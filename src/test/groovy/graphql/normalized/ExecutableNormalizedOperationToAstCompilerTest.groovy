@@ -1,9 +1,10 @@
 package graphql.normalized
 
-import graphql.ExecutionInput
+
 import graphql.GraphQL
 import graphql.TestUtil
 import graphql.language.AstPrinter
+import graphql.language.AstSorter
 import graphql.language.Document
 import graphql.schema.GraphQLSchema
 import graphql.schema.idl.RuntimeWiring
@@ -11,13 +12,13 @@ import graphql.schema.idl.TestLiveMockedWiringFactory
 import graphql.schema.scalars.JsonScalar
 import spock.lang.Specification
 
+import static graphql.ExecutionInput.newExecutionInput
 import static graphql.language.OperationDefinition.Operation.MUTATION
 import static graphql.language.OperationDefinition.Operation.QUERY
 import static graphql.language.OperationDefinition.Operation.SUBSCRIPTION
 import static graphql.normalized.ExecutableNormalizedOperationToAstCompiler.compileToDocument
 
 class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
-
     VariablePredicate noVariables = new VariablePredicate() {
         @Override
         boolean shouldMakeVariable(ExecutableNormalizedField executableNormalizedField, String argName, NormalizedInputValue normalizedInputValue) {
@@ -123,13 +124,13 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
         def fields = createNormalizedFields(schema, query)
         when:
         def result = compileToDocument(schema, QUERY, null, fields, noVariables)
-        def printed = AstPrinter.printAst(result.document)
+        def printed = AstPrinter.printAst(new AstSorter().sort(result.document))
         then:
         printed == '''query {
   animal {
+    name
+    otherName: name
     ... on Bird {
-      name
-      otherName: name
       friends {
         isBirdOwner
         name
@@ -141,9 +142,6 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
       }
     }
     ... on Cat {
-      name
-      otherName: name
-      mood
       friends {
         isCatOwner
         pets {
@@ -152,15 +150,648 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
           }
         }
       }
+      mood
     }
     ... on Dog {
-      name
-      otherName: name
       breed
     }
   }
 }
 '''
+    }
+
+    def "test interface fields with different output types on the implementations"() {
+        def schema = TestUtil.schema("""
+        interface Animal {
+            parent: Animal
+            name: String
+        }
+        type Cat implements Animal {
+            name: String
+            parent: Cat
+        }
+        type Dog implements Animal {
+            name: String
+            parent: Dog
+            isGoodBoy: Boolean
+        }
+        type Query {
+            animal: Animal
+        }
+        """)
+
+        String query = """
+        {
+            animal {
+                parent {
+                    name
+                }
+            }
+        }
+        """
+
+        def tree = createNormalizedTree(schema, query)
+        // printTreeWithLevelInfo(tree, schema).forEach { println it }
+
+        when:
+        def result = compileToDocument(schema, QUERY, null, tree.topLevelFields, noVariables)
+        def printed = AstPrinter.printAst(new AstSorter().sort(result.document))
+
+        then:
+        printed == """query {
+  animal {
+    parent {
+      name
+    }
+  }
+}
+"""
+    }
+
+    def "test interface fields with different output types on the implementations 2"() {
+        def schema = TestUtil.schema("""
+        interface Animal {
+            parent: Animal
+            name: String
+        }
+        type Cat implements Animal {
+            name: String
+            parent: Cat
+        }
+        type Dog implements Animal {
+            name: String
+            parent: Dog
+            isGoodBoy: Boolean
+        }
+        type Query {
+            animal: Animal
+        }
+        """)
+
+        String query = """
+        {
+            animal {
+                parent {
+                    name
+                    ... on Dog {
+                        isGoodBoy
+                    }
+                }
+            }
+        }
+        """
+
+        def tree = createNormalizedTree(schema, query)
+        // printTreeWithLevelInfo(tree, schema).forEach { println it }
+
+        when:
+        def result = compileToDocument(schema, QUERY, null, tree.topLevelFields, noVariables)
+        def printed = AstPrinter.printAst(new AstSorter().sort(result.document))
+
+        then:
+        printed == """query {
+  animal {
+    parent {
+      name
+      ... on Dog {
+        isGoodBoy
+      }
+    }
+  }
+}
+"""
+    }
+
+    def "test interface fields with different output types on the implementations 3"() {
+        // Tests we don't consider File as a possible option for parent on animals
+        def schema = TestUtil.schema("""
+        interface Node {
+            parent: Node
+        }
+        type File implements Node {
+            name: ID
+            parent: File
+        }
+        interface Animal implements Node {
+            parent: Animal
+            name: String
+        }
+        type Cat implements Animal & Node {
+            name: String
+            parent: Cat
+        }
+        type Dog implements Animal & Node {
+            name: String
+            parent: Dog
+            isGoodBoy: Boolean
+        }
+        type Query {
+            animal: Animal
+            file: File
+        }
+        """)
+
+        String query = """
+        {
+            animal {
+                parent {
+                    name
+                    ... on Dog {
+                        isGoodBoy
+                    }
+                    ... on Node {
+                        parent {
+                            ... on Cat {
+                                name
+                            }
+                            ... on Dog {
+                                name
+                            }
+                        }
+                    }
+                }
+            }
+            file {
+                name
+                ... on File {
+                    parent {
+                        name
+                    }
+                }
+            }
+        }
+        """
+
+        def tree = createNormalizedTree(schema, query)
+        // printTreeWithLevelInfo(tree, schema).forEach { println it }
+
+        when:
+        def result = compileToDocument(schema, QUERY, null, tree.topLevelFields, noVariables)
+        def printed = AstPrinter.printAst(new AstSorter().sort(result.document))
+
+        then:
+        printed == """query {
+  animal {
+    parent {
+      name
+      parent {
+        name
+      }
+      ... on Dog {
+        isGoodBoy
+      }
+    }
+  }
+  file {
+    name
+    parent {
+      name
+    }
+  }
+}
+"""
+    }
+
+    def "test unions always insert fragments for its subselections"() {
+        def schema = TestUtil.schema("""
+        union Animal = Cat | Dog
+        type Cat {
+            name: String
+            parent: Cat
+        }
+        type Dog {
+            name: String
+            parent: Dog
+            isGoodBoy: Boolean
+        }
+        type Query {
+            animal: Animal
+        }
+        """)
+
+        String query = """
+        {
+            animal {
+                ... on Cat {
+                    __typename
+                    name
+                }
+                ... on Dog {
+                    name
+                }
+                ... on Dog {
+                    isGoodBoy
+                }
+            }
+        }
+        """
+
+        def tree = createNormalizedTree(schema, query)
+        // printTreeWithLevelInfo(tree, schema).forEach { println it }
+
+        when:
+        def result = compileToDocument(schema, QUERY, null, tree.topLevelFields, noVariables)
+        def printed = AstPrinter.printAst(new AstSorter().sort(result.document))
+
+        then:
+        printed == """query {
+  animal {
+    ... on Cat {
+      __typename
+      name
+    }
+    ... on Dog {
+      isGoodBoy
+      name
+    }
+  }
+}
+"""
+    }
+
+    def "test typename in union when placed outside of fragments"() {
+        def schema = TestUtil.schema("""
+        union Animal = Cat | Dog
+        type Cat {
+            name: String
+            parent: Cat
+        }
+        type Dog {
+            name: String
+            parent: Dog
+            isGoodBoy: Boolean
+        }
+        type Query {
+            animal: Animal
+        }
+        """)
+
+        String query = """
+        {
+            animal {
+                __typename
+                ... on Cat {
+                    name
+                }
+                ... on Dog {
+                    name
+                }
+                ... on Dog {
+                    isGoodBoy
+                }
+            }
+        }
+        """
+
+        def tree = createNormalizedTree(schema, query)
+        // printTreeWithLevelInfo(tree, schema).forEach { println it }
+
+        when:
+        def result = compileToDocument(schema, QUERY, null, tree.topLevelFields, noVariables)
+        def printed = AstPrinter.printAst(new AstSorter().sort(result.document))
+
+        then:
+        printed == """query {
+  animal {
+    __typename
+    ... on Cat {
+      name
+    }
+    ... on Dog {
+      isGoodBoy
+      name
+    }
+  }
+}
+"""
+    }
+
+    def "test typename in union when placed inside fragments but on all types conditions"() {
+        def schema = TestUtil.schema("""
+        union Animal = Cat | Dog
+        type Cat {
+            name: String
+            parent: Cat
+        }
+        type Dog {
+            name: String
+            parent: Dog
+            isGoodBoy: Boolean
+        }
+        type Query {
+            animal: Animal
+        }
+        """)
+
+        String query = """
+        {
+            animal {
+                ... on Cat {
+                    __typename
+                    name
+                }
+                ... on Dog {
+                    __typename
+                    name
+                }
+                ... on Dog {
+                    isGoodBoy
+                }
+            }
+        }
+        """
+
+        def tree = createNormalizedTree(schema, query)
+        // printTreeWithLevelInfo(tree, schema).forEach { println it }
+
+        when:
+        def result = compileToDocument(schema, QUERY, null, tree.topLevelFields, noVariables)
+        def printed = AstPrinter.printAst(new AstSorter().sort(result.document))
+
+        then:
+        // Perhaps the typename should be hoisted out of the fragments, but the impl currently generates
+        // -Query.animal: Animal
+        // --Cat.__typename: String!
+        // --Dog.__typename: String!
+        // --Cat.name: String
+        // --Dog.name: String
+        // --Dog.isGoodBoy: Boolean
+        printed == """query {
+  animal {
+    ... on Cat {
+      __typename
+      name
+    }
+    ... on Dog {
+      __typename
+      isGoodBoy
+      name
+    }
+  }
+}
+"""
+    }
+
+    def "test print field for isGoodBoy when parent is changed to type Dog"() {
+        def schema = TestUtil.schema("""
+        interface Animal {
+            parent: Animal
+            name: String
+        }
+        type Cat implements Animal {
+            name: String
+            parent: Cat
+        }
+        type Dog implements Animal {
+            name: String
+            parent: Dog
+            isGoodBoy: Boolean
+        }
+        type Query {
+            animal: Animal
+        }
+        """)
+
+        String query = """
+        {
+            animal {
+                ... on Dog {
+                    parent {
+                        isGoodBoy
+                    }
+                }
+                ... on Animal {
+                    parent {
+                        name
+                    }
+                }
+            }
+        }
+        """
+
+        def tree = createNormalizedTree(schema, query)
+        // printTreeWithLevelInfo(tree, schema).forEach { println it }
+
+        when:
+        def result = compileToDocument(schema, QUERY, null, tree.topLevelFields, noVariables)
+        def printed = AstPrinter.printAst(new AstSorter().sort(result.document))
+
+        then:
+        // Note: the name field is spread across both fragments
+        printed == """query {
+  animal {
+    ... on Cat {
+      parent {
+        name
+      }
+    }
+    ... on Dog {
+      parent {
+        isGoodBoy
+        name
+      }
+    }
+  }
+}
+"""
+    }
+
+    def "test non conditional fields from interfaces are not surrounded by fragments"() {
+        def schema = TestUtil.schema("""
+        interface Animal {
+            parent: Animal
+            name: String
+            age: Int
+            location: String
+        }
+        type Cat implements Animal {
+            name: String
+            parent: Cat
+            age: Int
+            location: String
+        }
+        type Possum implements Animal {
+            name: String
+            parent: Animal
+            age: Int
+            location: String
+        }
+        type Rodent implements Animal {
+            name: String
+            parent: Animal
+            age: Int
+            location: String
+        }
+        type Deer implements Animal {
+            name: String
+            parent: Animal
+            age: Int
+            location: String
+        }
+        type Dog implements Animal {
+            name: String
+            parent: Dog
+            age: Int
+            location: String
+            isGoodBoy: Boolean
+        }
+        type Query {
+            animal: Animal
+        }
+        """)
+
+        String query = """
+        {
+            animal {
+                __typename
+                name
+                age
+                location
+                parent {
+                    name
+                    location
+                    ... on Dog {
+                        __typename
+                        age
+                        isGoodBoy
+                    }
+                    grandparent: parent {
+                        name
+                        age
+                        ... on Cat {
+                            catAge: age
+                        }
+                    }
+                }
+            }
+        }
+        """
+
+        def tree = createNormalizedTree(schema, query)
+        // printTreeWithLevelInfo(tree, schema).forEach { println it }
+
+        when:
+        def result = compileToDocument(schema, QUERY, null, tree.topLevelFields, noVariables)
+        def printed = AstPrinter.printAst(new AstSorter().sort(result.document))
+
+        then:
+        // Ensure that age location name etc are not surrounded by fragments unnecessarily
+        printed == """query {
+  animal {
+    __typename
+    age
+    location
+    name
+    parent {
+      location
+      name
+      grandparent: parent {
+        age
+        name
+        ... on Cat {
+          catAge: age
+        }
+      }
+      ... on Dog {
+        __typename
+        age
+        isGoodBoy
+      }
+    }
+  }
+}
+"""
+    }
+
+    def "test non conditional fields from interfaces are not surrounded by fragments 2"() {
+        def schema = TestUtil.schema("""
+        type Issue {
+            fields: IssueField
+        }
+        interface IssueField {
+            id: ID!
+            fieldId: Int
+            fieldName: String
+            label: String!
+        }
+        type DateIssueField implements IssueField {
+            id: ID!
+            fieldId: Int
+            fieldName: String
+            label: String!
+            date: String
+        }
+        type OptionsIssueField implements IssueField {
+            id: ID!
+            fieldId: Int
+            fieldName: String
+            label: String!
+        }
+        type SpecialIssueField implements IssueField {
+            id: ID!
+            fieldId: Int
+            fieldName: String
+            label: String!
+            specialType: String
+        }
+        type Query {
+            issue: Issue
+        }
+        """)
+
+        // This query also includes unnecessary fragments for fields that are already defined without fragments
+        String query = """
+        {
+            issue {
+                fields {
+                    __typename
+                    id
+                    fieldId
+                    fieldName
+                    label
+                    ... on IssueField {
+                        fieldId
+                    }
+                    ... on DateIssueField {
+                        date
+                    }
+                    ... on SpecialIssueField {
+                        id
+                        fieldId
+                        specialType
+                    }
+                }
+            }
+        }
+        """
+
+        def tree = createNormalizedTree(schema, query)
+        // printTreeWithLevelInfo(tree, schema).forEach { println it }
+
+        when:
+        def result = compileToDocument(schema, QUERY, null, tree.topLevelFields, noVariables)
+        def printed = AstPrinter.printAst(new AstSorter().sort(result.document))
+
+        then:
+        // Ensure that __typename id fieldId fieldName etc. are not surrounded by fragments unnecessarily
+        printed == """query {
+  issue {
+    fields {
+      __typename
+      fieldId
+      fieldName
+      id
+      label
+      ... on DateIssueField {
+        date
+      }
+      ... on SpecialIssueField {
+        specialType
+      }
+    }
+  }
+}
+"""
     }
 
     def "test a combination of plain objects and interfaces"() {
@@ -447,9 +1078,7 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
         then:
         AstPrinter.printAst(result.document) == '''query {
   foo1(arg: {arg1 : "Query"}) {
-    ... on AFoo {
-      test
-    }
+    test
   }
 }
 '''
@@ -494,13 +1123,15 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
         def fields = createNormalizedFields(schema, query)
         when:
         def result = compileToDocument(schema, QUERY, null, fields, noVariables)
+        def documentPrinted = AstPrinter.printAst(new AstSorter().sort(result.document))
         then:
-        AstPrinter.printAst(result.document) == '''query {
+        // Note: the typename field moves out of a fragment because AFoo is the only impl
+        documentPrinted == '''query {
   foo1(arg: {arg1 : "Query"}) {
+    __typename
+    test
     ... on AFoo {
-      test
       afoo
-      __typename
     }
   }
 }
@@ -543,20 +1174,69 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
         def fields = createNormalizedFields(schema, query)
         when:
         def result = compileToDocument(schema, QUERY, null, fields, noVariables)
+        def documentPrinted = AstPrinter.printAst(new AstSorter().sort(result.document))
         then:
-        AstPrinter.printAst(result.document) == '''query {
+        // Note: the typename field moves out of a fragment because AFoo is the only impl
+        documentPrinted == '''query {
   foo1(arg: {arg1 : "Query"}) {
-    ... on AFoo {
-      __typename
-      test
-    }
+    __typename
+    test
   }
 }
 '''
     }
 
-    // --------------------------------------------------------------------------------------
-    // Custom JSON handling
+    def "handles typename inside fragment"() {
+        def sdl = '''
+        type Query {
+            foo1(arg: I): Foo 
+        }
+        type Mutation {
+            foo1(arg: I): Foo 
+        }
+        interface Foo {
+            test: String
+        }
+        type AFoo implements Foo {
+            test: String
+        }
+        type BFoo implements Foo {
+            test: String
+        }
+        input I {
+            arg1: String
+        }
+        '''
+        def query = '''query {
+            ... on Query {
+                foo1(arg: {
+                    arg1: "Query"
+                }) {
+                    test
+                    ... on AFoo {
+                        __typename
+                    }
+                }
+            }
+        }
+        '''
+        GraphQLSchema schema = TestUtil.schema(sdl)
+        def fields = createNormalizedFields(schema, query)
+        when:
+        def result = compileToDocument(schema, QUERY, null, fields, noVariables)
+        def documentPrinted = AstPrinter.printAst(new AstSorter().sort(result.document))
+        then:
+        // Note: the typename field moves out of a fragment because AFoo is the only impl
+        documentPrinted == '''query {
+  foo1(arg: {arg1 : "Query"}) {
+    test
+    ... on AFoo {
+      __typename
+    }
+  }
+}
+'''
+    }
 
     def "test JSON when input is a variable"() {
         def sdl = '''
@@ -999,18 +1679,21 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
                  v5: [arg1: "fooArg"]]
     }
 
-    private List<ExecutableNormalizedField> createNormalizedFields(GraphQLSchema schema, String query, Map<String, Object> variables = [:]) {
+    private ExecutableNormalizedOperation createNormalizedTree(GraphQLSchema schema, String query, Map<String, Object> variables = [:]) {
         assertValidQuery(schema, query, variables)
         Document originalDocument = TestUtil.parseQuery(query)
 
         ExecutableNormalizedOperationFactory dependencyGraph = new ExecutableNormalizedOperationFactory()
-        def tree = dependencyGraph.createExecutableNormalizedOperationWithRawVariables(schema, originalDocument, null, variables)
-        return tree.getTopLevelFields()
+        return dependencyGraph.createExecutableNormalizedOperationWithRawVariables(schema, originalDocument, null, variables)
+    }
+
+    private List<ExecutableNormalizedField> createNormalizedFields(GraphQLSchema schema, String query, Map<String, Object> variables = [:]) {
+        return createNormalizedTree(schema, query, variables).getTopLevelFields()
     }
 
     private void assertValidQuery(GraphQLSchema graphQLSchema, String query, Map variables = [:]) {
         GraphQL graphQL = GraphQL.newGraphQL(graphQLSchema).build()
-        assert graphQL.execute(ExecutionInput.newExecutionInput(query).variables(variables)).errors.size() == 0
+        assert graphQL.execute(newExecutionInput().query(query).variables(variables)).errors.isEmpty()
     }
 
     GraphQLSchema mkSchema(String sdl) {

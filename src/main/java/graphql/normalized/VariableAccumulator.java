@@ -2,6 +2,7 @@ package graphql.normalized;
 
 import graphql.Internal;
 import graphql.language.VariableDefinition;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -18,15 +19,16 @@ import static graphql.normalized.ValueToVariableValueCompiler.normalizedInputVal
 public class VariableAccumulator {
 
     private final List<VariableValueWithDefinition> valueWithDefinitions;
+    @Nullable
     private final VariablePredicate variablePredicate;
 
-    public VariableAccumulator(VariablePredicate variablePredicate) {
+    public VariableAccumulator(@Nullable VariablePredicate variablePredicate) {
         this.variablePredicate = variablePredicate;
         valueWithDefinitions = new ArrayList<>();
     }
 
     public boolean shouldMakeVariable(ExecutableNormalizedField executableNormalizedField, String argName, NormalizedInputValue normalizedInputValue) {
-        return variablePredicate.shouldMakeVariable(executableNormalizedField, argName, normalizedInputValue);
+        return variablePredicate != null && variablePredicate.shouldMakeVariable(executableNormalizedField, argName, normalizedInputValue);
     }
 
     public VariableValueWithDefinition accumulateVariable(NormalizedInputValue normalizedInputValue) {
