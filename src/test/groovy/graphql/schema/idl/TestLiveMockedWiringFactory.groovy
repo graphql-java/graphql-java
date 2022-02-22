@@ -6,12 +6,26 @@ import graphql.schema.CoercingParseLiteralException
 import graphql.schema.CoercingParseValueException
 import graphql.schema.CoercingSerializeException
 import graphql.schema.DataFetcher
+import graphql.schema.GraphQLInterfaceType
 import graphql.schema.GraphQLObjectType
 import graphql.schema.GraphQLScalarType
+import graphql.schema.GraphQLTypeUtil
+import graphql.schema.GraphQLUnionType
 import graphql.schema.PropertyDataFetcher
 import graphql.schema.TypeResolver
 
-class MockedWiringFactory implements WiringFactory {
+class TestLiveMockedWiringFactory implements WiringFactory {
+
+    private final Map<String, GraphQLScalarType> scalars
+
+    TestLiveMockedWiringFactory() {
+        this.scalars = new HashMap<>()
+    }
+
+    TestLiveMockedWiringFactory(List<GraphQLScalarType> scalars) {
+        this.scalars = new HashMap<>()
+        scalars.forEach({ scalar -> this.scalars.put(scalar.getName(), scalar) })
+    }
 
     @Override
     boolean providesTypeResolver(InterfaceWiringEnvironment environment) {
@@ -23,7 +37,8 @@ class MockedWiringFactory implements WiringFactory {
         new TypeResolver() {
             @Override
             GraphQLObjectType getType(TypeResolutionEnvironment env) {
-                throw new UnsupportedOperationException("Not implemented")
+                def fieldType = GraphQLTypeUtil.unwrapAll(env.getFieldType())
+                env.getSchema().getImplementations((GraphQLInterfaceType) fieldType).get(0)
             }
         }
     }
@@ -38,10 +53,19 @@ class MockedWiringFactory implements WiringFactory {
         new TypeResolver() {
             @Override
             GraphQLObjectType getType(TypeResolutionEnvironment env) {
-                throw new UnsupportedOperationException("Not implemented")
+                def fieldType = GraphQLTypeUtil.unwrapAll(env.getFieldType())
+                GraphQLObjectType graphQLObjectType
+                def unionFirstType = ((GraphQLUnionType) fieldType).getTypes().get(0)
+                if (unionFirstType instanceof GraphQLInterfaceType) {
+                    graphQLObjectType = env.getSchema().getImplementations((GraphQLInterfaceType) unionFirstType).get(0)
+                } else {
+                    graphQLObjectType = unionFirstType as GraphQLObjectType
+                }
+                return graphQLObjectType
             }
         }
     }
+
 
     @Override
     boolean providesDataFetcher(FieldWiringEnvironment environment) {
@@ -61,22 +85,25 @@ class MockedWiringFactory implements WiringFactory {
         return true
     }
 
+    @Override
     GraphQLScalarType getScalar(ScalarWiringEnvironment environment) {
-        return GraphQLScalarType.newScalar().name(environment.getScalarTypeDefinition().getName()).coercing(new Coercing() {
+
+        String scalarName = environment.getScalarTypeDefinition().getName()
+        return scalars.computeIfAbsent(scalarName, name -> GraphQLScalarType.newScalar().name(name).coercing(new Coercing() {
             @Override
             Object serialize(Object dataFetcherResult) throws CoercingSerializeException {
-                throw new UnsupportedOperationException("Not implemented");
+                throw new UnsupportedOperationException("Not implemented...this is only a mocked scalar")
             }
 
             @Override
             Object parseValue(Object input) throws CoercingParseValueException {
-                throw new UnsupportedOperationException("Not implemented");
+                throw new UnsupportedOperationException("Not implemented...this is only a mocked scalar")
             }
 
             @Override
             Object parseLiteral(Object input) throws CoercingParseLiteralException {
-                throw new UnsupportedOperationException("Not implemented");
+                throw new UnsupportedOperationException("Not implemented...this is only a mocked scalar")
             }
-        }).build()
+        }).build())
     }
 }

@@ -17,6 +17,8 @@ import graphql.language.SelectionSet;
 import graphql.language.TypeName;
 import graphql.language.Value;
 import graphql.schema.GraphQLSchema;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -32,24 +34,57 @@ import static graphql.language.TypeName.newTypeName;
 
 @Internal
 public class ExecutableNormalizedOperationToAstCompiler {
-    public static Document compileToDocument(GraphQLSchema schema,
-                                             OperationDefinition.Operation operationKind,
-                                             String operationName,
-                                             List<ExecutableNormalizedField> topLevelFields) {
-        List<Selection<?>> selections = selectionsForNormalizedFields(schema, topLevelFields);
-        SelectionSet selectionSet = new SelectionSet(selections);
 
-        return Document.newDocument()
-                .definition(OperationDefinition.newOperationDefinition()
-                        .name(operationName)
-                        .operation(operationKind)
-                        .selectionSet(selectionSet)
-                        .build())
-                .build();
+    public static class CompilerResult {
+        private final Document document;
+        private final Map<String, Object> variables;
+
+        public CompilerResult(Document document, Map<String, Object> variables) {
+            this.document = document;
+            this.variables = variables;
+        }
+
+        public Document getDocument() {
+            return document;
+        }
+
+        public Map<String, Object> getVariables() {
+            return variables;
+        }
     }
 
-    private static List<Selection<?>> selectionsForNormalizedFields(GraphQLSchema schema,
-                                                                    List<ExecutableNormalizedField> executableNormalizedFields) {
+    public static CompilerResult compileToDocument(
+            GraphQLSchema schema,
+            OperationDefinition.Operation operationKind,
+            String operationName,
+            List<ExecutableNormalizedField> topLevelFields,
+            VariablePredicate variablePredicate
+    ) {
+        VariableAccumulator variableAccumulator = new VariableAccumulator(variablePredicate);
+        List<Selection<?>> selections = selectionsForNormalizedFields(schema, topLevelFields, variableAccumulator);
+        SelectionSet selectionSet = new SelectionSet(selections);
+
+
+        OperationDefinition.Builder definitionBuilder = OperationDefinition.newOperationDefinition()
+                .name(operationName)
+                .operation(operationKind)
+                .selectionSet(selectionSet);
+
+        definitionBuilder.variableDefinitions(variableAccumulator.getVariableDefinitions());
+
+        return new CompilerResult(
+                Document.newDocument()
+                        .definition(definitionBuilder.build())
+                        .build(),
+                variableAccumulator.getVariablesMap()
+        );
+    }
+
+    private static List<Selection<?>> selectionsForNormalizedFields(
+            GraphQLSchema schema,
+            List<ExecutableNormalizedField> executableNormalizedFields,
+            VariableAccumulator variableAccumulator
+    ) {
         ImmutableList.Builder<Selection<?>> selections = ImmutableList.builder();
 
         // All conditional fields go here instead of directly to selections so they can be grouped together
@@ -57,7 +92,7 @@ public class ExecutableNormalizedOperationToAstCompiler {
         Map<String, List<Field>> conditionalFieldsByObjectTypeName = new LinkedHashMap<>();
 
         for (ExecutableNormalizedField nf : executableNormalizedFields) {
-            Map<String, List<Field>> groupFieldsForChild = selectionForNormalizedField(schema, nf);
+            Map<String, List<Field>> groupFieldsForChild = selectionForNormalizedField(schema, nf, variableAccumulator);
             if (nf.isConditional(schema)) {
                 groupFieldsForChild.forEach((objectTypeName, fields) -> {
                     List<Field> fieldList = conditionalFieldsByObjectTypeName.computeIfAbsent(objectTypeName, ignored -> new ArrayList<>());
@@ -81,18 +116,21 @@ public class ExecutableNormalizedOperationToAstCompiler {
         return selections.build();
     }
 
-    private static Map<String, List<Field>> selectionForNormalizedField(GraphQLSchema schema,
-                                                                        ExecutableNormalizedField executableNormalizedField) {
+    private static Map<String, List<Field>> selectionForNormalizedField(
+            GraphQLSchema schema,
+            ExecutableNormalizedField executableNormalizedField,
+            VariableAccumulator variableAccumulator
+    ) {
         Map<String, List<Field>> groupedFields = new LinkedHashMap<>();
         for (String objectTypeName : executableNormalizedField.getObjectTypeNames()) {
-            List<Selection<?>> subSelections = selectionsForNormalizedFields(schema, executableNormalizedField.getChildren());
+            List<Selection<?>> subSelections = selectionsForNormalizedFields(schema, executableNormalizedField.getChildren(), variableAccumulator);
             SelectionSet selectionSet = null;
             if (subSelections.size() > 0) {
                 selectionSet = newSelectionSet()
                         .selections(subSelections)
                         .build();
             }
-            List<Argument> arguments = createArguments(executableNormalizedField);
+            List<Argument> arguments = createArguments(executableNormalizedField, variableAccumulator);
             Field field = newField()
                     .name(executableNormalizedField.getFieldName())
                     .alias(executableNormalizedField.getAlias())
@@ -109,30 +147,33 @@ public class ExecutableNormalizedOperationToAstCompiler {
         return newSelectionSet().selections(fields).build();
     }
 
-    private static List<Argument> createArguments(ExecutableNormalizedField executableNormalizedField) {
+    private static List<Argument> createArguments(ExecutableNormalizedField executableNormalizedField, VariableAccumulator variableAccumulator) {
         ImmutableList.Builder<Argument> result = ImmutableList.builder();
         ImmutableMap<String, NormalizedInputValue> normalizedArguments = executableNormalizedField.getNormalizedArguments();
         for (String argName : normalizedArguments.keySet()) {
+            NormalizedInputValue normalizedInputValue = normalizedArguments.get(argName);
+            Value<?> value = argValue(executableNormalizedField, argName, normalizedInputValue, variableAccumulator);
             Argument argument = newArgument()
                     .name(argName)
-                    .value(argValue(normalizedArguments.get(argName).getValue()))
+                    .value(value)
                     .build();
             result.add(argument);
         }
         return result.build();
     }
 
-    private static Value<?> argValue(Object value) {
+    @SuppressWarnings("unchecked")
+    private static Value<?> argValue(ExecutableNormalizedField executableNormalizedField, String argName, @Nullable Object value, VariableAccumulator variableAccumulator) {
         if (value instanceof List) {
             ArrayValue.Builder arrayValue = ArrayValue.newArrayValue();
-            arrayValue.values(map((List<Object>) value, ExecutableNormalizedOperationToAstCompiler::argValue));
+            arrayValue.values(map((List<Object>) value, val -> argValue(executableNormalizedField, argName, val, variableAccumulator)));
             return arrayValue.build();
         }
         if (value instanceof Map) {
             ObjectValue.Builder objectValue = ObjectValue.newObjectValue();
             Map<String, Object> map = (Map<String, Object>) value;
             for (String fieldName : map.keySet()) {
-                Value<?> fieldValue = argValue(((NormalizedInputValue) map.get(fieldName)).getValue());
+                Value<?> fieldValue = argValue(executableNormalizedField, argName, (NormalizedInputValue) map.get(fieldName), variableAccumulator);
                 objectValue.objectField(ObjectField.newObjectField().name(fieldName).value(fieldValue).build());
             }
             return objectValue.build();
@@ -141,5 +182,15 @@ public class ExecutableNormalizedOperationToAstCompiler {
             return NullValue.newNullValue().build();
         }
         return (Value<?>) value;
+    }
+
+    @NotNull
+    private static Value<?> argValue(ExecutableNormalizedField executableNormalizedField, String argName, NormalizedInputValue normalizedInputValue, VariableAccumulator variableAccumulator) {
+        if (variableAccumulator.shouldMakeVariable(executableNormalizedField, argName, normalizedInputValue)) {
+            VariableValueWithDefinition variableWithDefinition = variableAccumulator.accumulateVariable(normalizedInputValue);
+            return variableWithDefinition.getVariableReference();
+        } else {
+            return argValue(executableNormalizedField, argName, normalizedInputValue.getValue(), variableAccumulator);
+        }
     }
 }
