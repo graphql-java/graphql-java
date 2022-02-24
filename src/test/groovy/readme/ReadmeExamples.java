@@ -83,6 +83,9 @@ public class ReadmeExamples {
                 .query(queryType) // must be provided
                 .mutation(mutationType) // is optional
                 .build();
+
+        GraphQLUnionType.Builder description = newUnionType().description("");
+        description.definition(null).build();
     }
 
     void listsAndNonNullLists() {

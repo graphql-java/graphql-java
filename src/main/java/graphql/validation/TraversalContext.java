@@ -105,7 +105,7 @@ public class TraversalContext implements DocumentVisitor {
     }
 
     private void enterImpl(Directive directive) {
-        this.directive = DirectivesUtil.getFirstDirective(directive.getName(), schema.getAllDirectivesByName());
+        this.directive = schema.getDirective(directive.getName());
     }
 
     private void enterImpl(OperationDefinition operationDefinition) {

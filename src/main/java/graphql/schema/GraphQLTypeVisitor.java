@@ -23,7 +23,39 @@ public interface GraphQLTypeVisitor {
 
     TraversalControl visitGraphQLFieldDefinition(GraphQLFieldDefinition node, TraverserContext<GraphQLSchemaElement> context);
 
+    /**
+     * This method will be called twice.  Once for a directive definition in a schema and then do each time a directive is applied to a schema element
+     *
+     * When it's applied to a schema element then {@link TraverserContext#getParentNode()} will be the schema element that this is applied to.
+     *
+     * The graphql-java code base is trying to slowly move away from using {@link GraphQLDirective}s when they really should be {@link GraphQLAppliedDirective}s
+     * and this is another place that has been left in.  In the future this behavior will change and this will only visit directive definitions of a schema, not where
+     * they are applied.
+     *
+     * @param node the directive
+     * @param context the traversal context
+     * @return how to control the visitation processing
+     */
     TraversalControl visitGraphQLDirective(GraphQLDirective node, TraverserContext<GraphQLSchemaElement> context);
+
+    /**
+     * This method will be called when a directive is applied to a schema element.
+     *
+     * The {@link TraverserContext#getParentNode()} will be the schema element that this is applied to.
+     *
+     * The graphql-java code base is trying to slowly move away from using {@link GraphQLDirective}s when they really should be {@link GraphQLAppliedDirective}s
+     *
+     * @param node the applied directive
+     * @param context the traversal context
+     * @return how to control the visitation processing
+     */
+    default TraversalControl visitGraphQLAppliedDirective(GraphQLAppliedDirective node, TraverserContext<GraphQLSchemaElement> context) {
+        return TraversalControl.CONTINUE;
+    }
+
+    default TraversalControl visitGraphQLAppliedDirectiveArgument(GraphQLAppliedDirectiveArgument node, TraverserContext<GraphQLSchemaElement> context) {
+        return TraversalControl.CONTINUE;
+    }
 
     TraversalControl visitGraphQLInputObjectField(GraphQLInputObjectField node, TraverserContext<GraphQLSchemaElement> context);
 

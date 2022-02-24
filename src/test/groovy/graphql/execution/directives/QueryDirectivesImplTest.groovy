@@ -36,9 +36,11 @@ class QueryDirectivesImplTest extends Specification {
         def directives = impl.getImmediateDirectivesByName()
         then:
         directives.keySet().sort() == ["cached", "timeout", "upper"]
+        impl.getImmediateAppliedDirectivesByName().keySet().sort() == ["cached", "timeout", "upper"]
 
         when:
         def result = impl.getImmediateDirective("cached")
+        def appliedResult = impl.getImmediateAppliedDirective("cached")
 
         then:
         result.size() == 2
@@ -54,6 +56,13 @@ class QueryDirectivesImplTest extends Specification {
         // the prototypical other properties are copied ok
         result[0].validLocations().collect({ it.name() }).sort() == ["FIELD", "QUERY"]
         result[1].validLocations().collect({ it.name() }).sort() == ["FIELD", "QUERY"]
+
+        appliedResult.size() == 2
+        appliedResult[0].getName() == "cached"
+        appliedResult[1].getName() == "cached"
+
+        appliedResult[0].getArgument("forMillis").getValue() == 99
+        appliedResult[1].getArgument("forMillis").getValue() == 10
     }
 
 }

@@ -12,6 +12,8 @@ import graphql.language.Type
 import graphql.parser.Parser
 import graphql.schema.Coercing
 import graphql.schema.DataFetcher
+import graphql.schema.GraphQLAppliedDirectiveArgument
+import graphql.schema.GraphQLAppliedDirective
 import graphql.schema.GraphQLArgument
 import graphql.schema.GraphQLDirective
 import graphql.schema.GraphQLInputType
@@ -261,29 +263,33 @@ class TestUtil {
         return op.getSelectionSet().getSelectionsOfType(Field.class)[0] as Field
     }
 
-    static GraphQLDirective[] mockDirectivesWithArguments(String... names) {
+    static GraphQLAppliedDirective[] mockDirectivesWithArguments(String... names) {
         return names.collect { directiveName ->
-            def builder = newDirective().name(directiveName)
+            def builder = GraphQLAppliedDirective.newDirective().name(directiveName)
 
             names.each { argName ->
-                builder.argument(newArgument().name(argName).type(GraphQLInt).value(BigInteger.valueOf(0)).build())
+                builder.argument(GraphQLAppliedDirectiveArgument.newArgument().name(argName).type(GraphQLInt).valueProgrammatic(BigInteger.valueOf(0)).build())
             }
             return builder.build()
-        }.toArray() as GraphQLDirective[]
+        }.toArray() as GraphQLAppliedDirective[]
     }
 
-    static GraphQLDirective[] mockDirectivesWithNoValueArguments(String... names) {
+    static GraphQLAppliedDirective[] mockDirectivesWithNoValueArguments(String... names) {
         return names.collect { directiveName ->
-            def builder = newDirective().name(directiveName)
+            def builder = GraphQLAppliedDirective.newDirective().name(directiveName)
 
             names.each { argName ->
-                builder.argument(newArgument().name(argName).type(GraphQLInt).build())
+                builder.argument(GraphQLAppliedDirectiveArgument.newArgument().name(argName).type(GraphQLInt).build())
             }
             return builder.build()
-        }.toArray() as GraphQLDirective[]
+        }.toArray() as GraphQLAppliedDirective[]
     }
 
     static List<GraphQLArgument> mockArguments(String... names) {
+        return names.collect { newArgument().name(it).type(GraphQLInt).build() }
+    }
+
+    static List<GraphQLAppliedDirectiveArgument> mockAppliedArguments(String... names) {
         return names.collect { newArgument().name(it).type(GraphQLInt).build() }
     }
 
