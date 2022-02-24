@@ -18,5 +18,5 @@ import static java.lang.annotation.ElementType.TYPE;
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(value = {CONSTRUCTOR, METHOD, TYPE, FIELD, PACKAGE})
-public @interface Internal {
+public @interface  Internal {
 }
