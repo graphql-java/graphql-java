@@ -1287,6 +1287,61 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
 '''
     }
 
+    def "introspection query can be printed"() {
+        def sdl = '''
+        type Query {
+            foo1: Foo 
+        }
+        interface Foo {
+            test: String
+        }
+        type AFoo implements Foo {
+            test: String
+            aFoo: String
+        }
+        '''
+        def query = '''
+        query introspection_query {
+            __schema {
+                queryType {
+                    fields(includeDeprecated: false) {
+                        name
+                    }
+                }
+            }
+        
+            __type(name: "World") {
+                name
+                fields {
+                    name
+                }
+            }
+        }
+        '''
+
+        GraphQLSchema schema = mkSchema(sdl)
+        def fields = createNormalizedFields(schema, query)
+        when:
+        def result = compileToDocument(schema, QUERY, null, fields, noVariables)
+        def documentPrinted = AstPrinter.printAst(new AstSorter().sort(result.document))
+        then:
+        documentPrinted == '''query {
+  __schema {
+    queryType {
+      fields(includeDeprecated: false) {
+        name
+      }
+    }
+  }
+  __type(name: "World") {
+    fields {
+      name
+    }
+    name
+  }
+}
+'''
+    }
     def "test is conditional when there is only one interface implementation"() {
         def sdl = '''
         type Query {

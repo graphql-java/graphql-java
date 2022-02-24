@@ -2,8 +2,8 @@ package graphql.normalized;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import graphql.Assert;
 import graphql.Internal;
+import graphql.introspection.Introspection;
 import graphql.language.Argument;
 import graphql.language.ArrayValue;
 import graphql.language.Document;
@@ -17,6 +17,7 @@ import graphql.language.Selection;
 import graphql.language.SelectionSet;
 import graphql.language.TypeName;
 import graphql.language.Value;
+import graphql.schema.GraphQLCompositeType;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
@@ -29,7 +30,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import static graphql.Assert.assertNotNull;
 import static graphql.collect.ImmutableKit.map;
 import static graphql.execution.nextgen.Common.getOperationRootType;
 import static graphql.language.Argument.newArgument;
@@ -37,7 +37,6 @@ import static graphql.language.Field.newField;
 import static graphql.language.InlineFragment.newInlineFragment;
 import static graphql.language.SelectionSet.newSelectionSet;
 import static graphql.language.TypeName.newTypeName;
-import static graphql.schema.FieldCoordinates.coordinates;
 import static graphql.schema.GraphQLTypeUtil.unwrapAll;
 import static java.util.Collections.emptyList;
 
@@ -148,9 +147,8 @@ public class ExecutableNormalizedOperationToAstCompiler {
         if (executableNormalizedField.getChildren().isEmpty()) {
             subSelections = emptyList();
         } else {
-            GraphQLFieldDefinition fieldDefinition = getFieldDefinition(schema, objectTypeName, executableNormalizedField);
-            assertNotNull(fieldDefinition, () -> String.format("Field at %s.%s does not exist", objectTypeName, executableNormalizedField.getName()));
-            GraphQLUnmodifiedType fieldOutputType = unwrapAll(fieldDefinition.getType());
+            GraphQLFieldDefinition fieldDef = getFieldDefinition(schema, objectTypeName, executableNormalizedField);
+            GraphQLUnmodifiedType fieldOutputType = unwrapAll(fieldDef.getType());
 
             subSelections = subselectionsForNormalizedField(
                     schema,
@@ -234,10 +232,10 @@ public class ExecutableNormalizedOperationToAstCompiler {
         }
     }
 
-    @Nullable
+    @NotNull
     private static GraphQLFieldDefinition getFieldDefinition(GraphQLSchema schema,
                                                              String parentType,
                                                              ExecutableNormalizedField nf) {
-        return schema.getFieldDefinition(coordinates(parentType, nf.getName()));
+        return Introspection.getFieldDef(schema, (GraphQLCompositeType) schema.getType(parentType), nf.getName());
     }
 }
