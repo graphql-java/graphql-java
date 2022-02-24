@@ -30,6 +30,7 @@ import static graphql.Assert.assertShouldNeverHappen;
 import static graphql.execution.ExecutionContextBuilder.newExecutionContextBuilder;
 import static graphql.execution.ExecutionStepInfo.newExecutionStepInfo;
 import static graphql.execution.ExecutionStrategyParameters.newParameters;
+import static graphql.execution.nextgen.Common.getOperationRootType;
 import static graphql.language.OperationDefinition.Operation.MUTATION;
 import static graphql.language.OperationDefinition.Operation.QUERY;
 import static graphql.language.OperationDefinition.Operation.SUBSCRIPTION;
@@ -174,31 +175,5 @@ public class Execution {
         result = result.whenComplete(executeOperationCtx::onCompleted);
 
         return result;
-    }
-
-
-    private GraphQLObjectType getOperationRootType(GraphQLSchema graphQLSchema, OperationDefinition operationDefinition) {
-        OperationDefinition.Operation operation = operationDefinition.getOperation();
-        if (operation == MUTATION) {
-            GraphQLObjectType mutationType = graphQLSchema.getMutationType();
-            if (mutationType == null) {
-                throw new MissingRootTypeException("Schema is not configured for mutations.", operationDefinition.getSourceLocation());
-            }
-            return mutationType;
-        } else if (operation == QUERY) {
-            GraphQLObjectType queryType = graphQLSchema.getQueryType();
-            if (queryType == null) {
-                throw new MissingRootTypeException("Schema does not define the required query root type.", operationDefinition.getSourceLocation());
-            }
-            return queryType;
-        } else if (operation == SUBSCRIPTION) {
-            GraphQLObjectType subscriptionType = graphQLSchema.getSubscriptionType();
-            if (subscriptionType == null) {
-                throw new MissingRootTypeException("Schema is not configured for subscriptions.", operationDefinition.getSourceLocation());
-            }
-            return subscriptionType;
-        } else {
-            return assertShouldNeverHappen("Unhandled case.  An extra operation enum has been added without code support");
-        }
     }
 }

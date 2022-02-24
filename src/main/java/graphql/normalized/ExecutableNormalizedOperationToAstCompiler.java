@@ -31,6 +31,7 @@ import java.util.Map;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.collect.ImmutableKit.map;
+import static graphql.execution.nextgen.Common.getOperationRootType;
 import static graphql.language.Argument.newArgument;
 import static graphql.language.Field.newField;
 import static graphql.language.InlineFragment.newInlineFragment;
@@ -66,8 +67,7 @@ public class ExecutableNormalizedOperationToAstCompiler {
                                                    @Nullable String operationName,
                                                    @NotNull List<ExecutableNormalizedField> topLevelFields,
                                                    @Nullable VariablePredicate variablePredicate) {
-        GraphQLObjectType operationType = assertNotNull(getOperationType(schema, operationKind),
-                () -> "Schema does not support " + operationKind.name().toLowerCase() + " operations");
+        GraphQLObjectType operationType = getOperationRootType(schema, operationKind);
 
         VariableAccumulator variableAccumulator = new VariableAccumulator(variablePredicate);
         List<Selection<?>> selections = subselectionsForNormalizedField(schema, operationType.getName(), topLevelFields, variableAccumulator);
@@ -89,7 +89,7 @@ public class ExecutableNormalizedOperationToAstCompiler {
     }
 
     private static List<Selection<?>> subselectionsForNormalizedField(GraphQLSchema schema,
-                                                                      @Nullable String parentOutputType,
+                                                                      @NotNull String parentOutputType,
                                                                       List<ExecutableNormalizedField> executableNormalizedFields,
                                                                       VariableAccumulator variableAccumulator) {
         ImmutableList.Builder<Selection<?>> selections = ImmutableList.builder();
@@ -239,20 +239,5 @@ public class ExecutableNormalizedOperationToAstCompiler {
                                                              String parentType,
                                                              ExecutableNormalizedField nf) {
         return schema.getFieldDefinition(coordinates(parentType, nf.getName()));
-    }
-
-    @Nullable
-    private static GraphQLObjectType getOperationType(@NotNull GraphQLSchema schema,
-                                                      @NotNull OperationDefinition.Operation operationKind) {
-        switch (operationKind) {
-            case QUERY:
-                return schema.getQueryType();
-            case MUTATION:
-                return schema.getMutationType();
-            case SUBSCRIPTION:
-                return schema.getSubscriptionType();
-        }
-
-        return Assert.assertShouldNeverHappen("Unknown operation kind " + operationKind);
     }
 }

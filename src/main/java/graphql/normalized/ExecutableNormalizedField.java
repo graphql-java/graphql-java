@@ -2,6 +2,7 @@ package graphql.normalized;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import graphql.Assert;
 import graphql.Internal;
 import graphql.Mutable;
 import graphql.collect.ImmutableKit;
@@ -15,6 +16,7 @@ import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLUnionType;
 import graphql.util.FpKit;
+import org.dataloader.impl.Assertions;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -132,27 +134,34 @@ public class ExecutableNormalizedField {
 
         GraphQLType parentOutputType = schema.getType(parentOutputTypeName);
 
-        // Is not conditional if field exists in interface type, and we have specified all impls
         if (parentOutputType instanceof GraphQLInterfaceType) {
             GraphQLInterfaceType parentOutputTypeAsInterface = (GraphQLInterfaceType) parentOutputType;
             List<GraphQLObjectType> interfaceImpls = schema.getImplementations(parentOutputTypeAsInterface);
-            if (interfaceImpls.size() == objectTypeNames.size()) {
-                return parentOutputTypeAsInterface.getField(this.fieldName) == null
-                        && !this.fieldName.equals(Introspection.TypeNameMetaFieldDef.getName());
-            } else {
-                return true;
+
+            // __typename
+            if (this.fieldName.equals(Introspection.TypeNameMetaFieldDef.getName()) && interfaceImpls.size() == objectTypeNames.size()) {
+                return false; // Not conditional
             }
+
+            // If field does not exist on the output type, it is conditional
+            if (parentOutputTypeAsInterface.getField(fieldName) == null) {
+                return true; // Conditional
+            }
+
+            return interfaceImpls.size() != objectTypeNames.size();
         } else if (parentOutputType instanceof GraphQLUnionType) {
             GraphQLUnionType parentOutputTypeAsUnion = (GraphQLUnionType) parentOutputType;
-            if (objectTypeNames.size() == parentOutputTypeAsUnion.getTypes().size()) {
-                return !this.fieldName.equals(Introspection.TypeNameMetaFieldDef.getName());
+
+            // __typename is the only field in a union type that CAN be NOT conditional
+            if (this.fieldName.equals(Introspection.TypeNameMetaFieldDef.getName()) && objectTypeNames.size() == parentOutputTypeAsUnion.getTypes().size()) {
+                return false; // Not conditional
             } else {
-                return true;
+                return true; // Conditional
             }
         }
 
         if (objectTypeNames.size() > 1) {
-            return true;
+            return true; // Conditional
         }
 
         return parentOutputType != getOneObjectType(schema);
