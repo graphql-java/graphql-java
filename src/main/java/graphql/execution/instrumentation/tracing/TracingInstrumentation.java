@@ -84,8 +84,8 @@ public class TracingInstrumentation extends SimpleInstrumentation {
     }
 
     @Override
-    public InstrumentationContext<Object> beginFieldFetch(InstrumentationFieldFetchParameters parameters) {
-        TracingSupport tracingSupport = parameters.getInstrumentationState();
+    public InstrumentationContext<Object> beginFieldFetch(InstrumentationFieldFetchParameters parameters, InstrumentationState state) {
+        TracingSupport tracingSupport = (TracingSupport) state;
         TracingSupport.TracingContext ctx = tracingSupport.beginField(parameters.getEnvironment(), parameters.isTrivialDataFetcher());
         return whenCompleted((result, t) -> ctx.onEnd());
     }

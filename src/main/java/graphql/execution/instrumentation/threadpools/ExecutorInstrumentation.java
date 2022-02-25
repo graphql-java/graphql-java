@@ -5,6 +5,7 @@ import graphql.Assert;
 import graphql.Internal;
 import graphql.TrivialDataFetcher;
 import graphql.execution.Async;
+import graphql.execution.instrumentation.InstrumentationState;
 import graphql.execution.instrumentation.SimpleInstrumentation;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters;
 import graphql.schema.DataFetcher;
@@ -29,7 +30,7 @@ import static graphql.execution.instrumentation.threadpools.ExecutorInstrumentat
  * An IO oriented thread pool is typically a multiple of {@link Runtime#availableProcessors()} while a CPU oriented thread pool
  * is typically no more than {@link Runtime#availableProcessors()}.
  * <p>
- * The instrumentation will use the {@link graphql.execution.instrumentation.Instrumentation#instrumentDataFetcher(DataFetcher, InstrumentationFieldFetchParameters)}
+ * The instrumentation will use the {@link graphql.execution.instrumentation.Instrumentation#instrumentDataFetcher(DataFetcher, InstrumentationFieldFetchParameters, InstrumentationState)}
  * method to change your data fetchers so they are executed on a thread pool dedicated to fetching (if you provide one).
  * <p>
  * Once the data fetcher value is returns it will transfer control back to a processing thread pool (if you provide one).
@@ -106,7 +107,7 @@ public class ExecutorInstrumentation extends SimpleInstrumentation {
     }
 
     @Override
-    public DataFetcher<?> instrumentDataFetcher(DataFetcher<?> originalDataFetcher, InstrumentationFieldFetchParameters parameters) {
+    public DataFetcher<?> instrumentDataFetcher(DataFetcher<?> originalDataFetcher, InstrumentationFieldFetchParameters parameters, InstrumentationState parametersState) {
         if (originalDataFetcher instanceof TrivialDataFetcher) {
             return originalDataFetcher;
         }

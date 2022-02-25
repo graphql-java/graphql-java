@@ -77,7 +77,7 @@ class ExecutorInstrumentationTest extends Specification {
     def "can handle a data fetcher that throws exceptions"() {
         when:
         DataFetcher df = { env -> throw new RuntimeException("BANG") }
-        def modifiedDataFetcher = instrumentation.instrumentDataFetcher(df, null)
+        def modifiedDataFetcher = instrumentation.instrumentDataFetcher(df, null, null)
         def returnedValue = modifiedDataFetcher.get(null)
 
         then:
@@ -96,7 +96,7 @@ class ExecutorInstrumentationTest extends Specification {
 
         when:
         DataFetcher df = PropertyDataFetcher.fetching({ o -> "trivial" })
-        def modifiedDataFetcher = instrumentation.instrumentDataFetcher(df, null)
+        def modifiedDataFetcher = instrumentation.instrumentDataFetcher(df, null, null)
         def returnedValue = modifiedDataFetcher.get(dfEnv("source"))
 
         then:
@@ -111,7 +111,7 @@ class ExecutorInstrumentationTest extends Specification {
         instrumentation = build(FetchExecutor, ProcessingExecutor, observer)
 
         DataFetcher df = { env -> currentThread().getName() }
-        def modifiedDataFetcher = instrumentation.instrumentDataFetcher(df, null)
+        def modifiedDataFetcher = instrumentation.instrumentDataFetcher(df, null, null)
         def returnedValue = modifiedDataFetcher.get(null)
 
         then:
@@ -131,7 +131,7 @@ class ExecutorInstrumentationTest extends Specification {
         instrumentation = build(FetchExecutor, null, observer)
 
         DataFetcher df = { env -> currentThread().getName() }
-        def modifiedDataFetcher = instrumentation.instrumentDataFetcher(df, null)
+        def modifiedDataFetcher = instrumentation.instrumentDataFetcher(df, null, null)
         def returnedValue = modifiedDataFetcher.get(null)
 
         then:
@@ -152,7 +152,7 @@ class ExecutorInstrumentationTest extends Specification {
         instrumentation = build(null, ProcessingExecutor, observer)
 
         DataFetcher df = { env -> currentThread().getName() }
-        def modifiedDataFetcher = instrumentation.instrumentDataFetcher(df, null)
+        def modifiedDataFetcher = instrumentation.instrumentDataFetcher(df, null, null)
         def returnedValue = modifiedDataFetcher.get(null)
 
         then:
@@ -171,7 +171,7 @@ class ExecutorInstrumentationTest extends Specification {
         instrumentation = build(FetchExecutor, ProcessingExecutor, observer)
 
         DataFetcher df = { env -> CompletableFuture.completedFuture(currentThread().getName()) }
-        def modifiedDataFetcher = instrumentation.instrumentDataFetcher(df, null)
+        def modifiedDataFetcher = instrumentation.instrumentDataFetcher(df, null, null)
         def returnedValue = modifiedDataFetcher.get(null)
 
         then:

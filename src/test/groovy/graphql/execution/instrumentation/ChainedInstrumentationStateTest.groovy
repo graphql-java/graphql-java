@@ -74,21 +74,21 @@ class ChainedInstrumentationStateTest extends Specification {
         }
 
         @Override
-        InstrumentationContext<ExecutionResult> beginField(InstrumentationFieldParameters parameters) {
-            assertState(parameters.getInstrumentationState())
-            return super.beginField(parameters)
+        InstrumentationContext<ExecutionResult> beginField(InstrumentationFieldParameters parameters, InstrumentationState state) {
+            assertState(state)
+            return super.beginField(parameters, state)
         }
 
         @Override
-        InstrumentationContext<Object> beginFieldFetch(InstrumentationFieldFetchParameters parameters) {
-            assertState(parameters.getInstrumentationState())
-            return super.beginFieldFetch(parameters)
+        InstrumentationContext<Object> beginFieldFetch(InstrumentationFieldFetchParameters parameters, InstrumentationState state) {
+            assertState(state)
+            return super.beginFieldFetch(parameters, state)
         }
 
         @Override
-        DataFetcher<?> instrumentDataFetcher(DataFetcher<?> dataFetcher, InstrumentationFieldFetchParameters parameters) {
-            assertState(parameters.getInstrumentationState())
-            return super.instrumentDataFetcher(dataFetcher, parameters)
+        DataFetcher<?> instrumentDataFetcher(DataFetcher<?> dataFetcher, InstrumentationFieldFetchParameters parameters, InstrumentationState state) {
+            assertState(state)
+            return super.instrumentDataFetcher(dataFetcher, parameters, state)
         }
 
         @Override

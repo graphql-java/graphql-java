@@ -111,10 +111,11 @@ public interface Instrumentation {
      * This is called each time a subscription field produces a new reactive stream event value and it needs to be mapped over via the graphql field subselection.
      *
      * @param parameters the parameters to this step
+     * @param state the current state associated with these parameters
      *
      * @return a non null {@link InstrumentationContext} object that will be called back when the step ends
      */
-    default InstrumentationContext<ExecutionResult> beginSubscribedFieldEvent(InstrumentationFieldParameters parameters) {
+    default InstrumentationContext<ExecutionResult> beginSubscribedFieldEvent(InstrumentationFieldParameters parameters, InstrumentationState state) {
         return noOp();
     }
 
@@ -122,19 +123,21 @@ public interface Instrumentation {
      * This is called just before a field is resolved into a value.
      *
      * @param parameters the parameters to this step
+     * @param state the current state associated with these parameters
      *
      * @return a non null {@link InstrumentationContext} object that will be called back when the step ends
      */
-    InstrumentationContext<ExecutionResult> beginField(InstrumentationFieldParameters parameters);
+    InstrumentationContext<ExecutionResult> beginField(InstrumentationFieldParameters parameters, InstrumentationState state);
 
     /**
      * This is called just before a field {@link DataFetcher} is invoked.
      *
      * @param parameters the parameters to this step
+     * @param state the current state associated with these parameters
      *
      * @return a non null {@link InstrumentationContext} object that will be called back when the step ends
      */
-    InstrumentationContext<Object> beginFieldFetch(InstrumentationFieldFetchParameters parameters);
+    InstrumentationContext<Object> beginFieldFetch(InstrumentationFieldFetchParameters parameters, InstrumentationState state);
 
 
     /**
@@ -219,10 +222,11 @@ public interface Instrumentation {
      *
      * @param dataFetcher the data fetcher about to be used
      * @param parameters  the parameters describing the field to be fetched
+     * @param state the current state associated with these parameters
      *
      * @return a non null instrumented DataFetcher, the default is to return to the same object
      */
-    default DataFetcher<?> instrumentDataFetcher(DataFetcher<?> dataFetcher, InstrumentationFieldFetchParameters parameters) {
+    default DataFetcher<?> instrumentDataFetcher(DataFetcher<?> dataFetcher, InstrumentationFieldFetchParameters parameters, InstrumentationState state) {
         return dataFetcher;
     }
 

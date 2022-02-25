@@ -27,8 +27,6 @@ class TestingInstrumentation implements Instrumentation {
     List<Class> dfClasses = []
     def capturedData = [:]
 
-    def useOnDispatch = false
-
     @Override
     InstrumentationState createState() {
         return instrumentationState
@@ -37,61 +35,58 @@ class TestingInstrumentation implements Instrumentation {
     @Override
     InstrumentationContext<ExecutionResult> beginExecution(InstrumentationExecutionParameters parameters) {
         assert parameters.getInstrumentationState() == instrumentationState
-        new TestingInstrumentContext("execution", executionList, throwableList, useOnDispatch)
+        new TestingInstrumentContext("execution", executionList, throwableList)
     }
 
     @Override
     InstrumentationContext<Document> beginParse(InstrumentationExecutionParameters parameters) {
         assert parameters.getInstrumentationState() == instrumentationState
-        return new TestingInstrumentContext("parse", executionList, throwableList, useOnDispatch)
+        return new TestingInstrumentContext("parse", executionList, throwableList)
     }
 
     @Override
     InstrumentationContext<List<ValidationError>> beginValidation(InstrumentationValidationParameters parameters) {
         assert parameters.getInstrumentationState() == instrumentationState
-        return new TestingInstrumentContext("validation", executionList, throwableList, useOnDispatch)
+        return new TestingInstrumentContext("validation", executionList, throwableList)
     }
 
     @Override
     ExecutionStrategyInstrumentationContext beginExecutionStrategy(InstrumentationExecutionStrategyParameters parameters) {
         assert parameters.getInstrumentationState() == instrumentationState
-        return new TestingExecutionStrategyInstrumentationContext("execution-strategy", executionList, throwableList, useOnDispatch)
+        return new TestingExecutionStrategyInstrumentationContext("execution-strategy", executionList, throwableList)
     }
 
     @Override
     InstrumentationContext<ExecutionResult> beginExecuteOperation(InstrumentationExecuteOperationParameters parameters) {
         assert parameters.getInstrumentationState() == instrumentationState
-        return new TestingInstrumentContext("execute-operation", executionList, throwableList, useOnDispatch)
+        return new TestingInstrumentContext("execute-operation", executionList, throwableList)
     }
 
     @Override
-    InstrumentationContext<ExecutionResult> beginSubscribedFieldEvent(InstrumentationFieldParameters parameters) {
-        assert parameters.getInstrumentationState() == instrumentationState
-        return new TestingInstrumentContext("subscribed-field-event-$parameters.field.name", executionList, throwableList, useOnDispatch)
+    InstrumentationContext<ExecutionResult> beginSubscribedFieldEvent(InstrumentationFieldParameters parameters, InstrumentationState state) {
+        return new TestingInstrumentContext("subscribed-field-event-$parameters.field.name", executionList, throwableList)
     }
 
     @Override
-    InstrumentationContext<ExecutionResult> beginField(InstrumentationFieldParameters parameters) {
-        assert parameters.getInstrumentationState() == instrumentationState
-        return new TestingInstrumentContext("field-$parameters.field.name", executionList, throwableList, useOnDispatch)
+    InstrumentationContext<ExecutionResult> beginField(InstrumentationFieldParameters parameters, InstrumentationState state) {
+        return new TestingInstrumentContext("field-$parameters.field.name", executionList, throwableList)
     }
 
     @Override
-    InstrumentationContext<Object> beginFieldFetch(InstrumentationFieldFetchParameters parameters) {
-        assert parameters.getInstrumentationState() == instrumentationState
-        return new TestingInstrumentContext("fetch-$parameters.field.name", executionList, throwableList, useOnDispatch)
+    InstrumentationContext<Object> beginFieldFetch(InstrumentationFieldFetchParameters parameters, InstrumentationState state) {
+        return new TestingInstrumentContext("fetch-$parameters.field.name", executionList, throwableList)
     }
 
     @Override
     InstrumentationContext<CompletableFuture<ExecutionResult>> beginFieldComplete(InstrumentationFieldCompleteParameters parameters) {
         assert parameters.getInstrumentationState() == instrumentationState
-        return new TestingInstrumentContext("complete-$parameters.field.name", executionList, throwableList, useOnDispatch)
+        return new TestingInstrumentContext("complete-$parameters.field.name", executionList, throwableList)
     }
 
     @Override
     InstrumentationContext<CompletableFuture<ExecutionResult>> beginFieldListComplete(InstrumentationFieldCompleteParameters parameters) {
         assert parameters.getInstrumentationState() == instrumentationState
-        return new TestingInstrumentContext("complete-list-$parameters.field.name", executionList, throwableList, useOnDispatch)
+        return new TestingInstrumentContext("complete-list-$parameters.field.name", executionList, throwableList)
     }
 
     @Override
@@ -113,8 +108,7 @@ class TestingInstrumentation implements Instrumentation {
     }
 
     @Override
-    DataFetcher<?> instrumentDataFetcher(DataFetcher<?> dataFetcher, InstrumentationFieldFetchParameters parameters) {
-        assert parameters.getInstrumentationState() == instrumentationState
+    DataFetcher<?> instrumentDataFetcher(DataFetcher<?> dataFetcher, InstrumentationFieldFetchParameters parameters, InstrumentationState state) {
         dfClasses.add(dataFetcher.getClass())
         return new DataFetcher<Object>() {
             @Override

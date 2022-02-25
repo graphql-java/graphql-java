@@ -111,26 +111,26 @@ public class ChainedInstrumentation implements Instrumentation {
 
 
     @Override
-    public InstrumentationContext<ExecutionResult> beginSubscribedFieldEvent(InstrumentationFieldParameters parameters) {
+    public InstrumentationContext<ExecutionResult> beginSubscribedFieldEvent(InstrumentationFieldParameters parameters, InstrumentationState state) {
         return new ChainedInstrumentationContext<>(map(instrumentations, instrumentation -> {
-            InstrumentationState state = getState(instrumentation, parameters.getInstrumentationState());
-            return instrumentation.beginSubscribedFieldEvent(parameters.withNewState(state));
+            InstrumentationState newState = getState(instrumentation, state);
+            return instrumentation.beginSubscribedFieldEvent(parameters, newState);
         }));
     }
 
     @Override
-    public InstrumentationContext<ExecutionResult> beginField(InstrumentationFieldParameters parameters) {
+    public InstrumentationContext<ExecutionResult> beginField(InstrumentationFieldParameters parameters, InstrumentationState state) {
         return new ChainedInstrumentationContext<>(map(instrumentations, instrumentation -> {
-            InstrumentationState state = getState(instrumentation, parameters.getInstrumentationState());
-            return instrumentation.beginField(parameters.withNewState(state));
+            InstrumentationState newState = getState(instrumentation, state);
+            return instrumentation.beginField(parameters, newState);
         }));
     }
 
     @Override
-    public InstrumentationContext<Object> beginFieldFetch(InstrumentationFieldFetchParameters parameters) {
+    public InstrumentationContext<Object> beginFieldFetch(InstrumentationFieldFetchParameters parameters, InstrumentationState state) {
         return new ChainedInstrumentationContext<>(map(instrumentations, instrumentation -> {
-            InstrumentationState state = getState(instrumentation, parameters.getInstrumentationState());
-            return instrumentation.beginFieldFetch(parameters.withNewState(state));
+            InstrumentationState newState = getState(instrumentation, state);
+            return instrumentation.beginFieldFetch(parameters, newState);
         }));
     }
 
@@ -187,10 +187,10 @@ public class ChainedInstrumentation implements Instrumentation {
     }
 
     @Override
-    public DataFetcher<?> instrumentDataFetcher(DataFetcher<?> dataFetcher, InstrumentationFieldFetchParameters parameters) {
+    public DataFetcher<?> instrumentDataFetcher(DataFetcher<?> dataFetcher, InstrumentationFieldFetchParameters parameters, InstrumentationState parametersState) {
         for (Instrumentation instrumentation : instrumentations) {
-            InstrumentationState state = getState(instrumentation, parameters.getInstrumentationState());
-            dataFetcher = instrumentation.instrumentDataFetcher(dataFetcher, parameters.withNewState(state));
+            InstrumentationState state = getState(instrumentation, parametersState);
+            dataFetcher = instrumentation.instrumentDataFetcher(dataFetcher, parameters, state);
         }
         return dataFetcher;
     }

@@ -83,7 +83,7 @@ public class InstrumentationExamples {
         }
 
         @Override
-        public DataFetcher<?> instrumentDataFetcher(DataFetcher<?> dataFetcher, InstrumentationFieldFetchParameters parameters) {
+        public DataFetcher<?> instrumentDataFetcher(DataFetcher<?> dataFetcher, InstrumentationFieldFetchParameters parameters, InstrumentationState parametersState) {
             //
             // this allows you to intercept the data fetcher used to fetch a field and provide another one, perhaps
             // that enforces certain behaviours or has certain side effects on the data

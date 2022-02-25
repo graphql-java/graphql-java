@@ -62,12 +62,12 @@ public class SimpleInstrumentation implements Instrumentation {
     }
 
     @Override
-    public InstrumentationContext<ExecutionResult> beginField(InstrumentationFieldParameters parameters) {
+    public InstrumentationContext<ExecutionResult> beginField(InstrumentationFieldParameters parameters, InstrumentationState state) {
         return SimpleInstrumentationContext.noOp();
     }
 
     @Override
-    public InstrumentationContext<Object> beginFieldFetch(InstrumentationFieldFetchParameters parameters) {
+    public InstrumentationContext<Object> beginFieldFetch(InstrumentationFieldFetchParameters parameters, InstrumentationState state) {
         return SimpleInstrumentationContext.noOp();
     }
 }

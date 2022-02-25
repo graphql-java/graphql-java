@@ -74,8 +74,8 @@ public class DataLoaderDispatcherInstrumentation extends SimpleInstrumentation {
     }
 
     @Override
-    public DataFetcher<?> instrumentDataFetcher(DataFetcher<?> dataFetcher, InstrumentationFieldFetchParameters parameters) {
-        DataLoaderDispatcherInstrumentationState state = parameters.getInstrumentationState();
+    public DataFetcher<?> instrumentDataFetcher(DataFetcher<?> dataFetcher, InstrumentationFieldFetchParameters parameters, InstrumentationState parametersState) {
+        DataLoaderDispatcherInstrumentationState state = (DataLoaderDispatcherInstrumentationState) parametersState;
         if (state.isAggressivelyBatching()) {
             return dataFetcher;
         }
@@ -142,15 +142,15 @@ public class DataLoaderDispatcherInstrumentation extends SimpleInstrumentation {
 
 
     @Override
-    public InstrumentationContext<Object> beginFieldFetch(InstrumentationFieldFetchParameters parameters) {
-        DataLoaderDispatcherInstrumentationState state = parameters.getInstrumentationState();
+    public InstrumentationContext<Object> beginFieldFetch(InstrumentationFieldFetchParameters parameters, InstrumentationState parametersState) {
+        DataLoaderDispatcherInstrumentationState state = (DataLoaderDispatcherInstrumentationState) parametersState;
         //
         // if there are no data loaders, there is nothing to do
         //
         if (state.hasNoDataLoaders()) {
             return new SimpleInstrumentationContext<>();
         }
-        return state.getApproach().beginFieldFetch(parameters.withNewState(state.getState()));
+        return state.getApproach().beginFieldFetch(parameters, state.getState());
     }
 
     @Override

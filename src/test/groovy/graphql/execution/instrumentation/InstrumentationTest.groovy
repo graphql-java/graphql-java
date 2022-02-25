@@ -42,46 +42,45 @@ class InstrumentationTest extends Specification {
 
         def expected = [
                 "start:execution",
-                "onDispatched:execution",
+
                 "start:parse",
-                "onDispatched:parse",
                 "end:parse",
+
                 "start:validation",
-                "onDispatched:validation",
                 "end:validation",
+
                 "start:execute-operation",
+
                 "start:execution-strategy",
+
                 "start:field-hero",
                 "start:fetch-hero",
-                "onDispatched:fetch-hero",
                 "end:fetch-hero",
+
                 "start:complete-hero",
+
                 "start:execution-strategy",
+
                 "start:field-id",
                 "start:fetch-id",
-                "onDispatched:fetch-id",
                 "end:fetch-id",
                 "start:complete-id",
-                "onDispatched:complete-id",
                 "end:complete-id",
-                "onDispatched:field-id",
                 "end:field-id",
-                "onDispatched:execution-strategy",
+
                 "end:execution-strategy",
-                "onDispatched:complete-hero",
+
                 "end:complete-hero",
-                "onDispatched:field-hero",
                 "end:field-hero",
-                "onDispatched:execution-strategy",
+
                 "end:execution-strategy",
-                "onDispatched:execute-operation",
+
                 "end:execute-operation",
                 "end:execution",
         ]
         when:
 
         def instrumentation = new TestingInstrumentation()
-        instrumentation.useOnDispatch = true
 
         def graphQL = GraphQL
                 .newGraphQL(StarWarsSchema.starWarsSchema)
@@ -126,7 +125,7 @@ class InstrumentationTest extends Specification {
 
         def instrumentation = new TestingInstrumentation() {
             @Override
-            DataFetcher<?> instrumentDataFetcher(DataFetcher<?> dataFetcher, InstrumentationFieldFetchParameters parameters) {
+            DataFetcher<?> instrumentDataFetcher(DataFetcher<?> dataFetcher, InstrumentationFieldFetchParameters parameters, InstrumentationState state) {
                 return new DataFetcher<Object>() {
                     @Override
                     Object get(DataFetchingEnvironment environment) {
@@ -181,7 +180,7 @@ class InstrumentationTest extends Specification {
         }
 
         @Override
-        DataFetcher<?> instrumentDataFetcher(DataFetcher<?> dataFetcher, InstrumentationFieldFetchParameters parameters) {
+        DataFetcher<?> instrumentDataFetcher(DataFetcher<?> dataFetcher, InstrumentationFieldFetchParameters parameters, InstrumentationState state) {
             System.out.println(String.format("t%s instrument DF for %s", Thread.currentThread().getId(), parameters.environment.getExecutionStepInfo().getPath()))
 
             return new DataFetcher<Object>() {

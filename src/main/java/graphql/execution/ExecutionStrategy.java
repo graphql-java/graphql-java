@@ -204,7 +204,7 @@ public abstract class ExecutionStrategy {
 
         Instrumentation instrumentation = executionContext.getInstrumentation();
         InstrumentationContext<ExecutionResult> fieldCtx = instrumentation.beginField(
-                new InstrumentationFieldParameters(executionContext, executionStepInfo)
+                new InstrumentationFieldParameters(executionContext, executionStepInfo), executionContext.getInstrumentationState()
         );
 
         CompletableFuture<FetchedValue> fetchFieldFuture = fetchField(executionContext, parameters);
@@ -269,11 +269,11 @@ public abstract class ExecutionStrategy {
 
         Instrumentation instrumentation = executionContext.getInstrumentation();
 
-        InstrumentationFieldFetchParameters instrumentationFieldFetchParams = new InstrumentationFieldFetchParameters(executionContext, environment, parameters, dataFetcher instanceof TrivialDataFetcher);
-        InstrumentationContext<Object> fetchCtx = instrumentation.beginFieldFetch(instrumentationFieldFetchParams);
+        InstrumentationFieldFetchParameters instrumentationFieldFetchParams = new InstrumentationFieldFetchParameters(executionContext, environment, dataFetcher instanceof TrivialDataFetcher);
+        InstrumentationContext<Object> fetchCtx = instrumentation.beginFieldFetch(instrumentationFieldFetchParams, executionContext.getInstrumentationState());
 
         CompletableFuture<Object> fetchedValue;
-        dataFetcher = instrumentation.instrumentDataFetcher(dataFetcher, instrumentationFieldFetchParams);
+        dataFetcher = instrumentation.instrumentDataFetcher(dataFetcher, instrumentationFieldFetchParams, executionContext.getInstrumentationState());
         ExecutionId executionId = executionContext.getExecutionId();
         try {
             Object fetchedValueRaw = dataFetcher.get(environment);
@@ -458,7 +458,7 @@ public abstract class ExecutionStrategy {
             // and validate the field is nullable, if non-nullable throw exception
             parameters.getNonNullFieldValidator().validate(parameters.getPath(), null);
             // complete the field as null
-            fieldValue = completedFuture(new ExecutionResultImpl(null, executionContext.getErrors()));
+            fieldValue = completedFuture(new ExecutionResultImpl(null, null));
         }
         return FieldValueInfo.newFieldValueInfo(OBJECT).fieldValue(fieldValue).build();
     }
@@ -473,7 +473,7 @@ public abstract class ExecutionStrategy {
     protected CompletableFuture<ExecutionResult> completeValueForNull(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
         return Async.tryCatch(() -> {
             Object nullValue = parameters.getNonNullFieldValidator().validate(parameters.getPath(), null);
-            return completedFuture(new ExecutionResultImpl(nullValue, executionContext.getErrors()));
+            return completedFuture(new ExecutionResultImpl(nullValue, null));
         });
     }
 
@@ -495,7 +495,7 @@ public abstract class ExecutionStrategy {
             return FieldValueInfo.newFieldValueInfo(LIST).fieldValue(exceptionallyCompletedFuture(e)).build();
         }
         if (resultIterable == null) {
-            return FieldValueInfo.newFieldValueInfo(LIST).fieldValue(completedFuture(new ExecutionResultImpl(null, executionContext.getErrors()))).build();
+            return FieldValueInfo.newFieldValueInfo(LIST).fieldValue(completedFuture(new ExecutionResultImpl(null, null))).build();
         }
         return completeValueForList(executionContext, parameters, resultIterable);
     }
@@ -562,7 +562,7 @@ public abstract class ExecutionStrategy {
             for (ExecutionResult completedValue : results) {
                 completedResults.add(completedValue.getData());
             }
-            ExecutionResultImpl executionResult = new ExecutionResultImpl(completedResults, executionContext.getErrors());
+            ExecutionResultImpl executionResult = new ExecutionResultImpl(completedResults, null);
             overallResult.complete(executionResult);
         });
         overallResult.whenComplete(completeListCtx::onCompleted);
@@ -602,7 +602,7 @@ public abstract class ExecutionStrategy {
         } catch (NonNullableFieldWasNullException e) {
             return exceptionallyCompletedFuture(e);
         }
-        return completedFuture(new ExecutionResultImpl(serialized, executionContext.getErrors()));
+        return completedFuture(new ExecutionResultImpl(serialized, null));
     }
 
     /**
@@ -627,7 +627,7 @@ public abstract class ExecutionStrategy {
         } catch (NonNullableFieldWasNullException e) {
             return exceptionallyCompletedFuture(e);
         }
-        return completedFuture(new ExecutionResultImpl(serialized, executionContext.getErrors()));
+        return completedFuture(new ExecutionResultImpl(serialized, null));
     }
 
     /**
@@ -692,7 +692,7 @@ public abstract class ExecutionStrategy {
     }
 
     protected GraphQLObjectType resolveType(ExecutionContext executionContext, ExecutionStrategyParameters parameters, GraphQLType fieldType) {
-        return resolvedType.resolveType(executionContext, parameters.getField(), parameters.getSource(), parameters.getExecutionStepInfo(), fieldType, parameters.getLocalContext());
+        return resolvedType.resolveType(executionContext, parameters.getField(), parameters.getSource(), parameters.getExecutionStepInfo().getArguments(), fieldType);
     }
 
 
