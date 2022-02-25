@@ -862,7 +862,61 @@ class DataFetchingFieldSelectionSetImplTest extends Specification {
         }''')
         then:
         er.errors.isEmpty()
-        er.data["mutate"]["selectedFieldNames"] == ["selectedFieldNames","b","c"]
+        er.data["mutate"]["selectedFieldNames"] == ["selectedFieldNames", "b", "c"]
+    }
+
+    def "issue 2736 - test interface fields with different output types on the implementations - covariance"() {
+        def sdl = """
+        interface Animal {
+            parent: Animal
+            name: String
+        }
+        type Cat implements Animal {
+            name: String
+            parent: Cat
+        }
+        type Dog implements Animal {
+            name: String
+            parent: Dog
+            isGoodBoy: Boolean
+        }
+        type Query {
+            animal: Animal
+        }
+        """
+
+        def query = """
+        {
+            animal {
+                parent {
+                    name
+                }
+            }
+        }
+        """
+
+
+        DataFetcher dataFetcher = { DataFetchingEnvironment env ->
+            selectionSet = env.getSelectionSet()
+        }
+        RuntimeWiring runtimeWiring = newRuntimeWiring()
+                .type(newTypeWiring("Query").dataFetcher("animal", dataFetcher))
+                .type(newTypeWiring("Animal").typeResolver({ env -> env.schema.getObjectType("Dog") }))
+                .build()
+        def schema = TestUtil.schema(sdl, runtimeWiring)
+        def graphQL = GraphQL.newGraphQL(schema).build()
+
+        when:
+        def er = graphQL.execute(query)
+        then:
+        er.errors.isEmpty()
+
+        selectionSet.contains("parent") // short syntax
+        selectionSet.contains("parent/name") // short syntax
+        selectionSet.contains("Animal.parent")
+        selectionSet.contains("Cat.parent/Cat.name")
+        selectionSet.contains("Dog.parent/Dog.name")
+
     }
 
     static Comparator<SelectedField> byName() {
