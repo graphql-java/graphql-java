@@ -120,7 +120,7 @@ public class ChainedInstrumentation implements Instrumentation {
 
     @Override
     public InstrumentationContext<ExecutionResult> beginSubscribedFieldEvent(InstrumentationFieldParameters parameters, InstrumentationState state) {
-        return new ChainedInstrumentationContext<>(map(instrumentations, it -> it.beginSubscribedFieldEvent(parameters, state)));
+        return new ChainedInstrumentationContext<>(map(instrumentations, it -> it.beginSubscribedFieldEvent(parameters, getState(it, state))));
     }
 
     @Override
@@ -133,7 +133,7 @@ public class ChainedInstrumentation implements Instrumentation {
 
     @Override
     public InstrumentationContext<ExecutionResult> beginField(InstrumentationFieldParameters parameters, InstrumentationState state) {
-        return new ChainedInstrumentationContext<>(map(instrumentations, it -> it.beginField(parameters, state)));
+        return new ChainedInstrumentationContext<>(map(instrumentations, it -> it.beginField(parameters, getState(it, state))));
     }
 
     @Override
