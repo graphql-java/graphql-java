@@ -114,8 +114,13 @@ public interface Instrumentation {
      *
      * @return a non null {@link InstrumentationContext} object that will be called back when the step ends
      */
+    @Deprecated
     default InstrumentationContext<ExecutionResult> beginSubscribedFieldEvent(InstrumentationFieldParameters parameters) {
         return noOp();
+    }
+
+    default InstrumentationContext<ExecutionResult> beginSubscribedFieldEvent(InstrumentationFieldParameters parameters, InstrumentationState state) {
+        return beginSubscribedFieldEvent(parameters.withNewState(state));
     }
 
     /**
@@ -125,7 +130,12 @@ public interface Instrumentation {
      *
      * @return a non null {@link InstrumentationContext} object that will be called back when the step ends
      */
+    @Deprecated
     InstrumentationContext<ExecutionResult> beginField(InstrumentationFieldParameters parameters);
+
+    default InstrumentationContext<ExecutionResult> beginField(InstrumentationFieldParameters parameters, InstrumentationState state) {
+        return beginField(parameters.withNewState(state));
+    }
 
     /**
      * This is called just before a field {@link DataFetcher} is invoked.
@@ -134,7 +144,12 @@ public interface Instrumentation {
      *
      * @return a non null {@link InstrumentationContext} object that will be called back when the step ends
      */
+    @Deprecated
     InstrumentationContext<Object> beginFieldFetch(InstrumentationFieldFetchParameters parameters);
+
+    default InstrumentationContext<Object> beginFieldFetch(InstrumentationFieldFetchParameters parameters, InstrumentationState state) {
+        return beginFieldFetch(parameters.withNewState(state));
+    }
 
 
     /**
@@ -144,8 +159,13 @@ public interface Instrumentation {
      *
      * @return a non null {@link InstrumentationContext} object that will be called back when the step ends
      */
+    @Deprecated
     default InstrumentationContext<ExecutionResult> beginFieldComplete(InstrumentationFieldCompleteParameters parameters) {
         return noOp();
+    }
+
+    default InstrumentationContext<ExecutionResult> beginFieldComplete(InstrumentationFieldCompleteParameters parameters, InstrumentationState state) {
+        return beginFieldComplete(parameters.withNewState(state));
     }
 
     /**
@@ -155,8 +175,13 @@ public interface Instrumentation {
      *
      * @return a non null {@link InstrumentationContext} object that will be called back when the step ends
      */
+    @Deprecated
     default InstrumentationContext<ExecutionResult> beginFieldListComplete(InstrumentationFieldCompleteParameters parameters) {
         return noOp();
+    }
+
+    default InstrumentationContext<ExecutionResult> beginFieldListComplete(InstrumentationFieldCompleteParameters parameters, InstrumentationState state) {
+        return beginFieldListComplete(parameters.withNewState(state));
     }
 
     /**

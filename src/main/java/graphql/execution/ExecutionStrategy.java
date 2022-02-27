@@ -204,7 +204,7 @@ public abstract class ExecutionStrategy {
 
         Instrumentation instrumentation = executionContext.getInstrumentation();
         InstrumentationContext<ExecutionResult> fieldCtx = instrumentation.beginField(
-                new InstrumentationFieldParameters(executionContext, executionStepInfo)
+                new InstrumentationFieldParameters(executionContext, executionStepInfo), executionContext.getInstrumentationState()
         );
 
         CompletableFuture<FetchedValue> fetchFieldFuture = fetchField(executionContext, parameters);
@@ -270,7 +270,7 @@ public abstract class ExecutionStrategy {
         Instrumentation instrumentation = executionContext.getInstrumentation();
 
         InstrumentationFieldFetchParameters instrumentationFieldFetchParams = new InstrumentationFieldFetchParameters(executionContext, environment, parameters, dataFetcher instanceof TrivialDataFetcher);
-        InstrumentationContext<Object> fetchCtx = instrumentation.beginFieldFetch(instrumentationFieldFetchParams);
+        InstrumentationContext<Object> fetchCtx = instrumentation.beginFieldFetch(instrumentationFieldFetchParams, executionContext.getInstrumentationState());
 
         CompletableFuture<Object> fetchedValue;
         dataFetcher = instrumentation.instrumentDataFetcher(dataFetcher, instrumentationFieldFetchParams);
@@ -354,9 +354,9 @@ public abstract class ExecutionStrategy {
 
     private <T> CompletableFuture<T> asyncHandleException(DataFetcherExceptionHandler handler, DataFetcherExceptionHandlerParameters handlerParameters, ExecutionContext executionContext) {
         //noinspection unchecked
-        return  handler.handleException(handlerParameters)
-            .thenApply(handlerResult -> (T) DataFetcherResult.<FetchedValue>newResult().errors(handlerResult.getErrors()).build()
-            );
+        return handler.handleException(handlerParameters)
+                .thenApply(handlerResult -> (T) DataFetcherResult.<FetchedValue>newResult().errors(handlerResult.getErrors()).build()
+                );
     }
 
     /**
@@ -385,7 +385,7 @@ public abstract class ExecutionStrategy {
         Instrumentation instrumentation = executionContext.getInstrumentation();
         InstrumentationFieldCompleteParameters instrumentationParams = new InstrumentationFieldCompleteParameters(executionContext, parameters, () -> executionStepInfo, fetchedValue);
         InstrumentationContext<ExecutionResult> ctxCompleteField = instrumentation.beginFieldComplete(
-                instrumentationParams
+                instrumentationParams, executionContext.getInstrumentationState()
         );
 
         NonNullableFieldValidator nonNullableFieldValidator = new NonNullableFieldValidator(executionContext, executionStepInfo);
@@ -519,7 +519,7 @@ public abstract class ExecutionStrategy {
         Instrumentation instrumentation = executionContext.getInstrumentation();
 
         InstrumentationContext<ExecutionResult> completeListCtx = instrumentation.beginFieldListComplete(
-                instrumentationParams
+                instrumentationParams, executionContext.getInstrumentationState()
         );
 
         List<FieldValueInfo> fieldValueInfos = new ArrayList<>(size.orElse(1));
