@@ -744,7 +744,7 @@ type Dog implements Animal{
                         'Human.name']
     }
 
-    def "test interface fields with different output types on the implementations"() {
+    def "test interface fields with different output types (covariance) on the implementations"() {
         def graphQLSchema = schema("""
         interface Animal {
             parent: Animal
@@ -787,6 +787,95 @@ type Dog implements Animal{
                 "-Query.animal: Animal",
                 "--[Cat, Dog].parent: Cat, Dog",
                 "---[Cat, Dog].name: String",
+        ]
+    }
+
+    def "__typename in unions get merged"() {
+        def graphQLSchema = schema("""
+
+        type Cat {
+            name: String
+        }
+        type Dog {
+            name: String
+        }
+        union CatOrDog = Cat | Dog
+        type Query {
+            animal: CatOrDog
+        }
+        """)
+
+        def query = """
+        {
+            animal {
+                ... on Cat {__typename}
+                ... on Dog {__typename}
+            }
+        }
+        """
+
+        assertValidQuery(graphQLSchema, query)
+
+        Document document = TestUtil.parseQuery(query)
+
+        def dependencyGraph = new ExecutableNormalizedOperationFactory()
+        def tree = dependencyGraph.createExecutableNormalizedOperation(graphQLSchema, document, null, [:])
+        def printedTree = printTreeWithLevelInfo(tree, graphQLSchema)
+
+        expect:
+        printedTree == [
+                "-Query.animal: CatOrDog",
+                "--[Cat, Dog].__typename: String!",
+        ]
+    }
+
+    def "test union fields with different output types (covariance) on the implementations"() {
+        def graphQLSchema = schema("""
+
+        interface Animal {
+            parent: CatOrDog
+            name: String
+        }
+        type Cat  implements Animal{
+            name: String
+            parent: Cat
+        }
+        type Dog  implements Animal {
+            name: String
+            parent: Dog
+            isGoodBoy: Boolean
+        }
+        union CatOrDog = Cat | Dog
+        type Query {
+            animal: Animal
+        }
+        """)
+
+        def query = """
+        {
+            animal {
+                parent {
+                ... on Cat {name __typename }  
+                ... on Dog {name __typename }
+                }
+            }
+        }
+        """
+
+        assertValidQuery(graphQLSchema, query)
+
+        Document document = TestUtil.parseQuery(query)
+
+        def dependencyGraph = new ExecutableNormalizedOperationFactory()
+        def tree = dependencyGraph.createExecutableNormalizedOperation(graphQLSchema, document, null, [:])
+        def printedTree = printTreeWithLevelInfo(tree, graphQLSchema)
+
+        expect:
+        printedTree == [
+                "-Query.animal: Animal",
+                "--[Cat, Dog].parent: Cat, Dog",
+                "---[Cat, Dog].name: String",
+                "---[Cat, Dog].__typename: String!"
         ]
     }
 

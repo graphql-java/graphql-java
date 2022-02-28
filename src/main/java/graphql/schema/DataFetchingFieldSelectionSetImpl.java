@@ -244,8 +244,7 @@ public class DataFetchingFieldSelectionSetImpl implements DataFetchingFieldSelec
             normalisedSelectionSetFields.computeIfAbsent(globQualifiedName, newList()).add(selectedField);
             normalisedSelectionSetFields.computeIfAbsent(globSimpleName, newList()).add(selectedField);
 
-            GraphQLType unwrappedType = GraphQLTypeUtil.unwrapAll(normalizedSubSelectedField.getType(schema));
-            if (!GraphQLTypeUtil.isLeaf(unwrappedType)) {
+            if (normalizedSubSelectedField.hasChildren()) {
                 traverseSubSelectedFields(normalizedSubSelectedField, immediateFieldsBuilder, globQualifiedName, globSimpleName, false);
             }
         }

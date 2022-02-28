@@ -98,7 +98,7 @@ public class ExecutableNormalizedOperationToAstCompiler {
         Map<String, List<Field>> fieldsByTypeCondition = new LinkedHashMap<>();
 
         for (ExecutableNormalizedField nf : executableNormalizedFields) {
-            if (nf.isConditional(schema, parentOutputType)) {
+            if (nf.isConditional(schema)) {
                 selectionForNormalizedField(schema, nf, variableAccumulator)
                         .forEach((objectTypeName, field) ->
                                 fieldsByTypeCondition

@@ -8,13 +8,16 @@ import graphql.Mutable;
 import graphql.collect.ImmutableKit;
 import graphql.introspection.Introspection;
 import graphql.language.Argument;
+import graphql.schema.GraphQLCompositeType;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLInterfaceType;
+import graphql.schema.GraphQLNamedOutputType;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLOutputType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLUnionType;
+import graphql.schema.GraphQLUnmodifiedType;
 import graphql.util.FpKit;
 import org.dataloader.impl.Assertions;
 import org.jetbrains.annotations.NotNull;
@@ -33,6 +36,7 @@ import java.util.stream.Collectors;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertTrue;
+import static graphql.schema.GraphQLTypeUtil.simplePrint;
 import static graphql.schema.GraphQLTypeUtil.unwrapAll;
 
 /**
@@ -65,14 +69,6 @@ public class ExecutableNormalizedField {
         this.children = builder.children;
         this.level = builder.level;
         this.parent = builder.parent;
-    }
-
-    @Deprecated // doesn't really work
-    public boolean isConditional(GraphQLSchema schema) {
-        if (parent == null) {
-            return false;
-        }
-        return objectTypeNames.size() > 1 || unwrapAll(parent.getType(schema)) != getOneObjectType(schema);
     }
 
     /**
@@ -127,62 +123,87 @@ public class ExecutableNormalizedField {
      * We MUST consider that the output type of the {@code parent} field is {@code Animal} and
      * NOT {@code Cat} or {@code Dog} as their respective impls would say.
      */
-    public boolean isConditional(GraphQLSchema schema, @Nullable String parentOutputTypeName) {
-        if (parent == null || parentOutputTypeName == null) {
+    public boolean isConditional(@NotNull GraphQLSchema schema) {
+        if (parent == null) {
             return false;
         }
 
-        GraphQLType parentOutputType = schema.getType(parentOutputTypeName);
+        /**
+         * checking if we have an interface which can be used as an unconditional parent type
+         */
+        ImmutableList<GraphQLType> parentTypes = ImmutableKit.map(parent.getFieldDefinitions(schema), fd -> unwrapAll(fd.getType()));
 
-        if (parentOutputType instanceof GraphQLInterfaceType) {
-            GraphQLInterfaceType parentOutputTypeAsInterface = (GraphQLInterfaceType) parentOutputType;
-            List<GraphQLObjectType> interfaceImpls = schema.getImplementations(parentOutputTypeAsInterface);
-
-            // __typename
-            if (this.fieldName.equals(Introspection.TypeNameMetaFieldDef.getName()) && interfaceImpls.size() == objectTypeNames.size()) {
-                return false; // Not conditional
+        Set<GraphQLInterfaceType> interfacesImplementedByAllParents = null;
+        for (GraphQLType parentType : parentTypes) {
+            List<GraphQLInterfaceType> toAdd = new ArrayList<>();
+            if (parentType instanceof GraphQLObjectType) {
+                toAdd.addAll((List) ((GraphQLObjectType) parentType).getInterfaces());
+            } else if (parentType instanceof GraphQLInterfaceType) {
+                toAdd.add((GraphQLInterfaceType) parentType);
+                toAdd.addAll((List) ((GraphQLInterfaceType) parentType).getInterfaces());
             }
-
-            // If field does not exist on the output type, it is conditional
-            if (parentOutputTypeAsInterface.getField(fieldName) == null) {
-                return true; // Conditional
-            }
-
-            return interfaceImpls.size() != objectTypeNames.size();
-        } else if (parentOutputType instanceof GraphQLUnionType) {
-            GraphQLUnionType parentOutputTypeAsUnion = (GraphQLUnionType) parentOutputType;
-
-            // __typename is the only field in a union type that CAN be NOT conditional
-            if (this.fieldName.equals(Introspection.TypeNameMetaFieldDef.getName()) && objectTypeNames.size() == parentOutputTypeAsUnion.getTypes().size()) {
-                return false; // Not conditional
+            if (interfacesImplementedByAllParents == null) {
+                interfacesImplementedByAllParents = new LinkedHashSet<>();
+                interfacesImplementedByAllParents.addAll(toAdd);
             } else {
-                return true; // Conditional
+                interfacesImplementedByAllParents.retainAll(toAdd);
+            }
+        }
+        for (GraphQLInterfaceType parentInterfaceType : interfacesImplementedByAllParents) {
+            List<GraphQLObjectType> implementations = schema.getImplementations(parentInterfaceType);
+            // __typename
+            if (this.fieldName.equals(Introspection.TypeNameMetaFieldDef.getName()) && implementations.size() == objectTypeNames.size()) {
+                return false;
+            }
+            if (parentInterfaceType.getField(fieldName) == null) {
+                continue;
+            }
+            if (implementations.size() == objectTypeNames.size()) {
+                return false;
             }
         }
 
+        /**
+         *__typename is the only field in a union type that CAN be NOT conditional
+         */
+        List<GraphQLFieldDefinition> fieldDefinitions = parent.getFieldDefinitions(schema);
+        if (fieldDefinitions.get(0).getType() instanceof GraphQLUnionType) {
+            GraphQLUnionType parentOutputTypeAsUnion = (GraphQLUnionType) fieldDefinitions.get(0).getType();
+            if (this.fieldName.equals(Introspection.TypeNameMetaFieldDef.getName()) && objectTypeNames.size() == parentOutputTypeAsUnion.getTypes().size()) {
+                return false; // Not conditional
+            }
+        }
+
+        /**
+         * This means there is no Union or Interface which could serve as unconditional parent
+         */
         if (objectTypeNames.size() > 1) {
             return true; // Conditional
         }
-
-        return parentOutputType != getOneObjectType(schema);
-    }
-
-    @Deprecated // using this is ALMOST always wrong
-    public GraphQLOutputType getType(GraphQLSchema schema) {
-        return getOneFieldDefinition(schema).getType();
-    }
-
-    @Deprecated // using this is ALMOST always wrong
-    public GraphQLFieldDefinition getOneFieldDefinition(GraphQLSchema schema) {
-        GraphQLFieldDefinition fieldDefinition;
-        GraphQLFieldDefinition introspectionField = resolveIntrospectionField(schema, objectTypeNames, fieldName);
-        if (introspectionField != null) {
-            return introspectionField;
+        if (parent.objectTypeNames.size() > 1) {
+            return true;
         }
-        GraphQLObjectType type = (GraphQLObjectType) assertNotNull(schema.getType(objectTypeNames.iterator().next()));
-        fieldDefinition = assertNotNull(type.getField(fieldName), () -> String.format("no field %s found for type %s", fieldName, objectTypeNames.iterator().next()));
-        return fieldDefinition;
+
+        GraphQLObjectType oneObjectType = (GraphQLObjectType) schema.getType(objectTypeNames.iterator().next());
+        return unwrapAll(parent.getFieldDefinitions(schema).get(0).getType()) != oneObjectType;
     }
+
+    public boolean hasChildren() {
+        return children.size() > 0;
+    }
+
+    public GraphQLOutputType getType(GraphQLSchema schema) {
+        List<GraphQLFieldDefinition> fieldDefinitions = getFieldDefinitions(schema);
+        Set<String> fieldTypes = fieldDefinitions.stream().map(fd -> simplePrint(fd.getType())).collect(Collectors.toSet());
+        Assert.assertTrue(fieldTypes.size() == 1, () -> "More than one type ... use getTypes");
+        return fieldDefinitions.get(0).getType();
+    }
+
+    public List<GraphQLOutputType> getTypes(GraphQLSchema schema) {
+        List<GraphQLOutputType> fieldTypes = ImmutableKit.map(getFieldDefinitions(schema), fd -> fd.getType());
+        return fieldTypes;
+    }
+
 
     public List<GraphQLFieldDefinition> getFieldDefinitions(GraphQLSchema schema) {
         GraphQLFieldDefinition fieldDefinition = resolveIntrospectionField(schema, objectTypeNames, fieldName);
@@ -300,10 +321,6 @@ public class ExecutableNormalizedField {
         return objectTypeNames.iterator().next();
     }
 
-    @Deprecated // using this is ALMOST always wrong
-    public GraphQLObjectType getOneObjectType(GraphQLSchema schema) {
-        return (GraphQLObjectType) schema.getType(objectTypeNames.iterator().next());
-    }
 
     public String printDetails() {
         StringBuilder result = new StringBuilder();
