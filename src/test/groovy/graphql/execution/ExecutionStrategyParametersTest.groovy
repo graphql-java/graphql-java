@@ -12,8 +12,9 @@ class ExecutionStrategyParametersTest extends Specification {
 
     def "ExecutionParameters can be transformed"() {
         given:
+        def esi = newExecutionStepInfo().type(GraphQLString).build()
         def parameters = newParameters()
-                .executionStepInfo(newExecutionStepInfo().type(GraphQLString))
+                .executionStepInfo(() -> esi)
                 .source(new Object())
                 .localContext("localContext")
                 .fields(mergedSelectionSet("a": []))

@@ -4,6 +4,7 @@ import graphql.Assert;
 import graphql.PublicApi;
 
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import static graphql.Assert.assertNotNull;
 
@@ -12,7 +13,7 @@ import static graphql.Assert.assertNotNull;
  */
 @PublicApi
 public class ExecutionStrategyParameters {
-    private final ExecutionStepInfo executionStepInfo;
+    private final Supplier<ExecutionStepInfo> executionStepInfo;
     private final Object source;
     private final Object localContext;
     private final MergedSelectionSet fields;
@@ -23,7 +24,7 @@ public class ExecutionStrategyParameters {
     private final int currentListIndex;
     private final ExecutionStrategyParameters parent;
 
-    private ExecutionStrategyParameters(ExecutionStepInfo executionStepInfo,
+    private ExecutionStrategyParameters(Supplier<ExecutionStepInfo> executionStepInfo,
                                         Object source,
                                         Object localContext,
                                         MergedSelectionSet fields,
@@ -47,7 +48,7 @@ public class ExecutionStrategyParameters {
     }
 
     public ExecutionStepInfo getExecutionStepInfo() {
-        return executionStepInfo;
+        return executionStepInfo.get();
     }
 
     public Object getSource() {
@@ -112,7 +113,7 @@ public class ExecutionStrategyParameters {
     }
 
     public static class Builder {
-        ExecutionStepInfo executionStepInfo;
+        Supplier<ExecutionStepInfo> executionStepInfo;
         Object source;
         Object localContext;
         MergedSelectionSet fields;
@@ -145,13 +146,8 @@ public class ExecutionStrategyParameters {
             this.currentListIndex = oldParameters.currentListIndex;
         }
 
-        public Builder executionStepInfo(ExecutionStepInfo executionStepInfo) {
+        public Builder executionStepInfo(Supplier<ExecutionStepInfo> executionStepInfo) {
             this.executionStepInfo = executionStepInfo;
-            return this;
-        }
-
-        public Builder executionStepInfo(ExecutionStepInfo.Builder executionStepInfoBuilder) {
-            this.executionStepInfo = executionStepInfoBuilder.build();
             return this;
         }
 

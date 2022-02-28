@@ -380,10 +380,10 @@ public abstract class ExecutionStrategy {
         Field field = parameters.getField().getSingleField();
         GraphQLObjectType parentType = (GraphQLObjectType) parameters.getExecutionStepInfo().getUnwrappedNonNullType();
         GraphQLFieldDefinition fieldDef = getFieldDef(executionContext.getGraphQLSchema(), parentType, field);
-        ExecutionStepInfo executionStepInfo = createExecutionStepInfo(executionContext, parameters, fieldDef, parentType);
+        Supplier<ExecutionStepInfo> executionStepInfo = FpKit.intraThreadMemoize(() -> createExecutionStepInfo(executionContext, parameters, fieldDef, parentType));
 
         Instrumentation instrumentation = executionContext.getInstrumentation();
-        InstrumentationFieldCompleteParameters instrumentationParams = new InstrumentationFieldCompleteParameters(executionContext, parameters, () -> executionStepInfo, fetchedValue);
+        InstrumentationFieldCompleteParameters instrumentationParams = new InstrumentationFieldCompleteParameters(executionContext, parameters, executionStepInfo, fetchedValue);
         InstrumentationContext<ExecutionResult> ctxCompleteField = instrumentation.beginFieldComplete(
                 instrumentationParams
         );
@@ -396,10 +396,6 @@ public abstract class ExecutionStrategy {
                         .localContext(fetchedValue.getLocalContext())
                         .nonNullFieldValidator(nonNullableFieldValidator)
         );
-
-        if (log.isDebugEnabled()) {
-            log.debug("'{}' completing field '{}'...", executionContext.getExecutionId(), executionStepInfo.getPath());
-        }
 
         FieldValueInfo fieldValueInfo = completeValue(executionContext, newParameters);
 
@@ -527,7 +523,8 @@ public abstract class ExecutionStrategy {
         for (Object item : iterableValues) {
             ResultPath indexedPath = parameters.getPath().segment(index);
 
-            ExecutionStepInfo stepInfoForListElement = executionStepInfoFactory.newExecutionStepInfoForListElement(executionStepInfo, index);
+            int i = index;
+            Supplier<ExecutionStepInfo> stepInfoForListElement = FpKit.intraThreadMemoize(() -> executionStepInfoFactory.newExecutionStepInfoForListElement(executionStepInfo, i));
 
             NonNullableFieldValidator nonNullableFieldValidator = new NonNullableFieldValidator(executionContext, stepInfoForListElement);
 
@@ -652,7 +649,7 @@ public abstract class ExecutionStrategy {
 
         MergedSelectionSet subFields = fieldCollector.collectFields(collectorParameters, parameters.getField());
 
-        ExecutionStepInfo newExecutionStepInfo = executionStepInfo.changeTypeWithPreservedNonNull(resolvedObjectType);
+        Supplier<ExecutionStepInfo> newExecutionStepInfo = FpKit.intraThreadMemoize(() -> executionStepInfo.changeTypeWithPreservedNonNull(resolvedObjectType));
         NonNullableFieldValidator nonNullableFieldValidator = new NonNullableFieldValidator(executionContext, newExecutionStepInfo);
 
         ExecutionStrategyParameters newParameters = parameters.transform(builder ->
@@ -810,14 +807,14 @@ public abstract class ExecutionStrategy {
         ExecutionStepInfo parentStepInfo = parameters.getExecutionStepInfo();
         GraphQLOutputType fieldType = fieldDefinition.getType();
         List<GraphQLArgument> fieldArgDefs = fieldDefinition.getArguments();
-        Map<String, Object> argumentValues = Collections.emptyMap();
+        Supplier<Map<String, Object>> argumentValues = Collections::emptyMap;
         //
         // no need to create args at all if there are none on the field def
         //
         if (!fieldArgDefs.isEmpty()) {
             List<Argument> fieldArgs = field.getArguments();
             GraphQLCodeRegistry codeRegistry = executionContext.getGraphQLSchema().getCodeRegistry();
-            argumentValues = valuesResolver.getArgumentValues(codeRegistry, fieldArgDefs, fieldArgs, executionContext.getVariables());
+            argumentValues = FpKit.intraThreadMemoize(() -> valuesResolver.getArgumentValues(codeRegistry, fieldArgDefs, fieldArgs, executionContext.getVariables()));
         }
 
 

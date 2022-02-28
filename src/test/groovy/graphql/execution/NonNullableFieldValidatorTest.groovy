@@ -12,7 +12,7 @@ class NonNullableFieldValidatorTest extends Specification {
     def "non nullable field throws exception"() {
         ExecutionStepInfo typeInfo = ExecutionStepInfo.newExecutionStepInfo().type(nonNull(GraphQLString)).build()
 
-        NonNullableFieldValidator validator = new NonNullableFieldValidator(context, typeInfo)
+        NonNullableFieldValidator validator = new NonNullableFieldValidator(context, () -> typeInfo)
 
         when:
         validator.validate(ResultPath.rootPath(), null)
@@ -25,7 +25,7 @@ class NonNullableFieldValidatorTest extends Specification {
     def "nullable field does not throw exception"() {
         ExecutionStepInfo typeInfo = ExecutionStepInfo.newExecutionStepInfo().type(GraphQLString).build()
 
-        NonNullableFieldValidator validator = new NonNullableFieldValidator(context, typeInfo)
+        NonNullableFieldValidator validator = new NonNullableFieldValidator(context, () -> typeInfo)
 
         when:
         def result = validator.validate(ResultPath.rootPath(), null)

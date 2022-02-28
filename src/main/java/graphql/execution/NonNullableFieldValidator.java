@@ -3,6 +3,8 @@ package graphql.execution;
 
 import graphql.Internal;
 
+import java.util.function.Supplier;
+
 /**
  * This will check that a value is non null when the type definition says it must be and it will throw {@link NonNullableFieldWasNullException}
  * if this is not the case.
@@ -13,9 +15,9 @@ import graphql.Internal;
 public class NonNullableFieldValidator {
 
     private final ExecutionContext executionContext;
-    private final ExecutionStepInfo executionStepInfo;
+    private final Supplier<ExecutionStepInfo> executionStepInfo;
 
-    public NonNullableFieldValidator(ExecutionContext executionContext, ExecutionStepInfo executionStepInfo) {
+    public NonNullableFieldValidator(ExecutionContext executionContext, Supplier<ExecutionStepInfo> executionStepInfo) {
         this.executionContext = executionContext;
         this.executionStepInfo = executionStepInfo;
     }
@@ -33,6 +35,7 @@ public class NonNullableFieldValidator {
      */
     public <T> T validate(ResultPath path, T result) throws NonNullableFieldWasNullException {
         if (result == null) {
+            ExecutionStepInfo executionStepInfo = this.executionStepInfo.get();
             if (executionStepInfo.isNonNullType()) {
                 // see http://facebook.github.io/graphql/#sec-Errors-and-Non-Nullability
                 //

@@ -89,7 +89,7 @@ class AsyncSerialExecutionStrategyTest extends Specification {
                 .build()
         ExecutionStrategyParameters executionStrategyParameters = ExecutionStrategyParameters
                 .newParameters()
-                .executionStepInfo(typeInfo)
+                .executionStepInfo(() -> typeInfo)
                 .fields(mergedSelectionSet(['hello': mergedField(new Field('hello')), 'hello2': mergedField(new Field('hello2')), 'hello3': mergedField(new Field('hello3'))]))
                 .build()
 
@@ -133,7 +133,7 @@ class AsyncSerialExecutionStrategyTest extends Specification {
                 .build()
         ExecutionStrategyParameters executionStrategyParameters = ExecutionStrategyParameters
                 .newParameters()
-                .executionStepInfo(typeInfo)
+                .executionStepInfo(() -> typeInfo)
                 .fields(mergedSelectionSet(['hello': mergedField(new Field('hello')), 'hello2': mergedField(new Field('hello2')), 'hello3': mergedField(new Field('hello3'))]))
                 .build()
 

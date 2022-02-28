@@ -85,7 +85,7 @@ class AsyncExecutionStrategyTest extends Specification {
                 .build()
         ExecutionStrategyParameters executionStrategyParameters = ExecutionStrategyParameters
                 .newParameters()
-                .executionStepInfo(typeInfo)
+                .executionStepInfo(() -> typeInfo)
                 .fields(mergedSelectionSet(['hello': mergedField([Field.newField('hello').build()]), 'hello2': mergedField([Field.newField('hello2').build()])]))
                 .build()
 
@@ -124,7 +124,7 @@ class AsyncExecutionStrategyTest extends Specification {
                 .build()
         ExecutionStrategyParameters executionStrategyParameters = ExecutionStrategyParameters
                 .newParameters()
-                .executionStepInfo(typeInfo)
+                .executionStepInfo(() -> typeInfo)
                 .fields(mergedSelectionSet(['hello': mergedField([Field.newField('hello').build()]), 'hello2': mergedField([Field.newField('hello2').build()])]))
                 .build()
 
@@ -165,7 +165,7 @@ class AsyncExecutionStrategyTest extends Specification {
                 .build()
         ExecutionStrategyParameters executionStrategyParameters = ExecutionStrategyParameters
                 .newParameters()
-                .executionStepInfo(typeInfo)
+                .executionStepInfo(() -> typeInfo)
                 .fields(mergedSelectionSet(['hello': mergedField([Field.newField('hello').build()]), 'hello2': mergedField([Field.newField('hello2').build()])]))
                 .build()
 
@@ -205,7 +205,7 @@ class AsyncExecutionStrategyTest extends Specification {
                 .build()
         ExecutionStrategyParameters executionStrategyParameters = ExecutionStrategyParameters
                 .newParameters()
-                .executionStepInfo(typeInfo)
+                .executionStepInfo(() -> typeInfo)
                 .fields(mergedSelectionSet(['hello': mergedField([Field.newField('hello').build()]), 'hello2': mergedField([Field.newField('hello2').build()])]))
                 .build()
 
@@ -265,7 +265,7 @@ class AsyncExecutionStrategyTest extends Specification {
                 .build()
         ExecutionStrategyParameters executionStrategyParameters = ExecutionStrategyParameters
                 .newParameters()
-                .executionStepInfo(typeInfo)
+                .executionStepInfo(() -> typeInfo)
                 .fields(mergedSelectionSet(['hello': mergedField([new Field('hello')]), 'hello2': mergedField([new Field('hello2')])]))
                 .build()
 
