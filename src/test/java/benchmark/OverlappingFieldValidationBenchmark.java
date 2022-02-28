@@ -25,6 +25,7 @@ import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Threads;
 import org.openjdk.jmh.annotations.Warmup;
+import org.openjdk.jmh.infra.Blackhole;
 
 import java.io.IOException;
 import java.net.URL;
@@ -75,8 +76,15 @@ public class OverlappingFieldValidationBenchmark {
     }
 
     @Benchmark
-    public List<ValidationError> overlappingFieldValidation(MyState myState) {
-        return validateQuery(myState.schema, myState.document);
+    public void overlappingFieldValidationAbgTime(MyState myState, Blackhole blackhole) {
+        blackhole.consume(validateQuery(myState.schema, myState.document));
+    }
+
+    @Benchmark
+    @BenchmarkMode(Mode.Throughput)
+    @OutputTimeUnit(TimeUnit.SECONDS)
+    public void overlappingFieldValidationThroughput(MyState myState, Blackhole blackhole) {
+        blackhole.consume(validateQuery(myState.schema, myState.document));
     }
 
 

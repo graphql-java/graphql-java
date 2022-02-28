@@ -19,6 +19,10 @@ public class ConditionalNodes {
     ValuesResolver valuesResolver = new ValuesResolver();
 
     public boolean shouldInclude(Map<String, Object> variables, List<Directive> directives) {
+        // shortcut on no directives
+        if (directives.isEmpty()) {
+            return true;
+        }
         boolean skip = getDirectiveResult(variables, directives, SkipDirective.getName(), false);
         if (skip) {
             return false;

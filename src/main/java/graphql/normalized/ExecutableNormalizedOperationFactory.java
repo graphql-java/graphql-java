@@ -37,10 +37,10 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Predicate;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertShouldNeverHappen;
@@ -235,41 +235,44 @@ public class ExecutableNormalizedOperationFactory {
                     possibleObjects
             );
         }
+        Map<String, List<CollectedField>> fieldsByName = fieldsByResultKey(collectedFields);
+        ImmutableList.Builder<ExecutableNormalizedField> resultNFs = ImmutableList.builder();
+        ImmutableListMultimap.Builder<ExecutableNormalizedField, FieldAndAstParent> normalizedFieldToAstFields = ImmutableListMultimap.builder();
+
+        createNFs(resultNFs, parameters, fieldsByName, normalizedFieldToAstFields, level, executableNormalizedField);
+
+        return new CollectNFResult(resultNFs.build(), normalizedFieldToAstFields.build());
+    }
+
+    private Map<String, List<CollectedField>> fieldsByResultKey(List<CollectedField> collectedFields) {
         Map<String, List<CollectedField>> fieldsByName = new LinkedHashMap<>();
         for (CollectedField collectedField : collectedFields) {
             fieldsByName.computeIfAbsent(collectedField.field.getResultKey(), ignored -> new ArrayList<>()).add(collectedField);
         }
-        List<ExecutableNormalizedField> resultNFs = new ArrayList<>();
-        ImmutableListMultimap.Builder<ExecutableNormalizedField, FieldAndAstParent> normalizedFieldToAstFields = ImmutableListMultimap.builder();
-
-        createNFs(parameters, fieldsByName, resultNFs, normalizedFieldToAstFields, level, executableNormalizedField);
-
-        return new CollectNFResult(resultNFs, normalizedFieldToAstFields.build());
+        return fieldsByName;
     }
 
     public CollectNFResult collectFromOperation(FieldCollectorNormalizedQueryParams parameters,
                                                 OperationDefinition operationDefinition,
                                                 GraphQLObjectType rootType) {
-        Set<GraphQLObjectType> possibleObjects = new LinkedHashSet<>();
-        possibleObjects.add(rootType);
+
+
+        Set<GraphQLObjectType> possibleObjects = ImmutableSet.of(rootType);
         List<CollectedField> collectedFields = new ArrayList<>();
         collectFromSelectionSet(parameters, operationDefinition.getSelectionSet(), collectedFields, rootType, possibleObjects);
         // group by result key
-        Map<String, List<CollectedField>> fieldsByName = new LinkedHashMap<>();
-        for (CollectedField collectedField : collectedFields) {
-            fieldsByName.computeIfAbsent(collectedField.field.getResultKey(), ignored -> new ArrayList<>()).add(collectedField);
-        }
-        List<ExecutableNormalizedField> resultNFs = new ArrayList<>();
+        Map<String, List<CollectedField>> fieldsByName = fieldsByResultKey(collectedFields);
+        ImmutableList.Builder<ExecutableNormalizedField> resultNFs = ImmutableList.builder();
         ImmutableListMultimap.Builder<ExecutableNormalizedField, FieldAndAstParent> normalizedFieldToAstFields = ImmutableListMultimap.builder();
 
-        createNFs(parameters, fieldsByName, resultNFs, normalizedFieldToAstFields, 1, null);
+        createNFs(resultNFs, parameters, fieldsByName, normalizedFieldToAstFields, 1, null);
 
-        return new CollectNFResult(resultNFs, normalizedFieldToAstFields.build());
+        return new CollectNFResult(resultNFs.build(), normalizedFieldToAstFields.build());
     }
 
-    private void createNFs(FieldCollectorNormalizedQueryParams parameters,
+    private void createNFs(ImmutableList.Builder<ExecutableNormalizedField> nfListBuilder,
+                           FieldCollectorNormalizedQueryParams parameters,
                            Map<String, List<CollectedField>> fieldsByName,
-                           List<ExecutableNormalizedField> resultNFs,
                            ImmutableListMultimap.Builder<ExecutableNormalizedField, FieldAndAstParent> normalizedFieldToAstFields,
                            int level,
                            ExecutableNormalizedField parent) {
@@ -284,7 +287,7 @@ public class ExecutableNormalizedOperationFactory {
                 for (CollectedField collectedField : fieldGroup.fields) {
                     normalizedFieldToAstFields.put(nf, new FieldAndAstParent(collectedField.field, collectedField.astTypeCondition));
                 }
-                resultNFs.add(nf);
+                nfListBuilder.add(nf);
             }
             if (commonParentsGroups.size() > 1) {
                 parameters.addPossibleMergers(parent, resultKey);
@@ -308,7 +311,8 @@ public class ExecutableNormalizedOperationFactory {
             normalizedArgumentValues = valuesResolver.getNormalizedArgumentValues(fieldDefinition.getArguments(), field.getArguments(), parameters.getNormalizedVariableValues());
         }
         ImmutableList<String> objectTypeNames = map(objectTypes, GraphQLObjectType::getName);
-        ExecutableNormalizedField executableNormalizedField = ExecutableNormalizedField.newNormalizedField()
+
+        return ExecutableNormalizedField.newNormalizedField()
                 .alias(field.getAlias())
                 .resolvedArguments(argumentValues)
                 .normalizedArguments(normalizedArgumentValues)
@@ -318,8 +322,6 @@ public class ExecutableNormalizedOperationFactory {
                 .level(level)
                 .parent(parent)
                 .build();
-
-        return executableNormalizedField;
     }
 
     private static class CollectedFieldGroup {
@@ -333,20 +335,21 @@ public class ExecutableNormalizedOperationFactory {
     }
 
     private List<CollectedFieldGroup> groupByCommonParents(Collection<CollectedField> fields) {
-        Set<GraphQLObjectType> allRelevantObjects = new LinkedHashSet<>();
+        ImmutableSet.Builder<GraphQLObjectType> objectTypes = ImmutableSet.builder();
         for (CollectedField collectedField : fields) {
-            allRelevantObjects.addAll(collectedField.objectTypes);
+            objectTypes.addAll(collectedField.objectTypes);
         }
+        Set<GraphQLObjectType> allRelevantObjects = objectTypes.build();
         Map<GraphQLType, ImmutableList<CollectedField>> groupByAstParent = groupingBy(fields, fieldAndType -> fieldAndType.astTypeCondition);
         if (groupByAstParent.size() == 1) {
-            return singletonList(new CollectedFieldGroup(new LinkedHashSet<>(fields), allRelevantObjects));
+            return singletonList(new CollectedFieldGroup(ImmutableSet.copyOf(fields), allRelevantObjects));
         }
-        List<CollectedFieldGroup> result = new ArrayList<>();
+        ImmutableList.Builder<CollectedFieldGroup> result = ImmutableList.builder();
         for (GraphQLObjectType objectType : allRelevantObjects) {
             Set<CollectedField> relevantFields = filterSet(fields, field -> field.objectTypes.contains(objectType));
             result.add(new CollectedFieldGroup(relevantFields, singleton(objectType)));
         }
-        return result;
+        return result.build();
     }
 
 
