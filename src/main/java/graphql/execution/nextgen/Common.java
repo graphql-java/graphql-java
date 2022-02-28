@@ -3,11 +3,8 @@ package graphql.execution.nextgen;
 import graphql.Internal;
 import graphql.execution.MissingRootTypeException;
 import graphql.language.OperationDefinition;
-import graphql.language.SourceLocation;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.Optional;
 
@@ -22,30 +19,21 @@ import static graphql.language.OperationDefinition.Operation.SUBSCRIPTION;
 @Deprecated
 @Internal
 public class Common {
+
     public static GraphQLObjectType getOperationRootType(GraphQLSchema graphQLSchema, OperationDefinition operationDefinition) {
-        return getOperationRootType(graphQLSchema, operationDefinition.getOperation(), operationDefinition.getSourceLocation());
-    }
-
-    public static GraphQLObjectType getOperationRootType(@NotNull GraphQLSchema graphQLSchema,
-                                                         @NotNull OperationDefinition.Operation operation) {
-        return getOperationRootType(graphQLSchema, operation, null);
-    }
-
-    public static GraphQLObjectType getOperationRootType(@NotNull GraphQLSchema graphQLSchema,
-                                                         @NotNull OperationDefinition.Operation operation,
-                                                         @Nullable SourceLocation sourceLocation) {
+        OperationDefinition.Operation operation = operationDefinition.getOperation();
         if (operation == MUTATION) {
             GraphQLObjectType mutationType = graphQLSchema.getMutationType();
             return Optional.ofNullable(mutationType)
-                    .orElseThrow(() -> new MissingRootTypeException("Schema is not configured for mutations.", sourceLocation));
+                    .orElseThrow(() -> new MissingRootTypeException("Schema is not configured for mutations.", operationDefinition.getSourceLocation()));
         } else if (operation == QUERY) {
             GraphQLObjectType queryType = graphQLSchema.getQueryType();
             return Optional.ofNullable(queryType)
-                    .orElseThrow(() -> new MissingRootTypeException("Schema does not define the required query root type.", sourceLocation));
+                    .orElseThrow(() -> new MissingRootTypeException("Schema does not define the required query root type.", operationDefinition.getSourceLocation()));
         } else if (operation == SUBSCRIPTION) {
             GraphQLObjectType subscriptionType = graphQLSchema.getSubscriptionType();
             return Optional.ofNullable(subscriptionType)
-                    .orElseThrow(() -> new MissingRootTypeException("Schema is not configured for subscriptions.", sourceLocation));
+                    .orElseThrow(() -> new MissingRootTypeException("Schema is not configured for subscriptions.", operationDefinition.getSourceLocation()));
         } else {
             return assertShouldNeverHappen("Unhandled case.  An extra operation enum has been added without code support");
         }

@@ -2,6 +2,7 @@ package graphql.normalized;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import graphql.Assert;
 import graphql.Internal;
 import graphql.introspection.Introspection;
 import graphql.language.Argument;
@@ -31,7 +32,6 @@ import java.util.List;
 import java.util.Map;
 
 import static graphql.collect.ImmutableKit.map;
-import static graphql.execution.nextgen.Common.getOperationRootType;
 import static graphql.language.Argument.newArgument;
 import static graphql.language.Field.newField;
 import static graphql.language.InlineFragment.newInlineFragment;
@@ -66,7 +66,7 @@ public class ExecutableNormalizedOperationToAstCompiler {
                                                    @Nullable String operationName,
                                                    @NotNull List<ExecutableNormalizedField> topLevelFields,
                                                    @Nullable VariablePredicate variablePredicate) {
-        GraphQLObjectType operationType = getOperationRootType(schema, operationKind);
+        GraphQLObjectType operationType = getOperationType(schema, operationKind);
 
         VariableAccumulator variableAccumulator = new VariableAccumulator(variablePredicate);
         List<Selection<?>> selections = subselectionsForNormalizedField(schema, operationType.getName(), topLevelFields, variableAccumulator);
@@ -238,4 +238,21 @@ public class ExecutableNormalizedOperationToAstCompiler {
                                                              ExecutableNormalizedField nf) {
         return Introspection.getFieldDef(schema, (GraphQLCompositeType) schema.getType(parentType), nf.getName());
     }
+
+
+    @Nullable
+    private static GraphQLObjectType getOperationType(@NotNull GraphQLSchema schema,
+                                                      @NotNull OperationDefinition.Operation operationKind) {
+        switch (operationKind) {
+            case QUERY:
+                return schema.getQueryType();
+            case MUTATION:
+                return schema.getMutationType();
+            case SUBSCRIPTION:
+                return schema.getSubscriptionType();
+        }
+
+        return Assert.assertShouldNeverHappen("Unknown operation kind " + operationKind);
+    }
+
 }
