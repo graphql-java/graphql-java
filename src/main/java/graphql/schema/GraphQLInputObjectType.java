@@ -318,26 +318,6 @@ public class GraphQLInputObjectType implements GraphQLNamedInputType, GraphQLUnm
         // -- the following are repeated to avoid a binary incompatibility problem --
 
         @Override
-        public Builder replaceAppliedDirectives(List<GraphQLAppliedDirective> directives) {
-            return super.replaceAppliedDirectives(directives);
-        }
-
-        @Override
-        public Builder withAppliedDirectives(GraphQLAppliedDirective... directives) {
-            return super.withAppliedDirectives(directives);
-        }
-
-        @Override
-        public Builder withAppliedDirective(GraphQLAppliedDirective directive) {
-            return super.withAppliedDirective(directive);
-        }
-
-        @Override
-        public Builder withAppliedDirective(GraphQLAppliedDirective.Builder builder) {
-            return super.withAppliedDirective(builder);
-        }
-
-        @Override
         public Builder replaceDirectives(List<GraphQLDirective> directives) {
             return super.replaceDirectives(directives);
         }
@@ -360,11 +340,6 @@ public class GraphQLInputObjectType implements GraphQLNamedInputType, GraphQLUnm
         @Override
         public Builder clearDirectives() {
             return super.clearDirectives();
-        }
-
-        @Override
-        protected void copyExistingDirectives(GraphQLDirectiveContainer directivesContainer) {
-            super.copyExistingDirectives(directivesContainer);
         }
 
         @Override
