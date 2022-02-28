@@ -9,6 +9,7 @@ import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLType;
 
 import java.util.Map;
+import java.util.function.Supplier;
 
 /**
  * This class is a classic builder style one that SHOULD have been on have been on {@link TypeResolutionEnvironment}
@@ -20,7 +21,7 @@ public class TypeResolutionParameters {
     private final MergedField field;
     private final GraphQLType fieldType;
     private final Object value;
-    private final ImmutableMapWithNullValues<String, Object> argumentValues;
+    private final Supplier<ImmutableMapWithNullValues<String, Object>> argumentValues;
     private final GraphQLSchema schema;
     private final Object context;
     private final Object localContext;
@@ -52,7 +53,7 @@ public class TypeResolutionParameters {
     }
 
     public Map<String, Object> getArgumentValues() {
-        return argumentValues;
+        return argumentValues.get();
     }
 
     public GraphQLSchema getSchema() {
@@ -90,7 +91,7 @@ public class TypeResolutionParameters {
         private MergedField field;
         private GraphQLType fieldType;
         private Object value;
-        private ImmutableMapWithNullValues<String, Object> argumentValues;
+        private Supplier<ImmutableMapWithNullValues<String, Object>> argumentValues;
         private GraphQLSchema schema;
         private Object context;
         private GraphQLContext graphQLContext;
@@ -112,8 +113,8 @@ public class TypeResolutionParameters {
             return this;
         }
 
-        public Builder argumentValues(Map<String, Object> argumentValues) {
-            this.argumentValues = ImmutableMapWithNullValues.copyOf(argumentValues);
+        public Builder argumentValues(Supplier<Map<String, Object>> argumentValues) {
+            this.argumentValues = () -> ImmutableMapWithNullValues.copyOf(argumentValues.get());
             return this;
         }
 
