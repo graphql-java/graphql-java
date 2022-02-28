@@ -3,59 +3,46 @@ package graphql.schema;
 
 import com.google.common.collect.ImmutableList;
 import graphql.PublicApi;
-import graphql.language.DirectiveDefinition;
+import graphql.language.Directive;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
-import java.util.Collections;
-import java.util.EnumSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.StringJoiner;
 import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertValidName;
-import static graphql.introspection.Introspection.DirectiveLocation;
 import static graphql.util.FpKit.getByName;
 
 /**
- * A directive can be used to modify the behavior of a graphql field or type.
- * <p>
- * See http://graphql.org/learn/queries/#directives for more details on the concept.
+ * An applied directive represents the instance of a directive that is applied to a schema element,
+ * as opposed to it definition
  * <p>
  * A directive has a definition, that is what arguments it takes, and it can also be applied
  * to other schema elements.  Originally graphql-java re-used the {@link GraphQLDirective} and {@link GraphQLArgument}
  * classes to do both purposes.  This was a modelling mistake.  New {@link GraphQLAppliedDirective} and {@link GraphQLAppliedDirectiveArgument}
  * classes have been introduced to better model when a directive is applied to a schema element,
  * as opposed to its schema definition itself.
+ * <p>
+ * See http://graphql.org/learn/queries/#directives for more details on the concept.
  */
 @PublicApi
-public class GraphQLDirective implements GraphQLNamedSchemaElement {
+public class GraphQLAppliedDirective implements GraphQLNamedSchemaElement {
 
     private final String name;
-    private final boolean repeatable;
-    private final String description;
-    private final EnumSet<DirectiveLocation> locations;
-    private final ImmutableList<GraphQLArgument> arguments;
-    private final DirectiveDefinition definition;
-
+    private final ImmutableList<GraphQLAppliedDirectiveArgument> arguments;
+    private final Directive definition;
 
     public static final String CHILD_ARGUMENTS = "arguments";
 
-    private GraphQLDirective(String name,
-                             String description,
-                             boolean repeatable,
-                             EnumSet<DirectiveLocation> locations,
-                             List<GraphQLArgument> arguments,
-                             DirectiveDefinition definition) {
+    private GraphQLAppliedDirective(String name, Directive definition, List<GraphQLAppliedDirectiveArgument> arguments) {
         assertValidName(name);
         assertNotNull(arguments, () -> "arguments can't be null");
         this.name = name;
-        this.description = description;
-        this.repeatable = repeatable;
-        this.locations = locations;
         this.arguments = ImmutableList.copyOf(arguments);
         this.definition = definition;
     }
@@ -65,20 +52,17 @@ public class GraphQLDirective implements GraphQLNamedSchemaElement {
         return name;
     }
 
-    public boolean isRepeatable() {
-        return repeatable;
+    @Override
+    public String getDescription() {
+        return null;
     }
 
-    public boolean isNonRepeatable() {
-        return !repeatable;
-    }
-
-    public List<GraphQLArgument> getArguments() {
+    public List<GraphQLAppliedDirectiveArgument> getArguments() {
         return arguments;
     }
 
-    public GraphQLArgument getArgument(String name) {
-        for (GraphQLArgument argument : arguments) {
+    public GraphQLAppliedDirectiveArgument getArgument(String name) {
+        for (GraphQLAppliedDirectiveArgument argument : arguments) {
             if (argument.getName().equals(name)) {
                 return argument;
             }
@@ -86,26 +70,17 @@ public class GraphQLDirective implements GraphQLNamedSchemaElement {
         return null;
     }
 
-    public EnumSet<DirectiveLocation> validLocations() {
-        return EnumSet.copyOf(locations);
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public DirectiveDefinition getDefinition() {
+    public Directive getDefinition() {
         return definition;
     }
 
     @Override
     public String toString() {
-        return "GraphQLDirective{" +
-                "name='" + name + '\'' +
-                ", repeatable='" + repeatable + '\'' +
-                ", arguments=" + arguments +
-                ", locations=" + locations +
-                '}';
+        return new StringJoiner(", ", GraphQLAppliedDirective.class.getSimpleName() + "[", "]")
+                .add("name='" + name + "'")
+                .add("arguments=" + arguments)
+                .add("definition=" + definition)
+                .toString();
     }
 
     /**
@@ -116,7 +91,7 @@ public class GraphQLDirective implements GraphQLNamedSchemaElement {
      *
      * @return a new field based on calling build on that builder
      */
-    public GraphQLDirective transform(Consumer<Builder> builderConsumer) {
+    public GraphQLAppliedDirective transform(Consumer<Builder> builderConsumer) {
         Builder builder = newDirective(this);
         builderConsumer.accept(builder);
         return builder.build();
@@ -130,7 +105,7 @@ public class GraphQLDirective implements GraphQLNamedSchemaElement {
 
     @Override
     public TraversalControl accept(TraverserContext<GraphQLSchemaElement> context, GraphQLTypeVisitor visitor) {
-        return visitor.visitGraphQLDirective(this, context);
+        return visitor.visitGraphQLAppliedDirective(this, context);
     }
 
     @Override
@@ -146,23 +121,10 @@ public class GraphQLDirective implements GraphQLNamedSchemaElement {
     }
 
     @Override
-    public GraphQLDirective withNewChildren(SchemaElementChildrenContainer newChildren) {
+    public GraphQLAppliedDirective withNewChildren(SchemaElementChildrenContainer newChildren) {
         return transform(builder ->
                 builder.replaceArguments(newChildren.getChildren(CHILD_ARGUMENTS))
         );
-    }
-
-    /**
-     * This method can be used to turn a directive that was being use as an applied directive into one.
-     * @return an {@link GraphQLAppliedDirective}
-     */
-    public GraphQLAppliedDirective toAppliedDirective() {
-        GraphQLAppliedDirective.Builder builder = GraphQLAppliedDirective.newDirective();
-        builder.name(this.name);
-        for (GraphQLArgument argument : arguments) {
-            builder.argument(argument.toAppliedArgument());
-        }
-        return builder.build();
     }
 
     /**
@@ -186,58 +148,34 @@ public class GraphQLDirective implements GraphQLNamedSchemaElement {
         return new Builder();
     }
 
-    public static Builder newDirective(GraphQLDirective existing) {
+    public static Builder newDirective(GraphQLAppliedDirective existing) {
         return new Builder(existing);
     }
 
     public static class Builder extends GraphqlTypeBuilder<Builder> {
 
-        private EnumSet<DirectiveLocation> locations = EnumSet.noneOf(DirectiveLocation.class);
-        private final Map<String, GraphQLArgument> arguments = new LinkedHashMap<>();
-        private DirectiveDefinition definition;
-        private boolean repeatable = false;
+        private final Map<String, GraphQLAppliedDirectiveArgument> arguments = new LinkedHashMap<>();
+        private Directive definition;
 
         public Builder() {
         }
 
-        public Builder(GraphQLDirective existing) {
+        public Builder(GraphQLAppliedDirective existing) {
             this.name = existing.getName();
             this.description = existing.getDescription();
-            this.repeatable = existing.isRepeatable();
-            this.locations = existing.validLocations();
-            this.arguments.putAll(getByName(existing.getArguments(), GraphQLArgument::getName));
+            this.arguments.putAll(getByName(existing.getArguments(), GraphQLAppliedDirectiveArgument::getName));
         }
 
-        public Builder repeatable(boolean repeatable) {
-            this.repeatable = repeatable;
-            return this;
-        }
-
-        public Builder validLocations(DirectiveLocation... validLocations) {
-            Collections.addAll(locations, validLocations);
-            return this;
-        }
-
-        public Builder validLocation(DirectiveLocation validLocation) {
-            locations.add(validLocation);
-            return this;
-        }
-
-        public Builder clearValidLocations() {
-            locations = EnumSet.noneOf(DirectiveLocation.class);
-            return this;
-        }
-
-        public Builder argument(GraphQLArgument argument) {
+        public Builder argument(GraphQLAppliedDirectiveArgument argument) {
             assertNotNull(argument, () -> "argument must not be null");
             arguments.put(argument.getName(), argument);
             return this;
         }
 
-        public Builder replaceArguments(List<GraphQLArgument> arguments) {
+        public Builder replaceArguments(List<GraphQLAppliedDirectiveArgument> arguments) {
             assertNotNull(arguments, () -> "arguments must not be null");
             this.arguments.clear();
-            for (GraphQLArgument argument : arguments) {
+            for (GraphQLAppliedDirectiveArgument argument : arguments) {
                 this.arguments.put(argument.getName(), argument);
             }
             return this;
@@ -256,21 +194,21 @@ public class GraphQLDirective implements GraphQLNamedSchemaElement {
          *
          * @return this
          */
-        public Builder argument(UnaryOperator<GraphQLArgument.Builder> builderFunction) {
-            GraphQLArgument.Builder builder = GraphQLArgument.newArgument();
+        public Builder argument(UnaryOperator<GraphQLAppliedDirectiveArgument.Builder> builderFunction) {
+            GraphQLAppliedDirectiveArgument.Builder builder = GraphQLAppliedDirectiveArgument.newArgument();
             builder = builderFunction.apply(builder);
             return argument(builder);
         }
 
         /**
-         * Same effect as the argument(GraphQLArgument). Builder.build() is called
+         * Same effect as the argument(GraphQLAppliedDirectiveArgument). Builder.build() is called
          * from within
          *
-         * @param builder an un-built/incomplete GraphQLArgument
+         * @param builder an un-built/incomplete GraphQLAppliedDirectiveArgument
          *
          * @return this
          */
-        public Builder argument(GraphQLArgument.Builder builder) {
+        public Builder argument(GraphQLAppliedDirectiveArgument.Builder builder) {
             return argument(builder.build());
         }
 
@@ -285,21 +223,13 @@ public class GraphQLDirective implements GraphQLNamedSchemaElement {
         }
 
 
-        public Builder definition(DirectiveDefinition definition) {
+        public Builder definition(Directive definition) {
             this.definition = definition;
             return this;
         }
 
-        public GraphQLDirective build() {
-            return new GraphQLDirective(
-                    name,
-                    description,
-                    repeatable,
-                    locations,
-                    sort(arguments, GraphQLDirective.class, GraphQLArgument.class),
-                    definition);
+        public GraphQLAppliedDirective build() {
+            return new GraphQLAppliedDirective(name, this.definition, sort(arguments, GraphQLAppliedDirective.class, GraphQLAppliedDirectiveArgument.class));
         }
-
-
     }
 }

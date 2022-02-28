@@ -158,7 +158,6 @@ public class ExecutableNormalizedOperationFactory {
         CollectNFResult nextLevel = collectFromMergedField(fieldCollectorNormalizedQueryParams, field, mergedField, curLevel + 1);
 
         for (ExecutableNormalizedField child : nextLevel.children) {
-
             field.addChild(child);
             ImmutableList<FieldAndAstParent> mergedFieldForChild = nextLevel.normalizedFieldToAstFields.get(child);
             normalizedFieldToMergedField.put(child, newMergedField(map(mergedFieldForChild, fieldAndAstParent -> fieldAndAstParent.field)).build());
@@ -172,8 +171,6 @@ public class ExecutableNormalizedOperationFactory {
                     normalizedFieldToMergedField,
                     coordinatesToNormalizedFields,
                     curLevel + 1);
-
-
         }
     }
 
@@ -218,13 +215,11 @@ public class ExecutableNormalizedOperationFactory {
                                                   ExecutableNormalizedField executableNormalizedField,
                                                   ImmutableList<FieldAndAstParent> mergedField,
                                                   int level) {
-        GraphQLUnmodifiedType fieldType = unwrapAll(executableNormalizedField.getType(parameters.getGraphQLSchema()));
-        // if not composite we don't have any selectionSet because it is a Scalar or enum
-        if (!(fieldType instanceof GraphQLCompositeType)) {
+        List<GraphQLFieldDefinition> fieldDefs = executableNormalizedField.getFieldDefinitions(parameters.getGraphQLSchema());
+        Set<GraphQLObjectType> possibleObjects = resolvePossibleObjects(fieldDefs, parameters.getGraphQLSchema());
+        if (possibleObjects.isEmpty()) {
             return new CollectNFResult(Collections.emptyList(), ImmutableListMultimap.of());
         }
-
-        Set<GraphQLObjectType> possibleObjects = resolvePossibleObjects((GraphQLCompositeType) fieldType, parameters.getGraphQLSchema());
 
         List<CollectedField> collectedFields = new ArrayList<>();
         for (FieldAndAstParent fieldAndAstParent : mergedField) {
@@ -364,7 +359,6 @@ public class ExecutableNormalizedOperationFactory {
                                          GraphQLCompositeType astTypeCondition,
                                          Set<GraphQLObjectType> possibleObjects
     ) {
-
         for (Selection<?> selection : selectionSet.getSelections()) {
             if (selection instanceof Field) {
                 collectField(parameters, result, (Field) selection, possibleObjects, astTypeCondition);
@@ -445,23 +439,35 @@ public class ExecutableNormalizedOperationFactory {
         if (!conditionalNodes.shouldInclude(parameters.getCoercedVariableValues(), field.getDirectives())) {
             return;
         }
-        // this means there is actually no possible type for this field, and we are done
-        if (possibleObjectTypes.size() == 0) {
+        // this means there is actually no possible type for this field and we are done
+        if (possibleObjectTypes.isEmpty()) {
             return;
         }
         result.add(new CollectedField(field, possibleObjectTypes, astTypeCondition));
     }
-
 
     private Set<GraphQLObjectType> narrowDownPossibleObjects(Set<GraphQLObjectType> currentOnes,
                                                              GraphQLCompositeType typeCondition,
                                                              GraphQLSchema graphQLSchema) {
 
         ImmutableSet<GraphQLObjectType> resolvedTypeCondition = resolvePossibleObjects(typeCondition, graphQLSchema);
-        if (currentOnes.size() == 0) {
+        if (currentOnes.isEmpty()) {
             return resolvedTypeCondition;
         }
         return Sets.intersection(currentOnes, resolvedTypeCondition);
+    }
+
+    private ImmutableSet<GraphQLObjectType> resolvePossibleObjects(List<GraphQLFieldDefinition> defs, GraphQLSchema graphQLSchema) {
+        ImmutableSet.Builder<GraphQLObjectType> builder = ImmutableSet.builder();
+
+        for (GraphQLFieldDefinition def : defs) {
+            GraphQLUnmodifiedType outputType = unwrapAll(def.getType());
+            if (outputType instanceof GraphQLCompositeType) {
+                builder.addAll(resolvePossibleObjects((GraphQLCompositeType) outputType, graphQLSchema));
+            }
+        }
+
+        return builder.build();
     }
 
     private ImmutableSet<GraphQLObjectType> resolvePossibleObjects(GraphQLCompositeType type, GraphQLSchema graphQLSchema) {
@@ -471,10 +477,9 @@ public class ExecutableNormalizedOperationFactory {
             return ImmutableSet.copyOf(graphQLSchema.getImplementations((GraphQLInterfaceType) type));
         } else if (type instanceof GraphQLUnionType) {
             List types = ((GraphQLUnionType) type).getTypes();
-            return ImmutableSet.copyOf((types));
+            return ImmutableSet.copyOf(types);
         } else {
             return assertShouldNeverHappen();
         }
-
     }
 }

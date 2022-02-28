@@ -67,8 +67,8 @@ public class UniqueDirectiveNamesPerLocation extends AbstractRule {
         Set<String> directiveNames = new LinkedHashSet<>();
         for (Directive directive : directives) {
             String name = directive.getName();
-            Map<String, List<GraphQLDirective>> directivesByName = getValidationContext().getSchema().getAllDirectivesByName();
-            boolean nonRepeatable = DirectivesUtil.isAllNonRepeatable(directivesByName.getOrDefault(name, emptyList()));
+            GraphQLDirective graphQLDirective = getValidationContext().getSchema().getDirective(name);
+            boolean nonRepeatable = graphQLDirective != null && graphQLDirective.isNonRepeatable();
             if (directiveNames.contains(name) && nonRepeatable) {
                 addError(ValidationErrorType.DuplicateDirectiveName,
                         directive.getSourceLocation(),

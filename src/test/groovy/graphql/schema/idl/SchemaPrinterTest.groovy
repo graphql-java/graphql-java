@@ -1148,7 +1148,7 @@ input Input {
 '''
 
         when:
-        def resultWithSomeDirectives = new SchemaPrinter(defaultOptions().includeDirectives({ it.name == "example" })).print(schema)
+        def resultWithSomeDirectives = new SchemaPrinter(defaultOptions().includeDirectives({ it == "example" })).print(schema)
 
         then:
         resultWithSomeDirectives == '''directive @example on FIELD_DEFINITION

@@ -14,6 +14,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static graphql.schema.idl.SchemaGeneratorHelper.buildDescription;
+
 
 /**
  * This can generate a working runtime schema from a type registry and runtime wiring
@@ -109,7 +111,7 @@ public class SchemaGenerator {
         schemaBuilder.codeRegistry(codeRegistry);
 
         buildCtx.getTypeRegistry().schemaDefinition().ifPresent(schemaDefinition -> {
-            String description = schemaGeneratorHelper.buildDescription(buildCtx, schemaDefinition, schemaDefinition.getDescription());
+            String description = buildDescription(buildCtx, schemaDefinition, schemaDefinition.getDescription());
             schemaBuilder.description(description);
         });
         GraphQLSchema graphQLSchema = schemaBuilder.build();
@@ -141,10 +143,12 @@ public class SchemaGenerator {
     public static class Options {
         private final boolean useCommentsAsDescription;
         private final boolean captureAstDefinitions;
+        private final boolean useAppliedDirectivesOnly;
 
-        Options(boolean useCommentsAsDescription, boolean captureAstDefinitions) {
+        Options(boolean useCommentsAsDescription, boolean captureAstDefinitions, boolean useAppliedDirectivesOnly) {
             this.useCommentsAsDescription = useCommentsAsDescription;
             this.captureAstDefinitions = captureAstDefinitions;
+            this.useAppliedDirectivesOnly = useAppliedDirectivesOnly;
         }
 
         public boolean isUseCommentsAsDescription() {
@@ -155,8 +159,12 @@ public class SchemaGenerator {
             return captureAstDefinitions;
         }
 
+        public boolean isUseAppliedDirectivesOnly() {
+            return useAppliedDirectivesOnly;
+        }
+
         public static Options defaultOptions() {
-            return new Options(true, true);
+            return new Options(true, true, false);
         }
 
         /**
@@ -169,7 +177,7 @@ public class SchemaGenerator {
          * @return a new Options object
          */
         public Options useCommentsAsDescriptions(boolean useCommentsAsDescription) {
-            return new Options(useCommentsAsDescription, captureAstDefinitions);
+            return new Options(useCommentsAsDescription, captureAstDefinitions, useAppliedDirectivesOnly);
         }
 
         /**
@@ -181,7 +189,20 @@ public class SchemaGenerator {
          * @return a new Options object
          */
         public Options captureAstDefinitions(boolean captureAstDefinitions) {
-            return new Options(useCommentsAsDescription, captureAstDefinitions);
+            return new Options(useCommentsAsDescription, captureAstDefinitions, useAppliedDirectivesOnly);
+        }
+
+        /**
+         * The class {@link GraphQLDirective} should really represent the definition of a directive, and not its use on schema elements.
+         * The new {@link graphql.schema.GraphQLAppliedDirective} has been created to fix this however for legacy reasons both classes will be put on schema
+         * elements.  This flag allows you to only use {@link graphql.schema.GraphQLAppliedDirective} on schema elements.
+         *
+         * @param useAppliedDirectivesOnly the flag on whether to use {@link graphql.schema.GraphQLAppliedDirective}s only on schema elements
+         *
+         * @return a new Options object
+         */
+        public Options useAppliedDirectivesOnly(boolean useAppliedDirectivesOnly) {
+            return new Options(useCommentsAsDescription, captureAstDefinitions, useAppliedDirectivesOnly);
         }
     }
 }
