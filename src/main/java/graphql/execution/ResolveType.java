@@ -27,7 +27,7 @@ public class ResolveType {
                 .field(field)
                 .fieldType(fieldType)
                 .value(source)
-                .argumentValues(executionStepInfo.getArguments())
+                .argumentValues(executionStepInfo::getArguments)
                 .selectionSet(fieldSelectionSet)
                 .context(executionContext.getContext())
                 .graphQLContext(executionContext.getGraphQLContext())

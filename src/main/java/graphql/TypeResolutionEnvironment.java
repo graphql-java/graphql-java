@@ -10,6 +10,7 @@ import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLType;
 
 import java.util.Map;
+import java.util.function.Supplier;
 
 /**
  * This is passed to a {@link graphql.schema.TypeResolver} to help with object type resolution.
@@ -21,7 +22,7 @@ import java.util.Map;
 public class TypeResolutionEnvironment {
 
     private final Object object;
-    private final ImmutableMapWithNullValues<String, Object> arguments;
+    private final Supplier<ImmutableMapWithNullValues<String, Object>> arguments;
     private final MergedField field;
     private final GraphQLType fieldType;
     private final GraphQLSchema schema;
@@ -33,7 +34,7 @@ public class TypeResolutionEnvironment {
     @Internal
     public TypeResolutionEnvironment(TypeResolutionParameters parameters) {
         this.object = parameters.getValue();
-        this.arguments = ImmutableMapWithNullValues.copyOf(parameters.getArgumentValues());
+        this.arguments = () -> ImmutableMapWithNullValues.copyOf(parameters.getArgumentValues());
         this.field = parameters.getField();
         this.fieldType = parameters.getFieldType();
         this.schema = parameters.getSchema();
@@ -60,7 +61,7 @@ public class TypeResolutionEnvironment {
      * @return the runtime arguments to this the graphql field
      */
     public Map<String, Object> getArguments() {
-        return arguments;
+        return arguments.get();
     }
 
     /**
