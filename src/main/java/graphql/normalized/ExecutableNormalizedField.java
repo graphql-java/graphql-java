@@ -167,7 +167,7 @@ public class ExecutableNormalizedField {
          */
         List<GraphQLFieldDefinition> fieldDefinitions = parent.getFieldDefinitions(schema);
         if (unwrapAll(fieldDefinitions.get(0).getType()) instanceof GraphQLUnionType) {
-            GraphQLUnionType parentOutputTypeAsUnion = (GraphQLUnionType) fieldDefinitions.get(0).getType();
+            GraphQLUnionType parentOutputTypeAsUnion = (GraphQLUnionType) unwrapAll(fieldDefinitions.get(0).getType());
             if (this.fieldName.equals(Introspection.TypeNameMetaFieldDef.getName()) && objectTypeNames.size() == parentOutputTypeAsUnion.getTypes().size()) {
                 return false; // Not conditional
             }
