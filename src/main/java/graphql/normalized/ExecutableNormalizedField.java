@@ -143,8 +143,7 @@ public class ExecutableNormalizedField {
                 toAdd.addAll((List) ((GraphQLInterfaceType) parentType).getInterfaces());
             }
             if (interfacesImplementedByAllParents == null) {
-                interfacesImplementedByAllParents = new LinkedHashSet<>();
-                interfacesImplementedByAllParents.addAll(toAdd);
+                interfacesImplementedByAllParents = new LinkedHashSet<>(toAdd);
             } else {
                 interfacesImplementedByAllParents.retainAll(toAdd);
             }
