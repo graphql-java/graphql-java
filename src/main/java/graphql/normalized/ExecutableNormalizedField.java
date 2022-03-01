@@ -166,7 +166,7 @@ public class ExecutableNormalizedField {
          *__typename is the only field in a union type that CAN be NOT conditional
          */
         List<GraphQLFieldDefinition> fieldDefinitions = parent.getFieldDefinitions(schema);
-        if (fieldDefinitions.get(0).getType() instanceof GraphQLUnionType) {
+        if (unwrapAll(fieldDefinitions.get(0).getType()) instanceof GraphQLUnionType) {
             GraphQLUnionType parentOutputTypeAsUnion = (GraphQLUnionType) fieldDefinitions.get(0).getType();
             if (this.fieldName.equals(Introspection.TypeNameMetaFieldDef.getName()) && objectTypeNames.size() == parentOutputTypeAsUnion.getTypes().size()) {
                 return false; // Not conditional
