@@ -913,9 +913,8 @@ class DataFetchingFieldSelectionSetImplTest extends Specification {
 
         selectionSet.contains("parent") // short syntax
         selectionSet.contains("parent/name") // short syntax
-        selectionSet.contains("[Cat, Dog].parent/[Cat, Dog].name")
-//        selectionSet.contains("Cat.parent/Cat.name")
-//        selectionSet.contains("Dog.parent/Dog.name")
+        selectionSet.contains("*Cat*.parent/*Cat*.name")
+        selectionSet.contains("*Dog*.parent/*Dog*.name")
 
     }
 
