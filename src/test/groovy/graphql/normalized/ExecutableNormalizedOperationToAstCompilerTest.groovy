@@ -706,12 +706,11 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
         // --Dog.isGoodBoy: Boolean
         printed == """query {
   animal {
+    __typename
     ... on Cat {
-      __typename
       name
     }
     ... on Dog {
-      __typename
       isGoodBoy
       name
     }
