@@ -24,7 +24,7 @@
 
 Copyright (c) 2015, Andreas Marek and [贡献者们](https://github.com/graphql-java/graphql-java/graphs/contributors)
 
-### 支持
+### 技术支持
 
 ![YourKit](https://www.yourkit.com/images/yklogo.png)
 
