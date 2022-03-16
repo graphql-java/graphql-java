@@ -1,6 +1,8 @@
 package graphql.analysis
 
 import graphql.ExecutionInput
+import graphql.ExecutionResult
+import graphql.GraphQL
 import graphql.TestUtil
 import graphql.execution.AbortExecutionException
 import graphql.execution.instrumentation.InstrumentationContext
@@ -160,5 +162,31 @@ class MaxQueryDepthInstrumentationTest extends Specification {
         then:
         test == true
         notThrown(Exception)
+    }
+
+    def "coercing null variables that are marked as non nullable"() {
+
+        given:
+        def schema = TestUtil.schema("""
+            type Query {
+                field(arg : String!) : String
+            }
+        """)
+
+        MaxQueryDepthInstrumentation maximumQueryDepthInstrumentation = new MaxQueryDepthInstrumentation(6)
+        def graphQL = GraphQL.newGraphQL(schema).instrumentation(maximumQueryDepthInstrumentation).build()
+
+        when:
+        def query = '''
+            query x($var : String!) {
+                field(arg : $var)
+            }
+        '''
+        def executionInput = ExecutionInput.newExecutionInput(query).variables(["var": null]).build()
+        def er = graphQL.execute(executionInput)
+
+        then:
+        ! er.errors.isEmpty()
+
     }
 }
