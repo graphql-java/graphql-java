@@ -333,6 +333,43 @@ public class GraphQLInputObjectField implements GraphQLNamedSchemaElement, Graph
             return this;
         }
 
+        // -- the following are repeated to avoid a binary incompatibility problem --
+
+        @Override
+        public Builder replaceDirectives(List<GraphQLDirective> directives) {
+            return super.replaceDirectives(directives);
+        }
+
+        @Override
+        public Builder withDirectives(GraphQLDirective... directives) {
+            return super.withDirectives(directives);
+        }
+
+        @Override
+        public Builder withDirective(GraphQLDirective directive) {
+            return super.withDirective(directive);
+        }
+
+        @Override
+        public Builder withDirective(GraphQLDirective.Builder builder) {
+            return super.withDirective(builder);
+        }
+
+        @Override
+        public Builder clearDirectives() {
+            return super.clearDirectives();
+        }
+
+        @Override
+        public Builder name(String name) {
+            return super.name(name);
+        }
+
+        @Override
+        public Builder description(String description) {
+            return super.description(description);
+        }
+
         public GraphQLInputObjectField build() {
             assertNotNull(type, () -> "type can't be null");
             return new GraphQLInputObjectField(

@@ -290,6 +290,18 @@ public class GraphQLDirective implements GraphQLNamedSchemaElement {
             return this;
         }
 
+        // -- the following are repeated to avoid a binary incompatibility problem --
+
+        @Override
+        public Builder name(String name) {
+            return super.name(name);
+        }
+
+        @Override
+        public Builder description(String description) {
+            return super.description(description);
+        }
+
         public GraphQLDirective build() {
             return new GraphQLDirective(
                     name,

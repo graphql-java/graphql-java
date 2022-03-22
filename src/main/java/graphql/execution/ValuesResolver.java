@@ -146,8 +146,7 @@ public class ValuesResolver {
     public Map<String, Object> getArgumentValues(List<GraphQLArgument> argumentTypes,
                                                  List<Argument> arguments,
                                                  Map<String, Object> coercedVariables) {
-        GraphQLCodeRegistry codeRegistry = GraphQLCodeRegistry.newCodeRegistry().fieldVisibility(DEFAULT_FIELD_VISIBILITY).build();
-        return getArgumentValuesImpl(codeRegistry, argumentTypes, arguments, coercedVariables);
+        return getArgumentValuesImpl(DEFAULT_FIELD_VISIBILITY, argumentTypes, arguments, coercedVariables);
     }
 
     /**
@@ -162,7 +161,6 @@ public class ValuesResolver {
     public Map<String, NormalizedInputValue> getNormalizedArgumentValues(List<GraphQLArgument> argumentTypes,
                                                                          List<Argument> arguments,
                                                                          Map<String, NormalizedInputValue> normalizedVariables) {
-        GraphQLCodeRegistry codeRegistry = GraphQLCodeRegistry.newCodeRegistry().fieldVisibility(DEFAULT_FIELD_VISIBILITY).build();
         if (argumentTypes.isEmpty()) {
             return Collections.emptyMap();
         }
@@ -182,7 +180,7 @@ public class ValuesResolver {
             }
 
             GraphQLInputType argumentType = argumentDefinition.getType();
-            Object value = literalToNormalizedValue(codeRegistry.getFieldVisibility(), argumentType, argument.getValue(), normalizedVariables);
+            Object value = literalToNormalizedValue(DEFAULT_FIELD_VISIBILITY, argumentType, argument.getValue(), normalizedVariables);
             result.put(argumentName, new NormalizedInputValue(simplePrint(argumentType), value));
         }
         return result;
@@ -192,7 +190,7 @@ public class ValuesResolver {
                                                  List<GraphQLArgument> argumentTypes,
                                                  List<Argument> arguments,
                                                  Map<String, Object> coercedVariables) {
-        return getArgumentValuesImpl(codeRegistry, argumentTypes, arguments, coercedVariables);
+        return getArgumentValuesImpl(codeRegistry.getFieldVisibility(), argumentTypes, arguments, coercedVariables);
     }
 
     public static Value<?> valueToLiteral(InputValueWithState inputValueWithState, GraphQLType type) {
@@ -427,7 +425,7 @@ public class ValuesResolver {
     }
 
 
-    private Map<String, Object> getArgumentValuesImpl(GraphQLCodeRegistry codeRegistry,
+    private Map<String, Object> getArgumentValuesImpl(GraphqlFieldVisibility fieldVisibility,
                                                       List<GraphQLArgument> argumentTypes,
                                                       List<Argument> arguments,
                                                       Map<String, Object> coercedVariables
@@ -455,7 +453,7 @@ public class ValuesResolver {
             }
             if (!hasValue && argumentDefinition.hasSetDefaultValue()) {
                 Object coercedDefaultValue = defaultValueToInternalValue(
-                        codeRegistry.getFieldVisibility(),
+                        fieldVisibility,
                         defaultValue,
                         argumentType);
                 coercedValues.put(argumentName, coercedDefaultValue);
@@ -467,7 +465,7 @@ public class ValuesResolver {
                 } else if (argumentValue instanceof VariableReference) {
                     coercedValues.put(argumentName, value);
                 } else {
-                    value = literalToInternalValue(codeRegistry.getFieldVisibility(), argumentType, argument.getValue(), coercedVariables);
+                    value = literalToInternalValue(fieldVisibility, argumentType, argument.getValue(), coercedVariables);
                     coercedValues.put(argumentName, value);
                 }
             }
