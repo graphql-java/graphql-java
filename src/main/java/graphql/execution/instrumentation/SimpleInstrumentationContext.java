@@ -2,6 +2,7 @@ package graphql.execution.instrumentation;
 
 import graphql.PublicApi;
 
+import javax.annotation.Nonnull;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -24,6 +25,19 @@ public class SimpleInstrumentationContext<T> implements InstrumentationContext<T
     @SuppressWarnings("unchecked")
     public static <T> InstrumentationContext<T> noOp() {
         return (InstrumentationContext<T>) NO_OP;
+    }
+
+    /**
+     * This creates a no-op {@link InstrumentationContext} if the one pass in is null
+     *
+     * @param nullableContext a {@link InstrumentationContext} that can be null
+     * @param <T>             for two
+     *
+     * @return a non null {@link InstrumentationContext} that maybe a no-op
+     */
+    @Nonnull
+    public static <T> InstrumentationContext<T> nonNullCtx(InstrumentationContext<T> nullableContext) {
+        return nullableContext == null ? noOp() : nullableContext;
     }
 
     private final BiConsumer<T, Throwable> codeToRunOnComplete;
@@ -86,7 +100,7 @@ public class SimpleInstrumentationContext<T> implements InstrumentationContext<T
             } else {
                 targetCF.complete(result);
             }
-            instrumentationContext.onCompleted(result, throwable);
+            nonNullCtx(instrumentationContext).onCompleted(result, throwable);
         };
     }
 
