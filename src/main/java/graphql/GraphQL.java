@@ -16,6 +16,7 @@ import graphql.execution.instrumentation.DocumentAndVariables;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationState;
+import graphql.execution.instrumentation.NoContextChainedInstrumentation;
 import graphql.execution.instrumentation.SimpleInstrumentation;
 import graphql.execution.instrumentation.dataloader.DataLoaderDispatcherInstrumentation;
 import graphql.execution.instrumentation.parameters.InstrumentationCreateStateParameters;
@@ -662,6 +663,9 @@ public class GraphQL {
             return instrumentation == null ? SimpleInstrumentation.INSTANCE : instrumentation;
         }
         if (instrumentation instanceof DataLoaderDispatcherInstrumentation) {
+            return instrumentation;
+        }
+        if (instrumentation instanceof NoContextChainedInstrumentation) {
             return instrumentation;
         }
         if (instrumentation == null) {

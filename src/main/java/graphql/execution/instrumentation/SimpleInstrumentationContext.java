@@ -13,7 +13,15 @@ import java.util.function.Consumer;
 @PublicApi
 public class SimpleInstrumentationContext<T> implements InstrumentationContext<T> {
 
-    private static final InstrumentationContext<Object> NO_OP = new SimpleInstrumentationContext<>();
+    private static final InstrumentationContext<Object> NO_OP = new InstrumentationContext<Object>() {
+        @Override
+        public void onDispatched(CompletableFuture<Object> result) {
+        }
+
+        @Override
+        public void onCompleted(Object result, Throwable t) {
+        }
+    };
 
     /**
      * A context that does nothing

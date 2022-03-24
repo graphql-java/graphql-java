@@ -77,7 +77,9 @@ public interface Instrumentation {
      */
     @Deprecated
     @Nonnull
-    InstrumentationContext<ExecutionResult> beginExecution(InstrumentationExecutionParameters parameters);
+    default InstrumentationContext<ExecutionResult> beginExecution(InstrumentationExecutionParameters parameters) {
+        return noOp();
+    }
 
     /**
      * This is called right at the start of query execution, and it's the first step in the instrumentation chain.
@@ -103,7 +105,9 @@ public interface Instrumentation {
      */
     @Deprecated
     @Nonnull
-    InstrumentationContext<Document> beginParse(InstrumentationExecutionParameters parameters);
+    default InstrumentationContext<Document> beginParse(InstrumentationExecutionParameters parameters) {
+        return noOp();
+    }
 
     /**
      * This is called just before a query is parsed.
@@ -129,7 +133,9 @@ public interface Instrumentation {
      */
     @Deprecated
     @Nonnull
-    InstrumentationContext<List<ValidationError>> beginValidation(InstrumentationValidationParameters parameters);
+    default InstrumentationContext<List<ValidationError>> beginValidation(InstrumentationValidationParameters parameters) {
+        return noOp();
+    }
 
     /**
      * This is called just before the parsed query document is validated.
@@ -155,7 +161,9 @@ public interface Instrumentation {
      */
     @Deprecated
     @Nonnull
-    InstrumentationContext<ExecutionResult> beginExecuteOperation(InstrumentationExecuteOperationParameters parameters);
+    default InstrumentationContext<ExecutionResult> beginExecuteOperation(InstrumentationExecuteOperationParameters parameters) {
+        return noOp();
+    }
 
     /**
      * This is called just before the execution of the query operation is started.
@@ -182,7 +190,9 @@ public interface Instrumentation {
      */
     @Deprecated
     @Nonnull
-    ExecutionStrategyInstrumentationContext beginExecutionStrategy(InstrumentationExecutionStrategyParameters parameters);
+    default ExecutionStrategyInstrumentationContext beginExecutionStrategy(InstrumentationExecutionStrategyParameters parameters) {
+        return ExecutionStrategyInstrumentationContext.NOOP;
+    }
 
     /**
      * This is called each time an {@link graphql.execution.ExecutionStrategy} is invoked, which may be multiple times
@@ -238,7 +248,9 @@ public interface Instrumentation {
      */
     @Deprecated
     @Nonnull
-    InstrumentationContext<ExecutionResult> beginField(InstrumentationFieldParameters parameters);
+    default InstrumentationContext<ExecutionResult> beginField(InstrumentationFieldParameters parameters) {
+        return noOp();
+    }
 
     /**
      * This is called just before a field is resolved into a value.
@@ -264,7 +276,9 @@ public interface Instrumentation {
      */
     @Deprecated
     @Nonnull
-    InstrumentationContext<Object> beginFieldFetch(InstrumentationFieldFetchParameters parameters);
+    default InstrumentationContext<Object> beginFieldFetch(InstrumentationFieldFetchParameters parameters) {
+        return noOp();
+    }
 
     /**
      * This is called just before a field {@link DataFetcher} is invoked.
