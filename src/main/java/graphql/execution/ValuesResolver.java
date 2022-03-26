@@ -418,6 +418,8 @@ public class ValuesResolver {
                         .cause(e.getCause())
                         .sourceLocation(variableDefinition.getSourceLocation())
                         .build();
+            } catch (NonNullableValueCoercedAsNullException e) {
+                throw new NonNullableValueCoercedAsNullException(variableDefinition, e.getMessage());
             }
         }
 
@@ -495,7 +497,7 @@ public class ValuesResolver {
             Object returnValue =
                     externalValueToInternalValue(fieldVisibility, unwrapOne(graphQLType), value);
             if (returnValue == null) {
-                throw new NonNullableValueCoercedAsNullException("", emptyList(), graphQLType);
+                throw new NonNullableValueCoercedAsNullException(emptyList(), graphQLType);
             }
             return returnValue;
         }
