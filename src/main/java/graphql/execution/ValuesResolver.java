@@ -497,7 +497,7 @@ public class ValuesResolver {
             Object returnValue =
                     externalValueToInternalValue(fieldVisibility, unwrapOne(graphQLType), value);
             if (returnValue == null) {
-                throw new NonNullableValueCoercedAsNullException(emptyList(), graphQLType);
+                throw new NonNullableValueCoercedAsNullException(graphQLType);
             }
             return returnValue;
         }

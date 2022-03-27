@@ -43,15 +43,12 @@ public class NonNullableValueCoercedAsNullException extends GraphQLException imp
         this.path = path;
     }
 
-    public NonNullableValueCoercedAsNullException(List<Object> path, GraphQLType graphQLType) {
-        super(format("Coerced Null value for NonNull type '%s'",
-                GraphQLTypeUtil.simplePrint(graphQLType)));
-        this.path = path;
+    public NonNullableValueCoercedAsNullException(GraphQLType graphQLType) {
+        super(format("Coerced Null value for NonNull type '%s'", GraphQLTypeUtil.simplePrint(graphQLType)));
     }
 
     public NonNullableValueCoercedAsNullException(VariableDefinition variableDefinition, String causeMessage) {
-        super(format("Variable '%s' has invalid value: %s",
-                variableDefinition.getName(), causeMessage));
+        super(format("Variable '%s' has an invalid value: %s", variableDefinition.getName(), causeMessage));
         this.sourceLocations = Collections.singletonList(variableDefinition.getSourceLocation());
     }
 
