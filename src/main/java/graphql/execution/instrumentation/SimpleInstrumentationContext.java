@@ -39,10 +39,11 @@ public class SimpleInstrumentationContext<T> implements InstrumentationContext<T
     }
 
     @Override
-    public void onDispatched(CompletableFuture<T> result) {
+    public CompletableFuture<T> onDispatched(CompletableFuture<T> result) {
         if (codeToRunOnDispatch != null) {
             codeToRunOnDispatch.accept(result);
         }
+        return result;
     }
 
     @Override

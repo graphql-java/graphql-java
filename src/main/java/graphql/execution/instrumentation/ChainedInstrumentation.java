@@ -1,6 +1,7 @@
 package graphql.execution.instrumentation;
 
 import com.google.common.collect.ImmutableList;
+
 import graphql.ExecutionInput;
 import graphql.ExecutionResult;
 import graphql.PublicApi;
@@ -229,8 +230,11 @@ public class ChainedInstrumentation implements Instrumentation {
         }
 
         @Override
-        public void onDispatched(CompletableFuture<T> result) {
-            contexts.forEach(context -> context.onDispatched(result));
+        public CompletableFuture<T> onDispatched(CompletableFuture<T> result) {
+            return CompletableFuture.allOf(contexts.stream()
+                    .map(context -> context.onDispatched(result))
+                    .toArray(CompletableFuture<?>[]::new))
+                .thenCompose(__ -> result);
         }
 
         @Override
@@ -248,8 +252,11 @@ public class ChainedInstrumentation implements Instrumentation {
         }
 
         @Override
-        public void onDispatched(CompletableFuture<ExecutionResult> result) {
-            contexts.forEach(context -> context.onDispatched(result));
+        public CompletableFuture<ExecutionResult> onDispatched(CompletableFuture<ExecutionResult> result) {
+            return CompletableFuture.allOf(contexts.stream()
+                    .map(context -> context.onDispatched(result))
+                    .toArray(CompletableFuture<?>[]::new))
+                .thenCompose(__ -> result);
         }
 
         @Override
@@ -258,8 +265,10 @@ public class ChainedInstrumentation implements Instrumentation {
         }
 
         @Override
-        public void onFieldValuesInfo(List<FieldValueInfo> fieldValueInfoList) {
-            contexts.forEach(context -> context.onFieldValuesInfo(fieldValueInfoList));
+        public CompletableFuture<Void> onFieldValuesInfo(List<FieldValueInfo> fieldValueInfoList) {
+            return CompletableFuture.allOf(contexts.stream()
+                    .map(context -> context.onFieldValuesInfo(fieldValueInfoList))
+                    .toArray(CompletableFuture<?>[]::new));
         }
 
     }

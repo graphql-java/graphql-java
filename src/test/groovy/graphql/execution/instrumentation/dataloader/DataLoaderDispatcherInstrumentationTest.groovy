@@ -99,9 +99,9 @@ class DataLoaderDispatcherInstrumentationTest extends Specification {
         def dispatchedCalled = false
         def dataLoaderRegistry = new DataLoaderRegistry() {
             @Override
-            void dispatchAll() {
+            CompletableFuture<?> dispatch() {
                 dispatchedCalled = true
-                super.dispatchAll()
+                super.dispatch()
             }
         }
         def dataLoader = DataLoader.newDataLoader(new BatchLoader() {

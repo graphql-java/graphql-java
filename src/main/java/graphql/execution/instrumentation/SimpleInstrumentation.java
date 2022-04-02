@@ -45,8 +45,8 @@ public class SimpleInstrumentation implements Instrumentation {
     public ExecutionStrategyInstrumentationContext beginExecutionStrategy(InstrumentationExecutionStrategyParameters parameters) {
         return new ExecutionStrategyInstrumentationContext() {
             @Override
-            public void onDispatched(CompletableFuture<ExecutionResult> result) {
-
+            public CompletableFuture<ExecutionResult> onDispatched(CompletableFuture<ExecutionResult> result) {
+                return result;
             }
 
             @Override

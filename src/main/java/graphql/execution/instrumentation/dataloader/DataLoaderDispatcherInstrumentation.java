@@ -80,18 +80,18 @@ public class DataLoaderDispatcherInstrumentation extends SimpleInstrumentation {
             return dataFetcher;
         }
         //
-        // currently only AsyncExecutionStrategy with DataLoader and hence this allows us to "dispatch"
-        // on every object if its not using aggressive batching for other execution strategies
+        // currently, only AsyncExecutionStrategy with DataLoader and hence this allows us to "dispatch"
+        // on every object if it's not using aggressive batching for other execution strategies
         // which allows them to work if used.
         return (DataFetcher<Object>) environment -> {
             Object obj = dataFetcher.get(environment);
-            immediatelyDispatch(state);
-            return obj;
+            return Async.toCompletableFuture(obj)
+                .thenCombine(immediatelyDispatch(state), (result, __) -> result);
         };
     }
 
-    private void immediatelyDispatch(DataLoaderDispatcherInstrumentationState state) {
-        state.getApproach().dispatch();
+    private CompletableFuture<Void> immediatelyDispatch(DataLoaderDispatcherInstrumentationState state) {
+        return state.getApproach().dispatch();
     }
 
     @Override
@@ -128,7 +128,8 @@ public class DataLoaderDispatcherInstrumentation extends SimpleInstrumentation {
         if (state.hasNoDataLoaders()) {
             return new ExecutionStrategyInstrumentationContext() {
                 @Override
-                public void onDispatched(CompletableFuture<ExecutionResult> result) {
+                public CompletableFuture<ExecutionResult> onDispatched(CompletableFuture<ExecutionResult> result) {
+                    return result;
                 }
 
                 @Override

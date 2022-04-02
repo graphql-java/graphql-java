@@ -25,10 +25,11 @@ class TestingInstrumentContext<T> implements InstrumentationContext<T> {
     }
 
     @Override
-    void onDispatched(CompletableFuture<T> result) {
+    CompletableFuture<T> onDispatched(CompletableFuture<T> result) {
         if (useOnDispatch) {
             this.executionList << "onDispatched:$op"
         }
+        result
     }
 
     @Override

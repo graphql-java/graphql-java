@@ -131,8 +131,8 @@ public class FieldLevelTrackingApproach {
 
         return new ExecutionStrategyInstrumentationContext() {
             @Override
-            public void onDispatched(CompletableFuture<ExecutionResult> result) {
-
+            public CompletableFuture<ExecutionResult> onDispatched(CompletableFuture<ExecutionResult> result) {
+                return result;
             }
 
             @Override
@@ -141,14 +141,15 @@ public class FieldLevelTrackingApproach {
             }
 
             @Override
-            public void onFieldValuesInfo(List<FieldValueInfo> fieldValueInfoList) {
+            public CompletableFuture<Void> onFieldValuesInfo(List<FieldValueInfo> fieldValueInfoList) {
                 boolean dispatchNeeded;
                 synchronized (callStack) {
                     dispatchNeeded = handleOnFieldValuesInfo(fieldValueInfoList, callStack, curLevel);
                 }
                 if (dispatchNeeded) {
-                    dispatch();
+                    return dispatch();
                 }
+                return CompletableFuture.completedFuture(null);
             }
 
             @Override
@@ -197,16 +198,16 @@ public class FieldLevelTrackingApproach {
         return new InstrumentationContext<Object>() {
 
             @Override
-            public void onDispatched(CompletableFuture result) {
+            public CompletableFuture<Object> onDispatched(CompletableFuture<Object> result) {
                 boolean dispatchNeeded;
                 synchronized (callStack) {
                     callStack.increaseFetchCount(level);
                     dispatchNeeded = dispatchIfNeeded(callStack, level);
                 }
                 if (dispatchNeeded) {
-                    dispatch();
+                    return result.thenCombine(dispatch(), (value, __) -> value);
                 }
-
+                return result;
             }
 
             @Override
@@ -241,12 +242,17 @@ public class FieldLevelTrackingApproach {
         return false;
     }
 
-    void dispatch() {
+    CompletableFuture<Void> dispatch() {
         DataLoaderRegistry dataLoaderRegistry = getDataLoaderRegistry();
         if (log.isDebugEnabled()) {
             log.debug("Dispatching data loaders ({})", dataLoaderRegistry.getKeys());
         }
-        dataLoaderRegistry.dispatchAll();
+        return dataLoaderRegistry.dispatch().thenApply(count -> {
+            if (log.isDebugEnabled()) {
+                log.debug("Dispatched {} keys to load", count);
+            }
+            return null;
+        });
     }
 
     private DataLoaderRegistry getDataLoaderRegistry() {

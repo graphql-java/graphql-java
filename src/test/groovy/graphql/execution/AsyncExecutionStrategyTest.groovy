@@ -246,17 +246,17 @@ class AsyncExecutionStrategyTest extends Specification {
                         return new ExecutionStrategyInstrumentationContext() {
 
                             @Override
-                            void onFieldValuesInfo(List<FieldValueInfo> fieldValueInfoList) {
+                            CompletableFuture<Void> onFieldValuesInfo(List<FieldValueInfo> fieldValueInfoList) {
                                 throw new RuntimeException("Exception raised from instrumentation")
                             }
 
                             @Override
-                            public void onDispatched(CompletableFuture<ExecutionResult> result) {
-
+                            CompletableFuture<ExecutionResult> onDispatched(CompletableFuture<ExecutionResult> result) {
+                                return result;
                             }
 
                             @Override
-                            public void onCompleted(ExecutionResult result, Throwable t) {
+                            void onCompleted(ExecutionResult result, Throwable t) {
 
                             }
                         }
