@@ -286,8 +286,7 @@ public abstract class ExecutionStrategy {
             fetchedValue = new CompletableFuture<>();
             fetchedValue.completeExceptionally(e);
         }
-        fetchCtx.onDispatched(fetchedValue);
-        return fetchedValue
+        return fetchCtx.onDispatched(fetchedValue)
                 .handle((result, exception) -> {
                     fetchCtx.onCompleted(result, exception);
                     if (exception != null) {

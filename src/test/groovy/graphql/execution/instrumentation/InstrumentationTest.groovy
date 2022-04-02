@@ -146,7 +146,7 @@ class InstrumentationTest extends Specification {
 
         then:
         instrumentation.throwableList.size() == 1
-        instrumentation.throwableList[0].getMessage() == "DF BANG!"
+        instrumentation.throwableList[0].getCause().getMessage() == "DF BANG!"
     }
 
     /**
