@@ -702,7 +702,7 @@ public class Anonymizer {
             Set<GraphQLFieldDefinition> fieldDefinitions) {
         List<GraphQLArgument> result = new ArrayList<>();
         for (GraphQLFieldDefinition fieldDefinition : fieldDefinitions) {
-            Optional.ofNullable(fieldDefinition.getArgument(name)).map(result::add);
+            Optional.ofNullable(fieldDefinition.getArgument(name)).ifPresent(result::add);
         }
         return result;
     }
@@ -738,7 +738,7 @@ public class Anonymizer {
 
                     for (Argument argument : directive.getArguments()) {
                         GraphQLArgument argumentDefinition = directiveDefinition.getArgument(argument.getName());
-                        String newArgumentName = assertNotNull(newNames.get(argumentDefinition), () -> format("%s no new name found for directive argument %s %s", directiveName, argument.getName()));
+                        String newArgumentName = assertNotNull(newNames.get(argumentDefinition), () -> format("No new name found for directive %s argument %s", directiveName, argument.getName()));
                         astNodeToNewName.put(argument, newArgumentName);
                         visitDirectiveArgumentValues(directive, argument.getValue());
                     }
