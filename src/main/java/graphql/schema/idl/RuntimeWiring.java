@@ -121,6 +121,26 @@ public class RuntimeWiring {
         return comparatorRegistry;
     }
 
+    /**
+     * @return a Builder based on this RuntimeWiring
+     */
+    public Builder newBuilder() {
+        Builder builder = new Builder();
+        builder.dataFetchers.putAll(dataFetchers);
+        builder.defaultDataFetchers.putAll(defaultDataFetchers);
+        builder.scalars.putAll(scalars);
+        builder.typeResolvers.putAll(typeResolvers);
+        builder.registeredDirectiveWiring.putAll(registeredDirectiveWiring);
+        builder.directiveWiring.addAll(directiveWiring);
+        builder.wiringFactory = wiringFactory;
+        builder.enumValuesProviders.putAll(enumValuesProviders);
+        builder.schemaGeneratorPostProcessings.addAll(schemaGeneratorPostProcessings);
+        builder.fieldVisibility = fieldVisibility;
+        builder.codeRegistry = codeRegistry;
+        builder.comparatorRegistry = comparatorRegistry;
+        return builder;
+    }
+
     @PublicApi
     public static class Builder {
         private final Map<String, Map<String, DataFetcher>> dataFetchers = new LinkedHashMap<>();
