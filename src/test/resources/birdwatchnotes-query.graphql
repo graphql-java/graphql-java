@@ -1,0 +1,3042 @@
+query BirdwatchFetchGlobalTimeline($cursor: String = null, $context: String = null, $includePromotedContent: Boolean = false, $withBirdwatchNotes: Boolean = false, $withDownvotePerspective: Boolean!, $withReactionsMetadata: Boolean!, $withReactionsPerspective: Boolean!, $withSuperFollowsTweetFields: Boolean!, $withSuperFollowsUserFields: Boolean!, $withDmMuting: Boolean = false, $withClientEventToken: Boolean = false, $withVoice: Boolean = false, $isListMemberTargetUserId: NumericString = "0", $withCommunity: Boolean = false, $withQuickPromoteEligibilityTweetFields: Boolean = false, $withSafetyModeUserFields: Boolean = false, $__fs_dont_mention_me_view_api_enabled: Boolean! = false, $__fs_interactive_text_enabled: Boolean! = false, $__fs_responsive_web_uc_gql_enabled: Boolean! = false) {
+  viewer: viewer_v2(safety_level: FilterAll) {
+    birdwatch_home_page {
+      ...Page
+    }
+  }
+}
+
+fragment Page on Page {
+  id
+  body: page_body {
+    __typename
+    ... on Timeline {
+      timeline(cards_platform: "Web-12", cursor: $cursor, context: $context) {
+        ...TimelineTimeline
+      }
+    }
+    ... on SegmentedTimelines {
+      ...SegmentedTimelines
+    }
+  }
+  scribeConfig: scribe_config {
+    page
+    section
+  }
+  header: page_header {
+    __typename
+    ...TopicPageHeader
+  }
+  navBar: page_nav_bar {
+    __typename
+    ... on TopicPageNavBar {
+      ...TopicPageNavBar
+    }
+    ... on TitleNavBar {
+      ...TitleNavBar
+    }
+  }
+}
+
+fragment TimelineTimeline on TimelineTimeline {
+  instructions {
+    ...TimelineTimelineInstruction
+  }
+  responseObjects: response_objects {
+    ...TimelineResponseObjects
+  }
+  metadata {
+    ...TimelineTimelineMetadata
+  }
+}
+
+fragment SegmentedTimelines on SegmentedTimelines {
+  timelines {
+    ... on SegmentedTimeline {
+      ...SegmentedTimelineCommonFields
+      timeline {
+        id
+      }
+    }
+  }
+  initialTimeline: initial_timeline {
+    ... on SegmentedTimeline {
+      ...SegmentedTimelineCommonFields
+      timeline {
+        timeline(cards_platform: "Web-12") {
+          ...TimelineTimeline
+        }
+      }
+    }
+  }
+}
+
+fragment TopicPageHeader on TopicPageHeader {
+  topic {
+    ...Topic
+  }
+  facepile {
+    userResults: users_results {
+      ...UserResults
+    }
+    facepileUrl: facepile_url {
+      ...TimelineUrl
+    }
+  }
+  landingContext: landing_context
+  clientEventInfo: client_event_info {
+    ...TimelineClientEventInfo
+  }
+  displayType: display_type
+}
+
+fragment TopicPageNavBar on TopicPageNavBar {
+  topic {
+    ...Topic
+  }
+  clientEventInfo: client_event_info {
+    ...TimelineClientEventInfo
+  }
+}
+
+fragment TitleNavBar on TitleNavBar {
+  title
+  subtitle
+  clientEventInfo: client_event_info {
+    ...TimelineClientEventInfo
+  }
+}
+
+fragment TimelineTimelineInstruction on TimelineTimelineInstruction {
+  type: __typename
+  ... on TimelineAddEntries {
+    entries {
+      ...TimelineTimelineEntry
+    }
+  }
+  ... on TimelineRemoveEntries {
+    entry_ids
+  }
+  ... on TimelineReplaceEntry {
+    entry_id_to_replace
+    entry {
+      ...TimelineTimelineEntry
+    }
+  }
+  ... on TimelinePinEntry {
+    entry {
+      ...TimelineTimelineEntry
+    }
+  }
+  ... on TimelineAddToModule {
+    moduleItems: module_items {
+      ...TimelineModuleItem
+    }
+    moduleEntryId: module_entry_id
+    moduleItemEntryId: module_item_entry_id
+    prepend
+  }
+  ... on TimelineShowCover {
+    ...TimelineShowCover
+  }
+  ... on TimelineTerminateTimeline {
+    direction
+  }
+  ... on TimelineShowAlert {
+    ...TimelineShowAlert
+  }
+}
+
+fragment TimelineResponseObjects on TimelineResponseObjects {
+  feedbackActions: feedback_actions {
+    key
+    value {
+      feedbackType: feedback_type
+      prompt
+      subprompt
+      confirmation
+      childKeys: child_keys
+      feedbackUrl: feedback_url
+      encodedFeedbackRequest: encoded_feedback_request
+      hasUndoAction: has_undo_action
+      confirmationDisplayType: confirmation_display_type
+      icon
+      richBehavior: rich_behavior {
+        ...TimelineRichFeedbackBehavior
+      }
+      clientEventInfo: client_event_info {
+        ...TimelineClientEventInfo
+      }
+    }
+  }
+  immediateReactions: immediate_reactions {
+    key
+    value {
+      ...TimelineTimelineInstruction
+    }
+  }
+}
+
+fragment TimelineTimelineMetadata on TimelineTimelineMetadata {
+  reader_mode_config {
+    is_reader_mode_available
+  }
+  title
+  scribeConfig: scribe_config {
+    page
+    section
+  }
+}
+
+fragment SegmentedTimelineCommonFields on SegmentedTimeline {
+  id
+  labelText: label_text
+  scribeConfig: scribe_config {
+    page
+    section
+  }
+  refreshIntervalSec: refresh_interval_sec
+}
+
+fragment Topic on Topic {
+  description
+  following
+  icon_url
+  topic_id
+  name
+  not_interested
+}
+
+fragment UserResults on UserResults {
+  result {
+    __typename
+    ... on User {
+      ...User
+    }
+    ... on UserUnavailable {
+      ...UserUnavailable
+    }
+  }
+}
+
+fragment TimelineUrl on TimelineUrl {
+  url
+  urlType: url_type
+  urtEndpointOptions: urt_endpoint_options {
+    ...TimelineUrtEndpointOptions
+  }
+}
+
+fragment TimelineClientEventInfo on TimelineClientEventInfo {
+  action
+  component
+  element
+  entityToken: entity_token @include(if: $withClientEventToken)
+  details {
+    article_details {
+      article_position
+      share_count
+    }
+    conversationDetails: conversation_details {
+      conversationSection: conversation_section
+    }
+    guideDetails: guide_details {
+      identifier
+      token
+      transparentGuideDetails: transparent_guide_details {
+        type: __typename
+        ... on TimelineEventUrtMetadata {
+          impressionId: impression_id
+          position
+          sourceId: source_id
+          eventId: event_id
+          categoryModule: category_module
+          isHero: is_hero
+        }
+        ... on TimelineNewsModuleMetadata {
+          domain
+          url
+          title
+        }
+        ... on TimelineSemanticCoreInterest {
+          domainId: domain_id
+          entityId: entity_id
+        }
+        ... on TimelineTrendUrtMetadata {
+          impressionId: impression_id
+          impressionToken: impression_token
+          position
+          trendName: trend_name
+          relatedTerms: related_terms
+          associatedCardUrls: associated_card_urls
+          clusterId: cluster_id
+          categoryModule: category_module
+        }
+        ... on TimelineSimClusterInterest {
+          simClusterId: sim_cluster_id
+        }
+        ... on TimelineTttInterest {
+          tttGroupId: ttt_group_id
+          tttStreamId: ttt_stream_id
+        }
+      }
+    }
+    live_event_details {
+      eventId: event_id
+    }
+    momentsDetails: moments_details {
+      momentId: moment_id
+      guideCategoryId: guide_category_id
+      impressionId: impression_id
+      contextScribeInfo: context_scribe_info {
+        position
+        is_last_position
+      }
+    }
+    news_details {
+      url_id
+      candidate_source
+    }
+    notificationDetails: notification_details {
+      impressionId: impression_id
+      metadata
+    }
+    periscope_details {
+      broadcast_id
+    }
+    search_result_details {
+      injected
+      cluster_source
+      result_placement_type
+    }
+    timelinesDetails: timelines_details {
+      injectionType: injection_type
+      controllerData: controller_data
+      sourceData: source_data
+    }
+    topicDetails: topic_details {
+      topicId: topic_id
+      topicType: topic_type
+      topicInfo: topic_info
+    }
+    trends_details {
+      impression_id
+      impression_token
+      position
+      trend_name
+    }
+  }
+}
+
+fragment TimelineTimelineEntry on TimelineTimelineEntry {
+  entryId: entry_id
+  sortIndex: sort_index
+  content {
+    entryType: __typename
+    ... on TimelineTimelineItem {
+      ...TimelineTimelineItem
+    }
+    ... on TimelineTimelineCursor {
+      ...TimelineTimelineCursor
+    }
+    ... on TimelineTimelineModule {
+      ...TimelineTimelineModule
+    }
+  }
+}
+
+fragment TimelineModuleItem on TimelineModuleItem {
+  entryId: entry_id
+  dispensable
+  item {
+    ...TimelineTimelineItem
+  }
+  treeDisplay: tree_display {
+    ...TimelineModuleItemTreeDisplay
+  }
+}
+
+fragment TimelineShowCover on TimelineShowCover {
+  clientEventInfo: client_event_info {
+    ...TimelineClientEventInfo
+  }
+  cover {
+    ...TimelineCover
+  }
+}
+
+fragment TimelineShowAlert on TimelineShowAlert {
+  alertType: alert_type
+  triggerDelayMs: trigger_delay_ms
+  displayDurationMs: display_duration_ms
+  clientEventInfo: client_event_info {
+    ...TimelineClientEventInfo
+  }
+  collapseDelayMs: collapse_delay_ms
+  usersResults: users_results {
+    ...UserResults
+  }
+  richText: rich_text {
+    ...TimelineRichText
+  }
+  iconDisplayInfo: icon_display_info {
+    ...TimelineShowAlertIconDisplayInfo
+  }
+  colorConfig: color_config {
+    ...TimelineShowAlertColorConfiguration
+  }
+  displayLocation: display_location
+  navigationMetadata: navigation_metadata {
+    navigateToEntryId: navigate_to_entry_id
+  }
+}
+
+fragment TimelineRichFeedbackBehavior on TimelineRichFeedbackBehavior {
+  type: __typename
+  ... on TimelineRichFeedbackBehaviorBlockUser {
+    user_results {
+      ...UserResults
+    }
+  }
+  ... on TimelineRichFeedbackBehaviorReportList {
+    user_results {
+      ...UserResults
+    }
+    list {
+      ...List
+    }
+  }
+  ... on TimelineRichFeedbackBehaviorToggleMuteList {
+    list {
+      ...List
+    }
+  }
+  ... on TimelineRichFeedbackBehaviorToggleFollowTopicV2 {
+    topic {
+      ...Topic
+    }
+  }
+  ... on TimelineRichFeedbackBehaviorMarkNotInterestedTopic {
+    topic {
+      ...Topic
+    }
+  }
+}
+
+fragment User on User {
+  id
+  rest_id
+  affiliates_highlighted_label: identity_profile_labels_highlighted_label {
+    label {
+      ...HighlightedUserLabel
+    }
+  }
+  dm_muting @include(if: $withDmMuting)
+  has_nft_avatar
+  legacy {
+    ...ApiUser
+  }
+  professional {
+    ...Professional
+  }
+  smart_blocked_by @include(if: $withSafetyModeUserFields)
+  smart_blocking @include(if: $withSafetyModeUserFields)
+  smart_blocking_expiration @include(if: $withSafetyModeUserFields)
+  super_follow_eligible @include(if: $withSuperFollowsUserFields)
+  super_followed_by @include(if: $withSuperFollowsUserFields)
+  super_following @include(if: $withSuperFollowsUserFields)
+}
+
+fragment UserUnavailable on UserUnavailable {
+  message
+  unavailable_message {
+    ... on TimelineRichText {
+      alignment
+      entities {
+        fromIndex: from_index
+        toIndex: to_index
+        format
+        ref {
+          ...ShallowTimelineReferenceObject
+        }
+      }
+      rtl
+      text
+    }
+  }
+  reason: unavailable_reason
+}
+
+fragment TimelineUrtEndpointOptions on TimelineUrtEndpointOptions {
+  cacheId: cache_id
+  subtitle
+  title
+  requestParams: request_params {
+    key
+    value
+  }
+}
+
+fragment TimelineTimelineItem on TimelineTimelineItem {
+  itemContent: content {
+    itemType: __typename
+    ... on TimelineCommunity {
+      ...TimelineCommunity
+    }
+    ... on TimelineTweet {
+      ...TimelineTweet
+    }
+    ... on TimelineUser {
+      ...TimelineUser
+    }
+    ... on TimelineLabel {
+      ...TimelineLabel
+    }
+    ... on TimelineNews {
+      ...TimelineNews
+    }
+    ... on TimelineTombstone {
+      ...TimelineTombstone
+    }
+    ... on TimelineTopic {
+      ...TimelineTopic
+    }
+    ... on TimelineTopicFollowPrompt {
+      ...TimelineTopicFollowPrompt
+    }
+    ... on TopicLandingHeader {
+      ...TopicLandingHeader
+    }
+    ... on TimelinePrompt {
+      ...TimelinePrompt
+    }
+    ... on TimelineTimelineCursor {
+      ...TimelineTimelineCursor
+    }
+    ... on TimelineTwitterList {
+      ...TimelineTwitterList
+    }
+    ... on TimelineTile {
+      ...TimelineTile
+    }
+    ... on TimelineVerticalGridItem {
+      ...TimelineVerticalGridItem
+    }
+    ... on TimelineEventSummary {
+      ...TimelineEventSummary
+    }
+    ... on TimelineTweetComposer {
+      ...TimelineTweetComposer
+    }
+    ... on TimelineMessagePrompt {
+      ...TimelineMessagePrompt
+    }
+    ... on TimelineArticle {
+      ...TimelineArticle
+    }
+    ... on TimelineThreadHeaderItem {
+      ...TimelineThreadHeaderItem
+    }
+    ... on TimelinePagedCarouselItem {
+      ...TimelinePagedCarouselItem
+    }
+  }
+  feedbackInfo: feedback_info {
+    ...TimelineFeedbackInfo
+  }
+  clientEventInfo: client_event_info {
+    ...TimelineClientEventInfo
+  }
+  reactiveTriggers: reactive_triggers {
+    onLinger: on_linger {
+      ...TimelineTimelineReaction
+    }
+  }
+}
+
+fragment TimelineTimelineCursor on TimelineTimelineCursor {
+  value
+  cursorType: cursor_type
+  displayTreatment: display_treatment {
+    actionText: action_text
+    labelText: label_text
+  }
+  stopOnEmptyResponse: stop_on_empty_response
+}
+
+fragment TimelineTimelineModule on TimelineTimelineModule {
+  items {
+    ...TimelineModuleItem
+  }
+  metadata {
+    conversationMetadata: conversation_metadata {
+      ...TimelineModuleConversationMetadata
+    }
+    gridCarouselMetadata: grid_carousel_metadata {
+      numRows: num_rows
+    }
+  }
+  displayType: display_type
+  header {
+    displayType: display_type
+    text
+    icon
+    socialContext: social_context {
+      ...TimelineSocialContext
+    }
+    sticky
+  }
+  showMore: show_more_behavior {
+    ... on TimelineModuleShowMoreBehaviorRevealByCount {
+      initialItemsCount: initial_items_count
+      showMoreItemsCount: show_more_items_count
+    }
+  }
+  footer {
+    displayType: display_type
+    text
+    landingUrl: landing_url {
+      ...TimelineUrl
+    }
+    url
+  }
+  clientEventInfo: client_event_info {
+    ...TimelineClientEventInfo
+  }
+  feedbackInfo: feedback_info {
+    ...TimelineFeedbackInfo
+  }
+}
+
+fragment TimelineModuleItemTreeDisplay on TimelineModuleItemTreeDisplay {
+  parentModuleItemEntryId: parent_module_item_entry_id
+  indentFromParent: indent_from_parent
+  displayType: display_type
+  isAnchorChild: is_anchor_child
+}
+
+fragment TimelineCover on TimelineCover {
+  type: __typename
+  ... on TimelineHalfCover {
+    ...TimelineHalfCover
+  }
+  ... on TimelineFullCover {
+    ...TimelineFullCover
+  }
+}
+
+fragment TimelineRichText on TimelineRichText {
+  alignment
+  rtl
+  text
+  entities {
+    ...TimelineRichTextEntity
+  }
+}
+
+fragment TimelineShowAlertIconDisplayInfo on TimelineShowAlertIconDisplayInfo {
+  icon
+  tint
+}
+
+fragment TimelineShowAlertColorConfiguration on TimelineShowAlertColorConfiguration {
+  background
+  border
+  text
+}
+
+fragment List on List {
+  created_at
+  custom_banner_media {
+    media_info {
+      ... on ApiImage {
+        original_img_url
+        original_img_width
+        original_img_height
+        salient_rect {
+          left
+          top
+          width
+          height
+        }
+      }
+    }
+  }
+  default_banner_media {
+    media_info {
+      ... on ApiImage {
+        original_img_url
+        original_img_width
+        original_img_height
+        salient_rect {
+          left
+          top
+          width
+          height
+        }
+      }
+    }
+  }
+  description
+  following
+  id_str: rest_id
+  member_count
+  mode: accessibility
+  user_results: owner_results {
+    ...UserResults
+  }
+  name
+  is_member(user_id: $isListMemberTargetUserId)
+  subscriber_count
+  muting
+  pinning
+}
+
+fragment HighlightedUserLabel on HighlightedUserLabel {
+  url {
+    urlType: url_type
+    url
+  }
+  badge {
+    url
+  }
+  description
+  longDescription: long_description {
+    alignment
+    rtl
+    text
+    entities {
+      fromIndex: from_index
+      toIndex: to_index
+      format
+      ref {
+        ...ShallowTimelineReferenceObject
+      }
+    }
+  }
+  userLabelType: user_label_type
+}
+
+fragment ApiUser on ApiUser {
+  blocked_by
+  blocking
+  can_dm
+  can_media_tag
+  created_at
+  default_profile
+  default_profile_image
+  description
+  entities {
+    description {
+      ...EntitySet
+    }
+    url {
+      ...EntitySet
+    }
+  }
+  fast_followers_count
+  favourites_count
+  follow_request_sent
+  follow_request_received
+  followed_by
+  followers_count
+  following
+  friends_count
+  has_custom_timelines
+  is_translator
+  listed_count
+  location
+  media_count
+  muting
+  name
+  needs_phone_verification
+  normal_followers_count
+  notifications
+  pinned_tweet_ids_str
+  profile_banner_extensions {
+    mediaColor {
+      r {
+        ok {
+          ...ApiMediaEntityColorPalette
+        }
+      }
+    }
+  }
+  profile_banner_url
+  profile_image_extensions {
+    mediaColor {
+      r {
+        ok {
+          ...ApiMediaEntityColorPalette
+        }
+      }
+    }
+  }
+  profile_image_url_https
+  profile_interstitial_type
+  protected
+  screen_name
+  statuses_count
+  time_zone
+  translator_type
+  url
+  utc_offset
+  verified
+  want_retweets
+  withheld_description
+  withheld_entities {
+    description {
+      ...EntitySet
+    }
+    url {
+      ...EntitySet
+    }
+  }
+  withheld_in_countries
+  withheld_scope
+}
+
+fragment Professional on Professional {
+  rest_id
+  professional_type
+  category {
+    id
+    name
+    display
+  }
+}
+
+fragment ShallowTimelineReferenceObject on TimelineReferenceObject {
+  type: __typename
+  ... on TimelineRichTextCashtag {
+    text
+  }
+  ... on TimelineRichTextList {
+    id
+    url
+  }
+  ... on TimelineRichTextHashtag {
+    text
+  }
+  ... on TimelineUrl {
+    ...TimelineUrl
+  }
+  ... on TimelineRichTextUser {
+    user_results {
+      ...UserResultRef
+    }
+  }
+  ... on TimelineRichTextMention {
+    screen_name
+    mention_results: user_results {
+      ...UserResultRef
+    }
+  }
+}
+
+fragment TimelineCommunity on TimelineCommunity {
+  community {
+    ...Community
+  }
+}
+
+fragment TimelineTweet on TimelineTweet {
+  tweet_results {
+    ...TweetResults
+  }
+  tweetDisplayType: display_type
+  hasModeratedReplies: has_moderated_replies
+  ruxContext: rux_context
+  forwardPivot: forward_pivot {
+    ...TimelineForwardPivot
+  }
+  promotedMetadata: promoted_metadata {
+    ...TimelinePromotedMetadata
+  }
+  socialContext: social_context {
+    ...TimelineSocialContext
+  }
+  innerTombstoneInfo: inner_tombstone_info {
+    ...TimelineTombstoneInfo
+  }
+  conversation_annotation {
+    ...TimelineConversationAnnotation
+  }
+  reactiveTriggers: reactive_triggers {
+    ...TimelineTweetReactiveTrigger
+  }
+  prerollMetadata: preroll_metadata {
+    preroll {
+      ...TimelinePreroll
+    }
+  }
+}
+
+fragment TimelineUser on TimelineUser {
+  user_results {
+    ...UserResults
+  }
+  userDisplayType: display_type
+  promotedMetadata: promoted_metadata {
+    ...TimelinePromotedMetadata
+  }
+  socialContext: social_context {
+    ...TimelineSocialContext
+  }
+}
+
+fragment TimelineLabel on TimelineLabel {
+  text
+  subtext
+  disclosure_indicator
+  url {
+    ...TimelineUrl
+  }
+  display_type
+}
+
+fragment TimelineNews on TimelineNews {
+  newsDisplayType: news_display_type
+  landingUrl: landing_url {
+    ...TimelineUrl
+  }
+  title
+  author
+  description
+  pivotText: pivot_text
+  originalImage: original_image {
+    ...TimelineImageVariant
+  }
+}
+
+fragment TimelineTombstone on TimelineTombstone {
+  tombstoneDisplayType: display_type
+  tombstoneInfo: tombstone_info {
+    ...TimelineTombstoneInfo
+  }
+  tombstonedTweet: tweet {
+    ...TimelineTweet
+  }
+}
+
+fragment TimelineTopic on TimelineTopic {
+  topic {
+    ...Topic
+  }
+  topicFunctionalityType: topic_functionality_type
+  topicDisplayType: topic_display_type
+}
+
+fragment TimelineTopicFollowPrompt on TimelineTopicFollowPrompt {
+  topic {
+    ...Topic
+  }
+  topicPromptDisplayType: display_type
+  followIncentiveTitle: follow_incentive_title
+  followIncentiveText: follow_incentive_text
+}
+
+fragment TopicLandingHeader on TopicLandingHeader {
+  topic {
+    ...Topic
+  }
+  topicLandingContext: topic_landing_context
+  facepile {
+    ...TopicLandingFacepile
+  }
+}
+
+fragment TimelinePrompt on TimelinePrompt {
+  content {
+    contentType: __typename
+    ... on TimelineRelevancePrompt {
+      ...TimelineRelevancePrompt
+    }
+    ... on TimelineOnboardingLikesStartPrompt {
+      ...TimelineOnboardingLikesStartPrompt
+    }
+  }
+  clientEventInfo: client_event_info {
+    ...TimelineClientEventInfo
+  }
+}
+
+fragment TimelineTwitterList on TimelineTwitterList {
+  displayType: display_type
+  list {
+    ...List
+  }
+}
+
+fragment TimelineTile on TimelineTile {
+  url {
+    ...TimelineUrl
+  }
+  image {
+    ...TimelineImageVariant
+  }
+  content {
+    contentType: __typename
+    ... on TimelineTileContentBroadcast {
+      ...TimelineTileContentBroadcast
+    }
+    ... on TimelineTileContentStandard {
+      ...TimelineTileContentStandard
+    }
+    ... on TimelineTileContentScoreCard {
+      ...TimelineTileContentScoreCard
+    }
+    ... on TimelineTileContentCallToAction {
+      ...TimelineTileContentCallToAction
+    }
+  }
+}
+
+fragment TimelineVerticalGridItem on TimelineVerticalGridItem {
+  content {
+    contentType: __typename
+    ... on TimelineVerticalGridItemTopicTile {
+      ...TimelineVerticalGridItemTopicTile
+    }
+  }
+}
+
+fragment TimelineEventSummary on TimelineEventSummary {
+  badge {
+    ...TimelineBadge
+  }
+  eventSummaryDisplayType: display_type
+  groupedTrends: grouped_trends {
+    ...TimelineGroupedTrend
+  }
+  event {
+    rest_id
+  }
+  image {
+    ...TimelineImageVariant
+  }
+  media {
+    ...TimelineMedia
+  }
+  promotedMetadata: promoted_metadata {
+    ...TimelinePromotedMetadata
+  }
+  publisher_results {
+    ...UserResults
+  }
+  richContext: rich_context {
+    ...TimelineRichText
+  }
+  scoreEvent: score_event {
+    ...TimelineScoreEvent
+  }
+  socialContext: social_context {
+    ...TimelineSocialContext
+  }
+  supportingText: supporting_text
+  timeString: time_string
+  title
+  eventSummaryUrl: url {
+    ...TimelineUrl
+  }
+}
+
+fragment TimelineTweetComposer on TimelineTweetComposer {
+  composerDisplayType: display_type
+  composerButtonText: text
+  composerButtonUrl: url {
+    ...TimelineUrl
+  }
+}
+
+fragment TimelineMessagePrompt on TimelineMessagePrompt {
+  content {
+    contentType: __typename
+    ... on TimelineInlinePrompt {
+      ...TimelineInlinePrompt
+    }
+    ... on TimelineHeaderImagePrompt {
+      ...TimelineHeaderImagePrompt
+    }
+    ... on TimelineCompactPrompt {
+      ...TimelineCompactPromptFragment
+    }
+    ... on TimelineLargePrompt {
+      ...TimelineLargePrompt
+    }
+  }
+  impressionCallbacks: impression_callbacks {
+    endpoint
+  }
+}
+
+fragment TimelineArticle on TimelineArticle {
+  article {
+    ...Article
+  }
+  articleDisplayType: display_type
+  socialContext: social_context {
+    ...TimelineSocialContext
+  }
+}
+
+fragment TimelineThreadHeaderItem on TimelineThreadHeaderItem {
+  content {
+    contentType: __typename
+    ... on TimelineUserThreadHeader {
+      ...TimelineUserThreadHeader
+    }
+  }
+}
+
+fragment TimelinePagedCarouselItem on TimelinePagedCarouselItem {
+  content {
+    contentType: __typename
+    ... on TimelineMessagePrompt {
+      ...TimelineMessagePrompt
+    }
+    ... on TimelinePagedCarouselFeedbackItem {
+      ...TimelinePagedCarouselFeedbackItem
+    }
+  }
+}
+
+fragment TimelineFeedbackInfo on TimelineFeedbackInfo {
+  clientEventInfo: client_event_info {
+    ...TimelineClientEventInfo
+  }
+  feedbackKeys: feedback_keys
+  feedbackMetadata: feedback_metadata
+  displayContext: display_context {
+    reason
+  }
+}
+
+fragment TimelineTimelineReaction on TimelineTimelineReaction {
+  execution {
+    type: __typename
+    ... on TimelineImmediateTimelineReaction {
+      key
+    }
+    ... on TimelineRemoteTimelineReaction {
+      requestParams: request_params {
+        key
+        value
+      }
+      timeoutInSeconds: timeout_in_seconds
+    }
+  }
+  maxExecutionCount: max_execution_count
+}
+
+fragment TimelineModuleConversationMetadata on TimelineModuleConversationMetadata {
+  allTweetIds: all_tweet_ids
+  enableDeduplication: enable_deduplication
+  socialContext: social_context {
+    ...TimelineSocialContext
+  }
+}
+
+fragment TimelineSocialContext on TimelineSocialContext {
+  type: __typename
+  ... on TimelineGeneralContext {
+    contextType: context_type
+    text
+    url
+    contextImageUrls: context_image_urls
+    landingUrl: landing_url {
+      ...TimelineUrl
+    }
+  }
+  ... on TimelineTopicContext {
+    topic {
+      ...Topic
+    }
+    functionalityType: functionality_type
+    bannerText: banner_text {
+      ...TimelineRichText
+    }
+    linkText: link_text {
+      ...TimelineRichText
+    }
+  }
+}
+
+fragment TimelineHalfCover on TimelineHalfCover {
+  halfCoverDisplayType: display_type
+  primaryText: primary_text {
+    ...TimelineRichText
+  }
+  primaryCoverCta: primary_cover_cta {
+    ...TimelineCoverCta
+  }
+  secondaryCoverCta: secondary_cover_cta {
+    ...TimelineCoverCta
+  }
+  secondaryText: secondary_text {
+    ...TimelineRichText
+  }
+  impressionCallbacks: impression_callbacks {
+    endpoint
+  }
+  dismissible
+  coverImage: cover_image {
+    image {
+      ...TimelineImageVariant
+    }
+    imageDisplayType: image_display_type
+    imageAnimationType: image_animation_type
+  }
+  dismissInfo: dismiss_info {
+    callbacks {
+      endpoint
+    }
+  }
+}
+
+fragment TimelineFullCover on TimelineFullCover {
+  fullCoverDisplayType: display_type
+  primaryText: primary_text {
+    ...TimelineRichText
+  }
+  primaryCoverCta: primary_cover_cta {
+    ...TimelineCoverCta
+  }
+  secondaryCoverCta: secondary_cover_cta {
+    ...TimelineCoverCta
+  }
+  secondaryText: secondary_text {
+    ...TimelineRichText
+  }
+  image {
+    ...TimelineImageVariant
+  }
+  details {
+    ...TimelineRichText
+  }
+  dismissInfo: dismiss_info {
+    callbacks {
+      endpoint
+    }
+  }
+  imageDisplayType: image_display_type
+  impressionCallbacks: impression_callbacks {
+    endpoint
+  }
+}
+
+fragment TimelineRichTextEntity on TimelineRichTextEntity {
+  fromIndex: from_index
+  toIndex: to_index
+  format
+  ref {
+    ...TimelineReferenceObject
+  }
+}
+
+fragment EntitySet on EntitySet {
+  urls {
+    ...UrlsEntity
+  }
+}
+
+fragment ApiMediaEntityColorPalette on ApiMediaEntityColorPalette {
+  palette {
+    percentage
+    rgb {
+      blue
+      green
+      red
+    }
+  }
+}
+
+fragment UserResultRef on UserResults {
+  result {
+    __typename
+    ... on User {
+      legacy {
+        screen_name
+      }
+      rest_id
+    }
+    ... on UserUnavailable {
+      reason: unavailable_reason
+      message
+    }
+  }
+}
+
+fragment Community on Community {
+  id_str: rest_id
+  name
+  description
+  access
+  created_at
+  default_theme
+  custom_theme
+  actions {
+    join_action_result {
+      ...CommunityJoinActionResult
+    }
+    leave_action_result {
+      ...CommunityLeaveActionResult
+    }
+  }
+  admin_results {
+    ...UserResults
+  }
+  creator_results {
+    ...UserResults
+  }
+  invites_result {
+    ...CommunityInvitesResult
+  }
+  members_facepile_results {
+    ...UserResults
+  }
+  moderator_count
+  member_count
+  membership_settings {
+    ...CommunityMembershipSettings
+  }
+  role
+  rules {
+    ...CommunityRule
+  }
+  custom_banner_media {
+    media_info {
+      ... on ApiImage {
+        color_info {
+          palette {
+            rgb {
+              red
+              green
+              blue
+            }
+            percentage
+          }
+        }
+        original_img_url
+        original_img_width
+        original_img_height
+        salient_rect {
+          left
+          top
+          width
+          height
+        }
+      }
+    }
+  }
+  default_banner_media {
+    media_info {
+      ... on ApiImage {
+        color_info {
+          palette {
+            rgb {
+              red
+              green
+              blue
+            }
+            percentage
+          }
+        }
+        original_img_url
+        original_img_width
+        original_img_height
+        salient_rect {
+          left
+          top
+          width
+          height
+        }
+      }
+    }
+  }
+  viewer_relationship {
+    moderation_state {
+      __typename
+      ... on CommunityUserRemovedModerationState {
+        rule {
+          ...CommunityRule
+        }
+      }
+    }
+  }
+  join_requests_result {
+    __typename
+    ... on CommunityJoinRequests {
+      pending_join_request_count
+    }
+  }
+}
+
+fragment TweetResults on TweetResults {
+  result {
+    __typename
+    ... on Tweet {
+      ...Tweet
+    }
+    ... on TweetWithVisibilityResults {
+      ...TweetWithVisibilityResults
+    }
+    ... on TweetTombstone {
+      ...TweetTombstone
+    }
+  }
+}
+
+fragment TimelineForwardPivot on TimelineForwardPivot {
+  text {
+    ...TimelineRichText
+  }
+  landingUrl: landing_url {
+    ...TimelineUrl
+  }
+  displayType: display_type
+  engagementNudge: engagement_nudge
+  iconImageVariant: icon_image_variant {
+    ...TimelineImageVariant
+  }
+  stateBadge: state_badge {
+    ...TimelineBadge
+  }
+  softInterventionDisplayType: soft_intervention_display_type
+}
+
+fragment TimelinePromotedMetadata on TimelinePromotedMetadata {
+  advertiser_results {
+    ...UserResults
+  }
+  adMetadataContainer: ad_metadata_container {
+    ...TimelineAdMetadataContainer
+  }
+  disclosureType: disclosure_type
+  experimentValues: experiment_values {
+    key
+    value
+  }
+  impressionId: impression_id
+  impressionString: impression_string
+  promotedTrendName: promoted_trend_name
+  promotedTrendQueryTerm: promoted_trend_query_term
+  promotedTrend: promoted_trend {
+    rest_id
+  }
+  clickTrackingInfo: click_tracking_info {
+    ...TimelineClickTrackingInfo
+  }
+}
+
+fragment TimelineTombstoneInfo on TimelineTombstoneInfo {
+  text
+  cta {
+    text
+    url {
+      ...TimelineUrl
+    }
+  }
+  revealText: reveal_text
+  richText: rich_text {
+    ...TimelineRichText
+  }
+  richRevealText: rich_reveal_text {
+    ...TimelineRichText
+  }
+}
+
+fragment TimelineConversationAnnotation on TimelineConversationAnnotation {
+  conversation_annotation_type
+  description {
+    ...TimelineRichText
+  }
+  header {
+    ...TimelineRichText
+  }
+}
+
+fragment TimelineTweetReactiveTrigger on TimelineTweetReactiveTrigger {
+  reaction {
+    ...TimelineTimelineReaction
+  }
+  tweetAction: tweet_action
+}
+
+fragment TimelinePreroll on TimelinePreroll {
+  dynamicPrerollType: dynamic_preroll_type
+  mediaInfo: media_info {
+    ...TimelineMediaInfo
+  }
+  prerollId: preroll_id
+}
+
+fragment TimelineImageVariant on TimelineImageVariant {
+  url
+  width
+  height
+  palette {
+    percentage
+    rgb {
+      blue
+      green
+      red
+    }
+  }
+}
+
+fragment TopicLandingFacepile on TopicLandingFacepile {
+  users {
+    ...User
+  }
+  facepileUrl: facepile_url {
+    ...TimelineUrl
+  }
+}
+
+fragment TimelineRelevancePrompt on TimelineRelevancePrompt {
+  title: title
+  confirmation
+  isRelevantText: is_relevant_text
+  notRelevantText: not_relevant_text
+  isRelevantCallback: is_relevant_callback {
+    endpoint
+  }
+  notRelevantCallback: not_relevant_callback {
+    endpoint
+  }
+  displayType: display_type
+  reactiveTriggers: reactive_triggers {
+    onIsRelevant: on_is_relevant {
+      ...TimelineTimelineReaction
+    }
+  }
+}
+
+fragment TimelineOnboardingLikesStartPrompt on TimelineOnboardingLikesStartPrompt {
+  bodyRichText: body_text {
+    ...TimelineRichText
+  }
+  headerIconUrl: header_icon_url
+  headerRichText: header_text {
+    ...TimelineRichText
+  }
+  likesNeededToCompleteOnboarding: likes_needed_to_complete_onboarding
+}
+
+fragment TimelineTileContentBroadcast on TimelineTileContentBroadcast {
+  user {
+    ...User
+  }
+  badge {
+    ...TimelineBadge
+  }
+}
+
+fragment TimelineTileContentStandard on TimelineTileContentStandard {
+  title
+  badge {
+    ...TimelineBadge
+  }
+}
+
+fragment TimelineTileContentScoreCard on TimelineTileContentScoreCard {
+  scoreEventSummary: score_event_summary {
+    displayType: display_type
+    scoreEvent: score_event {
+      ...TimelineScoreEvent
+    }
+  }
+}
+
+fragment TimelineTileContentCallToAction on TimelineTileContentCallToAction {
+  text
+}
+
+fragment TimelineVerticalGridItemTopicTile on TimelineVerticalGridItemTopicTile {
+  topic {
+    ...Topic
+  }
+  style
+  functionalityType: functionality_type
+  url {
+    ...TimelineUrl
+  }
+}
+
+fragment TimelineBadge on TimelineBadge {
+  text
+  textColorName: text_color_name
+  backgroundColorName: background_color_name
+}
+
+fragment TimelineGroupedTrend on TimelineGroupedTrend {
+  name
+  url {
+    ...TimelineUrl
+  }
+}
+
+fragment TimelineMedia on TimelineMedia {
+  mediaEntity: media_entity {
+    ...TimelineMediaEntity
+  }
+  mediaKey: media_key {
+    id
+    category
+  }
+  imagePossibleCropping: image_possible_cropping {
+    left
+    top
+    width
+    height
+  }
+}
+
+fragment TimelineScoreEvent on TimelineScoreEvent {
+  id
+  category
+  startTimeMillis: start_time_millis
+  eventState: event_state
+  summary
+  participants {
+    ...TimelineScoreEventParticipant
+  }
+  gameState: game_state
+  gameClock: game_clock
+  gameClockPeriod: game_clock_period
+  scoreFormat: score_format
+  winnerId: winner_id
+  url {
+    ...TimelineUrl
+  }
+}
+
+fragment TimelineInlinePrompt on TimelineInlinePrompt {
+  headerText: header_text
+  bodyText: body_text
+  primaryButtonAction: primary_button_action {
+    ...TimelineMessageTextAction
+  }
+  secondaryButtonAction: secondary_button_action {
+    ...TimelineMessageTextAction
+  }
+  headerRichText: header_rich_text {
+    ...TimelineRichText
+  }
+  bodyRichText: body_rich_text {
+    ...TimelineRichText
+  }
+}
+
+fragment TimelineHeaderImagePrompt on TimelineHeaderImagePrompt {
+  headerImage: header_image {
+    ...TimelineMessageImage
+  }
+  optionalHeaderText: header_text
+  bodyText: body_text
+  primaryButtonAction: primary_button_action {
+    ...TimelineMessageTextAction
+  }
+  secondaryButtonAction: secondary_button_action {
+    ...TimelineMessageTextAction
+  }
+  headerRichText: header_rich_text {
+    ...TimelineRichText
+  }
+  bodyRichText: body_rich_text {
+    ...TimelineRichText
+  }
+  action {
+    ...TimelineMessageAction
+  }
+}
+
+fragment TimelineCompactPromptFragment on TimelineCompactPrompt {
+  headerText: header_text
+  bodyText: body_text
+  primaryButtonAction: primary_button_action {
+    ...TimelineMessageTextAction
+  }
+  secondaryButtonAction: secondary_button_action {
+    ...TimelineMessageTextAction
+  }
+  headerRichText: header_rich_text {
+    ...TimelineRichText
+  }
+  bodyRichText: body_rich_text {
+    ...TimelineRichText
+  }
+  action {
+    ...TimelineMessageAction
+  }
+}
+
+fragment TimelineLargePrompt on TimelineLargePrompt {
+  headerText: header_text
+  primaryButtonAction: primary_button_action {
+    ...TimelineMessageTextAction
+  }
+}
+
+fragment Article on Article {
+  rest_id
+  metadata {
+    article_url
+    description
+    domain
+    domain_url
+    image_url
+    publish_date
+    title
+  }
+}
+
+fragment TimelineUserThreadHeader on TimelineUserThreadHeader {
+  user {
+    ...User
+  }
+}
+
+fragment TimelinePagedCarouselFeedbackItem on TimelinePagedCarouselFeedbackItem {
+  content {
+    contentType: __typename
+    ... on TimelineTweet {
+      ...TimelineTweet
+    }
+  }
+  reactiveTriggers: reactive_triggers {
+    onShowMore: on_show_more {
+      ...TimelineTimelineReaction
+    }
+  }
+  showLessText: show_less_text
+  showLessCallback: show_less_callback {
+    endpoint
+  }
+  showMoreCallback: show_more_callback {
+    endpoint
+  }
+  showMoreText: show_more_text
+}
+
+fragment TimelineCoverCta on TimelineCoverCta {
+  text
+  ctaBehavior: cta_behavior {
+    type: __typename
+    ... on TimelineCoverBehaviorDismiss {
+      feedbackMessage: feedback_message {
+        ...TimelineRichText
+      }
+    }
+    ... on TimelineCoverBehaviorNavigate {
+      url {
+        ...TimelineUrl
+      }
+    }
+  }
+  callbacks {
+    endpoint
+  }
+  clientEventInfo: client_event_info {
+    ...TimelineClientEventInfo
+  }
+  icon
+  buttonStyle: button_style
+}
+
+fragment TimelineReferenceObject on TimelineReferenceObject {
+  type: __typename
+  ... on TimelineRichTextCashtag {
+    text
+  }
+  ... on TimelineRichTextList {
+    id
+    url
+  }
+  ... on TimelineRichTextHashtag {
+    text
+  }
+  ... on TimelineUrl {
+    ...TimelineUrl
+  }
+  ... on TimelineRichTextUser {
+    user_results {
+      ...UserResults
+    }
+  }
+  ... on TimelineRichTextMention {
+    mention_results: user_results {
+      result {
+        __typename
+        ... on User {
+          rest_id
+        }
+      }
+    }
+    screen_name
+  }
+}
+
+fragment UrlsEntity on UrlsEntity {
+  display_url
+  expanded_url
+  url
+  indices
+}
+
+fragment CommunityJoinActionResult on CommunityJoinActionResult {
+  __typename
+  ... on CommunityJoinActionUnavailable {
+    reason
+    message
+  }
+}
+
+fragment CommunityLeaveActionResult on CommunityLeaveActionResult {
+  __typename
+  ... on CommunityLeaveActionUnavailable {
+    reason
+    message
+  }
+}
+
+fragment CommunityInvitesResult on CommunityInvitesResult {
+  __typename
+  ... on CommunityInvitesUnavailable {
+    reason
+    message
+  }
+  ... on CommunityInvites {
+    remaining_invite_count
+    users_to_invite_slice {
+      items {
+        ...UserCommunityInviteRelationship
+      }
+      slice_info {
+        next_cursor
+        previous_cursor
+      }
+    }
+  }
+}
+
+fragment CommunityMembershipSettings on CommunityMembershipSettings {
+  __typename
+  ... on CommunityRestrictedMembershipSettings {
+    invites_policy
+    join_approval_policy
+  }
+}
+
+fragment CommunityRule on CommunityRule {
+  rest_id
+  name
+  description
+}
+
+fragment Tweet on Tweet {
+  ...CoreTweetFields
+  community @include(if: $withCommunity) {
+    ...Community
+  }
+  community_relationship @include(if: $withCommunity) {
+    id
+    rest_id
+    community {
+      ...Community
+    }
+    moderation_state {
+      ...CommunityModerationTweetState
+    }
+  }
+  quoted_status_result: quoted_tweet_results {
+    ...QuotedTweetResults
+  }
+  legacy(cards_platform: "Web-12", simple_quoted_tweet: true, include_promoted_content: $includePromotedContent) {
+    ...LegacyTweetFields
+    retweeted_status_result: retweeted_status_results {
+      ...RetweetedTweetResults
+    }
+  }
+  exclusivityInfo: exclusive_tweet_info @include(if: $withSuperFollowsTweetFields) {
+    creator_results {
+      ...SuperFollowsUserResults
+    }
+  }
+  superFollowsReplyUserResult: super_follows_conversation_user_results @include(if: $withSuperFollowsTweetFields) {
+    ...SuperFollowsUserResults
+  }
+  superFollowsQuotedUserResult: super_follows_quoted_user_results @include(if: $withSuperFollowsTweetFields) {
+    ...SuperFollowsUserResults
+  }
+  quick_promote_eligibility @include(if: $withQuickPromoteEligibilityTweetFields) {
+    eligibility
+  }
+  ...TrustedFriendsInfo
+}
+
+fragment TweetWithVisibilityResults on TweetWithVisibilityResults {
+  tweet {
+    ...Tweet
+  }
+  ...VisibilityResults
+}
+
+fragment TweetTombstone on TweetTombstone {
+  tombstone {
+    __typename
+    ... on TextTombstone {
+      text {
+        ...TimelineRichText
+      }
+    }
+  }
+}
+
+fragment TimelineAdMetadataContainer on TimelineAdMetadataContainer {
+  disclaimerType: disclaimer_type
+  sponsorshipCandidate: sponsorship_candidate
+  sponsorshipOrganization: sponsorship_organization
+  sponsorshipOrganizationWebsite: sponsorship_organization_website
+  sponsorshipType: sponsorship_type
+}
+
+fragment TimelineClickTrackingInfo on ClickTrackingInfo {
+  urlParams: url_params {
+    key
+    value
+  }
+  urlOverride: url_override
+  urlOverrideType: url_override_type
+}
+
+fragment TimelineMediaInfo on TimelineMediaInfo {
+  advertiserName: advertiser_name
+  advertiserProfileImageUrl: advertiser_profile_image_url
+  callToAction: call_to_action {
+    ...TimelineCallToAction
+  }
+  durationMillis: duration_millis
+  publisherResults: publisher_results {
+    ...UserResults
+  }
+  renderAdByAdvertiserName: render_ad_by_advertiser_name
+  uuid: uuid
+  videoVariants: video_variants {
+    ...TimelineVideoVariant
+  }
+}
+
+fragment TimelineMediaEntity on TimelineMediaEntity {
+  type: __typename
+  ... on TimelineBroadcastId {
+    id
+  }
+  ... on TimelineImageVariant {
+    ...TimelineImageVariant
+  }
+  ... on TimelineTweetMedia {
+    ...TimelineTweetMedia
+  }
+}
+
+fragment TimelineScoreEventParticipant on TimelineScoreEventParticipant {
+  id
+  fullName: full_name
+  shortName: short_name
+  affiliation
+  color {
+    ...TimelineColor
+  }
+  twitterUserId: twitter_user_id
+  score
+  secondaryScore: secondary_score
+  logo {
+    ...TimelineImageVariant
+  }
+}
+
+fragment TimelineMessageTextAction on TimelineMessageTextAction {
+  text
+  action {
+    ...TimelineMessageAction
+  }
+}
+
+fragment TimelineMessageImage on TimelineMessageImage {
+  imageVariants: image_variants {
+    ...TimelineImageVariant
+  }
+  backgroundColor: background_color
+}
+
+fragment TimelineMessageAction on TimelineMessageAction {
+  url
+  dismissOnClick: dismiss_on_click
+  onClickCallbacks: on_click_callbacks {
+    endpoint
+  }
+  clientEventInfo: client_event_info {
+    ...TimelineClientEventInfo
+  }
+}
+
+fragment UserCommunityInviteRelationship on UserCommunityRelationship {
+  community {
+    rest_id
+  }
+  actions {
+    invite_action_result {
+      ...UserCommunityInviteActionResult
+    }
+  }
+  user_results {
+    result {
+      __typename
+      ... on User {
+        rest_id
+        legacy {
+          profile_image_url_https
+          can_dm
+          can_media_tag
+          protected
+          verified
+          name
+          screen_name
+        }
+      }
+    }
+  }
+}
+
+fragment CoreTweetFields on Tweet {
+  rest_id
+  has_birdwatch_notes @include(if: $withBirdwatchNotes)
+  birdwatch_pivot {
+    callToAction: call_to_action {
+      prompt
+      title
+      destinationUrl: destination_url
+    }
+    destinationUrl: destination_url
+    footer {
+      ...TimelineRichText
+    }
+    note {
+      ...BirdwatchNote
+    }
+    subtitle {
+      ...TimelineRichText
+    }
+    title
+    iconType: icon_type
+  }
+  core {
+    user_results {
+      ...UserResults
+    }
+  }
+  card {
+    ...Card
+  }
+  softIntervention: soft_intervention_pivot {
+    ...TimelineForwardPivot
+  }
+  voiceInfo: voice_info @include(if: $withVoice) {
+    ...VoiceInfo
+  }
+  reactionMetadata: reaction_metadata @include(if: $withReactionsMetadata) {
+    reactionTypeMap: reaction_type_map {
+      type: key
+      count: value
+    }
+  }
+  reactionPerspective: reaction_perspective @include(if: $withReactionsPerspective) {
+    reactionType: reaction_type
+  }
+  downvotePerspective: downvote_perspective @include(if: $withDownvotePerspective) {
+    isDownvoted: is_downvoted
+  }
+  unmention_info @include(if: $__fs_dont_mention_me_view_api_enabled) {
+    ...UnmentionInfo
+  }
+  enrichments @include(if: $__fs_interactive_text_enabled) {
+    ...Enrichments
+  }
+  unified_card @include(if: $__fs_responsive_web_uc_gql_enabled) {
+    ...UnifiedCard
+  }
+}
+
+fragment CommunityModerationTweetState on CommunityTweetHiddenModerationState {
+  rule {
+    ...CommunityRule
+  }
+}
+
+fragment QuotedTweetResults on TweetResults {
+  result {
+    __typename
+    ... on Tweet {
+      ...QuotedTweet
+    }
+    ... on TweetWithVisibilityResults {
+      ...QuotedTweetWithVisibilityResults
+    }
+    ... on TweetTombstone {
+      ...TweetTombstone
+    }
+  }
+}
+
+fragment LegacyTweetFields on LegacyTweet {
+  conversation_muted
+  created_at
+  conversation_control {
+    policy
+    conversation_owner {
+      legacy {
+        screen_name
+      }
+    }
+    invite_via_mention
+  }
+  conversation_id_str
+  coordinates {
+    type
+    coordinates
+  }
+  display_text_range
+  entities {
+    ...TweetEntities
+  }
+  extended_entities {
+    ...TweetEntities
+  }
+  favorite_count
+  favorited
+  full_text
+  geo {
+    type
+    coordinates
+  }
+  in_reply_to_screen_name
+  in_reply_to_status_id_str
+  in_reply_to_user_id_str
+  is_quote_status
+  lang
+  limited_actions
+  possibly_sensitive
+  possibly_sensitive_editable
+  place {
+    attributes {
+      factual_id
+      iso3
+      locality
+      region
+      street_address
+      twitter
+      url
+    }
+    bounding_box: bounding_box_polygon {
+      coordinates
+      type
+    }
+    contained_within {
+      id
+    }
+    country
+    country_code
+    full_name
+    name
+    id
+    place_type
+    url
+  }
+  promoted_content {
+    disclosure_type
+    impression_id
+  }
+  quote_count
+  quoted_status_id_str
+  quoted_status_permalink {
+    url
+    expanded
+    display
+  }
+  reply_count
+  retweet_count
+  retweeted
+  scopes {
+    followers
+    place_ids
+  }
+  source
+  supplemental_language
+  user_id_str
+  withheld_scope
+  id_str
+  withheld_text
+  self_thread {
+    id_str
+  }
+}
+
+fragment RetweetedTweetResults on TweetResults {
+  result {
+    __typename
+    ... on Tweet {
+      ...RetweetedTweet
+    }
+    ... on TweetWithVisibilityResults {
+      ...RetweetedTweetWithVisibilityResults
+    }
+    ... on TweetTombstone {
+      ...TweetTombstone
+    }
+  }
+}
+
+fragment SuperFollowsUserResults on UserResults {
+  result {
+    __typename
+    ... on User {
+      legacy {
+        screen_name
+      }
+    }
+  }
+}
+
+fragment TrustedFriendsInfo on Tweet {
+  trusted_friends_info_result {
+    ... on ApiTrustedFriendsInfo {
+      __typename
+      owner_results {
+        ... on UserResults {
+          result {
+            __typename
+            ... on User {
+              legacy {
+                screen_name
+                name
+              }
+            }
+          }
+        }
+      }
+    }
+    ... on TrustedFriendsInfoUnavailable {
+      __typename
+      reason
+    }
+  }
+}
+
+fragment VisibilityResults on TweetWithVisibilityResults {
+  tweetInterstitial: tweet_interstitial {
+    ...TweetInterstitial
+  }
+  softInterventionPivot: soft_intervention_pivot {
+    ...SoftInterventionPivot
+  }
+}
+
+fragment TimelineCallToAction on TimelineCallToAction {
+  callToActionType: call_to_action_type
+  type
+  url
+}
+
+fragment TimelineVideoVariant on TimelineVideoVariant {
+  bitrate
+  contentType: content_type
+  url
+}
+
+fragment TimelineTweetMedia on TimelineTweetMedia {
+  tweet_results {
+    ...TweetResults
+  }
+  moment {
+    rest_id
+  }
+}
+
+fragment TimelineColor on TimelineColor {
+  red
+  green
+  blue
+  opacity
+}
+
+fragment UserCommunityInviteActionResult on UserCommunityInviteActionResult {
+  __typename
+  ... on UserCommunityInviteActionUnavailable {
+    reason
+    message
+  }
+}
+
+fragment BirdwatchNote on BirdwatchNote {
+  rest_id
+  data_v1 {
+    ...BirdwatchNoteDataV1
+  }
+  rating {
+    data_v1 {
+      ...BirdwatchNoteRatingDataV1
+    }
+    data_v2 {
+      ...BirdwatchNoteRatingDataV2
+    }
+    version
+  }
+  rating_status
+  rating_survey {
+    ...TimelineUrl
+  }
+  helpful_tags
+  not_helpful_tags
+  tweet_results {
+    result {
+      ... on Tweet {
+        rest_id
+      }
+    }
+  }
+  birdwatch_profile {
+    alias
+    badges
+  }
+  created_at
+  can_appeal
+  appeal_status
+  impression_count
+}
+
+fragment Card on Card {
+  rest_id
+  legacy {
+    ...LegacyCard
+  }
+}
+
+fragment VoiceInfo on VoiceInfo {
+  clipIndex: clip_index
+  numberOfClips: number_of_clips
+  totalDurationMillis: total_duration_millis
+  audiowaveValues: audiowave_values
+}
+
+fragment UnmentionInfo on UnmentionInfo {
+  unmentioned_users {
+    rest_id
+  }
+}
+
+fragment Enrichments on TweetEnrichments {
+  interactive_text_enrichment {
+    interactive_texts {
+      index_start
+      index_end
+      color_v2
+      id
+      target {
+        __typename
+        ... on WebsiteTarget {
+          url {
+            full_url
+          }
+        }
+      }
+    }
+  }
+}
+
+fragment UnifiedCard on UnifiedCard {
+  card_type
+  card_uri
+  layout {
+    __typename
+    ... on CardVerticalStackLayout {
+      ...CardVerticalStackLayout
+    }
+    ... on CardSwipeableLayout {
+      full_slides {
+        ...CardVerticalStackLayout
+      }
+    }
+    ... on CardModelExplorerLayout {
+      first_slide {
+        ...CardVerticalStackLayout
+      }
+      full_slides {
+        ...CardVerticalStackLayout
+      }
+    }
+  }
+  display_options {
+    should_auto_advance
+  }
+}
+
+fragment QuotedTweet on Tweet {
+  ...CoreTweetFields
+  community @include(if: $withCommunity) {
+    ...Community
+  }
+  quotedRefResult: quoted_tweet_results {
+    result {
+      __typename
+      ... on Tweet {
+        rest_id
+      }
+      ... on TweetWithVisibilityResults {
+        tweet {
+          rest_id
+        }
+      }
+    }
+  }
+  legacy(cards_platform: "Web-12", simple_quoted_tweet: true, include_promoted_content: $includePromotedContent) {
+    ...LegacyTweetFields
+    retweetRefResult: retweeted_status_results {
+      result {
+        __typename
+        ... on Tweet {
+          rest_id
+        }
+        ... on TweetWithVisibilityResults {
+          tweet {
+            rest_id
+          }
+        }
+      }
+    }
+  }
+}
+
+fragment QuotedTweetWithVisibilityResults on TweetWithVisibilityResults {
+  tweet {
+    ...QuotedTweet
+  }
+  ...VisibilityResults
+}
+
+fragment TweetEntities on EntitySet {
+  media {
+    ...ApiMediaEntity
+  }
+  user_mentions {
+    ...ApiMentionEntity
+  }
+  urls {
+    ...UrlsEntity
+  }
+  hashtags {
+    ...ApiTagEntity
+  }
+  symbols {
+    ...ApiTagEntity
+  }
+}
+
+fragment RetweetedTweet on Tweet {
+  ...CoreTweetFields
+  quoted_status_result: quoted_tweet_results {
+    ...QuotedTweetResults
+  }
+  legacy(cards_platform: "Web-12", simple_quoted_tweet: true, include_promoted_content: $includePromotedContent) {
+    ...LegacyTweetFields
+  }
+}
+
+fragment RetweetedTweetWithVisibilityResults on TweetWithVisibilityResults {
+  tweet {
+    ...RetweetedTweet
+  }
+  ...VisibilityResults
+}
+
+fragment TweetInterstitial on TweetInterstitial {
+  __typename
+  ... on ContextualTweetInterstitial {
+    displayType: display_type
+    text {
+      ...TimelineRichText
+    }
+    revealText: reveal_text {
+      ...TimelineRichText
+    }
+  }
+}
+
+fragment SoftInterventionPivot on SoftInterventionPivot {
+  text {
+    ...TimelineRichText
+  }
+  url {
+    ...TimelineUrl
+  }
+  engagementNudge: engagement_nudge
+  softInterventionDisplayType: display_type
+}
+
+fragment BirdwatchNoteDataV1 on BirdwatchNoteDataV1 {
+  classification
+  summary {
+    ...TimelineRichText
+  }
+  misleading_tags
+  believable
+  harmful
+  validation
+  not_misleading_tags
+  trustworthy_sources
+}
+
+fragment BirdwatchNoteRatingDataV1 on BirdwatchNoteRatingDataV1 {
+  agree
+  helpful
+  helpful_tags
+  not_helpful_tags
+}
+
+fragment BirdwatchNoteRatingDataV2 on BirdwatchNoteRatingDataV2 {
+  helpfulness_level
+  helpful_tags
+  not_helpful_tags
+}
+
+fragment LegacyCard on LegacyCard {
+  binding_values {
+    key
+    value {
+      boolean_value
+      double_value
+      image_value {
+        alt
+        height
+        width
+        url
+      }
+      image_color_value {
+        palette {
+          rgb {
+            blue
+            green
+            red
+          }
+          percentage
+        }
+      }
+      integer_value
+      scribe_key
+      string_value
+      type
+      user_value {
+        id_str
+        path
+      }
+    }
+  }
+  card_platform {
+    platform {
+      audience {
+        bucket
+        name
+      }
+      device {
+        name
+        version
+      }
+    }
+  }
+  name
+  url
+  user_refs {
+    ...User
+  }
+}
+
+fragment CardVerticalStackLayout on CardVerticalStackLayout {
+  components {
+    ...CardComponent
+  }
+}
+
+fragment ApiMediaEntity on ApiMediaEntity {
+  display_url
+  expanded_url
+  ext_alt_text
+  id_str
+  indices
+  media_key
+  media_url_https
+  possibly_sensitive
+  source_status_id_str
+  source_user_id_str
+  type
+  url
+  additional_media_info {
+    ...ApiMediaMetadata
+  }
+  ext_info360 {
+    is360
+  }
+  ext_media_color {
+    ...ApiMediaEntityColorPalette
+  }
+  mediaStats: ext_media_stats {
+    viewCount: view_count
+  }
+  ext_media_availability {
+    reason
+    status
+    unavailability_info {
+      ... on ApiMediaUnavailabilityInfoCopyrightViolation {
+        copyright_holder_name
+      }
+    }
+  }
+  features {
+    ...ApiMediaEntityFeatures
+  }
+  sensitive_media_warning {
+    adult_content
+    graphic_violence
+    other
+  }
+  sizes {
+    large {
+      h
+      w
+      resize
+    }
+    medium {
+      h
+      w
+      resize
+    }
+    small {
+      h
+      w
+      resize
+    }
+    thumb {
+      h
+      w
+      resize
+    }
+  }
+  original_info {
+    height
+    width
+    focus_rects {
+      x
+      y
+      w
+      h
+    }
+  }
+  video_info {
+    aspect_ratio
+    duration_millis
+    variants {
+      bitrate
+      content_type
+      url
+    }
+  }
+}
+
+fragment ApiMentionEntity on ApiMentionEntity {
+  id_str
+  name
+  screen_name
+  indices
+}
+
+fragment ApiTagEntity on ApiTagEntity {
+  indices
+  text
+}
+
+fragment CardComponent on CardComponent {
+  __typename
+  ... on CardAppStoreDetailsComponent {
+    ...CardAppStoreDetailsComponent
+  }
+  ... on CardButtonGroupComponent {
+    ...CardButtonGroupComponent
+  }
+  ... on CardDetailsComponent {
+    ...CardDetailsComponent
+  }
+  ... on CardMediaComponent {
+    ...CardMediaComponent
+  }
+  ... on CardMediaWithDetailsHorizontal {
+    ...CardMediaWithDetailsHorizontal
+  }
+  ... on CardSwipeableMediaComponent {
+    ...CardSwipeableMediaComponent
+  }
+  ... on CardTwitterListDetailsComponent {
+    ...CardTwitterListDetailsComponent
+  }
+}
+
+fragment ApiMediaMetadata on ApiMediaMetadata {
+  title
+  description
+  call_to_actions {
+    visit_site {
+      url
+    }
+    watch_now {
+      url
+    }
+    app_install {
+      play_store_id
+      app_store_id
+      ipad_app_store_id
+    }
+  }
+  embeddable
+  monetizable
+  source_user {
+    user_results {
+      ...UserResults
+    }
+  }
+}
+
+fragment ApiMediaEntityFeatures on ApiMediaEntityFeatures {
+  all {
+    tags {
+      user_id
+      name
+      screen_name
+      type
+    }
+  }
+  large {
+    faces {
+      x
+      y
+      h
+      w
+    }
+  }
+  medium {
+    faces {
+      x
+      y
+      h
+      w
+    }
+  }
+  small {
+    faces {
+      x
+      y
+      h
+      w
+    }
+  }
+  orig {
+    faces {
+      x
+      y
+      h
+      w
+    }
+  }
+}
+
+fragment CardAppStoreDetailsComponent on CardAppStoreDetailsComponent {
+  app_store_data {
+    ...AppStoreData
+  }
+  destination_obj {
+    ...CardDestination
+  }
+  use_dominant_color
+}
+
+fragment CardButtonGroupComponent on CardButtonGroupComponent {
+  buttons {
+    ...CardButtonElement
+  }
+  use_dominant_color
+}
+
+fragment CardDetailsComponent on CardDetailsComponent {
+  title {
+    ...CardDirectionalStringElement
+  }
+  subtitle {
+    ...CardDirectionalStringElement
+  }
+  destination_obj {
+    ...CardDestination
+  }
+}
+
+fragment CardMediaComponent on CardMediaComponent {
+  media {
+    ...ApiMedia
+  }
+  destination_obj {
+    ...CardDestination
+  }
+  media_button {
+    ...CardButtonElement
+  }
+}
+
+fragment CardMediaWithDetailsHorizontal on CardMediaWithDetailsHorizontal {
+  media {
+    ...ApiMedia
+  }
+  destination_obj {
+    ...CardDestination
+  }
+  topic_detail {
+    subtitle {
+      ...CardDirectionalStringElement
+    }
+    title {
+      ...CardDirectionalStringElement
+    }
+  }
+}
+
+fragment CardSwipeableMediaComponent on CardSwipeableMediaComponent {
+  first_media {
+    ...CardMediaComponent
+  }
+  full_media_list {
+    ...CardMediaComponent
+  }
+}
+
+fragment CardTwitterListDetailsComponent on CardTwitterListDetailsComponent {
+  destination_obj {
+    ...CardDestination
+  }
+  member_count
+  name {
+    ...CardDirectionalStringElement
+  }
+  subscriber_count
+  user_results {
+    result {
+      ...User
+    }
+  }
+}
+
+fragment AppStoreData on CardAppStoreData {
+  app_icon_media {
+    ...ApiMedia
+  }
+  category {
+    ...CardDirectionalStringElement
+  }
+  country_code
+  description {
+    ...CardDirectionalStringElement
+  }
+  id
+  title {
+    ...CardDirectionalStringElement
+  }
+  type
+  url
+  url_resolved
+}
+
+fragment CardDestination on CardDestination {
+  __typename
+  ... on CardBrowserDestination {
+    ...CardBrowserDestination
+  }
+  ... on CardBrowserWithDockedMediaDestination {
+    ...CardBrowserWithDockedMediaDestination
+  }
+  ... on CardAppStoreDestination {
+    ...CardAppStoreDestination
+  }
+  ... on CardAppStoreWithDockedMediaDestination {
+    ...CardAppStoreWithDockedMediaDestination
+  }
+  ... on CardPlayableDestination {
+    ...CardPlayableDestination
+  }
+  ... on CardTweetComposerDestination {
+    ...CardTweetComposerDestination
+  }
+}
+
+fragment CardButtonElement on CardButtonElement {
+  action
+  button_type
+  destination_obj {
+    ...CardDestination
+  }
+  icon_type
+  style
+  text {
+    ...CardDirectionalStringElement
+  }
+  use_dominant_color
+}
+
+fragment CardDirectionalStringElement on CardDirectionalStringElement {
+  content
+  is_rtl
+}
+
+fragment ApiMedia on ApiMedia {
+  id
+  media_key
+  media_id
+  media_info {
+    __typename
+    ... on ApiImage {
+      ...ApiImage
+    }
+    ... on ApiVideo {
+      ...ApiVideo
+    }
+    ... on ApiGif {
+      ...ApiGif
+    }
+  }
+}
+
+fragment CardBrowserDestination on CardBrowserDestination {
+  url_data {
+    vanity_url
+    full_url
+  }
+}
+
+fragment CardBrowserWithDockedMediaDestination on CardBrowserWithDockedMediaDestination {
+  url_data {
+    vanity_url
+    full_url
+  }
+  media {
+    ...ApiMedia
+  }
+}
+
+fragment CardAppStoreDestination on CardAppStoreDestination {
+  app_store_data {
+    ...AppStoreData
+  }
+}
+
+fragment CardAppStoreWithDockedMediaDestination on CardAppStoreWithDockedMediaDestination {
+  app_store_data {
+    ...AppStoreData
+  }
+  app_store_docked_media: media {
+    ...ApiMedia
+  }
+}
+
+fragment CardPlayableDestination on CardPlayableDestination {
+  playable_app_store_data: app_store_data {
+    ...AppStoreData
+  }
+  button_destination {
+    ... on CardAppStoreDestination {
+      app_store_data {
+        ...AppStoreData
+      }
+    }
+  }
+  playable_url: url_data {
+    vanity_url
+    full_url
+  }
+}
+
+fragment CardTweetComposerDestination on CardTweetComposerDestination {
+  is_prefix
+  tweet_composer_media: media {
+    ...ApiMedia
+  }
+  text
+}
+
+fragment ApiImage on ApiImage {
+  alt_text
+  original_img_height
+  original_img_width
+  original_img_url
+  salient_rect {
+    ...ApiMediaRect
+  }
+  color_info {
+    ...MediaColorInfo
+  }
+}
+
+fragment ApiVideo on ApiVideo {
+  aspect_ratio {
+    denominator
+    numerator
+  }
+  duration_millis
+  embeddable
+  preview_image {
+    ...ApiImage
+  }
+  variants {
+    bit_rate
+    content_type
+    url
+  }
+  view_count
+}
+
+fragment ApiGif on ApiGif {
+  alt_text
+  aspect_ratio {
+    denominator
+    numerator
+  }
+  preview_image {
+    ...ApiImage
+  }
+  variants {
+    bit_rate
+    content_type
+    url
+  }
+}
+
+fragment ApiMediaRect on ApiMediaRect {
+  height
+  left
+  top
+  width
+}
+
+fragment MediaColorInfo on MediaColorInfo {
+  palette {
+    percentage
+    rgb {
+      blue
+      green
+      red
+    }
+  }
+}

@@ -1,6 +1,12 @@
 package graphql.validation.rules;
 
 
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
 import graphql.Internal;
 import graphql.language.Definition;
 import graphql.language.FragmentDefinition;
@@ -13,15 +19,11 @@ import graphql.validation.ValidationContext;
 import graphql.validation.ValidationErrorCollector;
 import graphql.validation.ValidationErrorType;
 
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-
 @Internal
 public class NoFragmentCycles extends AbstractRule {
 
     private final Map<String, List<FragmentSpread>> fragmentSpreads = new LinkedHashMap<>();
+    private final HashSet<String> checked = new HashSet<>();
 
 
     public NoFragmentCycles(ValidationContext validationContext, ValidationErrorCollector validationErrorCollector) {
@@ -69,10 +71,27 @@ public class NoFragmentCycles extends AbstractRule {
 
     private void detectCycleRecursive(String fragmentName, String initialName, List<FragmentSpread> spreadPath) {
         List<FragmentSpread> fragmentSpreads = this.fragmentSpreads.get(fragmentName);
+        if (checked.contains(fragmentName)) {
+            return;
+        }
+
         if (fragmentSpreads == null) {
             // KnownFragmentNames will have picked this up.  Lets not NPE
             return;
         }
+
+        // JMB TODO: TIDY
+        /**
+         * JMB NOTES:
+         *
+         * The complexity here is something close to N*N*D, where N is the number of fragments and
+         * D is an average path depth.
+         *
+         * This feels possible to linearize or do with dynamic programming
+         * It also *certainly* repeats work
+         */
+
+
 
         outer:
         for (FragmentSpread fragmentSpread : fragmentSpreads) {
@@ -91,5 +110,6 @@ public class NoFragmentCycles extends AbstractRule {
             detectCycleRecursive(fragmentSpread.getName(), initialName, spreadPath);
             spreadPath.remove(spreadPath.size() - 1);
         }
+        checked.add(fragmentName);
     }
 }
