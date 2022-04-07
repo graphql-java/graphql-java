@@ -69,6 +69,26 @@ public class RuntimeWiring {
         return new Builder();
     }
 
+    /**
+     * @return a builder of Runtime Wiring based on the provided one
+     */
+    public static Builder newRuntimeWiring(RuntimeWiring original) {
+        Builder builder = new Builder();
+        builder.dataFetchers.putAll(original.dataFetchers);
+        builder.defaultDataFetchers.putAll(original.defaultDataFetchers);
+        builder.scalars.putAll(original.scalars);
+        builder.typeResolvers.putAll(original.typeResolvers);
+        builder.registeredDirectiveWiring.putAll(original.registeredDirectiveWiring);
+        builder.directiveWiring.addAll(original.directiveWiring);
+        builder.wiringFactory = original.wiringFactory;
+        builder.enumValuesProviders.putAll(original.enumValuesProviders);
+        builder.schemaGeneratorPostProcessings.addAll(original.schemaGeneratorPostProcessings);
+        builder.fieldVisibility = original.fieldVisibility;
+        builder.codeRegistry = original.codeRegistry;
+        builder.comparatorRegistry = original.comparatorRegistry;
+        return builder;
+    }
+
     public GraphQLCodeRegistry getCodeRegistry() {
         return codeRegistry;
     }
@@ -119,26 +139,6 @@ public class RuntimeWiring {
 
     public GraphqlTypeComparatorRegistry getComparatorRegistry() {
         return comparatorRegistry;
-    }
-
-    /**
-     * @return a Builder based on this RuntimeWiring
-     */
-    public Builder newBuilder() {
-        Builder builder = new Builder();
-        builder.dataFetchers.putAll(dataFetchers);
-        builder.defaultDataFetchers.putAll(defaultDataFetchers);
-        builder.scalars.putAll(scalars);
-        builder.typeResolvers.putAll(typeResolvers);
-        builder.registeredDirectiveWiring.putAll(registeredDirectiveWiring);
-        builder.directiveWiring.addAll(directiveWiring);
-        builder.wiringFactory = wiringFactory;
-        builder.enumValuesProviders.putAll(enumValuesProviders);
-        builder.schemaGeneratorPostProcessings.addAll(schemaGeneratorPostProcessings);
-        builder.fieldVisibility = fieldVisibility;
-        builder.codeRegistry = codeRegistry;
-        builder.comparatorRegistry = comparatorRegistry;
-        return builder;
     }
 
     @PublicApi
