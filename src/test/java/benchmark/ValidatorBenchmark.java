@@ -35,8 +35,8 @@ import static graphql.Assert.assertTrue;
 @State(Scope.Benchmark)
 @BenchmarkMode(Mode.AverageTime)
 @Threads(1)
-@Warmup(iterations = 5, time = 5)
-@Measurement(iterations = 5, time = 10)
+@Warmup(iterations = 4, time = 5)
+@Measurement(iterations = 8, time = 10)
 @Fork(1)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 public class ValidatorBenchmark {
@@ -53,11 +53,13 @@ public class ValidatorBenchmark {
 
     @State(Scope.Benchmark)
     public static class MyState {
+        Scenario largeSchema1;
         Scenario largeSchema4;
         Scenario manyFragments;
 
         @Setup
         public void setup() {
+            largeSchema1 = load("large-schema-1.graphqls", "large-schema-1-query.graphql");
             largeSchema4 = load("large-schema-4.graphqls", "large-schema-4-query.graphql");
             manyFragments = load("many-fragments.graphqls", "many-fragments-query.graphql");
         }
@@ -89,6 +91,11 @@ public class ValidatorBenchmark {
     private void run(Scenario scenario) {
         Validator validator = new Validator();
         validator.validateDocument(scenario.schema, scenario.document);
+    }
+
+    @Benchmark
+    public void largeSchema1(MyState state) {
+        run(state.largeSchema1);
     }
 
     @Benchmark
