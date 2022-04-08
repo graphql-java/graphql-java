@@ -145,6 +145,38 @@ class NoFragmentCyclesTest extends Specification {
         errorCollector.containsValidationError(ValidationErrorType.FragmentCycle)
     }
 
+    def "no co-recursive spreads in non-initial fragments"() {
+        given:
+        def query = """
+          fragment fragA on Dog { ...fragB }
+          fragment fragB on Dog { ...fragC }
+          fragment fragC on Doc { ...fragB }
+        """
+
+        when:
+        traverse(query)
+        then:
+        errorCollector.containsValidationError((ValidationErrorType.FragmentCycle))
+    }
+
+    def "mix of inline fragments and fragments"() {
+        given:
+        def query = """
+            fragment Foo on Foo {
+                ... on Type1 { ...Bar }
+                ... on Type2 { ...Baz }
+            }
+
+            fragment Bar on Bar { ...Baz }
+            fragment Baz on Baz { x }
+        """
+
+        when:
+        traverse(query)
+        then:
+        errorCollector.getErrors().isEmpty()
+    }
+
     def "no self-spread fragments used in multiple operations"() {
         given:
         def query = """
