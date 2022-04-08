@@ -2,8 +2,10 @@ package graphql.validation.rules;
 
 
 import java.util.ArrayList;
+import java.util.Deque;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -24,7 +26,6 @@ public class NoFragmentCycles extends AbstractRule {
 
     private final Map<String, List<FragmentSpread>> fragmentSpreads = new LinkedHashMap<>();
     private final HashSet<String> checked = new HashSet<>();
-
 
     public NoFragmentCycles(ValidationContext validationContext, ValidationErrorCollector validationErrorCollector) {
         super(validationContext, validationErrorCollector);
@@ -65,15 +66,16 @@ public class NoFragmentCycles extends AbstractRule {
 
     @Override
     public void checkFragmentDefinition(FragmentDefinition fragmentDefinition) {
-        List<FragmentSpread> spreadPath = new ArrayList<>();
+        Deque<FragmentSpread> spreadPath = new LinkedList<>();
         detectCycleRecursive(fragmentDefinition.getName(), fragmentDefinition.getName(), spreadPath);
     }
 
-    private void detectCycleRecursive(String fragmentName, String initialName, List<FragmentSpread> spreadPath) {
-        List<FragmentSpread> fragmentSpreads = this.fragmentSpreads.get(fragmentName);
+    private void detectCycleRecursive(String fragmentName, String initialName, Deque<FragmentSpread> spreadPath) {
         if (checked.contains(fragmentName)) {
             return;
         }
+
+        List<FragmentSpread> fragmentSpreads = this.fragmentSpreads.get(fragmentName);
 
         if (fragmentSpreads == null) {
             // KnownFragmentNames will have picked this up.  Lets not NPE
@@ -91,8 +93,6 @@ public class NoFragmentCycles extends AbstractRule {
          * It also *certainly* repeats work
          */
 
-
-
         outer:
         for (FragmentSpread fragmentSpread : fragmentSpreads) {
 
@@ -106,9 +106,9 @@ public class NoFragmentCycles extends AbstractRule {
                     continue outer;
                 }
             }
-            spreadPath.add(fragmentSpread);
+            spreadPath.push(fragmentSpread);
             detectCycleRecursive(fragmentSpread.getName(), initialName, spreadPath);
-            spreadPath.remove(spreadPath.size() - 1);
+            spreadPath.pop();
         }
         checked.add(fragmentName);
     }
