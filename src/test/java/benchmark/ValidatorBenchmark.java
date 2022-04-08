@@ -49,19 +49,15 @@ public class ValidatorBenchmark {
         @Setup
         public void setup() {
             try {
-                String schemaString = readFromClasspath("twitter.graphqls");
-                String query = readFromClasspath("birdwatchnotes-query.graphql");
+                String schemaString = readFromClasspath("large-schema-4.graphqls");
+                String query = readFromClasspath("large-schema-4-query.graphql");
                 schema = SchemaGenerator.createdMockedSchema(schemaString);
                 document = Parser.parse(query);
 
-                // JMB TODO: this fails execution because the query requires variables
-
                 // make sure this is a valid query overall
-                /*
                 GraphQL graphQL = GraphQL.newGraphQL(schema).build();
                 ExecutionResult executionResult = graphQL.execute(query);
                 assertTrue(executionResult.getErrors().size() == 0);
-                 */
             } catch (Exception e) {
                 System.out.println(e);
                 throw new RuntimeException(e);

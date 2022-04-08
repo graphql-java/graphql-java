@@ -90,20 +90,14 @@ public class ValidationUtil {
         }
 
         if (type instanceof GraphQLScalarType) {
-            return true;
-            /*
             Optional<GraphQLError> invalid = parseLiteral(value, ((GraphQLScalarType) type).getCoercing());
             invalid.ifPresent(graphQLError -> handleScalarError(value, (GraphQLScalarType) type, graphQLError));
             return !invalid.isPresent();
-             */
         }
         if (type instanceof GraphQLEnumType) {
-            return true;
-            /*
             Optional<GraphQLError> invalid = parseLiteralEnum(value, (GraphQLEnumType) type);
             invalid.ifPresent(graphQLError -> handleEnumError(value, (GraphQLEnumType) type, graphQLError));
             return !invalid.isPresent();
-             */
         }
 
         if (isList(type)) {
