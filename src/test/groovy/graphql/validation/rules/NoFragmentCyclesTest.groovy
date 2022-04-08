@@ -81,31 +81,6 @@ class NoFragmentCyclesTest extends Specification {
         errorCollector.getErrors().isEmpty()
     }
 
-
-    def "circular fragments"() {
-        given:
-        def query = """
-            fragment fragA on Dog { ...fragB }
-            fragment fragB on Dog { ...fragA }
-        """
-
-        when:
-        traverse(query)
-        then:
-        errorCollector.containsValidationError(ValidationErrorType.FragmentCycle)
-    }
-
-    def 'no spreading itself directly'() {
-        given:
-        def query = """
-        fragment fragA on Dog { ...fragA }
-        """
-        when:
-        traverse(query)
-        then:
-        errorCollector.containsValidationError(ValidationErrorType.FragmentCycle)
-    }
-
     def "no spreading itself indirectly within inline fragment"() {
         given:
         def query = """

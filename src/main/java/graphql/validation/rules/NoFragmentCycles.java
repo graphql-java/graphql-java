@@ -2,10 +2,8 @@ package graphql.validation.rules;
 
 
 import java.util.ArrayList;
-import java.util.Deque;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -66,11 +64,11 @@ public class NoFragmentCycles extends AbstractRule {
 
     @Override
     public void checkFragmentDefinition(FragmentDefinition fragmentDefinition) {
-        Deque<FragmentSpread> spreadPath = new LinkedList<>();
+        List<FragmentSpread> spreadPath = new ArrayList<>();
         detectCycleRecursive(fragmentDefinition.getName(), fragmentDefinition.getName(), spreadPath);
     }
 
-    private void detectCycleRecursive(String fragmentName, String initialName, Deque<FragmentSpread> spreadPath) {
+    private void detectCycleRecursive(String fragmentName, String initialName, List<FragmentSpread> spreadPath) {
         if (checked.contains(fragmentName)) {
             return;
         }
@@ -81,17 +79,6 @@ public class NoFragmentCycles extends AbstractRule {
             // KnownFragmentNames will have picked this up.  Lets not NPE
             return;
         }
-
-        // JMB TODO: TIDY
-        /**
-         * JMB NOTES:
-         *
-         * The complexity here is something close to N*N*D, where N is the number of fragments and
-         * D is an average path depth.
-         *
-         * This feels possible to linearize or do with dynamic programming
-         * It also *certainly* repeats work
-         */
 
         outer:
         for (FragmentSpread fragmentSpread : fragmentSpreads) {
@@ -106,9 +93,9 @@ public class NoFragmentCycles extends AbstractRule {
                     continue outer;
                 }
             }
-            spreadPath.push(fragmentSpread);
+            spreadPath.add(fragmentSpread);
             detectCycleRecursive(fragmentSpread.getName(), initialName, spreadPath);
-            spreadPath.pop();
+            spreadPath.remove(spreadPath.size() - 1);
         }
         checked.add(fragmentName);
     }

@@ -36,28 +36,44 @@ import static graphql.Assert.assertTrue;
 @BenchmarkMode(Mode.AverageTime)
 @Threads(1)
 @Warmup(iterations = 5, time = 5)
-@Measurement(iterations = 10, time = 10)
-@Fork(3)
+@Measurement(iterations = 5, time = 10)
+@Fork(1)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 public class ValidatorBenchmark {
 
+    private static class Scenario {
+        public final GraphQLSchema schema;
+        public final Document document;
+
+        Scenario(GraphQLSchema schema, Document document) {
+            this.schema = schema;
+            this.document = document;
+        }
+    }
+
     @State(Scope.Benchmark)
     public static class MyState {
-        GraphQLSchema schema;
-        Document document;
+        Scenario largeSchema4;
+        Scenario manyFragments;
 
         @Setup
         public void setup() {
+            largeSchema4 = load("large-schema-4.graphqls", "large-schema-4-query.graphql");
+            manyFragments = load("many-fragments.graphqls", "many-fragments-query.graphql");
+        }
+
+        private Scenario load(String schemaPath, String queryPath) {
             try {
-                String schemaString = readFromClasspath("large-schema-4.graphqls");
-                String query = readFromClasspath("large-schema-4-query.graphql");
-                schema = SchemaGenerator.createdMockedSchema(schemaString);
-                document = Parser.parse(query);
+                String schemaString = readFromClasspath(schemaPath);
+                String query = readFromClasspath(queryPath);
+                GraphQLSchema schema = SchemaGenerator.createdMockedSchema(schemaString);
+                Document document = Parser.parse(query);
 
                 // make sure this is a valid query overall
                 GraphQL graphQL = GraphQL.newGraphQL(schema).build();
                 ExecutionResult executionResult = graphQL.execute(query);
                 assertTrue(executionResult.getErrors().size() == 0);
+                return new Scenario(schema, document);
             } catch (Exception e) {
                 System.out.println(e);
                 throw new RuntimeException(e);
@@ -70,9 +86,18 @@ public class ValidatorBenchmark {
         }
     }
 
-    @Benchmark
-    public void runValidator(MyState state) {
+    private void run(Scenario scenario) {
         Validator validator = new Validator();
-        validator.validateDocument(state.schema, state.document);
+        validator.validateDocument(scenario.schema, scenario.document);
+    }
+
+    @Benchmark
+    public void largeSchema4(MyState state) {
+        run(state.largeSchema4);
+    }
+
+    @Benchmark
+    public void manyFragments(MyState state) {
+        run(state.manyFragments);
     }
 }
