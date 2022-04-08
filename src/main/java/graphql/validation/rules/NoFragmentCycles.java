@@ -103,7 +103,7 @@ public class NoFragmentCycles extends AbstractRule {
 
         for (String child : spreads) {
             // don't recurse infinitely, expect the recursion check to happen in checkFragmentDefinition
-            if (path.contains(child)) {
+            if (path.contains(child) || transitiveSpreads.containsKey(child)) {
                 continue;
             }
 
