@@ -6,6 +6,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import graphql.Internal;
 import graphql.language.Definition;
@@ -23,7 +24,7 @@ import graphql.validation.ValidationErrorType;
 public class NoFragmentCycles extends AbstractRule {
 
     private final Map<String, List<FragmentSpread>> fragmentSpreads = new LinkedHashMap<>();
-    private final HashSet<String> checked = new HashSet<>();
+    private final Set<String> checked = new HashSet<>();
 
     public NoFragmentCycles(ValidationContext validationContext, ValidationErrorCollector validationErrorCollector) {
         super(validationContext, validationErrorCollector);
