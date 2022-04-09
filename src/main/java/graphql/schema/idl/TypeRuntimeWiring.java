@@ -152,7 +152,7 @@ public class TypeRuntimeWiring {
         }
 
         public Builder enumValues(EnumValuesProvider enumValuesProvider) {
-            assertNotNull(enumValuesProvider, () -> "you must provide a type resolver");
+            assertNotNull(enumValuesProvider, () -> "you must provide an enum values provider");
             this.enumValuesProvider = enumValuesProvider;
             return this;
         }
