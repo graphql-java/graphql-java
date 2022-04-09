@@ -82,6 +82,7 @@ import static graphql.parser.StringValueParsing.parseTripleQuotedString;
 @Internal
 public class GraphqlAntlrToLanguage {
 
+    private static final List<Comment> NO_COMMENTS = ImmutableKit.emptyList();
     private static final int CHANNEL_COMMENTS = 2;
     private static final int CHANNEL_IGNORED_CHARS = 3;
     private final CommonTokenStream tokens;
@@ -866,6 +867,10 @@ public class GraphqlAntlrToLanguage {
     }
 
     protected List<Comment> getComments(ParserRuleContext ctx) {
+        if (!parserOptions.isCaptureLineComments()) {
+            return NO_COMMENTS;
+        }
+
         Token start = ctx.getStart();
         if (start != null) {
             int tokPos = start.getTokenIndex();
@@ -874,7 +879,7 @@ public class GraphqlAntlrToLanguage {
                 return getCommentOnChannel(refChannel);
             }
         }
-        return ImmutableKit.emptyList();
+        return NO_COMMENTS;
     }
 
 

@@ -26,6 +26,7 @@ public class ParserOptions {
     private static ParserOptions defaultJvmParserOptions = newParserOptions()
             .captureIgnoredChars(false)
             .captureSourceLocation(true)
+            .captureLineComments(true)
             .maxTokens(MAX_QUERY_TOKENS) // to prevent a billion laughs style attacks, we set a default for graphql-java
 
             .build();
@@ -66,12 +67,14 @@ public class ParserOptions {
 
     private final boolean captureIgnoredChars;
     private final boolean captureSourceLocation;
+    private final boolean captureLineComments;
     private final int maxTokens;
     private final ParsingListener parsingListener;
 
     private ParserOptions(Builder builder) {
         this.captureIgnoredChars = builder.captureIgnoredChars;
         this.captureSourceLocation = builder.captureSourceLocation;
+        this.captureLineComments = builder.captureLineComments;
         this.maxTokens = builder.maxTokens;
         this.parsingListener = builder.parsingListener;
     }
@@ -80,7 +83,7 @@ public class ParserOptions {
      * Significant memory savings can be made if we do NOT capture ignored characters,
      * especially in SDL parsing.  So we have set this to false by default.
      *
-     * @return true if ignored chars are captured in AST nodes
+     * @return true if ignored chars should be captured as AST nodes
      */
     public boolean isCaptureIgnoredChars() {
         return captureIgnoredChars;
@@ -91,12 +94,26 @@ public class ParserOptions {
      * Memory savings can be made if we do NOT set {@link graphql.language.SourceLocation}s
      * on AST nodes,  especially in SDL parsing.
      *
-     * @return true if {@link graphql.language.SourceLocation}s are captured in AST nodes
+     * @return true if {@link graphql.language.SourceLocation}s should be captured as AST nodes
      *
      * @see graphql.language.SourceLocation
      */
     public boolean isCaptureSourceLocation() {
         return captureSourceLocation;
+    }
+
+    /**
+     * Single-line {@link graphql.language.Comment}s do not have any semantic meaning in
+     * GraphQL source documents, as such you may wish to ignore them.
+     * <p>
+     * This option does not ignore documentation {@link graphql.language.Description}s.
+     *
+     * @return true if {@link graphql.language.Comment}s should be captured as AST nodes
+     *
+     * @see graphql.language.SourceLocation
+     */
+    public boolean isCaptureLineComments() {
+        return captureLineComments;
     }
 
     /**
@@ -128,6 +145,7 @@ public class ParserOptions {
 
         private boolean captureIgnoredChars = false;
         private boolean captureSourceLocation = true;
+        private boolean captureLineComments = true;
         private int maxTokens = MAX_QUERY_TOKENS;
         private ParsingListener parsingListener = ParsingListener.NOOP;
 
@@ -137,6 +155,7 @@ public class ParserOptions {
         Builder(ParserOptions parserOptions) {
             this.captureIgnoredChars = parserOptions.captureIgnoredChars;
             this.captureSourceLocation = parserOptions.captureSourceLocation;
+            this.captureLineComments = parserOptions.captureLineComments;
             this.maxTokens = parserOptions.maxTokens;
             this.parsingListener = parserOptions.parsingListener;
         }
@@ -148,6 +167,11 @@ public class ParserOptions {
 
         public Builder captureSourceLocation(boolean captureSourceLocation) {
             this.captureSourceLocation = captureSourceLocation;
+            return this;
+        }
+
+        public Builder captureLineComments(boolean captureLineComments) {
+            this.captureLineComments = captureLineComments;
             return this;
         }
 
