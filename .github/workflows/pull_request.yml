@@ -7,6 +7,7 @@ on:
   pull_request:
     branches:
       - master
+
 jobs:
   buildAndTest:
     name: buildAndTest ${{ matrix.java.c }}/${{ matrix.java.t || matrix.java.c }} (${{ matrix.dist.vm }}) on ${{ matrix.os }}
@@ -16,18 +17,15 @@ jobs:
       matrix:
         os: [ 'ubuntu-latest', 'windows-latest' ]
         java:
-          - { c: '8', t: '8' }
-#          - { c: '8', t: '11' }
-#          - { c: '8.0.282', t: '17' }
-          - { c: '8.0.282', t: '8.0.282' }
+          - { c: '8', t: '8' } # Latest Java 8
+          - { c: '8.0.282', t: '8.0.282' } # Earliest supported Java 8
           - { c: '11', t: '11' }
-          - { c: '16', t: '16' }
-          - { c: '8', t: '16' }
-#          - { c: '17', t: '17' }
-#          - { c: '18-ea', t: '18-ea' }
+          - { c: '17', t: '17' }
+          - { c: '18', t: '18' }
+          - { c: '19-ea', t: '19-ea' }
         dist:
           - { name: 'zulu', vm: 'hotspot' }
-#          - { name: 'adopt-openj9', vm: 'openj9' }
+          - { name: 'adopt-openj9', vm: 'openj9' }
 #        exclude:
 #          - # Hangs for some reason
 #            os: 'windows-latest'
@@ -43,14 +41,14 @@ jobs:
       - uses: gradle/wrapper-validation-action@v1
       - id: setup-test-jdk
         name: Set up testing JDK (${{ matrix.java.t || 'undefined' }}, ${{ matrix.dist.name }})
-        uses: actions/setup-java@v2
+        uses: actions/setup-java@v3
         if: ${{ matrix.java.t != null && (matrix.java.c != matrix.java.t) }}
         with:
           java-version: ${{ matrix.java.t }}
           distribution: ${{ matrix.dist.name }}
       - id: setup-base-jdk
         name: Set up base JDK (${{ matrix.java.c }}, ${{ matrix.dist.name }})
-        uses: actions/setup-java@v2
+        uses: actions/setup-java@v3
         with:
           java-version: ${{ matrix.java.c }}
           distribution: ${{ matrix.dist.name }}
@@ -74,7 +72,7 @@ jobs:
           arguments: check --info --stacktrace -Porg.gradle.java.installations.paths=${{ steps.setup-test-jdk.outputs.path }}
       - name: Archive Gradle Test Summary
         uses: actions/upload-artifact@v2
-        if: ${{ failure() }}
+        if: ${{ always() }}
         with:
           name: gradle-test-summary-b${{ matrix.java.c }}-t${{ matrix.java.t || matrix.java.c }}-${{ matrix.dist.name }}-${{ matrix.os }}
           path: build/reports/tests/test/
