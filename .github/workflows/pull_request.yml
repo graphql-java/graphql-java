@@ -22,15 +22,31 @@ jobs:
           - { c: '11', t: '11' }
           - { c: '17', t: '17' }
           - { c: '18', t: '18' }
-          - { c: '19-ea', t: '19-ea' }
+        # - { c: '19-ea', t: '19-ea' } # Will be supported by Gradle 7.5
         dist:
           - { name: 'zulu', vm: 'hotspot' }
           - { name: 'adopt-openj9', vm: 'openj9' }
-#        exclude:
-#          - # Hangs for some reason
-#            os: 'windows-latest'
-#            java: { c: '8', t: '17' }
-#            dist: { name: 'adopt-openj9', vm: 'openj9' }
+        exclude:
+          - # Hangs for some reason
+            os: 'windows-latest'
+            java: { c: '8', t: '17' }
+            dist: { name: 'adopt-openj9', vm: 'openj9' }
+          - # IBM Semeru does not offer Java 18
+            os: 'ubuntu-latest'
+            java: { c: '18', t: '18' }
+            dist: { name: 'adopt-openj9', vm: 'openj9' }
+          - # IBM Semeru does not offer Java 18
+            os: 'windows-latest'
+            java: { c: '18', t: '18' }
+            dist: { name: 'adopt-openj9', vm: 'openj9' }
+          - # Save some CPU (and the environment)
+            os: 'ubuntu-latest'
+            java: { c: '11', t: '11' }
+            dist: { name: 'adopt-openj9', vm: 'openj9' }
+          - # Save some CPU (and the environment)
+            os: 'windows-latest'
+            java: { c: '11', t: '11' }
+            dist: { name: 'adopt-openj9', vm: 'openj9' }
     env:
       ORG_GRADLE_PROJECT_toolchainCompileVersion: ${{ matrix.java.c }}
       ORG_GRADLE_PROJECT_toolchainJavadocVersion: ${{ matrix.java.c }}
@@ -71,9 +87,10 @@ jobs:
         with:
           arguments: check --info --stacktrace -Porg.gradle.java.installations.paths=${{ steps.setup-test-jdk.outputs.path }}
       - name: Archive Gradle Test Summary
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         if: ${{ always() }}
         with:
           name: gradle-test-summary-b${{ matrix.java.c }}-t${{ matrix.java.t || matrix.java.c }}-${{ matrix.dist.name }}-${{ matrix.os }}
           path: build/reports/tests/test/
           retention-days: 4
+          if-no-files-found: ignore
