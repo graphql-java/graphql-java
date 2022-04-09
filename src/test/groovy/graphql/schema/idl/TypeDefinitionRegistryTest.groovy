@@ -23,6 +23,9 @@ import graphql.parser.MultiSourceReader
 import graphql.schema.GraphQLTypeUtil
 import graphql.schema.idl.errors.SchemaProblem
 import graphql.schema.idl.errors.SchemaRedefinitionError
+import org.spockframework.runtime.extension.builtin.PreconditionContext
+import spock.lang.IgnoreIf
+import spock.lang.Issue
 import spock.lang.Specification
 import spock.lang.Unroll
 
@@ -1077,6 +1080,8 @@ class TypeDefinitionRegistryTest extends Specification {
                         "Foo", "Bar", "FooScalar", "FooDirective", "Extra", "ExtraInterface"]
     }
 
+    @Issue("https://github.com/graphql-java/graphql-java/issues/2709")
+    @IgnoreIf({ PreconditionContext it -> it.jvm.java16Compatible })
     def "multi source reader works"() {
 
         def sdl1 = '''

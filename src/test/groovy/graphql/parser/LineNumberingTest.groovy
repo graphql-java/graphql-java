@@ -3,6 +3,9 @@ package graphql.parser
 import graphql.language.Field
 import graphql.language.FragmentDefinition
 import graphql.language.OperationDefinition
+import org.spockframework.runtime.extension.builtin.PreconditionContext
+import spock.lang.IgnoreIf
+import spock.lang.Issue
 import spock.lang.Specification
 import spock.lang.Unroll
 
@@ -44,6 +47,8 @@ fragment X on Book {
 
     }
 
+    @Issue("https://github.com/graphql-java/graphql-java/issues/2709")
+    @IgnoreIf({ PreconditionContext it -> it.jvm.java16Compatible })
     def "multi source line numbering works as expected"() {
         def queryBit1 = '''query X {
    field1
