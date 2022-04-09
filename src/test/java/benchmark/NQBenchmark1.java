@@ -19,11 +19,11 @@ import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Threads;
 import org.openjdk.jmh.annotations.Warmup;
+import org.openjdk.jmh.infra.Blackhole;
 
 import java.io.IOException;
 import java.net.URL;
 import java.util.Collections;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 import static com.google.common.io.Resources.getResource;
@@ -32,9 +32,9 @@ import static com.google.common.io.Resources.getResource;
 @BenchmarkMode(Mode.Throughput)
 @Warmup(iterations = 2)
 @Measurement(iterations = 2, timeUnit = TimeUnit.NANOSECONDS)
-public class NQBenchmark {
+public class NQBenchmark1 {
 
-    @org.openjdk.jmh.annotations.State(Scope.Benchmark)
+    @State(Scope.Benchmark)
     public static class MyState {
 
         GraphQLSchema schema;
@@ -62,15 +62,29 @@ public class NQBenchmark {
 
     @Benchmark
     @Warmup(iterations = 2)
-    @Measurement(iterations = 100, time = 10)
+    @Measurement(iterations = 3, time = 10)
     @Threads(1)
     @Fork(3)
     @BenchmarkMode(Mode.AverageTime)
     @OutputTimeUnit(TimeUnit.MILLISECONDS)
-    public ExecutableNormalizedOperation benchMarkAvgTime(MyState myState) throws ExecutionException, InterruptedException {
+    public void benchMarkAvgTime(MyState myState, Blackhole blackhole )  {
+        runImpl(myState, blackhole);
+    }
+
+    @Benchmark
+    @Warmup(iterations = 2)
+    @Measurement(iterations = 3, time = 10)
+    @Threads(1)
+    @Fork(3)
+    @BenchmarkMode(Mode.Throughput)
+    @OutputTimeUnit(TimeUnit.SECONDS)
+    public void benchMarkThroughput(MyState myState, Blackhole blackhole )  {
+        runImpl(myState, blackhole);
+    }
+
+    private void runImpl(MyState myState, Blackhole blackhole) {
         ExecutableNormalizedOperation executableNormalizedOperation = ExecutableNormalizedOperationFactory.createExecutableNormalizedOperation(myState.schema, myState.document, null, Collections.emptyMap());
-//        System.out.println("fields size:" + normalizedQuery.getFieldToNormalizedField().size());
-        return executableNormalizedOperation;
+        blackhole.consume(executableNormalizedOperation);
     }
 
 

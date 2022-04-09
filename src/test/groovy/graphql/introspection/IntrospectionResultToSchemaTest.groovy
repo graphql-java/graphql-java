@@ -260,8 +260,11 @@ interface Character {
         then:
         result == """"One of the films in the Star Wars Trilogy"
 enum Episode {
+  "Released in 1977."
   NEWHOPE
+  "Released in 1980."
   EMPIRE
+  "Released in 1983."
   JEDI @deprecated(reason: "killed by clones")
 }"""
 
@@ -425,8 +428,11 @@ interface Character {
 
 "One of the films in the Star Wars Trilogy"
 enum Episode {
+  "Released in 1977."
   NEWHOPE
+  "Released in 1980."
   EMPIRE
+  "Released in 1983."
   JEDI
 }
 
@@ -492,14 +498,17 @@ type Episode {
 
 " Simpson seasons"
 enum Season {
+  " the beginning"
   Season1
   Season2
   Season3
   Season4
+  " Another one"
   Season5
   Season6
   Season7
   Season8
+  " Not really the last one :-)"
   Season9
 }
 

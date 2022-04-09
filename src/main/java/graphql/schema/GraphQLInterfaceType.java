@@ -45,7 +45,7 @@ public class GraphQLInterfaceType implements GraphQLNamedType, GraphQLCompositeT
     private final TypeResolver typeResolver;
     private final InterfaceTypeDefinition definition;
     private final ImmutableList<InterfaceTypeExtensionDefinition> extensionDefinitions;
-    private final DirectivesUtil.DirectivesHolder directives;
+    private final DirectivesUtil.DirectivesHolder directivesHolder;
 
     private final ImmutableList<GraphQLNamedOutputType> originalInterfaces;
     private final Comparator<? super GraphQLSchemaElement> interfaceComparator;
@@ -53,18 +53,19 @@ public class GraphQLInterfaceType implements GraphQLNamedType, GraphQLCompositeT
 
 
     public static final String CHILD_FIELD_DEFINITIONS = "fieldDefinitions";
-    public static final String CHILD_DIRECTIVES = "directives";
     public static final String CHILD_INTERFACES = "interfaces";
 
     @Internal
     private GraphQLInterfaceType(String name,
-                                String description,
-                                List<GraphQLFieldDefinition> fieldDefinitions,
-                                TypeResolver typeResolver, List<GraphQLDirective> directives,
-                                InterfaceTypeDefinition definition,
-                                List<InterfaceTypeExtensionDefinition> extensionDefinitions,
-                                List<GraphQLNamedOutputType> interfaces,
-                                Comparator<? super GraphQLSchemaElement> interfaceComparator) {
+                                 String description,
+                                 List<GraphQLFieldDefinition> fieldDefinitions,
+                                 TypeResolver typeResolver,
+                                 List<GraphQLDirective> directives,
+                                 List<GraphQLAppliedDirective> appliedDirectives,
+                                 InterfaceTypeDefinition definition,
+                                 List<InterfaceTypeExtensionDefinition> extensionDefinitions,
+                                 List<GraphQLNamedOutputType> interfaces,
+                                 Comparator<? super GraphQLSchemaElement> interfaceComparator) {
         assertValidName(name);
         assertNotNull(fieldDefinitions, () -> "fieldDefinitions can't null");
         assertNotNull(directives, () -> "directives cannot be null");
@@ -76,7 +77,7 @@ public class GraphQLInterfaceType implements GraphQLNamedType, GraphQLCompositeT
         this.interfaceComparator = interfaceComparator;
         this.originalInterfaces = ImmutableList.copyOf(sortTypes(interfaceComparator, interfaces));
         this.extensionDefinitions = ImmutableList.copyOf(extensionDefinitions);
-        this.directives = new DirectivesUtil.DirectivesHolder(directives);
+        this.directivesHolder = new DirectivesUtil.DirectivesHolder(directives, appliedDirectives);
         buildDefinitionMap(fieldDefinitions);
     }
 
@@ -125,22 +126,37 @@ public class GraphQLInterfaceType implements GraphQLNamedType, GraphQLCompositeT
 
     @Override
     public List<GraphQLDirective> getDirectives() {
-        return directives.getDirectives();
+        return directivesHolder.getDirectives();
     }
 
     @Override
     public Map<String, GraphQLDirective> getDirectivesByName() {
-        return directives.getDirectivesByName();
+        return directivesHolder.getDirectivesByName();
     }
 
     @Override
     public Map<String, List<GraphQLDirective>> getAllDirectivesByName() {
-        return directives.getAllDirectivesByName();
+        return directivesHolder.getAllDirectivesByName();
     }
 
     @Override
     public GraphQLDirective getDirective(String directiveName) {
-        return directives.getDirective(directiveName);
+        return directivesHolder.getDirective(directiveName);
+    }
+
+    @Override
+    public List<GraphQLAppliedDirective> getAppliedDirectives() {
+        return directivesHolder.getAppliedDirectives();
+    }
+
+    @Override
+    public Map<String, List<GraphQLAppliedDirective>> getAllAppliedDirectivesByName() {
+        return directivesHolder.getAllAppliedDirectivesByName();
+    }
+
+    @Override
+    public GraphQLAppliedDirective getAppliedDirective(String directiveName) {
+        return directivesHolder.getAppliedDirective(directiveName);
     }
 
     @Override
@@ -181,8 +197,9 @@ public class GraphQLInterfaceType implements GraphQLNamedType, GraphQLCompositeT
     @Override
     public List<GraphQLSchemaElement> getChildren() {
         List<GraphQLSchemaElement> children = new ArrayList<>(fieldDefinitionsByName.values());
-        children.addAll(directives.getDirectives());
         children.addAll(getInterfaces());
+        children.addAll(directivesHolder.getDirectives());
+        children.addAll(directivesHolder.getAppliedDirectives());
         return children;
     }
 
@@ -190,8 +207,9 @@ public class GraphQLInterfaceType implements GraphQLNamedType, GraphQLCompositeT
     public SchemaElementChildrenContainer getChildrenWithTypeReferences() {
         return SchemaElementChildrenContainer.newSchemaElementChildrenContainer()
                 .children(CHILD_FIELD_DEFINITIONS, fieldDefinitionsByName.values())
-                .children(CHILD_DIRECTIVES, directives.getDirectives())
                 .children(CHILD_INTERFACES, originalInterfaces)
+                .children(CHILD_DIRECTIVES, directivesHolder.getDirectives())
+                .children(CHILD_APPLIED_DIRECTIVES, directivesHolder.getAppliedDirectives())
                 .build();
     }
 
@@ -201,6 +219,8 @@ public class GraphQLInterfaceType implements GraphQLNamedType, GraphQLCompositeT
                 builder.replaceDirectives(newChildren.getChildren(CHILD_DIRECTIVES))
                         .replaceFields(newChildren.getChildren(CHILD_FIELD_DEFINITIONS))
                         .replaceInterfacesOrReferences(newChildren.getChildren(CHILD_INTERFACES))
+                        .replaceDirectives(newChildren.getChildren(CHILD_DIRECTIVES))
+                        .replaceAppliedDirectives(newChildren.getChildren(CHILD_APPLIED_DIRECTIVES))
         );
     }
 
@@ -243,12 +263,11 @@ public class GraphQLInterfaceType implements GraphQLNamedType, GraphQLCompositeT
 
 
     @PublicApi
-    public static class Builder extends GraphqlTypeBuilder {
+    public static class Builder extends GraphqlDirectivesContainerTypeBuilder<Builder,Builder> {
         private TypeResolver typeResolver;
         private InterfaceTypeDefinition definition;
         private List<InterfaceTypeExtensionDefinition> extensionDefinitions = emptyList();
         private final Map<String, GraphQLFieldDefinition> fields = new LinkedHashMap<>();
-        private final List<GraphQLDirective> directives = new ArrayList<>();
         private final Map<String, GraphQLNamedOutputType> interfaces = new LinkedHashMap<>();
 
         public Builder() {
@@ -262,25 +281,7 @@ public class GraphQLInterfaceType implements GraphQLNamedType, GraphQLCompositeT
             this.extensionDefinitions = existing.getExtensionDefinitions();
             this.fields.putAll(getByName(existing.getFieldDefinitions(), GraphQLFieldDefinition::getName));
             this.interfaces.putAll(getByName(existing.originalInterfaces, GraphQLNamedType::getName));
-            DirectivesUtil.addAll(this.directives,existing.getDirectives());
-        }
-
-        @Override
-        public Builder name(String name) {
-            super.name(name);
-            return this;
-        }
-
-        @Override
-        public Builder description(String description) {
-            super.description(description);
-            return this;
-        }
-
-        @Override
-        public Builder comparatorRegistry(GraphqlTypeComparatorRegistry comparatorRegistry) {
-            super.comparatorRegistry(comparatorRegistry);
-            return this;
+            copyExistingDirectives(existing);
         }
 
         public Builder definition(InterfaceTypeDefinition definition) {
@@ -365,42 +366,6 @@ public class GraphQLInterfaceType implements GraphQLNamedType, GraphQLCompositeT
             return this;
         }
 
-        public Builder withDirectives(GraphQLDirective... directives) {
-            assertNotNull(directives, () -> "directives can't be null");
-            this.directives.clear();
-            for (GraphQLDirective directive : directives) {
-                withDirective(directive);
-            }
-            return this;
-        }
-
-        public Builder withDirective(GraphQLDirective directive) {
-            assertNotNull(directive, () -> "directive can't be null");
-            DirectivesUtil.add(this.directives, directive);
-            return this;
-        }
-
-        public Builder replaceDirectives(List<GraphQLDirective> directives) {
-            assertNotNull(directives, () -> "directive can't be null");
-            this.directives.clear();
-            DirectivesUtil.addAll(this.directives, directives);
-            return this;
-        }
-
-        public Builder withDirective(GraphQLDirective.Builder builder) {
-            return withDirective(builder.build());
-        }
-
-        /**
-         * This is used to clear all the directives in the builder so far.
-         *
-         * @return the builder
-         */
-        public Builder clearDirectives() {
-            directives.clear();
-            return this;
-        }
-
         public Builder replaceInterfaces(List<GraphQLInterfaceType> interfaces) {
             return replaceInterfacesOrReferences(interfaces);
         }
@@ -444,6 +409,44 @@ public class GraphQLInterfaceType implements GraphQLNamedType, GraphQLCompositeT
             return this;
         }
 
+        // -- the following are repeated to avoid a binary incompatibility problem --
+
+
+        @Override
+        public Builder replaceDirectives(List<GraphQLDirective> directives) {
+            return super.replaceDirectives(directives);
+        }
+
+        @Override
+        public Builder withDirectives(GraphQLDirective... directives) {
+            return super.withDirectives(directives);
+        }
+
+        @Override
+        public Builder withDirective(GraphQLDirective directive) {
+            return super.withDirective(directive);
+        }
+
+        @Override
+        public Builder withDirective(GraphQLDirective.Builder builder) {
+            return super.withDirective(builder);
+        }
+
+        @Override
+        public Builder clearDirectives() {
+            return super.clearDirectives();
+        }
+
+        @Override
+        public Builder name(String name) {
+            return super.name(name);
+        }
+
+        @Override
+        public Builder description(String description) {
+            return super.description(description);
+        }
+
         public GraphQLInterfaceType build() {
             return new GraphQLInterfaceType(
                     name,
@@ -451,6 +454,7 @@ public class GraphQLInterfaceType implements GraphQLNamedType, GraphQLCompositeT
                     sort(fields, GraphQLInterfaceType.class, GraphQLFieldDefinition.class),
                     typeResolver,
                     sort(directives, GraphQLInterfaceType.class, GraphQLDirective.class),
+                    sort(appliedDirectives, GraphQLScalarType.class, GraphQLAppliedDirective.class),
                     definition,
                     extensionDefinitions,
                     valuesToList(interfaces),

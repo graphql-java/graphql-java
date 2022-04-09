@@ -4,6 +4,7 @@ import graphql.PublicApi;
 import graphql.language.NamedNode;
 import graphql.language.NodeParentTree;
 import graphql.schema.DataFetcher;
+import graphql.schema.GraphQLAppliedDirective;
 import graphql.schema.GraphQLCodeRegistry;
 import graphql.schema.GraphQLDirective;
 import graphql.schema.GraphQLDirectiveContainer;
@@ -54,6 +55,20 @@ public interface SchemaDirectiveWiringEnvironment<T extends GraphQLDirectiveCont
      * @return a named directive or null
      */
     GraphQLDirective getDirective(String directiveName);
+
+    /**
+     * @return all of the directives that are on the runtime element
+     */
+    Map<String, GraphQLAppliedDirective> getAppliedDirectives();
+
+    /**
+     * Returns a named applied directive or null
+     *
+     * @param directiveName the name of the directive
+     *
+     * @return a named directive or null
+     */
+    GraphQLAppliedDirective getAppliedDirective(String directiveName);
 
     /**
      * Returns true if the named directive is present

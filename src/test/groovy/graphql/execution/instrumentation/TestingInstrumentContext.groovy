@@ -7,11 +7,13 @@ class TestingInstrumentContext<T> implements InstrumentationContext<T> {
     def start = System.currentTimeMillis()
     def executionList = []
     def throwableList = []
+    def useOnDispatch
 
-    TestingInstrumentContext(op, executionList, throwableList) {
+    TestingInstrumentContext(op, executionList, throwableList, useOnDispatch) {
         this.op = op
         this.executionList = executionList
         this.throwableList = throwableList
+        this.useOnDispatch = useOnDispatch
         executionList << "start:$op"
         println("Started $op...")
     }
@@ -24,6 +26,9 @@ class TestingInstrumentContext<T> implements InstrumentationContext<T> {
 
     @Override
     void onDispatched(CompletableFuture<T> result) {
+        if (useOnDispatch) {
+            this.executionList << "onDispatched:$op"
+        }
     }
 
     @Override

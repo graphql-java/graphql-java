@@ -575,7 +575,7 @@ public class AstPrinter {
             }
             return "";
         }
-        return start + maybeString + (!isEmpty(end) ? end : "");
+        return new StringBuilder().append(start).append(maybeString).append(!isEmpty(end) ? end : "").toString();
     }
 
     private <T extends Node> String block(List<T> nodes) {
@@ -583,20 +583,20 @@ public class AstPrinter {
             return "{}";
         }
         if (compactMode) {
-            return "{"
-                    + join(nodes, " ")
-                    + "}";
+            return new StringBuilder().append("{").append(join(nodes, " ")).append("}").toString();
         }
-        return indent("{\n"
-                + join(nodes, "\n"))
+        return indent(new StringBuilder().append("{\n").append(join(nodes, "\n")))
                 + "\n}";
     }
 
-    private String indent(String maybeString) {
-        if (isEmpty(maybeString)) {
-            return "";
+    private StringBuilder indent(StringBuilder maybeString) {
+        for (int i = 0; i < maybeString.length(); i++) {
+            char c = maybeString.charAt(i);
+            if (c == '\n') {
+                maybeString.replace(i,i+1,"\n  ");
+                i+=3;
+            }
         }
-        maybeString = maybeString.replaceAll("\\n", "\n  ");
         return maybeString;
     }
 
@@ -605,13 +605,14 @@ public class AstPrinter {
         if (maybeNode == null) {
             return "";
         }
-        return start + node(maybeNode) + (isEmpty(end) ? "" : end);
+        return new StringBuilder().append(start).append(node(maybeNode)).append(isEmpty(end) ? "" : end).toString();
     }
 
     /**
      * This will pretty print the AST node in graphql language format
      *
      * @param node the AST node to print
+     *
      * @return the printed node in graphql language format
      */
     public static String printAst(Node node) {
@@ -637,6 +638,7 @@ public class AstPrinter {
      * and comments stripped out of the text.
      *
      * @param node the AST node to print
+     *
      * @return the printed node in a compact graphql language format
      */
     public static String printAstCompact(Node node) {

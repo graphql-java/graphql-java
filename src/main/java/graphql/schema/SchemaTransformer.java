@@ -528,6 +528,7 @@ public class SchemaTransformer {
         static final String ADD_TYPES = "addTypes";
         static final String DIRECTIVES = "directives";
         static final String SCHEMA_DIRECTIVES = "schemaDirectives";
+        static final String SCHEMA_APPLIED_DIRECTIVES = "schemaAppliedDirectives";
         static final String INTROSPECTION = "introspection";
         static final String SCHEMA_ELEMENT = "schemaElement";
 
@@ -539,6 +540,7 @@ public class SchemaTransformer {
         Set<GraphQLType> additionalTypes;
         Set<GraphQLDirective> directives;
         Set<GraphQLDirective> schemaDirectives;
+        Set<GraphQLAppliedDirective> schemaAppliedDirectives;
         GraphQLSchemaElement schemaElement;
 
         DummyRoot(GraphQLSchema schema) {
@@ -548,6 +550,7 @@ public class SchemaTransformer {
             subscription = schema.isSupportingSubscriptions() ? schema.getSubscriptionType() : null;
             additionalTypes = schema.getAdditionalTypes();
             schemaDirectives = new LinkedHashSet<>(schema.getSchemaDirectives());
+            schemaAppliedDirectives = new LinkedHashSet<>(schema.getSchemaAppliedDirectives());
             directives = new LinkedHashSet<>(schema.getDirectives());
             introspectionSchemaType = schema.getIntrospectionSchemaType();
         }
@@ -582,6 +585,7 @@ public class SchemaTransformer {
                 builder.children(ADD_TYPES, additionalTypes);
                 builder.children(DIRECTIVES, directives);
                 builder.children(SCHEMA_DIRECTIVES, schemaDirectives);
+                builder.children(SCHEMA_APPLIED_DIRECTIVES, schemaAppliedDirectives);
                 builder.child(INTROSPECTION, introspectionSchemaType);
             }
             return builder.build();
@@ -601,6 +605,7 @@ public class SchemaTransformer {
             additionalTypes = new LinkedHashSet<>(newChildren.getChildren(ADD_TYPES));
             directives = new LinkedHashSet<>(newChildren.getChildren(DIRECTIVES));
             schemaDirectives = new LinkedHashSet<>(newChildren.getChildren(SCHEMA_DIRECTIVES));
+            schemaAppliedDirectives = new LinkedHashSet<>(newChildren.getChildren(SCHEMA_APPLIED_DIRECTIVES));
             return this;
         }
 
@@ -618,6 +623,7 @@ public class SchemaTransformer {
                     .additionalDirectives(this.directives)
                     .introspectionSchemaType(this.introspectionSchemaType)
                     .withSchemaDirectives(this.schemaDirectives)
+                    .withSchemaAppliedDirectives(this.schemaAppliedDirectives)
                     .codeRegistry(codeRegistry.build())
                     .description(schema.getDescription())
                     .build();

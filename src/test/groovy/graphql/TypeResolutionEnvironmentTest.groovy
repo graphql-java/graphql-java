@@ -47,7 +47,7 @@ class TypeResolutionEnvironmentTest extends Specification {
 
         def environment = TypeResolutionParameters.newParameters()
                 .value("source")
-                .argumentValues([a: "b"])
+                .argumentValues(() -> [a: "b"])
                 .field(mergedField(new Field("field")))
                 .fieldType(interfaceType)
                 .schema(schema)
@@ -117,7 +117,7 @@ class TypeResolutionEnvironmentTest extends Specification {
         when:
         def environmentFooBar = TypeResolutionParameters.newParameters()
                 .value("source")
-                .argumentValues([:])
+                .argumentValues(() -> [:])
                 .field(mergedField(new Field("field")))
                 .fieldType(interfaceType)
                 .schema(schema)
@@ -133,7 +133,7 @@ class TypeResolutionEnvironmentTest extends Specification {
         when:
         def environmentFooImpl = TypeResolutionParameters.newParameters()
                 .value("source")
-                .argumentValues([:])
+                .argumentValues(() -> [:])
                 .field(mergedField(new Field("field")))
                 .fieldType(interfaceType)
                 .schema(schema)

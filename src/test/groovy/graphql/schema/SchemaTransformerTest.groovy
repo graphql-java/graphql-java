@@ -791,4 +791,56 @@ type Query {
         newSchema.getObjectType("__Field") == null
 
     }
+
+
+    def "applied directive and applied args can be changed"() {
+        // this is a test when only
+        // one element inside a scc is changed
+        def schema = TestUtil.schema("""
+            directive @foo(arg1 : String) on FIELD_DEFINITION
+            directive @bar(arg1 : String) on FIELD_DEFINITION
+            type Query {
+                field : String @foo(arg1 : "fooArg")
+                field2 : String @bar(arg1 : "barArg")
+            }
+""")
+
+        def visitor = new GraphQLTypeVisitorStub() {
+
+            @Override
+            TraversalControl visitGraphQLAppliedDirectiveArgument(GraphQLAppliedDirectiveArgument node, TraverserContext<GraphQLSchemaElement> context) {
+                if (context.getParentNode() instanceof GraphQLAppliedDirective) {
+                    GraphQLAppliedDirective directive = context.getParentNode()
+                    if (directive.name == "foo") {
+                        if (node.name == "arg1") {
+                            def newNode = node.transform({
+                                it.name("changedArg1")
+                            })
+                            return changeNode(context, newNode)
+                        }
+                    }
+                }
+                return TraversalControl.CONTINUE
+            }
+
+            @Override
+            TraversalControl visitGraphQLAppliedDirective(GraphQLAppliedDirective node, TraverserContext<GraphQLSchemaElement> context) {
+                return super.visitGraphQLAppliedDirective(node, context)
+            }
+
+        }
+
+        when:
+        def newSchema = SchemaTransformer.transformSchema(schema, visitor)
+        then:
+        def printer = new SchemaPrinter(SchemaPrinter.Options.defaultOptions().includeDirectives(true))
+        def newQueryType = newSchema.getObjectType("Query")
+
+        printer.print(newQueryType) == '''type Query {
+  field: String @foo(changedArg1 : "fooArg")
+  field2: String @bar(arg1 : "barArg")
+}
+
+'''
+    }
 }

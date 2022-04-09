@@ -495,7 +495,25 @@ class ValuesResolverTest extends Specification {
 
         then:
         def error = thrown(NonNullableValueCoercedAsNullException)
-        error.message == "Variable 'foo' has coerced Null value for NonNull type 'String!'"
+        error.message == "Variable 'foo' has an invalid value: Variable 'foo' has coerced Null value for NonNull type 'String!'"
+    }
+
+    def "coerceVariableValues: if variableType is a list of Non-Nullable type, and element value is null, throw a query error"() {
+        given:
+        def schema = TestUtil.schemaWithInputType(list(nonNull(GraphQLString)))
+
+        def defaultValueForFoo = new ArrayValue([new StringValue("defaultValueForFoo")])
+        def type = new ListType(new NonNullType(new TypeName("String")))
+        VariableDefinition fooVarDef = new VariableDefinition("foo", type, defaultValueForFoo)
+
+        def variableValuesMap = ["foo": [null]]
+
+        when:
+        resolver.coerceVariableValues(schema, [fooVarDef], variableValuesMap)
+
+        then:
+        def error = thrown(NonNullableValueCoercedAsNullException)
+        error.message == "Variable 'foo' has an invalid value: Coerced Null value for NonNull type 'String!'"
     }
 
     // Note: use NullValue defined in Field when it exists,
