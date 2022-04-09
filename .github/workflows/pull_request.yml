@@ -27,10 +27,6 @@ jobs:
           - { name: 'zulu', vm: 'hotspot' }
           - { name: 'adopt-openj9', vm: 'openj9' }
         exclude:
-          - # Hangs for some reason
-            os: 'windows-latest'
-            java: { c: '8', t: '17' }
-            dist: { name: 'adopt-openj9', vm: 'openj9' }
           - # IBM Semeru does not offer Java 18
             os: 'ubuntu-latest'
             java: { c: '18', t: '18' }
@@ -47,6 +43,15 @@ jobs:
             os: 'windows-latest'
             java: { c: '11', t: '11' }
             dist: { name: 'adopt-openj9', vm: 'openj9' }
+        include:
+          - # Build on 8.0.282 (earliest supported), and test on 17
+            os: 'ubuntu-latest'
+            java: { c: '8.0.282', t: '17' }
+            dist: { name: 'zulu', vm: 'hotspot' }
+          - # Remove when https://github.com/graphql-java/graphql-java/issues/2709 is fixed
+            os: 'windows-latest'
+            java: { c: '16', t: '16' }
+            dist: { name: 'zulu', vm: 'hotspot' }
     env:
       ORG_GRADLE_PROJECT_toolchainCompileVersion: ${{ matrix.java.c }}
       ORG_GRADLE_PROJECT_toolchainJavadocVersion: ${{ matrix.java.c }}
@@ -88,7 +93,7 @@ jobs:
           arguments: check --info --stacktrace -Porg.gradle.java.installations.paths=${{ steps.setup-test-jdk.outputs.path }}
       - name: Archive Gradle Test Summary
         uses: actions/upload-artifact@v3
-        if: ${{ always() }}
+        if: ${{ failure() }}
         with:
           name: gradle-test-summary-b${{ matrix.java.c }}-t${{ matrix.java.t || matrix.java.c }}-${{ matrix.dist.name }}-${{ matrix.os }}
           path: build/reports/tests/test/
