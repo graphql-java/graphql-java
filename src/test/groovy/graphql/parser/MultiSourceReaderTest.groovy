@@ -13,9 +13,8 @@ class MultiSourceReaderTest extends Specification {
         multiSource.close()
     }
 
-    // TODO un-ignore and fix test
-    //  https://spockframework.org/spock/docs/2.0/extensions.html#_ignoreif
-//    @IgnoreIf({ PreconditionContext it -> it.os.windows })
+    // Does not work on Windows
+    @IgnoreIf({ PreconditionContext it -> it.os.windows })
     def "can combine files"() {
         when:
         multiSource = MultiSourceReader.newMultiSourceReader()
