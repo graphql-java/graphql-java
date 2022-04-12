@@ -125,6 +125,13 @@ public class PropertyFetchingImpl {
     }
 
     private Object getPropertyViaGetterMethod(Object object, String propertyName, GraphQLType graphQLType, MethodFinder methodFinder, Object singleArgumentValue) throws NoSuchMethodException {
+        if (isRecord(object.getClass())) {
+            try {
+                return getPropertyViaGetterWithoutPrefix(object, propertyName, methodFinder, singleArgumentValue);
+            } catch (NoSuchMethodException ignored) {
+                // Records can still have getX and isX methods...
+            }
+        }
         if (isBooleanProperty(graphQLType)) {
             try {
                 return getPropertyViaGetterUsingPrefix(object, propertyName, "is", methodFinder, singleArgumentValue);
@@ -139,6 +146,11 @@ public class PropertyFetchingImpl {
     private Object getPropertyViaGetterUsingPrefix(Object object, String propertyName, String prefix, MethodFinder methodFinder, Object singleArgumentValue) throws NoSuchMethodException {
         String getterName = prefix + propertyName.substring(0, 1).toUpperCase() + propertyName.substring(1);
         Method method = methodFinder.apply(object.getClass(), getterName);
+        return invokeMethod(object, singleArgumentValue, method, takesSingleArgumentTypeAsOnlyArgument(method));
+    }
+
+    private Object getPropertyViaGetterWithoutPrefix(Object object, String propertyName, MethodFinder methodFinder, Object singleArgumentValue) throws NoSuchMethodException {
+        Method method = methodFinder.apply(object.getClass(), propertyName);
         return invokeMethod(object, singleArgumentValue, method, takesSingleArgumentTypeAsOnlyArgument(method));
     }
 
@@ -258,6 +270,12 @@ public class PropertyFetchingImpl {
         } catch (IllegalAccessException e) {
             throw new GraphQLException(e);
         }
+    }
+
+    private boolean isRecord(Class<?> clazz) {
+        // https://github.com/openjdk/jdk/blob/3f26d84f6a03030080328e36a1fd1a08c982838c/src/java.base/share/classes/java/lang/Class.java#L3829-L3835
+        return "java.lang.Record".equals(clazz.getSuperclass().getName())
+                && (clazz.getModifiers() & Modifier.FINAL) != 0;
     }
 
     @SuppressWarnings("SimplifiableIfStatement")
