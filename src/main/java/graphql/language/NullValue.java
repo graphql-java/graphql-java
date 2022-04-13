@@ -26,6 +26,10 @@ public class NullValue extends AbstractNode<NullValue> implements Value<NullValu
         super(sourceLocation, comments, ignoredChars, additionalData);
     }
 
+    public static NullValue of() {
+        return NullValue.newNullValue().build();
+    }
+
     @Override
     public List<Node> getChildren() {
         return Collections.emptyList();
