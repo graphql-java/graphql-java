@@ -110,7 +110,7 @@ fragment X on SomeType {
         }
     }"""
 
-        def expectedQuery = """query {
+        def expectedQuery = """{
   allIssues(arg1: "", arg2: 0) {
     id
   }

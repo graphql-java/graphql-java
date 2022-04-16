@@ -125,7 +125,7 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
         def result = compileToDocument(schema, QUERY, null, fields, noVariables)
         def printed = AstPrinter.printAst(new AstSorter().sort(result.document))
         then:
-        printed == '''query {
+        printed == '''{
   animal {
     name
     otherName: name
@@ -197,7 +197,7 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
         def printed = AstPrinter.printAst(new AstSorter().sort(result.document))
 
         then:
-        printed == """query {
+        printed == """{
   animal {
     parent {
       name
@@ -248,7 +248,7 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
         def printed = AstPrinter.printAst(new AstSorter().sort(result.document))
 
         then:
-        printed == """query {
+        printed == """{
   animal {
     parent {
       name
@@ -329,7 +329,7 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
         def printed = AstPrinter.printAst(new AstSorter().sort(result.document))
 
         then:
-        printed == """query {
+        printed == """{
   animal {
     parent {
       name
@@ -420,7 +420,7 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
         def printed = AstPrinter.printAst(new AstSorter().sort(result.document))
 
         then:
-        printed == """query {
+        printed == """{
   animal {
     parent {
       name
@@ -515,7 +515,7 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
         def printed = AstPrinter.printAst(new AstSorter().sort(result.document))
 
         then:
-        printed == """query {
+        printed == """{
   animal {
     parent {
       name
@@ -582,7 +582,7 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
         def printed = AstPrinter.printAst(new AstSorter().sort(result.document))
 
         then:
-        printed == """query {
+        printed == """{
   animal {
     ... on Cat {
       __typename
@@ -639,7 +639,7 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
         def printed = AstPrinter.printAst(new AstSorter().sort(result.document))
 
         then:
-        printed == """query {
+        printed == """{
   animal {
     __typename
     ... on Cat {
@@ -704,7 +704,7 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
         // --Cat.name: String
         // --Dog.name: String
         // --Dog.isGoodBoy: Boolean
-        printed == """query {
+        printed == """{
   animal {
     __typename
     ... on Cat {
@@ -765,7 +765,7 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
 
         then:
         // Note: the name field is spread across both fragments
-        printed == """query {
+        printed == """{
   animal {
     ... on Cat {
       parent {
@@ -863,7 +863,7 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
 
         then:
         // Ensure that age location name etc are not surrounded by fragments unnecessarily
-        printed == """query {
+        printed == """{
   animal {
     __typename
     age
@@ -961,7 +961,7 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
 
         then:
         // Ensure that __typename id fieldId fieldName etc. are not surrounded by fragments unnecessarily
-        printed == """query {
+        printed == """{
   issue {
     fields {
       __typename
@@ -1027,7 +1027,7 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
         def documentPrinted = AstPrinter.printAst(new AstSorter().sort(result.document))
 
         then:
-        documentPrinted == '''query {
+        documentPrinted == '''{
   foo(arg: {arg1 : "fooArg"}) {
     bar(arg: {arg1 : "barArg"}) {
       baz {
@@ -1061,7 +1061,7 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
         def documentPrinted = AstPrinter.printAst(new AstSorter().sort(result.document))
 
         then:
-        documentPrinted == '''query {
+        documentPrinted == '''{
   foo1(arg: "hello")
   foo2(a: 123, b: true, c: 123.45)
 }
@@ -1132,7 +1132,7 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
         def documentPrinted = AstPrinter.printAst(new AstSorter().sort(result.document))
 
         then:
-        documentPrinted == '''query {
+        documentPrinted == '''{
   foo1(arg: {arg1 : "Hello", arg2 : 123, arg3 : "IDID", arg4 : false, arg5 : 123.123, nested : {arg1 : "Hello2", arg2 : 1234, arg3 : "IDID1", arg4 : null, arg5 : null}})
 }
 '''
@@ -1278,7 +1278,7 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
         def result = compileToDocument(schema, QUERY, null, fields, noVariables)
         def documentPrinted = AstPrinter.printAst(new AstSorter().sort(result.document))
         then:
-        documentPrinted == '''query {
+        documentPrinted == '''{
   foo1(arg: {arg1 : "Query"}) {
     test
   }
@@ -1324,7 +1324,7 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
         def result = compileToDocument(schema, QUERY, null, fields, noVariables)
         def documentPrinted = AstPrinter.printAst(new AstSorter().sort(result.document))
         then:
-        documentPrinted == '''query {
+        documentPrinted == '''{
   __schema {
     queryType {
       fields(includeDeprecated: false) {
@@ -1374,7 +1374,7 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
         def result = compileToDocument(schema, QUERY, null, fields, noVariables)
         def documentPrinted = AstPrinter.printAst(new AstSorter().sort(result.document))
         then:
-        documentPrinted == '''query {
+        documentPrinted == '''{
   foo1 {
     test
     ... on AFoo {
@@ -1396,7 +1396,7 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
             aFoo: String
         }
         '''
-        def query = '''query {
+        def query = '''{
             ... on Query {
                 foo1 {
                     ... on AFoo {
@@ -1413,7 +1413,7 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
         def result = compileToDocument(schema, QUERY, null, fields, noVariables)
         def documentPrinted = AstPrinter.printAst(new AstSorter().sort(result.document))
         then:
-        documentPrinted == '''query {
+        documentPrinted == '''{
   foo1 {
     ... on AFoo {
       aFoo
@@ -1465,7 +1465,7 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
         def documentPrinted = AstPrinter.printAst(new AstSorter().sort(result.document))
         then:
         // Note: the typename field moves out of a fragment because AFoo is the only impl
-        documentPrinted == '''query {
+        documentPrinted == '''{
   foo1(arg: {arg1 : "Query"}) {
     __typename
     test
@@ -1516,7 +1516,7 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
         def documentPrinted = AstPrinter.printAst(new AstSorter().sort(result.document))
         then:
         // Note: the typename field moves out of a fragment because AFoo is the only impl
-        documentPrinted == '''query {
+        documentPrinted == '''{
   foo1(arg: {arg1 : "Query"}) {
     __typename
     test
@@ -1546,7 +1546,7 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
             arg1: String
         }
         '''
-        def query = '''query {
+        def query = '''{
             ... on Query {
                 foo1(arg: {
                     arg1: "Query"
@@ -1566,7 +1566,7 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
         def documentPrinted = AstPrinter.printAst(new AstSorter().sort(result.document))
         then:
         // Note: the typename field moves out of a fragment because AFoo is the only impl
-        documentPrinted == '''query {
+        documentPrinted == '''{
   foo1(arg: {arg1 : "Query"}) {
     test
     ... on AFoo {
