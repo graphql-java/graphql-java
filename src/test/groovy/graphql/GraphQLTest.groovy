@@ -975,6 +975,17 @@ many lines''']
         assEx.message.contains("variables map can't be null")
     }
 
+    def "raw variables map can't be null via ExecutionInput"() {
+        given:
+
+        when:
+        def input = newExecutionInput().query('query($var:String){ hello(arg: $var) }').rawVariables(null).build()
+
+        then:
+        def assEx = thrown(AssertException)
+        assEx.message.contains("raw variables map can't be null")
+    }
+
     def "query can't be null via ExecutionInput"() {
         given:
 

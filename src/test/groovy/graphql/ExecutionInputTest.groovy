@@ -2,6 +2,7 @@ package graphql
 
 import graphql.cachecontrol.CacheControl
 import graphql.execution.ExecutionId
+import graphql.execution.RawVariables
 import graphql.schema.DataFetcher
 import graphql.schema.DataFetchingEnvironment
 import org.dataloader.DataLoaderRegistry
@@ -17,6 +18,7 @@ class ExecutionInputTest extends Specification {
     def root = "root"
     def context = "context"
     def variables = [key: "value"]
+    def rawVariables = new RawVariables(variables)
 
     def "build works"() {
         when:
@@ -35,6 +37,28 @@ class ExecutionInputTest extends Specification {
         executionInput.graphQLContext.get("a") == "b"
         executionInput.root == root
         executionInput.variables == variables
+        executionInput.dataLoaderRegistry == registry
+        executionInput.cacheControl == cacheControl
+        executionInput.query == query
+        executionInput.locale == Locale.GERMAN
+        executionInput.extensions == [some: "map"]
+    }
+
+    def "build works with raw variables"() {
+        when:
+        def executionInput = ExecutionInput.newExecutionInput().query(query)
+                .dataLoaderRegistry(registry)
+                .cacheControl(cacheControl)
+                .rawVariables(rawVariables)
+                .root(root)
+                .graphQLContext({ it.of(["a": "b"]) })
+                .locale(Locale.GERMAN)
+                .extensions([some: "map"])
+                .build()
+        then:
+        executionInput.graphQLContext.get("a") == "b"
+        executionInput.root == root
+        executionInput.rawVariables == rawVariables
         executionInput.dataLoaderRegistry == registry
         executionInput.cacheControl == cacheControl
         executionInput.query == query
@@ -104,6 +128,31 @@ class ExecutionInputTest extends Specification {
         executionInput.graphQLContext == graphQLContext
         executionInput.root == root
         executionInput.variables == variables
+        executionInput.dataLoaderRegistry == registry
+        executionInput.cacheControl == cacheControl
+        executionInput.locale == Locale.GERMAN
+        executionInput.extensions == [some: "map"]
+        executionInput.query == "new query"
+    }
+
+    def "transform works and copies values with raw variables"() {
+        when:
+        def executionInputOld = ExecutionInput.newExecutionInput().query(query)
+                .dataLoaderRegistry(registry)
+                .cacheControl(cacheControl)
+                .rawVariables(rawVariables)
+                .extensions([some: "map"])
+                .root(root)
+                .graphQLContext({ it.of(["a": "b"]) })
+                .locale(Locale.GERMAN)
+                .build()
+        def graphQLContext = executionInputOld.getGraphQLContext()
+        def executionInput = executionInputOld.transform({ bldg -> bldg.query("new query") })
+
+        then:
+        executionInput.graphQLContext == graphQLContext
+        executionInput.root == root
+        executionInput.rawVariables == rawVariables
         executionInput.dataLoaderRegistry == registry
         executionInput.cacheControl == cacheControl
         executionInput.locale == Locale.GERMAN
