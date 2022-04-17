@@ -1,5 +1,6 @@
 package graphql.validation.rules;
 
+import com.google.common.collect.Sets;
 import graphql.Internal;
 import graphql.language.Argument;
 import graphql.language.Directive;
@@ -10,7 +11,6 @@ import graphql.validation.ValidationContext;
 import graphql.validation.ValidationErrorCollector;
 import graphql.validation.ValidationErrorType;
 
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -31,7 +31,7 @@ public class UniqueArgumentNamesRule extends AbstractRule {
             return;
         }
 
-        Set<String> arguments = new HashSet<>();
+        Set<String> arguments = Sets.newHashSetWithExpectedSize(field.getArguments().size());
 
         for (Argument argument : field.getArguments()) {
             if (arguments.contains(argument.getName())) {
@@ -48,7 +48,7 @@ public class UniqueArgumentNamesRule extends AbstractRule {
             return;
         }
 
-        Set<String> arguments = new HashSet<>(directive.getArguments().size());
+        Set<String> arguments = Sets.newHashSetWithExpectedSize(directive.getArguments().size());
 
         for (Argument argument : directive.getArguments()) {
             if (arguments.contains(argument.getName())) {
