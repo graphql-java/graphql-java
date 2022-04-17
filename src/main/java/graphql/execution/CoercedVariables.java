@@ -16,7 +16,7 @@ public class CoercedVariables {
         this.coercedVariables = ImmutableMapWithNullValues.copyOf(coercedVariables);
     }
 
-    public Map<String, Object> getCoercedVariables() {
+    public Map<String, Object> getMap() {
         return coercedVariables;
     }
 

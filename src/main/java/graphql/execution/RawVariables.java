@@ -16,7 +16,7 @@ public class RawVariables {
         this.rawVariables = ImmutableMapWithNullValues.copyOf(rawVariables);
     }
 
-    public Map<String, Object> getRawVariables() {
+    public Map<String, Object> getMap() {
         return rawVariables;
     }
 

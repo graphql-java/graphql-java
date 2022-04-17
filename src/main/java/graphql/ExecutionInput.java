@@ -2,6 +2,7 @@ package graphql;
 
 import graphql.cachecontrol.CacheControl;
 import graphql.execution.ExecutionId;
+import graphql.execution.RawVariables;
 import graphql.execution.instrumentation.dataloader.DataLoaderDispatcherInstrumentationState;
 import org.dataloader.DataLoaderRegistry;
 
@@ -24,7 +25,7 @@ public class ExecutionInput {
     private final GraphQLContext graphQLContext;
     private final Object localContext;
     private final Object root;
-    private final Map<String, Object> variables;
+    private final RawVariables rawVariables;
     private final Map<String, Object> extensions;
     private final DataLoaderRegistry dataLoaderRegistry;
     private final CacheControl cacheControl;
@@ -39,7 +40,7 @@ public class ExecutionInput {
         this.context = builder.context;
         this.graphQLContext = assertNotNull(builder.graphQLContext);
         this.root = builder.root;
-        this.variables = builder.variables;
+        this.rawVariables = builder.rawVariables;
         this.dataLoaderRegistry = builder.dataLoaderRegistry;
         this.cacheControl = builder.cacheControl;
         this.executionId = builder.executionId;
@@ -97,10 +98,18 @@ public class ExecutionInput {
     }
 
     /**
-     * @return a map of variables that can be referenced via $syntax in the query
+     * @return a map of raw variables that can be referenced via $syntax in the query. Retaining for backwards compatibility
      */
+    @Deprecated
     public Map<String, Object> getVariables() {
-        return variables;
+        return rawVariables.getMap();
+    }
+
+    /**
+     * @return a map of raw variables that can be referenced via $syntax in the query.
+     */
+    public RawVariables getRawVariables() {
+        return rawVariables;
     }
 
     /**
@@ -158,7 +167,7 @@ public class ExecutionInput {
                 .root(this.root)
                 .dataLoaderRegistry(this.dataLoaderRegistry)
                 .cacheControl(this.cacheControl)
-                .variables(this.variables)
+                .rawVariables(this.rawVariables)
                 .extensions(this.extensions)
                 .executionId(this.executionId)
                 .locale(this.locale);
@@ -176,7 +185,7 @@ public class ExecutionInput {
                 ", context=" + context +
                 ", graphQLContext=" + graphQLContext +
                 ", root=" + root +
-                ", variables=" + variables +
+                ", rawVariables=" + rawVariables +
                 ", dataLoaderRegistry=" + dataLoaderRegistry +
                 ", executionId= " + executionId +
                 ", locale= " + locale +
@@ -209,7 +218,7 @@ public class ExecutionInput {
         private Object context = graphQLContext; // we make these the same object on purpose - legacy code will get the same object if this change nothing
         private Object localContext;
         private Object root;
-        private Map<String, Object> variables = Collections.emptyMap();
+        private RawVariables rawVariables = new RawVariables(Collections.emptyMap());
         public Map<String, Object> extensions = Collections.emptyMap();
         //
         // this is important - it allows code to later known if we never really set a dataloader and hence it can optimize
@@ -241,7 +250,6 @@ public class ExecutionInput {
             this.executionId = executionId;
             return this;
         }
-
 
         /**
          * Sets the locale to use for this operation
@@ -351,8 +359,24 @@ public class ExecutionInput {
             return this;
         }
 
-        public Builder variables(Map<String, Object> variables) {
-            this.variables = assertNotNull(variables, () -> "variables map can't be null");
+        /**
+         * The legacy variables builder
+         *
+         * @param rawVariables the map of raw variables
+         *
+         * @return this builder
+         *
+         * @deprecated - use {@link RawVariables} to hold raw variables
+         */
+        @Deprecated
+        public Builder variables(Map<String, Object> rawVariables) {
+            assertNotNull(rawVariables, () -> "variables map can't be null");
+            this.rawVariables = new RawVariables(rawVariables);
+            return this;
+        }
+
+        public Builder rawVariables(RawVariables rawVariables) {
+            this.rawVariables = assertNotNull(rawVariables, () -> "raw variables map can't be null");
             return this;
         }
 
