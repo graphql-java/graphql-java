@@ -9,7 +9,6 @@ import graphql.Internal;
 import graphql.PublicApi;
 import graphql.cachecontrol.CacheControl;
 import graphql.collect.ImmutableKit;
-import graphql.collect.ImmutableMapWithNullValues;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationState;
 import graphql.language.Document;
@@ -18,6 +17,7 @@ import graphql.language.OperationDefinition;
 import graphql.schema.GraphQLSchema;
 import org.dataloader.DataLoaderRegistry;
 
+import java.util.Collections;
 import java.util.Locale;
 import java.util.Map;
 
@@ -39,7 +39,7 @@ public class ExecutionContextBuilder {
     Object root;
     Document document;
     OperationDefinition operationDefinition;
-    ImmutableMapWithNullValues<String, Object> variables = ImmutableMapWithNullValues.emptyMap();
+    CoercedVariables coercedVariables = new CoercedVariables(Collections.emptyMap());
     ImmutableMap<String, FragmentDefinition> fragmentsByName = ImmutableKit.emptyMap();
     DataLoaderRegistry dataLoaderRegistry;
     CacheControl cacheControl;
@@ -86,7 +86,7 @@ public class ExecutionContextBuilder {
         root = other.getRoot();
         document = other.getDocument();
         operationDefinition = other.getOperationDefinition();
-        variables = ImmutableMapWithNullValues.copyOf(other.getVariables());
+        coercedVariables = other.getCoercedVariables();
         fragmentsByName = ImmutableMap.copyOf(other.getFragmentsByName());
         dataLoaderRegistry = other.getDataLoaderRegistry();
         cacheControl = other.getCacheControl();
@@ -151,8 +151,17 @@ public class ExecutionContextBuilder {
         return this;
     }
 
+    /**
+     * @deprecated use {@link #coercedVariables(CoercedVariables)} instead
+     */
+    @Deprecated
     public ExecutionContextBuilder variables(Map<String, Object> variables) {
-        this.variables = ImmutableMapWithNullValues.copyOf(variables);
+        this.coercedVariables = new CoercedVariables(variables);
+        return this;
+    }
+
+    public ExecutionContextBuilder coercedVariables(CoercedVariables coercedVariables) {
+        this.coercedVariables = coercedVariables;
         return this;
     }
 

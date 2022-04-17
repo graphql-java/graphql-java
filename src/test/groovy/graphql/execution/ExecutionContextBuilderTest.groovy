@@ -82,4 +82,71 @@ class ExecutionContextBuilderTest extends Specification {
         executionContext.dataLoaderRegistry == dataLoaderRegistry
         executionContext.cacheControl == cacheControl
     }
+
+    def "builds the correct ExecutionContext with coerced variables"() {
+        given:
+        ExecutionContextBuilder executionContextBuilder = new ExecutionContextBuilder()
+
+        Instrumentation instrumentation = Mock(Instrumentation)
+        executionContextBuilder.instrumentation(instrumentation)
+
+        ExecutionStrategy queryStrategy = Mock(ExecutionStrategy)
+        executionContextBuilder.queryStrategy(queryStrategy)
+
+        ExecutionStrategy mutationStrategy = Mock(ExecutionStrategy)
+        executionContextBuilder.mutationStrategy(mutationStrategy)
+
+        ExecutionStrategy subscriptionStrategy = Mock(ExecutionStrategy)
+        executionContextBuilder.subscriptionStrategy(subscriptionStrategy)
+
+        GraphQLSchema schema = Mock(GraphQLSchema)
+        executionContextBuilder.graphQLSchema(schema)
+
+        def executionId = ExecutionId.generate()
+        executionContextBuilder.executionId(executionId)
+
+        def context = "context"
+        executionContextBuilder.context(context)
+
+        def graphQLContext = GraphQLContext.newContext().build()
+        executionContextBuilder.graphQLContext(graphQLContext)
+
+        def root = "root"
+        executionContextBuilder.root(root)
+
+        Document document = new Parser().parseDocument("query myQuery(\$var: String){...MyFragment} fragment MyFragment on Query{foo}")
+        def operation = document.definitions[0] as OperationDefinition
+        def fragment = document.definitions[1] as FragmentDefinition
+        executionContextBuilder.operationDefinition(operation)
+
+        executionContextBuilder.fragmentsByName([MyFragment: fragment])
+
+        def coercedVariables = new CoercedVariables([var: 'value'])
+        executionContextBuilder.coercedVariables(coercedVariables)
+
+        def dataLoaderRegistry = new DataLoaderRegistry()
+        executionContextBuilder.dataLoaderRegistry(dataLoaderRegistry)
+
+        def cacheControl = CacheControl.newCacheControl()
+        executionContextBuilder.cacheControl(cacheControl)
+
+        when:
+        def executionContext = executionContextBuilder.build()
+
+        then:
+        executionContext.executionId == executionId
+        executionContext.instrumentation == instrumentation
+        executionContext.graphQLSchema == schema
+        executionContext.queryStrategy == queryStrategy
+        executionContext.mutationStrategy == mutationStrategy
+        executionContext.subscriptionStrategy == subscriptionStrategy
+        executionContext.root == root
+        executionContext.context == context
+        executionContext.graphQLContext == graphQLContext
+        executionContext.coercedVariables == coercedVariables
+        executionContext.getFragmentsByName() == [MyFragment: fragment]
+        executionContext.operationDefinition == operation
+        executionContext.dataLoaderRegistry == dataLoaderRegistry
+        executionContext.cacheControl == cacheControl
+    }
 }
