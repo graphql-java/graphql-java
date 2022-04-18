@@ -2,6 +2,7 @@ package benchmark;
 
 import com.google.common.base.Charsets;
 import com.google.common.io.Resources;
+import graphql.execution.CoercedVariables;
 import graphql.language.Document;
 import graphql.normalized.ExecutableNormalizedOperation;
 import graphql.normalized.ExecutableNormalizedOperationFactory;
@@ -83,7 +84,7 @@ public class NQBenchmark1 {
     }
 
     private void runImpl(MyState myState, Blackhole blackhole) {
-        ExecutableNormalizedOperation executableNormalizedOperation = ExecutableNormalizedOperationFactory.createExecutableNormalizedOperation(myState.schema, myState.document, null, Collections.emptyMap());
+        ExecutableNormalizedOperation executableNormalizedOperation = ExecutableNormalizedOperationFactory.createExecutableNormalizedOperation(myState.schema, myState.document, null, new CoercedVariables(Collections.emptyMap()));
         blackhole.consume(executableNormalizedOperation);
     }
 

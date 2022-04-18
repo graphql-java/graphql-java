@@ -6,8 +6,10 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import graphql.Internal;
+import graphql.execution.CoercedVariables;
 import graphql.execution.ConditionalNodes;
 import graphql.execution.MergedField;
+import graphql.execution.RawVariables;
 import graphql.execution.ValuesResolver;
 import graphql.execution.nextgen.Common;
 import graphql.introspection.Introspection;
@@ -40,7 +42,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Predicate;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertShouldNeverHappen;
@@ -61,23 +62,22 @@ public class ExecutableNormalizedOperationFactory {
     public static ExecutableNormalizedOperation createExecutableNormalizedOperation(GraphQLSchema graphQLSchema,
                                                                                     Document document,
                                                                                     String operationName,
-                                                                                    Map<String, Object> coercedVariableValues) {
+                                                                                    CoercedVariables coercedVariableValues) {
         NodeUtil.GetOperationResult getOperationResult = NodeUtil.getOperation(document, operationName);
         return new ExecutableNormalizedOperationFactory().createNormalizedQueryImpl(graphQLSchema, getOperationResult.operationDefinition, getOperationResult.fragmentsByName, coercedVariableValues, null);
     }
 
-
     public static ExecutableNormalizedOperation createExecutableNormalizedOperation(GraphQLSchema graphQLSchema,
                                                                                     OperationDefinition operationDefinition,
                                                                                     Map<String, FragmentDefinition> fragments,
-                                                                                    Map<String, Object> coercedVariableValues) {
+                                                                                    CoercedVariables coercedVariableValues) {
         return new ExecutableNormalizedOperationFactory().createNormalizedQueryImpl(graphQLSchema, operationDefinition, fragments, coercedVariableValues, null);
     }
 
     public static ExecutableNormalizedOperation createExecutableNormalizedOperationWithRawVariables(GraphQLSchema graphQLSchema,
                                                                                                     Document document,
                                                                                                     String operationName,
-                                                                                                    Map<String, Object> rawVariables) {
+                                                                                                    RawVariables rawVariables) {
         NodeUtil.GetOperationResult getOperationResult = NodeUtil.getOperation(document, operationName);
         return new ExecutableNormalizedOperationFactory().createExecutableNormalizedOperationImplWithRawVariables(graphQLSchema, getOperationResult.operationDefinition, getOperationResult.fragmentsByName, rawVariables);
     }
@@ -85,13 +85,14 @@ public class ExecutableNormalizedOperationFactory {
     private ExecutableNormalizedOperation createExecutableNormalizedOperationImplWithRawVariables(GraphQLSchema graphQLSchema,
                                                                                                   OperationDefinition operationDefinition,
                                                                                                   Map<String, FragmentDefinition> fragments,
-                                                                                                  Map<String, Object> rawVariables
+                                                                                                  RawVariables rawVariables
     ) {
 
         List<VariableDefinition> variableDefinitions = operationDefinition.getVariableDefinitions();
-        Map<String, Object> coerceVariableValues = valuesResolver.coerceVariableValues(graphQLSchema, variableDefinitions, rawVariables);
-        Map<String, NormalizedInputValue> normalizedVariableValues = valuesResolver.getNormalizedVariableValues(graphQLSchema, variableDefinitions, rawVariables);
-        return createNormalizedQueryImpl(graphQLSchema, operationDefinition, fragments, coerceVariableValues, normalizedVariableValues);
+        // DZ TODO change after coerceVariableValues update
+        CoercedVariables coercedVariableValues = new CoercedVariables(valuesResolver.coerceVariableValues(graphQLSchema, variableDefinitions, rawVariables.getMap()));
+        Map<String, NormalizedInputValue> normalizedVariableValues = valuesResolver.getNormalizedVariableValues(graphQLSchema, variableDefinitions, rawVariables.getMap());
+        return createNormalizedQueryImpl(graphQLSchema, operationDefinition, fragments, coercedVariableValues, normalizedVariableValues);
     }
 
     /**
@@ -100,13 +101,13 @@ public class ExecutableNormalizedOperationFactory {
     private ExecutableNormalizedOperation createNormalizedQueryImpl(GraphQLSchema graphQLSchema,
                                                                     OperationDefinition operationDefinition,
                                                                     Map<String, FragmentDefinition> fragments,
-                                                                    Map<String, Object> coercedVariableValues,
+                                                                    CoercedVariables coercedVariableValues,
                                                                     @Nullable Map<String, NormalizedInputValue> normalizedVariableValues) {
         FieldCollectorNormalizedQueryParams parameters = FieldCollectorNormalizedQueryParams
                 .newParameters()
                 .fragments(fragments)
                 .schema(graphQLSchema)
-                .coercedVariables(coercedVariableValues)
+                .coercedVariables(coercedVariableValues.getMap())
                 .normalizedVariables(normalizedVariableValues)
                 .build();
 
