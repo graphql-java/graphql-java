@@ -21,7 +21,7 @@ public class ParserOptions {
      * If you want to allow more, then {@link #setDefaultParserOptions(ParserOptions)} allows you to change this
      * JVM wide.
      */
-    public static int MAX_QUERY_TOKENS = 15000;
+    public static final int MAX_QUERY_TOKENS = 15000;
 
     private static ParserOptions defaultJvmParserOptions = newParserOptions()
             .captureIgnoredChars(false)
