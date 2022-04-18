@@ -54,8 +54,7 @@ public class ExecutionHelper {
         RawVariables inputVariables = executionInput.getRawVariables();
         List<VariableDefinition> variableDefinitions = operationDefinition.getVariableDefinitions();
 
-        // DZ TODO update after changing type of coerceVariableValues
-        CoercedVariables coercedVariables = new CoercedVariables(valuesResolver.coerceVariableValues(graphQLSchema, variableDefinitions, inputVariables.getMap()));
+        CoercedVariables coercedVariables = valuesResolver.coerceVariableValues(graphQLSchema, variableDefinitions, inputVariables);
 
         ExecutionContext executionContext = newExecutionContextBuilder()
                 .executionId(executionId)

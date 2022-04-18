@@ -66,8 +66,7 @@ public class Execution {
 
         CoercedVariables coercedVariables;
         try {
-            // DZ TODO change after updating ValuesResolver#coercedVariableValues to return CoercedVariables
-            coercedVariables = new CoercedVariables(valuesResolver.coerceVariableValues(graphQLSchema, variableDefinitions, inputVariables.getMap()));
+            coercedVariables = valuesResolver.coerceVariableValues(graphQLSchema, variableDefinitions, inputVariables);
         } catch (RuntimeException rte) {
             if (rte instanceof GraphQLError) {
                 return completedFuture(new ExecutionResultImpl((GraphQLError) rte));

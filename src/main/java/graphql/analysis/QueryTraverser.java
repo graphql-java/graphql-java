@@ -1,6 +1,7 @@
 package graphql.analysis;
 
 import graphql.PublicApi;
+import graphql.execution.RawVariables;
 import graphql.execution.ValuesResolver;
 import graphql.language.Document;
 import graphql.language.FragmentDefinition;
@@ -61,7 +62,8 @@ public class QueryTraverser {
     }
 
     private Map<String, Object> coerceVariables(Map<String, Object> rawVariables, List<VariableDefinition> variableDefinitions) {
-        return new ValuesResolver().coerceVariableValues(schema, variableDefinitions, rawVariables);
+        // DZ TODO change return type after refactoring this class
+        return new ValuesResolver().coerceVariableValues(schema, variableDefinitions, new RawVariables(rawVariables)).getMap();
     }
 
     private QueryTraverser(GraphQLSchema schema,
