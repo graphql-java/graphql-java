@@ -4,6 +4,7 @@ import graphql.AssertException;
 import graphql.Internal;
 import graphql.language.ArrayValue;
 import graphql.language.BooleanValue;
+import graphql.language.EnumValue;
 import graphql.language.FloatValue;
 import graphql.language.IntValue;
 import graphql.language.NullValue;
@@ -41,7 +42,7 @@ public class ValueToVariableValueCompiler {
 
     @SuppressWarnings("unchecked")
     @Nullable
-    private static Object normalisedValueToVariableValue(Object maybeValue) {
+    static Object normalisedValueToVariableValue(Object maybeValue) {
         Object variableValue;
         if (maybeValue instanceof NormalizedInputValue) {
             NormalizedInputValue normalizedInputValue = (NormalizedInputValue) maybeValue;
@@ -52,8 +53,10 @@ public class ValueToVariableValueCompiler {
                 variableValue = normalisedValueToVariableValues((List<Object>) inputValue);
             } else if (inputValue instanceof Map) {
                 variableValue = normalisedValueToVariableValues((Map<String, Object>) inputValue);
+            } else if (inputValue == null) {
+                variableValue = null;
             } else {
-                throw new AssertException("Should never happen. Did not expect NormalizedInputValue.getValue() of type: " + inputValue.getClass());
+                throw new AssertException("Should never happen. Did not expect NormalizedInputValue.getValue() of type: " + maybeClass(inputValue));
             }
         } else if (maybeValue instanceof Value) {
             Value<?> value = (Value<?>) maybeValue;
@@ -63,7 +66,7 @@ public class ValueToVariableValueCompiler {
         } else if (maybeValue instanceof Map) {
             variableValue = normalisedValueToVariableValues((Map<String, Object>) maybeValue);
         } else {
-            throw new AssertException("Should never happen. Did not expect type: " + maybeValue.getClass());
+            throw new AssertException("Should never happen. Did not expect type: " + maybeClass(maybeValue));
         }
         return variableValue;
     }
@@ -115,10 +118,16 @@ public class ValueToVariableValueCompiler {
             return ((IntValue) value).getValue();
         } else if (value instanceof BooleanValue) {
             return ((BooleanValue) value).isValue();
+        } else if (value instanceof EnumValue) {
+            return ((EnumValue) value).getName();
         } else if (value instanceof NullValue) {
             return null;
         }
-        throw new AssertException("Should never happen. Cannot handle node of type: " + value.getClass());
+        throw new AssertException("Should never happen. Cannot handle node of type: " + maybeClass(value));
+    }
+
+    private static Object maybeClass(Object maybe) {
+        return maybe == null ? "null" : maybe.getClass();
     }
 
     private static String getVarName(int variableOrdinal) {
