@@ -162,9 +162,9 @@ public class AstPrinter {
     private NodePrinter<FieldDefinition> fieldDefinition() {
         final String argSep = compactMode ? "," : ", ";
         return (out, node) -> {
+            out.append(description(node));
             String args;
             if (hasDescription(node.getInputValueDefinitions()) && !compactMode) {
-                out.append(description(node));
                 args = join(node.getInputValueDefinitions(), "\n");
                 out.append(node.getName())
                         .append(wrap("(\n", args, ")"))
