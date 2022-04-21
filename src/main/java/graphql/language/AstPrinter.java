@@ -5,10 +5,7 @@ import graphql.PublicApi;
 
 import java.io.PrintWriter;
 import java.io.Writer;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static graphql.Assert.assertTrue;
 import static graphql.util.EscapeUtil.escapeJsonString;
@@ -593,8 +590,8 @@ public class AstPrinter {
         for (int i = 0; i < maybeString.length(); i++) {
             char c = maybeString.charAt(i);
             if (c == '\n') {
-                maybeString.replace(i, i + 1, "\n  ");
-                i += 3;
+                maybeString.replace(i,i+1,"\n  ");
+                i+=3;
             }
         }
         return maybeString;
