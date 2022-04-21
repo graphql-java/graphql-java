@@ -5,7 +5,10 @@ import graphql.PublicApi;
 
 import java.io.PrintWriter;
 import java.io.Writer;
-import java.util.*;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 import static graphql.Assert.assertTrue;
 import static graphql.util.EscapeUtil.escapeJsonString;
@@ -609,6 +612,7 @@ public class AstPrinter {
      * This will pretty print the AST node in graphql language format
      *
      * @param node the AST node to print
+     *
      * @return the printed node in graphql language format
      */
     public static String printAst(Node node) {
@@ -634,6 +638,7 @@ public class AstPrinter {
      * and comments stripped out of the text.
      *
      * @param node the AST node to print
+     *
      * @return the printed node in a compact graphql language format
      */
     public static String printAstCompact(Node node) {
