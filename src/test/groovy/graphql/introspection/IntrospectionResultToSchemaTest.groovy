@@ -415,7 +415,7 @@ type QueryType {
   id: String!): Human
   droid("id of the droid"
   id: String!): Droid
-}   
+}
 
 "A character in the Star Wars Trilogy"
 interface Character {
