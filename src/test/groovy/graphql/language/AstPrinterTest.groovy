@@ -474,16 +474,20 @@ type Query {
 
     def "print field descriptions"() {
         def query = '''type Query {
-  "comment"
-  field: String
+  "description"
+  field(
+  "description"
+  a: String): String
 }
 '''
         def document = parse(query)
         String output = printAst(document)
         expect:
         output == '''type Query {
-  "comment"
-  field: String
+  "description"
+  field(
+  "description"
+  a: String): String
 }
 '''
     }
