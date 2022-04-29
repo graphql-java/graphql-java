@@ -42,6 +42,7 @@ import graphql.language.VariableDefinition
 import graphql.language.VariableReference
 import org.antlr.v4.runtime.CommonTokenStream
 import org.antlr.v4.runtime.ParserRuleContext
+import spock.lang.Issue
 import spock.lang.Specification
 import spock.lang.Unroll
 
@@ -371,6 +372,28 @@ class ParserTest extends Specification {
         then:
         isEqual(helloField, new Field("hello", [new Argument("arg", new StringValue("hello, world"))]))
         helloField.comments.collect { c -> c.content } == [" this is some comment, which should be captured"]
+    }
+
+    @Issue("https://github.com/graphql-java/graphql-java/issues/2767")
+    def "parser does not transform comments to AST nodes when ParserOptions.captureLineComments(false)"() {
+        given:
+        def input = """
+            { # this is some comment, which should be captured
+               hello(arg: "hello, world" ) # test 
+               }
+            """
+        def parserOptionsWithoutCaptureLineComments = ParserOptions.newParserOptions()
+                .captureLineComments(false)
+                .build()
+
+        when:
+        def document = new Parser().parseDocument(input, parserOptionsWithoutCaptureLineComments)
+        Field helloField = (document.definitions[0] as OperationDefinition).selectionSet.selections[0] as Field
+
+        then:
+        isEqual(helloField, new Field("hello", [new Argument("arg", new StringValue("hello, world"))]))
+        assert helloField.comments.isEmpty() // No single-line comments on lone fields
+        assert document.comments.isEmpty() // No single-line comments in entire document
     }
 
     @Unroll
@@ -1118,7 +1141,7 @@ triple3 : """edge cases \\""" "" " \\"" \\" edge cases"""
         then:
         doc != null
         count == 9
-        tokens == ["query" , "{", "f" , "(", "arg", ":", "1", ")", "}"]
+        tokens == ["query", "{", "f", "(", "arg", ":", "1", ")", "}"]
 
         when: "integration test to prove it be supplied via EI"
 
@@ -1138,7 +1161,7 @@ triple3 : """edge cases \\""" "" " \\"" \\" edge cases"""
         then:
         er.errors.size() == 0
         count == 9
-        tokens == ["query" , "{", "f" , "(", "arg", ":", "1", ")", "}"]
+        tokens == ["query", "{", "f", "(", "arg", ":", "1", ")", "}"]
 
     }
 }
