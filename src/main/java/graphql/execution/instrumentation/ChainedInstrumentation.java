@@ -1,8 +1,8 @@
 package graphql.execution.instrumentation;
 
 import com.google.common.collect.ImmutableList;
-import graphql.Assert;
 import com.google.common.collect.Maps;
+import graphql.Assert;
 import graphql.ExecutionInput;
 import graphql.ExecutionResult;
 import graphql.PublicApi;
@@ -24,7 +24,6 @@ import graphql.validation.ValidationError;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Arrays;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;

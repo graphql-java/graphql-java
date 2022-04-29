@@ -16,9 +16,9 @@ import graphql.language.Document;
 import graphql.schema.DataFetcher;
 import graphql.schema.GraphQLSchema;
 import graphql.validation.ValidationError;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
@@ -61,7 +61,7 @@ public interface Instrumentation {
      *
      * @return a state object that is passed to each method
      */
-    @Nullable
+    @Nullable 
     default InstrumentationState createState(InstrumentationCreateStateParameters parameters) {
         return createState();
     }
@@ -76,7 +76,7 @@ public interface Instrumentation {
      * @deprecated use {@link #beginExecution(InstrumentationExecutionParameters, InstrumentationState)} instead
      */
     @Deprecated
-    @Nonnull
+    @NotNull
     default InstrumentationContext<ExecutionResult> beginExecution(InstrumentationExecutionParameters parameters) {
         return noOp();
     }
@@ -104,7 +104,7 @@ public interface Instrumentation {
      * @deprecated use {@link #beginParse(InstrumentationExecutionParameters, InstrumentationState)}  instead
      */
     @Deprecated
-    @Nonnull
+    @NotNull
     default InstrumentationContext<Document> beginParse(InstrumentationExecutionParameters parameters) {
         return noOp();
     }
@@ -132,7 +132,7 @@ public interface Instrumentation {
      * @deprecated use {@link #beginValidation(InstrumentationValidationParameters, InstrumentationState)} instead
      */
     @Deprecated
-    @Nonnull
+    @NotNull
     default InstrumentationContext<List<ValidationError>> beginValidation(InstrumentationValidationParameters parameters) {
         return noOp();
     }
@@ -160,7 +160,7 @@ public interface Instrumentation {
      * @deprecated use {@link #beginExecuteOperation(InstrumentationExecuteOperationParameters, InstrumentationState)} instead
      */
     @Deprecated
-    @Nonnull
+    @NotNull
     default InstrumentationContext<ExecutionResult> beginExecuteOperation(InstrumentationExecuteOperationParameters parameters) {
         return noOp();
     }
@@ -189,7 +189,7 @@ public interface Instrumentation {
      * @deprecated use {@link #beginExecutionStrategy(InstrumentationExecutionStrategyParameters, InstrumentationState)} instead
      */
     @Deprecated
-    @Nonnull
+    @NotNull
     default ExecutionStrategyInstrumentationContext beginExecutionStrategy(InstrumentationExecutionStrategyParameters parameters) {
         return ExecutionStrategyInstrumentationContext.NOOP;
     }
@@ -219,7 +219,7 @@ public interface Instrumentation {
      * @deprecated use {@link #beginSubscribedFieldEvent(InstrumentationFieldParameters, InstrumentationState)}  instead
      */
     @Deprecated
-    @Nonnull
+    @NotNull
     default InstrumentationContext<ExecutionResult> beginSubscribedFieldEvent(InstrumentationFieldParameters parameters) {
         return noOp();
     }
@@ -247,7 +247,7 @@ public interface Instrumentation {
      * @deprecated use {@link #beginField(InstrumentationFieldParameters, InstrumentationState)}   instead
      */
     @Deprecated
-    @Nonnull
+    @NotNull
     default InstrumentationContext<ExecutionResult> beginField(InstrumentationFieldParameters parameters) {
         return noOp();
     }
@@ -275,7 +275,7 @@ public interface Instrumentation {
      * @deprecated use {@link #beginFieldFetch(InstrumentationFieldFetchParameters, InstrumentationState)} instead
      */
     @Deprecated
-    @Nonnull
+    @NotNull
     default InstrumentationContext<Object> beginFieldFetch(InstrumentationFieldFetchParameters parameters) {
         return noOp();
     }
@@ -304,7 +304,7 @@ public interface Instrumentation {
      * @deprecated use {@link #beginFieldComplete(InstrumentationFieldCompleteParameters, InstrumentationState)} instead
      */
     @Deprecated
-    @Nonnull
+    @NotNull
     default InstrumentationContext<ExecutionResult> beginFieldComplete(InstrumentationFieldCompleteParameters parameters) {
         return noOp();
     }
@@ -332,7 +332,7 @@ public interface Instrumentation {
      * @deprecated use {@link #beginFieldListComplete(InstrumentationFieldCompleteParameters, InstrumentationState)}  instead
      */
     @Deprecated
-    @Nonnull
+    @NotNull
     default InstrumentationContext<ExecutionResult> beginFieldListComplete(InstrumentationFieldCompleteParameters parameters) {
         return noOp();
     }
@@ -362,7 +362,7 @@ public interface Instrumentation {
      * @deprecated use {@link #instrumentExecutionInput(ExecutionInput, InstrumentationExecutionParameters, InstrumentationState)} instead
      */
     @Deprecated
-    @Nonnull
+    @NotNull
     default ExecutionInput instrumentExecutionInput(ExecutionInput executionInput, InstrumentationExecutionParameters parameters) {
         return executionInput;
     }
@@ -377,7 +377,7 @@ public interface Instrumentation {
      *
      * @return a non null instrumented ExecutionInput, the default is to return to the same object
      */
-    @Nonnull
+    @NotNull
     default ExecutionInput instrumentExecutionInput(ExecutionInput executionInput, InstrumentationExecutionParameters parameters, InstrumentationState state) {
         return instrumentExecutionInput(executionInput, parameters.withNewState(state));
     }
@@ -393,7 +393,7 @@ public interface Instrumentation {
      * @deprecated use {@link #instrumentDocumentAndVariables(DocumentAndVariables, InstrumentationExecutionParameters, InstrumentationState)}  instead
      */
     @Deprecated
-    @Nonnull
+    @NotNull
     default DocumentAndVariables instrumentDocumentAndVariables(DocumentAndVariables documentAndVariables, InstrumentationExecutionParameters parameters) {
         return documentAndVariables;
     }
@@ -407,7 +407,7 @@ public interface Instrumentation {
      *
      * @return a non null instrumented DocumentAndVariables, the default is to return to the same objects
      */
-    @Nonnull
+    @NotNull
     default DocumentAndVariables instrumentDocumentAndVariables(DocumentAndVariables documentAndVariables, InstrumentationExecutionParameters parameters, InstrumentationState state) {
         return instrumentDocumentAndVariables(documentAndVariables, parameters.withNewState(state));
     }
@@ -424,7 +424,7 @@ public interface Instrumentation {
      * @deprecated use {@link #instrumentSchema(GraphQLSchema, InstrumentationExecutionParameters, InstrumentationState)}  instead
      */
     @Deprecated
-    @Nonnull
+    @NotNull
     default GraphQLSchema instrumentSchema(GraphQLSchema schema, InstrumentationExecutionParameters parameters) {
         return schema;
     }
@@ -439,7 +439,7 @@ public interface Instrumentation {
      *
      * @return a non null instrumented GraphQLSchema, the default is to return to the same object
      */
-    @Nonnull
+    @NotNull
     default GraphQLSchema instrumentSchema(GraphQLSchema schema, InstrumentationExecutionParameters parameters, InstrumentationState state) {
         return instrumentSchema(schema, parameters.withNewState(state));
     }
@@ -456,7 +456,7 @@ public interface Instrumentation {
      * @deprecated use {@link #instrumentExecutionContext(ExecutionContext, InstrumentationExecutionParameters)} instead
      */
     @Deprecated
-    @Nonnull
+    @NotNull
     default ExecutionContext instrumentExecutionContext(ExecutionContext executionContext, InstrumentationExecutionParameters parameters) {
         return executionContext;
     }
@@ -471,7 +471,7 @@ public interface Instrumentation {
      *
      * @return a non null instrumented ExecutionContext, the default is to return to the same object
      */
-    @Nonnull
+    @NotNull
     default ExecutionContext instrumentExecutionContext(ExecutionContext executionContext, InstrumentationExecutionParameters parameters, InstrumentationState state) {
         return instrumentExecutionContext(executionContext, parameters.withNewState(state));
     }
@@ -491,7 +491,7 @@ public interface Instrumentation {
      * @deprecated use {@link #instrumentDataFetcher(DataFetcher, InstrumentationFieldFetchParameters, InstrumentationState)}  instead
      */
     @Deprecated
-    @Nonnull
+    @NotNull
     default DataFetcher<?> instrumentDataFetcher(DataFetcher<?> dataFetcher, InstrumentationFieldFetchParameters parameters) {
         return dataFetcher;
     }
@@ -508,7 +508,7 @@ public interface Instrumentation {
      *
      * @return a non null instrumented DataFetcher, the default is to return to the same object
      */
-    @Nonnull
+    @NotNull
     default DataFetcher<?> instrumentDataFetcher(DataFetcher<?> dataFetcher, InstrumentationFieldFetchParameters parameters, InstrumentationState state) {
         return instrumentDataFetcher(dataFetcher, parameters.withNewState(state));
     }
@@ -524,7 +524,7 @@ public interface Instrumentation {
      * @deprecated use {@link #instrumentExecutionResult(ExecutionResult, InstrumentationExecutionParameters, InstrumentationState)}   instead
      */
     @Deprecated
-    @Nonnull
+    @NotNull
     default CompletableFuture<ExecutionResult> instrumentExecutionResult(ExecutionResult executionResult, InstrumentationExecutionParameters parameters) {
         return CompletableFuture.completedFuture(executionResult);
     }
@@ -538,7 +538,7 @@ public interface Instrumentation {
      *
      * @return a new execution result completable future
      */
-    @Nonnull
+    @NotNull
     default CompletableFuture<ExecutionResult> instrumentExecutionResult(ExecutionResult executionResult, InstrumentationExecutionParameters parameters, InstrumentationState state) {
         return instrumentExecutionResult(executionResult, parameters.withNewState(state));
     }
