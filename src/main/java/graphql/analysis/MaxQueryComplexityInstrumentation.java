@@ -17,6 +17,7 @@ import org.slf4j.LoggerFactory;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 
 import static graphql.Assert.assertNotNull;
@@ -90,7 +91,7 @@ public class MaxQueryComplexityInstrumentation extends SimpleInstrumentation {
     public InstrumentationContext<List<ValidationError>> beginValidation(InstrumentationValidationParameters parameters) {
         State state = parameters.getInstrumentationState();
         // for API backwards compatibility reasons we capture the validation parameters, so we can put them into QueryComplexityInfo
-        state.instrumentationValidationParameters = parameters;
+        state.instrumentationValidationParameters.set(parameters);
         return noOp();
     }
 
@@ -118,7 +119,7 @@ public class MaxQueryComplexityInstrumentation extends SimpleInstrumentation {
         if (totalComplexity > maxComplexity) {
             QueryComplexityInfo queryComplexityInfo = QueryComplexityInfo.newQueryComplexityInfo()
                     .complexity(totalComplexity)
-                    .instrumentationValidationParameters(state.instrumentationValidationParameters)
+                    .instrumentationValidationParameters(state.instrumentationValidationParameters.get())
                     .instrumentationExecuteOperationParameters(instrumentationExecuteOperationParameters)
                     .build();
             boolean throwAbortException = maxQueryComplexityExceededFunction.apply(queryComplexityInfo);
@@ -173,7 +174,7 @@ public class MaxQueryComplexityInstrumentation extends SimpleInstrumentation {
     }
 
     private static class State implements InstrumentationState {
-        InstrumentationValidationParameters instrumentationValidationParameters;
+        AtomicReference<InstrumentationValidationParameters> instrumentationValidationParameters = new AtomicReference<>();
     }
 
 }
