@@ -163,7 +163,7 @@ public class AstPrinter {
         final String argSep = compactMode ? "," : ", ";
         return (out, node) -> {
             String args;
-            if (hasDescription(node.getInputValueDefinitions()) && !compactMode) {
+            if (hasDescription(Collections.singletonList(node)) && !compactMode) {
                 out.append(description(node));
                 args = join(node.getInputValueDefinitions(), "\n");
                 out.append(node.getName())

@@ -42,7 +42,7 @@ public class CacheControl {
         PUBLIC, PRIVATE
     }
 
-    private class Hint {
+    private static final class Hint {
         private final List<Object> path;
         private final Integer maxAge;
         private final Scope scope;

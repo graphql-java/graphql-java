@@ -40,6 +40,10 @@ public class EnumValue extends AbstractNode<EnumValue> implements Value<EnumValu
         this(name, null, emptyList(), IgnoredChars.EMPTY, emptyMap());
     }
 
+    public static EnumValue of(String name) {
+        return newEnumValue().name(name).build();
+    }
+
     @Override
     public String getName() {
         return name;

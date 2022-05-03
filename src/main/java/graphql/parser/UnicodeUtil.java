@@ -13,11 +13,11 @@ import static graphql.Assert.assertShouldNeverHappen;
  */
 @Internal
 public class UnicodeUtil {
-    public static int MAX_UNICODE_CODE_POINT = 0x10FFFF;
-    public static int LEADING_SURROGATE_LOWER_BOUND = 0xD800;
-    public static int LEADING_SURROGATE_UPPER_BOUND = 0xDBFF;
-    public static int TRAILING_SURROGATE_LOWER_BOUND = 0xDC00;
-    public static int TRAILING_SURROGATE_UPPER_BOUND = 0xDFFF;
+    public static final int MAX_UNICODE_CODE_POINT = 0x10FFFF;
+    public static final int LEADING_SURROGATE_LOWER_BOUND = 0xD800;
+    public static final int LEADING_SURROGATE_UPPER_BOUND = 0xDBFF;
+    public static final int TRAILING_SURROGATE_LOWER_BOUND = 0xDC00;
+    public static final int TRAILING_SURROGATE_UPPER_BOUND = 0xDFFF;
 
     public static int parseAndWriteUnicode(StringWriter writer, String string, int i, SourceLocation sourceLocation) {
         // Unicode code points can either be:
@@ -31,7 +31,7 @@ public class UnicodeUtil {
         int continueIndex = isBracedEscape(string, i) ? endIndexExclusive : endIndexExclusive - 1;
 
         String hexStr = string.substring(startIndex, endIndexExclusive);
-        Integer codePoint = Integer.parseInt(hexStr, 16);
+        int codePoint = Integer.parseInt(hexStr, 16);
 
         if (isTrailingSurrogateValue(codePoint)) {
             throw new InvalidSyntaxException(sourceLocation, "Invalid unicode - trailing surrogate must be preceded with a leading surrogate -", null, string.substring(i - 1, continueIndex + 1), null);
@@ -45,7 +45,7 @@ public class UnicodeUtil {
             int trailingStartIndex = isBracedEscape(string, i) ? i + 2 : i + 1;
             int trailingEndIndexExclusive = getEndIndexExclusive(string, i, sourceLocation);
             String trailingHexStr = string.substring(trailingStartIndex, trailingEndIndexExclusive);
-            Integer trailingCodePoint = Integer.parseInt(trailingHexStr, 16);
+            int trailingCodePoint = Integer.parseInt(trailingHexStr, 16);
             continueIndex = isBracedEscape(string, i) ? trailingEndIndexExclusive : trailingEndIndexExclusive - 1;
 
             if (isTrailingSurrogateValue(trailingCodePoint)) {
