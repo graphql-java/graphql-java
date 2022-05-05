@@ -1,5 +1,6 @@
 package graphql.normalized
 
+import graphql.language.IntValue
 import graphql.language.NullValue
 import graphql.language.StringValue
 import graphql.language.TypeName
@@ -21,7 +22,7 @@ class VariableAccumulatorTest extends Specification {
 
         def variablesMap = accumulator.getVariablesMap()
         then:
-        variablesMap == [v0: "hello", v1: "world", v2: null, v3: null]
+        variablesMap == [v0: "hello", v1: 666, v2: null, v3: null]
     }
 
     def "can build variable definitions"() {
@@ -33,12 +34,12 @@ class VariableAccumulatorTest extends Specification {
 
         then:
         names == ["v0", "v1", "v2", "v3"]
-        typeNames == ["String", "String", "Int", "String"]
+        typeNames == ["String", "Int", "Int", "String"]
     }
 
     private void accumulateData(VariableAccumulator accumulator) {
         accumulator.accumulateVariable(new NormalizedInputValue("String", StringValue.of("hello")))
-        accumulator.accumulateVariable(new NormalizedInputValue("String", StringValue.of("world")))
+        accumulator.accumulateVariable(new NormalizedInputValue("Int", IntValue.of(666)))
         accumulator.accumulateVariable(new NormalizedInputValue("Int", NullValue.of()))
         accumulator.accumulateVariable(new NormalizedInputValue("String", null))
     }
