@@ -1,5 +1,6 @@
 package graphql
 
+import graphql.execution.instrumentation.ChainedInstrumentation
 import graphql.execution.instrumentation.dataloader.DataLoaderDispatcherInstrumentation
 import graphql.schema.DataFetcher
 import graphql.schema.DataFetchingEnvironment
@@ -11,6 +12,7 @@ import org.dataloader.DataLoader
 import org.dataloader.DataLoaderOptions
 import org.dataloader.DataLoaderRegistry
 import spock.lang.Specification
+import spock.lang.Timeout
 
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionStage
@@ -119,7 +121,40 @@ class Issue2068 extends Specification {
                     """)
                 .build())
 
-        then: "execution shouldn't hang"
+        then: "execution with single instrumentation shouldn't hang"
+        // wait for each future to complete and grab the results
+        thrown(RuntimeException)
+
+        when:
+        graphql = GraphQL.newGraphQL(schema)
+                .instrumentation(new ChainedInstrumentation(
+                        Collections.singletonList(new DataLoaderDispatcherInstrumentation()))
+                )
+                .build()
+
+        graphql.execute(newExecutionInput()
+                .dataLoaderRegistry(dataLoaderRegistry)
+                .query("""
+                query LoadPets {
+                      pets {
+                        cats {
+                          toys {
+                            name
+                          }
+                        }
+                        dogs {
+                          owner {
+                            nation {
+                              name
+                            }
+                          }
+                        }
+                      }
+                    }
+                    """)
+                .build())
+
+        then: "execution with chained instrumentation shouldn't hang"
         // wait for each future to complete and grab the results
         thrown(RuntimeException)
     }
