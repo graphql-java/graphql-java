@@ -99,7 +99,7 @@ class RuntimeWiringTest extends Specification {
     }
 
     def "scalars are present"() {
-        def customScalar = new GraphQLScalarType("URL", "Custom", coercing)
+        def customScalar = GraphQLScalarType.newScalar().name("URL").description("Custom").coercing(coercing).build()
 
         def wiring = RuntimeWiring.newRuntimeWiring().scalar(customScalar).build()
 

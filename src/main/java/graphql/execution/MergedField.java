@@ -63,9 +63,9 @@ public class MergedField {
     private final ImmutableList<Field> fields;
     private final Field singleField;
 
-    private MergedField(List<Field> fields) {
+    private MergedField(ImmutableList<Field> fields) {
         assertNotEmpty(fields);
-        this.fields = ImmutableList.copyOf(fields);
+        this.fields = fields;
         this.singleField = fields.get(0);
     }
 
@@ -74,7 +74,7 @@ public class MergedField {
      *
      * WARNING: This is not always the key in the execution result, because of possible aliases. See {@link #getResultKey()}
      *
-     * @return the name of of the merged fields.
+     * @return the name of the merged fields.
      */
     public String getName() {
         return singleField.getName();
@@ -141,14 +141,13 @@ public class MergedField {
 
     public static class Builder {
 
-        private final List<Field> fields;
+        private final ImmutableList.Builder<Field> fields = new ImmutableList.Builder<>();
 
         private Builder() {
-            this.fields = new ArrayList<>();
         }
 
         private Builder(MergedField existing) {
-            this.fields = new ArrayList<>(existing.getFields());
+            fields.addAll(existing.getFields());
         }
 
         public Builder fields(List<Field> fields) {
@@ -162,7 +161,7 @@ public class MergedField {
         }
 
         public MergedField build() {
-            return new MergedField(fields);
+            return new MergedField(fields.build());
         }
 
     }

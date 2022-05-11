@@ -32,18 +32,48 @@ import graphql.validation.rules.VariablesAreInputTypes;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 @Internal
 public class Validator {
 
+    static int MAX_VALIDATION_ERRORS = 100;
+
+    /**
+     * `graphql-java` will stop validation after a maximum number of validation messages has been reached.  Attackers
+     * can send pathologically invalid queries to induce a Denial of Service attack and fill memory with 10000s of errors
+     * and burn CPU in process.
+     *
+     * By default, this is set to 100 errors.  You can set a new JVM wide value as the maximum allowed validation errors.
+     *
+     * @param maxValidationErrors the maximum validation errors allow JVM wide
+     */
+    public static void setMaxValidationErrors(int maxValidationErrors) {
+        MAX_VALIDATION_ERRORS = maxValidationErrors;
+    }
+
+    public static int getMaxValidationErrors() {
+        return MAX_VALIDATION_ERRORS;
+    }
+
     public List<ValidationError> validateDocument(GraphQLSchema schema, Document document) {
+        return validateDocument(schema, document, ruleClass -> true);
+    }
+
+    public List<ValidationError> validateDocument(GraphQLSchema schema, Document document, Predicate<Class<?>> applyRule) {
         ValidationContext validationContext = new ValidationContext(schema, document);
 
-
-        ValidationErrorCollector validationErrorCollector = new ValidationErrorCollector();
+        ValidationErrorCollector validationErrorCollector = new ValidationErrorCollector(MAX_VALIDATION_ERRORS);
         List<AbstractRule> rules = createRules(validationContext, validationErrorCollector);
+        // filter out any rules they don't want applied
+        rules = rules.stream().filter(r -> applyRule.test(r.getClass())).collect(Collectors.toList());
         LanguageTraversal languageTraversal = new LanguageTraversal();
-        languageTraversal.traverse(document, new RulesVisitor(validationContext, rules));
+        try {
+            languageTraversal.traverse(document, new RulesVisitor(validationContext, rules));
+        } catch (ValidationErrorCollector.MaxValidationErrorsReached ignored) {
+            // if we have generated enough errors, then we can shortcut out
+        }
 
         return validationErrorCollector.getErrors();
     }

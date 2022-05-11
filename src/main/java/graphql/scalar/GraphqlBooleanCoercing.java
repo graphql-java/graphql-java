@@ -2,6 +2,7 @@ package graphql.scalar;
 
 import graphql.Internal;
 import graphql.language.BooleanValue;
+import graphql.language.Value;
 import graphql.schema.Coercing;
 import graphql.schema.CoercingParseLiteralException;
 import graphql.schema.CoercingParseValueException;
@@ -9,6 +10,7 @@ import graphql.schema.CoercingSerializeException;
 
 import java.math.BigDecimal;
 
+import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertShouldNeverHappen;
 import static graphql.scalar.CoercingUtil.isNumberIsh;
 import static graphql.scalar.CoercingUtil.typeName;
@@ -20,7 +22,14 @@ public class GraphqlBooleanCoercing implements Coercing<Boolean, Boolean> {
         if (input instanceof Boolean) {
             return (Boolean) input;
         } else if (input instanceof String) {
-            return Boolean.parseBoolean((String) input);
+            String lStr = ((String) input).toLowerCase();
+            if (lStr.equals("true")) {
+                return true;
+            }
+            if (lStr.equals("false")) {
+                return false;
+            }
+            return null;
         } else if (isNumberIsh(input)) {
             BigDecimal value;
             try {
@@ -66,5 +75,11 @@ public class GraphqlBooleanCoercing implements Coercing<Boolean, Boolean> {
             );
         }
         return ((BooleanValue) input).isValue();
+    }
+
+    @Override
+    public Value valueToLiteral(Object input) {
+        Boolean result = assertNotNull(convertImpl(input));
+        return BooleanValue.newBooleanValue(result).build();
     }
 }

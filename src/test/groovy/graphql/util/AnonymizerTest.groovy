@@ -2,6 +2,7 @@ package graphql.util
 
 import graphql.AssertException
 import graphql.TestUtil
+import graphql.schema.idl.DirectiveInfo
 import graphql.schema.idl.SchemaPrinter
 import spock.lang.Specification
 
@@ -176,15 +177,48 @@ type Object2 {
         type Query {
             foo(myInput: MyInput!): String
             foo2(arg: String = "toBeReplaced"): String
+            foo3(arg: [[String!]!]! = [["defaultValueList"]]): String
+            foo4(arg: Weekend! = SATURDAY): String
+            foo5(arg: MyInput! = { foo2: "default", foo5: SUNDAY, foo6: { foo1: 10 } } ): String
+            foo6: Object
         }
         input MyInput {
             foo1: Int
             foo2: String = "myDefaultValue"
             foo3: Int = 1234
             foo4: Int = 4567 
+            foo5: Weekend = SUNDAY
+            foo6: MyInput
+        }
+        
+        enum Weekend {
+            SATURDAY
+            SUNDAY
+        }
+        
+        type Object implements Iface {
+            id: String
+            # default value must match across hierarchy
+            bar(arg: MyInput = {foo2: "adefault", foo5: SATURDAY}): String
+        }
+        
+        interface Iface {
+            id: String
+           
+            bar(arg: MyInput = {foo2: "adefault", foo5: SATURDAY}): String
         }
         """)
-        def query = 'query myQuery($myVar: String = "someValue"){foo(myInput: {foo1: 8923, foo2: $myVar })}'
+        def query = '''
+        query myQuery($myVar: String = "someValue", 
+                        $varFoo3: [[String!]!]! = [["defaultValueList"]],
+                        $varFoo4: Weekend! = SATURDAY,
+                        $varFoo5: MyInput! = { foo2: "default", foo5: SUNDAY, foo6: { foo1: 10 } }){
+            foo(myInput: {foo1: 8923, foo2: $myVar })
+            foo3(arg: $varFoo3)
+            foo4(arg: $varFoo4)
+            foo5(arg: $varFoo5)
+        }
+        '''
 
         when:
         def result = Anonymizer.anonymizeSchemaAndQueries(schema, [query])
@@ -192,25 +226,45 @@ type Object2 {
         def newQuery = result.queries[0]
 
         then:
-        newSchema == """schema {
-  query: Object1
-}
-
-type Object1 {
-  field1(argument1: InputObject1!): String
-  field2(argument2: String = "defaultValue2"): String
-}
-
-input InputObject1 {
-  inputField1: Int
-  inputField2: String = "defaultValue1"
-  inputField3: Int = 1
-  inputField4: Int = 2
-}
-"""
-        newQuery == 'query operation($var1:String="stringValue1") {field1(argument1:{foo1:1,foo2:$var1})}'
-
-
+        newSchema == """\
+        schema {
+          query: Object1
+        }
+        
+        interface Interface1 {
+          field7: String
+          field8(argument6: InputObject1 = {inputField2 : "stringValue5", inputField5 : EnumValue1}): String
+        }
+        
+        type Object1 {
+          field1(argument1: InputObject1!): String
+          field2(argument2: String = "stringValue2"): String
+          field3(argument3: [[String!]!]! = [["stringValue3"]]): String
+          field4(argument4: Enum1! = EnumValue1): String
+          field5(argument5: InputObject1! = {inputField2 : "stringValue4", inputField5 : EnumValue2, inputField6 : {inputField1 : 3}}): String
+          field6: Object2
+        }
+        
+        type Object2 implements Interface1 {
+          field7: String
+          field8(argument6: InputObject1 = {inputField2 : "stringValue5", inputField5 : EnumValue1}): String
+        }
+        
+        enum Enum1 {
+          EnumValue1
+          EnumValue2
+        }
+        
+        input InputObject1 {
+          inputField1: Int
+          inputField2: String = "stringValue1"
+          inputField3: Int = 1
+          inputField4: Int = 2
+          inputField5: Enum1 = EnumValue2
+          inputField6: InputObject1
+        }
+        """.stripIndent()
+        newQuery == 'query operation($var1:String="stringValue1",$var2:[[String!]!]!=[["stringValue2"]],$var3:Enum1!=EnumValue1,$var4:InputObject1!={inputField2:"stringValue3",inputField5:EnumValue2,inputField6:{inputField1:2}}) {field1(argument1:{inputField1:1,inputField2:$var1}) field3(argument3:$var2) field4(argument4:$var3) field5(argument5:$var4)}'
     }
 
     def "query with aliases"() {
@@ -614,5 +668,204 @@ type Object1 {
   field2: Interface2
 }
 """
+    }
+
+    def "complex schema with directives"() {
+        given:
+        def schema = TestUtil.schema("""
+        directive @key(fields: String! = "sensitive") repeatable on SCHEMA | SCALAR 
+                            | OBJECT 
+                            | FIELD_DEFINITION 
+                            | ARGUMENT_DEFINITION 
+                            | INTERFACE 
+                            | UNION 
+                            | ENUM 
+                            | ENUM_VALUE 
+                            | INPUT_OBJECT 
+                            | INPUT_FIELD_DEFINITION 
+
+        schema @key(fields: "hello") {
+           query: Query
+        }
+
+        type Query @key(fields: "hello2") {
+            pets: Pet @key(fields: "hello3")
+            allPets: AllPets @deprecated(reason: "no money")
+        }
+        
+        enum PetKind @key(fields: "hello4") {
+            FRIENDLY @key(fields: "hello5")
+            NOT_FRIENDLY
+        }
+        
+        interface Pet @key(fields: "hello6") {
+            name: String
+            petKind: PetKind
+        }
+        type Dog implements Pet {
+            name: String 
+            dogField(limit: LimitInput): String
+            petKind: PetKind
+        } 
+        
+        input LimitInput @key(fields: "hello7") {
+            value: Int @key(fields: "hello8")
+        }
+       
+        union AllPets @key(fields: "hello9") = Dog
+        """)
+
+        when:
+        def result = Anonymizer.anonymizeSchema(schema)
+        def newSchema = new SchemaPrinter(SchemaPrinter.Options.defaultOptions()
+                .includeDirectives({!DirectiveInfo.isGraphqlSpecifiedDirective(it)}))
+                .print(result)
+
+        then:
+        newSchema == """\
+            schema @Directive1(argument1 : "stringValue1"){
+              query: Object1
+            }
+            
+            directive @Directive1(argument1: String! = "stringValue4") repeatable on SCHEMA | SCALAR | OBJECT | FIELD_DEFINITION | ARGUMENT_DEFINITION | INTERFACE | UNION | ENUM | ENUM_VALUE | INPUT_OBJECT | INPUT_FIELD_DEFINITION
+            
+            interface Interface1 @Directive1(argument1 : "stringValue12") {
+              field2: String
+              field3: Enum1
+            }
+            
+            union Union1 @Directive1(argument1 : "stringValue21") = Object2
+            
+            type Object1 @Directive1(argument1 : "stringValue8") {
+              field1: Interface1 @Directive1(argument1 : "stringValue9")
+              field4: Union1 @deprecated
+            }
+            
+            type Object2 implements Interface1 {
+              field2: String
+              field3: Enum1
+              field5(argument2: InputObject1): String
+            }
+            
+            enum Enum1 @Directive1(argument1 : "stringValue15") {
+              EnumValue1 @Directive1(argument1 : "stringValue18")
+              EnumValue2
+            }
+            
+            input InputObject1 @Directive1(argument1 : "stringValue24") {
+              inputField1: Int @Directive1(argument1 : "stringValue27")
+            }
+        """.stripIndent()
+    }
+
+    def "query with directives"() {
+        given:
+        def schema = TestUtil.schema("""
+        directive @whatever(myArg: String = "secret") on FIELD 
+        type Query {
+            foo: Foo
+        }
+        type Foo {
+            bar: String
+        }
+        """)
+        def query = 'query{foo @whatever {bar @whatever }}'
+
+        when:
+        def result = Anonymizer.anonymizeSchemaAndQueries(schema, [query])
+        def newSchema = new SchemaPrinter(SchemaPrinter.Options.defaultOptions().includeDirectives(SchemaPrinter.ExcludeGraphQLSpecifiedDirectivesPredicate)).print(result.schema)
+        def newQuery = result.queries[0]
+
+        then:
+        newSchema == """schema {
+  query: Object1
+}
+
+directive @Directive1(argument1: String = "stringValue1") on FIELD
+
+type Object1 {
+  field1: Object2
+}
+
+type Object2 {
+  field2: String
+}
+"""
+        newQuery == "query {field1 @Directive1 {field2 @Directive1}}"
+
+    }
+
+    def "query with directives with arguments"() {
+        given:
+        def schema = TestUtil.schema("""
+        directive @whatever(myArg: String = "secret") on FIELD 
+        type Query {
+            foo: Foo
+        }
+        type Foo {
+            bar: String
+        }
+        """)
+        def query = 'query{foo @whatever(myArg: "secret2") {bar @whatever(myArg: "secret3") }}'
+
+        when:
+        def result = Anonymizer.anonymizeSchemaAndQueries(schema, [query])
+        def newSchema = new SchemaPrinter(SchemaPrinter.Options.defaultOptions().includeDirectives(SchemaPrinter.ExcludeGraphQLSpecifiedDirectivesPredicate)).print(result.schema)
+        def newQuery = result.queries[0]
+
+        then:
+        newSchema == """schema {
+  query: Object1
+}
+
+directive @Directive1(argument1: String = "stringValue1") on FIELD
+
+type Object1 {
+  field1: Object2
+}
+
+type Object2 {
+  field2: String
+}
+"""
+        newQuery == 'query {field1 @Directive1(argument1:"stringValue2") {field2 @Directive1(argument1:"stringValue1")}}'
+
+    }
+
+    def "query with directives with arguments and variables"() {
+        given:
+        def schema = TestUtil.schema("""
+        directive @whatever(myArg: String = "secret") on FIELD 
+        type Query {
+            foo: Foo
+        }
+        type Foo {
+            bar(barArg: String): String
+        }
+        """)
+        def query = 'query($myVar: String = "myDefaultValue"){foo @whatever(myArg: $myVar) {bar(barArg: "barArgValue") @whatever(myArg: "secret3") }}'
+
+        when:
+        def result = Anonymizer.anonymizeSchemaAndQueries(schema, [query])
+        def newSchema = new SchemaPrinter(SchemaPrinter.Options.defaultOptions().includeDirectives(SchemaPrinter.ExcludeGraphQLSpecifiedDirectivesPredicate)).print(result.schema)
+        def newQuery = result.queries[0]
+
+        then:
+        newSchema == """schema {
+  query: Object1
+}
+
+directive @Directive1(argument1: String = "stringValue1") on FIELD
+
+type Object1 {
+  field1: Object2
+}
+
+type Object2 {
+  field2(argument2: String): String
+}
+"""
+        newQuery == 'query ($var1:String="stringValue3") {field1 @Directive1(argument1:$var1) {field2(argument2:"stringValue2") @Directive1(argument1:"stringValue1")}}'
+
     }
 }

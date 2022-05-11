@@ -5,6 +5,7 @@ import graphql.language.NamedNode;
 import graphql.language.NodeParentTree;
 import graphql.schema.DataFetcher;
 import graphql.schema.FieldCoordinates;
+import graphql.schema.GraphQLAppliedDirective;
 import graphql.schema.GraphQLCodeRegistry;
 import graphql.schema.GraphQLDirective;
 import graphql.schema.GraphQLDirectiveContainer;
@@ -24,6 +25,7 @@ public class SchemaDirectiveWiringEnvironmentImpl<T extends GraphQLDirectiveCont
 
     private final T element;
     private final Map<String, GraphQLDirective> directives;
+    private final Map<String, GraphQLAppliedDirective> appliedDirectives;
     private final NodeParentTree<NamedNode<?>> nodeParentTree;
     private final TypeDefinitionRegistry typeDefinitionRegistry;
     private final Map<String, Object> context;
@@ -33,11 +35,12 @@ public class SchemaDirectiveWiringEnvironmentImpl<T extends GraphQLDirectiveCont
     private final GraphQLFieldDefinition fieldDefinition;
     private final GraphQLDirective registeredDirective;
 
-    public SchemaDirectiveWiringEnvironmentImpl(T element, List<GraphQLDirective> directives, GraphQLDirective registeredDirective, SchemaGeneratorDirectiveHelper.Parameters parameters) {
+    public SchemaDirectiveWiringEnvironmentImpl(T element, List<GraphQLDirective> directives, List<GraphQLAppliedDirective> appliedDirectives, GraphQLDirective registeredDirective, SchemaGeneratorDirectiveHelper.Parameters parameters) {
         this.element = element;
         this.registeredDirective = registeredDirective;
         this.typeDefinitionRegistry = parameters.getTypeRegistry();
         this.directives = FpKit.getByName(directives, GraphQLDirective::getName);
+        this.appliedDirectives = FpKit.getByName(appliedDirectives, GraphQLAppliedDirective::getName);
         this.context = parameters.getContext();
         this.codeRegistry = parameters.getCodeRegistry();
         this.nodeParentTree = parameters.getNodeParentTree();
@@ -64,6 +67,16 @@ public class SchemaDirectiveWiringEnvironmentImpl<T extends GraphQLDirectiveCont
     @Override
     public GraphQLDirective getDirective(String directiveName) {
         return directives.get(directiveName);
+    }
+
+    @Override
+    public Map<String, GraphQLAppliedDirective> getAppliedDirectives() {
+        return appliedDirectives;
+    }
+
+    @Override
+    public GraphQLAppliedDirective getAppliedDirective(String directiveName) {
+        return appliedDirectives.get(directiveName);
     }
 
     @Override

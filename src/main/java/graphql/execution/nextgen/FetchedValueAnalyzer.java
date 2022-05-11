@@ -30,6 +30,10 @@ import static graphql.execution.nextgen.FetchedValueAnalysis.FetchedValueType.SC
 import static graphql.execution.nextgen.FetchedValueAnalysis.newFetchedValueAnalysis;
 import static graphql.schema.GraphQLTypeUtil.isList;
 
+/**
+ * @deprecated Jan 2022 - We have decided to deprecate the NextGen engine, and it will be removed in a future release.
+ */
+@Deprecated
 @Internal
 public class FetchedValueAnalyzer {
 
@@ -69,7 +73,7 @@ public class FetchedValueAnalyzer {
                     .build();
         }
         try {
-            GraphQLObjectType resolvedObjectType = resolveType.resolveType(executionContext, field, toAnalyze, executionInfo.getArguments(), fieldType);
+            GraphQLObjectType resolvedObjectType = resolveType.resolveType(executionContext, field, toAnalyze, executionInfo, fieldType, fetchedValue.getLocalContext());
             return newFetchedValueAnalysis(OBJECT)
                     .fetchedValue(fetchedValue)
                     .executionStepInfo(executionInfo)

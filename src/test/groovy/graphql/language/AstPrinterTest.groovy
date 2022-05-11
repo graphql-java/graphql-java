@@ -402,6 +402,26 @@ query NullEpisodeQuery {
 '''
     }
 
+    def "ast printing of blank string"() {
+        def query = '''
+query NullEpisodeQuery {
+  human(id: "     ") {
+    name
+  }
+}
+'''
+        def document = parse(query)
+        String output = printAst(document)
+
+        expect:
+        output == '''query NullEpisodeQuery {
+  human(id: "     ") {
+    name
+  }
+}
+'''
+    }
+
     //-------------------------------------------------
     def "ast printing of default variables with null"() {
         def query = '''
@@ -450,6 +470,26 @@ type Query {
 }
 '''
 
+    }
+
+    def "print field descriptions"() {
+        def query = '''type Query {
+  "description"
+  field(
+  "description"
+  a: String): String
+}
+'''
+        def document = parse(query)
+        String output = printAst(document)
+        expect:
+        output == '''type Query {
+  "description"
+  field(
+  "description"
+  a: String): String
+}
+'''
     }
 
     def "print empty description"() {

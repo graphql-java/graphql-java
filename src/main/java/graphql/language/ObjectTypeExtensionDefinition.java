@@ -17,7 +17,7 @@ import static graphql.collect.ImmutableKit.emptyList;
 import static graphql.collect.ImmutableKit.emptyMap;
 
 @PublicApi
-public class ObjectTypeExtensionDefinition extends ObjectTypeDefinition {
+public class ObjectTypeExtensionDefinition extends ObjectTypeDefinition implements SDLExtensionDefinition {
 
     @Internal
     protected ObjectTypeExtensionDefinition(String name,

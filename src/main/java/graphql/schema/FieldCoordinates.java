@@ -78,7 +78,7 @@ public class FieldCoordinates {
 
     @Override
     public String toString() {
-        return typeName + ':' + fieldName + '\'';
+        return typeName + '.' + fieldName;
     }
 
     /**

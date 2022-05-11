@@ -77,4 +77,17 @@ public class SimpleInstrumentationContext<T> implements InstrumentationContext<T
     public static <U> SimpleInstrumentationContext<U> whenCompleted(BiConsumer<U, Throwable> codeToRun) {
         return new SimpleInstrumentationContext<>(null, codeToRun);
     }
+
+    public static <T> BiConsumer<? super T, ? super Throwable> completeInstrumentationCtxCF(
+            InstrumentationContext<T> instrumentationContext, CompletableFuture<T> targetCF) {
+        return (result, throwable) -> {
+            if (throwable != null) {
+                targetCF.completeExceptionally(throwable);
+            } else {
+                targetCF.complete(result);
+            }
+            instrumentationContext.onCompleted(result, throwable);
+        };
+    }
+
 }

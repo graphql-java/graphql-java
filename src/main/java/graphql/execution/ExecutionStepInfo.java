@@ -11,6 +11,7 @@ import graphql.schema.GraphQLTypeUtil;
 
 import java.util.Map;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertTrue;
@@ -26,7 +27,7 @@ import static graphql.schema.GraphQLTypeUtil.isList;
 @PublicApi
 public class ExecutionStepInfo {
 
-    /**
+    /*
      * An ExecutionStepInfo represent either a field or a list element inside a list of objects/interfaces/unions.
      *
      * A StepInfo never represent a Scalar/Enum inside a list (e.g. [String]) because GraphQL execution doesn't descend down
@@ -64,29 +65,25 @@ public class ExecutionStepInfo {
     private final MergedField field;
     private final GraphQLFieldDefinition fieldDefinition;
     private final GraphQLObjectType fieldContainer;
-    private final ImmutableMapWithNullValues<String, Object> arguments;
+    private final Supplier<ImmutableMapWithNullValues<String, Object>> arguments;
 
-    private ExecutionStepInfo(GraphQLOutputType type,
-                              GraphQLFieldDefinition fieldDefinition,
-                              MergedField field,
-                              ResultPath path,
-                              ExecutionStepInfo parent,
-                              ImmutableMapWithNullValues<String, Object> arguments,
-                              GraphQLObjectType fieldsContainer) {
-        this.fieldDefinition = fieldDefinition;
-        this.field = field;
-        this.path = path;
-        this.parent = parent;
-        this.type = assertNotNull(type, () -> "you must provide a graphql type");
-        this.arguments = arguments;
-        this.fieldContainer = fieldsContainer;
+    private ExecutionStepInfo(Builder builder) {
+        this.fieldDefinition = builder.fieldDefinition;
+        this.field = builder.field;
+        this.path = builder.path;
+        this.parent = builder.parentInfo;
+        this.type = assertNotNull(builder.type, () -> "you must provide a graphql type");
+        this.arguments = builder.arguments;
+        this.fieldContainer = builder.fieldContainer;
     }
 
     /**
      * @return the GraphQLObjectType defining the {@link #getFieldDefinition()}
-     * @deprecated use {@link #getObjectType()} instead as it is named better
+     *
      * @see ExecutionStepInfo#getObjectType()
+     * @deprecated use {@link #getObjectType()} instead as it is named better
      */
+    @Deprecated
     public GraphQLObjectType getFieldContainer() {
         return fieldContainer;
     }
@@ -164,7 +161,7 @@ public class ExecutionStepInfo {
      * @return the resolved arguments that have been passed to this field
      */
     public Map<String, Object> getArguments() {
-        return arguments;
+        return arguments.get();
     }
 
     /**
@@ -172,11 +169,12 @@ public class ExecutionStepInfo {
      *
      * @param name the name of the argument
      * @param <T>  you decide what type it is
+     *
      * @return the named argument or null if its not present
      */
     @SuppressWarnings("unchecked")
     public <T> T getArgument(String name) {
-        return (T) arguments.get(name);
+        return (T) getArguments().get(name);
     }
 
     /**
@@ -200,14 +198,15 @@ public class ExecutionStepInfo {
      * after type resolution has occurred
      *
      * @param newType the new type to be
+     *
      * @return a new type info with the same
      */
     public ExecutionStepInfo changeTypeWithPreservedNonNull(GraphQLOutputType newType) {
         assertTrue(!GraphQLTypeUtil.isNonNull(newType), () -> "newType can't be non null");
         if (isNonNullType()) {
-            return new ExecutionStepInfo(GraphQLNonNull.nonNull(newType), fieldDefinition, field, path, this.parent, arguments, this.fieldContainer);
+            return newExecutionStepInfo(this).type(GraphQLNonNull.nonNull(newType)).build();
         } else {
-            return new ExecutionStepInfo(newType, fieldDefinition, field, path, this.parent, arguments, this.fieldContainer);
+            return newExecutionStepInfo(this).type(newType).build();
         }
     }
 
@@ -256,13 +255,13 @@ public class ExecutionStepInfo {
         GraphQLObjectType fieldContainer;
         MergedField field;
         ResultPath path;
-        ImmutableMapWithNullValues<String, Object> arguments;
+        Supplier<ImmutableMapWithNullValues<String, Object>> arguments;
 
         /**
          * @see ExecutionStepInfo#newExecutionStepInfo()
          */
         private Builder() {
-            arguments = ImmutableMapWithNullValues.emptyMap();
+            arguments = ImmutableMapWithNullValues::emptyMap;
         }
 
         private Builder(ExecutionStepInfo existing) {
@@ -272,7 +271,7 @@ public class ExecutionStepInfo {
             this.fieldContainer = existing.fieldContainer;
             this.field = existing.field;
             this.path = existing.path;
-            this.arguments = ImmutableMapWithNullValues.copyOf(existing.getArguments());
+            this.arguments = existing.arguments;
         }
 
         public Builder type(GraphQLOutputType type) {
@@ -300,8 +299,11 @@ public class ExecutionStepInfo {
             return this;
         }
 
-        public Builder arguments(Map<String, Object> arguments) {
-            this.arguments = arguments == null ? ImmutableMapWithNullValues.emptyMap() : ImmutableMapWithNullValues.copyOf(arguments);
+        public Builder arguments(Supplier<Map<String, Object>> arguments) {
+            this.arguments = () -> {
+                Map<String, Object> map = arguments.get();
+                return map == null ? ImmutableMapWithNullValues.emptyMap() : ImmutableMapWithNullValues.copyOf(map);
+            };
             return this;
         }
 
@@ -311,7 +313,7 @@ public class ExecutionStepInfo {
         }
 
         public ExecutionStepInfo build() {
-            return new ExecutionStepInfo(type, fieldDefinition, field, path, parentInfo, arguments, fieldContainer);
+            return new ExecutionStepInfo(this);
         }
     }
 }

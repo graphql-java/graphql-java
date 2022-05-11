@@ -129,7 +129,7 @@ public class QueryTraverser {
      * @param initialValue the initial value to pass to the reducer
      * @param <T>          the type of reduced value
      *
-     * @return the calucalated overall value
+     * @return the calculated overall value
      */
     @SuppressWarnings("unchecked")
     public <T> T reducePreOrder(QueryReducer<T> queryReducer, T initialValue) {

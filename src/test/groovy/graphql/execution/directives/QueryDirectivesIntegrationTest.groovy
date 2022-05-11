@@ -78,7 +78,7 @@ class QueryDirectivesIntegrationTest extends Specification {
         timeoutDirectives.collect({
             def s = it.getName() + "("
             it.arguments.forEach({
-                s += it.getName() + ":" + it.getValue()
+                s += it.getName() + ":" + it.getArgumentValue().value
             })
             s += ")"
             s

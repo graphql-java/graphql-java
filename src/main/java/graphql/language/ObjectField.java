@@ -11,6 +11,7 @@ import graphql.util.TraverserContext;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotNull;
@@ -28,8 +29,8 @@ public class ObjectField extends AbstractNode<ObjectField> implements NamedNode<
     @Internal
     protected ObjectField(String name, Value value, SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars, Map<String, String> additionalData) {
         super(sourceLocation, comments, ignoredChars, additionalData);
-        this.name = name;
-        this.value = value;
+        this.name = assertNotNull(name);
+        this.value = assertNotNull(value);
     }
 
     /**
@@ -81,7 +82,7 @@ public class ObjectField extends AbstractNode<ObjectField> implements NamedNode<
 
         ObjectField that = (ObjectField) o;
 
-        return !(name != null ? !name.equals(that.name) : that.name != null);
+        return Objects.equals(name, that.name);
 
     }
 

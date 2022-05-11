@@ -34,10 +34,16 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 
 import static graphql.Assert.assertNotNull;
 
+/**
+ *
+ * @deprecated Jan 2022 - We have decided to deprecate the NextGen engine, and it will be removed in a future release.
+ */
+@Deprecated
 @SuppressWarnings("Duplicates")
 @Internal
 public class GraphQL {
@@ -65,6 +71,7 @@ public class GraphQL {
      * which is the result of executing the provided query.
      *
      * @param executionInputBuilder {@link ExecutionInput.Builder}
+     *
      * @return an {@link ExecutionResult} which can include errors
      */
     public ExecutionResult execute(ExecutionInput.Builder executionInputBuilder) {
@@ -85,6 +92,7 @@ public class GraphQL {
      * </pre>
      *
      * @param builderFunction a function that is given a {@link ExecutionInput.Builder}
+     *
      * @return a promise to an {@link ExecutionResult} which can include errors
      */
     public CompletableFuture<ExecutionResult> execute(UnaryOperator<ExecutionInput.Builder> builderFunction) {
@@ -98,6 +106,7 @@ public class GraphQL {
      * which is the result of executing the provided query.
      *
      * @param executionInput {@link ExecutionInput}
+     *
      * @return a promise to an {@link ExecutionResult} which can include errors
      */
     public ExecutionResult execute(ExecutionInput executionInput) {
@@ -111,6 +120,7 @@ public class GraphQL {
      * which is the result of executing the provided query.
      *
      * @param executionInputBuilder {@link ExecutionInput.Builder}
+     *
      * @return a promise to an {@link ExecutionResult} which can include errors
      */
     public CompletableFuture<ExecutionResult> executeAsync(ExecutionInput.Builder executionInputBuilder) {
@@ -131,6 +141,7 @@ public class GraphQL {
      * </pre>
      *
      * @param builderFunction a function that is given a {@link ExecutionInput.Builder}
+     *
      * @return a promise to an {@link ExecutionResult} which can include errors
      */
     public CompletableFuture<ExecutionResult> executeAsync(UnaryOperator<ExecutionInput.Builder> builderFunction) {
@@ -144,6 +155,7 @@ public class GraphQL {
      * which is the result of executing the provided query.
      *
      * @param executionInput {@link ExecutionInput}
+     *
      * @return a promise to an {@link ExecutionResult} which can include errors
      */
     public CompletableFuture<ExecutionResult> executeAsync(ExecutionInput executionInput) {
@@ -182,11 +194,17 @@ public class GraphQL {
             executionInputRef.set(transformedInput);
             return parseAndValidate(executionInputRef, graphQLSchema, instrumentationState);
         };
-        PreparsedDocumentEntry preparsedDoc = preparsedDocumentProvider.getDocument(executionInput, computeFunction);
-        if (preparsedDoc.hasErrors()) {
-            return CompletableFuture.completedFuture(new ExecutionResultImpl(preparsedDoc.getErrors()));
-        }
-        return execute(executionInputRef.get(), preparsedDoc.getDocument(), graphQLSchema, instrumentationState);
+        CompletableFuture<PreparsedDocumentEntry> preparsedDoc = preparsedDocumentProvider.getDocumentAsync(executionInput, computeFunction);
+        return preparsedDoc.thenCompose(preparsedDocumentEntry -> {
+            if (preparsedDocumentEntry.hasErrors()) {
+                return CompletableFuture.completedFuture(new ExecutionResultImpl(preparsedDocumentEntry.getErrors()));
+            }
+            try {
+                return execute(executionInputRef.get(), preparsedDocumentEntry.getDocument(), graphQLSchema, instrumentationState);
+            } catch (AbortExecutionException e) {
+                return CompletableFuture.completedFuture(e.toExecutionResult());
+            }
+        });
     }
 
     private PreparsedDocumentEntry parseAndValidate(AtomicReference<ExecutionInput> executionInputRef, GraphQLSchema graphQLSchema, InstrumentationState instrumentationState) {
@@ -199,7 +217,7 @@ public class GraphQL {
         }
         ParseAndValidateResult parseResult = parse(executionInput, graphQLSchema, instrumentationState);
         if (parseResult.isFailure()) {
-            logNotSafe.warn("Query failed to parse : '{}'", executionInput.getQuery());
+            logNotSafe.warn("Query did not parse : '{}'", executionInput.getQuery());
             return new PreparsedDocumentEntry(parseResult.getSyntaxException().toInvalidSyntaxError());
         } else {
             final Document document = parseResult.getDocument();
@@ -212,7 +230,7 @@ public class GraphQL {
             }
             final List<ValidationError> errors = validate(executionInput, document, graphQLSchema, instrumentationState);
             if (!errors.isEmpty()) {
-                logNotSafe.warn("Query failed to validate : '{}'", query);
+                logNotSafe.warn("Query did not validate : '{}'", query);
                 return new PreparsedDocumentEntry(errors);
             }
 
@@ -246,7 +264,8 @@ public class GraphQL {
         CompletableFuture<List<ValidationError>> cf = new CompletableFuture<>();
         validationCtx.onDispatched(cf);
 
-        List<ValidationError> validationErrors = ParseAndValidate.validate(graphQLSchema, document);
+        Predicate<Class<?>> validationRulePredicate = executionInput.getGraphQLContext().getOrDefault(ParseAndValidate.INTERNAL_VALIDATION_PREDICATE_HINT, r -> true);
+        List<ValidationError> validationErrors = ParseAndValidate.validate(graphQLSchema, document, validationRulePredicate);
 
         validationCtx.onCompleted(validationErrors, null);
         cf.complete(validationErrors);
@@ -256,7 +275,7 @@ public class GraphQL {
     private CompletableFuture<ExecutionResult> execute(ExecutionInput executionInput, Document document, GraphQLSchema graphQLSchema, InstrumentationState instrumentationState) {
         String query = executionInput.getQuery();
         String operationName = executionInput.getOperationName();
-        Object context = executionInput.getContext();
+        Object context = executionInput.getGraphQLContext();
 
         Execution execution = new Execution();
         ExecutionId executionId = idProvider.provide(query, operationName, context);
@@ -286,6 +305,7 @@ public class GraphQL {
      * Helps you build a GraphQL object ready to execute queries
      *
      * @param graphQLSchema the schema to use
+     *
      * @return a builder of GraphQL objects
      */
     public static Builder newGraphQL(GraphQLSchema graphQLSchema) {
@@ -297,6 +317,7 @@ public class GraphQL {
      * the current values and allows you to transform it how you want.
      *
      * @param builderConsumer the consumer code that will be given a builder to transform
+     *
      * @return a new GraphQL object based on calling build on that builder
      */
     public GraphQL transform(Consumer<Builder> builderConsumer) {

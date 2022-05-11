@@ -25,6 +25,10 @@ import java.util.Map;
 import static graphql.execution.ExecutionContextBuilder.newExecutionContextBuilder;
 import static graphql.execution.ExecutionStepInfo.newExecutionStepInfo;
 
+/**
+ * @deprecated Jan 2022 - We have decided to deprecate the NextGen engine, and it will be removed in a future release.
+ */
+@Deprecated
 @Internal
 public class ExecutionHelper {
 
@@ -56,6 +60,7 @@ public class ExecutionHelper {
                 .instrumentationState(instrumentationState)
                 .graphQLSchema(graphQLSchema)
                 .context(executionInput.getContext())
+                .graphQLContext(executionInput.getGraphQLContext())
                 .root(executionInput.getRoot())
                 .fragmentsByName(fragmentsByName)
                 .variables(coercedVariables)

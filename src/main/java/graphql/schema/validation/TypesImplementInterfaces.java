@@ -1,6 +1,8 @@
 package graphql.schema.validation;
 
 import graphql.Internal;
+import graphql.execution.ValuesResolver;
+import graphql.language.Value;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLImplementingType;
@@ -23,6 +25,7 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 import static graphql.collect.ImmutableKit.map;
+import static graphql.language.AstPrinter.printAst;
 import static graphql.schema.GraphQLTypeUtil.isList;
 import static graphql.schema.GraphQLTypeUtil.isNonNull;
 import static graphql.schema.GraphQLTypeUtil.simplePrint;
@@ -147,7 +150,13 @@ public class TypesImplementInterfaces extends GraphQLTypeVisitorStub {
                     if (!interfaceArgStr.equals(objectArgStr)) {
                         same = false;
                     }
-                    if (!Objects.equals(objectArg.getDefaultValue(), interfaceArg.getDefaultValue())) {
+                    if (objectArg.hasSetDefaultValue() && interfaceArg.hasSetDefaultValue()) {
+                        Value<?> objectDefaultValue = ValuesResolver.valueToLiteral(objectArg.getArgumentDefaultValue(), objectArg.getType());
+                        Value<?> interfaceDefaultValue = ValuesResolver.valueToLiteral(interfaceArg.getArgumentDefaultValue(), interfaceArg.getType());
+                        if (!Objects.equals(printAst(objectDefaultValue), printAst(interfaceDefaultValue))) {
+                            same = false;
+                        }
+                    } else if (objectArg.hasSetDefaultValue() || interfaceArg.hasSetDefaultValue()) {
                         same = false;
                     }
                     if (!same) {

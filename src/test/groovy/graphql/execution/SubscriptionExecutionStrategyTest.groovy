@@ -7,6 +7,7 @@ import graphql.GraphQL
 import graphql.GraphQLError
 import graphql.GraphqlErrorBuilder
 import graphql.TestUtil
+import graphql.TypeMismatchError
 import graphql.execution.instrumentation.TestingInstrumentation
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters
 import graphql.execution.pubsub.CapturingSubscriber
@@ -14,6 +15,7 @@ import graphql.execution.pubsub.Message
 import graphql.execution.pubsub.ReactiveStreamsMessagePublisher
 import graphql.execution.pubsub.ReactiveStreamsObjectPublisher
 import graphql.execution.pubsub.RxJavaMessagePublisher
+import graphql.execution.reactive.SubscriptionPublisher
 import graphql.schema.DataFetcher
 import graphql.schema.DataFetchingEnvironment
 import graphql.schema.PropertyDataFetcher
@@ -42,6 +44,7 @@ class SubscriptionExecutionStrategyTest extends Specification {
             
             type Subscription {
                 newMessage(roomId:Int) : Message
+                newListOfMessages(roomId:Int): [Message]
             }
         """
 
@@ -49,22 +52,86 @@ class SubscriptionExecutionStrategyTest extends Specification {
         buildSubscriptionQL(newMessageDF, PropertyDataFetcher.fetching("sender"), PropertyDataFetcher.fetching("text"))
     }
 
-    GraphQL buildSubscriptionQL(DataFetcher newMessageDF, DataFetcher senderDF, DataFetcher textDF) {
-        RuntimeWiring runtimeWiring = RuntimeWiring.newRuntimeWiring()
-                .type(newTypeWiring("Subscription").dataFetcher("newMessage", newMessageDF).build())
+    RuntimeWiring.Builder buildBaseSubscriptionWiring(DataFetcher senderDF, DataFetcher textDF) {
+        return RuntimeWiring.newRuntimeWiring()
                 .type(newTypeWiring("Message")
                         .dataFetcher("sender", senderDF)
                         .dataFetcher("text", textDF)
                         .build())
+    }
+
+    GraphQL buildSubscriptionListQL(DataFetcher newListOfMessagesDF) {
+        return buildSubscriptionListQL(newListOfMessagesDF, PropertyDataFetcher.fetching("sender"), PropertyDataFetcher.fetching("text"))
+    }
+
+    GraphQL buildSubscriptionListQL(DataFetcher newListOfMessagesDF, DataFetcher senderDF, DataFetcher textDF) {
+        RuntimeWiring runtimeWiring = buildBaseSubscriptionWiring(senderDF, textDF)
+                .type(newTypeWiring("Subscription").dataFetcher("newListOfMessages", newListOfMessagesDF).build())
                 .build()
 
         return TestUtil.graphQL(idl, runtimeWiring).subscriptionExecutionStrategy(new SubscriptionExecutionStrategy()).build()
     }
 
-    GraphQLError mkError(String message) {
+    GraphQL buildSubscriptionQL(DataFetcher newMessageDF, DataFetcher senderDF, DataFetcher textDF) {
+        RuntimeWiring runtimeWiring = buildBaseSubscriptionWiring(senderDF, textDF)
+                .type(newTypeWiring("Subscription").dataFetcher("newMessage", newMessageDF).build())
+                .build()
+
+        return TestUtil.graphQL(idl, runtimeWiring).subscriptionExecutionStrategy(new SubscriptionExecutionStrategy()).build()
+    }
+
+    static GraphQLError mkError(String message) {
         GraphqlErrorBuilder.newError().message(message).build()
     }
 
+    @Unroll
+    def "#2609 when a GraphQLList is expected and a non iterable or non array is passed then it should yield a TypeMismatch error (spec October2021/6.2.3.2.ExecuteSubscriptionEvent(...).5)"() {
+        given:
+        DataFetcher newListOfMessagesDF = new DataFetcher() {
+            @Override
+            Object get(DataFetchingEnvironment environment) {
+                return new ReactiveStreamsMessagePublisher(5) {
+                    @Override
+                    protected Message examineMessage(Message message, Integer at) {
+                        // Should actually be list of messages ([Message])
+                        return new Message("aSender_" + at, "someText" + at)
+                    }
+                }
+            }
+        }
+
+        GraphQL graphQL = buildSubscriptionListQL(newListOfMessagesDF)
+
+        def executionInput = ExecutionInput.newExecutionInput().query("""
+            subscription NewListOfMessages {
+              newListOfMessages(roomId: 123) {
+                sender
+                text
+              }
+            }
+        """).build()
+
+        when:
+        def executionResult = graphQL.execute(executionInput)
+
+        Publisher<ExecutionResult> msgStream = executionResult.getData()
+
+        def capturingSubscriber = new CapturingSubscriber<ExecutionResult>()
+        msgStream.subscribe(capturingSubscriber)
+
+        then:
+        Awaitility.await().untilTrue(capturingSubscriber.isDone())
+
+        def messages = capturingSubscriber.events
+        messages.size() == 5
+        for (int i = 0; i < messages.size(); i++) {
+            def message = messages[i]
+            assert message.errors.size() == 1
+            assert message.errors[0] instanceof TypeMismatchError
+            assert message.errors[0].message.contains("/newListOfMessages")
+            assert message.errors[0].message.contains("LIST")
+        }
+    }
 
     @Unroll
     def "subscription query sends out a stream of events using the '#why' implementation"() {
@@ -99,6 +166,7 @@ class SubscriptionExecutionStrategyTest extends Specification {
         msgStream.subscribe(capturingSubscriber)
 
         then:
+        msgStream instanceof SubscriptionPublisher
         Awaitility.await().untilTrue(capturingSubscriber.isDone())
 
         def messages = capturingSubscriber.events
@@ -545,10 +613,10 @@ class SubscriptionExecutionStrategyTest extends Specification {
 
         def subscribedFieldCalls = instrumentation.executionList.findAll { s -> s.contains(":subscribed-field-event") }
         subscribedFieldCalls.size() == 20 // start and end calls
-        subscribedFieldCalls.findAll { s -> s.contains("newMessage")}.size() == 20 // all for our subscribed field
+        subscribedFieldCalls.findAll { s -> s.contains("newMessage") }.size() == 20 // all for our subscribed field
 
         // this works because our calls are serial - if we truly had async values then the order would not work
-        subscribedFieldCalls.withIndex().collect({s,index ->
+        subscribedFieldCalls.withIndex().collect({ s, index ->
             if (index % 2 == 0) {
                 assert s.startsWith("start:"), "expected start: on even indexes"
             } else {
@@ -558,4 +626,5 @@ class SubscriptionExecutionStrategyTest extends Specification {
 
         instrumentResultCalls.size() == 11 // one for the initial execution and then one for each stream event
     }
+
 }

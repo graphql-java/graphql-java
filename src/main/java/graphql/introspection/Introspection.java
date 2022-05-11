@@ -5,8 +5,8 @@ import com.google.common.collect.ImmutableSet;
 import graphql.Assert;
 import graphql.Internal;
 import graphql.PublicApi;
+import graphql.execution.ValuesResolver;
 import graphql.language.AstPrinter;
-import graphql.language.AstValueHelper;
 import graphql.schema.FieldCoordinates;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLCodeRegistry;
@@ -30,6 +30,7 @@ import graphql.schema.GraphQLOutputType;
 import graphql.schema.GraphQLScalarType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLUnionType;
+import graphql.schema.InputValueWithState;
 import graphql.schema.visibility.GraphqlFieldVisibility;
 
 import java.util.ArrayList;
@@ -54,6 +55,7 @@ import static graphql.schema.GraphQLTypeReference.typeRef;
 import static graphql.schema.GraphQLTypeUtil.simplePrint;
 import static graphql.schema.GraphQLTypeUtil.unwrapAllAs;
 import static graphql.schema.GraphQLTypeUtil.unwrapOne;
+import static graphql.schema.visibility.DefaultGraphqlFieldVisibility.DEFAULT_FIELD_VISIBILITY;
 
 @PublicApi
 public class Introspection {
@@ -162,10 +164,10 @@ public class Introspection {
             Object type = environment.getSource();
             if (type instanceof GraphQLArgument) {
                 GraphQLArgument inputField = (GraphQLArgument) type;
-                return inputField.getDefaultValue() != null ? print(inputField.getDefaultValue(), inputField.getType()) : null;
+                return inputField.hasSetDefaultValue() ? printDefaultValue(inputField.getArgumentDefaultValue(), inputField.getType()) : null;
             } else if (type instanceof GraphQLInputObjectField) {
                 GraphQLInputObjectField inputField = (GraphQLInputObjectField) type;
-                return inputField.getDefaultValue() != null ? print(inputField.getDefaultValue(), inputField.getType()) : null;
+                return inputField.hasSetDefaultValue() ? printDefaultValue(inputField.getInputFieldDefaultValue(), inputField.getType()) : null;
             }
             return null;
         });
@@ -182,8 +184,8 @@ public class Introspection {
         register(__InputValue, "description", descriptionDataFetcher);
     }
 
-    private static String print(Object value, GraphQLInputType type) {
-        return AstPrinter.printAst(AstValueHelper.astFromValue(value, type));
+    private static String printDefaultValue(InputValueWithState inputValueWithState, GraphQLInputType type) {
+        return AstPrinter.printAst(ValuesResolver.valueToLiteral(DEFAULT_FIELD_VISIBILITY, inputValueWithState, type));
     }
 
 
@@ -201,7 +203,7 @@ public class Introspection {
                     .argument(newArgument()
                             .name("includeDeprecated")
                             .type(GraphQLBoolean)
-                            .defaultValue(false)))
+                            .defaultValueProgrammatic(false)))
             .field(newFieldDefinition()
                     .name("type")
                     .type(nonNull(typeRef("__Type"))))
@@ -351,7 +353,7 @@ public class Introspection {
                     .argument(newArgument()
                             .name("includeDeprecated")
                             .type(GraphQLBoolean)
-                            .defaultValue(false)))
+                            .defaultValueProgrammatic(false)))
             .field(newFieldDefinition()
                     .name("interfaces")
                     .type(list(nonNull(typeRef("__Type")))))
@@ -364,14 +366,14 @@ public class Introspection {
                     .argument(newArgument()
                             .name("includeDeprecated")
                             .type(GraphQLBoolean)
-                            .defaultValue(false)))
+                            .defaultValueProgrammatic(false)))
             .field(newFieldDefinition()
                     .name("inputFields")
                     .type(list(nonNull(__InputValue)))
                     .argument(newArgument()
                             .name("includeDeprecated")
                             .type(GraphQLBoolean)
-                            .defaultValue(false)))
+                            .defaultValueProgrammatic(false)))
             .field(newFieldDefinition()
                     .name("ofType")
                     .type(typeRef("__Type")))
@@ -429,7 +431,7 @@ public class Introspection {
             .value("FRAGMENT_DEFINITION", DirectiveLocation.FRAGMENT_DEFINITION, "Indicates the directive is valid on fragment definitions.")
             .value("FRAGMENT_SPREAD", DirectiveLocation.FRAGMENT_SPREAD, "Indicates the directive is valid on fragment spreads.")
             .value("INLINE_FRAGMENT", DirectiveLocation.INLINE_FRAGMENT, "Indicates the directive is valid on inline fragments.")
-            .value("VARIABLE_DEFINITION", DirectiveLocation.INPUT_FIELD_DEFINITION, "Indicates the directive is valid on variable definitions.")
+            .value("VARIABLE_DEFINITION", DirectiveLocation.VARIABLE_DEFINITION, "Indicates the directive is valid on variable definitions.")
             //
             // from schema SDL PR  https://github.com/facebook/graphql/pull/90
             //
@@ -629,7 +631,6 @@ public class Introspection {
      * @param schema     the schema to use
      * @param parentType the type of the parent object
      * @param fieldName  the field to look up
-     *
      * @return a field definition otherwise throws an assertion exception if its null
      */
     public static GraphQLFieldDefinition getFieldDef(GraphQLSchema schema, GraphQLCompositeType parentType, String fieldName) {

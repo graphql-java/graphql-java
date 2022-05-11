@@ -20,6 +20,7 @@ import java.util.function.Function;
  * @param <D> the down stream type
  * @param <U> the up stream type to be mapped to
  */
+@SuppressWarnings("ReactiveStreamsPublisherImplementation")
 @Internal
 public class CompletionStageMappingPublisher<D, U> implements Publisher<D> {
     private final Publisher<U> upstreamPublisher;
@@ -38,109 +39,137 @@ public class CompletionStageMappingPublisher<D, U> implements Publisher<D> {
 
     @Override
     public void subscribe(Subscriber<? super D> downstreamSubscriber) {
-        upstreamPublisher.subscribe(new Subscriber<U>() {
-            Subscription delegatingSubscription;
-            final Queue<CompletionStage<?>> inFlightDataQ = new ArrayDeque<>();
-            final AtomicReference<Runnable> onCompleteOrErrorRun = new AtomicReference<>();
-            final AtomicBoolean onCompleteOrErrorRunCalled = new AtomicBoolean(false);
+        upstreamPublisher.subscribe(new CompletionStageSubscriber(downstreamSubscriber));
+    }
+
+    /**
+     * Get instance of an upstreamPublisher
+     * @return upstream instance of {@link Publisher}
+     */
+    public Publisher<U> getUpstreamPublisher() {
+        return upstreamPublisher;
+    }
+
+    @SuppressWarnings("ReactiveStreamsSubscriberImplementation")
+    @Internal
+    public class CompletionStageSubscriber implements Subscriber<U> {
+        private final Subscriber<? super D> downstreamSubscriber;
+        Subscription delegatingSubscription;
+        final Queue<CompletionStage<?>> inFlightDataQ;
+        final AtomicReference<Runnable> onCompleteOrErrorRun;
+        final AtomicBoolean onCompleteOrErrorRunCalled;
+
+        public CompletionStageSubscriber(Subscriber<? super D> downstreamSubscriber) {
+            this.downstreamSubscriber = downstreamSubscriber;
+            inFlightDataQ = new ArrayDeque<>();
+            onCompleteOrErrorRun = new AtomicReference<>();
+            onCompleteOrErrorRunCalled = new AtomicBoolean(false);
+        }
 
 
-            @Override
-            public void onSubscribe(Subscription subscription) {
-                delegatingSubscription = new DelegatingSubscription(subscription);
-                downstreamSubscriber.onSubscribe(delegatingSubscription);
+        @Override
+        public void onSubscribe(Subscription subscription) {
+            delegatingSubscription = new DelegatingSubscription(subscription);
+            downstreamSubscriber.onSubscribe(delegatingSubscription);
+        }
+
+        @Override
+        public void onNext(U u) {
+            // for safety - no more data after we have called done/error - we should not get this BUT belts and braces
+            if (onCompleteOrErrorRunCalled.get()) {
+                return;
             }
+            try {
+                CompletionStage<D> completionStage = mapper.apply(u);
+                offerToInFlightQ(completionStage);
+                completionStage.whenComplete(whenNextFinished(completionStage));
+            } catch (RuntimeException throwable) {
+                handleThrowable(throwable);
+            }
+        }
 
-            @Override
-            public void onNext(U u) {
-                // for safety - no more data after we have called done/error - we should not get this BUT belts and braces
-                if (onCompleteOrErrorRunCalled.get()) {
-                    return;
-                }
+        private BiConsumer<D, Throwable> whenNextFinished(CompletionStage<D> completionStage) {
+            return (d, throwable) -> {
                 try {
-                    CompletionStage<D> completionStage = mapper.apply(u);
-                    offerToInFlightQ(completionStage);
-                    completionStage.whenComplete(whenNextFinished(completionStage));
-                } catch (RuntimeException throwable) {
-                    handleThrowable(throwable);
-                }
-            }
-
-            private BiConsumer<D, Throwable> whenNextFinished(CompletionStage<D> completionStage) {
-                return (d, throwable) -> {
-                    try {
-                        if (throwable != null) {
-                            handleThrowable(throwable);
-                        } else {
-                            downstreamSubscriber.onNext(d);
-                        }
-                    } finally {
-                        Runnable runOnCompleteOrErrorRun = onCompleteOrErrorRun.get();
-                        boolean empty = removeFromInFlightQAndCheckIfEmpty(completionStage);
-                        if (empty && runOnCompleteOrErrorRun != null) {
-                            onCompleteOrErrorRun.set(null);
-                            runOnCompleteOrErrorRun.run();
-                        }
+                    if (throwable != null) {
+                        handleThrowable(throwable);
+                    } else {
+                        downstreamSubscriber.onNext(d);
                     }
-                };
-            }
-
-            private void handleThrowable(Throwable throwable) {
-                downstreamSubscriber.onError(throwable);
-                //
-                // reactive semantics say that IF an exception happens on a publisher
-                // then onError is called and no more messages flow.  But since the exception happened
-                // during the mapping, the upstream publisher does not no about this.
-                // so we cancel to bring the semantics back together, that is as soon as an exception
-                // has happened, no more messages flow
-                //
-                delegatingSubscription.cancel();
-            }
-
-            @Override
-            public void onError(Throwable t) {
-                onCompleteOrError(() -> {
-                    onCompleteOrErrorRunCalled.set(true);
-                    downstreamSubscriber.onError(t);
-                });
-            }
-
-            @Override
-            public void onComplete() {
-                onCompleteOrError(() -> {
-                    onCompleteOrErrorRunCalled.set(true);
-                    downstreamSubscriber.onComplete();
-                });
-            }
-
-            private void onCompleteOrError(Runnable doneCodeToRun) {
-                if (inFlightQIsEmpty()) {
-                    // run right now
-                    doneCodeToRun.run();
-                } else {
-                    onCompleteOrErrorRun.set(doneCodeToRun);
+                } finally {
+                    Runnable runOnCompleteOrErrorRun = onCompleteOrErrorRun.get();
+                    boolean empty = removeFromInFlightQAndCheckIfEmpty(completionStage);
+                    if (empty && runOnCompleteOrErrorRun != null) {
+                        onCompleteOrErrorRun.set(null);
+                        runOnCompleteOrErrorRun.run();
+                    }
                 }
-            }
+            };
+        }
 
-            private void offerToInFlightQ(CompletionStage<?> completionStage) {
-                synchronized (inFlightDataQ) {
-                    inFlightDataQ.offer(completionStage);
-                }
-            }
+        private void handleThrowable(Throwable throwable) {
+            downstreamSubscriber.onError(throwable);
+            //
+            // reactive semantics say that IF an exception happens on a publisher
+            // then onError is called and no more messages flow.  But since the exception happened
+            // during the mapping, the upstream publisher does not no about this.
+            // so we cancel to bring the semantics back together, that is as soon as an exception
+            // has happened, no more messages flow
+            //
+            delegatingSubscription.cancel();
+        }
 
-            private boolean removeFromInFlightQAndCheckIfEmpty(CompletionStage<?> completionStage) {
-                // uncontested locks in java are cheap - we dont expect much contention here
-                synchronized (inFlightDataQ) {
-                    inFlightDataQ.remove(completionStage);
-                    return inFlightDataQ.isEmpty();
-                }
-            }
+        @Override
+        public void onError(Throwable t) {
+            onCompleteOrError(() -> {
+                onCompleteOrErrorRunCalled.set(true);
+                downstreamSubscriber.onError(t);
+            });
+        }
 
-            private boolean inFlightQIsEmpty() {
-                synchronized (inFlightDataQ) {
-                    return inFlightDataQ.isEmpty();
-                }
+        @Override
+        public void onComplete() {
+            onCompleteOrError(() -> {
+                onCompleteOrErrorRunCalled.set(true);
+                downstreamSubscriber.onComplete();
+            });
+        }
+
+        /**
+         * Get instance of downstream subscriber
+         * @return {@link Subscriber}
+         */
+        public Subscriber<? super D> getDownstreamSubscriber() {
+            return downstreamSubscriber;
+        }
+
+        private void onCompleteOrError(Runnable doneCodeToRun) {
+            if (inFlightQIsEmpty()) {
+                // run right now
+                doneCodeToRun.run();
+            } else {
+                onCompleteOrErrorRun.set(doneCodeToRun);
             }
-        });
+        }
+
+        private void offerToInFlightQ(CompletionStage<?> completionStage) {
+            synchronized (inFlightDataQ) {
+                inFlightDataQ.offer(completionStage);
+            }
+        }
+
+        private boolean removeFromInFlightQAndCheckIfEmpty(CompletionStage<?> completionStage) {
+            // uncontested locks in java are cheap - we dont expect much contention here
+            synchronized (inFlightDataQ) {
+                inFlightDataQ.remove(completionStage);
+                return inFlightDataQ.isEmpty();
+            }
+        }
+
+        private boolean inFlightQIsEmpty() {
+            synchronized (inFlightDataQ) {
+                return inFlightDataQ.isEmpty();
+            }
+        }
     }
 }

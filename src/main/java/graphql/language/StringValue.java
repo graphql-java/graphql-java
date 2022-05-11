@@ -7,10 +7,10 @@ import graphql.PublicApi;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotNull;
@@ -77,7 +77,7 @@ public class StringValue extends AbstractNode<StringValue> implements ScalarValu
 
         StringValue that = (StringValue) o;
 
-        return !(value != null ? !value.equals(that.value) : that.value != null);
+        return Objects.equals(value, that.value);
 
     }
 
@@ -89,6 +89,10 @@ public class StringValue extends AbstractNode<StringValue> implements ScalarValu
     @Override
     public TraversalControl accept(TraverserContext<Node> context, NodeVisitor visitor) {
         return visitor.visitStringValue(this, context);
+    }
+
+    public static StringValue of(String value) {
+        return StringValue.newStringValue(value).build();
     }
 
     public static Builder newStringValue() {

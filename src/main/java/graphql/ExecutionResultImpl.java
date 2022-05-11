@@ -45,7 +45,7 @@ public class ExecutionResultImpl implements ExecutionResult {
         this.dataPresent = dataPresent;
         this.data = data;
 
-        if (errors != null && !errors.isEmpty()) {
+        if (errors != null) {
             this.errors = ImmutableList.copyOf(errors);
         } else {
             this.errors = ImmutableKit.emptyList();

@@ -5,7 +5,6 @@ import graphql.ExecutionResult
 import graphql.GraphQL
 import graphql.StarWarsSchema
 import graphql.execution.AsyncExecutionStrategy
-import graphql.execution.batched.BatchedExecutionStrategy
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters
 import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters
@@ -43,45 +42,46 @@ class InstrumentationTest extends Specification {
 
         def expected = [
                 "start:execution",
-
+                "onDispatched:execution",
                 "start:parse",
+                "onDispatched:parse",
                 "end:parse",
-
                 "start:validation",
+                "onDispatched:validation",
                 "end:validation",
-
                 "start:execute-operation",
-
                 "start:execution-strategy",
-
                 "start:field-hero",
                 "start:fetch-hero",
+                "onDispatched:fetch-hero",
                 "end:fetch-hero",
-
                 "start:complete-hero",
-
                 "start:execution-strategy",
-
                 "start:field-id",
                 "start:fetch-id",
+                "onDispatched:fetch-id",
                 "end:fetch-id",
                 "start:complete-id",
+                "onDispatched:complete-id",
                 "end:complete-id",
+                "onDispatched:field-id",
                 "end:field-id",
-
+                "onDispatched:execution-strategy",
                 "end:execution-strategy",
-
+                "onDispatched:complete-hero",
                 "end:complete-hero",
+                "onDispatched:field-hero",
                 "end:field-hero",
-
+                "onDispatched:execution-strategy",
                 "end:execution-strategy",
-
+                "onDispatched:execute-operation",
                 "end:execute-operation",
                 "end:execution",
         ]
         when:
 
         def instrumentation = new TestingInstrumentation()
+        instrumentation.useOnDispatch = true
 
         def graphQL = GraphQL
                 .newGraphQL(StarWarsSchema.starWarsSchema)
@@ -110,57 +110,6 @@ class InstrumentationTest extends Specification {
         instrumentation.dfInvocations[1].getExecutionStepInfo().getPath().toList() == ['hero', 'id']
         instrumentation.dfInvocations[1].getExecutionStepInfo().getUnwrappedNonNullType().name == 'String'
         instrumentation.dfInvocations[1].getExecutionStepInfo().isNonNullType()
-    }
-
-    def '#630 - Instrumentation of batched execution strategy is called'() {
-        given:
-
-        def query = """
-        {
-            hero {
-                id
-            }
-        }
-        """
-
-        def expected = [
-                "start:execution",
-                "start:parse",
-                "end:parse",
-                "start:validation",
-                "end:validation",
-                "start:execute-operation",
-                "start:execution-strategy",
-
-                "start:field-hero",
-                "start:fetch-hero",
-                "end:fetch-hero",
-                "end:field-hero",
-
-                "start:field-id",
-                "start:fetch-id",
-                "end:fetch-id",
-                "end:field-id",
-
-                "end:execution-strategy",
-                "end:execute-operation",
-                "end:execution",
-        ]
-        when:
-
-        def instrumentation = new TestingInstrumentation()
-
-        def graphQL = GraphQL
-                .newGraphQL(StarWarsSchema.starWarsSchema)
-                .queryExecutionStrategy(new BatchedExecutionStrategy())
-                .instrumentation(instrumentation)
-                .build()
-
-        graphQL.execute(query)
-
-        then:
-
-        instrumentation.executionList == expected
     }
 
     def "exceptions at field fetch will instrument exceptions correctly"() {
@@ -325,7 +274,7 @@ class InstrumentationTest extends Specification {
         def er = graphQL.execute(ExecutionInput.newExecutionInput().query(query).variables(variables)) // Luke
 
         then:
-        er.data == [human: [id : "1001", name: 'Darth Vader']]
+        er.data == [human: [id: "1001", name: 'Darth Vader']]
         instrumentation.capturedData["originalDoc"] == query
         instrumentation.capturedData["originalVariables"] == variables
     }

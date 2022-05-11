@@ -59,7 +59,7 @@ objectTypeExtensionDefinition :
 ;
 
 implementsInterfaces :
-    IMPLEMENTS '&'? typeName+ |
+    IMPLEMENTS '&'? typeName |
     implementsInterfaces '&' typeName ;
 
 fieldsDefinition : '{' fieldDefinition* '}';
@@ -126,6 +126,6 @@ directiveDefinition : description? DIRECTIVE '@' name argumentsDefinition? REPEA
 directiveLocation : name;
 
 directiveLocations :
-directiveLocation |
+'|'? directiveLocation |
 directiveLocations '|' directiveLocation
 ;

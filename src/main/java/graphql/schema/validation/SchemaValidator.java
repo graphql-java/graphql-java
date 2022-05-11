@@ -15,12 +15,16 @@ import java.util.Set;
 public class SchemaValidator {
 
 
-    private List<GraphQLTypeVisitor> rules = new ArrayList<>();
+    private final List<GraphQLTypeVisitor> rules = new ArrayList<>();
 
     public SchemaValidator() {
         rules.add(new NoUnbrokenInputCycles());
         rules.add(new TypesImplementInterfaces());
         rules.add(new TypeAndFieldRule());
+        rules.add(new DefaultValuesAreValid());
+        rules.add(new AppliedDirectivesAreValid());
+        rules.add(new AppliedDirectiveArgumentsAreValid());
+        rules.add(new InputAndOutputTypesUsedAppropriately());
     }
 
     public List<GraphQLTypeVisitor> getRules() {
@@ -30,6 +34,7 @@ public class SchemaValidator {
     public Set<SchemaValidationError> validateSchema(GraphQLSchema schema) {
         SchemaValidationErrorCollector validationErrorCollector = new SchemaValidationErrorCollector();
         Map<Class<?>, Object> rootVars = new LinkedHashMap<>();
+        rootVars.put(GraphQLSchema.class, schema);
         rootVars.put(SchemaValidationErrorCollector.class, validationErrorCollector);
         new SchemaTraverser().depthFirstFullSchema(rules, schema, rootVars);
         return validationErrorCollector.getErrors();

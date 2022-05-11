@@ -140,7 +140,7 @@ class NodeVisitorStubTest extends Specification {
         FieldDefinition.newFieldDefinition().build()                 | 'visitFieldDefinition'
         InputValueDefinition.newInputValueDefinition().build()       | 'visitInputValueDefinition'
         InputValueDefinition.newInputValueDefinition().build()       | 'visitInputValueDefinition'
-        new ObjectField("", null)                                    | 'visitObjectField'
+        new ObjectField("a", IntValue.of(1))                         | 'visitObjectField'
         OperationTypeDefinition.newOperationTypeDefinition().build() | 'visitOperationTypeDefinition'
         OperationTypeDefinition.newOperationTypeDefinition().build() | 'visitOperationTypeDefinition'
         SelectionSet.newSelectionSet().build()                       | 'visitSelectionSet'

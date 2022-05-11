@@ -8,9 +8,11 @@ import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLList;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLOutputType;
+import graphql.util.FpKit;
 
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 
 @Internal
 public class ExecutionStepInfoFactory {
@@ -25,7 +27,7 @@ public class ExecutionStepInfoFactory {
         GraphQLOutputType fieldType = fieldDefinition.getType();
         List<Argument> fieldArgs = mergedField.getArguments();
         GraphQLCodeRegistry codeRegistry = executionContext.getGraphQLSchema().getCodeRegistry();
-        Map<String, Object> argumentValues = valuesResolver.getArgumentValues(codeRegistry, fieldDefinition.getArguments(), fieldArgs, executionContext.getVariables());
+        Supplier<Map<String, Object>> argumentValues = FpKit.intraThreadMemoize(() -> valuesResolver.getArgumentValues(codeRegistry, fieldDefinition.getArguments(), fieldArgs, executionContext.getVariables()));
 
         ResultPath newPath = parentInfo.getPath().segment(mergedField.getResultKey());
 

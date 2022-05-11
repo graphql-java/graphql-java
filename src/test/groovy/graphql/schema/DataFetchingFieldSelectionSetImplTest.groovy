@@ -268,7 +268,7 @@ class DataFetchingFieldSelectionSetImplTest extends Specification {
         then:
 
         allFieldsViaAsterAster.size() == 14
-        allFields.size() == 28
+        allFields.size() == 14
         def allFieldsViaAsterAsterSorted = new ArrayList<>(allFieldsViaAsterAster).sort({ sf -> sf.qualifiedName })
         def allFieldsSorted = new ArrayList<>(allFields).sort({ sf -> sf.qualifiedName })
 
@@ -288,8 +288,8 @@ class DataFetchingFieldSelectionSetImplTest extends Specification {
                 "nodes/summary",
                 "totalCount"
         ]
-        allFieldsViaAsterAsterSorted.collect({ sf -> sf.qualifiedName }).toUnique() == expectedFieldNames
-        allFieldsSorted.collect({ sf -> sf.qualifiedName }).toUnique() == expectedFieldNames
+        allFieldsViaAsterAsterSorted.collect({ sf -> sf.qualifiedName }) == expectedFieldNames
+        allFieldsSorted.collect({ sf -> sf.qualifiedName }) == expectedFieldNames
 
         when:
         def expectedFullyQualifiedFieldNames = [
@@ -309,8 +309,8 @@ class DataFetchingFieldSelectionSetImplTest extends Specification {
                 "ThingConnection.totalCount"
         ]
         then:
-        allFieldsViaAsterAsterSorted.collect({ sf -> sf.fullyQualifiedName }).toUnique() == expectedFullyQualifiedFieldNames
-        allFieldsSorted.collect({ sf -> sf.fullyQualifiedName }).toUnique() == expectedFullyQualifiedFieldNames
+        allFieldsViaAsterAsterSorted.collect({ sf -> sf.fullyQualifiedName }) == expectedFullyQualifiedFieldNames
+        allFieldsSorted.collect({ sf -> sf.fullyQualifiedName }) == expectedFullyQualifiedFieldNames
 
     }
 
@@ -344,8 +344,8 @@ class DataFetchingFieldSelectionSetImplTest extends Specification {
         ]
 
         then:
-        fieldsGlob.collect({ field -> field.qualifiedName }).toUnique() == expectedFieldName
-        fields.collect({ field -> field.qualifiedName }).toUnique() == expectedFieldName
+        fieldsGlob.collect({ field -> field.qualifiedName }) == expectedFieldName
+        fields.collect({ field -> field.qualifiedName }) == expectedFieldName
     }
 
     def petSDL = '''
@@ -555,6 +555,11 @@ class DataFetchingFieldSelectionSetImplTest extends Specification {
 
         def selectedFields = petSelectionSet.getFields("name")
         selectedFields.size() == 2
+        assertTheyAreExpected(selectedFields, ["[Bird, Cat, Dog].name", "aliasedName:Dog.name"])
+
+        def getFields = petSelectionSet.getFields()
+        getFields.size() == 2
+        assertTheyAreExpected(getFields, ["[Bird, Cat, Dog].name", "aliasedName:Dog.name"])
 
         def byResultKey = petSelectionSet.getFieldsGroupedByResultKey()
         byResultKey.size() == 2
@@ -810,8 +815,8 @@ class DataFetchingFieldSelectionSetImplTest extends Specification {
         def selectedFields = leadSelectionSet.getFields()
 
         then:
-        selectedFields.size() == 2
-        assertTheyAreExpected(selectedFields, ["Lead.material", "Lead.material"])
+        selectedFields.size() == 1
+        assertTheyAreExpected(selectedFields, ["Lead.material"])
 
         when:
         selectedFields = leadSelectionSet.getFields("material")
@@ -822,17 +827,108 @@ class DataFetchingFieldSelectionSetImplTest extends Specification {
 
     }
 
-    Comparator<SelectedField> byName() {
-        { o1, o2 -> o1.getQualifiedName().compareTo(o2.getQualifiedName()) }
+    def "issue 2381 - selected fields can work in mutations"() {
+        def sdl = '''
+            type Query {
+                f :String
+            }
+            
+            type Mutation {
+                mutate : SomeType
+            }
+            
+            type SomeType {
+                selectedFieldNames : [String]
+                b : String
+                c : String
+            }
+        '''
+        DataFetcher mutationDF = { DataFetchingEnvironment env ->
+            def selectedFields = env.getSelectionSet().getImmediateFields()
+
+            def fieldNames = selectedFields.collect { it.getName() }
+            return ["selectedFieldNames": fieldNames]
+        }
+        def schema = TestUtil.schema(sdl, [Mutation: ["mutate": mutationDF]])
+        def graphQL = GraphQL.newGraphQL(schema).build()
+
+        when:
+        def er = graphQL.execute('''mutation M { 
+            mutate {
+                selectedFieldNames
+                b
+                c
+            }
+        }''')
+        then:
+        er.errors.isEmpty()
+        er.data["mutate"]["selectedFieldNames"] == ["selectedFieldNames", "b", "c"]
     }
 
-    void assertTheyAreExpected(List<SelectedField> selectedFields, List<String> expected) {
+    def "issue 2736 - test interface fields with different output types on the implementations - covariance"() {
+        def sdl = """
+        interface Animal {
+            parent: Animal
+            name: String
+        }
+        type Cat implements Animal {
+            name: String
+            parent: Cat
+        }
+        type Dog implements Animal {
+            name: String
+            parent: Dog
+            isGoodBoy: Boolean
+        }
+        type Query {
+            animal: Animal
+        }
+        """
+
+        def query = """
+        {
+            animal {
+                parent {
+                    name
+                }
+            }
+        }
+        """
+
+
+        DataFetcher dataFetcher = { DataFetchingEnvironment env ->
+            selectionSet = env.getSelectionSet()
+        }
+        RuntimeWiring runtimeWiring = newRuntimeWiring()
+                .type(newTypeWiring("Query").dataFetcher("animal", dataFetcher))
+                .type(newTypeWiring("Animal").typeResolver({ env -> env.schema.getObjectType("Dog") }))
+                .build()
+        def schema = TestUtil.schema(sdl, runtimeWiring)
+        def graphQL = GraphQL.newGraphQL(schema).build()
+
+        when:
+        def er = graphQL.execute(query)
+        then:
+        er.errors.isEmpty()
+
+        selectionSet.contains("parent") // short syntax
+        selectionSet.contains("parent/name") // short syntax
+        selectionSet.contains("*Cat*.parent/*Cat*.name")
+        selectionSet.contains("*Dog*.parent/*Dog*.name")
+
+    }
+
+    static Comparator<SelectedField> byName() {
+        { o1, o2 -> (o1.getQualifiedName() <=> o2.getQualifiedName()) }
+    }
+
+    static void assertTheyAreExpected(List<SelectedField> selectedFields, List<String> expected) {
         def names = selectedFields.collect({ sf -> mkSpecialName(sf) })
         names.sort()
         assert names == expected, "Not the right selected fields"
     }
 
-    String mkSpecialName(SelectedField selectedField) {
+    static String mkSpecialName(SelectedField selectedField) {
         def names = selectedField.getObjectTypeNames()
         (selectedField.getAlias() == null ? "" : selectedField.getAlias() + ":") + (names.size() > 1 ? names.toString() : names.get(0)) + "." + selectedField.getName()
     }

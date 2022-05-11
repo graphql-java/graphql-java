@@ -7,6 +7,7 @@ import java.lang.annotation.Target;
 import static java.lang.annotation.ElementType.CONSTRUCTOR;
 import static java.lang.annotation.ElementType.FIELD;
 import static java.lang.annotation.ElementType.METHOD;
+import static java.lang.annotation.ElementType.PACKAGE;
 import static java.lang.annotation.ElementType.TYPE;
 
 /**
@@ -16,6 +17,6 @@ import static java.lang.annotation.ElementType.TYPE;
  * In general unnecessary changes will be avoided but you should not depend on internal classes being stable
  */
 @Retention(RetentionPolicy.RUNTIME)
-@Target(value = {CONSTRUCTOR, METHOD, TYPE, FIELD})
-public @interface Internal {
+@Target(value = {CONSTRUCTOR, METHOD, TYPE, FIELD, PACKAGE})
+public @interface  Internal {
 }

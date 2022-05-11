@@ -4,7 +4,6 @@ import com.google.common.collect.ImmutableList;
 import graphql.PublicApi;
 import graphql.collect.ImmutableKit;
 
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -14,7 +13,7 @@ import static graphql.Assert.assertNotNull;
 import static graphql.collect.ImmutableKit.emptyList;
 
 @PublicApi
-public class SchemaExtensionDefinition extends SchemaDefinition {
+public class SchemaExtensionDefinition extends SchemaDefinition implements SDLExtensionDefinition {
 
     protected SchemaExtensionDefinition(List<Directive> directives,
                                         List<OperationTypeDefinition> operationTypeDefinitions,

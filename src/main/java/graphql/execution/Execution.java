@@ -30,6 +30,7 @@ import static graphql.Assert.assertShouldNeverHappen;
 import static graphql.execution.ExecutionContextBuilder.newExecutionContextBuilder;
 import static graphql.execution.ExecutionStepInfo.newExecutionStepInfo;
 import static graphql.execution.ExecutionStrategyParameters.newParameters;
+import static graphql.execution.nextgen.Common.getOperationRootType;
 import static graphql.language.OperationDefinition.Operation.MUTATION;
 import static graphql.language.OperationDefinition.Operation.QUERY;
 import static graphql.language.OperationDefinition.Operation.SUBSCRIPTION;
@@ -83,6 +84,7 @@ public class Execution {
                 .mutationStrategy(mutationStrategy)
                 .subscriptionStrategy(subscriptionStrategy)
                 .context(executionInput.getContext())
+                .graphQLContext(executionInput.getGraphQLContext())
                 .localContext(executionInput.getLocalContext())
                 .root(executionInput.getRoot())
                 .fragmentsByName(fragmentsByName)
@@ -151,14 +153,7 @@ public class Execution {
 
         CompletableFuture<ExecutionResult> result;
         try {
-            ExecutionStrategy executionStrategy;
-            if (operation == OperationDefinition.Operation.MUTATION) {
-                executionStrategy = executionContext.getMutationStrategy();
-            } else if (operation == SUBSCRIPTION) {
-                executionStrategy = executionContext.getSubscriptionStrategy();
-            } else {
-                executionStrategy = executionContext.getQueryStrategy();
-            }
+            ExecutionStrategy executionStrategy = executionContext.getStrategy(operation);
             if (logNotSafe.isDebugEnabled()) {
                 logNotSafe.debug("Executing '{}' query operation: '{}' using '{}' execution strategy", executionContext.getExecutionId(), operation, executionStrategy.getClass().getName());
             }

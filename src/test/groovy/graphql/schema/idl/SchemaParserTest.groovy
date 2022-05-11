@@ -4,6 +4,7 @@ import graphql.language.EnumTypeDefinition
 import graphql.language.InterfaceTypeDefinition
 import graphql.language.ObjectTypeDefinition
 import graphql.language.ScalarTypeDefinition
+import graphql.parser.ParserOptions
 import graphql.schema.idl.errors.SchemaProblem
 import spock.lang.Specification
 import spock.lang.Unroll
@@ -29,7 +30,7 @@ class SchemaParserTest extends Specification {
                 is_bar : Boolean
             }     
 
-            type Baz implements Foo, Goo {
+            type Baz implements Foo & Goo {
                 is_foo : Boolean
                 is_goo : Boolean
                 is_baz : Boolean
@@ -338,5 +339,25 @@ class SchemaParserTest extends Specification {
         schemaProblem.getErrors()[2].getMessage().contains("OperationDefinition")
     }
 
+    def "large schema files can be parsed - there is no limit"() {
+        def sdl = "type Query {\n"
+        for (int i = 0; i < 30000; i++) {
+            sdl += " f" + i + " : ID\n"
+        }
+        sdl += "}"
 
+        when:
+        def typeDefinitionRegistry = new SchemaParser().parse(sdl)
+        then:
+        typeDefinitionRegistry != null
+
+
+        when: "options are used they will be respected"
+        def options = ParserOptions.defaultParserOptions.transform({ it.maxTokens(100) })
+        new SchemaParser().parse(new StringReader(sdl), options)
+        then:
+        def e = thrown(SchemaProblem)
+        e.errors[0].message.contains("parsing has been cancelled")
+
+    }
 }

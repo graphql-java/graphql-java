@@ -2,27 +2,25 @@ package graphql.introspection
 
 import graphql.GraphQL
 import graphql.TestUtil
-import graphql.schema.idl.SchemaPrinter
 import spock.lang.Specification
 
 class IntrospectionWithDirectivesSupportTest extends Specification {
-
-    def printer = new SchemaPrinter(SchemaPrinter.Options.defaultOptions().includeIntrospectionTypes(true))
 
     def "can find directives in introspection"() {
         def sdl = '''
             directive @example( argName : String = "default") on OBJECT | FIELD_DEFINITION | INPUT_OBJECT | INPUT_FIELD_DEFINITION | SCHEMA
             directive @secret( argName : String = "secret") on OBJECT
+            directive @noDefault( arg1 : String, arg2 : String) on OBJECT
             
             schema @example(argName : "onSchema") {
                 query : Query
             }
             
-            type Query @example(argName : "onQuery") {
+            type Query @example(argName : "onQuery") @noDefault(arg1 : "set") {
                 hello : Hello @deprecated
             }
             
-            type Hello @example {
+            type Hello @example @noDefault {
                 world : String @deprecated
             }
             
@@ -33,9 +31,6 @@ class IntrospectionWithDirectivesSupportTest extends Specification {
 
         def schema = TestUtil.schema(sdl)
         schema = new IntrospectionWithDirectivesSupport().apply(schema)
-
-        println printer.print(schema)
-
         def graphql = GraphQL.newGraphQL(schema).build()
 
         def query = '''
@@ -94,15 +89,21 @@ class IntrospectionWithDirectivesSupportTest extends Specification {
 
         def schemaType = er.data["__schema"]
 
-        schemaType["directives"] == [[name: "include"], [name: "skip"], [name: "example"], [name: "secret"], [name: "deprecated"], [name: "specifiedBy"]]
+        schemaType["directives"] == [[name: "include"], [name: "skip"], [name: "example"], [name: "secret"], [name: "noDefault"], [name: "deprecated"], [name: "specifiedBy"]]
 
         schemaType["appliedDirectives"] == [[name: "example", args: [[name: "argName", value: '"onSchema"']]]]
 
         def queryType = er.data["__schema"]["types"].find({ type -> (type["name"] == "Query") })
-        queryType["appliedDirectives"] == [[name: "example", args: [[name: "argName", value: '"onQuery"']]]]
+        queryType["appliedDirectives"] == [
+                [name: "example", args: [[name: "argName", value: '"onQuery"']]],
+                [name: "noDefault", args: [[name: "arg1", value: '"set"']]]
+        ]
 
         def helloType = er.data["__schema"]["types"].find({ type -> (type["name"] == "Hello") })
-        helloType["appliedDirectives"] == [[name: "example", args: [[name: "argName", value: '"default"']]]]
+        helloType["appliedDirectives"] == [
+                [name: "example", args: [[name: "argName", value: '"default"']]],
+                [name: "noDefault", args: []] // always empty list
+        ]
 
         def worldField = helloType["fields"].find({ type -> (type["name"] == "world") })
         worldField["appliedDirectives"] == [[name: 'deprecated', args: [[name: 'reason', value: '"No longer supported"']]]]
@@ -131,7 +132,7 @@ class IntrospectionWithDirectivesSupportTest extends Specification {
         def filter = new IntrospectionWithDirectivesSupport.DirectivePredicate() {
             @Override
             boolean isDirectiveIncluded(IntrospectionWithDirectivesSupport.DirectivePredicateEnvironment env) {
-                return !env.getDirective().getName().contains("secret")
+                return !env.getDirectiveName().contains("secret")
             }
         }
         schema = new IntrospectionWithDirectivesSupport(filter).apply(schema)

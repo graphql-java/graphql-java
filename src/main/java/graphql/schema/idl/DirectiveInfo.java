@@ -1,11 +1,11 @@
 package graphql.schema.idl;
 
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import graphql.Directives;
 import graphql.PublicApi;
 import graphql.schema.GraphQLDirective;
 
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -18,27 +18,20 @@ public class DirectiveInfo {
     /**
      * A set of directives which provided by graphql specification
      */
-    public static final Set<GraphQLDirective> GRAPHQL_SPECIFICATION_DIRECTIVES = new LinkedHashSet<>();
+    public static final Set<GraphQLDirective> GRAPHQL_SPECIFICATION_DIRECTIVES = ImmutableSet.of(
+            Directives.IncludeDirective,
+            Directives.SkipDirective,
+            Directives.DeprecatedDirective,
+            Directives.SpecifiedByDirective);
 
     /**
      * A map from directive name to directive which provided by specification
      */
-    public static final Map<String, GraphQLDirective> GRAPHQL_SPECIFICATION_DIRECTIVE_MAP = new LinkedHashMap<>();
-
-    static {
-        GRAPHQL_SPECIFICATION_DIRECTIVES.add(Directives.IncludeDirective);
-        GRAPHQL_SPECIFICATION_DIRECTIVES.add(Directives.SkipDirective);
-        GRAPHQL_SPECIFICATION_DIRECTIVES.add(Directives.DeprecatedDirective);
-        GRAPHQL_SPECIFICATION_DIRECTIVES.add(Directives.SpecifiedByDirective);
-    }
-
-    static {
-        GRAPHQL_SPECIFICATION_DIRECTIVE_MAP.put(Directives.IncludeDirective.getName(), Directives.IncludeDirective);
-        GRAPHQL_SPECIFICATION_DIRECTIVE_MAP.put(Directives.SkipDirective.getName(), Directives.SkipDirective);
-        GRAPHQL_SPECIFICATION_DIRECTIVE_MAP.put(Directives.DeprecatedDirective.getName(), Directives.DeprecatedDirective);
-        GRAPHQL_SPECIFICATION_DIRECTIVE_MAP.put(Directives.SpecifiedByDirective.getName(), Directives.SpecifiedByDirective);
-    }
-
+    public static final Map<String, GraphQLDirective> GRAPHQL_SPECIFICATION_DIRECTIVE_MAP = ImmutableMap.of(
+            Directives.IncludeDirective.getName(), Directives.IncludeDirective,
+            Directives.SkipDirective.getName(), Directives.SkipDirective,
+            Directives.DeprecatedDirective.getName(), Directives.DeprecatedDirective,
+            Directives.SpecifiedByDirective.getName(), Directives.SpecifiedByDirective);
 
     /**
      * Returns true if a directive with provided directiveName has been defined in graphql specification

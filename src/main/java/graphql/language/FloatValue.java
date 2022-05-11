@@ -11,6 +11,7 @@ import java.math.BigDecimal;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotNull;
@@ -77,7 +78,7 @@ public class FloatValue extends AbstractNode<FloatValue> implements ScalarValue<
 
         FloatValue that = (FloatValue) o;
 
-        return !(value != null ? !value.equals(that.value) : that.value != null);
+        return Objects.equals(value, that.value);
 
     }
 
@@ -95,6 +96,10 @@ public class FloatValue extends AbstractNode<FloatValue> implements ScalarValue<
     @Override
     public TraversalControl accept(TraverserContext<Node> context, NodeVisitor visitor) {
         return visitor.visitFloatValue(this, context);
+    }
+
+    public static FloatValue of(double d) {
+        return newFloatValue().value(d).build();
     }
 
     public static Builder newFloatValue() {
@@ -130,6 +135,16 @@ public class FloatValue extends AbstractNode<FloatValue> implements ScalarValue<
 
         public Builder value(BigDecimal value) {
             this.value = value;
+            return this;
+        }
+
+        public Builder value(double value) {
+            this.value = BigDecimal.valueOf(value);
+            return this;
+        }
+
+        public Builder value(long value) {
+            this.value = BigDecimal.valueOf(value);
             return this;
         }
 

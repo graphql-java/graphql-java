@@ -14,22 +14,26 @@ public class ScalarExamples {
 
     public static class EmailScalar {
 
-        public static final GraphQLScalarType EMAIL = new GraphQLScalarType("email", "A custom scalar that handles emails", new Coercing() {
-            @Override
-            public Object serialize(Object dataFetcherResult) {
-                return serializeEmail(dataFetcherResult);
-            }
+        public static final GraphQLScalarType EMAIL = GraphQLScalarType.newScalar()
+                .name("email")
+                .description("A custom scalar that handles emails")
+                .coercing(new Coercing() {
+                    @Override
+                    public Object serialize(Object dataFetcherResult) {
+                        return serializeEmail(dataFetcherResult);
+                    }
 
-            @Override
-            public Object parseValue(Object input) {
-                return parseEmailFromVariable(input);
-            }
+                    @Override
+                    public Object parseValue(Object input) {
+                        return parseEmailFromVariable(input);
+                    }
 
-            @Override
-            public Object parseLiteral(Object input) {
-                return parseEmailFromAstLiteral(input);
-            }
-        });
+                    @Override
+                    public Object parseLiteral(Object input) {
+                        return parseEmailFromAstLiteral(input);
+                    }
+                })
+                .build();
 
 
         private static boolean looksLikeAnEmailAddress(String possibleEmailValue) {

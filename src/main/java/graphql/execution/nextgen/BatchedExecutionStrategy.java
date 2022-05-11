@@ -33,6 +33,10 @@ import static graphql.util.FpKit.mapEntries;
 import static graphql.util.FpKit.transposeMatrix;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 
+/**
+ * @deprecated Jan 2022 - We have decided to deprecate the NextGen engine, and it will be removed in a future release.
+ */
+@Deprecated
 @Internal
 public class BatchedExecutionStrategy implements ExecutionStrategy {
 
@@ -57,9 +61,9 @@ public class BatchedExecutionStrategy implements ExecutionStrategy {
                 .thenApply(RootExecutionResultNode::new);
 
         return rootCF.thenCompose(rootNode -> {
-            NodeMultiZipper<ExecutionResultNode> unresolvedNodes = ResultNodesUtil.getUnresolvedNodes(rootNode);
-            return nextStep(executionContext, unresolvedNodes);
-        })
+                    NodeMultiZipper<ExecutionResultNode> unresolvedNodes = ResultNodesUtil.getUnresolvedNodes(rootNode);
+                    return nextStep(executionContext, unresolvedNodes);
+                })
                 .thenApply(multiZipper -> multiZipper.toRootNode())
                 .thenApply(RootExecutionResultNode.class::cast);
     }

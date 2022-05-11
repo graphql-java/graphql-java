@@ -136,12 +136,8 @@ class ExecutionStrategyEquivalenceTest extends Specification {
         "async"           | new AsyncExecutionStrategy()            | standardQueriesAndResults()
         "asyncSerial"     | new AsyncSerialExecutionStrategy()      | standardQueriesAndResults()
         "breadthFirst"    | new BreadthFirstExecutionTestStrategy() | standardQueriesAndResults()
-        "executorService" | executorServiceStrategy()               | standardQueriesAndResults()
         "breadthFirst"    | new BreadthFirstTestStrategy()          | standardQueriesAndResults()
 
     }
 
-    def executorServiceStrategy() {
-        new ExecutorServiceExecutionStrategy(ForkJoinPool.commonPool())
-    }
 }

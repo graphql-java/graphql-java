@@ -159,7 +159,7 @@ public class ValidationUtil {
     private Set<String> getMissingFields(GraphQLInputObjectType type, Map<String, ObjectField> objectFieldMap, GraphqlFieldVisibility fieldVisibility) {
         return fieldVisibility.getFieldDefinitions(type).stream()
                 .filter(field -> isNonNull(field.getType()))
-                .filter(value -> (value.getDefaultValue() == null) && !objectFieldMap.containsKey(value.getName()))
+                .filter(value -> (value.getInputFieldDefaultValue().isNotSet()) && !objectFieldMap.containsKey(value.getName()))
                 .map(GraphQLInputObjectField::getName)
                 .collect(ImmutableSet.toImmutableSet());
     }

@@ -1,5 +1,7 @@
 package graphql
 
+
+import graphql.execution.TypeResolutionParameters
 import graphql.language.Field
 import graphql.schema.GraphQLObjectType
 import graphql.schema.TypeResolver
@@ -24,7 +26,7 @@ class TypeResolutionEnvironmentTest extends Specification {
             bar : String
         }
         
-        type FooBar implements Foo, Bar {
+        type FooBar implements Foo & Bar {
             foo : String
             bar : String
         }
@@ -36,10 +38,23 @@ class TypeResolutionEnvironmentTest extends Specification {
 
     def schema = TestUtil.schema(idl)
 
+    def interfaceType = schema.getType("Foo")
+
+    def graphqlContext = GraphQLContext.newContext().of("a", "b").build()
+
     def "basic operations"() {
         given:
 
-        def environment = new TypeResolutionEnvironment("source", [:], mergedField(new Field("field")), Scalars.GraphQLString, schema, "FooBar")
+        def environment = TypeResolutionParameters.newParameters()
+                .value("source")
+                .argumentValues(() -> [a: "b"])
+                .field(mergedField(new Field("field")))
+                .fieldType(interfaceType)
+                .schema(schema)
+                .context("FooBar")
+                .graphQLContext(graphqlContext)
+                .localContext("LocalContext")
+        .build()
 
         when:
 
@@ -48,6 +63,12 @@ class TypeResolutionEnvironmentTest extends Specification {
             GraphQLObjectType getType(TypeResolutionEnvironment env) {
                 String source = env.getObject()
                 assert source == "source"
+                assert env.getField().getName() == "field"
+                assert env.getFieldType() == interfaceType
+                assert env.getContext() == "FooBar"
+                assert env.getLocalContext() == "LocalContext"
+                assert env.getGraphQLContext() == graphqlContext
+                assert env.getArguments() == [a: "b"]
                 return schema.getObjectType("FooBar")
             }
         }
@@ -82,6 +103,7 @@ class TypeResolutionEnvironmentTest extends Specification {
             GraphQLObjectType getType(TypeResolutionEnvironment env) {
                 String source = env.getObject()
                 assert source == "source"
+                assert env.getGraphQLContext().get("a") == "b"
                 if ("FooBar" == env.getContext()) {
                     return schema.getObjectType("FooBar")
                 }
@@ -93,14 +115,32 @@ class TypeResolutionEnvironmentTest extends Specification {
         }
 
         when:
-        def environmentFooBar = new TypeResolutionEnvironment("source", [:], mergedField(new Field("field")), Scalars.GraphQLString, schema, "FooBar")
+        def environmentFooBar = TypeResolutionParameters.newParameters()
+                .value("source")
+                .argumentValues(() -> [:])
+                .field(mergedField(new Field("field")))
+                .fieldType(interfaceType)
+                .schema(schema)
+                .context("FooBar")
+                .graphQLContext(graphqlContext)
+                .build()
+
         def objTypeFooBar = resolverWithContext.getType(environmentFooBar)
 
         then:
         objTypeFooBar.name == "FooBar"
 
         when:
-        def environmentFooImpl = new TypeResolutionEnvironment("source", [:], mergedField(new Field("field")), Scalars.GraphQLString, schema, "Foo")
+        def environmentFooImpl = TypeResolutionParameters.newParameters()
+                .value("source")
+                .argumentValues(() -> [:])
+                .field(mergedField(new Field("field")))
+                .fieldType(interfaceType)
+                .schema(schema)
+                .context("Foo")
+                .graphQLContext(graphqlContext)
+                .build()
+
         def objTypeFooImpl = resolverWithContext.getType(environmentFooImpl)
 
         then:

@@ -9,17 +9,17 @@ import static graphql.schema.idl.TypeRuntimeWiring.newTypeWiring
 
 class Issue739 extends Specification {
 
-    def "#739 test"() {
+    def "Arguments passed via variables are not validated"() {
 
         when:
 
         RuntimeWiring runtimeWiring = RuntimeWiring.newRuntimeWiring()
                 .type(newTypeWiring("Query")
-                .dataFetcher("foo",
-                { env ->
-                    Map<String, Object> map = new HashMap<>()
-                    map.put("id", "abc")
-                    return map
+                        .dataFetcher("foo",
+                                { env ->
+                                    Map<String, Object> map = new HashMap<>()
+                                    map.put("id", "abc")
+                                    return map
 
                 })
                 .dataFetcher("bar",
@@ -77,17 +77,17 @@ class Issue739 extends Specification {
         ExecutionInput varInput = ExecutionInput.newExecutionInput()
             .query('query Bar($input: BarInput!) {bar(input: $input) {id}}')
             .variables(variables)
-            .build()
+                .build()
 
         ExecutionResult varResult = graphQL
-            .executeAsync(varInput)
-            .join()
+                .executeAsync(varInput)
+                .join()
 
         then:
         varResult.data == null
         varResult.errors.size() == 1
         varResult.errors[0].errorType == ErrorType.ValidationError
-        varResult.errors[0].message == "Variable 'input' has an invalid value : Expected type 'Map' but was 'Integer'. Variables for input objects must be an instance of type 'Map'.";
+        varResult.errors[0].message == "Variable 'input' has an invalid value: Expected type 'Map' but was 'Integer'. Variables for input objects must be an instance of type 'Map'."
         varResult.errors[0].locations == [new SourceLocation(1, 11)]
 
         when:
@@ -106,7 +106,7 @@ class Issue739 extends Specification {
         varResult.data == null
         varResult.errors.size() == 1
         varResult.errors[0].errorType == ErrorType.ValidationError
-        varResult.errors[0].message == "Variable 'boom' has an invalid value : Expected type 'Int' but was 'String'."
+        varResult.errors[0].message == "Variable 'input' has an invalid value: Expected type 'Int' but was 'String'."
         varResult.errors[0].locations == [new SourceLocation(1, 11)]
     }
 }

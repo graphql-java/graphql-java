@@ -322,6 +322,35 @@ class AstTransformerTest extends Specification {
 
     }
 
+    def "delete node through context"() {
+        def document = TestUtil.parseQuery("{root { a(arg: 1) { x y } toDelete { x y } } }")
+
+        final Map<Class<?>, Object> rootVars = new LinkedHashMap<>();
+        rootVars.put(String.class, "toDelete");
+
+        AstTransformer astTransformer = new AstTransformer()
+
+        def visitor = new NodeVisitorStub() {
+
+            @Override
+            TraversalControl visitField(Field field, TraverserContext<Node> context) {
+                final String fieldToDelete = context.getVarFromParents(String.class);
+                if (field.name == fieldToDelete) {
+                    return deleteNode(context);
+                } else {
+                    return TraversalControl.CONTINUE;
+                }
+            }
+        }
+
+        when:
+        def newDocument = astTransformer.transform(document, visitor, rootVars)
+
+        then:
+        printAstCompact(newDocument) == "query {root {a(arg:1) {x y}}}"
+
+    }
+
     def "delete node parallel"() {
         def document = TestUtil.parseQuery("{root { a(arg: 1) { x y } toDelete { x y } } }")
 

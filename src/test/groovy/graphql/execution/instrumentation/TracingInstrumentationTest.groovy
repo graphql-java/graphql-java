@@ -5,7 +5,6 @@ import graphql.StarWarsSchema
 import graphql.TestUtil
 import graphql.execution.AsyncExecutionStrategy
 import graphql.execution.AsyncSerialExecutionStrategy
-import graphql.execution.batched.BatchedExecutionStrategy
 import graphql.execution.instrumentation.tracing.TracingInstrumentation
 import graphql.schema.DataFetcher
 import graphql.schema.DataFetchingEnvironment
@@ -99,7 +98,6 @@ class TracingInstrumentationTest extends Specification {
         testExecutionStrategy              | _
         new AsyncExecutionStrategy()       | _
         new AsyncSerialExecutionStrategy() | _
-        new BatchedExecutionStrategy()     | _
     }
 
     def "trivial data fetchers are ignored"() {
@@ -159,8 +157,6 @@ class TracingInstrumentationTest extends Specification {
         testExecutionStrategy              | _
         new AsyncExecutionStrategy()       | _
         new AsyncSerialExecutionStrategy() | _
-        new BatchedExecutionStrategy()     | _
-
     }
 
     def "default behavior is that trivial fields ARE recorded"() {
@@ -200,6 +196,5 @@ class TracingInstrumentationTest extends Specification {
         testExecutionStrategy              | _
         new AsyncExecutionStrategy()       | _
         new AsyncSerialExecutionStrategy() | _
-        new BatchedExecutionStrategy()     | _
     }
 }

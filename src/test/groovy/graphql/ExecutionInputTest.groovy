@@ -3,6 +3,7 @@ package graphql
 import graphql.cachecontrol.CacheControl
 import graphql.execution.ExecutionId
 import graphql.schema.DataFetcher
+import graphql.schema.DataFetchingEnvironment
 import org.dataloader.DataLoaderRegistry
 import spock.lang.Specification
 
@@ -25,11 +26,13 @@ class ExecutionInputTest extends Specification {
                 .variables(variables)
                 .root(root)
                 .context(context)
+                .graphQLContext({ it.of(["a": "b"]) })
                 .locale(Locale.GERMAN)
                 .extensions([some: "map"])
                 .build()
         then:
         executionInput.context == context
+        executionInput.graphQLContext.get("a") == "b"
         executionInput.root == root
         executionInput.variables == variables
         executionInput.dataLoaderRegistry == registry
@@ -39,7 +42,16 @@ class ExecutionInputTest extends Specification {
         executionInput.extensions == [some: "map"]
     }
 
-    def "context methods work"() {
+    def "map context build works"() {
+        when:
+        def executionInput = ExecutionInput.newExecutionInput().query(query)
+                .graphQLContext([a: "b"])
+                .build()
+        then:
+        executionInput.graphQLContext.get("a") == "b"
+    }
+
+    def "legacy context methods work"() {
         when:
         def executionInput = ExecutionInput.newExecutionInput().query(query)
                 .context({ builder -> builder.of("k1", "v1") } as UnaryOperator)
@@ -55,12 +67,21 @@ class ExecutionInputTest extends Specification {
         (executionInput.context as GraphQLContext).get("k2") == "v2"
     }
 
-    def "context is defaulted"() {
+    def "legacy context is defaulted"() {
         when:
         def executionInput = ExecutionInput.newExecutionInput().query(query)
                 .build()
         then:
         executionInput.context instanceof GraphQLContext
+        executionInput.getGraphQLContext() == executionInput.getContext()
+    }
+
+    def "graphql context is defaulted"() {
+        when:
+        def executionInput = ExecutionInput.newExecutionInput().query(query)
+                .build()
+        then:
+        executionInput.graphQLContext instanceof GraphQLContext
     }
 
     def "transform works and copies values"() {
@@ -72,12 +93,15 @@ class ExecutionInputTest extends Specification {
                 .extensions([some: "map"])
                 .root(root)
                 .context(context)
+                .graphQLContext({ it.of(["a": "b"]) })
                 .locale(Locale.GERMAN)
                 .build()
+        def graphQLContext = executionInputOld.getGraphQLContext()
         def executionInput = executionInputOld.transform({ bldg -> bldg.query("new query") })
 
         then:
         executionInput.context == context
+        executionInput.graphQLContext == graphQLContext
         executionInput.root == root
         executionInput.variables == variables
         executionInput.dataLoaderRegistry == registry
@@ -105,11 +129,12 @@ class ExecutionInputTest extends Specification {
                 fetch : String
             }
         '''
-        DataFetcher df = { env ->
+        DataFetcher df = { DataFetchingEnvironment env ->
             return [
-                    "locale"      : env.getLocale().getDisplayName(),
-                    "cacheControl": env.getCacheControl() == cacheControl,
-                    "executionId" : env.getExecutionId().toString()
+                    "locale"        : env.getLocale().getDisplayName(Locale.ENGLISH),
+                    "cacheControl"  : env.getCacheControl() == cacheControl,
+                    "executionId"   : env.getExecutionId().toString(),
+                    "graphqlContext": env.getGraphQlContext().get("a")
 
             ]
         }
@@ -123,10 +148,12 @@ class ExecutionInputTest extends Specification {
                 .cacheControl(cacheControl)
                 .executionId(ExecutionId.from("ID123"))
                 .build()
+        executionInput.getGraphQLContext().putAll([a: "b"])
+
         def er = graphQL.execute(executionInput)
 
         then:
         er.errors.isEmpty()
-        er.data["fetch"] == "{locale=German, cacheControl=true, executionId=ID123}"
+        er.data["fetch"] == "{locale=German, cacheControl=true, executionId=ID123, graphqlContext=b}"
     }
 }

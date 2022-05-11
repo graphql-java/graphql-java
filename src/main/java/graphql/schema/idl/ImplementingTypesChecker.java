@@ -22,6 +22,7 @@ import graphql.schema.idl.errors.InterfaceWithCircularImplementationHierarchyErr
 import graphql.schema.idl.errors.MissingInterfaceFieldArgumentsError;
 import graphql.schema.idl.errors.MissingInterfaceFieldError;
 import graphql.schema.idl.errors.MissingTransitiveInterfaceError;
+import graphql.util.FpKit;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -65,8 +66,7 @@ class ImplementingTypesChecker {
         List<InterfaceTypeDefinition> interfaces = typeRegistry.getTypes(InterfaceTypeDefinition.class);
         List<ObjectTypeDefinition> objects = typeRegistry.getTypes(ObjectTypeDefinition.class);
 
-        Stream.of(interfaces.stream(), objects.stream())
-                .flatMap(Function.identity())
+        Stream.<ImplementingTypeDefinition<?>>concat(interfaces.stream(), objects.stream())
                 .forEach(type -> checkImplementingType(errors, typeRegistry, type));
     }
 
@@ -178,24 +178,32 @@ class ImplementingTypesChecker {
             FieldDefinition interfaceFieldDef,
             List<GraphQLError> errors
     ) {
-        List<InputValueDefinition> objectArgs = objectFieldDef.getInputValueDefinitions();
-        List<InputValueDefinition> interfaceArgs = interfaceFieldDef.getInputValueDefinitions();
-        for (int i = 0; i < interfaceArgs.size(); i++) {
-            InputValueDefinition interfaceArg = interfaceArgs.get(i);
-            InputValueDefinition objectArg = objectArgs.get(i);
-            String interfaceArgStr = AstPrinter.printAstCompact(interfaceArg);
-            String objectArgStr = AstPrinter.printAstCompact(objectArg);
-            if (!interfaceArgStr.equals(objectArgStr)) {
-                errors.add(new InterfaceFieldArgumentRedefinitionError(typeOfType, objectTypeDef, interfaceTypeDef, objectFieldDef, objectArgStr, interfaceArgStr));
+        Map<String, InputValueDefinition> objectArgs = FpKit.getByName(objectFieldDef.getInputValueDefinitions(), InputValueDefinition::getName);
+        Map<String, InputValueDefinition> interfaceArgs = FpKit.getByName(interfaceFieldDef.getInputValueDefinitions(), InputValueDefinition::getName);
+        for (Map.Entry<String, InputValueDefinition> interfaceEntries : interfaceArgs.entrySet()) {
+            InputValueDefinition interfaceArg = interfaceEntries.getValue();
+            InputValueDefinition objectArg = objectArgs.get(interfaceEntries.getKey());
+            if (objectArg == null) {
+                errors.add(new MissingInterfaceFieldArgumentsError(typeOfType, objectTypeDef, interfaceTypeDef, objectFieldDef));
+            } else {
+                String interfaceArgStr = AstPrinter.printAstCompact(interfaceArg);
+                String objectArgStr = AstPrinter.printAstCompact(objectArg);
+                if (!interfaceArgStr.equals(objectArgStr)) {
+                    errors.add(new InterfaceFieldArgumentRedefinitionError(typeOfType, objectTypeDef, interfaceTypeDef, objectFieldDef, objectArgStr, interfaceArgStr));
+                }
             }
         }
 
         if (objectArgs.size() > interfaceArgs.size()) {
-            for (int i = interfaceArgs.size(); i < objectArgs.size(); i++) {
-                InputValueDefinition objectArg = objectArgs.get(i);
-                if (objectArg.getType() instanceof NonNullType) {
-                    String objectArgStr = AstPrinter.printAst(objectArg);
-                    errors.add(new InterfaceFieldArgumentNotOptionalError(typeOfType, objectTypeDef, interfaceTypeDef, objectFieldDef, objectArgStr));
+            for (Map.Entry<String, InputValueDefinition> objetEntries : objectArgs.entrySet()) {
+                InputValueDefinition objectArg = objetEntries.getValue();
+                InputValueDefinition interfaceArg = interfaceArgs.get(objetEntries.getKey());
+                if (interfaceArg == null) {
+                    // there is no interface counterpart previously checked above
+                    if (objectArg.getType() instanceof NonNullType) {
+                        String objectArgStr = AstPrinter.printAst(objectArg);
+                        errors.add(new InterfaceFieldArgumentNotOptionalError(typeOfType, objectTypeDef, interfaceTypeDef, objectFieldDef, objectArgStr));
+                    }
                 }
             }
         }

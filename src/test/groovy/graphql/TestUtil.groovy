@@ -4,6 +4,7 @@ import graphql.execution.MergedField
 import graphql.execution.MergedSelectionSet
 import graphql.language.Document
 import graphql.language.Field
+import graphql.language.NullValue
 import graphql.language.ObjectTypeDefinition
 import graphql.language.OperationDefinition
 import graphql.language.ScalarTypeDefinition
@@ -11,6 +12,8 @@ import graphql.language.Type
 import graphql.parser.Parser
 import graphql.schema.Coercing
 import graphql.schema.DataFetcher
+import graphql.schema.GraphQLAppliedDirectiveArgument
+import graphql.schema.GraphQLAppliedDirective
 import graphql.schema.GraphQLArgument
 import graphql.schema.GraphQLDirective
 import graphql.schema.GraphQLInputType
@@ -19,10 +22,10 @@ import graphql.schema.GraphQLScalarType
 import graphql.schema.GraphQLSchema
 import graphql.schema.GraphQLType
 import graphql.schema.TypeResolver
-import graphql.schema.idl.MockedWiringFactory
 import graphql.schema.idl.RuntimeWiring
 import graphql.schema.idl.SchemaGenerator
 import graphql.schema.idl.SchemaParser
+import graphql.schema.idl.TestMockedWiringFactory
 import graphql.schema.idl.TypeRuntimeWiring
 import graphql.schema.idl.WiringFactory
 import graphql.schema.idl.errors.SchemaProblem
@@ -37,6 +40,9 @@ import static graphql.schema.GraphQLArgument.newArgument
 import static graphql.schema.GraphQLDirective.newDirective
 import static graphql.schema.GraphQLFieldDefinition.Builder
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition
+import static graphql.schema.GraphQLObjectType.newObject
+import static graphql.schema.GraphQLScalarType.newScalar
+import static graphql.schema.GraphQLSchema.newSchema
 
 class TestUtil {
 
@@ -45,12 +51,12 @@ class TestUtil {
         GraphQLArgument.Builder fieldArgument = newArgument().name("arg").type(inputType)
         Builder name = newFieldDefinition()
                 .name("name").type(GraphQLString).argument(fieldArgument)
-        GraphQLObjectType queryType = GraphQLObjectType.newObject().name("query").field(name).build()
-        new GraphQLSchema(queryType)
+        GraphQLObjectType queryType = newObject().name("query").field(name).build()
+        newSchema().query(queryType).build()
     }
 
-    static dummySchema = GraphQLSchema.newSchema()
-            .query(GraphQLObjectType.newObject()
+    static dummySchema = newSchema()
+            .query(newObject()
                     .name("QueryType")
                     .field(newFieldDefinition().name("field").type(GraphQLString))
                     .build())
@@ -156,12 +162,12 @@ class TestUtil {
         }
     }
 
-    static WiringFactory mockWiringFactory = new MockedWiringFactory()
+    static WiringFactory mockWiringFactory = new TestMockedWiringFactory()
 
     static RuntimeWiring mockRuntimeWiring = RuntimeWiring.newRuntimeWiring().wiringFactory(mockWiringFactory).build()
 
     static GraphQLScalarType mockScalar(String name) {
-        new GraphQLScalarType(name, name, mockCoercing())
+        newScalar().name(name).description(name).coercing(mockCoercing()).build()
     }
 
     static Coercing mockCoercing() {
@@ -178,18 +184,19 @@ class TestUtil {
 
             @Override
             Object parseLiteral(Object input) {
-                return null
+                return NullValue.newNullValue().build()
             }
         }
     }
 
     static GraphQLScalarType mockScalar(ScalarTypeDefinition definition) {
-        new GraphQLScalarType(
-                definition.getName(),
-                definition.getDescription() == null ? null : definition.getDescription().getContent(),
-                mockCoercing(),
-                definition.getDirectives().stream().map({ mockDirective(it.getName()) }).collect(Collectors.toList()),
-                definition)
+        newScalar()
+                .name(definition.getName())
+                .description(definition.getDescription() == null ? null : definition.getDescription().getContent())
+                .coercing(mockCoercing())
+                .replaceDirectives(definition.getDirectives().stream().map({ mockDirective(it.getName()) }).collect(Collectors.toList()))
+                .definition(definition)
+                .build()
     }
 
     static GraphQLDirective mockDirective(String name) {
@@ -256,29 +263,33 @@ class TestUtil {
         return op.getSelectionSet().getSelectionsOfType(Field.class)[0] as Field
     }
 
-    static GraphQLDirective[] mockDirectivesWithArguments(String... names) {
+    static GraphQLAppliedDirective[] mockDirectivesWithArguments(String... names) {
         return names.collect { directiveName ->
-            def builder = newDirective().name(directiveName)
+            def builder = GraphQLAppliedDirective.newDirective().name(directiveName)
 
             names.each { argName ->
-                builder.argument(newArgument().name(argName).type(GraphQLInt).value(BigInteger.valueOf(0)).build())
+                builder.argument(GraphQLAppliedDirectiveArgument.newArgument().name(argName).type(GraphQLInt).valueProgrammatic(BigInteger.valueOf(0)).build())
             }
             return builder.build()
-        }.toArray() as GraphQLDirective[]
+        }.toArray() as GraphQLAppliedDirective[]
     }
 
-    static GraphQLDirective[] mockDirectivesWithNoValueArguments(String... names) {
+    static GraphQLAppliedDirective[] mockDirectivesWithNoValueArguments(String... names) {
         return names.collect { directiveName ->
-            def builder = newDirective().name(directiveName)
+            def builder = GraphQLAppliedDirective.newDirective().name(directiveName)
 
             names.each { argName ->
-                builder.argument(newArgument().name(argName).type(GraphQLInt).build())
+                builder.argument(GraphQLAppliedDirectiveArgument.newArgument().name(argName).type(GraphQLInt).build())
             }
             return builder.build()
-        }.toArray() as GraphQLDirective[]
+        }.toArray() as GraphQLAppliedDirective[]
     }
 
     static List<GraphQLArgument> mockArguments(String... names) {
+        return names.collect { newArgument().name(it).type(GraphQLInt).build() }
+    }
+
+    static List<GraphQLAppliedDirectiveArgument> mockAppliedArguments(String... names) {
         return names.collect { newArgument().name(it).type(GraphQLInt).build() }
     }
 

@@ -11,7 +11,10 @@ import java.util.Map;
 /**
  * A map from name to List of Field representing the actual sub selections (during execution) of a Field with Fragments
  * evaluated and conditional directives considered.
+ *
+ * @deprecated Jan 2022 - We have decided to deprecate the NextGen engine, and it will be removed in a future release.
  */
+@Deprecated
 @Internal
 public class FieldSubSelection {
 

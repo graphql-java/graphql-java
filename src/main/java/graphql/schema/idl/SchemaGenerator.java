@@ -14,6 +14,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static graphql.schema.idl.SchemaGeneratorHelper.buildDescription;
+
 
 /**
  * This can generate a working runtime schema from a type registry and runtime wiring
@@ -23,6 +25,7 @@ public class SchemaGenerator {
 
     private final SchemaTypeChecker typeChecker = new SchemaTypeChecker();
     private final SchemaGeneratorHelper schemaGeneratorHelper = new SchemaGeneratorHelper();
+
     public SchemaGenerator() {
     }
 
@@ -81,15 +84,18 @@ public class SchemaGenerator {
 
         Map<String, OperationTypeDefinition> operationTypeDefinitions = SchemaExtensionsChecker.gatherOperationDefs(typeRegistry);
 
-        return makeExecutableSchemaImpl(typeRegistryCopy, wiring, operationTypeDefinitions);
+        return makeExecutableSchemaImpl(typeRegistryCopy, wiring, operationTypeDefinitions, options);
     }
 
-    private GraphQLSchema makeExecutableSchemaImpl(TypeDefinitionRegistry typeRegistry, RuntimeWiring wiring, Map<String, OperationTypeDefinition> operationTypeDefinitions) {
-        SchemaGeneratorHelper.BuildContext buildCtx = new SchemaGeneratorHelper.BuildContext(typeRegistry, wiring, operationTypeDefinitions);
+    private GraphQLSchema makeExecutableSchemaImpl(TypeDefinitionRegistry typeRegistry,
+                                                   RuntimeWiring wiring,
+                                                   Map<String, OperationTypeDefinition> operationTypeDefinitions,
+                                                   Options options) {
+        SchemaGeneratorHelper.BuildContext buildCtx = new SchemaGeneratorHelper.BuildContext(typeRegistry, wiring, operationTypeDefinitions, options);
 
         GraphQLSchema.Builder schemaBuilder = GraphQLSchema.newSchema();
 
-        Set<GraphQLDirective> additionalDirectives = schemaGeneratorHelper.buildAdditionalDirectives(buildCtx);
+        Set<GraphQLDirective> additionalDirectives = schemaGeneratorHelper.buildAdditionalDirectiveDefinitions(buildCtx);
         schemaBuilder.additionalDirectives(additionalDirectives);
 
         schemaGeneratorHelper.buildSchemaDirectivesAndExtensions(buildCtx, schemaBuilder);
@@ -105,16 +111,24 @@ public class SchemaGenerator {
         schemaBuilder.codeRegistry(codeRegistry);
 
         buildCtx.getTypeRegistry().schemaDefinition().ifPresent(schemaDefinition -> {
-            String description = schemaGeneratorHelper.buildDescription(schemaDefinition, schemaDefinition.getDescription());
+            String description = buildDescription(buildCtx, schemaDefinition, schemaDefinition.getDescription());
             schemaBuilder.description(description);
         });
         GraphQLSchema graphQLSchema = schemaBuilder.build();
 
         List<SchemaGeneratorPostProcessing> schemaTransformers = new ArrayList<>();
-        // handle directive wiring AFTER the schema has been built and hence type references are resolved at callback time
-        schemaTransformers.add(
-                new SchemaDirectiveWiringSchemaGeneratorPostProcessing(buildCtx.getTypeRegistry(), buildCtx.getWiring(), buildCtx.getCodeRegistry())
-        );
+        // we check if there are any SchemaDirectiveWiring's in play and if there are
+        // we add this to enable them.  By not adding it always, we save unnecessary
+        // schema build traversals
+        if (buildCtx.isDirectiveWiringRequired()) {
+            // handle directive wiring AFTER the schema has been built and hence type references are resolved at callback time
+            schemaTransformers.add(
+                    new SchemaDirectiveWiringSchemaGeneratorPostProcessing(
+                            buildCtx.getTypeRegistry(),
+                            buildCtx.getWiring(),
+                            buildCtx.getCodeRegistry())
+            );
+        }
         schemaTransformers.addAll(buildCtx.getWiring().getSchemaGeneratorPostProcessings());
 
         for (SchemaGeneratorPostProcessing postProcessing : schemaTransformers) {
@@ -127,12 +141,68 @@ public class SchemaGenerator {
      * These options control how the schema generation works
      */
     public static class Options {
+        private final boolean useCommentsAsDescription;
+        private final boolean captureAstDefinitions;
+        private final boolean useAppliedDirectivesOnly;
 
-        Options() {
+        Options(boolean useCommentsAsDescription, boolean captureAstDefinitions, boolean useAppliedDirectivesOnly) {
+            this.useCommentsAsDescription = useCommentsAsDescription;
+            this.captureAstDefinitions = captureAstDefinitions;
+            this.useAppliedDirectivesOnly = useAppliedDirectivesOnly;
+        }
+
+        public boolean isUseCommentsAsDescription() {
+            return useCommentsAsDescription;
+        }
+
+        public boolean isCaptureAstDefinitions() {
+            return captureAstDefinitions;
+        }
+
+        public boolean isUseAppliedDirectivesOnly() {
+            return useAppliedDirectivesOnly;
         }
 
         public static Options defaultOptions() {
-            return new Options();
+            return new Options(true, true, false);
+        }
+
+        /**
+         * This controls whether # comments can be used as descriptions in the built schema.  For specification legacy reasons
+         * # comments used to be used as schema element descriptions.  The specification has since clarified this and "" quoted string
+         * descriptions are the sanctioned way to make scheme element descriptions.
+         *
+         * @param useCommentsAsDescription the flag to control whether comments can be used as schema element descriptions
+         *
+         * @return a new Options object
+         */
+        public Options useCommentsAsDescriptions(boolean useCommentsAsDescription) {
+            return new Options(useCommentsAsDescription, captureAstDefinitions, useAppliedDirectivesOnly);
+        }
+
+        /**
+         * Memory can be saved if the original AST definitions are not associated with the built runtime types.  However
+         * some tooling may require them.
+         *
+         * @param captureAstDefinitions the flag on whether to capture AST definitions
+         *
+         * @return a new Options object
+         */
+        public Options captureAstDefinitions(boolean captureAstDefinitions) {
+            return new Options(useCommentsAsDescription, captureAstDefinitions, useAppliedDirectivesOnly);
+        }
+
+        /**
+         * The class {@link GraphQLDirective} should really represent the definition of a directive, and not its use on schema elements.
+         * The new {@link graphql.schema.GraphQLAppliedDirective} has been created to fix this however for legacy reasons both classes will be put on schema
+         * elements.  This flag allows you to only use {@link graphql.schema.GraphQLAppliedDirective} on schema elements.
+         *
+         * @param useAppliedDirectivesOnly the flag on whether to use {@link graphql.schema.GraphQLAppliedDirective}s only on schema elements
+         *
+         * @return a new Options object
+         */
+        public Options useAppliedDirectivesOnly(boolean useAppliedDirectivesOnly) {
+            return new Options(useCommentsAsDescription, captureAstDefinitions, useAppliedDirectivesOnly);
         }
     }
 }

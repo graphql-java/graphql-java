@@ -1,40 +1,31 @@
-# graphql-java
+# GraphQL Java
 
-[![Join the chat at https://gitter.im/graphql-java/graphql-java](https://badges.gitter.im/graphql-java/graphql-java.svg)](https://gitter.im/graphql-java/graphql-java?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+请在 Discussions 进行问题讨论和寻求帮助：https://github.com/graphql-java/graphql-java/discussions
 
-![logo](https://avatars1.githubusercontent.com/u/14289921?s=200&v=4)
-This is a [GraphQL](https://github.com/facebook/graphql) Java implementation.
- 
+该组件是 [GraphQL 规范](https://github.com/graphql/graphql-spec) 的 Java 实现。
 
-[![Build Status](https://travis-ci.org/graphql-java/graphql-java.svg?branch=master)](https://travis-ci.org/graphql-java/graphql-java)
+[![Build](https://github.com/graphql-java/graphql-java/actions/workflows/master.yml/badge.svg)](https://github.com/graphql-java/graphql-java/actions/workflows/master.yml)
 [![Latest Release](https://maven-badges.herokuapp.com/maven-central/com.graphql-java/graphql-java/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.graphql-java/graphql-java/)
-[![Latest Dev Build](https://api.bintray.com/packages/andimarek/graphql-java/graphql-java/images/download.svg)](https://bintray.com/andimarek/graphql-java/graphql-java/_latestVersion)
 
 
-## 文档
+### 文档
 
-关于 `graphql-java` 的详细使用说明，请阅读: http://graphql-java.readthedocs.io/
+入门教程：[Getting started with GraphQL Java and Spring Boot](https://www.graphql-java.com/tutorials/getting-started-with-spring-boot/)
 
-这也是个很好的教程 : https://www.howtographql.com/graphql-java/0-introduction/
+更多细节请参考`graphql-java`官方文档: https://www.graphql-java.com/documentation/getting-started
 
-在 [发行版本列表](https://github.com/graphql-java/graphql-java/releases) 中，你可以看到最新版本和变更日志.
+如果您想了解新版本更多的信息和变更日志请参阅[ releases 列表](https://github.com/graphql-java/graphql-java/releases)。
 
-### 编码行为约定
+### 行为规范
 
-请注意，本项目基于 [Contributor Code of Conduct](CODE_OF_CONDUCT.md) 协议来发行。
-贡献代码或其它给本项目， (commenting or opening PR/Issues etc) 即表示同意这个协议。
+请您注意该项目是与 [Contributor Code of Conduct](CODE_OF_CONDUCT.md) 一起发布的，通过提交 PR 或 Issues 参与该项目表示您已经同意遵守该准则，所以请您花时间仔细阅读它。
 
+### License
 
-### 感谢
+Copyright (c) 2015, Andreas Marek and [贡献者们](https://github.com/graphql-java/graphql-java/graphs/contributors)
 
-本框架是基于 [JS 参考实现](https://github.com/graphql/graphql-js)，来开发的。
-如 StarWarSchema 和测试用例 (和其它很多方面) 是从它适配到 Java 的。
+### 帮助支持
 
-### 许可证
+![YourKit](https://www.yourkit.com/images/yklogo.png)
 
-graphql-java 基于 MIT 许可证. 详见 [许可证](LICENSE.md) 。
-
-Copyright (c) 2015, Andreas Marek 与 [贡献者们](https://github.com/graphql-java/graphql-java/graphs/contributors)
-
-[graphql-js 许可证](https://github.com/graphql/graphql-js/blob/master/LICENSE)
-
+[YourKit](https://www.yourkit.com/) 通过 YourKit Java Profiler 能力对该项目提供了支持。

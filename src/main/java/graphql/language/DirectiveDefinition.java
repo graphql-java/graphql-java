@@ -21,7 +21,7 @@ import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
 import static java.util.Collections.emptyMap;
 
 @PublicApi
-public class DirectiveDefinition extends AbstractDescribedNode<DirectiveDefinition> implements SDLDefinition<DirectiveDefinition>, NamedNode<DirectiveDefinition> {
+public class DirectiveDefinition extends AbstractDescribedNode<DirectiveDefinition> implements SDLNamedDefinition<DirectiveDefinition>, NamedNode<DirectiveDefinition> {
     private final String name;
     private final boolean repeatable;
     private final ImmutableList<InputValueDefinition> inputValueDefinitions;

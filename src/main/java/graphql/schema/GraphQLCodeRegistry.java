@@ -1,6 +1,7 @@
 package graphql.schema;
 
 import graphql.Assert;
+import graphql.Internal;
 import graphql.PublicApi;
 import graphql.schema.visibility.GraphqlFieldVisibility;
 
@@ -189,7 +190,7 @@ public class GraphQLCodeRegistry {
         private final Map<String, TypeResolver> typeResolverMap = new HashMap<>();
         private GraphqlFieldVisibility fieldVisibility = DEFAULT_FIELD_VISIBILITY;
         private DataFetcherFactory<?> defaultDataFetcherFactory = env -> PropertyDataFetcher.fetching(env.getFieldDefinition().getName());
-
+        private boolean changed = false;
 
         private Builder() {
         }
@@ -200,6 +201,38 @@ public class GraphQLCodeRegistry {
             this.typeResolverMap.putAll(codeRegistry.typeResolverMap);
             this.fieldVisibility = codeRegistry.fieldVisibility;
             this.defaultDataFetcherFactory = codeRegistry.defaultDataFetcherFactory;
+        }
+
+        /**
+         * A helper method to track if the builder changes from the point
+         * at which this method was called.
+         *
+         * @return this builder for fluent code
+         */
+        @Internal
+        public Builder trackChanges() {
+            changed = false;
+            return this;
+        }
+
+        /**
+         * @return true if the builder has changed since {@link #trackChanges()} was called
+         */
+        @Internal
+        public boolean hasChanged() {
+            return changed;
+        }
+
+        private Builder markChanged() {
+            changed = true;
+            return this;
+        }
+
+        private Builder markChanged(boolean condition) {
+            if (condition) {
+                changed = true;
+            }
+            return this;
         }
 
         /**
@@ -224,6 +257,13 @@ public class GraphQLCodeRegistry {
          */
         public DataFetcher<?> getDataFetcher(FieldCoordinates coordinates, GraphQLFieldDefinition fieldDefinition) {
             return getDataFetcherImpl(coordinates, fieldDefinition, dataFetcherMap, systemDataFetcherMap, defaultDataFetcherFactory);
+        }
+
+        /**
+         * @return the default data fetcher factory associated with this code registry
+         */
+        public DataFetcherFactory<?> getDefaultDataFetcherFactory() {
+            return defaultDataFetcherFactory;
         }
 
         /**
@@ -309,7 +349,7 @@ public class GraphQLCodeRegistry {
             assertNotNull(coordinates);
             coordinates.assertValidNames();
             systemDataFetcherMap.put(coordinates.getFieldName(), DataFetcherFactories.useDataFetcher(dataFetcher));
-            return this;
+            return markChanged();
         }
 
         /**
@@ -329,7 +369,7 @@ public class GraphQLCodeRegistry {
             } else {
                 dataFetcherMap.put(coordinates, dataFetcherFactory);
             }
-            return this;
+            return markChanged();
         }
 
         /**
@@ -347,6 +387,7 @@ public class GraphQLCodeRegistry {
                 } else {
                     dataFetcher(coordinates, dataFetcher);
                 }
+                return markChanged();
             }
             return this;
         }
@@ -362,7 +403,7 @@ public class GraphQLCodeRegistry {
         public Builder dataFetchers(String parentTypeName, Map<String, DataFetcher<?>> fieldDataFetchers) {
             assertNotNull(fieldDataFetchers);
             fieldDataFetchers.forEach((fieldName, dataFetcher) -> dataFetcher(coordinates(parentTypeName, fieldName), dataFetcher));
-            return this;
+            return markChanged(!fieldDataFetchers.isEmpty());
         }
 
         /**
@@ -375,57 +416,63 @@ public class GraphQLCodeRegistry {
          */
         public Builder defaultDataFetcher(DataFetcherFactory<?> defaultDataFetcherFactory) {
             this.defaultDataFetcherFactory = Assert.assertNotNull(defaultDataFetcherFactory);
-            return this;
+            return markChanged();
         }
 
         public Builder dataFetchers(GraphQLCodeRegistry codeRegistry) {
             this.dataFetcherMap.putAll(codeRegistry.dataFetcherMap);
-            return this;
+            return markChanged(!codeRegistry.dataFetcherMap.isEmpty());
         }
 
         public Builder typeResolver(GraphQLInterfaceType interfaceType, TypeResolver typeResolver) {
             typeResolverMap.put(interfaceType.getName(), typeResolver);
-            return this;
+            return markChanged();
         }
 
         public Builder typeResolverIfAbsent(GraphQLInterfaceType interfaceType, TypeResolver typeResolver) {
-            typeResolverMap.putIfAbsent(interfaceType.getName(), typeResolver);
+            if (!typeResolverMap.containsKey(interfaceType.getName())) {
+                typeResolverMap.put(interfaceType.getName(), typeResolver);
+                return markChanged();
+            }
             return this;
         }
 
         public Builder typeResolver(GraphQLUnionType unionType, TypeResolver typeResolver) {
             typeResolverMap.put(unionType.getName(), typeResolver);
-            return this;
+            return markChanged();
         }
 
         public Builder typeResolverIfAbsent(GraphQLUnionType unionType, TypeResolver typeResolver) {
-            typeResolverMap.putIfAbsent(unionType.getName(), typeResolver);
-            return this;
+            if (!typeResolverMap.containsKey(unionType.getName())) {
+                typeResolverMap.put(unionType.getName(), typeResolver);
+                return markChanged();
+            }
+            return markChanged();
         }
 
         public Builder typeResolver(String typeName, TypeResolver typeResolver) {
             typeResolverMap.put(assertValidName(typeName), typeResolver);
-            return this;
+            return markChanged();
         }
 
         public Builder typeResolvers(GraphQLCodeRegistry codeRegistry) {
             this.typeResolverMap.putAll(codeRegistry.typeResolverMap);
-            return this;
+            return markChanged(!codeRegistry.typeResolverMap.isEmpty());
         }
 
         public Builder fieldVisibility(GraphqlFieldVisibility fieldVisibility) {
             this.fieldVisibility = assertNotNull(fieldVisibility);
-            return this;
+            return markChanged();
         }
 
         public Builder clearDataFetchers() {
             dataFetcherMap.clear();
-            return this;
+            return markChanged();
         }
 
         public Builder clearTypeResolvers() {
             typeResolverMap.clear();
-            return this;
+            return markChanged();
         }
 
         public GraphQLCodeRegistry build() {

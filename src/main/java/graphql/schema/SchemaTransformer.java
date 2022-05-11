@@ -1,5 +1,7 @@
 package graphql.schema;
 
+import com.google.common.collect.LinkedHashMultimap;
+import com.google.common.collect.Multimap;
 import graphql.PublicApi;
 import graphql.util.Breadcrumb;
 import graphql.util.NodeAdapter;
@@ -11,8 +13,10 @@ import graphql.util.TraverserContext;
 import graphql.util.TraverserVisitor;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
@@ -26,7 +30,8 @@ import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertShouldNeverHappen;
 import static graphql.schema.GraphQLSchemaElementAdapter.SCHEMA_ELEMENT_ADAPTER;
 import static graphql.schema.SchemaElementChildrenContainer.newSchemaElementChildrenContainer;
-import static graphql.schema.StronglyConnectedComponentsTopologicallySorted.getStronglyConnectedComponentsTopologicallySorted;
+import static graphql.schema.impl.StronglyConnectedComponentsTopologicallySorted.getStronglyConnectedComponentsTopologicallySorted;
+import static graphql.util.NodeZipper.ModificationType.DELETE;
 import static graphql.util.NodeZipper.ModificationType.REPLACE;
 import static graphql.util.TraversalControl.CONTINUE;
 import static java.lang.String.format;
@@ -58,7 +63,7 @@ import static java.lang.String.format;
  * <p>
  * To insert elements use either {@link GraphQLTypeVisitor#insertAfter(TraverserContext, GraphQLSchemaElement)} or
  * {@link GraphQLTypeVisitor#insertBefore(TraverserContext, GraphQLSchemaElement)}
- * which will insert the new node before or afgter the current node being visited
+ * which will insert the new node before or after the current node being visited
  * <pre>
  * {@code
  *  public TraversalControl visitGraphQLObjectType(GraphQLObjectType objectType, TraverserContext<GraphQLSchemaElement> context) {
@@ -139,7 +144,7 @@ public class SchemaTransformer {
         final Map<String, GraphQLTypeReference> typeReferences = new LinkedHashMap<>();
 
         // first pass - general transformation
-        traverseAndTransform(dummyRoot, changedTypes, typeReferences, visitor, codeRegistry);
+        boolean schemaChanged = traverseAndTransform(dummyRoot, changedTypes, typeReferences, visitor, codeRegistry);
 
         // if we have changed any named elements AND we have type references referring to them then
         // we need to make a second pass to replace these type references to the new names
@@ -151,9 +156,13 @@ public class SchemaTransformer {
         }
 
         if (schema != null) {
-            GraphQLSchema graphQLSchema = dummyRoot.rebuildSchema(codeRegistry);
-            if (postTransformation != null) {
-                graphQLSchema = graphQLSchema.transform(postTransformation);
+
+            GraphQLSchema graphQLSchema = schema;
+            if (schemaChanged || codeRegistry.hasChanged()) {
+                graphQLSchema = dummyRoot.rebuildSchema(codeRegistry);
+                if (postTransformation != null) {
+                    graphQLSchema = graphQLSchema.transform(postTransformation);
+                }
             }
             return graphQLSchema;
         } else {
@@ -176,7 +185,7 @@ public class SchemaTransformer {
         traverseAndTransform(dummyRoot, new HashMap<>(), new HashMap<>(), typeRefVisitor, codeRegistry);
     }
 
-    private void traverseAndTransform(DummyRoot dummyRoot, Map<String, GraphQLNamedType> changedTypes, Map<String, GraphQLTypeReference> typeReferences, GraphQLTypeVisitor visitor, GraphQLCodeRegistry.Builder codeRegistry) {
+    private boolean traverseAndTransform(DummyRoot dummyRoot, Map<String, GraphQLNamedType> changedTypes, Map<String, GraphQLTypeReference> typeReferences, GraphQLTypeVisitor visitor, GraphQLCodeRegistry.Builder codeRegistry) {
         List<NodeZipper<GraphQLSchemaElement>> zippers = new LinkedList<>();
         Map<GraphQLSchemaElement, NodeZipper<GraphQLSchemaElement>> zipperByNodeAfterTraversing = new LinkedHashMap<>();
         Map<GraphQLSchemaElement, NodeZipper<GraphQLSchemaElement>> zipperByOriginalNode = new LinkedHashMap<>();
@@ -246,6 +255,9 @@ public class SchemaTransformer {
             public TraversalControl backRef(TraverserContext<GraphQLSchemaElement> context) {
                 NodeZipper<GraphQLSchemaElement> zipper = zipperByOriginalNode.get(context.thisNode());
                 breadcrumbsByZipper.get(zipper).add(context.getBreadcrumbs());
+                if (zipper.getModificationType() == DELETE) {
+                    return CONTINUE;
+                }
                 visitor.visitBackRef(context);
                 List<GraphQLSchemaElement> reverseDependenciesForCurNode = reverseDependencies.get(zipper.getCurNode());
                 assertNotNull(reverseDependenciesForCurNode);
@@ -264,45 +276,107 @@ public class SchemaTransformer {
 
         List<List<GraphQLSchemaElement>> stronglyConnectedTopologicallySorted = getStronglyConnectedComponentsTopologicallySorted(reverseDependencies, typeRefReverseDependencies);
 
-        zipUpToDummyRoot(zippers, stronglyConnectedTopologicallySorted, breadcrumbsByZipper, zipperByNodeAfterTraversing);
+        return zipUpToDummyRoot(zippers, stronglyConnectedTopologicallySorted, breadcrumbsByZipper, zipperByNodeAfterTraversing);
+    }
+
+    private static class RelevantZippersAndBreadcrumbs {
+        final Multimap<GraphQLSchemaElement, NodeZipper<GraphQLSchemaElement>> zipperByParent = LinkedHashMultimap.create();
+        final Set<NodeZipper<GraphQLSchemaElement>> relevantZippers;
+        final Map<NodeZipper<GraphQLSchemaElement>, List<List<Breadcrumb<GraphQLSchemaElement>>>> breadcrumbsByZipper;
+
+        public RelevantZippersAndBreadcrumbs(List<NodeZipper<GraphQLSchemaElement>> relevantZippers,
+                                             Map<NodeZipper<GraphQLSchemaElement>, List<List<Breadcrumb<GraphQLSchemaElement>>>> breadcrumbsByZipper) {
+            this.relevantZippers = new LinkedHashSet<>(relevantZippers);
+            this.breadcrumbsByZipper = breadcrumbsByZipper;
+            for (NodeZipper<GraphQLSchemaElement> zipper : relevantZippers) {
+                for (List<Breadcrumb<GraphQLSchemaElement>> breadcrumbs : breadcrumbsByZipper.get(zipper)) {
+                    zipperByParent.put(breadcrumbs.get(0).getNode(), zipper);
+                }
+            }
+        }
+
+        public boolean isRelevantZipper(NodeZipper<GraphQLSchemaElement> zipper) {
+            return relevantZippers.contains(zipper);
+        }
+
+        public Collection<NodeZipper<GraphQLSchemaElement>> zippersWithParent(GraphQLSchemaElement parent) {
+            return zipperByParent.get(parent);
+        }
+
+        public void removeRelevantZipper(NodeZipper<GraphQLSchemaElement> zipper) {
+            relevantZippers.remove(zipper);
+        }
+
+        public List<List<Breadcrumb<GraphQLSchemaElement>>> getBreadcrumbs(NodeZipper<GraphQLSchemaElement> zipper) {
+            return breadcrumbsByZipper.get(zipper);
+        }
+
+        public void updateZipper(NodeZipper<GraphQLSchemaElement> currentZipper,
+                                 NodeZipper<GraphQLSchemaElement> newZipper) {
+            // the current zipper is not always relevant, meaning this has no effect sometimes
+            relevantZippers.remove(currentZipper);
+            relevantZippers.add(newZipper);
+
+
+            List<List<Breadcrumb<GraphQLSchemaElement>>> currentBreadcrumbs = breadcrumbsByZipper.get(currentZipper);
+            assertNotNull(currentBreadcrumbs, () -> format("No breadcrumbs found for zipper %s", currentZipper));
+            for (List<Breadcrumb<GraphQLSchemaElement>> breadcrumbs : currentBreadcrumbs) {
+                GraphQLSchemaElement parent = breadcrumbs.get(0).getNode();
+                zipperByParent.remove(parent, currentZipper);
+                zipperByParent.put(parent, newZipper);
+            }
+            breadcrumbsByZipper.remove(currentZipper);
+            breadcrumbsByZipper.put(newZipper, currentBreadcrumbs);
+
+        }
+
     }
 
 
-    private void zipUpToDummyRoot(List<NodeZipper<GraphQLSchemaElement>> zippers,
-                                  List<List<GraphQLSchemaElement>> stronglyConnectedTopologicallySorted,
-                                  Map<NodeZipper<GraphQLSchemaElement>, List<List<Breadcrumb<GraphQLSchemaElement>>>> breadcrumbsByZipper,
-                                  Map<GraphQLSchemaElement, NodeZipper<GraphQLSchemaElement>> nodeToZipper) {
+    private boolean zipUpToDummyRoot(List<NodeZipper<GraphQLSchemaElement>> zippers,
+                                     List<List<GraphQLSchemaElement>> stronglyConnectedTopologicallySorted,
+                                     Map<NodeZipper<GraphQLSchemaElement>, List<List<Breadcrumb<GraphQLSchemaElement>>>> breadcrumbsByZipper,
+                                     Map<GraphQLSchemaElement, NodeZipper<GraphQLSchemaElement>> nodeToZipper) {
         if (zippers.size() == 0) {
-            return;
+            return false;
         }
-        Set<NodeZipper<GraphQLSchemaElement>> curZippers = new LinkedHashSet<>(zippers);
+        RelevantZippersAndBreadcrumbs relevantZippers = new RelevantZippersAndBreadcrumbs(zippers, breadcrumbsByZipper);
 
         for (int i = stronglyConnectedTopologicallySorted.size() - 1; i >= 0; i--) {
             List<GraphQLSchemaElement> scc = stronglyConnectedTopologicallySorted.get(i);
-            boolean sccChanged = false;
-            List<GraphQLSchemaElement> unchangedSccElements = new ArrayList<>();
-            for (GraphQLSchemaElement element : scc) {
-                Map<NodeZipper<GraphQLSchemaElement>, List<Breadcrumb<GraphQLSchemaElement>>> zipperWithSameParent = zipperWithSameParent(element, curZippers, breadcrumbsByZipper);
-                if (zipperWithSameParent.size() > 0) {
-                    sccChanged = true;
-                } else {
-                    unchangedSccElements.add(element);
+            // performance relevant: we avoid calling zipperWithSameParent twice
+            // for SCC of size one.
+            if (scc.size() > 1) {
+                boolean sccChanged = false;
+                List<GraphQLSchemaElement> unchangedSccElements = new ArrayList<>();
+                for (GraphQLSchemaElement element : scc) {
+                    // if the current element itself has a zipper it is changed
+                    if (relevantZippers.isRelevantZipper(nodeToZipper.get(element))) {
+                        sccChanged = true;
+                        continue;
+                    }
+                    // if the current element is changed via "moveUp" it is changed
+                    Map<NodeZipper<GraphQLSchemaElement>, Breadcrumb<GraphQLSchemaElement>> zipperWithSameParent = zipperWithSameParent(element, relevantZippers, false);
+                    if (zipperWithSameParent.size() > 0) {
+                        sccChanged = true;
+                    } else {
+                        unchangedSccElements.add(element);
+                    }
                 }
-            }
-            if (!sccChanged) {
-                continue;
-            }
-            // we need to change all elements inside the current SCC
-            for (GraphQLSchemaElement element : unchangedSccElements) {
-                NodeZipper<GraphQLSchemaElement> originalZipper = nodeToZipper.get(element);
-                List<List<Breadcrumb<GraphQLSchemaElement>>> breadcrumbsForOriginalParent = breadcrumbsByZipper.get(originalZipper);
-                NodeZipper<GraphQLSchemaElement> newZipper = originalZipper.withNewNode(element.copy());
-                curZippers.add(newZipper);
-                breadcrumbsByZipper.put(newZipper, breadcrumbsForOriginalParent);
+                if (!sccChanged) {
+                    continue;
+                }
+                // we need to change all elements inside the current SCC
+                for (GraphQLSchemaElement element : unchangedSccElements) {
+                    NodeZipper<GraphQLSchemaElement> currentZipper = nodeToZipper.get(element);
+                    NodeZipper<GraphQLSchemaElement> newZipper = currentZipper.withNewNode(element.copy());
+                    nodeToZipper.put(element, newZipper);
+                    relevantZippers.updateZipper(currentZipper, newZipper);
+                }
             }
             for (int j = scc.size() - 1; j >= 0; j--) {
                 GraphQLSchemaElement element = scc.get(j);
-                Map<NodeZipper<GraphQLSchemaElement>, List<Breadcrumb<GraphQLSchemaElement>>> zipperWithSameParent = zipperWithSameParent(element, curZippers, breadcrumbsByZipper);
+                Map<NodeZipper<GraphQLSchemaElement>, Breadcrumb<GraphQLSchemaElement>> zipperWithSameParent = zipperWithSameParent(element, relevantZippers, true);
                 // this means we have a node which doesn't need to be changed
                 if (zipperWithSameParent.size() == 0) {
                     continue;
@@ -314,32 +388,38 @@ public class SchemaTransformer {
                     break;
                 }
 
-                // update curZippers
                 NodeZipper<GraphQLSchemaElement> curZipperForElement = nodeToZipper.get(element);
                 assertNotNull(curZipperForElement, () -> format("curZipperForElement is null for parentNode %s", element));
-                curZippers.remove(curZipperForElement);
-                curZippers.add(newZipper);
-
-                // update breadcrumbsByZipper to use the newZipper
-                List<List<Breadcrumb<GraphQLSchemaElement>>> breadcrumbsForOriginalParent = breadcrumbsByZipper.get(curZipperForElement);
-                assertNotNull(breadcrumbsForOriginalParent, () -> format("No breadcrumbs found for zipper %s", curZipperForElement));
-                breadcrumbsByZipper.remove(curZipperForElement);
-                breadcrumbsByZipper.put(newZipper, breadcrumbsForOriginalParent);
+                relevantZippers.updateZipper(curZipperForElement, newZipper);
 
             }
-
         }
+        return true;
     }
 
-    private Map<NodeZipper<GraphQLSchemaElement>, List<Breadcrumb<GraphQLSchemaElement>>> zipperWithSameParent(GraphQLSchemaElement parent,
-                                                                                                               Set<NodeZipper<GraphQLSchemaElement>> zippers,
-                                                                                                               Map<NodeZipper<GraphQLSchemaElement>, List<List<Breadcrumb<GraphQLSchemaElement>>>> curBreadcrumbsByZipper) {
-        Map<NodeZipper<GraphQLSchemaElement>, List<Breadcrumb<GraphQLSchemaElement>>> result = new LinkedHashMap<>();
+    private Map<NodeZipper<GraphQLSchemaElement>, Breadcrumb<GraphQLSchemaElement>> zipperWithSameParent(
+            GraphQLSchemaElement parent,
+            RelevantZippersAndBreadcrumbs relevantZippers,
+            boolean cleanup) {
+        Map<NodeZipper<GraphQLSchemaElement>, Breadcrumb<GraphQLSchemaElement>> result = new LinkedHashMap<>();
+        Collection<NodeZipper<GraphQLSchemaElement>> zippersWithParent = relevantZippers.zippersWithParent(parent);
+        Iterator<NodeZipper<GraphQLSchemaElement>> zippersIter = zippersWithParent.iterator();
         outer:
-        for (NodeZipper<GraphQLSchemaElement> zipper : zippers) {
-            for (List<Breadcrumb<GraphQLSchemaElement>> path : curBreadcrumbsByZipper.get(zipper)) {
+        while (zippersIter.hasNext()) {
+            NodeZipper<GraphQLSchemaElement> zipper = zippersIter.next();
+            List<List<Breadcrumb<GraphQLSchemaElement>>> listOfBreadcrumbsList = assertNotNull(relevantZippers.getBreadcrumbs(zipper));
+            for (int i = 0; i < listOfBreadcrumbsList.size(); i++) {
+                List<Breadcrumb<GraphQLSchemaElement>> path = listOfBreadcrumbsList.get(i);
                 if (path.get(0).getNode() == parent) {
-                    result.put(zipper, path);
+                    result.put(zipper, path.get(0));
+                    if (cleanup) {
+                        // remove breadcrumb we just used
+                        listOfBreadcrumbsList.remove(i);
+                        if (listOfBreadcrumbsList.size() == 0) {
+                            // if there are no breadcrumbs left for this zipper it is safe to remove
+                            relevantZippers.removeRelevantZipper(zipper);
+                        }
+                    }
                     continue outer;
                 }
             }
@@ -349,7 +429,7 @@ public class SchemaTransformer {
 
     private NodeZipper<GraphQLSchemaElement> moveUp(
             GraphQLSchemaElement parent,
-            Map<NodeZipper<GraphQLSchemaElement>, List<Breadcrumb<GraphQLSchemaElement>>> sameParentsZipper) {
+            Map<NodeZipper<GraphQLSchemaElement>, Breadcrumb<GraphQLSchemaElement>> sameParentsZipper) {
         Set<NodeZipper<GraphQLSchemaElement>> sameParent = sameParentsZipper.keySet();
         assertNotEmpty(sameParent, () -> "expected at least one zipper");
 
@@ -358,8 +438,8 @@ public class SchemaTransformer {
 
         List<ZipperWithOneParent> zipperWithOneParents = new ArrayList<>();
         for (NodeZipper<GraphQLSchemaElement> zipper : sameParent) {
-            List<Breadcrumb<GraphQLSchemaElement>> breadcrumbs = sameParentsZipper.get(zipper);
-            zipperWithOneParents.add(new ZipperWithOneParent(zipper, breadcrumbs.get(0)));
+            Breadcrumb<GraphQLSchemaElement> breadcrumb = sameParentsZipper.get(zipper);
+            zipperWithOneParents.add(new ZipperWithOneParent(zipper, breadcrumb));
         }
 
         zipperWithOneParents.sort((zipperWithOneParent1, zipperWithOneParent2) -> {
@@ -448,6 +528,7 @@ public class SchemaTransformer {
         static final String ADD_TYPES = "addTypes";
         static final String DIRECTIVES = "directives";
         static final String SCHEMA_DIRECTIVES = "schemaDirectives";
+        static final String SCHEMA_APPLIED_DIRECTIVES = "schemaAppliedDirectives";
         static final String INTROSPECTION = "introspection";
         static final String SCHEMA_ELEMENT = "schemaElement";
 
@@ -459,6 +540,7 @@ public class SchemaTransformer {
         Set<GraphQLType> additionalTypes;
         Set<GraphQLDirective> directives;
         Set<GraphQLDirective> schemaDirectives;
+        Set<GraphQLAppliedDirective> schemaAppliedDirectives;
         GraphQLSchemaElement schemaElement;
 
         DummyRoot(GraphQLSchema schema) {
@@ -468,6 +550,7 @@ public class SchemaTransformer {
             subscription = schema.isSupportingSubscriptions() ? schema.getSubscriptionType() : null;
             additionalTypes = schema.getAdditionalTypes();
             schemaDirectives = new LinkedHashSet<>(schema.getSchemaDirectives());
+            schemaAppliedDirectives = new LinkedHashSet<>(schema.getSchemaAppliedDirectives());
             directives = new LinkedHashSet<>(schema.getDirectives());
             introspectionSchemaType = schema.getIntrospectionSchemaType();
         }
@@ -502,6 +585,7 @@ public class SchemaTransformer {
                 builder.children(ADD_TYPES, additionalTypes);
                 builder.children(DIRECTIVES, directives);
                 builder.children(SCHEMA_DIRECTIVES, schemaDirectives);
+                builder.children(SCHEMA_APPLIED_DIRECTIVES, schemaAppliedDirectives);
                 builder.child(INTROSPECTION, introspectionSchemaType);
             }
             return builder.build();
@@ -521,6 +605,7 @@ public class SchemaTransformer {
             additionalTypes = new LinkedHashSet<>(newChildren.getChildren(ADD_TYPES));
             directives = new LinkedHashSet<>(newChildren.getChildren(DIRECTIVES));
             schemaDirectives = new LinkedHashSet<>(newChildren.getChildren(SCHEMA_DIRECTIVES));
+            schemaAppliedDirectives = new LinkedHashSet<>(newChildren.getChildren(SCHEMA_APPLIED_DIRECTIVES));
             return this;
         }
 
@@ -538,9 +623,10 @@ public class SchemaTransformer {
                     .additionalDirectives(this.directives)
                     .introspectionSchemaType(this.introspectionSchemaType)
                     .withSchemaDirectives(this.schemaDirectives)
+                    .withSchemaAppliedDirectives(this.schemaAppliedDirectives)
                     .codeRegistry(codeRegistry.build())
                     .description(schema.getDescription())
-                    .buildImpl(true);
+                    .build();
         }
     }
 }

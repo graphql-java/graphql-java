@@ -324,6 +324,7 @@ public class SchemaDiff {
         Map<String, Type> oldMemberTypes = sortedMap(oldDef.getMemberTypes(), SchemaDiff::getTypeName);
         Map<String, Type> newMemberTypes = sortedMap(newDef.getMemberTypes(), SchemaDiff::getTypeName);
 
+
         for (Map.Entry<String, Type> entry : oldMemberTypes.entrySet()) {
             String oldMemberTypeName = entry.getKey();
             if (!newMemberTypes.containsKey(oldMemberTypeName)) {
@@ -334,6 +335,9 @@ public class SchemaDiff {
                         .components(oldMemberTypeName)
                         .reasonMsg("The new API does not contain union member type '%s'", oldMemberTypeName)
                         .build());
+            } else {
+                // check type which is in the old and the new Union def
+                checkType(ctx, entry.getValue(), newMemberTypes.get(oldMemberTypeName));
             }
         }
         for (Map.Entry<String, Type> entry : newMemberTypes.entrySet()) {
@@ -889,9 +893,9 @@ public class SchemaDiff {
 
     // looks for a type called `Query|Mutation|Subscription` and if it exist then assumes it as an operation def
 
-    private Optional<OperationTypeDefinition> synthOperationTypeDefinition(Function<Type, Optional<ObjectTypeDefinition>> typeReteriver, String opName) {
+    private Optional<OperationTypeDefinition> synthOperationTypeDefinition(Function<Type, Optional<ObjectTypeDefinition>> typeRetriever, String opName) {
         TypeName type = TypeName.newTypeName().name(capitalize(opName)).build();
-        Optional<ObjectTypeDefinition> typeDef = typeReteriver.apply(type);
+        Optional<ObjectTypeDefinition> typeDef = typeRetriever.apply(type);
         return typeDef.map(objectTypeDefinition -> OperationTypeDefinition.newOperationTypeDefinition().name(opName).typeName(type).build());
     }
 

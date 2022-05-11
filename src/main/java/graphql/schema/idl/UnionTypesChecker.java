@@ -16,7 +16,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.stream.Stream;
 
 import static java.lang.String.format;
@@ -46,8 +45,7 @@ class UnionTypesChecker {
         List<UnionTypeDefinition> unionTypes = typeRegistry.getTypes(UnionTypeDefinition.class);
         List<UnionTypeExtensionDefinition> unionTypeExtensions = typeRegistry.getTypes(UnionTypeExtensionDefinition.class);
 
-        Stream.of(unionTypes.stream(), unionTypeExtensions.stream())
-                .flatMap(Function.identity())
+        Stream.concat(unionTypes.stream(), unionTypeExtensions.stream())
                 .forEach(type -> checkUnionType(typeRegistry, type, errors));
     }
 

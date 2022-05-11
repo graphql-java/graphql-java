@@ -2,6 +2,7 @@ package graphql.schema
 
 import graphql.AssertException
 import graphql.TestUtil
+import graphql.language.Node
 import spock.lang.Specification
 
 import static graphql.Scalars.GraphQLBoolean
@@ -12,6 +13,7 @@ import static graphql.introspection.Introspection.DirectiveLocation.FIELD_DEFINI
 import static graphql.introspection.Introspection.DirectiveLocation.INTERFACE
 import static graphql.introspection.Introspection.DirectiveLocation.OBJECT
 import static graphql.introspection.Introspection.DirectiveLocation.UNION
+import static graphql.language.AstPrinter.printAst
 
 class GraphQLDirectiveTest extends Specification {
 
@@ -99,13 +101,7 @@ class GraphQLDirectiveTest extends Specification {
         schema.getAllSchemaDirectivesByName().keySet() == ["d1", "dr"] as Set
         schema.getAllSchemaDirectivesByName()["d1"].size() == 1
         schema.getAllSchemaDirectivesByName()["dr"].size() == 2
-        schema.getAllSchemaDirectivesByName()["dr"].collect({ it.getArgument("arg").value }) == ["a1", "a2"]
-
-        when:
-        schema.getSchemaDirective("dr")
-        then:
-        thrown(AssertException)
-
+        schema.getAllSchemaDirectivesByName()["dr"].collect({ printAst(it.getArgument("arg").argumentValue.value) }) == ['"a1"', '"a2"']
 
         when:
         def queryType = schema.getObjectType("Query")
@@ -178,6 +174,9 @@ class GraphQLDirectiveTest extends Specification {
     }
 
     static boolean assertDirectiveContainer(GraphQLDirectiveContainer container) {
+        assert container.hasDirective("d1")
+        assert container.hasDirective("dr")
+        assert !container.hasDirective("non existent")
         assert container.getDirectives().collect({ it.name }) == ["d1", "dr", "dr"]
         assert container.getDirective("d1").name == "d1"
         assert container.getDirectivesByName().keySet() == ["d1"] as Set
@@ -188,13 +187,7 @@ class GraphQLDirectiveTest extends Specification {
 
         assert container.getDirectives("d1").size() == 1
         assert container.getDirectives("dr").size() == 2
-        assert container.getDirectives("dr").collect({ it.getArgument("arg").value }) == ["a1", "a2"]
-
-        try {
-            container.getDirective("dr")
-            assert false, "expecting an AssertException"
-        } catch (AssertException ignored) {
-        }
+        assert container.getDirectives("dr").collect({ printAst(it.getArgument("arg").argumentValue.value as Node) }) == ['"a1"', '"a2"']
 
         return true
     }

@@ -1,6 +1,7 @@
 package graphql.schema.idl;
 
 import graphql.Internal;
+import graphql.execution.ValuesResolver;
 import graphql.schema.DataFetcher;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLDirective;
@@ -15,10 +16,13 @@ import static graphql.schema.FieldCoordinates.coordinates;
 
 /**
  * This adds ' @fetch(from : "otherName") ' support so you can rename what property is read for a given field
+ *
+ * @deprecated This support introduces a non standard directive and has interfere with some implementations.  This is no longer
+ * installed default and will be removed in a future version
  */
 @Internal
+@Deprecated
 public class FetchSchemaDirectiveWiring implements SchemaDirectiveWiring {
-
     public static final String FETCH = "fetch";
 
     @Override
@@ -35,7 +39,7 @@ public class FetchSchemaDirectiveWiring implements SchemaDirectiveWiring {
     private String atFetchFromSupport(String fieldName, List<GraphQLDirective> directives) {
         // @fetch(from : "name")
         Optional<GraphQLArgument> from = directiveWithArg(directives, FETCH, "from");
-        return from.map(arg -> String.valueOf(arg.getValue())).orElse(fieldName);
+        return from.map(arg -> (String) ValuesResolver.valueToInternalValue(arg.getArgumentValue(), arg.getType())).orElse(fieldName);
     }
 
 }

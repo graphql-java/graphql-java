@@ -8,7 +8,6 @@ import graphql.schema.Coercing
 import graphql.schema.CoercingParseLiteralException
 import graphql.schema.DataFetcher
 import graphql.schema.GraphQLObjectType
-import graphql.schema.GraphQLScalarType
 import graphql.schema.TypeResolver
 import graphql.schema.idl.errors.DirectiveIllegalArgumentTypeError
 import graphql.schema.idl.errors.DirectiveIllegalLocationError
@@ -19,12 +18,12 @@ import graphql.schema.idl.errors.QueryOperationMissingError
 import spock.lang.Specification
 import spock.lang.Unroll
 
+import static graphql.schema.GraphQLScalarType.newScalar
 import static graphql.schema.idl.errors.DirectiveIllegalArgumentTypeError.DUPLICATED_KEYS_MESSAGE
 import static graphql.schema.idl.errors.DirectiveIllegalArgumentTypeError.EXPECTED_ENUM_MESSAGE
 import static graphql.schema.idl.errors.DirectiveIllegalArgumentTypeError.EXPECTED_LIST_MESSAGE
 import static graphql.schema.idl.errors.DirectiveIllegalArgumentTypeError.EXPECTED_NON_NULL_MESSAGE
 import static graphql.schema.idl.errors.DirectiveIllegalArgumentTypeError.EXPECTED_OBJECT_MESSAGE
-import static graphql.schema.idl.errors.DirectiveIllegalArgumentTypeError.EXPECTED_SCALAR_MESSAGE
 import static graphql.schema.idl.errors.DirectiveIllegalArgumentTypeError.MISSING_REQUIRED_FIELD_MESSAGE
 import static graphql.schema.idl.errors.DirectiveIllegalArgumentTypeError.MUST_BE_VALID_ENUM_VALUE_MESSAGE
 import static graphql.schema.idl.errors.DirectiveIllegalArgumentTypeError.NOT_A_VALID_SCALAR_LITERAL_MESSAGE
@@ -33,9 +32,7 @@ import static java.lang.String.format
 
 class SchemaTypeCheckerTest extends Specification {
 
-
-
-    TypeDefinitionRegistry parse(String spec) {
+    static TypeDefinitionRegistry parseSDL(String spec) {
         new SchemaParser().parse(spec)
     }
 
@@ -89,12 +86,12 @@ class SchemaTypeCheckerTest extends Specification {
     }
 
     List<GraphQLError> check(String spec, List<String> resolvingNames) {
-        def types = parse(spec)
+        def types = parseSDL(spec)
 
 
         NamedWiringFactory wiringFactory = new NamedWiringFactory("InterfaceType")
 
-        def scalesScalar = new GraphQLScalarType("Scales", "", new Coercing() {
+        def scalesScalar = newScalar().name("Scales").coercing(new Coercing() {
             @Override
             Object serialize(Object dataFetcherResult) {
                 return null
@@ -110,7 +107,9 @@ class SchemaTypeCheckerTest extends Specification {
                 return null
             }
         })
-        def aCustomDateScalar = new GraphQLScalarType("ACustomDate", "", new Coercing() {
+        .build()
+
+        def aCustomDateScalar = newScalar().name("ACustomDate").coercing(new Coercing() {
             @Override
             Object serialize(Object dataFetcherResult) {
                 return null
@@ -128,7 +127,8 @@ class SchemaTypeCheckerTest extends Specification {
                 }
                 return null
             }
-        })
+        }).build()
+
         def runtimeBuilder = RuntimeWiring.newRuntimeWiring()
                 .wiringFactory(wiringFactory)
                 .scalar(scalesScalar)
@@ -736,6 +736,33 @@ class SchemaTypeCheckerTest extends Specification {
         result.isEmpty()
     }
 
+    def "order of interface args does not matter"() {
+        def spec = """
+            interface InterfaceType {
+                fieldA(arg1 : String, arg2 : Int) : String
+            }
+
+            type BaseType {
+                fieldX : Int
+            }
+
+            extend type BaseType implements InterfaceType {
+                fieldA(arg2 : Int, arg1 : String) : String
+            }
+
+            schema {
+              query : BaseType
+            }
+        """
+
+        def result = check(spec)
+
+        expect:
+
+        result.isEmpty()
+    }
+
+
     def "test field arguments on object cannot contain additional required arguments"() {
         def spec = """
             interface InterfaceType {
@@ -963,45 +990,6 @@ class SchemaTypeCheckerTest extends Specification {
         result.size() == 7
     }
 
-    def "test that non repeatable directives are validated"() {
-
-        def spec = """                        
-            directive @directiveA on FIELD_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION
-            directive @directiveOK on FIELD_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION
-            interface InterfaceType1 {
-                fieldA : String @directiveA @directiveA 
-            }
-
-            type Query implements InterfaceType1 {
-                fieldA : String
-                fieldC : String @directiveA @directiveA
-            }
-
-            extend type Query {
-                fieldB : Int
-                fieldD: Int @directiveA @directiveA
-                fieldE: Int @directiveA @directiveOK
-            }
-            
-            enum EnumType {
-                
-                enumA @directiveA @directiveA
-                enumB @directiveA @directiveOK
-            }
-
-            input InputType {
-                inputFieldA : String @directiveA @directiveA
-                inputFieldB : String @directiveA @directiveOK
-            }
-        """
-
-        def result = check(spec)
-
-        expect:
-
-        !result.isEmpty()
-        result.size() == 5
-    }
 
     def "test that directives args are valid"() {
 
@@ -1089,7 +1077,6 @@ class SchemaTypeCheckerTest extends Specification {
 
         expect:
 
-        errorContaining(result, "The extension 'Query' type [@n:n] has redefined the directive called 'directive'")
         errorContaining(result, "'Query' extension type [@n:n] tried to redefine field 'fieldB' [@n:n]")
         errorContaining(result, "The type 'Query' [@n:n] has declared a field with a non unique name 'fieldC'")
         errorContaining(result, "The extension 'NonExistent' type [@n:n] is missing its base underlying type")
@@ -1122,10 +1109,9 @@ class SchemaTypeCheckerTest extends Specification {
 
         expect:
 
-        result.size() == 3
+        result.size() == 2
         errorContaining(result, "The extension 'NonExistent' type [@n:n] is missing its base underlying type")
         errorContaining(result, "'InterfaceType1' extension type [@n:n] tried to redefine field 'fieldA' [@n:n]")
-        errorContaining(result, "The extension 'InterfaceType1' type [@n:n] has redefined the directive called 'directive'")
     }
 
     def "union type extensions invariants are enforced"() {
@@ -1165,9 +1151,8 @@ class SchemaTypeCheckerTest extends Specification {
 
         expect:
 
-        result.size() == 4
+        result.size() == 3
         errorContaining(result, "The extension 'NonExistent' type [@n:n] is missing its base underlying type")
-        errorContaining(result, "The extension 'FooBar' type [@n:n] has redefined the directive called 'directive'")
         errorContaining(result, "The union member type 'Buzz' is not present when resolving type 'FooBar' [@n:n]")
         errorContaining(result, "The type 'FooBar' [@n:n] has declared an union member with a non unique name 'Foo'")
     }
@@ -1206,7 +1191,6 @@ class SchemaTypeCheckerTest extends Specification {
         expect:
 
         errorContaining(result, "'Numb' extension type [@n:n] tried to redefine enum value 'A' [@n:n]")
-        errorContaining(result, "The extension 'Numb' type [@n:n] has redefined the directive called 'directive'")
         errorContaining(result, "The type 'Numb' [@n:n] has declared an enum value with a non unique name 'D'")
         errorContaining(result, "The extension 'NonExistent' type [@n:n] is missing its base underlying type")
     }
@@ -1232,7 +1216,6 @@ class SchemaTypeCheckerTest extends Specification {
 
         expect:
 
-        errorContaining(result, "The extension 'Scales' type [@n:n] has redefined the directive called 'directive'")
         errorContaining(result, "The extension 'NonExistent' type [@n:n] is missing its base underlying type")
     }
 
@@ -1280,7 +1263,6 @@ class SchemaTypeCheckerTest extends Specification {
 
         expect:
 
-        errorContaining(result, "The extension 'Puter' type [@n:n] has redefined the directive called 'directive'")
         errorContaining(result, "The type 'Puter' [@n:n] has declared an input field with a non unique name 'fieldD'")
         errorContaining(result, "'Puter' extension type [@n:n] tried to redefine field 'fieldE' [@n:n]")
         errorContaining(result, "The extension 'NonExistent' type [@n:n] is missing its base underlying type")
@@ -1500,24 +1482,15 @@ class SchemaTypeCheckerTest extends Specification {
         where:
 
         allowedArgType | argValue                                                                               | detailedMessage
-        "String"       | 'MONDAY'                                                                               | format(EXPECTED_SCALAR_MESSAGE, "EnumValue")
-        "String"       | '{ an: "object" }'                                                                     | format(EXPECTED_SCALAR_MESSAGE, "ObjectValue")
-        "String"       | '["str", "str2"]'                                                                      | format(EXPECTED_SCALAR_MESSAGE, "ArrayValue")
         "ACustomDate"  | '"AFailingDate"'                                                                       | format(NOT_A_VALID_SCALAR_LITERAL_MESSAGE, "ACustomDate")
-// Now allowed by #2001
-//        "[String]"     | '"str"'                                                                                | format(EXPECTED_LIST_MESSAGE, "StringValue")
-//        "[String]!"    | '"str"'                                                                                | format(EXPECTED_LIST_MESSAGE, "StringValue")
         "[String!]"    | '["str", null]'                                                                        | format(EXPECTED_NON_NULL_MESSAGE)
         "[[String!]!]" | '[["str"], ["str2", null]]'                                                            | format(EXPECTED_NON_NULL_MESSAGE)
         "WEEKDAY"      | '"somestr"'                                                                            | format(EXPECTED_ENUM_MESSAGE, "StringValue")
         "WEEKDAY"      | 'SATURDAY'                                                                             | format(MUST_BE_VALID_ENUM_VALUE_MESSAGE, "SATURDAY", "MONDAY,TUESDAY")
         "UserInput"    | '{ fieldNonNull: "str", fieldNonNull: "dupeKey" }'                                     | format(DUPLICATED_KEYS_MESSAGE, "fieldNonNull")
         "UserInput"    | '{ fieldNonNull: "str", unknown: "field" }'                                            | format(UNKNOWN_FIELDS_MESSAGE, "unknown", "UserInput")
-// Now allowed by #2001
-//        "UserInput"    | '{ fieldNonNull: "str", fieldArray: "strInsteadOfArray" }'                             | format(EXPECTED_LIST_MESSAGE, "StringValue")
         "UserInput"    | '{ fieldNonNull: "str", fieldArrayOfArray: ["ArrayInsteadOfArrayOfArray"] }'           | format(EXPECTED_LIST_MESSAGE, "StringValue")
         "UserInput"    | '{ fieldNonNull: "str", fieldNestedInput: "strInsteadOfObject" }'                      | format(EXPECTED_OBJECT_MESSAGE, "StringValue")
-        "UserInput"    | '{ fieldNonNull: "str", fieldNestedInput: { street: { s: "objectInsteadOfString" }} }' | format(EXPECTED_SCALAR_MESSAGE, "ObjectValue")
         "UserInput"    | '{ field: "missing the `fieldNonNull` entry"}'                                         | format(MISSING_REQUIRED_FIELD_MESSAGE, "fieldNonNull")
     }
 

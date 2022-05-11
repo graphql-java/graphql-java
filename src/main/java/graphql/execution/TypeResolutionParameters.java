@@ -1,45 +1,51 @@
 package graphql.execution;
 
-import graphql.PublicApi;
+import graphql.GraphQLContext;
+import graphql.Internal;
+import graphql.TypeResolutionEnvironment;
 import graphql.collect.ImmutableMapWithNullValues;
-import graphql.schema.GraphQLInterfaceType;
+import graphql.schema.DataFetchingFieldSelectionSet;
 import graphql.schema.GraphQLSchema;
-import graphql.schema.GraphQLUnionType;
+import graphql.schema.GraphQLType;
 
 import java.util.Map;
+import java.util.function.Supplier;
 
-@PublicApi
+/**
+ * This class is a classic builder style one that SHOULD have been on have been on {@link TypeResolutionEnvironment}
+ * but for legacy reasons was not.  So it acts as the builder of {@link TypeResolutionEnvironment} objects
+ */
+@Internal
 public class TypeResolutionParameters {
 
-    private final GraphQLInterfaceType graphQLInterfaceType;
-    private final GraphQLUnionType graphQLUnionType;
     private final MergedField field;
+    private final GraphQLType fieldType;
     private final Object value;
-    private final ImmutableMapWithNullValues<String, Object> argumentValues;
+    private final Supplier<ImmutableMapWithNullValues<String, Object>> argumentValues;
     private final GraphQLSchema schema;
     private final Object context;
+    private final Object localContext;
+    private final GraphQLContext graphQLContext;
+    private final DataFetchingFieldSelectionSet selectionSet;
 
-    private TypeResolutionParameters(GraphQLInterfaceType graphQLInterfaceType, GraphQLUnionType graphQLUnionType,
-                                     MergedField field, Object value, ImmutableMapWithNullValues<String, Object> argumentValues, GraphQLSchema schema, final Object context) {
-        this.graphQLInterfaceType = graphQLInterfaceType;
-        this.graphQLUnionType = graphQLUnionType;
-        this.field = field;
-        this.value = value;
-        this.argumentValues = argumentValues;
-        this.schema = schema;
-        this.context = context;
-    }
-
-    public GraphQLInterfaceType getGraphQLInterfaceType() {
-        return graphQLInterfaceType;
-    }
-
-    public GraphQLUnionType getGraphQLUnionType() {
-        return graphQLUnionType;
+    private TypeResolutionParameters(Builder builder) {
+        this.field = builder.field;
+        this.fieldType = builder.fieldType;
+        this.value = builder.value;
+        this.argumentValues = builder.argumentValues;
+        this.schema = builder.schema;
+        this.context = builder.context;
+        this.graphQLContext = builder.graphQLContext;
+        this.localContext = builder.localContext;
+        this.selectionSet = builder.selectionSet;
     }
 
     public MergedField getField() {
         return field;
+    }
+
+    public GraphQLType getFieldType() {
+        return fieldType;
     }
 
     public Object getValue() {
@@ -47,43 +53,58 @@ public class TypeResolutionParameters {
     }
 
     public Map<String, Object> getArgumentValues() {
-        return argumentValues;
+        return argumentValues.get();
     }
 
     public GraphQLSchema getSchema() {
         return schema;
     }
 
+    public DataFetchingFieldSelectionSet getSelectionSet() {
+        return selectionSet;
+    }
+
     public static Builder newParameters() {
         return new Builder();
     }
 
+    /**
+     * @return the legacy context object
+     *
+     * @deprecated use {@link #getGraphQLContext()} instead
+     */
+    @Deprecated
     public Object getContext() {
         return context;
+    }
+
+    public GraphQLContext getGraphQLContext() {
+        return graphQLContext;
+    }
+
+    public Object getLocalContext() {
+        return localContext;
     }
 
     public static class Builder {
 
         private MergedField field;
-        private GraphQLInterfaceType graphQLInterfaceType;
-        private GraphQLUnionType graphQLUnionType;
+        private GraphQLType fieldType;
         private Object value;
-        private ImmutableMapWithNullValues<String, Object> argumentValues;
+        private Supplier<ImmutableMapWithNullValues<String, Object>> argumentValues;
         private GraphQLSchema schema;
         private Object context;
+        private GraphQLContext graphQLContext;
+        private Object localContext;
+        private DataFetchingFieldSelectionSet selectionSet;
 
         public Builder field(MergedField field) {
             this.field = field;
             return this;
         }
 
-        public Builder graphQLInterfaceType(GraphQLInterfaceType graphQLInterfaceType) {
-            this.graphQLInterfaceType = graphQLInterfaceType;
-            return this;
-        }
-
-        public Builder graphQLUnionType(GraphQLUnionType graphQLUnionType) {
-            this.graphQLUnionType = graphQLUnionType;
+        public Builder fieldType(GraphQLType fieldType) {
+            this.fieldType = fieldType;
             return this;
         }
 
@@ -92,8 +113,8 @@ public class TypeResolutionParameters {
             return this;
         }
 
-        public Builder argumentValues(Map<String, Object> argumentValues) {
-            this.argumentValues = ImmutableMapWithNullValues.copyOf(argumentValues);
+        public Builder argumentValues(Supplier<Map<String, Object>> argumentValues) {
+            this.argumentValues = () -> ImmutableMapWithNullValues.copyOf(argumentValues.get());
             return this;
         }
 
@@ -102,13 +123,31 @@ public class TypeResolutionParameters {
             return this;
         }
 
+        @Deprecated
         public Builder context(Object context) {
             this.context = context;
             return this;
         }
 
-        public TypeResolutionParameters build() {
-            return new TypeResolutionParameters(graphQLInterfaceType, graphQLUnionType, field, value, argumentValues, schema, context);
+        public Builder graphQLContext(GraphQLContext context) {
+            this.graphQLContext = context;
+            return this;
+        }
+
+        public Builder localContext(Object localContext) {
+            this.localContext = localContext;
+            return this;
+        }
+
+        public Builder selectionSet(DataFetchingFieldSelectionSet selectionSet) {
+            this.selectionSet = selectionSet;
+            return this;
+        }
+
+        public TypeResolutionEnvironment build() {
+            // this build should have always been in TypeResolutionEnvironment but this little workaround improves it a smidge,
+            // and we can fix it up later so this class is redundant
+            return new TypeResolutionEnvironment(new TypeResolutionParameters(this));
         }
     }
 }

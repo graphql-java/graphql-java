@@ -3,8 +3,9 @@ package graphql.schema;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import graphql.Internal;
-import graphql.normalized.NormalizedField;
+import graphql.normalized.ExecutableNormalizedField;
 
+import java.io.File;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.nio.file.PathMatcher;
@@ -16,19 +17,21 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.util.FpKit.newList;
 import static java.util.Collections.emptyList;
-import static java.util.stream.Collectors.toList;
 
 @Internal
 public class DataFetchingFieldSelectionSetImpl implements DataFetchingFieldSelectionSet {
 
     private final static String SEP = "/";
+    private final static boolean UNIXY = SEP.equals(File.separator);
 
     private final static DataFetchingFieldSelectionSet NOOP = new DataFetchingFieldSelectionSet() {
 
@@ -74,7 +77,7 @@ public class DataFetchingFieldSelectionSetImpl implements DataFetchingFieldSelec
         }
     };
 
-    public static DataFetchingFieldSelectionSet newCollector(GraphQLSchema schema, GraphQLOutputType fieldType, Supplier<NormalizedField> normalizedFieldSupplier) {
+    public static DataFetchingFieldSelectionSet newCollector(GraphQLSchema schema, GraphQLOutputType fieldType, Supplier<ExecutableNormalizedField> normalizedFieldSupplier) {
         if (!GraphQLTypeUtil.isLeaf(fieldType)) {
             return new DataFetchingFieldSelectionSetImpl(normalizedFieldSupplier, schema);
         } else {
@@ -83,15 +86,18 @@ public class DataFetchingFieldSelectionSetImpl implements DataFetchingFieldSelec
         }
     }
 
-    private final Supplier<NormalizedField> normalizedFieldSupplier;
+    private final Supplier<ExecutableNormalizedField> normalizedFieldSupplier;
 
     private volatile boolean computedValues;
-    private List<SelectedField> immediateFields;
+    // we have multiple entries in this map so that we can do glob matching in multiple ways
+    // however it needs to be normalised back to a set of unique fields when give back out to
+    // the caller.
     private Map<String, List<SelectedField>> normalisedSelectionSetFields;
+    private List<SelectedField> immediateFields;
     private Set<String> flattenedFieldsForGlobSearching;
-    private GraphQLSchema schema;
+    private final GraphQLSchema schema;
 
-    private DataFetchingFieldSelectionSetImpl(Supplier<NormalizedField> normalizedFieldSupplier, GraphQLSchema schema) {
+    private DataFetchingFieldSelectionSetImpl(Supplier<ExecutableNormalizedField> normalizedFieldSupplier, GraphQLSchema schema) {
         this.schema = schema;
         this.normalizedFieldSupplier = normalizedFieldSupplier;
         this.computedValues = false;
@@ -106,12 +112,21 @@ public class DataFetchingFieldSelectionSetImpl implements DataFetchingFieldSelec
         fieldGlobPattern = removeLeadingSlash(fieldGlobPattern);
         PathMatcher globMatcher = globMatcher(fieldGlobPattern);
         for (String flattenedField : flattenedFieldsForGlobSearching) {
+            flattenedField = osAppropriate(flattenedField);
             Path path = Paths.get(flattenedField);
             if (globMatcher.matches(path)) {
                 return true;
             }
         }
         return false;
+    }
+
+    private String osAppropriate(String flattenedField) {
+        if (UNIXY) {
+            return flattenedField;
+        } else {
+            return flattenedField.replace(SEP, "\\");
+        }
     }
 
     @Override
@@ -156,18 +171,20 @@ public class DataFetchingFieldSelectionSetImpl implements DataFetchingFieldSelec
             }
         }
 
-        ImmutableSet<SelectedField> resultSet = targetNames.stream()
-                .flatMap(name -> normalisedSelectionSetFields.getOrDefault(name, emptyList()).stream())
-                .collect(ImmutableSet.toImmutableSet());
-        return ImmutableList.copyOf(resultSet);
+        return toSetSemanticsList(targetNames.stream()
+                .flatMap(name -> normalisedSelectionSetFields.getOrDefault(name, emptyList()).stream()));
     }
 
     @Override
     public List<SelectedField> getFields() {
         computeValuesLazily();
-        return normalisedSelectionSetFields.values().stream()
-                .flatMap(Collection::stream)
-                .collect(toList());
+        return toSetSemanticsList(normalisedSelectionSetFields.values().stream()
+                .flatMap(Collection::stream));
+    }
+
+    private List<SelectedField> toSetSemanticsList(Stream<SelectedField> stream) {
+        return ImmutableList.copyOf(stream
+                .collect(ImmutableSet.toImmutableSet()));
     }
 
     @Override
@@ -192,23 +209,24 @@ public class DataFetchingFieldSelectionSetImpl implements DataFetchingFieldSelec
         }
         // this supplier is a once only thread synced call - so do it outside this lock
         // if only to have only 1 lock in action at a time
-        NormalizedField currentNormalisedField = normalizedFieldSupplier.get();
+        ExecutableNormalizedField currentNormalisedField = normalizedFieldSupplier.get();
         synchronized (this) {
             if (computedValues) {
                 return;
             }
             flattenedFieldsForGlobSearching = new LinkedHashSet<>();
             normalisedSelectionSetFields = new LinkedHashMap<>();
-            immediateFields = new ArrayList<>();
-            traverseSubSelectedFields(currentNormalisedField, "", "", true);
+            ImmutableList.Builder<SelectedField> immediateFieldsBuilder = ImmutableList.builder();
+            traverseSubSelectedFields(currentNormalisedField, immediateFieldsBuilder, "", "", true);
+            immediateFields = immediateFieldsBuilder.build();
             computedValues = true;
         }
     }
 
 
-    private void traverseSubSelectedFields(NormalizedField currentNormalisedField, String qualifiedFieldPrefix, String simpleFieldPrefix, boolean firstLevel) {
-        List<NormalizedField> children = currentNormalisedField.getChildren();
-        for (NormalizedField normalizedSubSelectedField : children) {
+    private void traverseSubSelectedFields(ExecutableNormalizedField currentNormalisedField, ImmutableList.Builder<SelectedField> immediateFieldsBuilder, String qualifiedFieldPrefix, String simpleFieldPrefix, boolean firstLevel) {
+        List<ExecutableNormalizedField> children = currentNormalisedField.getChildren();
+        for (ExecutableNormalizedField normalizedSubSelectedField : children) {
             String typeQualifiedName = mkTypeQualifiedName(normalizedSubSelectedField);
             String simpleName = normalizedSubSelectedField.getName();
 
@@ -221,15 +239,13 @@ public class DataFetchingFieldSelectionSetImpl implements DataFetchingFieldSelec
 
             SelectedFieldImpl selectedField = new SelectedFieldImpl(globSimpleName, globQualifiedName, normalizedSubSelectedField, schema);
             if (firstLevel) {
-                immediateFields.add(selectedField);
+                immediateFieldsBuilder.add(selectedField);
             }
             normalisedSelectionSetFields.computeIfAbsent(globQualifiedName, newList()).add(selectedField);
             normalisedSelectionSetFields.computeIfAbsent(globSimpleName, newList()).add(selectedField);
 
-            GraphQLFieldDefinition fieldDefinition = normalizedSubSelectedField.getOneFieldDefinition(schema);
-            GraphQLType unwrappedType = GraphQLTypeUtil.unwrapAll(normalizedSubSelectedField.getType(schema));
-            if (!GraphQLTypeUtil.isLeaf(unwrappedType)) {
-                traverseSubSelectedFields(normalizedSubSelectedField, globQualifiedName, globSimpleName, false);
+            if (normalizedSubSelectedField.hasChildren()) {
+                traverseSubSelectedFields(normalizedSubSelectedField, immediateFieldsBuilder, globQualifiedName, globSimpleName, false);
             }
         }
     }
@@ -242,8 +258,8 @@ public class DataFetchingFieldSelectionSetImpl implements DataFetchingFieldSelec
         return fieldGlobPattern;
     }
 
-    private static String mkTypeQualifiedName(NormalizedField normalizedField) {
-        return normalizedField.objectTypeNamesToString() + "." + normalizedField.getName();
+    private static String mkTypeQualifiedName(ExecutableNormalizedField executableNormalizedField) {
+        return executableNormalizedField.objectTypeNamesToString() + "." + executableNormalizedField.getName();
     }
 
     private static String mkFieldGlobName(String fieldPrefix, String fieldName) {
@@ -274,22 +290,22 @@ public class DataFetchingFieldSelectionSetImpl implements DataFetchingFieldSelec
         private final String qualifiedName;
         private final String fullyQualifiedName;
         private final DataFetchingFieldSelectionSet selectionSet;
-        private final NormalizedField normalizedField;
+        private final ExecutableNormalizedField executableNormalizedField;
         private final GraphQLSchema schema;
 
-        private SelectedFieldImpl(String simpleQualifiedName, String fullyQualifiedName, NormalizedField normalizedField, GraphQLSchema schema) {
+        private SelectedFieldImpl(String simpleQualifiedName, String fullyQualifiedName, ExecutableNormalizedField executableNormalizedField, GraphQLSchema schema) {
             this.schema = schema;
             this.qualifiedName = simpleQualifiedName;
             this.fullyQualifiedName = fullyQualifiedName;
-            this.normalizedField = normalizedField;
-            this.selectionSet = new DataFetchingFieldSelectionSetImpl(() -> normalizedField, schema);
+            this.executableNormalizedField = executableNormalizedField;
+            this.selectionSet = new DataFetchingFieldSelectionSetImpl(() -> executableNormalizedField, schema);
         }
 
-        private SelectedField mkParent(NormalizedField normalizedField) {
+        private SelectedField mkParent(ExecutableNormalizedField executableNormalizedField) {
             String parentSimpleQualifiedName = beforeLastSlash(qualifiedName);
             String parentFullyQualifiedName = beforeLastSlash(fullyQualifiedName);
-            return normalizedField.getParent() == null ? null :
-                    new SelectedFieldImpl(parentSimpleQualifiedName, parentFullyQualifiedName, normalizedField.getParent(), schema);
+            return executableNormalizedField.getParent() == null ? null :
+                    new SelectedFieldImpl(parentSimpleQualifiedName, parentFullyQualifiedName, executableNormalizedField.getParent(), schema);
         }
 
         private String beforeLastSlash(String name) {
@@ -302,7 +318,7 @@ public class DataFetchingFieldSelectionSetImpl implements DataFetchingFieldSelec
 
         @Override
         public String getName() {
-            return normalizedField.getName();
+            return executableNormalizedField.getName();
         }
 
         @Override
@@ -317,53 +333,53 @@ public class DataFetchingFieldSelectionSetImpl implements DataFetchingFieldSelec
 
         @Override
         public List<GraphQLFieldDefinition> getFieldDefinitions() {
-            return normalizedField.getFieldDefinitions(schema);
+            return executableNormalizedField.getFieldDefinitions(schema);
         }
 
         @Override
         public GraphQLOutputType getType() {
-            return normalizedField.getType(schema);
+            return executableNormalizedField.getType(schema);
         }
 
         @Override
         public List<GraphQLObjectType> getObjectTypes() {
-            return this.schema.getTypes(normalizedField.getObjectTypeNames());
+            return this.schema.getTypes(executableNormalizedField.getObjectTypeNames());
         }
 
         @Override
         public List<String> getObjectTypeNames() {
-            return ImmutableList.copyOf(normalizedField.getObjectTypeNames());
+            return ImmutableList.copyOf(executableNormalizedField.getObjectTypeNames());
         }
 
         @Override
         public Map<String, Object> getArguments() {
-            return normalizedField.getResolvedArguments();
+            return executableNormalizedField.getResolvedArguments();
         }
 
         @Override
         public int getLevel() {
-            return normalizedField.getLevel();
+            return executableNormalizedField.getLevel();
         }
 
         @Override
         public boolean isConditional() {
-            return normalizedField.isConditional(this.schema);
+            return executableNormalizedField.isConditional(this.schema);
         }
 
         @Override
         public String getAlias() {
-            return normalizedField.getAlias();
+            return executableNormalizedField.getAlias();
         }
 
         @Override
         public String getResultKey() {
-            return normalizedField.getResultKey();
+            return executableNormalizedField.getResultKey();
         }
 
         @Override
         public SelectedField getParentField() {
             // lazy
-            return mkParent(normalizedField);
+            return mkParent(executableNormalizedField);
         }
 
         @Override
@@ -371,9 +387,27 @@ public class DataFetchingFieldSelectionSetImpl implements DataFetchingFieldSelec
             return selectionSet;
         }
 
+        // a selected field is the same as another selected field if its the same ExecutableNF
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            SelectedFieldImpl that = (SelectedFieldImpl) o;
+            return executableNormalizedField.equals(that.executableNormalizedField);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(executableNormalizedField);
+        }
+
         @Override
         public String toString() {
-            return getQualifiedName();
+            return getFullyQualifiedName();
         }
     }
 }

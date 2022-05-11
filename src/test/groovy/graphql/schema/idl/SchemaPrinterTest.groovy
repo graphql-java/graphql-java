@@ -9,6 +9,7 @@ import graphql.introspection.IntrospectionResultToSchema
 import graphql.schema.Coercing
 import graphql.schema.GraphQLArgument
 import graphql.schema.GraphQLCodeRegistry
+import graphql.schema.GraphQLDirective
 import graphql.schema.GraphQLEnumType
 import graphql.schema.GraphQLEnumValueDefinition
 import graphql.schema.GraphQLFieldDefinition
@@ -18,12 +19,13 @@ import graphql.schema.GraphQLInputType
 import graphql.schema.GraphQLInterfaceType
 import graphql.schema.GraphQLNamedSchemaElement
 import graphql.schema.GraphQLObjectType
-import graphql.schema.GraphQLOutputType
 import graphql.schema.GraphQLScalarType
 import graphql.schema.GraphQLSchema
 import graphql.schema.GraphQLSchemaElement
 import graphql.schema.GraphQLType
 import graphql.schema.GraphQLUnionType
+import graphql.schema.GraphqlTypeComparatorRegistry
+import graphql.schema.GraphqlTypeComparators
 import graphql.schema.TypeResolver
 import spock.lang.Specification
 
@@ -40,7 +42,10 @@ import static graphql.schema.GraphQLInputObjectField.newInputObjectField
 import static graphql.schema.GraphQLInterfaceType.newInterface
 import static graphql.schema.GraphQLList.list
 import static graphql.schema.GraphQLNonNull.nonNull
+import static graphql.schema.GraphQLObjectType.newObject
+import static graphql.schema.GraphQLScalarType.newScalar
 import static graphql.schema.idl.RuntimeWiring.newRuntimeWiring
+import static graphql.schema.idl.SchemaPrinter.ExcludeGraphQLSpecifiedDirectivesPredicate
 import static graphql.schema.idl.SchemaPrinter.Options.defaultOptions
 
 class SchemaPrinterTest extends Specification {
@@ -58,7 +63,7 @@ class SchemaPrinterTest extends Specification {
     }
 
 
-    GraphQLScalarType ASTEROID = new GraphQLScalarType("Asteroid", "desc", new Coercing() {
+    GraphQLScalarType ASTEROID = newScalar().name("Asteroid").description("desc").coercing(new Coercing() {
         @Override
         Object serialize(Object input) {
             throw new UnsupportedOperationException("Not implemented")
@@ -74,6 +79,7 @@ class SchemaPrinterTest extends Specification {
             throw new UnsupportedOperationException("Not implemented")
         }
     })
+            .build()
 
     def resolver = new TypeResolver() {
 
@@ -82,21 +88,6 @@ class SchemaPrinterTest extends Specification {
             throw new UnsupportedOperationException("Not implemented")
         }
     }
-
-    static class MyGraphQLObjectType extends GraphQLObjectType {
-
-        MyGraphQLObjectType(String name, String description, List<GraphQLFieldDefinition> fieldDefinitions) {
-            super(name, description, fieldDefinitions, new ArrayList<GraphQLOutputType>())
-        }
-    }
-
-    static class MyTestGraphQLObjectType extends MyGraphQLObjectType {
-
-        MyTestGraphQLObjectType(String name, String description, List<GraphQLFieldDefinition> fieldDefinitions) {
-            super(name, description, fieldDefinitions)
-        }
-    }
-
 
     def "typeString"() {
 
@@ -109,9 +100,9 @@ class SchemaPrinterTest extends Specification {
     }
 
     def "argsString"() {
-        def argument1 = new GraphQLArgument("arg1", null, list(nonNull(Scalars.GraphQLInt)), 10)
-        def argument2 = new GraphQLArgument("arg2", null, GraphQLString, null)
-        def argument3 = new GraphQLArgument("arg3", null, GraphQLString, "default")
+        def argument1 = newArgument().name("arg1").type(list(nonNull(GraphQLInt))).defaultValue(10).build()
+        def argument2 = newArgument().name("arg2").type(GraphQLString).build();
+        def argument3 = newArgument().name("arg3").type(GraphQLString).defaultValue("default").build()
         def argStr = new SchemaPrinter().argsString([argument1, argument2, argument3])
 
         expect:
@@ -120,9 +111,9 @@ class SchemaPrinterTest extends Specification {
     }
 
     def "argsString_sorts"() {
-        def argument1 = new GraphQLArgument("arg1", null, list(nonNull(Scalars.GraphQLInt)), 10)
-        def argument2 = new GraphQLArgument("arg2", null, GraphQLString, null)
-        def argument3 = new GraphQLArgument("arg3", null, GraphQLString, "default")
+        def argument1 = newArgument().name("arg1").type(list(nonNull(GraphQLInt))).defaultValue(10).build()
+        def argument2 = newArgument().name("arg2").type(GraphQLString).build();
+        def argument3 = newArgument().name("arg3").type(GraphQLString).defaultValue("default").build()
         def argStr = new SchemaPrinter().argsString([argument2, argument1, argument3])
 
         expect:
@@ -131,8 +122,8 @@ class SchemaPrinterTest extends Specification {
     }
 
     def "argsString_comments"() {
-        def argument1 = new GraphQLArgument("arg1", "A multiline\ncomment", list(nonNull(Scalars.GraphQLInt)), 10)
-        def argument2 = new GraphQLArgument("arg2", "A single line comment", list(nonNull(Scalars.GraphQLInt)), 10)
+        def argument1 = newArgument().name("arg1").description("A multiline\ncomment").type(list(nonNull(GraphQLInt))).defaultValue(10).build()
+        def argument2 = newArgument().name("arg2").description("A single line comment").type(list(nonNull(GraphQLInt))).defaultValue(10).build()
         def argStr = new SchemaPrinter().argsString([argument1, argument2])
 
         expect:
@@ -316,7 +307,7 @@ type Subscription {
         given:
         GraphQLFieldDefinition fieldDefinition = newFieldDefinition()
                 .name("field").type(GraphQLString).build()
-        def queryType = GraphQLObjectType.newObject().name("Query").description("About Query\nSecond Line").field(fieldDefinition).build()
+        def queryType = newObject().name("Query").description("About Query\nSecond Line").field(fieldDefinition).build()
         def schema = GraphQLSchema.newSchema().query(queryType).build()
         when:
         def result = new SchemaPrinter(noDirectivesOption).print(schema)
@@ -336,7 +327,7 @@ type Query {
         given:
         GraphQLFieldDefinition fieldDefinition = newFieldDefinition()
                 .name("field").description("About field\nsecond").type(GraphQLString).build()
-        def queryType = GraphQLObjectType.newObject().name("Query").field(fieldDefinition).build()
+        def queryType = newObject().name("Query").field(fieldDefinition).build()
         def schema = GraphQLSchema.newSchema().query(queryType).build()
         when:
         def result = new SchemaPrinter(noDirectivesOption).print(schema)
@@ -356,7 +347,7 @@ type Query {
         given:
         GraphQLFieldDefinition fieldDefinition = newFieldDefinition()
                 .name("field").description("").type(GraphQLString).build()
-        def queryType = GraphQLObjectType.newObject().name("Query").field(fieldDefinition).build()
+        def queryType = newObject().name("Query").field(fieldDefinition).build()
         def schema = GraphQLSchema.newSchema().query(queryType).build()
         when:
         def result = new SchemaPrinter(noDirectivesOption).print(schema)
@@ -377,7 +368,7 @@ type Query {
                 .build()
         GraphQLFieldDefinition fieldDefinition = newFieldDefinition()
                 .name("field").type(graphQLEnumType).build()
-        def queryType = GraphQLObjectType.newObject().name("Query").field(fieldDefinition).build()
+        def queryType = newObject().name("Query").field(fieldDefinition).build()
         def schema = GraphQLSchema.newSchema().query(queryType).build()
         when:
         def result = new SchemaPrinter(noDirectivesOption).print(schema)
@@ -400,7 +391,7 @@ enum Enum {
         given:
         GraphQLFieldDefinition fieldDefinition = newFieldDefinition()
                 .name("field").type(GraphQLString).build()
-        def possibleType = GraphQLObjectType.newObject().name("PossibleType").field(fieldDefinition).build()
+        def possibleType = newObject().name("PossibleType").field(fieldDefinition).build()
         GraphQLUnionType unionType = GraphQLUnionType.newUnionType()
                 .name("Union")
                 .description("About union")
@@ -409,7 +400,7 @@ enum Enum {
                 .build()
         GraphQLFieldDefinition fieldDefinition2 = newFieldDefinition()
                 .name("field").type(unionType).build()
-        def queryType = GraphQLObjectType.newObject().name("Query").field(fieldDefinition2).build()
+        def queryType = newObject().name("Query").field(fieldDefinition2).build()
         def schema = GraphQLSchema.newSchema().query(queryType).build()
         when:
         def result = new SchemaPrinter(noDirectivesOption).print(schema)
@@ -430,10 +421,10 @@ type Query {
     }
 
     def "prints union"() {
-        def possibleType1 = GraphQLObjectType.newObject().name("PossibleType1").field(
+        def possibleType1 = newObject().name("PossibleType1").field(
                 newFieldDefinition().name("field").type(GraphQLString).build()
         ).build()
-        def possibleType2 = GraphQLObjectType.newObject().name("PossibleType2").field(
+        def possibleType2 = newObject().name("PossibleType2").field(
                 newFieldDefinition().name("field").type(GraphQLString).build()
         ).build()
         GraphQLUnionType unionType = GraphQLUnionType.newUnionType()
@@ -444,7 +435,7 @@ type Query {
                 .build()
         GraphQLFieldDefinition fieldDefinition2 = newFieldDefinition()
                 .name("field").type(unionType).build()
-        def queryType = GraphQLObjectType.newObject().name("Query").field(fieldDefinition2).build()
+        def queryType = newObject().name("Query").field(fieldDefinition2).build()
         def schema = GraphQLSchema.newSchema().query(queryType).build()
         when:
         def result = new SchemaPrinter(noDirectivesOption).print(schema)
@@ -478,7 +469,7 @@ type Query {
                 .name("field")
                 .argument(newArgument().name("arg").type(inputType).build())
                 .type(GraphQLString).build()
-        def queryType = GraphQLObjectType.newObject().name("Query").field(fieldDefinition2).build()
+        def queryType = newObject().name("Query").field(fieldDefinition2).build()
         def schema = GraphQLSchema.newSchema().query(queryType).build()
         when:
         def result = new SchemaPrinter(noDirectivesOption).print(schema)
@@ -507,7 +498,7 @@ input Input {
                 .build()
         GraphQLFieldDefinition fieldDefinition = newFieldDefinition()
                 .name("field").type(graphQLInterfaceType).build()
-        def queryType = GraphQLObjectType.newObject().name("Query").field(fieldDefinition).build()
+        def queryType = newObject().name("Query").field(fieldDefinition).build()
         def schema = GraphQLSchema.newSchema().query(queryType).build()
         when:
         def result = new SchemaPrinter(noDirectivesOption).print(schema)
@@ -527,7 +518,7 @@ type Query {
 
     def "prints scalar description as comment"() {
         given:
-        GraphQLScalarType myScalar = new GraphQLScalarType("Scalar", "about scalar", new Coercing() {
+        GraphQLScalarType myScalar = newScalar().name("Scalar").description("about scalar").coercing(new Coercing() {
             @Override
             Object serialize(Object input) {
                 return null
@@ -543,9 +534,10 @@ type Query {
                 return null
             }
         })
+                .build()
         GraphQLFieldDefinition fieldDefinition = newFieldDefinition()
                 .name("field").type(myScalar).build()
-        def queryType = GraphQLObjectType.newObject().name("Query").field(fieldDefinition).build()
+        def queryType = newObject().name("Query").field(fieldDefinition).build()
         def schema = GraphQLSchema.newSchema().query(queryType).build()
         when:
         def result = new SchemaPrinter(defaultOptions().includeScalarTypes(true).includeDirectives(false)).print(schema)
@@ -567,7 +559,7 @@ scalar Scalar
                 .argument(newArgument().name("arg2").type(GraphQLString).build())
                 .argument(newArgument().name("arg3").description("about 3\nsecond line").type(GraphQLString).build())
                 .type(GraphQLString).build()
-        def queryType = GraphQLObjectType.newObject().name("Query").field(fieldDefinition2).build()
+        def queryType = newObject().name("Query").field(fieldDefinition2).build()
         def schema = GraphQLSchema.newSchema().query(queryType).build()
         when:
         def result = new SchemaPrinter(noDirectivesOption).print(schema)
@@ -589,33 +581,13 @@ scalar Scalar
 
     }
 
-    def "prints derived object type"() {
-        given:
-        GraphQLFieldDefinition fieldDefinition = newFieldDefinition().name("field").type(GraphQLString).build()
-        def queryType = new MyGraphQLObjectType("Query", "About Query\nSecond Line", Arrays.asList(fieldDefinition))
-        def schema = GraphQLSchema.newSchema().query(queryType).build()
-
-        when:
-        def result = new SchemaPrinter(noDirectivesOption).print(schema)
-
-        then:
-        result == '''"""
-About Query
-Second Line
-"""
-type Query {
-  field: String
-}
-'''
-    }
-
     def "prints type"() {
         given:
         def inputObjectType = GraphQLInputObjectType.newInputObject()
                 .name("inputObjectType")
                 .field(GraphQLInputObjectField.newInputObjectField().name("field").type(GraphQLString).build())
                 .build()
-        def objectType = GraphQLObjectType.newObject()
+        def objectType = newObject()
                 .name("objectType")
                 .field(GraphQLFieldDefinition.newFieldDefinition().name("field").type(GraphQLString).build())
                 .build()
@@ -626,7 +598,7 @@ type Query {
                 .name("interfaceType")
                 .field(GraphQLFieldDefinition.newFieldDefinition().name("field").type(GraphQLString).build())
                 .build()
-        def objectWithInterface = GraphQLObjectType.newObject()
+        def objectWithInterface = newObject()
                 .name("objectWithInterface")
                 .field(GraphQLFieldDefinition.newFieldDefinition().name("field").type(GraphQLString).build())
                 .withInterface(interfaceType)
@@ -645,7 +617,7 @@ type Query {
                 .type(enumType)
                 .build()
 
-        def queryType = GraphQLObjectType.newObject().name("Query").field(field1).field(field2).field(field3).build()
+        def queryType = newObject().name("Query").field(field1).field(field2).field(field3).build()
         def codeRegistry = GraphQLCodeRegistry.newCodeRegistry().typeResolver(interfaceType, { env -> null }).build();
         def schema = GraphQLSchema.newSchema().query(queryType).codeRegistry(codeRegistry).build()
         when:
@@ -680,23 +652,6 @@ input inputObjectType {
 '''
     }
 
-    def "concurrentModificationException should not occur when multiple extended graphQL types are used"() {
-        given:
-        GraphQLFieldDefinition fieldDefinition = newFieldDefinition().name("field").type(GraphQLString).build()
-        def queryType = new MyTestGraphQLObjectType("Query", "test", Arrays.asList(fieldDefinition))
-        def schema = GraphQLSchema.newSchema().query(queryType).build()
-
-        when:
-        def result = new SchemaPrinter(noDirectivesOption).print(schema)
-
-        then:
-        result == '''"test"
-type Query {
-  field: String
-}
-'''
-    }
-
     def "arrayIndexOutOfBoundsException should not occur if a field description of only a newline is passed"() {
         given:
         GraphQLFieldDefinition fieldDefinition = newFieldDefinition()
@@ -705,7 +660,7 @@ type Query {
                 .type(GraphQLString)
                 .build()
 
-        def queryType = new MyTestGraphQLObjectType("Query", "test", Arrays.asList(fieldDefinition))
+        def queryType = newObject().name("Query").description("test").field(fieldDefinition).build()
         def schema = GraphQLSchema.newSchema().query(queryType).build()
 
         when:
@@ -831,7 +786,7 @@ enum Episode {
   NEWHOPE
 }
 
-"Asteroid"
+"desc"
 scalar Asteroid
 """
     }
@@ -939,11 +894,51 @@ type Query {
 
         then:
         // args and directives are sorted like the rest of the schema printer
-        result == '''"Directs the executor to include this field or fragment only when the `if` argument is true"
+        result == '''directive @argDirective on ARGUMENT_DEFINITION
+
+"Marks the field, argument, input field or enum value as deprecated"
+directive @deprecated(
+    "The reason for the deprecation"
+    reason: String = "No longer supported"
+  ) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION
+
+directive @enumTypeDirective on ENUM
+
+directive @enumValueDirective on ENUM_VALUE
+
+directive @fieldDirective1 on FIELD_DEFINITION
+
+directive @fieldDirective2(argBool: Boolean, argFloat: Float, argInt: Int, argStr: String) on FIELD_DEFINITION
+
+"Directs the executor to include this field or fragment only when the `if` argument is true"
 directive @include(
     "Included when true."
     if: Boolean!
   ) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
+
+directive @inputFieldDirective on INPUT_FIELD_DEFINITION
+
+directive @inputTypeDirective on INPUT_OBJECT
+
+directive @interfaceFieldDirective on FIELD_DEFINITION
+
+directive @interfaceImplementingFieldDirective on FIELD_DEFINITION
+
+directive @interfaceImplementingTypeDirective on OBJECT
+
+directive @interfaceTypeDirective on INTERFACE
+
+directive @query1 repeatable on OBJECT
+
+directive @query2(arg1: String) on OBJECT
+
+directive @repeatableDirective repeatable on SCALAR
+
+directive @scalarDirective on SCALAR
+
+directive @single on OBJECT
+
+directive @singleField on FIELD_DEFINITION
 
 "Directs the executor to skip this field or fragment when the `if`'argument is true."
 directive @skip(
@@ -951,53 +946,13 @@ directive @skip(
     if: Boolean!
   ) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
 
-directive @interfaceFieldDirective on FIELD_DEFINITION
-
-directive @unionTypeDirective on UNION
-
-directive @query1 repeatable on OBJECT
-
-directive @query2(arg1: String) on OBJECT
-
-directive @fieldDirective1 on FIELD_DEFINITION
-
-directive @fieldDirective2(argBool: Boolean, argFloat: Float, argInt: Int, argStr: String) on FIELD_DEFINITION
-
-directive @argDirective on ARGUMENT_DEFINITION
-
-directive @interfaceImplementingTypeDirective on OBJECT
-
-directive @enumTypeDirective on ENUM
-
-directive @single on OBJECT
-
-directive @singleField on FIELD_DEFINITION
-
-directive @interfaceImplementingFieldDirective on FIELD_DEFINITION
-
-directive @enumValueDirective on ENUM_VALUE
-
-directive @inputTypeDirective on INPUT_OBJECT
-
-directive @inputFieldDirective on INPUT_FIELD_DEFINITION
-
-directive @interfaceTypeDirective on INTERFACE
-
-directive @scalarDirective on SCALAR
-
-directive @repeatableDirective repeatable on SCALAR
-
-"Marks the field or enum value as deprecated"
-directive @deprecated(
-    "The reason for the deprecation"
-    reason: String = "No longer supported"
-  ) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION
-
 "Exposes a URL that specifies the behaviour of this scalar."
 directive @specifiedBy(
     "The URL that specifies the behaviour of this scalar."
     url: String!
   ) on SCALAR
+
+directive @unionTypeDirective on UNION
 
 interface SomeInterface @interfaceTypeDirective {
   fieldA: String @interfaceFieldDirective
@@ -1114,7 +1069,13 @@ input SomeInput {
 
         then:
         // args and directives are sorted like the rest of the schema printer
-        result == '''"Directs the executor to include this field or fragment only when the `if` argument is true"
+        result == '''"Marks the field, argument, input field or enum value as deprecated"
+directive @deprecated(
+    "The reason for the deprecation"
+    reason: String = "No longer supported"
+  ) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION
+
+"Directs the executor to include this field or fragment only when the `if` argument is true"
 directive @include(
     "Included when true."
     if: Boolean!
@@ -1125,12 +1086,6 @@ directive @skip(
     "Skipped when true."
     if: Boolean!
   ) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
-
-"Marks the field or enum value as deprecated"
-directive @deprecated(
-    "The reason for the deprecation"
-    reason: String = "No longer supported"
-  ) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION
 
 "Exposes a URL that specifies the behaviour of this scalar."
 directive @specifiedBy(
@@ -1193,7 +1148,7 @@ input Input {
 '''
 
         when:
-        def resultWithSomeDirectives = new SchemaPrinter(defaultOptions().includeDirectives({ it.name == "example" })).print(schema)
+        def resultWithSomeDirectives = new SchemaPrinter(defaultOptions().includeDirectives({ it == "example" })).print(schema)
 
         then:
         resultWithSomeDirectives == '''directive @example on FIELD_DEFINITION
@@ -1207,27 +1162,27 @@ type Query {
         def resultWithDirectives = new SchemaPrinter(defaultOptions().includeDirectives(true)).print(schema)
 
         then:
-        resultWithDirectives == '''"Directs the executor to include this field or fragment only when the `if` argument is true"
+        resultWithDirectives == '''"Marks the field, argument, input field or enum value as deprecated"
+directive @deprecated(
+    "The reason for the deprecation"
+    reason: String = "No longer supported"
+  ) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION
+
+directive @example on FIELD_DEFINITION
+
+"Directs the executor to include this field or fragment only when the `if` argument is true"
 directive @include(
     "Included when true."
     if: Boolean!
   ) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
+
+directive @moreComplex(arg1: String = "default", arg2: Int) on FIELD_DEFINITION | INPUT_FIELD_DEFINITION
 
 "Directs the executor to skip this field or fragment when the `if`'argument is true."
 directive @skip(
     "Skipped when true."
     if: Boolean!
   ) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
-
-directive @example on FIELD_DEFINITION
-
-directive @moreComplex(arg1: String = "default", arg2: Int) on FIELD_DEFINITION | INPUT_FIELD_DEFINITION
-
-"Marks the field or enum value as deprecated"
-directive @deprecated(
-    "The reason for the deprecation"
-    reason: String = "No longer supported"
-  ) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION
 
 "Exposes a URL that specifies the behaviour of this scalar."
 directive @specifiedBy(
@@ -1272,27 +1227,27 @@ type Query {
         def resultWithDirectiveDefinitions = new SchemaPrinter(defaultOptions().includeDirectiveDefinitions(true)).print(schema)
 
         then:
-        resultWithDirectiveDefinitions == '''"Directs the executor to include this field or fragment only when the `if` argument is true"
+        resultWithDirectiveDefinitions == '''"Marks the field, argument, input field or enum value as deprecated"
+directive @deprecated(
+    "The reason for the deprecation"
+    reason: String = "No longer supported"
+  ) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION
+
+directive @example on FIELD_DEFINITION
+
+"Directs the executor to include this field or fragment only when the `if` argument is true"
 directive @include(
     "Included when true."
     if: Boolean!
   ) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
+
+directive @moreComplex(arg1: String = "default", arg2: Int) on FIELD_DEFINITION | INPUT_FIELD_DEFINITION
 
 "Directs the executor to skip this field or fragment when the `if`'argument is true."
 directive @skip(
     "Skipped when true."
     if: Boolean!
   ) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
-
-directive @example on FIELD_DEFINITION
-
-directive @moreComplex(arg1: String = "default", arg2: Int) on FIELD_DEFINITION | INPUT_FIELD_DEFINITION
-
-"Marks the field or enum value as deprecated"
-directive @deprecated(
-    "The reason for the deprecation"
-    reason: String = "No longer supported"
-  ) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION
 
 "Exposes a URL that specifies the behaviour of this scalar."
 directive @specifiedBy(
@@ -1385,7 +1340,7 @@ type Query {
             @Override
             GraphQLScalarType getScalar(ScalarWiringEnvironment env) {
                 def definition = env.getScalarTypeDefinition()
-                return GraphQLScalarType.newScalar()
+                return newScalar()
                         .name(definition.getName())
                         .definition(definition)
                         .extensionDefinitions(env.getExtensions())
@@ -1406,7 +1361,15 @@ type Query {
         def result = new SchemaPrinter(printOptions).print(schema)
 
         then:
-        result == '''"Directs the executor to include this field or fragment only when the `if` argument is true"
+        result == '''"Marks the field, argument, input field or enum value as deprecated"
+directive @deprecated(
+    "The reason for the deprecation"
+    reason: String = "No longer supported"
+  ) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION
+
+directive @directive1 on SCALAR
+
+"Directs the executor to include this field or fragment only when the `if` argument is true"
 directive @include(
     "Included when true."
     if: Boolean!
@@ -1417,14 +1380,6 @@ directive @skip(
     "Skipped when true."
     if: Boolean!
   ) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
-
-directive @directive1 on SCALAR
-
-"Marks the field or enum value as deprecated"
-directive @deprecated(
-    "The reason for the deprecation"
-    reason: String = "No longer supported"
-  ) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION
 
 "Exposes a URL that specifies the behaviour of this scalar."
 directive @specifiedBy(
@@ -1681,7 +1636,7 @@ scalar CustomScalar
 
     def "omit unused built-in by default - created programmatically"() {
         given:
-        GraphQLScalarType myScalar = new GraphQLScalarType("RandomScalar", "about scalar", new Coercing() {
+        GraphQLScalarType myScalar = newScalar().name("RandomScalar").description("about scalar").coercing(new Coercing() {
             @Override
             Object serialize(Object input) {
                 return null
@@ -1697,9 +1652,11 @@ scalar CustomScalar
                 return null
             }
         })
+                .build()
+
         GraphQLFieldDefinition fieldDefinition = newFieldDefinition()
                 .name("scalarType").type(myScalar).build()
-        def queryType = GraphQLObjectType.newObject().name("Query").field(fieldDefinition).build()
+        def queryType = newObject().name("Query").field(fieldDefinition).build()
 
         def schema = GraphQLSchema.newSchema().query(queryType).additionalType(myScalar).build()
 
@@ -1721,7 +1678,7 @@ scalar RandomScalar
 
     def "show unused custom scalars when unused - created programmatically"() {
         given:
-        GraphQLScalarType myScalar = new GraphQLScalarType("Scalar", "about scalar", new Coercing() {
+        GraphQLScalarType myScalar = newScalar().name("Scalar").description("about scalar").coercing(new Coercing() {
             @Override
             Object serialize(Object input) {
                 return null
@@ -1737,9 +1694,11 @@ scalar RandomScalar
                 return null
             }
         })
+                .build()
+
         GraphQLFieldDefinition fieldDefinition = newFieldDefinition()
                 .name("someType").type(GraphQLInt).build()
-        def queryType = GraphQLObjectType.newObject().name("Query").field(fieldDefinition).build()
+        def queryType = newObject().name("Query").field(fieldDefinition).build()
 
         def schema = GraphQLSchema.newSchema().query(queryType).additionalType(myScalar).build()
 
@@ -1905,6 +1864,14 @@ type PrintMeType {
   query: MyQuery
 }
 
+"Marks the field, argument, input field or enum value as deprecated"
+directive @deprecated(
+    "The reason for the deprecation"
+    reason: String = "No longer supported"
+  ) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION
+
+directive @foo on SCHEMA
+
 "Directs the executor to include this field or fragment only when the `if` argument is true"
 directive @include(
     "Included when true."
@@ -1916,14 +1883,6 @@ directive @skip(
     "Skipped when true."
     if: Boolean!
   ) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
-
-directive @foo on SCHEMA
-
-"Marks the field or enum value as deprecated"
-directive @deprecated(
-    "The reason for the deprecation"
-    reason: String = "No longer supported"
-  ) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION
 
 "Exposes a URL that specifies the behaviour of this scalar."
 directive @specifiedBy(
@@ -1937,4 +1896,238 @@ type MyQuery {
 """
     }
 
+    def "allow printing of just directives"() {
+        def sdl = """
+            directive @foo on FIELD_DEFINITION
+            type Query { anything: String @foo }
+        """
+        def schema = TestUtil.schema(sdl)
+        def directive = schema.getDirective("foo");
+
+        when:
+        def result = new SchemaPrinter(defaultOptions().includeDirectives(true)).print(directive)
+
+        then:
+        result == """directive @foo on FIELD_DEFINITION"""
+    }
+
+    def "directive with leading pipe gets discarded"() {
+        def sdl = """
+            directive @foo on | OBJECT | FIELD_DEFINITION
+            type Query { anything: String @foo }
+        """
+        def schema = TestUtil.schema(sdl)
+        def directive = schema.getDirective("foo");
+
+        when:
+        def result = new SchemaPrinter(defaultOptions().includeDirectives(true)).print(directive)
+
+        then:
+        result == """directive @foo on OBJECT | FIELD_DEFINITION"""
+    }
+
+    def "description printing escapes triple quotes"() {
+        def descriptionWithTripleQuote = 'Hello """ \n World """ """';
+        def field = newFieldDefinition().name("hello").type(GraphQLString).build()
+        def queryType = newObject().name("Query").field(field).description(descriptionWithTripleQuote).build()
+        def schema = GraphQLSchema.newSchema().query(queryType).build()
+        when:
+        def result = new SchemaPrinter(defaultOptions().includeDirectives(ExcludeGraphQLSpecifiedDirectivesPredicate)).print(schema)
+
+        then:
+        result == '''"""
+Hello \\""" 
+ World \\""" \\"""
+"""
+type Query {
+  hello: String
+}
+'''
+    }
+
+    def "directive with optional values"() {
+        def sdl = """
+            directive @foo(note:String) on FIELD_DEFINITION
+            type Query { 
+                anything: String @foo 
+                anything2: String @foo(note: "foo")
+            }
+        """
+        def schema = TestUtil.schema(sdl)
+        when:
+        def result = new SchemaPrinter(defaultOptions().includeDirectives(ExcludeGraphQLSpecifiedDirectivesPredicate)).print(schema)
+
+
+        then:
+        result == """directive @foo(note: String) on FIELD_DEFINITION
+
+type Query {
+  anything: String @foo
+  anything2: String @foo(note : "foo")
+}
+"""
+    }
+
+    def "programmatic object value in an argument is printed"() {
+
+        GraphQLInputObjectType compoundType = GraphQLInputObjectType.newInputObject().name("Compound")
+                .field({ it.name("a").type(GraphQLString) })
+                .field({ it.name("b").type(GraphQLString) })
+                .build()
+
+        GraphQLObjectType objType = newObject().name("obj")
+                .field({
+                    it.name("f").type(GraphQLString)
+                            .argument({
+                                it.name("arg").type(compoundType).defaultValueProgrammatic(["a": "A", "b": "B"])
+                            })
+                }).build()
+
+        when:
+
+        def result = new SchemaPrinter().print(objType)
+
+
+        then:
+        result == '''type obj {
+  f(arg: Compound = {a : "A", b : "B"}): String
+}
+
+'''
+
+        when:
+        def newDirective = GraphQLDirective.newDirective().name("foo")
+                .argument({
+                    it.name("arg").type(compoundType).valueProgrammatic(["a": "A", "b": "B"])
+                })
+                .build()
+
+        objType = newObject().name("obj").field({
+            it.name("f").type(GraphQLString).withDirective(newDirective)
+        }).build()
+
+        result = new SchemaPrinter().print(objType)
+
+        then:
+
+        result == '''type obj {
+  f: String @foo(arg : {a : "A", b : "B"})
+}
+
+'''
+    }
+
+    def "can specify a new ordering for the schema printer"() {
+
+        def sdl = """
+            type Query { id( b:ID a:ID c:ID) : ID }
+            
+            type XQuery { id: ID }
+            type YQuery { id: ID }
+            type ZQuery { id: ID }
+            
+            interface XInterface { id: ID }
+            interface ZInterface { id: ID }
+            interface YInterface { id: ID }
+            
+            
+            input XInput { x : Int }
+            input ZInput { x : Int }
+            input YInput { x : Int }
+            
+            scalar XScalar
+            scalar ZScalar
+            scalar YScalar
+            
+            union XUnion = Query | XQuery
+            union ZUnion = Query | XQuery
+            union YUnion = Query | XQuery
+        """
+        def schema = TestUtil.schema(sdl)
+
+        // by name descending
+        GraphqlTypeComparatorRegistry comparatorRegistry = { env -> return GraphqlTypeComparators.byNameAsc().reversed() }
+        def options = defaultOptions().includeDirectives(true).setComparators(comparatorRegistry)
+        when:
+        def result = new SchemaPrinter(options).print(schema)
+
+        then:
+        result == '''"Exposes a URL that specifies the behaviour of this scalar."
+directive @specifiedBy(
+    "The URL that specifies the behaviour of this scalar."
+    url: String!
+  ) on SCALAR
+
+"Directs the executor to skip this field or fragment when the `if`'argument is true."
+directive @skip(
+    "Skipped when true."
+    if: Boolean!
+  ) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
+
+"Directs the executor to include this field or fragment only when the `if` argument is true"
+directive @include(
+    "Included when true."
+    if: Boolean!
+  ) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
+
+"Marks the field, argument, input field or enum value as deprecated"
+directive @deprecated(
+    "The reason for the deprecation"
+    reason: String = "No longer supported"
+  ) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION
+
+union ZUnion = XQuery | Query
+
+scalar ZScalar
+
+type ZQuery {
+  id: ID
+}
+
+interface ZInterface {
+  id: ID
+}
+
+input ZInput {
+  x: Int
+}
+
+union YUnion = XQuery | Query
+
+scalar YScalar
+
+type YQuery {
+  id: ID
+}
+
+interface YInterface {
+  id: ID
+}
+
+input YInput {
+  x: Int
+}
+
+union XUnion = XQuery | Query
+
+scalar XScalar
+
+type XQuery {
+  id: ID
+}
+
+interface XInterface {
+  id: ID
+}
+
+input XInput {
+  x: Int
+}
+
+type Query {
+  id(c: ID, b: ID, a: ID): ID
+}
+'''
+
+    }
 }

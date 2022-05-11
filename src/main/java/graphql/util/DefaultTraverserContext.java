@@ -56,10 +56,11 @@ public class DefaultTraverserContext<T> implements TraverserContext<T> {
         if (parent == null || parent.isRootContext()) {
             this.breadcrumbs = ImmutableKit.emptyList();
         } else {
-            List<Breadcrumb<T>> breadcrumbs = new ArrayList<>(parent.getBreadcrumbs().size() + 1);
-            breadcrumbs.add(new Breadcrumb<>(this.parent.thisNode(), this.location));
-            breadcrumbs.addAll(parent.getBreadcrumbs());
-            this.breadcrumbs = ImmutableList.copyOf(breadcrumbs);
+            this.breadcrumbs = ImmutableList.<Breadcrumb<T>>builderWithExpectedSize(parent.getBreadcrumbs().size() + 1)
+                    .add(new Breadcrumb<>(this.parent.thisNode(), this.location))
+                    .addAll(parent.getBreadcrumbs())
+                    .build();
+
         }
     }
 
