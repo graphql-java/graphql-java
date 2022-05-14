@@ -103,6 +103,46 @@ class ExecutionContextBuilderTest extends Specification {
         executionContext.cacheControl == cacheControl
     }
 
+    def "builds the correct ExecutionContext, if both variables and coercedVariables are set, latest value set takes precedence"() {
+        given:
+        def coercedVariables = new CoercedVariables([var: 'value'])
+
+        when:
+        def executionContext = new ExecutionContextBuilder()
+                .instrumentation(instrumentation)
+                .queryStrategy(queryStrategy)
+                .mutationStrategy(mutationStrategy)
+                .subscriptionStrategy(subscriptionStrategy)
+                .graphQLSchema(schema)
+                .executionId(executionId)
+                .context(context)
+                .graphQLContext(graphQLContext)
+                .root(root)
+                .operationDefinition(operation)
+                .fragmentsByName([MyFragment: fragment])
+                .variables([var: 'value'])
+                .coercedVariables(coercedVariables)
+                .dataLoaderRegistry(dataLoaderRegistry)
+                .cacheControl(cacheControl)
+                .build()
+
+        then:
+        executionContext.executionId == executionId
+        executionContext.instrumentation == instrumentation
+        executionContext.graphQLSchema == schema
+        executionContext.queryStrategy == queryStrategy
+        executionContext.mutationStrategy == mutationStrategy
+        executionContext.subscriptionStrategy == subscriptionStrategy
+        executionContext.root == root
+        executionContext.context == context
+        executionContext.graphQLContext == graphQLContext
+        executionContext.coercedVariables == coercedVariables
+        executionContext.getFragmentsByName() == [MyFragment: fragment]
+        executionContext.operationDefinition == operation
+        executionContext.dataLoaderRegistry == dataLoaderRegistry
+        executionContext.cacheControl == cacheControl
+    }
+
     def "transform works and copies values with coerced variables"() {
         given:
         def oldCoercedVariables = CoercedVariables.emptyVariables()
@@ -127,6 +167,50 @@ class ExecutionContextBuilderTest extends Specification {
         def coercedVariables = new CoercedVariables([var: 'value'])
         def executionContext = executionContextOld.transform(builder -> builder
                                                         .coercedVariables(coercedVariables))
+
+        then:
+        executionContext.executionId == executionId
+        executionContext.instrumentation == instrumentation
+        executionContext.graphQLSchema == schema
+        executionContext.queryStrategy == queryStrategy
+        executionContext.mutationStrategy == mutationStrategy
+        executionContext.subscriptionStrategy == subscriptionStrategy
+        executionContext.root == root
+        executionContext.context == context
+        executionContext.graphQLContext == graphQLContext
+        executionContext.coercedVariables == coercedVariables
+        executionContext.getFragmentsByName() == [MyFragment: fragment]
+        executionContext.operationDefinition == operation
+        executionContext.dataLoaderRegistry == dataLoaderRegistry
+        executionContext.cacheControl == cacheControl
+    }
+
+    def "transform copies values, if both variables and coercedVariables set, latest value set takes precedence"() {
+        given:
+        def oldCoercedVariables = CoercedVariables.emptyVariables()
+        def executionContextOld = new ExecutionContextBuilder()
+                .instrumentation(instrumentation)
+                .queryStrategy(queryStrategy)
+                .mutationStrategy(mutationStrategy)
+                .subscriptionStrategy(subscriptionStrategy)
+                .graphQLSchema(schema)
+                .executionId(executionId)
+                .context(context)
+                .graphQLContext(graphQLContext)
+                .root(root)
+                .operationDefinition(operation)
+                .variables([:])
+                .coercedVariables(oldCoercedVariables)
+                .fragmentsByName([MyFragment: fragment])
+                .dataLoaderRegistry(dataLoaderRegistry)
+                .cacheControl(cacheControl)
+                .build()
+
+        when:
+        def coercedVariables = new CoercedVariables([var: 'value'])
+        def executionContext = executionContextOld.transform(builder -> builder
+                .variables([var: 'value'])
+                .coercedVariables(coercedVariables))
 
         then:
         executionContext.executionId == executionId
