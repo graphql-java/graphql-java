@@ -78,7 +78,7 @@ public class NQBenchmark2 {
     @BenchmarkMode(Mode.AverageTime)
     @OutputTimeUnit(TimeUnit.MILLISECONDS)
     public ExecutableNormalizedOperation benchMarkAvgTime(MyState myState) throws ExecutionException, InterruptedException {
-        ExecutableNormalizedOperation executableNormalizedOperation = ExecutableNormalizedOperationFactory.createExecutableNormalizedOperation(myState.schema, myState.document, null, new CoercedVariables(Collections.emptyMap()));
+        ExecutableNormalizedOperation executableNormalizedOperation = ExecutableNormalizedOperationFactory.createExecutableNormalizedOperation(myState.schema, myState.document, null, CoercedVariables.emptyVariables());
 //        System.out.println("fields size:" + normalizedQuery.getFieldToNormalizedField().size());
         return executableNormalizedOperation;
     }
@@ -86,7 +86,7 @@ public class NQBenchmark2 {
     public static void main(String[] args) {
         MyState myState = new MyState();
         myState.setup();
-        ExecutableNormalizedOperation executableNormalizedOperation = ExecutableNormalizedOperationFactory.createExecutableNormalizedOperation(myState.schema, myState.document, null, new CoercedVariables(Collections.emptyMap()));
+        ExecutableNormalizedOperation executableNormalizedOperation = ExecutableNormalizedOperationFactory.createExecutableNormalizedOperation(myState.schema, myState.document, null, CoercedVariables.emptyVariables());
 //        System.out.println(printTree(normalizedQuery));
         ImmutableListMultimap<Field, ExecutableNormalizedField> fieldToNormalizedField = executableNormalizedOperation.getFieldToNormalizedField();
         System.out.println(fieldToNormalizedField.size());

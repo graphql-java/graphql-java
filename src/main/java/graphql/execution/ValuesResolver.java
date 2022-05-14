@@ -397,7 +397,7 @@ public class ValuesResolver {
                 boolean hasValue = rawVariables.containsKey(variableName);
                 Object value = rawVariables.get(variableName);
                 if (!hasValue && defaultValue != null) {
-                    Object coercedDefaultValue = literalToInternalValue(fieldVisibility, variableType, defaultValue, new CoercedVariables(Collections.emptyMap()));
+                    Object coercedDefaultValue = literalToInternalValue(fieldVisibility, variableType, defaultValue, CoercedVariables.emptyVariables());
                     coercedValues.put(variableName, coercedDefaultValue);
                 } else if (isNonNull(variableType) && (!hasValue || value == null)) {
                     throw new NonNullableValueCoercedAsNullException(variableDefinition, variableType);
@@ -706,7 +706,7 @@ public class ValuesResolver {
      */
     private Object literalToInternalValueForScalar(Value inputValue, GraphQLScalarType scalarType, CoercedVariables coercedVariables) {
         // the CoercingParseLiteralException exception that could happen here has been validated earlier via ValidationUtil
-        return scalarType.getCoercing().parseLiteral(inputValue, coercedVariables.getMap());
+        return scalarType.getCoercing().parseLiteral(inputValue, coercedVariables.toMap());
     }
 
     /**
@@ -808,7 +808,7 @@ public class ValuesResolver {
         }
         if (defaultValue.isLiteral()) {
             // default value literals can't reference variables, this is why the variables are empty
-            return literalToInternalValue(fieldVisibility, type, (Value) defaultValue.getValue(), new CoercedVariables(Collections.emptyMap()));
+            return literalToInternalValue(fieldVisibility, type, (Value) defaultValue.getValue(), CoercedVariables.emptyVariables());
         }
         if (defaultValue.isExternal()) {
             // performs validation too

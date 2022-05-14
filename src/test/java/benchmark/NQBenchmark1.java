@@ -84,7 +84,7 @@ public class NQBenchmark1 {
     }
 
     private void runImpl(MyState myState, Blackhole blackhole) {
-        ExecutableNormalizedOperation executableNormalizedOperation = ExecutableNormalizedOperationFactory.createExecutableNormalizedOperation(myState.schema, myState.document, null, new CoercedVariables(Collections.emptyMap()));
+        ExecutableNormalizedOperation executableNormalizedOperation = ExecutableNormalizedOperationFactory.createExecutableNormalizedOperation(myState.schema, myState.document, null, CoercedVariables.emptyVariables());
         blackhole.consume(executableNormalizedOperation);
     }
 

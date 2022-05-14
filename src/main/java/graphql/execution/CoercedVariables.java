@@ -3,6 +3,7 @@ package graphql.execution;
 import graphql.Internal;
 import graphql.collect.ImmutableMapWithNullValues;
 
+import java.util.Collections;
 import java.util.Map;
 
 /**
@@ -16,7 +17,7 @@ public class CoercedVariables {
         this.coercedVariables = ImmutableMapWithNullValues.copyOf(coercedVariables);
     }
 
-    public Map<String, Object> getMap() {
+    public Map<String, Object> toMap() {
         return coercedVariables;
     }
 
@@ -26,5 +27,9 @@ public class CoercedVariables {
 
     public Object get(String key) {
         return coercedVariables.get(key);
+    }
+
+    public static CoercedVariables emptyVariables() {
+        return new CoercedVariables(Collections.emptyMap());
     }
 }

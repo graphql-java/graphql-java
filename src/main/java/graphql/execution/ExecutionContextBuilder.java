@@ -39,7 +39,7 @@ public class ExecutionContextBuilder {
     Object root;
     Document document;
     OperationDefinition operationDefinition;
-    CoercedVariables coercedVariables = new CoercedVariables(Collections.emptyMap());
+    CoercedVariables coercedVariables = CoercedVariables.emptyVariables();
     ImmutableMap<String, FragmentDefinition> fragmentsByName = ImmutableKit.emptyMap();
     DataLoaderRegistry dataLoaderRegistry;
     CacheControl cacheControl;

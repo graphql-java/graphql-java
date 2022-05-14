@@ -120,7 +120,7 @@ public class ExecutionContext {
      */
     @Deprecated
     public Map<String, Object> getVariables() {
-        return coercedVariables.getMap();
+        return coercedVariables.toMap();
     }
 
     public CoercedVariables getCoercedVariables() {

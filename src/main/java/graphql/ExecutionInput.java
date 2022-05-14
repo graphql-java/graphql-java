@@ -102,7 +102,7 @@ public class ExecutionInput {
      */
     @Deprecated
     public Map<String, Object> getVariables() {
-        return rawVariables.getMap();
+        return rawVariables.toMap();
     }
 
     /**
@@ -218,7 +218,7 @@ public class ExecutionInput {
         private Object context = graphQLContext; // we make these the same object on purpose - legacy code will get the same object if this change nothing
         private Object localContext;
         private Object root;
-        private RawVariables rawVariables = new RawVariables(Collections.emptyMap());
+        private RawVariables rawVariables = RawVariables.emptyVariables();
         public Map<String, Object> extensions = Collections.emptyMap();
         //
         // this is important - it allows code to later known if we never really set a dataloader and hence it can optimize

@@ -3,6 +3,7 @@ package graphql.execution;
 import graphql.Internal;
 import graphql.collect.ImmutableMapWithNullValues;
 
+import java.util.Collections;
 import java.util.Map;
 
 /**
@@ -16,7 +17,7 @@ public class RawVariables {
         this.rawVariables = ImmutableMapWithNullValues.copyOf(rawVariables);
     }
 
-    public Map<String, Object> getMap() {
+    public Map<String, Object> toMap() {
         return rawVariables;
     }
 
@@ -26,5 +27,9 @@ public class RawVariables {
 
     public Object get(String key) {
         return rawVariables.get(key);
+    }
+
+    public static RawVariables emptyVariables() {
+        return new RawVariables(Collections.emptyMap());
     }
 }

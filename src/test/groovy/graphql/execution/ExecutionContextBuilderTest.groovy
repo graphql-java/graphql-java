@@ -105,7 +105,7 @@ class ExecutionContextBuilderTest extends Specification {
 
     def "transform works and copies values with coerced variables"() {
         given:
-        def oldCoercedVariables = new CoercedVariables(Collections.emptyMap())
+        def oldCoercedVariables = CoercedVariables.emptyVariables()
         def executionContextOld = new ExecutionContextBuilder()
             .instrumentation(instrumentation)
             .queryStrategy(queryStrategy)

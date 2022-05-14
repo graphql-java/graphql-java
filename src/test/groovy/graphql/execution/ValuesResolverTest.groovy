@@ -175,7 +175,7 @@ class ValuesResolverTest extends Specification {
         def argument = new Argument("arg", new VariableReference("var"))
 
         when:
-        def variables = new CoercedVariables(Collections.emptyMap())
+        def variables = CoercedVariables.emptyVariables()
         def values = resolver.getArgumentValues([fieldArgument], [argument], variables)
 
         then:
@@ -206,7 +206,7 @@ class ValuesResolverTest extends Specification {
 
         when:
         def argument = new Argument("arg", inputValue)
-        def values = resolver.getArgumentValues([fieldArgument], [argument], new CoercedVariables(Collections.emptyMap()))
+        def values = resolver.getArgumentValues([fieldArgument], [argument], CoercedVariables.emptyVariables())
 
         then:
         values['arg'] == outputValue
@@ -254,7 +254,7 @@ class ValuesResolverTest extends Specification {
 
         when:
         def argument = new Argument("arg", inputValue)
-        def values = resolver.getArgumentValues([fieldArgument], [argument], new CoercedVariables(Collections.emptyMap()))
+        def values = resolver.getArgumentValues([fieldArgument], [argument], CoercedVariables.emptyVariables())
 
         then:
         values['arg'] == outputValue
@@ -302,7 +302,7 @@ class ValuesResolverTest extends Specification {
         def fieldArgument1 = newArgument().name("arg1").type(enumType).build()
         def fieldArgument2 = newArgument().name("arg2").type(enumType).build()
         when:
-        def values = resolver.getArgumentValues([fieldArgument1, fieldArgument2], [argument1, argument2], new CoercedVariables(Collections.emptyMap()))
+        def values = resolver.getArgumentValues([fieldArgument1, fieldArgument2], [argument1, argument2], CoercedVariables.emptyVariables())
 
         then:
         values['arg1'] == 'PLUTO'
@@ -319,7 +319,7 @@ class ValuesResolverTest extends Specification {
         def fieldArgument = newArgument().name("arg").type(list(GraphQLBoolean)).build()
 
         when:
-        def values = resolver.getArgumentValues([fieldArgument], [argument], new CoercedVariables(Collections.emptyMap()))
+        def values = resolver.getArgumentValues([fieldArgument], [argument], CoercedVariables.emptyVariables())
 
         then:
         values['arg'] == [true, false]
@@ -333,7 +333,7 @@ class ValuesResolverTest extends Specification {
         def fieldArgument = newArgument().name("arg").type(list(GraphQLString)).build()
 
         when:
-        def values = resolver.getArgumentValues([fieldArgument], [argument], new CoercedVariables(Collections.emptyMap()))
+        def values = resolver.getArgumentValues([fieldArgument], [argument], CoercedVariables.emptyVariables())
 
         then:
         values['arg'] == ['world']
@@ -428,7 +428,7 @@ class ValuesResolverTest extends Specification {
         def resolvedValues = resolver.coerceVariableValues(schema, [fooVarDef, barVarDef], new RawVariables(InputValue))
 
         then:
-        resolvedValues.getMap() == outputValue
+        resolvedValues.toMap() == outputValue
 
         where:
         InputValue                || outputValue
@@ -443,7 +443,7 @@ class ValuesResolverTest extends Specification {
         VariableDefinition fooVarDef = new VariableDefinition("foo", new NonNullType(new TypeName("String")))
 
         when:
-        resolver.coerceVariableValues(schema, [fooVarDef], new RawVariables(Collections.emptyMap()))
+        resolver.coerceVariableValues(schema, [fooVarDef], RawVariables.emptyVariables())
 
         then:
         thrown(GraphQLException)
@@ -516,7 +516,7 @@ class ValuesResolverTest extends Specification {
         def argument = new Argument("arg", NullValue.newNullValue().build())
 
         when:
-        def variables = new CoercedVariables(Collections.emptyMap())
+        def variables = CoercedVariables.emptyVariables()
         def values = resolver.getArgumentValues([fieldArgument], [argument], variables)
 
         then:

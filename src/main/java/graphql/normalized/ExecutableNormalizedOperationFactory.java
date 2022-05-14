@@ -106,7 +106,7 @@ public class ExecutableNormalizedOperationFactory {
                 .newParameters()
                 .fragments(fragments)
                 .schema(graphQLSchema)
-                .coercedVariables(coercedVariableValues.getMap())
+                .coercedVariables(coercedVariableValues.toMap())
                 .normalizedVariables(normalizedVariableValues)
                 .build();
 

@@ -109,7 +109,7 @@ type Dog implements Animal{
         Document document = TestUtil.parseQuery(query)
 
         ExecutableNormalizedOperationFactory dependencyGraph = new ExecutableNormalizedOperationFactory()
-        def tree = dependencyGraph.createExecutableNormalizedOperation(graphQLSchema, document, null, new CoercedVariables(Collections.emptyMap()))
+        def tree = dependencyGraph.createExecutableNormalizedOperation(graphQLSchema, document, null, CoercedVariables.emptyVariables())
         def printedTree = printTreeWithLevelInfo(tree, graphQLSchema)
 
         expect:
@@ -195,7 +195,7 @@ type Dog implements Animal{
         Document document = TestUtil.parseQuery(query)
 
         ExecutableNormalizedOperationFactory dependencyGraph = new ExecutableNormalizedOperationFactory()
-        def tree = dependencyGraph.createExecutableNormalizedOperation(graphQLSchema, document, null, new CoercedVariables(Collections.emptyMap()))
+        def tree = dependencyGraph.createExecutableNormalizedOperation(graphQLSchema, document, null, CoercedVariables.emptyVariables())
         def printedTree = printTreeWithLevelInfo(tree, graphQLSchema)
 
         expect:
@@ -275,7 +275,7 @@ type Dog implements Animal{
         Document document = TestUtil.parseQuery(query)
 
         ExecutableNormalizedOperationFactory dependencyGraph = new ExecutableNormalizedOperationFactory()
-        def tree = dependencyGraph.createExecutableNormalizedOperation(graphQLSchema, document, null, new CoercedVariables(Collections.emptyMap()))
+        def tree = dependencyGraph.createExecutableNormalizedOperation(graphQLSchema, document, null, CoercedVariables.emptyVariables())
         def printedTree = printTreeWithLevelInfo(tree, graphQLSchema)
 
         expect:
@@ -326,7 +326,7 @@ type Dog implements Animal{
         Document document = TestUtil.parseQuery(query)
 
         ExecutableNormalizedOperationFactory dependencyGraph = new ExecutableNormalizedOperationFactory()
-        def tree = dependencyGraph.createExecutableNormalizedOperation(graphQLSchema, document, null, new CoercedVariables(Collections.emptyMap()))
+        def tree = dependencyGraph.createExecutableNormalizedOperation(graphQLSchema, document, null, CoercedVariables.emptyVariables())
         def printedTree = printTree(tree)
 
         expect:
@@ -369,7 +369,7 @@ type Dog implements Animal{
         Document document = TestUtil.parseQuery(query)
 
         ExecutableNormalizedOperationFactory dependencyGraph = new ExecutableNormalizedOperationFactory()
-        def tree = dependencyGraph.createExecutableNormalizedOperation(graphQLSchema, document, null, new CoercedVariables(Collections.emptyMap()))
+        def tree = dependencyGraph.createExecutableNormalizedOperation(graphQLSchema, document, null, CoercedVariables.emptyVariables())
         def printedTree = printTree(tree)
 
         expect:
@@ -419,7 +419,7 @@ type Dog implements Animal{
         Document document = TestUtil.parseQuery(query)
 
         ExecutableNormalizedOperationFactory dependencyGraph = new ExecutableNormalizedOperationFactory()
-        def tree = dependencyGraph.createExecutableNormalizedOperation(graphQLSchema, document, null, new CoercedVariables(Collections.emptyMap()))
+        def tree = dependencyGraph.createExecutableNormalizedOperation(graphQLSchema, document, null, CoercedVariables.emptyVariables())
         def printedTree = printTree(tree)
 
         expect:
@@ -482,7 +482,7 @@ type Dog implements Animal{
         Document document = TestUtil.parseQuery(query)
 
         ExecutableNormalizedOperationFactory dependencyGraph = new ExecutableNormalizedOperationFactory()
-        def tree = dependencyGraph.createExecutableNormalizedOperation(graphQLSchema, document, null, new CoercedVariables(Collections.emptyMap()))
+        def tree = dependencyGraph.createExecutableNormalizedOperation(graphQLSchema, document, null, CoercedVariables.emptyVariables())
         def printedTree = printTreeWithLevelInfo(tree, graphQLSchema)
 
         expect:
@@ -528,7 +528,7 @@ type Dog implements Animal{
         Document document = TestUtil.parseQuery(query)
 
         ExecutableNormalizedOperationFactory dependencyGraph = new ExecutableNormalizedOperationFactory()
-        def tree = dependencyGraph.createExecutableNormalizedOperation(graphQLSchema, document, null, new CoercedVariables(Collections.emptyMap()))
+        def tree = dependencyGraph.createExecutableNormalizedOperation(graphQLSchema, document, null, CoercedVariables.emptyVariables())
         def printedTree = printTree(tree)
 
         expect:
@@ -572,7 +572,7 @@ type Dog implements Animal{
         Document document = TestUtil.parseQuery(query)
 
         ExecutableNormalizedOperationFactory dependencyGraph = new ExecutableNormalizedOperationFactory()
-        def tree = dependencyGraph.createExecutableNormalizedOperation(graphQLSchema, document, null, new CoercedVariables(Collections.emptyMap()))
+        def tree = dependencyGraph.createExecutableNormalizedOperation(graphQLSchema, document, null, CoercedVariables.emptyVariables())
         def printedTree = printTree(tree)
 
         expect:
@@ -616,7 +616,7 @@ type Dog implements Animal{
         Document document = TestUtil.parseQuery(query)
 
         ExecutableNormalizedOperationFactory dependencyGraph = new ExecutableNormalizedOperationFactory()
-        def tree = dependencyGraph.createExecutableNormalizedOperation(graphQLSchema, document, null, new CoercedVariables(Collections.emptyMap()))
+        def tree = dependencyGraph.createExecutableNormalizedOperation(graphQLSchema, document, null, CoercedVariables.emptyVariables())
         def printedTree = printTree(tree)
 
         expect:
@@ -648,7 +648,7 @@ type Dog implements Animal{
         Document document = TestUtil.parseQuery(query)
 
         ExecutableNormalizedOperationFactory dependencyGraph = new ExecutableNormalizedOperationFactory()
-        def tree = dependencyGraph.createExecutableNormalizedOperation(graphQLSchema, document, null, new CoercedVariables(Collections.emptyMap()))
+        def tree = dependencyGraph.createExecutableNormalizedOperation(graphQLSchema, document, null, CoercedVariables.emptyVariables())
         def printedTree = printTree(tree)
 
         expect:
@@ -699,7 +699,7 @@ type Dog implements Animal{
         Document document = TestUtil.parseQuery(query)
 
         ExecutableNormalizedOperationFactory dependencyGraph = new ExecutableNormalizedOperationFactory()
-        def tree = dependencyGraph.createExecutableNormalizedOperation(graphQLSchema, document, null, new CoercedVariables(Collections.emptyMap()))
+        def tree = dependencyGraph.createExecutableNormalizedOperation(graphQLSchema, document, null, CoercedVariables.emptyVariables())
         def printedTree = printTreeWithLevelInfo(tree, graphQLSchema)
 
         expect:
@@ -737,7 +737,7 @@ type Dog implements Animal{
         Document document = TestUtil.parseQuery(query)
 
         ExecutableNormalizedOperationFactory dependencyGraph = new ExecutableNormalizedOperationFactory()
-        def tree = dependencyGraph.createExecutableNormalizedOperation(graphQLSchema, document, null, new CoercedVariables(Collections.emptyMap()))
+        def tree = dependencyGraph.createExecutableNormalizedOperation(graphQLSchema, document, null, CoercedVariables.emptyVariables())
         def printedTree = printTree(tree)
 
         expect:
@@ -781,7 +781,7 @@ type Dog implements Animal{
         Document document = TestUtil.parseQuery(query)
 
         def dependencyGraph = new ExecutableNormalizedOperationFactory()
-        def tree = dependencyGraph.createExecutableNormalizedOperation(graphQLSchema, document, null, new CoercedVariables(Collections.emptyMap()))
+        def tree = dependencyGraph.createExecutableNormalizedOperation(graphQLSchema, document, null, CoercedVariables.emptyVariables())
         def printedTree = printTreeWithLevelInfo(tree, graphQLSchema)
 
         expect:
@@ -821,7 +821,7 @@ type Dog implements Animal{
         Document document = TestUtil.parseQuery(query)
 
         def dependencyGraph = new ExecutableNormalizedOperationFactory()
-        def tree = dependencyGraph.createExecutableNormalizedOperation(graphQLSchema, document, null, new CoercedVariables(Collections.emptyMap()))
+        def tree = dependencyGraph.createExecutableNormalizedOperation(graphQLSchema, document, null, CoercedVariables.emptyVariables())
         def printedTree = printTreeWithLevelInfo(tree, graphQLSchema)
 
         expect:
@@ -869,7 +869,7 @@ type Dog implements Animal{
         Document document = TestUtil.parseQuery(query)
 
         def dependencyGraph = new ExecutableNormalizedOperationFactory()
-        def tree = dependencyGraph.createExecutableNormalizedOperation(graphQLSchema, document, null, new CoercedVariables(Collections.emptyMap()))
+        def tree = dependencyGraph.createExecutableNormalizedOperation(graphQLSchema, document, null, CoercedVariables.emptyVariables())
         def printedTree = printTreeWithLevelInfo(tree, graphQLSchema)
 
         expect:
@@ -938,7 +938,7 @@ type Dog implements Animal{
         def subFooField = (document.getDefinitions()[1] as FragmentDefinition).getSelectionSet().getSelections()[0] as Field
 
         ExecutableNormalizedOperationFactory dependencyGraph = new ExecutableNormalizedOperationFactory()
-        def tree = dependencyGraph.createExecutableNormalizedOperation(graphQLSchema, document, null, new CoercedVariables(Collections.emptyMap()))
+        def tree = dependencyGraph.createExecutableNormalizedOperation(graphQLSchema, document, null, CoercedVariables.emptyVariables())
         def fieldToNormalizedField = tree.getFieldToNormalizedField()
 
         expect:
@@ -981,7 +981,7 @@ type Dog implements Animal{
         def idField = petsField.getSelectionSet().getSelections()[0] as Field
 
         ExecutableNormalizedOperationFactory dependencyGraph = new ExecutableNormalizedOperationFactory()
-        def tree = dependencyGraph.createExecutableNormalizedOperation(graphQLSchema, document, null, new CoercedVariables(Collections.emptyMap()))
+        def tree = dependencyGraph.createExecutableNormalizedOperation(graphQLSchema, document, null, CoercedVariables.emptyVariables())
         def fieldToNormalizedField = tree.getFieldToNormalizedField()
 
 
@@ -1030,7 +1030,7 @@ type Dog implements Animal{
         def typeField = selections[3] as Field
 
         ExecutableNormalizedOperationFactory dependencyGraph = new ExecutableNormalizedOperationFactory()
-        def tree = dependencyGraph.createExecutableNormalizedOperation(graphQLSchema, document, null, new CoercedVariables(Collections.emptyMap()))
+        def tree = dependencyGraph.createExecutableNormalizedOperation(graphQLSchema, document, null, CoercedVariables.emptyVariables())
         def fieldToNormalizedField = tree.getFieldToNormalizedField()
 
         expect:
@@ -1087,7 +1087,7 @@ type Dog implements Animal{
         Document document = TestUtil.parseQuery(query)
 
         ExecutableNormalizedOperationFactory dependencyGraph = new ExecutableNormalizedOperationFactory()
-        def tree = dependencyGraph.createExecutableNormalizedOperation(graphQLSchema, document, null, new CoercedVariables(Collections.emptyMap()))
+        def tree = dependencyGraph.createExecutableNormalizedOperation(graphQLSchema, document, null, CoercedVariables.emptyVariables())
         def printedTree = printTreeWithLevelInfo(tree, graphQLSchema)
 
         expect:
@@ -1130,7 +1130,7 @@ type Dog implements Animal{
         Document document = TestUtil.parseQuery(query)
 
         ExecutableNormalizedOperationFactory dependencyGraph = new ExecutableNormalizedOperationFactory()
-        def tree = dependencyGraph.createExecutableNormalizedOperation(graphQLSchema, document, null, new CoercedVariables(Collections.emptyMap()))
+        def tree = dependencyGraph.createExecutableNormalizedOperation(graphQLSchema, document, null, CoercedVariables.emptyVariables())
         def printedTree = printTree(tree)
 
         expect:
@@ -1158,7 +1158,7 @@ type Dog implements Animal{
         Document document = TestUtil.parseQuery(query)
 
         ExecutableNormalizedOperationFactory dependencyGraph = new ExecutableNormalizedOperationFactory()
-        def tree = dependencyGraph.createExecutableNormalizedOperation(graphQLSchema, document, null, new CoercedVariables(Collections.emptyMap()))
+        def tree = dependencyGraph.createExecutableNormalizedOperation(graphQLSchema, document, null, CoercedVariables.emptyVariables())
         def normalizedFieldToMergedField = tree.getNormalizedFieldToMergedField()
         Traverser<ExecutableNormalizedField> traverser = Traverser.depthFirst({ it.getChildren() })
         List<MergedField> result = new ArrayList<>()
@@ -1198,7 +1198,7 @@ type Dog implements Animal{
         ExecutableNormalizedOperationFactory dependencyGraph = new ExecutableNormalizedOperationFactory()
 
         when:
-        def tree = dependencyGraph.createExecutableNormalizedOperation(graphQLSchema, document, null, new CoercedVariables(Collections.emptyMap()))
+        def tree = dependencyGraph.createExecutableNormalizedOperation(graphQLSchema, document, null, CoercedVariables.emptyVariables())
         def coordinatesToNormalizedFields = tree.coordinatesToNormalizedFields
 
         then:
@@ -1297,7 +1297,7 @@ schema {
         Document document = TestUtil.parseQuery(mutation)
 
         ExecutableNormalizedOperationFactory dependencyGraph = new ExecutableNormalizedOperationFactory()
-        def tree = dependencyGraph.createExecutableNormalizedOperation(graphQLSchema, document, null, new CoercedVariables(Collections.emptyMap()))
+        def tree = dependencyGraph.createExecutableNormalizedOperation(graphQLSchema, document, null, CoercedVariables.emptyVariables())
         def printedTree = printTreeWithLevelInfo(tree, graphQLSchema)
 
         expect:
@@ -1594,7 +1594,7 @@ schema {
         Document document = TestUtil.parseQuery(query)
         ExecutableNormalizedOperationFactory dependencyGraph = new ExecutableNormalizedOperationFactory()
         when:
-        def tree = dependencyGraph.createExecutableNormalizedOperationWithRawVariables(graphQLSchema, document, null, new RawVariables(Collections.emptyMap()))
+        def tree = dependencyGraph.createExecutableNormalizedOperationWithRawVariables(graphQLSchema, document, null, RawVariables.emptyVariables())
 
         then:
         tree.normalizedFieldToMergedField.size() == 3
@@ -1652,7 +1652,7 @@ schema {
         Document document = TestUtil.parseQuery(query)
         ExecutableNormalizedOperationFactory dependencyGraph = new ExecutableNormalizedOperationFactory()
         when:
-        def tree = dependencyGraph.createExecutableNormalizedOperationWithRawVariables(graphQLSchema, document, null, new RawVariables(Collections.emptyMap()))
+        def tree = dependencyGraph.createExecutableNormalizedOperationWithRawVariables(graphQLSchema, document, null, RawVariables.emptyVariables())
         println String.join("\n", printTree(tree))
 
         /**
@@ -1698,7 +1698,7 @@ schema {
         Document document = TestUtil.parseQuery(query)
         ExecutableNormalizedOperationFactory dependencyGraph = new ExecutableNormalizedOperationFactory()
         when:
-        def tree = dependencyGraph.createExecutableNormalizedOperationWithRawVariables(graphQLSchema, document, null, new RawVariables(Collections.emptyMap()))
+        def tree = dependencyGraph.createExecutableNormalizedOperationWithRawVariables(graphQLSchema, document, null, RawVariables.emptyVariables())
         def printedTree = printTreeWithLevelInfo(tree, graphQLSchema)
 
         then:
@@ -1769,7 +1769,7 @@ schema {
         Document document = TestUtil.parseQuery(query)
         ExecutableNormalizedOperationFactory dependencyGraph = new ExecutableNormalizedOperationFactory()
         when:
-        def tree = dependencyGraph.createExecutableNormalizedOperationWithRawVariables(schema, document, null, new RawVariables(Collections.emptyMap()))
+        def tree = dependencyGraph.createExecutableNormalizedOperationWithRawVariables(schema, document, null, RawVariables.emptyVariables())
         def printedTree = printTreeWithLevelInfo(tree, schema)
 
         then:
@@ -1833,7 +1833,7 @@ schema {
         Document document = TestUtil.parseQuery(query)
         ExecutableNormalizedOperationFactory dependencyGraph = new ExecutableNormalizedOperationFactory()
         when:
-        def tree = dependencyGraph.createExecutableNormalizedOperationWithRawVariables(schema, document, null, new RawVariables(Collections.emptyMap()))
+        def tree = dependencyGraph.createExecutableNormalizedOperationWithRawVariables(schema, document, null, RawVariables.emptyVariables())
         def printedTree = printTreeWithLevelInfo(tree, schema)
 
         then:
@@ -1890,7 +1890,7 @@ schema {
         Document document = TestUtil.parseQuery(query)
         ExecutableNormalizedOperationFactory dependencyGraph = new ExecutableNormalizedOperationFactory()
         when:
-        def tree = dependencyGraph.createExecutableNormalizedOperationWithRawVariables(schema, document, null, new RawVariables(Collections.emptyMap()))
+        def tree = dependencyGraph.createExecutableNormalizedOperationWithRawVariables(schema, document, null, RawVariables.emptyVariables())
         def printedTree = printTreeWithLevelInfo(tree, schema)
 
         then:
@@ -1965,7 +1965,7 @@ schema {
         Document document = TestUtil.parseQuery(query)
         ExecutableNormalizedOperationFactory dependencyGraph = new ExecutableNormalizedOperationFactory()
         when:
-        def tree = dependencyGraph.createExecutableNormalizedOperationWithRawVariables(schema, document, null, new RawVariables(Collections.emptyMap()))
+        def tree = dependencyGraph.createExecutableNormalizedOperationWithRawVariables(schema, document, null, RawVariables.emptyVariables())
         def printedTree = printTreeWithLevelInfo(tree, schema)
 
         then:
@@ -2027,7 +2027,7 @@ schema {
         Document document = TestUtil.parseQuery(query)
         ExecutableNormalizedOperationFactory dependencyGraph = new ExecutableNormalizedOperationFactory()
         when:
-        def tree = dependencyGraph.createExecutableNormalizedOperationWithRawVariables(schema, document, null, new RawVariables(Collections.emptyMap()))
+        def tree = dependencyGraph.createExecutableNormalizedOperationWithRawVariables(schema, document, null, RawVariables.emptyVariables())
         def printedTree = printTreeWithLevelInfo(tree, schema)
 
         then:
@@ -2069,7 +2069,7 @@ schema {
         Document document = TestUtil.parseQuery(query)
         ExecutableNormalizedOperationFactory dependencyGraph = new ExecutableNormalizedOperationFactory()
         when:
-        def tree = dependencyGraph.createExecutableNormalizedOperationWithRawVariables(schema, document, null, new RawVariables(Collections.emptyMap()))
+        def tree = dependencyGraph.createExecutableNormalizedOperationWithRawVariables(schema, document, null, RawVariables.emptyVariables())
         def printedTree = printTreeWithLevelInfo(tree, schema)
 
         then:
@@ -2112,7 +2112,7 @@ schema {
         Document document = TestUtil.parseQuery(query)
         ExecutableNormalizedOperationFactory dependencyGraph = new ExecutableNormalizedOperationFactory()
         when:
-        def tree = dependencyGraph.createExecutableNormalizedOperationWithRawVariables(schema, document, null, new RawVariables(Collections.emptyMap()))
+        def tree = dependencyGraph.createExecutableNormalizedOperationWithRawVariables(schema, document, null, RawVariables.emptyVariables())
         def printedTree = printTreeWithLevelInfo(tree, schema)
 
         then:
@@ -2155,7 +2155,7 @@ schema {
         Document document = TestUtil.parseQuery(query)
         ExecutableNormalizedOperationFactory dependencyGraph = new ExecutableNormalizedOperationFactory()
         when:
-        def tree = dependencyGraph.createExecutableNormalizedOperationWithRawVariables(schema, document, null, new RawVariables(Collections.emptyMap()))
+        def tree = dependencyGraph.createExecutableNormalizedOperationWithRawVariables(schema, document, null, RawVariables.emptyVariables())
         def printedTree = printTreeWithLevelInfo(tree, schema)
 
         then:
@@ -2230,7 +2230,7 @@ schema {
         Document document = TestUtil.parseQuery(query)
         ExecutableNormalizedOperationFactory dependencyGraph = new ExecutableNormalizedOperationFactory()
         when:
-        def tree = dependencyGraph.createExecutableNormalizedOperationWithRawVariables(schema, document, null, new RawVariables(Collections.emptyMap()))
+        def tree = dependencyGraph.createExecutableNormalizedOperationWithRawVariables(schema, document, null, RawVariables.emptyVariables())
         def printedTree = printTreeWithLevelInfo(tree, schema)
 
         then:
@@ -2306,7 +2306,7 @@ schema {
         Document document = TestUtil.parseQuery(query)
         ExecutableNormalizedOperationFactory dependencyGraph = new ExecutableNormalizedOperationFactory()
         when:
-        def tree = dependencyGraph.createExecutableNormalizedOperationWithRawVariables(schema, document, null, new RawVariables(Collections.emptyMap()))
+        def tree = dependencyGraph.createExecutableNormalizedOperationWithRawVariables(schema, document, null, RawVariables.emptyVariables())
         def printedTree = printTreeWithLevelInfo(tree, schema)
 
         then:
@@ -2396,7 +2396,7 @@ schema {
         assertValidQuery(graphQLSchema, query)
         Document document = TestUtil.parseQuery(query)
         when:
-        def tree = ExecutableNormalizedOperationFactory.createExecutableNormalizedOperationWithRawVariables(graphQLSchema, document, null, new RawVariables(Collections.emptyMap()))
+        def tree = ExecutableNormalizedOperationFactory.createExecutableNormalizedOperationWithRawVariables(graphQLSchema, document, null, RawVariables.emptyVariables())
         println String.join("\n", printTree(tree))
         def printedTree = printTree(tree)
 
