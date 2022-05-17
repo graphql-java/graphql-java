@@ -21,7 +21,7 @@ import static graphql.Assert.assertShouldNeverHappen;
  */
 public class TypeParser {
 
-    public static Type createType(String typeName) {
+    public static Type parse(String typeName) {
 
         CodePointCharStream charStream = CharStreams.fromString(typeName);
 
@@ -30,7 +30,12 @@ public class TypeParser {
         TokenStream tokenStream = new CommonTokenStream(lexer);
         GraphqlParser graphqlParser = new GraphqlParser(tokenStream);
         GraphqlParser.TypeContext typeContext = graphqlParser.type();
-        return createType(typeContext);
+        final Type type = createType(typeContext);
+        if(type == null) {
+            return assertShouldNeverHappen("'%s' is invalid type name", typeName);
+        } else{
+            return type;
+        }
     }
 
     private static Type createType(GraphqlParser.TypeContext ctx) {
@@ -41,7 +46,7 @@ public class TypeParser {
         } else if (ctx.listType() != null) {
             return createListType(ctx.listType());
         } else {
-            return assertShouldNeverHappen();
+            return null;
         }
     }
 

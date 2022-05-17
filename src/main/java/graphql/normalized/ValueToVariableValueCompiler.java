@@ -7,34 +7,21 @@ import graphql.language.BooleanValue;
 import graphql.language.EnumValue;
 import graphql.language.FloatValue;
 import graphql.language.IntValue;
-import graphql.language.ListType;
-import graphql.language.NonNullType;
 import graphql.language.NullValue;
 import graphql.language.ObjectField;
 import graphql.language.ObjectValue;
 import graphql.language.StringValue;
-import graphql.language.Type;
-import graphql.language.TypeName;
 import graphql.language.Value;
 import graphql.language.VariableDefinition;
 import graphql.language.VariableReference;
 import graphql.parser.TypeParser;
-import graphql.parser.antlr.GraphqlLexer;
-import graphql.parser.antlr.GraphqlParser;
-import org.antlr.v4.runtime.CharStreams;
-import org.antlr.v4.runtime.CodePointCharStream;
-import org.antlr.v4.runtime.CommonTokenStream;
-import org.antlr.v4.runtime.TokenStream;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import static graphql.Assert.assertShouldNeverHappen;
 import static graphql.collect.ImmutableKit.map;
 import static java.util.stream.Collectors.toList;
 
@@ -48,7 +35,7 @@ public class ValueToVariableValueCompiler {
                 variableValue,
                 VariableDefinition.newVariableDefinition()
                         .name(varName)
-                        .type(TypeParser.createType(normalizedInputValue.getTypeName()))
+                        .type(TypeParser.parse(normalizedInputValue.getTypeName()))
                         .build(),
                 VariableReference.newVariableReference().name(varName).build());
     }
