@@ -961,6 +961,39 @@ triple3 : """edge cases \\""" "" " \\"" \\" edge cases"""
         '{string : "s", integer : 1, boolean : true}' | ObjectValue.class
     }
 
+    @Unroll
+    def 'parse type literals #typeLiteral'() {
+        expect:
+        Parser.parseType(typeLiteral).isEqualTo(expectedType)
+
+        where:
+        typeLiteral   | expectedType
+        "Foo"         | new TypeName("Foo")
+        "String"      | new TypeName("String")
+        "[String]"    | new ListType(new TypeName("String"))
+        "Boolean!"    | new NonNullType(new TypeName("Boolean"))
+        "[Int]!"      | new NonNullType(new ListType(new TypeName("Int")))
+        "[[String!]]" | new ListType(new ListType(new NonNullType(new TypeName("String"))))
+    }
+
+    @Unroll
+    def 'parse invalid type literal #typeLiteral'() {
+        when:
+        Parser.parseType(typeLiteral)
+
+        then:
+        thrown(InvalidSyntaxException)
+
+        where:
+        typeLiteral | _
+        "[String"   | _
+        "[[Int]"    | _
+        "![Foo]"    | _
+        "Boolean !" | _
+        "[Int!"     | _
+        "[String]]" | _
+    }
+
     def "ignored chars can be set on or off"() {
         def s = '''
             

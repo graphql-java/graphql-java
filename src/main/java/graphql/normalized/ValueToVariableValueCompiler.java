@@ -14,7 +14,7 @@ import graphql.language.StringValue;
 import graphql.language.Value;
 import graphql.language.VariableDefinition;
 import graphql.language.VariableReference;
-import graphql.parser.TypeParser;
+import graphql.parser.Parser;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -35,7 +35,7 @@ public class ValueToVariableValueCompiler {
                 variableValue,
                 VariableDefinition.newVariableDefinition()
                         .name(varName)
-                        .type(TypeParser.parse(normalizedInputValue.getTypeName()))
+                        .type(Parser.parseType(normalizedInputValue.getTypeName()))
                         .build(),
                 VariableReference.newVariableReference().name(varName).build());
     }
@@ -133,10 +133,5 @@ public class ValueToVariableValueCompiler {
     private static String getVarName(int variableOrdinal) {
         return "v" + variableOrdinal;
     }
-
-
-
-
-
 
 }
