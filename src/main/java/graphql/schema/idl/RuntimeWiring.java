@@ -14,6 +14,7 @@ import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
 
 import static graphql.Assert.assertNotNull;
@@ -67,6 +68,40 @@ public class RuntimeWiring {
      */
     public static Builder newRuntimeWiring() {
         return new Builder();
+    }
+
+    /**
+     * @return a builder of Runtime Wiring based on the provided one
+     */
+    public static Builder newRuntimeWiring(RuntimeWiring original) {
+        Builder builder = new Builder();
+        builder.dataFetchers.putAll(original.dataFetchers);
+        builder.defaultDataFetchers.putAll(original.defaultDataFetchers);
+        builder.scalars.putAll(original.scalars);
+        builder.typeResolvers.putAll(original.typeResolvers);
+        builder.registeredDirectiveWiring.putAll(original.registeredDirectiveWiring);
+        builder.directiveWiring.addAll(original.directiveWiring);
+        builder.wiringFactory = original.wiringFactory;
+        builder.enumValuesProviders.putAll(original.enumValuesProviders);
+        builder.schemaGeneratorPostProcessings.addAll(original.schemaGeneratorPostProcessings);
+        builder.fieldVisibility = original.fieldVisibility;
+        builder.codeRegistry = original.codeRegistry;
+        builder.comparatorRegistry = original.comparatorRegistry;
+        return builder;
+    }
+
+    /**
+     * This helps you transform the current RuntimeWiring object into another one by starting a builder with all
+     * the current values and allows you to transform it how you want.
+     *
+     * @param builderConsumer the consumer code that will be given a builder to transform
+     *
+     * @return a new RuntimeWiring object based on calling build on that builder
+     */
+    public RuntimeWiring transform(Consumer<Builder> builderConsumer) {
+        Builder builder = newRuntimeWiring(this);
+        builderConsumer.accept(builder);
+        return builder.build();
     }
 
     public GraphQLCodeRegistry getCodeRegistry() {
