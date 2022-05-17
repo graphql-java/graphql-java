@@ -15,7 +15,7 @@ import java.util.Map;
  * with times frames that cross graphql-java versions.  While we don't change things unnecessarily,  we may inadvertently break
  * the serialised compatibility across versions.
  *
- * @see <a href="https://facebook.github.io/graphql/#sec-Errors">GraphQL Spec - 7.2.2 Errors</a>
+ * @see <a href="https://spec.graphql.org/October2021/#sec-Errors">GraphQL Spec - 7.1.2 Errors</a>
  */
 @PublicApi
 public interface GraphQLError extends Serializable {
@@ -51,7 +51,7 @@ public interface GraphQLError extends Serializable {
      * should be present.  Certain JSON serializers may or may interpret the error to spec, so this method
      * is provided to produce a map that strictly follows the specification.
      *
-     * See : <a href="http://facebook.github.io/graphql/#sec-Errors">http://facebook.github.io/graphql/#sec-Errors</a>
+     * See : <a href="https://spec.graphql.org/October2021/#sec-Errors">GraphQL Spec - 7.1.2 Errors</a>
      *
      * @return a map of the error that strictly follows the specification
      */

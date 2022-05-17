@@ -163,7 +163,7 @@ public class AstPrinter {
         final String argSep = compactMode ? "," : ", ";
         return (out, node) -> {
             String args;
-            if (hasDescription(node.getInputValueDefinitions()) && !compactMode) {
+            if (hasDescription(Collections.singletonList(node)) && !compactMode) {
                 out.append(description(node));
                 args = join(node.getInputValueDefinitions(), "\n");
                 out.append(node.getName())
@@ -294,7 +294,7 @@ public class AstPrinter {
 
             // Anonymous queries with no directives or variable definitions can use
             // the query short form.
-            if (isEmpty(name) && isEmpty(directives) && isEmpty(varDefinitions) && op.equals("QUERY")) {
+            if (isEmpty(name) && isEmpty(directives) && isEmpty(varDefinitions) && op.equals("query")) {
                 out.append(selectionSet);
             } else {
                 out.append(spaced(op, smooshed(name, varDefinitions), directives, selectionSet));

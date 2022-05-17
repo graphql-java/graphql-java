@@ -2,6 +2,7 @@ package graphql.util;
 
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import graphql.Internal;
 
 import java.lang.reflect.Array;
@@ -279,13 +280,13 @@ public class FpKit {
     }
 
     public static <T> Set<T> filterSet(Collection<T> input, Predicate<T> filter) {
-        LinkedHashSet<T> result = new LinkedHashSet<>();
+        ImmutableSet.Builder<T> result = ImmutableSet.builder();
         for (T t : input) {
             if (filter.test(t)) {
                 result.add(t);
             }
         }
-        return result;
+        return result.build();
     }
 
     /**

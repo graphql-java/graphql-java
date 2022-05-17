@@ -4,6 +4,9 @@ import graphql.PublicApi;
 
 import java.io.Serializable;
 
+/**
+ * A single-line comment. These are comments that start with a {@code #} in source documents.
+ */
 @PublicApi
 public class Comment implements Serializable {
     public final String content;

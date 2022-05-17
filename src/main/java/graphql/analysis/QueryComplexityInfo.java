@@ -1,6 +1,7 @@
 package graphql.analysis;
 
 import graphql.PublicApi;
+import graphql.execution.instrumentation.parameters.InstrumentationExecuteOperationParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationValidationParameters;
 
 /**
@@ -10,11 +11,13 @@ import graphql.execution.instrumentation.parameters.InstrumentationValidationPar
 public class QueryComplexityInfo {
 
     private final int complexity;
-    private InstrumentationValidationParameters instrumentationValidationParameters;
+    private final InstrumentationValidationParameters instrumentationValidationParameters;
+    private final InstrumentationExecuteOperationParameters instrumentationExecuteOperationParameters;
 
-    private QueryComplexityInfo(int complexity, InstrumentationValidationParameters parameters) {
-        this.complexity = complexity;
-        this.instrumentationValidationParameters = parameters;
+    private QueryComplexityInfo(Builder builder) {
+        this.complexity = builder.complexity;
+        this.instrumentationValidationParameters = builder.instrumentationValidationParameters;
+        this.instrumentationExecuteOperationParameters = builder.instrumentationExecuteOperationParameters;
     }
 
     /**
@@ -33,6 +36,15 @@ public class QueryComplexityInfo {
      */
     public InstrumentationValidationParameters getInstrumentationValidationParameters() {
         return instrumentationValidationParameters;
+    }
+
+    /**
+     * This returns the instrumentation execute operation parameters.
+     *
+     * @return the instrumentation execute operation parameters.
+     */
+    public InstrumentationExecuteOperationParameters getInstrumentationExecuteOperationParameters() {
+        return instrumentationExecuteOperationParameters;
     }
 
     @Override
@@ -54,6 +66,7 @@ public class QueryComplexityInfo {
 
         private int complexity;
         private InstrumentationValidationParameters instrumentationValidationParameters;
+        private InstrumentationExecuteOperationParameters instrumentationExecuteOperationParameters;
 
         private Builder() {
         }
@@ -62,6 +75,7 @@ public class QueryComplexityInfo {
          * The query complexity.
          *
          * @param complexity the query complexity
+         *
          * @return this builder
          */
         public Builder complexity(int complexity) {
@@ -73,6 +87,7 @@ public class QueryComplexityInfo {
          * The instrumentation validation parameters.
          *
          * @param parameters the instrumentation validation parameters.
+         *
          * @return this builder
          */
         public Builder instrumentationValidationParameters(InstrumentationValidationParameters parameters) {
@@ -80,11 +95,16 @@ public class QueryComplexityInfo {
             return this;
         }
 
+        public Builder instrumentationExecuteOperationParameters(InstrumentationExecuteOperationParameters instrumentationExecuteOperationParameters) {
+            this.instrumentationExecuteOperationParameters = instrumentationExecuteOperationParameters;
+            return this;
+        }
+
         /**
          * @return a built {@link QueryComplexityInfo} object
          */
         public QueryComplexityInfo build() {
-            return new QueryComplexityInfo(complexity, instrumentationValidationParameters);
+            return new QueryComplexityInfo(this);
         }
     }
 }

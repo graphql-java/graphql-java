@@ -2,8 +2,10 @@ package graphql.normalized;
 
 import graphql.Internal;
 import graphql.language.VariableDefinition;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -18,15 +20,16 @@ import static graphql.normalized.ValueToVariableValueCompiler.normalizedInputVal
 public class VariableAccumulator {
 
     private final List<VariableValueWithDefinition> valueWithDefinitions;
+    @Nullable
     private final VariablePredicate variablePredicate;
 
-    public VariableAccumulator(VariablePredicate variablePredicate) {
+    public VariableAccumulator(@Nullable VariablePredicate variablePredicate) {
         this.variablePredicate = variablePredicate;
         valueWithDefinitions = new ArrayList<>();
     }
 
     public boolean shouldMakeVariable(ExecutableNormalizedField executableNormalizedField, String argName, NormalizedInputValue normalizedInputValue) {
-        return variablePredicate.shouldMakeVariable(executableNormalizedField, argName, normalizedInputValue);
+        return variablePredicate != null && variablePredicate.shouldMakeVariable(executableNormalizedField, argName, normalizedInputValue);
     }
 
     public VariableValueWithDefinition accumulateVariable(NormalizedInputValue normalizedInputValue) {
@@ -50,10 +53,11 @@ public class VariableAccumulator {
      * @return the map of variable names to variable values
      */
     public Map<String, Object> getVariablesMap() {
-        return valueWithDefinitions.stream()
-                .collect(Collectors.toMap(
-                        variableWithDefinition -> variableWithDefinition.getDefinition().getName(),
-                        VariableValueWithDefinition::getValue
-                ));
+        Map<String, Object> map = new LinkedHashMap<>();
+        valueWithDefinitions.forEach(variableWithDefinition -> {
+            String name = variableWithDefinition.getDefinition().getName();
+            map.put(name, variableWithDefinition.getValue());
+        });
+        return map;
     }
 }

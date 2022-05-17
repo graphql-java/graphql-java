@@ -8,8 +8,8 @@ import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLDirective;
 import graphql.schema.GraphqlTypeBuilder;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -47,7 +47,7 @@ public class QueryAppliedDirective {
         this.definition = definition;
     }
 
-    @Nonnull
+    @NotNull
     public String getName() {
         return name;
     }

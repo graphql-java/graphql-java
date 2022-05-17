@@ -230,7 +230,7 @@ public class IntrospectionResultToSchema {
         for (Map<String, Object> enumValue : enumValues) {
 
             EnumValueDefinition.Builder enumValueDefinition = EnumValueDefinition.newEnumValueDefinition().name((String) enumValue.get("name"));
-            enumTypeDefinition.description(toDescription(input));
+            enumValueDefinition.description(toDescription(enumValue));
 
             createDeprecatedDirective(enumValue, enumValueDefinition);
 

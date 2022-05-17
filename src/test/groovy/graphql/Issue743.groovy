@@ -28,6 +28,6 @@ class Issue743 extends Specification {
         executionResult.data == null
         executionResult.errors.size() == 1
         executionResult.errors[0].errorType == ErrorType.ValidationError
-        executionResult.errors[0].message == "Variable 'isTrue' has coerced Null value for NonNull type 'Boolean!'"
+        executionResult.errors[0].message == "Variable 'isTrue' has an invalid value: Variable 'isTrue' has coerced Null value for NonNull type 'Boolean!'"
     }
 }
