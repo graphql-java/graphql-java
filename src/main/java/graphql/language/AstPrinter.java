@@ -294,7 +294,7 @@ public class AstPrinter {
 
             // Anonymous queries with no directives or variable definitions can use
             // the query short form.
-            if (isEmpty(name) && isEmpty(directives) && isEmpty(varDefinitions) && op.equals("QUERY")) {
+            if (isEmpty(name) && isEmpty(directives) && isEmpty(varDefinitions) && op.equals("query")) {
                 out.append(selectionSet);
             } else {
                 out.append(spaced(op, smooshed(name, varDefinitions), directives, selectionSet));

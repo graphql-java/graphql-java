@@ -199,7 +199,7 @@ scalar DateTime
         String output = printAst(document)
 
         expect:
-        output == """query {
+        output == """{
   empireHero: hero(episode: EMPIRE) {
     name
   }
@@ -235,7 +235,7 @@ fragment comparisonFields on Character {
         String output = printAst(document)
 
         expect:
-        output == """query {
+        output == """{
   leftComparison: hero(episode: EMPIRE) {
     ...comparisonFields
   }
@@ -583,7 +583,7 @@ extend input Input @directive {
         String output = AstPrinter.printAstCompact(document)
 
         expect:
-        output == '''query {aliasOfFoo:foo(arg1:"val1",args2:"val2") @isCached {hello} world @neverCache @okThenCache} fragment FX on SomeType {aliased:field(withArgs:"argVal",andMoreArgs:"andMoreVals")}'''
+        output == '''{aliasOfFoo:foo(arg1:"val1",args2:"val2") @isCached {hello} world @neverCache @okThenCache} fragment FX on SomeType {aliased:field(withArgs:"argVal",andMoreArgs:"andMoreVals")}'''
     }
 
     def "print ast with inline fragment without type condition"() {
@@ -601,8 +601,8 @@ extend input Input @directive {
         String outputFull = AstPrinter.printAst(document)
 
         expect:
-        outputCompact == '''query {foo {... {hello}}}'''
-        outputFull == '''query {
+        outputCompact == '''{foo {... {hello}}}'''
+        outputFull == '''{
   foo {
     ... {
       hello
