@@ -5,6 +5,8 @@ import graphql.TestUtil
 import graphql.language.AstPrinter
 import graphql.language.AstSorter
 import graphql.language.Document
+import graphql.language.IntValue
+import graphql.language.StringValue
 import graphql.schema.GraphQLSchema
 import graphql.schema.idl.RuntimeWiring
 import graphql.schema.idl.TestLiveMockedWiringFactory
@@ -1136,6 +1138,41 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
   foo1(arg: {arg1 : "Hello", arg2 : 123, arg3 : "IDID", arg4 : false, arg5 : 123.123, nested : {arg1 : "Hello2", arg2 : 1234, arg3 : "IDID1", arg4 : null, arg5 : null}})
 }
 '''
+    }
+
+
+    def "test input object arguments 2"() {
+        def sdl = '''
+        type Query {
+            foo1(arg: Outer): String
+        }
+        input Outer {
+            a : Inner
+        }
+        input Inner {
+            b : InnerInner
+        }
+        input InnerInner {
+            c : Int
+            d : String
+        }
+        '''
+        def query = '''query something($v : Int){
+            foo1(arg: { a : { b : { c :$v, d :"ast" }}})
+        }
+        '''
+        GraphQLSchema schema = mkSchema(sdl)
+        def fields = createNormalizedFields(schema, query,["v":123])
+        when:
+        def result = compileToDocument(schema, QUERY, null, fields, allVariables)
+        def documentPrinted = AstPrinter.printAst(new AstSorter().sort(result.document))
+
+        then:
+        fields[0].normalizedArguments["arg"].value["a"].value["b"].value["c"].value.isEqualTo(IntValue.of(123))
+        fields[0].normalizedArguments["arg"].value["a"].value["b"].value["d"].value.isEqualTo(StringValue.of("ast"))
+        documentPrinted.trim() == '''query ($v0: Outer) {
+  foo1(arg: $v0)
+}'''
     }
 
     def "test mutations"() {

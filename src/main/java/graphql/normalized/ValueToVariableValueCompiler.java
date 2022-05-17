@@ -11,10 +11,10 @@ import graphql.language.NullValue;
 import graphql.language.ObjectField;
 import graphql.language.ObjectValue;
 import graphql.language.StringValue;
-import graphql.language.TypeName;
 import graphql.language.Value;
 import graphql.language.VariableDefinition;
 import graphql.language.VariableReference;
+import graphql.parser.Parser;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -35,7 +35,7 @@ public class ValueToVariableValueCompiler {
                 variableValue,
                 VariableDefinition.newVariableDefinition()
                         .name(varName)
-                        .type(TypeName.newTypeName(normalizedInputValue.getTypeName()).build())
+                        .type(Parser.parseType(normalizedInputValue.getTypeName()))
                         .build(),
                 VariableReference.newVariableReference().name(varName).build());
     }
