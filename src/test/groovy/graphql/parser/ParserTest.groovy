@@ -972,6 +972,8 @@ triple3 : """edge cases \\""" "" " \\"" \\" edge cases"""
         "String"      | new TypeName("String")
         "[String]"    | new ListType(new TypeName("String"))
         "Boolean!"    | new NonNullType(new TypeName("Boolean"))
+        "Boolean !"   | new NonNullType(new TypeName("Boolean"))
+        "Boolean,  !" | new NonNullType(new TypeName("Boolean"))
         "[Int]!"      | new NonNullType(new ListType(new TypeName("Int")))
         "[[String!]]" | new ListType(new ListType(new NonNullType(new TypeName("String"))))
     }
@@ -989,7 +991,7 @@ triple3 : """edge cases \\""" "" " \\"" \\" edge cases"""
         "[String"   | _
         "[[Int]"    | _
         "![Foo]"    | _
-        "Boolean !" | _
+        "!Boolean"  | _
         "[Int!"     | _
         "[String]]" | _
     }
