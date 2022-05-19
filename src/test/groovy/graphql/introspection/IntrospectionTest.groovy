@@ -150,6 +150,12 @@ class IntrospectionTest extends Specification {
 
     def "introspection for deprecated support"() {
         def spec = '''
+
+            directive @someDirective(
+                deprecatedArg : String @deprecated
+                notDeprecatedArg : String
+            ) on FIELD 
+
             type Query {
                namedField(arg : InputType @deprecated ) : Enum @deprecated
                notDeprecated(arg : InputType) : Enum
@@ -172,10 +178,10 @@ class IntrospectionTest extends Specification {
 
         def types = executionResult.data['__schema']['types'] as List
         def queryType = types.find { it['name'] == 'Query' }
-        def namedField = (queryType['fields'] as List).find({ it["name"] == "namedField"})
+        def namedField = (queryType['fields'] as List).find({ it["name"] == "namedField" })
         namedField["isDeprecated"]
 
-        def notDeprecatedField = (queryType['fields'] as List).find({ it["name"] == "notDeprecated"})
+        def notDeprecatedField = (queryType['fields'] as List).find({ it["name"] == "notDeprecated" })
         !notDeprecatedField["isDeprecated"]
         notDeprecatedField["deprecationReason"] == null
 
@@ -189,13 +195,108 @@ class IntrospectionTest extends Specification {
         inputField["isDeprecated"]
         inputField["deprecationReason"] == "No longer supported"
 
-        def argument = (namedField["args"] as List).find({ it["name"] == "arg"})
+        def argument = (namedField["args"] as List).find({ it["name"] == "arg" })
         argument["isDeprecated"]
         argument["deprecationReason"] == "No longer supported"
 
-        def argument2 = (notDeprecatedField["args"] as List).find({ it["name"] == "arg"})
+        def argument2 = (notDeprecatedField["args"] as List).find({ it["name"] == "arg" })
         !argument2["isDeprecated"]
         argument2["deprecationReason"] == null
+
+
+        def directives = executionResult.data['__schema']['directives'] as List
+        def directive = directives.find { it['name'] == "someDirective" }
+
+        def directiveArgs = directive["args"] as List
+        directiveArgs.collect({ it["name"] }).sort() == ["deprecatedArg", "notDeprecatedArg"]
+
+        def dArgument = directiveArgs.find({ it["name"] == "deprecatedArg" })
+        dArgument["isDeprecated"]
+        dArgument["deprecationReason"] == "No longer supported"
+
+    }
+
+    def "can filter out deprecated things in introspection"() {
+
+        def spec = '''
+
+            directive @someDirective(
+                deprecatedArg : String @deprecated
+                notDeprecatedArg : String
+            ) on FIELD 
+
+            type Query {
+               namedField(arg : InputType @deprecated,  notDeprecatedArg : InputType ) : Enum @deprecated
+               notDeprecated(arg : InputType @deprecated,  notDeprecatedArg : InputType) : Enum
+            }
+            enum Enum {
+                RED @deprecated
+                BLUE
+            }
+            input InputType {
+                inputField : String @deprecated
+                notDeprecatedInputField : String 
+            }
+        '''
+
+        def graphQL = TestUtil.graphQL(spec).build()
+
+        when: "we dont include deprecated things"
+        def introspectionQueryWithoutDeprecated = IntrospectionQuery.INTROSPECTION_QUERY.replace("includeDeprecated: true", "includeDeprecated: false")
+
+        def executionResult = graphQL.execute(introspectionQueryWithoutDeprecated)
+
+        then:
+        executionResult.errors.isEmpty()
+
+        def types = executionResult.data['__schema']['types'] as List
+        def queryType = types.find { it['name'] == 'Query' }
+        def fields = (queryType['fields'] as List)
+        fields.size() == 1
+
+        def notDeprecatedField = fields[0]
+        notDeprecatedField["name"] == "notDeprecated"
+
+        def fieldArgs = notDeprecatedField["args"] as List
+        fieldArgs.size() == 1
+        fieldArgs[0]["name"] == "notDeprecatedArg"
+
+        def enumType = types.find { it['name'] == 'Enum' }
+        def enumValues = (enumType['enumValues'] as List)
+        enumValues.size() == 1
+        enumValues[0]["name"] == "BLUE"
+
+        def inputType = types.find { it['name'] == 'InputType' }
+        def inputFields = (inputType['inputFields'] as List)
+        inputFields.size() == 1
+        inputFields[0]["name"] == "notDeprecatedInputField"
+
+        when: "we DO include deprecated things"
+        executionResult = graphQL.execute(IntrospectionQuery.INTROSPECTION_QUERY)
+
+        types = executionResult.data['__schema']['types'] as List
+        queryType = types.find { it['name'] == 'Query' }
+        fields = (queryType['fields'] as List)
+
+        notDeprecatedField = fields.find { it["name"] == "notDeprecated" }
+        fieldArgs = notDeprecatedField["args"] as List
+
+        enumType = types.find { it['name'] == 'Enum' }
+        enumValues = (enumType['enumValues'] as List)
+
+        inputType = types.find { it['name'] == 'InputType' }
+        inputFields = (inputType['inputFields'] as List)
+
+        then:
+        executionResult.errors.isEmpty()
+
+        fields.size() == 2
+
+        fieldArgs.size() == 2
+
+        enumValues.size() == 2
+
+        inputFields.size() == 2
     }
 
     def "can change data fetchers for introspection types"() {

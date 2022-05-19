@@ -18,7 +18,7 @@ public interface IntrospectionQuery {
             "        name\n" +
             "        description\n" +
             "        locations\n" +
-            "        args {\n" +
+            "        args(includeDeprecated: true) {\n" +
             "          ...InputValue\n" +
             "        }\n" +
             "        isRepeatable\n" +
@@ -33,7 +33,7 @@ public interface IntrospectionQuery {
             "    fields(includeDeprecated: true) {\n" +
             "      name\n" +
             "      description\n" +
-            "      args {\n" +
+            "      args(includeDeprecated: true) {\n" +
             "        ...InputValue\n" +
             "      }\n" +
             "      type {\n" +

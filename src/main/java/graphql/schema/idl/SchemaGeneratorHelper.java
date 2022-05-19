@@ -95,6 +95,7 @@ import static graphql.introspection.Introspection.DirectiveLocation.UNION;
 import static graphql.schema.GraphQLEnumValueDefinition.newEnumValueDefinition;
 import static graphql.schema.GraphQLTypeReference.typeRef;
 import static graphql.schema.idl.SchemaGeneratorAppliedDirectiveHelper.buildAppliedDirectives;
+import static graphql.schema.idl.SchemaGeneratorAppliedDirectiveHelper.buildDeprecationReason;
 import static graphql.schema.idl.SchemaGeneratorAppliedDirectiveHelper.buildDirectiveDefinitionFromAst;
 import static java.lang.String.format;
 import static java.util.Collections.emptyList;
@@ -210,8 +211,6 @@ public class SchemaGeneratorHelper {
         }
     }
 
-    static final String NO_LONGER_SUPPORTED = "No longer supported";
-
     static String buildDescription(BuildContext buildContext, Node<?> node, Description description) {
         if (description != null) {
             return description.getContent();
@@ -233,23 +232,6 @@ public class SchemaGeneratorHelper {
             return null;
         }
         return String.join("\n", lines);
-    }
-
-    String buildDeprecationReason(List<Directive> directives) {
-        directives = Optional.ofNullable(directives).orElse(emptyList());
-        Optional<Directive> directive = directives.stream().filter(d -> "deprecated".equals(d.getName())).findFirst();
-        if (directive.isPresent()) {
-            Map<String, String> args = directive.get().getArguments().stream().collect(toMap(
-                    Argument::getName, arg -> ((StringValue) arg.getValue()).getValue()
-            ));
-            if (args.isEmpty()) {
-                return NO_LONGER_SUPPORTED; // default value from spec
-            } else {
-                // pre flight checks have ensured its valid
-                return args.get("reason");
-            }
-        }
-        return null;
     }
 
     public Function<Type<?>, GraphQLInputType> inputTypeFactory(BuildContext buildCtx) {
@@ -331,8 +313,6 @@ public class SchemaGeneratorHelper {
         fieldBuilder.deprecate(buildDeprecationReason(fieldDef.getDirectives()));
         fieldBuilder.comparatorRegistry(buildCtx.getComparatorRegistry());
 
-        // currently the spec doesnt allow deprecations on InputValueDefinitions but it should!
-        //fieldBuilder.deprecate(buildDeprecationReason(fieldDef.getDirectives()));
         GraphQLInputType inputType = buildInputType(buildCtx, fieldDef.getType());
         fieldBuilder.type(inputType);
         Value<?> defaultValue = fieldDef.getDefaultValue();
