@@ -495,10 +495,6 @@ class SchemaDiffTest extends Specification {
         expect:
         reporter.dangerCount == 0
         reporter.breakageCount == 0
-        reporter.dangers.every {
-            it.getCategory() == DiffCategory.DEPRECATION_ADDED
-        }
-
     }
 
     def "field was deprecated"() {
