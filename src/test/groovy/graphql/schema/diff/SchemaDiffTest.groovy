@@ -485,6 +485,22 @@ class SchemaDiffTest extends Specification {
 
     }
 
+    def "deprecated fields are unchanged"() {
+        def schema = TestUtil.schemaFile("diff/" + "schema_deprecated_fields_new.graphqls", wireWithNoFetching())
+        DiffSet diffSet = DiffSet.diffSet(schema, schema)
+
+        def diff = new SchemaDiff()
+        diff.diffSchema(diffSet, chainedReporter)
+
+        expect:
+        reporter.dangerCount == 0
+        reporter.breakageCount == 0
+        reporter.dangers.every {
+            it.getCategory() == DiffCategory.DEPRECATION_ADDED
+        }
+
+    }
+
     def "field was deprecated"() {
         DiffSet diffSet = diffSet("schema_deprecated_fields_new.graphqls")
 

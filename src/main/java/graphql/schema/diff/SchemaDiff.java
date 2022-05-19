@@ -477,7 +477,7 @@ public class SchemaDiff {
                         .components(enumName)
                         .reasonMsg("The new API has added a new enum value '%s'", enumName)
                         .build());
-            } else if (isDeprecated(newDefinitionMap.get(enumName))) {
+            } else if (isDeprecated(newDefinitionMap.get(enumName)) && !isDeprecated(oldEnum)) {
                 ctx.report(DiffEvent.apiDanger()
                         .category(DiffCategory.DEPRECATION_ADDED)
                         .typeName(oldDef.getName())
