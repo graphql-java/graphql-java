@@ -71,22 +71,24 @@ public class RuntimeWiring {
     }
 
     /**
+     * @param originalRuntimeWiring the runtime wiring to start from
+     *
      * @return a builder of Runtime Wiring based on the provided one
      */
-    public static Builder newRuntimeWiring(RuntimeWiring original) {
+    public static Builder newRuntimeWiring(RuntimeWiring originalRuntimeWiring) {
         Builder builder = new Builder();
-        builder.dataFetchers.putAll(original.dataFetchers);
-        builder.defaultDataFetchers.putAll(original.defaultDataFetchers);
-        builder.scalars.putAll(original.scalars);
-        builder.typeResolvers.putAll(original.typeResolvers);
-        builder.registeredDirectiveWiring.putAll(original.registeredDirectiveWiring);
-        builder.directiveWiring.addAll(original.directiveWiring);
-        builder.wiringFactory = original.wiringFactory;
-        builder.enumValuesProviders.putAll(original.enumValuesProviders);
-        builder.schemaGeneratorPostProcessings.addAll(original.schemaGeneratorPostProcessings);
-        builder.fieldVisibility = original.fieldVisibility;
-        builder.codeRegistry = original.codeRegistry;
-        builder.comparatorRegistry = original.comparatorRegistry;
+        builder.dataFetchers.putAll(originalRuntimeWiring.dataFetchers);
+        builder.defaultDataFetchers.putAll(originalRuntimeWiring.defaultDataFetchers);
+        builder.scalars.putAll(originalRuntimeWiring.scalars);
+        builder.typeResolvers.putAll(originalRuntimeWiring.typeResolvers);
+        builder.registeredDirectiveWiring.putAll(originalRuntimeWiring.registeredDirectiveWiring);
+        builder.directiveWiring.addAll(originalRuntimeWiring.directiveWiring);
+        builder.wiringFactory = originalRuntimeWiring.wiringFactory;
+        builder.enumValuesProviders.putAll(originalRuntimeWiring.enumValuesProviders);
+        builder.schemaGeneratorPostProcessings.addAll(originalRuntimeWiring.schemaGeneratorPostProcessings);
+        builder.fieldVisibility = originalRuntimeWiring.fieldVisibility;
+        builder.codeRegistry = originalRuntimeWiring.codeRegistry;
+        builder.comparatorRegistry = originalRuntimeWiring.comparatorRegistry;
         return builder;
     }
 
