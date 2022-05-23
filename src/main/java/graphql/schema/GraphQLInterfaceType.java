@@ -21,11 +21,11 @@ import java.util.function.UnaryOperator;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertValidName;
+import static graphql.collect.ImmutableKit.emptyList;
 import static graphql.schema.GraphqlTypeComparators.sortTypes;
 import static graphql.util.FpKit.getByName;
 import static graphql.util.FpKit.valuesToList;
 import static java.lang.String.format;
-import static java.util.Collections.emptyList;
 
 /**
  * In graphql, an interface is an abstract type that defines the set of fields that a type must include to
@@ -263,7 +263,7 @@ public class GraphQLInterfaceType implements GraphQLNamedType, GraphQLCompositeT
 
 
     @PublicApi
-    public static class Builder extends GraphqlDirectivesContainerTypeBuilder<Builder,Builder> {
+    public static class Builder extends GraphqlDirectivesContainerTypeBuilder<Builder, Builder> {
         private TypeResolver typeResolver;
         private InterfaceTypeDefinition definition;
         private List<InterfaceTypeExtensionDefinition> extensionDefinitions = emptyList();

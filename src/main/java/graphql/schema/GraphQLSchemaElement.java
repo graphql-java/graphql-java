@@ -1,10 +1,10 @@
 package graphql.schema;
 
 import graphql.PublicApi;
+import graphql.collect.ImmutableKit;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
-import java.util.Collections;
 import java.util.List;
 
 import static graphql.schema.SchemaElementChildrenContainer.newSchemaElementChildrenContainer;
@@ -17,7 +17,7 @@ import static graphql.schema.SchemaElementChildrenContainer.newSchemaElementChil
 public interface GraphQLSchemaElement {
 
     default List<GraphQLSchemaElement> getChildren() {
-        return Collections.emptyList();
+        return ImmutableKit.emptyList();
     }
 
     default SchemaElementChildrenContainer getChildrenWithTypeReferences() {

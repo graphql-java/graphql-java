@@ -25,8 +25,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static graphql.Assert.assertNotNull;
+import static graphql.collect.ImmutableKit.emptyList;
 import static graphql.util.FpKit.newList;
-import static java.util.Collections.emptyList;
 
 @Internal
 public class DataFetchingFieldSelectionSetImpl implements DataFetchingFieldSelectionSet {
@@ -64,7 +64,7 @@ public class DataFetchingFieldSelectionSetImpl implements DataFetchingFieldSelec
 
         @Override
         public List<SelectedField> getFields(String fieldGlobPattern, String... fieldGlobPatterns) {
-            return Collections.emptyList();
+            return ImmutableKit.emptyList();
         }
 
         @Override

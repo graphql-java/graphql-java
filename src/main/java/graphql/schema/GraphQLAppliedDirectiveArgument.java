@@ -3,6 +3,7 @@ package graphql.schema;
 
 import graphql.Assert;
 import graphql.PublicApi;
+import graphql.collect.ImmutableKit;
 import graphql.language.Argument;
 import graphql.language.Value;
 import graphql.util.TraversalControl;
@@ -10,7 +11,6 @@ import graphql.util.TraverserContext;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -104,7 +104,7 @@ public class GraphQLAppliedDirectiveArgument implements GraphQLNamedSchemaElemen
 
     @Override
     public List<GraphQLSchemaElement> getChildren() {
-        return Collections.emptyList();
+        return ImmutableKit.emptyList();
     }
 
 

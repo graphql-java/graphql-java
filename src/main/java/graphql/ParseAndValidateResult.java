@@ -7,7 +7,6 @@ import graphql.parser.InvalidSyntaxException;
 import graphql.validation.ValidationError;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -105,7 +104,7 @@ public class ParseAndValidateResult {
         private Document document;
         private Map<String, Object> variables = ImmutableKit.emptyMap();
         private InvalidSyntaxException syntaxException;
-        private List<ValidationError> validationErrors = Collections.emptyList();
+        private List<ValidationError> validationErrors = ImmutableKit.emptyList();
 
         public Builder document(Document document) {
             this.document = document;

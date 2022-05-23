@@ -70,7 +70,6 @@ import org.antlr.v4.runtime.tree.TerminalNode;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import static graphql.Assert.assertShouldNeverHappen;
@@ -804,7 +803,7 @@ public class GraphqlAntlrToLanguage {
 
     private List<IgnoredChar> mapTokenToIgnoredChar(List<Token> tokens) {
         if (tokens == null) {
-            return Collections.emptyList();
+            return ImmutableKit.emptyList();
         }
         return map(tokens, this::createIgnoredChar);
 

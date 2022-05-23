@@ -841,7 +841,7 @@ public class Anonymizer {
             public TraversalControl visitVariableDefinition(VariableDefinition node, TraverserContext<Node> context) {
                 String newName = assertNotNull(variableNames.get(node.getName()));
                 VariableDefinition newNode = node.transform(builder -> {
-                    builder.name(newName).comments(Collections.emptyList());
+                    builder.name(newName).comments(ImmutableKit.emptyList());
 
                     // convert variable language type to renamed language type
                     TypeName typeName = TypeUtil.unwrapAll(node.getType());
