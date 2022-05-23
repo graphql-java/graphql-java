@@ -1,11 +1,13 @@
 package graphql.execution;
 
+import graphql.Assert;
 import graphql.ExecutionResult;
 import graphql.PublicApi;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Future;
 
 import static graphql.Assert.assertNotNull;
 
@@ -22,13 +24,13 @@ public class FieldValueInfo {
     }
 
     private final CompleteValueType completeValueType;
-    private final CompletableFuture<ExecutionResult> fieldValue;
+    private final Future<ExecutionResult> fieldValue;
     private final List<FieldValueInfo> fieldValueInfos;
 
-    private FieldValueInfo(CompleteValueType completeValueType, CompletableFuture<ExecutionResult> fieldValue, List<FieldValueInfo> fieldValueInfos) {
+    private FieldValueInfo(CompleteValueType completeValueType, Future<ExecutionResult> fieldValue, List<FieldValueInfo> fieldValueInfos) {
         assertNotNull(fieldValueInfos, () -> "fieldValueInfos can't be null");
         this.completeValueType = completeValueType;
-        this.fieldValue = fieldValue;
+        this.fieldValue = Assert.assertNotNull(fieldValue);
         this.fieldValueInfos = fieldValueInfos;
     }
 
@@ -36,7 +38,7 @@ public class FieldValueInfo {
         return completeValueType;
     }
 
-    public CompletableFuture<ExecutionResult> getFieldValue() {
+    public Future<ExecutionResult> getFieldValue() {
         return fieldValue;
     }
 
@@ -60,7 +62,7 @@ public class FieldValueInfo {
     @SuppressWarnings("unused")
     public static class Builder {
         private CompleteValueType completeValueType;
-        private CompletableFuture<ExecutionResult> executionResultFuture;
+        private Future<ExecutionResult> executionResultFuture;
         private List<FieldValueInfo> listInfos = new ArrayList<>();
 
         public Builder(CompleteValueType completeValueType) {
@@ -72,7 +74,7 @@ public class FieldValueInfo {
             return this;
         }
 
-        public Builder fieldValue(CompletableFuture<ExecutionResult> executionResultFuture) {
+        public Builder fieldValue(Future<ExecutionResult> executionResultFuture) {
             this.executionResultFuture = executionResultFuture;
             return this;
         }

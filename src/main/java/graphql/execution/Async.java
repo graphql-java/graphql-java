@@ -11,6 +11,8 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -141,6 +143,21 @@ public class Async {
 
     public static <U, T> List<CompletableFuture<U>> mapCompose(List<CompletableFuture<T>> values, Function<T, CompletableFuture<U>> mapper) {
         return ImmutableKit.map(values, cf -> cf.thenCompose(mapper));
+    }
+
+    public static <T> List<T> all(List<Future<T>> futures) {
+        List<T> result = new ArrayList<>();
+
+        for(Future<T> future: futures) {
+            try {
+                result.add(future.get());
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            } catch (ExecutionException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        return result;
     }
 
 }

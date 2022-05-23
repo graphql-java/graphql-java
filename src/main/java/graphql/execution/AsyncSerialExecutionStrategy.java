@@ -28,27 +28,28 @@ public class AsyncSerialExecutionStrategy extends AbstractAsyncExecutionStrategy
     @Override
     @SuppressWarnings({"TypeParameterUnusedInFormals", "FutureReturnValueIgnored"})
     public CompletableFuture<ExecutionResult> execute(ExecutionContext executionContext, ExecutionStrategyParameters parameters) throws NonNullableFieldWasNullException {
-
-        Instrumentation instrumentation = executionContext.getInstrumentation();
-        InstrumentationExecutionStrategyParameters instrumentationParameters = new InstrumentationExecutionStrategyParameters(executionContext, parameters);
-        InstrumentationContext<ExecutionResult> executionStrategyCtx = instrumentation.beginExecutionStrategy(instrumentationParameters);
-        MergedSelectionSet fields = parameters.getFields();
-        ImmutableList<String> fieldNames = ImmutableList.copyOf(fields.keySet());
-
-        CompletableFuture<List<ExecutionResult>> resultsFuture = Async.eachSequentially(fieldNames, (fieldName, index, prevResults) -> {
-            MergedField currentField = fields.getSubField(fieldName);
-            ResultPath fieldPath = parameters.getPath().segment(mkNameForPath(currentField));
-            ExecutionStrategyParameters newParameters = parameters
-                    .transform(builder -> builder.field(currentField).path(fieldPath));
-            return resolveField(executionContext, newParameters);
-        });
-
-        CompletableFuture<ExecutionResult> overallResult = new CompletableFuture<>();
-        executionStrategyCtx.onDispatched(overallResult);
-
-        resultsFuture.whenComplete(handleResults(executionContext, fieldNames, overallResult));
-        overallResult.whenComplete(executionStrategyCtx::onCompleted);
-        return overallResult;
+//
+//        Instrumentation instrumentation = executionContext.getInstrumentation();
+//        InstrumentationExecutionStrategyParameters instrumentationParameters = new InstrumentationExecutionStrategyParameters(executionContext, parameters);
+//        InstrumentationContext<ExecutionResult> executionStrategyCtx = instrumentation.beginExecutionStrategy(instrumentationParameters);
+//        MergedSelectionSet fields = parameters.getFields();
+//        ImmutableList<String> fieldNames = ImmutableList.copyOf(fields.keySet());
+//
+//        CompletableFuture<List<ExecutionResult>> resultsFuture = Async.eachSequentially(fieldNames, (fieldName, index, prevResults) -> {
+//            MergedField currentField = fields.getSubField(fieldName);
+//            ResultPath fieldPath = parameters.getPath().segment(mkNameForPath(currentField));
+//            ExecutionStrategyParameters newParameters = parameters
+//                    .transform(builder -> builder.field(currentField).path(fieldPath));
+//            return resolveField(executionContext, newParameters);
+//        });
+//
+//        CompletableFuture<ExecutionResult> overallResult = new CompletableFuture<>();
+//        executionStrategyCtx.onDispatched(overallResult);
+//
+//        resultsFuture.whenComplete(handleResults(executionContext, fieldNames, overallResult));
+//        overallResult.whenComplete(executionStrategyCtx::onCompleted);
+//        return overallResult;
+        throw  new RuntimeException("na");
     }
 
 }

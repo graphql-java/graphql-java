@@ -37,6 +37,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -447,13 +449,17 @@ public class GraphQL {
      */
     public ExecutionResult execute(ExecutionInput executionInput) {
         try {
-            return executeAsync(executionInput).join();
-        } catch (CompletionException e) {
+            return executeAsync(executionInput).get();
+        } catch (RuntimeException e) {
             if (e.getCause() instanceof RuntimeException) {
                 throw (RuntimeException) e.getCause();
             } else {
                 throw e;
             }
+        } catch (ExecutionException e) {
+            throw new RuntimeException(e);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -467,7 +473,7 @@ public class GraphQL {
      *
      * @return a promise to an {@link ExecutionResult} which can include errors
      */
-    public CompletableFuture<ExecutionResult> executeAsync(ExecutionInput.Builder executionInputBuilder) {
+    public Future<ExecutionResult> executeAsync(ExecutionInput.Builder executionInputBuilder) {
         return executeAsync(executionInputBuilder.build());
     }
 
@@ -488,7 +494,7 @@ public class GraphQL {
      *
      * @return a promise to an {@link ExecutionResult} which can include errors
      */
-    public CompletableFuture<ExecutionResult> executeAsync(UnaryOperator<ExecutionInput.Builder> builderFunction) {
+    public Future<ExecutionResult> executeAsync(UnaryOperator<ExecutionInput.Builder> builderFunction) {
         return executeAsync(builderFunction.apply(ExecutionInput.newExecutionInput()).build());
     }
 
@@ -502,7 +508,7 @@ public class GraphQL {
      *
      * @return a promise to an {@link ExecutionResult} which can include errors
      */
-    public CompletableFuture<ExecutionResult> executeAsync(ExecutionInput executionInput) {
+    public Future<ExecutionResult> executeAsync(ExecutionInput executionInput) {
         try {
             if (logNotSafe.isDebugEnabled()) {
                 logNotSafe.debug("Executing request. operation name: '{}'. query: '{}'. variables '{}'", executionInput.getOperationName(), executionInput.getQuery(), executionInput.getVariables());
@@ -521,13 +527,8 @@ public class GraphQL {
 
             GraphQLSchema graphQLSchema = instrumentation.instrumentSchema(this.graphQLSchema, instrumentationParameters);
 
-            CompletableFuture<ExecutionResult> executionResult = parseValidateAndExecute(executionInput, graphQLSchema, instrumentationState);
+            Future<ExecutionResult> executionResult = parseValidateAndExecute(executionInput, graphQLSchema, instrumentationState);
             //
-            // finish up instrumentation
-            executionResult = executionResult.whenComplete(completeInstrumentationCtxCF(executionInstrumentation, beginExecutionCF));
-            //
-            // allow instrumentation to tweak the result
-            executionResult = executionResult.thenCompose(result -> instrumentation.instrumentExecutionResult(result, instrumentationParameters));
             return executionResult;
         } catch (AbortExecutionException abortException) {
             return CompletableFuture.completedFuture(abortException.toExecutionResult());
@@ -545,24 +546,18 @@ public class GraphQL {
     }
 
 
-    private CompletableFuture<ExecutionResult> parseValidateAndExecute(ExecutionInput executionInput, GraphQLSchema graphQLSchema, InstrumentationState instrumentationState) {
+    private Future<ExecutionResult> parseValidateAndExecute(ExecutionInput executionInput, GraphQLSchema graphQLSchema, InstrumentationState instrumentationState) {
         AtomicReference<ExecutionInput> executionInputRef = new AtomicReference<>(executionInput);
-        Function<ExecutionInput, PreparsedDocumentEntry> computeFunction = transformedInput -> {
-            // if they change the original query in the pre-parser, then we want to see it downstream from then on
-            executionInputRef.set(transformedInput);
-            return parseAndValidate(executionInputRef, graphQLSchema, instrumentationState);
-        };
-        CompletableFuture<PreparsedDocumentEntry> preparsedDoc = preparsedDocumentProvider.getDocumentAsync(executionInput, computeFunction);
-        return preparsedDoc.thenCompose(preparsedDocumentEntry -> {
-            if (preparsedDocumentEntry.hasErrors()) {
-                return CompletableFuture.completedFuture(new ExecutionResultImpl(preparsedDocumentEntry.getErrors()));
-            }
-            try {
-                return execute(executionInputRef.get(), preparsedDocumentEntry.getDocument(), graphQLSchema, instrumentationState);
-            } catch (AbortExecutionException e) {
-                return CompletableFuture.completedFuture(e.toExecutionResult());
-            }
-        });
+
+        PreparsedDocumentEntry preparsedDocumentEntry = parseAndValidate(executionInputRef, graphQLSchema, instrumentationState);
+        if (preparsedDocumentEntry.hasErrors()) {
+            return CompletableFuture.completedFuture(new ExecutionResultImpl(preparsedDocumentEntry.getErrors()));
+        }
+        try {
+            return execute(executionInputRef.get(), preparsedDocumentEntry.getDocument(), graphQLSchema, instrumentationState);
+        } catch (AbortExecutionException e) {
+            return CompletableFuture.completedFuture(e.toExecutionResult());
+        }
     }
 
     private PreparsedDocumentEntry parseAndValidate(AtomicReference<ExecutionInput> executionInputRef, GraphQLSchema graphQLSchema, InstrumentationState instrumentationState) {
@@ -630,7 +625,7 @@ public class GraphQL {
         return validationErrors;
     }
 
-    private CompletableFuture<ExecutionResult> execute(ExecutionInput executionInput, Document document, GraphQLSchema graphQLSchema, InstrumentationState instrumentationState) {
+    private Future<ExecutionResult> execute(ExecutionInput executionInput, Document document, GraphQLSchema graphQLSchema, InstrumentationState instrumentationState) {
 
         Execution execution = new Execution(queryStrategy, mutationStrategy, subscriptionStrategy, instrumentation, valueUnboxer);
         ExecutionId executionId = executionInput.getExecutionId();
@@ -638,21 +633,21 @@ public class GraphQL {
         if (logNotSafe.isDebugEnabled()) {
             logNotSafe.debug("Executing '{}'. operation name: '{}'. query: '{}'. variables '{}'", executionId, executionInput.getOperationName(), executionInput.getQuery(), executionInput.getVariables());
         }
-        CompletableFuture<ExecutionResult> future = execution.execute(document, graphQLSchema, executionId, executionInput, instrumentationState);
-        future = future.whenComplete((result, throwable) -> {
-            if (throwable != null) {
-                logNotSafe.error(String.format("Execution '%s' threw exception when executing : query : '%s'. variables '%s'", executionId, executionInput.getQuery(), executionInput.getVariables()), throwable);
-            } else {
-                if (log.isDebugEnabled()) {
-                    int errorCount = result.getErrors().size();
-                    if (errorCount > 0) {
-                        log.debug("Execution '{}' completed with '{}' errors", executionId, errorCount);
-                    } else {
-                        log.debug("Execution '{}' completed with zero errors", executionId);
-                    }
-                }
-            }
-        });
+        Future<ExecutionResult> future = execution.execute(document, graphQLSchema, executionId, executionInput, instrumentationState);
+//        future = future.whenComplete((result, throwable) -> {
+//            if (throwable != null) {
+//                logNotSafe.error(String.format("Execution '%s' threw exception when executing : query : '%s'. variables '%s'", executionId, executionInput.getQuery(), executionInput.getVariables()), throwable);
+//            } else {
+//                if (log.isDebugEnabled()) {
+//                    int errorCount = result.getErrors().size();
+//                    if (errorCount > 0) {
+//                        log.debug("Execution '{}' completed with '{}' errors", executionId, errorCount);
+//                    } else {
+//                        log.debug("Execution '{}' completed with zero errors", executionId);
+//                    }
+//                }
+//            }
+//        });
         return future;
     }
 

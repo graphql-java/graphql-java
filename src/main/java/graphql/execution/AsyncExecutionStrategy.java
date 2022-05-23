@@ -1,15 +1,20 @@
 package graphql.execution;
 
 import graphql.ExecutionResult;
+import graphql.ExecutionResultImpl;
 import graphql.PublicApi;
 import graphql.execution.instrumentation.ExecutionStrategyInstrumentationContext;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.function.BiConsumer;
 
 import static graphql.collect.ImmutableKit.map;
@@ -38,7 +43,7 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
 
     @Override
     @SuppressWarnings("FutureReturnValueIgnored")
-    public CompletableFuture<ExecutionResult> execute(ExecutionContext executionContext, ExecutionStrategyParameters parameters) throws NonNullableFieldWasNullException {
+    public Future<ExecutionResult> execute(ExecutionContext executionContext, ExecutionStrategyParameters parameters) throws NonNullableFieldWasNullException {
 
         Instrumentation instrumentation = executionContext.getInstrumentation();
         InstrumentationExecutionStrategyParameters instrumentationParameters = new InstrumentationExecutionStrategyParameters(executionContext, parameters);
@@ -47,7 +52,7 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
 
         MergedSelectionSet fields = parameters.getFields();
         Set<String> fieldNames = fields.keySet();
-        List<CompletableFuture<FieldValueInfo>> futures = new ArrayList<>(fieldNames.size());
+        List<Future<FieldValueInfo>> futures = new ArrayList<>(fieldNames.size());
         List<String> resolvedFields = new ArrayList<>(fieldNames.size());
         for (String fieldName : fieldNames) {
             MergedField currentField = fields.getSubField(fieldName);
@@ -57,31 +62,30 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
                     .transform(builder -> builder.field(currentField).path(fieldPath).parent(parameters));
 
             resolvedFields.add(fieldName);
-            CompletableFuture<FieldValueInfo> future = resolveFieldWithInfo(executionContext, newParameters);
+            Future<FieldValueInfo> future = resolveFieldWithInfo(executionContext, newParameters);
             futures.add(future);
         }
-        CompletableFuture<ExecutionResult> overallResult = new CompletableFuture<>();
-        executionStrategyCtx.onDispatched(overallResult);
 
-        Async.each(futures).whenComplete((completeValueInfos, throwable) -> {
-            BiConsumer<List<ExecutionResult>, Throwable> handleResultsConsumer = handleResults(executionContext, resolvedFields, overallResult);
-            if (throwable != null) {
-                handleResultsConsumer.accept(null, throwable.getCause());
-                return;
+        return executor.submit(() -> {
+            List<FieldValueInfo> fieldValueInfos = Async.all(futures);
+            Map<String, Object> resolvedValuesByField = new LinkedHashMap<>(fieldNames.size());
+            int ix = 0;
+            for (FieldValueInfo fieldValueInfo : fieldValueInfos) {
+                ExecutionResult executionResult = null;
+                try {
+                    executionResult = fieldValueInfo.getFieldValue().get();
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                } catch (ExecutionException e) {
+                    throw new RuntimeException(e);
+                }
+
+                String fieldName = resolvedFields.get(ix++);
+                resolvedValuesByField.put(fieldName, executionResult.getData());
             }
-            List<CompletableFuture<ExecutionResult>> executionResultFuture = map(completeValueInfos, FieldValueInfo::getFieldValue);
-            executionStrategyCtx.onFieldValuesInfo(completeValueInfos);
-            Async.each(executionResultFuture).whenComplete(handleResultsConsumer);
-        }).exceptionally((ex) -> {
-            // if there are any issues with combining/handling the field results,
-            // complete the future at all costs and bubble up any thrown exception so
-            // the execution does not hang.
-            executionStrategyCtx.onFieldValuesException();
-            overallResult.completeExceptionally(ex);
-            return null;
+            ExecutionResultImpl executionResult = new ExecutionResultImpl(resolvedValuesByField, executionContext.getErrors());
+            return executionResult;
         });
 
-        overallResult.whenComplete(executionStrategyCtx::onCompleted);
-        return overallResult;
     }
 }

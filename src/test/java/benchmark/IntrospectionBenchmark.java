@@ -28,6 +28,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.google.common.io.Resources.asByteSource;
 import static com.google.common.io.Resources.getResource;
 
 @State(Scope.Benchmark)
@@ -79,7 +80,7 @@ public class IntrospectionBenchmark {
     public IntrospectionBenchmark() {
         String largeSchema = readFromClasspath("large-schema-4.graphqls");
         GraphQLSchema graphQLSchema = SchemaGenerator.createdMockedSchema(largeSchema);
-        graphQL = GraphQL.newGraphQL(graphQLSchema).instrumentation(countingInstrumentation).build();
+        graphQL = GraphQL.newGraphQL(graphQLSchema).build();
     }
 
 
@@ -94,36 +95,9 @@ public class IntrospectionBenchmark {
 
     public static void main(String[] args) {
         IntrospectionBenchmark introspectionBenchmark = new IntrospectionBenchmark();
-//        while (true) {
-//            long then = System.currentTimeMillis();
-//            ExecutionResult er = introspectionBenchmark.benchMarkIntrospection();
-//            long ms = System.currentTimeMillis() - then;
-//            System.out.println("Took " + ms + "ms");
-//        }
+        ExecutionResult executionResult = introspectionBenchmark.benchMarkIntrospection();
+        System.out.println("data" + executionResult.getData());
 
-        introspectionBenchmark.benchMarkIntrospection();
-
-        Map<String, Long> counts = sortByValue(introspectionBenchmark.countingInstrumentation.counts);
-        Map<String, Long> times = sortByValue(introspectionBenchmark.countingInstrumentation.times);
-
-        System.out.println("Counts");
-        counts.forEach((k, v) -> System.out.printf("C %-70s : %020d\n", k, v));
-        System.out.println("Times");
-        times.forEach((k, v) -> System.out.printf("T %-70s : %020d\n", k, v));
-
-
-    }
-
-    public static <K, V extends Comparable<? super V>> Map<K, V> sortByValue(Map<K, V> map) {
-        List<Map.Entry<K, V>> list = new ArrayList<>(map.entrySet());
-        list.sort(Map.Entry.comparingByValue());
-
-        Map<K, V> result = new LinkedHashMap<>();
-        for (Map.Entry<K, V> entry : list) {
-            result.put(entry.getKey(), entry.getValue());
-        }
-
-        return result;
     }
 
     @Benchmark

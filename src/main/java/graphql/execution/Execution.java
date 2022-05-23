@@ -25,6 +25,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Future;
 
 import static graphql.Assert.assertShouldNeverHappen;
 import static graphql.execution.ExecutionContextBuilder.newExecutionContextBuilder;
@@ -56,7 +57,7 @@ public class Execution {
         this.valueUnboxer = valueUnboxer;
     }
 
-    public CompletableFuture<ExecutionResult> execute(Document document, GraphQLSchema graphQLSchema, ExecutionId executionId, ExecutionInput executionInput, InstrumentationState instrumentationState) {
+    public Future<ExecutionResult> execute(Document document, GraphQLSchema graphQLSchema, ExecutionId executionId, ExecutionInput executionInput, InstrumentationState instrumentationState) {
 
         NodeUtil.GetOperationResult getOperationResult = NodeUtil.getOperation(document, executionInput.getOperationName());
         Map<String, FragmentDefinition> fragmentsByName = getOperationResult.fragmentsByName;
@@ -107,7 +108,7 @@ public class Execution {
     }
 
 
-    private CompletableFuture<ExecutionResult> executeOperation(ExecutionContext executionContext, Object root, OperationDefinition operationDefinition) {
+    private Future<ExecutionResult> executeOperation(ExecutionContext executionContext, Object root, OperationDefinition operationDefinition) {
 
         InstrumentationExecuteOperationParameters instrumentationParams = new InstrumentationExecuteOperationParameters(executionContext);
         InstrumentationContext<ExecutionResult> executeOperationCtx = instrumentation.beginExecuteOperation(instrumentationParams);
@@ -151,7 +152,7 @@ public class Execution {
                 .path(path)
                 .build();
 
-        CompletableFuture<ExecutionResult> result;
+        Future<ExecutionResult> result;
         try {
             ExecutionStrategy executionStrategy = executionContext.getStrategy(operation);
             if (logNotSafe.isDebugEnabled()) {
@@ -170,9 +171,7 @@ public class Execution {
         }
 
         // note this happens NOW - not when the result completes
-        executeOperationCtx.onDispatched(result);
 
-        result = result.whenComplete(executeOperationCtx::onCompleted);
 
         return result;
     }
