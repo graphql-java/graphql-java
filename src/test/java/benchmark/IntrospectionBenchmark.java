@@ -79,7 +79,9 @@ public class IntrospectionBenchmark {
     public IntrospectionBenchmark() {
         String largeSchema = readFromClasspath("large-schema-4.graphqls");
         GraphQLSchema graphQLSchema = SchemaGenerator.createdMockedSchema(largeSchema);
-        graphQL = GraphQL.newGraphQL(graphQLSchema).instrumentation(countingInstrumentation).build();
+        graphQL = GraphQL.newGraphQL(graphQLSchema)
+                //.instrumentation(countingInstrumentation)
+                .build();
     }
 
 
