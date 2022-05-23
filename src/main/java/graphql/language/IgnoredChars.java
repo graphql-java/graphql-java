@@ -2,11 +2,10 @@ package graphql.language;
 
 import com.google.common.collect.ImmutableList;
 import graphql.PublicApi;
+import graphql.collect.ImmutableKit;
 
 import java.io.Serializable;
 import java.util.List;
-
-import static graphql.collect.ImmutableKit.emptyList;
 
 /**
  * Graphql syntax has a series of characters, such as spaces, new lines and commas that are not considered relevant
@@ -20,7 +19,7 @@ public class IgnoredChars implements Serializable {
     private final ImmutableList<IgnoredChar> left;
     private final ImmutableList<IgnoredChar> right;
 
-    public static final IgnoredChars EMPTY = new IgnoredChars(emptyList(), emptyList());
+    public static final IgnoredChars EMPTY = new IgnoredChars(ImmutableKit.emptyList(), ImmutableKit.emptyList());
 
     public IgnoredChars(List<IgnoredChar> left, List<IgnoredChar> right) {
         this.left = ImmutableList.copyOf(left);

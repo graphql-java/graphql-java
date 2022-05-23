@@ -1,6 +1,7 @@
 package graphql.language;
 
 import graphql.PublicApi;
+import graphql.collect.ImmutableKit;
 import graphql.util.DefaultTraverserContext;
 import graphql.util.TraversalControl;
 import graphql.util.Traverser;
@@ -29,7 +30,7 @@ public class NodeTraverser {
     }
 
     public NodeTraverser() {
-        this(Collections.emptyMap(), Node::getChildren);
+        this(ImmutableKit.emptyMap(), Node::getChildren);
     }
 
 

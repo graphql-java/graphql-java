@@ -1,11 +1,11 @@
 package graphql;
 
 import graphql.cachecontrol.CacheControl;
+import graphql.collect.ImmutableKit;
 import graphql.execution.ExecutionId;
 import graphql.execution.instrumentation.dataloader.DataLoaderDispatcherInstrumentationState;
 import org.dataloader.DataLoaderRegistry;
 
-import java.util.Collections;
 import java.util.Locale;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -209,8 +209,8 @@ public class ExecutionInput {
         private Object context = graphQLContext; // we make these the same object on purpose - legacy code will get the same object if this change nothing
         private Object localContext;
         private Object root;
-        private Map<String, Object> variables = Collections.emptyMap();
-        public Map<String, Object> extensions = Collections.emptyMap();
+        private Map<String, Object> variables = ImmutableKit.emptyMap();
+        public Map<String, Object> extensions = ImmutableKit.emptyMap();
         //
         // this is important - it allows code to later known if we never really set a dataloader and hence it can optimize
         // dataloader field tracking away.

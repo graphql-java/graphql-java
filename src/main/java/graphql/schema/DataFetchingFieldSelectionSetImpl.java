@@ -3,6 +3,7 @@ package graphql.schema;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import graphql.Internal;
+import graphql.collect.ImmutableKit;
 import graphql.normalized.ExecutableNormalizedField;
 
 import java.io.File;
@@ -68,12 +69,12 @@ public class DataFetchingFieldSelectionSetImpl implements DataFetchingFieldSelec
 
         @Override
         public Map<String, List<SelectedField>> getFieldsGroupedByResultKey() {
-            return Collections.emptyMap();
+            return ImmutableKit.emptyMap();
         }
 
         @Override
         public Map<String, List<SelectedField>> getFieldsGroupedByResultKey(String fieldGlobPattern, String... fieldGlobPatterns) {
-            return Collections.emptyMap();
+            return ImmutableKit.emptyMap();
         }
     };
 

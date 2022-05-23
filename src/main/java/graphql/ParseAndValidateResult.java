@@ -1,5 +1,6 @@
 package graphql;
 
+import graphql.collect.ImmutableKit;
 import graphql.execution.instrumentation.DocumentAndVariables;
 import graphql.language.Document;
 import graphql.parser.InvalidSyntaxException;
@@ -25,9 +26,9 @@ public class ParseAndValidateResult {
 
     private ParseAndValidateResult(Builder builder) {
         this.document = builder.document;
-        this.variables = builder.variables == null ? Collections.emptyMap() : builder.variables;
+        this.variables = builder.variables == null ? ImmutableKit.emptyMap() : builder.variables;
         this.syntaxException = builder.syntaxException;
-        this.validationErrors = builder.validationErrors == null ? Collections.emptyList() : builder.validationErrors;
+        this.validationErrors = builder.validationErrors == null ? ImmutableKit.emptyList() : builder.validationErrors;
     }
 
     /**
@@ -102,7 +103,7 @@ public class ParseAndValidateResult {
 
     public static class Builder {
         private Document document;
-        private Map<String, Object> variables = Collections.emptyMap();
+        private Map<String, Object> variables = ImmutableKit.emptyMap();
         private InvalidSyntaxException syntaxException;
         private List<ValidationError> validationErrors = Collections.emptyList();
 
