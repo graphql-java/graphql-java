@@ -27,7 +27,7 @@ public class ExecutionStepInfoFactory {
         GraphQLOutputType fieldType = fieldDefinition.getType();
         List<Argument> fieldArgs = mergedField.getArguments();
         GraphQLCodeRegistry codeRegistry = executionContext.getGraphQLSchema().getCodeRegistry();
-        Supplier<Map<String, Object>> argumentValues = FpKit.intraThreadMemoize(() -> valuesResolver.getArgumentValues(codeRegistry, fieldDefinition.getArguments(), fieldArgs, executionContext.getVariables()));
+        Supplier<Map<String, Object>> argumentValues = FpKit.intraThreadMemoize(() -> valuesResolver.getArgumentValues(codeRegistry, fieldDefinition.getArguments(), fieldArgs, executionContext.getCoercedVariables()));
 
         ResultPath newPath = parentInfo.getPath().segment(mergedField.getResultKey());
 
