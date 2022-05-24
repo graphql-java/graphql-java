@@ -2,6 +2,7 @@ package graphql
 
 import graphql.cachecontrol.CacheControl
 import graphql.execution.ExecutionId
+import graphql.execution.RawVariables
 import graphql.schema.DataFetcher
 import graphql.schema.DataFetchingEnvironment
 import org.dataloader.DataLoaderRegistry
@@ -35,6 +36,7 @@ class ExecutionInputTest extends Specification {
         executionInput.graphQLContext.get("a") == "b"
         executionInput.root == root
         executionInput.variables == variables
+        executionInput.rawVariables.toMap() == variables
         executionInput.dataLoaderRegistry == registry
         executionInput.cacheControl == cacheControl
         executionInput.query == query
@@ -104,6 +106,32 @@ class ExecutionInputTest extends Specification {
         executionInput.graphQLContext == graphQLContext
         executionInput.root == root
         executionInput.variables == variables
+        executionInput.dataLoaderRegistry == registry
+        executionInput.cacheControl == cacheControl
+        executionInput.locale == Locale.GERMAN
+        executionInput.extensions == [some: "map"]
+        executionInput.query == "new query"
+    }
+
+    def "transform works and sets variables"() {
+        when:
+        def executionInputOld = ExecutionInput.newExecutionInput().query(query)
+                .dataLoaderRegistry(registry)
+                .cacheControl(cacheControl)
+                .extensions([some: "map"])
+                .root(root)
+                .graphQLContext({ it.of(["a": "b"]) })
+                .locale(Locale.GERMAN)
+                .build()
+        def graphQLContext = executionInputOld.getGraphQLContext()
+        def executionInput = executionInputOld.transform({ bldg -> bldg
+                .query("new query")
+                .variables(variables) })
+
+        then:
+        executionInput.graphQLContext == graphQLContext
+        executionInput.root == root
+        executionInput.rawVariables.toMap() == variables
         executionInput.dataLoaderRegistry == registry
         executionInput.cacheControl == cacheControl
         executionInput.locale == Locale.GERMAN

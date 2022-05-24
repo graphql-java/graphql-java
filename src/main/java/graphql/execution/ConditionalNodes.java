@@ -34,7 +34,7 @@ public class ConditionalNodes {
     private boolean getDirectiveResult(Map<String, Object> variables, List<Directive> directives, String directiveName, boolean defaultValue) {
         Directive foundDirective = NodeUtil.findNodeByName(directives, directiveName);
         if (foundDirective != null) {
-            Map<String, Object> argumentValues = valuesResolver.getArgumentValues(SkipDirective.getArguments(), foundDirective.getArguments(), variables);
+            Map<String, Object> argumentValues = valuesResolver.getArgumentValues(SkipDirective.getArguments(), foundDirective.getArguments(), new CoercedVariables(variables));
             Object flag = argumentValues.get("if");
             Assert.assertTrue(flag instanceof Boolean, () -> String.format("The '%s' directive MUST have a value for the 'if' argument", directiveName));
             return (Boolean) flag;

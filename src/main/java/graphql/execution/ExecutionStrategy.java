@@ -818,7 +818,7 @@ public abstract class ExecutionStrategy {
         if (!fieldArgDefs.isEmpty()) {
             List<Argument> fieldArgs = field.getArguments();
             GraphQLCodeRegistry codeRegistry = executionContext.getGraphQLSchema().getCodeRegistry();
-            argumentValues = FpKit.intraThreadMemoize(() -> valuesResolver.getArgumentValues(codeRegistry, fieldArgDefs, fieldArgs, executionContext.getVariables()));
+            argumentValues = FpKit.intraThreadMemoize(() -> valuesResolver.getArgumentValues(codeRegistry, fieldArgDefs, fieldArgs, executionContext.getCoercedVariables()));
         }
 
 
