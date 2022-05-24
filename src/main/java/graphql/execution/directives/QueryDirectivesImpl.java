@@ -16,7 +16,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import static java.util.Collections.emptyList;
+import static graphql.collect.ImmutableKit.emptyList;
 
 /**
  * These objects are ALWAYS in the context of a single MergedField

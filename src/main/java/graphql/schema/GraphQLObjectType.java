@@ -23,10 +23,10 @@ import java.util.function.UnaryOperator;
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertShouldNeverHappen;
 import static graphql.Assert.assertValidName;
+import static graphql.collect.ImmutableKit.emptyList;
 import static graphql.schema.GraphqlTypeComparators.sortTypes;
 import static graphql.util.FpKit.getByName;
 import static graphql.util.FpKit.valuesToList;
-import static java.util.Collections.emptyList;
 
 /**
  * This is the work horse type and represents an object with one or more field values that can be retrieved
@@ -250,7 +250,7 @@ public class GraphQLObjectType implements GraphQLNamedOutputType, GraphQLComposi
     }
 
     @PublicApi
-    public static class Builder extends GraphqlDirectivesContainerTypeBuilder<Builder,Builder> {
+    public static class Builder extends GraphqlDirectivesContainerTypeBuilder<Builder, Builder> {
         private ObjectTypeDefinition definition;
         private List<ObjectTypeExtensionDefinition> extensionDefinitions = emptyList();
         private final Map<String, GraphQLFieldDefinition> fields = new LinkedHashMap<>();

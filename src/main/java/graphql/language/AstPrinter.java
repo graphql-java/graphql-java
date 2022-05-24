@@ -2,6 +2,7 @@ package graphql.language;
 
 import graphql.AssertException;
 import graphql.PublicApi;
+import graphql.collect.ImmutableKit;
 
 import java.io.PrintWriter;
 import java.io.Writer;
@@ -468,7 +469,7 @@ public class AstPrinter {
     }
 
     private <T> List<T> nvl(List<T> list) {
-        return list != null ? list : Collections.emptyList();
+        return list != null ? list : ImmutableKit.emptyList();
     }
 
     private NodePrinter<Value> value() {
@@ -593,8 +594,8 @@ public class AstPrinter {
         for (int i = 0; i < maybeString.length(); i++) {
             char c = maybeString.charAt(i);
             if (c == '\n') {
-                maybeString.replace(i,i+1,"\n  ");
-                i+=3;
+                maybeString.replace(i, i + 1, "\n  ");
+                i += 3;
             }
         }
         return maybeString;

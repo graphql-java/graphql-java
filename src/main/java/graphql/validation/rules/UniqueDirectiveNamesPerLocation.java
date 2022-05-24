@@ -1,6 +1,5 @@
 package graphql.validation.rules;
 
-import graphql.DirectivesUtil;
 import graphql.Internal;
 import graphql.language.Directive;
 import graphql.language.Document;
@@ -18,10 +17,7 @@ import graphql.validation.ValidationErrorType;
 
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
-
-import static java.util.Collections.emptyList;
 
 /**
  * https://facebook.github.io/graphql/June2018/#sec-Directives-Are-Unique-Per-Location

@@ -6,6 +6,7 @@ import graphql.AssertException;
 import graphql.Internal;
 import graphql.Scalars;
 import graphql.VisibleForTesting;
+import graphql.collect.ImmutableKit;
 import graphql.language.Argument;
 import graphql.language.ArrayValue;
 import graphql.language.BooleanValue;
@@ -162,7 +163,7 @@ public class ValuesResolver {
                                                                          List<Argument> arguments,
                                                                          Map<String, NormalizedInputValue> normalizedVariables) {
         if (argumentTypes.isEmpty()) {
-            return Collections.emptyMap();
+            return ImmutableKit.emptyMap();
         }
 
         Map<String, NormalizedInputValue> result = new LinkedHashMap<>();
@@ -430,7 +431,7 @@ public class ValuesResolver {
                                                       List<Argument> arguments,
                                                       CoercedVariables coercedVariables) {
         if (argumentTypes.isEmpty()) {
-            return Collections.emptyMap();
+            return ImmutableKit.emptyMap();
         }
 
         Map<String, Object> coercedValues = new LinkedHashMap<>();

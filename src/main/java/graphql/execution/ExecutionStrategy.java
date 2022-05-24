@@ -10,6 +10,7 @@ import graphql.SerializationError;
 import graphql.TrivialDataFetcher;
 import graphql.TypeMismatchError;
 import graphql.UnresolvedTypeError;
+import graphql.collect.ImmutableKit;
 import graphql.execution.directives.QueryDirectives;
 import graphql.execution.directives.QueryDirectivesImpl;
 import graphql.execution.instrumentation.Instrumentation;
@@ -354,9 +355,9 @@ public abstract class ExecutionStrategy {
 
     private <T> CompletableFuture<T> asyncHandleException(DataFetcherExceptionHandler handler, DataFetcherExceptionHandlerParameters handlerParameters, ExecutionContext executionContext) {
         //noinspection unchecked
-        return  handler.handleException(handlerParameters)
-            .thenApply(handlerResult -> (T) DataFetcherResult.<FetchedValue>newResult().errors(handlerResult.getErrors()).build()
-            );
+        return handler.handleException(handlerParameters)
+                .thenApply(handlerResult -> (T) DataFetcherResult.<FetchedValue>newResult().errors(handlerResult.getErrors()).build()
+                );
     }
 
     /**
@@ -810,7 +811,7 @@ public abstract class ExecutionStrategy {
         ExecutionStepInfo parentStepInfo = parameters.getExecutionStepInfo();
         GraphQLOutputType fieldType = fieldDefinition.getType();
         List<GraphQLArgument> fieldArgDefs = fieldDefinition.getArguments();
-        Supplier<Map<String, Object>> argumentValues = Collections::emptyMap;
+        Supplier<Map<String, Object>> argumentValues = ImmutableKit::emptyMap;
         //
         // no need to create args at all if there are none on the field def
         //

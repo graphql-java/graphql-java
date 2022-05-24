@@ -23,9 +23,9 @@ import java.util.function.Consumer;
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertShouldNeverHappen;
 import static graphql.Assert.assertValidName;
+import static graphql.collect.ImmutableKit.emptyList;
 import static graphql.schema.GraphQLEnumValueDefinition.newEnumValueDefinition;
 import static graphql.util.FpKit.getByName;
-import static java.util.Collections.emptyList;
 
 /**
  * A graphql enumeration type has a limited set of values.
@@ -295,7 +295,7 @@ public class GraphQLEnumType implements GraphQLNamedInputType, GraphQLNamedOutpu
         return new Builder(existing);
     }
 
-    public static class Builder extends GraphqlDirectivesContainerTypeBuilder<Builder,Builder> {
+    public static class Builder extends GraphqlDirectivesContainerTypeBuilder<Builder, Builder> {
 
         private EnumTypeDefinition definition;
         private List<EnumTypeExtensionDefinition> extensionDefinitions = emptyList();

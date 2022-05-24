@@ -1,12 +1,12 @@
 package graphql;
 
 import graphql.cachecontrol.CacheControl;
+import graphql.collect.ImmutableKit;
 import graphql.execution.ExecutionId;
 import graphql.execution.RawVariables;
 import graphql.execution.instrumentation.dataloader.DataLoaderDispatcherInstrumentationState;
 import org.dataloader.DataLoaderRegistry;
 
-import java.util.Collections;
 import java.util.Locale;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -218,7 +218,7 @@ public class ExecutionInput {
         private Object localContext;
         private Object root;
         private RawVariables rawVariables = RawVariables.emptyVariables();
-        public Map<String, Object> extensions = Collections.emptyMap();
+        public Map<String, Object> extensions = ImmutableKit.emptyMap();
         //
         // this is important - it allows code to later known if we never really set a dataloader and hence it can optimize
         // dataloader field tracking away.

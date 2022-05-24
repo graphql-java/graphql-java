@@ -3,6 +3,7 @@ package graphql.schema;
 import com.google.common.collect.LinkedHashMultimap;
 import com.google.common.collect.Multimap;
 import graphql.PublicApi;
+import graphql.collect.ImmutableKit;
 import graphql.util.Breadcrumb;
 import graphql.util.NodeAdapter;
 import graphql.util.NodeLocation;
@@ -14,7 +15,6 @@ import graphql.util.TraverserVisitor;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -504,7 +504,7 @@ public class SchemaTransformer {
         if (oldBreadcrumbs.size() > 1) {
             newBreadcrumbs = oldBreadcrumbs.subList(1, oldBreadcrumbs.size());
         } else {
-            newBreadcrumbs = Collections.emptyList();
+            newBreadcrumbs = ImmutableKit.emptyList();
         }
         return new NodeZipper<>(newNode, newBreadcrumbs, SCHEMA_ELEMENT_ADAPTER);
     }

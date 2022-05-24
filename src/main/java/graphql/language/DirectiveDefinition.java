@@ -16,9 +16,9 @@ import java.util.Objects;
 import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotNull;
+import static graphql.collect.ImmutableKit.addToList;
 import static graphql.collect.ImmutableKit.emptyList;
 import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
-import static java.util.Collections.emptyMap;
 
 @PublicApi
 public class DirectiveDefinition extends AbstractDescribedNode<DirectiveDefinition> implements SDLNamedDefinition<DirectiveDefinition>, NamedNode<DirectiveDefinition> {
@@ -53,7 +53,7 @@ public class DirectiveDefinition extends AbstractDescribedNode<DirectiveDefiniti
      * @param name of the directive definition
      */
     public DirectiveDefinition(String name) {
-        this(name, false, null, emptyList(), emptyList(), null, emptyList(), IgnoredChars.EMPTY, emptyMap());
+        this(name, false, null, emptyList(), emptyList(), null, emptyList(), IgnoredChars.EMPTY, ImmutableKit.emptyMap());
     }
 
     @Override
@@ -211,7 +211,7 @@ public class DirectiveDefinition extends AbstractDescribedNode<DirectiveDefiniti
         }
 
         public Builder inputValueDefinition(InputValueDefinition inputValueDefinition) {
-            this.inputValueDefinitions = ImmutableKit.addToList(inputValueDefinitions, inputValueDefinition);
+            this.inputValueDefinitions = addToList(inputValueDefinitions, inputValueDefinition);
             return this;
         }
 
@@ -222,7 +222,7 @@ public class DirectiveDefinition extends AbstractDescribedNode<DirectiveDefiniti
         }
 
         public Builder directiveLocation(DirectiveLocation directiveLocation) {
-            this.directiveLocations = ImmutableKit.addToList(directiveLocations, directiveLocation);
+            this.directiveLocations = addToList(directiveLocations, directiveLocation);
             return this;
         }
 
