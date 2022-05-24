@@ -3,7 +3,7 @@ package graphql.execution.instrumentation.dataloader;
 import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
 import graphql.PublicApi;
-import graphql.execution.Async;
+import graphql.collect.ImmutableKit;
 import graphql.execution.AsyncExecutionStrategy;
 import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionStrategy;
@@ -25,7 +25,6 @@ import org.dataloader.stats.Statistics;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -160,7 +159,7 @@ public class DataLoaderDispatcherInstrumentation extends SimpleInstrumentation {
         }
         DataLoaderDispatcherInstrumentationState state = parameters.getInstrumentationState();
         Map<Object, Object> currentExt = executionResult.getExtensions();
-        Map<Object, Object> statsMap = new LinkedHashMap<>(currentExt == null ? Collections.emptyMap() : currentExt);
+        Map<Object, Object> statsMap = new LinkedHashMap<>(currentExt == null ? ImmutableKit.emptyMap() : currentExt);
         Map<Object, Object> dataLoaderStats = buildStatsMap(state);
         statsMap.put("dataloader", dataLoaderStats);
 

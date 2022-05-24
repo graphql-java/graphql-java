@@ -3,11 +3,11 @@ package graphql.execution.instrumentation.parameters;
 import graphql.ExecutionInput;
 import graphql.GraphQLContext;
 import graphql.PublicApi;
+import graphql.collect.ImmutableKit;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationState;
 import graphql.schema.GraphQLSchema;
 
-import java.util.Collections;
 import java.util.Map;
 
 /**
@@ -30,7 +30,7 @@ public class InstrumentationExecutionParameters {
         this.operation = executionInput.getOperationName();
         this.context = executionInput.getContext();
         this.graphQLContext = executionInput.getGraphQLContext();
-        this.variables = executionInput.getVariables() != null ? executionInput.getVariables() : Collections.emptyMap();
+        this.variables = executionInput.getVariables() != null ? executionInput.getVariables() : ImmutableKit.emptyMap();
         this.instrumentationState = instrumentationState;
         this.schema = schema;
     }
@@ -60,6 +60,7 @@ public class InstrumentationExecutionParameters {
 
     /**
      * @param <T> for two
+     *
      * @return the legacy context
      *
      * @deprecated use {@link #getGraphQLContext()} instead

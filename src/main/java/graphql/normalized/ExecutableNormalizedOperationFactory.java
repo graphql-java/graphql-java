@@ -6,6 +6,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import graphql.Internal;
+import graphql.collect.ImmutableKit;
 import graphql.execution.ConditionalNodes;
 import graphql.execution.MergedField;
 import graphql.execution.ValuesResolver;
@@ -35,12 +36,10 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Predicate;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertShouldNeverHappen;
@@ -218,7 +217,7 @@ public class ExecutableNormalizedOperationFactory {
         List<GraphQLFieldDefinition> fieldDefs = executableNormalizedField.getFieldDefinitions(parameters.getGraphQLSchema());
         Set<GraphQLObjectType> possibleObjects = resolvePossibleObjects(fieldDefs, parameters.getGraphQLSchema());
         if (possibleObjects.isEmpty()) {
-            return new CollectNFResult(Collections.emptyList(), ImmutableListMultimap.of());
+            return new CollectNFResult(ImmutableKit.emptyList(), ImmutableListMultimap.of());
         }
 
         List<CollectedField> collectedFields = new ArrayList<>();

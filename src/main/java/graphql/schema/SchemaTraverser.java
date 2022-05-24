@@ -2,6 +2,7 @@ package graphql.schema;
 
 
 import graphql.PublicApi;
+import graphql.collect.ImmutableKit;
 import graphql.util.TraversalControl;
 import graphql.util.Traverser;
 import graphql.util.TraverserContext;
@@ -41,7 +42,7 @@ public class SchemaTraverser {
      * @return a traversal result
      */
     public TraverserResult depthFirstFullSchema(GraphQLTypeVisitor typeVisitor, GraphQLSchema schema) {
-        return depthFirstFullSchema(Collections.singletonList(typeVisitor), schema, Collections.emptyMap());
+        return depthFirstFullSchema(Collections.singletonList(typeVisitor), schema, ImmutableKit.emptyMap());
     }
 
     /**

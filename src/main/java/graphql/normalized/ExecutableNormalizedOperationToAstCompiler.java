@@ -31,6 +31,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import static graphql.collect.ImmutableKit.emptyList;
 import static graphql.collect.ImmutableKit.map;
 import static graphql.language.Argument.newArgument;
 import static graphql.language.Field.newField;
@@ -38,7 +39,6 @@ import static graphql.language.InlineFragment.newInlineFragment;
 import static graphql.language.SelectionSet.newSelectionSet;
 import static graphql.language.TypeName.newTypeName;
 import static graphql.schema.GraphQLTypeUtil.unwrapAll;
-import static java.util.Collections.emptyList;
 
 @Internal
 public class ExecutableNormalizedOperationToAstCompiler {

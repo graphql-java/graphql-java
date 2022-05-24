@@ -6,6 +6,7 @@ import graphql.AssertException;
 import graphql.Internal;
 import graphql.Scalars;
 import graphql.VisibleForTesting;
+import graphql.collect.ImmutableKit;
 import graphql.language.Argument;
 import graphql.language.ArrayValue;
 import graphql.language.BooleanValue;
@@ -162,7 +163,7 @@ public class ValuesResolver {
                                                                          List<Argument> arguments,
                                                                          Map<String, NormalizedInputValue> normalizedVariables) {
         if (argumentTypes.isEmpty()) {
-            return Collections.emptyMap();
+            return ImmutableKit.emptyMap();
         }
 
         Map<String, NormalizedInputValue> result = new LinkedHashMap<>();
@@ -399,7 +400,7 @@ public class ValuesResolver {
                 boolean hasValue = rawVariables.containsKey(variableName);
                 Object value = rawVariables.get(variableName);
                 if (!hasValue && defaultValue != null) {
-                    Object coercedDefaultValue = literalToInternalValue(fieldVisibility, variableType, defaultValue, Collections.emptyMap());
+                    Object coercedDefaultValue = literalToInternalValue(fieldVisibility, variableType, defaultValue, ImmutableKit.emptyMap());
                     coercedValues.put(variableName, coercedDefaultValue);
                 } else if (isNonNull(variableType) && (!hasValue || value == null)) {
                     throw new NonNullableValueCoercedAsNullException(variableDefinition, variableType);
@@ -433,7 +434,7 @@ public class ValuesResolver {
                                                       Map<String, Object> coercedVariables
     ) {
         if (argumentTypes.isEmpty()) {
-            return Collections.emptyMap();
+            return ImmutableKit.emptyMap();
         }
 
         Map<String, Object> coercedValues = new LinkedHashMap<>();
@@ -813,7 +814,7 @@ public class ValuesResolver {
         }
         if (defaultValue.isLiteral()) {
             // default value literals can't reference variables, this is why the variables are empty
-            return literalToInternalValue(fieldVisibility, type, (Value) defaultValue.getValue(), Collections.emptyMap());
+            return literalToInternalValue(fieldVisibility, type, (Value) defaultValue.getValue(), ImmutableKit.emptyMap());
         }
         if (defaultValue.isExternal()) {
             // performs validation too

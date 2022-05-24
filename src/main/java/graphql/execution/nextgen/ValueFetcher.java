@@ -91,7 +91,7 @@ public class ValueFetcher {
             if (i == 0) {
                 errors = fetchedValueContainingList.getErrors();
             } else {
-                errors = Collections.emptyList();
+                errors = ImmutableKit.emptyList();
             }
             FetchedValue fetchedValue = FetchedValue.newFetchedValue()
                     .fetchedValue(list.get(i))
