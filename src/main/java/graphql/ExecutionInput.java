@@ -98,9 +98,8 @@ public class ExecutionInput {
     }
 
     /**
-     * @return a map of raw variables that can be referenced via $syntax in the query. Retaining for backwards compatibility
+     * @return a map of raw variables that can be referenced via $syntax in the query.
      */
-    @Deprecated
     public Map<String, Object> getVariables() {
         return rawVariables.toMap();
     }
@@ -167,7 +166,7 @@ public class ExecutionInput {
                 .root(this.root)
                 .dataLoaderRegistry(this.dataLoaderRegistry)
                 .cacheControl(this.cacheControl)
-                .rawVariables(this.rawVariables)
+                .variables(this.rawVariables.toMap())
                 .extensions(this.extensions)
                 .executionId(this.executionId)
                 .locale(this.locale);
@@ -360,23 +359,15 @@ public class ExecutionInput {
         }
 
         /**
-         * The legacy variables builder
+         * Adds raw (not coerced) variables
          *
          * @param rawVariables the map of raw variables
          *
          * @return this builder
-         *
-         * @deprecated - use {@link RawVariables} to hold raw variables
          */
-        @Deprecated
         public Builder variables(Map<String, Object> rawVariables) {
             assertNotNull(rawVariables, () -> "variables map can't be null");
             this.rawVariables = new RawVariables(rawVariables);
-            return this;
-        }
-
-        public Builder rawVariables(RawVariables rawVariables) {
-            this.rawVariables = assertNotNull(rawVariables, () -> "raw variables map can't be null");
             return this;
         }
 

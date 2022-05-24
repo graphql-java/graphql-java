@@ -1,9 +1,9 @@
 package graphql.execution;
 
 import graphql.Internal;
+import graphql.collect.ImmutableKit;
 import graphql.collect.ImmutableMapWithNullValues;
 
-import java.util.Collections;
 import java.util.Map;
 
 /**
@@ -30,6 +30,6 @@ public class RawVariables {
     }
 
     public static RawVariables emptyVariables() {
-        return new RawVariables(Collections.emptyMap());
+        return new RawVariables(ImmutableKit.emptyMap());
     }
 }

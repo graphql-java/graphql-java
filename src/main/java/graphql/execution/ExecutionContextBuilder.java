@@ -17,7 +17,6 @@ import graphql.language.OperationDefinition;
 import graphql.schema.GraphQLSchema;
 import org.dataloader.DataLoaderRegistry;
 
-import java.util.Collections;
 import java.util.Locale;
 import java.util.Map;
 

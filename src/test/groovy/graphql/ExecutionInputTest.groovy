@@ -18,7 +18,6 @@ class ExecutionInputTest extends Specification {
     def root = "root"
     def context = "context"
     def variables = [key: "value"]
-    def rawVariables = new RawVariables(variables)
 
     def "build works"() {
         when:
@@ -37,51 +36,7 @@ class ExecutionInputTest extends Specification {
         executionInput.graphQLContext.get("a") == "b"
         executionInput.root == root
         executionInput.variables == variables
-        executionInput.dataLoaderRegistry == registry
-        executionInput.cacheControl == cacheControl
-        executionInput.query == query
-        executionInput.locale == Locale.GERMAN
-        executionInput.extensions == [some: "map"]
-    }
-
-    def "build works with raw variables"() {
-        when:
-        def executionInput = ExecutionInput.newExecutionInput().query(query)
-                .dataLoaderRegistry(registry)
-                .cacheControl(cacheControl)
-                .rawVariables(rawVariables)
-                .root(root)
-                .graphQLContext({ it.of(["a": "b"]) })
-                .locale(Locale.GERMAN)
-                .extensions([some: "map"])
-                .build()
-        then:
-        executionInput.graphQLContext.get("a") == "b"
-        executionInput.root == root
-        executionInput.rawVariables == rawVariables
-        executionInput.dataLoaderRegistry == registry
-        executionInput.cacheControl == cacheControl
-        executionInput.query == query
-        executionInput.locale == Locale.GERMAN
-        executionInput.extensions == [some: "map"]
-    }
-
-    def "build works, if both variables and rawVariables are set, the latest value set takes precedence"() {
-        when:
-        def executionInput = ExecutionInput.newExecutionInput().query(query)
-                .dataLoaderRegistry(registry)
-                .cacheControl(cacheControl)
-                .variables(variables)
-                .rawVariables(rawVariables)
-                .root(root)
-                .graphQLContext({ it.of(["a": "b"]) })
-                .locale(Locale.GERMAN)
-                .extensions([some: "map"])
-                .build()
-        then:
-        executionInput.rawVariables == rawVariables
-        executionInput.graphQLContext.get("a") == "b"
-        executionInput.root == root
+        executionInput.rawVariables.toMap() == variables
         executionInput.dataLoaderRegistry == registry
         executionInput.cacheControl == cacheControl
         executionInput.query == query
@@ -158,32 +113,7 @@ class ExecutionInputTest extends Specification {
         executionInput.query == "new query"
     }
 
-    def "transform works and copies values with raw variables"() {
-        when:
-        def executionInputOld = ExecutionInput.newExecutionInput().query(query)
-                .dataLoaderRegistry(registry)
-                .cacheControl(cacheControl)
-                .rawVariables(rawVariables)
-                .extensions([some: "map"])
-                .root(root)
-                .graphQLContext({ it.of(["a": "b"]) })
-                .locale(Locale.GERMAN)
-                .build()
-        def graphQLContext = executionInputOld.getGraphQLContext()
-        def executionInput = executionInputOld.transform({ bldg -> bldg.query("new query") })
-
-        then:
-        executionInput.graphQLContext == graphQLContext
-        executionInput.root == root
-        executionInput.rawVariables == rawVariables
-        executionInput.dataLoaderRegistry == registry
-        executionInput.cacheControl == cacheControl
-        executionInput.locale == Locale.GERMAN
-        executionInput.extensions == [some: "map"]
-        executionInput.query == "new query"
-    }
-
-    def "transform works and sets raw variables"() {
+    def "transform works and sets variables"() {
         when:
         def executionInputOld = ExecutionInput.newExecutionInput().query(query)
                 .dataLoaderRegistry(registry)
@@ -196,39 +126,12 @@ class ExecutionInputTest extends Specification {
         def graphQLContext = executionInputOld.getGraphQLContext()
         def executionInput = executionInputOld.transform({ bldg -> bldg
                 .query("new query")
-                .rawVariables(rawVariables) })
+                .variables(variables) })
 
         then:
         executionInput.graphQLContext == graphQLContext
         executionInput.root == root
-        executionInput.rawVariables == rawVariables
-        executionInput.dataLoaderRegistry == registry
-        executionInput.cacheControl == cacheControl
-        executionInput.locale == Locale.GERMAN
-        executionInput.extensions == [some: "map"]
-        executionInput.query == "new query"
-    }
-
-    def "transform works and sets values, if both variables and rawVariables are set, latest value set takes precedence"() {
-        when:
-        def executionInputOld = ExecutionInput.newExecutionInput().query(query)
-                .dataLoaderRegistry(registry)
-                .cacheControl(cacheControl)
-                .extensions([some: "map"])
-                .root(root)
-                .graphQLContext({ it.of(["a": "b"]) })
-                .locale(Locale.GERMAN)
-                .build()
-        def graphQLContext = executionInputOld.getGraphQLContext()
-        def executionInput = executionInputOld.transform({ bldg -> bldg
-                .query("new query")
-                .variables(variables)
-                .rawVariables(rawVariables) })
-
-        then:
-        executionInput.graphQLContext == graphQLContext
-        executionInput.root == root
-        executionInput.rawVariables == rawVariables
+        executionInput.rawVariables.toMap() == variables
         executionInput.dataLoaderRegistry == registry
         executionInput.cacheControl == cacheControl
         executionInput.locale == Locale.GERMAN

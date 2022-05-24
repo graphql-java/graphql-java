@@ -1,9 +1,9 @@
 package graphql.execution;
 
 import graphql.Internal;
+import graphql.collect.ImmutableKit;
 import graphql.collect.ImmutableMapWithNullValues;
 
-import java.util.Collections;
 import java.util.Map;
 
 /**
@@ -30,6 +30,6 @@ public class CoercedVariables {
     }
 
     public static CoercedVariables emptyVariables() {
-        return new CoercedVariables(Collections.emptyMap());
+        return new CoercedVariables(ImmutableKit.emptyMap());
     }
 }
