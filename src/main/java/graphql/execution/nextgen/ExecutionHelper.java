@@ -2,12 +2,14 @@ package graphql.execution.nextgen;
 
 import graphql.ExecutionInput;
 import graphql.Internal;
+import graphql.execution.CoercedVariables;
 import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionId;
 import graphql.execution.ExecutionStepInfo;
 import graphql.execution.FieldCollector;
 import graphql.execution.FieldCollectorParameters;
 import graphql.execution.MergedSelectionSet;
+import graphql.execution.RawVariables;
 import graphql.execution.ResultPath;
 import graphql.execution.ValuesResolver;
 import graphql.execution.instrumentation.InstrumentationState;
@@ -49,11 +51,10 @@ public class ExecutionHelper {
         OperationDefinition operationDefinition = getOperationResult.operationDefinition;
 
         ValuesResolver valuesResolver = new ValuesResolver();
-        Map<String, Object> inputVariables = executionInput.getVariables();
+        RawVariables inputVariables = executionInput.getRawVariables();
         List<VariableDefinition> variableDefinitions = operationDefinition.getVariableDefinitions();
 
-        Map<String, Object> coercedVariables;
-        coercedVariables = valuesResolver.coerceVariableValues(graphQLSchema, variableDefinitions, inputVariables);
+        CoercedVariables coercedVariables = valuesResolver.coerceVariableValues(graphQLSchema, variableDefinitions, inputVariables);
 
         ExecutionContext executionContext = newExecutionContextBuilder()
                 .executionId(executionId)
@@ -63,7 +64,7 @@ public class ExecutionHelper {
                 .graphQLContext(executionInput.getGraphQLContext())
                 .root(executionInput.getRoot())
                 .fragmentsByName(fragmentsByName)
-                .variables(coercedVariables)
+                .coercedVariables(coercedVariables)
                 .document(document)
                 .operationDefinition(operationDefinition)
                 .build();
@@ -71,7 +72,6 @@ public class ExecutionHelper {
         ExecutionData executionData = new ExecutionData();
         executionData.executionContext = executionContext;
         return executionData;
-
     }
 
     public FieldSubSelection getFieldSubSelection(ExecutionContext executionContext) {
@@ -95,6 +95,5 @@ public class ExecutionHelper {
                 .executionInfo(executionInfo)
                 .build();
         return fieldSubSelection;
-
     }
 }
