@@ -387,7 +387,7 @@ public class DataFetchingFieldSelectionSetImpl implements DataFetchingFieldSelec
             return selectionSet;
         }
 
-        // a selected field is the same as another selected field if its the same ExecutableNF
+        // a selected field is the same as another selected field if it's the same ExecutableNF
         @Override
         public boolean equals(Object o) {
             if (this == o) {

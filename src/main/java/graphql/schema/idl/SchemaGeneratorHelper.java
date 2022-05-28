@@ -245,7 +245,7 @@ public class SchemaGeneratorHelper {
             if (args.isEmpty()) {
                 return NO_LONGER_SUPPORTED; // default value from spec
             } else {
-                // pre flight checks have ensured its valid
+                // pre flight checks have ensured it's valid
                 return args.get("reason");
             }
         }

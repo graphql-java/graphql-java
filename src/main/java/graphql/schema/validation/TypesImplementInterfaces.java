@@ -70,7 +70,7 @@ public class TypesImplementInterfaces extends GraphQLTypeVisitorStub {
 
     }
 
-    // this deliberately has open field visibility here since its validating the schema
+    // this deliberately has open field visibility here since it's validating the schema
     // when completely open
     private void checkObjectImplementsInterface(GraphQLImplementingType implementingType, GraphQLInterfaceType interfaceType, SchemaValidationErrorCollector validationErrorCollector) {
         List<GraphQLFieldDefinition> fieldDefinitions = interfaceType.getFieldDefinitions();

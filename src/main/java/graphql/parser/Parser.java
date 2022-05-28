@@ -226,7 +226,7 @@ public class Parser {
             Token last = allTokens.get(allTokens.size() - 1);
             //
             // do we have more tokens in the stream than we consumed in the parse?
-            // if yes then its invalid.  We make sure its the same channel
+            // if yes then it's invalid.  We make sure it's the same channel
             boolean notEOF = last.getType() != Token.EOF;
             boolean lastGreaterThanDocument = last.getTokenIndex() > stop.getTokenIndex();
             boolean sameChannel = last.getChannel() == stop.getChannel();

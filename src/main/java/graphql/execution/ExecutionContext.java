@@ -176,8 +176,8 @@ public class ExecutionContext {
         synchronized (this) {
             //
             // see http://facebook.github.io/graphql/#sec-Errors-and-Non-Nullability about how per
-            // field errors should be handled - ie only once per field if its already there for nullability
-            // but unclear if its not that error path
+            // field errors should be handled - ie only once per field if it's already there for nullability
+            // but unclear if it's not that error path
             //
             if (!errorPaths.add(fieldPath)) {
                 return;

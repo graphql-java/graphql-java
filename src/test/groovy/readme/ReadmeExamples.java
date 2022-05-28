@@ -93,7 +93,7 @@ public class ReadmeExamples {
 
         GraphQLNonNull.nonNull(GraphQLString); // a non null String
 
-        // with static imports its even shorter
+        // with static imports it's even shorter
         newArgument()
                 .name("example")
                 .type(nonNull(list(GraphQLString)));
