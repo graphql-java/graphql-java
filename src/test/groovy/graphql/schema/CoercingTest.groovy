@@ -2,6 +2,7 @@ package graphql.schema
 
 import graphql.ExecutionInput
 import graphql.TestUtil
+import graphql.analysis.MaxQueryDepthInstrumentation
 import graphql.language.ArrayValue
 import graphql.language.BooleanValue
 import graphql.language.FloatValue
@@ -13,6 +14,8 @@ import graphql.language.VariableReference
 import graphql.schema.idl.RuntimeWiring
 import graphql.schema.idl.TypeRuntimeWiring
 import spock.lang.Specification
+
+import java.time.ZonedDateTime
 
 import static graphql.schema.GraphQLScalarType.newScalar
 
@@ -71,7 +74,6 @@ class CoercingTest extends Specification {
         }
     })
     .build()
-
 
     def "end to end test of coercing with variables references"() {
         def spec = '''
@@ -213,5 +215,80 @@ class CoercingTest extends Specification {
         er.errors.size() == 1
         er.errors[0].message.contains("serialize message")
         er.errors[0].extensions == [serialize: true]
+    }
+
+    static def parseDateTimeValue(Object input) {
+        try {
+            if (input instanceof StringValue) {
+                return ZonedDateTime.parse(((StringValue) input).getValue())
+            } else if (input instanceof String) {
+                return ZonedDateTime.parse((String) input)
+            } else throw new IllegalArgumentException("Unexpected input type: ${input.getClass()}")
+        } catch (Exception e) {
+            throw new CoercingParseValueException("Failed to parse input value $input as ZonedDateTime", e)
+        }
+    }
+
+    GraphQLScalarType zonedDateTimeLikeScalar = newScalar().name("ZonedDateTimeLike").description("ZonedDateTimeLike").coercing(new Coercing() {
+        @Override
+        Object serialize(Object dataFetcherResult) throws CoercingSerializeException {
+            return dataFetcherResult
+        }
+
+        @Override
+        Object parseValue(Object input) throws CoercingParseValueException {
+            return parseDateTimeValue(input)
+        }
+
+        @Override
+        Object parseLiteral(Object input) throws CoercingParseLiteralException {
+            return input
+        }
+    })
+    .build()
+
+    def "custom scalars are only coerced once - end to end test with execution and instrumentation"() {
+        def spec = '''
+            scalar ZonedDateTimeLike
+            
+            type Query {
+                field(argument : ZonedDateTimeLike) : ZonedDateTimeLike
+            }    
+        '''
+        DataFetcher df = new DataFetcher() {
+            @Override
+            Object get(DataFetchingEnvironment environment) {
+                def argument = environment.getArgument("argument")
+                return argument
+            }
+        }
+
+        def runtimeWiring = RuntimeWiring.newRuntimeWiring()
+                .type(TypeRuntimeWiring.newTypeWiring("Query")
+                        .dataFetcher("field", df))
+                .scalar(zonedDateTimeLikeScalar)
+                .build()
+
+        def executionInput = ExecutionInput.newExecutionInput()
+                .variables([zonedDateTime: "2022-05-16T19:52:37Z"])
+                .query('''
+                    query myZonedDateTimeQuery($zonedDateTime : ZonedDateTimeLike) {
+                        field(argument : $zonedDateTime)
+                    }''')
+                .build()
+
+        MaxQueryDepthInstrumentation maximumQueryDepthInstrumentation = new MaxQueryDepthInstrumentation(7)
+
+        def graphQL = TestUtil.graphQL(spec, runtimeWiring).instrumentation(maximumQueryDepthInstrumentation).build()
+
+        when:
+        def er = graphQL.execute(executionInput)
+
+        then:
+        // If variables were coerced twice, would expect an IllegalArgumentException to be thrown,
+        // as the ZonedDateTime custom scalar parser can only parse strings, not instances of ZonedDateTime
+        notThrown(Exception)
+        er.errors.isEmpty()
+        er.data == [field: ZonedDateTime.parse("2022-05-16T19:52:37Z")]
     }
 }
