@@ -84,7 +84,7 @@ public class FpKit {
      *
      * @return an Iterable from that object
      *
-     * @throws java.lang.ClassCastException if its not an Iterable
+     * @throws java.lang.ClassCastException if it's not an Iterable
      */
     @SuppressWarnings("unchecked")
     public static <T> Collection<T> toCollection(Object iterableResult) {
@@ -101,7 +101,7 @@ public class FpKit {
     }
 
     /**
-     * Converts a value into an list if its really a collection or array of things
+     * Converts a value into a list if it's really a collection or array of things
      * else it turns it into a singleton list containing that one value
      *
      * @param possibleIterable the possible
@@ -304,7 +304,7 @@ public class FpKit {
     /**
      * This will memoize the Supplier within the current thread's visibility, that is it does not
      * use volatile reads but rather use a sentinel check and re-reads the delegate supplier
-     * value if the read has not stuck to this thread.  This means that its possible that your delegate
+     * value if the read has not stuck to this thread.  This means that it's possible that your delegate
      * supplier MAY be called more than once across threads, but only once on the same thread.
      *
      * @param delegate the supplier to delegate to

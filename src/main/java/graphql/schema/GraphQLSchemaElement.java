@@ -52,7 +52,7 @@ public interface GraphQLSchemaElement {
 
     /**
      * Each GraphQLSchemaElement should make a copy of itself when this is called.  The copy should
-     * be include its current contents as they currently exist into a new object.
+     * be included its current contents as they currently exist into a new object.
      *
      * @return a copy of this element
      */

@@ -631,7 +631,7 @@ public class Introspection {
      * @param schema     the schema to use
      * @param parentType the type of the parent object
      * @param fieldName  the field to look up
-     * @return a field definition otherwise throws an assertion exception if its null
+     * @return a field definition otherwise throws an assertion exception if it's null
      */
     public static GraphQLFieldDefinition getFieldDef(GraphQLSchema schema, GraphQLCompositeType parentType, String fieldName) {
 

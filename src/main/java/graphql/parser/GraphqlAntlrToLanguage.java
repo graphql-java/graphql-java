@@ -887,7 +887,7 @@ public class GraphqlAntlrToLanguage {
         for (Token refTok : refChannel) {
             String text = refTok.getText();
             // we strip the leading hash # character but we don't trim because we don't
-            // know the "comment markup".  Maybe its space sensitive, maybe its not.  So
+            // know the "comment markup".  Maybe it's space sensitive, maybe it's not.  So
             // consumers can decide that
             if (text == null) {
                 continue;

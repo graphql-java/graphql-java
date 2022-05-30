@@ -38,21 +38,21 @@ public class ParseAndValidateResult {
     }
 
     /**
-     * @return the parsed document or null if its syntactically invalid.
+     * @return the parsed document or null if it's syntactically invalid.
      */
     public Document getDocument() {
         return document;
     }
 
     /**
-     * @return the document variables or null if its syntactically invalid.
+     * @return the document variables or null if it's syntactically invalid.
      */
     public Map<String, Object> getVariables() {
         return variables;
     }
 
     /**
-     * @return the parsed document and variables or null if its syntactically invalid.
+     * @return the parsed document and variables or null if it's syntactically invalid.
      */
     public DocumentAndVariables getDocumentAndVariables() {
         if (document != null) {
@@ -62,14 +62,14 @@ public class ParseAndValidateResult {
     }
 
     /**
-     * @return the syntax exception or null if its syntactically valid.
+     * @return the syntax exception or null if it's syntactically valid.
      */
     public InvalidSyntaxException getSyntaxException() {
         return syntaxException;
     }
 
     /**
-     * @return a list of validation errors, which might be empty if its syntactically invalid.
+     * @return a list of validation errors, which might be empty if it's syntactically invalid.
      */
     public List<ValidationError> getValidationErrors() {
         return validationErrors;

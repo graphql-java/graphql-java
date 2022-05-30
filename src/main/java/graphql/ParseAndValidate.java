@@ -13,7 +13,7 @@ import java.util.function.Predicate;
 
 /**
  * This class allows you to parse and validate a graphql query without executing it.  It will tell you
- * if its syntactically valid and also semantically valid according to the graphql specification
+ * if it's syntactically valid and also semantically valid according to the graphql specification
  * and the provided schema.
  */
 @PublicApi
