@@ -1,5 +1,6 @@
 package graphql.execution.instrumentation.dataloader;
 
+import graphql.Assert;
 import graphql.Internal;
 
 import java.util.Arrays;
@@ -32,7 +33,7 @@ public class LevelMap {
             throw new IllegalArgumentException("negative level " + level);
         }
         if (level + 1 > countsByLevel.length) {
-            throw new IllegalArgumentException("unknown level " + level);
+            Assert.assertShouldNeverHappen("LevelMap.get called before increment for level " + level);
         }
         return countsByLevel[level];
     }
