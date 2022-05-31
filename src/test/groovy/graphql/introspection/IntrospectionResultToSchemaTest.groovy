@@ -104,13 +104,11 @@ class IntrospectionResultToSchemaTest extends Specification {
 
         then:
         result == """type QueryType implements Query {
-  hero(
-  \"\"\"
+  hero(\"\"\"
   comment about episode
   on two lines
   \"\"\"
-  episode: Episode
-  foo: String = \"bar\"): Character @deprecated(reason: "killed off character")
+  episode: Episode, foo: String = \"bar\"): Character @deprecated(reason: "killed off character")
 }"""
 
     }
@@ -212,9 +210,13 @@ class IntrospectionResultToSchemaTest extends Specification {
         then:
         result == """"A character in the Star Wars Trilogy"
 interface Character {
+  "The id of the character."
   id: String!
+  "The name of the character."
   name: String
+  "The friends of the character, or an empty list if they have none."
   friends: [Character]
+  "Which movies they appear in."
   appearsIn: [Episode]
 }"""
 
@@ -260,8 +262,11 @@ interface Character {
         then:
         result == """"One of the films in the Star Wars Trilogy"
 enum Episode {
+  "Released in 1977."
   NEWHOPE
+  "Released in 1980."
   EMPIRE
+  "Released in 1983."
   JEDI @deprecated(reason: "killed by clones")
 }"""
 
@@ -404,47 +409,61 @@ input CharacterInput {
 }
 
 type QueryType {
-  hero(
-  "If omitted, returns the hero of the whole saga. If provided, returns the hero of that particular episode."
+  hero("If omitted, returns the hero of the whole saga. If provided, returns the hero of that particular episode."
   episode: Episode): Character
-  human(
-  "id of the human"
+  human("id of the human"
   id: String!): Human
-  droid(
-  "id of the droid"
+  droid("id of the droid"
   id: String!): Droid
 }
 
 "A character in the Star Wars Trilogy"
 interface Character {
+  "The id of the character."
   id: String!
+  "The name of the character."
   name: String
+  "The friends of the character, or an empty list if they have none."
   friends: [Character]
+  "Which movies they appear in."
   appearsIn: [Episode]
 }
 
 "One of the films in the Star Wars Trilogy"
 enum Episode {
+  "Released in 1977."
   NEWHOPE
+  "Released in 1980."
   EMPIRE
+  "Released in 1983."
   JEDI
 }
 
 "A humanoid creature in the Star Wars universe."
 type Human implements Character {
+  "The id of the human."
   id: String!
+  "The name of the human."
   name: String
+  "The friends of the human, or an empty list if they have none."
   friends: [Character]
+  "Which movies they appear in."
   appearsIn: [Episode]
+  "The home planet of the human, or null if unknown."
   homePlanet: String
 }
 
 "A mechanical creature in the Star Wars universe."
 type Droid implements Character {
+  "The id of the droid."
   id: String!
+  "The name of the droid."
   name: String
+  "The friends of the droid, or an empty list if they have none."
   friends: [Character]
+  "Which movies they appear in."
   appearsIn: [Episode]
+  "The primary function of the droid."
   primaryFunction: String
 }
 """
@@ -492,14 +511,17 @@ type Episode {
 
 " Simpson seasons"
 enum Season {
+  " the beginning"
   Season1
   Season2
   Season3
   Season4
+  " Another one"
   Season5
   Season6
   Season7
   Season8
+  " Not really the last one :-)"
   Season9
 }
 

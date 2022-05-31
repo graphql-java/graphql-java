@@ -1,6 +1,7 @@
 package graphql.execution.instrumentation;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Maps;
 import graphql.ExecutionInput;
 import graphql.ExecutionResult;
 import graphql.PublicApi;
@@ -210,7 +211,7 @@ public class ChainedInstrumentation implements Instrumentation {
 
 
         private ChainedInstrumentationState(List<Instrumentation> instrumentations, InstrumentationCreateStateParameters parameters) {
-            instrumentationStates = new LinkedHashMap<>(instrumentations.size());
+            instrumentationStates = Maps.newLinkedHashMapWithExpectedSize(instrumentations.size());
             instrumentations.forEach(i -> instrumentationStates.put(i, i.createState(parameters)));
         }
 
@@ -262,6 +263,10 @@ public class ChainedInstrumentation implements Instrumentation {
             contexts.forEach(context -> context.onFieldValuesInfo(fieldValueInfoList));
         }
 
+        @Override
+        public void onFieldValuesException() {
+            contexts.forEach(ExecutionStrategyInstrumentationContext::onFieldValuesException);
+        }
     }
 
 }

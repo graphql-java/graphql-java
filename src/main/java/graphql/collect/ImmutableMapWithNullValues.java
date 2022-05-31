@@ -36,7 +36,7 @@ public final class ImmutableMapWithNullValues<K, V> implements Map<K, V> {
      * Only used to construct the singleton empty map
      */
     private ImmutableMapWithNullValues() {
-        this(Collections.emptyMap());
+        this(ImmutableKit.emptyMap());
     }
 
 
@@ -191,5 +191,10 @@ public final class ImmutableMapWithNullValues<K, V> implements Map<K, V> {
     @Deprecated
     public V merge(K key, V value, BiFunction<? super V, ? super V, ? extends V> remappingFunction) {
         throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public String toString() {
+        return delegate.toString();
     }
 }

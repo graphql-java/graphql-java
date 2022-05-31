@@ -5,6 +5,7 @@ import graphql.execution.ResultPath;
 import graphql.language.SourceLocation;
 import graphql.schema.DataFetchingEnvironment;
 
+import org.jetbrains.annotations.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -14,9 +15,12 @@ import static graphql.Assert.assertNotNull;
 /**
  * This helps you build {@link graphql.GraphQLError}s and also has a quick way to make a  {@link graphql.execution.DataFetcherResult}s
  * from that error.
+ *
+ * @param <B> this base class allows you to derive new classes from this base error builder
  */
+@SuppressWarnings("unchecked")
 @PublicApi
-public class GraphqlErrorBuilder {
+public class GraphqlErrorBuilder<B extends GraphqlErrorBuilder<B>> {
 
     private String message;
     private List<Object> path;
@@ -24,12 +28,34 @@ public class GraphqlErrorBuilder {
     private ErrorClassification errorType = ErrorType.DataFetchingException;
     private Map<String, Object> extensions = null;
 
+    public String getMessage() {
+        return message;
+    }
+
+    @Nullable
+    public List<Object> getPath() {
+        return path;
+    }
+
+    @Nullable
+    public List<SourceLocation> getLocations() {
+        return locations;
+    }
+
+    public ErrorClassification getErrorType() {
+        return errorType;
+    }
+
+    @Nullable
+    public Map<String, Object> getExtensions() {
+        return extensions;
+    }
 
     /**
      * @return a builder of {@link graphql.GraphQLError}s
      */
-    public static GraphqlErrorBuilder newError() {
-        return new GraphqlErrorBuilder();
+    public static GraphqlErrorBuilder<?> newError() {
+        return new GraphqlErrorBuilder<>();
     }
 
     /**
@@ -40,52 +66,62 @@ public class GraphqlErrorBuilder {
      *
      * @return a builder of {@link graphql.GraphQLError}s
      */
-    public static GraphqlErrorBuilder newError(DataFetchingEnvironment dataFetchingEnvironment) {
-        return new GraphqlErrorBuilder()
+    public static GraphqlErrorBuilder<?> newError(DataFetchingEnvironment dataFetchingEnvironment) {
+        return new GraphqlErrorBuilder<>()
                 .location(dataFetchingEnvironment.getField().getSourceLocation())
                 .path(dataFetchingEnvironment.getExecutionStepInfo().getPath());
     }
 
-    private GraphqlErrorBuilder() {
+    protected GraphqlErrorBuilder() {
     }
 
-    public GraphqlErrorBuilder message(String message, Object... formatArgs) {
+    public B message(String message, Object... formatArgs) {
         if (formatArgs == null || formatArgs.length == 0) {
             this.message = assertNotNull(message);
         } else {
             this.message = String.format(assertNotNull(message), formatArgs);
         }
-        return this;
+        return (B) this;
     }
 
-    public GraphqlErrorBuilder locations(List<SourceLocation> locations) {
-        this.locations.addAll(assertNotNull(locations));
-        return this;
+    public B locations(@Nullable List<SourceLocation> locations) {
+        if (locations != null) {
+            this.locations.addAll(locations);
+        } else {
+            this.locations = null;
+        }
+        return (B) this;
     }
 
-    public GraphqlErrorBuilder location(SourceLocation location) {
-        this.locations.add(assertNotNull(location));
-        return this;
+    public B location(@Nullable SourceLocation location) {
+        if (locations != null) {
+            this.locations.add(location);
+        }
+        return (B) this;
     }
 
-    public GraphqlErrorBuilder path(ResultPath path) {
-        this.path = assertNotNull(path).toList();
-        return this;
+    public B path(@Nullable ResultPath path) {
+        if (path != null) {
+            this.path = path.toList();
+        } else {
+            this.path = null;
+        }
+        return (B) this;
     }
 
-    public GraphqlErrorBuilder path(List<Object> path) {
-        this.path = assertNotNull(path);
-        return this;
+    public B path(@Nullable List<Object> path) {
+        this.path = path;
+        return (B) this;
     }
 
-    public GraphqlErrorBuilder errorType(ErrorClassification errorType) {
+    public B errorType(ErrorClassification errorType) {
         this.errorType = assertNotNull(errorType);
-        return this;
+        return (B) this;
     }
 
-    public GraphqlErrorBuilder extensions(Map<String, Object> extensions) {
-        this.extensions = assertNotNull(extensions);
-        return this;
+    public B extensions(@Nullable Map<String, Object> extensions) {
+        this.extensions = extensions;
+        return (B) this;
     }
 
     /**
@@ -147,7 +183,7 @@ public class GraphqlErrorBuilder {
      *
      * @return a new data fetcher result that contains the built error
      */
-    public DataFetcherResult toResult() {
+    public DataFetcherResult<?> toResult() {
         return DataFetcherResult.newResult()
                 .error(build())
                 .build();

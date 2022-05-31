@@ -69,7 +69,7 @@ class ApolloPersistedQuerySupportTest extends Specification {
         def documentEntry = apolloSupport.getDocument(ei, engineParser)
         def doc = documentEntry.getDocument()
         then:
-        printAstCompact(doc) == "query {oneTwoThree}"
+        printAstCompact(doc) == "{oneTwoThree}"
         persistedQueryCache.keyCount[hashOne] == 1
         persistedQueryCache.parseCount[hashOne] == 1
 
@@ -79,7 +79,7 @@ class ApolloPersistedQuerySupportTest extends Specification {
         doc = documentEntry.getDocument()
 
         then:
-        printAstCompact(doc) == "query {oneTwoThree}"
+        printAstCompact(doc) == "{oneTwoThree}"
         persistedQueryCache.keyCount[hashOne] == 2
         persistedQueryCache.parseCount[hashOne] == 1 // only compiled once cause we had it
     }
@@ -94,7 +94,7 @@ class ApolloPersistedQuerySupportTest extends Specification {
         def documentEntry = apolloSupport.getDocument(ei, engineParser)
         def doc = documentEntry.getDocument()
         then:
-        printAstCompact(doc) == "query {normal}"
+        printAstCompact(doc) == "{normal}"
         persistedQueryCache.keyCount.size() == 0
         persistedQueryCache.parseCount.size() == 0
     }
@@ -104,11 +104,11 @@ class ApolloPersistedQuerySupportTest extends Specification {
         def apolloSupport = new ApolloPersistedQuerySupport(persistedQueryCache)
 
         when:
-        def ei = mkEI(hashOne, "query {normal}")
+        def ei = mkEI(hashOne, "{normal}")
         def documentEntry = apolloSupport.getDocument(ei, engineParser)
         def doc = documentEntry.getDocument()
         then:
-        printAstCompact(doc) == "query {oneTwoThree}"
+        printAstCompact(doc) == "{oneTwoThree}"
         persistedQueryCache.keyCount[hashOne] == 1
         persistedQueryCache.parseCount[hashOne] == 1
 
@@ -140,14 +140,14 @@ class ApolloPersistedQuerySupportTest extends Specification {
         def documentEntry = apolloSupport.getDocument(ei, engineParser)
         def doc = documentEntry.getDocument()
         then:
-        printAstCompact(doc) == "query {oneTwoThree}"
+        printAstCompact(doc) == "{oneTwoThree}"
 
         when:
         ei = mkEI(hashTwo, PERSISTED_QUERY_MARKER)
         documentEntry = apolloSupport.getDocument(ei, engineParser)
         doc = documentEntry.getDocument()
         then:
-        printAstCompact(doc) == "query {fourFiveSix}"
+        printAstCompact(doc) == "{fourFiveSix}"
 
         when:
         ei = mkEI("nonExistent", PERSISTED_QUERY_MARKER)

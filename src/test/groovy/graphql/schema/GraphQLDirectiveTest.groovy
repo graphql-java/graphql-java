@@ -104,12 +104,6 @@ class GraphQLDirectiveTest extends Specification {
         schema.getAllSchemaDirectivesByName()["dr"].collect({ printAst(it.getArgument("arg").argumentValue.value) }) == ['"a1"', '"a2"']
 
         when:
-        schema.getSchemaDirective("dr")
-        then:
-        thrown(AssertException)
-
-
-        when:
         def queryType = schema.getObjectType("Query")
 
         then:
@@ -194,12 +188,6 @@ class GraphQLDirectiveTest extends Specification {
         assert container.getDirectives("d1").size() == 1
         assert container.getDirectives("dr").size() == 2
         assert container.getDirectives("dr").collect({ printAst(it.getArgument("arg").argumentValue.value as Node) }) == ['"a1"', '"a2"']
-
-        try {
-            container.getDirective("dr")
-            assert false, "expecting an AssertException"
-        } catch (AssertException ignored) {
-        }
 
         return true
     }

@@ -32,11 +32,11 @@ public class TypeUtil {
     }
 
     /**
-     * Unwraps all layers of the type or just returns the type again if its not a wrapped type
+     * Unwraps all layers of the type or just returns the type again if it's not a wrapped type
      *
      * @param type the type to be unwrapped
      *
-     * @return the unwrapped type or the same type again if its not wrapped
+     * @return the unwrapped type or the same type again if it's not wrapped
      */
     public static TypeName unwrapAll(Type type) {
         if (isList(type)) {
@@ -48,11 +48,11 @@ public class TypeUtil {
     }
 
     /**
-     * Unwraps one layer of the type or just returns the type again if its not a wrapped type
+     * Unwraps one layer of the type or just returns the type again if it's not a wrapped type
      *
      * @param type the type to be unwrapped
      *
-     * @return the unwrapped type or the same type again if its not wrapped
+     * @return the unwrapped type or the same type again if it's not wrapped
      */
     public static Type unwrapOne(Type type) {
         if (isNonNull(type)) {

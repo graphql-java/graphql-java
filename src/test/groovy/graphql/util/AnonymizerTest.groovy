@@ -40,7 +40,7 @@ type Object2 {
   field3: ID
 }
 """
-        newQuery == "query {field1 {field2 field3}}"
+        newQuery == "{field1 {field2 field3}}"
     }
 
     def "query with fragments"() {
@@ -75,7 +75,7 @@ type Object2 {
   field3: ID
 }
 """
-        newQuery == "query {...Fragment1 field1 {... on Object2 {field2 field3}}} fragment Fragment1 on Object1 {field1 {field2 field3}}"
+        newQuery == "{...Fragment1 field1 {... on Object2 {field2 field3}}} fragment Fragment1 on Object1 {field1 {field2 field3}}"
 
     }
 
@@ -111,7 +111,7 @@ type Object2 {
   field3: ID
 }
 """
-        newQuery == 'query {field1(argument1:"stringValue1",argument2:"stringValue2") {field2 field3}}'
+        newQuery == '{field1(argument1:"stringValue1",argument2:"stringValue2") {field2 field3}}'
 
     }
 
@@ -285,7 +285,7 @@ type Object2 {
         def newQuery = result.queries[0]
 
         then:
-        newQuery == "query {alias1:field1 {alias2:field3}}"
+        newQuery == "{alias1:field1 {alias2:field3}}"
     }
 
     def "complex schema"() {
@@ -501,7 +501,7 @@ type Object2 {
         def newQuery = result.queries[0]
 
         then:
-        newQuery == "query {field2 {__typename alias1:__typename field1}}"
+        newQuery == "{field2 {__typename alias1:__typename field1}}"
     }
 
     def "handles cyclic types"() {
@@ -723,38 +723,38 @@ type Object1 {
 
         then:
         newSchema == """\
-        schema @Directive1(argument1 : "stringValue2"){
-          query: Object1
-        }
-        
-        directive @Directive1(argument1: String! = "stringValue3") repeatable on SCHEMA | SCALAR | OBJECT | FIELD_DEFINITION | ARGUMENT_DEFINITION | INTERFACE | UNION | ENUM | ENUM_VALUE | INPUT_OBJECT | INPUT_FIELD_DEFINITION
-        
-        interface Interface1 @Directive1(argument1 : "stringValue10") {
-          field2: String
-          field3: Enum1
-        }
-        
-        union Union1 @Directive1(argument1 : "stringValue16") = Object2
-        
-        type Object1 @Directive1(argument1 : "stringValue6") {
-          field1: Interface1 @Directive1(argument1 : "stringValue8")
-          field4: Union1 @deprecated
-        }
-        
-        type Object2 implements Interface1 {
-          field2: String
-          field3: Enum1
-          field5(argument2: InputObject1): String
-        }
-        
-        enum Enum1 @Directive1(argument1 : "stringValue12") {
-          EnumValue1 @Directive1(argument1 : "stringValue14")
-          EnumValue2
-        }
-        
-        input InputObject1 @Directive1(argument1 : "stringValue18") {
-          inputField1: Int @Directive1(argument1 : "stringValue20")
-        }
+            schema @Directive1(argument1 : "stringValue1"){
+              query: Object1
+            }
+            
+            directive @Directive1(argument1: String! = "stringValue4") repeatable on SCHEMA | SCALAR | OBJECT | FIELD_DEFINITION | ARGUMENT_DEFINITION | INTERFACE | UNION | ENUM | ENUM_VALUE | INPUT_OBJECT | INPUT_FIELD_DEFINITION
+            
+            interface Interface1 @Directive1(argument1 : "stringValue12") {
+              field2: String
+              field3: Enum1
+            }
+            
+            union Union1 @Directive1(argument1 : "stringValue21") = Object2
+            
+            type Object1 @Directive1(argument1 : "stringValue8") {
+              field1: Interface1 @Directive1(argument1 : "stringValue9")
+              field4: Union1 @deprecated
+            }
+            
+            type Object2 implements Interface1 {
+              field2: String
+              field3: Enum1
+              field5(argument2: InputObject1): String
+            }
+            
+            enum Enum1 @Directive1(argument1 : "stringValue15") {
+              EnumValue1 @Directive1(argument1 : "stringValue18")
+              EnumValue2
+            }
+            
+            input InputObject1 @Directive1(argument1 : "stringValue24") {
+              inputField1: Int @Directive1(argument1 : "stringValue27")
+            }
         """.stripIndent()
     }
 
@@ -791,7 +791,7 @@ type Object2 {
   field2: String
 }
 """
-        newQuery == "query {field1 @Directive1 {field2 @Directive1}}"
+        newQuery == "{field1 @Directive1 {field2 @Directive1}}"
 
     }
 
@@ -806,7 +806,7 @@ type Object2 {
             bar: String
         }
         """)
-        def query = 'query{foo @whatever(myArg: "secret2") {bar @whatever(myArg: "secret3") }}'
+        def query = '{foo @whatever(myArg: "secret2") {bar @whatever(myArg: "secret3") }}'
 
         when:
         def result = Anonymizer.anonymizeSchemaAndQueries(schema, [query])
@@ -828,7 +828,7 @@ type Object2 {
   field2: String
 }
 """
-        newQuery == 'query {field1 @Directive1(argument1:"stringValue2") {field2 @Directive1(argument1:"stringValue1")}}'
+        newQuery == '{field1 @Directive1(argument1:"stringValue2") {field2 @Directive1(argument1:"stringValue1")}}'
 
     }
 

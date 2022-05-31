@@ -95,7 +95,7 @@ public class Async {
 
 
     /**
-     * Turns an object T into a CompletableFuture if its not already
+     * Turns an object T into a CompletableFuture if it's not already
      *
      * @param t   - the object to check
      * @param <T> for two

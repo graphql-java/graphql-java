@@ -3,6 +3,7 @@ package graphql.execution.nextgen.result;
 import graphql.Assert;
 import graphql.GraphQLError;
 import graphql.Internal;
+import graphql.collect.ImmutableKit;
 import graphql.execution.ExecutionStepInfo;
 import graphql.execution.NonNullableFieldWasNullException;
 
@@ -10,20 +11,24 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+/**
+ * @deprecated Jan 2022 - We have decided to deprecate the NextGen engine, and it will be removed in a future release.
+ */
+@Deprecated
 @Internal
 public class LeafExecutionResultNode extends ExecutionResultNode {
 
     public LeafExecutionResultNode(ExecutionStepInfo executionStepInfo,
                                    ResolvedValue resolvedValue,
                                    NonNullableFieldWasNullException nonNullableFieldWasNullException) {
-        this(executionStepInfo, resolvedValue, nonNullableFieldWasNullException, Collections.emptyList());
+        this(executionStepInfo, resolvedValue, nonNullableFieldWasNullException, ImmutableKit.emptyList());
     }
 
     public LeafExecutionResultNode(ExecutionStepInfo executionStepInfo,
                                    ResolvedValue resolvedValue,
                                    NonNullableFieldWasNullException nonNullableFieldWasNullException,
                                    List<GraphQLError> errors) {
-        super(executionStepInfo, resolvedValue, nonNullableFieldWasNullException, Collections.emptyList(), errors);
+        super(executionStepInfo, resolvedValue, nonNullableFieldWasNullException, ImmutableKit.emptyList(), errors);
     }
 
 

@@ -1,5 +1,8 @@
 package readme;
 
+import graphql.GraphQLError;
+import graphql.GraphqlErrorBuilder;
+import graphql.InvalidSyntaxError;
 import graphql.Scalars;
 import graphql.StarWarsData;
 import graphql.TypeResolutionEnvironment;
@@ -80,6 +83,9 @@ public class ReadmeExamples {
                 .query(queryType) // must be provided
                 .mutation(mutationType) // is optional
                 .build();
+
+        GraphQLUnionType.Builder description = newUnionType().description("");
+        description.definition(null).build();
     }
 
     void listsAndNonNullLists() {
@@ -87,7 +93,7 @@ public class ReadmeExamples {
 
         GraphQLNonNull.nonNull(GraphQLString); // a non null String
 
-        // with static imports its even shorter
+        // with static imports it's even shorter
         newArgument()
                 .name("example")
                 .type(nonNull(list(GraphQLString)));
@@ -446,6 +452,27 @@ public class ReadmeExamples {
                 }
             }
         };
+    }
+
+    static class SpecialError extends InvalidSyntaxError {
+
+        public SpecialError(SpecialErrorBuilder builder) {
+            super(builder.getLocations(), builder.getMessage());
+        }
+    }
+
+    static class SpecialErrorBuilder extends GraphqlErrorBuilder<SpecialErrorBuilder> {
+
+        @Override
+        public SpecialError build() {
+            return new SpecialError(this);
+        }
+    }
+
+    private void errorBuilderExample() {
+        GraphQLError err = GraphqlErrorBuilder.newError().message("direct").build();
+
+        SpecialError specialErr = new SpecialErrorBuilder().message("special").build();
     }
 
     private DataFetcher createDataFetcher(FieldDefinition definition, Directive directive) {

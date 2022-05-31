@@ -132,7 +132,7 @@ class IntrospectionWithDirectivesSupportTest extends Specification {
         def filter = new IntrospectionWithDirectivesSupport.DirectivePredicate() {
             @Override
             boolean isDirectiveIncluded(IntrospectionWithDirectivesSupport.DirectivePredicateEnvironment env) {
-                return !env.getDirective().getName().contains("secret")
+                return !env.getDirectiveName().contains("secret")
             }
         }
         schema = new IntrospectionWithDirectivesSupport(filter).apply(schema)

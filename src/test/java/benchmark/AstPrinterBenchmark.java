@@ -233,4 +233,22 @@ public class AstPrinterBenchmark {
     public static void printAst(Blackhole blackhole) {
         blackhole.consume(AstPrinter.printAst(document));
     }
+
+    @Benchmark
+    @BenchmarkMode(Mode.Throughput)
+    @OutputTimeUnit(TimeUnit.SECONDS)
+    public void benchMarkAstPrinterCompactThroughput(Blackhole blackhole) {
+        printAstCompact(blackhole);
+    }
+
+    @Benchmark
+    @BenchmarkMode(Mode.AverageTime)
+    @OutputTimeUnit(TimeUnit.MILLISECONDS)
+    public void benchMarkAstPrinterCompactAvgTime(Blackhole blackhole) {
+        printAstCompact(blackhole);
+    }
+
+    public static void printAstCompact(Blackhole blackhole) {
+        blackhole.consume(AstPrinter.printAstCompact(document));
+    }
 }

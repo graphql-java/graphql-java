@@ -10,9 +10,12 @@ import graphql.execution.instrumentation.SimpleInstrumentation
 import graphql.execution.instrumentation.TestingInstrumentation
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters
 import graphql.language.Document
+import graphql.parser.Parser
 import spock.lang.Specification
 
 import java.util.function.Function
+
+import static graphql.ExecutionInput.newExecutionInput
 
 class PreparsedDocumentProviderTest extends Specification {
 
@@ -219,5 +222,29 @@ class PreparsedDocumentProviderTest extends Specification {
 
         resultB.data == [hero: [name: "R2-D2"]]
         instrumentationB.capturedInput.getQuery() == queryB
+    }
+
+    def "sync method and async method result is same"() {
+        given:
+        def provider = new TestingPreparsedDocumentProvider()
+        def queryA = """
+              query A {
+                  hero {
+                      id
+                  }
+              }
+              """
+        def engineParser = {
+            ExecutionInput ei ->
+                def doc = new Parser().parseDocument(ei.getQuery())
+                return new PreparsedDocumentEntry(doc)
+        }
+        when:
+        def syncMethod = provider.getDocument(newExecutionInput(queryA).build(), engineParser)
+        def asyncMethod = provider.getDocumentAsync(newExecutionInput(queryA).build(), engineParser)
+
+        then:
+        asyncMethod != null
+        asyncMethod.get().equals(syncMethod)
     }
 }

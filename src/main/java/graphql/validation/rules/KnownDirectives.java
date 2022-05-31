@@ -31,7 +31,7 @@ public class KnownDirectives extends AbstractRule {
 
     @Override
     public void checkDirective(Directive directive, List<Node> ancestors) {
-        GraphQLDirective graphQLDirective = getValidationContext().getSchema().getFirstDirective(directive.getName());
+        GraphQLDirective graphQLDirective = getValidationContext().getSchema().getDirective(directive.getName());
         if (graphQLDirective == null) {
             String message = String.format("Unknown directive %s", directive.getName());
             addError(ValidationErrorType.UnknownDirective, directive.getSourceLocation(), message);
@@ -45,7 +45,7 @@ public class KnownDirectives extends AbstractRule {
         }
     }
 
-    @SuppressWarnings("deprecation") // the suppression stands because its deprecated but still in graphql spec
+    @SuppressWarnings("deprecation") // the suppression stands because it's deprecated but still in graphql spec
     private boolean hasInvalidLocation(GraphQLDirective directive, Node ancestor) {
         EnumSet<DirectiveLocation> validLocations = directive.validLocations();
         if (ancestor instanceof OperationDefinition) {

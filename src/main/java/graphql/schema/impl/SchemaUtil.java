@@ -25,7 +25,7 @@ import java.util.TreeMap;
 public class SchemaUtil {
 
     /**
-     * Called to visit a partially build schema (during {@link GraphQLSchema} build phases) with a set of visitors
+     * Called to visit a partially built schema (during {@link GraphQLSchema} build phases) with a set of visitors
      *
      * Each visitor is expected to hold its own side effects that might be last used to construct a full schema
      *

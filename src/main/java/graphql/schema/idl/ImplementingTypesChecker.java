@@ -35,7 +35,7 @@ import java.util.function.BinaryOperator;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
-import static java.util.Collections.emptyList;
+import static graphql.collect.ImmutableKit.emptyList;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
 
@@ -66,8 +66,7 @@ class ImplementingTypesChecker {
         List<InterfaceTypeDefinition> interfaces = typeRegistry.getTypes(InterfaceTypeDefinition.class);
         List<ObjectTypeDefinition> objects = typeRegistry.getTypes(ObjectTypeDefinition.class);
 
-        Stream.of(interfaces.stream(), objects.stream())
-                .flatMap(Function.identity())
+        Stream.<ImplementingTypeDefinition<?>>concat(interfaces.stream(), objects.stream())
                 .forEach(type -> checkImplementingType(errors, typeRegistry, type));
     }
 

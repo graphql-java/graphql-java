@@ -1,10 +1,13 @@
 package graphql;
 
 
+import com.google.common.collect.ImmutableSet;
 import graphql.language.Description;
 import graphql.language.DirectiveDefinition;
 import graphql.language.StringValue;
 import graphql.schema.GraphQLDirective;
+
+import java.util.Set;
 
 import static graphql.Scalars.GraphQLBoolean;
 import static graphql.Scalars.GraphQLString;
@@ -99,7 +102,7 @@ public class Directives {
             .argument(newArgument()
                     .name("reason")
                     .type(GraphQLString)
-                    .defaultValue(NO_LONGER_SUPPORTED)
+                    .defaultValueProgrammatic(NO_LONGER_SUPPORTED)
                     .description("The reason for the deprecation"))
             .validLocations(FIELD_DEFINITION, ENUM_VALUE, ARGUMENT_DEFINITION, INPUT_FIELD_DEFINITION)
             .definition(DEPRECATED_DIRECTIVE_DEFINITION)
@@ -122,6 +125,4 @@ public class Directives {
     private static Description createDescription(String s) {
         return new Description(s, null, false);
     }
-
-
 }

@@ -8,8 +8,9 @@ import graphql.language.Type;
 import graphql.language.TypeName;
 import graphql.schema.GraphQLType;
 
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.Objects;
-import java.util.Stack;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.schema.GraphQLList.list;
@@ -27,7 +28,7 @@ public class TypeInfo {
 
     private final Type rawType;
     private final TypeName typeName;
-    private final Stack<Class<?>> decoration = new Stack<>();
+    private final Deque<Class<?>> decoration = new ArrayDeque<>();
 
     private TypeInfo(Type type) {
         this.rawType = assertNotNull(type, () -> "type must not be null");
@@ -79,8 +80,7 @@ public class TypeInfo {
 
         Type out = TypeName.newTypeName(newName).build();
 
-        Stack<Class<?>> wrappingStack = new Stack<>();
-        wrappingStack.addAll(this.decoration);
+        Deque<Class<?>> wrappingStack = new ArrayDeque<>(this.decoration);
         while (!wrappingStack.isEmpty()) {
             Class<?> clazz = wrappingStack.pop();
             if (clazz.equals(NonNullType.class)) {
@@ -106,8 +106,7 @@ public class TypeInfo {
     public <T extends GraphQLType> T decorate(GraphQLType objectType) {
 
         GraphQLType out = objectType;
-        Stack<Class<?>> wrappingStack = new Stack<>();
-        wrappingStack.addAll(this.decoration);
+        Deque<Class<?>> wrappingStack = new ArrayDeque<>(this.decoration);
         while (!wrappingStack.isEmpty()) {
             Class<?> clazz = wrappingStack.pop();
             if (clazz.equals(NonNullType.class)) {

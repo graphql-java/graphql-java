@@ -260,7 +260,7 @@ public class GraphQLCodeRegistry {
         }
 
         /**
-         * @return the default data fetcher facttory associated with this code registry
+         * @return the default data fetcher factory associated with this code registry
          */
         public DataFetcherFactory<?> getDefaultDataFetcherFactory() {
             return defaultDataFetcherFactory;

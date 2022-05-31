@@ -24,6 +24,12 @@ import static graphql.util.FpKit.getByName;
  * A directive can be used to modify the behavior of a graphql field or type.
  * <p>
  * See http://graphql.org/learn/queries/#directives for more details on the concept.
+ * <p>
+ * A directive has a definition, that is what arguments it takes, and it can also be applied
+ * to other schema elements.  Originally graphql-java re-used the {@link GraphQLDirective} and {@link GraphQLArgument}
+ * classes to do both purposes.  This was a modelling mistake.  New {@link GraphQLAppliedDirective} and {@link GraphQLAppliedDirectiveArgument}
+ * classes have been introduced to better model when a directive is applied to a schema element,
+ * as opposed to its schema definition itself.
  */
 @PublicApi
 public class GraphQLDirective implements GraphQLNamedSchemaElement {
@@ -147,6 +153,19 @@ public class GraphQLDirective implements GraphQLNamedSchemaElement {
     }
 
     /**
+     * This method can be used to turn a directive that was being use as an applied directive into one.
+     * @return an {@link GraphQLAppliedDirective}
+     */
+    public GraphQLAppliedDirective toAppliedDirective() {
+        GraphQLAppliedDirective.Builder builder = GraphQLAppliedDirective.newDirective();
+        builder.name(this.name);
+        for (GraphQLArgument argument : arguments) {
+            builder.argument(argument.toAppliedArgument());
+        }
+        return builder.build();
+    }
+
+    /**
      * {@inheritDoc}
      */
     @Override
@@ -171,7 +190,7 @@ public class GraphQLDirective implements GraphQLNamedSchemaElement {
         return new Builder(existing);
     }
 
-    public static class Builder extends GraphqlTypeBuilder {
+    public static class Builder extends GraphqlTypeBuilder<Builder> {
 
         private EnumSet<DirectiveLocation> locations = EnumSet.noneOf(DirectiveLocation.class);
         private final Map<String, GraphQLArgument> arguments = new LinkedHashMap<>();
@@ -189,26 +208,8 @@ public class GraphQLDirective implements GraphQLNamedSchemaElement {
             this.arguments.putAll(getByName(existing.getArguments(), GraphQLArgument::getName));
         }
 
-        @Override
-        public Builder name(String name) {
-            super.name(name);
-            return this;
-        }
-
-        @Override
-        public Builder description(String description) {
-            super.description(description);
-            return this;
-        }
-
         public Builder repeatable(boolean repeatable) {
             this.repeatable = repeatable;
-            return this;
-        }
-
-        @Override
-        public Builder comparatorRegistry(GraphqlTypeComparatorRegistry comparatorRegistry) {
-            super.comparatorRegistry(comparatorRegistry);
             return this;
         }
 
@@ -287,6 +288,18 @@ public class GraphQLDirective implements GraphQLNamedSchemaElement {
         public Builder definition(DirectiveDefinition definition) {
             this.definition = definition;
             return this;
+        }
+
+        // -- the following are repeated to avoid a binary incompatibility problem --
+
+        @Override
+        public Builder name(String name) {
+            return super.name(name);
+        }
+
+        @Override
+        public Builder description(String description) {
+            return super.description(description);
         }
 
         public GraphQLDirective build() {

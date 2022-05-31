@@ -159,7 +159,7 @@ public class CompletionStageMappingPublisher<D, U> implements Publisher<D> {
         }
 
         private boolean removeFromInFlightQAndCheckIfEmpty(CompletionStage<?> completionStage) {
-            // uncontested locks in java are cheap - we dont expect much contention here
+            // uncontested locks in java are cheap - we don't expect much contention here
             synchronized (inFlightDataQ) {
                 inFlightDataQ.remove(completionStage);
                 return inFlightDataQ.isEmpty();

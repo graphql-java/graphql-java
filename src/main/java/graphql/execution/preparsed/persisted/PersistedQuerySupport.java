@@ -78,7 +78,7 @@ public abstract class PersistedQuerySupport implements PreparsedDocumentProvider
     }
 
     /**
-     * Allows you to customize the graphql error that is sent back on a missing persistend query
+     * Allows you to customize the graphql error that is sent back on a missing persisted query
      *
      * @param persistedQueryError the missing persistent query exception
      *

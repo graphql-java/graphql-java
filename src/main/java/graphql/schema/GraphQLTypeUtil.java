@@ -2,8 +2,12 @@ package graphql.schema;
 
 import graphql.Assert;
 import graphql.PublicApi;
+import graphql.introspection.Introspection;
+import graphql.schema.idl.DirectiveInfo;
+import graphql.schema.idl.ScalarInfo;
 
 import java.util.Stack;
+import java.util.function.Predicate;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertShouldNeverHappen;
@@ -155,11 +159,11 @@ public class GraphQLTypeUtil {
     }
 
     /**
-     * Unwraps one layer of the type or just returns the type again if its not a wrapped type
+     * Unwraps one layer of the type or just returns the type again if it's not a wrapped type
      *
      * @param type the type to unwrapOne
      *
-     * @return the unwrapped type or the same type again if its not wrapped
+     * @return the unwrapped type or the same type again if it's not wrapped
      */
     public static GraphQLType unwrapOne(GraphQLType type) {
         if (isNonNull(type)) {
@@ -171,13 +175,13 @@ public class GraphQLTypeUtil {
     }
 
     /**
-     * Unwraps one layer of the type or just returns the type again if its not a wrapped type
+     * Unwraps one layer of the type or just returns the type again if it's not a wrapped type
      * and then cast to the target type.
      *
      * @param type the type to unwrapOne
-     * @param <T> for two
+     * @param <T>  for two
      *
-     * @return the unwrapped type or the same type again if its not wrapped
+     * @return the unwrapped type or the same type again if it's not wrapped
      */
     public static <T extends GraphQLType> T unwrapOneAs(GraphQLType type) {
         //noinspection unchecked
@@ -185,7 +189,7 @@ public class GraphQLTypeUtil {
     }
 
     /**
-     * Unwraps all layers of the type or just returns the type again if its not a wrapped type
+     * Unwraps all layers of the type or just returns the type again if it's not a wrapped type
      *
      * @param type the type to unwrapOne
      *
@@ -201,11 +205,11 @@ public class GraphQLTypeUtil {
     }
 
     /**
-     * Unwraps all layers of the type or just returns the type again if its not a wrapped type
+     * Unwraps all layers of the type or just returns the type again if it's not a wrapped type
      * and then cast to the target type.
      *
      * @param type the type to unwrapOne
-     * @param <T> for two
+     * @param <T>  for two
      *
      * @return the underlying type
      */
@@ -234,7 +238,7 @@ public class GraphQLTypeUtil {
      * and then cast to the target type.
      *
      * @param type the type to unwrap
-     * @param <T> for two
+     * @param <T>  for two
      *
      * @return the underlying type that is not {@link GraphQLNonNull}
      */
@@ -253,7 +257,7 @@ public class GraphQLTypeUtil {
      * @return a stack of the type wrapping which will be at least 1 later deep
      */
     public static Stack<GraphQLType> unwrapType(GraphQLType type) {
-        type = assertNotNull(type);
+        assertNotNull(type);
         Stack<GraphQLType> decoration = new Stack<>();
         while (true) {
             decoration.push(type);
@@ -274,4 +278,24 @@ public class GraphQLTypeUtil {
     }
 
 
+    /**
+     * This predicate returns true if the schema element is an inbuilt schema element
+     * such as the system scalars and directives or introspection types
+     *
+     * @return true if it's a system schema element
+     */
+    public static Predicate<GraphQLNamedSchemaElement> isSystemElement() {
+        return schemaElement -> {
+            if (schemaElement instanceof GraphQLScalarType) {
+                return ScalarInfo.isGraphqlSpecifiedScalar((GraphQLScalarType) schemaElement);
+            }
+            if (schemaElement instanceof GraphQLDirective) {
+                return DirectiveInfo.isGraphqlSpecifiedDirective((GraphQLDirective) schemaElement);
+            }
+            if (schemaElement instanceof GraphQLNamedType) {
+                return Introspection.isIntrospectionTypes((GraphQLNamedType) schemaElement);
+            }
+            return false;
+        };
+    }
 }

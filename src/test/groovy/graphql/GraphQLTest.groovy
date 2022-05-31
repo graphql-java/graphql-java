@@ -6,6 +6,8 @@ import graphql.collect.ImmutableKit
 import graphql.execution.AsyncExecutionStrategy
 import graphql.execution.AsyncSerialExecutionStrategy
 import graphql.execution.DataFetcherExceptionHandler
+import graphql.execution.DataFetcherExceptionHandlerParameters
+import graphql.execution.DataFetcherExceptionHandlerResult
 import graphql.execution.DataFetcherResult
 import graphql.execution.ExecutionContext
 import graphql.execution.ExecutionId
@@ -971,8 +973,6 @@ many lines''']
         then:
         def assEx = thrown(AssertException)
         assEx.message.contains("variables map can't be null")
-
-
     }
 
     def "query can't be null via ExecutionInput"() {
@@ -984,8 +984,6 @@ many lines''']
         then:
         def assEx = thrown(AssertException)
         assEx.message.contains("query can't be null")
-
-
     }
 
     def "query must be set via ExecutionInput"() {
@@ -1129,6 +1127,26 @@ many lines''']
 
     }
 
+    def "default value defined in the schema is used when none provided in the query"() {
+        // Spec (https://spec.graphql.org/June2018/#sec-All-Variable-Usages-are-Allowed): A notable exception to typical variable type compatibility is allowing a variable definition with a nullable type to be provided to a non‐null location as long as either that variable or that location provides a default value.
+        given:
+        def spec = """type Query {
+            sayHello(name: String! = "amigo"): String
+        }"""
+        def df = { dfe ->
+            return dfe.getArgument("name")
+        } as DataFetcher
+        def graphQL = TestUtil.graphQL(spec, ["Query": ["sayHello": df]]).build()
+
+        when:
+        def result = graphQL.execute('query($var:String){sayHello(name:$var)}');
+
+        then:
+        result.errors.isEmpty()
+        result.getData() == [sayHello: "amigo"]
+
+    }
+
     def "specified url can be defined and queried via introspection"() {
         given:
         GraphQLSchema schema = TestUtil.schema('type Query {foo: MyScalar} scalar MyScalar @specifiedBy(url:"myUrl")');
@@ -1156,16 +1174,23 @@ many lines''']
         er.data["f"] == "hi"
     }
 
+
     def "can set default fetcher exception handler"() {
+
+
         def sdl = 'type Query { f : String } '
 
         DataFetcher df = { env ->
             throw new RuntimeException("BANG!")
         }
         def capturedMsg = null
-        def exceptionHandler = { params ->
-            capturedMsg = params.exception.getMessage()
-        } as DataFetcherExceptionHandler
+        def exceptionHandler = new DataFetcherExceptionHandler() {
+            @Override
+            CompletableFuture<DataFetcherExceptionHandlerResult> handleException(DataFetcherExceptionHandlerParameters params) {
+                capturedMsg = params.exception.getMessage()
+                return CompletableFuture.completedFuture(DataFetcherExceptionHandlerResult.newResult().build())
+            }
+        }
         def schema = TestUtil.schema(sdl, [Query: [f: df]])
         def graphQL = GraphQL.newGraphQL(schema).defaultDataFetcherExceptionHandler(exceptionHandler).build()
         when:

@@ -25,9 +25,13 @@ import java.util.Optional;
 
 import static graphql.collect.ImmutableKit.map;
 import static graphql.execution.nextgen.result.ResultNodeAdapter.RESULT_NODE_ADAPTER;
-import static java.util.Collections.emptyList;
+import static graphql.collect.ImmutableKit.emptyList;
 import static java.util.Collections.singleton;
 
+/**
+ * @deprecated Jan 2022 - We have decided to deprecate the NextGen engine, and it will be removed in a future release.
+ */
+@Deprecated
 @Internal
 public class ResultNodesUtil {
 

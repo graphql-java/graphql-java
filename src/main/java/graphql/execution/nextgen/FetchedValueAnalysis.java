@@ -13,6 +13,10 @@ import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotNull;
 
+/**
+ * @deprecated Jan 2022 - We have decided to deprecate the NextGen engine, and it will be removed in a future release.
+ */
+@Deprecated
 @Internal
 public class FetchedValueAnalysis {
 
@@ -72,7 +76,7 @@ public class FetchedValueAnalysis {
         return fetchedValue;
     }
 
-    public FetchedValueAnalysis transfrom(Consumer<Builder> builderConsumer) {
+    public FetchedValueAnalysis transform(Consumer<Builder> builderConsumer) {
         Builder builder = new Builder(this);
         builderConsumer.accept(builder);
         return builder.build();

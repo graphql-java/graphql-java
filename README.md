@@ -5,14 +5,16 @@ Discuss and ask questions in our Discussions: https://github.com/graphql-java/gr
 This is a [GraphQL](https://github.com/graphql/graphql-spec) Java implementation.
 
 [![Build](https://github.com/graphql-java/graphql-java/actions/workflows/master.yml/badge.svg)](https://github.com/graphql-java/graphql-java/actions/workflows/master.yml)
-[![Latest Release](https://maven-badges.herokuapp.com/maven-central/com.graphql-java/graphql-java/badge.svg)](https://maven-badges.herokuapp.com/maven-central/com.graphql-java/graphql-java/)
+[![Latest Release](https://img.shields.io/maven-central/v/com.graphql-java/graphql-java?versionPrefix=18)](https://maven-badges.herokuapp.com/maven-central/com.graphql-java/graphql-java/)
+[![Latest Snapshot](https://img.shields.io/maven-central/v/com.graphql-java/graphql-java?label=maven-central%20snapshot)](https://maven-badges.herokuapp.com/maven-central/com.graphql-java/graphql-java/)
+[![MIT licensed](https://img.shields.io/badge/license-MIT-green)](https://github.com/graphql-java/graphql-java/blob/master/LICENSE.md)
 
 
 ### Documentation
 
 We have a tutorial for beginners: [Getting started with GraphQL Java and Spring Boot](https://www.graphql-java.com/tutorials/getting-started-with-spring-boot/)
 
-For details how to use `graphql-java` please look at the documentation: https://www.graphql-java.com/documentation 
+For details how to use `graphql-java` please look at the documentation: https://www.graphql-java.com/documentation/getting-started
 
 
 Please take a look at our [list of releases](https://github.com/graphql-java/graphql-java/releases) if you want to learn more about new releases and the changelog.

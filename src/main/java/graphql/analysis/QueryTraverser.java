@@ -1,6 +1,8 @@
 package graphql.analysis;
 
 import graphql.PublicApi;
+import graphql.execution.CoercedVariables;
+import graphql.execution.RawVariables;
 import graphql.execution.ValuesResolver;
 import graphql.language.Document;
 import graphql.language.FragmentDefinition;
@@ -42,7 +44,7 @@ public class QueryTraverser {
     private final Collection<? extends Node> roots;
     private final GraphQLSchema schema;
     private final Map<String, FragmentDefinition> fragmentsByName;
-    private final Map<String, Object> variables;
+    private CoercedVariables coercedVariables;
 
     private final GraphQLCompositeType rootParentType;
 
@@ -50,18 +52,18 @@ public class QueryTraverser {
                            Document document,
                            String operation,
                            Map<String, Object> variables) {
-        assertNotNull(document, () -> "document  can't be null");
+        assertNotNull(document, () -> "document can't be null");
         NodeUtil.GetOperationResult getOperationResult = NodeUtil.getOperation(document, operation);
         List<VariableDefinition> variableDefinitions = getOperationResult.operationDefinition.getVariableDefinitions();
         this.schema = assertNotNull(schema, () -> "schema can't be null");
         this.fragmentsByName = getOperationResult.fragmentsByName;
         this.roots = singletonList(getOperationResult.operationDefinition);
         this.rootParentType = getRootTypeFromOperation(getOperationResult.operationDefinition);
-        this.variables = coerceVariables(assertNotNull(variables, () -> "variables can't be null"), variableDefinitions);
+        this.coercedVariables = coerceVariables(assertNotNull(variables, () -> "variables can't be null"), variableDefinitions);
     }
 
-    private Map<String, Object> coerceVariables(Map<String, Object> rawVariables, List<VariableDefinition> variableDefinitions) {
-        return new ValuesResolver().coerceVariableValues(schema, variableDefinitions, rawVariables);
+    private CoercedVariables coerceVariables(Map<String, Object> rawVariables, List<VariableDefinition> variableDefinitions) {
+        return new ValuesResolver().coerceVariableValues(schema, variableDefinitions, new RawVariables(rawVariables));
     }
 
     private QueryTraverser(GraphQLSchema schema,
@@ -70,11 +72,11 @@ public class QueryTraverser {
                            Map<String, FragmentDefinition> fragmentsByName,
                            Map<String, Object> variables) {
         this.schema = assertNotNull(schema, () -> "schema can't be null");
-        this.variables = assertNotNull(variables, () -> "variables can't be null");
         assertNotNull(root, () -> "root can't be null");
         this.roots = Collections.singleton(root);
         this.rootParentType = assertNotNull(rootParentType, () -> "rootParentType can't be null");
         this.fragmentsByName = assertNotNull(fragmentsByName, () -> "fragmentsByName can't be null");
+        this.coercedVariables = new CoercedVariables(assertNotNull(variables, () -> "variables can't be null"));
     }
 
     public Object visitDepthFirst(QueryVisitor queryVisitor) {
@@ -129,7 +131,7 @@ public class QueryTraverser {
      * @param initialValue the initial value to pass to the reducer
      * @param <T>          the type of reduced value
      *
-     * @return the calucalated overall value
+     * @return the calculated overall value
      */
     @SuppressWarnings("unchecked")
     public <T> T reducePreOrder(QueryReducer<T> queryReducer, T initialValue) {
@@ -181,7 +183,7 @@ public class QueryTraverser {
         }
 
         NodeTraverser nodeTraverser = new NodeTraverser(rootVars, this::childrenOf);
-        NodeVisitorWithTypeTracking nodeVisitorWithTypeTracking = new NodeVisitorWithTypeTracking(preOrderCallback, postOrderCallback, variables, schema, fragmentsByName);
+        NodeVisitorWithTypeTracking nodeVisitorWithTypeTracking = new NodeVisitorWithTypeTracking(preOrderCallback, postOrderCallback, coercedVariables.toMap(), schema, fragmentsByName);
         return nodeTraverser.depthFirst(nodeVisitorWithTypeTracking, roots);
     }
 

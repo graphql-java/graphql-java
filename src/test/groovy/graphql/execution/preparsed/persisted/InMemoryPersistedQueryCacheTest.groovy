@@ -40,19 +40,19 @@ class InMemoryPersistedQueryCacheTest extends Specification {
         def getDoc = inMemCache.getPersistedQueryDocument(hash, ei, onMiss)
         def doc = getDoc.document
         then:
-        printAstCompact(doc) == "query {oneTwoThreeFour}"
+        printAstCompact(doc) == "{oneTwoThreeFour}"
     }
 
     def "When there's a cache miss, uses the query from known queries if the execution input's query is the APQ Marker"() {
         def hash = "somehash"
         def inMemCache = InMemoryPersistedQueryCache.newInMemoryPersistedQueryCache()
-                .addQuery(hash, "query {foo bar baz}")
+                .addQuery(hash, "{foo bar baz}")
                 .build()
         def ei = mkEI(hash, PersistedQuerySupport.PERSISTED_QUERY_MARKER)
         when:
         def getDoc = inMemCache.getPersistedQueryDocument(hash, ei, onMiss)
         def doc = getDoc.document
         then:
-        printAstCompact(doc) == "query {foo bar baz}"
+        printAstCompact(doc) == "{foo bar baz}"
     }
 }

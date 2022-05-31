@@ -1,5 +1,6 @@
 package graphql
 
+import graphql.execution.DataFetcherResult
 import graphql.schema.DataFetcher
 import graphql.schema.GraphQLInterfaceType
 import graphql.schema.GraphQLObjectType
@@ -13,7 +14,9 @@ import graphql.schema.idl.WiringFactory
 import spock.lang.Specification
 
 import static graphql.Assert.assertShouldNeverHappen
+import static graphql.ExecutionInput.newExecutionInput
 import static graphql.schema.GraphQLTypeUtil.unwrapAll
+import static graphql.schema.idl.TypeRuntimeWiring.newTypeWiring
 
 class TypeResolverExecutionTest extends Specification {
 
@@ -479,5 +482,182 @@ class TypeResolverExecutionTest extends Specification {
         then:
         res.data == null
         res.errors[0] instanceof UnresolvedTypeError
+    }
+
+    def "can get access to field selection set during type resolution"() {
+        def sdl = '''
+
+        type Query {
+            foo : BarInterface
+        }
+        
+        interface BarInterface {
+             name : String
+        }
+         
+        type NewBar implements BarInterface {
+            name : String
+            newBarOnlyField : String
+        }
+
+        type OldBar implements BarInterface {
+            name : String
+            oldBarOnlyField : String
+        }
+        '''
+
+        TypeResolver typeResolver = new TypeResolver() {
+            @Override
+            GraphQLObjectType getType(TypeResolutionEnvironment env) {
+                boolean askedForOldBar = !env.getSelectionSet().getFields("oldBarOnlyField").isEmpty()
+                if (askedForOldBar) {
+                    return env.getSchema().getObjectType("OldBar")
+                }
+                return env.getSchema().getObjectType("NewBar")
+            }
+        }
+
+
+        def wiring = RuntimeWiring.newRuntimeWiring()
+                .type(newTypeWiring("Query")
+                        .dataFetcher("foo", { env -> [name: "NAME"] }))
+                .type(newTypeWiring("BarInterface")
+                        .typeResolver(typeResolver))
+                .build()
+
+
+        def graphQL = TestUtil.graphQL(sdl, wiring).build()
+
+        when:
+        def query = '''
+        query {           
+            foo {
+                __typename
+                ...OldBarFragment
+                ...NewBarFragment
+            }
+        }
+
+        fragment OldBarFragment on OldBar {
+          name
+          oldBarOnlyField
+        }
+        
+        fragment NewBarFragment on NewBar {
+          name
+          newBarOnlyField
+        }
+        '''
+
+        def er = graphQL.execute(query)
+
+        then:
+        er.errors.isEmpty()
+        er.data == ["foo": [
+                "__typename"     : "OldBar",
+                "name"           : "NAME",
+                "oldBarOnlyField": null,
+        ]]
+
+
+        when:
+        query = '''
+        query {           
+            foo {
+                __typename
+                ...NewBarFragment
+            }
+        }
+
+        fragment NewBarFragment on NewBar {
+          name
+        }
+        '''
+
+        er = graphQL.execute(query)
+
+        then:
+        er.errors.isEmpty()
+        er.data == ["foo": [
+                "__typename": "NewBar",
+                "name"      : "NAME",
+        ]]
+    }
+
+    def "can get access to attributes in the type resolver"() {
+        def sdl = '''
+
+        type Query {
+            foo : BarInterface
+        }
+        
+        interface BarInterface {
+             name : String
+        }
+         
+        type NewBar implements BarInterface {
+            name : String
+            newBarOnlyField : String
+        }
+
+        type OldBar implements BarInterface {
+            name : String
+            oldBarOnlyField : String
+        }
+        '''
+
+
+        TypeResolver typeResolver = new TypeResolver() {
+            @Override
+            GraphQLObjectType getType(TypeResolutionEnvironment env) {
+                assert env.getField().getName() == "foo"
+                assert env.getFieldType() == env.getSchema().getType("BarInterface")
+                assert env.getContext() == "Context"
+                assert env.getGraphQLContext().get("x") == "graphqlContext"
+                assert env.getLocalContext() == "LocalContext"
+                return env.getSchema().getObjectType("NewBar")
+            }
+        }
+
+
+        def df = { env ->
+            DataFetcherResult.newResult().data([name: "NAME"]).localContext("LocalContext").build()
+        }
+        def wiring = RuntimeWiring.newRuntimeWiring()
+                .type(newTypeWiring("Query")
+                        .dataFetcher("foo", df))
+                .type(newTypeWiring("BarInterface")
+                        .typeResolver(typeResolver))
+                .build()
+
+
+        def graphQL = TestUtil.graphQL(sdl, wiring).build()
+
+        def query = '''
+        query {           
+            foo {
+                __typename
+                ...NewBarFragment
+            }
+        }
+
+        fragment NewBarFragment on NewBar {
+          name
+        }
+        '''
+
+        when:
+        def ei = newExecutionInput(query)
+                .context("Context")
+                .graphQLContext(["x" : "graphqlContext"])
+                .build()
+        def er = graphQL.execute(ei)
+
+        then:
+        er.errors.isEmpty()
+        er.data == ["foo": [
+                "__typename": "NewBar",
+                "name"      : "NAME",
+        ]]
     }
 }

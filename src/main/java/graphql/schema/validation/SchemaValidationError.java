@@ -2,25 +2,25 @@ package graphql.schema.validation;
 
 import graphql.Internal;
 
-import java.util.Objects;
+import java.util.StringJoiner;
 
 import static graphql.Assert.assertNotNull;
 
 @Internal
 public class SchemaValidationError {
 
-    private final SchemaValidationErrorType errorType;
+    private final SchemaValidationErrorClassification errorClassification;
     private final String description;
 
-    public SchemaValidationError(SchemaValidationErrorType errorType, String description) {
-        assertNotNull(errorType, () -> "error type can not be null");
+    public SchemaValidationError(SchemaValidationErrorType errorClassification, String description) {
+        assertNotNull(errorClassification, () -> "error classification can not be null");
         assertNotNull(description, () -> "error description can not be null");
-        this.errorType = errorType;
+        this.errorClassification = errorClassification;
         this.description = description;
     }
 
-    public SchemaValidationErrorType getErrorType() {
-        return errorType;
+    public SchemaValidationErrorClassification getClassification() {
+        return errorClassification;
     }
 
     public String getDescription() {
@@ -28,9 +28,17 @@ public class SchemaValidationError {
     }
 
     @Override
+    public String toString() {
+        return new StringJoiner(", ", SchemaValidationError.class.getSimpleName() + "[", "]")
+                .add("errorClassification=" + errorClassification)
+                .add("description='" + description + "'")
+                .toString();
+    }
+
+    @Override
     public int hashCode() {
         int result = 1;
-        result = 31 * result + errorType.hashCode();
+        result = 31 * result + errorClassification.hashCode();
         result = 31 * result + description.hashCode();
         return result;
     }
@@ -44,6 +52,6 @@ public class SchemaValidationError {
             return false;
         }
         SchemaValidationError that = (SchemaValidationError) other;
-        return this.errorType.equals(that.errorType) && this.description.equals(that.description);
+        return this.errorClassification.equals(that.errorClassification) && this.description.equals(that.description);
     }
 }

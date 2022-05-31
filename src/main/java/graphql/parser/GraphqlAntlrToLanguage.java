@@ -70,7 +70,6 @@ import org.antlr.v4.runtime.tree.TerminalNode;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import static graphql.Assert.assertShouldNeverHappen;
@@ -82,6 +81,7 @@ import static graphql.parser.StringValueParsing.parseTripleQuotedString;
 @Internal
 public class GraphqlAntlrToLanguage {
 
+    private static final List<Comment> NO_COMMENTS = ImmutableKit.emptyList();
     private static final int CHANNEL_COMMENTS = 2;
     private static final int CHANNEL_IGNORED_CHARS = 3;
     private final CommonTokenStream tokens;
@@ -803,7 +803,7 @@ public class GraphqlAntlrToLanguage {
 
     private List<IgnoredChar> mapTokenToIgnoredChar(List<Token> tokens) {
         if (tokens == null) {
-            return Collections.emptyList();
+            return ImmutableKit.emptyList();
         }
         return map(tokens, this::createIgnoredChar);
 
@@ -866,6 +866,10 @@ public class GraphqlAntlrToLanguage {
     }
 
     protected List<Comment> getComments(ParserRuleContext ctx) {
+        if (!parserOptions.isCaptureLineComments()) {
+            return NO_COMMENTS;
+        }
+
         Token start = ctx.getStart();
         if (start != null) {
             int tokPos = start.getTokenIndex();
@@ -874,7 +878,7 @@ public class GraphqlAntlrToLanguage {
                 return getCommentOnChannel(refChannel);
             }
         }
-        return ImmutableKit.emptyList();
+        return NO_COMMENTS;
     }
 
 
@@ -883,7 +887,7 @@ public class GraphqlAntlrToLanguage {
         for (Token refTok : refChannel) {
             String text = refTok.getText();
             // we strip the leading hash # character but we don't trim because we don't
-            // know the "comment markup".  Maybe its space sensitive, maybe its not.  So
+            // know the "comment markup".  Maybe it's space sensitive, maybe it's not.  So
             // consumers can decide that
             if (text == null) {
                 continue;

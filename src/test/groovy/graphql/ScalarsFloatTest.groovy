@@ -54,8 +54,9 @@ class ScalarsFloatTest extends Specification {
         42.0000d              | 42
         new Integer(42)       | 42
         "-1"                  | -1
-        new BigInteger(42)    | 42
+        new BigInteger("42")  | 42
         new BigDecimal("42")  | 42
+        new BigDecimal("4.2") | 4.2d
         42.3f                 | 42.3d
         42.0d                 | 42d
         new Byte("42")        | 42

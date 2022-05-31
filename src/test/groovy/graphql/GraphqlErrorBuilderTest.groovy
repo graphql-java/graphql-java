@@ -39,6 +39,19 @@ class GraphqlErrorBuilderTest extends Specification {
         graphQLError.getErrorType() == ErrorType.DataFetchingException
     }
 
+    def "builder getters work"() {
+        when:
+        def errorBuilder = GraphqlErrorBuilder.newError()
+                .message("Gunfight at the %s corral", "NotOK")
+                .location(location)
+                .path(["a","b"])
+        then:
+        errorBuilder.getMessage() == "Gunfight at the NotOK corral"
+        errorBuilder.getErrorType() == ErrorType.DataFetchingException
+        errorBuilder.getPath() == ["a","b"]
+        errorBuilder.getLocations() == [location]
+    }
+
     def "data fetcher result building works"() {
         when:
         def result = GraphqlErrorBuilder.newError().message("Gunfight at the %s corral", "NotOK").toResult()
@@ -109,5 +122,19 @@ class GraphqlErrorBuilderTest extends Specification {
         GraphqlErrorBuilder.newError().message(null).build()
         then:
         thrown(AssertException)
+    }
+
+    def "can have nullable attributes"() {
+        when:
+        def error = GraphqlErrorBuilder.newError().message("msg")
+                .locations(null)
+                .extensions(null)
+                .path(null)
+                .build()
+        then:
+        error.message == "msg"
+        error.locations == null
+        error.path == null
+        error.extensions == null
     }
 }

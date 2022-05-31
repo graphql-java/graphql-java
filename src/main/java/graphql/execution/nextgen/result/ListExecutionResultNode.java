@@ -2,19 +2,23 @@ package graphql.execution.nextgen.result;
 
 import graphql.GraphQLError;
 import graphql.Internal;
+import graphql.collect.ImmutableKit;
 import graphql.execution.ExecutionStepInfo;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
+/**
+ * @deprecated Jan 2022 - We have decided to deprecate the NextGen engine, and it will be removed in a future release.
+ */
+@Deprecated
 @Internal
 public class ListExecutionResultNode extends ExecutionResultNode {
 
     public ListExecutionResultNode(ExecutionStepInfo executionStepInfo,
                                    ResolvedValue resolvedValue,
                                    List<ExecutionResultNode> children) {
-        this(executionStepInfo, resolvedValue, children, Collections.emptyList());
+        this(executionStepInfo, resolvedValue, children, ImmutableKit.emptyList());
 
     }
 
