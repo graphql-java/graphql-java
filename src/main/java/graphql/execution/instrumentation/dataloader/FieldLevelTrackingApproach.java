@@ -61,14 +61,6 @@ public class FieldLevelTrackingApproach {
             happenedOnFieldValueCallsPerLevel.increment(level, 1);
         }
 
-        /**
-         * Ensure that the happenedOnFieldValueCallsPerLevel LevelMap
-         * has capacity at the specified level
-         */
-        void ensureHappenedOnFieldValueCalls(int level) {
-            happenedOnFieldValueCallsPerLevel.increment(level, 0);
-        }
-
         boolean allStrategyCallsHappened(int level) {
             return happenedStrategyCallsPerLevel.get(level) == expectedStrategyCallsPerLevel.get(level);
         }
@@ -202,7 +194,6 @@ public class FieldLevelTrackingApproach {
                 boolean dispatchNeeded;
                 synchronized (callStack) {
                     callStack.increaseFetchCount(level);
-                    callStack.ensureHappenedOnFieldValueCalls(level);
                     dispatchNeeded = dispatchIfNeeded(callStack, level);
                 }
                 if (dispatchNeeded) {

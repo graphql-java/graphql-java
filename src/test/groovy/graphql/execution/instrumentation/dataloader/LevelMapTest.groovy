@@ -101,7 +101,7 @@ class LevelMapTest extends Specification {
         sut.toString() == "IntMap[level=0,count=42 level=1,count=1 ]"
     }
 
-    def "asserts that get is called before increment"() {
+    def "can get outside of its size"() {
         given:
         LevelMap sut = new LevelMap(0)
 
@@ -109,6 +109,6 @@ class LevelMapTest extends Specification {
         sut.get(1)
 
         then:
-        thrown(AssertException)
+        sut.get(1) == 0
     }
 }

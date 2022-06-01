@@ -1,8 +1,6 @@
 package graphql.execution.instrumentation.dataloader;
 
-import graphql.Assert;
 import graphql.Internal;
-
 import java.util.Arrays;
 
 /**
@@ -29,26 +27,21 @@ public class LevelMap {
     }
 
     public int get(int level) {
-        if (level < 0) {
-            throw new IllegalArgumentException("negative level " + level);
-        }
-        if (level + 1 > countsByLevel.length) {
-            Assert.assertShouldNeverHappen("LevelMap.get called before increment for level " + level);
-        }
+        maybeResize(level);
         return countsByLevel[level];
     }
 
     public void increment(int level, int by) {
-        mutatePreconditions(level);
+        maybeResize(level);
         countsByLevel[level] += by;
     }
 
     public void set(int level, int newValue) {
-        mutatePreconditions(level);
+        maybeResize(level);
         countsByLevel[level] = newValue;
     }
 
-    private void mutatePreconditions(int level) {
+    private void maybeResize(int level) {
         if (level < 0) {
             throw new IllegalArgumentException("negative level " + level);
         }
