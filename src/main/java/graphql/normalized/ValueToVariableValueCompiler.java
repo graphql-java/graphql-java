@@ -22,7 +22,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import static graphql.collect.ImmutableKit.map;
 import static java.util.stream.Collectors.toList;
 
 @Internal
@@ -66,13 +65,15 @@ public class ValueToVariableValueCompiler {
         } else if (maybeValue instanceof Map) {
             variableValue = normalisedValueToVariableValues((Map<String, Object>) maybeValue);
         } else {
-            throw new AssertException("Should never happen. Did not expect type: " + maybeClass(maybeValue));
+                throw new AssertException("Should never happen. Did not expect type: " + maybeClass(maybeValue));
         }
         return variableValue;
     }
 
     private static List<Object> normalisedValueToVariableValues(List<Object> arrayValues) {
-        return map(arrayValues, ValueToVariableValueCompiler::normalisedValueToVariableValue);
+        return arrayValues.stream()
+                .map(ValueToVariableValueCompiler::normalisedValueToVariableValue)
+                .collect(toList());
     }
 
     @NotNull
