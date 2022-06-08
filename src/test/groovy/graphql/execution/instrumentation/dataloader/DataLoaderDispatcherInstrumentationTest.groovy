@@ -79,7 +79,7 @@ class DataLoaderDispatcherInstrumentationTest extends Specification {
         chainedInstrumentation.instrumentations.any { instr -> instr instanceof DataLoaderDispatcherInstrumentation }
     }
 
-    def "dispatch is never called if not data loader registry is set in"() {
+    def "dispatch is never called if data loader registry is not set"() {
         def dataLoaderRegistry = new DataLoaderRegistry() {
             @Override
             void dispatchAll() {
@@ -293,5 +293,31 @@ class DataLoaderDispatcherInstrumentationTest extends Specification {
         then:
         er.errors.isEmpty()
         er.data["field"] == "working as expected"
+    }
+
+    def "handles deep async queries when a data loader registry is present"() {
+        given:
+        def support = new DeepDataFetchers()
+        def dummyDataloaderRegistry = new DataLoaderRegistry()
+        def batchingInstrumentation = new DataLoaderDispatcherInstrumentation()
+        def graphql = GraphQL.newGraphQL(support.schema())
+                .instrumentation(batchingInstrumentation)
+                .build()
+        // FieldLevelTrackingApproach uses LevelMaps with a default size of 16.
+        // Use a value greater than 16 to ensure that the underlying LevelMaps are resized
+        // as expected
+        def depth = 50
+
+        when:
+        def asyncResult = graphql.executeAsync(
+                newExecutionInput()
+                        .query(support.buildQuery(depth))
+                        .dataLoaderRegistry(dummyDataloaderRegistry)
+        )
+        def er = asyncResult.join()
+
+        then:
+        er.errors.isEmpty()
+        er.data == support.buildResponse(depth)
     }
 }
