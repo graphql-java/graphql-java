@@ -21,8 +21,8 @@ import java.util.function.UnaryOperator;
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertShouldNeverHappen;
 import static graphql.Assert.assertValidName;
+import static graphql.collect.ImmutableKit.emptyList;
 import static graphql.util.FpKit.getByName;
-import static java.util.Collections.emptyList;
 
 /**
  * graphql clearly delineates between the types of objects that represent the output of a query and input objects that
@@ -225,7 +225,7 @@ public class GraphQLInputObjectType implements GraphQLNamedInputType, GraphQLUnm
     }
 
     @PublicApi
-    public static class Builder extends GraphqlDirectivesContainerTypeBuilder<Builder,Builder> {
+    public static class Builder extends GraphqlDirectivesContainerTypeBuilder<Builder, Builder> {
         private InputObjectTypeDefinition definition;
         private List<InputObjectTypeExtensionDefinition> extensionDefinitions = emptyList();
         private final Map<String, GraphQLInputObjectField> fields = new LinkedHashMap<>();

@@ -55,7 +55,6 @@ import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLTypeReference;
 import graphql.schema.GraphQLUnionType;
-import graphql.schema.GraphqlDirectivesContainerTypeBuilder;
 import graphql.schema.GraphqlTypeComparatorRegistry;
 import graphql.schema.PropertyDataFetcher;
 import graphql.schema.TypeResolver;
@@ -83,6 +82,7 @@ import static graphql.Assert.assertNotNull;
 import static graphql.Directives.DEPRECATED_DIRECTIVE_DEFINITION;
 import static graphql.Directives.SPECIFIED_BY_DIRECTIVE_DEFINITION;
 import static graphql.Directives.SpecifiedByDirective;
+import static graphql.collect.ImmutableKit.emptyList;
 import static graphql.introspection.Introspection.DirectiveLocation.ARGUMENT_DEFINITION;
 import static graphql.introspection.Introspection.DirectiveLocation.ENUM;
 import static graphql.introspection.Introspection.DirectiveLocation.ENUM_VALUE;
@@ -97,7 +97,6 @@ import static graphql.schema.GraphQLTypeReference.typeRef;
 import static graphql.schema.idl.SchemaGeneratorAppliedDirectiveHelper.buildAppliedDirectives;
 import static graphql.schema.idl.SchemaGeneratorAppliedDirectiveHelper.buildDirectiveDefinitionFromAst;
 import static java.lang.String.format;
-import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toMap;
 
 @Internal
@@ -245,7 +244,7 @@ public class SchemaGeneratorHelper {
             if (args.isEmpty()) {
                 return NO_LONGER_SUPPORTED; // default value from spec
             } else {
-                // pre flight checks have ensured its valid
+                // pre flight checks have ensured it's valid
                 return args.get("reason");
             }
         }

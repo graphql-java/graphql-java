@@ -25,10 +25,10 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 
+import static graphql.collect.ImmutableKit.emptyList;
 import static graphql.collect.ImmutableKit.map;
 import static graphql.schema.idl.SchemaGeneratorHelper.buildDescription;
 import static graphql.util.Pair.pair;
-import static java.util.Collections.emptyList;
 
 /**
  * This contains helper code to build out appliedm directives on schema element

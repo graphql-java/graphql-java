@@ -55,7 +55,7 @@ public class PropertyDataFetcher<T> implements DataFetcher<T>, TrivialDataFetche
 
     /**
      * Returns a data fetcher that will use the property name to examine the {@link DataFetchingEnvironment#getSource()} object
-     * for a getter method or field with that name, or if its a map, it will look up a value using
+     * for a getter method or field with that name, or if it's a map, it will look up a value using
      * property name as a key.
      * <p>
      * For example :

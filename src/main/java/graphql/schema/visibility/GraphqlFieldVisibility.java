@@ -31,7 +31,7 @@ public interface GraphqlFieldVisibility {
      * @param fieldsContainer the type in play
      * @param fieldName       the name of the desired field
      *
-     * @return a {@link graphql.schema.GraphQLFieldDefinition} or null if its not visible
+     * @return a {@link graphql.schema.GraphQLFieldDefinition} or null if it's not visible
      */
     GraphQLFieldDefinition getFieldDefinition(GraphQLFieldsContainer fieldsContainer, String fieldName);
 
@@ -53,7 +53,7 @@ public interface GraphqlFieldVisibility {
      * @param fieldsContainer the type in play
      * @param fieldName       the name of the desired field
      *
-     * @return a {@link graphql.schema.GraphQLInputObjectField} or null if its not visible
+     * @return a {@link graphql.schema.GraphQLInputObjectField} or null if it's not visible
      */
     default GraphQLInputObjectField getFieldDefinition(GraphQLInputFieldsContainer fieldsContainer, String fieldName) {
         return fieldsContainer.getFieldDefinition(fieldName);

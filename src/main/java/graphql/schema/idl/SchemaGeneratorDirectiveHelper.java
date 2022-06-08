@@ -40,7 +40,7 @@ public class SchemaGeneratorDirectiveHelper {
 
     /**
      * This will return true if something in the RuntimeWiring requires a {@link SchemaDirectiveWiring}.  This is to allow
-     * a shortcut to decide that that we dont need ANY SchemaDirectiveWiring post processing
+     * a shortcut to decide that we don't need ANY SchemaDirectiveWiring post processing
      *
      * @param directiveContainer the element that has directives
      * @param typeRegistry       the type registry

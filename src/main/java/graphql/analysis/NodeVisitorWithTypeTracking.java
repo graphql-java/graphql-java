@@ -1,6 +1,7 @@
 package graphql.analysis;
 
 import graphql.Internal;
+import graphql.execution.CoercedVariables;
 import graphql.execution.ConditionalNodes;
 import graphql.execution.ValuesResolver;
 import graphql.introspection.Introspection;
@@ -154,7 +155,7 @@ public class NodeVisitorWithTypeTracking extends NodeVisitorStub {
         boolean isTypeNameIntrospectionField = fieldDefinition == schema.getIntrospectionTypenameFieldDefinition();
         GraphQLFieldsContainer fieldsContainer = !isTypeNameIntrospectionField ? (GraphQLFieldsContainer) unwrapAll(parentEnv.getOutputType()) : null;
         GraphQLCodeRegistry codeRegistry = schema.getCodeRegistry();
-        Map<String, Object> argumentValues = valuesResolver.getArgumentValues(codeRegistry, fieldDefinition.getArguments(), field.getArguments(), variables);
+        Map<String, Object> argumentValues = valuesResolver.getArgumentValues(codeRegistry, fieldDefinition.getArguments(), field.getArguments(), new CoercedVariables(variables));
         QueryVisitorFieldEnvironment environment = new QueryVisitorFieldEnvironmentImpl(isTypeNameIntrospectionField,
                 field,
                 fieldDefinition,

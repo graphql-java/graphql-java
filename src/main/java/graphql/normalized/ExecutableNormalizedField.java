@@ -8,18 +8,14 @@ import graphql.Mutable;
 import graphql.collect.ImmutableKit;
 import graphql.introspection.Introspection;
 import graphql.language.Argument;
-import graphql.schema.GraphQLCompositeType;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLInterfaceType;
-import graphql.schema.GraphQLNamedOutputType;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLOutputType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLUnionType;
-import graphql.schema.GraphQLUnmodifiedType;
 import graphql.util.FpKit;
-import org.dataloader.impl.Assertions;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -122,6 +118,10 @@ public class ExecutableNormalizedField {
      * <p>
      * We MUST consider that the output type of the {@code parent} field is {@code Animal} and
      * NOT {@code Cat} or {@code Dog} as their respective impls would say.
+     *
+     * @param schema - the graphql schema in play
+     *
+     * @return true if the field is conditional
      */
     public boolean isConditional(@NotNull GraphQLSchema schema) {
         if (parent == null) {

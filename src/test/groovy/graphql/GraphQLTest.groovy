@@ -973,8 +973,6 @@ many lines''']
         then:
         def assEx = thrown(AssertException)
         assEx.message.contains("variables map can't be null")
-
-
     }
 
     def "query can't be null via ExecutionInput"() {
@@ -986,8 +984,6 @@ many lines''']
         then:
         def assEx = thrown(AssertException)
         assEx.message.contains("query can't be null")
-
-
     }
 
     def "query must be set via ExecutionInput"() {
