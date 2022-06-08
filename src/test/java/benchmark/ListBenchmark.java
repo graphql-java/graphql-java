@@ -33,7 +33,7 @@ public class ListBenchmark {
         return list;
     }
 
-    Function<String, String> mapper = s -> new StringBuilder(s).reverse().toString();
+    private final Function<String, String> mapper = s -> new StringBuilder(s).reverse().toString();
 
     @Benchmark
     public void benchmarkListStream(Blackhole blackhole) {
