@@ -49,7 +49,7 @@ class SubscriptionUniqueRootFieldTest extends Specification {
     def "5.2.3.1 subscription with more than one root field fails validation"() {
         given:
         def subscriptionTwoRoots = '''
-            subscription doggo {
+            subscription pets {
               dog {
                 name
               }
@@ -70,11 +70,11 @@ class SubscriptionUniqueRootFieldTest extends Specification {
     def "5.2.3.1 subscription with more than one root field with fragment fails validation"() {
         given:
         def subscriptionTwoRootsWithFragment = '''
-            subscription sub {
-              ...multiplePets
+            subscription whoIsAGoodBoy {
+              ...pets
             }
 
-            fragment multiplePets on SubscriptionRoot {
+            fragment pets on SubscriptionRoot {
               dog {
                 name
               }
