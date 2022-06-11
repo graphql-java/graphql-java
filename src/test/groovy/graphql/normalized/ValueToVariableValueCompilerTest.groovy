@@ -11,7 +11,6 @@ import graphql.language.NullValue
 import graphql.language.ObjectField
 import graphql.language.ObjectValue
 import graphql.language.StringValue
-import graphql.language.Type
 import graphql.language.TypeName
 import graphql.schema.idl.TypeUtil
 import spock.lang.Specification
@@ -89,6 +88,18 @@ class ValueToVariableValueCompilerTest extends Specification {
         // but for now this is what we do
     }
 
+    def "can handle NormalizedInputValue values that are NIV with null members"() {
+        expect:
+        def niv = new NormalizedInputValue("TypeName", value)
+        def actual = ValueToVariableValueCompiler.normalisedValueToVariableValue(niv)
+        actual == expected
+
+        where:
+        value                                                                                        | expected
+        [a: new NormalizedInputValue("X", IntValue.of(666)), b: new NormalizedInputValue("X", null)] | [a: 666, b: null]
+        [new NormalizedInputValue("X", IntValue.of(666)), new NormalizedInputValue("X", null)]       | [666, null]
+    }
+
 
     def "can print variables as expected"() {
         expect:
@@ -100,7 +111,7 @@ class ValueToVariableValueCompilerTest extends Specification {
         // compare actual type
         def actualType = actual.definition.type
         actualType.isEqualTo(expectedType)
-        if(actualType instanceof NonNullType || actualType instanceof ListType){
+        if (actualType instanceof NonNullType || actualType instanceof ListType) {
             actualType.type.isEqualTo(expectedType.type)
         }
         TypeUtil.simplePrint(actualType) == typeName
@@ -113,8 +124,8 @@ class ValueToVariableValueCompilerTest extends Specification {
         BooleanValue.of(true)            | 4        | "Boolean!"   | true              | "v4"            | new NonNullType(new TypeName("Boolean"))
         FloatValue.of(999d)              | 5        | "Float"      | 999d              | "v5"            | new TypeName("Float")
         EnumValue.of("enumValue")        | 6        | "Foo!"       | "enumValue"       | "v6"            | new NonNullType(new TypeName("Foo"))
-        ["a" : IntValue.of(64),
-         "b":IntValue.of(65) ]           | 7        | "ObjectType" | [a: 64, b: 65]    | "v7"            | new TypeName("ObjectType")
+        ["a": IntValue.of(64),
+         "b": IntValue.of(65)]           | 7        | "ObjectType" | [a: 64, b: 65]    | "v7"            | new TypeName("ObjectType")
         [StringValue.of("9"),
          StringValue.of("10"),
          StringValue.of("11")]           | 8        | "[String]"   | ["9", "10", "11"] | "v8"            | new ListType((new TypeName("String")))

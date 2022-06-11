@@ -84,7 +84,7 @@ public class MaxQueryDepthInstrumentation extends SimpleInstrumentation {
                 .schema(executionContext.getGraphQLSchema())
                 .document(executionContext.getDocument())
                 .operationName(executionContext.getExecutionInput().getOperationName())
-                .variables(executionContext.getVariables())
+                .coercedVariables(executionContext.getCoercedVariables())
                 .build();
     }
 
