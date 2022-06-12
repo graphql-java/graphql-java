@@ -116,6 +116,8 @@ public class ExecutionContext {
     }
 
     /**
+     * @return map of coerced variables
+     *
      * @deprecated use {@link #getCoercedVariables()} instead
      */
     @Deprecated
