@@ -122,8 +122,10 @@ shadowJar {
         include 'com.google.common.math.*'
         include 'com.google.common.primitives.*'
     }
+    relocate('org.antlr.v4.runtime', 'graphql.org.antlr.v4.runtime')
     dependencies {
         include(dependency('com.google.guava:guava:31.0.1-jre'))
+        include(dependency('org.antlr:antlr4-runtime:' + antlrVersion))
     }
     from "LICENSE.md"
     from "src/main/antlr/Graphql.g4"
@@ -143,14 +145,14 @@ shadowJar {
     //Configure bnd for shadowJar
     // -exportcontents: graphql.*  Adds all packages of graphql and below to the exported packages list
     // -removeheaders:  Private-Package Removes the MANIFEST.MF header Private-Package, which contains all the internal packages and 
-    //                                  also the repackaged pckages like guava, which would be wrong after repackaging.
+    //                                  also the repackaged packages like guava, which would be wrong after repackaging.
     // Import-Package:  Changes the imported packages header, to exclude guava and dependencies from the import list (! excludes packages)
     //                  Guava was repackaged and included inside the jar, so we need remove it.
     //                  The last ,* copies all the existing imports from the other dependencies, which is required.
     bnd('''
 -exportcontents: graphql.*
 -removeheaders: Private-Package
-Import-Package: !com.google.*,!org.checkerframework.*,!javax.annotation.*,!graphql.com.google.*,*
+Import-Package: !com.google.*,!org.checkerframework.*,!javax.annotation.*,!graphql.com.google.*,!org.antlr.*,!graphql.org.antlr.*,*
 ''')
 }
 
@@ -238,15 +240,15 @@ publishing {
                 classifier "javadoc"
             }
             pom.withXml {
-                // The ANTLR-related code below--introduced in `1ac98bf`--addresses an issue with
+                // Removing antlr4 below (introduced in `1ac98bf`) addresses an issue with
                 // the Gradle ANTLR plugin. `1ac98bf` can be reverted and this comment removed once
                 // that issue is fixed and Gradle upgraded. See https://goo.gl/L92KiF and https://goo.gl/FY0PVR.
                 //
-                // We are removing here guava because the classes we want to use is "shaded" into the jar itself
+                // Removing antlr4-runtime and guava because the classes we want to use are "shaded" into the jar itself
                 // via the shadowJar task
                 def pomNode = asNode()
                 pomNode.dependencies.'*'.findAll() {
-                    it.artifactId.text() == 'antlr4' || it.artifactId.text() == 'guava'
+                    it.artifactId.text() == 'antlr4' || it.artifactId.text() == 'antlr4-runtime' || it.artifactId.text() == 'guava'
                 }.each() {
                     it.parent().remove(it)
                 }
