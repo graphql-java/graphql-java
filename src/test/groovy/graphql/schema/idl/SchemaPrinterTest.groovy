@@ -2130,4 +2130,26 @@ type Query {
 '''
 
     }
+
+    def "prints schema description as comment"() {
+        given:
+        GraphQLFieldDefinition fieldDefinition = newFieldDefinition()
+                .name("field").type(GraphQLString).build()
+        def queryType = newObject().name("Query").field(fieldDefinition).build()
+        def schema = GraphQLSchema.newSchema().description("About Schema").query(queryType).build()
+        when:
+        def result = new SchemaPrinter(noDirectivesOption.includeSchemaDefinition(true)).print(schema)
+        println(result)
+
+        then:
+        result == '''"About Schema"
+schema {
+  query: Query
+}
+
+type Query {
+  field: String
+}
+'''
+    }
 }
