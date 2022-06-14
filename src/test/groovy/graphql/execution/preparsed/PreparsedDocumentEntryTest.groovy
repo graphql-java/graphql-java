@@ -30,25 +30,16 @@ class PreparsedDocumentEntryTest extends Specification {
         thrown(AssertException)
     }
 
-    def "Ensure a non-null errors returns"() {
+    def "Ensure a non-null error returns"() {
         given:
-        def errors = [new InvalidSyntaxError(new SourceLocation(0, 0), "bang"),
-                      new ValidationError(ValidationErrorType.InvalidSyntax)]
+        def error = new InvalidSyntaxError(new SourceLocation(0, 0), "bang")
 
         when:
-        def docEntry = new PreparsedDocumentEntry(errors)
+        def docEntry = new PreparsedDocumentEntry(error)
 
         then:
         docEntry.document == null
-        docEntry.errors == errors
-    }
-
-    def "Ensure a null errors throws Exception"() {
-        when:
-        new PreparsedDocumentEntry((List<GraphQLError>) null)
-
-        then:
-        thrown(AssertException)
+        docEntry.errors == Collections.singletonList(error)
     }
 
     def "Ensure a null error throws Exception"() {
@@ -59,5 +50,38 @@ class PreparsedDocumentEntryTest extends Specification {
         thrown(AssertException)
     }
 
+    def "Ensure a null error and valid document throws Exception"() {
+        given:
+        def document = Document.newDocument().build()
 
+        when:
+        new PreparsedDocumentEntry(document, (List<GraphQLError>) null)
+
+        then:
+        thrown(AssertException)
+    }
+
+    def "Ensure a non-null error and null document throws Exception"() {
+        given:
+        def error = new InvalidSyntaxError(new SourceLocation(0, 0), "bang")
+
+        when:
+        new PreparsedDocumentEntry(null, [error])
+
+        then:
+        thrown(AssertException)
+    }
+
+    def "Ensure a non-null error and non-null document returns"() {
+        given:
+        def error = new InvalidSyntaxError(new SourceLocation(0, 0), "bang")
+        def document = Document.newDocument().build()
+
+        when:
+        def docEntry = new PreparsedDocumentEntry(document, [error])
+
+        then:
+        docEntry.document == document
+        docEntry.errors.get(0) == error
+    }
 }

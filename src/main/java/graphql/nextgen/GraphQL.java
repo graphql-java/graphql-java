@@ -231,7 +231,7 @@ public class GraphQL {
             final List<ValidationError> errors = validate(executionInput, document, graphQLSchema, instrumentationState);
             if (!errors.isEmpty()) {
                 logNotSafe.warn("Query did not validate : '{}'", query);
-                return new PreparsedDocumentEntry(errors);
+                return new PreparsedDocumentEntry(document, errors);
             }
 
             return new PreparsedDocumentEntry(document);

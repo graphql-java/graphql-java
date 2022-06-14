@@ -108,21 +108,39 @@ class SerialisationTest extends Specification {
         originalAst == newAst
     }
 
-    def "PreparsedDocumentEntry with errors is serializable"() {
+    def "PreparsedDocumentEntry with error is serializable"() {
 
         when:
         GraphQLError syntaxError1 = new InvalidSyntaxError(srcLoc(1, 1), "Bad Syntax 1")
-        GraphQLError validationError2 = new ValidationError(ValidationErrorType.FieldUndefined, srcLoc(2, 2), "Bad Query 2")
-        def originalEntry = new PreparsedDocumentEntry([syntaxError1, validationError2])
+        def originalEntry = new PreparsedDocumentEntry(syntaxError1)
 
         PreparsedDocumentEntry newEntry = serialisedDownAndBack(originalEntry)
 
         then:
 
+        newEntry.getErrors().size() == 1
+        newEntry.getErrors().get(0).getMessage() == syntaxError1.getMessage()
+        newEntry.getErrors().get(0).getLocations() == syntaxError1.getLocations()
+    }
+
+    def "PreparsedDocumentEntry with errors and document is serializable"() {
+        when:
+
+        Document originalDoc = TestUtil.parseQuery(query)
+        GraphQLError syntaxError1 = new InvalidSyntaxError(srcLoc(1, 1), "Bad Syntax 1")
+        GraphQLError validationError2 = new ValidationError(ValidationErrorType.FieldUndefined, srcLoc(2, 2), "Bad Query 2")
+        def originalEntry = new PreparsedDocumentEntry(originalDoc, [syntaxError1, validationError2])
+        def originalAst = AstPrinter.printAst(originalEntry.getDocument())
+        PreparsedDocumentEntry newEntry = serialisedDownAndBack(originalEntry)
+
+        def newAst = AstPrinter.printAst(newEntry.getDocument())
+
+        then:
+
+        originalAst == newAst
         newEntry.getErrors().size() == 2
         newEntry.getErrors().get(0).getMessage() == syntaxError1.getMessage()
         newEntry.getErrors().get(0).getLocations() == syntaxError1.getLocations()
-
         newEntry.getErrors().get(1).getMessage() == validationError2.getMessage()
         newEntry.getErrors().get(1).getLocations() == validationError2.getLocations()
     }
