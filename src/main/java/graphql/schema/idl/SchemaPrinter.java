@@ -15,11 +15,12 @@ import graphql.language.InputValueDefinition;
 import graphql.language.InterfaceTypeDefinition;
 import graphql.language.ObjectTypeDefinition;
 import graphql.language.ScalarTypeDefinition;
+import graphql.language.SchemaDefinition;
 import graphql.language.TypeDefinition;
 import graphql.language.UnionTypeDefinition;
 import graphql.schema.DefaultGraphqlTypeComparatorRegistry;
-import graphql.schema.GraphQLAppliedDirectiveArgument;
 import graphql.schema.GraphQLAppliedDirective;
+import graphql.schema.GraphQLAppliedDirectiveArgument;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLDirective;
 import graphql.schema.GraphQLDirectiveContainer;
@@ -742,6 +743,9 @@ public class SchemaPrinter {
             }
 
             if (needsSchemaPrinted) {
+                if (hasDescription(schema)) {
+                    out.print(printComments(schema, ""));
+                }
                 List<GraphQLAppliedDirective> directives = DirectivesUtil.toAppliedDirectives(schema.getSchemaAppliedDirectives(), schema.getSchemaDirectives());
                 out.format("schema %s{\n", directivesString(GraphQLSchemaElement.class, false, directives));
                 if (queryType != null) {
@@ -1099,6 +1103,9 @@ public class SchemaPrinter {
         } else if (descriptionHolder instanceof GraphQLDirective) {
             GraphQLDirective type = (GraphQLDirective) descriptionHolder;
             return description(type.getDescription(), null);
+        } else if (descriptionHolder instanceof GraphQLSchema) {
+            GraphQLSchema type = (GraphQLSchema) descriptionHolder;
+            return description(type.getDescription(), ofNullable(type.getDefinition()).map(SchemaDefinition::getDescription).orElse(null));
         } else {
             return Assert.assertShouldNeverHappen();
         }
