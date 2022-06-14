@@ -151,6 +151,9 @@ public class ExecutionContextBuilder {
     }
 
     /**
+     * @param variables map of already coerced variables
+     * @return this builder
+     *
      * @deprecated use {@link #coercedVariables(CoercedVariables)} instead
      */
     @Deprecated
