@@ -163,27 +163,20 @@ public class FieldLevelTrackingApproach {
     //
     // thread safety : called with synchronised(callStack)
     //
-    private boolean handleOnFieldValuesInfo(List<FieldValueInfo> fieldValueInfoList, CallStack callStack, int curLevel) {
+    private boolean handleOnFieldValuesInfo(List<FieldValueInfo> fieldValueInfos, CallStack callStack, int curLevel) {
         callStack.increaseHappenedOnFieldValueCalls(curLevel);
-        int expectedStrategyCalls = 0;
-        for (FieldValueInfo fieldValueInfo : fieldValueInfoList) {
-            if (fieldValueInfo.getCompleteValueType() == FieldValueInfo.CompleteValueType.OBJECT) {
-                expectedStrategyCalls++;
-            } else if (fieldValueInfo.getCompleteValueType() == FieldValueInfo.CompleteValueType.LIST) {
-                expectedStrategyCalls += getCountForList(fieldValueInfo);
-            }
-        }
+        int expectedStrategyCalls = getCountForList(fieldValueInfos);
         callStack.increaseExpectedStrategyCalls(curLevel + 1, expectedStrategyCalls);
         return dispatchIfNeeded(callStack, curLevel + 1);
     }
 
-    private int getCountForList(FieldValueInfo fieldValueInfo) {
+    private int getCountForList(List<FieldValueInfo> fieldValueInfos) {
         int result = 0;
-        for (FieldValueInfo cvi : fieldValueInfo.getFieldValueInfos()) {
-            if (cvi.getCompleteValueType() == FieldValueInfo.CompleteValueType.OBJECT) {
-                result++;
-            } else if (cvi.getCompleteValueType() == FieldValueInfo.CompleteValueType.LIST) {
-                result += getCountForList(cvi);
+        for (FieldValueInfo fieldValueInfo : fieldValueInfos) {
+            if (fieldValueInfo.getCompleteValueType() == FieldValueInfo.CompleteValueType.OBJECT) {
+                result += 1;
+            } else if (fieldValueInfo.getCompleteValueType() == FieldValueInfo.CompleteValueType.LIST) {
+                result += getCountForList(fieldValueInfo.getFieldValueInfos());
             }
         }
         return result;
@@ -197,7 +190,7 @@ public class FieldLevelTrackingApproach {
         return new InstrumentationContext<Object>() {
 
             @Override
-            public void onDispatched(CompletableFuture result) {
+            public void onDispatched(CompletableFuture<Object> result) {
                 boolean dispatchNeeded;
                 synchronized (callStack) {
                     callStack.increaseFetchCount(level);

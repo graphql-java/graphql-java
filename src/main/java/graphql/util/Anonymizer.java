@@ -12,6 +12,7 @@ import graphql.analysis.QueryVisitorFieldArgumentValueEnvironment;
 import graphql.analysis.QueryVisitorFieldEnvironment;
 import graphql.analysis.QueryVisitorFragmentSpreadEnvironment;
 import graphql.analysis.QueryVisitorInlineFragmentEnvironment;
+import graphql.collect.ImmutableKit;
 import graphql.execution.ValuesResolver;
 import graphql.introspection.Introspection;
 import graphql.language.Argument;
@@ -125,19 +126,19 @@ public class Anonymizer {
     }
 
     public static GraphQLSchema anonymizeSchema(String sdl) {
-        return anonymizeSchemaAndQueries(createdMockedSchema(sdl), Collections.emptyList(), Collections.emptyMap()).schema;
+        return anonymizeSchemaAndQueries(createdMockedSchema(sdl), ImmutableKit.emptyList(), ImmutableKit.emptyMap()).schema;
     }
 
     public static GraphQLSchema anonymizeSchema(GraphQLSchema schema) {
-        return anonymizeSchemaAndQueries(schema, Collections.emptyList(), Collections.emptyMap()).schema;
+        return anonymizeSchemaAndQueries(schema, ImmutableKit.emptyList(), ImmutableKit.emptyMap()).schema;
     }
 
     public static AnonymizeResult anonymizeSchemaAndQueries(String sdl, List<String> queries) {
-        return anonymizeSchemaAndQueries(createdMockedSchema(sdl), queries, Collections.emptyMap());
+        return anonymizeSchemaAndQueries(createdMockedSchema(sdl), queries, ImmutableKit.emptyMap());
     }
 
     public static AnonymizeResult anonymizeSchemaAndQueries(GraphQLSchema schema, List<String> queries) {
-        return anonymizeSchemaAndQueries(schema, queries, Collections.emptyMap());
+        return anonymizeSchemaAndQueries(schema, queries, ImmutableKit.emptyMap());
     }
 
     public static AnonymizeResult anonymizeSchemaAndQueries(String sdl, List<String> queries, Map<String, Object> variables) {
@@ -840,7 +841,7 @@ public class Anonymizer {
             public TraversalControl visitVariableDefinition(VariableDefinition node, TraverserContext<Node> context) {
                 String newName = assertNotNull(variableNames.get(node.getName()));
                 VariableDefinition newNode = node.transform(builder -> {
-                    builder.name(newName).comments(Collections.emptyList());
+                    builder.name(newName).comments(ImmutableKit.emptyList());
 
                     // convert variable language type to renamed language type
                     TypeName typeName = TypeUtil.unwrapAll(node.getType());

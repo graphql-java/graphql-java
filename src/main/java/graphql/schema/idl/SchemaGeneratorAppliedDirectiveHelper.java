@@ -31,7 +31,6 @@ import static graphql.collect.ImmutableKit.map;
 import static graphql.introspection.Introspection.DirectiveLocation.ARGUMENT_DEFINITION;
 import static graphql.schema.idl.SchemaGeneratorHelper.buildDescription;
 import static graphql.util.Pair.pair;
-import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toMap;
 
 /**

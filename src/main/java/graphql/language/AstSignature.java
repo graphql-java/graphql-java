@@ -2,12 +2,12 @@ package graphql.language;
 
 import com.google.common.collect.ImmutableList;
 import graphql.PublicApi;
+import graphql.collect.ImmutableKit;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -23,7 +23,7 @@ public class AstSignature {
 
     /**
      * This can produce a "signature" canonical AST that conforms to the algorithm as outlined
-     *  <a href="https://github.com/apollographql/apollo-tooling/blob/master/packages/apollo-graphql/src/operationId.ts">here</a>
+     * <a href="https://github.com/apollographql/apollo-tooling/blob/master/packages/apollo-graphql/src/operationId.ts">here</a>
      * which removes excess operations, removes any field aliases, hides literal values and sorts the result into a canonical
      * query.
      *
@@ -45,7 +45,7 @@ public class AstSignature {
 
     /**
      * This can produce a "privacy safe" AST that some what conforms to the algorithm as outlined
-     *  <a href="https://github.com/apollographql/apollo-tooling/blob/master/packages/apollo-graphql/src/operationId.ts">here</a>
+     * <a href="https://github.com/apollographql/apollo-tooling/blob/master/packages/apollo-graphql/src/operationId.ts">here</a>
      * which removes excess operations, removes any field aliases, hides some literal values and sorts the result.
      *
      * This is not a signature.  For example object literal structures are retained like `{ a : "", b : 0}` which means
@@ -94,7 +94,7 @@ public class AstSignature {
             @Override
             public TraversalControl visitArrayValue(ArrayValue node, TraverserContext<Node> context) {
                 if (signatureMode) {
-                    return changeNode(context, node.transform(builder -> builder.values(Collections.emptyList())));
+                    return changeNode(context, node.transform(builder -> builder.values(ImmutableKit.emptyList())));
                 }
                 return TraversalControl.CONTINUE;
             }
@@ -102,7 +102,7 @@ public class AstSignature {
             @Override
             public TraversalControl visitObjectValue(ObjectValue node, TraverserContext<Node> context) {
                 if (signatureMode) {
-                    return changeNode(context, node.transform(builder -> builder.objectFields(Collections.emptyList())));
+                    return changeNode(context, node.transform(builder -> builder.objectFields(ImmutableKit.emptyList())));
                 }
                 return TraversalControl.CONTINUE;
             }

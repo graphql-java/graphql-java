@@ -25,7 +25,7 @@ import java.util.Optional;
 
 import static graphql.collect.ImmutableKit.map;
 import static graphql.execution.nextgen.result.ResultNodeAdapter.RESULT_NODE_ADAPTER;
-import static java.util.Collections.emptyList;
+import static graphql.collect.ImmutableKit.emptyList;
 import static java.util.Collections.singleton;
 
 /**

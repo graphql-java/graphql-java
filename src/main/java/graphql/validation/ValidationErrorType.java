@@ -38,5 +38,7 @@ public enum ValidationErrorType implements ValidationErrorClassification {
     DuplicateDirectiveName,
     DuplicateArgumentNames,
     DuplicateVariableName,
-    NullValueForNonNullArgument
+    NullValueForNonNullArgument,
+    SubscriptionMultipleRootFields,
+    SubscriptionIntrospectionRootField
 }

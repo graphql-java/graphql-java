@@ -10,6 +10,7 @@ import graphql.SerializationError;
 import graphql.TrivialDataFetcher;
 import graphql.TypeMismatchError;
 import graphql.UnresolvedTypeError;
+import graphql.collect.ImmutableKit;
 import graphql.execution.directives.QueryDirectives;
 import graphql.execution.directives.QueryDirectivesImpl;
 import graphql.execution.instrumentation.Instrumentation;
@@ -96,7 +97,7 @@ import static java.util.concurrent.CompletableFuture.completedFuture;
  * <p>
  * The execution of a field has two phases, first a raw object must be fetched for a field via a {@link DataFetcher} which
  * is defined on the {@link GraphQLFieldDefinition}.  This object must then be 'completed' into a suitable value, either as a scalar/enum type via
- * coercion or if its a complex object type by recursively calling the execution strategy for the lower level fields.
+ * coercion or if it's a complex object type by recursively calling the execution strategy for the lower level fields.
  * <p>
  * The first phase (data fetching) is handled by the method {@link #fetchField(ExecutionContext, ExecutionStrategyParameters)}
  * <p>
@@ -354,9 +355,9 @@ public abstract class ExecutionStrategy {
 
     private <T> CompletableFuture<T> asyncHandleException(DataFetcherExceptionHandler handler, DataFetcherExceptionHandlerParameters handlerParameters, ExecutionContext executionContext) {
         //noinspection unchecked
-        return  handler.handleException(handlerParameters)
-            .thenApply(handlerResult -> (T) DataFetcherResult.<FetchedValue>newResult().errors(handlerResult.getErrors()).build()
-            );
+        return handler.handleException(handlerParameters)
+                .thenApply(handlerResult -> (T) DataFetcherResult.<FetchedValue>newResult().errors(handlerResult.getErrors()).build()
+                );
     }
 
     /**
@@ -685,7 +686,7 @@ public abstract class ExecutionStrategy {
      *
      * @return an Iterable from that object
      *
-     * @throws java.lang.ClassCastException if its not an Iterable
+     * @throws java.lang.ClassCastException if it's not an Iterable
      */
     protected Iterable<Object> toIterable(Object result) {
         return FpKit.toIterable(result);
@@ -810,14 +811,14 @@ public abstract class ExecutionStrategy {
         ExecutionStepInfo parentStepInfo = parameters.getExecutionStepInfo();
         GraphQLOutputType fieldType = fieldDefinition.getType();
         List<GraphQLArgument> fieldArgDefs = fieldDefinition.getArguments();
-        Supplier<Map<String, Object>> argumentValues = Collections::emptyMap;
+        Supplier<Map<String, Object>> argumentValues = ImmutableKit::emptyMap;
         //
         // no need to create args at all if there are none on the field def
         //
         if (!fieldArgDefs.isEmpty()) {
             List<Argument> fieldArgs = field.getArguments();
             GraphQLCodeRegistry codeRegistry = executionContext.getGraphQLSchema().getCodeRegistry();
-            argumentValues = FpKit.intraThreadMemoize(() -> valuesResolver.getArgumentValues(codeRegistry, fieldArgDefs, fieldArgs, executionContext.getVariables()));
+            argumentValues = FpKit.intraThreadMemoize(() -> valuesResolver.getArgumentValues(codeRegistry, fieldArgDefs, fieldArgs, executionContext.getCoercedVariables()));
         }
 
 

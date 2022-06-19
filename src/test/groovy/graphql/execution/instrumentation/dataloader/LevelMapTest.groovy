@@ -1,6 +1,7 @@
 package graphql.execution.instrumentation.dataloader
 
 import spock.lang.Specification
+import graphql.AssertException
 
 class LevelMapTest extends Specification {
 
@@ -98,5 +99,16 @@ class LevelMapTest extends Specification {
 
         then:
         sut.toString() == "IntMap[level=0,count=42 level=1,count=1 ]"
+    }
+
+    def "can get outside of its size"() {
+        given:
+        LevelMap sut = new LevelMap(0)
+
+        when:
+        sut.get(1)
+
+        then:
+        sut.get(1) == 0
     }
 }

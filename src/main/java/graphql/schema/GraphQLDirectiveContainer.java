@@ -5,7 +5,7 @@ import graphql.PublicApi;
 import java.util.List;
 import java.util.Map;
 
-import static java.util.Collections.emptyList;
+import static graphql.collect.ImmutableKit.emptyList;
 
 /**
  * Represents a graphql runtime type that can have {@link graphql.schema.GraphQLAppliedDirective}'s.
@@ -72,6 +72,7 @@ public interface GraphQLDirectiveContainer extends GraphQLNamedSchemaElement {
      * @param directiveName the name of the directive
      *
      * @return true if there is a directive on this element with that name
+     *
      * @deprecated use {@link #hasAppliedDirective(String)} instead
      */
     @Deprecated
@@ -142,6 +143,7 @@ public interface GraphQLDirectiveContainer extends GraphQLNamedSchemaElement {
      * @param directiveName the name of the directives to retrieve
      *
      * @return the directives or empty list if there is not one with that name
+     *
      * @deprecated - use the {@link GraphQLAppliedDirective} methods instead
      */
     @Deprecated

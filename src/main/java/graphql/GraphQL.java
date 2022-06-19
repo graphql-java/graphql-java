@@ -53,7 +53,7 @@ import static graphql.execution.instrumentation.SimpleInstrumentationContext.com
  * and the {@link graphql.execution.ExecutionStrategy execution strategy}
  * <p>
  * Building this object is very cheap and can be done on each execution if necessary.  Building the schema is often not
- * as cheap, especially if its parsed from graphql IDL schema format via {@link graphql.schema.idl.SchemaParser}.
+ * as cheap, especially if it's parsed from graphql IDL schema format via {@link graphql.schema.idl.SchemaParser}.
  * <p>
  * The data for a query is returned via {@link ExecutionResult#getData()} and any errors encountered as placed in
  * {@link ExecutionResult#getErrors()}.
@@ -669,7 +669,7 @@ public class GraphQL {
 
         //
         // if we don't have a DataLoaderDispatcherInstrumentation in play, we add one.  We want DataLoader to be 1st class in graphql without requiring
-        // people to remember to wire it in.  Later we may decide to have more default instrumentations but for now its just the one
+        // people to remember to wire it in.  Later we may decide to have more default instrumentations but for now it's just the one
         //
         List<Instrumentation> instrumentationList = new ArrayList<>();
         if (instrumentation instanceof ChainedInstrumentation) {

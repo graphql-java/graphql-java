@@ -172,6 +172,12 @@ public class SpecValidationSchema {
             .field(newFieldDefinition().name("pet").type(pet))
             .build();
 
+    public static final GraphQLObjectType subscriptionRoot = GraphQLObjectType.newObject()
+            .name("SubscriptionRoot")
+            .field(newFieldDefinition().name("dog").type(dog))
+            .field(newFieldDefinition().name("cat").type(cat))
+            .build();
+
     @SuppressWarnings("serial")
     public static final Set<GraphQLType> specValidationDictionary = new HashSet<GraphQLType>() {{
         add(dogCommand);
@@ -199,6 +205,7 @@ public class SpecValidationSchema {
 
     public static final GraphQLSchema specValidationSchema = GraphQLSchema.newSchema()
             .query(queryRoot)
+            .subscription(subscriptionRoot)
             .additionalDirective(upperDirective)
             .additionalDirective(lowerDirective)
             .additionalDirective(dogDirective)

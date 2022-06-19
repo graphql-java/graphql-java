@@ -2,6 +2,7 @@ package graphql.schema.idl;
 
 import graphql.GraphQLError;
 import graphql.Internal;
+import graphql.collect.ImmutableKit;
 import graphql.introspection.Introspection;
 import graphql.language.Argument;
 import graphql.language.Directive;
@@ -30,7 +31,6 @@ import graphql.schema.idl.errors.SchemaProblem;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -171,7 +171,7 @@ public class SchemaTypeChecker {
     private void checkScalarImplementationsArePresent(List<GraphQLError> errors, TypeDefinitionRegistry typeRegistry, RuntimeWiring wiring) {
         typeRegistry.scalars().forEach((scalarName, scalarTypeDefinition) -> {
             WiringFactory wiringFactory = wiring.getWiringFactory();
-            ScalarWiringEnvironment environment = new ScalarWiringEnvironment(typeRegistry, scalarTypeDefinition, Collections.emptyList());
+            ScalarWiringEnvironment environment = new ScalarWiringEnvironment(typeRegistry, scalarTypeDefinition, ImmutableKit.emptyList());
             if (!wiringFactory.providesScalar(environment) && !wiring.getScalars().containsKey(scalarName)) {
                 errors.add(new MissingScalarImplementationError(scalarName));
             }

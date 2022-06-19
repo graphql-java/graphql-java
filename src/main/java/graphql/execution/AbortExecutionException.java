@@ -13,7 +13,7 @@ import java.util.Collection;
 import java.util.List;
 
 import static graphql.Assert.assertNotNull;
-import static java.util.Collections.emptyList;
+import static graphql.collect.ImmutableKit.emptyList;
 
 /**
  * This Exception indicates that the current execution should be aborted.

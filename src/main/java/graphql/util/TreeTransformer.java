@@ -2,6 +2,7 @@ package graphql.util;
 
 
 import graphql.PublicApi;
+import graphql.collect.ImmutableKit;
 
 import java.util.Collections;
 import java.util.LinkedList;
@@ -20,7 +21,7 @@ public class TreeTransformer<T> {
     }
 
     public T transform(T root, TraverserVisitor<T> traverserVisitor) {
-        return transform(root, traverserVisitor, Collections.emptyMap());
+        return transform(root, traverserVisitor, ImmutableKit.emptyMap());
     }
 
     public T transform(T root, TraverserVisitor<T> traverserVisitor, Map<Class<?>, Object> rootVars) {

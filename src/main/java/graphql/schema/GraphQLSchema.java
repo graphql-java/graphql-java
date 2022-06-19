@@ -56,7 +56,7 @@ public class GraphQLSchema {
     private final ImmutableSet<GraphQLType> additionalTypes;
     private final GraphQLFieldDefinition introspectionSchemaField;
     private final GraphQLFieldDefinition introspectionTypeField;
-    // we don't allow modification of "__typename" - its a scalar
+    // we don't allow modification of "__typename" - it's a scalar
     private final GraphQLFieldDefinition __typename = Introspection.TypeNameMetaFieldDef;
     private final DirectivesUtil.DirectivesHolder directiveDefinitionsHolder;
     private final DirectivesUtil.DirectivesHolder schemaAppliedDirectivesHolder;
@@ -105,7 +105,7 @@ public class GraphQLSchema {
 
     /*
      * This constructs a full fledged graphql schema object that has not yet had its type references replaced
-     * but its otherwise complete
+     * but it's otherwise complete
      */
     @Internal
     public GraphQLSchema(GraphQLSchema existingSchema,
@@ -225,7 +225,7 @@ public class GraphQLSchema {
     }
 
     /**
-     * Gets the named type from the schema or null if its not present
+     * Gets the named type from the schema or null if it's not present
      *
      * @param typeName the name of the type to retrieve
      *
@@ -254,9 +254,9 @@ public class GraphQLSchema {
     }
 
     /**
-     * Gets the named type from the schema or null if its not present.
+     * Gets the named type from the schema or null if it's not present.
      *
-     * Warning - your are inviting class cast errors if you the types are not what you expect.
+     * Warning - you are inviting class cast errors if the types are not what you expect.
      *
      * @param typeName the name of the type to retrieve
      * @param <T>      for two
@@ -292,7 +292,7 @@ public class GraphQLSchema {
         GraphQLType graphQLType = typeMap.get(typeName);
         if (graphQLType != null) {
             assertTrue(graphQLType instanceof GraphQLObjectType,
-                    () -> String.format("You have asked for named object type '%s' but its not an object type but rather a '%s'", typeName, graphQLType.getClass().getName()));
+                    () -> String.format("You have asked for named object type '%s' but it's not an object type but rather a '%s'", typeName, graphQLType.getClass().getName()));
         }
         return (GraphQLObjectType) graphQLType;
     }
@@ -323,7 +323,7 @@ public class GraphQLSchema {
         GraphQLType graphQLType = getType(typeName);
         if (graphQLType != null) {
             assertTrue(graphQLType instanceof GraphQLFieldsContainer,
-                    () -> String.format("You have asked for named type '%s' but its not GraphQLFieldsContainer but rather a '%s'", typeName, graphQLType.getClass().getName()));
+                    () -> String.format("You have asked for named type '%s' but it's not GraphQLFieldsContainer but rather a '%s'", typeName, graphQLType.getClass().getName()));
             return ((GraphQLFieldsContainer) graphQLType).getFieldDefinition(fieldName);
         }
         return null;
@@ -859,7 +859,7 @@ public class GraphQLSchema {
         /**
          * Builds the schema
          *
-         * @param additionalTypes - please dont use this any more
+         * @param additionalTypes - please don't use this anymore
          *
          * @return the built schema
          *
@@ -899,7 +899,7 @@ public class GraphQLSchema {
             assertNotNull(additionalDirectives, () -> "additionalDirectives can't be null");
 
             // schemas built via the schema generator have the deprecated directive BUT we want it present for hand built
-            // schemas - its inherently part of the spec!
+            // schemas - it's inherently part of the spec!
             if (additionalDirectives.stream().noneMatch(d -> d.getName().equals(Directives.DeprecatedDirective.getName()))) {
                 additionalDirectives.add(Directives.DeprecatedDirective);
             }
