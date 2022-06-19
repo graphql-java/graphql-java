@@ -2,6 +2,7 @@ package graphql.normalized
 
 import graphql.GraphQL
 import graphql.TestUtil
+import graphql.execution.RawVariables
 import graphql.language.AstPrinter
 import graphql.language.AstSorter
 import graphql.language.Document
@@ -2044,7 +2045,7 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
         Document originalDocument = TestUtil.parseQuery(query)
 
         ExecutableNormalizedOperationFactory dependencyGraph = new ExecutableNormalizedOperationFactory()
-        return dependencyGraph.createExecutableNormalizedOperationWithRawVariables(schema, originalDocument, null, variables)
+        return dependencyGraph.createExecutableNormalizedOperationWithRawVariables(schema, originalDocument, null, new RawVariables(variables))
     }
 
     private List<ExecutableNormalizedField> createNormalizedFields(GraphQLSchema schema, String query, Map<String, Object> variables = [:]) {
