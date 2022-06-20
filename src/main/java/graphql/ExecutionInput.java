@@ -367,7 +367,7 @@ public class ExecutionInput {
          */
         public Builder variables(Map<String, Object> rawVariables) {
             assertNotNull(rawVariables, () -> "variables map can't be null");
-            this.rawVariables = new RawVariables(rawVariables);
+            this.rawVariables = RawVariables.of(rawVariables);
             return this;
         }
 

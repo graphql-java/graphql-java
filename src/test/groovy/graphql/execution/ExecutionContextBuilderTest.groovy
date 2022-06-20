@@ -66,7 +66,7 @@ class ExecutionContextBuilderTest extends Specification {
 
     def "builds the correct ExecutionContext with coerced variables"() {
         given:
-        def coercedVariables = new CoercedVariables([var: 'value'])
+        def coercedVariables = CoercedVariables.of([var: 'value'])
 
         when:
         def executionContext = new ExecutionContextBuilder()
@@ -105,7 +105,7 @@ class ExecutionContextBuilderTest extends Specification {
 
     def "builds the correct ExecutionContext, if both variables and coercedVariables are set, latest value set takes precedence"() {
         given:
-        def coercedVariables = new CoercedVariables([var: 'value'])
+        def coercedVariables = CoercedVariables.of([var: 'value'])
 
         when:
         def executionContext = new ExecutionContextBuilder()
@@ -164,7 +164,7 @@ class ExecutionContextBuilderTest extends Specification {
             .build()
 
         when:
-        def coercedVariables = new CoercedVariables([var: 'value'])
+        def coercedVariables = CoercedVariables.of([var: 'value'])
         def executionContext = executionContextOld.transform(builder -> builder
                                                         .coercedVariables(coercedVariables))
 
@@ -207,7 +207,7 @@ class ExecutionContextBuilderTest extends Specification {
                 .build()
 
         when:
-        def coercedVariables = new CoercedVariables([var: 'value'])
+        def coercedVariables = CoercedVariables.of([var: 'value'])
         def executionContext = executionContextOld.transform(builder -> builder
                 .variables([var: 'value'])
                 .coercedVariables(coercedVariables))
