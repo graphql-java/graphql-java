@@ -63,6 +63,14 @@ class PreparsedDocumentEntryTest extends Specification {
         thrown(AssertException)
     }
 
+    def "Ensure a null errors throws Exception"() {
+        when:
+        new PreparsedDocumentEntry((List<GraphQLError>) null)
+
+        then:
+        thrown(AssertException)
+    }
+
     def "Ensure a null error and valid document throws Exception"() {
         given:
         def document = Document.newDocument().build()
