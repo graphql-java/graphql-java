@@ -257,7 +257,7 @@ public class QueryTraverser {
          */
         public Builder variables(Map<String, Object> variables) {
             assertNotNull(variables, () -> "variables can't be null");
-            this.rawVariables = new RawVariables(variables);
+            this.rawVariables = RawVariables.of(variables);
             return this;
         }
 
@@ -326,7 +326,7 @@ public class QueryTraverser {
                     // When traversing with an arbitrary root, there is no variable definition context available
                     // Thus, the variables must have already been coerced
                     // Retaining this builder for backwards compatibility
-                    return new QueryTraverser(schema, root, rootParentType, fragmentsByName, new CoercedVariables(rawVariables.toMap()));
+                    return new QueryTraverser(schema, root, rootParentType, fragmentsByName, CoercedVariables.of(rawVariables.toMap()));
                 }
                 return new QueryTraverser(schema, root, rootParentType, fragmentsByName, coercedVariables);
             }

@@ -1,15 +1,15 @@
 package graphql.execution;
 
-import graphql.Internal;
+import graphql.PublicApi;
 import graphql.collect.ImmutableKit;
 import graphql.collect.ImmutableMapWithNullValues;
 
 import java.util.Map;
 
 /**
- * Holds coerced variables
+ * Holds coerced variables, that is their values are now in a canonical form.
  */
-@Internal
+@PublicApi
 public class CoercedVariables {
     private final ImmutableMapWithNullValues<String, Object> coercedVariables;
 
@@ -31,5 +31,9 @@ public class CoercedVariables {
 
     public static CoercedVariables emptyVariables() {
         return new CoercedVariables(ImmutableKit.emptyMap());
+    }
+
+    public static CoercedVariables of(Map<String, Object> coercedVariables) {
+        return new CoercedVariables(coercedVariables);
     }
 }
