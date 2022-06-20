@@ -27,6 +27,7 @@ import java.util.Set;
 import java.util.function.Function;
 
 import static graphql.Directives.NO_LONGER_SUPPORTED;
+import static graphql.collect.ImmutableKit.emptyList;
 import static graphql.collect.ImmutableKit.map;
 import static graphql.introspection.Introspection.DirectiveLocation.ARGUMENT_DEFINITION;
 import static graphql.schema.idl.SchemaGeneratorHelper.buildDescription;

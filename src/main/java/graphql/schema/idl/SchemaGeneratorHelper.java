@@ -80,6 +80,7 @@ import java.util.stream.Collectors;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.Directives.DEPRECATED_DIRECTIVE_DEFINITION;
+import static graphql.Directives.NO_LONGER_SUPPORTED;
 import static graphql.Directives.SPECIFIED_BY_DIRECTIVE_DEFINITION;
 import static graphql.Directives.SpecifiedByDirective;
 import static graphql.collect.ImmutableKit.emptyList;
