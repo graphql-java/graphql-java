@@ -30,6 +30,19 @@ class PreparsedDocumentEntryTest extends Specification {
         thrown(AssertException)
     }
 
+    def "Ensure a non-null errors returns"() {
+        given:
+        def errors = [new InvalidSyntaxError(new SourceLocation(0, 0), "bang"),
+                      new ValidationError(ValidationErrorType.InvalidSyntax)]
+
+        when:
+        def docEntry = new PreparsedDocumentEntry(errors)
+
+        then:
+        docEntry.document == null
+        docEntry.errors == errors
+    }
+
     def "Ensure a non-null error returns"() {
         given:
         def error = new InvalidSyntaxError(new SourceLocation(0, 0), "bang")

@@ -39,6 +39,12 @@ public class PreparsedDocumentEntry implements Serializable {
         this.errors = null;
     }
 
+    public PreparsedDocumentEntry(List<? extends GraphQLError> errors) {
+        assertNotNull(errors);
+        this.document = null;
+        this.errors = errors;
+    }
+
     public PreparsedDocumentEntry(GraphQLError error) {
         assertNotNull(error);
         this.document = null;
