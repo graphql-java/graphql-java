@@ -46,9 +46,7 @@ public class PreparsedDocumentEntry implements Serializable {
     }
 
     public PreparsedDocumentEntry(GraphQLError error) {
-        assertNotNull(error);
-        this.document = null;
-        this.errors = singletonList(error);
+        this(singletonList(assertNotNull(error)));
     }
 
     public Document getDocument() {
