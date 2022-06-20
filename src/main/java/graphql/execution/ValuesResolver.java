@@ -249,7 +249,7 @@ public class ValuesResolver {
             return inputValueWithState.getValue();
         }
         if (inputValueWithState.isLiteral()) {
-            return new ValuesResolver().literalToInternalValue(fieldVisibility, type, (Value<?>) inputValueWithState.getValue(), new CoercedVariables(emptyMap()));
+            return new ValuesResolver().literalToInternalValue(fieldVisibility, type, (Value<?>) inputValueWithState.getValue(), CoercedVariables.emptyVariables());
         }
         if (inputValueWithState.isExternal()) {
             return new ValuesResolver().externalValueToInternalValue(fieldVisibility, type, inputValueWithState.getValue());
@@ -422,7 +422,7 @@ public class ValuesResolver {
             }
         }
 
-        return new CoercedVariables(coercedValues);
+        return CoercedVariables.of(coercedValues);
     }
 
 

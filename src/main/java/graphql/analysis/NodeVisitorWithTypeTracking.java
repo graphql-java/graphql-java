@@ -155,7 +155,7 @@ public class NodeVisitorWithTypeTracking extends NodeVisitorStub {
         boolean isTypeNameIntrospectionField = fieldDefinition == schema.getIntrospectionTypenameFieldDefinition();
         GraphQLFieldsContainer fieldsContainer = !isTypeNameIntrospectionField ? (GraphQLFieldsContainer) unwrapAll(parentEnv.getOutputType()) : null;
         GraphQLCodeRegistry codeRegistry = schema.getCodeRegistry();
-        Map<String, Object> argumentValues = valuesResolver.getArgumentValues(codeRegistry, fieldDefinition.getArguments(), field.getArguments(), new CoercedVariables(variables));
+        Map<String, Object> argumentValues = valuesResolver.getArgumentValues(codeRegistry, fieldDefinition.getArguments(), field.getArguments(), CoercedVariables.of(variables));
         QueryVisitorFieldEnvironment environment = new QueryVisitorFieldEnvironmentImpl(isTypeNameIntrospectionField,
                 field,
                 fieldDefinition,

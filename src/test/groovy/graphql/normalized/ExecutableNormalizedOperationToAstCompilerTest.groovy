@@ -2082,7 +2082,7 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
         Document originalDocument = TestUtil.parseQuery(query)
 
         ExecutableNormalizedOperationFactory dependencyGraph = new ExecutableNormalizedOperationFactory()
-        return dependencyGraph.createExecutableNormalizedOperationWithRawVariables(schema, originalDocument, null, new RawVariables(variables))
+        return dependencyGraph.createExecutableNormalizedOperationWithRawVariables(schema, originalDocument, null, RawVariables.of(variables))
     }
 
     private List<ExecutableNormalizedField> createNormalizedFields(GraphQLSchema schema, String query, Map<String, Object> variables = [:]) {
