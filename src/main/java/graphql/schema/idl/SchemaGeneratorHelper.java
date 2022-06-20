@@ -80,6 +80,7 @@ import java.util.stream.Collectors;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.Directives.DEPRECATED_DIRECTIVE_DEFINITION;
+import static graphql.Directives.NO_LONGER_SUPPORTED;
 import static graphql.Directives.SPECIFIED_BY_DIRECTIVE_DEFINITION;
 import static graphql.Directives.SpecifiedByDirective;
 import static graphql.collect.ImmutableKit.emptyList;
@@ -95,6 +96,7 @@ import static graphql.introspection.Introspection.DirectiveLocation.UNION;
 import static graphql.schema.GraphQLEnumValueDefinition.newEnumValueDefinition;
 import static graphql.schema.GraphQLTypeReference.typeRef;
 import static graphql.schema.idl.SchemaGeneratorAppliedDirectiveHelper.buildAppliedDirectives;
+import static graphql.schema.idl.SchemaGeneratorAppliedDirectiveHelper.buildDeprecationReason;
 import static graphql.schema.idl.SchemaGeneratorAppliedDirectiveHelper.buildDirectiveDefinitionFromAst;
 import static java.lang.String.format;
 import static java.util.stream.Collectors.toMap;
@@ -208,8 +210,6 @@ public class SchemaGeneratorHelper {
             return options.isCaptureAstDefinitions();
         }
     }
-
-    static final String NO_LONGER_SUPPORTED = "No longer supported";
 
     static String buildDescription(BuildContext buildContext, Node<?> node, Description description) {
         if (description != null) {
@@ -330,8 +330,6 @@ public class SchemaGeneratorHelper {
         fieldBuilder.deprecate(buildDeprecationReason(fieldDef.getDirectives()));
         fieldBuilder.comparatorRegistry(buildCtx.getComparatorRegistry());
 
-        // currently the spec doesnt allow deprecations on InputValueDefinitions but it should!
-        //fieldBuilder.deprecate(buildDeprecationReason(fieldDef.getDirectives()));
         GraphQLInputType inputType = buildInputType(buildCtx, fieldDef.getType());
         fieldBuilder.type(inputType);
         Value<?> defaultValue = fieldDef.getDefaultValue();
