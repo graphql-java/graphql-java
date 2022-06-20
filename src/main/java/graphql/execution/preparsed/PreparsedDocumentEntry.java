@@ -11,8 +11,9 @@ import static graphql.Assert.assertNotNull;
 import static java.util.Collections.singletonList;
 
 /**
- * An instance of a preparsed document entry represents the result of a query parse and validation, like
- * an either implementation it contains either the correct result in the document property or the errors.
+ * An instance of a preparsed document entry represents the result of a query parse and validation. In the case of
+ * failed parsing or no validation errors this class acts as an either implementation. In the case of successful
+ * parsing and failed validation this class provides both the document and the validation errors.
  *
  * NOTE: This class implements {@link java.io.Serializable} and hence it can be serialised and placed into a distributed cache.  However we
  * are not aiming to provide long term compatibility and do not intend for you to place this serialised data into permanent storage,
@@ -23,6 +24,14 @@ import static java.util.Collections.singletonList;
 public class PreparsedDocumentEntry implements Serializable {
     private final Document document;
     private final List<? extends GraphQLError> errors;
+
+    public PreparsedDocumentEntry(Document document,
+                                  List<? extends GraphQLError> errors) {
+        assertNotNull(document);
+        assertNotNull(errors);
+        this.document = document;
+        this.errors = errors;
+    }
 
     public PreparsedDocumentEntry(Document document) {
         assertNotNull(document);
