@@ -1,15 +1,15 @@
 package graphql.execution;
 
-import graphql.Internal;
+import graphql.PublicApi;
 import graphql.collect.ImmutableKit;
 import graphql.collect.ImmutableMapWithNullValues;
 
 import java.util.Map;
 
 /**
- * Holds raw variables, which not have been coerced yet
+ * Holds raw variables, which have not been coerced yet into {@link CoercedVariables}
  */
-@Internal
+@PublicApi
 public class RawVariables {
     private final ImmutableMapWithNullValues<String, Object> rawVariables;
 
@@ -30,6 +30,10 @@ public class RawVariables {
     }
 
     public static RawVariables emptyVariables() {
-        return new RawVariables(ImmutableKit.emptyMap());
+        return RawVariables.of(ImmutableKit.emptyMap());
+    }
+
+    public static RawVariables of(Map<String, Object> rawVariables) {
+        return new RawVariables(rawVariables);
     }
 }

@@ -155,7 +155,7 @@ public class ExecutionContextBuilder {
      */
     @Deprecated
     public ExecutionContextBuilder variables(Map<String, Object> variables) {
-        this.coercedVariables = new CoercedVariables(variables);
+        this.coercedVariables = CoercedVariables.of(variables);
         return this;
     }
 
