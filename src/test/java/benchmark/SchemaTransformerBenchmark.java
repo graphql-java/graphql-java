@@ -116,14 +116,14 @@ public class SchemaTransformerBenchmark {
     }
 
     @Benchmark
-    public GraphQLSchema benchMarkSchemaTransformerAdd(MyState myState) {
+    public GraphQLSchema benchMarkSchemaTransformerAdd(MyState myState) throws InterruptedException {
         GraphQLSchema schema = myState.schema;
         return SchemaTransformer.transformSchema(schema, myState.directiveAdder);
     }
 
 
     @Benchmark
-    public GraphQLSchema benchMarkSchemaTransformerRemove(MyState myState) {
+    public GraphQLSchema benchMarkSchemaTransformerRemove(MyState myState) throws InterruptedException {
         GraphQLSchema schema = myState.txSchema;
         return SchemaTransformer.transformSchema(schema, myState.directiveRemover);
     }

@@ -36,19 +36,19 @@ public class ListBenchmark {
     private final Function<String, String> mapper = s -> new StringBuilder(s).reverse().toString();
 
     @Benchmark
-    public void benchmarkListStream(Blackhole blackhole) {
+    public void benchmarkListStream(Blackhole blackhole) throws InterruptedException {
         List<String> output = startingList.stream().map(mapper).collect(Collectors.toList());
         blackhole.consume(output);
     }
 
     @Benchmark
-    public void benchmarkImmutableListBuilder(Blackhole blackhole) {
+    public void benchmarkImmutableListBuilder(Blackhole blackhole) throws InterruptedException {
         List<String> output = ImmutableKit.map(startingList, mapper);
         blackhole.consume(output);
     }
 
     @Benchmark
-    public void benchmarkArrayList(Blackhole blackhole) {
+    public void benchmarkArrayList(Blackhole blackhole) throws InterruptedException {
         List<String> output = new ArrayList<>(startingList.size());
         for (String s : startingList) {
             output.add(mapper.apply(s));
@@ -57,7 +57,7 @@ public class ListBenchmark {
     }
 
     @Benchmark
-    public void benchmarkImmutableCollectorBuilder(Blackhole blackhole) {
+    public void benchmarkImmutableCollectorBuilder(Blackhole blackhole) throws InterruptedException {
         List<String> output = startingList.stream().map(mapper).collect(ImmutableList.toImmutableList());
         blackhole.consume(output);
     }

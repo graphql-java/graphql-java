@@ -44,14 +44,14 @@ public class BenchMark {
     @Benchmark
     @BenchmarkMode(Mode.Throughput)
     @OutputTimeUnit(TimeUnit.SECONDS)
-    public void benchMarkSimpleQueriesThroughput() {
+    public void benchMarkSimpleQueriesThroughput() throws InterruptedException {
         executeQuery();
     }
 
     @Benchmark
     @BenchmarkMode(Mode.AverageTime)
     @OutputTimeUnit(TimeUnit.MILLISECONDS)
-    public void benchMarkSimpleQueriesAvgTime() {
+    public void benchMarkSimpleQueriesAvgTime() throws InterruptedException {
         executeQuery();
     }
 

@@ -40,14 +40,14 @@ public class TypeDefinitionParserVersusSerializeBenchMark {
     @Benchmark
     @BenchmarkMode(Mode.Throughput)
     @OutputTimeUnit(TimeUnit.SECONDS)
-    public void benchMarkParsing(Blackhole blackhole) {
+    public void benchMarkParsing(Blackhole blackhole) throws InterruptedException {
         blackhole.consume(schemaParser.parse(SDL));
     }
 
     @Benchmark
     @BenchmarkMode(Mode.Throughput)
     @OutputTimeUnit(TimeUnit.SECONDS)
-    public void benchMarkSerializing(Blackhole blackhole) {
+    public void benchMarkSerializing(Blackhole blackhole) throws InterruptedException {
         blackhole.consume(serialise());
     }
 

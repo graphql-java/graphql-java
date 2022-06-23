@@ -30,14 +30,14 @@ public class PropertyFetcherBenchMark {
     @Benchmark
     @BenchmarkMode(Mode.Throughput)
     @OutputTimeUnit(TimeUnit.SECONDS)
-    public void benchMarkThroughputInDirectClassHierarchy(Blackhole blackhole) {
+    public void benchMarkThroughputInDirectClassHierarchy(Blackhole blackhole) throws InterruptedException {
         executeTest(blackhole, dfeFoo);
     }
 
     @Benchmark
     @BenchmarkMode(Mode.Throughput)
     @OutputTimeUnit(TimeUnit.SECONDS)
-    public void benchMarkThroughputDirectClassHierarchy(Blackhole blackhole) {
+    public void benchMarkThroughputDirectClassHierarchy(Blackhole blackhole) throws InterruptedException{
         executeTest(blackhole, dfeBar);
     }
 

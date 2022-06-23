@@ -76,14 +76,14 @@ public class OverlappingFieldValidationBenchmark {
     }
 
     @Benchmark
-    public void overlappingFieldValidationAbgTime(MyState myState, Blackhole blackhole) {
+    public void overlappingFieldValidationAbgTime(MyState myState, Blackhole blackhole) throws InterruptedException {
         blackhole.consume(validateQuery(myState.schema, myState.document));
     }
 
     @Benchmark
     @BenchmarkMode(Mode.Throughput)
     @OutputTimeUnit(TimeUnit.SECONDS)
-    public void overlappingFieldValidationThroughput(MyState myState, Blackhole blackhole) {
+    public void overlappingFieldValidationThroughput(MyState myState, Blackhole blackhole) throws InterruptedException {
         blackhole.consume(validateQuery(myState.schema, myState.document));
     }
 

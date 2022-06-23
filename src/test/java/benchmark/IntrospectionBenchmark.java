@@ -94,7 +94,7 @@ public class IntrospectionBenchmark {
         }
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws InterruptedException {
         IntrospectionBenchmark introspectionBenchmark = new IntrospectionBenchmark();
 //        while (true) {
 //            long then = System.currentTimeMillis();
@@ -132,7 +132,7 @@ public class IntrospectionBenchmark {
     @BenchmarkMode(Mode.AverageTime)
     @Warmup(iterations = 2)
     @Measurement(iterations = 3)
-    public ExecutionResult benchMarkIntrospection() {
+    public ExecutionResult benchMarkIntrospection() throws InterruptedException {
         return graphQL.execute(IntrospectionQuery.INTROSPECTION_QUERY);
     }
 

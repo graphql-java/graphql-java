@@ -28,7 +28,7 @@ public class AddError {
     @BenchmarkMode(Mode.SingleShotTime)
     @Warmup(iterations = 1, batchSize = 50000)
     @Measurement(iterations = 1, batchSize = 5000)
-    public ExecutionContext benchMarkAddError() {
+    public ExecutionContext benchMarkAddError() throws InterruptedException {
         context.addError(
                 new SchemaMissingError(),
                 ResultPath.fromList(Collections.singletonList(x++))
