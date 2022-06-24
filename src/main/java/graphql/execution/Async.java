@@ -29,6 +29,11 @@ public class Async {
 
     /**
      * Combines 1 or more CF. It is a wrapper around CompletableFuture.allOf.
+     *
+     * @param expectedSize how many we expect
+     * @param <T>          for two
+     *
+     * @return a combined builder of CFs
      */
     public static <T> CombinedBuilder<T> ofExpectedSize(int expectedSize) {
         if (expectedSize == 0) {
@@ -75,14 +80,14 @@ public class Async {
 
             CompletableFuture<List<T>> overallResult = new CompletableFuture<>();
             completableFuture
-                .whenComplete((ignored, exception) -> {
-                    if (exception != null) {
-                        overallResult.completeExceptionally(exception);
-                        return;
-                    }
-                    List<T> results = Collections.singletonList(completableFuture.join());
-                    overallResult.complete(results);
-                });
+                    .whenComplete((ignored, exception) -> {
+                        if (exception != null) {
+                            overallResult.completeExceptionally(exception);
+                            return;
+                        }
+                        List<T> results = Collections.singletonList(completableFuture.join());
+                        overallResult.complete(results);
+                    });
             return overallResult;
         }
     }
@@ -109,17 +114,17 @@ public class Async {
 
             CompletableFuture<List<T>> overallResult = new CompletableFuture<>();
             CompletableFuture.allOf(array)
-                .whenComplete((ignored, exception) -> {
-                    if (exception != null) {
-                        overallResult.completeExceptionally(exception);
-                        return;
-                    }
-                    List<T> results = new ArrayList<>(array.length);
-                    for (CompletableFuture<T> future : array) {
-                        results.add(future.join());
-                    }
-                    overallResult.complete(results);
-                });
+                    .whenComplete((ignored, exception) -> {
+                        if (exception != null) {
+                            overallResult.completeExceptionally(exception);
+                            return;
+                        }
+                        List<T> results = new ArrayList<>(array.length);
+                        for (CompletableFuture<T> future : array) {
+                            results.add(future.join());
+                        }
+                        overallResult.complete(results);
+                    });
             return overallResult;
         }
 
@@ -136,18 +141,18 @@ public class Async {
         @SuppressWarnings("unchecked")
         CompletableFuture<U>[] arrayOfFutures = futures.toArray(new CompletableFuture[0]);
         CompletableFuture
-            .allOf(arrayOfFutures)
-            .whenComplete((ignored, exception) -> {
-                if (exception != null) {
-                    overallResult.completeExceptionally(exception);
-                    return;
-                }
-                List<U> results = new ArrayList<>(arrayOfFutures.length);
-                for (CompletableFuture<U> future : arrayOfFutures) {
-                    results.add(future.join());
-                }
-                overallResult.complete(results);
-            });
+                .allOf(arrayOfFutures)
+                .whenComplete((ignored, exception) -> {
+                    if (exception != null) {
+                        overallResult.completeExceptionally(exception);
+                        return;
+                    }
+                    List<U> results = new ArrayList<>(arrayOfFutures.length);
+                    for (CompletableFuture<U> future : arrayOfFutures) {
+                        results.add(future.join());
+                    }
+                    overallResult.complete(results);
+                });
         return overallResult;
     }
 
@@ -205,6 +210,7 @@ public class Async {
      *
      * @param t   - the object to check
      * @param <T> for two
+     *
      * @return a CompletableFuture
      */
     public static <T> CompletableFuture<T> toCompletableFuture(T t) {
