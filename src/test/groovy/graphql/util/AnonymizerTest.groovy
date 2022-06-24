@@ -40,7 +40,7 @@ type Object2 {
   field3: ID
 }
 """
-        newQuery == "{field1 {field2 field3}}"
+        newQuery == "{field1{field2 field3}}"
     }
 
     def "query with fragments"() {
@@ -75,7 +75,7 @@ type Object2 {
   field3: ID
 }
 """
-        newQuery == "{...Fragment1 field1 {... on Object2 {field2 field3}}} fragment Fragment1 on Object1 {field1 {field2 field3}}"
+        newQuery == "{...Fragment1 field1{...on Object2{field2 field3}}} fragment Fragment1 on Object1 {field1{field2 field3}}"
 
     }
 
@@ -111,7 +111,7 @@ type Object2 {
   field3: ID
 }
 """
-        newQuery == '{field1(argument1:"stringValue1",argument2:"stringValue2") {field2 field3}}'
+        newQuery == '{field1(argument1:"stringValue1",argument2:"stringValue2"){field2 field3}}'
 
     }
 
@@ -147,7 +147,7 @@ type Object2 {
   field3(argument4: ID): ID
 }
 """
-        newQuery == 'query operation($var1:ID) {field1(argument1:$var1,argument2:"stringValue1") {field2 field3(argument4:$var1)}}'
+        newQuery == 'query operation($var1:ID){field1(argument1:$var1,argument2:"stringValue1"){field2 field3(argument4:$var1)}}'
 
 
     }
@@ -264,7 +264,7 @@ type Object2 {
           inputField6: InputObject1
         }
         """.stripIndent()
-        newQuery == 'query operation($var1:String="stringValue1",$var2:[[String!]!]!=[["stringValue2"]],$var3:Enum1!=EnumValue1,$var4:InputObject1!={inputField2:"stringValue3",inputField5:EnumValue2,inputField6:{inputField1:2}}) {field1(argument1:{inputField1:1,inputField2:$var1}) field3(argument3:$var2) field4(argument4:$var3) field5(argument5:$var4)}'
+        newQuery == 'query operation($var1:String="stringValue1",$var2:[[String!]!]!=[["stringValue2"]],$var3:Enum1!=EnumValue1,$var4:InputObject1!={inputField2:"stringValue3",inputField5:EnumValue2,inputField6:{inputField1:2}}){field1(argument1:{inputField1:1,inputField2:$var1}) field3(argument3:$var2) field4(argument4:$var3) field5(argument5:$var4)}'
     }
 
     def "query with aliases"() {
@@ -285,7 +285,7 @@ type Object2 {
         def newQuery = result.queries[0]
 
         then:
-        newQuery == "{alias1:field1 {alias2:field3}}"
+        newQuery == "{alias1:field1{alias2:field3}}"
     }
 
     def "complex schema"() {
@@ -501,7 +501,7 @@ type Object2 {
         def newQuery = result.queries[0]
 
         then:
-        newQuery == "{field2 {__typename alias1:__typename field1}}"
+        newQuery == "{field2{__typename alias1:__typename field1}}"
     }
 
     def "handles cyclic types"() {
@@ -791,7 +791,7 @@ type Object2 {
   field2: String
 }
 """
-        newQuery == "{field1 @Directive1 {field2 @Directive1}}"
+        newQuery == "{field1 @Directive1{field2 @Directive1}}"
 
     }
 
@@ -828,7 +828,7 @@ type Object2 {
   field2: String
 }
 """
-        newQuery == '{field1 @Directive1(argument1:"stringValue2") {field2 @Directive1(argument1:"stringValue1")}}'
+        newQuery == '{field1 @Directive1(argument1:"stringValue2"){field2 @Directive1(argument1:"stringValue1")}}'
 
     }
 
@@ -865,7 +865,7 @@ type Object2 {
   field2(argument2: String): String
 }
 """
-        newQuery == 'query ($var1:String="stringValue3") {field1 @Directive1(argument1:$var1) {field2(argument2:"stringValue2") @Directive1(argument1:"stringValue1")}}'
+        newQuery == 'query ($var1:String="stringValue3"){field1 @Directive1(argument1:$var1){field2(argument2:"stringValue2") @Directive1(argument1:"stringValue1")}}'
 
     }
 }

@@ -626,7 +626,16 @@ extend input Input @directive {
 
         expect:
         isParseableAst(output)
-        output == '''{aliasOfFoo:foo(arg1:"val1",args2:"val2") @isCached{hello} world @neverCache @okThenCache} fragment FX on SomeType {aliased:field(withArgs:"argVal",andMoreArgs:"andMoreVals")}'''
+        output == '''{aliasOfFoo:foo(arg1:"val1",args2:"val2") @isCached{hello}world @neverCache @okThenCache} fragment FX on SomeType {aliased:field(withArgs:"argVal",andMoreArgs:"andMoreVals")}'''
+    }
+
+    def "can tighten fields with no query prefix"() {
+        when:
+        def doc = parse("{root { fooA{ midB{ leafB}} fooB{ midB{ leafB         }}}}")
+        def output = AstPrinter.printAstCompact(doc)
+        then:
+        isParseableAst(output)
+        output == "{root{fooA{midB{leafB}}fooB{midB{leafB}}}}"
     }
 
     def "print ast with inline fragment without type condition"() {

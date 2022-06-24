@@ -551,23 +551,25 @@ public class AstPrinter {
      * Some joined nodes don't need delimiters between them and some do
      * This encodes that knowledge of those that don't require delimiters
      */
+    @SuppressWarnings("SameParameterValue")
     private <T extends Node> String jointight(List<T> nodes, String delim, String prefix, String suffix) {
         StringBuilder joined = new StringBuilder();
         joined.append(prefix);
 
-        T lastNode = null;
+        String lastNodeText = "";
         boolean first = true;
         for (T node : nodes) {
             if (first) {
                 first = false;
             } else {
-                boolean canButtTogether = lastNode instanceof InlineFragment || lastNode instanceof FragmentSpread;
+                boolean canButtTogether = lastNodeText.endsWith("}");
                 if (! canButtTogether) {
                     joined.append(delim);
                 }
             }
-            joined.append(this.node(node));
-            lastNode = node;
+            String nodeText = this.node(node);
+            lastNodeText = nodeText;
+            joined.append(nodeText);
         }
 
         joined.append(suffix);
