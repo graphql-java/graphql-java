@@ -151,11 +151,19 @@ public class AstPrinter {
             String directives = directives(node.getDirectives());
             String selectionSet = node(node.getSelectionSet());
 
-            out.append(spaced(
-                    alias + name + arguments,
-                    directives,
-                    selectionSet
-            ));
+            if (compactMode) {
+                out.append(spaced(
+                        alias + name + arguments,
+                        directives
+                ));
+                out.append(selectionSet);
+            } else {
+                out.append(spaced(
+                        alias + name + arguments,
+                        directives,
+                        selectionSet
+                ));
+            }
         };
     }
 
@@ -231,12 +239,22 @@ public class AstPrinter {
             String directives = directives(node.getDirectives());
             String selectionSet = node(node.getSelectionSet());
 
-            out.append(spaced(
-                    "...",
-                    typeCondition,
-                    directives,
-                    selectionSet
-            ));
+            if (compactMode) {
+                // believe it or not but "...on Foo" is valid syntax
+                out.append("...");
+                out.append(spaced(
+                        typeCondition,
+                        directives
+                ));
+                out.append(selectionSet);
+            } else {
+                out.append(spaced(
+                        "...",
+                        typeCondition,
+                        directives,
+                        selectionSet
+                ));
+            }
         };
     }
 
@@ -298,7 +316,12 @@ public class AstPrinter {
             if (isEmpty(name) && isEmpty(directives) && isEmpty(varDefinitions) && op.equals("query")) {
                 out.append(selectionSet);
             } else {
-                out.append(spaced(op, smooshed(name, varDefinitions), directives, selectionSet));
+                if (compactMode) {
+                    out.append(spaced(op, smooshed(name, varDefinitions), directives));
+                    out.append(selectionSet);
+                } else {
+                    out.append(spaced(op, smooshed(name, varDefinitions), directives, selectionSet));
+                }
             }
         };
     }
@@ -323,7 +346,8 @@ public class AstPrinter {
 
     private NodePrinter<SelectionSet> selectionSet() {
         return (out, node) -> {
-            out.append(block(node.getSelections()));
+            String block = block(node.getSelections());
+            out.append(block);
         };
     }
 
@@ -523,7 +547,33 @@ public class AstPrinter {
         return join(nodes, delim, "", "");
     }
 
-    @SuppressWarnings("SameParameterValue")
+    /*
+     * Some joined nodes don't need delimiters between them and some do
+     * This encodes that knowledge of those that don't require delimiters
+     */
+    private <T extends Node> String jointight(List<T> nodes, String delim, String prefix, String suffix) {
+        StringBuilder joined = new StringBuilder();
+        joined.append(prefix);
+
+        T lastNode = null;
+        boolean first = true;
+        for (T node : nodes) {
+            if (first) {
+                first = false;
+            } else {
+                boolean canButtTogether = lastNode instanceof InlineFragment || lastNode instanceof FragmentSpread;
+                if (! canButtTogether) {
+                    joined.append(delim);
+                }
+            }
+            joined.append(this.node(node));
+            lastNode = node;
+        }
+
+        joined.append(suffix);
+        return joined.toString();
+    }
+
     private <T extends Node> String join(List<T> nodes, String delim, String prefix, String suffix) {
         StringBuilder joined = new StringBuilder();
         joined.append(prefix);
@@ -584,7 +634,8 @@ public class AstPrinter {
             return "{}";
         }
         if (compactMode) {
-            return new StringBuilder().append("{").append(join(nodes, " ")).append("}").toString();
+            String joinedNodes = jointight(nodes, " ", "", "");
+            return new StringBuilder().append("{").append(joinedNodes).append("}").toString();
         }
         return indent(new StringBuilder().append("{\n").append(join(nodes, "\n")))
                 + "\n}";

@@ -19,6 +19,16 @@ class AstPrinterTest extends Specification {
         AstPrinter.printAst(node)
     }
 
+    boolean isParseableAst(ast) {
+        try {
+            def document = parse(ast)
+            return document != null
+        } catch (Exception ignored) {
+            return false
+        }
+    }
+
+
     def starWarsSchema = """
 # objects can have comments
 # over a number of lines
@@ -332,7 +342,39 @@ query HeroForEpisode($ep: Episode!) {
   }
 }
 '''
+        isParseableAst(output)
     }
+
+    def "ast printing of inline fragments in compactMode"() {
+        def query = '''
+query HeroForEpisode($ep: Episode!) {
+  hero(episode: $ep) {
+    name
+       ... on Droid {
+        primaryFunction
+        id
+     }
+         ... on Human {
+        height
+        id
+    }
+    age {
+      inMonths
+      inYears
+    }
+  }
+}'''
+        when:
+        def document = parse(query)
+        String output = AstPrinter.printAstCompact(document)
+
+        then:
+
+        isParseableAst(output)
+
+        output == 'query HeroForEpisode($ep:Episode!){hero(episode:$ep){name ...on Droid{primaryFunction id}...on Human{height id}age{inMonths inYears}}}'
+    }
+
 
 //-------------------------------------------------
     def "ast printing of default variables"() {
@@ -583,7 +625,8 @@ extend input Input @directive {
         String output = AstPrinter.printAstCompact(document)
 
         expect:
-        output == '''{aliasOfFoo:foo(arg1:"val1",args2:"val2") @isCached {hello} world @neverCache @okThenCache} fragment FX on SomeType {aliased:field(withArgs:"argVal",andMoreArgs:"andMoreVals")}'''
+        isParseableAst(output)
+        output == '''{aliasOfFoo:foo(arg1:"val1",args2:"val2") @isCached{hello} world @neverCache @okThenCache} fragment FX on SomeType {aliased:field(withArgs:"argVal",andMoreArgs:"andMoreVals")}'''
     }
 
     def "print ast with inline fragment without type condition"() {
@@ -601,7 +644,7 @@ extend input Input @directive {
         String outputFull = AstPrinter.printAst(document)
 
         expect:
-        outputCompact == '''{foo {... {hello}}}'''
+        outputCompact == '''{foo{...{hello}}}'''
         outputFull == '''{
   foo {
     ... {
@@ -610,6 +653,8 @@ extend input Input @directive {
   }
 }
 '''
+        isParseableAst(outputCompact)
+        isParseableAst(outputFull)
     }
 
     def 'StringValue is converted to valid Strings'() {
