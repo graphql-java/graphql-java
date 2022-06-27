@@ -18,6 +18,7 @@ import graphql.schema.transform.VisibleFieldPredicateEnvironment.VisibleFieldPre
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -124,7 +125,19 @@ public class FieldVisibilitySchemaTransformation {
                 observedTypes.add((GraphQLType) node);
             }
             if (node instanceof GraphQLInterfaceType) {
-                observedTypes.addAll(graphQLSchema.getImplementations((GraphQLInterfaceType) node));
+                final GraphQLSchemaElement parentNode = context.getParentNode();
+                if(parentNode instanceof GraphQLObjectType && observedTypes.contains(parentNode)) {
+                    // This means the traversal reached this interface via a type that implements it. If that type
+                    // has already been observed, we don't need to continue traversing so we quit early.
+                    // This is just to avoid the streaming/filtering bellow
+                    return TraversalControl.QUIT;
+                }
+
+                final List<GraphQLObjectType> implementations = graphQLSchema.getImplementations((GraphQLInterfaceType) node);
+
+                implementations.stream()
+                        .filter(impl -> !observedTypes.contains(impl))
+                        .forEach(impl -> new SchemaTraverser().depthFirst(this, Collections.singleton(impl)));
             }
 
             return TraversalControl.CONTINUE;
