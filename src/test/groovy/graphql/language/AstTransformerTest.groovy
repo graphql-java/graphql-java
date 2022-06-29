@@ -629,8 +629,8 @@ class AstTransformerTest extends Specification {
         def newDocumentParallel = astTransformer.transformParallel(document, visitor)
 
         then:
-        printAstCompact(newDocument) == "{field(newArg1:10,arg2:2,arg3:10) @directive1 @after1Directive @newDirective2}"
-        printAstCompact(newDocumentParallel) == "{field(newArg1:10,arg2:2,arg3:10) @directive1 @after1Directive @newDirective2}"
+        printAstCompact(newDocument) == "{field(newArg1:10,arg2:2,arg3:10) @directive1@after1Directive@newDirective2}"
+        printAstCompact(newDocumentParallel) == "{field(newArg1:10,arg2:2,arg3:10) @directive1@after1Directive@newDirective2}"
 
     }
 
@@ -661,8 +661,8 @@ class AstTransformerTest extends Specification {
         def newDocumentParallel = astTransformer.transformParallel(document, visitor)
 
         then:
-        printAstCompact(newDocument) == "{field @before @directive1 @after @directive2}"
-        printAstCompact(newDocumentParallel) == "{field @before @directive1 @after @directive2}"
+        printAstCompact(newDocument) == "{field @before@directive1@after@directive2}"
+        printAstCompact(newDocumentParallel) == "{field @before@directive1@after@directive2}"
 
     }
 
@@ -708,8 +708,8 @@ class AstTransformerTest extends Specification {
         def newDocumentParallel = astTransformer.transformParallel(document, visitor)
 
         then:
-        printAstCompact(newDocument) == "{field(arg1:1,a1:10,a4:10,a2:10,a3:10) @d5 @directive1 @d4 @d1 @d2 @d3}"
-        printAstCompact(newDocumentParallel) == "{field(arg1:1,a1:10,a4:10,a2:10,a3:10) @d5 @directive1 @d4 @d1 @d2 @d3}"
+        printAstCompact(newDocument) == "{field(arg1:1,a1:10,a4:10,a2:10,a3:10) @d5@directive1@d4@d1@d2@d3}"
+        printAstCompact(newDocumentParallel) == "{field(arg1:1,a1:10,a4:10,a2:10,a3:10) @d5@directive1@d4@d1@d2@d3}"
 
     }
 

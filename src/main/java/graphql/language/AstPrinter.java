@@ -540,7 +540,7 @@ public class AstPrinter {
     }
 
     private String directives(List<Directive> directives) {
-        return join(nvl(directives), " ");
+        return join(nvl(directives), compactMode? "" : " ");
     }
 
     private <T extends Node> String join(List<T> nodes, String delim) {
@@ -552,7 +552,7 @@ public class AstPrinter {
      * This encodes that knowledge of those that don't require delimiters
      */
     @SuppressWarnings("SameParameterValue")
-    private <T extends Node> String jointight(List<T> nodes, String delim, String prefix, String suffix) {
+    private <T extends Node> String joinTight(List<T> nodes, String delim, String prefix, String suffix) {
         StringBuilder joined = new StringBuilder();
         joined.append(prefix);
 
@@ -636,7 +636,7 @@ public class AstPrinter {
             return "{}";
         }
         if (compactMode) {
-            String joinedNodes = jointight(nodes, " ", "", "");
+            String joinedNodes = joinTight(nodes, " ", "", "");
             return new StringBuilder().append("{").append(joinedNodes).append("}").toString();
         }
         return indent(new StringBuilder().append("{\n").append(join(nodes, "\n")))

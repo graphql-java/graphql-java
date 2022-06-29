@@ -301,6 +301,7 @@ query Hero($episode: Episode, $withFriends: Boolean!) {
         String output = printAst(document)
 
         expect:
+        isParseableAst(output)
         output == '''query Hero($episode: Episode, $withFriends: Boolean!) {
   hero(episode: $episode) {
     name @repeatable @repeatable
@@ -611,10 +612,10 @@ extend input Input @directive {
         def query = '''
     { 
         #comments go away
-        aliasOfFoo : foo(arg1 : "val1", args2 : "val2") @isCached { #   and this comment as well
+        aliasOfFoo : foo(arg1 : "val1", args2 : "val2") @isCached @orIsItNotCached     { #   and this comment as well
             hello
         } 
-        world @neverCache @okThenCache
+        world @neverCache @youSaidCache @okThenCache 
     }
     
     fragment FX on SomeType {
@@ -626,7 +627,7 @@ extend input Input @directive {
 
         expect:
         isParseableAst(output)
-        output == '''{aliasOfFoo:foo(arg1:"val1",args2:"val2") @isCached{hello}world @neverCache @okThenCache} fragment FX on SomeType {aliased:field(withArgs:"argVal",andMoreArgs:"andMoreVals")}'''
+        output == '''{aliasOfFoo:foo(arg1:"val1",args2:"val2") @isCached@orIsItNotCached{hello}world @neverCache@youSaidCache@okThenCache} fragment FX on SomeType {aliased:field(withArgs:"argVal",andMoreArgs:"andMoreVals")}'''
     }
 
     def "can tighten fields with no query prefix"() {
