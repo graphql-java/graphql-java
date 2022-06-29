@@ -1134,4 +1134,48 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
         restrictedSchema.getType("BillingStatus") != null
     }
 
+    def "handles types that become visible via types reachable by interface that implements interface"() {
+        given:
+        GraphQLSchema schema = TestUtil.schema("""
+
+        directive @private on FIELD_DEFINITION
+
+        type Query {
+            account: Account
+            node: Node
+        }
+        
+        type Account {
+            name: String
+            billingStatus: BillingStatus @private
+        }
+        
+        type BillingStatus {
+            accountNumber: String
+        }
+       
+        interface Node {
+            id: ID!
+        } 
+        
+        interface NamedNode implements Node {
+            id: ID!
+            name: String 
+        }
+        
+        type Billing implements Node & NamedNode {
+            id: ID!
+            name: String
+            status: BillingStatus
+        }
+        
+        """)
+
+        when:
+        GraphQLSchema restrictedSchema = visibilitySchemaTransformation.apply(schema)
+
+        then:
+        (restrictedSchema.getType("Account") as GraphQLObjectType).getFieldDefinition("billingStatus") == null
+        restrictedSchema.getType("BillingStatus") != null
+    }
 }
