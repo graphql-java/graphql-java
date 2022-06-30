@@ -68,7 +68,7 @@ public class NQBenchmark1 {
     @Fork(3)
     @BenchmarkMode(Mode.AverageTime)
     @OutputTimeUnit(TimeUnit.MILLISECONDS)
-    public void benchMarkAvgTime(MyState myState, Blackhole blackhole ) throws InterruptedException {
+    public void benchMarkAvgTime(MyState myState, Blackhole blackhole )  {
         runImpl(myState, blackhole);
     }
 
@@ -79,7 +79,7 @@ public class NQBenchmark1 {
     @Fork(3)
     @BenchmarkMode(Mode.Throughput)
     @OutputTimeUnit(TimeUnit.SECONDS)
-    public void benchMarkThroughput(MyState myState, Blackhole blackhole ) throws InterruptedException {
+    public void benchMarkThroughput(MyState myState, Blackhole blackhole )  {
         runImpl(myState, blackhole);
     }
 

@@ -21,7 +21,7 @@ import java.util.concurrent.TimeUnit;
 public class IntMapBenchmark {
 
 	@Benchmark
-	public void benchmarkLinkedHashMap(Blackhole blackhole) throws InterruptedException {
+	public void benchmarkLinkedHashMap(Blackhole blackhole) {
 		Map<Integer, Integer> result = new LinkedHashMap<>();
 		for (int i = 0; i < 30; i++) {
 			int level = i % 10;
@@ -32,7 +32,7 @@ public class IntMapBenchmark {
 	}
 
 	@Benchmark
-	public void benchmarkIntMap(Blackhole blackhole) throws InterruptedException {
+	public void benchmarkIntMap(Blackhole blackhole) {
 		LevelMap result = new LevelMap(16);
 		for (int i = 0; i < 30; i++) {
 			int level = i % 10;

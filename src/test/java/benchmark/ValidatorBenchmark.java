@@ -71,7 +71,7 @@ public class ValidatorBenchmark {
     }
 
     @Benchmark
-    public void runValidator(MyState state) throws InterruptedException {
+    public void runValidator(MyState state) {
         Validator validator = new Validator();
         validator.validateDocument(state.schema, state.document);
     }

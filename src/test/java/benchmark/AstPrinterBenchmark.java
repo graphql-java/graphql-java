@@ -219,14 +219,14 @@ public class AstPrinterBenchmark {
     @Benchmark
     @BenchmarkMode(Mode.Throughput)
     @OutputTimeUnit(TimeUnit.SECONDS)
-    public void benchMarkAstPrinterThroughput(Blackhole blackhole) throws InterruptedException {
+    public void benchMarkAstPrinterThroughput(Blackhole blackhole) {
         printAst(blackhole);
     }
 
     @Benchmark
     @BenchmarkMode(Mode.AverageTime)
     @OutputTimeUnit(TimeUnit.MILLISECONDS)
-    public void benchMarkAstPrinterAvgTime(Blackhole blackhole) throws InterruptedException {
+    public void benchMarkAstPrinterAvgTime(Blackhole blackhole) {
         printAst(blackhole);
     }
 
@@ -237,18 +237,18 @@ public class AstPrinterBenchmark {
     @Benchmark
     @BenchmarkMode(Mode.Throughput)
     @OutputTimeUnit(TimeUnit.SECONDS)
-    public void benchMarkAstPrinterCompactThroughput(Blackhole blackhole) throws InterruptedException {
+    public void benchMarkAstPrinterCompactThroughput(Blackhole blackhole) {
         printAstCompact(blackhole);
     }
 
     @Benchmark
     @BenchmarkMode(Mode.AverageTime)
     @OutputTimeUnit(TimeUnit.MILLISECONDS)
-    public void benchMarkAstPrinterCompactAvgTime(Blackhole blackhole) throws InterruptedException {
+    public void benchMarkAstPrinterCompactAvgTime(Blackhole blackhole) {
         printAstCompact(blackhole);
     }
 
-    public static void printAstCompact(Blackhole blackhole) throws InterruptedException {
+    public static void printAstCompact(Blackhole blackhole) {
         blackhole.consume(AstPrinter.printAstCompact(document));
     }
 }

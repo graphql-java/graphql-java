@@ -38,14 +38,14 @@ public class SchemaBenchMark {
     @Benchmark
     @BenchmarkMode(Mode.Throughput)
     @OutputTimeUnit(TimeUnit.MINUTES)
-    public void benchMarkLargeSchemaCreate(Blackhole blackhole) throws InterruptedException {
+    public void benchMarkLargeSchemaCreate(Blackhole blackhole) {
         blackhole.consume(createSchema(largeSDL));
     }
 
     @Benchmark
     @BenchmarkMode(Mode.AverageTime)
     @OutputTimeUnit(TimeUnit.MILLISECONDS)
-    public void benchMarkLargeSchemaCreateAvgTime(Blackhole blackhole) throws InterruptedException {
+    public void benchMarkLargeSchemaCreateAvgTime(Blackhole blackhole) {
         blackhole.consume(createSchema(largeSDL));
     }
 
