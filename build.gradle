@@ -10,6 +10,7 @@ plugins {
     id "biz.aQute.bnd.builder" version "6.1.0"
     id "io.github.gradle-nexus.publish-plugin" version "1.1.0"
     id "groovy"
+    id "me.champeau.jmh" version "0.6.6"
 }
 
 def getDevelopmentVersion() {
@@ -108,8 +109,10 @@ dependencies {
 
     testImplementation 'org.testng:testng:6.1.1' // use for reactive streams test inheritance
 
-    testImplementation 'org.openjdk.jmh:jmh-core:1.34'
-    testAnnotationProcessor 'org.openjdk.jmh:jmh-generator-annprocess:1.34'
+    testImplementation 'org.openjdk.jmh:jmh-core:1.35'
+    testAnnotationProcessor 'org.openjdk.jmh:jmh-generator-annprocess:1.35'
+    jmh 'org.openjdk.jmh:jmh-core:1.35'
+    jmh 'org.openjdk.jmh:jmh-generator-annprocess:1.35'
 }
 
 shadowJar {
