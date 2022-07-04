@@ -2,6 +2,7 @@ package graphql.validation;
 
 
 import graphql.Internal;
+import graphql.i18n.I18n;
 import graphql.language.Document;
 import graphql.schema.GraphQLSchema;
 import graphql.validation.rules.ArgumentsOfCorrectType;
@@ -20,19 +21,20 @@ import graphql.validation.rules.NoUnusedVariables;
 import graphql.validation.rules.OverlappingFieldsCanBeMerged;
 import graphql.validation.rules.PossibleFragmentSpreads;
 import graphql.validation.rules.ProvidedNonNullArguments;
-import graphql.validation.rules.ScalarLeafs;
+import graphql.validation.rules.ScalarLeaves;
 import graphql.validation.rules.SubscriptionUniqueRootField;
-import graphql.validation.rules.UniqueArgumentNamesRule;
+import graphql.validation.rules.UniqueArgumentNames;
 import graphql.validation.rules.UniqueDirectiveNamesPerLocation;
 import graphql.validation.rules.UniqueFragmentNames;
 import graphql.validation.rules.UniqueOperationNames;
-import graphql.validation.rules.UniqueVariableNamesRule;
+import graphql.validation.rules.UniqueVariableNames;
 import graphql.validation.rules.VariableDefaultValuesOfCorrectType;
 import graphql.validation.rules.VariableTypesMatchRule;
 import graphql.validation.rules.VariablesAreInputTypes;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -58,12 +60,13 @@ public class Validator {
         return MAX_VALIDATION_ERRORS;
     }
 
-    public List<ValidationError> validateDocument(GraphQLSchema schema, Document document) {
-        return validateDocument(schema, document, ruleClass -> true);
+    public List<ValidationError> validateDocument(GraphQLSchema schema, Document document, Locale locale) {
+        return validateDocument(schema, document, ruleClass -> true, locale);
     }
 
-    public List<ValidationError> validateDocument(GraphQLSchema schema, Document document, Predicate<Class<?>> applyRule) {
-        ValidationContext validationContext = new ValidationContext(schema, document);
+    public List<ValidationError> validateDocument(GraphQLSchema schema, Document document, Predicate<Class<?>> applyRule, Locale locale) {
+        I18n i18n = I18n.i18n(I18n.BundleType.Validation, locale);
+        ValidationContext validationContext = new ValidationContext(schema, document, i18n);
 
         ValidationErrorCollector validationErrorCollector = new ValidationErrorCollector(MAX_VALIDATION_ERRORS);
         List<AbstractRule> rules = createRules(validationContext, validationErrorCollector);
