@@ -63,20 +63,9 @@ public class ValidationError implements GraphQLError {
             this.locations.addAll(builder.sourceLocations);
         }
         this.description = builder.description;
-        this.message = mkMessage(builder.validationErrorType, builder.description, builder.queryPath);
+        this.message = builder.description;
         this.queryPath = builder.queryPath;
         this.extensions = builder.extensions;
-    }
-
-    private String mkMessage(ValidationErrorClassification validationErrorType, String description, List<String> queryPath) {
-        return String.format("Validation error of type %s: %s%s", validationErrorType, description, toPath(queryPath));
-    }
-
-    private String toPath(List<String> queryPath) {
-        if (queryPath == null) {
-            return "";
-        }
-        return String.format(" @ '%s'", String.join("/", queryPath));
     }
 
     public ValidationErrorClassification getValidationErrorType() {

@@ -9,6 +9,7 @@ import graphql.validation.ValidationError;
 import graphql.validation.Validator;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.function.Predicate;
 
 /**
@@ -40,7 +41,7 @@ public class ParseAndValidate {
     public static ParseAndValidateResult parseAndValidate(GraphQLSchema graphQLSchema, ExecutionInput executionInput) {
         ParseAndValidateResult result = parse(executionInput);
         if (!result.isFailure()) {
-            List<ValidationError> errors = validate(graphQLSchema, result.getDocument());
+            List<ValidationError> errors = validate(graphQLSchema, result.getDocument(), executionInput.getLocale());
             return result.transform(builder -> builder.validationErrors(errors));
         }
         return result;
@@ -74,8 +75,8 @@ public class ParseAndValidate {
      *
      * @return a result object that indicates how this operation went
      */
-    public static List<ValidationError> validate(GraphQLSchema graphQLSchema, Document parsedDocument) {
-        return validate(graphQLSchema, parsedDocument, ruleClass -> true);
+    public static List<ValidationError> validate(GraphQLSchema graphQLSchema, Document parsedDocument, Locale locale) {
+        return validate(graphQLSchema, parsedDocument, ruleClass -> true, locale);
     }
 
     /**
@@ -87,8 +88,8 @@ public class ParseAndValidate {
      *
      * @return a result object that indicates how this operation went
      */
-    public static List<ValidationError> validate(GraphQLSchema graphQLSchema, Document parsedDocument, Predicate<Class<?>> rulePredicate) {
+    public static List<ValidationError> validate(GraphQLSchema graphQLSchema, Document parsedDocument, Predicate<Class<?>> rulePredicate, Locale locale) {
         Validator validator = new Validator();
-        return validator.validateDocument(graphQLSchema, parsedDocument, rulePredicate);
+        return validator.validateDocument(graphQLSchema, parsedDocument, rulePredicate, locale);
     }
 }
