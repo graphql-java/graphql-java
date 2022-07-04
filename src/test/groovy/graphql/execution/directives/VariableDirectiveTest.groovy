@@ -34,8 +34,8 @@ class VariableDirectiveTest extends Specification {
 
         when:
         def document = TestUtil.parseQuery(spec)
-        def validator = new Validator();
-        def validationErrors = validator.validateDocument(schema, document);
+        def validator = new Validator()
+        def validationErrors = validator.validateDocument(schema, document, Locale.ENGLISH)
 
         then:
         validationErrors.size() == 0
@@ -52,12 +52,12 @@ class VariableDirectiveTest extends Specification {
 
         when:
         def document = TestUtil.parseQuery(spec)
-        def validator = new Validator();
-        def validationErrors = validator.validateDocument(schema, document);
+        def validator = new Validator()
+        def validationErrors = validator.validateDocument(schema, document, Locale.ENGLISH)
 
         then:
         validationErrors.size() == 1
-        validationErrors[0].message == "Validation error of type MisplacedDirective: Directive variableDirective not allowed here @ 'f'"
+        validationErrors[0].message == "Validation error (MisplacedDirective@[f]) : Directive 'variableDirective' not allowed here"
     }
 
     def "invalid directive for variable"() {
@@ -71,12 +71,12 @@ class VariableDirectiveTest extends Specification {
 
         when:
         def document = TestUtil.parseQuery(spec)
-        def validator = new Validator();
-        def validationErrors = validator.validateDocument(schema, document);
+        def validator = new Validator()
+        def validationErrors = validator.validateDocument(schema, document, Locale.ENGLISH)
 
         then:
         validationErrors.size() == 1
-        validationErrors[0].message == "Validation error of type MisplacedDirective: Directive argumentDirective not allowed here"
+        validationErrors[0].message == "Validation error (MisplacedDirective) : Directive 'argumentDirective' not allowed here"
     }
 
 

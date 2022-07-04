@@ -65,6 +65,7 @@ class SubscriptionUniqueRootFieldTest extends Specification {
         !validationErrors.empty
         validationErrors.size() == 1
         validationErrors[0].validationErrorType == ValidationErrorType.SubscriptionMultipleRootFields
+        validationErrors[0].message == "Validation error (SubscriptionMultipleRootFields) : Subscription operation 'pets' must have exactly one root field"
     }
 
     def "5.2.3.1 subscription with more than one root field with fragment fails validation"() {
@@ -90,6 +91,7 @@ class SubscriptionUniqueRootFieldTest extends Specification {
         !validationErrors.empty
         validationErrors.size() == 1
         validationErrors[0].validationErrorType == ValidationErrorType.SubscriptionMultipleRootFields
+        validationErrors[0].message == "Validation error (SubscriptionMultipleRootFields) : Subscription operation 'whoIsAGoodBoy' must have exactly one root field with fragments"
     }
 
     def "5.2.3.1 document can contain multiple operations with different root fields"() {
@@ -128,10 +130,32 @@ class SubscriptionUniqueRootFieldTest extends Specification {
         !validationErrors.empty
         validationErrors.size() == 1
         validationErrors[0].validationErrorType == ValidationErrorType.SubscriptionIntrospectionRootField
+        validationErrors[0].message == "Validation error (SubscriptionIntrospectionRootField) : Subscription operation 'doggo' root field '__typename' cannot be an introspection field"
+    }
+
+    def "5.2.3.1 subscription root field via fragment must not be an introspection field"() {
+        given:
+        def subscriptionIntrospectionField = '''
+            subscription doggo {
+              ...dogs
+            }
+            
+            fragment dogs on SubscriptionRoot {
+              __typename
+            }
+        '''
+        when:
+        def validationErrors = validate(subscriptionIntrospectionField)
+
+        then:
+        !validationErrors.empty
+        validationErrors.size() == 1
+        validationErrors[0].validationErrorType == ValidationErrorType.SubscriptionIntrospectionRootField
+        validationErrors[0].message == "Validation error (SubscriptionIntrospectionRootField) : Subscription operation 'doggo' fragment root field '__typename' cannot be an introspection field"
     }
 
     static List<ValidationError> validate(String query) {
         def document = new Parser().parseDocument(query)
-        return new Validator().validateDocument(SpecValidationSchema.specValidationSchema, document)
+        return new Validator().validateDocument(SpecValidationSchema.specValidationSchema, document, Locale.ENGLISH)
     }
 }

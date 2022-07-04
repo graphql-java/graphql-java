@@ -2,7 +2,6 @@ package graphql
 
 import graphql.cachecontrol.CacheControl
 import graphql.execution.ExecutionId
-import graphql.execution.RawVariables
 import graphql.schema.DataFetcher
 import graphql.schema.DataFetchingEnvironment
 import org.dataloader.DataLoaderRegistry
@@ -141,11 +140,13 @@ class ExecutionInputTest extends Specification {
 
     def "defaults query into builder as expected"() {
         when:
-        def executionInput = ExecutionInput.newExecutionInput("{ q }").build()
+        def executionInput = ExecutionInput.newExecutionInput("{ q }")
+                .locale(Locale.ENGLISH)
+                .build()
         then:
         executionInput.query == "{ q }"
         executionInput.cacheControl != null
-        executionInput.locale == null
+        executionInput.locale == Locale.ENGLISH
         executionInput.dataLoaderRegistry != null
         executionInput.variables == [:]
     }

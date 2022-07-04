@@ -122,8 +122,8 @@ public class Validator {
         ProvidedNonNullArguments providedNonNullArguments = new ProvidedNonNullArguments(validationContext, validationErrorCollector);
         rules.add(providedNonNullArguments);
 
-        ScalarLeafs scalarLeafs = new ScalarLeafs(validationContext, validationErrorCollector);
-        rules.add(scalarLeafs);
+        ScalarLeaves scalarLeaves = new ScalarLeaves(validationContext, validationErrorCollector);
+        rules.add(scalarLeaves);
 
         VariableDefaultValuesOfCorrectType variableDefaultValuesOfCorrectType = new VariableDefaultValuesOfCorrectType(validationContext, validationErrorCollector);
         rules.add(variableDefaultValuesOfCorrectType);
@@ -144,10 +144,10 @@ public class Validator {
         UniqueDirectiveNamesPerLocation uniqueDirectiveNamesPerLocation = new UniqueDirectiveNamesPerLocation(validationContext, validationErrorCollector);
         rules.add(uniqueDirectiveNamesPerLocation);
 
-        UniqueArgumentNamesRule uniqueArgumentNamesRule = new UniqueArgumentNamesRule(validationContext, validationErrorCollector);
+        UniqueArgumentNames uniqueArgumentNamesRule = new UniqueArgumentNames(validationContext, validationErrorCollector);
         rules.add(uniqueArgumentNamesRule);
 
-        UniqueVariableNamesRule uniqueVariableNamesRule = new UniqueVariableNamesRule(validationContext, validationErrorCollector);
+        UniqueVariableNames uniqueVariableNamesRule = new UniqueVariableNames(validationContext, validationErrorCollector);
         rules.add(uniqueVariableNamesRule);
 
         SubscriptionUniqueRootField uniqueSubscriptionRootField = new SubscriptionUniqueRootField(validationContext, validationErrorCollector);

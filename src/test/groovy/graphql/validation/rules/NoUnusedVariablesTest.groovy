@@ -1,13 +1,16 @@
 package graphql.validation.rules
 
 import graphql.TestUtil
+import graphql.i18n.I18n
 import graphql.language.Document
 import graphql.parser.Parser
 import graphql.validation.LanguageTraversal
 import graphql.validation.RulesVisitor
+import graphql.validation.SpecValidationSchema
 import graphql.validation.ValidationContext
 import graphql.validation.ValidationErrorCollector
 import graphql.validation.ValidationErrorType
+import graphql.validation.Validator
 import spock.lang.Specification
 
 class NoUnusedVariablesTest extends Specification {
@@ -15,7 +18,8 @@ class NoUnusedVariablesTest extends Specification {
 
     def traverse(String query) {
         Document document = new Parser().parseDocument(query)
-        ValidationContext validationContext = new ValidationContext(TestUtil.dummySchema, document)
+        I18n i18n = I18n.i18n(I18n.BundleType.Validation, Locale.ENGLISH)
+        ValidationContext validationContext = new ValidationContext(TestUtil.dummySchema, document, i18n)
         NoUnusedVariables noUnusedVariables = new NoUnusedVariables(validationContext, errorCollector)
         LanguageTraversal languageTraversal = new LanguageTraversal()
 
@@ -113,5 +117,24 @@ class NoUnusedVariablesTest extends Specification {
 
         then:
         errorCollector.containsValidationError(ValidationErrorType.UnusedVariable)
+    }
+
+    def "variables not used in fragments with error message"() {
+        def query = '''
+                query getDogName($arg1: String, $unusedArg: Int) {
+                  dog(arg1: $arg1) {
+                      name
+                  }           
+                }
+            '''
+        when:
+        def document = Parser.parse(query)
+        def validationErrors = new Validator().validateDocument(SpecValidationSchema.specValidationSchema, document, Locale.ENGLISH)
+
+        then:
+        !validationErrors.empty
+        validationErrors.size() == 1
+        validationErrors.get(0).getValidationErrorType() == ValidationErrorType.UnusedVariable
+        validationErrors.get(0).message == "Validation error (UnusedVariable) : Unused variable 'unusedArg'"
     }
 }
