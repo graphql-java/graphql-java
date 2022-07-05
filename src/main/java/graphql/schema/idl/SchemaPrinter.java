@@ -447,11 +447,7 @@ public class SchemaPrinter {
             printSchemaElement(out, element, visibility);
         }
 
-        String result = sw.toString();
-        if (result.endsWith("\n\n")) {
-            result = result.substring(0, result.length() - 1);
-        }
-        return result;
+        return trimNewLineChars(sw.toString());
     }
 
     private interface SchemaElementPrinter<T> {
@@ -989,7 +985,7 @@ public class SchemaPrinter {
 
         printSchemaElement(out, type, DEFAULT_FIELD_VISIBILITY);
 
-        return sw.toString();
+        return trimNewLineChars(sw.toString());
     }
 
     public String print(List<GraphQLSchemaElement> elements) {
@@ -1005,7 +1001,7 @@ public class SchemaPrinter {
                 Assert.assertShouldNeverHappen("How did we miss a %s", element.getClass());
             }
         }
-        return sw.toString();
+        return trimNewLineChars(sw.toString());
     }
 
     public String print(GraphQLDirective graphQLDirective) {
@@ -1130,6 +1126,12 @@ public class SchemaPrinter {
         return options.comparatorRegistry.getComparator(environment);
     }
 
+    private static String trimNewLineChars(String s) {
+        if (s.endsWith("\n\n")) {
+            s = s.substring(0, s.length() - 1);
+        }
+        return s;
+    }
 
     private static boolean isNullOrEmpty(String s) {
         return s == null || s.isEmpty();

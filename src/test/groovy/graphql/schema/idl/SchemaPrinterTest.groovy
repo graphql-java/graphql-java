@@ -152,7 +152,6 @@ class SchemaPrinterTest extends Specification {
   id: ID!
   name: String!
 }
-
 """
     }
 
@@ -1469,7 +1468,6 @@ extend type Query {
 extend type Query {
   baz: String
 }
-
 '''
     }
 
@@ -1992,7 +1990,6 @@ type Query {
         result == '''type obj {
   f(arg: Compound = {a : "A", b : "B"}): String
 }
-
 '''
 
         when:
@@ -2013,7 +2010,6 @@ type Query {
         result == '''type obj {
   f: String @foo(arg : {a : "A", b : "B"})
 }
-
 '''
     }
 
@@ -2148,6 +2144,32 @@ schema {
 }
 
 type Query {
+  field: String
+}
+'''
+    }
+
+    def "prints list of schema elements"() {
+        given:
+        def testObjectA = newObject()
+                .name("TestObjectA")
+                .field(newFieldDefinition().name("field").type(GraphQLString))
+                .build()
+        def testObjectB = newObject()
+                .name("TestObjectB")
+                .field(newFieldDefinition().name("field").type(GraphQLString))
+                .build()
+
+        when:
+        def result = new SchemaPrinter().print([testObjectA, testObjectB])
+        println(result)
+
+        then:
+        result == '''type TestObjectA {
+  field: String
+}
+
+type TestObjectB {
   field: String
 }
 '''
