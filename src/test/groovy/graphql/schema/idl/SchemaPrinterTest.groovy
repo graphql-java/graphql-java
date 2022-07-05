@@ -133,7 +133,7 @@ class SchemaPrinterTest extends Specification {
     A multiline
     comment
     """
-    arg1: [Int!] = 10, 
+    arg1: [Int!] = 10,
     "A single line comment"
     arg2: [Int!] = 10
   )'''
@@ -567,8 +567,8 @@ scalar Scalar
         result == '''type Query {
   field(
     "about arg1"
-    arg1: String, 
-    arg2: String, 
+    arg1: String,
+    arg2: String,
     """
     about 3
     second line

@@ -792,7 +792,10 @@ public class SchemaPrinter {
             if (count == 0) {
                 sb.append("(");
             } else {
-                sb.append(", ");
+                sb.append(",");
+                if (!hasDescriptions) {
+                    sb.append(" ");
+                }
             }
             if (hasDescriptions) {
                 sb.append("\n");
