@@ -1025,22 +1025,19 @@ public class SchemaPrinter {
     }
 
     private void printComments(PrintWriter out, Object graphQLType, String prefix) {
-
         String descriptionText = getDescription(graphQLType);
         if (isNullOrEmpty(descriptionText)) {
             return;
         }
 
-        if (!isNullOrEmpty(descriptionText)) {
-            List<String> lines = Arrays.asList(descriptionText.split("\n"));
-            if (options.isDescriptionsAsHashComments()) {
-                printMultiLineHashDescription(out, prefix, lines);
-            } else if (!lines.isEmpty()) {
-                if (lines.size() > 1) {
-                    printMultiLineDescription(out, prefix, lines);
-                } else {
-                    printSingleLineDescription(out, prefix, lines.get(0));
-                }
+        List<String> lines = Arrays.asList(descriptionText.split("\n"));
+        if (options.isDescriptionsAsHashComments()) {
+            printMultiLineHashDescription(out, prefix, lines);
+        } else if (!lines.isEmpty()) {
+            if (lines.size() > 1) {
+                printMultiLineDescription(out, prefix, lines);
+            } else {
+                printSingleLineDescription(out, prefix, lines.get(0));
             }
         }
     }
