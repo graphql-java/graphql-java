@@ -311,7 +311,7 @@ type SubChildChanged {
                     })
                 }).build();
 
-        def schemaObject = GraphQLSchema.newSchema()
+        def schemaObject = newSchema()
                 .query(queryObject)
                 .build()
 
@@ -685,7 +685,6 @@ type Query {
         when:
         def newSchema = SchemaTransformer.transformSchema(schema, fieldChanger)
 
-        def printer = new SchemaPrinter(SchemaPrinter.Options.defaultOptions().includeDirectives(false))
         def newFoo = newSchema.getQueryType().getFieldDefinition("foo").getType() as GraphQLObjectType
         then:
         newFoo.getFieldDefinition("changed") != null
