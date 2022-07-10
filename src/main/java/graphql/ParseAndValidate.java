@@ -72,6 +72,7 @@ public class ParseAndValidate {
      *
      * @param graphQLSchema  the graphql schema to validate against
      * @param parsedDocument the previously parsed document
+     * @param locale         the current locale
      *
      * @return a result object that indicates how this operation went
      */
@@ -85,6 +86,7 @@ public class ParseAndValidate {
      * @param graphQLSchema  the graphql schema to validate against
      * @param parsedDocument the previously parsed document
      * @param rulePredicate  this predicate is used to decide what validation rules will be applied
+     * @param locale         the current locale
      *
      * @return a result object that indicates how this operation went
      */
