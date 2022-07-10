@@ -40,7 +40,11 @@ public class ArgumentValidationUtil extends ValidationUtil {
 
     @Override
     protected void handleScalarError(Value<?> value, GraphQLScalarType type, GraphQLError invalid) {
-        errMsgKey = "ArgumentValidationUtil.handleScalarError";
+        if (invalid.getMessage() == null) {
+            errMsgKey = "ArgumentValidationUtil.handleScalarError";
+        } else {
+            errMsgKey = "ArgumentValidationUtil.handleScalarErrorCustomMessage";
+        }
         arguments.add(type.getName());
         arguments.add(invalid.getMessage());
         argumentValue = value;
@@ -49,7 +53,11 @@ public class ArgumentValidationUtil extends ValidationUtil {
 
     @Override
     protected void handleEnumError(Value<?> value, GraphQLEnumType type, GraphQLError invalid) {
-        errMsgKey = "ArgumentValidationUtil.handleEnumError";
+        if (invalid.getMessage() == null) {
+            errMsgKey = "ArgumentValidationUtil.handleEnumError";
+        } else {
+            errMsgKey = "ArgumentValidationUtil.handleEnumErrorCustomMessage";
+        }
         arguments.add(type.getName());
         arguments.add(invalid.getMessage());
         argumentValue = value;

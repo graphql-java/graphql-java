@@ -77,7 +77,7 @@ class ArgumentsOfCorrectTypeTest extends Specification {
         !validationErrors.empty
         validationErrors.size() == 1
         validationErrors.get(0).getValidationErrorType() == ValidationErrorType.WrongType
-        validationErrors.get(0).message == "Validation error (WrongType@[dog]) : argument 'arg1' with value 'IntValue{value=1}' is not a valid 'String'"
+        validationErrors.get(0).message == "Validation error (WrongType@[dog]) : argument 'arg1' with value 'IntValue{value=1}' is not a valid 'String' - Expected AST type 'StringValue' but was 'IntValue'."
     }
 
     def "invalid input object type results in error"() {
@@ -329,7 +329,7 @@ class ArgumentsOfCorrectTypeTest extends Specification {
         !validationErrors.empty
         validationErrors.size() == 1
         validationErrors.get(0).getValidationErrorType() == ValidationErrorType.WrongType
-        validationErrors.get(0).message == "Validation error (WrongType@[dog/doesKnowCommand]) : argument 'dogCommand' with value 'EnumValue{name='PRETTY'}' is not a valid 'DogCommand'"
+        validationErrors.get(0).message == "Validation error (WrongType@[dog/doesKnowCommand]) : argument 'dogCommand' with value 'EnumValue{name='PRETTY'}' is not a valid 'DogCommand' - Expected enum literal value not in allowable values -  'EnumValue{name='PRETTY'}'."
     }
 
     static List<ValidationError> validate(String query) {
