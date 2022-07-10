@@ -29,7 +29,7 @@ import graphql.validation.rules.UniqueFragmentNames;
 import graphql.validation.rules.UniqueOperationNames;
 import graphql.validation.rules.UniqueVariableNames;
 import graphql.validation.rules.VariableDefaultValuesOfCorrectType;
-import graphql.validation.rules.VariableTypesMatchRule;
+import graphql.validation.rules.VariableTypesMatch;
 import graphql.validation.rules.VariablesAreInputTypes;
 
 import java.util.ArrayList;
@@ -129,8 +129,8 @@ public class Validator {
         rules.add(variableDefaultValuesOfCorrectType);
         VariablesAreInputTypes variablesAreInputTypes = new VariablesAreInputTypes(validationContext, validationErrorCollector);
         rules.add(variablesAreInputTypes);
-        VariableTypesMatchRule variableTypesMatchRule = new VariableTypesMatchRule(validationContext, validationErrorCollector);
-        rules.add(variableTypesMatchRule);
+        VariableTypesMatch variableTypesMatch = new VariableTypesMatch(validationContext, validationErrorCollector);
+        rules.add(variableTypesMatch);
 
         LoneAnonymousOperation loneAnonymousOperation = new LoneAnonymousOperation(validationContext, validationErrorCollector);
         rules.add(loneAnonymousOperation);

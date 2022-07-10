@@ -11,14 +11,14 @@ import graphql.validation.ValidationErrorCollector
 import graphql.validation.ValidationErrorType
 import spock.lang.Specification
 
-class VariableTypesMatchRuleTest extends Specification {
+class VariableTypesMatchTest extends Specification {
     ValidationErrorCollector errorCollector = new ValidationErrorCollector()
 
     def traverse(String query) {
         def document = Parser.parse(query)
         I18n i18n = I18n.i18n(I18n.BundleType.Validation, Locale.ENGLISH)
         def validationContext = new ValidationContext(StarWarsSchema.starWarsSchema, document, i18n)
-        def variableTypesMatchRule = new VariableTypesMatchRule(validationContext, errorCollector)
+        def variableTypesMatchRule = new VariableTypesMatch(validationContext, errorCollector)
         def languageTraversal = new LanguageTraversal()
         languageTraversal.traverse(document, new RulesVisitor(validationContext, [variableTypesMatchRule]))
     }

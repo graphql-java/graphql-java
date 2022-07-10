@@ -23,17 +23,17 @@ import java.util.Optional;
 import static graphql.validation.ValidationErrorType.VariableTypeMismatch;
 
 @Internal
-public class VariableTypesMatchRule extends AbstractRule {
+public class VariableTypesMatch extends AbstractRule {
 
     final VariablesTypesMatcher variablesTypesMatcher;
 
     private Map<String, VariableDefinition> variableDefinitionMap;
 
-    public VariableTypesMatchRule(ValidationContext validationContext, ValidationErrorCollector validationErrorCollector) {
+    public VariableTypesMatch(ValidationContext validationContext, ValidationErrorCollector validationErrorCollector) {
         this(validationContext, validationErrorCollector, new VariablesTypesMatcher());
     }
 
-    VariableTypesMatchRule(ValidationContext validationContext, ValidationErrorCollector validationErrorCollector, VariablesTypesMatcher variablesTypesMatcher) {
+    VariableTypesMatch(ValidationContext validationContext, ValidationErrorCollector validationErrorCollector, VariablesTypesMatcher variablesTypesMatcher) {
         super(validationContext, validationErrorCollector);
         setVisitFragmentSpreads(true);
         this.variablesTypesMatcher = variablesTypesMatcher;
