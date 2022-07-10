@@ -22,11 +22,13 @@ public class ValidationError implements GraphQLError {
     private final List<String> queryPath;
     private final Map<String, Object> extensions;
 
+    @Deprecated
     public ValidationError(ValidationErrorClassification validationErrorType) {
         this(newValidationError()
                 .validationErrorType(validationErrorType));
     }
 
+    @Deprecated
     public ValidationError(ValidationErrorClassification validationErrorType, SourceLocation sourceLocation, String description) {
         this(newValidationError()
                 .validationErrorType(validationErrorType)
@@ -34,6 +36,7 @@ public class ValidationError implements GraphQLError {
                 .description(description));
     }
 
+    @Deprecated
     public ValidationError(ValidationErrorType validationErrorType, SourceLocation sourceLocation, String description, List<String> queryPath) {
         this(newValidationError()
                 .validationErrorType(validationErrorType)
@@ -42,6 +45,7 @@ public class ValidationError implements GraphQLError {
                 .queryPath(queryPath));
     }
 
+    @Deprecated
     public ValidationError(ValidationErrorType validationErrorType, List<SourceLocation> sourceLocations, String description) {
         this(newValidationError()
                 .validationErrorType(validationErrorType)
@@ -49,6 +53,7 @@ public class ValidationError implements GraphQLError {
                 .description(description));
     }
 
+    @Deprecated
     public ValidationError(ValidationErrorType validationErrorType, List<SourceLocation> sourceLocations, String description, List<String> queryPath) {
         this(newValidationError()
                 .validationErrorType(validationErrorType)
