@@ -25,7 +25,7 @@ public class AstPrinter {
 
     private final boolean compactMode;
 
-    private AstPrinter(boolean compactMode) {
+    protected AstPrinter(boolean compactMode) {
         this.compactMode = compactMode;
         printers.put(Argument.class, argument());
         printers.put(ArrayValue.class, value());
@@ -463,11 +463,11 @@ public class AstPrinter {
     }
 
     @SuppressWarnings("unchecked")
-    private <T extends Node> NodePrinter<T> _findPrinter(Node node) {
+    protected <T extends Node> NodePrinter<T> _findPrinter(Node node) {
         return _findPrinter(node, null);
     }
 
-    private <T extends Node> NodePrinter<T> _findPrinter(Node node, Class startClass) {
+    protected <T extends Node> NodePrinter<T> _findPrinter(Node node, Class startClass) {
         if (node == null) {
             return (out, type) -> {
             };
@@ -689,7 +689,7 @@ public class AstPrinter {
 
     /**
      * This will print the Ast node in graphql language format in a compact manner, with no new lines
-     * and comments stripped out of the text.
+     * and descriptions stripped out of the text.
      *
      * @param node the AST node to print
      *
@@ -712,7 +712,16 @@ public class AstPrinter {
      *
      * @param <T> the type of node
      */
-    private interface NodePrinter<T extends Node> {
+    protected interface NodePrinter<T extends Node> {
         void print(StringBuilder out, T node);
+    }
+
+    /**
+     * Allow subclasses to replace a printer for a specific {@link Node}
+     * @param nodeClass the class of the {@link Node}
+     * @param nodePrinter the custom {@link NodePrinter}
+     */
+    protected void replacePrinter(Class<? extends Node> nodeClass, NodePrinter<? extends Node> nodePrinter) {
+        this.printers.put(nodeClass, nodePrinter);
     }
 }
