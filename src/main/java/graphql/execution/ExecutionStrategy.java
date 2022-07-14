@@ -126,7 +126,6 @@ public abstract class ExecutionStrategy {
     private static final Logger log = LoggerFactory.getLogger(ExecutionStrategy.class);
     private static final Logger logNotSafe = LogKit.getNotPrivacySafeLogger(ExecutionStrategy.class);
 
-    protected final ValuesResolver valuesResolver = new ValuesResolver();
     protected final FieldCollector fieldCollector = new FieldCollector();
     protected final ExecutionStepInfoFactory executionStepInfoFactory = new ExecutionStepInfoFactory();
     private final ResolveType resolvedType = new ResolveType();
@@ -818,7 +817,7 @@ public abstract class ExecutionStrategy {
         if (!fieldArgDefs.isEmpty()) {
             List<Argument> fieldArgs = field.getArguments();
             GraphQLCodeRegistry codeRegistry = executionContext.getGraphQLSchema().getCodeRegistry();
-            argumentValues = FpKit.intraThreadMemoize(() -> valuesResolver.getArgumentValues(codeRegistry, fieldArgDefs, fieldArgs, executionContext.getCoercedVariables()));
+            argumentValues = FpKit.intraThreadMemoize(() -> ValuesResolver.getArgumentValues(codeRegistry, fieldArgDefs, fieldArgs, executionContext.getCoercedVariables()));
         }
 
 
