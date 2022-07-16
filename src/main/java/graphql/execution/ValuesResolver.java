@@ -70,6 +70,9 @@ import static java.util.stream.Collectors.toList;
 @Internal
 public class ValuesResolver {
 
+    private ValuesResolver() {
+    }
+
     public enum ValueMode {
         LITERAL,
         NORMALIZED
