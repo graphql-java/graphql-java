@@ -56,7 +56,6 @@ import static java.util.Collections.singletonList;
 @Internal
 public class ExecutableNormalizedOperationFactory {
 
-    private final ValuesResolver valuesResolver = new ValuesResolver();
     private final ConditionalNodes conditionalNodes = new ConditionalNodes();
 
     public static ExecutableNormalizedOperation createExecutableNormalizedOperation(GraphQLSchema graphQLSchema,
@@ -89,8 +88,8 @@ public class ExecutableNormalizedOperationFactory {
     ) {
 
         List<VariableDefinition> variableDefinitions = operationDefinition.getVariableDefinitions();
-        CoercedVariables coercedVariableValues = valuesResolver.coerceVariableValues(graphQLSchema, variableDefinitions, rawVariables);
-        Map<String, NormalizedInputValue> normalizedVariableValues = valuesResolver.getNormalizedVariableValues(graphQLSchema, variableDefinitions, rawVariables);
+        CoercedVariables coercedVariableValues = ValuesResolver.coerceVariableValues(graphQLSchema, variableDefinitions, rawVariables);
+        Map<String, NormalizedInputValue> normalizedVariableValues = ValuesResolver.getNormalizedVariableValues(graphQLSchema, variableDefinitions, rawVariables);
         return createNormalizedQueryImpl(graphQLSchema, operationDefinition, fragments, coercedVariableValues, normalizedVariableValues);
     }
 
@@ -305,10 +304,10 @@ public class ExecutableNormalizedOperationFactory {
         String fieldName = field.getName();
         GraphQLFieldDefinition fieldDefinition = Introspection.getFieldDef(parameters.getGraphQLSchema(), objectTypes.iterator().next(), fieldName);
 
-        Map<String, Object> argumentValues = valuesResolver.getArgumentValues(fieldDefinition.getArguments(), field.getArguments(),CoercedVariables.of(parameters.getCoercedVariableValues()));
+        Map<String, Object> argumentValues = ValuesResolver.getArgumentValues(fieldDefinition.getArguments(), field.getArguments(),CoercedVariables.of(parameters.getCoercedVariableValues()));
         Map<String, NormalizedInputValue> normalizedArgumentValues = null;
         if (parameters.getNormalizedVariableValues() != null) {
-            normalizedArgumentValues = valuesResolver.getNormalizedArgumentValues(fieldDefinition.getArguments(), field.getArguments(), parameters.getNormalizedVariableValues());
+            normalizedArgumentValues = ValuesResolver.getNormalizedArgumentValues(fieldDefinition.getArguments(), field.getArguments(), parameters.getNormalizedVariableValues());
         }
         ImmutableList<String> objectTypeNames = map(objectTypes, GraphQLObjectType::getName);
 
