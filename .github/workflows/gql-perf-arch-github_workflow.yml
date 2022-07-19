@@ -1,0 +1,70 @@
+name: gql-perf-arch-github_workflow
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+    inputs:
+      COMMIT_HASH_INPUT:
+        description: 'Commit hash'
+        required: true
+      CLASSES_TO_EXECUTE_INPUT:
+        description: 'Classes to test'
+        required: false
+      PULL_REQUEST_NUMBER_INPUT:
+        description: 'Pull request number'
+        required: false
+env:
+  #Actions secrets (keys)
+  PROJECT_ID: ${{ secrets.PROJECT_ID }}
+  QUEUE_ID: ${{ secrets.QUEUE_ID }}
+  LOCATION: ${{ secrets.LOCATION }}
+  WORKFLOW_URL: ${{ secrets.WORKFLOW_URL }}
+  SERVICE_ACCOUNT_EMAIL: ${{ secrets.SERVICE_ACCOUNT_EMAIL }}
+  #Payload variables
+  COMMIT_HASH: ${{ (github.sha) }}
+  CLASSES: ${{ (github.event.inputs.CLASSES_TO_EXECUTE_INPUT) }}
+  PULL_REQUEST_NUMBER: ${{ (github.event.inputs.PULL_REQUEST_NUMBER_INPUT) }}
+jobs:
+  push_action:
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'push' }}
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '14'
+      - run: npm install
+      - run: npm i yenv
+      - run: npm i uuid
+
+      - id: 'auth'
+        name: 'Authenticate to Google Cloud'
+        uses: google-github-actions/auth@v0.4.0
+        with:
+          credentials_json: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}
+
+      - name: Execute JS script
+        run: node google_cloud_http_target_task.js
+
+  workflow_dispatch_action:
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'workflow_dispatch' }}
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+            node-version: '14'
+      - run: npm install
+      - run: npm i yenv
+      - run: npm install uuid
+      - run: echo "COMMIT_HASH=${{ (github.event.inputs.COMMIT_HASH_INPUT) }} " >> $GITHUB_ENV
+
+      - id: 'auth'
+        name: 'Authenticate to Google Cloud'
+        uses: google-github-actions/auth@v0.4.0
+        with:
+          credentials_json: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}
+
+      - name: Execute JS script
+        run: node google_cloud_http_target_task.js
