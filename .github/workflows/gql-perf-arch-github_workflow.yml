@@ -2,7 +2,7 @@ name: gql-perf-arch-github_workflow
 on:
   push:
     branches:
-      - main
+      - master
   workflow_dispatch:
     inputs:
       COMMIT_HASH_INPUT:

@@ -14,9 +14,7 @@
     "@google-cloud/tasks": "^3.0.0",
     "body-parser": "^1.18.3",
     "express": "^4.16.3",
-    "yenv": "^3.0.1"
-  },
-  "devDependencies": {
+    "yenv": "^3.0.1",
     "uuid": "^8.0.0"
   }
 }
