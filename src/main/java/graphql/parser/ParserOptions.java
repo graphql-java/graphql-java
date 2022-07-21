@@ -65,6 +65,18 @@ public class ParserOptions {
         defaultJvmParserOptions = assertNotNull(options);
     }
 
+    /**
+     * This will return the passed in parser options or the system-wide default ones if they
+     * are null
+     *
+     * @param parserOptions the options to check
+     *
+     * @return a non-null set of parser options
+     */
+    public static ParserOptions orDefaultOnes(ParserOptions parserOptions) {
+        return parserOptions == null ? getDefaultParserOptions() : parserOptions;
+    }
+
     private final boolean captureIgnoredChars;
     private final boolean captureSourceLocation;
     private final boolean captureLineComments;

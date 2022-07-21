@@ -96,7 +96,7 @@ public class GraphqlAntlrToLanguage {
     public GraphqlAntlrToLanguage(CommonTokenStream tokens, MultiSourceReader multiSourceReader, ParserOptions parserOptions) {
         this.tokens = tokens;
         this.multiSourceReader = multiSourceReader;
-        this.parserOptions = parserOptions == null ? ParserOptions.getDefaultParserOptions() : parserOptions;
+        this.parserOptions = ParserOptions.orDefaultOnes(parserOptions);
     }
 
     public ParserOptions getParserOptions() {
