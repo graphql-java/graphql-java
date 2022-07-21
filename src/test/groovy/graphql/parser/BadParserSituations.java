@@ -16,6 +16,7 @@ import java.io.OutputStream;
 import java.io.PrintStream;
 import java.time.Duration;
 import java.util.List;
+import java.util.function.Function;
 
 import static graphql.schema.idl.RuntimeWiring.newRuntimeWiring;
 
@@ -31,27 +32,40 @@ public class BadParserSituations {
 
         System.setErr(toDevNull());
 
-        for (int runNumber = 1; runNumber <=2; runNumber++) {
+        for (int runNumber = 1; runNumber <= 2; runNumber++) {
             // on the second run - have unlimited tokens
             if (runNumber > 1) {
                 ParserOptions unlimitedTokens = ParserOptions.getDefaultParserOptions().transform(builder -> builder.maxTokens(Integer.MAX_VALUE));
                 ParserOptions.setDefaultParserOptions(unlimitedTokens);
             }
-            runScenarios("Whitespace Bad Payloads",runNumber, Strings.repeat(" ", 10), graphQL);
-            runScenarios("Grammar Directives Bad Payloads",runNumber, "@lol", graphQL);
-            runScenarios("Grammar Field Bad Payloads",runNumber, "f(id:null)", graphQL);
+            runScenarios("Comment Bad Payloads", runNumber, graphQL, howMany -> {
+                String repeatedPayload = Strings.repeat("# some comment\n", howMany);
+                String query = repeatedPayload + "\nquery q {__typename }";
+                return query;
+            });
+            runScenarios("Whitespace Bad Payloads", runNumber, graphQL, howMany -> {
+                String repeatedPayload = Strings.repeat("          ", howMany);
+                return "query {__typename " + repeatedPayload + " }";
+            });
+            runScenarios("Grammar Directives Bad Payloads", runNumber, graphQL, howMany -> {
+                String repeatedPayload = Strings.repeat("@lol", howMany);
+                return "query {__typename " + repeatedPayload + " }";
+            });
+            runScenarios("Grammar Field Bad Payloads", runNumber, graphQL, howMany -> {
+                String repeatedPayload = Strings.repeat("f(id:null)", howMany);
+                return "query {__typename " + repeatedPayload + " }";
+            });
 
         }
 
     }
 
-    private static void runScenarios(String scenarioName, int runNumber, String badPayload, GraphQL graphQL) {
+    private static void runScenarios(String scenarioName, int runNumber, GraphQL graphQL, Function<Integer, String> queryGenerator) {
         long maxRuntime = 0;
         for (int i = 1; i < CHECKS_AMOUNT; i++) {
 
             int howManyBadPayloads = i * STEP;
-            String repeatedPayload = Strings.repeat(badPayload, howManyBadPayloads);
-            String query = "query {__typename " + repeatedPayload + " }";
+            String query = queryGenerator.apply(howManyBadPayloads);
 
             ExecutionInput executionInput = ExecutionInput.newExecutionInput().query(query).build();
             long startTime = System.nanoTime();
