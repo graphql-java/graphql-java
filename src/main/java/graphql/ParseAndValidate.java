@@ -81,6 +81,18 @@ public class ParseAndValidate {
     }
 
     /**
+     * This can be called to validate a parsed graphql query, with the JVM default locale.
+     *
+     * @param graphQLSchema  the graphql schema to validate against
+     * @param parsedDocument the previously parsed document
+     *
+     * @return a result object that indicates how this operation went
+     */
+    public static List<ValidationError> validate(GraphQLSchema graphQLSchema, Document parsedDocument) {
+        return validate(graphQLSchema, parsedDocument, ruleClass -> true, Locale.getDefault());
+    }
+
+    /**
      * This can be called to validate a parsed graphql query.
      *
      * @param graphQLSchema  the graphql schema to validate against
@@ -93,5 +105,19 @@ public class ParseAndValidate {
     public static List<ValidationError> validate(GraphQLSchema graphQLSchema, Document parsedDocument, Predicate<Class<?>> rulePredicate, Locale locale) {
         Validator validator = new Validator();
         return validator.validateDocument(graphQLSchema, parsedDocument, rulePredicate, locale);
+    }
+
+    /**
+     * This can be called to validate a parsed graphql query, with the JVM default locale.
+     *
+     * @param graphQLSchema  the graphql schema to validate against
+     * @param parsedDocument the previously parsed document
+     * @param rulePredicate  this predicate is used to decide what validation rules will be applied
+     *
+     * @return a result object that indicates how this operation went
+     */
+    public static List<ValidationError> validate(GraphQLSchema graphQLSchema, Document parsedDocument, Predicate<Class<?>> rulePredicate) {
+        Validator validator = new Validator();
+        return validator.validateDocument(graphQLSchema, parsedDocument, rulePredicate, Locale.getDefault());
     }
 }
