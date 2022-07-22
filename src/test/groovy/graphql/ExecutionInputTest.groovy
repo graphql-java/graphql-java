@@ -85,6 +85,14 @@ class ExecutionInputTest extends Specification {
         executionInput.graphQLContext instanceof GraphQLContext
     }
 
+    def "locale defaults to JVM default"() {
+        when:
+        def executionInput = ExecutionInput.newExecutionInput().query(query)
+                .build()
+        then:
+        executionInput.getLocale() == Locale.getDefault()
+    }
+
     def "transform works and copies values"() {
         when:
         def executionInputOld = ExecutionInput.newExecutionInput().query(query)
