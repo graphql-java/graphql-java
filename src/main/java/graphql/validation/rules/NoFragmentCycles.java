@@ -11,12 +11,13 @@ import graphql.validation.DocumentVisitor;
 import graphql.validation.LanguageTraversal;
 import graphql.validation.ValidationContext;
 import graphql.validation.ValidationErrorCollector;
-import graphql.validation.ValidationErrorType;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+
+import static graphql.validation.ValidationErrorType.FragmentCycle;
 
 @Internal
 public class NoFragmentCycles extends AbstractRule {
@@ -70,7 +71,7 @@ public class NoFragmentCycles extends AbstractRule {
     private void detectCycleRecursive(String fragmentName, String initialName, List<FragmentSpread> spreadPath) {
         List<FragmentSpread> fragmentSpreads = this.fragmentSpreads.get(fragmentName);
         if (fragmentSpreads == null) {
-            // KnownFragmentNames will have picked this up.  Lets not NPE
+            // KnownFragmentNames will have picked this up.  Let's not NPE
             return;
         }
 
@@ -78,8 +79,8 @@ public class NoFragmentCycles extends AbstractRule {
         for (FragmentSpread fragmentSpread : fragmentSpreads) {
 
             if (fragmentSpread.getName().equals(initialName)) {
-                String message = "Fragment cycles not allowed";
-                addError(ValidationErrorType.FragmentCycle, spreadPath, message);
+                String message = i18n(FragmentCycle, "NoFragmentCycles.cyclesNotAllowed");
+                addError(FragmentCycle, spreadPath, message);
                 continue;
             }
             for (FragmentSpread spread : spreadPath) {

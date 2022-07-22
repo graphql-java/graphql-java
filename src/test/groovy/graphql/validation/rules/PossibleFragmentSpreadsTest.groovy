@@ -1,5 +1,6 @@
 package graphql.validation.rules
 
+import graphql.i18n.I18n
 import graphql.language.Document
 import graphql.parser.Parser
 import graphql.validation.LanguageTraversal
@@ -15,7 +16,8 @@ class PossibleFragmentSpreadsTest extends Specification {
 
     def traverse(String query) {
         Document document = new Parser().parseDocument(query)
-        ValidationContext validationContext = new ValidationContext(Harness.Schema, document)
+        I18n i18n = I18n.i18n(I18n.BundleType.Validation, Locale.ENGLISH)
+        ValidationContext validationContext = new ValidationContext(Harness.Schema, document, i18n)
         PossibleFragmentSpreads possibleFragmentSpreads = new PossibleFragmentSpreads(validationContext, errorCollector)
         LanguageTraversal languageTraversal = new LanguageTraversal()
 
@@ -179,7 +181,7 @@ class PossibleFragmentSpreadsTest extends Specification {
 
         then:
         errorCollector.getErrors().size() == 1
-        errorCollector.getErrors().get(0).message == 'Validation error of type InvalidFragmentType: Fragment cannot be spread here as objects of type Cat can never be of type Dog @ \'invalidObjectWithinObjectAnon\''
+        errorCollector.getErrors().get(0).message == "Validation error (InvalidFragmentType@[invalidObjectWithinObjectAnon]) : Fragment cannot be spread here as objects of type 'Cat' can never be of type 'Dog'"
     }
 
     def 'object into not implementing interface'() {
@@ -192,7 +194,7 @@ class PossibleFragmentSpreadsTest extends Specification {
 
         then:
         errorCollector.getErrors().size() == 1
-        errorCollector.getErrors().get(0).message == 'Validation error of type InvalidFragmentType: Fragment humanFragment cannot be spread here as objects of type Pet can never be of type Human @ \'invalidObjectWithinInterface\''
+        errorCollector.getErrors().get(0).message == "Validation error (InvalidFragmentType@[invalidObjectWithinInterface]) : Fragment 'humanFragment' cannot be spread here as objects of type 'Pet' can never be of type 'Human'"
     }
 
     def 'object into not containing union'() {
