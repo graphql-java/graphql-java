@@ -324,7 +324,8 @@ public class Parser {
         SourceLocation sourceLocation = null;
         String offendingToken = null;
         if (token != null) {
-            tokenType = token.getChannel() == CHANNEL_IGNORED_CHARS ? "whitespace" : tokenType;
+            int channel = token.getChannel();
+            tokenType = channel == CHANNEL_IGNORED_CHARS ? "whitespace" : (channel == CHANNEL_COMMENTS ? "comments" : "grammar");
 
             offendingToken = token.getText();
             sourceLocation = AntlrHelper.createSourceLocation(multiSourceReader, token.getLine(), token.getCharPositionInLine());
