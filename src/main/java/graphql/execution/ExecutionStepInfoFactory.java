@@ -17,17 +17,13 @@ import java.util.function.Supplier;
 @Internal
 public class ExecutionStepInfoFactory {
 
-
-    ValuesResolver valuesResolver = new ValuesResolver();
-
-
     public ExecutionStepInfo newExecutionStepInfoForSubField(ExecutionContext executionContext, MergedField mergedField, ExecutionStepInfo parentInfo) {
         GraphQLObjectType parentType = (GraphQLObjectType) parentInfo.getUnwrappedNonNullType();
         GraphQLFieldDefinition fieldDefinition = Introspection.getFieldDef(executionContext.getGraphQLSchema(), parentType, mergedField.getName());
         GraphQLOutputType fieldType = fieldDefinition.getType();
         List<Argument> fieldArgs = mergedField.getArguments();
         GraphQLCodeRegistry codeRegistry = executionContext.getGraphQLSchema().getCodeRegistry();
-        Supplier<Map<String, Object>> argumentValues = FpKit.intraThreadMemoize(() -> valuesResolver.getArgumentValues(codeRegistry, fieldDefinition.getArguments(), fieldArgs, executionContext.getCoercedVariables()));
+        Supplier<Map<String, Object>> argumentValues = FpKit.intraThreadMemoize(() -> ValuesResolver.getArgumentValues(codeRegistry, fieldDefinition.getArguments(), fieldArgs, executionContext.getCoercedVariables()));
 
         ResultPath newPath = parentInfo.getPath().segment(mergedField.getResultKey());
 
