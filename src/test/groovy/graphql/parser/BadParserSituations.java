@@ -33,25 +33,29 @@ public class BadParserSituations {
         System.setErr(toDevNull());
 
         for (int runNumber = 1; runNumber <= 2; runNumber++) {
+            String runState = "Limited Tokens";
             // on the second run - have unlimited tokens
             if (runNumber > 1) {
-                ParserOptions unlimitedTokens = ParserOptions.getDefaultParserOptions().transform(builder -> builder.maxTokens(Integer.MAX_VALUE));
-                ParserOptions.setDefaultParserOptions(unlimitedTokens);
+                ParserOptions unlimitedTokens = ParserOptions.getDefaultQueryParserOptions().transform(
+                        builder -> builder.maxTokens(Integer.MAX_VALUE));
+                ParserOptions.setDefaultQueryParserOptions(unlimitedTokens);
+
+                runState = "Unlimited Tokens";
             }
-            runScenarios("Comment Bad Payloads", runNumber, graphQL, howMany -> {
+            runScenarios("Whitespace Bad Payloads", runState, graphQL, howMany -> {
+                String repeatedPayload = Strings.repeat("          ", howMany);
+                return "query {__typename " + repeatedPayload + " }";
+            });
+            runScenarios("Comment Bad Payloads", runState, graphQL, howMany -> {
                 String repeatedPayload = Strings.repeat("# some comment\n", howMany);
                 String query = repeatedPayload + "\nquery q {__typename }";
                 return query;
             });
-            runScenarios("Whitespace Bad Payloads", runNumber, graphQL, howMany -> {
-                String repeatedPayload = Strings.repeat("          ", howMany);
-                return "query {__typename " + repeatedPayload + " }";
-            });
-            runScenarios("Grammar Directives Bad Payloads", runNumber, graphQL, howMany -> {
+            runScenarios("Grammar Directives Bad Payloads", runState, graphQL, howMany -> {
                 String repeatedPayload = Strings.repeat("@lol", howMany);
                 return "query {__typename " + repeatedPayload + " }";
             });
-            runScenarios("Grammar Field Bad Payloads", runNumber, graphQL, howMany -> {
+            runScenarios("Grammar Field Bad Payloads", runState, graphQL, howMany -> {
                 String repeatedPayload = Strings.repeat("f(id:null)", howMany);
                 return "query {__typename " + repeatedPayload + " }";
             });
@@ -60,7 +64,7 @@ public class BadParserSituations {
 
     }
 
-    private static void runScenarios(String scenarioName, int runNumber, GraphQL graphQL, Function<Integer, String> queryGenerator) {
+    private static void runScenarios(String scenarioName, String runState, GraphQL graphQL, Function<Integer, String> queryGenerator) {
         long maxRuntime = 0;
         for (int i = 1; i < CHECKS_AMOUNT; i++) {
 
@@ -74,15 +78,15 @@ public class BadParserSituations {
 
             Duration duration = Duration.ofNanos(System.nanoTime() - startTime);
 
-            System.out.printf("%s(run #%d)(%d of %d) - | query length %d | bad payloads %d | duration %dms \n", scenarioName, runNumber, i, CHECKS_AMOUNT, query.length(), howManyBadPayloads, duration.toMillis());
+            System.out.printf("%s(%s)(%d of %d) - | query length %d | bad payloads %d | duration %dms \n", scenarioName, runState, i, CHECKS_AMOUNT, query.length(), howManyBadPayloads, duration.toMillis());
             printLastError(executionResult.getErrors());
 
             if (duration.toMillis() > maxRuntime) {
                 maxRuntime = duration.toMillis();
             }
         }
-        System.out.printf("%s(run #%d) - finished | max time was %s ms \n" +
-                "=======================\n\n", scenarioName, runNumber, maxRuntime);
+        System.out.printf("%s(%s) - finished | max time was %s ms \n" +
+                "=======================\n\n", scenarioName, runState, maxRuntime);
     }
 
     private static void printLastError(List<GraphQLError> errors) {

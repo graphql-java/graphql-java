@@ -77,6 +77,7 @@ import static graphql.collect.ImmutableKit.emptyList;
 import static graphql.collect.ImmutableKit.map;
 import static graphql.parser.StringValueParsing.parseSingleQuotedString;
 import static graphql.parser.StringValueParsing.parseTripleQuotedString;
+import static java.util.Optional.ofNullable;
 
 @Internal
 public class GraphqlAntlrToLanguage {
@@ -96,7 +97,7 @@ public class GraphqlAntlrToLanguage {
     public GraphqlAntlrToLanguage(CommonTokenStream tokens, MultiSourceReader multiSourceReader, ParserOptions parserOptions) {
         this.tokens = tokens;
         this.multiSourceReader = multiSourceReader;
-        this.parserOptions = ParserOptions.orDefaultOnes(parserOptions);
+        this.parserOptions = ofNullable(parserOptions).orElse(ParserOptions.getDefaultParserOptions());
     }
 
     public ParserOptions getParserOptions() {

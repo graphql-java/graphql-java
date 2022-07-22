@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.io.Reader;
 import java.io.UncheckedIOException;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 
@@ -224,7 +225,7 @@ public class Parser {
         });
 
         // default in the parser options if they are not set
-        parserOptions = ParserOptions.orDefaultOnes(parserOptions);
+        parserOptions = Optional.ofNullable(parserOptions).orElse(ParserOptions.getDefaultParserOptions());
 
         int maxTokens = parserOptions.getMaxTokens();
         Consumer<Token> onTooManyTokens = token -> throwCancelParseIfTooManyTokens(token, maxTokens, multiSourceReader);

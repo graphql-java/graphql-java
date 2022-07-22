@@ -28,17 +28,23 @@ public class ParserOptions {
             .captureSourceLocation(true)
             .captureLineComments(true)
             .maxTokens(MAX_QUERY_TOKENS) // to prevent a billion laughs style attacks, we set a default for graphql-java
+            .build();
 
+    private static ParserOptions defaultJvmQueryParserOptions = newParserOptions()
+            .captureIgnoredChars(false)
+            .captureSourceLocation(true)
+            .captureLineComments(false) // #comments are not useful in query parsing
+            .maxTokens(MAX_QUERY_TOKENS) // to prevent a billion laughs style attacks, we set a default for graphql-java
             .build();
 
     /**
-     * By default the Parser will not capture ignored characters.  A static holds this default
+     * By default, the Parser will not capture ignored characters.  A static holds this default
      * value in a JVM wide basis options object.
      *
      * Significant memory savings can be made if we do NOT capture ignored characters,
      * especially in SDL parsing.
      *
-     * @return the static default value on whether to capture ignored chars
+     * @return the static default JVM value
      *
      * @see graphql.language.IgnoredChar
      * @see graphql.language.SourceLocation
@@ -48,7 +54,20 @@ public class ParserOptions {
     }
 
     /**
-     * By default the Parser will not capture ignored characters.  A static holds this default
+     * By default, for query parsing, the Parser will not capture ignored characters and it will not capture line comments into AST
+     * elements .  A static holds this default value for query parsing in a JVM wide basis options object.
+     *
+     * @return the static default JVM value for query parsing
+     *
+     * @see graphql.language.IgnoredChar
+     * @see graphql.language.SourceLocation
+     */
+    public static ParserOptions getDefaultQueryParserOptions() {
+        return defaultJvmQueryParserOptions;
+    }
+
+    /**
+     * By default, the Parser will not capture ignored characters.  A static holds this default
      * value in a JVM wide basis options object.
      *
      * Significant memory savings can be made if we do NOT capture ignored characters,
@@ -66,16 +85,20 @@ public class ParserOptions {
     }
 
     /**
-     * This will return the passed in parser options or the system-wide default ones if they
-     * are null
+     * By default, the Parser will not capture ignored characters or line comments.  A static holds this default
+     * value in a JVM wide basis options object for query parsing.
      *
-     * @param parserOptions the options to check
+     * This static can be set to true to allow the behavior of version 16.x or before.
      *
-     * @return a non-null set of parser options
+     * @param options - the new default JVM parser options for query parsing
+     *
+     * @see graphql.language.IgnoredChar
+     * @see graphql.language.SourceLocation
      */
-    public static ParserOptions orDefaultOnes(ParserOptions parserOptions) {
-        return parserOptions == null ? getDefaultParserOptions() : parserOptions;
+    public static void setDefaultQueryParserOptions(ParserOptions options) {
+        defaultJvmQueryParserOptions = assertNotNull(options);
     }
+
 
     private final boolean captureIgnoredChars;
     private final boolean captureSourceLocation;
