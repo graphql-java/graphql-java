@@ -1,15 +1,13 @@
 const { CloudTasksClient } = require('@google-cloud/tasks');
-const yenv = require('yenv')
 const { v4: uuidv4 } = require('uuid');
 
-const parsedDocument = yenv('.github/workflows/gql-perf-arch-github_workflow.yml')
 const client = new CloudTasksClient();
 
 const constructPayload = () => {
   const jobId = String(uuidv4());
-  const commitHash = parsedDocument.COMMIT_HASH;
-  const classes = parsedDocument.CLASSES;
-  const pullRequestNumber = parsedDocument.PULL_REQUEST_NUMBER;
+  const commitHash = process.env.COMMIT_HASH;
+  const classes = process.env.CLASSES;
+  const pullRequestNumber = process.env.PULL_REQUEST_NUMBER;
 
   const payloadStructure = {
     "jobId": jobId,
@@ -42,11 +40,11 @@ const constructTask = (serviceAccountEmail, payload, url) => {
 }
 
 const createRequestBody = (payload) => {
-  const project = parsedDocument.PROJECT_ID;
-  const queue = parsedDocument.QUEUE_ID;
-  const location = parsedDocument.LOCATION;
-  const url = parsedDocument.WORKFLOW_URL;
-  const serviceAccountEmail = parsedDocument.SERVICE_ACCOUNT_EMAIL;
+  const project = process.env.PROJECT_ID;
+  const queue = process.env.QUEUE_ID;
+  const location = process.env.LOCATION;
+  const url = process.env.WORKFLOW_URL
+  const serviceAccountEmail = process.env.SERVICE_ACCOUNT_EMAIL;
   const requestBody = {
       "fullyQualifiedQueueName": client.queuePath(project, location, queue),
       "task": constructTask(serviceAccountEmail, payload, url)
@@ -54,11 +52,16 @@ const createRequestBody = (payload) => {
   return requestBody;
 }
 
-async function createHttpTaskWithToken() {
+const constructRequest = () => {
   const payloadStructure = constructPayload();
   const payload = formatPayload(payloadStructure);
   const requestBody = createRequestBody(payload);
   const request = { parent: requestBody.fullyQualifiedQueueName, task: requestBody.task };
+  return request;
+}
+
+async function createHttpTaskWithToken() {
+  const request = constructRequest();
   const [response] = await client.createTask(request);
   const name = response.name;
   console.log(`Created task ${name}`);

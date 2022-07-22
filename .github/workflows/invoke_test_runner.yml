@@ -1,4 +1,4 @@
-name: gql-perf-arch-github_workflow
+name: invoke_test_runner
 on:
   push:
     branches:
@@ -15,12 +15,11 @@ on:
         description: 'Pull request number'
         required: false
 env:
-  #Actions secrets (keys)
   PROJECT_ID: ${{ secrets.PROJECT_ID }}
   QUEUE_ID: ${{ secrets.QUEUE_ID }}
   LOCATION: ${{ secrets.LOCATION }}
-  WORKFLOW_URL: ${{ secrets.WORKFLOW_URL }}
   SERVICE_ACCOUNT_EMAIL: ${{ secrets.SERVICE_ACCOUNT_EMAIL }}
+  WORKFLOW_URL: ${{ secrets.WORKFLOW_URL }}
   #Payload variables
   COMMIT_HASH: ${{ (github.sha) }}
   CLASSES: ${{ (github.event.inputs.CLASSES_TO_EXECUTE_INPUT) }}
@@ -47,4 +46,4 @@ jobs:
           credentials_json: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}
 
       - name: Execute JS script
-        run: node .github/workflows/google_cloud_http_target_task.js
+        run: node .github/workflows/create_job.js
