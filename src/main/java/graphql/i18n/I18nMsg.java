@@ -30,7 +30,7 @@ public class I18nMsg {
         return msgArguments.toArray();
     }
 
-    public I18nMsg argumentAt(int index, Object argument) {
+    public I18nMsg addArgumentAt(int index, Object argument) {
         List<Object> newArgs = new ArrayList<>(this.msgArguments);
         newArgs.add(index, argument);
         return new I18nMsg(this.msgKey, newArgs);
