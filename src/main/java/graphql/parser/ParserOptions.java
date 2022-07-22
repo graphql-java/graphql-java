@@ -37,6 +37,7 @@ public class ParserOptions {
             .captureSourceLocation(true)
             .captureLineComments(true)
             .maxTokens(MAX_QUERY_TOKENS) // to prevent a billion laughs style attacks, we set a default for graphql-java
+            .maxWhitespaceTokens(MAX_WHITESPACE_TOKENS)
             .build();
 
     private static ParserOptions defaultJvmOperationParserOptions = newParserOptions()
@@ -44,6 +45,7 @@ public class ParserOptions {
             .captureSourceLocation(true)
             .captureLineComments(false) // #comments are not useful in query parsing
             .maxTokens(MAX_QUERY_TOKENS) // to prevent a billion laughs style attacks, we set a default for graphql-java
+            .maxWhitespaceTokens(MAX_WHITESPACE_TOKENS)
             .build();
 
     /**
