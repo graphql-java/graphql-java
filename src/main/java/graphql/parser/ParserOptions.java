@@ -23,8 +23,8 @@ public class ParserOptions {
      */
     public static final int MAX_QUERY_TOKENS = 15_000;
     /**
-     * Another graphql hacking vector is to send large amounts of whitespace in queries that burn lots of parsing CPU time and burn
-     * memory representing a document.  Whitespace token processing in ANTLR is 2 order of magnitude faster than grammar token processing
+     * Another graphql hacking vector is to send large amounts of whitespace in operations that burn lots of parsing CPU time and burn
+     * memory representing a document.  Whitespace token processing in ANTLR is 2 orders of magnitude faster than grammar token processing
      * however it still takes some time to happen.
      *
      * If you want to allow more, then {@link #setDefaultParserOptions(ParserOptions)} allows you to change this
@@ -163,7 +163,7 @@ public class ParserOptions {
     }
 
     /**
-     * A graphql hacking vector is to send nonsensical queries that burn lots of parsing CPU time and burn
+     * A graphql hacking vector is to send nonsensical queries that burn lots of parsing CPU time and burns
      * memory representing a document that won't ever execute.  To prevent this you can set a maximum number of parse
      * tokens that will be accepted before an exception is thrown and the parsing is stopped.
      *
@@ -175,7 +175,7 @@ public class ParserOptions {
 
     /**
      * A graphql hacking vector is to send larges amounts of whitespace that burn lots of parsing CPU time and burn
-     * memory representing a document.  To prevent this you can set a maximum number of whitepsace parse
+     * memory representing a document.  To prevent this you can set a maximum number of whitespace parse
      * tokens that will be accepted before an exception is thrown and the parsing is stopped.
      *
      * @return the maximum number of raw whitespace tokens the parser will accept, after which an exception will be thrown.
