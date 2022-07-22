@@ -75,6 +75,8 @@ import java.util.List;
 import static graphql.Assert.assertShouldNeverHappen;
 import static graphql.collect.ImmutableKit.emptyList;
 import static graphql.collect.ImmutableKit.map;
+import static graphql.parser.Parser.CHANNEL_COMMENTS;
+import static graphql.parser.Parser.CHANNEL_IGNORED_CHARS;
 import static graphql.parser.StringValueParsing.parseSingleQuotedString;
 import static graphql.parser.StringValueParsing.parseTripleQuotedString;
 import static java.util.Optional.ofNullable;
@@ -83,8 +85,6 @@ import static java.util.Optional.ofNullable;
 public class GraphqlAntlrToLanguage {
 
     private static final List<Comment> NO_COMMENTS = ImmutableKit.emptyList();
-    private static final int CHANNEL_COMMENTS = 2;
-    private static final int CHANNEL_IGNORED_CHARS = 3;
     private final CommonTokenStream tokens;
     private final MultiSourceReader multiSourceReader;
     private final ParserOptions parserOptions;

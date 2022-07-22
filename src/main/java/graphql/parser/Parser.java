@@ -1,5 +1,6 @@
 package graphql.parser;
 
+import graphql.Internal;
 import graphql.PublicApi;
 import graphql.language.Document;
 import graphql.language.Node;
@@ -26,8 +27,8 @@ import java.io.Reader;
 import java.io.UncheckedIOException;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
-import java.util.function.Consumer;
 
 /**
  * This can parse graphql syntax, both Query syntax and Schema Definition Language (SDL) syntax, into an
@@ -47,6 +48,11 @@ import java.util.function.Consumer;
  */
 @PublicApi
 public class Parser {
+
+    @Internal
+    public static final int CHANNEL_COMMENTS = 2;
+    @Internal
+    public static final int CHANNEL_IGNORED_CHARS = 3;
 
     /**
      * Parses a string input into a graphql AST {@link Document}
@@ -227,9 +233,12 @@ public class Parser {
         // default in the parser options if they are not set
         parserOptions = Optional.ofNullable(parserOptions).orElse(ParserOptions.getDefaultParserOptions());
 
+        // this lexer wrapper allows us to stop lexing when too many tokens are in place.  This prevents DOS attacks.
         int maxTokens = parserOptions.getMaxTokens();
-        Consumer<Token> onTooManyTokens = token -> throwCancelParseIfTooManyTokens(token, maxTokens, multiSourceReader);
-        SafeTokenSource safeTokenSource = new SafeTokenSource(lexer, maxTokens, onTooManyTokens);
+        int maxWhitespaceTokens = parserOptions.getMaxWhitespaceTokens();
+        BiConsumer<Integer, Token> onTooManyTokens = (maxTokenCount, token) -> throwCancelParseIfTooManyTokens(token, maxTokenCount, multiSourceReader);
+        SafeTokenSource safeTokenSource = new SafeTokenSource(lexer, maxTokens, maxWhitespaceTokens, onTooManyTokens);
+
         CommonTokenStream tokens = new CommonTokenStream(safeTokenSource);
 
         GraphqlParser parser = new GraphqlParser(tokens);
@@ -311,13 +320,16 @@ public class Parser {
     }
 
     private void throwCancelParseIfTooManyTokens(Token token, int maxTokens, MultiSourceReader multiSourceReader) throws ParseCancelledException {
-        String msg = String.format("More than %d parse tokens have been presented. To prevent Denial Of Service attacks, parsing has been cancelled.", maxTokens);
+        String tokenType  = "grammar";
         SourceLocation sourceLocation = null;
         String offendingToken = null;
         if (token != null) {
+            tokenType = token.getChannel() == CHANNEL_IGNORED_CHARS ? "whitespace" : tokenType;
+
             offendingToken = token.getText();
             sourceLocation = AntlrHelper.createSourceLocation(multiSourceReader, token.getLine(), token.getCharPositionInLine());
         }
+        String msg = String.format("More than %d %s tokens have been presented. To prevent Denial Of Service attacks, parsing has been cancelled.", maxTokens, tokenType);
         throw new ParseCancelledException(msg, sourceLocation, offendingToken);
     }
 

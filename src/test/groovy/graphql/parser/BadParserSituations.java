@@ -22,6 +22,10 @@ import static graphql.schema.idl.RuntimeWiring.newRuntimeWiring;
 
 /**
  * This is not a test - it's a program we can run to show the system reacts to certain bad inputs
+ *
+ * You can run this to discover scenarios and see what happens at what levels.
+ *
+ * I used this to help discover more on the behavior of ANTLR and its moving parts
  */
 public class BadParserSituations {
     static Integer STEP = 5000;
@@ -36,9 +40,9 @@ public class BadParserSituations {
             String runState = "Limited Tokens";
             // on the second run - have unlimited tokens
             if (runNumber > 1) {
-                ParserOptions unlimitedTokens = ParserOptions.getDefaultQueryParserOptions().transform(
-                        builder -> builder.maxTokens(Integer.MAX_VALUE));
-                ParserOptions.setDefaultQueryParserOptions(unlimitedTokens);
+                ParserOptions unlimitedTokens = ParserOptions.getDefaultOperationParserOptions().transform(
+                        builder -> builder.maxTokens(Integer.MAX_VALUE).maxWhitespaceTokens(Integer.MAX_VALUE));
+                ParserOptions.setDefaultOperationParserOptions(unlimitedTokens);
 
                 runState = "Unlimited Tokens";
             }

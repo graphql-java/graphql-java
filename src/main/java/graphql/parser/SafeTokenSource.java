@@ -8,6 +8,7 @@ import org.antlr.v4.runtime.TokenSource;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 /**
@@ -23,31 +24,45 @@ import java.util.function.Consumer;
  */
 @Internal
 public class SafeTokenSource implements TokenSource {
+
     private final TokenSource lexer;
     private final int maxTokens;
-    private final Consumer<Token> whenMaxTokensExceeded;
+    private final int maxWhitespaceTokens;
+    private final BiConsumer<Integer, Token> whenMaxTokensExceeded;
     private final Map<Integer, Integer> channelCounts;
 
-    public SafeTokenSource(TokenSource lexer, int maxTokens, Consumer<Token> whenMaxTokensExceeded) {
+    public SafeTokenSource(TokenSource lexer, int maxTokens, int maxWhitespaceTokens, BiConsumer<Integer, Token> whenMaxTokensExceeded) {
         this.lexer = lexer;
         this.maxTokens = maxTokens;
+        this.maxWhitespaceTokens = maxWhitespaceTokens;
         this.whenMaxTokensExceeded = whenMaxTokensExceeded;
         this.channelCounts = new HashMap<>();
     }
+
+
 
     @Override
     public Token nextToken() {
         Token token = lexer.nextToken();
         if (token != null) {
             int channel = token.getChannel();
-            Integer currentCount = channelCounts.getOrDefault(channel, 0);
+            int currentCount = channelCounts.getOrDefault(channel, 0);
             currentCount = currentCount + 1;
-            if (currentCount > maxTokens) {
-                whenMaxTokensExceeded.accept(token);
+            if (channel == Parser.CHANNEL_IGNORED_CHARS) {
+                // whitespace gets its own max count
+                callbackIfMaxExceeded(maxWhitespaceTokens, currentCount, token);
+            } else {
+                callbackIfMaxExceeded(maxTokens, currentCount, token);
             }
             channelCounts.put(channel, currentCount);
         }
         return token;
+    }
+
+    private void callbackIfMaxExceeded(int maxCount, int currentCount, Token token) {
+        if (currentCount > maxCount) {
+            whenMaxTokensExceeded.accept(maxCount,token);
+        }
     }
 
     @Override

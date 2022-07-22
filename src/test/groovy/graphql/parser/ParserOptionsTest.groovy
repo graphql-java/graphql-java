@@ -4,53 +4,57 @@ import spock.lang.Specification
 
 class ParserOptionsTest extends Specification {
     static defaultOptions = ParserOptions.getDefaultParserOptions()
-    static defaultQueryOptions = ParserOptions.getDefaultQueryParserOptions()
+    static defaultOperationOptions = ParserOptions.getDefaultOperationParserOptions()
 
     void setup() {
         ParserOptions.setDefaultParserOptions(defaultOptions)
-        ParserOptions.setDefaultQueryParserOptions(defaultQueryOptions)
+        ParserOptions.setDefaultOperationParserOptions(defaultOperationOptions)
     }
 
     void cleanup() {
         ParserOptions.setDefaultParserOptions(defaultOptions)
-        ParserOptions.setDefaultQueryParserOptions(defaultQueryOptions)
+        ParserOptions.setDefaultOperationParserOptions(defaultOperationOptions)
     }
 
     def "lock in default settings"() {
         expect:
         defaultOptions.getMaxTokens() == 15_000
+        defaultOptions.getMaxWhitespaceTokens() == 200_000
         defaultOptions.isCaptureSourceLocation()
         defaultOptions.isCaptureLineComments()
         !defaultOptions.isCaptureIgnoredChars()
 
-        defaultQueryOptions.getMaxTokens() == 15_000
-        defaultQueryOptions.isCaptureSourceLocation()
-        !defaultQueryOptions.isCaptureLineComments()
-        !defaultQueryOptions.isCaptureIgnoredChars()
+        defaultOperationOptions.getMaxTokens() == 15_000
+        defaultOperationOptions.getMaxWhitespaceTokens() == 200_000
+        defaultOperationOptions.isCaptureSourceLocation()
+        !defaultOperationOptions.isCaptureLineComments()
+        !defaultOperationOptions.isCaptureIgnoredChars()
     }
 
     def "can set in new option JVM wide"() {
         def newDefaultOptions = defaultOptions.transform({ it.captureIgnoredChars(true) })
-        def newDefaultQueryOptions = defaultQueryOptions.transform({ it.captureIgnoredChars(true).captureLineComments(true) })
+        def newDefaultOperationOptions = defaultOperationOptions.transform(
+                { it.captureIgnoredChars(true).captureLineComments(true).maxWhitespaceTokens(300_000) })
 
         when:
         ParserOptions.setDefaultParserOptions(newDefaultOptions)
-        ParserOptions.setDefaultQueryParserOptions(newDefaultQueryOptions)
+        ParserOptions.setDefaultOperationParserOptions(newDefaultOperationOptions)
 
         def currentDefaultOptions = ParserOptions.getDefaultParserOptions()
-        def currentDefaultQueryOptions = ParserOptions.getDefaultQueryParserOptions()
+        def currentDefaultOperationOptions = ParserOptions.getDefaultOperationParserOptions()
 
         then:
 
         currentDefaultOptions.getMaxTokens() == 15_000
+        currentDefaultOptions.getMaxWhitespaceTokens() == 200_000
         currentDefaultOptions.isCaptureSourceLocation()
         currentDefaultOptions.isCaptureLineComments()
         currentDefaultOptions.isCaptureIgnoredChars()
 
-        currentDefaultQueryOptions.getMaxTokens() == 15_000
-        currentDefaultQueryOptions.isCaptureSourceLocation()
-        currentDefaultQueryOptions.isCaptureLineComments()
-        currentDefaultQueryOptions.isCaptureIgnoredChars()
-
+        currentDefaultOperationOptions.getMaxTokens() == 15_000
+        currentDefaultOperationOptions.getMaxWhitespaceTokens() == 300_000
+        currentDefaultOperationOptions.isCaptureSourceLocation()
+        currentDefaultOperationOptions.isCaptureLineComments()
+        currentDefaultOperationOptions.isCaptureIgnoredChars()
     }
 }

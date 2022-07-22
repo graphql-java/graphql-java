@@ -13,15 +13,24 @@ import static graphql.Assert.assertNotNull;
 public class ParserOptions {
 
     /**
-     * An graphql hacking vector is to send nonsensical queries that burn lots of parsing CPU time and burn
-     * memory representing a document that wont ever execute.  To prevent this for most users, graphql-java
+     * A graphql hacking vector is to send nonsensical queries that burn lots of parsing CPU time and burn
+     * memory representing a document that won't ever execute.  To prevent this for most users, graphql-java
      * set this value to 15000.  ANTLR parsing time is linear to the number of tokens presented.  The more you
      * allow the longer it takes.
      *
      * If you want to allow more, then {@link #setDefaultParserOptions(ParserOptions)} allows you to change this
      * JVM wide.
      */
-    public static final int MAX_QUERY_TOKENS = 15000;
+    public static final int MAX_QUERY_TOKENS = 15_000;
+    /**
+     * Another graphql hacking vector is to send large amounts of whitespace in queries that burn lots of parsing CPU time and burn
+     * memory representing a document.  Whitespace token processing in ANTLR is 2 order of magnitude faster than grammar token processing
+     * however it still takes some time to happen.
+     *
+     * If you want to allow more, then {@link #setDefaultParserOptions(ParserOptions)} allows you to change this
+     * JVM wide.
+     */
+    public static final int MAX_WHITESPACE_TOKENS = 200_000;
 
     private static ParserOptions defaultJvmParserOptions = newParserOptions()
             .captureIgnoredChars(false)
@@ -30,7 +39,7 @@ public class ParserOptions {
             .maxTokens(MAX_QUERY_TOKENS) // to prevent a billion laughs style attacks, we set a default for graphql-java
             .build();
 
-    private static ParserOptions defaultJvmQueryParserOptions = newParserOptions()
+    private static ParserOptions defaultJvmOperationParserOptions = newParserOptions()
             .captureIgnoredChars(false)
             .captureSourceLocation(true)
             .captureLineComments(false) // #comments are not useful in query parsing
@@ -54,16 +63,16 @@ public class ParserOptions {
     }
 
     /**
-     * By default, for query parsing, the Parser will not capture ignored characters and it will not capture line comments into AST
-     * elements .  A static holds this default value for query parsing in a JVM wide basis options object.
+     * By default, for operation parsing, the Parser will not capture ignored characters, and it will not capture line comments into AST
+     * elements .  A static holds this default value for operation parsing in a JVM wide basis options object.
      *
      * @return the static default JVM value for query parsing
      *
      * @see graphql.language.IgnoredChar
      * @see graphql.language.SourceLocation
      */
-    public static ParserOptions getDefaultQueryParserOptions() {
-        return defaultJvmQueryParserOptions;
+    public static ParserOptions getDefaultOperationParserOptions() {
+        return defaultJvmOperationParserOptions;
     }
 
     /**
@@ -86,17 +95,17 @@ public class ParserOptions {
 
     /**
      * By default, the Parser will not capture ignored characters or line comments.  A static holds this default
-     * value in a JVM wide basis options object for query parsing.
+     * value in a JVM wide basis options object for operation parsing.
      *
      * This static can be set to true to allow the behavior of version 16.x or before.
      *
-     * @param options - the new default JVM parser options for query parsing
+     * @param options - the new default JVM parser options for operation parsing
      *
      * @see graphql.language.IgnoredChar
      * @see graphql.language.SourceLocation
      */
-    public static void setDefaultQueryParserOptions(ParserOptions options) {
-        defaultJvmQueryParserOptions = assertNotNull(options);
+    public static void setDefaultOperationParserOptions(ParserOptions options) {
+        defaultJvmOperationParserOptions = assertNotNull(options);
     }
 
 
@@ -104,6 +113,7 @@ public class ParserOptions {
     private final boolean captureSourceLocation;
     private final boolean captureLineComments;
     private final int maxTokens;
+    private final int maxWhitespaceTokens;
     private final ParsingListener parsingListener;
 
     private ParserOptions(Builder builder) {
@@ -111,6 +121,7 @@ public class ParserOptions {
         this.captureSourceLocation = builder.captureSourceLocation;
         this.captureLineComments = builder.captureLineComments;
         this.maxTokens = builder.maxTokens;
+        this.maxWhitespaceTokens = builder.maxWhitespaceTokens;
         this.parsingListener = builder.parsingListener;
     }
 
@@ -162,6 +173,17 @@ public class ParserOptions {
         return maxTokens;
     }
 
+    /**
+     * A graphql hacking vector is to send larges amounts of whitespace that burn lots of parsing CPU time and burn
+     * memory representing a document.  To prevent this you can set a maximum number of whitepsace parse
+     * tokens that will be accepted before an exception is thrown and the parsing is stopped.
+     *
+     * @return the maximum number of raw whitespace tokens the parser will accept, after which an exception will be thrown.
+     */
+    public int getMaxWhitespaceTokens() {
+        return maxWhitespaceTokens;
+    }
+
     public ParsingListener getParsingListener() {
         return parsingListener;
     }
@@ -183,6 +205,7 @@ public class ParserOptions {
         private boolean captureLineComments = true;
         private int maxTokens = MAX_QUERY_TOKENS;
         private ParsingListener parsingListener = ParsingListener.NOOP;
+        private int maxWhitespaceTokens = MAX_WHITESPACE_TOKENS;
 
         Builder() {
         }
@@ -192,6 +215,7 @@ public class ParserOptions {
             this.captureSourceLocation = parserOptions.captureSourceLocation;
             this.captureLineComments = parserOptions.captureLineComments;
             this.maxTokens = parserOptions.maxTokens;
+            this.maxWhitespaceTokens = parserOptions.maxWhitespaceTokens;
             this.parsingListener = parserOptions.parsingListener;
         }
 
@@ -212,6 +236,11 @@ public class ParserOptions {
 
         public Builder maxTokens(int maxTokens) {
             this.maxTokens = maxTokens;
+            return this;
+        }
+
+        public Builder maxWhitespaceTokens(int maxWhitespaceTokens) {
+            this.maxWhitespaceTokens = maxWhitespaceTokens;
             return this;
         }
 

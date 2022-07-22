@@ -5,7 +5,7 @@ import org.antlr.v4.runtime.CharStreams
 import org.antlr.v4.runtime.Token
 import spock.lang.Specification
 
-import java.util.function.Consumer
+import java.util.function.BiConsumer
 
 class SafeTokenSourceTest extends Specification {
 
@@ -30,23 +30,24 @@ class SafeTokenSourceTest extends Specification {
         """)
         when:
         Token offendingToken = null
-        Consumer<Token> onToMany = { token ->
+        BiConsumer<Integer, Token> onTooManyTokens = { max, token ->
             offendingToken = token
-            throw new IllegalStateException("stop!")
+            throw new IllegalStateException("stop at $max")
         }
-        def tokenSource = new SafeTokenSource(graphqlLexer, 1000, onToMany)
+        def tokenSource = new SafeTokenSource(graphqlLexer, 50, 1000, onTooManyTokens)
 
         consumeAllTokens(tokenSource)
         assert false, "This is not meant to actually consume all tokens"
 
         then:
-        thrown(IllegalStateException)
+        def e = thrown(IllegalStateException)
+        e.message == "stop at 1000"
         offendingToken != null
         offendingToken.getChannel() == 3 // whitespace
         offendingToken.getText() == " "
     }
 
-    def "can call back to the consumer when max graphql tokens are encountered"() {
+    def "can call back to the consumer when max grammar tokens are encountered"() {
 
         def offendingText = "@lol" * 1000
         GraphqlLexer graphqlLexer = lexer("""
@@ -54,17 +55,18 @@ class SafeTokenSourceTest extends Specification {
         """)
         when:
         Token offendingToken = null
-        Consumer<Token> onToMany = { token ->
+        BiConsumer<Integer, Token> onTooManyTokens = { max, token ->
             offendingToken = token
-            throw new IllegalStateException("stop!")
+            throw new IllegalStateException("stop at $max")
         }
-        def tokenSource = new SafeTokenSource(graphqlLexer, 1000, onToMany)
+        def tokenSource = new SafeTokenSource(graphqlLexer, 1000, 200_000, onTooManyTokens)
 
         consumeAllTokens(tokenSource)
         assert false, "This is not meant to actually consume all tokens"
 
         then:
-        thrown(IllegalStateException)
+        def e = thrown(IllegalStateException)
+        e.message == "stop at 1000"
         offendingToken != null
         offendingToken.getChannel() == 0 // grammar
     }
@@ -76,11 +78,11 @@ class SafeTokenSourceTest extends Specification {
         """)
         when:
         Token offendingToken = null
-        Consumer<Token> onToMany = { token ->
+        BiConsumer<Integer, Token> onTooManyTokens = { max, token ->
             offendingToken = token
-            throw new IllegalStateException("stop!")
+            throw new IllegalStateException("stop at $max")
         }
-        def tokenSource = new SafeTokenSource(graphqlLexer, 1000, onToMany)
+        def tokenSource = new SafeTokenSource(graphqlLexer, 1000, 200_000, onTooManyTokens)
 
         consumeAllTokens(tokenSource)
 
