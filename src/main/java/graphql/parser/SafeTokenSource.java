@@ -33,7 +33,9 @@ public class SafeTokenSource implements TokenSource {
         this.maxTokens = maxTokens;
         this.maxWhitespaceTokens = maxWhitespaceTokens;
         this.whenMaxTokensExceeded = whenMaxTokensExceeded;
+        // this could be a Map<int,int> however we want it to be faster as possible.
         // we only have 3 channels - but they are 0,2 and 3 so use 5 for safety - still faster than a map get/put
+        // if we ever add another channel beyond 5 it will IOBEx during tests so future changes will be handled before release!
         this.channelCounts = new int[]{0, 0, 0, 0, 0};
     }
 
