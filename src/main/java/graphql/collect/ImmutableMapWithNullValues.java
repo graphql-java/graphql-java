@@ -36,7 +36,7 @@ public final class ImmutableMapWithNullValues<K, V> implements Map<K, V> {
      * Only used to construct the singleton empty map
      */
     private ImmutableMapWithNullValues() {
-        this(Collections.emptyMap());
+        this(ImmutableKit.emptyMap());
     }
 
 

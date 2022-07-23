@@ -7,10 +7,9 @@ import spock.lang.Specification
 
 class StarWarsValidationTest extends Specification {
 
-
-    List<ValidationError> validate(String query) {
+    static List<ValidationError> validate(String query) {
         def document = new Parser().parseDocument(query)
-        return new Validator().validateDocument(StarWarsSchema.starWarsSchema, document)
+        return new Validator().validateDocument(StarWarsSchema.starWarsSchema, document, Locale.ENGLISH)
     }
 
     def 'Validates a complex but valid query'() {

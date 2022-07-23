@@ -114,7 +114,7 @@ public class SchemaParser {
     private TypeDefinitionRegistry parseImpl(Reader schemaInput, ParserOptions parseOptions) {
         try {
             if (parseOptions == null) {
-                // for SDL we dont stop how many parser tokens there are - its not the attack vector
+                // for SDL we don't stop how many parser tokens there are - it's not the attack vector
                 // to be prevented compared to queries
                 parseOptions = ParserOptions.getDefaultParserOptions().transform(opts -> opts.maxTokens(Integer.MAX_VALUE));
             }

@@ -34,9 +34,11 @@ public class SchemaDirectiveWiringEnvironmentImpl<T extends GraphQLDirectiveCont
     private final GraphQLFieldsContainer fieldsContainer;
     private final GraphQLFieldDefinition fieldDefinition;
     private final GraphQLDirective registeredDirective;
+    private final GraphQLAppliedDirective registeredAppliedDirective;
 
-    public SchemaDirectiveWiringEnvironmentImpl(T element, List<GraphQLDirective> directives, List<GraphQLAppliedDirective> appliedDirectives, GraphQLDirective registeredDirective, SchemaGeneratorDirectiveHelper.Parameters parameters) {
+    public SchemaDirectiveWiringEnvironmentImpl(T element, List<GraphQLDirective> directives, List<GraphQLAppliedDirective> appliedDirectives, GraphQLAppliedDirective registeredAppliedDirective, GraphQLDirective registeredDirective, SchemaGeneratorDirectiveHelper.Parameters parameters) {
         this.element = element;
+        this.registeredAppliedDirective = registeredAppliedDirective;
         this.registeredDirective = registeredDirective;
         this.typeDefinitionRegistry = parameters.getTypeRegistry();
         this.directives = FpKit.getByName(directives, GraphQLDirective::getName);
@@ -57,6 +59,11 @@ public class SchemaDirectiveWiringEnvironmentImpl<T extends GraphQLDirectiveCont
     @Override
     public GraphQLDirective getDirective() {
         return registeredDirective;
+    }
+
+    @Override
+    public GraphQLAppliedDirective getAppliedDirective() {
+        return registeredAppliedDirective;
     }
 
     @Override

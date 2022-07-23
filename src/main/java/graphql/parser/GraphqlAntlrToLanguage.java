@@ -70,7 +70,6 @@ import org.antlr.v4.runtime.tree.TerminalNode;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import static graphql.Assert.assertShouldNeverHappen;
@@ -804,7 +803,7 @@ public class GraphqlAntlrToLanguage {
 
     private List<IgnoredChar> mapTokenToIgnoredChar(List<Token> tokens) {
         if (tokens == null) {
-            return Collections.emptyList();
+            return ImmutableKit.emptyList();
         }
         return map(tokens, this::createIgnoredChar);
 
@@ -888,7 +887,7 @@ public class GraphqlAntlrToLanguage {
         for (Token refTok : refChannel) {
             String text = refTok.getText();
             // we strip the leading hash # character but we don't trim because we don't
-            // know the "comment markup".  Maybe its space sensitive, maybe its not.  So
+            // know the "comment markup".  Maybe it's space sensitive, maybe it's not.  So
             // consumers can decide that
             if (text == null) {
                 continue;

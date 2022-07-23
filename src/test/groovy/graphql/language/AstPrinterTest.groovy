@@ -19,6 +19,16 @@ class AstPrinterTest extends Specification {
         AstPrinter.printAst(node)
     }
 
+    boolean isParseableAst(ast) {
+        try {
+            def document = parse(ast)
+            return document != null
+        } catch (Exception ignored) {
+            return false
+        }
+    }
+
+
     def starWarsSchema = """
 # objects can have comments
 # over a number of lines
@@ -199,7 +209,7 @@ scalar DateTime
         String output = printAst(document)
 
         expect:
-        output == """query {
+        output == """{
   empireHero: hero(episode: EMPIRE) {
     name
   }
@@ -235,7 +245,7 @@ fragment comparisonFields on Character {
         String output = printAst(document)
 
         expect:
-        output == """query {
+        output == """{
   leftComparison: hero(episode: EMPIRE) {
     ...comparisonFields
   }
@@ -291,6 +301,7 @@ query Hero($episode: Episode, $withFriends: Boolean!) {
         String output = printAst(document)
 
         expect:
+        isParseableAst(output)
         output == '''query Hero($episode: Episode, $withFriends: Boolean!) {
   hero(episode: $episode) {
     name @repeatable @repeatable
@@ -332,7 +343,39 @@ query HeroForEpisode($ep: Episode!) {
   }
 }
 '''
+        isParseableAst(output)
     }
+
+    def "ast printing of inline fragments in compactMode"() {
+        def query = '''
+query HeroForEpisode($ep: Episode!) {
+  hero(episode: $ep) {
+    name
+       ... on Droid {
+        primaryFunction
+        id
+     }
+         ... on Human {
+        height
+        id
+    }
+    age {
+      inMonths
+      inYears
+    }
+  }
+}'''
+        when:
+        def document = parse(query)
+        String output = AstPrinter.printAstCompact(document)
+
+        then:
+
+        isParseableAst(output)
+
+        output == 'query HeroForEpisode($ep:Episode!){hero(episode:$ep){name ...on Droid{primaryFunction id}...on Human{height id}age{inMonths inYears}}}'
+    }
+
 
 //-------------------------------------------------
     def "ast printing of default variables"() {
@@ -569,10 +612,10 @@ extend input Input @directive {
         def query = '''
     { 
         #comments go away
-        aliasOfFoo : foo(arg1 : "val1", args2 : "val2") @isCached { #   and this comment as well
+        aliasOfFoo : foo(arg1 : "val1", args2 : "val2") @isCached @orIsItNotCached     { #   and this comment as well
             hello
         } 
-        world @neverCache @okThenCache
+        world @neverCache @youSaidCache @okThenCache 
     }
     
     fragment FX on SomeType {
@@ -583,7 +626,17 @@ extend input Input @directive {
         String output = AstPrinter.printAstCompact(document)
 
         expect:
-        output == '''query {aliasOfFoo:foo(arg1:"val1",args2:"val2") @isCached {hello} world @neverCache @okThenCache} fragment FX on SomeType {aliased:field(withArgs:"argVal",andMoreArgs:"andMoreVals")}'''
+        isParseableAst(output)
+        output == '''{aliasOfFoo:foo(arg1:"val1",args2:"val2") @isCached@orIsItNotCached{hello}world @neverCache@youSaidCache@okThenCache} fragment FX on SomeType {aliased:field(withArgs:"argVal",andMoreArgs:"andMoreVals")}'''
+    }
+
+    def "can tighten fields with no query prefix"() {
+        when:
+        def doc = parse("{root { fooA{ midB{ leafB}} fooB{ midB{ leafB         }}}}")
+        def output = AstPrinter.printAstCompact(doc)
+        then:
+        isParseableAst(output)
+        output == "{root{fooA{midB{leafB}}fooB{midB{leafB}}}}"
     }
 
     def "print ast with inline fragment without type condition"() {
@@ -601,8 +654,8 @@ extend input Input @directive {
         String outputFull = AstPrinter.printAst(document)
 
         expect:
-        outputCompact == '''query {foo {... {hello}}}'''
-        outputFull == '''query {
+        outputCompact == '''{foo{...{hello}}}'''
+        outputFull == '''{
   foo {
     ... {
       hello
@@ -610,6 +663,8 @@ extend input Input @directive {
   }
 }
 '''
+        isParseableAst(outputCompact)
+        isParseableAst(outputFull)
     }
 
     def 'StringValue is converted to valid Strings'() {

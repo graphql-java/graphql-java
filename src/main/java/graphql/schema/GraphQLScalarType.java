@@ -17,8 +17,8 @@ import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertValidName;
+import static graphql.collect.ImmutableKit.emptyList;
 import static graphql.schema.SchemaElementChildrenContainer.newSchemaElementChildrenContainer;
-import static java.util.Collections.emptyList;
 
 /**
  * A scalar type is a leaf node in the graphql tree of types.  This class allows you to define new scalar types.
@@ -83,7 +83,7 @@ GraphQLScalarType implements GraphQLNamedInputType, GraphQLNamedOutputType, Grap
         return specifiedByUrl;
     }
 
-    public Coercing<?,?> getCoercing() {
+    public Coercing<?, ?> getCoercing() {
         return coercing;
     }
 

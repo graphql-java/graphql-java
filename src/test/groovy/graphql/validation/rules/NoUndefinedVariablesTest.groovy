@@ -1,6 +1,7 @@
 package graphql.validation.rules
 
 import graphql.TestUtil
+import graphql.i18n.I18n
 import graphql.language.Document
 import graphql.parser.Parser
 import graphql.validation.LanguageTraversal
@@ -15,7 +16,8 @@ class NoUndefinedVariablesTest extends Specification {
 
     def traverse(String query) {
         Document document = new Parser().parseDocument(query)
-        ValidationContext validationContext = new ValidationContext(TestUtil.dummySchema, document)
+        I18n i18n = I18n.i18n(I18n.BundleType.Validation, Locale.ENGLISH)
+        ValidationContext validationContext = new ValidationContext(TestUtil.dummySchema, document, i18n)
         NoUndefinedVariables noUndefinedVariables = new NoUndefinedVariables(validationContext, errorCollector)
         LanguageTraversal languageTraversal = new LanguageTraversal()
 
@@ -35,7 +37,7 @@ class NoUndefinedVariablesTest extends Specification {
 
         then:
         errorCollector.containsValidationError(ValidationErrorType.UndefinedVariable)
-
+        errorCollector.getErrors()[0].message == "Validation error (UndefinedVariable@[field]) : Undefined variable 'd'"
     }
 
     def "all variables defined"() {
@@ -106,6 +108,7 @@ class NoUndefinedVariablesTest extends Specification {
 
         then:
         errorCollector.containsValidationError(ValidationErrorType.UndefinedVariable)
+        errorCollector.getErrors()[0].message == "Validation error (UndefinedVariable@[FragA/field/FragB/field/FragC/field]) : Undefined variable 'c'"
     }
 
     def "floating fragment with variables"() {
@@ -157,6 +160,7 @@ class NoUndefinedVariablesTest extends Specification {
 
         then:
         errorCollector.containsValidationError(ValidationErrorType.UndefinedVariable)
+        errorCollector.getErrors()[0].message == "Validation error (UndefinedVariable@[A/field]) : Undefined variable 'a'"
     }
 
     def "multiple operations with undefined variables"() {
@@ -175,5 +179,6 @@ class NoUndefinedVariablesTest extends Specification {
 
         then:
         errorCollector.containsValidationError(ValidationErrorType.UndefinedVariable)
+        errorCollector.getErrors()[0].message == "Validation error (UndefinedVariable@[A/field]) : Undefined variable 'a'"
     }
 }

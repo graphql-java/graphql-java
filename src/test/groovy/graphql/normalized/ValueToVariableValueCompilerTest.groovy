@@ -5,10 +5,13 @@ import graphql.language.BooleanValue
 import graphql.language.EnumValue
 import graphql.language.FloatValue
 import graphql.language.IntValue
+import graphql.language.ListType
+import graphql.language.NonNullType
 import graphql.language.NullValue
 import graphql.language.ObjectField
 import graphql.language.ObjectValue
 import graphql.language.StringValue
+import graphql.language.TypeName
 import graphql.schema.idl.TypeUtil
 import spock.lang.Specification
 
@@ -85,6 +88,18 @@ class ValueToVariableValueCompilerTest extends Specification {
         // but for now this is what we do
     }
 
+    def "can handle NormalizedInputValue values that are NIV with null members"() {
+        expect:
+        def niv = new NormalizedInputValue("TypeName", value)
+        def actual = ValueToVariableValueCompiler.normalisedValueToVariableValue(niv)
+        actual == expected
+
+        where:
+        value                                                                                        | expected
+        [a: new NormalizedInputValue("X", IntValue.of(666)), b: new NormalizedInputValue("X", null)] | [a: 666, b: null]
+        [new NormalizedInputValue("X", IntValue.of(666)), new NormalizedInputValue("X", null)]       | [666, null]
+    }
+
 
     def "can print variables as expected"() {
         expect:
@@ -93,26 +108,27 @@ class ValueToVariableValueCompilerTest extends Specification {
         actual.value == expectedValue
         actual.variableReference.name == expectedVarName
         actual.definition.name == expectedVarName
-        TypeUtil.simplePrint(actual.definition.type) == typeName
+        // compare actual type
+        def actualType = actual.definition.type
+        actualType.isEqualTo(expectedType)
+        if (actualType instanceof NonNullType || actualType instanceof ListType) {
+            actualType.type.isEqualTo(expectedType.type)
+        }
+        TypeUtil.simplePrint(actualType) == typeName
 
         where:
-        value                            | varCount | typeName     | expectedValue     | expectedVarName
-        NullValue.newNullValue().build() | 1        | "ID"         | null              | "v1"
-        IntValue.of(666)                 | 2        | "Int!"       | 666               | "v2"
-        StringValue.of("str")            | 3        | "String"     | "str"             | "v3"
-        BooleanValue.of(true)            | 4        | "Boolean!"   | true              | "v4"
-        FloatValue.of(999d)              | 5        | "Float"      | 999d              | "v5"
-        EnumValue.of("enumValue")        | 6        | "Foo!"       | "enumValue"       | "v6"
-        ObjectValue.newObjectValue()
-                .objectField(ObjectField.newObjectField().name("a").value(IntValue.of(64)).build())
-                .objectField(ObjectField.newObjectField().name("b").value(StringValue.of("65")).build())
-                .build()                 | 7        | "ObjectType" | [a: 64, b: "65"]  | "v7"
-        ArrayValue.newArrayValue()
-                .value(IntValue.of(9))
-                .value(StringValue.of("10"))
-                .value(EnumValue.of("enum"))
-                .build()                 | 8        | "ArrayType"  | [9, "10", "enum"] | "v8"
-
+        value                            | varCount | typeName     | expectedValue     | expectedVarName | expectedType
+        NullValue.newNullValue().build() | 1        | "ID"         | null              | "v1"            | new TypeName("ID")
+        IntValue.of(666)                 | 2        | "Int!"       | 666               | "v2"            | new NonNullType(new TypeName("Int"))
+        StringValue.of("str")            | 3        | "String"     | "str"             | "v3"            | new TypeName("String")
+        BooleanValue.of(true)            | 4        | "Boolean!"   | true              | "v4"            | new NonNullType(new TypeName("Boolean"))
+        FloatValue.of(999d)              | 5        | "Float"      | 999d              | "v5"            | new TypeName("Float")
+        EnumValue.of("enumValue")        | 6        | "Foo!"       | "enumValue"       | "v6"            | new NonNullType(new TypeName("Foo"))
+        ["a": IntValue.of(64),
+         "b": IntValue.of(65)]           | 7        | "ObjectType" | [a: 64, b: 65]    | "v7"            | new TypeName("ObjectType")
+        [StringValue.of("9"),
+         StringValue.of("10"),
+         StringValue.of("11")]           | 8        | "[String]"   | ["9", "10", "11"] | "v8"            | new ListType((new TypeName("String")))
 
     }
 }

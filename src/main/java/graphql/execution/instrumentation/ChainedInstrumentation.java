@@ -352,6 +352,10 @@ public class ChainedInstrumentation implements Instrumentation {
             contexts.forEach(context -> context.onFieldValuesInfo(fieldValueInfoList));
         }
 
+        @Override
+        public void onFieldValuesException() {
+            contexts.forEach(ExecutionStrategyInstrumentationContext::onFieldValuesException);
+        }
     }
 
 }

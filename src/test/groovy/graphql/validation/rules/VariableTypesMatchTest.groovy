@@ -2,6 +2,7 @@ package graphql.validation.rules
 
 
 import graphql.StarWarsSchema
+import graphql.i18n.I18n
 import graphql.parser.Parser
 import graphql.validation.LanguageTraversal
 import graphql.validation.RulesVisitor
@@ -10,13 +11,14 @@ import graphql.validation.ValidationErrorCollector
 import graphql.validation.ValidationErrorType
 import spock.lang.Specification
 
-class VariableTypesMatchRuleTest extends Specification {
+class VariableTypesMatchTest extends Specification {
     ValidationErrorCollector errorCollector = new ValidationErrorCollector()
 
     def traverse(String query) {
         def document = Parser.parse(query)
-        def validationContext = new ValidationContext(StarWarsSchema.starWarsSchema, document)
-        def variableTypesMatchRule = new VariableTypesMatchRule(validationContext, errorCollector)
+        I18n i18n = I18n.i18n(I18n.BundleType.Validation, Locale.ENGLISH)
+        def validationContext = new ValidationContext(StarWarsSchema.starWarsSchema, document, i18n)
+        def variableTypesMatchRule = new VariableTypesMatch(validationContext, errorCollector)
         def languageTraversal = new LanguageTraversal()
         languageTraversal.traverse(document, new RulesVisitor(validationContext, [variableTypesMatchRule]))
     }
@@ -54,7 +56,7 @@ class VariableTypesMatchRuleTest extends Specification {
         then:
         errorCollector.containsValidationError(ValidationErrorType.VariableTypeMismatch)
         // #991: describe which types were mismatched in error message
-        errorCollector.errors[0].message.contains("Variable type 'String' doesn't match expected type 'String!'")
+        errorCollector.errors[0].message == "Validation error (VariableTypeMismatch@[human]) : Variable type 'String' does not match expected type 'String!'"
     }
 
     def "invalid variables in fragment spread"() {
@@ -76,7 +78,7 @@ class VariableTypesMatchRuleTest extends Specification {
 
         then:
         errorCollector.containsValidationError(ValidationErrorType.VariableTypeMismatch)
-        errorCollector.errors[0].message.contains("Variable type 'String' doesn't match expected type 'String!'")
+        errorCollector.errors[0].message == "Validation error (VariableTypeMismatch@[QueryType/human]) : Variable type 'String' does not match expected type 'String!'"
     }
 
     def "mixed validity operations, valid first"() {
@@ -102,7 +104,7 @@ class VariableTypesMatchRuleTest extends Specification {
 
         then:
         errorCollector.containsValidationError(ValidationErrorType.VariableTypeMismatch)
-        errorCollector.errors[0].message.contains("Variable type 'String' doesn't match expected type 'String!'")
+        errorCollector.errors[0].message == "Validation error (VariableTypeMismatch@[QueryType/human]) : Variable type 'String' does not match expected type 'String!'"
     }
 
     def "mixed validity operations, invalid first"() {
@@ -128,7 +130,7 @@ class VariableTypesMatchRuleTest extends Specification {
 
         then:
         errorCollector.containsValidationError(ValidationErrorType.VariableTypeMismatch)
-        errorCollector.errors[0].message.contains("Variable type 'String' doesn't match expected type 'String!'")
+        errorCollector.errors[0].message == "Validation error (VariableTypeMismatch@[QueryType/human]) : Variable type 'String' does not match expected type 'String!'"
     }
 
     def "multiple invalid operations"() {
@@ -156,11 +158,11 @@ class VariableTypesMatchRuleTest extends Specification {
         errorCollector.getErrors().size() == 2
         errorCollector.errors.any {
             it.validationErrorType == ValidationErrorType.VariableTypeMismatch &&
-                it.message.contains("Variable type 'String' doesn't match expected type 'String!'")
+                it.message == "Validation error (VariableTypeMismatch@[QueryType/human]) : Variable type 'String' does not match expected type 'String!'"
         }
         errorCollector.errors.any {
             it.validationErrorType == ValidationErrorType.VariableTypeMismatch &&
-                    it.message.contains("Variable type 'Boolean' doesn't match expected type 'String!'")
+                it.message == "Validation error (VariableTypeMismatch@[QueryType/human]) : Variable type 'Boolean' does not match expected type 'String!'"
         }
     }
 }

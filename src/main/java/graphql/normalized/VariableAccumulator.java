@@ -5,6 +5,7 @@ import graphql.language.VariableDefinition;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -52,10 +53,11 @@ public class VariableAccumulator {
      * @return the map of variable names to variable values
      */
     public Map<String, Object> getVariablesMap() {
-        return valueWithDefinitions.stream()
-                .collect(Collectors.toMap(
-                        variableWithDefinition -> variableWithDefinition.getDefinition().getName(),
-                        VariableValueWithDefinition::getValue
-                ));
+        Map<String, Object> map = new LinkedHashMap<>();
+        valueWithDefinitions.forEach(variableWithDefinition -> {
+            String name = variableWithDefinition.getDefinition().getName();
+            map.put(name, variableWithDefinition.getValue());
+        });
+        return map;
     }
 }

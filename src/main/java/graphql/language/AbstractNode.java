@@ -5,8 +5,8 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import graphql.Assert;
 import graphql.PublicApi;
+import graphql.collect.ImmutableKit;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -21,7 +21,7 @@ public abstract class AbstractNode<T extends Node> implements Node<T> {
     private final ImmutableMap<String, String> additionalData;
 
     public AbstractNode(SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars) {
-        this(sourceLocation, comments, ignoredChars, Collections.emptyMap());
+        this(sourceLocation, comments, ignoredChars, ImmutableKit.emptyMap());
     }
 
     public AbstractNode(SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars, Map<String, String> additionalData) {

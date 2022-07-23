@@ -1,6 +1,7 @@
 package graphql.validation.rules
 
 import graphql.TestUtil
+import graphql.i18n.I18n
 import graphql.language.Document
 import graphql.parser.Parser
 import graphql.validation.LanguageTraversal
@@ -17,7 +18,8 @@ class NoFragmentCyclesTest extends Specification {
 
     def traverse(String query) {
         Document document = new Parser().parseDocument(query)
-        ValidationContext validationContext = new ValidationContext(TestUtil.dummySchema, document)
+        I18n i18n = I18n.i18n(I18n.BundleType.Validation, Locale.ENGLISH)
+        ValidationContext validationContext = new ValidationContext(TestUtil.dummySchema, document, i18n)
         NoFragmentCycles noFragmentCycles = new NoFragmentCycles(validationContext, errorCollector)
         LanguageTraversal languageTraversal = new LanguageTraversal()
         languageTraversal.traverse(document, new RulesVisitor(validationContext, [noFragmentCycles]))
@@ -46,7 +48,6 @@ class NoFragmentCyclesTest extends Specification {
         traverse(query)
         then:
         errorCollector.getErrors().isEmpty()
-
     }
 
     def 'spreading twice indirectly is not circular'() {
@@ -81,7 +82,6 @@ class NoFragmentCyclesTest extends Specification {
         errorCollector.getErrors().isEmpty()
     }
 
-
     def "circular fragments"() {
         given:
         def query = """
@@ -93,6 +93,7 @@ class NoFragmentCyclesTest extends Specification {
         traverse(query)
         then:
         errorCollector.containsValidationError(ValidationErrorType.FragmentCycle)
+        errorCollector.getErrors()[0].message == "Validation error (FragmentCycle@[fragA]) : Fragment cycles not allowed"
     }
 
     def 'no spreading itself directly'() {
@@ -104,6 +105,7 @@ class NoFragmentCyclesTest extends Specification {
         traverse(query)
         then:
         errorCollector.containsValidationError(ValidationErrorType.FragmentCycle)
+        errorCollector.getErrors()[0].message == "Validation error (FragmentCycle@[fragA]) : Fragment cycles not allowed"
     }
 
     def "no spreading itself indirectly within inline fragment"() {
@@ -124,7 +126,7 @@ class NoFragmentCyclesTest extends Specification {
         traverse(query)
         then:
         errorCollector.containsValidationError(ValidationErrorType.FragmentCycle)
-
+        errorCollector.getErrors()[0].message == "Validation error (FragmentCycle@[fragA]) : Fragment cycles not allowed"
     }
 
     def "no spreading itself deeply two paths"() {
@@ -138,7 +140,7 @@ class NoFragmentCyclesTest extends Specification {
         traverse(query)
         then:
         errorCollector.containsValidationError(ValidationErrorType.FragmentCycle)
-
+        errorCollector.getErrors()[0].message == "Validation error (FragmentCycle@[fragA]) : Fragment cycles not allowed"
     }
 
     def "no self-spreading in floating fragments"() {
@@ -154,6 +156,7 @@ class NoFragmentCyclesTest extends Specification {
 
         then:
         errorCollector.containsValidationError(ValidationErrorType.FragmentCycle)
+        errorCollector.getErrors()[0].message == "Validation error (FragmentCycle@[fragA]) : Fragment cycles not allowed"
     }
 
     def "no co-recursive spreads in floating fragments"() {
@@ -168,6 +171,7 @@ class NoFragmentCyclesTest extends Specification {
 
         then:
         errorCollector.containsValidationError(ValidationErrorType.FragmentCycle)
+        errorCollector.getErrors()[0].message == "Validation error (FragmentCycle@[fragB]) : Fragment cycles not allowed"
     }
 
     def "no self-spread fragments used in multiple operations"() {
@@ -183,6 +187,7 @@ class NoFragmentCyclesTest extends Specification {
 
         then:
         errorCollector.containsValidationError(ValidationErrorType.FragmentCycle)
+        errorCollector.getErrors()[0].message == "Validation error (FragmentCycle@[fragA]) : Fragment cycles not allowed"
     }
 
     def "#583 no npe on undefined fragment"() {
@@ -213,7 +218,9 @@ class NoFragmentCyclesTest extends Specification {
         """
 
         def document = Parser.parse(query)
-        def validationContext = new ValidationContext(TestUtil.dummySchema, document)
+
+        I18n i18n = I18n.i18n(I18n.BundleType.Validation, Locale.ENGLISH)
+        def validationContext = new ValidationContext(TestUtil.dummySchema, document, i18n)
         def rules = new Validator().createRules(validationContext, errorCollector)
         when:
         LanguageTraversal languageTraversal = new LanguageTraversal()
@@ -223,5 +230,6 @@ class NoFragmentCyclesTest extends Specification {
 
         !errorCollector.getErrors().isEmpty()
         errorCollector.containsValidationError(ValidationErrorType.FragmentCycle)
+        errorCollector.getErrors()[0].message == "Validation error (FragmentCycle@[MyFrag]) : Fragment cycles not allowed"
     }
 }

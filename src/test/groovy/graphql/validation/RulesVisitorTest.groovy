@@ -1,6 +1,7 @@
 package graphql.validation
 
 import graphql.TestUtil
+import graphql.i18n.I18n
 import graphql.language.Document
 import graphql.parser.Parser
 import spock.lang.Specification
@@ -15,7 +16,8 @@ class RulesVisitorTest extends Specification {
 
     def traverse(String query) {
         Document document = new Parser().parseDocument(query)
-        ValidationContext validationContext = new ValidationContext(TestUtil.dummySchema, document)
+        I18n i18n = I18n.i18n(I18n.BundleType.Validation, Locale.ENGLISH)
+        ValidationContext validationContext = new ValidationContext(TestUtil.dummySchema, document, i18n)
         LanguageTraversal languageTraversal = new LanguageTraversal()
         languageTraversal.traverse(document, new RulesVisitor(validationContext, [simpleRule, visitsSpreadsRule]))
     }

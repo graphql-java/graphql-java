@@ -35,6 +35,7 @@ class ExecutionInputTest extends Specification {
         executionInput.graphQLContext.get("a") == "b"
         executionInput.root == root
         executionInput.variables == variables
+        executionInput.rawVariables.toMap() == variables
         executionInput.dataLoaderRegistry == registry
         executionInput.cacheControl == cacheControl
         executionInput.query == query
@@ -84,6 +85,14 @@ class ExecutionInputTest extends Specification {
         executionInput.graphQLContext instanceof GraphQLContext
     }
 
+    def "locale defaults to JVM default"() {
+        when:
+        def executionInput = ExecutionInput.newExecutionInput().query(query)
+                .build()
+        then:
+        executionInput.getLocale() == Locale.getDefault()
+    }
+
     def "transform works and copies values"() {
         when:
         def executionInputOld = ExecutionInput.newExecutionInput().query(query)
@@ -111,13 +120,41 @@ class ExecutionInputTest extends Specification {
         executionInput.query == "new query"
     }
 
+    def "transform works and sets variables"() {
+        when:
+        def executionInputOld = ExecutionInput.newExecutionInput().query(query)
+                .dataLoaderRegistry(registry)
+                .cacheControl(cacheControl)
+                .extensions([some: "map"])
+                .root(root)
+                .graphQLContext({ it.of(["a": "b"]) })
+                .locale(Locale.GERMAN)
+                .build()
+        def graphQLContext = executionInputOld.getGraphQLContext()
+        def executionInput = executionInputOld.transform({ bldg -> bldg
+                .query("new query")
+                .variables(variables) })
+
+        then:
+        executionInput.graphQLContext == graphQLContext
+        executionInput.root == root
+        executionInput.rawVariables.toMap() == variables
+        executionInput.dataLoaderRegistry == registry
+        executionInput.cacheControl == cacheControl
+        executionInput.locale == Locale.GERMAN
+        executionInput.extensions == [some: "map"]
+        executionInput.query == "new query"
+    }
+
     def "defaults query into builder as expected"() {
         when:
-        def executionInput = ExecutionInput.newExecutionInput("{ q }").build()
+        def executionInput = ExecutionInput.newExecutionInput("{ q }")
+                .locale(Locale.ENGLISH)
+                .build()
         then:
         executionInput.query == "{ q }"
         executionInput.cacheControl != null
-        executionInput.locale == null
+        executionInput.locale == Locale.ENGLISH
         executionInput.dataLoaderRegistry != null
         executionInput.variables == [:]
     }

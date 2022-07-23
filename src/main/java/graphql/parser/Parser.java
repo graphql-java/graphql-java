@@ -4,6 +4,7 @@ import graphql.PublicApi;
 import graphql.language.Document;
 import graphql.language.Node;
 import graphql.language.SourceLocation;
+import graphql.language.Type;
 import graphql.language.Value;
 import graphql.parser.antlr.GraphqlBaseListener;
 import graphql.parser.antlr.GraphqlLexer;
@@ -69,6 +70,19 @@ public class Parser {
      */
     public static Value<?> parseValue(String input) throws InvalidSyntaxException {
         return new Parser().parseValueImpl(input);
+    }
+
+    /**
+     * Parses a string input into a graphql AST Type
+     *
+     * @param input the input to parse
+     *
+     * @return an AST {@link Type}
+     *
+     * @throws InvalidSyntaxException if the input is not valid graphql syntax
+     */
+    public static Type<?> parseType(String input) throws InvalidSyntaxException {
+        return new Parser().parseTypeImpl(input);
     }
 
     /**
@@ -169,6 +183,19 @@ public class Parser {
         return (Value<?>) parseImpl(multiSourceReader, nodeFunction, null);
     }
 
+    private Type<?> parseTypeImpl(String input) throws InvalidSyntaxException {
+        BiFunction<GraphqlParser, GraphqlAntlrToLanguage, Object[]> nodeFunction = (parser, toLanguage) -> {
+            final GraphqlParser.TypeContext documentContext = parser.type();
+            Type<?> value = toLanguage.createType(documentContext);
+            return new Object[]{documentContext, value};
+        };
+        MultiSourceReader multiSourceReader = MultiSourceReader.newMultiSourceReader()
+                .string(input, null)
+                .trackData(true)
+                .build();
+        return (Type<?>) parseImpl(multiSourceReader, nodeFunction, null);
+    }
+
     private Node<?> parseImpl(Reader reader, BiFunction<GraphqlParser, GraphqlAntlrToLanguage, Object[]> nodeFunction, ParserOptions parserOptions) throws InvalidSyntaxException {
         MultiSourceReader multiSourceReader;
         if (reader instanceof MultiSourceReader) {
@@ -226,7 +253,7 @@ public class Parser {
             Token last = allTokens.get(allTokens.size() - 1);
             //
             // do we have more tokens in the stream than we consumed in the parse?
-            // if yes then its invalid.  We make sure its the same channel
+            // if yes then it's invalid.  We make sure it's the same channel
             boolean notEOF = last.getType() != Token.EOF;
             boolean lastGreaterThanDocument = last.getTokenIndex() > stop.getTokenIndex();
             boolean sameChannel = last.getChannel() == stop.getChannel();

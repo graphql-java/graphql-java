@@ -11,10 +11,10 @@ import graphql.language.NullValue;
 import graphql.language.ObjectField;
 import graphql.language.ObjectValue;
 import graphql.language.StringValue;
-import graphql.language.TypeName;
 import graphql.language.Value;
 import graphql.language.VariableDefinition;
 import graphql.language.VariableReference;
+import graphql.parser.Parser;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -22,7 +22,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import static graphql.collect.ImmutableKit.map;
 import static java.util.stream.Collectors.toList;
 
 @Internal
@@ -35,7 +34,7 @@ public class ValueToVariableValueCompiler {
                 variableValue,
                 VariableDefinition.newVariableDefinition()
                         .name(varName)
-                        .type(TypeName.newTypeName(normalizedInputValue.getTypeName()).build())
+                        .type(Parser.parseType(normalizedInputValue.getTypeName()))
                         .build(),
                 VariableReference.newVariableReference().name(varName).build());
     }
@@ -66,13 +65,15 @@ public class ValueToVariableValueCompiler {
         } else if (maybeValue instanceof Map) {
             variableValue = normalisedValueToVariableValues((Map<String, Object>) maybeValue);
         } else {
-            throw new AssertException("Should never happen. Did not expect type: " + maybeClass(maybeValue));
+                throw new AssertException("Should never happen. Did not expect type: " + maybeClass(maybeValue));
         }
         return variableValue;
     }
 
     private static List<Object> normalisedValueToVariableValues(List<Object> arrayValues) {
-        return map(arrayValues, ValueToVariableValueCompiler::normalisedValueToVariableValue);
+        return arrayValues.stream()
+                .map(ValueToVariableValueCompiler::normalisedValueToVariableValue)
+                .collect(toList());
     }
 
     @NotNull

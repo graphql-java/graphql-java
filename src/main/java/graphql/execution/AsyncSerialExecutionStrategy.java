@@ -13,8 +13,8 @@ import java.util.concurrent.CompletableFuture;
 import static graphql.execution.instrumentation.SimpleInstrumentationContext.nonNullCtx;
 
 /**
- * Async non-blocking execution, but serial: only one field at the the time will be resolved.
- * See {@link AsyncExecutionStrategy} for a non serial (parallel) execution of every field.
+ * Async non-blocking execution, but serial: only one field at the time will be resolved.
+ * See {@link AsyncExecutionStrategy} for a non-serial (parallel) execution of every field.
  */
 @PublicApi
 public class AsyncSerialExecutionStrategy extends AbstractAsyncExecutionStrategy {

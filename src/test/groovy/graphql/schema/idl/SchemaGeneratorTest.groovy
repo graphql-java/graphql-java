@@ -2506,4 +2506,31 @@ class SchemaGeneratorTest extends Specification {
     }
 
 
+    def "classCastException when interface extension is before base and has recursion"() {
+        given:
+        def spec = '''
+        # order is important, moving extension below type Foo will fix the issue
+        extend type Foo implements HasFoo {
+          foo: Foo
+        }
+        
+        type Query {
+          test: ID
+        }
+        
+        interface HasFoo {
+          foo: Foo
+        }
+        
+        type Foo {
+          id: ID
+        }
+        '''
+
+        when:
+        TestUtil.schema(spec)
+
+        then:
+        noExceptionThrown()
+    }
 }

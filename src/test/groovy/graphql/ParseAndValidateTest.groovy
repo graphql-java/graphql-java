@@ -48,7 +48,7 @@ class ParseAndValidateTest extends Specification {
         def result = ParseAndValidate.parse(input)
 
         when:
-        def errors = ParseAndValidate.validate(StarWarsSchema.starWarsSchema, result.getDocument())
+        def errors = ParseAndValidate.validate(StarWarsSchema.starWarsSchema, result.getDocument(), input.getLocale())
 
         then:
         errors.isEmpty()
@@ -60,11 +60,11 @@ class ParseAndValidateTest extends Specification {
         def result = ParseAndValidate.parse(input)
 
         when:
-        def errors = ParseAndValidate.validate(StarWarsSchema.starWarsSchema, result.getDocument())
+        def errors = ParseAndValidate.validate(StarWarsSchema.starWarsSchema, result.getDocument(), input.getLocale())
 
         then:
         !errors.isEmpty()
-        errors[0].validationErrorType == ValidationErrorType.SubSelectionRequired
+        errors[0].validationErrorType == ValidationErrorType.SubselectionRequired
     }
 
     def "can combine parse and validation on valid input"() {
@@ -94,7 +94,7 @@ class ParseAndValidateTest extends Specification {
         result.variables == [var1: 1]
         result.syntaxException == null
 
-        (result.errors[0] as ValidationError).validationErrorType == ValidationErrorType.SubSelectionRequired
+        (result.errors[0] as ValidationError).validationErrorType == ValidationErrorType.SubselectionRequired
     }
 
     def "can shortcut on parse and validation on INVALID syntax"() {

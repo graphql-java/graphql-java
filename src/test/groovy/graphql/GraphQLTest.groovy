@@ -369,7 +369,7 @@ class GraphQLTest extends Specification {
 
         then:
         result.errors.size() == 1
-        result.errors[0].message == "Validation error of type WrongType: argument 'bar' with value 'IntValue{value=12345678910}' is not a valid 'Int' - Expected value to be in the Integer range but it was '12345678910' @ 'foo'"
+        result.errors[0].message == "Validation error (WrongType@[foo]) : argument 'bar' with value 'IntValue{value=12345678910}' is not a valid 'Int' - Expected value to be in the Integer range but it was '12345678910'"
     }
 
     @SuppressWarnings("GroovyAssignabilityCheck")
@@ -813,7 +813,7 @@ class GraphQLTest extends Specification {
 
         then:
         result.errors.size() == 1
-        result.errors[0].message.contains("Sub selection required")
+        result.errors[0].message.contains("Subselection required")
 
         where:
         instrumentationName    | instrumentation
@@ -973,8 +973,6 @@ many lines''']
         then:
         def assEx = thrown(AssertException)
         assEx.message.contains("variables map can't be null")
-
-
     }
 
     def "query can't be null via ExecutionInput"() {
@@ -986,8 +984,6 @@ many lines''']
         then:
         def assEx = thrown(AssertException)
         assEx.message.contains("query can't be null")
-
-
     }
 
     def "query must be set via ExecutionInput"() {
@@ -1014,7 +1010,7 @@ many lines''']
         def graphQL = TestUtil.graphQL(spec, ["Query": ["sayHello": df]]).build()
 
         when:
-        def data = graphQL.execute('query($var:String){sayHello(name:$var)}').getData();
+        def data = graphQL.execute('query($var:String){sayHello(name:$var)}').getData()
 
         then:
         data == [sayHello: "amigo"]
@@ -1032,7 +1028,7 @@ many lines''']
         def graphQL = TestUtil.graphQL(spec, ["Query": ["sayHello": df]]).build()
 
         when:
-        def data = graphQL.execute('query($var:String = "amigo"){sayHello(name:$var)}').getData();
+        def data = graphQL.execute('query($var:String = "amigo"){sayHello(name:$var)}').getData()
 
         then:
         data == [sayHello: "amigo"]
@@ -1050,7 +1046,7 @@ many lines''']
         def graphQL = TestUtil.graphQL(spec, ["Query": ["sayHello": df]]).build()
 
         when:
-        def data = graphQL.execute('query($var:String! = "amigo"){sayHello(name:$var)}').getData();
+        def data = graphQL.execute('query($var:String! = "amigo"){sayHello(name:$var)}').getData()
 
         then:
         data == [sayHello: "amigo"]
@@ -1063,13 +1059,13 @@ many lines''']
             sayHello(name: String): String
         }"""
         def df = { dfe ->
-            boolean isNullValue = dfe.containsArgument("name") && dfe.getArgument("name") == null;
-            return isNullValue ? "is null" : "error";
+            boolean isNullValue = dfe.containsArgument("name") && dfe.getArgument("name") == null
+            return isNullValue ? "is null" : "error"
         } as DataFetcher
         def graphQL = TestUtil.graphQL(spec, ["Query": ["sayHello": df]]).build()
 
         when:
-        def data = graphQL.execute('query($var:String = null){sayHello(name:$var)}').getData();
+        def data = graphQL.execute('query($var:String = null){sayHello(name:$var)}').getData()
 
         then:
         data == [sayHello: "is null"]
@@ -1082,13 +1078,13 @@ many lines''']
             sayHello(name: String = null): String
         }"""
         def df = { dfe ->
-            boolean isNullValue = dfe.containsArgument("name") && dfe.getArgument("name") == null;
-            return isNullValue ? "is null" : "error";
+            boolean isNullValue = dfe.containsArgument("name") && dfe.getArgument("name") == null
+            return isNullValue ? "is null" : "error"
         } as DataFetcher
         def graphQL = TestUtil.graphQL(spec, ["Query": ["sayHello": df]]).build()
 
         when:
-        def data = graphQL.execute('query($var:String){sayHello(name:$var)}').getData();
+        def data = graphQL.execute('query($var:String){sayHello(name:$var)}').getData()
 
         then:
         data == [sayHello: "is null"]
@@ -1106,7 +1102,7 @@ many lines''']
         def graphQL = TestUtil.graphQL(spec, ["Query": ["sayHello": df]]).build()
 
         when:
-        def data = graphQL.execute('query($var:String){sayHello(name:$var)}').getData();
+        def data = graphQL.execute('query($var:String){sayHello(name:$var)}').getData()
 
         then:
         data == [sayHello: "not provided"]
@@ -1124,7 +1120,7 @@ many lines''']
         def graphQL = TestUtil.graphQL(spec, ["Query": ["sayHello": df]]).build()
 
         when:
-        def errors = graphQL.execute('query($var:String=null){sayHello(name:$var)}').getErrors();
+        def errors = graphQL.execute('query($var:String=null){sayHello(name:$var)}').getErrors()
 
         then:
         errors.size() == 1
@@ -1143,7 +1139,7 @@ many lines''']
         def graphQL = TestUtil.graphQL(spec, ["Query": ["sayHello": df]]).build()
 
         when:
-        def result = graphQL.execute('query($var:String){sayHello(name:$var)}');
+        def result = graphQL.execute('query($var:String){sayHello(name:$var)}')
 
         then:
         result.errors.isEmpty()
@@ -1153,10 +1149,10 @@ many lines''']
 
     def "specified url can be defined and queried via introspection"() {
         given:
-        GraphQLSchema schema = TestUtil.schema('type Query {foo: MyScalar} scalar MyScalar @specifiedBy(url:"myUrl")');
+        GraphQLSchema schema = TestUtil.schema('type Query {foo: MyScalar} scalar MyScalar @specifiedBy(url:"myUrl")')
 
         when:
-        def result = GraphQL.newGraphQL(schema).build().execute('{__type(name: "MyScalar") {name specifiedByUrl}}').getData();
+        def result = GraphQL.newGraphQL(schema).build().execute('{__type(name: "MyScalar") {name specifiedByUrl}}').getData()
 
         then:
         result == [__type: [name: "MyScalar", specifiedByUrl: "myUrl"]]

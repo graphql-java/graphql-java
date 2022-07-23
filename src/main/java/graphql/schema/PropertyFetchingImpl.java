@@ -73,7 +73,7 @@ public class PropertyFetchingImpl {
 
         //
         // if we have tried all strategies before and they have all failed then we negatively cache
-        // the cacheKey and assume that its never going to turn up.  This shortcuts the property lookup
+        // the cacheKey and assume that it's never going to turn up.  This shortcuts the property lookup
         // in systems where there was a `foo` graphql property but they never provided an POJO
         // version of `foo`.
         //

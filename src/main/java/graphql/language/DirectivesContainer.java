@@ -7,8 +7,8 @@ import graphql.PublicApi;
 import java.util.List;
 import java.util.Map;
 
+import static graphql.collect.ImmutableKit.emptyList;
 import static graphql.language.NodeUtil.allDirectivesByName;
-import static java.util.Collections.emptyList;
 
 /**
  * Represents a language node that can contain Directives.  Directives can be repeatable and (by default) non repeatable.

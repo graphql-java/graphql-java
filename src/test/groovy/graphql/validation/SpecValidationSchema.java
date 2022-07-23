@@ -5,6 +5,8 @@ import graphql.TypeResolutionEnvironment;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLDirective;
 import graphql.schema.GraphQLEnumType;
+import graphql.schema.GraphQLInputObjectField;
+import graphql.schema.GraphQLInputObjectType;
 import graphql.schema.GraphQLInterfaceType;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
@@ -172,6 +174,12 @@ public class SpecValidationSchema {
             .field(newFieldDefinition().name("pet").type(pet))
             .build();
 
+    public static final GraphQLObjectType subscriptionRoot = GraphQLObjectType.newObject()
+            .name("SubscriptionRoot")
+            .field(newFieldDefinition().name("dog").type(dog))
+            .field(newFieldDefinition().name("cat").type(cat))
+            .build();
+
     @SuppressWarnings("serial")
     public static final Set<GraphQLType> specValidationDictionary = new HashSet<GraphQLType>() {{
         add(dogCommand);
@@ -197,12 +205,38 @@ public class SpecValidationSchema {
             .validLocations(FIELD, FRAGMENT_SPREAD, FRAGMENT_DEFINITION, INLINE_FRAGMENT, QUERY)
             .build();
 
+    public static final GraphQLDirective nonNullDirective = GraphQLDirective.newDirective()
+            .name("nonNullDirective")
+            .argument(newArgument().name("arg1").type(nonNull(GraphQLString)).build())
+            .validLocations(FIELD, FRAGMENT_SPREAD, FRAGMENT_DEFINITION, INLINE_FRAGMENT, QUERY)
+            .build();
+
+    public static final GraphQLInputObjectType inputType = GraphQLInputObjectType.newInputObject()
+            .name("Input")
+            .field(GraphQLInputObjectField.newInputObjectField()
+                    .name("id")
+                    .type(GraphQLString)
+                    .build())
+            .field(GraphQLInputObjectField.newInputObjectField()
+                    .name("name")
+                    .type(nonNull(GraphQLString))
+                    .build())
+            .build();
+
+    public static final GraphQLDirective objectArgumentDirective = GraphQLDirective.newDirective()
+            .name("objectArgumentDirective")
+            .argument(newArgument().name("myObject").type(nonNull(inputType)).build())
+            .validLocations(FIELD, FRAGMENT_SPREAD, FRAGMENT_DEFINITION, INLINE_FRAGMENT, QUERY)
+            .build();
+
     public static final GraphQLSchema specValidationSchema = GraphQLSchema.newSchema()
             .query(queryRoot)
+            .subscription(subscriptionRoot)
             .additionalDirective(upperDirective)
             .additionalDirective(lowerDirective)
             .additionalDirective(dogDirective)
+            .additionalDirective(nonNullDirective)
+            .additionalDirective(objectArgumentDirective)
             .build(specValidationDictionary);
-
 
 }
