@@ -1116,11 +1116,43 @@ triple3 : """edge cases \\""" "" " \\"" \\" edge cases"""
         er.errors[0].message.contains("parsing has been cancelled")
     }
 
+    def "a large whitespace laughs attack will be prevented by default"() {
+        def spaces = " " * 300_000
+        def text = "query { f $spaces }"
+        when:
+        Parser.parse(text)
+
+        then:
+        def e = thrown(ParseCancelledException)
+        e.getMessage().contains("parsing has been cancelled")
+
+        when: "integration test to prove it cancels by default"
+
+        def sdl = """type Query { f : ID} """
+        def graphQL = TestUtil.graphQL(sdl).build()
+        def er = graphQL.execute(text)
+        then:
+        er.errors.size() == 1
+        er.errors[0].message.contains("parsing has been cancelled")
+    }
+
     def "they can shoot themselves if they want to with large documents"() {
         def lol = "@lol" * 10000 // two tokens = 20000+ tokens
         def text = "query { f $lol }"
 
         def options = ParserOptions.newParserOptions().maxTokens(30000).build()
+        when:
+        def doc = new Parser().parseDocument(text, options)
+
+        then:
+        doc != null
+    }
+
+    def "they can shoot themselves if they want to with large documents with lots of whitespace"() {
+        def spaces = " " * 300_000
+        def text = "query { f $spaces }"
+
+        def options = ParserOptions.newParserOptions().maxWhitespaceTokens(Integer.MAX_VALUE).build()
         when:
         def doc = new Parser().parseDocument(text, options)
 
