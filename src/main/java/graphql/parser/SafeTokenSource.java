@@ -46,7 +46,7 @@ public class SafeTokenSource implements TokenSource {
         if (token != null) {
             int channel = token.getChannel();
             int currentCount = ++channelCounts[channel];
-            if (channel == Parser.CHANNEL_IGNORED_CHARS) {
+            if (channel == Parser.CHANNEL_WHITESPACE) {
                 // whitespace gets its own max count
                 callbackIfMaxExceeded(maxWhitespaceTokens, currentCount, token);
             } else {

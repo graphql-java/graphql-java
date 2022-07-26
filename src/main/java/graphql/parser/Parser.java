@@ -52,7 +52,7 @@ public class Parser {
     @Internal
     public static final int CHANNEL_COMMENTS = 2;
     @Internal
-    public static final int CHANNEL_IGNORED_CHARS = 3;
+    public static final int CHANNEL_WHITESPACE = 3;
 
     /**
      * Parses a string input into a graphql AST {@link Document}
@@ -325,7 +325,7 @@ public class Parser {
         String offendingToken = null;
         if (token != null) {
             int channel = token.getChannel();
-            tokenType = channel == CHANNEL_IGNORED_CHARS ? "whitespace" : (channel == CHANNEL_COMMENTS ? "comments" : "grammar");
+            tokenType = channel == CHANNEL_WHITESPACE ? "whitespace" : (channel == CHANNEL_COMMENTS ? "comments" : "grammar");
 
             offendingToken = token.getText();
             sourceLocation = AntlrHelper.createSourceLocation(multiSourceReader, token.getLine(), token.getCharPositionInLine());

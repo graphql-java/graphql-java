@@ -48,6 +48,14 @@ public class ParserOptions {
             .maxWhitespaceTokens(MAX_WHITESPACE_TOKENS)
             .build();
 
+    private static ParserOptions defaultJvmSdlParserOptions = newParserOptions()
+            .captureIgnoredChars(false)
+            .captureSourceLocation(true)
+            .captureLineComments(true) // #comments are useful in SDL parsing
+            .maxTokens(Integer.MAX_VALUE) // we are less worried about a billion laughs with SDL parsing since the call path is not facing attackers
+            .maxWhitespaceTokens(Integer.MAX_VALUE)
+            .build();
+
     /**
      * By default, the Parser will not capture ignored characters.  A static holds this default
      * value in a JVM wide basis options object.
@@ -62,19 +70,6 @@ public class ParserOptions {
      */
     public static ParserOptions getDefaultParserOptions() {
         return defaultJvmParserOptions;
-    }
-
-    /**
-     * By default, for operation parsing, the Parser will not capture ignored characters, and it will not capture line comments into AST
-     * elements .  A static holds this default value for operation parsing in a JVM wide basis options object.
-     *
-     * @return the static default JVM value for query parsing
-     *
-     * @see graphql.language.IgnoredChar
-     * @see graphql.language.SourceLocation
-     */
-    public static ParserOptions getDefaultOperationParserOptions() {
-        return defaultJvmOperationParserOptions;
     }
 
     /**
@@ -95,6 +90,20 @@ public class ParserOptions {
         defaultJvmParserOptions = assertNotNull(options);
     }
 
+
+    /**
+     * By default, for operation parsing, the Parser will not capture ignored characters, and it will not capture line comments into AST
+     * elements .  A static holds this default value for operation parsing in a JVM wide basis options object.
+     *
+     * @return the static default JVM value for operation parsing
+     *
+     * @see graphql.language.IgnoredChar
+     * @see graphql.language.SourceLocation
+     */
+    public static ParserOptions getDefaultOperationParserOptions() {
+        return defaultJvmOperationParserOptions;
+    }
+
     /**
      * By default, the Parser will not capture ignored characters or line comments.  A static holds this default
      * value in a JVM wide basis options object for operation parsing.
@@ -110,6 +119,37 @@ public class ParserOptions {
         defaultJvmOperationParserOptions = assertNotNull(options);
     }
 
+    /**
+     * By default, for SDL parsing, the Parser will not capture ignored characters, but it will capture line comments into AST
+     * elements.  The SDL default options allow unlimited tokens and whitespace, since a DOS attack vector is
+     * not commonly available via schema SDL parsing.
+     *
+     * A static holds this default value for SDL parsing in a JVM wide basis options object.
+     *
+     * @return the static default JVM value for SDL parsing
+     *
+     * @see graphql.language.IgnoredChar
+     * @see graphql.language.SourceLocation
+     * @see graphql.schema.idl.SchemaParser
+     */
+    public static ParserOptions getDefaultSdlParserOptions() {
+        return defaultJvmSdlParserOptions;
+    }
+
+    /**
+     * By default, for SDL parsing, the Parser will not capture ignored characters, but it will capture line comments into AST
+     * elements .  A static holds this default value for operation parsing in a JVM wide basis options object.
+     *
+     * This static can be set to true to allow the behavior of version 16.x or before.
+     *
+     * @param options - the new default JVM parser options for operation parsing
+     *
+     * @see graphql.language.IgnoredChar
+     * @see graphql.language.SourceLocation
+     */
+    public static void setDefaultSdlParserOptions(ParserOptions options) {
+        defaultJvmSdlParserOptions = assertNotNull(options);
+    }
 
     private final boolean captureIgnoredChars;
     private final boolean captureSourceLocation;

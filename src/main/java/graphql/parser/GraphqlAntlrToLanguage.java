@@ -76,7 +76,7 @@ import static graphql.Assert.assertShouldNeverHappen;
 import static graphql.collect.ImmutableKit.emptyList;
 import static graphql.collect.ImmutableKit.map;
 import static graphql.parser.Parser.CHANNEL_COMMENTS;
-import static graphql.parser.Parser.CHANNEL_IGNORED_CHARS;
+import static graphql.parser.Parser.CHANNEL_WHITESPACE;
 import static graphql.parser.StringValueParsing.parseSingleQuotedString;
 import static graphql.parser.StringValueParsing.parseTripleQuotedString;
 import static java.util.Optional.ofNullable;
@@ -791,12 +791,12 @@ public class GraphqlAntlrToLanguage {
         }
         Token start = ctx.getStart();
         int tokenStartIndex = start.getTokenIndex();
-        List<Token> leftChannel = tokens.getHiddenTokensToLeft(tokenStartIndex, CHANNEL_IGNORED_CHARS);
+        List<Token> leftChannel = tokens.getHiddenTokensToLeft(tokenStartIndex, CHANNEL_WHITESPACE);
         List<IgnoredChar> ignoredCharsLeft = mapTokenToIgnoredChar(leftChannel);
 
         Token stop = ctx.getStop();
         int tokenStopIndex = stop.getTokenIndex();
-        List<Token> rightChannel = tokens.getHiddenTokensToRight(tokenStopIndex, CHANNEL_IGNORED_CHARS);
+        List<Token> rightChannel = tokens.getHiddenTokensToRight(tokenStopIndex, CHANNEL_WHITESPACE);
         List<IgnoredChar> ignoredCharsRight = mapTokenToIgnoredChar(rightChannel);
 
         nodeBuilder.ignoredChars(new IgnoredChars(ignoredCharsLeft, ignoredCharsRight));
