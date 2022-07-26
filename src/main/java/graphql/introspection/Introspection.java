@@ -31,7 +31,6 @@ import graphql.schema.GraphQLScalarType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLUnionType;
 import graphql.schema.InputValueWithState;
-import graphql.schema.visibility.GraphqlFieldVisibility;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -218,7 +217,11 @@ public class Introspection {
     static {
         register(__Field, "args", environment -> {
             Object type = environment.getSource();
-            return ((GraphQLFieldDefinition) type).getArguments();
+            GraphQLFieldDefinition fieldDef = (GraphQLFieldDefinition) type;
+            Boolean includeDeprecated = environment.getArgument("includeDeprecated");
+            return fieldDef.getArguments().stream()
+                    .filter(arg -> includeDeprecated || !arg.isDeprecated())
+                    .collect(Collectors.toList());
         });
         register(__Field, "isDeprecated", environment -> {
             Object type = environment.getSource();
@@ -262,10 +265,14 @@ public class Introspection {
             Boolean includeDeprecated = environment.getArgument("includeDeprecated");
             List<GraphQLFieldDefinition> fieldDefinitions = environment
                     .getGraphQLSchema()
+                    .getCodeRegistry()
                     .getFieldVisibility()
                     .getFieldDefinitions(fieldsContainer);
+            if (includeDeprecated) {
+                return fieldDefinitions;
+            }
             return fieldDefinitions.stream()
-                    .filter(field -> includeDeprecated || !field.isDeprecated())
+                    .filter(field -> !field.isDeprecated())
                     .collect(Collectors.toList());
         }
         return null;
@@ -296,11 +303,14 @@ public class Introspection {
 
     private static final IntrospectionDataFetcher<?> enumValuesTypesFetcher = environment -> {
         Object type = environment.getSource();
-        Boolean includeDeprecated = environment.getArgument("includeDeprecated");
         if (type instanceof GraphQLEnumType) {
+            Boolean includeDeprecated = environment.getArgument("includeDeprecated");
             List<GraphQLEnumValueDefinition> values = ((GraphQLEnumType) type).getValues();
+            if (includeDeprecated) {
+                return values;
+            }
             return values.stream()
-                    .filter(enumValue -> includeDeprecated || !enumValue.isDeprecated())
+                    .filter(enumValue -> !enumValue.isDeprecated())
                     .collect(Collectors.toList());
         }
         return null;
@@ -310,11 +320,16 @@ public class Introspection {
         Object type = environment.getSource();
         if (type instanceof GraphQLInputObjectType) {
             Boolean includeDeprecated = environment.getArgument("includeDeprecated");
-            GraphqlFieldVisibility fieldVisibility = environment
+            List<GraphQLInputObjectField> inputFields = environment
                     .getGraphQLSchema()
-                    .getFieldVisibility();
-            return fieldVisibility.getFieldDefinitions((GraphQLInputObjectType) type)
-                    .stream().filter(inputField -> includeDeprecated || !inputField.isDeprecated())
+                    .getCodeRegistry()
+                    .getFieldVisibility()
+                    .getFieldDefinitions((GraphQLInputObjectType) type);
+            if (includeDeprecated) {
+                return inputFields;
+            }
+            return inputFields
+                    .stream().filter(inputField -> !inputField.isDeprecated())
                     .collect(Collectors.toList());
         }
         return null;
@@ -466,7 +481,11 @@ public class Introspection {
                     .type(nonNull(list(nonNull(__DirectiveLocation)))))
             .field(newFieldDefinition()
                     .name("args")
-                    .type(nonNull(list(nonNull(__InputValue)))))
+                    .type(nonNull(list(nonNull(__InputValue))))
+                    .argument(newArgument()
+                            .name("includeDeprecated")
+                            .type(GraphQLBoolean)
+                            .defaultValueProgrammatic(false)))
             .field(newFieldDefinition()
                     .name("onOperation")
                     .type(GraphQLBoolean)
@@ -488,7 +507,10 @@ public class Introspection {
         });
         register(__Directive, "args", environment -> {
             GraphQLDirective directive = environment.getSource();
-            return directive.getArguments();
+            Boolean includeDeprecated = environment.getArgument("includeDeprecated");
+            return directive.getArguments().stream()
+                    .filter(arg -> includeDeprecated || !arg.isDeprecated())
+                    .collect(Collectors.toList());
         });
         register(__Directive, "name", nameDataFetcher);
         register(__Directive, "description", descriptionDataFetcher);
@@ -631,6 +653,7 @@ public class Introspection {
      * @param schema     the schema to use
      * @param parentType the type of the parent object
      * @param fieldName  the field to look up
+     *
      * @return a field definition otherwise throws an assertion exception if it's null
      */
     public static GraphQLFieldDefinition getFieldDef(GraphQLSchema schema, GraphQLCompositeType parentType, String fieldName) {

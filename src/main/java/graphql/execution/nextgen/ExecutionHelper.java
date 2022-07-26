@@ -50,11 +50,10 @@ public class ExecutionHelper {
         Map<String, FragmentDefinition> fragmentsByName = getOperationResult.fragmentsByName;
         OperationDefinition operationDefinition = getOperationResult.operationDefinition;
 
-        ValuesResolver valuesResolver = new ValuesResolver();
         RawVariables inputVariables = executionInput.getRawVariables();
         List<VariableDefinition> variableDefinitions = operationDefinition.getVariableDefinitions();
 
-        CoercedVariables coercedVariables = valuesResolver.coerceVariableValues(graphQLSchema, variableDefinitions, inputVariables);
+        CoercedVariables coercedVariables = ValuesResolver.coerceVariableValues(graphQLSchema, variableDefinitions, inputVariables);
 
         ExecutionContext executionContext = newExecutionContextBuilder()
                 .executionId(executionId)

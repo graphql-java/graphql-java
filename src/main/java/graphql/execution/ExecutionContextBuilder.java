@@ -151,11 +151,14 @@ public class ExecutionContextBuilder {
     }
 
     /**
+     * @param variables map of already coerced variables
+     * @return this builder
+     *
      * @deprecated use {@link #coercedVariables(CoercedVariables)} instead
      */
     @Deprecated
     public ExecutionContextBuilder variables(Map<String, Object> variables) {
-        this.coercedVariables = new CoercedVariables(variables);
+        this.coercedVariables = CoercedVariables.of(variables);
         return this;
     }
 

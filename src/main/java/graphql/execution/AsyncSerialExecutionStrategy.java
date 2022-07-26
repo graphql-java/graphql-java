@@ -10,9 +10,11 @@ import graphql.execution.instrumentation.parameters.InstrumentationExecutionStra
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
+import static graphql.execution.instrumentation.SimpleInstrumentationContext.nonNullCtx;
+
 /**
- * Async non-blocking execution, but serial: only one field at the the time will be resolved.
- * See {@link AsyncExecutionStrategy} for a non serial (parallel) execution of every field.
+ * Async non-blocking execution, but serial: only one field at the time will be resolved.
+ * See {@link AsyncExecutionStrategy} for a non-serial (parallel) execution of every field.
  */
 @PublicApi
 public class AsyncSerialExecutionStrategy extends AbstractAsyncExecutionStrategy {
@@ -31,7 +33,9 @@ public class AsyncSerialExecutionStrategy extends AbstractAsyncExecutionStrategy
 
         Instrumentation instrumentation = executionContext.getInstrumentation();
         InstrumentationExecutionStrategyParameters instrumentationParameters = new InstrumentationExecutionStrategyParameters(executionContext, parameters);
-        InstrumentationContext<ExecutionResult> executionStrategyCtx = instrumentation.beginExecutionStrategy(instrumentationParameters);
+        InstrumentationContext<ExecutionResult> executionStrategyCtx = nonNullCtx(instrumentation.beginExecutionStrategy(instrumentationParameters,
+                executionContext.getInstrumentationState())
+        );
         MergedSelectionSet fields = parameters.getFields();
         ImmutableList<String> fieldNames = ImmutableList.copyOf(fields.keySet());
 

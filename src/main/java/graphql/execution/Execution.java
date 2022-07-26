@@ -30,6 +30,7 @@ import static graphql.Assert.assertShouldNeverHappen;
 import static graphql.execution.ExecutionContextBuilder.newExecutionContextBuilder;
 import static graphql.execution.ExecutionStepInfo.newExecutionStepInfo;
 import static graphql.execution.ExecutionStrategyParameters.newParameters;
+import static graphql.execution.instrumentation.SimpleInstrumentationContext.nonNullCtx;
 import static graphql.language.OperationDefinition.Operation.MUTATION;
 import static graphql.language.OperationDefinition.Operation.QUERY;
 import static graphql.language.OperationDefinition.Operation.SUBSCRIPTION;
@@ -40,7 +41,6 @@ public class Execution {
     private static final Logger logNotSafe = LogKit.getNotPrivacySafeLogger(Execution.class);
 
     private final FieldCollector fieldCollector = new FieldCollector();
-    private final ValuesResolver valuesResolver = new ValuesResolver();
     private final ExecutionStrategy queryStrategy;
     private final ExecutionStrategy mutationStrategy;
     private final ExecutionStrategy subscriptionStrategy;
@@ -66,7 +66,7 @@ public class Execution {
 
         CoercedVariables coercedVariables;
         try {
-            coercedVariables = valuesResolver.coerceVariableValues(graphQLSchema, variableDefinitions, inputVariables);
+            coercedVariables = ValuesResolver.coerceVariableValues(graphQLSchema, variableDefinitions, inputVariables);
         } catch (RuntimeException rte) {
             if (rte instanceof GraphQLError) {
                 return completedFuture(new ExecutionResultImpl((GraphQLError) rte));
@@ -101,7 +101,7 @@ public class Execution {
         InstrumentationExecutionParameters parameters = new InstrumentationExecutionParameters(
                 executionInput, graphQLSchema, instrumentationState
         );
-        executionContext = instrumentation.instrumentExecutionContext(executionContext, parameters);
+        executionContext = instrumentation.instrumentExecutionContext(executionContext, parameters, instrumentationState);
         return executeOperation(executionContext, executionInput.getRoot(), executionContext.getOperationDefinition());
     }
 
@@ -109,7 +109,7 @@ public class Execution {
     private CompletableFuture<ExecutionResult> executeOperation(ExecutionContext executionContext, Object root, OperationDefinition operationDefinition) {
 
         InstrumentationExecuteOperationParameters instrumentationParams = new InstrumentationExecuteOperationParameters(executionContext);
-        InstrumentationContext<ExecutionResult> executeOperationCtx = instrumentation.beginExecuteOperation(instrumentationParams);
+        InstrumentationContext<ExecutionResult> executeOperationCtx = nonNullCtx(instrumentation.beginExecuteOperation(instrumentationParams, executionContext.getInstrumentationState()));
 
         OperationDefinition.Operation operation = operationDefinition.getOperation();
         GraphQLObjectType operationRootType;

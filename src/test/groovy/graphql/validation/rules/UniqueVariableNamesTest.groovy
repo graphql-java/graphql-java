@@ -7,7 +7,7 @@ import graphql.validation.ValidationErrorType
 import graphql.validation.Validator
 import spock.lang.Specification
 
-class UniqueVariableNamesRulerTest extends Specification {
+class UniqueVariableNamesTest extends Specification {
 
     def schema = TestUtil.schema('''
             type Query {
@@ -25,7 +25,7 @@ class UniqueVariableNamesRulerTest extends Specification {
 
         when:
         def document = Parser.parse(query)
-        def validationResult = new Validator().validateDocument(schema, document)
+        def validationResult = new Validator().validateDocument(schema, document, Locale.ENGLISH)
 
         then:
         validationResult.size() == 0
@@ -41,11 +41,12 @@ class UniqueVariableNamesRulerTest extends Specification {
 
         when:
         def document = Parser.parse(query)
-        def validationResult = new Validator().validateDocument(schema, document)
+        def validationResult = new Validator().validateDocument(schema, document, Locale.ENGLISH)
 
         then:
         validationResult.size() == 1
         (validationResult[0] as ValidationError).validationErrorType == ValidationErrorType.DuplicateVariableName
+        validationResult[0].message == "Validation error (DuplicateVariableName) : There can be only one variable named 'arg'"
     }
 
 }

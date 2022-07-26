@@ -6,11 +6,12 @@ import graphql.language.VariableDefinition;
 import graphql.validation.AbstractRule;
 import graphql.validation.ValidationContext;
 import graphql.validation.ValidationErrorCollector;
-import graphql.validation.ValidationErrorType;
 
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+
+import static graphql.validation.ValidationErrorType.DuplicateVariableName;
 
 /**
  * Unique variable names
@@ -18,9 +19,9 @@ import java.util.Set;
  * A GraphQL operation is only valid if all its variables are uniquely named.
  */
 @Internal
-public class UniqueVariableNamesRule extends AbstractRule {
+public class UniqueVariableNames extends AbstractRule {
 
-    public UniqueVariableNamesRule(ValidationContext validationContext, ValidationErrorCollector validationErrorCollector) {
+    public UniqueVariableNames(ValidationContext validationContext, ValidationErrorCollector validationErrorCollector) {
         super(validationContext, validationErrorCollector);
     }
 
@@ -36,15 +37,11 @@ public class UniqueVariableNamesRule extends AbstractRule {
 
         for (VariableDefinition variableDefinition : variableDefinitions) {
             if (variableNameList.contains(variableDefinition.getName())) {
-                addError(ValidationErrorType.DuplicateVariableName, variableDefinition.getSourceLocation(), duplicateVariableNameMessage(variableDefinition.getName()));
+                String message = i18n(DuplicateVariableName, "UniqueVariableNames.oneVariable", variableDefinition.getName());
+                addError(DuplicateVariableName, variableDefinition.getSourceLocation(), message);
             } else {
                 variableNameList.add(variableDefinition.getName());
             }
         }
     }
-
-    static String duplicateVariableNameMessage(String variableName) {
-        return String.format("There can be only one variable named '%s'", variableName);
-    }
-
 }

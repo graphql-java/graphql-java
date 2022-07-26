@@ -4,10 +4,13 @@ import graphql.language.Document
 import graphql.parser.Parser
 import graphql.validation.LanguageTraversal
 import graphql.validation.RulesVisitor
+import graphql.validation.SpecValidationSchema
 import graphql.validation.TraversalContext
 import graphql.validation.ValidationContext
+import graphql.validation.ValidationError
 import graphql.validation.ValidationErrorCollector
 import graphql.validation.ValidationErrorType
+import graphql.validation.Validator
 import spock.lang.Specification
 
 class NoUnusedFragmentsTest extends Specification {
@@ -173,5 +176,29 @@ class NoUnusedFragmentsTest extends Specification {
         then:
         errorCollector.containsValidationError(ValidationErrorType.UnusedFragment)
         errorCollector.getErrors().size() == 2
+    }
+
+    def "contains unused fragment with error message"() {
+        def query = """
+            query getDogName {
+              dog {
+                  name
+              }           
+            }
+            fragment dogFragment on Dog { barkVolume }
+        """.stripIndent()
+        when:
+        def validationErrors = validate(query)
+
+        then:
+        !validationErrors.empty
+        validationErrors.size() == 1
+        validationErrors[0].validationErrorType == ValidationErrorType.UnusedFragment
+        validationErrors[0].message == "Validation error (UnusedFragment) : Unused fragment 'dogFragment'"
+    }
+
+    static List<ValidationError> validate(String query) {
+        def document = new Parser().parseDocument(query)
+        return new Validator().validateDocument(SpecValidationSchema.specValidationSchema, document, Locale.ENGLISH)
     }
 }

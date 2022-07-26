@@ -60,6 +60,7 @@ import static graphql.execution.FieldValueInfo.CompleteValueType.LIST;
 import static graphql.execution.FieldValueInfo.CompleteValueType.NULL;
 import static graphql.execution.FieldValueInfo.CompleteValueType.OBJECT;
 import static graphql.execution.FieldValueInfo.CompleteValueType.SCALAR;
+import static graphql.execution.instrumentation.SimpleInstrumentationContext.nonNullCtx;
 import static graphql.schema.DataFetchingEnvironmentImpl.newDataFetchingEnvironment;
 import static graphql.schema.GraphQLTypeUtil.isEnum;
 import static graphql.schema.GraphQLTypeUtil.isList;
@@ -126,7 +127,6 @@ public abstract class ExecutionStrategy {
     private static final Logger log = LoggerFactory.getLogger(ExecutionStrategy.class);
     private static final Logger logNotSafe = LogKit.getNotPrivacySafeLogger(ExecutionStrategy.class);
 
-    protected final ValuesResolver valuesResolver = new ValuesResolver();
     protected final FieldCollector fieldCollector = new FieldCollector();
     protected final ExecutionStepInfoFactory executionStepInfoFactory = new ExecutionStepInfoFactory();
     private final ResolveType resolvedType = new ResolveType();
@@ -204,9 +204,9 @@ public abstract class ExecutionStrategy {
         Supplier<ExecutionStepInfo> executionStepInfo = FpKit.intraThreadMemoize(() -> createExecutionStepInfo(executionContext, parameters, fieldDef, null));
 
         Instrumentation instrumentation = executionContext.getInstrumentation();
-        InstrumentationContext<ExecutionResult> fieldCtx = instrumentation.beginField(
-                new InstrumentationFieldParameters(executionContext, executionStepInfo)
-        );
+        InstrumentationContext<ExecutionResult> fieldCtx = nonNullCtx(instrumentation.beginField(
+                new InstrumentationFieldParameters(executionContext, executionStepInfo), executionContext.getInstrumentationState()
+        ));
 
         CompletableFuture<FetchedValue> fetchFieldFuture = fetchField(executionContext, parameters);
         CompletableFuture<FieldValueInfo> result = fetchFieldFuture.thenApply((fetchedValue) ->
@@ -271,10 +271,12 @@ public abstract class ExecutionStrategy {
         Instrumentation instrumentation = executionContext.getInstrumentation();
 
         InstrumentationFieldFetchParameters instrumentationFieldFetchParams = new InstrumentationFieldFetchParameters(executionContext, environment, parameters, dataFetcher instanceof TrivialDataFetcher);
-        InstrumentationContext<Object> fetchCtx = instrumentation.beginFieldFetch(instrumentationFieldFetchParams);
+        InstrumentationContext<Object> fetchCtx = nonNullCtx(instrumentation.beginFieldFetch(instrumentationFieldFetchParams,
+                executionContext.getInstrumentationState())
+        );
 
         CompletableFuture<Object> fetchedValue;
-        dataFetcher = instrumentation.instrumentDataFetcher(dataFetcher, instrumentationFieldFetchParams);
+        dataFetcher = instrumentation.instrumentDataFetcher(dataFetcher, instrumentationFieldFetchParams, executionContext.getInstrumentationState());
         ExecutionId executionId = executionContext.getExecutionId();
         try {
             Object fetchedValueRaw = dataFetcher.get(environment);
@@ -385,9 +387,9 @@ public abstract class ExecutionStrategy {
 
         Instrumentation instrumentation = executionContext.getInstrumentation();
         InstrumentationFieldCompleteParameters instrumentationParams = new InstrumentationFieldCompleteParameters(executionContext, parameters, () -> executionStepInfo, fetchedValue);
-        InstrumentationContext<ExecutionResult> ctxCompleteField = instrumentation.beginFieldComplete(
-                instrumentationParams
-        );
+        InstrumentationContext<ExecutionResult> ctxCompleteField = nonNullCtx(instrumentation.beginFieldComplete(
+                instrumentationParams, executionContext.getInstrumentationState()
+        ));
 
         NonNullableFieldValidator nonNullableFieldValidator = new NonNullableFieldValidator(executionContext, executionStepInfo);
 
@@ -519,9 +521,9 @@ public abstract class ExecutionStrategy {
         InstrumentationFieldCompleteParameters instrumentationParams = new InstrumentationFieldCompleteParameters(executionContext, parameters, () -> executionStepInfo, iterableValues);
         Instrumentation instrumentation = executionContext.getInstrumentation();
 
-        InstrumentationContext<ExecutionResult> completeListCtx = instrumentation.beginFieldListComplete(
-                instrumentationParams
-        );
+        InstrumentationContext<ExecutionResult> completeListCtx = nonNullCtx(instrumentation.beginFieldListComplete(
+                instrumentationParams, executionContext.getInstrumentationState()
+        ));
 
         List<FieldValueInfo> fieldValueInfos = new ArrayList<>(size.orElse(1));
         int index = 0;
@@ -818,7 +820,7 @@ public abstract class ExecutionStrategy {
         if (!fieldArgDefs.isEmpty()) {
             List<Argument> fieldArgs = field.getArguments();
             GraphQLCodeRegistry codeRegistry = executionContext.getGraphQLSchema().getCodeRegistry();
-            argumentValues = FpKit.intraThreadMemoize(() -> valuesResolver.getArgumentValues(codeRegistry, fieldArgDefs, fieldArgs, executionContext.getCoercedVariables()));
+            argumentValues = FpKit.intraThreadMemoize(() -> ValuesResolver.getArgumentValues(codeRegistry, fieldArgDefs, fieldArgs, executionContext.getCoercedVariables()));
         }
 
 

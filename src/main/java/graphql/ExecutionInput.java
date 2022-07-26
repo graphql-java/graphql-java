@@ -225,7 +225,7 @@ public class ExecutionInput {
         //
         private DataLoaderRegistry dataLoaderRegistry = DataLoaderDispatcherInstrumentationState.EMPTY_DATALOADER_REGISTRY;
         private CacheControl cacheControl = CacheControl.newCacheControl();
-        private Locale locale;
+        private Locale locale = Locale.getDefault();
         private ExecutionId executionId;
 
         public Builder query(String query) {
@@ -367,7 +367,7 @@ public class ExecutionInput {
          */
         public Builder variables(Map<String, Object> rawVariables) {
             assertNotNull(rawVariables, () -> "variables map can't be null");
-            this.rawVariables = new RawVariables(rawVariables);
+            this.rawVariables = RawVariables.of(rawVariables);
             return this;
         }
 

@@ -2,6 +2,7 @@ package benchmark;
 
 import java.io.IOException;
 import java.net.URL;
+import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 
 import com.google.common.base.Charsets;
@@ -73,6 +74,6 @@ public class ValidatorBenchmark {
     @Benchmark
     public void runValidator(MyState state) {
         Validator validator = new Validator();
-        validator.validateDocument(state.schema, state.document);
+        validator.validateDocument(state.schema, state.document, Locale.ENGLISH);
     }
 }

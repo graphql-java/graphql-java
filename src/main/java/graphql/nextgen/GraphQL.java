@@ -231,7 +231,7 @@ public class GraphQL {
             final List<ValidationError> errors = validate(executionInput, document, graphQLSchema, instrumentationState);
             if (!errors.isEmpty()) {
                 logNotSafe.warn("Query did not validate : '{}'", query);
-                return new PreparsedDocumentEntry(errors);
+                return new PreparsedDocumentEntry(document, errors);
             }
 
             return new PreparsedDocumentEntry(document);
@@ -265,7 +265,7 @@ public class GraphQL {
         validationCtx.onDispatched(cf);
 
         Predicate<Class<?>> validationRulePredicate = executionInput.getGraphQLContext().getOrDefault(ParseAndValidate.INTERNAL_VALIDATION_PREDICATE_HINT, r -> true);
-        List<ValidationError> validationErrors = ParseAndValidate.validate(graphQLSchema, document, validationRulePredicate);
+        List<ValidationError> validationErrors = ParseAndValidate.validate(graphQLSchema, document, validationRulePredicate, executionInput.getLocale());
 
         validationCtx.onCompleted(validationErrors, null);
         cf.complete(validationErrors);

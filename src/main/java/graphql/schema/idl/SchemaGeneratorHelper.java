@@ -80,6 +80,7 @@ import java.util.stream.Collectors;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.Directives.DEPRECATED_DIRECTIVE_DEFINITION;
+import static graphql.Directives.NO_LONGER_SUPPORTED;
 import static graphql.Directives.SPECIFIED_BY_DIRECTIVE_DEFINITION;
 import static graphql.Directives.SpecifiedByDirective;
 import static graphql.collect.ImmutableKit.emptyList;
@@ -209,8 +210,6 @@ public class SchemaGeneratorHelper {
         }
     }
 
-    static final String NO_LONGER_SUPPORTED = "No longer supported";
-
     static String buildDescription(BuildContext buildContext, Node<?> node, Description description) {
         if (description != null) {
             return description.getContent();
@@ -330,8 +329,6 @@ public class SchemaGeneratorHelper {
         fieldBuilder.deprecate(buildDeprecationReason(fieldDef.getDirectives()));
         fieldBuilder.comparatorRegistry(buildCtx.getComparatorRegistry());
 
-        // currently the spec doesnt allow deprecations on InputValueDefinitions but it should!
-        //fieldBuilder.deprecate(buildDeprecationReason(fieldDef.getDirectives()));
         GraphQLInputType inputType = buildInputType(buildCtx, fieldDef.getType());
         fieldBuilder.type(inputType);
         Value<?> defaultValue = fieldDef.getDefaultValue();
@@ -550,7 +547,7 @@ public class SchemaGeneratorHelper {
         });
 
         extensions.forEach(extension -> extension.getImplements().forEach(type -> {
-            GraphQLInterfaceType interfaceType = buildOutputType(buildCtx, type);
+            GraphQLNamedOutputType interfaceType = buildOutputType(buildCtx, type);
             if (!interfaces.containsKey(interfaceType.getName())) {
                 interfaces.put(interfaceType.getName(), interfaceType);
             }
@@ -660,7 +657,7 @@ public class SchemaGeneratorHelper {
         });
 
         extensions.forEach(extension -> extension.getImplements().forEach(type -> {
-            GraphQLInterfaceType interfaceType = buildOutputType(buildCtx, type);
+            GraphQLNamedOutputType interfaceType = buildOutputType(buildCtx, type);
             if (!interfaces.containsKey(interfaceType.getName())) {
                 interfaces.put(interfaceType.getName(), interfaceType);
             }
