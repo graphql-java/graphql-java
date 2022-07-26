@@ -1,9 +1,10 @@
 package graphql.parser;
 
-import graphql.Assert;
 import graphql.PublicApi;
 
 import java.util.function.Consumer;
+
+import static graphql.Assert.assertNotNull;
 
 /**
  * Options that control how the {@link Parser} behaves.
@@ -12,31 +13,57 @@ import java.util.function.Consumer;
 public class ParserOptions {
 
     /**
-     * An graphql hacking vector is to send nonsensical queries that burn lots of parsing CPU time and burn
-     * memory representing a document that wont ever execute.  To prevent this for most users, graphql-java
+     * A graphql hacking vector is to send nonsensical queries that burn lots of parsing CPU time and burn
+     * memory representing a document that won't ever execute.  To prevent this for most users, graphql-java
      * set this value to 15000.  ANTLR parsing time is linear to the number of tokens presented.  The more you
      * allow the longer it takes.
      *
      * If you want to allow more, then {@link #setDefaultParserOptions(ParserOptions)} allows you to change this
      * JVM wide.
      */
-    public static int MAX_QUERY_TOKENS = 15000;
+    public static final int MAX_QUERY_TOKENS = 15_000;
+    /**
+     * Another graphql hacking vector is to send large amounts of whitespace in operations that burn lots of parsing CPU time and burn
+     * memory representing a document.  Whitespace token processing in ANTLR is 2 orders of magnitude faster than grammar token processing
+     * however it still takes some time to happen.
+     *
+     * If you want to allow more, then {@link #setDefaultParserOptions(ParserOptions)} allows you to change this
+     * JVM wide.
+     */
+    public static final int MAX_WHITESPACE_TOKENS = 200_000;
 
     private static ParserOptions defaultJvmParserOptions = newParserOptions()
             .captureIgnoredChars(false)
             .captureSourceLocation(true)
+            .captureLineComments(true)
             .maxTokens(MAX_QUERY_TOKENS) // to prevent a billion laughs style attacks, we set a default for graphql-java
+            .maxWhitespaceTokens(MAX_WHITESPACE_TOKENS)
+            .build();
 
+    private static ParserOptions defaultJvmOperationParserOptions = newParserOptions()
+            .captureIgnoredChars(false)
+            .captureSourceLocation(true)
+            .captureLineComments(false) // #comments are not useful in query parsing
+            .maxTokens(MAX_QUERY_TOKENS) // to prevent a billion laughs style attacks, we set a default for graphql-java
+            .maxWhitespaceTokens(MAX_WHITESPACE_TOKENS)
+            .build();
+
+    private static ParserOptions defaultJvmSdlParserOptions = newParserOptions()
+            .captureIgnoredChars(false)
+            .captureSourceLocation(true)
+            .captureLineComments(true) // #comments are useful in SDL parsing
+            .maxTokens(Integer.MAX_VALUE) // we are less worried about a billion laughs with SDL parsing since the call path is not facing attackers
+            .maxWhitespaceTokens(Integer.MAX_VALUE)
             .build();
 
     /**
-     * By default the Parser will not capture ignored characters.  A static holds this default
+     * By default, the Parser will not capture ignored characters.  A static holds this default
      * value in a JVM wide basis options object.
      *
      * Significant memory savings can be made if we do NOT capture ignored characters,
      * especially in SDL parsing.
      *
-     * @return the static default value on whether to capture ignored chars
+     * @return the static default JVM value
      *
      * @see graphql.language.IgnoredChar
      * @see graphql.language.SourceLocation
@@ -46,7 +73,7 @@ public class ParserOptions {
     }
 
     /**
-     * By default the Parser will not capture ignored characters.  A static holds this default
+     * By default, the Parser will not capture ignored characters.  A static holds this default
      * value in a JVM wide basis options object.
      *
      * Significant memory savings can be made if we do NOT capture ignored characters,
@@ -60,24 +87,89 @@ public class ParserOptions {
      * @see graphql.language.SourceLocation
      */
     public static void setDefaultParserOptions(ParserOptions options) {
-        defaultJvmParserOptions = Assert.assertNotNull(options);
+        defaultJvmParserOptions = assertNotNull(options);
+    }
+
+
+    /**
+     * By default, for operation parsing, the Parser will not capture ignored characters, and it will not capture line comments into AST
+     * elements .  A static holds this default value for operation parsing in a JVM wide basis options object.
+     *
+     * @return the static default JVM value for operation parsing
+     *
+     * @see graphql.language.IgnoredChar
+     * @see graphql.language.SourceLocation
+     */
+    public static ParserOptions getDefaultOperationParserOptions() {
+        return defaultJvmOperationParserOptions;
+    }
+
+    /**
+     * By default, the Parser will not capture ignored characters or line comments.  A static holds this default
+     * value in a JVM wide basis options object for operation parsing.
+     *
+     * This static can be set to true to allow the behavior of version 16.x or before.
+     *
+     * @param options - the new default JVM parser options for operation parsing
+     *
+     * @see graphql.language.IgnoredChar
+     * @see graphql.language.SourceLocation
+     */
+    public static void setDefaultOperationParserOptions(ParserOptions options) {
+        defaultJvmOperationParserOptions = assertNotNull(options);
+    }
+
+    /**
+     * By default, for SDL parsing, the Parser will not capture ignored characters, but it will capture line comments into AST
+     * elements.  The SDL default options allow unlimited tokens and whitespace, since a DOS attack vector is
+     * not commonly available via schema SDL parsing.
+     *
+     * A static holds this default value for SDL parsing in a JVM wide basis options object.
+     *
+     * @return the static default JVM value for SDL parsing
+     *
+     * @see graphql.language.IgnoredChar
+     * @see graphql.language.SourceLocation
+     * @see graphql.schema.idl.SchemaParser
+     */
+    public static ParserOptions getDefaultSdlParserOptions() {
+        return defaultJvmSdlParserOptions;
+    }
+
+    /**
+     * By default, for SDL parsing, the Parser will not capture ignored characters, but it will capture line comments into AST
+     * elements .  A static holds this default value for operation parsing in a JVM wide basis options object.
+     *
+     * This static can be set to true to allow the behavior of version 16.x or before.
+     *
+     * @param options - the new default JVM parser options for operation parsing
+     *
+     * @see graphql.language.IgnoredChar
+     * @see graphql.language.SourceLocation
+     */
+    public static void setDefaultSdlParserOptions(ParserOptions options) {
+        defaultJvmSdlParserOptions = assertNotNull(options);
     }
 
     private final boolean captureIgnoredChars;
     private final boolean captureSourceLocation;
+    private final boolean captureLineComments;
     private final int maxTokens;
+    private final int maxWhitespaceTokens;
 
     private ParserOptions(Builder builder) {
         this.captureIgnoredChars = builder.captureIgnoredChars;
         this.captureSourceLocation = builder.captureSourceLocation;
+        this.captureLineComments = builder.captureLineComments;
         this.maxTokens = builder.maxTokens;
+        this.maxWhitespaceTokens = builder.maxWhitespaceTokens;
     }
 
     /**
      * Significant memory savings can be made if we do NOT capture ignored characters,
      * especially in SDL parsing.  So we have set this to false by default.
      *
-     * @return true if ignored chars are captured in AST nodes
+     * @return true if ignored chars should be captured as AST nodes
      */
     public boolean isCaptureIgnoredChars() {
         return captureIgnoredChars;
@@ -88,7 +180,7 @@ public class ParserOptions {
      * Memory savings can be made if we do NOT set {@link graphql.language.SourceLocation}s
      * on AST nodes,  especially in SDL parsing.
      *
-     * @return true if {@link graphql.language.SourceLocation}s are captured in AST nodes
+     * @return true if {@link graphql.language.SourceLocation}s should be captured as AST nodes
      *
      * @see graphql.language.SourceLocation
      */
@@ -97,14 +189,39 @@ public class ParserOptions {
     }
 
     /**
-     * An graphql hacking vector is to send nonsensical queries that burn lots of parsing CPU time and burn
-     * memory representing a document that wont ever execute.  To prevent this you can set a maximum number of parse
+     * Single-line {@link graphql.language.Comment}s do not have any semantic meaning in
+     * GraphQL source documents, as such you may wish to ignore them.
+     * <p>
+     * This option does not ignore documentation {@link graphql.language.Description}s.
+     *
+     * @return true if {@link graphql.language.Comment}s should be captured as AST nodes
+     *
+     * @see graphql.language.SourceLocation
+     */
+    public boolean isCaptureLineComments() {
+        return captureLineComments;
+    }
+
+    /**
+     * A graphql hacking vector is to send nonsensical queries that burn lots of parsing CPU time and burns
+     * memory representing a document that won't ever execute.  To prevent this you can set a maximum number of parse
      * tokens that will be accepted before an exception is thrown and the parsing is stopped.
      *
      * @return the maximum number of raw tokens the parser will accept, after which an exception will be thrown.
      */
     public int getMaxTokens() {
         return maxTokens;
+    }
+
+    /**
+     * A graphql hacking vector is to send larges amounts of whitespace that burn lots of parsing CPU time and burn
+     * memory representing a document.  To prevent this you can set a maximum number of whitespace parse
+     * tokens that will be accepted before an exception is thrown and the parsing is stopped.
+     *
+     * @return the maximum number of raw whitespace tokens the parser will accept, after which an exception will be thrown.
+     */
+    public int getMaxWhitespaceTokens() {
+        return maxWhitespaceTokens;
     }
 
     public ParserOptions transform(Consumer<Builder> builderConsumer) {
@@ -121,7 +238,9 @@ public class ParserOptions {
 
         private boolean captureIgnoredChars = false;
         private boolean captureSourceLocation = true;
+        private boolean captureLineComments = true;
         private int maxTokens = MAX_QUERY_TOKENS;
+        private int maxWhitespaceTokens = MAX_WHITESPACE_TOKENS;
 
         Builder() {
         }
@@ -129,7 +248,9 @@ public class ParserOptions {
         Builder(ParserOptions parserOptions) {
             this.captureIgnoredChars = parserOptions.captureIgnoredChars;
             this.captureSourceLocation = parserOptions.captureSourceLocation;
+            this.captureLineComments = parserOptions.captureLineComments;
             this.maxTokens = parserOptions.maxTokens;
+            this.maxWhitespaceTokens = parserOptions.maxWhitespaceTokens;
         }
 
         public Builder captureIgnoredChars(boolean captureIgnoredChars) {
@@ -142,8 +263,18 @@ public class ParserOptions {
             return this;
         }
 
+        public Builder captureLineComments(boolean captureLineComments) {
+            this.captureLineComments = captureLineComments;
+            return this;
+        }
+
         public Builder maxTokens(int maxTokens) {
             this.maxTokens = maxTokens;
+            return this;
+        }
+
+        public Builder maxWhitespaceTokens(int maxWhitespaceTokens) {
+            this.maxWhitespaceTokens = maxWhitespaceTokens;
             return this;
         }
 
