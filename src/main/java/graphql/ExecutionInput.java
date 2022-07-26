@@ -120,7 +120,10 @@ public class ExecutionInput {
 
     /**
      * @return the cache control helper associated with this execution
+     *
+     * @deprecated - Apollo has deprecated the Cache Control specification
      */
+    @Deprecated
     public CacheControl getCacheControl() {
         return cacheControl;
     }
@@ -390,6 +393,7 @@ public class ExecutionInput {
             return this;
         }
 
+        @Deprecated
         public Builder cacheControl(CacheControl cacheControl) {
             this.cacheControl = assertNotNull(cacheControl);
             return this;
