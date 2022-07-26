@@ -3,11 +3,14 @@ package graphql;
 import graphql.language.Document;
 import graphql.parser.InvalidSyntaxException;
 import graphql.parser.Parser;
+import graphql.parser.ParserOptions;
 import graphql.schema.GraphQLSchema;
 import graphql.validation.ValidationError;
 import graphql.validation.Validator;
 
 import java.util.List;
+
+import static java.util.Optional.ofNullable;
 
 /**
  * This class allows you to parse and validate a graphql query without executing it.  It will tell you
@@ -42,8 +45,13 @@ public class ParseAndValidate {
      */
     public static ParseAndValidateResult parse(ExecutionInput executionInput) {
         try {
+            //
+            // we allow the caller to specify new parser options by context
+            ParserOptions parserOptions = executionInput.getGraphQLContext().get(ParserOptions.class);
+            // we use the query parser options by default if they are not specified
+            parserOptions = ofNullable(parserOptions).orElse(ParserOptions.getDefaultOperationParserOptions());
             Parser parser = new Parser();
-            Document document = parser.parseDocument(executionInput.getQuery());
+            Document document = parser.parseDocument(executionInput.getQuery(),parserOptions);
             return ParseAndValidateResult.newResult().document(document).variables(executionInput.getVariables()).build();
         } catch (InvalidSyntaxException e) {
             return ParseAndValidateResult.newResult().syntaxException(e).variables(executionInput.getVariables()).build();
