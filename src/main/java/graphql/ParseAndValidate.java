@@ -12,6 +12,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.function.Predicate;
 
+import static java.util.Optional.ofNullable;
+
 /**
  * This class allows you to parse and validate a graphql query without executing it.  It will tell you
  * if it's syntactically valid and also semantically valid according to the graphql specification
@@ -59,6 +61,8 @@ public class ParseAndValidate {
             //
             // we allow the caller to specify new parser options by context
             ParserOptions parserOptions = executionInput.getGraphQLContext().get(ParserOptions.class);
+            // we use the query parser options by default if they are not specified
+            parserOptions = ofNullable(parserOptions).orElse(ParserOptions.getDefaultOperationParserOptions());
             Parser parser = new Parser();
             Document document = parser.parseDocument(executionInput.getQuery(), parserOptions);
             return ParseAndValidateResult.newResult().document(document).variables(executionInput.getVariables()).build();

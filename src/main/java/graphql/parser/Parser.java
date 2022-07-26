@@ -1,5 +1,6 @@
 package graphql.parser;
 
+import graphql.Internal;
 import graphql.PublicApi;
 import graphql.language.Document;
 import graphql.language.Node;
@@ -25,6 +26,8 @@ import java.io.IOException;
 import java.io.Reader;
 import java.io.UncheckedIOException;
 import java.util.List;
+import java.util.Optional;
+import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 
 /**
@@ -45,6 +48,11 @@ import java.util.function.BiFunction;
  */
 @PublicApi
 public class Parser {
+
+    @Internal
+    public static final int CHANNEL_COMMENTS = 2;
+    @Internal
+    public static final int CHANNEL_WHITESPACE = 3;
 
     /**
      * Parses a string input into a graphql AST {@link Document}
@@ -222,7 +230,16 @@ public class Parser {
             }
         });
 
-        CommonTokenStream tokens = new CommonTokenStream(lexer);
+        // default in the parser options if they are not set
+        parserOptions = Optional.ofNullable(parserOptions).orElse(ParserOptions.getDefaultParserOptions());
+
+        // this lexer wrapper allows us to stop lexing when too many tokens are in place.  This prevents DOS attacks.
+        int maxTokens = parserOptions.getMaxTokens();
+        int maxWhitespaceTokens = parserOptions.getMaxWhitespaceTokens();
+        BiConsumer<Integer, Token> onTooManyTokens = (maxTokenCount, token) -> throwCancelParseIfTooManyTokens(token, maxTokenCount, multiSourceReader);
+        SafeTokenSource safeTokenSource = new SafeTokenSource(lexer, maxTokens, maxWhitespaceTokens, onTooManyTokens);
+
+        CommonTokenStream tokens = new CommonTokenStream(safeTokenSource);
 
         GraphqlParser parser = new GraphqlParser(tokens);
         parser.removeErrorListeners();
@@ -295,19 +312,26 @@ public class Parser {
 
                 count++;
                 if (count > maxTokens) {
-                    String msg = String.format("More than %d parse tokens have been presented. To prevent Denial Of Service attacks, parsing has been cancelled.", maxTokens);
-                    SourceLocation sourceLocation = null;
-                    String offendingToken = null;
-                    if (token != null) {
-                        offendingToken = node.getText();
-                        sourceLocation = AntlrHelper.createSourceLocation(multiSourceReader, token.getLine(), token.getCharPositionInLine());
-                    }
-
-                    throw new ParseCancelledException(msg, sourceLocation, offendingToken);
+                    throwCancelParseIfTooManyTokens(token, maxTokens, multiSourceReader);
                 }
             }
         };
         parser.addParseListener(listener);
+    }
+
+    private void throwCancelParseIfTooManyTokens(Token token, int maxTokens, MultiSourceReader multiSourceReader) throws ParseCancelledException {
+        String tokenType  = "grammar";
+        SourceLocation sourceLocation = null;
+        String offendingToken = null;
+        if (token != null) {
+            int channel = token.getChannel();
+            tokenType = channel == CHANNEL_WHITESPACE ? "whitespace" : (channel == CHANNEL_COMMENTS ? "comments" : "grammar");
+
+            offendingToken = token.getText();
+            sourceLocation = AntlrHelper.createSourceLocation(multiSourceReader, token.getLine(), token.getCharPositionInLine());
+        }
+        String msg = String.format("More than %d %s tokens have been presented. To prevent Denial Of Service attacks, parsing has been cancelled.", maxTokens, tokenType);
+        throw new ParseCancelledException(msg, sourceLocation, offendingToken);
     }
 
     /**

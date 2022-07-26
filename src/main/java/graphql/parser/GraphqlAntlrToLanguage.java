@@ -75,15 +75,16 @@ import java.util.List;
 import static graphql.Assert.assertShouldNeverHappen;
 import static graphql.collect.ImmutableKit.emptyList;
 import static graphql.collect.ImmutableKit.map;
+import static graphql.parser.Parser.CHANNEL_COMMENTS;
+import static graphql.parser.Parser.CHANNEL_WHITESPACE;
 import static graphql.parser.StringValueParsing.parseSingleQuotedString;
 import static graphql.parser.StringValueParsing.parseTripleQuotedString;
+import static java.util.Optional.ofNullable;
 
 @Internal
 public class GraphqlAntlrToLanguage {
 
     private static final List<Comment> NO_COMMENTS = ImmutableKit.emptyList();
-    private static final int CHANNEL_COMMENTS = 2;
-    private static final int CHANNEL_IGNORED_CHARS = 3;
     private final CommonTokenStream tokens;
     private final MultiSourceReader multiSourceReader;
     private final ParserOptions parserOptions;
@@ -96,7 +97,7 @@ public class GraphqlAntlrToLanguage {
     public GraphqlAntlrToLanguage(CommonTokenStream tokens, MultiSourceReader multiSourceReader, ParserOptions parserOptions) {
         this.tokens = tokens;
         this.multiSourceReader = multiSourceReader;
-        this.parserOptions = parserOptions == null ? ParserOptions.getDefaultParserOptions() : parserOptions;
+        this.parserOptions = ofNullable(parserOptions).orElse(ParserOptions.getDefaultParserOptions());
     }
 
     public ParserOptions getParserOptions() {
@@ -790,12 +791,12 @@ public class GraphqlAntlrToLanguage {
         }
         Token start = ctx.getStart();
         int tokenStartIndex = start.getTokenIndex();
-        List<Token> leftChannel = tokens.getHiddenTokensToLeft(tokenStartIndex, CHANNEL_IGNORED_CHARS);
+        List<Token> leftChannel = tokens.getHiddenTokensToLeft(tokenStartIndex, CHANNEL_WHITESPACE);
         List<IgnoredChar> ignoredCharsLeft = mapTokenToIgnoredChar(leftChannel);
 
         Token stop = ctx.getStop();
         int tokenStopIndex = stop.getTokenIndex();
-        List<Token> rightChannel = tokens.getHiddenTokensToRight(tokenStopIndex, CHANNEL_IGNORED_CHARS);
+        List<Token> rightChannel = tokens.getHiddenTokensToRight(tokenStopIndex, CHANNEL_WHITESPACE);
         List<IgnoredChar> ignoredCharsRight = mapTokenToIgnoredChar(rightChannel);
 
         nodeBuilder.ignoredChars(new IgnoredChars(ignoredCharsLeft, ignoredCharsRight));
