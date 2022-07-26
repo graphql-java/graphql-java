@@ -47,6 +47,22 @@ import spock.lang.Unroll
 
 class ParserTest extends Specification {
 
+    static defaultOptions = ParserOptions.getDefaultParserOptions()
+    static defaultOperationOptions = ParserOptions.getDefaultOperationParserOptions()
+    static defaultSdlOptions = ParserOptions.getDefaultSdlParserOptions()
+
+    void setup() {
+        ParserOptions.setDefaultParserOptions(defaultOptions)
+        ParserOptions.setDefaultOperationParserOptions(defaultOperationOptions)
+        ParserOptions.setDefaultSdlParserOptions(defaultSdlOptions)
+    }
+
+    void cleanup() {
+        ParserOptions.setDefaultParserOptions(defaultOptions)
+        ParserOptions.setDefaultOperationParserOptions(defaultOperationOptions)
+        ParserOptions.setDefaultSdlParserOptions(defaultSdlOptions)
+    }
+
 
     def "parse anonymous simple query"() {
         given:
