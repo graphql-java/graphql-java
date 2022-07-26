@@ -82,32 +82,6 @@ class NoFragmentCyclesTest extends Specification {
         errorCollector.getErrors().isEmpty()
     }
 
-    def "circular fragments"() {
-        given:
-        def query = """
-            fragment fragA on Dog { ...fragB }
-            fragment fragB on Dog { ...fragA }
-        """
-
-        when:
-        traverse(query)
-        then:
-        errorCollector.containsValidationError(ValidationErrorType.FragmentCycle)
-        errorCollector.getErrors()[0].message == "Validation error (FragmentCycle@[fragA]) : Fragment cycles not allowed"
-    }
-
-    def 'no spreading itself directly'() {
-        given:
-        def query = """
-        fragment fragA on Dog { ...fragA }
-        """
-        when:
-        traverse(query)
-        then:
-        errorCollector.containsValidationError(ValidationErrorType.FragmentCycle)
-        errorCollector.getErrors()[0].message == "Validation error (FragmentCycle@[fragA]) : Fragment cycles not allowed"
-    }
-
     def "no spreading itself indirectly within inline fragment"() {
         given:
         def query = """
@@ -172,6 +146,38 @@ class NoFragmentCyclesTest extends Specification {
         then:
         errorCollector.containsValidationError(ValidationErrorType.FragmentCycle)
         errorCollector.getErrors()[0].message == "Validation error (FragmentCycle@[fragB]) : Fragment cycles not allowed"
+    }
+
+    def "no co-recursive spreads in non-initial fragments"() {
+        given:
+        def query = """
+          fragment fragA on Dog { ...fragB }
+          fragment fragB on Dog { ...fragC }
+          fragment fragC on Doc { ...fragB }
+        """
+
+        when:
+        traverse(query)
+        then:
+        errorCollector.containsValidationError((ValidationErrorType.FragmentCycle))
+    }
+
+    def "mix of inline fragments and fragments"() {
+        given:
+        def query = """
+            fragment Foo on Foo {
+                ... on Type1 { ...Bar }
+                ... on Type2 { ...Baz }
+            }
+
+            fragment Bar on Bar { ...Baz }
+            fragment Baz on Baz { x }
+        """
+
+        when:
+        traverse(query)
+        then:
+        errorCollector.getErrors().isEmpty()
     }
 
     def "no self-spread fragments used in multiple operations"() {
