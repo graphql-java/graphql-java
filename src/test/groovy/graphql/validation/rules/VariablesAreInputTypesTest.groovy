@@ -18,7 +18,6 @@ class VariablesAreInputTypesTest extends Specification {
     ValidationErrorCollector errorCollector = new ValidationErrorCollector()
     VariablesAreInputTypes variablesAreInputTypes = new VariablesAreInputTypes(validationContext, errorCollector)
 
-
     def "the unmodified ast type is not a schema input type"() {
         given:
         def astType = new NonNullType(new ListType(new TypeName(StarWarsSchema.droidType.getName())))
@@ -65,12 +64,13 @@ class VariablesAreInputTypesTest extends Specification {
         def validator = new Validator()
 
         when:
-        def validationErrors = validator.validateDocument(graphQlSchema, document)
+        def validationErrors = validator.validateDocument(graphQlSchema, document, Locale.ENGLISH)
 
         then:
         !validationErrors.empty
         validationErrors.size() == 2
         validationErrors.validationErrorType as Set ==
                 [ValidationErrorType.VariableTypeMismatch, ValidationErrorType.NonInputTypeOnVariable] as Set
+        validationErrors[0].message == "Validation error (NonInputTypeOnVariable) : Input variable 'user' type 'User' is not an input type"
     }
 }

@@ -2,9 +2,12 @@ package graphql.normalized
 
 import graphql.GraphQL
 import graphql.TestUtil
+import graphql.execution.RawVariables
 import graphql.language.AstPrinter
 import graphql.language.AstSorter
 import graphql.language.Document
+import graphql.language.IntValue
+import graphql.language.StringValue
 import graphql.schema.GraphQLSchema
 import graphql.schema.idl.RuntimeWiring
 import graphql.schema.idl.TestLiveMockedWiringFactory
@@ -125,7 +128,7 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
         def result = compileToDocument(schema, QUERY, null, fields, noVariables)
         def printed = AstPrinter.printAst(new AstSorter().sort(result.document))
         then:
-        printed == '''query {
+        printed == '''{
   animal {
     name
     otherName: name
@@ -197,7 +200,7 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
         def printed = AstPrinter.printAst(new AstSorter().sort(result.document))
 
         then:
-        printed == """query {
+        printed == """{
   animal {
     parent {
       name
@@ -248,7 +251,7 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
         def printed = AstPrinter.printAst(new AstSorter().sort(result.document))
 
         then:
-        printed == """query {
+        printed == """{
   animal {
     parent {
       name
@@ -329,7 +332,7 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
         def printed = AstPrinter.printAst(new AstSorter().sort(result.document))
 
         then:
-        printed == """query {
+        printed == """{
   animal {
     parent {
       name
@@ -420,7 +423,7 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
         def printed = AstPrinter.printAst(new AstSorter().sort(result.document))
 
         then:
-        printed == """query {
+        printed == """{
   animal {
     parent {
       name
@@ -515,7 +518,7 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
         def printed = AstPrinter.printAst(new AstSorter().sort(result.document))
 
         then:
-        printed == """query {
+        printed == """{
   animal {
     parent {
       name
@@ -582,7 +585,7 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
         def printed = AstPrinter.printAst(new AstSorter().sort(result.document))
 
         then:
-        printed == """query {
+        printed == """{
   animal {
     ... on Cat {
       __typename
@@ -639,7 +642,7 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
         def printed = AstPrinter.printAst(new AstSorter().sort(result.document))
 
         then:
-        printed == """query {
+        printed == """{
   animal {
     __typename
     ... on Cat {
@@ -704,7 +707,7 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
         // --Cat.name: String
         // --Dog.name: String
         // --Dog.isGoodBoy: Boolean
-        printed == """query {
+        printed == """{
   animal {
     __typename
     ... on Cat {
@@ -765,7 +768,7 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
 
         then:
         // Note: the name field is spread across both fragments
-        printed == """query {
+        printed == """{
   animal {
     ... on Cat {
       parent {
@@ -863,7 +866,7 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
 
         then:
         // Ensure that age location name etc are not surrounded by fragments unnecessarily
-        printed == """query {
+        printed == """{
   animal {
     __typename
     age
@@ -961,7 +964,7 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
 
         then:
         // Ensure that __typename id fieldId fieldName etc. are not surrounded by fragments unnecessarily
-        printed == """query {
+        printed == """{
   issue {
     fields {
       __typename
@@ -1027,7 +1030,7 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
         def documentPrinted = AstPrinter.printAst(new AstSorter().sort(result.document))
 
         then:
-        documentPrinted == '''query {
+        documentPrinted == '''{
   foo(arg: {arg1 : "fooArg"}) {
     bar(arg: {arg1 : "barArg"}) {
       baz {
@@ -1061,7 +1064,7 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
         def documentPrinted = AstPrinter.printAst(new AstSorter().sort(result.document))
 
         then:
-        documentPrinted == '''query {
+        documentPrinted == '''{
   foo1(arg: "hello")
   foo2(a: 123, b: true, c: 123.45)
 }
@@ -1132,10 +1135,45 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
         def documentPrinted = AstPrinter.printAst(new AstSorter().sort(result.document))
 
         then:
-        documentPrinted == '''query {
+        documentPrinted == '''{
   foo1(arg: {arg1 : "Hello", arg2 : 123, arg3 : "IDID", arg4 : false, arg5 : 123.123, nested : {arg1 : "Hello2", arg2 : 1234, arg3 : "IDID1", arg4 : null, arg5 : null}})
 }
 '''
+    }
+
+
+    def "test input object arguments 2"() {
+        def sdl = '''
+        type Query {
+            foo1(arg: Outer): String
+        }
+        input Outer {
+            a : Inner
+        }
+        input Inner {
+            b : InnerInner
+        }
+        input InnerInner {
+            c : Int
+            d : String
+        }
+        '''
+        def query = '''query something($v : Int){
+            foo1(arg: { a : { b : { c :$v, d :"ast" }}})
+        }
+        '''
+        GraphQLSchema schema = mkSchema(sdl)
+        def fields = createNormalizedFields(schema, query,["v":123])
+        when:
+        def result = compileToDocument(schema, QUERY, null, fields, allVariables)
+        def documentPrinted = AstPrinter.printAst(new AstSorter().sort(result.document))
+
+        then:
+        fields[0].normalizedArguments["arg"].value["a"].value["b"].value["c"].value.isEqualTo(IntValue.of(123))
+        fields[0].normalizedArguments["arg"].value["a"].value["b"].value["d"].value.isEqualTo(StringValue.of("ast"))
+        documentPrinted.trim() == '''query ($v0: Outer) {
+  foo1(arg: $v0)
+}'''
     }
 
     def "test mutations"() {
@@ -1278,7 +1316,7 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
         def result = compileToDocument(schema, QUERY, null, fields, noVariables)
         def documentPrinted = AstPrinter.printAst(new AstSorter().sort(result.document))
         then:
-        documentPrinted == '''query {
+        documentPrinted == '''{
   foo1(arg: {arg1 : "Query"}) {
     test
   }
@@ -1324,7 +1362,7 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
         def result = compileToDocument(schema, QUERY, null, fields, noVariables)
         def documentPrinted = AstPrinter.printAst(new AstSorter().sort(result.document))
         then:
-        documentPrinted == '''query {
+        documentPrinted == '''{
   __schema {
     queryType {
       fields(includeDeprecated: false) {
@@ -1374,7 +1412,7 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
         def result = compileToDocument(schema, QUERY, null, fields, noVariables)
         def documentPrinted = AstPrinter.printAst(new AstSorter().sort(result.document))
         then:
-        documentPrinted == '''query {
+        documentPrinted == '''{
   foo1 {
     test
     ... on AFoo {
@@ -1396,7 +1434,7 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
             aFoo: String
         }
         '''
-        def query = '''query {
+        def query = '''{
             ... on Query {
                 foo1 {
                     ... on AFoo {
@@ -1413,7 +1451,7 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
         def result = compileToDocument(schema, QUERY, null, fields, noVariables)
         def documentPrinted = AstPrinter.printAst(new AstSorter().sort(result.document))
         then:
-        documentPrinted == '''query {
+        documentPrinted == '''{
   foo1 {
     ... on AFoo {
       aFoo
@@ -1465,7 +1503,7 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
         def documentPrinted = AstPrinter.printAst(new AstSorter().sort(result.document))
         then:
         // Note: the typename field moves out of a fragment because AFoo is the only impl
-        documentPrinted == '''query {
+        documentPrinted == '''{
   foo1(arg: {arg1 : "Query"}) {
     __typename
     test
@@ -1516,7 +1554,7 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
         def documentPrinted = AstPrinter.printAst(new AstSorter().sort(result.document))
         then:
         // Note: the typename field moves out of a fragment because AFoo is the only impl
-        documentPrinted == '''query {
+        documentPrinted == '''{
   foo1(arg: {arg1 : "Query"}) {
     __typename
     test
@@ -1546,7 +1584,7 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
             arg1: String
         }
         '''
-        def query = '''query {
+        def query = '''{
             ... on Query {
                 foo1(arg: {
                     arg1: "Query"
@@ -1566,7 +1604,7 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
         def documentPrinted = AstPrinter.printAst(new AstSorter().sort(result.document))
         then:
         // Note: the typename field moves out of a fragment because AFoo is the only impl
-        documentPrinted == '''query {
+        documentPrinted == '''{
   foo1(arg: {arg1 : "Query"}) {
     test
     ... on AFoo {
@@ -2044,7 +2082,7 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
         Document originalDocument = TestUtil.parseQuery(query)
 
         ExecutableNormalizedOperationFactory dependencyGraph = new ExecutableNormalizedOperationFactory()
-        return dependencyGraph.createExecutableNormalizedOperationWithRawVariables(schema, originalDocument, null, variables)
+        return dependencyGraph.createExecutableNormalizedOperationWithRawVariables(schema, originalDocument, null, RawVariables.of(variables))
     }
 
     private List<ExecutableNormalizedField> createNormalizedFields(GraphQLSchema schema, String query, Map<String, Object> variables = [:]) {

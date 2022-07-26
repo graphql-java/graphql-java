@@ -1,10 +1,14 @@
 package graphql.validation.rules
 
+import graphql.ExecutionInput
+import graphql.GraphQL
 import graphql.StarWarsSchema
+import graphql.TestUtil
 import graphql.language.FragmentDefinition
 import graphql.language.InlineFragment
 import graphql.language.TypeName
 import graphql.validation.ValidationContext
+import graphql.validation.ValidationError
 import graphql.validation.ValidationErrorCollector
 import graphql.validation.ValidationErrorType
 import spock.lang.Specification
@@ -26,7 +30,6 @@ class FragmentsOnCompositeTypeTest extends Specification {
         then:
         errorCollector.containsValidationError(ValidationErrorType.InlineFragmentTypeConditionInvalid)
         errorCollector.errors.size() == 1
-        errorCollector.errors[0].message == "Validation error of type InlineFragmentTypeConditionInvalid: Inline fragment type condition is invalid, must be on Object/Interface/Union"
     }
 
     def "should results in no error"(InlineFragment inlineFragment) {
@@ -71,5 +74,88 @@ class FragmentsOnCompositeTypeTest extends Specification {
         errorCollector.containsValidationError(ValidationErrorType.FragmentTypeConditionInvalid)
     }
 
+    def schema = TestUtil.schema("""
+            type Query {
+                nothing: String
+            }
+            
+            type Mutation {
+                updateUDI(input: UDIInput!): UDIOutput
+            }
+            
+            type UDIOutput {
+                device: String
+                version: String
+            }
+            
+            input UDIInput {
+                device: String 
+                version: String
+            }
+        """)
+
+    def graphQL = GraphQL.newGraphQL(schema).build()
+
+
+    def "#1440 when fragment type condition is input type it should return validation error - not classCastException"() {
+        when:
+        def executionInput = ExecutionInput.newExecutionInput()
+                .query('''                    
+                    mutation UpdateUDI($input: UDIInput!) { 
+                        updateUDI(input: $input) { 
+                            ...fragOnInputType 
+                            __typename 
+                        } 
+                    }
+                    
+                    # fragment should only target composite types
+                    fragment fragOnInputType on UDIInput { 
+                        device
+                        version 
+                        __typename 
+                    } 
+                    
+                    ''')
+                .variables([input: [device: 'device', version: 'version'] ])
+                .build()
+
+        def executionResult = graphQL.execute(executionInput)
+
+        then:
+
+        executionResult.data == null
+        executionResult.errors.size() == 1
+        (executionResult.errors[0] as ValidationError).validationErrorType == ValidationErrorType.FragmentTypeConditionInvalid
+        (executionResult.errors[0] as ValidationError).message == "Validation error (FragmentTypeConditionInvalid@[fragOnInputType]) : Fragment type condition is invalid, must be on Object/Interface/Union"
+    }
+
+    def "#1440 when inline fragment type condition is input type it should return validation error - not classCastException"() {
+        when:
+        def executionInput = ExecutionInput.newExecutionInput()
+                .query('''                    
+                    mutation UpdateUDI($input: UDIInput!) { 
+                        updateUDI(input: $input) { 
+                            # fragment should only target composite types
+                            ... on UDIInput { 
+                                device
+                                version 
+                                __typename 
+                            }  
+                            __typename 
+                        } 
+                    }
+                    ''')
+                .variables([input: [device: 'device', version: 'version'] ])
+                .build()
+
+        def executionResult = graphQL.execute(executionInput)
+
+        then:
+
+        executionResult.data == null
+        executionResult.errors.size() == 1
+        (executionResult.errors[0] as ValidationError).validationErrorType == ValidationErrorType.InlineFragmentTypeConditionInvalid
+        (executionResult.errors[0] as ValidationError).message == "Validation error (InlineFragmentTypeConditionInvalid@[updateUDI]) : Inline fragment type condition is invalid, must be on Object/Interface/Union"
+    }
 
 }

@@ -4,9 +4,12 @@ import graphql.TypeResolutionEnvironment
 import graphql.schema.Coercing
 import graphql.schema.DataFetcher
 import graphql.schema.DataFetchingEnvironment
+import graphql.schema.GraphQLFieldDefinition
+import graphql.schema.GraphQLFieldsContainer
 import graphql.schema.GraphQLObjectType
 import graphql.schema.GraphQLScalarType
 import graphql.schema.TypeResolver
+import graphql.schema.visibility.GraphqlFieldVisibility
 import spock.lang.Specification
 
 import java.util.function.UnaryOperator
@@ -113,5 +116,78 @@ class RuntimeWiringTest extends Specification {
         wiring.getScalars().get("String").name == "String"
         wiring.getScalars().get("Boolean").name == "Boolean"
         wiring.getScalars().get("ID").name == "ID"
+    }
+
+    def "newRuntimeWiring works and copies values"() {
+        when:
+        def customScalar1 = GraphQLScalarType.newScalar()
+                .name("Custom1").description("Custom 1").coercing(coercing).build()
+
+        def oldWiring = RuntimeWiring.newRuntimeWiring()
+                .scalar(customScalar1)
+                .build()
+
+        def customScalar2 = GraphQLScalarType.newScalar()
+                .name("Custom2").description("Custom 2").coercing(coercing).build()
+
+        GraphqlFieldVisibility fieldVisibility = new GraphqlFieldVisibility() {
+            @Override
+            List<GraphQLFieldDefinition> getFieldDefinitions(GraphQLFieldsContainer fieldsContainer) {
+                return null
+            }
+
+            @Override
+            GraphQLFieldDefinition getFieldDefinition(GraphQLFieldsContainer fieldsContainer, String fieldName) {
+                return null
+            }
+        }
+
+        def newWiring = RuntimeWiring.newRuntimeWiring(oldWiring)
+                .scalar(customScalar2)
+                .fieldVisibility(fieldVisibility)
+                .build()
+
+        then:
+        newWiring.scalars.entrySet().containsAll(oldWiring.scalars.entrySet())
+        newWiring.scalars["Custom1"] == customScalar1
+        newWiring.scalars["Custom2"] == customScalar2
+        newWiring.fieldVisibility == fieldVisibility
+    }
+
+    def "transform works and copies values"() {
+        when:
+        def customScalar1 = GraphQLScalarType.newScalar()
+                .name("Custom1").description("Custom 1").coercing(coercing).build()
+
+        def oldWiring = RuntimeWiring.newRuntimeWiring()
+                .scalar(customScalar1)
+                .build()
+
+        def customScalar2 = GraphQLScalarType.newScalar()
+                .name("Custom2").description("Custom 2").coercing(coercing).build()
+
+        GraphqlFieldVisibility fieldVisibility = new GraphqlFieldVisibility() {
+            @Override
+            List<GraphQLFieldDefinition> getFieldDefinitions(GraphQLFieldsContainer fieldsContainer) {
+                return null
+            }
+
+            @Override
+            GraphQLFieldDefinition getFieldDefinition(GraphQLFieldsContainer fieldsContainer, String fieldName) {
+                return null
+            }
+        }
+
+        def newWiring = oldWiring.transform({ builder ->
+            builder
+                    .scalar(customScalar2)
+                    .fieldVisibility(fieldVisibility)
+        })
+
+        then:
+        newWiring.scalars.entrySet().containsAll(oldWiring.scalars.entrySet())
+        newWiring.scalars["Custom1"] == customScalar1
+        newWiring.scalars["Custom2"] == customScalar2
+        newWiring.fieldVisibility == fieldVisibility
     }
 }

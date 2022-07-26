@@ -2,6 +2,7 @@ package graphql.validation;
 
 
 import graphql.Internal;
+import graphql.i18n.I18nMsg;
 import graphql.language.Argument;
 import graphql.language.Directive;
 import graphql.language.Document;
@@ -22,21 +23,20 @@ import java.util.Collection;
 import java.util.List;
 
 import static graphql.validation.ValidationError.newValidationError;
+import static java.lang.System.arraycopy;
 
 @Internal
 public class AbstractRule {
 
     private final ValidationContext validationContext;
     private final ValidationErrorCollector validationErrorCollector;
-
-
+    private final ValidationUtil validationUtil;
     private boolean visitFragmentSpreads;
-
-    private ValidationUtil validationUtil = new ValidationUtil();
 
     public AbstractRule(ValidationContext validationContext, ValidationErrorCollector validationErrorCollector) {
         this.validationContext = validationContext;
         this.validationErrorCollector = validationErrorCollector;
+        this.validationUtil = new ValidationUtil();
     }
 
     public boolean isVisitFragmentSpreads() {
@@ -46,7 +46,6 @@ public class AbstractRule {
     public void setVisitFragmentSpreads(boolean visitFragmentSpreads) {
         this.visitFragmentSpreads = visitFragmentSpreads;
     }
-
 
     public ValidationUtil getValidationUtil() {
         return validationUtil;
@@ -78,7 +77,6 @@ public class AbstractRule {
         return validationErrorCollector.getErrors();
     }
 
-
     public ValidationContext getValidationContext() {
         return validationContext;
     }
@@ -89,6 +87,45 @@ public class AbstractRule {
 
     protected List<String> getQueryPath() {
         return validationContext.getQueryPath();
+    }
+
+    /**
+     * Creates an I18n message using the {@link graphql.i18n.I18nMsg}
+     *
+     * @param validationErrorType the type of validation failure
+     * @param i18nMsg             the i18n message object
+     *
+     * @return the formatted I18n message
+     */
+    public String i18n(ValidationErrorType validationErrorType, I18nMsg i18nMsg) {
+        return i18n(validationErrorType, i18nMsg.getMsgKey(), i18nMsg.getMsgArguments());
+    }
+
+    /**
+     * Creates an I18N message using the key and arguments
+     *
+     * @param validationErrorType the type of validation failure
+     * @param msgKey              the key in the underlying message bundle
+     * @param msgArgs             the message arguments
+     *
+     * @return the formatted I18N message
+     */
+    public String i18n(ValidationErrorType validationErrorType, String msgKey, Object... msgArgs) {
+        Object[] params = new Object[msgArgs.length + 1];
+        params[0] = mkTypeAndPath(validationErrorType);
+        arraycopy(msgArgs, 0, params, 1, msgArgs.length);
+
+        return validationContext.i18n(msgKey, params);
+    }
+
+    private String mkTypeAndPath(ValidationErrorType validationErrorType) {
+        List<String> queryPath = getQueryPath();
+        StringBuilder sb = new StringBuilder();
+        sb.append(validationErrorType);
+        if (queryPath != null) {
+            sb.append("@[").append(String.join("/", queryPath)).append("]");
+        }
+        return sb.toString();
     }
 
     public void checkDocument(Document document) {

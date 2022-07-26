@@ -36,7 +36,7 @@ class GraphqlErrorHelperTest extends Specification {
 
     class ExtensionAddingError implements GraphQLError {
 
-        Map<String, Object> extensions;
+        Map<String, Object> extensions
 
         ExtensionAddingError(Map<String, Object> extensions) {
             this.extensions = extensions
@@ -59,7 +59,7 @@ class GraphqlErrorHelperTest extends Specification {
 
         @Override
         Map<String, Object> getExtensions() {
-            return extensions;
+            return extensions
         }
     }
 
@@ -72,7 +72,7 @@ class GraphqlErrorHelperTest extends Specification {
         then:
         specMap == [
                 locations : [[line: 6, column: 9]],
-                message   : "Validation error of type InvalidFragmentType: Things are not valid",
+                message   : "Things are not valid",
                 extensions: [classification: "ValidationError"],
 
         ]

@@ -27,15 +27,14 @@ class UniqueFragmentNamesTest extends Specification {
         """.stripIndent()
         when:
         def document = Parser.parse(query)
-        def validationErrors = new Validator().validateDocument(SpecValidationSchema.specValidationSchema, document)
+        def validationErrors = new Validator().validateDocument(SpecValidationSchema.specValidationSchema, document, Locale.ENGLISH)
 
         then:
         !validationErrors.empty
         validationErrors.size() == 1
         validationErrors[0].locations == [new SourceLocation(10, 1)]
-        validationErrors[0].message.contains("There can be only one fragment named 'F'")
+        validationErrors[0].message == "Validation error (DuplicateFragmentName@[F]) : There can be only one fragment named 'F'"
         validationErrors[0].validationErrorType == ValidationErrorType.DuplicateFragmentName
-
     }
 
 }

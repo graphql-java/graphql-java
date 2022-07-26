@@ -80,7 +80,7 @@ class QueryTransformerTest extends Specification {
 
         then:
         printAstCompact(newDocument) ==
-                "query {root {fooA {midA-modified {leafA} midB {leafB}} fooB {midA-modified {leafA} midB {leafB}}}}"
+                "{root{fooA{midA-modified{leafA}midB{leafB}}fooB{midA-modified{leafA}midB{leafB}}}}"
     }
 
     def "transform query delete midA nodes"() {
@@ -102,7 +102,7 @@ class QueryTransformerTest extends Specification {
 
         then:
         printAstCompact(newDocument) ==
-                "query {root {fooA {midB {leafB}} fooB {midB {leafB}}}}"
+                "{root{fooA{midB{leafB}}fooB{midB{leafB}}}}"
     }
 
     def "transform query add midA sibling"() {
@@ -124,7 +124,7 @@ class QueryTransformerTest extends Specification {
 
         then:
         printAstCompact(newDocument) ==
-                "query {root {fooA {midA {leafA} addedField}}}"
+                "{root{fooA{midA{leafA}addedField}}}"
     }
 
     def "transform query delete fragment spread and inline fragment"() {
@@ -170,7 +170,7 @@ class QueryTransformerTest extends Specification {
         then:
 
         printAstCompact(newDocument) ==
-                "query {root {fooA {midB {leafB}} fooB {midB {leafB}}}} fragment frag on Foo {midA {leafA}}"
+                "{root{fooA{midB{leafB}}fooB{midB{leafB}}}} fragment frag on Foo {midA{leafA}}"
     }
 
     def "transform query does not traverse named fragments when started from query"() {
@@ -253,7 +253,7 @@ class QueryTransformerTest extends Specification {
         def newFragment = queryTransformer.transform(visitor)
         then:
         printAstCompact(newFragment) ==
-                "fragment newFragName on newTypeName {fooA {midA {newChild1 newChild2}}}"
+                "fragment newFragName on newTypeName {fooA{midA{newChild1 newChild2}}}"
     }
 
     def "transform starting in a interface field"() {
@@ -445,7 +445,7 @@ class QueryTransformerTest extends Specification {
         when:
         def newNode = queryTransformer.transform(visitor)
         then:
-        printAstCompact(newNode) == "{__typename ... on A {aX} ... on B {b}}"
+        printAstCompact(newNode) == "{__typename ...on A{aX}...on B{b}}"
 
     }
 }

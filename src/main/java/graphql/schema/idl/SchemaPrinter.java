@@ -15,11 +15,12 @@ import graphql.language.InputValueDefinition;
 import graphql.language.InterfaceTypeDefinition;
 import graphql.language.ObjectTypeDefinition;
 import graphql.language.ScalarTypeDefinition;
+import graphql.language.SchemaDefinition;
 import graphql.language.TypeDefinition;
 import graphql.language.UnionTypeDefinition;
 import graphql.schema.DefaultGraphqlTypeComparatorRegistry;
-import graphql.schema.GraphQLAppliedDirectiveArgument;
 import graphql.schema.GraphQLAppliedDirective;
+import graphql.schema.GraphQLAppliedDirectiveArgument;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLDirective;
 import graphql.schema.GraphQLDirectiveContainer;
@@ -446,11 +447,7 @@ public class SchemaPrinter {
             printSchemaElement(out, element, visibility);
         }
 
-        String result = sw.toString();
-        if (result.endsWith("\n\n")) {
-            result = result.substring(0, result.length() - 1);
-        }
-        return result;
+        return trimNewLineChars(sw.toString());
     }
 
     private interface SchemaElementPrinter<T> {
@@ -742,6 +739,9 @@ public class SchemaPrinter {
             }
 
             if (needsSchemaPrinted) {
+                if (hasDescription(schema)) {
+                    out.print(printComments(schema, ""));
+                }
                 List<GraphQLAppliedDirective> directives = DirectivesUtil.toAppliedDirectives(schema.getSchemaAppliedDirectives(), schema.getSchemaDirectives());
                 out.format("schema %s{\n", directivesString(GraphQLSchemaElement.class, false, directives));
                 if (queryType != null) {
@@ -792,7 +792,10 @@ public class SchemaPrinter {
             if (count == 0) {
                 sb.append("(");
             } else {
-                sb.append(", ");
+                sb.append(",");
+                if (!hasDescriptions) {
+                    sb.append(" ");
+                }
             }
             if (hasDescriptions) {
                 sb.append("\n");
@@ -985,7 +988,7 @@ public class SchemaPrinter {
 
         printSchemaElement(out, type, DEFAULT_FIELD_VISIBILITY);
 
-        return sw.toString();
+        return trimNewLineChars(sw.toString());
     }
 
     public String print(List<GraphQLSchemaElement> elements) {
@@ -1001,7 +1004,7 @@ public class SchemaPrinter {
                 Assert.assertShouldNeverHappen("How did we miss a %s", element.getClass());
             }
         }
-        return sw.toString();
+        return trimNewLineChars(sw.toString());
     }
 
     public String print(GraphQLDirective graphQLDirective) {
@@ -1021,22 +1024,19 @@ public class SchemaPrinter {
     }
 
     private void printComments(PrintWriter out, Object graphQLType, String prefix) {
-
         String descriptionText = getDescription(graphQLType);
         if (isNullOrEmpty(descriptionText)) {
             return;
         }
 
-        if (!isNullOrEmpty(descriptionText)) {
-            List<String> lines = Arrays.asList(descriptionText.split("\n"));
-            if (options.isDescriptionsAsHashComments()) {
-                printMultiLineHashDescription(out, prefix, lines);
-            } else if (!lines.isEmpty()) {
-                if (lines.size() > 1) {
-                    printMultiLineDescription(out, prefix, lines);
-                } else {
-                    printSingleLineDescription(out, prefix, lines.get(0));
-                }
+        List<String> lines = Arrays.asList(descriptionText.split("\n"));
+        if (options.isDescriptionsAsHashComments()) {
+            printMultiLineHashDescription(out, prefix, lines);
+        } else if (!lines.isEmpty()) {
+            if (lines.size() > 1) {
+                printMultiLineDescription(out, prefix, lines);
+            } else {
+                printSingleLineDescription(out, prefix, lines.get(0));
             }
         }
     }
@@ -1099,6 +1099,9 @@ public class SchemaPrinter {
         } else if (descriptionHolder instanceof GraphQLDirective) {
             GraphQLDirective type = (GraphQLDirective) descriptionHolder;
             return description(type.getDescription(), null);
+        } else if (descriptionHolder instanceof GraphQLSchema) {
+            GraphQLSchema type = (GraphQLSchema) descriptionHolder;
+            return description(type.getDescription(), ofNullable(type.getDefinition()).map(SchemaDefinition::getDescription).orElse(null));
         } else {
             return Assert.assertShouldNeverHappen();
         }
@@ -1126,6 +1129,12 @@ public class SchemaPrinter {
         return options.comparatorRegistry.getComparator(environment);
     }
 
+    private static String trimNewLineChars(String s) {
+        if (s.endsWith("\n\n")) {
+            s = s.substring(0, s.length() - 1);
+        }
+        return s;
+    }
 
     private static boolean isNullOrEmpty(String s) {
         return s == null || s.isEmpty();

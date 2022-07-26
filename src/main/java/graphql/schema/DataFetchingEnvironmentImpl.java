@@ -19,7 +19,6 @@ import graphql.language.OperationDefinition;
 import org.dataloader.DataLoader;
 import org.dataloader.DataLoaderRegistry;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -53,7 +52,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
 
     private DataFetchingEnvironmentImpl(Builder builder) {
         this.source = builder.source;
-        this.arguments = builder.arguments == null ? Collections::emptyMap : builder.arguments;
+        this.arguments = builder.arguments == null ? ImmutableKit::emptyMap : builder.arguments;
         this.context = builder.context;
         this.graphQLContext = builder.graphQLContext;
         this.localContext = builder.localContext;

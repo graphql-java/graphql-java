@@ -42,6 +42,7 @@ import graphql.language.VariableDefinition
 import graphql.language.VariableReference
 import org.antlr.v4.runtime.CommonTokenStream
 import org.antlr.v4.runtime.ParserRuleContext
+import spock.lang.Issue
 import spock.lang.Specification
 import spock.lang.Unroll
 
@@ -371,6 +372,28 @@ class ParserTest extends Specification {
         then:
         isEqual(helloField, new Field("hello", [new Argument("arg", new StringValue("hello, world"))]))
         helloField.comments.collect { c -> c.content } == [" this is some comment, which should be captured"]
+    }
+
+    @Issue("https://github.com/graphql-java/graphql-java/issues/2767")
+    def "parser does not transform comments to AST nodes when ParserOptions.captureLineComments(false)"() {
+        given:
+        def input = """
+            { # this is some comment, which should be captured
+               hello(arg: "hello, world" ) # test 
+               }
+            """
+        def parserOptionsWithoutCaptureLineComments = ParserOptions.newParserOptions()
+                .captureLineComments(false)
+                .build()
+
+        when:
+        def document = new Parser().parseDocument(input, parserOptionsWithoutCaptureLineComments)
+        Field helloField = (document.definitions[0] as OperationDefinition).selectionSet.selections[0] as Field
+
+        then:
+        isEqual(helloField, new Field("hello", [new Argument("arg", new StringValue("hello, world"))]))
+        assert helloField.comments.isEmpty() // No single-line comments on lone fields
+        assert document.comments.isEmpty() // No single-line comments in entire document
     }
 
     @Unroll
@@ -938,6 +961,41 @@ triple3 : """edge cases \\""" "" " \\"" \\" edge cases"""
         '{string : "s", integer : 1, boolean : true}' | ObjectValue.class
     }
 
+    @Unroll
+    def 'parse type literals #typeLiteral'() {
+        expect:
+        Parser.parseType(typeLiteral).isEqualTo(expectedType)
+
+        where:
+        typeLiteral   | expectedType
+        "Foo"         | new TypeName("Foo")
+        "String"      | new TypeName("String")
+        "[String]"    | new ListType(new TypeName("String"))
+        "Boolean!"    | new NonNullType(new TypeName("Boolean"))
+        "Boolean !"   | new NonNullType(new TypeName("Boolean"))
+        "Boolean,  !" | new NonNullType(new TypeName("Boolean"))
+        "[Int]!"      | new NonNullType(new ListType(new TypeName("Int")))
+        "[[String!]]" | new ListType(new ListType(new NonNullType(new TypeName("String"))))
+    }
+
+    @Unroll
+    def 'parse invalid type literal #typeLiteral'() {
+        when:
+        Parser.parseType(typeLiteral)
+
+        then:
+        thrown(InvalidSyntaxException)
+
+        where:
+        typeLiteral | _
+        "[String"   | _
+        "[[Int]"    | _
+        "![Foo]"    | _
+        "!Boolean"  | _
+        "[Int!"     | _
+        "[String]]" | _
+    }
+
     def "ignored chars can be set on or off"() {
         def s = '''
             
@@ -1118,7 +1176,7 @@ triple3 : """edge cases \\""" "" " \\"" \\" edge cases"""
         then:
         doc != null
         count == 9
-        tokens == ["query" , "{", "f" , "(", "arg", ":", "1", ")", "}"]
+        tokens == ["query", "{", "f", "(", "arg", ":", "1", ")", "}"]
 
         when: "integration test to prove it be supplied via EI"
 
@@ -1138,7 +1196,7 @@ triple3 : """edge cases \\""" "" " \\"" \\" edge cases"""
         then:
         er.errors.size() == 0
         count == 9
-        tokens == ["query" , "{", "f" , "(", "arg", ":", "1", ")", "}"]
+        tokens == ["query", "{", "f", "(", "arg", ":", "1", ")", "}"]
 
     }
 }

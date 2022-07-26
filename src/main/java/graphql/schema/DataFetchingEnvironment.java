@@ -60,7 +60,7 @@ public interface DataFetchingEnvironment extends IntrospectionDataFetchingEnviro
      * @param name the name of the argument
      * @param <T>  you decide what type it is
      *
-     * @return the named argument or null if its not present
+     * @return the named argument or null if it's not present
      */
     <T> T getArgument(String name);
 
@@ -71,7 +71,7 @@ public interface DataFetchingEnvironment extends IntrospectionDataFetchingEnviro
      * @param defaultValue the default value if the argument is not present
      * @param <T>          you decide what type it is
      *
-     * @return the named argument or the default if its not present
+     * @return the named argument or the default if it's not present
      */
     <T> T getArgumentOrDefault(String name, T defaultValue);
 
@@ -105,10 +105,10 @@ public interface DataFetchingEnvironment extends IntrospectionDataFetchingEnviro
      * via {@link graphql.execution.DataFetcherResult#getLocalContext()} which can be used to pass down extra information to
      * fields beyond the normal {@link #getSource()}
      * <p>
-     * This differs from {@link #getContext()} in that its field specific and passed from parent field to child field,
+     * This differs from {@link #getContext()} in that it's field specific and passed from parent field to child field,
      * whilst {@link #getContext()} is global for the whole query.
      * <p>
-     * If the field is a top level field then 'localContext' equals null since its never be set until those
+     * If the field is a top level field then 'localContext' equals null since it's never be set until those
      * fields execute.
      *
      * @param <T> you decide what type it is

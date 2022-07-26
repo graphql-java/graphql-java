@@ -32,7 +32,10 @@ class UniqueDirectiveNamesPerLocationTest extends Specification {
         then:
         !validationErrors.empty
         validationErrors.size() == 1
-        assertDuplicateDirectiveName("upper", "FragmentDefinition", 12, 39, validationErrors[0])
+        validationErrors[0].locations[0].line == 12
+        validationErrors[0].locations[0].column == 39
+        validationErrors[0].validationErrorType == ValidationErrorType.DuplicateDirectiveName
+        validationErrors[0].message == "Validation error (DuplicateDirectiveName@[FragDef]) : Non repeatable directives must be uniquely named within a location. The directive 'upper' used on a 'FragmentDefinition' is not unique"
     }
 
     def '5.7.3 Directives Are Unique Per Location - OperationDefinition'() {
@@ -57,7 +60,10 @@ class UniqueDirectiveNamesPerLocationTest extends Specification {
         then:
         !validationErrors.empty
         validationErrors.size() == 1
-        assertDuplicateDirectiveName("upper", "OperationDefinition", 2, 29, validationErrors[0])
+        validationErrors[0].locations[0].line == 2
+        validationErrors[0].locations[0].column == 29
+        validationErrors[0].validationErrorType == ValidationErrorType.DuplicateDirectiveName
+        validationErrors[0].message == "Validation error (DuplicateDirectiveName) : Non repeatable directives must be uniquely named within a location. The directive 'upper' used on a 'OperationDefinition' is not unique"
     }
 
     def '5.7.3 Directives Are Unique Per Location - Field'() {
@@ -82,7 +88,10 @@ class UniqueDirectiveNamesPerLocationTest extends Specification {
         then:
         !validationErrors.empty
         validationErrors.size() == 1
-        assertDuplicateDirectiveName("upper", "Field", 4, 28, validationErrors[0])
+        validationErrors[0].locations[0].line == 4
+        validationErrors[0].locations[0].column == 28
+        validationErrors[0].validationErrorType == ValidationErrorType.DuplicateDirectiveName
+        validationErrors[0].message == "Validation error (DuplicateDirectiveName@[dog/name]) : Non repeatable directives must be uniquely named within a location. The directive 'upper' used on a 'Field' is not unique"
     }
 
     def '5.7.3 Directives Are Unique Per Location - FragmentSpread'() {
@@ -107,7 +116,10 @@ class UniqueDirectiveNamesPerLocationTest extends Specification {
         then:
         !validationErrors.empty
         validationErrors.size() == 1
-        assertDuplicateDirectiveName("upper", "FragmentSpread", 5, 35, validationErrors[0])
+        validationErrors[0].locations[0].line == 5
+        validationErrors[0].locations[0].column == 35
+        validationErrors[0].validationErrorType == ValidationErrorType.DuplicateDirectiveName
+        validationErrors[0].message == "Validation error (DuplicateDirectiveName@[dog]) : Non repeatable directives must be uniquely named within a location. The directive 'upper' used on a 'FragmentSpread' is not unique"
     }
 
     def '5.7.3 Directives Are Unique Per Location - InlineFragment'() {
@@ -132,22 +144,14 @@ class UniqueDirectiveNamesPerLocationTest extends Specification {
         then:
         !validationErrors.empty
         validationErrors.size() == 1
-        assertDuplicateDirectiveName("upper", "InlineFragment", 6, 27, validationErrors[0])
+        validationErrors[0].locations[0].line == 6
+        validationErrors[0].locations[0].column == 27
+        validationErrors[0].validationErrorType == ValidationErrorType.DuplicateDirectiveName
+        validationErrors[0].message == "Validation error (DuplicateDirectiveName@[dog]) : Non repeatable directives must be uniquely named within a location. The directive 'upper' used on a 'InlineFragment' is not unique"
     }
 
-
-
-    def assertDuplicateDirectiveName(String name, String type, int line, int column, ValidationError error) {
-        assert error.locations[0].line == line
-        assert error.locations[0].column == column
-        assert error.validationErrorType == ValidationErrorType.DuplicateDirectiveName
-        def expectedMsg = "Non repeatable directives must be uniquely named within a location. The directive '${name}' used on a '${type}' is not unique."
-        assert error.message.contains(expectedMsg)
-        true
-    }
-
-    List<ValidationError> validate(String query) {
+    static List<ValidationError> validate(String query) {
         def document = new Parser().parseDocument(query)
-        return new Validator().validateDocument(SpecValidationSchema.specValidationSchema, document)
+        return new Validator().validateDocument(SpecValidationSchema.specValidationSchema, document, Locale.ENGLISH)
     }
 }

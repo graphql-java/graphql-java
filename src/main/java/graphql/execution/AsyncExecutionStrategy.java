@@ -12,7 +12,6 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
 
-import static graphql.collect.ImmutableKit.map;
 
 /**
  * The standard graphql execution strategy that runs fields asynchronously non-blocking.
@@ -43,11 +42,11 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
         Instrumentation instrumentation = executionContext.getInstrumentation();
         InstrumentationExecutionStrategyParameters instrumentationParameters = new InstrumentationExecutionStrategyParameters(executionContext, parameters);
 
-        ExecutionStrategyInstrumentationContext executionStrategyCtx = instrumentation.beginExecutionStrategy(instrumentationParameters);
+        ExecutionStrategyInstrumentationContext executionStrategyCtx = ExecutionStrategyInstrumentationContext.nonNullCtx(instrumentation.beginExecutionStrategy(instrumentationParameters, executionContext.getInstrumentationState()));
 
         MergedSelectionSet fields = parameters.getFields();
         Set<String> fieldNames = fields.keySet();
-        List<CompletableFuture<FieldValueInfo>> futures = new ArrayList<>(fieldNames.size());
+        Async.CombinedBuilder<FieldValueInfo> futures = Async.ofExpectedSize(fields.size());
         List<String> resolvedFields = new ArrayList<>(fieldNames.size());
         for (String fieldName : fieldNames) {
             MergedField currentField = fields.getSubField(fieldName);
@@ -63,15 +62,18 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
         CompletableFuture<ExecutionResult> overallResult = new CompletableFuture<>();
         executionStrategyCtx.onDispatched(overallResult);
 
-        Async.each(futures).whenComplete((completeValueInfos, throwable) -> {
+        futures.await().whenComplete((completeValueInfos, throwable) -> {
             BiConsumer<List<ExecutionResult>, Throwable> handleResultsConsumer = handleResults(executionContext, resolvedFields, overallResult);
             if (throwable != null) {
                 handleResultsConsumer.accept(null, throwable.getCause());
                 return;
             }
-            List<CompletableFuture<ExecutionResult>> executionResultFuture = map(completeValueInfos, FieldValueInfo::getFieldValue);
+            Async.CombinedBuilder<ExecutionResult> executionResultFutures = Async.ofExpectedSize(completeValueInfos.size());
+            for (FieldValueInfo completeValueInfo : completeValueInfos) {
+                executionResultFutures.add(completeValueInfo.getFieldValue());
+            }
             executionStrategyCtx.onFieldValuesInfo(completeValueInfos);
-            Async.each(executionResultFuture).whenComplete(handleResultsConsumer);
+            executionResultFutures.await().whenComplete(handleResultsConsumer);
         }).exceptionally((ex) -> {
             // if there are any issues with combining/handling the field results,
             // complete the future at all costs and bubble up any thrown exception so

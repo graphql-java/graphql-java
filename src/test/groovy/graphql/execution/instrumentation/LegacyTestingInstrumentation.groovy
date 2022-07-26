@@ -18,7 +18,10 @@ import graphql.validation.ValidationError
 
 import java.util.concurrent.CompletableFuture
 
-class TestingInstrumentation implements Instrumentation {
+/**
+ * This class overrides the old deprecated methods and shows that they still can be called
+ */
+class LegacyTestingInstrumentation implements Instrumentation {
 
     def instrumentationState = new InstrumentationState() {}
     List<String> executionList = []

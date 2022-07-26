@@ -33,7 +33,7 @@ class FieldValidationSupport {
                 .schema(executionContext.getGraphQLSchema())
                 .document(executionContext.getDocument())
                 .operationName(executionContext.getOperationDefinition().getName())
-                .variables(executionContext.getVariables())
+                .coercedVariables(executionContext.getCoercedVariables())
                 .build();
 
         queryTraverser.visitPreOrder(new QueryVisitorStub() {

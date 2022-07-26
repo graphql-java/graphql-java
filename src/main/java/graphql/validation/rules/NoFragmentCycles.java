@@ -4,7 +4,6 @@ package graphql.validation.rules;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -21,6 +20,8 @@ import graphql.validation.LanguageTraversal;
 import graphql.validation.ValidationContext;
 import graphql.validation.ValidationErrorCollector;
 import graphql.validation.ValidationErrorType;
+
+import static graphql.validation.ValidationErrorType.FragmentCycle;
 
 @Internal
 public class NoFragmentCycles extends AbstractRule {
@@ -70,7 +71,7 @@ public class NoFragmentCycles extends AbstractRule {
 
         for (Map.Entry<String, Set<String>> entry : transitiveSpreads.entrySet()) {
             if (entry.getValue().contains(entry.getKey())) {
-                String message = "Fragment cycles not allowed";
+                String message = i18n(FragmentCycle, "NoFragmentCycles.cyclesNotAllowed");
                 addError(ValidationErrorType.FragmentCycle, Collections.singletonList(fragmentDefinition), message);
             }
         }

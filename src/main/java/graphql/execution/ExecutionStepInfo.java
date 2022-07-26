@@ -170,7 +170,7 @@ public class ExecutionStepInfo {
      * @param name the name of the argument
      * @param <T>  you decide what type it is
      *
-     * @return the named argument or null if its not present
+     * @return the named argument or null if it's not present
      */
     @SuppressWarnings("unchecked")
     public <T> T getArgument(String name) {

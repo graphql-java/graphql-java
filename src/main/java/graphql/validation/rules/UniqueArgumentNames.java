@@ -1,5 +1,6 @@
 package graphql.validation.rules;
 
+import com.google.common.collect.Sets;
 import graphql.Internal;
 import graphql.language.Argument;
 import graphql.language.Directive;
@@ -8,11 +9,12 @@ import graphql.language.Node;
 import graphql.validation.AbstractRule;
 import graphql.validation.ValidationContext;
 import graphql.validation.ValidationErrorCollector;
-import graphql.validation.ValidationErrorType;
 
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+
+import static graphql.validation.ValidationErrorType.DuplicateArgumentNames;
+
 
 /**
  * Unique argument names
@@ -20,8 +22,8 @@ import java.util.Set;
  * A GraphQL field or directive is only valid if all supplied arguments are uniquely named.
  */
 @Internal
-public class UniqueArgumentNamesRule extends AbstractRule {
-    public UniqueArgumentNamesRule(ValidationContext validationContext, ValidationErrorCollector validationErrorCollector) {
+public class UniqueArgumentNames extends AbstractRule {
+    public UniqueArgumentNames(ValidationContext validationContext, ValidationErrorCollector validationErrorCollector) {
         super(validationContext, validationErrorCollector);
     }
 
@@ -31,11 +33,12 @@ public class UniqueArgumentNamesRule extends AbstractRule {
             return;
         }
 
-        Set<String> arguments = new HashSet<>();
+        Set<String> arguments = Sets.newHashSetWithExpectedSize(field.getArguments().size());
 
         for (Argument argument : field.getArguments()) {
             if (arguments.contains(argument.getName())) {
-                addError(ValidationErrorType.DuplicateArgumentNames, field.getSourceLocation(), duplicateArgumentNameMessage(argument.getName()));
+                String message = i18n(DuplicateArgumentNames, "UniqueArgumentNames.uniqueArgument", argument.getName());
+                addError(DuplicateArgumentNames, field.getSourceLocation(), message);
             } else {
                 arguments.add(argument.getName());
             }
@@ -48,19 +51,16 @@ public class UniqueArgumentNamesRule extends AbstractRule {
             return;
         }
 
-        Set<String> arguments = new HashSet<>(directive.getArguments().size());
+        Set<String> arguments = Sets.newHashSetWithExpectedSize(directive.getArguments().size());
 
         for (Argument argument : directive.getArguments()) {
             if (arguments.contains(argument.getName())) {
-                addError(ValidationErrorType.DuplicateArgumentNames, directive.getSourceLocation(), duplicateArgumentNameMessage(argument.getName()));
+                String message = i18n(DuplicateArgumentNames, "UniqueArgumentNames.uniqueArgument", argument.getName());
+                addError(DuplicateArgumentNames, directive.getSourceLocation(), message);
             } else {
                 arguments.add(argument.getName());
             }
         }
 
-    }
-
-    static String duplicateArgumentNameMessage(String argumentName) {
-        return String.format("There can be only one argument named '%s'", argumentName);
     }
 }

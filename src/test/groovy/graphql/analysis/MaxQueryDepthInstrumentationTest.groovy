@@ -1,14 +1,16 @@
 package graphql.analysis
 
 import graphql.ExecutionInput
+import graphql.GraphQL
 import graphql.TestUtil
 import graphql.execution.AbortExecutionException
-import graphql.execution.instrumentation.InstrumentationContext
-import graphql.execution.instrumentation.parameters.InstrumentationValidationParameters
+import graphql.execution.ExecutionContext
+import graphql.execution.ExecutionContextBuilder
+import graphql.execution.ExecutionId
+import graphql.execution.instrumentation.parameters.InstrumentationExecuteOperationParameters
 import graphql.language.Document
 import graphql.parser.Parser
-import graphql.validation.ValidationError
-import graphql.validation.ValidationErrorType
+import graphql.schema.GraphQLSchema
 import spock.lang.Specification
 
 import java.util.function.Function
@@ -21,63 +23,7 @@ class MaxQueryDepthInstrumentationTest extends Specification {
     }
 
 
-    def "doesn't do anything if validation errors occur"() {
-        given:
-        def schema = TestUtil.schema("""
-            type Query{
-                bar: String
-            }
-        """)
-        def query = createQuery("""
-            { bar { thisIsWrong } }
-            """)
-        def queryTraversal = Mock(QueryTraverser)
-        MaxQueryDepthInstrumentation maximumQueryDepthInstrumentation = new MaxQueryDepthInstrumentation(6) {
-
-            @Override
-            QueryTraverser newQueryTraverser(InstrumentationValidationParameters parameters) {
-                return queryTraversal
-            }
-        }
-        ExecutionInput executionInput = Mock(ExecutionInput)
-        InstrumentationValidationParameters validationParameters = new InstrumentationValidationParameters(executionInput, query, schema, null)
-        InstrumentationContext instrumentationContext = maximumQueryDepthInstrumentation.beginValidation(validationParameters)
-        when:
-        instrumentationContext.onCompleted([new ValidationError(ValidationErrorType.SubSelectionNotAllowed)], null)
-        then:
-        0 * queryTraversal._(_)
-
-    }
-
-    def "doesn't do anything if exception was thrown"() {
-        given:
-        def schema = TestUtil.schema("""
-            type Query{
-                bar: String
-            }
-        """)
-        def query = createQuery("""
-            { bar { thisIsWrong } }
-            """)
-        def queryTraversal = Mock(QueryTraverser)
-        MaxQueryDepthInstrumentation maximumQueryDepthInstrumentation = new MaxQueryDepthInstrumentation(6) {
-
-            @Override
-            QueryTraverser newQueryTraverser(InstrumentationValidationParameters parameters) {
-                return queryTraversal
-            }
-        }
-        ExecutionInput executionInput = Mock(ExecutionInput)
-        InstrumentationValidationParameters validationParameters = new InstrumentationValidationParameters(executionInput, query, schema, null)
-        InstrumentationContext instrumentationContext = maximumQueryDepthInstrumentation.beginValidation(validationParameters)
-        when:
-        instrumentationContext.onCompleted(null, new RuntimeException())
-        then:
-        0 * queryTraversal._(_)
-
-    }
-
-    def "throws exception"() {
+    def "throws exception if too deep"() {
         given:
         def schema = TestUtil.schema("""
             type Query{
@@ -94,16 +40,16 @@ class MaxQueryDepthInstrumentationTest extends Specification {
             """)
         MaxQueryDepthInstrumentation maximumQueryDepthInstrumentation = new MaxQueryDepthInstrumentation(6)
         ExecutionInput executionInput = Mock(ExecutionInput)
-        InstrumentationValidationParameters validationParameters = new InstrumentationValidationParameters(executionInput, query, schema, null)
-        InstrumentationContext instrumentationContext = maximumQueryDepthInstrumentation.beginValidation(validationParameters)
+        def executionContext = executionCtx(executionInput, query, schema)
+        def executeOperationParameters = new InstrumentationExecuteOperationParameters(executionContext)
         when:
-        instrumentationContext.onCompleted(null, null)
+        maximumQueryDepthInstrumentation.beginExecuteOperation(executeOperationParameters)
         then:
         def e = thrown(AbortExecutionException)
         e.message.contains("maximum query depth exceeded 7 > 6")
     }
 
-    def "doesn't throw exception"() {
+    def "doesn't throw exception if not deep enough"() {
         given:
         def schema = TestUtil.schema("""
             type Query{
@@ -120,10 +66,10 @@ class MaxQueryDepthInstrumentationTest extends Specification {
             """)
         MaxQueryDepthInstrumentation maximumQueryDepthInstrumentation = new MaxQueryDepthInstrumentation(7)
         ExecutionInput executionInput = Mock(ExecutionInput)
-        InstrumentationValidationParameters validationParameters = new InstrumentationValidationParameters(executionInput, query, schema, null)
-        InstrumentationContext instrumentationContext = maximumQueryDepthInstrumentation.beginValidation(validationParameters)
+        def executionContext = executionCtx(executionInput, query, schema)
+        def executeOperationParameters = new InstrumentationExecuteOperationParameters(executionContext)
         when:
-        instrumentationContext.onCompleted(null, null)
+        maximumQueryDepthInstrumentation.beginExecuteOperation(executeOperationParameters)
         then:
         notThrown(Exception)
     }
@@ -143,22 +89,52 @@ class MaxQueryDepthInstrumentationTest extends Specification {
         def query = createQuery("""
             {f1: foo {foo {foo {scalar}}} f2: foo { foo {foo {foo {foo{foo{scalar}}}}}} }
             """)
-        Boolean test = false
+        Boolean calledFunction = false
         Function<QueryDepthInfo, Boolean> maxQueryDepthExceededFunction = new Function<QueryDepthInfo, Boolean>() {
             @Override
             Boolean apply(final QueryDepthInfo queryDepthInfo) {
-                test = true
+                calledFunction = true
                 return false
             }
         }
         MaxQueryDepthInstrumentation maximumQueryDepthInstrumentation = new MaxQueryDepthInstrumentation(6, maxQueryDepthExceededFunction)
         ExecutionInput executionInput = Mock(ExecutionInput)
-        InstrumentationValidationParameters validationParameters = new InstrumentationValidationParameters(executionInput, query, schema, null)
-        InstrumentationContext instrumentationContext = maximumQueryDepthInstrumentation.beginValidation(validationParameters)
+        def executionContext = executionCtx(executionInput, query, schema)
+        def executeOperationParameters = new InstrumentationExecuteOperationParameters(executionContext)
         when:
-        instrumentationContext.onCompleted(null, null)
+        maximumQueryDepthInstrumentation.beginExecuteOperation(executeOperationParameters)
         then:
-        test == true
+        calledFunction
         notThrown(Exception)
+    }
+
+    def "coercing null variables that are marked as non nullable wont blow up early"() {
+
+        given:
+        def schema = TestUtil.schema("""
+            type Query {
+                field(arg : String!) : String
+            }
+        """)
+
+        MaxQueryDepthInstrumentation maximumQueryDepthInstrumentation = new MaxQueryDepthInstrumentation(6)
+        def graphQL = GraphQL.newGraphQL(schema).instrumentation(maximumQueryDepthInstrumentation).build()
+
+        when:
+        def query = '''
+            query x($var : String!) {
+                field(arg : $var)
+            }
+        '''
+        def executionInput = ExecutionInput.newExecutionInput(query).variables(["var": null]).build()
+        def er = graphQL.execute(executionInput)
+
+        then:
+        !er.errors.isEmpty()
+    }
+
+    private ExecutionContext executionCtx(ExecutionInput executionInput, Document query, GraphQLSchema schema) {
+        ExecutionContextBuilder.newExecutionContextBuilder()
+                .executionInput(executionInput).document(query).graphQLSchema(schema).executionId(ExecutionId.generate()).build()
     }
 }

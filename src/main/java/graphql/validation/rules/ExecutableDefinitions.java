@@ -2,6 +2,7 @@ package graphql.validation.rules;
 
 import graphql.Internal;
 import graphql.language.Definition;
+import graphql.language.DirectiveDefinition;
 import graphql.language.Document;
 import graphql.language.FragmentDefinition;
 import graphql.language.OperationDefinition;
@@ -10,7 +11,8 @@ import graphql.language.TypeDefinition;
 import graphql.validation.AbstractRule;
 import graphql.validation.ValidationContext;
 import graphql.validation.ValidationErrorCollector;
-import graphql.validation.ValidationErrorType;
+
+import static graphql.validation.ValidationErrorType.NonExecutableDefinition;
 
 @Internal
 public class ExecutableDefinitions extends AbstractRule {
@@ -32,26 +34,20 @@ public class ExecutableDefinitions extends AbstractRule {
                 && !(definition instanceof FragmentDefinition)) {
 
                 String message = nonExecutableDefinitionMessage(definition);
-                addError(ValidationErrorType.NonExecutableDefinition, definition.getSourceLocation(), message);
+                addError(NonExecutableDefinition, definition.getSourceLocation(), message);
             }
         });
     }
 
     private String nonExecutableDefinitionMessage(Definition definition) {
-
-        String definitionName;
         if (definition instanceof TypeDefinition) {
-            definitionName = ((TypeDefinition) definition).getName();
+            return i18n(NonExecutableDefinition, "ExecutableDefinitions.notExecutableType", ((TypeDefinition) definition).getName());
         } else if (definition instanceof SchemaDefinition) {
-            definitionName = "schema";
-        } else {
-            definitionName = "provided";
+            return i18n(NonExecutableDefinition, "ExecutableDefinitions.notExecutableSchema");
+        } else if (definition instanceof DirectiveDefinition) {
+            return i18n(NonExecutableDefinition, "ExecutableDefinitions.notExecutableDirective", ((DirectiveDefinition) definition).getName());
         }
 
-        return nonExecutableDefinitionMessage(definitionName);
-    }
-
-    static String nonExecutableDefinitionMessage(String definitionName) {
-        return String.format("The %s definition is not executable.", definitionName);
+        return i18n(NonExecutableDefinition, "ExecutableDefinitions.notExecutableDefinition");
     }
 }
