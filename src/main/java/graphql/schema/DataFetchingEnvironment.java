@@ -238,7 +238,10 @@ public interface DataFetchingEnvironment extends IntrospectionDataFetchingEnviro
 
     /**
      * @return the current {@link CacheControl} instance used to add cache hints to the response
+     *
+     * @deprecated - Apollo has deprecated the Cache Control specification
      */
+    @Deprecated
     CacheControl getCacheControl();
 
     /**
