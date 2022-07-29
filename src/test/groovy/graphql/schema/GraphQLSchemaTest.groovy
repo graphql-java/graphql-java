@@ -10,6 +10,7 @@ import graphql.schema.idl.TypeRuntimeWiring
 import spock.lang.Specification
 
 import java.util.function.UnaryOperator
+import java.util.stream.Collectors
 
 import static graphql.Scalars.GraphQLString
 import static graphql.StarWarsSchema.characterInterface
@@ -187,7 +188,6 @@ class GraphQLSchemaTest extends Specification {
         type Dog implements Pet {
             name : String
         }
-
         type Cat implements Pet {
             name : String
         }
@@ -212,6 +212,46 @@ class GraphQLSchemaTest extends Specification {
 
         GraphQLObjectType dogType = schema.getTypeAs("Dog")
         dogType.getName() == "Dog"
+    }
+
+    def "issue with type references when original type is transformed away"() {
+        def sdl = '''
+            type Query {
+              # The b fields leads to the addition of the B type (actual definition)
+              b: B
+              # When we filter out the `b` field, we can still access B through A
+              # however they are GraphQLTypeReferences and not an actual GraphQL Object
+              a: A
+            } 
+
+            type A {
+              b: B
+            }
+
+            type B {
+              a: A
+              b: B
+            }
+        '''
+
+        when:
+        def schema = TestUtil.schema(sdl)
+        // When field `a` is filtered out
+        List<GraphQLFieldDefinition> fields = schema.queryType.fieldDefinitions.stream().filter({
+            it.name == "a"
+        }).collect(Collectors.toList())
+        // And we transform the schema's query root, the schema building
+        // will throw because type B won't be in the type map anymore, since
+        // there are no more actual B object types in the schema tree.
+        def transformed = schema.transform({
+            it.query(schema.queryType.transform({
+                it.replaceFields(fields)
+            }))
+        })
+
+        then:
+        transformed.containsType("B")
+
     }
 
     def "cheap transform without types transformation works"() {
