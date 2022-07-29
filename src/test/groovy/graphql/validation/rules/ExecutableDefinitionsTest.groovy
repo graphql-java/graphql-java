@@ -120,7 +120,7 @@ type QueryRoot {
 
     def 'Executable Definitions with no directive definition'() {
         def query = """
-              directive @nope on INPUT_OBJECT
+            directive @nope on INPUT_OBJECT
             """.stripIndent()
         when:
         def document = new Parser().parseDocument(query)
