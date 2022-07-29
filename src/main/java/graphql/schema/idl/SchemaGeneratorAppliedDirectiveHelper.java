@@ -6,10 +6,11 @@ import graphql.language.Argument;
 import graphql.language.Directive;
 import graphql.language.DirectiveDefinition;
 import graphql.language.InputValueDefinition;
+import graphql.language.StringValue;
 import graphql.language.Type;
 import graphql.language.Value;
-import graphql.schema.GraphQLAppliedDirectiveArgument;
 import graphql.schema.GraphQLAppliedDirective;
+import graphql.schema.GraphQLAppliedDirectiveArgument;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLDirective;
 import graphql.schema.GraphQLInputType;
@@ -25,10 +26,13 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 
+import static graphql.Directives.NO_LONGER_SUPPORTED;
+import static graphql.collect.ImmutableKit.emptyList;
 import static graphql.collect.ImmutableKit.map;
+import static graphql.introspection.Introspection.DirectiveLocation.ARGUMENT_DEFINITION;
 import static graphql.schema.idl.SchemaGeneratorHelper.buildDescription;
 import static graphql.util.Pair.pair;
-import static java.util.Collections.emptyList;
+import static java.util.stream.Collectors.toMap;
 
 /**
  * This contains helper code to build out appliedm directives on schema element
@@ -244,18 +248,50 @@ class SchemaGeneratorAppliedDirectiveHelper {
                 dl -> Introspection.DirectiveLocation.valueOf(dl.getName().toUpperCase()));
     }
 
-    static GraphQLArgument buildDirectiveArgumentDefinitionFromAst(SchemaGeneratorHelper.BuildContext buildCtx, InputValueDefinition arg, Function<Type<?>, GraphQLInputType> inputTypeFactory) {
-        GraphQLArgument.Builder builder = GraphQLArgument.newArgument()
-                .name(arg.getName())
-                .definition(buildCtx.isCaptureAstDefinitions() ? arg : null);
+    static GraphQLArgument buildDirectiveArgumentDefinitionFromAst(SchemaGeneratorHelper.BuildContext buildCtx, InputValueDefinition valueDefinition, Function<Type<?>, GraphQLInputType> inputTypeFactory) {
+        GraphQLArgument.Builder builder = GraphQLArgument.newArgument();
+        builder.definition(buildCtx.isCaptureAstDefinitions() ? valueDefinition : null);
+        builder.name(valueDefinition.getName());
+        builder.description(buildDescription(buildCtx, valueDefinition, valueDefinition.getDescription()));
+        builder.deprecate(buildDeprecationReason(valueDefinition.getDirectives()));
+        builder.comparatorRegistry(buildCtx.getComparatorRegistry());
 
-        GraphQLInputType inputType = inputTypeFactory.apply(arg.getType());
+        GraphQLInputType inputType = inputTypeFactory.apply(valueDefinition.getType());
         builder.type(inputType);
-        if (arg.getDefaultValue() != null) {
-            builder.valueLiteral(arg.getDefaultValue());
-            builder.defaultValueLiteral(arg.getDefaultValue());
+        if (valueDefinition.getDefaultValue() != null) {
+            builder.valueLiteral(valueDefinition.getDefaultValue());
+            builder.defaultValueLiteral(valueDefinition.getDefaultValue());
         }
-        builder.description(buildDescription(buildCtx, arg, arg.getDescription()));
+
+        Pair<List<GraphQLDirective>, List<GraphQLAppliedDirective>> appliedDirectives = buildAppliedDirectives(
+                buildCtx,
+                inputTypeFactory,
+                valueDefinition.getDirectives(),
+                emptyList(),
+                ARGUMENT_DEFINITION,
+                buildCtx.getDirectives(),
+                buildCtx.getComparatorRegistry());
+        buildAppliedDirectives(buildCtx, builder, appliedDirectives);
+
         return builder.build();
     }
+
+
+    static String buildDeprecationReason(List<Directive> directives) {
+        directives = Optional.ofNullable(directives).orElse(emptyList());
+        Optional<Directive> directive = directives.stream().filter(d -> "deprecated".equals(d.getName())).findFirst();
+        if (directive.isPresent()) {
+            Map<String, String> args = directive.get().getArguments().stream().collect(toMap(
+                    Argument::getName, arg -> ((StringValue) arg.getValue()).getValue()
+            ));
+            if (args.isEmpty()) {
+                return NO_LONGER_SUPPORTED; // default value from spec
+            } else {
+                // pre flight checks have ensured its valid
+                return args.get("reason");
+            }
+        }
+        return null;
+    }
+
 }

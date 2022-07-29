@@ -29,6 +29,16 @@ class ImmutableKitTest extends Specification {
         outputList instanceof ImmutableList
     }
 
+    def "can map a collection with nulls"() {
+        when:
+        def outputList = ImmutableKit.mapAndDropNulls(["quick", "brown", "NULL", "fox"], {
+            word -> (word == "NULL") ? null : word.reverse()
+        })
+        then:
+        outputList == ["kciuq", "nworb", "xof"]
+        outputList instanceof ImmutableList
+    }
+
     def "can add to lists"() {
         def list = ["a"]
 

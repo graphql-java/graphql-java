@@ -2,6 +2,7 @@ package graphql.execution.directives;
 
 import com.google.common.collect.ImmutableMap;
 import graphql.Internal;
+import graphql.execution.CoercedVariables;
 import graphql.execution.ValuesResolver;
 import graphql.language.Directive;
 import graphql.schema.GraphQLArgument;
@@ -18,8 +19,6 @@ import java.util.Map;
  */
 @Internal
 public class DirectivesResolver {
-
-    private final ValuesResolver valuesResolver = new ValuesResolver();
 
     public DirectivesResolver() {
     }
@@ -38,7 +37,7 @@ public class DirectivesResolver {
     }
 
     private void buildArguments(GraphQLDirective.Builder directiveBuilder, GraphQLCodeRegistry codeRegistry, GraphQLDirective protoType, Directive fieldDirective, Map<String, Object> variables) {
-        Map<String, Object> argumentValues = valuesResolver.getArgumentValues(codeRegistry, protoType.getArguments(), fieldDirective.getArguments(), variables);
+        Map<String, Object> argumentValues = ValuesResolver.getArgumentValues(codeRegistry, protoType.getArguments(), fieldDirective.getArguments(), CoercedVariables.of(variables));
         directiveBuilder.clearArguments();
         protoType.getArguments().forEach(protoArg -> {
             if (argumentValues.containsKey(protoArg.getName())) {

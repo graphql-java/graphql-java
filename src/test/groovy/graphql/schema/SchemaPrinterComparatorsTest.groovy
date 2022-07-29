@@ -38,7 +38,6 @@ class SchemaPrinterComparatorsTest extends Specification {
         then:
         result == '''"TestScalar"
 scalar TestScalar @a(a : 0, bb : 0) @bb(a : 0, bb : 0)
-
 '''
     }
 
@@ -59,7 +58,6 @@ scalar TestScalar @a(a : 0, bb : 0) @bb(a : 0, bb : 0)
   a @a(a : 0, bb : 0) @bb(a : 0, bb : 0)
   bb @a(a : 0, bb : 0) @bb(a : 0, bb : 0)
 }
-
 '''
     }
 
@@ -77,7 +75,6 @@ scalar TestScalar @a(a : 0, bb : 0) @bb(a : 0, bb : 0)
 
         then:
         result == '''union TestUnion @a(a : 0, bb : 0) @bb(a : 0, bb : 0) = a | bb
-
 '''
     }
 
@@ -87,11 +84,11 @@ scalar TestScalar @a(a : 0, bb : 0) @bb(a : 0, bb : 0)
         GraphQLInterfaceType interfaceType = newInterface().name("TypeA")
                 .withAppliedDirectives(mockDirectivesWithArguments("a", "bb"))
                 .field(newFieldDefinition().name("a")
-                    .argument(mockArguments("a", "bb"))
+                    .arguments(mockArguments("a", "bb"))
                     .type(GraphQLString)
                     .withAppliedDirectives(mockDirectivesWithArguments("a", "bb")).build())
                 .field(newFieldDefinition().name("bb")
-                    .argument(mockArguments("a", "bb"))
+                    .arguments(mockArguments("a", "bb"))
                     .type(GraphQLString)
                     .withAppliedDirectives(mockDirectivesWithArguments("a", "bb")).build())
                 .build()
@@ -106,7 +103,6 @@ scalar TestScalar @a(a : 0, bb : 0) @bb(a : 0, bb : 0)
   a(a: Int, bb: Int): String @a(a : 0, bb : 0) @bb(a : 0, bb : 0)
   bb(a: Int, bb: Int): String @a(a : 0, bb : 0) @bb(a : 0, bb : 0)
 }
-
 '''
     }
 
@@ -117,11 +113,11 @@ scalar TestScalar @a(a : 0, bb : 0) @bb(a : 0, bb : 0)
                 .withInterfaces(newInterface().name("a").build(), newInterface().name("bb").build())
                 .withAppliedDirectives(mockDirectivesWithArguments("a", "bb"))
                 .field(newFieldDefinition().name("a")
-                    .argument(mockArguments("a", "bb"))
+                    .arguments(mockArguments("a", "bb"))
                     .type(GraphQLString)
                     .withAppliedDirectives(mockDirectivesWithArguments("a", "bb")).build())
                 .field(newFieldDefinition().name("bb")
-                    .argument(mockArguments("a", "bb"))
+                    .arguments(mockArguments("a", "bb"))
                     .type(GraphQLString)
                     .withAppliedDirectives(mockDirectivesWithArguments("a", "bb")).build())
                 .build()
@@ -136,7 +132,6 @@ scalar TestScalar @a(a : 0, bb : 0) @bb(a : 0, bb : 0)
   a(a: Int, bb: Int): String @a(a : 0, bb : 0) @bb(a : 0, bb : 0)
   bb(a: Int, bb: Int): String @a(a : 0, bb : 0) @bb(a : 0, bb : 0)
 }
-
 '''
     }
 
@@ -163,7 +158,6 @@ scalar TestScalar @a(a : 0, bb : 0) @bb(a : 0, bb : 0)
   a: String @a(a : 0, bb : 0) @bb(a : 0, bb : 0)
   bb: String @a(a : 0, bb : 0) @bb(a : 0, bb : 0)
 }
-
 '''
     }
 
@@ -210,7 +204,6 @@ scalar TestScalar @a(a : 0, bb : 0) @bb(a : 0, bb : 0)
         then:
         result == '''"TestScalar"
 scalar TestScalar @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
-
 '''
     }
 
@@ -232,7 +225,6 @@ scalar TestScalar @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
         then:
         result == '''"TestScalar"
 scalar TestScalar @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
-
 '''
     }
 
@@ -260,7 +252,6 @@ scalar TestScalar @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
   bb @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
   a @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
 }
-
 '''
     }
 
@@ -287,7 +278,6 @@ scalar TestScalar @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
   bb @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
   a @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
 }
-
 '''
     }
 
@@ -311,7 +301,6 @@ scalar TestScalar @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
 
         then:
         result == '''union TestUnion @bb(bb : 0, a : 0) @a(bb : 0, a : 0) = bb | a
-
 '''
     }
 
@@ -335,7 +324,6 @@ scalar TestScalar @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
 
         then:
         result == '''union TestUnion @bb(bb : 0, a : 0) @a(bb : 0, a : 0) = bb | a
-
 '''
     }
 
@@ -345,11 +333,11 @@ scalar TestScalar @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
         GraphQLInterfaceType interfaceType = newInterface().name("TypeA")
                 .withAppliedDirectives(mockDirectivesWithArguments("a", "bb"))
                 .field(newFieldDefinition().name("a")
-                    .argument(mockArguments("a", "bb"))
+                    .arguments(mockArguments("a", "bb"))
                     .type(GraphQLString)
                     .withAppliedDirectives(mockDirectivesWithArguments("a", "bb")).build())
                 .field(newFieldDefinition().name("bb")
-                    .argument(mockArguments("a", "bb"))
+                    .arguments(mockArguments("a", "bb"))
                     .type(GraphQLString)
                     .withAppliedDirectives(mockDirectivesWithArguments("a", "bb")).build())
                 .build()
@@ -372,7 +360,6 @@ scalar TestScalar @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
   bb(bb: Int, a: Int): String @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
   a(bb: Int, a: Int): String @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
 }
-
 '''
     }
 
@@ -382,11 +369,11 @@ scalar TestScalar @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
         GraphQLInterfaceType interfaceType = newInterface().name("TypeA")
                 .withAppliedDirectives(mockDirectivesWithArguments("a", "bb"))
                 .field(newFieldDefinition().name("a")
-                    .argument(mockArguments("a", "bb"))
+                    .arguments(mockArguments("a", "bb"))
                     .type(GraphQLString)
                     .withAppliedDirectives(mockDirectivesWithArguments("a", "bb")).build())
                 .field(newFieldDefinition().name("bb")
-                    .argument(mockArguments("a", "bb"))
+                    .arguments(mockArguments("a", "bb"))
                     .type(GraphQLString)
                     .withAppliedDirectives(mockDirectivesWithArguments("a", "bb")).build())
                 .build()
@@ -408,7 +395,6 @@ scalar TestScalar @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
   bb(bb: Int, a: Int): String @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
   a(bb: Int, a: Int): String @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
 }
-
 '''
     }
 
@@ -419,11 +405,11 @@ scalar TestScalar @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
                 .withInterfaces(newInterface().name("a") .build(), newInterface().name("bb").build())
                 .withAppliedDirectives(mockDirectivesWithArguments("a", "bb"))
                 .field(newFieldDefinition().name("a")
-                    .argument(mockArguments("a", "bb"))
+                    .arguments(mockArguments("a", "bb"))
                     .type(GraphQLString)
                     .withAppliedDirectives(mockDirectivesWithArguments("a", "bb")).build())
                 .field(newFieldDefinition().name("bb")
-                    .argument(mockArguments("a", "bb"))
+                    .arguments(mockArguments("a", "bb"))
                     .type(GraphQLString).withAppliedDirectives(mockDirectivesWithArguments("a", "bb")).build())
                 .build()
         // @formatter:on
@@ -445,7 +431,6 @@ scalar TestScalar @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
   bb(bb: Int, a: Int): String @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
   a(bb: Int, a: Int): String @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
 }
-
 '''
     }
 
@@ -456,11 +441,11 @@ scalar TestScalar @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
                 .withInterfaces(newInterface().name("a") .build(), newInterface().name("bb").build())
                 .withAppliedDirectives(mockDirectivesWithArguments("a", "bb"))
                 .field(newFieldDefinition().name("a")
-                    .argument(mockArguments("a", "bb"))
+                    .arguments(mockArguments("a", "bb"))
                     .type(GraphQLString)
                     .withAppliedDirectives(mockDirectivesWithArguments("a", "bb")).build())
                 .field(newFieldDefinition().name("bb")
-                    .argument(mockArguments("a", "bb"))
+                    .arguments(mockArguments("a", "bb"))
                     .type(GraphQLString).withAppliedDirectives(mockDirectivesWithArguments("a", "bb")).build())
                 .build()
         // @formatter:on
@@ -481,7 +466,6 @@ scalar TestScalar @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
   bb(bb: Int, a: Int): String @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
   a(bb: Int, a: Int): String @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
 }
-
 '''
     }
 
@@ -514,7 +498,6 @@ scalar TestScalar @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
   bb: String @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
   a: String @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
 }
-
 '''
     }
 
@@ -546,7 +529,6 @@ scalar TestScalar @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
   bb: String @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
   a: String @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
 }
-
 '''
     }
 
@@ -644,22 +626,22 @@ scalar TestScalar @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
                 .withInterfaces(newInterface().name("a") .build(), newInterface().name("bb").build())
                 .withAppliedDirectives(mockDirectivesWithArguments("a", "bb"))
                 .field(newFieldDefinition().name("a")
-                    .argument(mockArguments("a", "bb"))
+                    .arguments(mockArguments("a", "bb"))
                     .type(GraphQLString)
                     .withAppliedDirectives(mockDirectivesWithArguments("a", "bb")).build())
                 .field(newFieldDefinition().name("bb")
-                    .argument(mockArguments("a", "bb"))
+                    .arguments(mockArguments("a", "bb"))
                     .type(GraphQLString).withAppliedDirectives(mockDirectivesWithArguments("a", "bb")).build())
                 .build()
 
         GraphQLInterfaceType interfaceType = newInterface().name("TestInterfaceType")
                 .withAppliedDirectives(mockDirectivesWithArguments("a", "bb"))
                 .field(newFieldDefinition().name("a")
-                    .argument(mockArguments("a", "bb"))
+                    .arguments(mockArguments("a", "bb"))
                     .type(GraphQLString)
                     .withAppliedDirectives(mockDirectivesWithArguments("a", "bb")).build())
                 .field(newFieldDefinition().name("bb")
-                    .argument(mockArguments("a", "bb"))
+                    .arguments(mockArguments("a", "bb"))
                     .type(GraphQLString)
                     .withAppliedDirectives(mockDirectivesWithArguments("a", "bb")).build())
                 .build()
@@ -699,39 +681,33 @@ scalar TestScalar @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
 
         scalarResult == '''"TestScalar"
 scalar TestScalar @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
-
 '''
 
         enumResult == '''enum TestEnum @bb(bb : 0, a : 0) @a(bb : 0, a : 0) {
   bb @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
   a @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
 }
-
 '''
 
         unionResult == '''union TestUnion @bb(bb : 0, a : 0) @a(bb : 0, a : 0) = bb | a
-
 '''
 
         interfaceTypeResult == '''interface TestInterfaceType @bb(bb : 0, a : 0) @a(bb : 0, a : 0) {
   bb(bb: Int, a: Int): String @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
   a(bb: Int, a: Int): String @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
 }
-
 '''
 
         objectTypeResult == '''type TestObjectType implements bb & a @bb(bb : 0, a : 0) @a(bb : 0, a : 0) {
   bb(bb: Int, a: Int): String @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
   a(bb: Int, a: Int): String @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
 }
-
 '''
 
         inputObjectTypeResult == '''input TestInputObjectType @bb(bb : 0, a : 0) @a(bb : 0, a : 0) {
   bb: String @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
   a: String @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
 }
-
 '''
     }
 
@@ -745,7 +721,7 @@ scalar TestScalar @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
         def result = registry.getComparator(newEnvironment().elementType(GraphQLFieldDefinition.class).build())
 
         then:
-        result == TestUtil.byGreatestLength
+        result == byGreatestLength
     }
 
     def "DefaultSchemaPrinterComparatorRegistry provides default comparator when environment is not found"() {
@@ -772,7 +748,6 @@ scalar TestScalar @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
         then:
         result == '''"TestScalar"
 scalar TestScalar @a @bb
-
 '''
     }
 
@@ -795,11 +770,11 @@ scalar TestScalar @a @bb
             }
         }
 
-        def a = GraphQLScalarType.newScalar()
+        def a = newScalar()
                 .name("a")
                 .coercing(coercing)
                 .build()
-        def b = GraphQLScalarType.newScalar()
+        def b = newScalar()
                 .name("b")
                 .coercing(coercing)
                 .build()
@@ -810,7 +785,7 @@ scalar TestScalar @a @bb
 
         when:
         def sortedList = list.stream().sorted(
-                DefaultGraphqlTypeComparatorRegistry.DEFAULT_COMPARATOR).collect(Collectors.toList()
+                DEFAULT_COMPARATOR).collect(Collectors.toList()
         )
 
         then:

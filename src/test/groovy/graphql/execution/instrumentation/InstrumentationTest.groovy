@@ -80,7 +80,7 @@ class InstrumentationTest extends Specification {
         ]
         when:
 
-        def instrumentation = new TestingInstrumentation()
+        def instrumentation = new LegacyTestingInstrumentation()
         instrumentation.useOnDispatch = true
 
         def graphQL = GraphQL
@@ -124,7 +124,7 @@ class InstrumentationTest extends Specification {
         }
         """
 
-        def instrumentation = new TestingInstrumentation() {
+        def instrumentation = new LegacyTestingInstrumentation() {
             @Override
             DataFetcher<?> instrumentDataFetcher(DataFetcher<?> dataFetcher, InstrumentationFieldFetchParameters parameters) {
                 return new DataFetcher<Object>() {
@@ -163,7 +163,7 @@ class InstrumentationTest extends Specification {
         final AtomicBoolean goSignal = new AtomicBoolean()
 
         @Override
-        ExecutionStrategyInstrumentationContext beginExecutionStrategy(InstrumentationExecutionStrategyParameters parameters) {
+        ExecutionStrategyInstrumentationContext beginExecutionStrategy(InstrumentationExecutionStrategyParameters parameters, InstrumentationState state) {
             System.out.println(String.format("t%s setting go signal off", Thread.currentThread().getId()))
             goSignal.set(false)
             return new ExecutionStrategyInstrumentationContext() {
@@ -181,7 +181,7 @@ class InstrumentationTest extends Specification {
         }
 
         @Override
-        DataFetcher<?> instrumentDataFetcher(DataFetcher<?> dataFetcher, InstrumentationFieldFetchParameters parameters) {
+        DataFetcher<?> instrumentDataFetcher(DataFetcher<?> dataFetcher, InstrumentationFieldFetchParameters parameters, InstrumentationState state) {
             System.out.println(String.format("t%s instrument DF for %s", Thread.currentThread().getId(), parameters.environment.getExecutionStepInfo().getPath()))
 
             return new DataFetcher<Object>() {
@@ -196,7 +196,6 @@ class InstrumentationTest extends Specification {
                         return value
                     })
                 }
-
             }
         }
     }
@@ -251,17 +250,16 @@ class InstrumentationTest extends Specification {
 }
 '''
 
-        def instrumentation = new TestingInstrumentation() {
+        def instrumentation = new ModernTestingInstrumentation() {
 
             @Override
-            DocumentAndVariables instrumentDocumentAndVariables(DocumentAndVariables documentAndVariables, InstrumentationExecutionParameters parameters) {
+            DocumentAndVariables instrumentDocumentAndVariables(DocumentAndVariables documentAndVariables, InstrumentationExecutionParameters parameters, InstrumentationState state) {
                 this.capturedData["originalDoc"] = AstPrinter.printAst(documentAndVariables.getDocument())
                 this.capturedData["originalVariables"] = documentAndVariables.getVariables()
                 def newDoc = new Parser().parseDocument(newQuery)
                 def newVars = [var: "1001"]
                 documentAndVariables.transform({ builder -> builder.document(newDoc).variables(newVars) })
             }
-
         }
 
         def graphQL = GraphQL
@@ -277,5 +275,131 @@ class InstrumentationTest extends Specification {
         er.data == [human: [id: "1001", name: 'Darth Vader']]
         instrumentation.capturedData["originalDoc"] == query
         instrumentation.capturedData["originalVariables"] == variables
+    }
+
+    def "an instrumentation can return null and graphql calling code can handle it when inside a chain"() {
+        given:
+
+        def query = """
+        {
+            hero {
+                id
+            }
+        }
+        """
+
+        //
+        // for testing purposes we must use AsyncExecutionStrategy under the covers to get such
+        // serial behaviour.  The Instrumentation of a parallel strategy would be much different
+        // and certainly harder to test
+
+        def expected = [
+                "start:execution",
+                // because a null context was returned, there is no onDispatched and end
+                //"onDispatched:execution",
+                "start:parse",
+                "onDispatched:parse",
+                "end:parse",
+                "start:validation",
+                "onDispatched:validation",
+                "end:validation",
+                "start:execute-operation",
+                "start:execution-strategy",
+                "start:field-hero",
+                "start:fetch-hero",
+                "onDispatched:fetch-hero",
+                "end:fetch-hero",
+                "start:complete-hero",
+                "start:execution-strategy",
+                "start:field-id",
+                "start:fetch-id",
+                "onDispatched:fetch-id",
+                "end:fetch-id",
+                "start:complete-id",
+                "onDispatched:complete-id",
+                "end:complete-id",
+                "onDispatched:field-id",
+                "end:field-id",
+                "onDispatched:execution-strategy",
+                "end:execution-strategy",
+                "onDispatched:complete-hero",
+                "end:complete-hero",
+                "onDispatched:field-hero",
+                "end:field-hero",
+                "onDispatched:execution-strategy",
+                "end:execution-strategy",
+                "onDispatched:execute-operation",
+                "end:execute-operation",
+                //"end:execution",
+        ]
+        when:
+
+        def instrumentation = new ModernTestingInstrumentation() {
+            @Override
+            InstrumentationContext<ExecutionResult> beginExecution(InstrumentationExecutionParameters parameters, InstrumentationState state) {
+                executionList.add("start:execution")
+                return null
+            }
+        }
+        instrumentation.useOnDispatch = true
+
+        def graphQL = GraphQL
+                .newGraphQL(StarWarsSchema.starWarsSchema)
+                .queryExecutionStrategy(new AsyncExecutionStrategy())
+                .instrumentation(instrumentation)
+                .build()
+
+        graphQL.execute(query)
+
+        then:
+        instrumentation.executionList == expected
+    }
+
+    def "an instrumentation can return null and graphql calling code can handle it when not inside a chain"() {
+
+        given:
+
+        def query = '''query Q($var: String!) {
+                                  human(id: $var) {
+                                    id
+                                    name
+                                  }
+                                }
+                            '''
+
+        def instrumentation = new AllNullTestingInstrumentation()
+
+        def graphQL = GraphQL
+                .newGraphQL(StarWarsSchema.starWarsSchema)
+                .instrumentation(instrumentation)
+                .doNotAddDefaultInstrumentations() // important, otherwise a chained one wil be used
+                .build()
+
+        when:
+        def variables = [var: "1001"]
+        def er = graphQL.execute(ExecutionInput.newExecutionInput().query(query).variables(variables)) // Luke
+
+        then:
+        er.data == [human: [id: "1001", name: 'Darth Vader']]
+
+        def expected = [
+                "start:execution",
+                "start:parse",
+                "start:validation",
+                "start:execute-operation",
+                "start:execution-strategy",
+                "start:field-human",
+                "start:fetch-human",
+                "start:complete-human",
+                "start:execution-strategy",
+                "start:field-id",
+                "start:fetch-id",
+                "start:complete-id",
+                "start:field-name",
+                "start:fetch-name",
+                "start:complete-name",
+        ]
+
+        instrumentation.executionList == expected
     }
 }

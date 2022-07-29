@@ -4,16 +4,17 @@ import graphql.AssertException;
 import graphql.Internal;
 import graphql.language.ArrayValue;
 import graphql.language.BooleanValue;
+import graphql.language.EnumValue;
 import graphql.language.FloatValue;
 import graphql.language.IntValue;
 import graphql.language.NullValue;
 import graphql.language.ObjectField;
 import graphql.language.ObjectValue;
 import graphql.language.StringValue;
-import graphql.language.TypeName;
 import graphql.language.Value;
 import graphql.language.VariableDefinition;
 import graphql.language.VariableReference;
+import graphql.parser.Parser;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -21,7 +22,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import static graphql.collect.ImmutableKit.map;
 import static java.util.stream.Collectors.toList;
 
 @Internal
@@ -34,14 +34,14 @@ public class ValueToVariableValueCompiler {
                 variableValue,
                 VariableDefinition.newVariableDefinition()
                         .name(varName)
-                        .type(TypeName.newTypeName(normalizedInputValue.getTypeName()).build())
+                        .type(Parser.parseType(normalizedInputValue.getTypeName()))
                         .build(),
                 VariableReference.newVariableReference().name(varName).build());
     }
 
     @SuppressWarnings("unchecked")
     @Nullable
-    private static Object normalisedValueToVariableValue(Object maybeValue) {
+    static Object normalisedValueToVariableValue(Object maybeValue) {
         Object variableValue;
         if (maybeValue instanceof NormalizedInputValue) {
             NormalizedInputValue normalizedInputValue = (NormalizedInputValue) maybeValue;
@@ -52,8 +52,10 @@ public class ValueToVariableValueCompiler {
                 variableValue = normalisedValueToVariableValues((List<Object>) inputValue);
             } else if (inputValue instanceof Map) {
                 variableValue = normalisedValueToVariableValues((Map<String, Object>) inputValue);
+            } else if (inputValue == null) {
+                variableValue = null;
             } else {
-                throw new AssertException("Should never happen. Did not expect NormalizedInputValue.getValue() of type: " + inputValue.getClass());
+                throw new AssertException("Should never happen. Did not expect NormalizedInputValue.getValue() of type: " + maybeClass(inputValue));
             }
         } else if (maybeValue instanceof Value) {
             Value<?> value = (Value<?>) maybeValue;
@@ -63,13 +65,15 @@ public class ValueToVariableValueCompiler {
         } else if (maybeValue instanceof Map) {
             variableValue = normalisedValueToVariableValues((Map<String, Object>) maybeValue);
         } else {
-            throw new AssertException("Should never happen. Did not expect type: " + maybeValue.getClass());
+                throw new AssertException("Should never happen. Did not expect type: " + maybeClass(maybeValue));
         }
         return variableValue;
     }
 
     private static List<Object> normalisedValueToVariableValues(List<Object> arrayValues) {
-        return map(arrayValues, ValueToVariableValueCompiler::normalisedValueToVariableValue);
+        return arrayValues.stream()
+                .map(ValueToVariableValueCompiler::normalisedValueToVariableValue)
+                .collect(toList());
     }
 
     @NotNull
@@ -115,10 +119,16 @@ public class ValueToVariableValueCompiler {
             return ((IntValue) value).getValue();
         } else if (value instanceof BooleanValue) {
             return ((BooleanValue) value).isValue();
+        } else if (value instanceof EnumValue) {
+            return ((EnumValue) value).getName();
         } else if (value instanceof NullValue) {
             return null;
         }
-        throw new AssertException("Should never happen. Cannot handle node of type: " + value.getClass());
+        throw new AssertException("Should never happen. Cannot handle node of type: " + maybeClass(value));
+    }
+
+    private static Object maybeClass(Object maybe) {
+        return maybe == null ? "null" : maybe.getClass();
     }
 
     private static String getVarName(int variableOrdinal) {

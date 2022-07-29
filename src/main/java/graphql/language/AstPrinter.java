@@ -2,6 +2,7 @@ package graphql.language;
 
 import graphql.AssertException;
 import graphql.PublicApi;
+import graphql.collect.ImmutableKit;
 
 import java.io.PrintWriter;
 import java.io.Writer;
@@ -150,11 +151,19 @@ public class AstPrinter {
             String directives = directives(node.getDirectives());
             String selectionSet = node(node.getSelectionSet());
 
-            out.append(spaced(
-                    alias + name + arguments,
-                    directives,
-                    selectionSet
-            ));
+            if (compactMode) {
+                out.append(spaced(
+                        alias + name + arguments,
+                        directives
+                ));
+                out.append(selectionSet);
+            } else {
+                out.append(spaced(
+                        alias + name + arguments,
+                        directives,
+                        selectionSet
+                ));
+            }
         };
     }
 
@@ -163,7 +172,7 @@ public class AstPrinter {
         final String argSep = compactMode ? "," : ", ";
         return (out, node) -> {
             String args;
-            if (hasDescription(node.getInputValueDefinitions()) && !compactMode) {
+            if (hasDescription(Collections.singletonList(node)) && !compactMode) {
                 out.append(description(node));
                 args = join(node.getInputValueDefinitions(), "\n");
                 out.append(node.getName())
@@ -230,12 +239,22 @@ public class AstPrinter {
             String directives = directives(node.getDirectives());
             String selectionSet = node(node.getSelectionSet());
 
-            out.append(spaced(
-                    "...",
-                    typeCondition,
-                    directives,
-                    selectionSet
-            ));
+            if (compactMode) {
+                // believe it or not but "...on Foo" is valid syntax
+                out.append("...");
+                out.append(spaced(
+                        typeCondition,
+                        directives
+                ));
+                out.append(selectionSet);
+            } else {
+                out.append(spaced(
+                        "...",
+                        typeCondition,
+                        directives,
+                        selectionSet
+                ));
+            }
         };
     }
 
@@ -294,10 +313,15 @@ public class AstPrinter {
 
             // Anonymous queries with no directives or variable definitions can use
             // the query short form.
-            if (isEmpty(name) && isEmpty(directives) && isEmpty(varDefinitions) && op.equals("QUERY")) {
+            if (isEmpty(name) && isEmpty(directives) && isEmpty(varDefinitions) && op.equals("query")) {
                 out.append(selectionSet);
             } else {
-                out.append(spaced(op, smooshed(name, varDefinitions), directives, selectionSet));
+                if (compactMode) {
+                    out.append(spaced(op, smooshed(name, varDefinitions), directives));
+                    out.append(selectionSet);
+                } else {
+                    out.append(spaced(op, smooshed(name, varDefinitions), directives, selectionSet));
+                }
             }
         };
     }
@@ -322,7 +346,8 @@ public class AstPrinter {
 
     private NodePrinter<SelectionSet> selectionSet() {
         return (out, node) -> {
-            out.append(block(node.getSelections()));
+            String block = block(node.getSelections());
+            out.append(block);
         };
     }
 
@@ -468,7 +493,7 @@ public class AstPrinter {
     }
 
     private <T> List<T> nvl(List<T> list) {
-        return list != null ? list : Collections.emptyList();
+        return list != null ? list : ImmutableKit.emptyList();
     }
 
     private NodePrinter<Value> value() {
@@ -515,14 +540,42 @@ public class AstPrinter {
     }
 
     private String directives(List<Directive> directives) {
-        return join(nvl(directives), " ");
+        return join(nvl(directives), compactMode? "" : " ");
     }
 
     private <T extends Node> String join(List<T> nodes, String delim) {
         return join(nodes, delim, "", "");
     }
 
+    /*
+     * Some joined nodes don't need delimiters between them and some do
+     * This encodes that knowledge of those that don't require delimiters
+     */
     @SuppressWarnings("SameParameterValue")
+    private <T extends Node> String joinTight(List<T> nodes, String delim, String prefix, String suffix) {
+        StringBuilder joined = new StringBuilder();
+        joined.append(prefix);
+
+        String lastNodeText = "";
+        boolean first = true;
+        for (T node : nodes) {
+            if (first) {
+                first = false;
+            } else {
+                boolean canButtTogether = lastNodeText.endsWith("}");
+                if (! canButtTogether) {
+                    joined.append(delim);
+                }
+            }
+            String nodeText = this.node(node);
+            lastNodeText = nodeText;
+            joined.append(nodeText);
+        }
+
+        joined.append(suffix);
+        return joined.toString();
+    }
+
     private <T extends Node> String join(List<T> nodes, String delim, String prefix, String suffix) {
         StringBuilder joined = new StringBuilder();
         joined.append(prefix);
@@ -583,7 +636,8 @@ public class AstPrinter {
             return "{}";
         }
         if (compactMode) {
-            return new StringBuilder().append("{").append(join(nodes, " ")).append("}").toString();
+            String joinedNodes = joinTight(nodes, " ", "", "");
+            return new StringBuilder().append("{").append(joinedNodes).append("}").toString();
         }
         return indent(new StringBuilder().append("{\n").append(join(nodes, "\n")))
                 + "\n}";
@@ -593,8 +647,8 @@ public class AstPrinter {
         for (int i = 0; i < maybeString.length(); i++) {
             char c = maybeString.charAt(i);
             if (c == '\n') {
-                maybeString.replace(i,i+1,"\n  ");
-                i+=3;
+                maybeString.replace(i, i + 1, "\n  ");
+                i += 3;
             }
         }
         return maybeString;

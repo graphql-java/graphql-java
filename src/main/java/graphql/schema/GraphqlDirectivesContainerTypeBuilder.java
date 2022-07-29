@@ -3,7 +3,6 @@ package graphql.schema;
 import graphql.Internal;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 
 import static graphql.Assert.assertNotNull;
@@ -44,6 +43,10 @@ public abstract class GraphqlDirectivesContainerTypeBuilder<B extends GraphqlDir
 
 
     /**
+     * @param directives the list of directives
+     *
+     * @return this builder
+     *
      * @deprecated - use the {@link GraphQLAppliedDirective} methods instead
      */
     @Deprecated
@@ -55,6 +58,10 @@ public abstract class GraphqlDirectivesContainerTypeBuilder<B extends GraphqlDir
     }
 
     /**
+     * @param directives the variable args of directives
+     *
+     * @return this builder
+     *
      * @deprecated - use the {@link GraphQLAppliedDirective} methods instead
      */
     @Deprecated
@@ -68,6 +75,10 @@ public abstract class GraphqlDirectivesContainerTypeBuilder<B extends GraphqlDir
     }
 
     /**
+     * @param directive the directive to add
+     *
+     * @return this builder
+     *
      * @deprecated - use the {@link GraphQLAppliedDirective} methods instead
      */
     @Deprecated
@@ -78,6 +89,10 @@ public abstract class GraphqlDirectivesContainerTypeBuilder<B extends GraphqlDir
     }
 
     /**
+     * @param builder the directive builder
+     *
+     * @return this builder
+     *
      * @deprecated - use the {@link GraphQLAppliedDirective} methods instead
      */
     @Deprecated

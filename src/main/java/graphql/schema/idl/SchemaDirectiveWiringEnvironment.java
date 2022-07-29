@@ -39,11 +39,29 @@ public interface SchemaDirectiveWiringEnvironment<T extends GraphQLDirectiveCont
      *
      * @return the directive that was registered under specific directive name or null if it was not
      * registered this way
+     *
+     * @deprecated use {@link #getAppliedDirective()}
      */
     GraphQLDirective getDirective();
 
     /**
+     * This returns the applied directive that the {@link graphql.schema.idl.SchemaDirectiveWiring} was registered
+     * against during calls to {@link graphql.schema.idl.RuntimeWiring.Builder#directive(String, SchemaDirectiveWiring)}
+     * <p>
+     * If this method of registration is not used (say because
+     * {@link graphql.schema.idl.WiringFactory#providesSchemaDirectiveWiring(SchemaDirectiveWiringEnvironment)} or
+     * {@link graphql.schema.idl.RuntimeWiring.Builder#directiveWiring(SchemaDirectiveWiring)} was used)
+     * then this will return null.
+     *
+     * @return the applied directive that was registered under specific directive name or null if it was not
+     * registered this way
+     */
+    GraphQLAppliedDirective getAppliedDirective();
+
+    /**
      * @return all of the directives that are on the runtime element
+     *
+     * @deprecated use {@link #getAppliedDirectives()} instead
      */
     Map<String, GraphQLDirective> getDirectives();
 
@@ -53,6 +71,8 @@ public interface SchemaDirectiveWiringEnvironment<T extends GraphQLDirectiveCont
      * @param directiveName the name of the directive
      *
      * @return a named directive or null
+     *
+     * @deprecated use {@link #getAppliedDirective(String)}  instead
      */
     GraphQLDirective getDirective(String directiveName);
 

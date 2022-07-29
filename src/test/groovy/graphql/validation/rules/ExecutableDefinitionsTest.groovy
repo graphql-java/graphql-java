@@ -2,12 +2,11 @@ package graphql.validation.rules
 
 import graphql.language.SourceLocation
 import graphql.parser.Parser
+import graphql.validation.SpecValidationSchema
 import graphql.validation.ValidationError
 import graphql.validation.ValidationErrorType
 import graphql.validation.Validator
 import spock.lang.Specification
-
-import static graphql.validation.rules.ExecutableDefinitions.nonExecutableDefinitionMessage
 
 class ExecutableDefinitionsTest extends Specification {
 
@@ -69,9 +68,12 @@ extend type Dog {
         then:
         !validationErrors.empty
         validationErrors.size() == 2
-        validationErrors[0] == nonExecutableDefinition("Cow", 8, 1)
-        validationErrors[1] == nonExecutableDefinition("Dog", 12, 1)
-
+        validationErrors[0].validationErrorType == ValidationErrorType.NonExecutableDefinition
+        validationErrors[0].locations == [new SourceLocation(8, 1)]
+        validationErrors[0].message == "Validation error (NonExecutableDefinition) : Type 'Cow' definition is not executable"
+        validationErrors[1].validationErrorType == ValidationErrorType.NonExecutableDefinition
+        validationErrors[1].locations == [new SourceLocation(12, 1)]
+        validationErrors[1].message == "Validation error (NonExecutableDefinition) : Type 'Dog' definition is not executable"
     }
 
     def 'Executable Definitions with schema definition'() {
@@ -91,8 +93,12 @@ type QueryRoot {
         then:
         !validationErrors.empty
         validationErrors.size() == 2
-        validationErrors[0] == nonExecutableDefinition("schema", 2, 1)
-        validationErrors[1] == nonExecutableDefinition("QueryRoot", 6, 1)
+        validationErrors[0].validationErrorType == ValidationErrorType.NonExecutableDefinition
+        validationErrors[0].locations == [new SourceLocation(2, 1)]
+        validationErrors[0].message == "Validation error (NonExecutableDefinition) : Schema definition is not executable"
+        validationErrors[1].validationErrorType == ValidationErrorType.NonExecutableDefinition
+        validationErrors[1].locations == [new SourceLocation(6, 1)]
+        validationErrors[1].message == "Validation error (NonExecutableDefinition) : Type 'QueryRoot' definition is not executable"
     }
 
     def 'Executable Definitions with input value type definition'() {
@@ -107,18 +113,29 @@ type QueryRoot {
         then:
         !validationErrors.empty
         validationErrors.size() == 1
-        validationErrors[0] == nonExecutableDefinition("QueryRoot", 2, 1)
+        validationErrors[0].validationErrorType == ValidationErrorType.NonExecutableDefinition
+        validationErrors[0].locations == [new SourceLocation(2, 1)]
+        validationErrors[0].message == "Validation error (NonExecutableDefinition) : Type 'QueryRoot' definition is not executable"
     }
 
-
-    ValidationError nonExecutableDefinition(String defName, int line, int column) {
-        return new ValidationError(ValidationErrorType.NonExecutableDefinition,
-                [new SourceLocation(line, column)],
-                nonExecutableDefinitionMessage(defName))
-    }
-
-    List<ValidationError> validate(String query) {
+    def 'Executable Definitions with no directive definition'() {
+        def query = """
+              directive @nope on INPUT_OBJECT
+            """.stripIndent()
+        when:
         def document = new Parser().parseDocument(query)
-        return new Validator().validateDocument(Harness.Schema, document)
+        def validationErrors = new Validator().validateDocument(SpecValidationSchema.specValidationSchema, document, Locale.ENGLISH)
+
+        then:
+        !validationErrors.empty
+        validationErrors.size() == 1
+        validationErrors[0].validationErrorType == ValidationErrorType.NonExecutableDefinition
+        validationErrors[0].locations == [new SourceLocation(2, 1)]
+        validationErrors[0].message == "Validation error (NonExecutableDefinition) : Directive 'nope' definition is not executable"
+    }
+
+    static List<ValidationError> validate(String query) {
+        def document = new Parser().parseDocument(query)
+        return new Validator().validateDocument(Harness.Schema, document, Locale.ENGLISH)
     }
 }

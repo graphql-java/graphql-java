@@ -55,7 +55,6 @@ import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLTypeReference;
 import graphql.schema.GraphQLUnionType;
-import graphql.schema.GraphqlDirectivesContainerTypeBuilder;
 import graphql.schema.GraphqlTypeComparatorRegistry;
 import graphql.schema.PropertyDataFetcher;
 import graphql.schema.TypeResolver;
@@ -81,8 +80,10 @@ import java.util.stream.Collectors;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.Directives.DEPRECATED_DIRECTIVE_DEFINITION;
+import static graphql.Directives.NO_LONGER_SUPPORTED;
 import static graphql.Directives.SPECIFIED_BY_DIRECTIVE_DEFINITION;
 import static graphql.Directives.SpecifiedByDirective;
+import static graphql.collect.ImmutableKit.emptyList;
 import static graphql.introspection.Introspection.DirectiveLocation.ARGUMENT_DEFINITION;
 import static graphql.introspection.Introspection.DirectiveLocation.ENUM;
 import static graphql.introspection.Introspection.DirectiveLocation.ENUM_VALUE;
@@ -97,7 +98,6 @@ import static graphql.schema.GraphQLTypeReference.typeRef;
 import static graphql.schema.idl.SchemaGeneratorAppliedDirectiveHelper.buildAppliedDirectives;
 import static graphql.schema.idl.SchemaGeneratorAppliedDirectiveHelper.buildDirectiveDefinitionFromAst;
 import static java.lang.String.format;
-import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.toMap;
 
 @Internal
@@ -210,8 +210,6 @@ public class SchemaGeneratorHelper {
         }
     }
 
-    static final String NO_LONGER_SUPPORTED = "No longer supported";
-
     static String buildDescription(BuildContext buildContext, Node<?> node, Description description) {
         if (description != null) {
             return description.getContent();
@@ -245,7 +243,7 @@ public class SchemaGeneratorHelper {
             if (args.isEmpty()) {
                 return NO_LONGER_SUPPORTED; // default value from spec
             } else {
-                // pre flight checks have ensured its valid
+                // pre flight checks have ensured it's valid
                 return args.get("reason");
             }
         }
@@ -331,8 +329,6 @@ public class SchemaGeneratorHelper {
         fieldBuilder.deprecate(buildDeprecationReason(fieldDef.getDirectives()));
         fieldBuilder.comparatorRegistry(buildCtx.getComparatorRegistry());
 
-        // currently the spec doesnt allow deprecations on InputValueDefinitions but it should!
-        //fieldBuilder.deprecate(buildDeprecationReason(fieldDef.getDirectives()));
         GraphQLInputType inputType = buildInputType(buildCtx, fieldDef.getType());
         fieldBuilder.type(inputType);
         Value<?> defaultValue = fieldDef.getDefaultValue();
@@ -551,7 +547,7 @@ public class SchemaGeneratorHelper {
         });
 
         extensions.forEach(extension -> extension.getImplements().forEach(type -> {
-            GraphQLInterfaceType interfaceType = buildOutputType(buildCtx, type);
+            GraphQLNamedOutputType interfaceType = buildOutputType(buildCtx, type);
             if (!interfaces.containsKey(interfaceType.getName())) {
                 interfaces.put(interfaceType.getName(), interfaceType);
             }
@@ -661,7 +657,7 @@ public class SchemaGeneratorHelper {
         });
 
         extensions.forEach(extension -> extension.getImplements().forEach(type -> {
-            GraphQLInterfaceType interfaceType = buildOutputType(buildCtx, type);
+            GraphQLNamedOutputType interfaceType = buildOutputType(buildCtx, type);
             if (!interfaces.containsKey(interfaceType.getName())) {
                 interfaces.put(interfaceType.getName(), interfaceType);
             }

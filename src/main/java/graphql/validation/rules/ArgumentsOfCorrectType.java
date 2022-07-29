@@ -9,7 +9,8 @@ import graphql.validation.ArgumentValidationUtil;
 import graphql.validation.ValidationContext;
 import graphql.validation.ValidationError;
 import graphql.validation.ValidationErrorCollector;
-import graphql.validation.ValidationErrorType;
+
+import static graphql.validation.ValidationErrorType.WrongType;
 
 @Internal
 public class ArgumentsOfCorrectType extends AbstractRule {
@@ -26,10 +27,11 @@ public class ArgumentsOfCorrectType extends AbstractRule {
         }
         ArgumentValidationUtil validationUtil = new ArgumentValidationUtil(argument);
         if (!validationUtil.isValidLiteralValue(argument.getValue(), fieldArgument.getType(), getValidationContext().getSchema())) {
+            String message = i18n(WrongType, validationUtil.getMsgAndArgs());
             addError(ValidationError.newValidationError()
-                    .validationErrorType(ValidationErrorType.WrongType)
+                    .validationErrorType(WrongType)
                     .sourceLocation(argument.getSourceLocation())
-                    .description(validationUtil.getMessage())
+                    .description(message)
                     .extensions(validationUtil.getErrorExtensions()));
         }
     }

@@ -36,7 +36,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -52,10 +51,6 @@ import static java.util.Collections.singletonList;
 @Deprecated
 @Internal
 public class ValueFetcher {
-
-
-    ValuesResolver valuesResolver = new ValuesResolver();
-
     private static final Logger log = LoggerFactory.getLogger(ValueFetcher.class);
     private static final Logger logNotSafe = LogKit.getNotPrivacySafeLogger(ExecutionStrategy.class);
 
@@ -91,7 +86,7 @@ public class ValueFetcher {
             if (i == 0) {
                 errors = fetchedValueContainingList.getErrors();
             } else {
-                errors = Collections.emptyList();
+                errors = ImmutableKit.emptyList();
             }
             FetchedValue fetchedValue = FetchedValue.newFetchedValue()
                     .fetchedValue(list.get(i))
@@ -123,7 +118,7 @@ public class ValueFetcher {
         GraphQLCodeRegistry codeRegistry = executionContext.getGraphQLSchema().getCodeRegistry();
         GraphQLFieldsContainer parentType = getFieldsContainer(executionInfo);
 
-        Supplier<Map<String, Object>> argumentValues = FpKit.intraThreadMemoize(() -> valuesResolver.getArgumentValues(codeRegistry, fieldDef.getArguments(), field.getArguments(), executionContext.getVariables()));
+        Supplier<Map<String, Object>> argumentValues = FpKit.intraThreadMemoize(() -> ValuesResolver.getArgumentValues(codeRegistry, fieldDef.getArguments(), field.getArguments(), executionContext.getCoercedVariables()));
 
         QueryDirectivesImpl queryDirectives = new QueryDirectivesImpl(sameFields, executionContext.getGraphQLSchema(), executionContext.getVariables());
 

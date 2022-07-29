@@ -16,6 +16,7 @@ import graphql.execution.instrumentation.DocumentAndVariables;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationState;
+import graphql.execution.instrumentation.NoContextChainedInstrumentation;
 import graphql.execution.instrumentation.SimpleInstrumentation;
 import graphql.execution.instrumentation.dataloader.DataLoaderDispatcherInstrumentation;
 import graphql.execution.instrumentation.parameters.InstrumentationCreateStateParameters;
@@ -46,6 +47,7 @@ import java.util.function.UnaryOperator;
 import static graphql.Assert.assertNotNull;
 import static graphql.execution.ExecutionIdProvider.DEFAULT_EXECUTION_ID_PROVIDER;
 import static graphql.execution.instrumentation.SimpleInstrumentationContext.completeInstrumentationCtxCF;
+import static graphql.execution.instrumentation.SimpleInstrumentationContext.nonNullCtx;
 
 /**
  * This class is where all graphql-java query execution begins.  It combines the objects that are needed
@@ -53,7 +55,7 @@ import static graphql.execution.instrumentation.SimpleInstrumentationContext.com
  * and the {@link graphql.execution.ExecutionStrategy execution strategy}
  * <p>
  * Building this object is very cheap and can be done on each execution if necessary.  Building the schema is often not
- * as cheap, especially if its parsed from graphql IDL schema format via {@link graphql.schema.idl.SchemaParser}.
+ * as cheap, especially if it's parsed from graphql IDL schema format via {@link graphql.schema.idl.SchemaParser}.
  * <p>
  * The data for a query is returned via {@link ExecutionResult#getData()} and any errors encountered as placed in
  * {@link ExecutionResult#getErrors()}.
@@ -512,14 +514,14 @@ public class GraphQL {
             InstrumentationState instrumentationState = instrumentation.createState(new InstrumentationCreateStateParameters(this.graphQLSchema, executionInput));
 
             InstrumentationExecutionParameters inputInstrumentationParameters = new InstrumentationExecutionParameters(executionInput, this.graphQLSchema, instrumentationState);
-            executionInput = instrumentation.instrumentExecutionInput(executionInput, inputInstrumentationParameters);
+            executionInput = instrumentation.instrumentExecutionInput(executionInput, inputInstrumentationParameters, instrumentationState);
 
             CompletableFuture<ExecutionResult> beginExecutionCF = new CompletableFuture<>();
             InstrumentationExecutionParameters instrumentationParameters = new InstrumentationExecutionParameters(executionInput, this.graphQLSchema, instrumentationState);
-            InstrumentationContext<ExecutionResult> executionInstrumentation = instrumentation.beginExecution(instrumentationParameters);
+            InstrumentationContext<ExecutionResult> executionInstrumentation = nonNullCtx(instrumentation.beginExecution(instrumentationParameters, instrumentationState));
             executionInstrumentation.onDispatched(beginExecutionCF);
 
-            GraphQLSchema graphQLSchema = instrumentation.instrumentSchema(this.graphQLSchema, instrumentationParameters);
+            GraphQLSchema graphQLSchema = instrumentation.instrumentSchema(this.graphQLSchema, instrumentationParameters, instrumentationState);
 
             CompletableFuture<ExecutionResult> executionResult = parseValidateAndExecute(executionInput, graphQLSchema, instrumentationState);
             //
@@ -527,7 +529,7 @@ public class GraphQL {
             executionResult = executionResult.whenComplete(completeInstrumentationCtxCF(executionInstrumentation, beginExecutionCF));
             //
             // allow instrumentation to tweak the result
-            executionResult = executionResult.thenCompose(result -> instrumentation.instrumentExecutionResult(result, instrumentationParameters));
+            executionResult = executionResult.thenCompose(result -> instrumentation.instrumentExecutionResult(result, instrumentationParameters, instrumentationState));
             return executionResult;
         } catch (AbortExecutionException abortException) {
             return CompletableFuture.completedFuture(abortException.toExecutionResult());
@@ -589,7 +591,7 @@ public class GraphQL {
             final List<ValidationError> errors = validate(executionInput, document, graphQLSchema, instrumentationState);
             if (!errors.isEmpty()) {
                 logNotSafe.warn("Query did not validate : '{}'", query);
-                return new PreparsedDocumentEntry(errors);
+                return new PreparsedDocumentEntry(document, errors);
             }
 
             return new PreparsedDocumentEntry(document);
@@ -598,32 +600,32 @@ public class GraphQL {
 
     private ParseAndValidateResult parse(ExecutionInput executionInput, GraphQLSchema graphQLSchema, InstrumentationState instrumentationState) {
         InstrumentationExecutionParameters parameters = new InstrumentationExecutionParameters(executionInput, graphQLSchema, instrumentationState);
-        InstrumentationContext<Document> parseInstrumentation = instrumentation.beginParse(parameters);
+        InstrumentationContext<Document> parseInstrumentationCtx = nonNullCtx(instrumentation.beginParse(parameters, instrumentationState));
         CompletableFuture<Document> documentCF = new CompletableFuture<>();
-        parseInstrumentation.onDispatched(documentCF);
+        parseInstrumentationCtx.onDispatched(documentCF);
 
         ParseAndValidateResult parseResult = ParseAndValidate.parse(executionInput);
         if (parseResult.isFailure()) {
-            parseInstrumentation.onCompleted(null, parseResult.getSyntaxException());
+            parseInstrumentationCtx.onCompleted(null, parseResult.getSyntaxException());
             return parseResult;
         } else {
             documentCF.complete(parseResult.getDocument());
-            parseInstrumentation.onCompleted(parseResult.getDocument(), null);
+            parseInstrumentationCtx.onCompleted(parseResult.getDocument(), null);
 
             DocumentAndVariables documentAndVariables = parseResult.getDocumentAndVariables();
-            documentAndVariables = instrumentation.instrumentDocumentAndVariables(documentAndVariables, parameters);
+            documentAndVariables = instrumentation.instrumentDocumentAndVariables(documentAndVariables, parameters, instrumentationState);
             return ParseAndValidateResult.newResult()
                     .document(documentAndVariables.getDocument()).variables(documentAndVariables.getVariables()).build();
         }
     }
 
     private List<ValidationError> validate(ExecutionInput executionInput, Document document, GraphQLSchema graphQLSchema, InstrumentationState instrumentationState) {
-        InstrumentationContext<List<ValidationError>> validationCtx = instrumentation.beginValidation(new InstrumentationValidationParameters(executionInput, document, graphQLSchema, instrumentationState));
+        InstrumentationContext<List<ValidationError>> validationCtx = nonNullCtx(instrumentation.beginValidation(new InstrumentationValidationParameters(executionInput, document, graphQLSchema, instrumentationState), instrumentationState));
         CompletableFuture<List<ValidationError>> cf = new CompletableFuture<>();
         validationCtx.onDispatched(cf);
 
         Predicate<Class<?>> validationRulePredicate = executionInput.getGraphQLContext().getOrDefault(ParseAndValidate.INTERNAL_VALIDATION_PREDICATE_HINT, r -> true);
-        List<ValidationError> validationErrors = ParseAndValidate.validate(graphQLSchema, document, validationRulePredicate);
+        List<ValidationError> validationErrors = ParseAndValidate.validate(graphQLSchema, document, validationRulePredicate, executionInput.getLocale());
 
         validationCtx.onCompleted(validationErrors, null);
         cf.complete(validationErrors);
@@ -663,13 +665,16 @@ public class GraphQL {
         if (instrumentation instanceof DataLoaderDispatcherInstrumentation) {
             return instrumentation;
         }
+        if (instrumentation instanceof NoContextChainedInstrumentation) {
+            return instrumentation;
+        }
         if (instrumentation == null) {
             return new DataLoaderDispatcherInstrumentation();
         }
 
         //
         // if we don't have a DataLoaderDispatcherInstrumentation in play, we add one.  We want DataLoader to be 1st class in graphql without requiring
-        // people to remember to wire it in.  Later we may decide to have more default instrumentations but for now its just the one
+        // people to remember to wire it in.  Later we may decide to have more default instrumentations but for now it's just the one
         //
         List<Instrumentation> instrumentationList = new ArrayList<>();
         if (instrumentation instanceof ChainedInstrumentation) {

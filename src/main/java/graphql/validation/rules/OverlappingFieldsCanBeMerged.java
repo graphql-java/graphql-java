@@ -239,11 +239,11 @@ public class OverlappingFieldsCanBeMerged extends AbstractRule {
                 continue;
             }
             if (!field.getName().equals(name)) {
-                String reason = format("%s: %s and %s are different fields", pathToString(path), name, field.getName());
+                String reason = i18n(FieldsConflict, "OverlappingFieldsCanBeMerged.differentFields", pathToString(path), name, field.getName());
                 return new Conflict(reason, fields);
             }
             if (!sameArguments(field.getArguments(), arguments)) {
-                String reason = format("%s: they have differing arguments", pathToString(path));
+                String reason = i18n(FieldsConflict, "OverlappingFieldsCanBeMerged.differentArgs", pathToString(path));
                 return new Conflict(reason, fields);
             }
 
@@ -298,13 +298,13 @@ public class OverlappingFieldsCanBeMerged extends AbstractRule {
             while (true) {
                 if (isNonNull(typeA) || isNonNull(typeB)) {
                     if (isNullable(typeA) || isNullable(typeB)) {
-                        String reason = format("%s: fields have different nullability shapes", pathToString(path));
+                        String reason = i18n(FieldsConflict, "OverlappingFieldsCanBeMerged.differentNullability", pathToString(path));
                         return new Conflict(reason, fields);
                     }
                 }
                 if (isList(typeA) || isList(typeB)) {
                     if (!isList(typeA) || !isList(typeB)) {
-                        String reason = format("%s: fields have different list shapes", pathToString(path));
+                        String reason = i18n(FieldsConflict, "OverlappingFieldsCanBeMerged.differentLists", pathToString(path));
                         return new Conflict(reason, fields);
                     }
                 }
@@ -331,7 +331,7 @@ public class OverlappingFieldsCanBeMerged extends AbstractRule {
     private Conflict mkNotSameTypeError(ImmutableList<String> path, List<Field> fields, GraphQLType typeA, GraphQLType typeB) {
         String name1 = typeA != null ? simplePrint(typeA) : "null";
         String name2 = typeB != null ? simplePrint(typeB) : "null";
-        String reason = format("%s: they return differing types %s and %s", pathToString(path), name1, name2);
+        String reason = i18n(FieldsConflict, "OverlappingFieldsCanBeMerged.differentReturnTypes", pathToString(path), name1, name2);
         return new Conflict(reason, fields);
     }
 

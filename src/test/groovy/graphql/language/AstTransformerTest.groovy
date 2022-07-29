@@ -38,7 +38,7 @@ class AstTransformerTest extends Specification {
 
         then:
         printAstCompact(newDocument) ==
-                "query {root {foo {midA-modified {leafA} midB-modified {leafB}} bar {midC-modified {leafC} midD-modified {leafD}}}}"
+                "{root{foo{midA-modified{leafA}midB-modified{leafB}}bar{midC-modified{leafC}midD-modified{leafD}}}}"
     }
 
     def "modify multiple nodes parallel"() {
@@ -66,7 +66,7 @@ class AstTransformerTest extends Specification {
 
         then:
         printAstCompact(newDocument) ==
-                "query {root {foo {midA-modified {leafA} midB-modified {leafB}} bar {midC-modified {leafC} midD-modified {leafD}}}}"
+                "{root{foo{midA-modified{leafA}midB-modified{leafB}}bar{midC-modified{leafC}midD-modified{leafD}}}}"
     }
 
     def "no change at all"() {
@@ -116,7 +116,7 @@ class AstTransformerTest extends Specification {
         def newDocument = astTransformer.transform(document, visitor)
 
         then:
-        printAstCompact(newDocument) == "query {foo2}"
+        printAstCompact(newDocument) == "{foo2}"
 
     }
 
@@ -139,7 +139,7 @@ class AstTransformerTest extends Specification {
         def newDocument = astTransformer.transformParallel(document, visitor)
 
         then:
-        printAstCompact(newDocument) == "query {foo2}"
+        printAstCompact(newDocument) == "{foo2}"
 
     }
 
@@ -165,7 +165,7 @@ class AstTransformerTest extends Specification {
         def newDocument = astTransformer.transform(document, visitor)
 
         then:
-        printAstCompact(newDocument) == "query {foo2 {a b}}"
+        printAstCompact(newDocument) == "{foo2{a b}}"
 
     }
 
@@ -191,7 +191,7 @@ class AstTransformerTest extends Specification {
         def newDocument = astTransformer.transformParallel(document, visitor)
 
         then:
-        printAstCompact(newDocument) == "query {foo2 {a b}}"
+        printAstCompact(newDocument) == "{foo2{a b}}"
 
     }
 
@@ -217,7 +217,7 @@ class AstTransformerTest extends Specification {
         def newDocument = astTransformer.transform(document, visitor)
 
         then:
-        printAstCompact(newDocument) == "query {root {a(a_arg:2) {v w} b(b_arg:1) {x y}}}"
+        printAstCompact(newDocument) == "{root{a(a_arg:2){v w}b(b_arg:1){x y}}}"
 
     }
 
@@ -242,7 +242,7 @@ class AstTransformerTest extends Specification {
         def newDocument = astTransformer.transformParallel(document, visitor)
 
         then:
-        printAstCompact(newDocument) == "query {root {a(a_arg:2) {v w} b(b_arg:1) {x y}}}"
+        printAstCompact(newDocument) == "{root{a(a_arg:2){v w}b(b_arg:1){x y}}}"
 
     }
 
@@ -268,7 +268,7 @@ class AstTransformerTest extends Specification {
         def newDocument = astTransformer.transform(document, visitor)
 
         then:
-        printAstCompact(newDocument) == "query {root {a(arg:1) {x y}}}"
+        printAstCompact(newDocument) == "{root{a(arg:1){x y}}}"
 
     }
 
@@ -293,7 +293,7 @@ class AstTransformerTest extends Specification {
         def newDocument = astTransformer.transformParallel(document, visitor)
 
         then:
-        printAstCompact(newDocument) == "query {root {a(arg:1) {x y}}}"
+        printAstCompact(newDocument) == "{root{a(arg:1){x y}}}"
 
     }
 
@@ -318,7 +318,7 @@ class AstTransformerTest extends Specification {
         def newDocument = astTransformer.transform(document, visitor)
 
         then:
-        printAstCompact(newDocument) == "query {root {a(arg:1) {x y}}}"
+        printAstCompact(newDocument) == "{root{a(arg:1){x y}}}"
 
     }
 
@@ -347,7 +347,7 @@ class AstTransformerTest extends Specification {
         def newDocument = astTransformer.transform(document, visitor, rootVars)
 
         then:
-        printAstCompact(newDocument) == "query {root {a(arg:1) {x y}}}"
+        printAstCompact(newDocument) == "{root{a(arg:1){x y}}}"
 
     }
 
@@ -373,7 +373,7 @@ class AstTransformerTest extends Specification {
         def newDocument = astTransformer.transformParallel(document, visitor)
 
         then:
-        printAstCompact(newDocument) == "query {root {a(arg:1) {x y}}}"
+        printAstCompact(newDocument) == "{root{a(arg:1){x y}}}"
 
     }
 
@@ -407,8 +407,8 @@ class AstTransformerTest extends Specification {
 
         then:
 
-        printAstCompact(newDocument) == "query {root {aChanged(arg:1) {y1} b {y2} new}}"
-        printAstCompact(newDocumentParallel) == "query {root {aChanged(arg:1) {y1} b {y2} new}}"
+        printAstCompact(newDocument) == "{root{aChanged(arg:1){y1}b{y2}new}}"
+        printAstCompact(newDocumentParallel) == "{root{aChanged(arg:1){y1}b{y2}new}}"
 
     }
 
@@ -431,8 +431,8 @@ class AstTransformerTest extends Specification {
         def newDocumentParallel = astTransformer.transformParallel(document, visitor)
 
         then:
-        printAstCompact(newDocument) == "query {foo foo2}"
-        printAstCompact(newDocumentParallel) == "query {foo foo2}"
+        printAstCompact(newDocument) == "{foo foo2}"
+        printAstCompact(newDocumentParallel) == "{foo foo2}"
 
     }
 
@@ -455,8 +455,8 @@ class AstTransformerTest extends Specification {
         def newDocumentParallel = astTransformer.transformParallel(document, visitor)
 
         then:
-        printAstCompact(newDocument) == "query {foo2 foo}"
-        printAstCompact(newDocumentParallel) == "query {foo2 foo}"
+        printAstCompact(newDocument) == "{foo2 foo}"
+        printAstCompact(newDocumentParallel) == "{foo2 foo}"
 
     }
 
@@ -480,7 +480,7 @@ class AstTransformerTest extends Specification {
         def newDocument = astTransformer.transform(document, visitor)
 
         then:
-        printAstCompact(newDocument) == "query {foo2 foo foo3}"
+        printAstCompact(newDocument) == "{foo2 foo foo3}"
 
     }
 
@@ -504,7 +504,7 @@ class AstTransformerTest extends Specification {
         def newDocument = astTransformer.transformParallel(document, visitor)
 
         then:
-        printAstCompact(newDocument) == "query {foo2 foo foo3}"
+        printAstCompact(newDocument) == "{foo2 foo foo3}"
 
     }
 
@@ -532,8 +532,8 @@ class AstTransformerTest extends Specification {
         def newDocumentParallel = astTransformer.transformParallel(document, visitor)
 
         then:
-        printAstCompact(newDocument) == "query {root {a(arg:1) {x y} newOne}}"
-        printAstCompact(newDocumentParallel) == "query {root {a(arg:1) {x y} newOne}}"
+        printAstCompact(newDocument) == "{root{a(arg:1){x y}newOne}}"
+        printAstCompact(newDocumentParallel) == "{root{a(arg:1){x y}newOne}}"
 
     }
 
@@ -562,8 +562,8 @@ class AstTransformerTest extends Specification {
         def newDocumentParallel = astTransformer.transformParallel(document, visitor)
 
         then:
-        printAstCompact(newDocument) == "query {root {a-changed(arg:1) {x y}}}"
-        printAstCompact(newDocumentParallel) == "query {root {a-changed(arg:1) {x y}}}"
+        printAstCompact(newDocument) == "{root{a-changed(arg:1){x y}}}"
+        printAstCompact(newDocumentParallel) == "{root{a-changed(arg:1){x y}}}"
 
 
     }
@@ -589,8 +589,8 @@ class AstTransformerTest extends Specification {
         def newDocumentParallel = astTransformer.transformParallel(document, visitor)
 
         then:
-        printAstCompact(newDocument) == "query B {fieldB}"
-        printAstCompact(newDocumentParallel) == "query B {fieldB}"
+        printAstCompact(newDocument) == "query B{fieldB}"
+        printAstCompact(newDocumentParallel) == "query B{fieldB}"
 
     }
 
@@ -629,8 +629,8 @@ class AstTransformerTest extends Specification {
         def newDocumentParallel = astTransformer.transformParallel(document, visitor)
 
         then:
-        printAstCompact(newDocument) == "query {field(newArg1:10,arg2:2,arg3:10) @directive1 @after1Directive @newDirective2}"
-        printAstCompact(newDocumentParallel) == "query {field(newArg1:10,arg2:2,arg3:10) @directive1 @after1Directive @newDirective2}"
+        printAstCompact(newDocument) == "{field(newArg1:10,arg2:2,arg3:10) @directive1@after1Directive@newDirective2}"
+        printAstCompact(newDocumentParallel) == "{field(newArg1:10,arg2:2,arg3:10) @directive1@after1Directive@newDirective2}"
 
     }
 
@@ -661,8 +661,8 @@ class AstTransformerTest extends Specification {
         def newDocumentParallel = astTransformer.transformParallel(document, visitor)
 
         then:
-        printAstCompact(newDocument) == "query {field @before @directive1 @after @directive2}"
-        printAstCompact(newDocumentParallel) == "query {field @before @directive1 @after @directive2}"
+        printAstCompact(newDocument) == "{field @before@directive1@after@directive2}"
+        printAstCompact(newDocumentParallel) == "{field @before@directive1@after@directive2}"
 
     }
 
@@ -708,8 +708,8 @@ class AstTransformerTest extends Specification {
         def newDocumentParallel = astTransformer.transformParallel(document, visitor)
 
         then:
-        printAstCompact(newDocument) == "query {field(arg1:1,a1:10,a4:10,a2:10,a3:10) @d5 @directive1 @d4 @d1 @d2 @d3}"
-        printAstCompact(newDocumentParallel) == "query {field(arg1:1,a1:10,a4:10,a2:10,a3:10) @d5 @directive1 @d4 @d1 @d2 @d3}"
+        printAstCompact(newDocument) == "{field(arg1:1,a1:10,a4:10,a2:10,a3:10) @d5@directive1@d4@d1@d2@d3}"
+        printAstCompact(newDocumentParallel) == "{field(arg1:1,a1:10,a4:10,a2:10,a3:10) @d5@directive1@d4@d1@d2@d3}"
 
     }
 
@@ -741,8 +741,8 @@ class AstTransformerTest extends Specification {
         def newDocumentParallel = astTransformer.transformParallel(document, visitor)
 
         then:
-        printAstCompact(newDocument) == "query {first-changed second-changed after-second-1 after-second-2}"
-        printAstCompact(newDocumentParallel) == "query {first-changed second-changed after-second-1 after-second-2}"
+        printAstCompact(newDocument) == "{first-changed second-changed after-second-1 after-second-2}"
+        printAstCompact(newDocumentParallel) == "{first-changed second-changed after-second-1 after-second-2}"
 
     }
 
@@ -772,7 +772,7 @@ class AstTransformerTest extends Specification {
         def newDocument = astTransformer.transform(document, visitor)
 
         then:
-        printAstCompact(newDocument) == "query {before-1 before-2 changed after-1 after-2 after-3}"
+        printAstCompact(newDocument) == "{before-1 before-2 changed after-1 after-2 after-3}"
 
     }
 
@@ -797,8 +797,8 @@ class AstTransformerTest extends Specification {
         def newDocumentParallel = astTransformer.transformParallel(document, visitor)
 
         then:
-        printAstCompact(newDocument) == "query {change3}"
-        printAstCompact(newDocumentParallel) == "query {change3}"
+        printAstCompact(newDocument) == "{change3}"
+        printAstCompact(newDocumentParallel) == "{change3}"
 
     }
 

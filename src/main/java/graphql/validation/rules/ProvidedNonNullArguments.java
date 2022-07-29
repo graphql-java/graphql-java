@@ -14,13 +14,15 @@ import graphql.schema.GraphQLFieldDefinition;
 import graphql.validation.AbstractRule;
 import graphql.validation.ValidationContext;
 import graphql.validation.ValidationErrorCollector;
-import graphql.validation.ValidationErrorType;
 
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
 import static graphql.schema.GraphQLTypeUtil.isNonNull;
+import static graphql.validation.ValidationErrorType.MissingDirectiveArgument;
+import static graphql.validation.ValidationErrorType.MissingFieldArgument;
+import static graphql.validation.ValidationErrorType.NullValueForNonNullArgument;
 
 @Internal
 public class ProvidedNonNullArguments extends AbstractRule {
@@ -42,15 +44,15 @@ public class ProvidedNonNullArguments extends AbstractRule {
             boolean nonNullType = isNonNull(graphQLArgument.getType());
             boolean noDefaultValue = graphQLArgument.getArgumentDefaultValue().isNotSet();
             if (argument == null && nonNullType && noDefaultValue) {
-                String message = String.format("Missing field argument %s", graphQLArgument.getName());
-                addError(ValidationErrorType.MissingFieldArgument, field.getSourceLocation(), message);
+                String message = i18n(MissingFieldArgument, "ProvidedNonNullArguments.missingFieldArg", graphQLArgument.getName());
+                addError(MissingFieldArgument, field.getSourceLocation(), message);
             }
 
             if (argument != null) {
                 Value value = argument.getValue();
                 if ((value == null || value instanceof NullValue) && nonNullType && noDefaultValue) {
-                    String message = String.format("null value for non-null field argument %s", graphQLArgument.getName());
-                    addError(ValidationErrorType.NullValueForNonNullArgument, field.getSourceLocation(), message);
+                    String message = i18n(NullValueForNonNullArgument, "ProvidedNonNullArguments.nullValue", graphQLArgument.getName());
+                    addError(NullValueForNonNullArgument, field.getSourceLocation(), message);
                 }
             }
         }
@@ -70,8 +72,8 @@ public class ProvidedNonNullArguments extends AbstractRule {
             boolean nonNullType = isNonNull(graphQLArgument.getType());
             boolean noDefaultValue = graphQLArgument.getArgumentDefaultValue().isNotSet();
             if (argument == null && nonNullType && noDefaultValue) {
-                String message = String.format("Missing directive argument %s", graphQLArgument.getName());
-                addError(ValidationErrorType.MissingDirectiveArgument, directive.getSourceLocation(), message);
+                String message = i18n(MissingDirectiveArgument, "ProvidedNonNullArguments.missingDirectiveArg", graphQLArgument.getName());
+                addError(MissingDirectiveArgument, directive.getSourceLocation(), message);
             }
         }
     }

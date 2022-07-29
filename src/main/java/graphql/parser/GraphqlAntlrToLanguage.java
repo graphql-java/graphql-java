@@ -70,20 +70,21 @@ import org.antlr.v4.runtime.tree.TerminalNode;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 import static graphql.Assert.assertShouldNeverHappen;
 import static graphql.collect.ImmutableKit.emptyList;
 import static graphql.collect.ImmutableKit.map;
+import static graphql.parser.Parser.CHANNEL_COMMENTS;
+import static graphql.parser.Parser.CHANNEL_WHITESPACE;
 import static graphql.parser.StringValueParsing.parseSingleQuotedString;
 import static graphql.parser.StringValueParsing.parseTripleQuotedString;
+import static java.util.Optional.ofNullable;
 
 @Internal
 public class GraphqlAntlrToLanguage {
 
-    private static final int CHANNEL_COMMENTS = 2;
-    private static final int CHANNEL_IGNORED_CHARS = 3;
+    private static final List<Comment> NO_COMMENTS = ImmutableKit.emptyList();
     private final CommonTokenStream tokens;
     private final MultiSourceReader multiSourceReader;
     private final ParserOptions parserOptions;
@@ -96,7 +97,7 @@ public class GraphqlAntlrToLanguage {
     public GraphqlAntlrToLanguage(CommonTokenStream tokens, MultiSourceReader multiSourceReader, ParserOptions parserOptions) {
         this.tokens = tokens;
         this.multiSourceReader = multiSourceReader;
-        this.parserOptions = parserOptions == null ? ParserOptions.getDefaultParserOptions() : parserOptions;
+        this.parserOptions = ofNullable(parserOptions).orElse(ParserOptions.getDefaultParserOptions());
     }
 
     public ParserOptions getParserOptions() {
@@ -790,12 +791,12 @@ public class GraphqlAntlrToLanguage {
         }
         Token start = ctx.getStart();
         int tokenStartIndex = start.getTokenIndex();
-        List<Token> leftChannel = tokens.getHiddenTokensToLeft(tokenStartIndex, CHANNEL_IGNORED_CHARS);
+        List<Token> leftChannel = tokens.getHiddenTokensToLeft(tokenStartIndex, CHANNEL_WHITESPACE);
         List<IgnoredChar> ignoredCharsLeft = mapTokenToIgnoredChar(leftChannel);
 
         Token stop = ctx.getStop();
         int tokenStopIndex = stop.getTokenIndex();
-        List<Token> rightChannel = tokens.getHiddenTokensToRight(tokenStopIndex, CHANNEL_IGNORED_CHARS);
+        List<Token> rightChannel = tokens.getHiddenTokensToRight(tokenStopIndex, CHANNEL_WHITESPACE);
         List<IgnoredChar> ignoredCharsRight = mapTokenToIgnoredChar(rightChannel);
 
         nodeBuilder.ignoredChars(new IgnoredChars(ignoredCharsLeft, ignoredCharsRight));
@@ -803,7 +804,7 @@ public class GraphqlAntlrToLanguage {
 
     private List<IgnoredChar> mapTokenToIgnoredChar(List<Token> tokens) {
         if (tokens == null) {
-            return Collections.emptyList();
+            return ImmutableKit.emptyList();
         }
         return map(tokens, this::createIgnoredChar);
 
@@ -866,6 +867,10 @@ public class GraphqlAntlrToLanguage {
     }
 
     protected List<Comment> getComments(ParserRuleContext ctx) {
+        if (!parserOptions.isCaptureLineComments()) {
+            return NO_COMMENTS;
+        }
+
         Token start = ctx.getStart();
         if (start != null) {
             int tokPos = start.getTokenIndex();
@@ -874,7 +879,7 @@ public class GraphqlAntlrToLanguage {
                 return getCommentOnChannel(refChannel);
             }
         }
-        return ImmutableKit.emptyList();
+        return NO_COMMENTS;
     }
 
 
@@ -883,7 +888,7 @@ public class GraphqlAntlrToLanguage {
         for (Token refTok : refChannel) {
             String text = refTok.getText();
             // we strip the leading hash # character but we don't trim because we don't
-            // know the "comment markup".  Maybe its space sensitive, maybe its not.  So
+            // know the "comment markup".  Maybe it's space sensitive, maybe it's not.  So
             // consumers can decide that
             if (text == null) {
                 continue;

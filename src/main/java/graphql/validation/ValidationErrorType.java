@@ -10,8 +10,8 @@ public enum ValidationErrorType implements ValidationErrorClassification {
     DefaultForNonNullArgument,
     WrongType,
     UnknownType,
-    SubSelectionRequired,
-    SubSelectionNotAllowed,
+    SubselectionRequired,
+    SubselectionNotAllowed,
     InvalidSyntax,
     BadValueForDefaultArg,
     FieldUndefined,
@@ -38,5 +38,7 @@ public enum ValidationErrorType implements ValidationErrorClassification {
     DuplicateDirectiveName,
     DuplicateArgumentNames,
     DuplicateVariableName,
-    NullValueForNonNullArgument
+    NullValueForNonNullArgument,
+    SubscriptionMultipleRootFields,
+    SubscriptionIntrospectionRootField
 }

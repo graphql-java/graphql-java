@@ -3,11 +3,11 @@ package graphql.execution.instrumentation.parameters;
 import graphql.ExecutionInput;
 import graphql.GraphQLContext;
 import graphql.PublicApi;
+import graphql.collect.ImmutableKit;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationState;
 import graphql.schema.GraphQLSchema;
 
-import java.util.Collections;
 import java.util.Map;
 
 /**
@@ -30,7 +30,7 @@ public class InstrumentationExecutionParameters {
         this.operation = executionInput.getOperationName();
         this.context = executionInput.getContext();
         this.graphQLContext = executionInput.getGraphQLContext();
-        this.variables = executionInput.getVariables() != null ? executionInput.getVariables() : Collections.emptyMap();
+        this.variables = executionInput.getVariables() != null ? executionInput.getVariables() : ImmutableKit.emptyMap();
         this.instrumentationState = instrumentationState;
         this.schema = schema;
     }
@@ -41,7 +41,10 @@ public class InstrumentationExecutionParameters {
      * @param instrumentationState the new state for this parameters object
      *
      * @return a new parameters object with the new state
+     *
+     * @deprecated state is now passed in direct to instrumentation methods
      */
+    @Deprecated
     public InstrumentationExecutionParameters withNewState(InstrumentationState instrumentationState) {
         return new InstrumentationExecutionParameters(this.getExecutionInput(), this.schema, instrumentationState);
     }
@@ -60,6 +63,7 @@ public class InstrumentationExecutionParameters {
 
     /**
      * @param <T> for two
+     *
      * @return the legacy context
      *
      * @deprecated use {@link #getGraphQLContext()} instead
@@ -78,6 +82,17 @@ public class InstrumentationExecutionParameters {
         return variables;
     }
 
+    /**
+     * Previously the instrumentation parameters had access to the state created via {@link Instrumentation#createState(InstrumentationCreateStateParameters)} but now
+     * to save object allocations, the state is passed directly into instrumentation methods
+     *
+     * @param <T> for two
+     *
+     * @return the state created previously during a call to {@link Instrumentation#createState(InstrumentationCreateStateParameters)}
+     *
+     * @deprecated state is now passed in direct to instrumentation methods
+     */
+    @Deprecated
     @SuppressWarnings("TypeParameterUnusedInFormals")
     public <T extends InstrumentationState> T getInstrumentationState() {
         //noinspection unchecked

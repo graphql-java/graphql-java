@@ -36,7 +36,10 @@ public class InstrumentationFieldFetchParameters extends InstrumentationFieldPar
      * @param instrumentationState the new state for this parameters object
      *
      * @return a new parameters object with the new state
+     *
+     * @deprecated state is now passed in direct to instrumentation methods
      */
+    @Deprecated
     @Override
     public InstrumentationFieldFetchParameters withNewState(InstrumentationState instrumentationState) {
         return new InstrumentationFieldFetchParameters(
