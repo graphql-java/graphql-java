@@ -7,6 +7,8 @@ import graphql.GraphQL
 import graphql.TestUtil
 import graphql.schema.idl.RuntimeWiring
 import graphql.schema.idl.TypeRuntimeWiring
+import graphql.util.TraversalControl
+import graphql.util.TraverserContext
 import spock.lang.Specification
 
 import java.util.function.UnaryOperator
@@ -252,6 +254,55 @@ class GraphQLSchemaTest extends Specification {
         then:
         transformed.containsType("B")
 
+    }
+
+    def "can change types via SchemaTransformer and visitor"() {
+        def sdl = '''
+            type Query {
+              # The b fields leads to the addition of the B type (actual definition)
+              b: B
+              # When we filter out the `b` field, we can still access B through A
+              # however they are GraphQLTypeReferences and not an actual GraphQL Object
+              a: A
+            } 
+
+            type A {
+              b: B
+            }
+
+            type B {
+              a: A
+              b: B
+            }
+        '''
+
+        when:
+        def schema = TestUtil.schema(sdl)
+
+        GraphQLTypeVisitorStub visitor = new GraphQLTypeVisitorStub() {
+            @Override
+            TraversalControl visitGraphQLObjectType(GraphQLObjectType objectType, TraverserContext<GraphQLSchemaElement> context) {
+                GraphQLCodeRegistry.Builder codeRegistry = context.getVarFromParents(GraphQLCodeRegistry.Builder.class);
+                // we need to change __XXX introspection types to have directive extensions
+                if (objectType.getName().equals("Query")) {
+                    def queryType = objectType
+                    List<GraphQLFieldDefinition> fields = queryType.fieldDefinitions.stream().filter({
+                        it.name == "a"
+                    }).collect(Collectors.toList())
+
+                    GraphQLObjectType newObjectType  = queryType.transform({
+                        it.replaceFields(fields)
+                    })
+
+                    return changeNode(context, newObjectType);
+                }
+                return TraversalControl.CONTINUE
+            }
+        }
+        GraphQLSchema transformed = SchemaTransformer.transformSchema(schema, visitor)
+
+        then:
+        transformed.containsType("B")
     }
 
     def "cheap transform without types transformation works"() {
