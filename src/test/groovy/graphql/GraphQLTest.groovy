@@ -1352,4 +1352,15 @@ many lines''']
         graphQL.getMutationStrategy() instanceof AsyncSerialExecutionStrategy
         graphQL.getSubscriptionStrategy() instanceof SubscriptionExecutionStrategy
     }
+
+    def "null locale on input is handled under the covers"() {
+
+        def graphQL = GraphQL.newGraphQL(StarWarsSchema.starWarsSchema).build()
+        def ei = newExecutionInput("query q { validationError } ").locale(null).build()
+
+        when:
+        def er = graphQL.execute(ei)
+        then:
+        ! er.errors.isEmpty()
+    }
 }
