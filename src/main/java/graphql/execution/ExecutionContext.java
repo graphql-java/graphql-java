@@ -163,6 +163,7 @@ public class ExecutionContext {
         return dataLoaderRegistry;
     }
 
+    @Deprecated
     public CacheControl getCacheControl() {
         return cacheControl;
     }

@@ -187,6 +187,7 @@ public class ExecutionContextBuilder {
         return this;
     }
 
+    @Deprecated
     public ExecutionContextBuilder cacheControl(CacheControl cacheControl) {
         this.cacheControl = cacheControl;
         return this;

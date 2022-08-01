@@ -196,7 +196,7 @@ class CoercingTest extends Specification {
         def er = customScalarSchema.execute(ei)
         then:
         er.errors.size() == 1
-        er.errors[0].message.contains("parseLiteral message")
+        er.errors[0].message == "Validation error (WrongType@[field]) : argument 'arg2' with value 'StringValue{value='bang'}' is not a valid 'CustomScalar' - parseLiteral message"
         er.errors[0].extensions == [parseLiteral: true]
     }
 
@@ -213,7 +213,7 @@ class CoercingTest extends Specification {
         def er = customScalarSchema.execute(ei)
         then:
         er.errors.size() == 1
-        er.errors[0].message.contains("serialize message")
+        er.errors[0].message.contains("Can't serialize value (/field) : serialize message")
         er.errors[0].extensions == [serialize: true]
     }
 

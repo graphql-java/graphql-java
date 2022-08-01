@@ -218,6 +218,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
     }
 
     @Override
+    @Deprecated
     public CacheControl getCacheControl() {
         return cacheControl;
     }
@@ -391,6 +392,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
             return this;
         }
 
+        @Deprecated
         public Builder cacheControl(CacheControl cacheControl) {
             this.cacheControl = cacheControl;
             return this;

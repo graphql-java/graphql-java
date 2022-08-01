@@ -96,7 +96,6 @@ import static graphql.introspection.Introspection.DirectiveLocation.UNION;
 import static graphql.schema.GraphQLEnumValueDefinition.newEnumValueDefinition;
 import static graphql.schema.GraphQLTypeReference.typeRef;
 import static graphql.schema.idl.SchemaGeneratorAppliedDirectiveHelper.buildAppliedDirectives;
-import static graphql.schema.idl.SchemaGeneratorAppliedDirectiveHelper.buildDeprecationReason;
 import static graphql.schema.idl.SchemaGeneratorAppliedDirectiveHelper.buildDirectiveDefinitionFromAst;
 import static java.lang.String.format;
 import static java.util.stream.Collectors.toMap;
@@ -548,7 +547,7 @@ public class SchemaGeneratorHelper {
         });
 
         extensions.forEach(extension -> extension.getImplements().forEach(type -> {
-            GraphQLInterfaceType interfaceType = buildOutputType(buildCtx, type);
+            GraphQLNamedOutputType interfaceType = buildOutputType(buildCtx, type);
             if (!interfaces.containsKey(interfaceType.getName())) {
                 interfaces.put(interfaceType.getName(), interfaceType);
             }
@@ -658,7 +657,7 @@ public class SchemaGeneratorHelper {
         });
 
         extensions.forEach(extension -> extension.getImplements().forEach(type -> {
-            GraphQLInterfaceType interfaceType = buildOutputType(buildCtx, type);
+            GraphQLNamedOutputType interfaceType = buildOutputType(buildCtx, type);
             if (!interfaces.containsKey(interfaceType.getName())) {
                 interfaces.put(interfaceType.getName(), interfaceType);
             }

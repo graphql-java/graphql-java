@@ -343,6 +343,7 @@ class SchemaParserTest extends Specification {
         def sdl = "type Query {\n"
         for (int i = 0; i < 30000; i++) {
             sdl += " f" + i + " : ID\n"
+            sdl += " " * 10 // 10 whitespace as well
         }
         sdl += "}"
 

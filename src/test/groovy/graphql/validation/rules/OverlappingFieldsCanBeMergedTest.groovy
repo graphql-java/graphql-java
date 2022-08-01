@@ -2,6 +2,7 @@ package graphql.validation.rules
 
 
 import graphql.TypeResolutionEnvironment
+import graphql.i18n.I18n
 import graphql.language.Document
 import graphql.language.SourceLocation
 import graphql.parser.Parser
@@ -27,7 +28,6 @@ class OverlappingFieldsCanBeMergedTest extends Specification {
 
     ValidationErrorCollector errorCollector = new ValidationErrorCollector()
 
-
     def traverse(String query, GraphQLSchema schema) {
         if (schema == null) {
             def objectType = newObject()
@@ -39,7 +39,8 @@ class OverlappingFieldsCanBeMergedTest extends Specification {
         }
 
         Document document = new Parser().parseDocument(query)
-        ValidationContext validationContext = new ValidationContext(schema, document)
+        I18n i18n = I18n.i18n(I18n.BundleType.Validation, Locale.ENGLISH)
+        ValidationContext validationContext = new ValidationContext(schema, document, i18n)
         OverlappingFieldsCanBeMerged overlappingFieldsCanBeMerged = new OverlappingFieldsCanBeMerged(validationContext, errorCollector)
         LanguageTraversal languageTraversal = new LanguageTraversal()
 
@@ -74,7 +75,7 @@ class OverlappingFieldsCanBeMergedTest extends Specification {
 
         then:
         errorCollector.getErrors().size() == 1
-        errorCollector.getErrors()[0].message == "Validation error of type FieldsConflict: myName: name and nickname are different fields @ 'f'"
+        errorCollector.getErrors()[0].message == "Validation error (FieldsConflict@[f]) : 'myName' : 'name' and 'nickname' are different fields"
         errorCollector.getErrors()[0].locations == [new SourceLocation(3, 17), new SourceLocation(4, 17)]
     }
 
@@ -135,7 +136,7 @@ class OverlappingFieldsCanBeMergedTest extends Specification {
 
         then:
         errorCollector.getErrors().size() == 1
-        errorCollector.getErrors()[0].message == "Validation error of type FieldsConflict: scalar: they return differing types Int and String @ 'boxUnion'"
+        errorCollector.getErrors()[0].message == "Validation error (FieldsConflict@[boxUnion]) : 'scalar' : returns different types 'Int' and 'String'"
     }
 
 
@@ -183,7 +184,7 @@ class OverlappingFieldsCanBeMergedTest extends Specification {
 
         then:
         errorCollector.getErrors().size() == 1
-        errorCollector.getErrors()[0].message == "Validation error of type FieldsConflict: scalar: fields have different nullability shapes @ 'boxUnion'"
+        errorCollector.getErrors()[0].message == "Validation error (FieldsConflict@[boxUnion]) : 'scalar' : fields have different nullability shapes"
     }
 
     def 'not the same list return types'() {
@@ -207,7 +208,7 @@ class OverlappingFieldsCanBeMergedTest extends Specification {
 
         then:
         errorCollector.getErrors().size() == 1
-        errorCollector.getErrors()[0].message == "Validation error of type FieldsConflict: scalar: fields have different list shapes @ 'boxUnion'"
+        errorCollector.getErrors()[0].message == "Validation error (FieldsConflict@[boxUnion]) : 'scalar' : fields have different list shapes"
     }
 
 
@@ -323,7 +324,7 @@ class OverlappingFieldsCanBeMergedTest extends Specification {
 
         then:
         errorCollector.getErrors().size() == 1
-        errorCollector.getErrors()[0].message == "Validation error of type FieldsConflict: fido: name and nickname are different fields @ 'sameAliasesWithDifferentFieldTargets'"
+        errorCollector.getErrors()[0].message == "Validation error (FieldsConflict@[sameAliasesWithDifferentFieldTargets]) : 'fido' : 'name' and 'nickname' are different fields"
         errorCollector.getErrors()[0].locations == [new SourceLocation(3, 13), new SourceLocation(4, 13)]
     }
 
@@ -346,7 +347,7 @@ class OverlappingFieldsCanBeMergedTest extends Specification {
 
         then:
         errorCollector.getErrors().size() == 1
-        errorCollector.getErrors()[0].message == "Validation error of type FieldsConflict: name: nickname and name are different fields @ 'aliasMaskingDirectFieldAccess'"
+        errorCollector.getErrors()[0].message == "Validation error (FieldsConflict@[aliasMaskingDirectFieldAccess]) : 'name' : 'nickname' and 'name' are different fields"
         errorCollector.getErrors()[0].locations == [new SourceLocation(3, 13), new SourceLocation(4, 13)]
     }
 
@@ -372,7 +373,7 @@ class OverlappingFieldsCanBeMergedTest extends Specification {
 
         then:
         errorCollector.getErrors().size() == 1
-        errorCollector.getErrors()[0].message == "Validation error of type FieldsConflict: doesKnowCommand: they have differing arguments @ 'conflictingArgs'"
+        errorCollector.getErrors()[0].message == "Validation error (FieldsConflict@[conflictingArgs]) : 'doesKnowCommand' : fields have different arguments"
         errorCollector.getErrors()[0].locations == [new SourceLocation(3, 13), new SourceLocation(4, 13)]
     }
 
@@ -425,7 +426,7 @@ class OverlappingFieldsCanBeMergedTest extends Specification {
 
         then:
         errorCollector.getErrors().size() == 1
-        errorCollector.getErrors()[0].message == "Validation error of type FieldsConflict: x: a and b are different fields"
+        errorCollector.getErrors()[0].message == "Validation error (FieldsConflict) : 'x' : 'a' and 'b' are different fields"
         errorCollector.getErrors()[0].locations == [new SourceLocation(7, 13), new SourceLocation(10, 13)]
     }
 
@@ -472,9 +473,8 @@ class OverlappingFieldsCanBeMergedTest extends Specification {
         then:
         errorCollector.getErrors().size() == 1
 
-        errorCollector.getErrors()[0].message == "Validation error of type FieldsConflict: x: a and b are different fields @ 'f1'"
+        errorCollector.getErrors()[0].message == "Validation error (FieldsConflict@[f1]) : 'x' : 'a' and 'b' are different fields"
         errorCollector.getErrors()[0].locations == [new SourceLocation(18, 13), new SourceLocation(21, 13)]
-
     }
 
 
@@ -503,7 +503,7 @@ class OverlappingFieldsCanBeMergedTest extends Specification {
 
         then:
         errorCollector.getErrors().size() == 1
-        errorCollector.getErrors()[0].message == "Validation error of type FieldsConflict: field/x: a and b are different fields"
+        errorCollector.getErrors()[0].message == "Validation error (FieldsConflict) : 'field/x' : 'a' and 'b' are different fields"
         errorCollector.getErrors()[0].locations.size() == 2
     }
 
@@ -537,10 +537,10 @@ class OverlappingFieldsCanBeMergedTest extends Specification {
 
         then:
         errorCollector.getErrors().size() == 2
-        errorCollector.getErrors()[0].message == "Validation error of type FieldsConflict: field/x: a and b are different fields"
+        errorCollector.getErrors()[0].message == "Validation error (FieldsConflict) : 'field/x' : 'a' and 'b' are different fields"
         errorCollector.getErrors()[0].locations.size() == 2
 
-        errorCollector.getErrors()[1].message == "Validation error of type FieldsConflict: field/y: c and d are different fields"
+        errorCollector.getErrors()[1].message == "Validation error (FieldsConflict) : 'field/y' : 'c' and 'd' are different fields"
         errorCollector.getErrors()[1].locations.size() == 2
     }
 
@@ -579,7 +579,7 @@ class OverlappingFieldsCanBeMergedTest extends Specification {
 
         then:
         errorCollector.getErrors().size() == 1
-        errorCollector.getErrors()[0].message == "Validation error of type FieldsConflict: field/deepField/x: a and b are different fields"
+        errorCollector.getErrors()[0].message == "Validation error (FieldsConflict) : 'field/deepField/x' : 'a' and 'b' are different fields"
         errorCollector.getErrors()[0].locations.size() == 2
     }
 
@@ -621,7 +621,7 @@ class OverlappingFieldsCanBeMergedTest extends Specification {
 
         then:
         errorCollector.getErrors().size() == 1
-        errorCollector.getErrors()[0].message == "Validation error of type FieldsConflict: deepField/x: a and b are different fields @ 'field'"
+        errorCollector.getErrors()[0].message == "Validation error (FieldsConflict@[field]) : 'deepField/x' : 'a' and 'b' are different fields"
         errorCollector.getErrors()[0].locations.size() == 2
     }
 
@@ -841,7 +841,7 @@ class OverlappingFieldsCanBeMergedTest extends Specification {
 
         then:
         errorCollector.getErrors().size() == 1
-        errorCollector.getErrors()[0].message == "Validation error of type FieldsConflict: friends/conflict: they return differing types Int and Float @ 'pets'"
+        errorCollector.getErrors()[0].message == "Validation error (FieldsConflict@[pets]) : 'friends/conflict' : returns different types 'Int' and 'Float'"
     }
 
 

@@ -7,7 +7,7 @@ import graphql.StarWarsSchema
 import graphql.execution.AsyncExecutionStrategy
 import graphql.execution.instrumentation.InstrumentationContext
 import graphql.execution.instrumentation.SimpleInstrumentation
-import graphql.execution.instrumentation.TestingInstrumentation
+import graphql.execution.instrumentation.LegacyTestingInstrumentation
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters
 import graphql.language.Document
 import graphql.parser.Parser
@@ -100,8 +100,8 @@ class PreparsedDocumentProviderTest extends Specification {
 
         when:
 
-        def instrumentation = new TestingInstrumentation()
-        def instrumentationPreparsed = new TestingInstrumentation()
+        def instrumentation = new LegacyTestingInstrumentation()
+        def instrumentationPreparsed = new LegacyTestingInstrumentation()
         def preparsedCache = new TestingPreparsedDocumentProvider()
 
         def strategy = new AsyncExecutionStrategy()

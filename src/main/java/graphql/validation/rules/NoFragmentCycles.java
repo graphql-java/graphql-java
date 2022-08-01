@@ -1,6 +1,14 @@
 package graphql.validation.rules;
 
 
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 import graphql.Internal;
 import graphql.language.Definition;
 import graphql.language.FragmentDefinition;
@@ -13,16 +21,12 @@ import graphql.validation.ValidationContext;
 import graphql.validation.ValidationErrorCollector;
 import graphql.validation.ValidationErrorType;
 
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import static graphql.validation.ValidationErrorType.FragmentCycle;
 
 @Internal
 public class NoFragmentCycles extends AbstractRule {
 
-    private final Map<String, List<FragmentSpread>> fragmentSpreads = new LinkedHashMap<>();
-
+    private final Map<String, Set<String>> fragmentSpreads = new HashMap<>();
 
     public NoFragmentCycles(ValidationContext validationContext, ValidationErrorCollector validationErrorCollector) {
         super(validationContext, validationErrorCollector);
@@ -39,14 +43,13 @@ public class NoFragmentCycles extends AbstractRule {
         }
     }
 
-
-    private List<FragmentSpread> gatherSpreads(FragmentDefinition fragmentDefinition) {
-        final List<FragmentSpread> fragmentSpreads = new ArrayList<>();
+    private Set<String> gatherSpreads(FragmentDefinition fragmentDefinition) {
+        final Set<String> fragmentSpreads = new HashSet<>();
         DocumentVisitor visitor = new DocumentVisitor() {
             @Override
             public void enter(Node node, List<Node> path) {
                 if (node instanceof FragmentSpread) {
-                    fragmentSpreads.add((FragmentSpread) node);
+                    fragmentSpreads.add(((FragmentSpread) node).getName());
                 }
             }
 
@@ -60,36 +63,56 @@ public class NoFragmentCycles extends AbstractRule {
         return fragmentSpreads;
     }
 
-
     @Override
     public void checkFragmentDefinition(FragmentDefinition fragmentDefinition) {
-        List<FragmentSpread> spreadPath = new ArrayList<>();
-        detectCycleRecursive(fragmentDefinition.getName(), fragmentDefinition.getName(), spreadPath);
+        LinkedList<String> path = new LinkedList<>();
+        path.add(0, fragmentDefinition.getName());
+        Map<String, Set<String>> transitiveSpreads = buildTransitiveSpreads(path, new HashMap<>());
+
+        for (Map.Entry<String, Set<String>> entry : transitiveSpreads.entrySet()) {
+            if (entry.getValue().contains(entry.getKey())) {
+                String message = i18n(FragmentCycle, "NoFragmentCycles.cyclesNotAllowed");
+                addError(ValidationErrorType.FragmentCycle, Collections.singletonList(fragmentDefinition), message);
+            }
+        }
     }
 
-    private void detectCycleRecursive(String fragmentName, String initialName, List<FragmentSpread> spreadPath) {
-        List<FragmentSpread> fragmentSpreads = this.fragmentSpreads.get(fragmentName);
-        if (fragmentSpreads == null) {
-            // KnownFragmentNames will have picked this up.  Lets not NPE
-            return;
+    private Map<String, Set<String>> buildTransitiveSpreads(LinkedList<String> path, Map<String, Set<String>> transitiveSpreads) {
+        String name = path.peekFirst();
+
+        if (transitiveSpreads.containsKey(name)) {
+            return transitiveSpreads;
         }
 
-        outer:
-        for (FragmentSpread fragmentSpread : fragmentSpreads) {
+        Set<String> spreads = fragmentSpreads.get(name);
 
-            if (fragmentSpread.getName().equals(initialName)) {
-                String message = "Fragment cycles not allowed";
-                addError(ValidationErrorType.FragmentCycle, spreadPath, message);
+        // spreads may be null when there is no corresponding FragmentDefinition for this spread.
+        // This will be handled by KnownFragmentNames
+        if (spreads == null || spreads.isEmpty()) {
+            return transitiveSpreads;
+        }
+
+        // Add the current spreads to the transitive spreads of each ancestor in the traversal path
+        for (String ancestor : path) {
+            Set<String> ancestorSpreads = transitiveSpreads.get(ancestor);
+            if (ancestorSpreads == null) {
+                ancestorSpreads = new HashSet<>();
+            }
+            ancestorSpreads.addAll(spreads);
+            transitiveSpreads.put(ancestor, ancestorSpreads);
+        }
+
+        for (String child : spreads) {
+            // don't recurse infinitely, expect the recursion check to happen in checkFragmentDefinition
+            if (path.contains(child) || transitiveSpreads.containsKey(child)) {
                 continue;
             }
-            for (FragmentSpread spread : spreadPath) {
-                if (spread.equals(fragmentSpread)) {
-                    continue outer;
-                }
-            }
-            spreadPath.add(fragmentSpread);
-            detectCycleRecursive(fragmentSpread.getName(), initialName, spreadPath);
-            spreadPath.remove(spreadPath.size() - 1);
+
+            // descend into each spread in the current fragment
+            LinkedList<String> childPath = new LinkedList<>(path);
+            childPath.add(0, child);
+            buildTransitiveSpreads(childPath, transitiveSpreads);
         }
+        return transitiveSpreads;
     }
 }

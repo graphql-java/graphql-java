@@ -162,6 +162,7 @@ public class DelegatingDataFetchingEnvironment implements DataFetchingEnvironmen
     }
 
     @Override
+    @Deprecated
     public CacheControl getCacheControl() {
         return delegateEnvironment.getCacheControl();
     }
