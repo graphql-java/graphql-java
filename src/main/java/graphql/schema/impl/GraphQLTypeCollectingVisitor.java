@@ -152,13 +152,7 @@ public class GraphQLTypeCollectingVisitor extends GraphQLTypeVisitorStub {
     private Map<String, GraphQLNamedType> fixFieldDanglingTypes(Map<String, GraphQLNamedType> visitedTypes) {
         for (GraphQLNamedType fieldPointerType : fieldActualTypes.values()) {
             String typeName = fieldPointerType.getName();
-            GraphQLNamedType visitedType = visitedTypes.get(typeName);
-            if (visitedType == null) {
-                visitedTypes.put(typeName, fieldPointerType);
-            } else {
-                // if we have this type (by name) already then it better be the same object
-                assertUniqueTypeObjects(visitedType, fieldPointerType);
-            }
+            visitedTypes.putIfAbsent(typeName, fieldPointerType);
         }
         return visitedTypes;
     }
