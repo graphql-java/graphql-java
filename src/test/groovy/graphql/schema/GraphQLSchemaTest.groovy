@@ -21,6 +21,7 @@ import static graphql.StarWarsSchema.humanType
 import static graphql.StarWarsSchema.starWarsSchema
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition
 import static graphql.schema.GraphQLObjectType.newObject
+import static graphql.schema.GraphQLTypeReference.typeRef
 
 class GraphQLSchemaTest extends Specification {
 
@@ -305,6 +306,35 @@ class GraphQLSchemaTest extends Specification {
         transformed.containsType("B")
     }
 
+    def "fields edited from type references should still built valid schemas"() {
+        def typeB = newObject().name("B")
+                .field(newFieldDefinition().name("a").type(typeRef("A")))
+                .field(newFieldDefinition().name("b").type(typeRef("B")))
+                .build()
+
+
+        def typeAFieldB = newFieldDefinition().name("b").type(typeRef("B")).build()
+        // at the line above typeB is never strongly referenced
+        // and this simulates an edit situation that wont happen with direct java declaration
+        // but where the type reference is replaced to an actual but its the ONLY direct reference
+        // to that type``
+        typeAFieldB.replaceType(typeB)
+
+        def typeA = newObject().name("A")
+                .field(typeAFieldB)
+                .build()
+
+        def queryType = newObject().name("Query")
+                .field(newFieldDefinition().name("a").type(typeA))
+                .build()
+
+        when:
+        def schema = GraphQLSchema.newSchema().query(queryType).build()
+        then:
+        schema.getType("A") != null
+        schema.getType("B") != null
+    }
+
     def "cheap transform without types transformation works"() {
 
         def sdl = '''
@@ -415,4 +445,5 @@ class GraphQLSchemaTest extends Specification {
         thrown(AssertException)
 
     }
+
 }

@@ -22,12 +22,16 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.TreeMap;
 
+import static graphql.schema.GraphQLTypeUtil.isNotWrapped;
+import static graphql.schema.GraphQLTypeUtil.unwrapAllAs;
+import static graphql.schema.GraphQLTypeUtil.unwrapOne;
 import static java.lang.String.format;
 
 @Internal
 public class GraphQLTypeCollectingVisitor extends GraphQLTypeVisitorStub {
 
     private final Map<String, GraphQLNamedType> result = new LinkedHashMap<>();
+    private final Map<String, GraphQLNamedType> fieldActualTypes = new LinkedHashMap<>();
 
     public GraphQLTypeCollectingVisitor() {
     }
@@ -86,9 +90,13 @@ public class GraphQLTypeCollectingVisitor extends GraphQLTypeVisitorStub {
 
     @Override
     public TraversalControl visitGraphQLFieldDefinition(GraphQLFieldDefinition node, TraverserContext<GraphQLSchemaElement> context) {
-
+        GraphQLNamedType type = unwrapAllAs(node.getType());
+        if (! (type instanceof GraphQLTypeReference)) {
+            fieldActualTypes.put(type.getName(), type);
+        }
         return super.visitGraphQLFieldDefinition(node, context);
     }
+
 
     private boolean isNotTypeReference(String name) {
         return result.containsKey(name) && !(result.get(name) instanceof GraphQLTypeReference);
@@ -113,17 +121,38 @@ public class GraphQLTypeCollectingVisitor extends GraphQLTypeVisitorStub {
         if (existingType != null) {
             // type references are ok
             if (!(existingType instanceof GraphQLTypeReference || type instanceof GraphQLTypeReference))
-                // object comparison here is deliberate
+            // object comparison here is deliberate
+            {
                 if (existingType != type) {
                     throw new AssertException(format("All types within a GraphQL schema must have unique names. No two provided types may have the same name.\n" +
                                     "No provided type may have a name which conflicts with any built in types (including Scalar and Introspection types).\n" +
                                     "You have redefined the type '%s' from being a '%s' to a '%s'",
                             type.getName(), existingType.getClass().getSimpleName(), type.getClass().getSimpleName()));
                 }
+            }
         }
     }
 
     public ImmutableMap<String, GraphQLNamedType> getResult() {
-        return ImmutableMap.copyOf(new TreeMap<>(result));
+        Map<String, GraphQLNamedType> types = new TreeMap<>(fixFieldDanglingTypes(result));
+        return ImmutableMap.copyOf(types);
+    }
+
+    /**
+     * It's possible for certain field edits to create a situation where a field had a type reference, then
+     * it got replaced with an actual reference and then the schema gets edited such that the only reference
+     * to that type is the replaced field reference.  This edge case means that the replaced reference can be
+     * missed if it's the only way to get to that type.
+     *
+     * @param visitedTypes the types collected by this visitor
+     *
+     * @return a fixed up map where the only
+     */
+    private Map<String, GraphQLNamedType> fixFieldDanglingTypes(Map<String, GraphQLNamedType> visitedTypes) {
+        for (GraphQLNamedType fieldPointerType : fieldActualTypes.values()) {
+            String typeName = fieldPointerType.getName();
+            visitedTypes.putIfAbsent(typeName, fieldPointerType);
+        }
+        return visitedTypes;
     }
 }
