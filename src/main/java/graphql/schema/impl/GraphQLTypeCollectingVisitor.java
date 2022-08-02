@@ -22,9 +22,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.TreeMap;
 
-import static graphql.schema.GraphQLTypeUtil.isNotWrapped;
 import static graphql.schema.GraphQLTypeUtil.unwrapAllAs;
-import static graphql.schema.GraphQLTypeUtil.unwrapOne;
 import static java.lang.String.format;
 
 @Internal
@@ -91,7 +89,7 @@ public class GraphQLTypeCollectingVisitor extends GraphQLTypeVisitorStub {
     @Override
     public TraversalControl visitGraphQLFieldDefinition(GraphQLFieldDefinition node, TraverserContext<GraphQLSchemaElement> context) {
         GraphQLNamedType type = unwrapAllAs(node.getType());
-        if (! (type instanceof GraphQLTypeReference)) {
+        if (!(type instanceof GraphQLTypeReference)) {
             fieldActualTypes.put(type.getName(), type);
         }
         return super.visitGraphQLFieldDefinition(node, context);
@@ -120,16 +118,19 @@ public class GraphQLTypeCollectingVisitor extends GraphQLTypeVisitorStub {
         // do we have an existing definition
         if (existingType != null) {
             // type references are ok
-            if (!(existingType instanceof GraphQLTypeReference || type instanceof GraphQLTypeReference))
-            // object comparison here is deliberate
-            {
-                if (existingType != type) {
-                    throw new AssertException(format("All types within a GraphQL schema must have unique names. No two provided types may have the same name.\n" +
-                                    "No provided type may have a name which conflicts with any built in types (including Scalar and Introspection types).\n" +
-                                    "You have redefined the type '%s' from being a '%s' to a '%s'",
-                            type.getName(), existingType.getClass().getSimpleName(), type.getClass().getSimpleName()));
-                }
+            if (!(existingType instanceof GraphQLTypeReference || type instanceof GraphQLTypeReference)) {
+                assertUniqueTypeObjects(type, existingType);
             }
+        }
+    }
+
+    private void assertUniqueTypeObjects(GraphQLNamedType type, GraphQLType existingType) {
+        // object comparison here is deliberate
+        if (existingType != type) {
+            throw new AssertException(format("All types within a GraphQL schema must have unique names. No two provided types may have the same name.\n" +
+                            "No provided type may have a name which conflicts with any built in types (including Scalar and Introspection types).\n" +
+                            "You have redefined the type '%s' from being a '%s' to a '%s'",
+                    type.getName(), existingType.getClass().getSimpleName(), type.getClass().getSimpleName()));
         }
     }
 
@@ -151,7 +152,13 @@ public class GraphQLTypeCollectingVisitor extends GraphQLTypeVisitorStub {
     private Map<String, GraphQLNamedType> fixFieldDanglingTypes(Map<String, GraphQLNamedType> visitedTypes) {
         for (GraphQLNamedType fieldPointerType : fieldActualTypes.values()) {
             String typeName = fieldPointerType.getName();
-            visitedTypes.putIfAbsent(typeName, fieldPointerType);
+            GraphQLNamedType visitedType = visitedTypes.get(typeName);
+            if (visitedType == null) {
+                visitedTypes.put(typeName, fieldPointerType);
+            } else {
+                // if we have this type (by name) already then it better be the same object
+                assertUniqueTypeObjects(visitedType, fieldPointerType);
+            }
         }
         return visitedTypes;
     }
