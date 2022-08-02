@@ -12,16 +12,19 @@ import graphql.util.TraverserContext
 import spock.lang.Specification
 
 import java.util.function.UnaryOperator
-import java.util.stream.Collectors
 
 import static graphql.Scalars.GraphQLString
 import static graphql.StarWarsSchema.characterInterface
 import static graphql.StarWarsSchema.droidType
 import static graphql.StarWarsSchema.humanType
 import static graphql.StarWarsSchema.starWarsSchema
+import static graphql.schema.GraphQLArgument.newArgument
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition
+import static graphql.schema.GraphQLInputObjectField.newInputObjectField
+import static graphql.schema.GraphQLInputObjectType.newInputObject
 import static graphql.schema.GraphQLObjectType.newObject
 import static graphql.schema.GraphQLTypeReference.typeRef
+import static java.util.stream.Collectors.toList
 
 class GraphQLSchemaTest extends Specification {
 
@@ -239,10 +242,10 @@ class GraphQLSchemaTest extends Specification {
 
         when:
         def schema = TestUtil.schema(sdl)
-        // When field `a` is filtered out
+        // When field `b` is filtered out
         List<GraphQLFieldDefinition> fields = schema.queryType.fieldDefinitions.stream().filter({
             it.name == "a"
-        }).collect(Collectors.toList())
+        }).collect(toList())
         // And we transform the schema's query root, the schema building
         // will throw because type B won't be in the type map anymore, since
         // there are no more actual B object types in the schema tree.
@@ -260,10 +263,7 @@ class GraphQLSchemaTest extends Specification {
     def "can change types via SchemaTransformer and visitor"() {
         def sdl = '''
             type Query {
-              # The b fields leads to the addition of the B type (actual definition)
               b: B
-              # When we filter out the `b` field, we can still access B through A
-              # however they are GraphQLTypeReferences and not an actual GraphQL Object
               a: A
             } 
 
@@ -283,15 +283,13 @@ class GraphQLSchemaTest extends Specification {
         GraphQLTypeVisitorStub visitor = new GraphQLTypeVisitorStub() {
             @Override
             TraversalControl visitGraphQLObjectType(GraphQLObjectType objectType, TraverserContext<GraphQLSchemaElement> context) {
-                GraphQLCodeRegistry.Builder codeRegistry = context.getVarFromParents(GraphQLCodeRegistry.Builder.class);
-                // we need to change __XXX introspection types to have directive extensions
-                if (objectType.getName().equals("Query")) {
+                if (objectType.getName() == "Query") {
                     def queryType = objectType
                     List<GraphQLFieldDefinition> fields = queryType.fieldDefinitions.stream().filter({
                         it.name == "a"
-                    }).collect(Collectors.toList())
+                    }).collect(toList())
 
-                    GraphQLObjectType newObjectType  = queryType.transform({
+                    GraphQLObjectType newObjectType = queryType.transform({
                         it.replaceFields(fields)
                     })
 
@@ -324,8 +322,38 @@ class GraphQLSchemaTest extends Specification {
                 .field(typeAFieldB)
                 .build()
 
+        //
+        // the same pattern above applies ot other replaceable types like arguments and input fields
+        def inputTypeY = newInputObject().name("InputTypeY")
+                .field(newInputObjectField().name("in2").type(GraphQLString))
+                .build()
+
+        def inputFieldOfY = newInputObjectField().name("inY").type(typeRef("InputTypeY")).build()
+        // only reference to InputTypeY
+        inputFieldOfY.replaceType(inputTypeY)
+
+        def inputTypeZ = newInputObject().name("InputTypeZ")
+                .field(inputFieldOfY)
+                .build()
+
+        def inputTypeX = newInputObject().name("InputTypeX")
+                .field(newInputObjectField().name("inX").type(GraphQLString))
+                .build()
+
+        GraphQLArgument argOfX = newArgument().name("argOfX").type(typeRef("InputTypeX")).build()
+        // only reference to InputTypeX
+        argOfX.replaceType(inputTypeX)
+
+        GraphQLArgument argOfZ = newArgument().name("argOfZ").type(inputTypeZ).build()
+
+        def typeC = newObject().name("C")
+                .field(newFieldDefinition().name("f1").type(GraphQLString).argument(argOfX))
+                .field(newFieldDefinition().name("f2").type(GraphQLString).argument(argOfZ))
+                .build()
+
         def queryType = newObject().name("Query")
                 .field(newFieldDefinition().name("a").type(typeA))
+                .field(newFieldDefinition().name("c").type(typeC))
                 .build()
 
         when:
@@ -333,6 +361,9 @@ class GraphQLSchemaTest extends Specification {
         then:
         schema.getType("A") != null
         schema.getType("B") != null
+        schema.getType("InputTypeX") != null
+        schema.getType("InputTypeY") != null
+        schema.getType("InputTypeZ") != null
     }
 
     def "cheap transform without types transformation works"() {
