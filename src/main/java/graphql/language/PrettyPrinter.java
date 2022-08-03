@@ -422,6 +422,10 @@ public class PrettyPrinter extends AstPrinter {
             this.indentText =  String.join("", Collections.nCopies(indentWidth, indentType.character));
         }
 
+        public static PrettyPrinterOptions defaultOptions()  {
+            return defaultOptions;
+        }
+
         public static Builder builder() {
             return new Builder();
         }
@@ -436,7 +440,7 @@ public class PrettyPrinter extends AstPrinter {
             }
         }
 
-        private static class Builder {
+        public static class Builder {
             private IndentType indentType;
             private int indentWidth = 1;
 
