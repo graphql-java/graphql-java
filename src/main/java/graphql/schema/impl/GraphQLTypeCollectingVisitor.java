@@ -116,18 +116,6 @@ public class GraphQLTypeCollectingVisitor extends GraphQLTypeVisitorStub {
         return CONTINUE;
     }
 
-    @Override
-    public TraversalControl visitGraphQLList(GraphQLList node, TraverserContext<GraphQLSchemaElement> context) {
-        saveIndirectStrongReference(node::getWrappedType);
-        return CONTINUE;
-    }
-
-    @Override
-    public TraversalControl visitGraphQLNonNull(GraphQLNonNull node, TraverserContext<GraphQLSchemaElement> context) {
-        saveIndirectStrongReference(node::getWrappedType);
-        return CONTINUE;
-    }
-
     private <T> void saveIndirectStrongReference(Supplier<GraphQLType> typeSupplier) {
         GraphQLNamedType type = unwrapAllAs(typeSupplier.get());
         if (!(type instanceof GraphQLTypeReference)) {

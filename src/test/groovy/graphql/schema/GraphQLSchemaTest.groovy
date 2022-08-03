@@ -22,6 +22,7 @@ import static graphql.schema.GraphQLArgument.newArgument
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition
 import static graphql.schema.GraphQLInputObjectField.newInputObjectField
 import static graphql.schema.GraphQLInputObjectType.newInputObject
+import static graphql.schema.GraphQLNonNull.nonNull
 import static graphql.schema.GraphQLObjectType.newObject
 import static graphql.schema.GraphQLTypeReference.typeRef
 import static java.util.stream.Collectors.toList
@@ -298,10 +299,10 @@ class GraphQLSchemaTest extends Specification {
                 return TraversalControl.CONTINUE
             }
         }
-        GraphQLSchema transformed = SchemaTransformer.transformSchema(schema, visitor)
+        GraphQLSchema transformedSchema = SchemaTransformer.transformSchema(schema, visitor)
 
         then:
-        transformed.containsType("B")
+        transformedSchema.containsType("B")
     }
 
     def "fields edited from type references should still built valid schemas"() {
@@ -364,6 +365,41 @@ class GraphQLSchemaTest extends Specification {
         schema.getType("InputTypeX") != null
         schema.getType("InputTypeY") != null
         schema.getType("InputTypeZ") != null
+    }
+
+    def "list and non nulls work when direct references are edited"() {
+
+        def typeX = newObject().name("TypeX")
+                .field(newFieldDefinition().name("f1").type(GraphQLString))
+                .build()
+        def queryType = newObject().name("Query")
+                .field(newFieldDefinition().name("direct").type(typeX))
+                .field(newFieldDefinition().name("indirectNonNull").type(nonNull(typeRef("TypeX"))))
+                .field(newFieldDefinition().name("indirectList").type(GraphQLList.list(nonNull(typeRef("TypeX")))))
+                .build()
+
+        when:
+        def schema = GraphQLSchema.newSchema().query(queryType).build()
+        then:
+        schema.getType("TypeX") != null
+
+        // now edit away the actual strong reference
+        when:
+        GraphQLTypeVisitor visitor = new GraphQLTypeVisitorStub() {
+
+            @Override
+            TraversalControl visitGraphQLFieldDefinition(GraphQLFieldDefinition node, TraverserContext<GraphQLSchemaElement> context) {
+                if (node.getName() == "direct") {
+                    return deleteNode(context)
+                }
+                return TraversalControl.CONTINUE
+            }
+        }
+
+        GraphQLSchema transformedSchema = SchemaTransformer.transformSchema(schema, visitor)
+
+        then:
+        transformedSchema.getType("TypeX") != null
     }
 
     def "cheap transform without types transformation works"() {
