@@ -313,7 +313,7 @@ public class IntrospectionResultToSchema {
 
     private void createDeprecatedDirective(Map<String, Object> field, NodeDirectivesBuilder nodeDirectivesBuilder) {
         List<Directive> directives = new ArrayList<>();
-        if ((Boolean) field.get("isDeprecated")) {
+        if (Boolean.TRUE.equals(field.get("isDeprecated"))) {
             String reason = (String) field.get("deprecationReason");
             if (reason == null) {
                 reason = "No longer supported"; // default according to spec
