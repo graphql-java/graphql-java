@@ -453,6 +453,15 @@ public class ExecutableNormalizedOperationFactory {
         if (currentOnes.isEmpty()) {
             return resolvedTypeCondition;
         }
+
+        // Intersection calculation is expensive when either set is large.
+        // If a set only has one member, it is equivalent and cheaper to calculate via contains.
+        if (resolvedTypeCondition.size() == 1 && currentOnes.contains(resolvedTypeCondition.iterator().next())) {
+            return resolvedTypeCondition;
+        } else if (currentOnes.size() == 1 && resolvedTypeCondition.contains(currentOnes.iterator().next())) {
+            return currentOnes;
+        }
+
         return Sets.intersection(currentOnes, resolvedTypeCondition);
     }
 

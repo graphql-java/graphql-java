@@ -1,0 +1,2761 @@
+query extra_large {
+    jira {
+        epicLinkFieldKey
+        screenIdByIssueKey(issueKey: "GJ-1")
+        issueByKey(key: "GJ-1", cloudId: "abc123") {
+            issueId
+            fields {
+                edges {
+                    node {
+                        __typename
+                        ... on JiraAffectedServicesField {
+                            ... on JiraIssueField {
+                                __isJiraIssueField: __typename
+                                ... on JiraIssueFieldConfiguration {
+                                    __isJiraIssueFieldConfiguration: __typename
+                                    fieldConfig {
+                                        isRequired
+                                        isEditable
+                                    }
+                                }
+                                ... on JiraUserIssueFieldConfiguration {
+                                    __isJiraUserIssueFieldConfiguration: __typename
+                                    userFieldConfig {
+                                        isPinned
+                                    }
+                                }
+                            }
+                            fieldId
+                            name
+                            type
+                            description
+                            selectedAffectedServicesConnection {
+                                totalCount
+                                edges {
+                                    node {
+                                        serviceId
+                                    }
+                                }
+                            }
+                            affectedServices {
+                                totalCount
+                                edges {
+                                    node {
+                                        serviceId
+                                    }
+                                }
+                            }
+                            searchUrl
+                        }
+                        ... on JiraAssetField {
+                            ... on JiraIssueField {
+                                __isJiraIssueField: __typename
+                                ... on JiraIssueFieldConfiguration {
+                                    __isJiraIssueFieldConfiguration: __typename
+                                    fieldConfig {
+                                        isRequired
+                                        isEditable
+                                    }
+                                }
+                                ... on JiraUserIssueFieldConfiguration {
+                                    __isJiraUserIssueFieldConfiguration: __typename
+                                    userFieldConfig {
+                                        isPinned
+                                    }
+                                }
+                            }
+                            fieldId
+                            name
+                            type
+                            description
+                            selectedAssetsConnection {
+                                totalCount
+                                edges {
+                                    node {
+                                        appKey
+                                        originId
+                                        serializedOrigin
+                                        value
+                                    }
+                                }
+                            }
+                            searchUrl
+                        }
+                        ... on JiraCMDBField {
+                            ... on JiraIssueField {
+                                __isJiraIssueField: __typename
+                                ... on JiraIssueFieldConfiguration {
+                                    __isJiraIssueFieldConfiguration: __typename
+                                    fieldConfig {
+                                        isRequired
+                                        isEditable
+                                    }
+                                }
+                                ... on JiraUserIssueFieldConfiguration {
+                                    __isJiraUserIssueFieldConfiguration: __typename
+                                    userFieldConfig {
+                                        isPinned
+                                    }
+                                }
+                            }
+                            fieldId
+                            name
+                            type
+                            description
+                            isMulti
+                            searchUrl
+                            selectedCmdbObjectsConnection {
+                                totalCount
+                                edges {
+                                    node {
+                                        id
+                                        objectGlobalId
+                                        objectId
+                                        workspaceId
+                                        label
+                                    }
+                                }
+                            }
+                            attributesIncludedInAutoCompleteSearch
+                        }
+                        ... on JiraCascadingSelectField {
+                            ... on JiraIssueField {
+                                __isJiraIssueField: __typename
+                                ... on JiraIssueFieldConfiguration {
+                                    __isJiraIssueFieldConfiguration: __typename
+                                    fieldConfig {
+                                        isRequired
+                                        isEditable
+                                    }
+                                }
+                                ... on JiraUserIssueFieldConfiguration {
+                                    __isJiraUserIssueFieldConfiguration: __typename
+                                    userFieldConfig {
+                                        isPinned
+                                    }
+                                }
+                            }
+                            fieldId
+                            name
+                            type
+                            description
+                            cascadingOption {
+                                parentOptionValue {
+                                    id
+                                    optionId
+                                    value
+                                    isDisabled
+                                }
+                                childOptionValue {
+                                    id
+                                    optionId
+                                    value
+                                    isDisabled
+                                }
+                            }
+                            cascadingOptions {
+                                totalCount
+                                edges {
+                                    node {
+                                        parentOptionValue {
+                                            id
+                                            optionId
+                                            value
+                                            isDisabled
+                                        }
+                                        childOptionValues {
+                                            id
+                                            optionId
+                                            value
+                                            isDisabled
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        ... on JiraCheckboxesField {
+                            ... on JiraIssueField {
+                                __isJiraIssueField: __typename
+                                ... on JiraIssueFieldConfiguration {
+                                    __isJiraIssueFieldConfiguration: __typename
+                                    fieldConfig {
+                                        isRequired
+                                        isEditable
+                                    }
+                                }
+                                ... on JiraUserIssueFieldConfiguration {
+                                    __isJiraUserIssueFieldConfiguration: __typename
+                                    userFieldConfig {
+                                        isPinned
+                                    }
+                                }
+                            }
+                            fieldId
+                            name
+                            type
+                            description
+                            selectedOptions {
+                                totalCount
+                                edges {
+                                    node {
+                                        id
+                                        optionId
+                                        value
+                                        isDisabled
+                                    }
+                                }
+                            }
+                            fieldOptions {
+                                totalCount
+                                edges {
+                                    node {
+                                        id
+                                        optionId
+                                        value
+                                        isDisabled
+                                    }
+                                }
+                            }
+                        }
+                        ... on JiraColorField {
+                            ... on JiraIssueField {
+                                __isJiraIssueField: __typename
+                                ... on JiraIssueFieldConfiguration {
+                                    __isJiraIssueFieldConfiguration: __typename
+                                    fieldConfig {
+                                        isRequired
+                                        isEditable
+                                    }
+                                }
+                                ... on JiraUserIssueFieldConfiguration {
+                                    __isJiraUserIssueFieldConfiguration: __typename
+                                    userFieldConfig {
+                                        isPinned
+                                    }
+                                }
+                            }
+                            fieldId
+                            name
+                            type
+                            description
+                            color {
+                                id
+                                colorKey
+                            }
+                        }
+                        ... on JiraComponentsField {
+                            ... on JiraIssueField {
+                                __isJiraIssueField: __typename
+                                ... on JiraIssueFieldConfiguration {
+                                    __isJiraIssueFieldConfiguration: __typename
+                                    fieldConfig {
+                                        isRequired
+                                        isEditable
+                                    }
+                                }
+                                ... on JiraUserIssueFieldConfiguration {
+                                    __isJiraUserIssueFieldConfiguration: __typename
+                                    userFieldConfig {
+                                        isPinned
+                                    }
+                                }
+                            }
+                            fieldId
+                            name
+                            type
+                            description
+                            selectedComponentsConnection {
+                                totalCount
+                                edges {
+                                    node {
+                                        id
+                                        componentId
+                                        name
+                                        description
+                                    }
+                                }
+                            }
+                            components {
+                                totalCount
+                                edges {
+                                    node {
+                                        id
+                                        componentId
+                                        name
+                                        description
+                                    }
+                                }
+                            }
+                        }
+                        ... on JiraConnectMultipleSelectField {
+                            ... on JiraIssueField {
+                                __isJiraIssueField: __typename
+                                ... on JiraIssueFieldConfiguration {
+                                    __isJiraIssueFieldConfiguration: __typename
+                                    fieldConfig {
+                                        isRequired
+                                        isEditable
+                                    }
+                                }
+                                ... on JiraUserIssueFieldConfiguration {
+                                    __isJiraUserIssueFieldConfiguration: __typename
+                                    userFieldConfig {
+                                        isPinned
+                                    }
+                                }
+                            }
+                            fieldId
+                            name
+                            type
+                            description
+                            selectedOptions {
+                                totalCount
+                                edges {
+                                    node {
+                                        id
+                                        optionId
+                                        value
+                                        isDisabled
+                                    }
+                                }
+                            }
+                            fieldOptions {
+                                totalCount
+                                edges {
+                                    node {
+                                        id
+                                        optionId
+                                        value
+                                        isDisabled
+                                    }
+                                }
+                            }
+                            searchUrl
+                        }
+                        ... on JiraConnectNumberField {
+                            ... on JiraIssueField {
+                                __isJiraIssueField: __typename
+                                ... on JiraIssueFieldConfiguration {
+                                    __isJiraIssueFieldConfiguration: __typename
+                                    fieldConfig {
+                                        isRequired
+                                        isEditable
+                                    }
+                                }
+                                ... on JiraUserIssueFieldConfiguration {
+                                    __isJiraUserIssueFieldConfiguration: __typename
+                                    userFieldConfig {
+                                        isPinned
+                                    }
+                                }
+                            }
+                            fieldId
+                            name
+                            type
+                            description
+                            number
+                        }
+                        ... on JiraConnectRichTextField {
+                            ... on JiraIssueField {
+                                __isJiraIssueField: __typename
+                                ... on JiraIssueFieldConfiguration {
+                                    __isJiraIssueFieldConfiguration: __typename
+                                    fieldConfig {
+                                        isRequired
+                                        isEditable
+                                    }
+                                }
+                                ... on JiraUserIssueFieldConfiguration {
+                                    __isJiraUserIssueFieldConfiguration: __typename
+                                    userFieldConfig {
+                                        isPinned
+                                    }
+                                }
+                            }
+                            fieldId
+                            name
+                            type
+                            description
+                            richText {
+                                plainText
+                                adfValue {
+                                    json
+                                }
+                            }
+                            renderer
+                        }
+                        ... on JiraConnectSingleSelectField {
+                            ... on JiraIssueField {
+                                __isJiraIssueField: __typename
+                                ... on JiraIssueFieldConfiguration {
+                                    __isJiraIssueFieldConfiguration: __typename
+                                    fieldConfig {
+                                        isRequired
+                                        isEditable
+                                    }
+                                }
+                                ... on JiraUserIssueFieldConfiguration {
+                                    __isJiraUserIssueFieldConfiguration: __typename
+                                    userFieldConfig {
+                                        isPinned
+                                    }
+                                }
+                            }
+                            fieldId
+                            name
+                            type
+                            description
+                            fieldOption {
+                                id
+                                optionId
+                                value
+                                isDisabled
+                            }
+                            fieldOptions {
+                                totalCount
+                                edges {
+                                    node {
+                                        id
+                                        optionId
+                                        value
+                                        isDisabled
+                                    }
+                                }
+                            }
+                            searchUrl
+                        }
+                        ... on JiraConnectTextField {
+                            ... on JiraIssueField {
+                                __isJiraIssueField: __typename
+                                ... on JiraIssueFieldConfiguration {
+                                    __isJiraIssueFieldConfiguration: __typename
+                                    fieldConfig {
+                                        isRequired
+                                        isEditable
+                                    }
+                                }
+                                ... on JiraUserIssueFieldConfiguration {
+                                    __isJiraUserIssueFieldConfiguration: __typename
+                                    userFieldConfig {
+                                        isPinned
+                                    }
+                                }
+                            }
+                            fieldId
+                            name
+                            type
+                            description
+                            text
+                        }
+                        ... on JiraDatePickerField {
+                            ... on JiraIssueField {
+                                __isJiraIssueField: __typename
+                                ... on JiraIssueFieldConfiguration {
+                                    __isJiraIssueFieldConfiguration: __typename
+                                    fieldConfig {
+                                        isRequired
+                                        isEditable
+                                    }
+                                }
+                                ... on JiraUserIssueFieldConfiguration {
+                                    __isJiraUserIssueFieldConfiguration: __typename
+                                    userFieldConfig {
+                                        isPinned
+                                    }
+                                }
+                            }
+                            fieldId
+                            name
+                            type
+                            description
+                            date
+                        }
+                        ... on JiraDateTimePickerField {
+                            ... on JiraIssueField {
+                                __isJiraIssueField: __typename
+                                ... on JiraIssueFieldConfiguration {
+                                    __isJiraIssueFieldConfiguration: __typename
+                                    fieldConfig {
+                                        isRequired
+                                        isEditable
+                                    }
+                                }
+                                ... on JiraUserIssueFieldConfiguration {
+                                    __isJiraUserIssueFieldConfiguration: __typename
+                                    userFieldConfig {
+                                        isPinned
+                                    }
+                                }
+                            }
+                            fieldId
+                            name
+                            type
+                            description
+                            dateTime
+                        }
+                        ... on JiraEpicLinkField {
+                            ... on JiraIssueField {
+                                __isJiraIssueField: __typename
+                                ... on JiraIssueFieldConfiguration {
+                                    __isJiraIssueFieldConfiguration: __typename
+                                    fieldConfig {
+                                        isRequired
+                                        isEditable
+                                    }
+                                }
+                                ... on JiraUserIssueFieldConfiguration {
+                                    __isJiraUserIssueFieldConfiguration: __typename
+                                    userFieldConfig {
+                                        isPinned
+                                    }
+                                }
+                            }
+                            fieldId
+                            name
+                            type
+                            description
+                            epic {
+                                id
+                                issueId
+                                name
+                                key
+                                summary
+                                color
+                                done
+                            }
+                            epics {
+                                totalCount
+                                edges {
+                                    node {
+                                        id
+                                        issueId
+                                        name
+                                        key
+                                        summary
+                                        color
+                                        done
+                                    }
+                                }
+                            }
+                            searchUrl
+                        }
+                        ... on JiraFlagField {
+                            ... on JiraIssueField {
+                                __isJiraIssueField: __typename
+                                ... on JiraIssueFieldConfiguration {
+                                    __isJiraIssueFieldConfiguration: __typename
+                                    fieldConfig {
+                                        isRequired
+                                        isEditable
+                                    }
+                                }
+                                ... on JiraUserIssueFieldConfiguration {
+                                    __isJiraUserIssueFieldConfiguration: __typename
+                                    userFieldConfig {
+                                        isPinned
+                                    }
+                                }
+                            }
+                            fieldId
+                            name
+                            type
+                            description
+                            flag {
+                                isFlagged
+                            }
+                        }
+                        ... on JiraForgeGroupField {
+                            ... on JiraIssueField {
+                                __isJiraIssueField: __typename
+                                ... on JiraIssueFieldConfiguration {
+                                    __isJiraIssueFieldConfiguration: __typename
+                                    fieldConfig {
+                                        isRequired
+                                        isEditable
+                                    }
+                                }
+                                ... on JiraUserIssueFieldConfiguration {
+                                    __isJiraUserIssueFieldConfiguration: __typename
+                                    userFieldConfig {
+                                        isPinned
+                                    }
+                                }
+                            }
+                            fieldId
+                            name
+                            type
+                            description
+                            selectedGroup {
+                                id
+                                groupId
+                                name
+                            }
+                            groups {
+                                totalCount
+                                edges {
+                                    node {
+                                        id
+                                        groupId
+                                        name
+                                    }
+                                }
+                            }
+                            searchUrl
+                            renderer
+                        }
+                        ... on JiraForgeGroupsField {
+                            ... on JiraIssueField {
+                                __isJiraIssueField: __typename
+                                ... on JiraIssueFieldConfiguration {
+                                    __isJiraIssueFieldConfiguration: __typename
+                                    fieldConfig {
+                                        isRequired
+                                        isEditable
+                                    }
+                                }
+                                ... on JiraUserIssueFieldConfiguration {
+                                    __isJiraUserIssueFieldConfiguration: __typename
+                                    userFieldConfig {
+                                        isPinned
+                                    }
+                                }
+                            }
+                            fieldId
+                            name
+                            type
+                            selectedGroupsConnection {
+                                edges {
+                                    node {
+                                        id
+                                        groupId
+                                        name
+                                    }
+                                }
+                            }
+                            renderer
+                        }
+                        ... on JiraForgeNumberField {
+                            ... on JiraIssueField {
+                                __isJiraIssueField: __typename
+                                ... on JiraIssueFieldConfiguration {
+                                    __isJiraIssueFieldConfiguration: __typename
+                                    fieldConfig {
+                                        isRequired
+                                        isEditable
+                                    }
+                                }
+                                ... on JiraUserIssueFieldConfiguration {
+                                    __isJiraUserIssueFieldConfiguration: __typename
+                                    userFieldConfig {
+                                        isPinned
+                                    }
+                                }
+                            }
+                            fieldId
+                            name
+                            type
+                            description
+                            number
+                            renderer
+                        }
+                        ... on JiraForgeObjectField {
+                            ... on JiraIssueField {
+                                __isJiraIssueField: __typename
+                                ... on JiraIssueFieldConfiguration {
+                                    __isJiraIssueFieldConfiguration: __typename
+                                    fieldConfig {
+                                        isRequired
+                                        isEditable
+                                    }
+                                }
+                                ... on JiraUserIssueFieldConfiguration {
+                                    __isJiraUserIssueFieldConfiguration: __typename
+                                    userFieldConfig {
+                                        isPinned
+                                    }
+                                }
+                            }
+                            fieldId
+                            name
+                            type
+                            description
+                            object
+                            renderer
+                        }
+                        ... on JiraForgeStringField {
+                            ... on JiraIssueField {
+                                __isJiraIssueField: __typename
+                                ... on JiraIssueFieldConfiguration {
+                                    __isJiraIssueFieldConfiguration: __typename
+                                    fieldConfig {
+                                        isRequired
+                                        isEditable
+                                    }
+                                }
+                                ... on JiraUserIssueFieldConfiguration {
+                                    __isJiraUserIssueFieldConfiguration: __typename
+                                    userFieldConfig {
+                                        isPinned
+                                    }
+                                }
+                            }
+                            fieldId
+                            name
+                            type
+                            description
+                            text
+                            renderer
+                        }
+                        ... on JiraForgeStringsField {
+                            ... on JiraIssueField {
+                                __isJiraIssueField: __typename
+                                ... on JiraIssueFieldConfiguration {
+                                    __isJiraIssueFieldConfiguration: __typename
+                                    fieldConfig {
+                                        isRequired
+                                        isEditable
+                                    }
+                                }
+                                ... on JiraUserIssueFieldConfiguration {
+                                    __isJiraUserIssueFieldConfiguration: __typename
+                                    userFieldConfig {
+                                        isPinned
+                                    }
+                                }
+                            }
+                            fieldId
+                            name
+                            type
+                            description
+                            selectedLabelsConnection {
+                                totalCount
+                                edges {
+                                    node {
+                                        labelId
+                                        name
+                                    }
+                                }
+                            }
+                            labels {
+                                totalCount
+                                edges {
+                                    node {
+                                        labelId
+                                        name
+                                    }
+                                }
+                            }
+                            renderer
+                            searchUrl
+                        }
+                        ... on JiraForgeUserField {
+                            ... on JiraIssueField {
+                                __isJiraIssueField: __typename
+                                ... on JiraIssueFieldConfiguration {
+                                    __isJiraIssueFieldConfiguration: __typename
+                                    fieldConfig {
+                                        isRequired
+                                        isEditable
+                                    }
+                                }
+                                ... on JiraUserIssueFieldConfiguration {
+                                    __isJiraUserIssueFieldConfiguration: __typename
+                                    userFieldConfig {
+                                        isPinned
+                                    }
+                                }
+                            }
+                            fieldId
+                            name
+                            type
+                            description
+                            user {
+                                __typename
+                                __isUser: __typename
+                                accountId
+                                accountStatus
+                                name
+                                picture
+                                ... on AtlassianAccountUser {
+                                    email
+                                    zoneinfo
+                                    locale
+                                }
+                            }
+                            searchUrl
+                        }
+                        ... on JiraIssueRestrictionField {
+                            ... on JiraIssueField {
+                                __isJiraIssueField: __typename
+                                ... on JiraIssueFieldConfiguration {
+                                    __isJiraIssueFieldConfiguration: __typename
+                                    fieldConfig {
+                                        isRequired
+                                        isEditable
+                                    }
+                                }
+                                ... on JiraUserIssueFieldConfiguration {
+                                    __isJiraUserIssueFieldConfiguration: __typename
+                                    userFieldConfig {
+                                        isPinned
+                                    }
+                                }
+                            }
+                            fieldId
+                            name
+                            type
+                            description
+                            selectedRolesConnection {
+                                totalCount
+                                edges {
+                                    node {
+                                        id
+                                        roleId
+                                        name
+                                        description
+                                    }
+                                }
+                            }
+                            roles {
+                                totalCount
+                                edges {
+                                    node {
+                                        id
+                                        roleId
+                                        name
+                                        description
+                                    }
+                                }
+                            }
+                            searchUrl
+                        }
+                        ... on JiraIssueTypeField {
+                            ... on JiraIssueField {
+                                __isJiraIssueField: __typename
+                                ... on JiraIssueFieldConfiguration {
+                                    __isJiraIssueFieldConfiguration: __typename
+                                    fieldConfig {
+                                        isRequired
+                                        isEditable
+                                    }
+                                }
+                                ... on JiraUserIssueFieldConfiguration {
+                                    __isJiraUserIssueFieldConfiguration: __typename
+                                    userFieldConfig {
+                                        isPinned
+                                    }
+                                }
+                            }
+                            fieldId
+                            name
+                            type
+                            description
+                            issueType {
+                                id
+                                issueTypeId
+                                name
+                                description
+                                avatar {
+                                    xsmall
+                                    small
+                                    medium
+                                    large
+                                }
+                                hierarchy {
+                                    level
+                                    name
+                                }
+                            }
+                            issueTypes {
+                                edges {
+                                    node {
+                                        id
+                                        issueTypeId
+                                        name
+                                        description
+                                        avatar {
+                                            xsmall
+                                            small
+                                            medium
+                                            large
+                                        }
+                                        hierarchy {
+                                            level
+                                            name
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        ... on JiraLabelsField {
+                            ... on JiraIssueField {
+                                __isJiraIssueField: __typename
+                                ... on JiraIssueFieldConfiguration {
+                                    __isJiraIssueFieldConfiguration: __typename
+                                    fieldConfig {
+                                        isRequired
+                                        isEditable
+                                    }
+                                }
+                                ... on JiraUserIssueFieldConfiguration {
+                                    __isJiraUserIssueFieldConfiguration: __typename
+                                    userFieldConfig {
+                                        isPinned
+                                    }
+                                }
+                            }
+                            fieldId
+                            name
+                            type
+                            description
+                            selectedLabelsConnection {
+                                totalCount
+                                edges {
+                                    node {
+                                        labelId
+                                        name
+                                    }
+                                }
+                            }
+                            labels {
+                                totalCount
+                                edges {
+                                    node {
+                                        labelId
+                                        name
+                                    }
+                                }
+                            }
+                            searchUrl
+                        }
+                        ... on JiraMultipleGroupPickerField {
+                            ... on JiraIssueField {
+                                __isJiraIssueField: __typename
+                                ... on JiraIssueFieldConfiguration {
+                                    __isJiraIssueFieldConfiguration: __typename
+                                    fieldConfig {
+                                        isRequired
+                                        isEditable
+                                    }
+                                }
+                                ... on JiraUserIssueFieldConfiguration {
+                                    __isJiraUserIssueFieldConfiguration: __typename
+                                    userFieldConfig {
+                                        isPinned
+                                    }
+                                }
+                            }
+                            fieldId
+                            name
+                            type
+                            description
+                            selectedGroupsConnection {
+                                totalCount
+                                edges {
+                                    node {
+                                        groupId
+                                        name
+                                        id
+                                    }
+                                }
+                            }
+                            groups {
+                                totalCount
+                                edges {
+                                    node {
+                                        id
+                                        groupId
+                                        name
+                                    }
+                                }
+                            }
+                            searchUrl
+                        }
+                        ... on JiraMultipleSelectField {
+                            ... on JiraIssueField {
+                                __isJiraIssueField: __typename
+                                ... on JiraIssueFieldConfiguration {
+                                    __isJiraIssueFieldConfiguration: __typename
+                                    fieldConfig {
+                                        isRequired
+                                        isEditable
+                                    }
+                                }
+                                ... on JiraUserIssueFieldConfiguration {
+                                    __isJiraUserIssueFieldConfiguration: __typename
+                                    userFieldConfig {
+                                        isPinned
+                                    }
+                                }
+                            }
+                            fieldId
+                            name
+                            type
+                            description
+                            selectedOptions {
+                                totalCount
+                                edges {
+                                    node {
+                                        id
+                                        optionId
+                                        value
+                                        isDisabled
+                                    }
+                                }
+                            }
+                            fieldOptions {
+                                totalCount
+                                edges {
+                                    node {
+                                        id
+                                        optionId
+                                        value
+                                        isDisabled
+                                    }
+                                }
+                            }
+                            searchUrl
+                        }
+                        ... on JiraMultipleSelectUserPickerField {
+                            ... on JiraIssueField {
+                                __isJiraIssueField: __typename
+                                ... on JiraIssueFieldConfiguration {
+                                    __isJiraIssueFieldConfiguration: __typename
+                                    fieldConfig {
+                                        isRequired
+                                        isEditable
+                                    }
+                                }
+                                ... on JiraUserIssueFieldConfiguration {
+                                    __isJiraUserIssueFieldConfiguration: __typename
+                                    userFieldConfig {
+                                        isPinned
+                                    }
+                                }
+                            }
+                            fieldId
+                            name
+                            type
+                            description
+                            selectedUsersConnection {
+                                totalCount
+                                edges {
+                                    node {
+                                        __typename
+                                        __isUser: __typename
+                                        accountId
+                                        accountStatus
+                                        name
+                                        picture
+                                        ... on AtlassianAccountUser {
+                                            email
+                                            zoneinfo
+                                            locale
+                                        }
+                                    }
+                                }
+                            }
+                            users {
+                                edges {
+                                    node {
+                                        __typename
+                                        __isUser: __typename
+                                        accountId
+                                        accountStatus
+                                        name
+                                        picture
+                                        ... on AtlassianAccountUser {
+                                            email
+                                            zoneinfo
+                                            locale
+                                        }
+                                    }
+                                }
+                            }
+                            searchUrl
+                        }
+                        ... on JiraMultipleVersionPickerField {
+                            ... on JiraIssueField {
+                                __isJiraIssueField: __typename
+                                ... on JiraIssueFieldConfiguration {
+                                    __isJiraIssueFieldConfiguration: __typename
+                                    fieldConfig {
+                                        isRequired
+                                        isEditable
+                                    }
+                                }
+                                ... on JiraUserIssueFieldConfiguration {
+                                    __isJiraUserIssueFieldConfiguration: __typename
+                                    userFieldConfig {
+                                        isPinned
+                                    }
+                                }
+                            }
+                            fieldId
+                            name
+                            type
+                            description
+                            selectedVersionsConnection {
+                                totalCount
+                                edges {
+                                    node {
+                                        id
+                                        versionId
+                                        name
+                                        iconUrl
+                                        status
+                                        description
+                                        startDate
+                                        releaseDate
+                                    }
+                                }
+                            }
+                            versions {
+                                totalCount
+                                edges {
+                                    node {
+                                        id
+                                        versionId
+                                        name
+                                        iconUrl
+                                        status
+                                        description
+                                        startDate
+                                        releaseDate
+                                    }
+                                }
+                            }
+                        }
+                        ... on JiraNumberField {
+                            ... on JiraIssueField {
+                                __isJiraIssueField: __typename
+                                ... on JiraIssueFieldConfiguration {
+                                    __isJiraIssueFieldConfiguration: __typename
+                                    fieldConfig {
+                                        isRequired
+                                        isEditable
+                                    }
+                                }
+                                ... on JiraUserIssueFieldConfiguration {
+                                    __isJiraUserIssueFieldConfiguration: __typename
+                                    userFieldConfig {
+                                        isPinned
+                                    }
+                                }
+                            }
+                            fieldId
+                            name
+                            type
+                            description
+                            number
+                            isStoryPointField
+                        }
+                        ... on JiraParentIssueField {
+                            ... on JiraIssueField {
+                                __isJiraIssueField: __typename
+                                ... on JiraIssueFieldConfiguration {
+                                    __isJiraIssueFieldConfiguration: __typename
+                                    fieldConfig {
+                                        isRequired
+                                        isEditable
+                                    }
+                                }
+                                ... on JiraUserIssueFieldConfiguration {
+                                    __isJiraUserIssueFieldConfiguration: __typename
+                                    userFieldConfig {
+                                        isPinned
+                                    }
+                                }
+                            }
+                            fieldId
+                            name
+                            type
+                            description
+                            parentIssue {
+                                id
+                                issueId
+                                key
+                                webUrl
+                                fieldsById(ids: ["issuetype ", "project ", "summary "]) {
+                                    edges {
+                                        node {
+                                            __typename
+                                            ... on JiraIssueTypeField {
+                                                fieldId
+                                                name
+                                                type
+                                                description
+                                                issueType {
+                                                    id
+                                                    issueTypeId
+                                                    name
+                                                    description
+                                                    avatar {
+                                                        xsmall
+                                                        small
+                                                        medium
+                                                        large
+                                                    }
+                                                    hierarchy {
+                                                        level
+                                                        name
+                                                    }
+                                                }
+                                                issueTypes {
+                                                    edges {
+                                                        node {
+                                                            id
+                                                            issueTypeId
+                                                            name
+                                                            description
+                                                            avatar {
+                                                                xsmall
+                                                                small
+                                                                medium
+                                                                large
+                                                            }
+                                                            hierarchy {
+                                                                level
+                                                                name
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                            ... on JiraProjectField {
+                                                fieldId
+                                                name
+                                                type
+                                                description
+                                                project {
+                                                    projectId
+                                                    key
+                                                    name
+                                                    avatar {
+                                                        medium
+                                                    }
+                                                    projectType
+                                                    status
+                                                    projectStyle
+                                                    id
+                                                }
+                                            }
+                                            ... on JiraSingleLineTextField {
+                                                fieldId
+                                                name
+                                                type
+                                                description
+                                                text
+                                            }
+                                            id
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        ... on JiraPeopleField {
+                            ... on JiraIssueField {
+                                __isJiraIssueField: __typename
+                                ... on JiraIssueFieldConfiguration {
+                                    __isJiraIssueFieldConfiguration: __typename
+                                    fieldConfig {
+                                        isRequired
+                                        isEditable
+                                    }
+                                }
+                                ... on JiraUserIssueFieldConfiguration {
+                                    __isJiraUserIssueFieldConfiguration: __typename
+                                    userFieldConfig {
+                                        isPinned
+                                    }
+                                }
+                            }
+                            fieldId
+                            name
+                            type
+                            description
+                            selectedUsersConnection {
+                                totalCount
+                                edges {
+                                    node {
+                                        __typename
+                                        __isUser: __typename
+                                        accountId
+                                        accountStatus
+                                        name
+                                        picture
+                                        ... on AtlassianAccountUser {
+                                            email
+                                            zoneinfo
+                                            locale
+                                        }
+                                    }
+                                }
+                            }
+                            users {
+                                totalCount
+                                edges {
+                                    node {
+                                        __typename
+                                        __isUser: __typename
+                                        accountId
+                                        accountStatus
+                                        name
+                                        picture
+                                        ... on AtlassianAccountUser {
+                                            email
+                                            zoneinfo
+                                            locale
+                                        }
+                                    }
+                                }
+                            }
+                            isMulti
+                            searchUrl
+                        }
+                        ... on JiraPriorityField {
+                            ... on JiraIssueField {
+                                __isJiraIssueField: __typename
+                                ... on JiraIssueFieldConfiguration {
+                                    __isJiraIssueFieldConfiguration: __typename
+                                    fieldConfig {
+                                        isRequired
+                                        isEditable
+                                    }
+                                }
+                                ... on JiraUserIssueFieldConfiguration {
+                                    __isJiraUserIssueFieldConfiguration: __typename
+                                    userFieldConfig {
+                                        isPinned
+                                    }
+                                }
+                            }
+                            fieldId
+                            name
+                            type
+                            description
+                            priority {
+                                priorityId
+                                name
+                                iconUrl
+                                color
+                                id
+                            }
+                            priorities {
+                                edges {
+                                    node {
+                                        priorityId
+                                        name
+                                        iconUrl
+                                        color
+                                        id
+                                    }
+                                }
+                            }
+                        }
+                        ... on JiraProjectField {
+                            ... on JiraIssueField {
+                                __isJiraIssueField: __typename
+                                ... on JiraIssueFieldConfiguration {
+                                    __isJiraIssueFieldConfiguration: __typename
+                                    fieldConfig {
+                                        isRequired
+                                        isEditable
+                                    }
+                                }
+                                ... on JiraUserIssueFieldConfiguration {
+                                    __isJiraUserIssueFieldConfiguration: __typename
+                                    userFieldConfig {
+                                        isPinned
+                                    }
+                                }
+                            }
+                            fieldId
+                            name
+                            type
+                            description
+                            project {
+                                projectId
+                                key
+                                name
+                                avatar {
+                                    medium
+                                }
+                                projectType
+                                status
+                                projectStyle
+                                id
+                            }
+                        }
+                        ... on JiraRadioSelectField {
+                            ... on JiraIssueField {
+                                __isJiraIssueField: __typename
+                                ... on JiraIssueFieldConfiguration {
+                                    __isJiraIssueFieldConfiguration: __typename
+                                    fieldConfig {
+                                        isRequired
+                                        isEditable
+                                    }
+                                }
+                                ... on JiraUserIssueFieldConfiguration {
+                                    __isJiraUserIssueFieldConfiguration: __typename
+                                    userFieldConfig {
+                                        isPinned
+                                    }
+                                }
+                            }
+                            fieldId
+                            name
+                            type
+                            description
+                            selectedOption {
+                                id
+                                optionId
+                                value
+                                isDisabled
+                            }
+                            fieldOptions {
+                                totalCount
+                                edges {
+                                    node {
+                                        id
+                                        optionId
+                                        value
+                                        isDisabled
+                                    }
+                                }
+                            }
+                        }
+                        ... on JiraResolutionField {
+                            ... on JiraIssueField {
+                                __isJiraIssueField: __typename
+                                ... on JiraIssueFieldConfiguration {
+                                    __isJiraIssueFieldConfiguration: __typename
+                                    fieldConfig {
+                                        isRequired
+                                        isEditable
+                                    }
+                                }
+                                ... on JiraUserIssueFieldConfiguration {
+                                    __isJiraUserIssueFieldConfiguration: __typename
+                                    userFieldConfig {
+                                        isPinned
+                                    }
+                                }
+                            }
+                            fieldId
+                            name
+                            type
+                            description
+                            resolution {
+                                id
+                                resolutionId
+                                name
+                                description
+                            }
+                            resolutions {
+                                totalCount
+                                edges {
+                                    node {
+                                        id
+                                        resolutionId
+                                        name
+                                        description
+                                    }
+                                }
+                            }
+                        }
+                        ... on JiraRichTextField {
+                            ... on JiraIssueField {
+                                __isJiraIssueField: __typename
+                                ... on JiraIssueFieldConfiguration {
+                                    __isJiraIssueFieldConfiguration: __typename
+                                    fieldConfig {
+                                        isRequired
+                                        isEditable
+                                    }
+                                }
+                                ... on JiraUserIssueFieldConfiguration {
+                                    __isJiraUserIssueFieldConfiguration: __typename
+                                    userFieldConfig {
+                                        isPinned
+                                    }
+                                }
+                            }
+                            fieldId
+                            name
+                            type
+                            description
+                            richText {
+                                plainText
+                                adfValue {
+                                    json
+                                }
+                            }
+                            renderer
+                        }
+                        ... on JiraSecurityLevelField {
+                            ... on JiraIssueField {
+                                __isJiraIssueField: __typename
+                                ... on JiraIssueFieldConfiguration {
+                                    __isJiraIssueFieldConfiguration: __typename
+                                    fieldConfig {
+                                        isRequired
+                                        isEditable
+                                    }
+                                }
+                                ... on JiraUserIssueFieldConfiguration {
+                                    __isJiraUserIssueFieldConfiguration: __typename
+                                    userFieldConfig {
+                                        isPinned
+                                    }
+                                }
+                            }
+                            fieldId
+                            name
+                            type
+                            description
+                            securityLevel {
+                                id
+                                name
+                                securityId
+                                description
+                            }
+                        }
+                        ... on JiraServiceManagementDateTimeField {
+                            ... on JiraIssueField {
+                                __isJiraIssueField: __typename
+                                ... on JiraIssueFieldConfiguration {
+                                    __isJiraIssueFieldConfiguration: __typename
+                                    fieldConfig {
+                                        isRequired
+                                        isEditable
+                                    }
+                                }
+                                ... on JiraUserIssueFieldConfiguration {
+                                    __isJiraUserIssueFieldConfiguration: __typename
+                                    userFieldConfig {
+                                        isPinned
+                                    }
+                                }
+                            }
+                            fieldId
+                            name
+                            type
+                            description
+                            dateTime
+                        }
+                        ... on JiraServiceManagementIncidentLinkingField {
+                            ... on JiraIssueField {
+                                __isJiraIssueField: __typename
+                                ... on JiraIssueFieldConfiguration {
+                                    __isJiraIssueFieldConfiguration: __typename
+                                    fieldConfig {
+                                        isRequired
+                                        isEditable
+                                    }
+                                }
+                                ... on JiraUserIssueFieldConfiguration {
+                                    __isJiraUserIssueFieldConfiguration: __typename
+                                    userFieldConfig {
+                                        isPinned
+                                    }
+                                }
+                            }
+                            fieldId
+                            name
+                            type
+                            description
+                            incident {
+                                hasLinkedIncidents
+                            }
+                        }
+                        ... on JiraServiceManagementMultipleSelectUserPickerField {
+                            ... on JiraIssueField {
+                                __isJiraIssueField: __typename
+                                ... on JiraIssueFieldConfiguration {
+                                    __isJiraIssueFieldConfiguration: __typename
+                                    fieldConfig {
+                                        isRequired
+                                        isEditable
+                                    }
+                                }
+                                ... on JiraUserIssueFieldConfiguration {
+                                    __isJiraUserIssueFieldConfiguration: __typename
+                                    userFieldConfig {
+                                        isPinned
+                                    }
+                                }
+                            }
+                            fieldId
+                            name
+                            type
+                            description
+                            selectedUsersConnection {
+                                totalCount
+                                edges {
+                                    node {
+                                        __typename
+                                        __isUser: __typename
+                                        accountId
+                                        accountStatus
+                                        name
+                                        picture
+                                        ... on AtlassianAccountUser {
+                                            email
+                                            zoneinfo
+                                            locale
+                                        }
+                                    }
+                                }
+                            }
+                            users {
+                                totalCount
+                                edges {
+                                    node {
+                                        __typename
+                                        __isUser: __typename
+                                        accountId
+                                        accountStatus
+                                        name
+                                        picture
+                                        ... on AtlassianAccountUser {
+                                            email
+                                            zoneinfo
+                                            locale
+                                        }
+                                    }
+                                }
+                            }
+                            searchUrl
+                        }
+                        ... on JiraServiceManagementOrganizationField {
+                            ... on JiraIssueField {
+                                __isJiraIssueField: __typename
+                                ... on JiraIssueFieldConfiguration {
+                                    __isJiraIssueFieldConfiguration: __typename
+                                    fieldConfig {
+                                        isRequired
+                                        isEditable
+                                    }
+                                }
+                                ... on JiraUserIssueFieldConfiguration {
+                                    __isJiraUserIssueFieldConfiguration: __typename
+                                    userFieldConfig {
+                                        isPinned
+                                    }
+                                }
+                            }
+                            fieldId
+                            name
+                            type
+                            description
+                            selectedOrganizationsConnection {
+                                totalCount
+                                edges {
+                                    node {
+                                        organizationId
+                                        organizationName
+                                        domain
+                                    }
+                                }
+                            }
+                            searchUrl
+                        }
+                        ... on JiraServiceManagementPeopleField {
+                            ... on JiraIssueField {
+                                __isJiraIssueField: __typename
+                                ... on JiraIssueFieldConfiguration {
+                                    __isJiraIssueFieldConfiguration: __typename
+                                    fieldConfig {
+                                        isRequired
+                                        isEditable
+                                    }
+                                }
+                                ... on JiraUserIssueFieldConfiguration {
+                                    __isJiraUserIssueFieldConfiguration: __typename
+                                    userFieldConfig {
+                                        isPinned
+                                    }
+                                }
+                            }
+                            fieldId
+                            name
+                            type
+                            description
+                            selectedUsersConnection {
+                                totalCount
+                                edges {
+                                    node {
+                                        __typename
+                                        __isUser: __typename
+                                        accountId
+                                        accountStatus
+                                        name
+                                        picture
+                                        ... on AtlassianAccountUser {
+                                            email
+                                            zoneinfo
+                                            locale
+                                        }
+                                    }
+                                }
+                            }
+                            users {
+                                totalCount
+                                edges {
+                                    node {
+                                        __typename
+                                        __isUser: __typename
+                                        accountId
+                                        accountStatus
+                                        name
+                                        picture
+                                        ... on AtlassianAccountUser {
+                                            email
+                                            zoneinfo
+                                            locale
+                                        }
+                                    }
+                                }
+                            }
+                            isMulti
+                            searchUrl
+                        }
+                        ... on JiraServiceManagementRequestFeedbackField {
+                            ... on JiraIssueField {
+                                __isJiraIssueField: __typename
+                                ... on JiraIssueFieldConfiguration {
+                                    __isJiraIssueFieldConfiguration: __typename
+                                    fieldConfig {
+                                        isRequired
+                                        isEditable
+                                    }
+                                }
+                                ... on JiraUserIssueFieldConfiguration {
+                                    __isJiraUserIssueFieldConfiguration: __typename
+                                    userFieldConfig {
+                                        isPinned
+                                    }
+                                }
+                            }
+                            fieldId
+                            name
+                            type
+                            description
+                            feedback {
+                                rating
+                            }
+                        }
+                        ... on JiraServiceManagementRequestLanguageField {
+                            ... on JiraIssueField {
+                                __isJiraIssueField: __typename
+                                ... on JiraIssueFieldConfiguration {
+                                    __isJiraIssueFieldConfiguration: __typename
+                                    fieldConfig {
+                                        isRequired
+                                        isEditable
+                                    }
+                                }
+                                ... on JiraUserIssueFieldConfiguration {
+                                    __isJiraUserIssueFieldConfiguration: __typename
+                                    userFieldConfig {
+                                        isPinned
+                                    }
+                                }
+                            }
+                            fieldId
+                            name
+                            type
+                            description
+                            language {
+                                languageCode
+                                displayName
+                            }
+                            languages {
+                                languageCode
+                                displayName
+                            }
+                        }
+                        ... on JiraServiceManagementRequestTypeField {
+                            ... on JiraIssueField {
+                                __isJiraIssueField: __typename
+                                ... on JiraIssueFieldConfiguration {
+                                    __isJiraIssueFieldConfiguration: __typename
+                                    fieldConfig {
+                                        isRequired
+                                        isEditable
+                                    }
+                                }
+                                ... on JiraUserIssueFieldConfiguration {
+                                    __isJiraUserIssueFieldConfiguration: __typename
+                                    userFieldConfig {
+                                        isPinned
+                                    }
+                                }
+                            }
+                            fieldId
+                            name
+                            type
+                            description
+                            requestType {
+                                id
+                                requestTypeId
+                                name
+                                key
+                                description
+                                helpText
+                                issueType {
+                                    id
+                                    issueTypeId
+                                    name
+                                    description
+                                    avatar {
+                                        xsmall
+                                        small
+                                        medium
+                                        large
+                                    }
+                                }
+                                portalId
+                                avatar {
+                                    xsmall
+                                    small
+                                    medium
+                                    large
+                                }
+                                practices {
+                                    key
+                                }
+                            }
+                            requestTypes {
+                                totalCount
+                                edges {
+                                    node {
+                                        id
+                                        requestTypeId
+                                        name
+                                        key
+                                        description
+                                        helpText
+                                        issueType {
+                                            id
+                                            name
+                                            description
+                                            avatar {
+                                                xsmall
+                                                small
+                                                medium
+                                                large
+                                            }
+                                        }
+                                        portalId
+                                        avatar {
+                                            xsmall
+                                            small
+                                            medium
+                                            large
+                                        }
+                                        practices {
+                                            key
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        ... on JiraServiceManagementRespondersField {
+                            ... on JiraIssueField {
+                                __isJiraIssueField: __typename
+                                ... on JiraIssueFieldConfiguration {
+                                    __isJiraIssueFieldConfiguration: __typename
+                                    fieldConfig {
+                                        isRequired
+                                        isEditable
+                                    }
+                                }
+                                ... on JiraUserIssueFieldConfiguration {
+                                    __isJiraUserIssueFieldConfiguration: __typename
+                                    userFieldConfig {
+                                        isPinned
+                                    }
+                                }
+                            }
+                            fieldId
+                            name
+                            type
+                            description
+                            respondersConnection {
+                                edges {
+                                    node {
+                                        __typename
+                                        ... on JiraServiceManagementUserResponder {
+                                            user {
+                                                __typename
+                                                picture
+                                                name
+                                            }
+                                        }
+                                        ... on JiraServiceManagementTeamResponder {
+                                            teamId
+                                            teamName
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        ... on JiraSingleGroupPickerField {
+                            ... on JiraIssueField {
+                                __isJiraIssueField: __typename
+                                ... on JiraIssueFieldConfiguration {
+                                    __isJiraIssueFieldConfiguration: __typename
+                                    fieldConfig {
+                                        isRequired
+                                        isEditable
+                                    }
+                                }
+                                ... on JiraUserIssueFieldConfiguration {
+                                    __isJiraUserIssueFieldConfiguration: __typename
+                                    userFieldConfig {
+                                        isPinned
+                                    }
+                                }
+                            }
+                            fieldId
+                            name
+                            type
+                            description
+                            selectedGroup {
+                                id
+                                groupId
+                                name
+                            }
+                            groups {
+                                totalCount
+                                edges {
+                                    node {
+                                        id
+                                        groupId
+                                        name
+                                    }
+                                }
+                            }
+                            searchUrl
+                        }
+                        ... on JiraSingleLineTextField {
+                            ... on JiraIssueField {
+                                __isJiraIssueField: __typename
+                                ... on JiraIssueFieldConfiguration {
+                                    __isJiraIssueFieldConfiguration: __typename
+                                    fieldConfig {
+                                        isRequired
+                                        isEditable
+                                    }
+                                }
+                                ... on JiraUserIssueFieldConfiguration {
+                                    __isJiraUserIssueFieldConfiguration: __typename
+                                    userFieldConfig {
+                                        isPinned
+                                    }
+                                }
+                            }
+                            fieldId
+                            name
+                            type
+                            description
+                            text
+                        }
+                        ... on JiraSingleSelectField {
+                            ... on JiraIssueField {
+                                __isJiraIssueField: __typename
+                                ... on JiraIssueFieldConfiguration {
+                                    __isJiraIssueFieldConfiguration: __typename
+                                    fieldConfig {
+                                        isRequired
+                                        isEditable
+                                    }
+                                }
+                                ... on JiraUserIssueFieldConfiguration {
+                                    __isJiraUserIssueFieldConfiguration: __typename
+                                    userFieldConfig {
+                                        isPinned
+                                    }
+                                }
+                            }
+                            fieldId
+                            name
+                            type
+                            description
+                            fieldOption {
+                                id
+                                optionId
+                                value
+                                isDisabled
+                            }
+                            fieldOptions {
+                                totalCount
+                                edges {
+                                    node {
+                                        id
+                                        optionId
+                                        value
+                                        isDisabled
+                                    }
+                                }
+                            }
+                            searchUrl
+                        }
+                        ... on JiraSingleSelectUserPickerField {
+                            ... on JiraIssueField {
+                                __isJiraIssueField: __typename
+                                ... on JiraIssueFieldConfiguration {
+                                    __isJiraIssueFieldConfiguration: __typename
+                                    fieldConfig {
+                                        isRequired
+                                        isEditable
+                                    }
+                                }
+                                ... on JiraUserIssueFieldConfiguration {
+                                    __isJiraUserIssueFieldConfiguration: __typename
+                                    userFieldConfig {
+                                        isPinned
+                                    }
+                                }
+                            }
+                            fieldId
+                            name
+                            type
+                            description
+                            user {
+                                __typename
+                                __isUser: __typename
+                                accountId
+                                accountStatus
+                                name
+                                picture
+                                ... on AtlassianAccountUser {
+                                    email
+                                    zoneinfo
+                                    locale
+                                }
+                            }
+                            searchUrl
+                        }
+                        ... on JiraSingleVersionPickerField {
+                            ... on JiraIssueField {
+                                __isJiraIssueField: __typename
+                                ... on JiraIssueFieldConfiguration {
+                                    __isJiraIssueFieldConfiguration: __typename
+                                    fieldConfig {
+                                        isRequired
+                                        isEditable
+                                    }
+                                }
+                                ... on JiraUserIssueFieldConfiguration {
+                                    __isJiraUserIssueFieldConfiguration: __typename
+                                    userFieldConfig {
+                                        isPinned
+                                    }
+                                }
+                            }
+                            fieldId
+                            name
+                            type
+                            description
+                            version {
+                                id
+                                versionId
+                                name
+                                iconUrl
+                                status
+                                description
+                                startDate
+                                releaseDate
+                            }
+                            versions {
+                                totalCount
+                                edges {
+                                    node {
+                                        id
+                                        versionId
+                                        name
+                                        iconUrl
+                                        status
+                                        description
+                                        startDate
+                                        releaseDate
+                                    }
+                                }
+                            }
+                        }
+                        ... on JiraSprintField {
+                            ... on JiraIssueField {
+                                __isJiraIssueField: __typename
+                                ... on JiraIssueFieldConfiguration {
+                                    __isJiraIssueFieldConfiguration: __typename
+                                    fieldConfig {
+                                        isRequired
+                                        isEditable
+                                    }
+                                }
+                                ... on JiraUserIssueFieldConfiguration {
+                                    __isJiraUserIssueFieldConfiguration: __typename
+                                    userFieldConfig {
+                                        isPinned
+                                    }
+                                }
+                            }
+                            fieldId
+                            name
+                            type
+                            description
+                            selectedSprintsConnection {
+                                totalCount
+                                edges {
+                                    node {
+                                        id
+                                        sprintId
+                                        name
+                                        state
+                                        boardName
+                                        startDate
+                                        endDate
+                                        completionDate
+                                        goal
+                                    }
+                                }
+                            }
+                            sprints {
+                                totalCount
+                                edges {
+                                    node {
+                                        id
+                                        sprintId
+                                        name
+                                        state
+                                        boardName
+                                        startDate
+                                        endDate
+                                        completionDate
+                                        goal
+                                    }
+                                }
+                            }
+                            searchUrl
+                        }
+                        ... on JiraStatusField {
+                            ... on JiraIssueField {
+                                __isJiraIssueField: __typename
+                                ... on JiraIssueFieldConfiguration {
+                                    __isJiraIssueFieldConfiguration: __typename
+                                    fieldConfig {
+                                        isRequired
+                                        isEditable
+                                    }
+                                }
+                                ... on JiraUserIssueFieldConfiguration {
+                                    __isJiraUserIssueFieldConfiguration: __typename
+                                    userFieldConfig {
+                                        isPinned
+                                    }
+                                }
+                            }
+                            fieldId
+                            name
+                            type
+                            description
+                            status {
+                                id
+                                name
+                                description
+                                statusId
+                                statusCategory {
+                                    id
+                                    statusCategoryId
+                                    key
+                                    name
+                                    colorName
+                                }
+                            }
+                        }
+                        ... on JiraTeamField {
+                            ... on JiraIssueField {
+                                __isJiraIssueField: __typename
+                                ... on JiraIssueFieldConfiguration {
+                                    __isJiraIssueFieldConfiguration: __typename
+                                    fieldConfig {
+                                        isRequired
+                                        isEditable
+                                    }
+                                }
+                                ... on JiraUserIssueFieldConfiguration {
+                                    __isJiraUserIssueFieldConfiguration: __typename
+                                    userFieldConfig {
+                                        isPinned
+                                    }
+                                }
+                            }
+                            fieldId
+                            name
+                            type
+                            description
+                            selectedTeam {
+                                id
+                                teamId
+                                name
+                                avatar {
+                                    xsmall
+                                    small
+                                    medium
+                                    large
+                                }
+                                members {
+                                    totalCount
+                                    edges {
+                                        node {
+                                            __typename
+                                        }
+                                    }
+                                }
+                            }
+                            teams {
+                                totalCount
+                                edges {
+                                    node {
+                                        id
+                                        teamId
+                                        name
+                                        avatar {
+                                            xsmall
+                                            small
+                                            medium
+                                            large
+                                        }
+                                        members {
+                                            totalCount
+                                            edges {
+                                                node {
+                                                    __typename
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            searchUrl
+                        }
+                        ... on JiraTeamViewField {
+                            ... on JiraIssueField {
+                                __isJiraIssueField: __typename
+                                ... on JiraIssueFieldConfiguration {
+                                    __isJiraIssueFieldConfiguration: __typename
+                                    fieldConfig {
+                                        isRequired
+                                        isEditable
+                                    }
+                                }
+                                ... on JiraUserIssueFieldConfiguration {
+                                    __isJiraUserIssueFieldConfiguration: __typename
+                                    userFieldConfig {
+                                        isPinned
+                                    }
+                                }
+                            }
+                            fieldId
+                            name
+                            type
+                            description
+                            selectedTeam {
+                                jiraSuppliedVisibility
+                                jiraSuppliedName
+                                jiraSuppliedId
+                                jiraSuppliedTeamId
+                                jiraSuppliedAvatar {
+                                    xsmall
+                                    small
+                                    medium
+                                    large
+                                }
+                            }
+                            searchUrl
+                        }
+                        ... on JiraTimeTrackingField {
+                            ... on JiraIssueField {
+                                __isJiraIssueField: __typename
+                                ... on JiraIssueFieldConfiguration {
+                                    __isJiraIssueFieldConfiguration: __typename
+                                    fieldConfig {
+                                        isRequired
+                                        isEditable
+                                    }
+                                }
+                                ... on JiraUserIssueFieldConfiguration {
+                                    __isJiraUserIssueFieldConfiguration: __typename
+                                    userFieldConfig {
+                                        isPinned
+                                    }
+                                }
+                            }
+                            fieldId
+                            name
+                            type
+                            description
+                            originalEstimate {
+                                timeInSeconds
+                            }
+                            remainingEstimate {
+                                timeInSeconds
+                            }
+                            timeSpent {
+                                timeInSeconds
+                            }
+                            timeTrackingSettings {
+                                isJiraConfiguredTimeTrackingEnabled
+                                workingHoursPerDay
+                                workingDaysPerWeek
+                                defaultFormat
+                                defaultUnit
+                            }
+                        }
+                        ... on JiraUrlField {
+                            ... on JiraIssueField {
+                                __isJiraIssueField: __typename
+                                ... on JiraIssueFieldConfiguration {
+                                    __isJiraIssueFieldConfiguration: __typename
+                                    fieldConfig {
+                                        isRequired
+                                        isEditable
+                                    }
+                                }
+                                ... on JiraUserIssueFieldConfiguration {
+                                    __isJiraUserIssueFieldConfiguration: __typename
+                                    userFieldConfig {
+                                        isPinned
+                                    }
+                                }
+                            }
+                            fieldId
+                            name
+                            type
+                            description
+                            url
+                        }
+                        ... on JiraVotesField {
+                            ... on JiraIssueField {
+                                __isJiraIssueField: __typename
+                                ... on JiraIssueFieldConfiguration {
+                                    __isJiraIssueFieldConfiguration: __typename
+                                    fieldConfig {
+                                        isRequired
+                                        isEditable
+                                    }
+                                }
+                                ... on JiraUserIssueFieldConfiguration {
+                                    __isJiraUserIssueFieldConfiguration: __typename
+                                    userFieldConfig {
+                                        isPinned
+                                    }
+                                }
+                            }
+                            fieldId
+                            name
+                            type
+                            description
+                            vote {
+                                hasVoted
+                                count
+                            }
+                        }
+                        ... on JiraWatchesField {
+                            ... on JiraIssueField {
+                                __isJiraIssueField: __typename
+                                ... on JiraIssueFieldConfiguration {
+                                    __isJiraIssueFieldConfiguration: __typename
+                                    fieldConfig {
+                                        isRequired
+                                        isEditable
+                                    }
+                                }
+                                ... on JiraUserIssueFieldConfiguration {
+                                    __isJiraUserIssueFieldConfiguration: __typename
+                                    userFieldConfig {
+                                        isPinned
+                                    }
+                                }
+                            }
+                            fieldId
+                            name
+                            type
+                            description
+                            watch {
+                                isWatching
+                                count
+                            }
+                        }
+                        ... on JiraForgeDatetimeField {
+                            ... on JiraIssueField {
+                                __isJiraIssueField: __typename
+                                ... on JiraIssueFieldConfiguration {
+                                    __isJiraIssueFieldConfiguration: __typename
+                                    fieldConfig {
+                                        isRequired
+                                        isEditable
+                                    }
+                                }
+                                ... on JiraUserIssueFieldConfiguration {
+                                    __isJiraUserIssueFieldConfiguration: __typename
+                                    userFieldConfig {
+                                        isPinned
+                                    }
+                                }
+                            }
+                            fieldId
+                            name
+                            type
+                            description
+                            dateTime
+                            renderer
+                        }
+                        id
+                    }
+                }
+            }
+            childIssues {
+                __typename
+                ... on JiraChildIssuesWithinLimit {
+                    issues {
+                        totalCount
+                        edges {
+                            node {
+                                id
+                                key
+                                issueId
+                                webUrl
+                                fieldsById(
+                                    ids: [
+                                        "assignee "
+                                        "created "
+                                        "issuetype "
+                                        "priority "
+                                        "status "
+                                        "summary "
+                                        "timetracking "
+                                        "updated "
+                                    ]
+                                ) {
+                                    edges {
+                                        node {
+                                            __typename
+                                            ... on JiraIssueTypeField {
+                                                fieldId
+                                                name
+                                                type
+                                                description
+                                                issueType {
+                                                    id
+                                                    issueTypeId
+                                                    name
+                                                    description
+                                                    avatar {
+                                                        xsmall
+                                                        small
+                                                        medium
+                                                        large
+                                                    }
+                                                    hierarchy {
+                                                        level
+                                                        name
+                                                    }
+                                                }
+                                                issueTypes {
+                                                    edges {
+                                                        node {
+                                                            id
+                                                            issueTypeId
+                                                            name
+                                                            description
+                                                            avatar {
+                                                                xsmall
+                                                                small
+                                                                medium
+                                                                large
+                                                            }
+                                                            hierarchy {
+                                                                level
+                                                                name
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                            ... on JiraSingleLineTextField {
+                                                fieldId
+                                                name
+                                                type
+                                                description
+                                                text
+                                            }
+                                            ... on JiraPriorityField {
+                                                fieldId
+                                                name
+                                                type
+                                                description
+                                                priority {
+                                                    priorityId
+                                                    name
+                                                    iconUrl
+                                                    color
+                                                    id
+                                                }
+                                                priorities {
+                                                    edges {
+                                                        node {
+                                                            priorityId
+                                                            name
+                                                            iconUrl
+                                                            color
+                                                            id
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                            ... on JiraStatusField {
+                                                fieldId
+                                                name
+                                                type
+                                                description
+                                                status {
+                                                    id
+                                                    name
+                                                    description
+                                                    statusId
+                                                    statusCategory {
+                                                        id
+                                                        statusCategoryId
+                                                        key
+                                                        name
+                                                        colorName
+                                                    }
+                                                }
+                                            }
+                                            ... on JiraSingleSelectUserPickerField {
+                                                fieldId
+                                                name
+                                                type
+                                                description
+                                                user {
+                                                    __typename
+                                                    __isUser: __typename
+                                                    accountId
+                                                    accountStatus
+                                                    name
+                                                    picture
+                                                    ... on AtlassianAccountUser {
+                                                        email
+                                                        zoneinfo
+                                                        locale
+                                                    }
+                                                }
+                                                searchUrl
+                                            }
+                                            ... on JiraTimeTrackingField {
+                                                fieldId
+                                                name
+                                                type
+                                                description
+                                                originalEstimate {
+                                                    timeInSeconds
+                                                }
+                                                remainingEstimate {
+                                                    timeInSeconds
+                                                }
+                                                timeSpent {
+                                                    timeInSeconds
+                                                }
+                                                timeTrackingSettings {
+                                                    isJiraConfiguredTimeTrackingEnabled
+                                                    workingHoursPerDay
+                                                    workingDaysPerWeek
+                                                    defaultFormat
+                                                    defaultUnit
+                                                }
+                                            }
+                                            ... on JiraDateTimePickerField {
+                                                fieldId
+                                                name
+                                                type
+                                                description
+                                                dateTime
+                                            }
+                                            ... on JiraDatePickerField {
+                                                fieldId
+                                                name
+                                                type
+                                                description
+                                                date
+                                            }
+                                            id
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                ... on JiraChildIssuesExceedingLimit {
+                    search
+                }
+            }
+            issueLinks {
+                totalCount
+                edges {
+                    node {
+                        id
+                        issueLinkId
+                        relatedBy {
+                            id
+                            relationName
+                            linkTypeId
+                            linkTypeName
+                            direction
+                        }
+                        issue {
+                            id
+                            issueId
+                            key
+                            webUrl
+                            fieldsById(
+                                ids: [
+                                    "assignee "
+                                    "issuetype "
+                                    "priority "
+                                    "status "
+                                    "summary "
+                                ]
+                            ) {
+                                edges {
+                                    node {
+                                        __typename
+                                        ... on JiraStatusField {
+                                            fieldId
+                                            name
+                                            type
+                                            description
+                                            status {
+                                                id
+                                                name
+                                                description
+                                                statusId
+                                                statusCategory {
+                                                    id
+                                                    statusCategoryId
+                                                    key
+                                                    name
+                                                    colorName
+                                                }
+                                            }
+                                        }
+                                        ... on JiraPriorityField {
+                                            fieldId
+                                            name
+                                            type
+                                            description
+                                            priority {
+                                                priorityId
+                                                name
+                                                iconUrl
+                                                color
+                                                id
+                                            }
+                                            priorities {
+                                                edges {
+                                                    node {
+                                                        priorityId
+                                                        name
+                                                        iconUrl
+                                                        color
+                                                        id
+                                                    }
+                                                }
+                                            }
+                                        }
+                                        ... on JiraIssueTypeField {
+                                            fieldId
+                                            name
+                                            type
+                                            description
+                                            issueType {
+                                                id
+                                                issueTypeId
+                                                name
+                                                description
+                                                avatar {
+                                                    xsmall
+                                                    small
+                                                    medium
+                                                    large
+                                                }
+                                                hierarchy {
+                                                    level
+                                                    name
+                                                }
+                                            }
+                                            issueTypes {
+                                                edges {
+                                                    node {
+                                                        id
+                                                        issueTypeId
+                                                        name
+                                                        description
+                                                        avatar {
+                                                            xsmall
+                                                            small
+                                                            medium
+                                                            large
+                                                        }
+                                                        hierarchy {
+                                                            level
+                                                            name
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                        ... on JiraSingleLineTextField {
+                                            fieldId
+                                            name
+                                            type
+                                            description
+                                            text
+                                        }
+                                        ... on JiraSingleSelectUserPickerField {
+                                            fieldId
+                                            name
+                                            type
+                                            description
+                                            searchUrl
+                                            user {
+                                                __typename
+                                                __isUser: __typename
+                                                accountId
+                                                accountStatus
+                                                name
+                                                picture
+                                                ... on AtlassianAccountUser {
+                                                    email
+                                                    zoneinfo
+                                                    locale
+                                                }
+                                            }
+                                        }
+                                        id
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            id
+        }
+    }
+}
