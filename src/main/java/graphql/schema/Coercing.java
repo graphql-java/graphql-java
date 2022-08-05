@@ -47,6 +47,11 @@ public interface Coercing<I, O> {
      */
     O serialize(@NotNull Object dataFetcherResult) throws CoercingSerializeException;
 
+    default O serialize(@NotNull CoercingEnvironment<Object> environment) throws CoercingSerializeException {
+        return serialize(environment.getValueToBeCoerced());
+    }
+
+
     /**
      * Called to resolve an input from a query variable into a Java object acceptable for the scalar type.
      * <p>
@@ -60,6 +65,10 @@ public interface Coercing<I, O> {
      * @throws graphql.schema.CoercingParseValueException if value input can't be parsed
      */
     @NotNull I parseValue(@NotNull Object input) throws CoercingParseValueException;
+
+    default I parseValue(@NotNull CoercingEnvironment<Object> environment) throws CoercingParseValueException {
+        return parseValue(environment.getValueToBeCoerced());
+    }
 
     /**
      * Called during query validation to convert a query input AST node into a Java object acceptable for the scalar type.  The input
@@ -99,6 +108,10 @@ public interface Coercing<I, O> {
         return parseLiteral(input);
     }
 
+    default I parseLiteral(CoercingLiteralEnvironment environment) throws CoercingParseLiteralException {
+        return parseLiteral(environment.getValueToBeCoerced(),environment.getVariables());
+    }
+
 
     /**
      * Converts an external input value to a literal (Ast Value).
@@ -111,5 +124,9 @@ public interface Coercing<I, O> {
      */
     default @NotNull Value valueToLiteral(@NotNull Object input) {
         throw new UnsupportedOperationException("This is not implemented by this Scalar " + this.getClass());
+    }
+
+    default @NotNull Value valueToLiteral(CoercingEnvironment<Object> environment) {
+        return valueToLiteral(environment.getValueToBeCoerced());
     }
 }
