@@ -67,13 +67,27 @@ public class GraphQLEnumType implements GraphQLNamedInputType, GraphQLNamedOutpu
     }
 
     @Internal
+    @Deprecated
     public Object serialize(Object input) {
-        return getNameByValue(input);
+        return serialize(mkCoercingEnv(input));
+    }
+
+    public Object serialize(CoercingEnvironment<Object> environment) {
+        return getNameByValue(environment);
     }
 
     @Internal
+    @Deprecated
     public Object parseValue(Object input) {
-        return getValueByName(input);
+        return getValueByName(mkCoercingEnv(input));
+    }
+
+    public Object parseValue(CoercingEnvironment<Object> environment) {
+        return getValueByName(environment);
+    }
+
+    private static CoercingEnvironment<Object> mkCoercingEnv(Object input) {
+        return CoercingEnvironment.newCoercingEnvironment().value(input).build();
     }
 
     private String typeName(Object input) {
@@ -84,7 +98,16 @@ public class GraphQLEnumType implements GraphQLNamedInputType, GraphQLNamedOutpu
     }
 
     @Internal
+    @Deprecated
     public Object parseLiteral(Object input) {
+        CoercingLiteralEnvironment environment = CoercingLiteralEnvironment.newCoercingEnvironment().value((Value<?>) input).build();
+        return parseLiteral(environment);
+    }
+
+    @Internal
+    public Object parseLiteral(CoercingLiteralEnvironment environment) {
+        Value<?> input = environment.getValueToBeCoerced();
+        // TODO - use I18N
         if (!(input instanceof EnumValue)) {
             throw new CoercingParseLiteralException(
                     "Expected AST type 'EnumValue' but was '" + typeName(input) + "'."
@@ -101,7 +124,16 @@ public class GraphQLEnumType implements GraphQLNamedInputType, GraphQLNamedOutpu
     }
 
     @Internal
+    @Deprecated
     public Value valueToLiteral(Object input) {
+        CoercingEnvironment<Object> environment = CoercingEnvironment.newCoercingEnvironment().value(input).build();
+        return valueToLiteral(environment);
+    }
+
+    @Internal
+    public Value valueToLiteral(CoercingEnvironment<Object> environment) {
+        Object input = environment.getValueToBeCoerced();
+        // TODO - use I18N
         GraphQLEnumValueDefinition enumValueDefinition = valueDefinitionMap.get(input.toString());
         assertNotNull(enumValueDefinition, () -> "Invalid input for Enum '" + name + "'. No value found for name '" + input + "'");
         return EnumValue.newEnumValue(enumValueDefinition.getName()).build();
@@ -121,11 +153,13 @@ public class GraphQLEnumType implements GraphQLNamedInputType, GraphQLNamedOutpu
                 (fld1, fld2) -> assertShouldNeverHappen("Duplicated definition for field '%s' in type '%s'", fld1.getName(), this.name)));
     }
 
-    private Object getValueByName(Object value) {
+    private Object getValueByName(CoercingEnvironment<Object> environment) {
+        Object value = environment.getValueToBeCoerced();
         GraphQLEnumValueDefinition enumValueDefinition = valueDefinitionMap.get(value.toString());
         if (enumValueDefinition != null) {
             return enumValueDefinition.getValue();
         }
+        // TODO - use 18N here
         throw new CoercingParseValueException("Invalid input for Enum '" + name + "'. No value found for name '" + value.toString() + "'");
     }
 
