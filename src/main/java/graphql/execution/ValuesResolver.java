@@ -21,6 +21,8 @@ import graphql.language.Value;
 import graphql.language.VariableDefinition;
 import graphql.language.VariableReference;
 import graphql.normalized.NormalizedInputValue;
+import graphql.schema.CoercingEnvironment;
+import graphql.schema.CoercingLiteralEnvironment;
 import graphql.schema.CoercingParseLiteralException;
 import graphql.schema.CoercingParseValueException;
 import graphql.schema.GraphQLArgument;
@@ -294,7 +296,7 @@ public class ValuesResolver {
             if (valueMode == NORMALIZED) {
                 return assertShouldNeverHappen("can't infer normalized structure");
             }
-            return valueToLiteralLegacy(inputValueWithState.getValue(), type);
+            return valueToLiteralLegacy(inputValueWithState.getValue(), type, locale);
         }
         if (inputValueWithState.isLiteral()) {
             return inputValueWithState.getValue();
@@ -395,7 +397,9 @@ public class ValuesResolver {
      * No validation
      */
     private static Value externalValueToLiteralForScalar(GraphQLScalarType scalarType, Object value, Locale locale) {
-        return scalarType.getCoercing().valueToLiteral(value);
+        CoercingEnvironment<Object> environment = CoercingEnvironment.newEnvironment()
+                .value(value).locale(locale).build();
+        return scalarType.getCoercing().valueToLiteral(environment);
 
     }
 
@@ -403,7 +407,9 @@ public class ValuesResolver {
      * No validation
      */
     private static Value externalValueToLiteralForEnum(GraphQLEnumType enumType, Object value, Locale locale) {
-        return enumType.valueToLiteral(value);
+        CoercingEnvironment<Object> environment = CoercingEnvironment.newEnvironment()
+                .value(value).locale(locale).build();
+        return enumType.valueToLiteral(environment);
     }
 
     /**
@@ -805,7 +811,7 @@ public class ValuesResolver {
             return null;
         }
         if (type instanceof GraphQLScalarType) {
-            return literalToInternalValueForScalar(inputValue, (GraphQLScalarType) type, coercedVariables);
+            return literalToInternalValueForScalar(inputValue, (GraphQLScalarType) type, coercedVariables, locale);
         }
         if (isNonNull(type)) {
             return literalToInternalValue(fieldVisibility, unwrapOne(type), inputValue, coercedVariables);
@@ -825,9 +831,11 @@ public class ValuesResolver {
     /**
      * no validation
      */
-    private static Object literalToInternalValueForScalar(Value inputValue, GraphQLScalarType scalarType, CoercedVariables coercedVariables) {
+    private static Object literalToInternalValueForScalar(Value inputValue, GraphQLScalarType scalarType, CoercedVariables coercedVariables, Locale locale) {
         // the CoercingParseLiteralException exception that could happen here has been validated earlier via ValidationUtil
-        return scalarType.getCoercing().parseLiteral(inputValue, coercedVariables.toMap());
+        CoercingLiteralEnvironment environment = CoercingLiteralEnvironment.newLiteralEnvironment()
+                .value(inputValue).locale(locale).variables(coercedVariables.toMap()).build();
+        return scalarType.getCoercing().parseLiteral(environment);
     }
 
     /**
@@ -949,26 +957,26 @@ public class ValuesResolver {
      * Only provided here to preserve backwards compatibility.
      */
     @VisibleForTesting
-    static Value<?> valueToLiteralLegacy(Object value, GraphQLType type) {
+    static Value<?> valueToLiteralLegacy(Object value, GraphQLType type, Locale locale) {
         assertTrue(!(value instanceof Value), () -> "Unexpected literal " + value);
         if (value == null) {
             return null;
         }
 
         if (isNonNull(type)) {
-            return handleNonNullLegacy(value, (GraphQLNonNull) type);
+            return handleNonNullLegacy(value, (GraphQLNonNull) type, locale);
         }
 
         // Convert JavaScript array to GraphQL list. If the GraphQLType is a list, but
         // the value is not an array, convert the value using the list's item type.
         if (isList(type)) {
-            return handleListLegacy(value, (GraphQLList) type);
+            return handleListLegacy(value, (GraphQLList) type, locale);
         }
 
         // Populate the fields of the input object by creating ASTs from each value
         // in the JavaScript object according to the fields in the input type.
         if (type instanceof GraphQLInputObjectType) {
-            return handleInputObjectLegacy(value, (GraphQLInputObjectType) type);
+            return handleInputObjectLegacy(value, (GraphQLInputObjectType) type, locale);
         }
 
         if (!(type instanceof GraphQLScalarType || type instanceof GraphQLEnumType)) {
@@ -977,7 +985,7 @@ public class ValuesResolver {
 
         // Since value is an internally represented value, it must be serialized
         // to an externally represented value before converting into an AST.
-        final Object serialized = serializeLegacy(type, value);
+        final Object serialized = serializeLegacy(type, value, locale);
         if (isNullishLegacy(serialized)) {
             return null;
         }
@@ -1010,14 +1018,14 @@ public class ValuesResolver {
         throw new AssertException("'Cannot convert value to AST: " + serialized);
     }
 
-    private static Value<?> handleInputObjectLegacy(Object javaValue, GraphQLInputObjectType type) {
+    private static Value<?> handleInputObjectLegacy(Object javaValue, GraphQLInputObjectType type, Locale locale) {
         List<GraphQLInputObjectField> fields = type.getFields();
         List<ObjectField> fieldNodes = new ArrayList<>();
         fields.forEach(field -> {
             String fieldName = field.getName();
             GraphQLInputType fieldType = field.getType();
             Object fieldValueObj = PropertyDataFetcherHelper.getPropertyValue(fieldName, javaValue, fieldType);
-            Value<?> nodeValue = valueToLiteralLegacy(fieldValueObj, fieldType);
+            Value<?> nodeValue = valueToLiteralLegacy(fieldValueObj, fieldType, locale);
             if (nodeValue != null) {
                 fieldNodes.add(newObjectField().name(fieldName).value(nodeValue).build());
             }
@@ -1034,28 +1042,30 @@ public class ValuesResolver {
     }
 
     @SuppressWarnings("rawtypes")
-    private static Value<?> handleListLegacy(Object value, GraphQLList type) {
+    private static Value<?> handleListLegacy(Object value, GraphQLList type, Locale locale) {
         GraphQLType itemType = type.getWrappedType();
         if (FpKit.isIterable(value)) {
             List<Value> valuesNodes = FpKit.toListOrSingletonList(value)
                     .stream()
-                    .map(item -> valueToLiteralLegacy(item, itemType))
+                    .map(item -> valueToLiteralLegacy(item, itemType, locale))
                     .collect(toList());
             return ArrayValue.newArrayValue().values(valuesNodes).build();
         }
-        return valueToLiteralLegacy(value, itemType);
+        return valueToLiteralLegacy(value, itemType, locale);
     }
 
-    private static Value<?> handleNonNullLegacy(Object _value, GraphQLNonNull type) {
+    private static Value<?> handleNonNullLegacy(Object _value, GraphQLNonNull type, Locale locale) {
         GraphQLType wrappedType = type.getWrappedType();
-        return valueToLiteralLegacy(_value, wrappedType);
+        return valueToLiteralLegacy(_value, wrappedType, locale);
     }
 
-    private static Object serializeLegacy(GraphQLType type, Object value) {
+    private static Object serializeLegacy(GraphQLType type, Object value, Locale locale) {
+        CoercingEnvironment<Object> environment = CoercingEnvironment.newEnvironment()
+                .value(value).locale(locale).build();
         if (type instanceof GraphQLScalarType) {
-            return ((GraphQLScalarType) type).getCoercing().serialize(value);
+            return ((GraphQLScalarType) type).getCoercing().serialize(environment);
         } else {
-            return ((GraphQLEnumType) type).serialize(value);
+            return ((GraphQLEnumType) type).serialize(environment);
         }
     }
 

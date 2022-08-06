@@ -48,6 +48,21 @@ public interface Coercing<I, O> {
     @Deprecated
     O serialize(@NotNull Object dataFetcherResult) throws CoercingSerializeException;
 
+    /**
+     * Called to convert a Java object result of a DataFetcher to a valid runtime value for the scalar type.
+     * <p>
+     * Note : Throw {@link graphql.schema.CoercingSerializeException} if there is fundamental
+     * problem during serialisation, don't return null to indicate failure.
+     * <p>
+     * Note : You should not allow {@link java.lang.RuntimeException}s to come out of your serialize method, but rather
+     * catch them and fire them as {@link graphql.schema.CoercingSerializeException} instead as per the method contract.
+     *
+     * @param environment the coercing environment parameters
+     *
+     * @return a serialized value which may be null.
+     *
+     * @throws graphql.schema.CoercingSerializeException if value input can't be serialized
+     */
     default O serialize(@NotNull CoercingEnvironment<Object> environment) throws CoercingSerializeException {
         return serialize(environment.getValueToBeCoerced());
     }
@@ -68,6 +83,18 @@ public interface Coercing<I, O> {
     @Deprecated
     @NotNull I parseValue(@NotNull Object input) throws CoercingParseValueException;
 
+    /**
+     * Called to resolve an input from a query variable into a Java object acceptable for the scalar type.
+     * <p>
+     * Note : You should not allow {@link java.lang.RuntimeException}s to come out of your parseValue method, but rather
+     * catch them and fire them as {@link graphql.schema.CoercingParseValueException} instead as per the method contract.
+     *
+     * @param environment the coercing environment parameters
+     *
+     * @return a parsed value which is never null
+     *
+     * @throws graphql.schema.CoercingParseValueException if value input can't be parsed
+     */
     default I parseValue(@NotNull CoercingEnvironment<Object> environment) throws CoercingParseValueException {
         return parseValue(environment.getValueToBeCoerced());
     }
@@ -108,18 +135,35 @@ public interface Coercing<I, O> {
      */
     @SuppressWarnings("unused")
     @Deprecated
-    default @NotNull I parseLiteral(Object input, Map<String, Object> variables) throws CoercingParseLiteralException {
+    default I parseLiteral(Object input, Map<String, Object> variables) throws CoercingParseLiteralException {
         return parseLiteral(input);
     }
 
+    /**
+     * Called during query execution to convert a query input AST node into a Java object acceptable for the scalar type.  The input
+     * object will be an instance of {@link graphql.language.Value}.
+     * <p>
+     * Note : You should not allow {@link java.lang.RuntimeException}s to come out of your parseLiteral method, but rather
+     * catch them and fire them as {@link graphql.schema.CoercingParseLiteralException} instead as per the method contract.
+     * <p>
+     * Many scalar types don't need to implement this method because they don't take AST {@link graphql.language.VariableReference}
+     * objects and convert them into actual values.  But for those scalar types that want to do this, then this
+     * method should be implemented.
+     *
+     * @param environment the literal coercing environment parameters
+     *
+     * @return a parsed value which is never null
+     *
+     * @throws graphql.schema.CoercingParseLiteralException if input literal can't be parsed
+     */
     default I parseLiteral(CoercingLiteralEnvironment environment) throws CoercingParseLiteralException {
-        return parseLiteral(environment.getValueToBeCoerced(),environment.getVariables());
+        return parseLiteral(environment.getValueToBeCoerced(), environment.getVariables());
     }
 
 
     /**
      * Converts an external input value to a literal (Ast Value).
-     *
+     * <p>
      * IMPORTANT: the argument is validated before by calling {@link #parseValue(Object)}.
      *
      * @param input an external input value
@@ -131,6 +175,15 @@ public interface Coercing<I, O> {
         throw new UnsupportedOperationException("This is not implemented by this Scalar " + this.getClass());
     }
 
+    /**
+     * Converts an external input value to a literal (Ast Value).
+     * <p>
+     * IMPORTANT: the argument is validated before by calling {@link #parseValue(Object)}.
+     *
+     * @param environment the coercing environment parameters
+     *
+     * @return The literal matching the external input value.
+     */
     default @NotNull Value valueToLiteral(CoercingEnvironment<Object> environment) {
         return valueToLiteral(environment.getValueToBeCoerced());
     }

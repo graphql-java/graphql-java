@@ -1,5 +1,6 @@
 package graphql.validation.rules
 
+import graphql.i18n.I18n
 import graphql.language.Argument
 import graphql.language.ArrayValue
 import graphql.language.BooleanValue
@@ -31,10 +32,13 @@ class ArgumentsOfCorrectTypeTest extends Specification {
 
     ArgumentsOfCorrectType argumentsOfCorrectType
     ValidationContext validationContext = Mock(ValidationContext)
+    I18n i18n = Mock(I18n)
     ValidationErrorCollector errorCollector = new ValidationErrorCollector()
 
     def setup() {
         argumentsOfCorrectType = new ArgumentsOfCorrectType(validationContext, errorCollector)
+        validationContext.getI18n() >> i18n
+        i18n.getLocale() >> Locale.getDefault()
     }
 
     def "valid type results in no error"() {

@@ -27,6 +27,7 @@ class ValidationUtilTest extends Specification {
 
     def schema = GraphQLSchema.newSchema().query(StarWarsSchema.queryType).build()
     def validationUtil = new ValidationUtil()
+    def locale = Locale.getDefault()
 
     def "getUnmodified type of list of nonNull"() {
         given:
@@ -51,32 +52,32 @@ class ValidationUtilTest extends Specification {
 
     def "null and NonNull is invalid"() {
         expect:
-        !validationUtil.isValidLiteralValue(null, nonNull(GraphQLString),schema)
+        !validationUtil.isValidLiteralValue(null, nonNull(GraphQLString), schema, locale)
     }
 
     def "NullValue and NonNull is invalid"() {
         expect:
-        !validationUtil.isValidLiteralValue(NullValue.newNullValue().build(), nonNull(GraphQLString),schema)
+        !validationUtil.isValidLiteralValue(NullValue.newNullValue().build(), nonNull(GraphQLString), schema, locale)
     }
 
     def "a nonNull value for a NonNull type is valid"() {
         expect:
-        validationUtil.isValidLiteralValue(new StringValue("string"), nonNull(GraphQLString),schema)
+        validationUtil.isValidLiteralValue(new StringValue("string"), nonNull(GraphQLString), schema, locale)
     }
 
     def "null is valid when type is NonNull"() {
         expect:
-        validationUtil.isValidLiteralValue(null, GraphQLString,schema)
+        validationUtil.isValidLiteralValue(null, GraphQLString, schema, locale)
     }
 
     def "NullValue is valid when type is NonNull"() {
         expect:
-        validationUtil.isValidLiteralValue(NullValue.newNullValue().build(), GraphQLString,schema)
+        validationUtil.isValidLiteralValue(NullValue.newNullValue().build(), GraphQLString, schema, locale)
     }
 
     def "variables are valid"() {
         expect:
-        validationUtil.isValidLiteralValue(new VariableReference("var"), GraphQLBoolean,schema)
+        validationUtil.isValidLiteralValue(new VariableReference("var"), GraphQLBoolean, schema, locale)
     }
 
     def "ArrayValue and ListType is invalid when one entry is invalid"() {
@@ -85,7 +86,7 @@ class ValidationUtilTest extends Specification {
         def type = list(GraphQLString)
 
         expect:
-        !validationUtil.isValidLiteralValue(arrayValue, type,schema)
+        !validationUtil.isValidLiteralValue(arrayValue, type,schema,locale)
     }
 
     def "One value is a single element List"() {
@@ -93,7 +94,7 @@ class ValidationUtilTest extends Specification {
         def singleValue = new BooleanValue(true)
         def type = list(GraphQLBoolean)
         expect:
-        validationUtil.isValidLiteralValue(singleValue, type,schema)
+        validationUtil.isValidLiteralValue(singleValue, type,schema,locale)
     }
 
     def "a valid array"() {
@@ -102,19 +103,19 @@ class ValidationUtilTest extends Specification {
         def type = list(GraphQLString)
 
         expect:
-        validationUtil.isValidLiteralValue(arrayValue, type,schema)
+        validationUtil.isValidLiteralValue(arrayValue, type,schema, locale)
     }
 
     def "a valid scalar"() {
         given:
         expect:
-        validationUtil.isValidLiteralValue(new BooleanValue(true), GraphQLBoolean,schema)
+        validationUtil.isValidLiteralValue(new BooleanValue(true), GraphQLBoolean, schema, locale)
     }
 
     def "invalid scalar"() {
         given:
         expect:
-        !validationUtil.isValidLiteralValue(new BooleanValue(true), GraphQLString,schema)
+        !validationUtil.isValidLiteralValue(new BooleanValue(true), GraphQLString, schema, locale)
     }
 
     def "valid enum"() {
@@ -122,21 +123,21 @@ class ValidationUtilTest extends Specification {
         def enumType = GraphQLEnumType.newEnum().name("enumType").value("PLUTO").build()
 
         expect:
-        validationUtil.isValidLiteralValue(new EnumValue("PLUTO"), enumType,schema)
+        validationUtil.isValidLiteralValue(new EnumValue("PLUTO"), enumType, schema, locale)
     }
 
     def "invalid enum value"() {
         given:
         def enumType = GraphQLEnumType.newEnum().name("enumType").value("PLUTO").build()
         expect:
-        !validationUtil.isValidLiteralValue(new StringValue("MARS"), enumType,schema)
+        !validationUtil.isValidLiteralValue(new StringValue("MARS"), enumType, schema, locale)
     }
 
     def "invalid enum name"() {
         given:
         def enumType = GraphQLEnumType.newEnum().name("enumType").value("PLUTO").build()
         expect:
-        !validationUtil.isValidLiteralValue(new EnumValue("MARS"), enumType,schema)
+        !validationUtil.isValidLiteralValue(new EnumValue("MARS"), enumType, schema, locale)
     }
 
     def "a valid ObjectValue"() {
@@ -151,7 +152,7 @@ class ValidationUtilTest extends Specification {
         objectValue.objectField(new ObjectField("hello", new StringValue("world")))
 
         expect:
-        validationUtil.isValidLiteralValue(objectValue.build(), inputObjectType, schema)
+        validationUtil.isValidLiteralValue(objectValue.build(), inputObjectType, schema, locale)
     }
 
     def "a invalid ObjectValue with a invalid field"() {
@@ -166,7 +167,7 @@ class ValidationUtilTest extends Specification {
         objectValue.objectField(new ObjectField("hello", new BooleanValue(false)))
 
         expect:
-        !validationUtil.isValidLiteralValue(objectValue.build(), inputObjectType, schema)
+        !validationUtil.isValidLiteralValue(objectValue.build(), inputObjectType, schema, locale)
     }
 
     def "a invalid ObjectValue with a missing field"() {
@@ -180,7 +181,7 @@ class ValidationUtilTest extends Specification {
         def objectValue = ObjectValue.newObjectValue().build()
 
         expect:
-        !validationUtil.isValidLiteralValue(objectValue, inputObjectType,schema)
+        !validationUtil.isValidLiteralValue(objectValue, inputObjectType,schema, locale)
     }
 
     def "a valid ObjectValue with a nonNull field and default value"() {
@@ -195,6 +196,6 @@ class ValidationUtilTest extends Specification {
         def objectValue = ObjectValue.newObjectValue()
 
         expect:
-        validationUtil.isValidLiteralValue(objectValue.build(), inputObjectType, schema)
+        validationUtil.isValidLiteralValue(objectValue.build(), inputObjectType, schema, locale)
     }
 }

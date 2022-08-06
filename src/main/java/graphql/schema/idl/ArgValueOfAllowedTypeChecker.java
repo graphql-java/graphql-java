@@ -25,6 +25,7 @@ import graphql.language.Type;
 import graphql.language.TypeDefinition;
 import graphql.language.TypeName;
 import graphql.language.Value;
+import graphql.schema.CoercingLiteralEnvironment;
 import graphql.schema.CoercingParseLiteralException;
 import graphql.schema.GraphQLScalarType;
 import graphql.schema.idl.errors.DirectiveIllegalArgumentTypeError;
@@ -285,7 +286,8 @@ class ArgValueOfAllowedTypeChecker {
 
     private boolean isArgumentValueScalarLiteral(GraphQLScalarType scalarType, Value<?> instanceValue) {
         try {
-            scalarType.getCoercing().parseLiteral(instanceValue);
+            CoercingLiteralEnvironment environment = CoercingLiteralEnvironment.newLiteralEnvironment().value(instanceValue).build();
+            scalarType.getCoercing().parseLiteral(environment);
             return true;
         } catch (CoercingParseLiteralException ex) {
             if (logNotSafe.isDebugEnabled()) {

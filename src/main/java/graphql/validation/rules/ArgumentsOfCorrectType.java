@@ -10,6 +10,8 @@ import graphql.validation.ValidationContext;
 import graphql.validation.ValidationError;
 import graphql.validation.ValidationErrorCollector;
 
+import java.util.Locale;
+
 import static graphql.validation.ValidationErrorType.WrongType;
 
 @Internal
@@ -26,7 +28,8 @@ public class ArgumentsOfCorrectType extends AbstractRule {
             return;
         }
         ArgumentValidationUtil validationUtil = new ArgumentValidationUtil(argument);
-        if (!validationUtil.isValidLiteralValue(argument.getValue(), fieldArgument.getType(), getValidationContext().getSchema())) {
+        Locale locale = getValidationContext().getI18n().getLocale();
+        if (!validationUtil.isValidLiteralValue(argument.getValue(), fieldArgument.getType(), getValidationContext().getSchema(), locale)) {
             String message = i18n(WrongType, validationUtil.getMsgAndArgs());
             addError(ValidationError.newValidationError()
                     .validationErrorType(WrongType)

@@ -87,7 +87,7 @@ public class GraphQLEnumType implements GraphQLNamedInputType, GraphQLNamedOutpu
     }
 
     private static CoercingEnvironment<Object> mkCoercingEnv(Object input) {
-        return CoercingEnvironment.newCoercingEnvironment().value(input).build();
+        return CoercingEnvironment.newEnvironment().value(input).build();
     }
 
     private String typeName(Object input) {
@@ -100,7 +100,8 @@ public class GraphQLEnumType implements GraphQLNamedInputType, GraphQLNamedOutpu
     @Internal
     @Deprecated
     public Object parseLiteral(Object input) {
-        CoercingLiteralEnvironment environment = CoercingLiteralEnvironment.newCoercingEnvironment().value((Value<?>) input).build();
+        CoercingLiteralEnvironment environment = CoercingLiteralEnvironment.newLiteralEnvironment()
+                .value((Value<?>) input).build();
         return parseLiteral(environment);
     }
 
@@ -126,7 +127,8 @@ public class GraphQLEnumType implements GraphQLNamedInputType, GraphQLNamedOutpu
     @Internal
     @Deprecated
     public Value valueToLiteral(Object input) {
-        CoercingEnvironment<Object> environment = CoercingEnvironment.newCoercingEnvironment().value(input).build();
+        CoercingEnvironment<Object> environment = CoercingEnvironment.newEnvironment()
+                .value(input).build();
         return valueToLiteral(environment);
     }
 
@@ -163,7 +165,8 @@ public class GraphQLEnumType implements GraphQLNamedInputType, GraphQLNamedOutpu
         throw new CoercingParseValueException("Invalid input for Enum '" + name + "'. No value found for name '" + value.toString() + "'");
     }
 
-    private Object getNameByValue(Object value) {
+    private Object getNameByValue(CoercingEnvironment<Object> environment) {
+        Object value = environment.getValueToBeCoerced();
         for (GraphQLEnumValueDefinition valueDefinition : valueDefinitionMap.values()) {
             Object definitionValue = valueDefinition.getValue();
             if (value.equals(definitionValue)) {

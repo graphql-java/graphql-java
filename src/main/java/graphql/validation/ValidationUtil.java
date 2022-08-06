@@ -16,6 +16,7 @@ import graphql.language.TypeName;
 import graphql.language.Value;
 import graphql.language.VariableReference;
 import graphql.schema.Coercing;
+import graphql.schema.CoercingLiteralEnvironment;
 import graphql.schema.CoercingParseLiteralException;
 import graphql.schema.GraphQLEnumType;
 import graphql.schema.GraphQLInputObjectField;
@@ -28,6 +29,7 @@ import graphql.schema.visibility.GraphqlFieldVisibility;
 
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -74,7 +76,7 @@ public class ValidationUtil {
     protected void handleFieldNotValidError(Value<?> value, GraphQLType type, int index) {
     }
 
-    public boolean isValidLiteralValue(Value<?> value, GraphQLType type, GraphQLSchema schema) {
+    public boolean isValidLiteralValue(Value<?> value, GraphQLType type, GraphQLSchema schema, Locale locale) {
         if (value == null || value instanceof NullValue) {
             boolean valid = !(isNonNull(type));
             if (!valid) {
@@ -86,11 +88,11 @@ public class ValidationUtil {
             return true;
         }
         if (isNonNull(type)) {
-            return isValidLiteralValue(value, unwrapOne(type), schema);
+            return isValidLiteralValue(value, unwrapOne(type), schema, locale);
         }
 
         if (type instanceof GraphQLScalarType) {
-            Optional<GraphQLError> invalid = parseLiteral(value, ((GraphQLScalarType) type).getCoercing());
+            Optional<GraphQLError> invalid = parseLiteral(value, ((GraphQLScalarType) type).getCoercing(), locale);
             invalid.ifPresent(graphQLError -> handleScalarError(value, (GraphQLScalarType) type, graphQLError));
             return !invalid.isPresent();
         }
@@ -101,9 +103,9 @@ public class ValidationUtil {
         }
 
         if (isList(type)) {
-            return isValidLiteralValue(value, (GraphQLList) type, schema);
+            return isValidLiteralValue(value, (GraphQLList) type, schema, locale);
         }
-        return type instanceof GraphQLInputObjectType && isValidLiteralValue(value, (GraphQLInputObjectType) type, schema);
+        return type instanceof GraphQLInputObjectType && isValidLiteralValue(value, (GraphQLInputObjectType) type, schema, locale);
 
     }
 
@@ -116,16 +118,18 @@ public class ValidationUtil {
         }
     }
 
-    private Optional<GraphQLError> parseLiteral(Value<?> value, Coercing<?, ?> coercing) {
+    private Optional<GraphQLError> parseLiteral(Value<?> value, Coercing<?, ?> coercing, Locale locale) {
+        CoercingLiteralEnvironment environment = CoercingLiteralEnvironment.newLiteralEnvironment()
+                .value(value).locale(locale).build();
         try {
-            coercing.parseLiteral(value);
+            coercing.parseLiteral(environment);
             return Optional.empty();
         } catch (CoercingParseLiteralException e) {
             return Optional.of(e);
         }
     }
 
-    private boolean isValidLiteralValue(Value<?> value, GraphQLInputObjectType type, GraphQLSchema schema) {
+    private boolean isValidLiteralValue(Value<?> value, GraphQLInputObjectType type, GraphQLSchema schema, Locale locale) {
         if (!(value instanceof ObjectValue)) {
             handleNotObjectError(value, type);
             return false;
@@ -147,7 +151,7 @@ public class ValidationUtil {
                 handleExtraFieldError(value, type, objectField);
                 return false;
             }
-            if (!isValidLiteralValue(objectField.getValue(), inputObjectField.getType(), schema)) {
+            if (!isValidLiteralValue(objectField.getValue(), inputObjectField.getType(), schema, locale)) {
                 handleFieldNotValidError(objectField, type);
                 return false;
             }
@@ -172,19 +176,19 @@ public class ValidationUtil {
         return result;
     }
 
-    private boolean isValidLiteralValue(Value<?> value, GraphQLList type, GraphQLSchema schema) {
+    private boolean isValidLiteralValue(Value<?> value, GraphQLList type, GraphQLSchema schema, Locale locale) {
         GraphQLType wrappedType = type.getWrappedType();
         if (value instanceof ArrayValue) {
             List<Value> values = ((ArrayValue) value).getValues();
             for (int i = 0; i < values.size(); i++) {
-                if (!isValidLiteralValue(values.get(i), wrappedType, schema)) {
+                if (!isValidLiteralValue(values.get(i), wrappedType, schema, locale)) {
                     handleFieldNotValidError(values.get(i), wrappedType, i);
                     return false;
                 }
             }
             return true;
         } else {
-            return isValidLiteralValue(value, wrappedType, schema);
+            return isValidLiteralValue(value, wrappedType, schema, locale);
         }
     }
 

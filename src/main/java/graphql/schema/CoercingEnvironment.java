@@ -1,15 +1,36 @@
 package graphql.schema;
 
+import org.jetbrains.annotations.NotNull;
+
 import java.util.Locale;
 
+/**
+ * This interface represent the parameters that are sent into a {@link Coercing} methods
+ *
+ * @param <T> for two
+ */
 public interface CoercingEnvironment<T> {
 
+    /**
+     * @return the value to be coerced in some way
+     */
     T getValueToBeCoerced();
 
+    /**
+     * @return a locale that can be used during coercion
+     */
+    @NotNull
     Locale getLocale();
 
 
-    static <T> Builder<T> newCoercingEnvironment() {
+    /**
+     * Allows you to build a new coercing environment
+     *
+     * @param <T> for two
+     *
+     * @return a new builder of CoercingEnvironment
+     */
+    static <T> Builder<T> newEnvironment() {
         return new Builder<>();
     }
 
@@ -35,7 +56,7 @@ public interface CoercingEnvironment<T> {
                 }
 
                 @Override
-                public Locale getLocale() {
+                public @NotNull Locale getLocale() {
                     return locale;
                 }
             };

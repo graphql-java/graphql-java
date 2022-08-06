@@ -7,6 +7,8 @@ import graphql.validation.AbstractRule;
 import graphql.validation.ValidationContext;
 import graphql.validation.ValidationErrorCollector;
 
+import java.util.Locale;
+
 import static graphql.schema.GraphQLTypeUtil.simplePrint;
 import static graphql.validation.ValidationErrorType.BadValueForDefaultArg;
 
@@ -24,8 +26,9 @@ public class VariableDefaultValuesOfCorrectType extends AbstractRule {
         if (inputType == null) {
             return;
         }
+        Locale locale = getValidationContext().getI18n().getLocale();
         if (variableDefinition.getDefaultValue() != null
-                && !getValidationUtil().isValidLiteralValue(variableDefinition.getDefaultValue(), inputType, getValidationContext().getSchema())) {
+                && !getValidationUtil().isValidLiteralValue(variableDefinition.getDefaultValue(), inputType, getValidationContext().getSchema(), locale)) {
             String message = i18n(BadValueForDefaultArg, "VariableDefaultValuesOfCorrectType.badDefault", variableDefinition.getDefaultValue(), simplePrint(inputType));
             addError(BadValueForDefaultArg, variableDefinition.getSourceLocation(), message);
         }

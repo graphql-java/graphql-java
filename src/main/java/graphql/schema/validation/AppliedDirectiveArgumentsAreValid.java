@@ -16,6 +16,8 @@ import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 import graphql.validation.ValidationUtil;
 
+import java.util.Locale;
+
 import static java.lang.String.format;
 
 @Internal
@@ -44,7 +46,7 @@ public class AppliedDirectiveArgumentsAreValid extends GraphQLTypeVisitorStub {
         InputValueWithState argumentValue = argument.getArgumentValue();
         boolean invalid = false;
         if (argumentValue.isLiteral() &&
-                !validationUtil.isValidLiteralValue((Value<?>) argumentValue.getValue(), argument.getType(), schema)) {
+                !validationUtil.isValidLiteralValue((Value<?>) argumentValue.getValue(), argument.getType(), schema, Locale.getDefault())) {
             invalid = true;
         } else if (argumentValue.isExternal() &&
                 !isValidExternalValue(schema, argumentValue.getValue(), argument.getType())) {

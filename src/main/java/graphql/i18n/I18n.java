@@ -14,6 +14,8 @@ import static graphql.Assert.assertShouldNeverHappen;
 @Internal
 public class I18n {
 
+    private final Locale locale;
+
     /**
      * This enum is a type safe way to control what resource bundle to load from
      */
@@ -33,9 +35,14 @@ public class I18n {
 
     @VisibleForTesting
     protected I18n(BundleType bundleType, Locale locale) {
+        this.locale = locale;
         assertNotNull(bundleType);
         assertNotNull(locale);
         this.resourceBundle = ResourceBundle.getBundle(bundleType.baseName, locale);
+    }
+
+    public Locale getLocale() {
+        return locale;
     }
 
     public ResourceBundle getResourceBundle() {

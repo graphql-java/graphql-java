@@ -23,6 +23,7 @@ import graphql.language.Argument;
 import graphql.language.Field;
 import graphql.normalized.ExecutableNormalizedField;
 import graphql.normalized.ExecutableNormalizedOperation;
+import graphql.schema.CoercingEnvironment;
 import graphql.schema.CoercingSerializeException;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
@@ -590,7 +591,9 @@ public abstract class ExecutionStrategy {
     protected CompletableFuture<ExecutionResult> completeValueForScalar(ExecutionContext executionContext, ExecutionStrategyParameters parameters, GraphQLScalarType scalarType, Object result) {
         Object serialized;
         try {
-            serialized = scalarType.getCoercing().serialize(result);
+            CoercingEnvironment<Object> environment = CoercingEnvironment.newEnvironment()
+                    .value(result).locale(executionContext.getLocale()).build();
+            serialized = scalarType.getCoercing().serialize(environment);
         } catch (CoercingSerializeException e) {
             serialized = handleCoercionProblem(executionContext, parameters, e);
         }

@@ -12,6 +12,7 @@ import graphql.execution.MergedField;
 import graphql.execution.NonNullableFieldWasNullException;
 import graphql.execution.ResolveType;
 import graphql.execution.UnresolvedTypeException;
+import graphql.schema.CoercingEnvironment;
 import graphql.schema.CoercingSerializeException;
 import graphql.schema.GraphQLEnumType;
 import graphql.schema.GraphQLObjectType;
@@ -179,7 +180,9 @@ public class FetchedValueAnalyzer {
     }
 
     protected Object serializeScalarValue(Object toAnalyze, GraphQLScalarType scalarType) throws CoercingSerializeException {
-        return scalarType.getCoercing().serialize(toAnalyze);
+        CoercingEnvironment<Object> environment = CoercingEnvironment.newEnvironment()
+                .value(toAnalyze).build();
+        return scalarType.getCoercing().serialize(environment);
     }
 
     private FetchedValueAnalysis analyzeEnumValue(FetchedValue fetchedValue, Object toAnalyze, GraphQLEnumType enumType, ExecutionStepInfo executionInfo) {
