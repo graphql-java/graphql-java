@@ -4,7 +4,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Sets;
 import graphql.Internal;
 import graphql.collect.ImmutableKit;
 import graphql.execution.CoercedVariables;
@@ -50,6 +49,7 @@ import static graphql.execution.MergedField.newMergedField;
 import static graphql.schema.GraphQLTypeUtil.unwrapAll;
 import static graphql.util.FpKit.filterSet;
 import static graphql.util.FpKit.groupingBy;
+import static graphql.util.FpKit.intersection;
 import static java.util.Collections.singleton;
 import static java.util.Collections.singletonList;
 
@@ -454,15 +454,8 @@ public class ExecutableNormalizedOperationFactory {
             return resolvedTypeCondition;
         }
 
-        // Intersection calculation is expensive when either set is large.
-        // If a set only has one member, it is equivalent and cheaper to calculate via contains.
-        if (resolvedTypeCondition.size() == 1 && currentOnes.contains(resolvedTypeCondition.iterator().next())) {
-            return resolvedTypeCondition;
-        } else if (currentOnes.size() == 1 && resolvedTypeCondition.contains(currentOnes.iterator().next())) {
-            return currentOnes;
-        }
-
-        return Sets.intersection(currentOnes, resolvedTypeCondition);
+        // Faster intersection, as either set often has a size of 1.
+        return intersection(currentOnes, resolvedTypeCondition);
     }
 
     private ImmutableSet<GraphQLObjectType> resolvePossibleObjects(List<GraphQLFieldDefinition> defs, GraphQLSchema graphQLSchema) {
