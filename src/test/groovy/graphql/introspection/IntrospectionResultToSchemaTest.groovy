@@ -988,4 +988,71 @@ scalar EmployeeRef
 scalar EmployeeRef
 '''
     }
+
+    def "copes when isDeprecated is not defined"() {
+        def input = ''' {
+            "kind": "OBJECT",
+            "name": "QueryType",
+            "description": null,
+            "fields": [
+              {
+                "name": "hero",
+                "description": null,
+                "args": [
+                  {
+                    "name": "episode",
+                    "description": "comment about episode\non two lines",
+                    "type": {
+                      "kind": "ENUM",
+                      "name": "Episode",
+                      "ofType": null
+                    },
+                    "defaultValue": null
+                  },
+                  {
+                    "name": "foo",
+                    "description": null,
+                    "type": {
+                        "kind": "SCALAR",
+                        "name": "String",
+                        "ofType": null
+                    },
+                    "defaultValue": "\\"bar\\""
+                  }
+                ],
+                "type": {
+                  "kind": "INTERFACE",
+                  "name": "Character",
+                  "ofType": null
+                },
+                "isDeprecatedISNOTYDEFINED": false,
+                "deprecationReason": "killed off character"
+              }
+            ],
+            "inputFields": null,
+            "interfaces": [{
+                    "kind": "INTERFACE",
+                    "name": "Query",
+                    "ofType": null
+                }],
+            "enumValues": null,
+            "possibleTypes": null
+      }
+      '''
+        def parsed = slurp(input)
+
+        when:
+        ObjectTypeDefinition objectTypeDefinition = introspectionResultToSchema.createObject(parsed)
+        def result = printAst(objectTypeDefinition)
+
+        then:
+        result == """type QueryType implements Query {
+  hero(\"\"\"
+  comment about episode
+  on two lines
+  \"\"\"
+  episode: Episode, foo: String = \"bar\"): Character
+}"""
+
+    }
 }
