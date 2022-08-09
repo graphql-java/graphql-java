@@ -12,16 +12,16 @@ const constructPayload = () => {
   const payloadStructure = {
     "jobId": jobId,
     "commitHash": commitHash,
-    "classes":  castClassesStringToArray(classes),
+    "classes":  convertClassesStringToArray(classes),
     "pullRequest": pullRequestNumber,
   }
   return payloadStructure;
 }
 
-const castClassesStringToArray = (classes) => {
+const convertClassesStringToArray = (classes) => {
     const classesArray = classes.split(',');
-    const timedClassesArray = classesArray.map(currentClass => currentClass.trim());
-    return timedClassesArray;
+    const trimmedClassesArray = classesArray.map(currentClass => currentClass.trim());
+    return trimmedClassesArray;
 }
 
 const formatPayload = (payloadStructure) => {
