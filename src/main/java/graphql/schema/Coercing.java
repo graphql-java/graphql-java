@@ -2,9 +2,12 @@ package graphql.schema;
 
 
 import graphql.PublicSpi;
+import graphql.execution.CoercedVariables;
 import graphql.language.Value;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
+import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -46,7 +49,7 @@ public interface Coercing<I, O> {
      * @throws graphql.schema.CoercingSerializeException if value input can't be serialized
      */
     @Deprecated
-    O serialize(@NotNull Object dataFetcherResult) throws CoercingSerializeException;
+    @Nullable O serialize(@NotNull Object dataFetcherResult) throws CoercingSerializeException;
 
     /**
      * Called to convert a Java object result of a DataFetcher to a valid runtime value for the scalar type.
@@ -57,14 +60,15 @@ public interface Coercing<I, O> {
      * Note : You should not allow {@link java.lang.RuntimeException}s to come out of your serialize method, but rather
      * catch them and fire them as {@link graphql.schema.CoercingSerializeException} instead as per the method contract.
      *
-     * @param environment the coercing environment parameters
+     * @param dataFetcherResult is never null
+     * @param locale            the local to use for error messages or serialisation
      *
      * @return a serialized value which may be null.
      *
      * @throws graphql.schema.CoercingSerializeException if value input can't be serialized
      */
-    default O serialize(@NotNull CoercingEnvironment<Object> environment) throws CoercingSerializeException {
-        return serialize(environment.getValueToBeCoerced());
+    default @Nullable O serialize(@NotNull Object dataFetcherResult, @NotNull Locale locale) throws CoercingSerializeException {
+        return serialize(dataFetcherResult);
     }
 
 
@@ -89,14 +93,14 @@ public interface Coercing<I, O> {
      * Note : You should not allow {@link java.lang.RuntimeException}s to come out of your parseValue method, but rather
      * catch them and fire them as {@link graphql.schema.CoercingParseValueException} instead as per the method contract.
      *
-     * @param environment the coercing environment parameters
+     * @param input is never null
      *
      * @return a parsed value which is never null
      *
      * @throws graphql.schema.CoercingParseValueException if value input can't be parsed
      */
-    default I parseValue(@NotNull CoercingEnvironment<Object> environment) throws CoercingParseValueException {
-        return parseValue(environment.getValueToBeCoerced());
+    default I parseValue(@NotNull Object input, @NotNull Locale locale) throws CoercingParseValueException {
+        return parseValue(input);
     }
 
     /**
@@ -113,7 +117,7 @@ public interface Coercing<I, O> {
      * @throws graphql.schema.CoercingParseLiteralException if input literal can't be parsed
      */
     @Deprecated
-    @NotNull I parseLiteral(@NotNull Object input) throws CoercingParseLiteralException;
+    @Nullable I parseLiteral(@NotNull Object input) throws CoercingParseLiteralException;
 
     /**
      * Called during query execution to convert a query input AST node into a Java object acceptable for the scalar type.  The input
@@ -135,7 +139,7 @@ public interface Coercing<I, O> {
      */
     @SuppressWarnings("unused")
     @Deprecated
-    default I parseLiteral(Object input, Map<String, Object> variables) throws CoercingParseLiteralException {
+    default @Nullable I parseLiteral(Object input, Map<String, Object> variables) throws CoercingParseLiteralException {
         return parseLiteral(input);
     }
 
@@ -150,14 +154,16 @@ public interface Coercing<I, O> {
      * objects and convert them into actual values.  But for those scalar types that want to do this, then this
      * method should be implemented.
      *
-     * @param environment the literal coercing environment parameters
+     * @param input     is never null
+     * @param variables the resolved variables passed to the query
+     * @param locale    the locale to use
      *
-     * @return a parsed value which is never null
+     * @return a parsed value which may be null, say for {@link graphql.language.NullValue} as input
      *
      * @throws graphql.schema.CoercingParseLiteralException if input literal can't be parsed
      */
-    default I parseLiteral(CoercingLiteralEnvironment environment) throws CoercingParseLiteralException {
-        return parseLiteral(environment.getValueToBeCoerced(), environment.getVariables());
+    default @Nullable I parseLiteral(@NotNull Value<?> input, @NotNull CoercedVariables variables, @NotNull Locale locale) throws CoercingParseLiteralException {
+        return parseLiteral(input, variables.toMap());
     }
 
 
@@ -180,11 +186,12 @@ public interface Coercing<I, O> {
      * <p>
      * IMPORTANT: the argument is validated before by calling {@link #parseValue(Object)}.
      *
-     * @param environment the coercing environment parameters
+     * @param input  an external input value
+     * @param locale the locale you can use for conversion or error messages
      *
      * @return The literal matching the external input value.
      */
-    default @NotNull Value valueToLiteral(CoercingEnvironment<Object> environment) {
-        return valueToLiteral(environment.getValueToBeCoerced());
+    default @NotNull Value<?> valueToLiteral(@NotNull Object input, @NotNull Locale locale) {
+        return valueToLiteral(input);
     }
 }

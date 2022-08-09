@@ -3,6 +3,7 @@ package graphql.schema.idl;
 import graphql.AssertException;
 import graphql.GraphQLError;
 import graphql.Internal;
+import graphql.execution.CoercedVariables;
 import graphql.language.Argument;
 import graphql.language.ArrayValue;
 import graphql.language.Directive;
@@ -25,7 +26,6 @@ import graphql.language.Type;
 import graphql.language.TypeDefinition;
 import graphql.language.TypeName;
 import graphql.language.Value;
-import graphql.schema.CoercingLiteralEnvironment;
 import graphql.schema.CoercingParseLiteralException;
 import graphql.schema.GraphQLScalarType;
 import graphql.schema.idl.errors.DirectiveIllegalArgumentTypeError;
@@ -33,6 +33,7 @@ import graphql.util.LogKit;
 import org.slf4j.Logger;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Stream;
@@ -286,8 +287,7 @@ class ArgValueOfAllowedTypeChecker {
 
     private boolean isArgumentValueScalarLiteral(GraphQLScalarType scalarType, Value<?> instanceValue) {
         try {
-            CoercingLiteralEnvironment environment = CoercingLiteralEnvironment.newLiteralEnvironment().value(instanceValue).build();
-            scalarType.getCoercing().parseLiteral(environment);
+            scalarType.getCoercing().parseLiteral(instanceValue, CoercedVariables.emptyVariables(), Locale.getDefault());
             return true;
         } catch (CoercingParseLiteralException ex) {
             if (logNotSafe.isDebugEnabled()) {

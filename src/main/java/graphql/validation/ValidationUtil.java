@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableSet;
 import graphql.Assert;
 import graphql.GraphQLError;
 import graphql.Internal;
+import graphql.execution.CoercedVariables;
 import graphql.language.ArrayValue;
 import graphql.language.ListType;
 import graphql.language.NonNullType;
@@ -16,7 +17,6 @@ import graphql.language.TypeName;
 import graphql.language.Value;
 import graphql.language.VariableReference;
 import graphql.schema.Coercing;
-import graphql.schema.CoercingLiteralEnvironment;
 import graphql.schema.CoercingParseLiteralException;
 import graphql.schema.GraphQLEnumType;
 import graphql.schema.GraphQLInputObjectField;
@@ -119,10 +119,8 @@ public class ValidationUtil {
     }
 
     private Optional<GraphQLError> parseLiteral(Value<?> value, Coercing<?, ?> coercing, Locale locale) {
-        CoercingLiteralEnvironment environment = CoercingLiteralEnvironment.newLiteralEnvironment()
-                .value(value).locale(locale).build();
         try {
-            coercing.parseLiteral(environment);
+            coercing.parseLiteral(value, CoercedVariables.emptyVariables(), locale);
             return Optional.empty();
         } catch (CoercingParseLiteralException e) {
             return Optional.of(e);

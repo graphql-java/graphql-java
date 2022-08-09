@@ -12,7 +12,6 @@ import graphql.execution.MergedField;
 import graphql.execution.NonNullableFieldWasNullException;
 import graphql.execution.ResolveType;
 import graphql.execution.UnresolvedTypeException;
-import graphql.schema.CoercingEnvironment;
 import graphql.schema.CoercingSerializeException;
 import graphql.schema.GraphQLEnumType;
 import graphql.schema.GraphQLObjectType;
@@ -23,6 +22,7 @@ import graphql.util.FpKit;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Locale;
 
 import static graphql.execution.nextgen.FetchedValueAnalysis.FetchedValueType.ENUM;
 import static graphql.execution.nextgen.FetchedValueAnalysis.FetchedValueType.LIST;
@@ -180,9 +180,7 @@ public class FetchedValueAnalyzer {
     }
 
     protected Object serializeScalarValue(Object toAnalyze, GraphQLScalarType scalarType) throws CoercingSerializeException {
-        CoercingEnvironment<Object> environment = CoercingEnvironment.newEnvironment()
-                .value(toAnalyze).build();
-        return scalarType.getCoercing().serialize(environment);
+        return scalarType.getCoercing().serialize(toAnalyze, Locale.getDefault());
     }
 
     private FetchedValueAnalysis analyzeEnumValue(FetchedValue fetchedValue, Object toAnalyze, GraphQLEnumType enumType, ExecutionStepInfo executionInfo) {

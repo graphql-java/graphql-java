@@ -17,6 +17,7 @@ import graphql.util.TraverserContext;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.function.Consumer;
 
@@ -69,25 +70,34 @@ public class GraphQLEnumType implements GraphQLNamedInputType, GraphQLNamedOutpu
     @Internal
     @Deprecated
     public Object serialize(Object input) {
-        return serialize(mkCoercingEnv(input));
+        return serialize(input, Locale.getDefault());
     }
 
-    public Object serialize(CoercingEnvironment<Object> environment) {
-        return getNameByValue(environment);
+    @Internal
+    public Object serialize(Object input, Locale locale) {
+        return getNameByValue(input, locale);
     }
 
     @Internal
     @Deprecated
     public Object parseValue(Object input) {
-        return getValueByName(mkCoercingEnv(input));
+        return getValueByName(input, Locale.getDefault());
     }
 
-    public Object parseValue(CoercingEnvironment<Object> environment) {
-        return getValueByName(environment);
+    public Object parseValue(Object input, Locale locale) {
+        return getValueByName(input, locale);
     }
 
-    private static CoercingEnvironment<Object> mkCoercingEnv(Object input) {
-        return CoercingEnvironment.newEnvironment().value(input).build();
+
+    @Internal
+    @Deprecated
+    public Object parseLiteral(Object input) {
+        return parseLiteralImpl(input, Locale.getDefault());
+    }
+
+    @Internal
+    public Object parseLiteral(Value<?> input, Locale locale) {
+        return parseLiteralImpl(input, locale);
     }
 
     private String typeName(Object input) {
@@ -97,17 +107,7 @@ public class GraphQLEnumType implements GraphQLNamedInputType, GraphQLNamedOutpu
         return input.getClass().getSimpleName();
     }
 
-    @Internal
-    @Deprecated
-    public Object parseLiteral(Object input) {
-        CoercingLiteralEnvironment environment = CoercingLiteralEnvironment.newLiteralEnvironment()
-                .value((Value<?>) input).build();
-        return parseLiteral(environment);
-    }
-
-    @Internal
-    public Object parseLiteral(CoercingLiteralEnvironment environment) {
-        Value<?> input = environment.getValueToBeCoerced();
+    private Object parseLiteralImpl(Object input, Locale locale) {
         // TODO - use I18N
         if (!(input instanceof EnumValue)) {
             throw new CoercingParseLiteralException(
@@ -127,14 +127,11 @@ public class GraphQLEnumType implements GraphQLNamedInputType, GraphQLNamedOutpu
     @Internal
     @Deprecated
     public Value valueToLiteral(Object input) {
-        CoercingEnvironment<Object> environment = CoercingEnvironment.newEnvironment()
-                .value(input).build();
-        return valueToLiteral(environment);
+        return valueToLiteral(input, Locale.getDefault());
     }
 
     @Internal
-    public Value valueToLiteral(CoercingEnvironment<Object> environment) {
-        Object input = environment.getValueToBeCoerced();
+    public Value<?> valueToLiteral(Object input, Locale locale) {
         // TODO - use I18N
         GraphQLEnumValueDefinition enumValueDefinition = valueDefinitionMap.get(input.toString());
         assertNotNull(enumValueDefinition, () -> "Invalid input for Enum '" + name + "'. No value found for name '" + input + "'");
@@ -155,8 +152,7 @@ public class GraphQLEnumType implements GraphQLNamedInputType, GraphQLNamedOutpu
                 (fld1, fld2) -> assertShouldNeverHappen("Duplicated definition for field '%s' in type '%s'", fld1.getName(), this.name)));
     }
 
-    private Object getValueByName(CoercingEnvironment<Object> environment) {
-        Object value = environment.getValueToBeCoerced();
+    private Object getValueByName(Object value, Locale locale) {
         GraphQLEnumValueDefinition enumValueDefinition = valueDefinitionMap.get(value.toString());
         if (enumValueDefinition != null) {
             return enumValueDefinition.getValue();
@@ -165,8 +161,7 @@ public class GraphQLEnumType implements GraphQLNamedInputType, GraphQLNamedOutpu
         throw new CoercingParseValueException("Invalid input for Enum '" + name + "'. No value found for name '" + value.toString() + "'");
     }
 
-    private Object getNameByValue(CoercingEnvironment<Object> environment) {
-        Object value = environment.getValueToBeCoerced();
+    private Object getNameByValue(Object value, Locale locale) {
         for (GraphQLEnumValueDefinition valueDefinition : valueDefinitionMap.values()) {
             Object definitionValue = valueDefinition.getValue();
             if (value.equals(definitionValue)) {
