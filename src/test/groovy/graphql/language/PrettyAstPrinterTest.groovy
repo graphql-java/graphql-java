@@ -1,9 +1,8 @@
 package graphql.language
 
-import graphql.parser.NodeToRuleCapturingParser
 import spock.lang.Specification
 
-class PrettyPrinterTest extends Specification {
+class PrettyAstPrinterTest extends Specification {
 
     def "can print type with comments"() {
         given:
@@ -504,26 +503,19 @@ a: A, b: B): Type
 }
 '''
         when:
-        def options = PrettyPrinter.PrettyPrinterOptions
+        def options = PrettyAstPrinter.PrettyPrinterOptions
                 .builder()
-                .indentType(PrettyPrinter.PrettyPrinterOptions.IndentType.TAB)
+                .indentType(PrettyAstPrinter.PrettyPrinterOptions.IndentType.TAB)
                 .indentWith(1)
                 .build()
 
-        def parser = new NodeToRuleCapturingParser()
-        def document = parser.parseDocument(input)
-
-        def result = new PrettyPrinter(parser.parserContext, options).print(document)
+        def result = PrettyAstPrinter.print(input, options)
 
         then:
         result == expected
     }
 
     private static String print(String input) {
-        def parser = new NodeToRuleCapturingParser()
-        def document = parser.parseDocument(input)
-        def parserContext = parser.parserContext
-
-        return new PrettyPrinter(parserContext).print(document)
+        return PrettyAstPrinter.print(input, PrettyAstPrinter.PrettyPrinterOptions.defaultOptions())
     }
 }

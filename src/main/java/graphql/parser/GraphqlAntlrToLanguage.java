@@ -94,15 +94,37 @@ public class GraphqlAntlrToLanguage {
 
     private final Map<Node<?>, ParserRuleContext> nodeToRuleMap;
 
+    /**
+     * @param tokens            the token stream
+     * @param multiSourceReader the source of the query document
+     */
     public GraphqlAntlrToLanguage(CommonTokenStream tokens, MultiSourceReader multiSourceReader) {
         this(tokens, multiSourceReader, null);
     }
 
+    /**
+     * @param tokens            the token stream
+     * @param multiSourceReader the source of the query document
+     * @param parserOptions     the parser options
+     */
     public GraphqlAntlrToLanguage(CommonTokenStream tokens, MultiSourceReader multiSourceReader, ParserOptions parserOptions) {
         this(tokens, multiSourceReader, parserOptions, null);
     }
 
-    public GraphqlAntlrToLanguage(CommonTokenStream tokens, MultiSourceReader multiSourceReader, ParserOptions parserOptions, @Nullable Map<Node<?>, ParserRuleContext> nodeToRuleMap) {
+    /**
+     * @param tokens            the token stream
+     * @param multiSourceReader the source of the query document
+     * @param parserOptions     the parser options
+     * @param nodeToRuleMap     a map that will be used to accumulate the ParserRuleContext associated with each node.
+     *                          This information can be used after the parsing process is done to access some elements
+     *                          that are usually lost during parsing. If the map is "null", no accumulation will be performed.
+     */
+    public GraphqlAntlrToLanguage(
+            CommonTokenStream tokens,
+            MultiSourceReader multiSourceReader,
+            ParserOptions parserOptions,
+            @Nullable Map<Node<?>, ParserRuleContext> nodeToRuleMap
+    ) {
         this.tokens = tokens;
         this.multiSourceReader = multiSourceReader;
         this.parserOptions = ofNullable(parserOptions).orElse(ParserOptions.getDefaultParserOptions());

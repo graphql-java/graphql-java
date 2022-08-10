@@ -23,15 +23,15 @@ import static graphql.Assert.assertTrue;
  * @see AstPrinter
  */
 @PublicApi
-public class PrettyPrinter extends AstPrinter {
+public class PrettyAstPrinter extends AstPrinter {
     private final CommentParser commentParser;
     private final PrettyPrinterOptions options;
 
-    public PrettyPrinter(NodeToRuleCapturingParser.ParserContext parserContext) {
+    public PrettyAstPrinter(NodeToRuleCapturingParser.ParserContext parserContext) {
         this(parserContext, PrettyPrinterOptions.defaultOptions);
     }
 
-    public PrettyPrinter(NodeToRuleCapturingParser.ParserContext parserContext, PrettyPrinterOptions options) {
+    public PrettyAstPrinter(NodeToRuleCapturingParser.ParserContext parserContext, PrettyPrinterOptions options) {
         super(false);
         this.commentParser = new CommentParser(parserContext);
         this.options = options;
@@ -68,7 +68,7 @@ public class PrettyPrinter extends AstPrinter {
         NodeToRuleCapturingParser parser = new NodeToRuleCapturingParser();
         Document document = parser.parseDocument(schemaDefinition);
 
-        return new PrettyPrinter(parser.getParserContext(), options).print(document);
+        return new PrettyAstPrinter(parser.getParserContext(), options).print(document);
     }
 
     private NodePrinter<Document> document() {
