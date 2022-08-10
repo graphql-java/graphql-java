@@ -113,7 +113,8 @@ public class ValuesResolver {
      */
     public static Map<String, NormalizedInputValue> getNormalizedVariableValues(GraphQLSchema schema,
                                                                                 List<VariableDefinition> variableDefinitions,
-                                                                                RawVariables rawVariables, Locale locale) {
+                                                                                RawVariables rawVariables,
+                                                                                Locale locale) {
         GraphqlFieldVisibility fieldVisibility = schema.getCodeRegistry().getFieldVisibility();
         Map<String, NormalizedInputValue> result = new LinkedHashMap<>();
         for (VariableDefinition variableDefinition : variableDefinitions) {
@@ -217,15 +218,24 @@ public class ValuesResolver {
      *
      * @return a value converted to a literal
      */
-    public static Value<?> valueToLiteral(@NotNull GraphqlFieldVisibility fieldVisibility, @NotNull InputValueWithState inputValueWithState, @NotNull GraphQLType type, Locale locale) {
+    public static Value<?> valueToLiteral(@NotNull GraphqlFieldVisibility fieldVisibility,
+                                          @NotNull InputValueWithState inputValueWithState,
+                                          @NotNull GraphQLType type,
+                                          Locale locale) {
         return (Value<?>) valueToLiteral(fieldVisibility, inputValueWithState, type, ValueMode.LITERAL, locale);
     }
 
-    public static Value<?> valueToLiteral(@NotNull InputValueWithState inputValueWithState, @NotNull GraphQLType type, Locale locale) {
+    public static Value<?> valueToLiteral(@NotNull InputValueWithState inputValueWithState,
+                                          @NotNull GraphQLType type,
+                                          Locale locale) {
         return (Value<?>) valueToLiteral(DEFAULT_FIELD_VISIBILITY, inputValueWithState, type, ValueMode.LITERAL, locale);
     }
 
-    private static Object valueToLiteral(GraphqlFieldVisibility fieldVisibility, InputValueWithState inputValueWithState, GraphQLType type, ValueMode valueMode, Locale locale) {
+    private static Object valueToLiteral(GraphqlFieldVisibility fieldVisibility,
+                                         InputValueWithState inputValueWithState,
+                                         GraphQLType type,
+                                         ValueMode valueMode,
+                                         Locale locale) {
         if (inputValueWithState.isInternal()) {
             if (valueMode == NORMALIZED) {
                 return assertShouldNeverHappen("can't infer normalized structure");
@@ -251,11 +261,16 @@ public class ValuesResolver {
      *
      * @return a value converted to an internal value
      */
-    public static Object externalValueToInternalValue(GraphqlFieldVisibility fieldVisibility, Object externalValue, GraphQLInputType type, Locale locale) {
+    public static Object externalValueToInternalValue(GraphqlFieldVisibility fieldVisibility,
+                                                      Object externalValue,
+                                                      GraphQLInputType type,
+                                                      Locale locale) {
         return ValuesResolver.externalValueToInternalValue(fieldVisibility, type, externalValue, locale);
     }
 
-    public static Object valueToInternalValue(InputValueWithState inputValueWithState, GraphQLType type, Locale locale) throws CoercingParseValueException, CoercingParseLiteralException {
+    public static Object valueToInternalValue(InputValueWithState inputValueWithState,
+                                              GraphQLType type,
+                                              Locale locale) throws CoercingParseValueException, CoercingParseLiteralException {
         DefaultGraphqlFieldVisibility fieldVisibility = DEFAULT_FIELD_VISIBILITY;
         if (inputValueWithState.isInternal()) {
             return inputValueWithState.getValue();
@@ -272,7 +287,9 @@ public class ValuesResolver {
 
     @Nullable
     @SuppressWarnings("unchecked")
-    public static <T> T getInputValueImpl(GraphQLInputType inputType, InputValueWithState inputValue, Locale locale) {
+    public static <T> T getInputValueImpl(GraphQLInputType inputType,
+                                          InputValueWithState inputValue,
+                                          Locale locale) {
         if (inputValue.isNotSet()) {
             return null;
         }
@@ -325,7 +342,11 @@ public class ValuesResolver {
      * No validation
      */
     @SuppressWarnings("unchecked")
-    private static Object externalValueToLiteralForList(GraphqlFieldVisibility fieldVisibility, GraphQLList listType, Object value, ValueMode valueMode, Locale locale) {
+    private static Object externalValueToLiteralForList(GraphqlFieldVisibility fieldVisibility,
+                                                        GraphQLList listType,
+                                                        Object value,
+                                                        ValueMode valueMode,
+                                                        Locale locale) {
         GraphQLInputType wrappedType = (GraphQLInputType) listType.getWrappedType();
         List result = FpKit.toListOrSingletonList(value)
                 .stream()
@@ -399,7 +420,8 @@ public class ValuesResolver {
      */
     private static CoercedVariables externalValueToInternalValueForVariables(GraphQLSchema schema,
                                                                              List<VariableDefinition> variableDefinitions,
-                                                                             RawVariables rawVariables, Locale locale) {
+                                                                             RawVariables rawVariables,
+                                                                             Locale locale) {
         GraphqlFieldVisibility fieldVisibility = schema.getCodeRegistry().getFieldVisibility();
         Map<String, Object> coercedValues = new LinkedHashMap<>();
         for (VariableDefinition variableDefinition : variableDefinitions) {
@@ -505,7 +527,8 @@ public class ValuesResolver {
     @SuppressWarnings("unchecked")
     private static Object externalValueToInternalValue(GraphqlFieldVisibility fieldVisibility,
                                                        GraphQLType graphQLType,
-                                                       Object value, Locale locale) throws NonNullableValueCoercedAsNullException, CoercingParseValueException {
+                                                       Object value,
+                                                       Locale locale) throws NonNullableValueCoercedAsNullException, CoercingParseValueException {
         if (isNonNull(graphQLType)) {
             Object returnValue =
                     externalValueToInternalValue(fieldVisibility, unwrapOne(graphQLType), value, locale);
@@ -758,7 +781,8 @@ public class ValuesResolver {
     private static Object literalToInternalValueForInputObject(GraphqlFieldVisibility fieldVisibility,
                                                                GraphQLInputObjectType type,
                                                                ObjectValue inputValue,
-                                                               CoercedVariables coercedVariables, Locale locale) {
+                                                               CoercedVariables coercedVariables,
+                                                               Locale locale) {
         Map<String, Object> coercedValues = new LinkedHashMap<>();
 
         Map<String, ObjectField> inputFieldsByName = mapObjectValueFieldsByName(inputValue);
