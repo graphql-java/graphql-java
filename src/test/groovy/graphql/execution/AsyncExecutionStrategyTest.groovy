@@ -82,6 +82,7 @@ class AsyncExecutionStrategyTest extends Specification {
                 .operationDefinition(operation)
                 .instrumentation(SimpleInstrumentation.INSTANCE)
                 .valueUnboxer(ValueUnboxer.DEFAULT)
+                .locale(Locale.getDefault())
                 .build()
         ExecutionStrategyParameters executionStrategyParameters = ExecutionStrategyParameters
                 .newParameters()
@@ -121,6 +122,7 @@ class AsyncExecutionStrategyTest extends Specification {
                 .operationDefinition(operation)
                 .valueUnboxer(ValueUnboxer.DEFAULT)
                 .instrumentation(SimpleInstrumentation.INSTANCE)
+                .locale(Locale.getDefault())
                 .build()
         ExecutionStrategyParameters executionStrategyParameters = ExecutionStrategyParameters
                 .newParameters()
@@ -162,6 +164,7 @@ class AsyncExecutionStrategyTest extends Specification {
                 .operationDefinition(operation)
                 .valueUnboxer(ValueUnboxer.DEFAULT)
                 .instrumentation(SimpleInstrumentation.INSTANCE)
+                .locale(Locale.getDefault())
                 .build()
         ExecutionStrategyParameters executionStrategyParameters = ExecutionStrategyParameters
                 .newParameters()
@@ -202,6 +205,7 @@ class AsyncExecutionStrategyTest extends Specification {
                 .operationDefinition(operation)
                 .instrumentation(SimpleInstrumentation.INSTANCE)
                 .valueUnboxer(ValueUnboxer.DEFAULT)
+                .locale(Locale.getDefault())
                 .build()
         ExecutionStrategyParameters executionStrategyParameters = ExecutionStrategyParameters
                 .newParameters()
@@ -240,6 +244,7 @@ class AsyncExecutionStrategyTest extends Specification {
                 .executionId(ExecutionId.generate())
                 .operationDefinition(operation)
                 .valueUnboxer(ValueUnboxer.DEFAULT)
+                .locale(Locale.getDefault())
                 .instrumentation(new SimpleInstrumentation() {
                     @Override
                     ExecutionStrategyInstrumentationContext beginExecutionStrategy(InstrumentationExecutionStrategyParameters parameters) {

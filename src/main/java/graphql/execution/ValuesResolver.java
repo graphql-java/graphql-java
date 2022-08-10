@@ -94,7 +94,8 @@ public class ValuesResolver {
      */
     public static CoercedVariables coerceVariableValues(GraphQLSchema schema,
                                                         List<VariableDefinition> variableDefinitions,
-                                                        RawVariables rawVariables, Locale locale) throws CoercingParseValueException, NonNullableValueCoercedAsNullException {
+                                                        RawVariables rawVariables,
+                                                        Locale locale) throws CoercingParseValueException, NonNullableValueCoercedAsNullException {
 
         return externalValueToInternalValueForVariables(schema, variableDefinitions, rawVariables, locale);
     }
