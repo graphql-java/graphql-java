@@ -196,12 +196,7 @@ public class GraphQLTypeUtil {
      * @return the underlying type
      */
     public static GraphQLUnmodifiedType unwrapAll(GraphQLType type) {
-        while (true) {
-            if (isNotWrapped(type)) {
-                return (GraphQLUnmodifiedType) type;
-            }
-            type = unwrapOne(type);
-        }
+        return unwrapAllAs(type);
     }
 
     /**
@@ -215,7 +210,16 @@ public class GraphQLTypeUtil {
      */
     public static <T extends GraphQLType> T unwrapAllAs(GraphQLType type) {
         //noinspection unchecked
-        return (T) unwrapAll(type);
+        return (T) unwrapAllImpl(type);
+    }
+
+    private static GraphQLType unwrapAllImpl(GraphQLType type) {
+        while (true) {
+            if (isNotWrapped(type)) {
+                return type;
+            }
+            type = unwrapOne(type);
+        }
     }
 
 

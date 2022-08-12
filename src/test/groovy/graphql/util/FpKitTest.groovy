@@ -97,4 +97,41 @@ class FpKitTest extends Specification {
         then:
         l == ["Parrot"]
     }
+
+    def "set intersection works"() {
+        def set1 = ["A","B","C"] as Set
+        def set2 = ["A","C","D"] as Set
+        def singleSetA = ["A"] as Set
+        def disjointSet = ["X","Y"] as Set
+
+        when:
+        def intersection = FpKit.intersection(set1, set2)
+        then:
+        intersection == ["A","C"] as Set
+
+        when: // reversed parameters
+        intersection = FpKit.intersection(set2, set1)
+        then:
+        intersection == ["A","C"] as Set
+
+        when: // singles
+        intersection = FpKit.intersection(set1, singleSetA)
+        then:
+        intersection == ["A"] as Set
+
+        when: // singles reversed
+        intersection = FpKit.intersection(singleSetA, set1)
+        then:
+        intersection == ["A"] as Set
+
+        when: // disjoint
+        intersection = FpKit.intersection(set1, disjointSet)
+        then:
+        intersection.isEmpty()
+
+        when: // disjoint reversed
+        intersection = FpKit.intersection(disjointSet,set1)
+        then:
+        intersection.isEmpty()
+    }
 }
