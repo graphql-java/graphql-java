@@ -3,6 +3,7 @@ package graphql.introspection;
 
 import com.google.common.collect.ImmutableSet;
 import graphql.Assert;
+import graphql.GraphQLContext;
 import graphql.Internal;
 import graphql.PublicApi;
 import graphql.execution.ValuesResolver;
@@ -164,10 +165,10 @@ public class Introspection {
             Object type = environment.getSource();
             if (type instanceof GraphQLArgument) {
                 GraphQLArgument inputField = (GraphQLArgument) type;
-                return inputField.hasSetDefaultValue() ? printDefaultValue(inputField.getArgumentDefaultValue(), inputField.getType(), environment.getLocale()) : null;
+                return inputField.hasSetDefaultValue() ? printDefaultValue(inputField.getArgumentDefaultValue(), inputField.getType(), environment.getGraphQlContext()) : null;
             } else if (type instanceof GraphQLInputObjectField) {
                 GraphQLInputObjectField inputField = (GraphQLInputObjectField) type;
-                return inputField.hasSetDefaultValue() ? printDefaultValue(inputField.getInputFieldDefaultValue(), inputField.getType(), environment.getLocale()) : null;
+                return inputField.hasSetDefaultValue() ? printDefaultValue(inputField.getInputFieldDefaultValue(), inputField.getType(), environment.getGraphQlContext()) : null;
             }
             return null;
         });
@@ -184,8 +185,8 @@ public class Introspection {
         register(__InputValue, "description", descriptionDataFetcher);
     }
 
-    private static String printDefaultValue(InputValueWithState inputValueWithState, GraphQLInputType type, Locale locale) {
-        return AstPrinter.printAst(ValuesResolver.valueToLiteral(inputValueWithState, type, locale));
+    private static String printDefaultValue(InputValueWithState inputValueWithState, GraphQLInputType type, GraphQLContext graphQLContext) {
+        return AstPrinter.printAst(ValuesResolver.valueToLiteral(inputValueWithState, type, graphQLContext));
     }
 
 

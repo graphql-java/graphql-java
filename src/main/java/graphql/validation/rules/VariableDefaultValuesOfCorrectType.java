@@ -26,9 +26,8 @@ public class VariableDefaultValuesOfCorrectType extends AbstractRule {
         if (inputType == null) {
             return;
         }
-        Locale locale = getValidationContext().getI18n().getLocale();
         if (variableDefinition.getDefaultValue() != null
-                && !getValidationUtil().isValidLiteralValue(variableDefinition.getDefaultValue(), inputType, getValidationContext().getSchema(), locale)) {
+                && !getValidationUtil().isValidLiteralValue(variableDefinition.getDefaultValue(), inputType, getValidationContext().getSchema(), getValidationContext().getGraphQLContext())) {
             String message = i18n(BadValueForDefaultArg, "VariableDefaultValuesOfCorrectType.badDefault", variableDefinition.getDefaultValue(), simplePrint(inputType));
             addError(BadValueForDefaultArg, variableDefinition.getSourceLocation(), message);
         }

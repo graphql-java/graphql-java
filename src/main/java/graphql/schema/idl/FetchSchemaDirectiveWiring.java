@@ -1,5 +1,6 @@
 package graphql.schema.idl;
 
+import graphql.GraphQLContext;
 import graphql.Internal;
 import graphql.execution.ValuesResolver;
 import graphql.schema.DataFetcher;
@@ -40,7 +41,7 @@ public class FetchSchemaDirectiveWiring implements SchemaDirectiveWiring {
     private String atFetchFromSupport(String fieldName, List<GraphQLDirective> directives) {
         // @fetch(from : "name")
         Optional<GraphQLArgument> from = directiveWithArg(directives, FETCH, "from");
-        return from.map(arg -> (String) ValuesResolver.valueToInternalValue(arg.getArgumentValue(), arg.getType(), Locale.getDefault())).orElse(fieldName);
+        return from.map(arg -> (String) ValuesResolver.valueToInternalValue(arg.getArgumentValue(), arg.getType(), GraphQLContext.getDefault())).orElse(fieldName);
     }
 
 }

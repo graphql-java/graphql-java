@@ -2,6 +2,7 @@ package graphql.schema;
 
 
 import graphql.Assert;
+import graphql.GraphQLContext;
 import graphql.PublicApi;
 import graphql.collect.ImmutableKit;
 import graphql.language.Argument;
@@ -87,7 +88,7 @@ public class GraphQLAppliedDirectiveArgument implements GraphQLNamedSchemaElemen
      * @return a value of type T which is the java value of the argument
      */
     public <T> T getValue() {
-        return getInputValueImpl(getType(), value, Locale.getDefault());
+        return getInputValueImpl(getType(), value, GraphQLContext.getDefault());
     }
 
     /**

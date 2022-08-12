@@ -2,6 +2,7 @@ package graphql.schema;
 
 
 import graphql.DirectivesUtil;
+import graphql.GraphQLContext;
 import graphql.PublicApi;
 import graphql.language.InputValueDefinition;
 import graphql.language.Value;
@@ -107,7 +108,7 @@ public class GraphQLInputObjectField implements GraphQLNamedSchemaElement, Graph
      * @return a value of type T which is the java value of the input field default
      */
     public static <T> T getInputFieldDefaultValue(GraphQLInputObjectField inputObjectField) {
-        return getInputValueImpl(inputObjectField.getType(), inputObjectField.getInputFieldDefaultValue(), Locale.getDefault());
+        return getInputValueImpl(inputObjectField.getType(), inputObjectField.getInputFieldDefaultValue(), GraphQLContext.getDefault());
     }
 
 

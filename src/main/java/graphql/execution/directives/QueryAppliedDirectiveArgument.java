@@ -2,6 +2,7 @@ package graphql.execution.directives;
 
 
 import graphql.Assert;
+import graphql.GraphQLContext;
 import graphql.PublicApi;
 import graphql.language.Argument;
 import graphql.language.Value;
@@ -84,7 +85,7 @@ public class QueryAppliedDirectiveArgument {
      */
     @Nullable
     public <T> T getValue() {
-        return getInputValueImpl(getType(), value, Locale.getDefault());
+        return getInputValueImpl(getType(), value, GraphQLContext.getDefault());
     }
 
     /**

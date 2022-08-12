@@ -28,8 +28,7 @@ public class ArgumentsOfCorrectType extends AbstractRule {
             return;
         }
         ArgumentValidationUtil validationUtil = new ArgumentValidationUtil(argument);
-        Locale locale = getValidationContext().getI18n().getLocale();
-        if (!validationUtil.isValidLiteralValue(argument.getValue(), fieldArgument.getType(), getValidationContext().getSchema(), locale)) {
+        if (!validationUtil.isValidLiteralValue(argument.getValue(), fieldArgument.getType(), getValidationContext().getSchema(), getValidationContext().getGraphQLContext())) {
             String message = i18n(WrongType, validationUtil.getMsgAndArgs());
             addError(ValidationError.newValidationError()
                     .validationErrorType(WrongType)

@@ -2,6 +2,7 @@ package graphql.util;
 
 import graphql.AssertException;
 import graphql.Directives;
+import graphql.GraphQLContext;
 import graphql.PublicApi;
 import graphql.Scalars;
 import graphql.analysis.QueryTraverser;
@@ -184,12 +185,12 @@ public class Anonymizer {
                 GraphQLArgument newElement = graphQLArgument.transform(builder -> {
                     builder.name(newName).description(null).definition(null);
                     if (graphQLArgument.hasSetDefaultValue()) {
-                        Value<?> defaultValueLiteral = ValuesResolver.valueToLiteral(graphQLArgument.getArgumentDefaultValue(), graphQLArgument.getType(), Locale.getDefault());
+                        Value<?> defaultValueLiteral = ValuesResolver.valueToLiteral(graphQLArgument.getArgumentDefaultValue(), graphQLArgument.getType(), GraphQLContext.getDefault());
                         builder.defaultValueLiteral(replaceValue(defaultValueLiteral, graphQLArgument.getType(), newNameMap, defaultStringValueCounter, defaultIntValueCounter));
                     }
 
                     if (graphQLArgument.hasSetValue()) {
-                        Value<?> valueLiteral = ValuesResolver.valueToLiteral(graphQLArgument.getArgumentValue(), graphQLArgument.getType(), Locale.getDefault());
+                        Value<?> valueLiteral = ValuesResolver.valueToLiteral(graphQLArgument.getArgumentValue(), graphQLArgument.getType(), GraphQLContext.getDefault());
                         builder.valueLiteral(replaceValue(valueLiteral, graphQLArgument.getType(), newNameMap, defaultStringValueCounter, defaultIntValueCounter));
                     }
                 });
@@ -205,7 +206,7 @@ public class Anonymizer {
                 GraphQLAppliedDirectiveArgument newElement = graphQLArgument.transform(builder -> {
                     builder.name(newName).description(null).definition(null);
                     if (graphQLArgument.hasSetValue()) {
-                        Value<?> valueLiteral = ValuesResolver.valueToLiteral(graphQLArgument.getArgumentValue(), graphQLArgument.getType(), Locale.getDefault());
+                        Value<?> valueLiteral = ValuesResolver.valueToLiteral(graphQLArgument.getArgumentValue(), graphQLArgument.getType(), GraphQLContext.getDefault());
                         builder.valueLiteral(replaceValue(valueLiteral, graphQLArgument.getType(), newNameMap, defaultStringValueCounter, defaultIntValueCounter));
                     }
                 });
@@ -307,7 +308,7 @@ public class Anonymizer {
 
                 Value<?> defaultValue = null;
                 if (graphQLInputObjectField.hasSetDefaultValue()) {
-                    defaultValue = ValuesResolver.valueToLiteral(graphQLInputObjectField.getInputFieldDefaultValue(), graphQLInputObjectField.getType(), Locale.getDefault());
+                    defaultValue = ValuesResolver.valueToLiteral(graphQLInputObjectField.getInputFieldDefaultValue(), graphQLInputObjectField.getType(), GraphQLContext.getDefault());
                     defaultValue = replaceValue(defaultValue, graphQLInputObjectField.getType(), newNameMap, defaultStringValueCounter, defaultIntValueCounter);
                 }
 

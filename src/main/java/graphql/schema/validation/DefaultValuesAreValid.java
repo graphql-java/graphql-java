@@ -1,5 +1,6 @@
 package graphql.schema.validation;
 
+import graphql.GraphQLContext;
 import graphql.execution.NonNullableValueCoercedAsNullException;
 import graphql.execution.ValuesResolver;
 import graphql.language.Value;
@@ -25,7 +26,7 @@ public class DefaultValuesAreValid extends GraphQLTypeVisitorStub {
 
     private ValidationUtil validationUtil = new ValidationUtil();
 
-    private final Locale locale = Locale.getDefault();
+    private final GraphQLContext graphQLContext = GraphQLContext.getDefault();
 
 
     @Override
@@ -43,10 +44,10 @@ public class DefaultValuesAreValid extends GraphQLTypeVisitorStub {
         InputValueWithState defaultValue = inputObjectField.getInputFieldDefaultValue();
         boolean invalid = false;
         if (defaultValue.isLiteral() &&
-                !validationUtil.isValidLiteralValue((Value<?>) defaultValue.getValue(), inputObjectField.getType(), schema, locale)) {
+                !validationUtil.isValidLiteralValue((Value<?>) defaultValue.getValue(), inputObjectField.getType(), schema, graphQLContext)) {
             invalid = true;
         } else if (defaultValue.isExternal() &&
-                !isValidExternalValue(schema, defaultValue.getValue(), inputObjectField.getType(), locale)) {
+                !isValidExternalValue(schema, defaultValue.getValue(), inputObjectField.getType(), graphQLContext)) {
             invalid = true;
         }
         if (invalid) {
@@ -66,10 +67,10 @@ public class DefaultValuesAreValid extends GraphQLTypeVisitorStub {
         InputValueWithState defaultValue = argument.getArgumentDefaultValue();
         boolean invalid = false;
         if (defaultValue.isLiteral() &&
-                !validationUtil.isValidLiteralValue((Value<?>) defaultValue.getValue(), argument.getType(), schema, locale)) {
+                !validationUtil.isValidLiteralValue((Value<?>) defaultValue.getValue(), argument.getType(), schema, graphQLContext)) {
             invalid = true;
         } else if (defaultValue.isExternal() &&
-                !isValidExternalValue(schema, defaultValue.getValue(), argument.getType(), locale)) {
+                !isValidExternalValue(schema, defaultValue.getValue(), argument.getType(), graphQLContext)) {
             invalid = true;
         }
         if (invalid) {
@@ -79,9 +80,9 @@ public class DefaultValuesAreValid extends GraphQLTypeVisitorStub {
         return TraversalControl.CONTINUE;
     }
 
-    private boolean isValidExternalValue(GraphQLSchema schema, Object externalValue, GraphQLInputType type, Locale locale) {
+    private boolean isValidExternalValue(GraphQLSchema schema, Object externalValue, GraphQLInputType type, GraphQLContext graphQLContext) {
         try {
-            ValuesResolver.externalValueToInternalValue(schema.getCodeRegistry().getFieldVisibility(), externalValue, type, locale);
+            ValuesResolver.externalValueToInternalValue(schema.getCodeRegistry().getFieldVisibility(), externalValue, type, graphQLContext);
             return true;
         } catch (CoercingParseValueException | NonNullableValueCoercedAsNullException e) {
             return false;

@@ -21,13 +21,28 @@ class GraphQLContextTest extends Specification {
         graphQLContext.stream().count()
     }
 
+    def "default context has a locale in it"() {
+        def context
+        when:
+        context = GraphQLContext.newContext().build()
+        then:
+        context.get(Locale.class) == Locale.getDefault()
+        sizeOf(context) == 1
+
+        when:
+        context = GraphQLContext.getDefault()
+        then:
+        context.get(Locale.class) == Locale.getDefault()
+        sizeOf(context) == 1
+    }
+
     def "of builder"() {
         def context
         when:
         context = GraphQLContext.newContext().of("k1", "v1").build()
         then:
         context.get("k1") == "v1"
-        sizeOf(context) == 1
+        sizeOf(context) == 2 // with locale defaulted
 
         when:
         context = GraphQLContext.newContext().of(
@@ -37,7 +52,7 @@ class GraphQLContextTest extends Specification {
         then:
         context.get("k1") == "v1"
         context.get("k2") == "v2"
-        sizeOf(context) == 2
+        sizeOf(context) == 3
 
         when:
         context = GraphQLContext.newContext().of(
@@ -49,7 +64,7 @@ class GraphQLContextTest extends Specification {
         context.get("k1") == "v1"
         context.get("k2") == "v2"
         context.get("k3") == "v3"
-        sizeOf(context) == 3
+        sizeOf(context) == 4
 
         when:
         context = GraphQLContext.newContext().of(
@@ -63,7 +78,7 @@ class GraphQLContextTest extends Specification {
         context.get("k2") == "v2"
         context.get("k3") == "v3"
         context.get("k4") == "v4"
-        sizeOf(context) == 4
+        sizeOf(context) == 5
 
         when:
         context = GraphQLContext.newContext().of(
@@ -79,7 +94,7 @@ class GraphQLContextTest extends Specification {
         context.get("k3") == "v3"
         context.get("k4") == "v4"
         context.get("k5") == "v5"
-        sizeOf(context) == 5
+        sizeOf(context) == 6
 
         when:
         context = GraphQLContext.newContext()
@@ -90,7 +105,7 @@ class GraphQLContextTest extends Specification {
         context.get("k1") == "v1"
         context.get("k2") == "v2"
         context.get("k3") == "v3"
-        sizeOf(context) == 3
+        sizeOf(context) == 4
 
         when:
         context = GraphQLContext.of(["k1": "v1", "k2": "v2"])
@@ -98,14 +113,14 @@ class GraphQLContextTest extends Specification {
         then:
         context.get("k1") == "v1"
         context.get("k2") == "v2"
-        sizeOf(context) == 2
+        sizeOf(context) == 3
 
         when:
         context = GraphQLContext.of({ it.of("k1", "v1") } as Consumer<GraphQLContext.Builder>)
 
         then:
         context.get("k1") == "v1"
-        sizeOf(context) == 1
+        sizeOf(context) == 2
     }
 
     def "put works"() {
@@ -116,7 +131,18 @@ class GraphQLContextTest extends Specification {
         then:
         context.get("k1") == "v1delta"
         context.hasKey("k1")
-        sizeOf(context) == 1
+        sizeOf(context) == 2
+    }
+
+    def "putIfAbsent works"() {
+        def context
+        when:
+        context = buildContext([k1: "v1"])
+        context.putIfAbsent("k1", "v1delta")
+        then:
+        context.get("k1") == "v1"
+        context.hasKey("k1")
+        sizeOf(context) == 2
     }
 
     def "putAll works"() {
@@ -128,7 +154,7 @@ class GraphQLContextTest extends Specification {
         then:
         context.get("k1") == "v1"
         context.get("k2") == "v2"
-        sizeOf(context) == 2
+        sizeOf(context) == 3
 
         when:
         context = buildContext([k1: "v1"])
@@ -137,7 +163,7 @@ class GraphQLContextTest extends Specification {
         then:
         context.get("k1") == "v1"
         context.get("k2") == "v2"
-        sizeOf(context) == 2
+        sizeOf(context) == 3
 
         when:
         context = buildContext([k1: "v1"])
@@ -146,7 +172,7 @@ class GraphQLContextTest extends Specification {
         then:
         context.get("k1") == "v1"
         context.get("k2") == "v2"
-        sizeOf(context) == 2
+        sizeOf(context) == 3
 
         when:
         context = buildContext([k1: "v1"])
@@ -155,7 +181,7 @@ class GraphQLContextTest extends Specification {
         then:
         context.get("k1") == "v1"
         context.get("k2") == "v2"
-        sizeOf(context) == 2
+        sizeOf(context) == 3
     }
 
     def "hasKey works"() {
@@ -190,9 +216,9 @@ class GraphQLContextTest extends Specification {
         def context
         when:
         context = buildContext([k1: "v1", k2: "k2"])
-        def keys = context.stream().map({ entry -> entry.key }).collect(Collectors.joining())
+        def keys = context.stream().map({ entry -> entry.key }).collect(Collectors.toSet())
         then:
-        keys == "k1k2"
+        keys == [Locale.class, "k1","k2"] as Set
     }
 
     def "delete works"() {
@@ -205,7 +231,7 @@ class GraphQLContextTest extends Specification {
         context.get("k1") == null
         context.getOrDefault("k1", "default") == "default"
 
-        sizeOf(context) == 0
+        sizeOf(context) == 1
     }
 
     def "graphql context integration test"() {

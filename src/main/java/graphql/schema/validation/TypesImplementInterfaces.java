@@ -1,5 +1,6 @@
 package graphql.schema.validation;
 
+import graphql.GraphQLContext;
 import graphql.Internal;
 import graphql.execution.ValuesResolver;
 import graphql.language.Value;
@@ -152,8 +153,8 @@ public class TypesImplementInterfaces extends GraphQLTypeVisitorStub {
                         same = false;
                     }
                     if (objectArg.hasSetDefaultValue() && interfaceArg.hasSetDefaultValue()) {
-                        Value<?> objectDefaultValue = ValuesResolver.valueToLiteral(objectArg.getArgumentDefaultValue(), objectArg.getType(), Locale.getDefault());
-                        Value<?> interfaceDefaultValue = ValuesResolver.valueToLiteral(interfaceArg.getArgumentDefaultValue(), interfaceArg.getType(), Locale.getDefault());
+                        Value<?> objectDefaultValue = ValuesResolver.valueToLiteral(objectArg.getArgumentDefaultValue(), objectArg.getType(), GraphQLContext.getDefault());
+                        Value<?> interfaceDefaultValue = ValuesResolver.valueToLiteral(interfaceArg.getArgumentDefaultValue(), interfaceArg.getType(), GraphQLContext.getDefault());
                         if (!Objects.equals(printAst(objectDefaultValue), printAst(interfaceDefaultValue))) {
                             same = false;
                         }

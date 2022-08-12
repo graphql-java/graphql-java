@@ -1,6 +1,7 @@
 package graphql.normalized;
 
 import graphql.Assert;
+import graphql.GraphQLContext;
 import graphql.Internal;
 import graphql.language.FragmentDefinition;
 import graphql.schema.GraphQLSchema;
@@ -10,7 +11,6 @@ import org.jetbrains.annotations.Nullable;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 
 @Internal
@@ -19,7 +19,7 @@ public class FieldCollectorNormalizedQueryParams {
     private final Map<String, FragmentDefinition> fragmentsByName;
     private final Map<String, Object> coercedVariableValues;
     private final Map<String, NormalizedInputValue> normalizedVariableValues;
-    private final Locale locale;
+    private final GraphQLContext graphQLContext;
 
     public List<PossibleMerger> possibleMergerList = new ArrayList<>();
 
@@ -55,8 +55,8 @@ public class FieldCollectorNormalizedQueryParams {
         return normalizedVariableValues;
     }
 
-    public Locale getLocale() {
-        return locale;
+    public GraphQLContext getGraphQLContext() {
+        return graphQLContext;
     }
 
     private FieldCollectorNormalizedQueryParams(Builder builder) {
@@ -64,7 +64,7 @@ public class FieldCollectorNormalizedQueryParams {
         this.graphQLSchema = builder.graphQLSchema;
         this.coercedVariableValues = builder.coercedVariableValues;
         this.normalizedVariableValues = builder.normalizedVariableValues;
-        this.locale = builder.locale;
+        this.graphQLContext = builder.graphQLContext;
     }
 
     public static Builder newParameters() {
@@ -76,7 +76,7 @@ public class FieldCollectorNormalizedQueryParams {
         private final Map<String, FragmentDefinition> fragmentsByName = new LinkedHashMap<>();
         private final Map<String, Object> coercedVariableValues = new LinkedHashMap<>();
         private Map<String, NormalizedInputValue> normalizedVariableValues;
-        private Locale locale = Locale.getDefault();
+        private GraphQLContext graphQLContext = GraphQLContext.getDefault();
 
         /**
          * @see FieldCollectorNormalizedQueryParams#newParameters()
@@ -105,8 +105,8 @@ public class FieldCollectorNormalizedQueryParams {
             return this;
         }
 
-        public Builder locale(Locale locale) {
-            this.locale = locale;
+        public Builder graphQLContext(GraphQLContext graphQLContext) {
+            this.graphQLContext = graphQLContext;
             return this;
         }
 

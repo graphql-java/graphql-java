@@ -1,5 +1,6 @@
 package graphql;
 
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -42,7 +43,10 @@ public class GraphQLContext {
 
     private GraphQLContext(ConcurrentMap<Object, Object> map) {
         this.map = map;
+        // the graphql context always has a locale in it
+        map.putIfAbsent(Locale.class, Locale.getDefault());
     }
+
 
     /**
      * Deletes a key in the context
@@ -115,6 +119,19 @@ public class GraphQLContext {
      */
     public GraphQLContext put(Object key, Object value) {
         map.put(assertNotNull(key), assertNotNull(value));
+        return this;
+    }
+
+    /**
+     * Puts a value into the context if it does not already have a value under the specified key.
+     *
+     * @param key   the key to set
+     * @param value the new value (which not must be null)
+     *
+     * @return this {@link GraphQLContext} object
+     */
+    public GraphQLContext putIfAbsent(Object key, Object value) {
+        map.putIfAbsent(assertNotNull(key), assertNotNull(value));
         return this;
     }
 
@@ -199,6 +216,14 @@ public class GraphQLContext {
     public String toString() {
         return map.toString();
     }
+
+    /**
+     * @return a default {@link GraphQLContext}
+     */
+    public static GraphQLContext getDefault() {
+        return GraphQLContext.newContext().build();
+    }
+
 
     /**
      * Creates a new GraphqlContext with the map of context added to it

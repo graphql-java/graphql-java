@@ -1,5 +1,6 @@
 package graphql.parser;
 
+import com.google.common.collect.ImmutableList;
 import graphql.Internal;
 import graphql.PublicApi;
 import graphql.language.Document;
@@ -10,6 +11,7 @@ import graphql.language.Value;
 import graphql.parser.antlr.GraphqlBaseListener;
 import graphql.parser.antlr.GraphqlLexer;
 import graphql.parser.antlr.GraphqlParser;
+import graphql.parser.exceptions.ParseCancelledException;
 import org.antlr.v4.runtime.BaseErrorListener;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CodePointCharStream;
@@ -29,6 +31,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
+import java.util.function.Supplier;
 
 /**
  * This can parse graphql syntax, both Query syntax and Schema Definition Language (SDL) syntax, into an
@@ -252,10 +255,22 @@ public class Parser {
         lexer.removeErrorListeners();
         lexer.addErrorListener(new BaseErrorListener() {
             @Override
-            public void syntaxError(Recognizer<?, ?> recognizer, Object offendingSymbol, int line, int charPositionInLine, String msg, RecognitionException e) {
+            public void syntaxError(Recognizer<?, ?> recognizer, Object offendingSymbol, int line, int charPositionInLine, String antlerMsg, RecognitionException e) {
                 SourceLocation sourceLocation = AntlrHelper.createSourceLocation(multiSourceReader, line, charPositionInLine);
                 String preview = AntlrHelper.createPreview(multiSourceReader, line);
-                throw new InvalidSyntaxException(sourceLocation, msg, preview, null, null);
+                Supplier<String> msgMaker = () -> {
+                    String msgKey;
+                    List<Object> args;
+                    if (antlerMsg == null) {
+                        msgKey = "InvalidSyntax.noMessage";
+                        args = ImmutableList.of(sourceLocation.getLine(), sourceLocation.getColumn());
+                    } else {
+                        msgKey = "InvalidSyntax.full";
+                        args = ImmutableList.of(antlerMsg, sourceLocation.getLine(), sourceLocation.getColumn());
+                    }
+                    return environment.getI18N().msg(msgKey, args);
+                };
+                throw new InvalidSyntaxException(msgMaker, sourceLocation, null, preview, null);
             }
         });
 
@@ -266,7 +281,7 @@ public class Parser {
         // this lexer wrapper allows us to stop lexing when too many tokens are in place.  This prevents DOS attacks.
         int maxTokens = parserOptions.getMaxTokens();
         int maxWhitespaceTokens = parserOptions.getMaxWhitespaceTokens();
-        BiConsumer<Integer, Token> onTooManyTokens = (maxTokenCount, token) -> throwCancelParseIfTooManyTokens(token, maxTokenCount, multiSourceReader);
+        BiConsumer<Integer, Token> onTooManyTokens = (maxTokenCount, token) -> throwCancelParseIfTooManyTokens(environment, token, maxTokenCount, multiSourceReader);
         SafeTokenSource safeTokenSource = new SafeTokenSource(lexer, maxTokens, maxWhitespaceTokens, onTooManyTokens);
 
         CommonTokenStream tokens = new CommonTokenStream(safeTokenSource);
@@ -275,16 +290,13 @@ public class Parser {
         parser.removeErrorListeners();
         parser.getInterpreter().setPredictionMode(PredictionMode.SLL);
 
-        ExtendedBailStrategy bailStrategy = new ExtendedBailStrategy(multiSourceReader);
+        ExtendedBailStrategy bailStrategy = new ExtendedBailStrategy(multiSourceReader, environment);
         parser.setErrorHandler(bailStrategy);
 
         // preserve old protected call semantics - remove at some point
-        GraphqlAntlrToLanguage toLanguage = getAntlrToLanguage(tokens, multiSourceReader);
-        if (toLanguage == null) {
-            toLanguage = getAntlrToLanguage(tokens, multiSourceReader, parserOptions);
-        }
+        GraphqlAntlrToLanguage toLanguage = getAntlrToLanguage(tokens, multiSourceReader, environment);
 
-        setupParserListener(multiSourceReader, parser, toLanguage);
+        setupParserListener(environment, multiSourceReader, parser, toLanguage);
 
 
         //
@@ -311,7 +323,7 @@ public class Parser {
         return node;
     }
 
-    private void setupParserListener(MultiSourceReader multiSourceReader, GraphqlParser parser, GraphqlAntlrToLanguage toLanguage) {
+    private void setupParserListener(ParserEnvironment environment, MultiSourceReader multiSourceReader, GraphqlParser parser, GraphqlAntlrToLanguage toLanguage) {
         ParserOptions parserOptions = toLanguage.getParserOptions();
         ParsingListener parsingListener = parserOptions.getParsingListener();
         int maxTokens = parserOptions.getMaxTokens();
@@ -342,14 +354,14 @@ public class Parser {
 
                 count++;
                 if (count > maxTokens) {
-                    throwCancelParseIfTooManyTokens(token, maxTokens, multiSourceReader);
+                    throwCancelParseIfTooManyTokens(environment, token, maxTokens, multiSourceReader);
                 }
             }
         };
         parser.addParseListener(listener);
     }
 
-    private void throwCancelParseIfTooManyTokens(Token token, int maxTokens, MultiSourceReader multiSourceReader) throws ParseCancelledException {
+    private void throwCancelParseIfTooManyTokens(ParserEnvironment environment, Token token, int maxTokens, MultiSourceReader multiSourceReader) throws ParseCancelledException {
         String tokenType = "grammar";
         SourceLocation sourceLocation = null;
         String offendingToken = null;
@@ -360,8 +372,7 @@ public class Parser {
             offendingToken = token.getText();
             sourceLocation = AntlrHelper.createSourceLocation(multiSourceReader, token.getLine(), token.getCharPositionInLine());
         }
-        String msg = String.format("More than %d %s tokens have been presented. To prevent Denial Of Service attacks, parsing has been cancelled.", maxTokens, tokenType);
-        throw new ParseCancelledException(msg, sourceLocation, offendingToken);
+        throw new ParseCancelledException(environment.getI18N(), sourceLocation, offendingToken, maxTokens, tokenType);
     }
 
     /**
@@ -372,7 +383,7 @@ public class Parser {
      *
      * @return a new GraphqlAntlrToLanguage instance
      *
-     * @deprecated - really should use {@link #getAntlrToLanguage(CommonTokenStream, MultiSourceReader, ParserOptions)}
+     * @deprecated - really should use {@link #getAntlrToLanguage(CommonTokenStream, MultiSourceReader, ParserEnvironment)}
      */
     @Deprecated
     protected GraphqlAntlrToLanguage getAntlrToLanguage(CommonTokenStream tokens, MultiSourceReader multiSourceReader) {
@@ -384,11 +395,11 @@ public class Parser {
      *
      * @param tokens            the token stream
      * @param multiSourceReader the source of the query document
-     * @param parserOptions     - the parser options
+     * @param environment       the parser environment
      *
      * @return a new GraphqlAntlrToLanguage instance
      */
-    protected GraphqlAntlrToLanguage getAntlrToLanguage(CommonTokenStream tokens, MultiSourceReader multiSourceReader, ParserOptions parserOptions) {
-        return new GraphqlAntlrToLanguage(tokens, multiSourceReader, parserOptions);
+    protected GraphqlAntlrToLanguage getAntlrToLanguage(CommonTokenStream tokens, MultiSourceReader multiSourceReader, ParserEnvironment environment) {
+        return new GraphqlAntlrToLanguage(tokens, multiSourceReader, environment.getParserOptions(), environment.getI18N());
     }
 }

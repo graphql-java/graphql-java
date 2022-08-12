@@ -1,19 +1,26 @@
 package graphql.parser;
 
+import com.google.common.collect.ImmutableList;
 import graphql.Internal;
 import graphql.language.SourceLocation;
+import graphql.parser.exceptions.MoreTokensSyntaxException;
 import org.antlr.v4.runtime.BailErrorStrategy;
 import org.antlr.v4.runtime.Parser;
 import org.antlr.v4.runtime.RecognitionException;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.misc.ParseCancellationException;
 
+import java.util.List;
+import java.util.function.Supplier;
+
 @Internal
 public class ExtendedBailStrategy extends BailErrorStrategy {
     private final MultiSourceReader multiSourceReader;
+    private final ParserEnvironment environment;
 
-    public ExtendedBailStrategy(MultiSourceReader multiSourceReader) {
+    public ExtendedBailStrategy(MultiSourceReader multiSourceReader, ParserEnvironment environment) {
         this.multiSourceReader = multiSourceReader;
+        this.environment = environment;
     }
 
     @Override
@@ -37,23 +44,40 @@ public class ExtendedBailStrategy extends BailErrorStrategy {
     InvalidSyntaxException mkMoreTokensException(Token token) {
         SourceLocation sourceLocation = AntlrHelper.createSourceLocation(multiSourceReader, token);
         String sourcePreview = AntlrHelper.createPreview(multiSourceReader, token.getLine());
-        return new InvalidSyntaxException(sourceLocation,
-                "There are more tokens in the query that have not been consumed",
-                sourcePreview, token.getText(), null);
+        return new MoreTokensSyntaxException(environment.getI18N(), sourceLocation,
+                token.getText(), sourcePreview);
     }
 
 
     private InvalidSyntaxException mkException(Parser recognizer, RecognitionException cause) {
-        String sourcePreview = null;
-        String offendingToken = null;
-        SourceLocation sourceLocation = null;
+        String sourcePreview;
+        String offendingToken;
+        final SourceLocation sourceLocation;
         Token currentToken = recognizer.getCurrentToken();
         if (currentToken != null) {
             sourceLocation = AntlrHelper.createSourceLocation(multiSourceReader, currentToken);
             offendingToken = currentToken.getText();
             sourcePreview = AntlrHelper.createPreview(multiSourceReader, currentToken.getLine());
+        } else {
+            sourcePreview = null;
+            offendingToken = null;
+            sourceLocation = null;
         }
-        return new InvalidSyntaxException(sourceLocation, null, sourcePreview, offendingToken, cause);
+
+        Supplier<String> msgMaker = () -> {
+            String msgKey;
+            List<Object> args;
+            SourceLocation location = sourceLocation == null ? SourceLocation.EMPTY : sourceLocation;
+            if (offendingToken == null) {
+                msgKey = "InvalidSyntaxBail.noToken";
+                args = ImmutableList.of(location.getLine(), location.getColumn());
+            } else {
+                msgKey = "InvalidSyntaxBail.full";
+                args = ImmutableList.of(offendingToken, sourceLocation.getLine(), sourceLocation.getColumn());
+            }
+            return environment.getI18N().msg(msgKey, args);
+        };
+        return new InvalidSyntaxException(msgMaker, sourceLocation, offendingToken, sourcePreview, cause);
     }
 
 }

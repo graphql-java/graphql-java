@@ -1,5 +1,6 @@
 package graphql.schema.validation;
 
+import graphql.GraphQLContext;
 import graphql.Internal;
 import graphql.execution.NonNullableValueCoercedAsNullException;
 import graphql.execution.ValuesResolver;
@@ -45,12 +46,11 @@ public class AppliedDirectiveArgumentsAreValid extends GraphQLTypeVisitorStub {
         SchemaValidationErrorCollector errorCollector = context.getVarFromParents(SchemaValidationErrorCollector.class);
         InputValueWithState argumentValue = argument.getArgumentValue();
         boolean invalid = false;
-        Locale locale = Locale.getDefault();
         if (argumentValue.isLiteral() &&
-                !validationUtil.isValidLiteralValue((Value<?>) argumentValue.getValue(), argument.getType(), schema, locale)) {
+                !validationUtil.isValidLiteralValue((Value<?>) argumentValue.getValue(), argument.getType(), schema, GraphQLContext.getDefault())) {
             invalid = true;
         } else if (argumentValue.isExternal() &&
-                !isValidExternalValue(schema, argumentValue.getValue(), argument.getType(), locale)) {
+                !isValidExternalValue(schema, argumentValue.getValue(), argument.getType(), GraphQLContext.getDefault())) {
             invalid = true;
         }
         if (invalid) {
@@ -59,9 +59,9 @@ public class AppliedDirectiveArgumentsAreValid extends GraphQLTypeVisitorStub {
         }
     }
 
-    private boolean isValidExternalValue(GraphQLSchema schema, Object externalValue, GraphQLInputType type, Locale locale) {
+    private boolean isValidExternalValue(GraphQLSchema schema, Object externalValue, GraphQLInputType type, GraphQLContext graphQLContext) {
         try {
-            ValuesResolver.externalValueToInternalValue(schema.getCodeRegistry().getFieldVisibility(), externalValue, type, locale);
+            ValuesResolver.externalValueToInternalValue(schema.getCodeRegistry().getFieldVisibility(), externalValue, type, graphQLContext);
             return true;
         } catch (CoercingParseValueException | NonNullableValueCoercedAsNullException e) {
             return false;

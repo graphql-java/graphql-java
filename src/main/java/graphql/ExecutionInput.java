@@ -47,6 +47,16 @@ public class ExecutionInput {
         this.locale = builder.locale;
         this.localContext = builder.localContext;
         this.extensions = builder.extensions;
+        setLocaleIntoContext();
+    }
+
+    private void setLocaleIntoContext() {
+        if (locale != null) {
+            Object currentLocale = graphQLContext.get(Locale.class);
+            if (locale != currentLocale) {
+                graphQLContext.put(Locale.class, locale);
+            }
+        }
     }
 
     /**

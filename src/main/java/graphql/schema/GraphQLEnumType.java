@@ -4,6 +4,7 @@ package graphql.schema;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import graphql.DirectivesUtil;
+import graphql.GraphQLContext;
 import graphql.Internal;
 import graphql.PublicApi;
 import graphql.language.EnumTypeDefinition;
@@ -70,34 +71,34 @@ public class GraphQLEnumType implements GraphQLNamedInputType, GraphQLNamedOutpu
     @Internal
     @Deprecated
     public Object serialize(Object input) {
-        return serialize(input, Locale.getDefault());
+        return serialize(input, GraphQLContext.getDefault());
     }
 
     @Internal
-    public Object serialize(Object input, Locale locale) {
-        return getNameByValue(input, locale);
+    public Object serialize(Object input, GraphQLContext graphQLContext) {
+        return getNameByValue(input, graphQLContext);
     }
 
     @Internal
     @Deprecated
     public Object parseValue(Object input) {
-        return getValueByName(input, Locale.getDefault());
+        return getValueByName(input, GraphQLContext.getDefault());
     }
 
-    public Object parseValue(Object input, Locale locale) {
-        return getValueByName(input, locale);
+    public Object parseValue(Object input, GraphQLContext graphQLContext) {
+        return getValueByName(input, graphQLContext);
     }
 
 
     @Internal
     @Deprecated
     public Object parseLiteral(Object input) {
-        return parseLiteralImpl(input, Locale.getDefault());
+        return parseLiteralImpl(input, GraphQLContext.getDefault());
     }
 
     @Internal
-    public Object parseLiteral(Value<?> input, Locale locale) {
-        return parseLiteralImpl(input, locale);
+    public Object parseLiteral(Value<?> input, GraphQLContext graphQLContext) {
+        return parseLiteralImpl(input, graphQLContext);
     }
 
     private String typeName(Object input) {
@@ -107,7 +108,7 @@ public class GraphQLEnumType implements GraphQLNamedInputType, GraphQLNamedOutpu
         return input.getClass().getSimpleName();
     }
 
-    private Object parseLiteralImpl(Object input, Locale locale) {
+    private Object parseLiteralImpl(Object input, GraphQLContext graphQLContext) {
         // TODO - use I18N
         if (!(input instanceof EnumValue)) {
             throw new CoercingParseLiteralException(
@@ -127,11 +128,11 @@ public class GraphQLEnumType implements GraphQLNamedInputType, GraphQLNamedOutpu
     @Internal
     @Deprecated
     public Value valueToLiteral(Object input) {
-        return valueToLiteral(input, Locale.getDefault());
+        return valueToLiteral(input, GraphQLContext.getDefault());
     }
 
     @Internal
-    public Value<?> valueToLiteral(Object input, Locale locale) {
+    public Value<?> valueToLiteral(Object input, GraphQLContext graphQLContext) {
         // TODO - use I18N
         GraphQLEnumValueDefinition enumValueDefinition = valueDefinitionMap.get(input.toString());
         assertNotNull(enumValueDefinition, () -> "Invalid input for Enum '" + name + "'. No value found for name '" + input + "'");
@@ -152,7 +153,7 @@ public class GraphQLEnumType implements GraphQLNamedInputType, GraphQLNamedOutpu
                 (fld1, fld2) -> assertShouldNeverHappen("Duplicated definition for field '%s' in type '%s'", fld1.getName(), this.name)));
     }
 
-    private Object getValueByName(Object value, Locale locale) {
+    private Object getValueByName(Object value, GraphQLContext graphQLContext) {
         GraphQLEnumValueDefinition enumValueDefinition = valueDefinitionMap.get(value.toString());
         if (enumValueDefinition != null) {
             return enumValueDefinition.getValue();
@@ -161,7 +162,7 @@ public class GraphQLEnumType implements GraphQLNamedInputType, GraphQLNamedOutpu
         throw new CoercingParseValueException("Invalid input for Enum '" + name + "'. No value found for name '" + value.toString() + "'");
     }
 
-    private Object getNameByValue(Object value, Locale locale) {
+    private Object getNameByValue(Object value, GraphQLContext graphQLContext) {
         for (GraphQLEnumValueDefinition valueDefinition : valueDefinitionMap.values()) {
             Object definitionValue = valueDefinition.getValue();
             if (value.equals(definitionValue)) {
@@ -174,7 +175,7 @@ public class GraphQLEnumType implements GraphQLNamedInputType, GraphQLNamedOutpu
                 }
             }
         }
-        // ok we didn't match on pure object.equals().  Lets try the Java enum strategy
+        // ok we didn't match on pure object.equals().  Let's try the Java enum strategy
         if (value instanceof Enum) {
             String enumNameValue = ((Enum<?>) value).name();
             for (GraphQLEnumValueDefinition valueDefinition : valueDefinitionMap.values()) {

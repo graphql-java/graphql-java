@@ -1,5 +1,6 @@
 package graphql.analysis;
 
+import graphql.GraphQLContext;
 import graphql.PublicApi;
 import graphql.execution.CoercedVariables;
 import graphql.execution.RawVariables;
@@ -71,7 +72,7 @@ public class QueryTraverser {
         this.fragmentsByName = getOperationResult.fragmentsByName;
         this.roots = singletonList(getOperationResult.operationDefinition);
         this.rootParentType = getRootTypeFromOperation(getOperationResult.operationDefinition);
-        this.coercedVariables = ValuesResolver.coerceVariableValues(schema, variableDefinitions, rawVariables, Locale.getDefault());
+        this.coercedVariables = ValuesResolver.coerceVariableValues(schema, variableDefinitions, rawVariables, GraphQLContext.getDefault());
     }
 
     private QueryTraverser(GraphQLSchema schema,

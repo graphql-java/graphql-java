@@ -1,6 +1,7 @@
 package graphql.validation.rules;
 
 
+import graphql.GraphQLContext;
 import graphql.Internal;
 import graphql.execution.TypeFromAST;
 import graphql.execution.ValuesResolver;
@@ -67,8 +68,7 @@ public class VariableTypesMatch extends AbstractRule {
         if (schemaDefault.isPresent() && schemaDefault.get().isLiteral()) {
             schemaDefaultValue = (Value) schemaDefault.get().getValue();
         } else if (schemaDefault.isPresent() && schemaDefault.get().isSet()) {
-            Locale locale = getValidationContext().getI18n().getLocale();
-            schemaDefaultValue = ValuesResolver.valueToLiteral(schemaDefault.get(), expectedType, locale);
+            schemaDefaultValue = ValuesResolver.valueToLiteral(schemaDefault.get(), expectedType, getValidationContext().getGraphQLContext());
         }
         if (expectedType == null) {
             // we must have a unknown variable say to not have a known type

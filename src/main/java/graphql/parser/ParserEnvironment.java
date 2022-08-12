@@ -1,6 +1,7 @@
 package graphql.parser;
 
 import graphql.PublicApi;
+import graphql.i18n.I18n;
 
 import java.io.Reader;
 import java.io.StringReader;
@@ -28,6 +29,11 @@ public interface ParserEnvironment {
      * @return the locale to produce parsing error messages in
      */
     Locale getLocale();
+
+    /**
+     * @return the {@link I18n} to produce parsing error messages with
+     */
+    I18n getI18N();
 
     /**
      * @return a builder of new parsing options
@@ -66,6 +72,7 @@ public interface ParserEnvironment {
         }
 
         public ParserEnvironment build() {
+            I18n i18n = I18n.i18n(I18n.BundleType.Parsing, locale);
             return new ParserEnvironment() {
                 @Override
                 public Reader getDocument() {
@@ -80,6 +87,11 @@ public interface ParserEnvironment {
                 @Override
                 public Locale getLocale() {
                     return locale;
+                }
+
+                @Override
+                public I18n getI18N() {
+                    return i18n;
                 }
             };
         }

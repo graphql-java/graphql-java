@@ -1,6 +1,7 @@
 package graphql.schema.idl;
 
 import graphql.AssertException;
+import graphql.GraphQLContext;
 import graphql.GraphQLError;
 import graphql.Internal;
 import graphql.execution.CoercedVariables;
@@ -287,7 +288,7 @@ class ArgValueOfAllowedTypeChecker {
 
     private boolean isArgumentValueScalarLiteral(GraphQLScalarType scalarType, Value<?> instanceValue) {
         try {
-            scalarType.getCoercing().parseLiteral(instanceValue, CoercedVariables.emptyVariables(), Locale.getDefault());
+            scalarType.getCoercing().parseLiteral(instanceValue, CoercedVariables.emptyVariables(), GraphQLContext.getDefault());
             return true;
         } catch (CoercingParseLiteralException ex) {
             if (logNotSafe.isDebugEnabled()) {

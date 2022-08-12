@@ -1,5 +1,6 @@
 package graphql.execution.nextgen;
 
+import graphql.GraphQLContext;
 import graphql.Internal;
 import graphql.SerializationError;
 import graphql.TypeMismatchError;
@@ -180,7 +181,7 @@ public class FetchedValueAnalyzer {
     }
 
     protected Object serializeScalarValue(Object toAnalyze, GraphQLScalarType scalarType) throws CoercingSerializeException {
-        return scalarType.getCoercing().serialize(toAnalyze, Locale.getDefault());
+        return scalarType.getCoercing().serialize(toAnalyze, GraphQLContext.getDefault());
     }
 
     private FetchedValueAnalysis analyzeEnumValue(FetchedValue fetchedValue, Object toAnalyze, GraphQLEnumType enumType, ExecutionStepInfo executionInfo) {
