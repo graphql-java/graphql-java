@@ -40,6 +40,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
@@ -78,28 +79,29 @@ public class ExecutableNormalizedOperationFactory {
                                                                                                     Document document,
                                                                                                     String operationName,
                                                                                                     RawVariables rawVariables) {
-        return createExecutableNormalizedOperationWithRawVariables(graphQLSchema, document, operationName, rawVariables, GraphQLContext.getDefault());
+        return createExecutableNormalizedOperationWithRawVariables(graphQLSchema, document, operationName, rawVariables, GraphQLContext.getDefault(), Locale.getDefault());
     }
 
     public static ExecutableNormalizedOperation createExecutableNormalizedOperationWithRawVariables(GraphQLSchema graphQLSchema,
                                                                                                     Document document,
                                                                                                     String operationName,
                                                                                                     RawVariables rawVariables,
-                                                                                                    GraphQLContext graphQLContext) {
+                                                                                                    GraphQLContext graphQLContext,
+                                                                                                    Locale locale) {
         NodeUtil.GetOperationResult getOperationResult = NodeUtil.getOperation(document, operationName);
-        return new ExecutableNormalizedOperationFactory().createExecutableNormalizedOperationImplWithRawVariables(graphQLSchema, getOperationResult.operationDefinition, getOperationResult.fragmentsByName, rawVariables, graphQLContext);
+        return new ExecutableNormalizedOperationFactory().createExecutableNormalizedOperationImplWithRawVariables(graphQLSchema, getOperationResult.operationDefinition, getOperationResult.fragmentsByName, rawVariables, graphQLContext, locale);
     }
 
     private ExecutableNormalizedOperation createExecutableNormalizedOperationImplWithRawVariables(GraphQLSchema graphQLSchema,
                                                                                                   OperationDefinition operationDefinition,
                                                                                                   Map<String, FragmentDefinition> fragments,
                                                                                                   RawVariables rawVariables,
-                                                                                                  GraphQLContext graphQLContext
-    ) {
+                                                                                                  GraphQLContext graphQLContext,
+                                                                                                  Locale locale) {
 
         List<VariableDefinition> variableDefinitions = operationDefinition.getVariableDefinitions();
-        CoercedVariables coercedVariableValues = ValuesResolver.coerceVariableValues(graphQLSchema, variableDefinitions, rawVariables, graphQLContext);
-        Map<String, NormalizedInputValue> normalizedVariableValues = ValuesResolver.getNormalizedVariableValues(graphQLSchema, variableDefinitions, rawVariables, graphQLContext);
+        CoercedVariables coercedVariableValues = ValuesResolver.coerceVariableValues(graphQLSchema, variableDefinitions, rawVariables, graphQLContext, locale);
+        Map<String, NormalizedInputValue> normalizedVariableValues = ValuesResolver.getNormalizedVariableValues(graphQLSchema, variableDefinitions, rawVariables, graphQLContext, locale);
         return createNormalizedQueryImpl(graphQLSchema, operationDefinition, fragments, coercedVariableValues, normalizedVariableValues);
     }
 
@@ -314,7 +316,7 @@ public class ExecutableNormalizedOperationFactory {
         String fieldName = field.getName();
         GraphQLFieldDefinition fieldDefinition = Introspection.getFieldDef(parameters.getGraphQLSchema(), objectTypes.iterator().next(), fieldName);
 
-        Map<String, Object> argumentValues = ValuesResolver.getArgumentValues(fieldDefinition.getArguments(), field.getArguments(), CoercedVariables.of(parameters.getCoercedVariableValues()), parameters.getGraphQLContext());
+        Map<String, Object> argumentValues = ValuesResolver.getArgumentValues(fieldDefinition.getArguments(), field.getArguments(), CoercedVariables.of(parameters.getCoercedVariableValues()), parameters.getGraphQLContext(), parameters.getLocale());
         Map<String, NormalizedInputValue> normalizedArgumentValues = null;
         if (parameters.getNormalizedVariableValues() != null) {
             normalizedArgumentValues = ValuesResolver.getNormalizedArgumentValues(fieldDefinition.getArguments(), field.getArguments(), parameters.getNormalizedVariableValues());

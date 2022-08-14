@@ -153,8 +153,8 @@ public class TypesImplementInterfaces extends GraphQLTypeVisitorStub {
                         same = false;
                     }
                     if (objectArg.hasSetDefaultValue() && interfaceArg.hasSetDefaultValue()) {
-                        Value<?> objectDefaultValue = ValuesResolver.valueToLiteral(objectArg.getArgumentDefaultValue(), objectArg.getType(), GraphQLContext.getDefault());
-                        Value<?> interfaceDefaultValue = ValuesResolver.valueToLiteral(interfaceArg.getArgumentDefaultValue(), interfaceArg.getType(), GraphQLContext.getDefault());
+                        Value<?> objectDefaultValue = ValuesResolver.valueToLiteral(objectArg.getArgumentDefaultValue(), objectArg.getType(), GraphQLContext.getDefault(), Locale.getDefault());
+                        Value<?> interfaceDefaultValue = ValuesResolver.valueToLiteral(interfaceArg.getArgumentDefaultValue(), interfaceArg.getType(), GraphQLContext.getDefault(), Locale.getDefault());
                         if (!Objects.equals(printAst(objectDefaultValue), printAst(interfaceDefaultValue))) {
                             same = false;
                         }

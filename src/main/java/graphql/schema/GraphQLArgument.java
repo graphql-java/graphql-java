@@ -149,7 +149,7 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
      */
     @Deprecated
     public static <T> T getArgumentValue(GraphQLArgument argument) {
-        return getInputValueImpl(argument.getType(), argument.getArgumentValue(), GraphQLContext.getDefault());
+        return getInputValueImpl(argument.getType(), argument.getArgumentValue(), GraphQLContext.getDefault(), Locale.getDefault());
     }
 
     /**
@@ -169,7 +169,7 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
      * @return a value of type T which is the java value of the argument default
      */
     public static <T> T getArgumentDefaultValue(GraphQLArgument argument) {
-        return getInputValueImpl(argument.getType(), argument.getArgumentDefaultValue(), GraphQLContext.getDefault());
+        return getInputValueImpl(argument.getType(), argument.getArgumentDefaultValue(), GraphQLContext.getDefault(), Locale.getDefault());
     }
 
     public String getDescription() {

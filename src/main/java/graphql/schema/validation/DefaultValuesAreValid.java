@@ -44,7 +44,7 @@ public class DefaultValuesAreValid extends GraphQLTypeVisitorStub {
         InputValueWithState defaultValue = inputObjectField.getInputFieldDefaultValue();
         boolean invalid = false;
         if (defaultValue.isLiteral() &&
-                !validationUtil.isValidLiteralValue((Value<?>) defaultValue.getValue(), inputObjectField.getType(), schema, graphQLContext)) {
+                !validationUtil.isValidLiteralValue((Value<?>) defaultValue.getValue(), inputObjectField.getType(), schema, graphQLContext, Locale.getDefault())) {
             invalid = true;
         } else if (defaultValue.isExternal() &&
                 !isValidExternalValue(schema, defaultValue.getValue(), inputObjectField.getType(), graphQLContext)) {
@@ -67,7 +67,7 @@ public class DefaultValuesAreValid extends GraphQLTypeVisitorStub {
         InputValueWithState defaultValue = argument.getArgumentDefaultValue();
         boolean invalid = false;
         if (defaultValue.isLiteral() &&
-                !validationUtil.isValidLiteralValue((Value<?>) defaultValue.getValue(), argument.getType(), schema, graphQLContext)) {
+                !validationUtil.isValidLiteralValue((Value<?>) defaultValue.getValue(), argument.getType(), schema, graphQLContext, Locale.getDefault())) {
             invalid = true;
         } else if (defaultValue.isExternal() &&
                 !isValidExternalValue(schema, defaultValue.getValue(), argument.getType(), graphQLContext)) {
@@ -82,7 +82,7 @@ public class DefaultValuesAreValid extends GraphQLTypeVisitorStub {
 
     private boolean isValidExternalValue(GraphQLSchema schema, Object externalValue, GraphQLInputType type, GraphQLContext graphQLContext) {
         try {
-            ValuesResolver.externalValueToInternalValue(schema.getCodeRegistry().getFieldVisibility(), externalValue, type, graphQLContext);
+            ValuesResolver.externalValueToInternalValue(schema.getCodeRegistry().getFieldVisibility(), externalValue, type, graphQLContext, Locale.getDefault());
             return true;
         } catch (CoercingParseValueException | NonNullableValueCoercedAsNullException e) {
             return false;

@@ -8,6 +8,7 @@ import graphql.language.Value;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Locale;
 import java.util.Map;
 
 import static graphql.Assert.assertNotNull;
@@ -64,12 +65,13 @@ public interface Coercing<I, O> {
      *
      * @param dataFetcherResult is never null
      * @param graphQLContext    the graphql context in place
+     * @param locale            the locale to use
      *
      * @return a serialized value which may be null.
      *
      * @throws graphql.schema.CoercingSerializeException if value input can't be serialized
      */
-    default @Nullable O serialize(@NotNull Object dataFetcherResult, @NotNull GraphQLContext graphQLContext) throws CoercingSerializeException {
+    default @Nullable O serialize(@NotNull Object dataFetcherResult, @NotNull GraphQLContext graphQLContext, @NotNull Locale locale) throws CoercingSerializeException {
         assertNotNull(dataFetcherResult);
         assertNotNull(graphQLContext);
         return serialize(dataFetcherResult);
@@ -99,14 +101,16 @@ public interface Coercing<I, O> {
      *
      * @param input          is never null
      * @param graphQLContext the graphql context in place
+     * @param locale         the locale to use
      *
      * @return a parsed value which is never null
      *
      * @throws graphql.schema.CoercingParseValueException if value input can't be parsed
      */
-    default I parseValue(@NotNull Object input, @NotNull GraphQLContext graphQLContext) throws CoercingParseValueException {
+    default I parseValue(@NotNull Object input, @NotNull GraphQLContext graphQLContext, @NotNull Locale locale) throws CoercingParseValueException {
         assertNotNull(input);
         assertNotNull(graphQLContext);
+        assertNotNull(locale);
         return parseValue(input);
     }
 
@@ -164,14 +168,16 @@ public interface Coercing<I, O> {
      * @param input          is never null
      * @param variables      the resolved variables passed to the query
      * @param graphQLContext the graphql context in place
+     * @param locale         the locale to use
      *
      * @return a parsed value which may be null, say for {@link graphql.language.NullValue} as input
      *
      * @throws graphql.schema.CoercingParseLiteralException if input literal can't be parsed
      */
-    default @Nullable I parseLiteral(@NotNull Value<?> input, @NotNull CoercedVariables variables, @NotNull GraphQLContext graphQLContext) throws CoercingParseLiteralException {
+    default @Nullable I parseLiteral(@NotNull Value<?> input, @NotNull CoercedVariables variables, @NotNull GraphQLContext graphQLContext, @NotNull Locale locale) throws CoercingParseLiteralException {
         assertNotNull(input);
         assertNotNull(graphQLContext);
+        assertNotNull(locale);
         return parseLiteral(input, variables.toMap());
     }
 
@@ -200,9 +206,10 @@ public interface Coercing<I, O> {
      *
      * @return The literal matching the external input value.
      */
-    default @NotNull Value<?> valueToLiteral(@NotNull Object input, @NotNull GraphQLContext graphQLContext) {
+    default @NotNull Value<?> valueToLiteral(@NotNull Object input, @NotNull GraphQLContext graphQLContext, @NotNull Locale locale) {
         assertNotNull(input);
         assertNotNull(graphQLContext);
+        assertNotNull(locale);
         return valueToLiteral(input);
     }
 }

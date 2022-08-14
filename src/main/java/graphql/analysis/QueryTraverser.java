@@ -72,7 +72,7 @@ public class QueryTraverser {
         this.fragmentsByName = getOperationResult.fragmentsByName;
         this.roots = singletonList(getOperationResult.operationDefinition);
         this.rootParentType = getRootTypeFromOperation(getOperationResult.operationDefinition);
-        this.coercedVariables = ValuesResolver.coerceVariableValues(schema, variableDefinitions, rawVariables, GraphQLContext.getDefault());
+        this.coercedVariables = ValuesResolver.coerceVariableValues(schema, variableDefinitions, rawVariables, GraphQLContext.getDefault(), Locale.getDefault());
     }
 
     private QueryTraverser(GraphQLSchema schema,

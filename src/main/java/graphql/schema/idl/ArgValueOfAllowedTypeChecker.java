@@ -288,7 +288,7 @@ class ArgValueOfAllowedTypeChecker {
 
     private boolean isArgumentValueScalarLiteral(GraphQLScalarType scalarType, Value<?> instanceValue) {
         try {
-            scalarType.getCoercing().parseLiteral(instanceValue, CoercedVariables.emptyVariables(), GraphQLContext.getDefault());
+            scalarType.getCoercing().parseLiteral(instanceValue, CoercedVariables.emptyVariables(), GraphQLContext.getDefault(), Locale.getDefault());
             return true;
         } catch (CoercingParseLiteralException ex) {
             if (logNotSafe.isDebugEnabled()) {

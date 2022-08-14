@@ -53,7 +53,7 @@ public class ExecutionHelper {
         RawVariables inputVariables = executionInput.getRawVariables();
         List<VariableDefinition> variableDefinitions = operationDefinition.getVariableDefinitions();
 
-        CoercedVariables coercedVariables = ValuesResolver.coerceVariableValues(graphQLSchema, variableDefinitions, inputVariables, executionInput.getGraphQLContext());
+        CoercedVariables coercedVariables = ValuesResolver.coerceVariableValues(graphQLSchema, variableDefinitions, inputVariables, executionInput.getGraphQLContext(), executionInput.getLocale());
 
         ExecutionContext executionContext = newExecutionContextBuilder()
                 .executionId(executionId)

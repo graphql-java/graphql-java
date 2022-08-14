@@ -86,6 +86,7 @@ class AsyncSerialExecutionStrategyTest extends Specification {
                 .operationDefinition(operation)
                 .instrumentation(SimpleInstrumentation.INSTANCE)
                 .valueUnboxer(ValueUnboxer.DEFAULT)
+                .locale(Locale.getDefault())
                 .graphQLContext(GraphQLContext.getDefault())
                 .build()
         ExecutionStrategyParameters executionStrategyParameters = ExecutionStrategyParameters
@@ -131,6 +132,7 @@ class AsyncSerialExecutionStrategyTest extends Specification {
                 .operationDefinition(operation)
                 .instrumentation(SimpleInstrumentation.INSTANCE)
                 .valueUnboxer(ValueUnboxer.DEFAULT)
+                .locale(Locale.getDefault())
                 .graphQLContext(GraphQLContext.getDefault())
                 .build()
         ExecutionStrategyParameters executionStrategyParameters = ExecutionStrategyParameters

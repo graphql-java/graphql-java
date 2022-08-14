@@ -204,7 +204,7 @@ public class IntrospectionWithDirectivesSupport {
         DataFetcher<?> argValueDF = env -> {
             final GraphQLAppliedDirectiveArgument argument = env.getSource();
             InputValueWithState value = argument.getArgumentValue();
-            Node<?> literal = ValuesResolver.valueToLiteral(value, argument.getType(), env.getGraphQlContext());
+            Node<?> literal = ValuesResolver.valueToLiteral(value, argument.getType(), env.getGraphQlContext(), env.getLocale());
             return AstPrinter.printAst(literal);
         };
         codeRegistry.dataFetcher(coordinates(objectType, "appliedDirectives"), df);

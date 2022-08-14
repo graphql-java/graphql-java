@@ -1,5 +1,6 @@
 package graphql.i18n;
 
+import graphql.GraphQLContext;
 import graphql.Internal;
 import graphql.VisibleForTesting;
 
@@ -21,6 +22,7 @@ public class I18n {
      */
     public enum BundleType {
         Parsing,
+        Scalars,
         Validation,
         Execution,
         General;

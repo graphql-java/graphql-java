@@ -181,7 +181,7 @@ public class FetchedValueAnalyzer {
     }
 
     protected Object serializeScalarValue(Object toAnalyze, GraphQLScalarType scalarType) throws CoercingSerializeException {
-        return scalarType.getCoercing().serialize(toAnalyze, GraphQLContext.getDefault());
+        return scalarType.getCoercing().serialize(toAnalyze, GraphQLContext.getDefault(), Locale.getDefault());
     }
 
     private FetchedValueAnalysis analyzeEnumValue(FetchedValue fetchedValue, Object toAnalyze, GraphQLEnumType enumType, ExecutionStepInfo executionInfo) {

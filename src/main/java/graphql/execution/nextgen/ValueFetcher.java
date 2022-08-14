@@ -120,7 +120,7 @@ public class ValueFetcher {
         GraphQLCodeRegistry codeRegistry = executionContext.getGraphQLSchema().getCodeRegistry();
         GraphQLFieldsContainer parentType = getFieldsContainer(executionInfo);
 
-        Supplier<Map<String, Object>> argumentValues = FpKit.intraThreadMemoize(() -> ValuesResolver.getArgumentValues(codeRegistry, fieldDef.getArguments(), field.getArguments(), executionContext.getCoercedVariables(), GraphQLContext.getDefault()));
+        Supplier<Map<String, Object>> argumentValues = FpKit.intraThreadMemoize(() -> ValuesResolver.getArgumentValues(codeRegistry, fieldDef.getArguments(), field.getArguments(), executionContext.getCoercedVariables(), GraphQLContext.getDefault(), Locale.getDefault()));
 
         QueryDirectivesImpl queryDirectives = new QueryDirectivesImpl(sameFields, executionContext.getGraphQLSchema(), executionContext.getVariables());
 

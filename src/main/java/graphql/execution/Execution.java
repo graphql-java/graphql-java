@@ -66,7 +66,7 @@ public class Execution {
 
         CoercedVariables coercedVariables;
         try {
-            coercedVariables = ValuesResolver.coerceVariableValues(graphQLSchema, variableDefinitions, inputVariables, executionInput.getGraphQLContext());
+            coercedVariables = ValuesResolver.coerceVariableValues(graphQLSchema, variableDefinitions, inputVariables, executionInput.getGraphQLContext(), executionInput.getLocale());
         } catch (RuntimeException rte) {
             if (rte instanceof GraphQLError) {
                 return completedFuture(new ExecutionResultImpl((GraphQLError) rte));

@@ -1,7 +1,6 @@
 package graphql.validation.rules;
 
 
-import graphql.GraphQLContext;
 import graphql.Internal;
 import graphql.execution.TypeFromAST;
 import graphql.execution.ValuesResolver;
@@ -18,11 +17,9 @@ import graphql.validation.ValidationContext;
 import graphql.validation.ValidationErrorCollector;
 
 import java.util.LinkedHashMap;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 
-import static graphql.schema.visibility.DefaultGraphqlFieldVisibility.DEFAULT_FIELD_VISIBILITY;
 import static graphql.validation.ValidationErrorType.VariableTypeMismatch;
 
 @Internal
@@ -68,7 +65,7 @@ public class VariableTypesMatch extends AbstractRule {
         if (schemaDefault.isPresent() && schemaDefault.get().isLiteral()) {
             schemaDefaultValue = (Value) schemaDefault.get().getValue();
         } else if (schemaDefault.isPresent() && schemaDefault.get().isSet()) {
-            schemaDefaultValue = ValuesResolver.valueToLiteral(schemaDefault.get(), expectedType, getValidationContext().getGraphQLContext());
+            schemaDefaultValue = ValuesResolver.valueToLiteral(schemaDefault.get(), expectedType, getValidationContext().getGraphQLContext(), getValidationContext().getI18n().getLocale());
         }
         if (expectedType == null) {
             // we must have a unknown variable say to not have a known type

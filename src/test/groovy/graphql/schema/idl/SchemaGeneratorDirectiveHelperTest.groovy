@@ -144,7 +144,7 @@ class SchemaGeneratorDirectiveHelperTest extends Specification {
 
                 GraphQLDirective directive = environment.getDirective()
                 def arg = directive.getArgument("target")
-                String target = ValuesResolver.valueToInternalValue(arg.getArgumentValue(), arg.getType(), GraphQLContext.getDefault())
+                String target = ValuesResolver.valueToInternalValue(arg.getArgumentValue(), arg.getType(), GraphQLContext.getDefault(), Locale.getDefault())
                 assert name == target, " The target $target is not equal to the object name $name"
                 return element
             }

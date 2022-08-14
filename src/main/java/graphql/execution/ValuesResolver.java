@@ -50,6 +50,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import static graphql.Assert.assertShouldNeverHappen;
@@ -88,16 +89,18 @@ public class ValuesResolver {
      * @param schema              the schema
      * @param variableDefinitions the variable definitions
      * @param rawVariables        the supplied variables
-     * @param graphqlContext      the graphqlContext to use for error messages etc...
+     * @param graphqlContext      the GraphqlContext to use
+     * @param locale              the Locale to use
      *
      * @return coerced variable values as a map
      */
     public static CoercedVariables coerceVariableValues(GraphQLSchema schema,
                                                         List<VariableDefinition> variableDefinitions,
                                                         RawVariables rawVariables,
-                                                        GraphQLContext graphqlContext) throws CoercingParseValueException, NonNullableValueCoercedAsNullException {
+                                                        GraphQLContext graphqlContext,
+                                                        Locale locale) throws CoercingParseValueException, NonNullableValueCoercedAsNullException {
 
-        return externalValueToInternalValueForVariables(schema, variableDefinitions, rawVariables, graphqlContext);
+        return externalValueToInternalValueForVariables(schema, variableDefinitions, rawVariables, graphqlContext, locale);
     }
 
 
@@ -107,14 +110,16 @@ public class ValuesResolver {
      * @param schema              the schema to use
      * @param variableDefinitions the list of variable definitions
      * @param rawVariables        the raw variables
-     * @param graphqlContext      the graphqlContext to use for error messages etc..
+     * @param graphqlContext      the GraphqlContext to use
+     * @param locale              the Locale to use
      *
      * @return a map of the normalised values
      */
     public static Map<String, NormalizedInputValue> getNormalizedVariableValues(GraphQLSchema schema,
                                                                                 List<VariableDefinition> variableDefinitions,
                                                                                 RawVariables rawVariables,
-                                                                                GraphQLContext graphqlContext) {
+                                                                                GraphQLContext graphqlContext,
+                                                                                Locale locale) {
         GraphqlFieldVisibility fieldVisibility = schema.getCodeRegistry().getFieldVisibility();
         Map<String, NormalizedInputValue> result = new LinkedHashMap<>();
         for (VariableDefinition variableDefinition : variableDefinitions) {
@@ -133,7 +138,7 @@ public class ValuesResolver {
                 if (value == null) {
                     result.put(variableName, new NormalizedInputValue(simplePrint(variableType), null));
                 } else {
-                    Object literal = externalValueToLiteral(fieldVisibility, value, (GraphQLInputType) variableType, NORMALIZED, graphqlContext);
+                    Object literal = externalValueToLiteral(fieldVisibility, value, (GraphQLInputType) variableType, NORMALIZED, graphqlContext, locale);
                     result.put(variableName, new NormalizedInputValue(simplePrint(variableType), literal));
                 }
             }
@@ -150,15 +155,17 @@ public class ValuesResolver {
      * @param argumentTypes    the list of argument types
      * @param arguments        the AST arguments
      * @param coercedVariables the coerced variables
-     * @param graphqlContext   the graphqlContext to use
+     * @param graphqlContext   the GraphqlContext to use
+     * @param locale           the Locale to use
      *
      * @return a map of named argument values
      */
     public static Map<String, Object> getArgumentValues(List<GraphQLArgument> argumentTypes,
                                                         List<Argument> arguments,
                                                         CoercedVariables coercedVariables,
-                                                        GraphQLContext graphqlContext) {
-        return getArgumentValuesImpl(DEFAULT_FIELD_VISIBILITY, argumentTypes, arguments, coercedVariables, graphqlContext);
+                                                        GraphQLContext graphqlContext,
+                                                        Locale locale) {
+        return getArgumentValuesImpl(DEFAULT_FIELD_VISIBILITY, argumentTypes, arguments, coercedVariables, graphqlContext, locale);
     }
 
     /**
@@ -202,8 +209,9 @@ public class ValuesResolver {
                                                         List<GraphQLArgument> argumentTypes,
                                                         List<Argument> arguments,
                                                         CoercedVariables coercedVariables,
-                                                        GraphQLContext graphqlContext) {
-        return getArgumentValuesImpl(codeRegistry.getFieldVisibility(), argumentTypes, arguments, coercedVariables, graphqlContext);
+                                                        GraphQLContext graphqlContext,
+                                                        Locale locale) {
+        return getArgumentValuesImpl(codeRegistry.getFieldVisibility(), argumentTypes, arguments, coercedVariables, graphqlContext, locale);
     }
 
     /**
@@ -214,39 +222,43 @@ public class ValuesResolver {
      * @param fieldVisibility     the field visibility to use
      * @param inputValueWithState the input value
      * @param type                the type of input value
-     * @param graphqlContext      the graphqlContext to use for error messages etc..
+     * @param graphqlContext      the GraphqlContext to use
+     * @param locale              the Locale to use
      *
      * @return a value converted to a literal
      */
     public static Value<?> valueToLiteral(@NotNull GraphqlFieldVisibility fieldVisibility,
                                           @NotNull InputValueWithState inputValueWithState,
                                           @NotNull GraphQLType type,
-                                          GraphQLContext graphqlContext) {
-        return (Value<?>) valueToLiteral(fieldVisibility, inputValueWithState, type, ValueMode.LITERAL, graphqlContext);
+                                          GraphQLContext graphqlContext,
+                                          Locale locale) {
+        return (Value<?>) valueToLiteral(fieldVisibility, inputValueWithState, type, ValueMode.LITERAL, graphqlContext, locale);
     }
 
     public static Value<?> valueToLiteral(@NotNull InputValueWithState inputValueWithState,
                                           @NotNull GraphQLType type,
-                                          GraphQLContext graphqlContext) {
-        return (Value<?>) valueToLiteral(DEFAULT_FIELD_VISIBILITY, inputValueWithState, type, ValueMode.LITERAL, graphqlContext);
+                                          GraphQLContext graphqlContext,
+                                          Locale locale) {
+        return (Value<?>) valueToLiteral(DEFAULT_FIELD_VISIBILITY, inputValueWithState, type, ValueMode.LITERAL, graphqlContext, locale);
     }
 
     private static Object valueToLiteral(GraphqlFieldVisibility fieldVisibility,
                                          InputValueWithState inputValueWithState,
                                          GraphQLType type,
                                          ValueMode valueMode,
-                                         GraphQLContext graphqlContext) {
+                                         GraphQLContext graphqlContext,
+                                         Locale locale) {
         if (inputValueWithState.isInternal()) {
             if (valueMode == NORMALIZED) {
                 return assertShouldNeverHappen("can't infer normalized structure");
             }
-            return valueToLiteralLegacy(inputValueWithState.getValue(), type, graphqlContext);
+            return valueToLiteralLegacy(inputValueWithState.getValue(), type, graphqlContext, locale);
         }
         if (inputValueWithState.isLiteral()) {
             return inputValueWithState.getValue();
         }
         if (inputValueWithState.isExternal()) {
-            return ValuesResolver.externalValueToLiteral(fieldVisibility, inputValueWithState.getValue(), (GraphQLInputType) type, valueMode, graphqlContext);
+            return ValuesResolver.externalValueToLiteral(fieldVisibility, inputValueWithState.getValue(), (GraphQLInputType) type, valueMode, graphqlContext, locale);
         }
         return assertShouldNeverHappen("unexpected value state " + inputValueWithState);
     }
@@ -257,29 +269,32 @@ public class ValuesResolver {
      * @param fieldVisibility the field visibility to use
      * @param externalValue   the input external value
      * @param type            the type of input value
-     * @param graphqlContext  the graphqlContext to sue for error messages etc..
+     * @param graphqlContext  the GraphqlContext to use
+     * @param locale          the Locale to use
      *
      * @return a value converted to an internal value
      */
     public static Object externalValueToInternalValue(GraphqlFieldVisibility fieldVisibility,
                                                       Object externalValue,
                                                       GraphQLInputType type,
-                                                      GraphQLContext graphqlContext) {
-        return ValuesResolver.externalValueToInternalValue(fieldVisibility, type, externalValue, graphqlContext);
+                                                      GraphQLContext graphqlContext,
+                                                      Locale locale) {
+        return ValuesResolver.externalValueToInternalValue(fieldVisibility, type, externalValue, graphqlContext, locale);
     }
 
     public static Object valueToInternalValue(InputValueWithState inputValueWithState,
                                               GraphQLType type,
-                                              GraphQLContext graphqlContext) throws CoercingParseValueException, CoercingParseLiteralException {
+                                              GraphQLContext graphqlContext,
+                                              Locale locale) throws CoercingParseValueException, CoercingParseLiteralException {
         DefaultGraphqlFieldVisibility fieldVisibility = DEFAULT_FIELD_VISIBILITY;
         if (inputValueWithState.isInternal()) {
             return inputValueWithState.getValue();
         }
         if (inputValueWithState.isLiteral()) {
-            return ValuesResolver.literalToInternalValue(fieldVisibility, type, (Value<?>) inputValueWithState.getValue(), CoercedVariables.emptyVariables(), graphqlContext);
+            return ValuesResolver.literalToInternalValue(fieldVisibility, type, (Value<?>) inputValueWithState.getValue(), CoercedVariables.emptyVariables(), graphqlContext, locale);
         }
         if (inputValueWithState.isExternal()) {
-            return ValuesResolver.externalValueToInternalValue(fieldVisibility, type, inputValueWithState.getValue(), graphqlContext);
+            return ValuesResolver.externalValueToInternalValue(fieldVisibility, type, inputValueWithState.getValue(), graphqlContext, locale);
         }
         return assertShouldNeverHappen("unexpected value state " + inputValueWithState);
     }
@@ -289,11 +304,12 @@ public class ValuesResolver {
     @SuppressWarnings("unchecked")
     public static <T> T getInputValueImpl(GraphQLInputType inputType,
                                           InputValueWithState inputValue,
-                                          GraphQLContext graphqlContext) {
+                                          GraphQLContext graphqlContext,
+                                          Locale locale) {
         if (inputValue.isNotSet()) {
             return null;
         }
-        return (T) valueToInternalValue(inputValue, inputType, graphqlContext);
+        return (T) valueToInternalValue(inputValue, inputType, graphqlContext, locale);
     }
 
     /**
@@ -303,21 +319,22 @@ public class ValuesResolver {
                                                  @Nullable Object value,
                                                  GraphQLInputType type,
                                                  ValueMode valueMode,
-                                                 GraphQLContext graphqlContext) {
+                                                 GraphQLContext graphqlContext,
+                                                 Locale locale) {
         if (value == null) {
             return newNullValue().build();
         }
         if (GraphQLTypeUtil.isNonNull(type)) {
-            return externalValueToLiteral(fieldVisibility, value, (GraphQLInputType) unwrapNonNull(type), valueMode, graphqlContext);
+            return externalValueToLiteral(fieldVisibility, value, (GraphQLInputType) unwrapNonNull(type), valueMode, graphqlContext, locale);
         }
         if (type instanceof GraphQLScalarType) {
-            return externalValueToLiteralForScalar((GraphQLScalarType) type, value, graphqlContext);
+            return externalValueToLiteralForScalar((GraphQLScalarType) type, value, graphqlContext, locale);
         } else if (type instanceof GraphQLEnumType) {
-            return externalValueToLiteralForEnum((GraphQLEnumType) type, value, graphqlContext);
+            return externalValueToLiteralForEnum((GraphQLEnumType) type, value, graphqlContext, locale);
         } else if (type instanceof GraphQLList) {
-            return externalValueToLiteralForList(fieldVisibility, (GraphQLList) type, value, valueMode, graphqlContext);
+            return externalValueToLiteralForList(fieldVisibility, (GraphQLList) type, value, valueMode, graphqlContext, locale);
         } else if (type instanceof GraphQLInputObjectType) {
-            return externalValueToLiteralForObject(fieldVisibility, (GraphQLInputObjectType) type, value, valueMode, graphqlContext);
+            return externalValueToLiteralForObject(fieldVisibility, (GraphQLInputObjectType) type, value, valueMode, graphqlContext, locale);
         } else {
             return assertShouldNeverHappen("unexpected type %s", type);
         }
@@ -326,16 +343,16 @@ public class ValuesResolver {
     /**
      * No validation
      */
-    private static Value externalValueToLiteralForScalar(GraphQLScalarType scalarType, Object value, GraphQLContext graphqlContext) {
-        return scalarType.getCoercing().valueToLiteral(value, graphqlContext);
+    private static Value externalValueToLiteralForScalar(GraphQLScalarType scalarType, Object value, GraphQLContext graphqlContext, @NotNull Locale locale) {
+        return scalarType.getCoercing().valueToLiteral(value, graphqlContext, locale);
 
     }
 
     /**
      * No validation
      */
-    private static Value externalValueToLiteralForEnum(GraphQLEnumType enumType, Object value, GraphQLContext graphqlContext) {
-        return enumType.valueToLiteral(value, graphqlContext);
+    private static Value externalValueToLiteralForEnum(GraphQLEnumType enumType, Object value, GraphQLContext graphqlContext, Locale locale) {
+        return enumType.valueToLiteral(value, graphqlContext, locale);
     }
 
     /**
@@ -346,11 +363,12 @@ public class ValuesResolver {
                                                         GraphQLList listType,
                                                         Object value,
                                                         ValueMode valueMode,
-                                                        GraphQLContext graphqlContext) {
+                                                        GraphQLContext graphqlContext,
+                                                        Locale locale) {
         GraphQLInputType wrappedType = (GraphQLInputType) listType.getWrappedType();
         List result = FpKit.toListOrSingletonList(value)
                 .stream()
-                .map(val -> externalValueToLiteral(fieldVisibility, val, wrappedType, valueMode, graphqlContext))
+                .map(val -> externalValueToLiteral(fieldVisibility, val, wrappedType, valueMode, graphqlContext, locale))
                 .collect(toList());
         if (valueMode == NORMALIZED) {
             return result;
@@ -367,7 +385,7 @@ public class ValuesResolver {
                                                           GraphQLInputObjectType inputObjectType,
                                                           Object inputValue,
                                                           ValueMode valueMode,
-                                                          GraphQLContext graphqlContext) {
+                                                          GraphQLContext graphqlContext, Locale locale) {
         assertTrue(inputValue instanceof Map, () -> "Expect Map as input");
         Map<String, Object> inputMap = (Map<String, Object>) inputValue;
         List<GraphQLInputObjectField> fieldDefinitions = fieldVisibility.getFieldDefinitions(inputObjectType);
@@ -381,7 +399,7 @@ public class ValuesResolver {
             Object fieldValue = inputMap.getOrDefault(fieldName, null);
             if (!hasValue && inputFieldDefinition.hasSetDefaultValue()) {
                 //TODO: consider valueMode
-                Object defaultValueLiteral = valueToLiteral(fieldVisibility, inputFieldDefinition.getInputFieldDefaultValue(), fieldType, graphqlContext);
+                Object defaultValueLiteral = valueToLiteral(fieldVisibility, inputFieldDefinition.getInputFieldDefaultValue(), fieldType, graphqlContext, locale);
                 if (valueMode == ValueMode.LITERAL) {
                     normalizedResult.put(fieldName, new NormalizedInputValue(simplePrint(fieldType), defaultValueLiteral));
                 } else {
@@ -399,7 +417,7 @@ public class ValuesResolver {
                             fieldValue,
                             fieldType,
                             valueMode,
-                            graphqlContext);
+                            graphqlContext, locale);
                     if (valueMode == NORMALIZED) {
                         normalizedResult.put(fieldName, new NormalizedInputValue(simplePrint(fieldType), literal));
                     } else {
@@ -421,7 +439,7 @@ public class ValuesResolver {
     private static CoercedVariables externalValueToInternalValueForVariables(GraphQLSchema schema,
                                                                              List<VariableDefinition> variableDefinitions,
                                                                              RawVariables rawVariables,
-                                                                             GraphQLContext graphqlContext) {
+                                                                             GraphQLContext graphqlContext, Locale locale) {
         GraphqlFieldVisibility fieldVisibility = schema.getCodeRegistry().getFieldVisibility();
         Map<String, Object> coercedValues = new LinkedHashMap<>();
         for (VariableDefinition variableDefinition : variableDefinitions) {
@@ -434,7 +452,7 @@ public class ValuesResolver {
                 boolean hasValue = rawVariables.containsKey(variableName);
                 Object value = rawVariables.get(variableName);
                 if (!hasValue && defaultValue != null) {
-                    Object coercedDefaultValue = literalToInternalValue(fieldVisibility, variableType, defaultValue, CoercedVariables.emptyVariables(), graphqlContext);
+                    Object coercedDefaultValue = literalToInternalValue(fieldVisibility, variableType, defaultValue, CoercedVariables.emptyVariables(), graphqlContext, locale);
                     coercedValues.put(variableName, coercedDefaultValue);
                 } else if (isNonNull(variableType) && (!hasValue || value == null)) {
                     throw new NonNullableValueCoercedAsNullException(variableDefinition, variableType);
@@ -442,7 +460,7 @@ public class ValuesResolver {
                     if (value == null) {
                         coercedValues.put(variableName, null);
                     } else {
-                        Object coercedValue = externalValueToInternalValue(fieldVisibility, variableType, value, graphqlContext);
+                        Object coercedValue = externalValueToInternalValue(fieldVisibility, variableType, value, graphqlContext, locale);
                         coercedValues.put(variableName, coercedValue);
                     }
                 }
@@ -466,7 +484,8 @@ public class ValuesResolver {
                                                              List<GraphQLArgument> argumentTypes,
                                                              List<Argument> arguments,
                                                              CoercedVariables coercedVariables,
-                                                             GraphQLContext graphqlContext) {
+                                                             GraphQLContext graphqlContext,
+                                                             Locale locale) {
         if (argumentTypes.isEmpty()) {
             return ImmutableKit.emptyMap();
         }
@@ -493,7 +512,7 @@ public class ValuesResolver {
                         fieldVisibility,
                         defaultValue,
                         argumentType,
-                        graphqlContext);
+                        graphqlContext, locale);
                 coercedValues.put(argumentName, coercedDefaultValue);
             } else if (isNonNull(argumentType) && (!hasValue || isNullValue(value))) {
                 throw new NonNullableValueCoercedAsNullException(argumentDefinition);
@@ -503,7 +522,7 @@ public class ValuesResolver {
                 } else if (argumentValue instanceof VariableReference) {
                     coercedValues.put(argumentName, value);
                 } else {
-                    value = literalToInternalValue(fieldVisibility, argumentType, argument.getValue(), coercedVariables, graphqlContext);
+                    value = literalToInternalValue(fieldVisibility, argumentType, argument.getValue(), coercedVariables, graphqlContext, locale);
                     coercedValues.put(argumentName, value);
                 }
             }
@@ -528,10 +547,11 @@ public class ValuesResolver {
     private static Object externalValueToInternalValue(GraphqlFieldVisibility fieldVisibility,
                                                        GraphQLType graphQLType,
                                                        Object value,
-                                                       GraphQLContext graphqlContext) throws NonNullableValueCoercedAsNullException, CoercingParseValueException {
+                                                       GraphQLContext graphqlContext,
+                                                       Locale locale) throws NonNullableValueCoercedAsNullException, CoercingParseValueException {
         if (isNonNull(graphQLType)) {
             Object returnValue =
-                    externalValueToInternalValue(fieldVisibility, unwrapOne(graphQLType), value, graphqlContext);
+                    externalValueToInternalValue(fieldVisibility, unwrapOne(graphQLType), value, graphqlContext, locale);
             if (returnValue == null) {
                 throw new NonNullableValueCoercedAsNullException(graphQLType);
             }
@@ -543,14 +563,14 @@ public class ValuesResolver {
         }
 
         if (graphQLType instanceof GraphQLScalarType) {
-            return externalValueToInternalValueForScalar((GraphQLScalarType) graphQLType, value, graphqlContext);
+            return externalValueToInternalValueForScalar((GraphQLScalarType) graphQLType, value, graphqlContext, locale);
         } else if (graphQLType instanceof GraphQLEnumType) {
-            return externalValueToInternalValueForEnum((GraphQLEnumType) graphQLType, value, graphqlContext);
+            return externalValueToInternalValueForEnum((GraphQLEnumType) graphQLType, value, graphqlContext, locale);
         } else if (graphQLType instanceof GraphQLList) {
-            return externalValueToInternalValueForList(fieldVisibility, (GraphQLList) graphQLType, value, graphqlContext);
+            return externalValueToInternalValueForList(fieldVisibility, (GraphQLList) graphQLType, value, graphqlContext, locale);
         } else if (graphQLType instanceof GraphQLInputObjectType) {
             if (value instanceof Map) {
-                return externalValueToInternalValueForObject(fieldVisibility, (GraphQLInputObjectType) graphQLType, (Map<String, Object>) value, graphqlContext);
+                return externalValueToInternalValueForObject(fieldVisibility, (GraphQLInputObjectType) graphQLType, (Map<String, Object>) value, graphqlContext, locale);
             } else {
                 throw CoercingParseValueException.newCoercingParseValueException()
                         .message("Expected type 'Map' but was '" + value.getClass().getSimpleName() +
@@ -568,7 +588,8 @@ public class ValuesResolver {
     private static Object externalValueToInternalValueForObject(GraphqlFieldVisibility fieldVisibility,
                                                                 GraphQLInputObjectType inputObjectType,
                                                                 Map<String, Object> inputMap,
-                                                                GraphQLContext graphqlContext) throws NonNullableValueCoercedAsNullException, CoercingParseValueException {
+                                                                GraphQLContext graphqlContext,
+                                                                Locale locale) throws NonNullableValueCoercedAsNullException, CoercingParseValueException {
         List<GraphQLInputObjectField> fieldDefinitions = fieldVisibility.getFieldDefinitions(inputObjectType);
         List<String> fieldNames = map(fieldDefinitions, GraphQLInputObjectField::getName);
         for (String providedFieldName : inputMap.keySet()) {
@@ -588,7 +609,7 @@ public class ValuesResolver {
             if (!hasValue && inputFieldDefinition.hasSetDefaultValue()) {
                 Object coercedDefaultValue = defaultValueToInternalValue(fieldVisibility,
                         defaultValue,
-                        fieldType, graphqlContext);
+                        fieldType, graphqlContext, locale);
                 coercedValues.put(fieldName, coercedDefaultValue);
             } else if (isNonNull(fieldType) && (!hasValue || value == null)) {
                 throw new NonNullableValueCoercedAsNullException(fieldName, emptyList(), fieldType);
@@ -597,7 +618,7 @@ public class ValuesResolver {
                     coercedValues.put(fieldName, null);
                 } else {
                     value = externalValueToInternalValue(fieldVisibility,
-                            fieldType, value, graphqlContext);
+                            fieldType, value, graphqlContext, locale);
                     coercedValues.put(fieldName, value);
                 }
             }
@@ -608,15 +629,15 @@ public class ValuesResolver {
     /**
      * including validation
      */
-    private static Object externalValueToInternalValueForScalar(GraphQLScalarType graphQLScalarType, Object value, GraphQLContext graphqlContext) throws CoercingParseValueException {
-        return graphQLScalarType.getCoercing().parseValue(value, graphqlContext);
+    private static Object externalValueToInternalValueForScalar(GraphQLScalarType graphQLScalarType, Object value, GraphQLContext graphqlContext, Locale locale) throws CoercingParseValueException {
+        return graphQLScalarType.getCoercing().parseValue(value, graphqlContext, locale);
     }
 
     /**
      * including validation
      */
-    private static Object externalValueToInternalValueForEnum(GraphQLEnumType graphQLEnumType, Object value, GraphQLContext graphqlContext) throws CoercingParseValueException {
-        return graphQLEnumType.parseValue(value, graphqlContext);
+    private static Object externalValueToInternalValueForEnum(GraphQLEnumType graphQLEnumType, Object value, GraphQLContext graphqlContext, Locale locale) throws CoercingParseValueException {
+        return graphQLEnumType.parseValue(value, graphqlContext, locale);
     }
 
     /**
@@ -625,12 +646,13 @@ public class ValuesResolver {
     private static List externalValueToInternalValueForList(GraphqlFieldVisibility fieldVisibility,
                                                             GraphQLList graphQLList,
                                                             Object value,
-                                                            GraphQLContext graphqlContext) throws CoercingParseValueException, NonNullableValueCoercedAsNullException {
+                                                            GraphQLContext graphqlContext,
+                                                            Locale locale) throws CoercingParseValueException, NonNullableValueCoercedAsNullException {
 
         GraphQLType wrappedType = graphQLList.getWrappedType();
         return FpKit.toListOrSingletonList(value)
                 .stream()
-                .map(val -> externalValueToInternalValue(fieldVisibility, wrappedType, val, graphqlContext))
+                .map(val -> externalValueToInternalValue(fieldVisibility, wrappedType, val, graphqlContext, locale))
                 .collect(toList());
     }
 
@@ -707,7 +729,8 @@ public class ValuesResolver {
      * @param type             the type of the input value
      * @param inputValue       the AST literal to be changed
      * @param coercedVariables the coerced variable values
-     * @param graphqlContext   the graphqlContext to use
+     * @param graphqlContext   the GraphqlContext to use
+     * @param locale           the Locale to use
      *
      * @return literal converted to an internal value
      */
@@ -715,7 +738,8 @@ public class ValuesResolver {
                                                 GraphQLType type,
                                                 Value inputValue,
                                                 CoercedVariables coercedVariables,
-                                                GraphQLContext graphqlContext) {
+                                                GraphQLContext graphqlContext,
+                                                Locale locale) {
 
         if (inputValue instanceof VariableReference) {
             return coercedVariables.get(((VariableReference) inputValue).getName());
@@ -724,19 +748,19 @@ public class ValuesResolver {
             return null;
         }
         if (type instanceof GraphQLScalarType) {
-            return literalToInternalValueForScalar(inputValue, (GraphQLScalarType) type, coercedVariables, graphqlContext);
+            return literalToInternalValueForScalar(inputValue, (GraphQLScalarType) type, coercedVariables, graphqlContext, locale);
         }
         if (isNonNull(type)) {
-            return literalToInternalValue(fieldVisibility, unwrapOne(type), inputValue, coercedVariables, graphqlContext);
+            return literalToInternalValue(fieldVisibility, unwrapOne(type), inputValue, coercedVariables, graphqlContext, locale);
         }
         if (type instanceof GraphQLInputObjectType) {
-            return literalToInternalValueForInputObject(fieldVisibility, (GraphQLInputObjectType) type, (ObjectValue) inputValue, coercedVariables, graphqlContext);
+            return literalToInternalValueForInputObject(fieldVisibility, (GraphQLInputObjectType) type, (ObjectValue) inputValue, coercedVariables, graphqlContext, locale);
         }
         if (type instanceof GraphQLEnumType) {
-            return ((GraphQLEnumType) type).parseLiteral(inputValue, graphqlContext);
+            return ((GraphQLEnumType) type).parseLiteral(inputValue, graphqlContext, locale);
         }
         if (isList(type)) {
-            return literalToInternalValueForList(fieldVisibility, (GraphQLList) type, inputValue, coercedVariables, graphqlContext);
+            return literalToInternalValueForList(fieldVisibility, (GraphQLList) type, inputValue, coercedVariables, graphqlContext, locale);
         }
         return null;
     }
@@ -744,9 +768,9 @@ public class ValuesResolver {
     /**
      * no validation
      */
-    private static Object literalToInternalValueForScalar(Value inputValue, GraphQLScalarType scalarType, CoercedVariables coercedVariables, GraphQLContext graphqlContext) {
+    private static Object literalToInternalValueForScalar(Value inputValue, GraphQLScalarType scalarType, CoercedVariables coercedVariables, GraphQLContext graphqlContext, @NotNull Locale locale) {
         // the CoercingParseLiteralException exception that could happen here has been validated earlier via ValidationUtil
-        return scalarType.getCoercing().parseLiteral(inputValue, coercedVariables, graphqlContext);
+        return scalarType.getCoercing().parseLiteral(inputValue, coercedVariables, graphqlContext, locale);
     }
 
     /**
@@ -756,13 +780,14 @@ public class ValuesResolver {
                                                         GraphQLList graphQLList,
                                                         Value value,
                                                         CoercedVariables coercedVariables,
-                                                        GraphQLContext graphqlContext) {
+                                                        GraphQLContext graphqlContext,
+                                                        Locale locale) {
 
         if (value instanceof ArrayValue) {
             ArrayValue arrayValue = (ArrayValue) value;
             List<Object> result = new ArrayList<>();
             for (Value singleValue : arrayValue.getValues()) {
-                result.add(literalToInternalValue(fieldVisibility, graphQLList.getWrappedType(), singleValue, coercedVariables, graphqlContext));
+                result.add(literalToInternalValue(fieldVisibility, graphQLList.getWrappedType(), singleValue, coercedVariables, graphqlContext, locale));
             }
             return result;
         } else {
@@ -771,7 +796,7 @@ public class ValuesResolver {
                             graphQLList.getWrappedType(),
                             value,
                             coercedVariables,
-                            graphqlContext));
+                            graphqlContext, locale));
         }
     }
 
@@ -782,7 +807,8 @@ public class ValuesResolver {
                                                                GraphQLInputObjectType type,
                                                                ObjectValue inputValue,
                                                                CoercedVariables coercedVariables,
-                                                               GraphQLContext graphqlContext) {
+                                                               GraphQLContext graphqlContext,
+                                                               Locale locale) {
         Map<String, Object> coercedValues = new LinkedHashMap<>();
 
         Map<String, ObjectField> inputFieldsByName = mapObjectValueFieldsByName(inputValue);
@@ -807,7 +833,7 @@ public class ValuesResolver {
                 Object coercedDefaultValue = defaultValueToInternalValue(fieldVisibility,
                         inputFieldDefinition.getInputFieldDefaultValue(),
                         fieldType,
-                        graphqlContext);
+                        graphqlContext, locale);
                 coercedValues.put(fieldName, coercedDefaultValue);
             } else if (isNonNull(fieldType) && (!hasValue || isNullValue(value))) {
                 return assertShouldNeverHappen("Should have been validated before");
@@ -817,7 +843,7 @@ public class ValuesResolver {
                 } else if (fieldValue instanceof VariableReference) {
                     coercedValues.put(fieldName, value);
                 } else {
-                    value = literalToInternalValue(fieldVisibility, fieldType, fieldValue, coercedVariables, graphqlContext);
+                    value = literalToInternalValue(fieldVisibility, fieldType, fieldValue, coercedVariables, graphqlContext, locale);
                     coercedValues.put(fieldName, value);
                 }
             }
@@ -846,17 +872,18 @@ public class ValuesResolver {
     private static Object defaultValueToInternalValue(GraphqlFieldVisibility fieldVisibility,
                                                       InputValueWithState defaultValue,
                                                       GraphQLInputType type,
-                                                      GraphQLContext graphqlContext) {
+                                                      GraphQLContext graphqlContext,
+                                                      Locale locale) {
         if (defaultValue.isInternal()) {
             return defaultValue.getValue();
         }
         if (defaultValue.isLiteral()) {
             // default value literals can't reference variables, this is why the variables are empty
-            return literalToInternalValue(fieldVisibility, type, (Value) defaultValue.getValue(), CoercedVariables.emptyVariables(), graphqlContext);
+            return literalToInternalValue(fieldVisibility, type, (Value) defaultValue.getValue(), CoercedVariables.emptyVariables(), graphqlContext, locale);
         }
         if (defaultValue.isExternal()) {
             // performs validation too
-            return externalValueToInternalValue(fieldVisibility, type, defaultValue.getValue(), graphqlContext);
+            return externalValueToInternalValue(fieldVisibility, type, defaultValue.getValue(), graphqlContext, locale);
         }
         return assertShouldNeverHappen();
     }
@@ -871,26 +898,26 @@ public class ValuesResolver {
      * Only provided here to preserve backwards compatibility.
      */
     @VisibleForTesting
-    static Value<?> valueToLiteralLegacy(Object value, GraphQLType type, GraphQLContext graphqlContext) {
+    static Value<?> valueToLiteralLegacy(Object value, GraphQLType type, GraphQLContext graphqlContext, Locale locale) {
         assertTrue(!(value instanceof Value), () -> "Unexpected literal " + value);
         if (value == null) {
             return null;
         }
 
         if (isNonNull(type)) {
-            return handleNonNullLegacy(value, (GraphQLNonNull) type, graphqlContext);
+            return handleNonNullLegacy(value, (GraphQLNonNull) type, graphqlContext, locale);
         }
 
         // Convert JavaScript array to GraphQL list. If the GraphQLType is a list, but
         // the value is not an array, convert the value using the list's item type.
         if (isList(type)) {
-            return handleListLegacy(value, (GraphQLList) type, graphqlContext);
+            return handleListLegacy(value, (GraphQLList) type, graphqlContext, locale);
         }
 
         // Populate the fields of the input object by creating ASTs from each value
         // in the JavaScript object according to the fields in the input type.
         if (type instanceof GraphQLInputObjectType) {
-            return handleInputObjectLegacy(value, (GraphQLInputObjectType) type, graphqlContext);
+            return handleInputObjectLegacy(value, (GraphQLInputObjectType) type, graphqlContext, locale);
         }
 
         if (!(type instanceof GraphQLScalarType || type instanceof GraphQLEnumType)) {
@@ -899,7 +926,7 @@ public class ValuesResolver {
 
         // Since value is an internally represented value, it must be serialized
         // to an externally represented value before converting into an AST.
-        final Object serialized = serializeLegacy(type, value, graphqlContext);
+        final Object serialized = serializeLegacy(type, value, graphqlContext, locale);
         if (isNullishLegacy(serialized)) {
             return null;
         }
@@ -932,14 +959,14 @@ public class ValuesResolver {
         throw new AssertException("'Cannot convert value to AST: " + serialized);
     }
 
-    private static Value<?> handleInputObjectLegacy(Object javaValue, GraphQLInputObjectType type, GraphQLContext graphqlContext) {
+    private static Value<?> handleInputObjectLegacy(Object javaValue, GraphQLInputObjectType type, GraphQLContext graphqlContext, Locale locale) {
         List<GraphQLInputObjectField> fields = type.getFields();
         List<ObjectField> fieldNodes = new ArrayList<>();
         fields.forEach(field -> {
             String fieldName = field.getName();
             GraphQLInputType fieldType = field.getType();
             Object fieldValueObj = PropertyDataFetcherHelper.getPropertyValue(fieldName, javaValue, fieldType);
-            Value<?> nodeValue = valueToLiteralLegacy(fieldValueObj, fieldType, graphqlContext);
+            Value<?> nodeValue = valueToLiteralLegacy(fieldValueObj, fieldType, graphqlContext, locale);
             if (nodeValue != null) {
                 fieldNodes.add(newObjectField().name(fieldName).value(nodeValue).build());
             }
@@ -956,28 +983,28 @@ public class ValuesResolver {
     }
 
     @SuppressWarnings("rawtypes")
-    private static Value<?> handleListLegacy(Object value, GraphQLList type, GraphQLContext graphqlContext) {
+    private static Value<?> handleListLegacy(Object value, GraphQLList type, GraphQLContext graphqlContext, Locale locale) {
         GraphQLType itemType = type.getWrappedType();
         if (FpKit.isIterable(value)) {
             List<Value> valuesNodes = FpKit.toListOrSingletonList(value)
                     .stream()
-                    .map(item -> valueToLiteralLegacy(item, itemType, graphqlContext))
+                    .map(item -> valueToLiteralLegacy(item, itemType, graphqlContext, locale))
                     .collect(toList());
             return ArrayValue.newArrayValue().values(valuesNodes).build();
         }
-        return valueToLiteralLegacy(value, itemType, graphqlContext);
+        return valueToLiteralLegacy(value, itemType, graphqlContext, locale);
     }
 
-    private static Value<?> handleNonNullLegacy(Object _value, GraphQLNonNull type, GraphQLContext graphqlContext) {
+    private static Value<?> handleNonNullLegacy(Object _value, GraphQLNonNull type, GraphQLContext graphqlContext, Locale locale) {
         GraphQLType wrappedType = type.getWrappedType();
-        return valueToLiteralLegacy(_value, wrappedType, graphqlContext);
+        return valueToLiteralLegacy(_value, wrappedType, graphqlContext, locale);
     }
 
-    private static Object serializeLegacy(GraphQLType type, Object value, GraphQLContext graphqlContext) {
+    private static Object serializeLegacy(GraphQLType type, Object value, GraphQLContext graphqlContext, Locale locale) {
         if (type instanceof GraphQLScalarType) {
-            return ((GraphQLScalarType) type).getCoercing().serialize(value, graphqlContext);
+            return ((GraphQLScalarType) type).getCoercing().serialize(value, graphqlContext, locale);
         } else {
-            return ((GraphQLEnumType) type).serialize(value, graphqlContext);
+            return ((GraphQLEnumType) type).serialize(value, graphqlContext, locale);
         }
     }
 

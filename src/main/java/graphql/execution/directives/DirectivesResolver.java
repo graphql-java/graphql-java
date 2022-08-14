@@ -39,7 +39,7 @@ public class DirectivesResolver {
     }
 
     private void buildArguments(GraphQLDirective.Builder directiveBuilder, GraphQLCodeRegistry codeRegistry, GraphQLDirective protoType, Directive fieldDirective, Map<String, Object> variables) {
-        Map<String, Object> argumentValues = ValuesResolver.getArgumentValues(codeRegistry, protoType.getArguments(), fieldDirective.getArguments(), CoercedVariables.of(variables), GraphQLContext.getDefault());
+        Map<String, Object> argumentValues = ValuesResolver.getArgumentValues(codeRegistry, protoType.getArguments(), fieldDirective.getArguments(), CoercedVariables.of(variables), GraphQLContext.getDefault(), Locale.getDefault());
         directiveBuilder.clearArguments();
         protoType.getArguments().forEach(protoArg -> {
             if (argumentValues.containsKey(protoArg.getName())) {

@@ -56,7 +56,6 @@ import static graphql.schema.GraphQLTypeReference.typeRef;
 import static graphql.schema.GraphQLTypeUtil.simplePrint;
 import static graphql.schema.GraphQLTypeUtil.unwrapAllAs;
 import static graphql.schema.GraphQLTypeUtil.unwrapOne;
-import static graphql.schema.visibility.DefaultGraphqlFieldVisibility.DEFAULT_FIELD_VISIBILITY;
 
 @PublicApi
 public class Introspection {
@@ -165,10 +164,14 @@ public class Introspection {
             Object type = environment.getSource();
             if (type instanceof GraphQLArgument) {
                 GraphQLArgument inputField = (GraphQLArgument) type;
-                return inputField.hasSetDefaultValue() ? printDefaultValue(inputField.getArgumentDefaultValue(), inputField.getType(), environment.getGraphQlContext()) : null;
+                return inputField.hasSetDefaultValue()
+                        ? printDefaultValue(inputField.getArgumentDefaultValue(), inputField.getType(), environment.getGraphQlContext(), environment.getLocale())
+                        : null;
             } else if (type instanceof GraphQLInputObjectField) {
                 GraphQLInputObjectField inputField = (GraphQLInputObjectField) type;
-                return inputField.hasSetDefaultValue() ? printDefaultValue(inputField.getInputFieldDefaultValue(), inputField.getType(), environment.getGraphQlContext()) : null;
+                return inputField.hasSetDefaultValue()
+                        ? printDefaultValue(inputField.getInputFieldDefaultValue(), inputField.getType(), environment.getGraphQlContext(), environment.getLocale())
+                        : null;
             }
             return null;
         });
@@ -185,8 +188,8 @@ public class Introspection {
         register(__InputValue, "description", descriptionDataFetcher);
     }
 
-    private static String printDefaultValue(InputValueWithState inputValueWithState, GraphQLInputType type, GraphQLContext graphQLContext) {
-        return AstPrinter.printAst(ValuesResolver.valueToLiteral(inputValueWithState, type, graphQLContext));
+    private static String printDefaultValue(InputValueWithState inputValueWithState, GraphQLInputType type, GraphQLContext graphQLContext, Locale locale) {
+        return AstPrinter.printAst(ValuesResolver.valueToLiteral(inputValueWithState, type, graphQLContext, locale));
     }
 
 

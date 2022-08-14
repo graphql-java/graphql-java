@@ -47,10 +47,10 @@ public class AppliedDirectiveArgumentsAreValid extends GraphQLTypeVisitorStub {
         InputValueWithState argumentValue = argument.getArgumentValue();
         boolean invalid = false;
         if (argumentValue.isLiteral() &&
-                !validationUtil.isValidLiteralValue((Value<?>) argumentValue.getValue(), argument.getType(), schema, GraphQLContext.getDefault())) {
+                !validationUtil.isValidLiteralValue((Value<?>) argumentValue.getValue(), argument.getType(), schema, GraphQLContext.getDefault(), Locale.getDefault())) {
             invalid = true;
         } else if (argumentValue.isExternal() &&
-                !isValidExternalValue(schema, argumentValue.getValue(), argument.getType(), GraphQLContext.getDefault())) {
+                !isValidExternalValue(schema, argumentValue.getValue(), argument.getType(), GraphQLContext.getDefault(), Locale.getDefault())) {
             invalid = true;
         }
         if (invalid) {
@@ -59,9 +59,9 @@ public class AppliedDirectiveArgumentsAreValid extends GraphQLTypeVisitorStub {
         }
     }
 
-    private boolean isValidExternalValue(GraphQLSchema schema, Object externalValue, GraphQLInputType type, GraphQLContext graphQLContext) {
+    private boolean isValidExternalValue(GraphQLSchema schema, Object externalValue, GraphQLInputType type, GraphQLContext graphQLContext, Locale locale) {
         try {
-            ValuesResolver.externalValueToInternalValue(schema.getCodeRegistry().getFieldVisibility(), externalValue, type, graphQLContext);
+            ValuesResolver.externalValueToInternalValue(schema.getCodeRegistry().getFieldVisibility(), externalValue, type, graphQLContext, locale);
             return true;
         } catch (CoercingParseValueException | NonNullableValueCoercedAsNullException e) {
             return false;

@@ -88,7 +88,7 @@ public class GraphQLAppliedDirectiveArgument implements GraphQLNamedSchemaElemen
      * @return a value of type T which is the java value of the argument
      */
     public <T> T getValue() {
-        return getInputValueImpl(getType(), value, GraphQLContext.getDefault());
+        return getInputValueImpl(getType(), value, GraphQLContext.getDefault(), Locale.getDefault());
     }
 
     /**

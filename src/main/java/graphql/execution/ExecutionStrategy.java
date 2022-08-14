@@ -590,7 +590,7 @@ public abstract class ExecutionStrategy {
     protected CompletableFuture<ExecutionResult> completeValueForScalar(ExecutionContext executionContext, ExecutionStrategyParameters parameters, GraphQLScalarType scalarType, Object result) {
         Object serialized;
         try {
-            serialized = scalarType.getCoercing().serialize(result, executionContext.getGraphQLContext());
+            serialized = scalarType.getCoercing().serialize(result, executionContext.getGraphQLContext(), executionContext.getLocale());
         } catch (CoercingSerializeException e) {
             serialized = handleCoercionProblem(executionContext, parameters, e);
         }
@@ -820,7 +820,12 @@ public abstract class ExecutionStrategy {
         if (!fieldArgDefs.isEmpty()) {
             List<Argument> fieldArgs = field.getArguments();
             GraphQLCodeRegistry codeRegistry = executionContext.getGraphQLSchema().getCodeRegistry();
-            Supplier<Map<String, Object>> argValuesSupplier = () -> ValuesResolver.getArgumentValues(codeRegistry, fieldArgDefs, fieldArgs, executionContext.getCoercedVariables(), executionContext.getGraphQLContext());
+            Supplier<Map<String, Object>> argValuesSupplier = () -> ValuesResolver.getArgumentValues(codeRegistry,
+                    fieldArgDefs,
+                    fieldArgs,
+                    executionContext.getCoercedVariables(),
+                    executionContext.getGraphQLContext(),
+                    executionContext.getLocale());
             argumentValues = FpKit.intraThreadMemoize(argValuesSupplier);
         }
 

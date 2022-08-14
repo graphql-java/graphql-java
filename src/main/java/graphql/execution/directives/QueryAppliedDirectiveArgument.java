@@ -85,7 +85,7 @@ public class QueryAppliedDirectiveArgument {
      */
     @Nullable
     public <T> T getValue() {
-        return getInputValueImpl(getType(), value, GraphQLContext.getDefault());
+        return getInputValueImpl(getType(), value, GraphQLContext.getDefault(), Locale.getDefault());
     }
 
     /**

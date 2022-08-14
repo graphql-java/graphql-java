@@ -715,7 +715,7 @@ public class SchemaPrinter {
     }
 
     private static String printAst(InputValueWithState value, GraphQLInputType type) {
-        return AstPrinter.printAst(ValuesResolver.valueToLiteral(value, type, GraphQLContext.getDefault()));
+        return AstPrinter.printAst(ValuesResolver.valueToLiteral(value, type, GraphQLContext.getDefault(), Locale.getDefault()));
     }
 
     private SchemaElementPrinter<GraphQLSchema> schemaPrinter() {
