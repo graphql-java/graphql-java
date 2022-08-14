@@ -26,6 +26,14 @@ class I18nTest extends Specification {
         }
     }
 
+    def "A non-default bundle can be read"() {
+        def i18n = I18n.i18n(BundleType.Validation, Locale.GERMAN)
+        when:
+        def message = i18n.msg("ExecutableDefinitions.notExecutableType")
+        then:
+        message == "Validierungsfehler ({0}) : Die Typdefinition '{1}' ist nicht ausführbar"
+    }
+
     static def assertBundleStaticShape(ResourceBundle bundle) {
         def enumeration = bundle.getKeys()
         while (enumeration.hasMoreElements()) {
