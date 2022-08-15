@@ -1,9 +1,7 @@
 package graphql.parser;
 
 import graphql.Internal;
-import graphql.i18n.I18n;
 import graphql.language.SourceLocation;
-import graphql.parser.exceptions.InvalidUnicodeSyntaxException;
 
 import java.io.IOException;
 import java.io.StringWriter;
@@ -21,14 +19,14 @@ public class UnicodeUtil {
     public static final int TRAILING_SURROGATE_LOWER_BOUND = 0xDC00;
     public static final int TRAILING_SURROGATE_UPPER_BOUND = 0xDFFF;
 
-    public static int parseAndWriteUnicode(I18n i18n, StringWriter writer, String string, int i, SourceLocation sourceLocation) {
+    public static int parseAndWriteUnicode(StringWriter writer, String string, int i, SourceLocation sourceLocation) {
         // Unicode code points can either be:
         //  1. Unbraced: four hex characters in the form \\u597D, or
         //  2. Braced: any number of hex characters surrounded by braces in the form \\u{1F37A}
 
         // Extract the code point hex digits. Index i points to 'u'
         int startIndex = isBracedEscape(string, i) ? i + 2 : i + 1;
-        int endIndexExclusive = getEndIndexExclusive(i18n, string, i, sourceLocation);
+        int endIndexExclusive = getEndIndexExclusive(string, i, sourceLocation);
         // Index for parser to continue at, the last character of the escaped unicode character. Either } or hex digit
         int continueIndex = isBracedEscape(string, i) ? endIndexExclusive : endIndexExclusive - 1;
 
@@ -36,16 +34,16 @@ public class UnicodeUtil {
         int codePoint = Integer.parseInt(hexStr, 16);
 
         if (isTrailingSurrogateValue(codePoint)) {
-            throw new InvalidUnicodeSyntaxException(i18n, "InvalidUnicode.trailingLeadingSurrogate", sourceLocation, offendingToken(string, i, continueIndex));
+            throw new InvalidSyntaxException(sourceLocation, "Invalid unicode - trailing surrogate must be preceded with a leading surrogate -", null, string.substring(i - 1, continueIndex + 1), null);
         } else if (isLeadingSurrogateValue(codePoint)) {
             if (!isEscapedUnicode(string, continueIndex + 1)) {
-                throw new InvalidUnicodeSyntaxException(i18n, "InvalidUnicode.leadingTrailingSurrogate", sourceLocation, offendingToken(string, i, continueIndex));
+                throw new InvalidSyntaxException(sourceLocation, "Invalid unicode - leading surrogate must be followed by a trailing surrogate -", null, string.substring(i - 1, continueIndex + 1), null);
             }
 
             // Shift parser ahead to 'u' in second escaped Unicode character
             i = continueIndex + 2;
             int trailingStartIndex = isBracedEscape(string, i) ? i + 2 : i + 1;
-            int trailingEndIndexExclusive = getEndIndexExclusive(i18n, string, i, sourceLocation);
+            int trailingEndIndexExclusive = getEndIndexExclusive(string, i, sourceLocation);
             String trailingHexStr = string.substring(trailingStartIndex, trailingEndIndexExclusive);
             int trailingCodePoint = Integer.parseInt(trailingHexStr, 16);
             continueIndex = isBracedEscape(string, i) ? trailingEndIndexExclusive : trailingEndIndexExclusive - 1;
@@ -56,20 +54,16 @@ public class UnicodeUtil {
                 return continueIndex;
             }
 
-            throw new InvalidUnicodeSyntaxException(i18n, "InvalidUnicode.leadingTrailingSurrogate", sourceLocation, offendingToken(string, i, continueIndex));
+            throw new InvalidSyntaxException(sourceLocation, "Invalid unicode - leading surrogate must be followed by a trailing surrogate -", null, string.substring(i - 1, continueIndex + 1), null);
         } else if (isValidUnicodeCodePoint(codePoint)) {
             writeCodePoint(writer, codePoint);
             return continueIndex;
         }
 
-        throw new InvalidUnicodeSyntaxException(i18n, "InvalidUnicode.invalidCodePoint", sourceLocation, offendingToken(string, i, continueIndex));
+        throw new InvalidSyntaxException(sourceLocation, "Invalid unicode - not a valid code point -", null, string.substring(i - 1, continueIndex + 1), null);
     }
 
-    private static String offendingToken(String string, int i, int continueIndex) {
-        return string.substring(i - 1, continueIndex + 1);
-    }
-
-    private static int getEndIndexExclusive(I18n i18n, String string, int i, SourceLocation sourceLocation) {
+    private static int getEndIndexExclusive(String string, int i, SourceLocation sourceLocation) {
         // Unbraced case, with exactly 4 hex digits
         if (string.length() > i + 5 && !isBracedEscape(string, i)) {
             return i + 5;
@@ -79,7 +73,7 @@ public class UnicodeUtil {
         int endIndexExclusive = i + 2;
         do {
             if (endIndexExclusive + 1 >= string.length()) {
-                throw new InvalidUnicodeSyntaxException(i18n, "InvalidUnicode.incorrectEscape", sourceLocation, string.substring(i - 1, endIndexExclusive));
+                throw new InvalidSyntaxException(sourceLocation, "Invalid unicode - incorrectly formatted escape -", null, string.substring(i - 1, endIndexExclusive), null);
             }
         } while (string.charAt(++endIndexExclusive) != '}');
 

@@ -40,7 +40,6 @@ import graphql.language.TypeName
 import graphql.language.UnionTypeDefinition
 import graphql.language.VariableDefinition
 import graphql.language.VariableReference
-import graphql.parser.exceptions.ParseCancelledException
 import org.antlr.v4.runtime.CommonTokenStream
 import org.antlr.v4.runtime.ParserRuleContext
 import spock.lang.Issue
@@ -606,7 +605,7 @@ class ParserTest extends Specification {
 
         then:
         def e = thrown(InvalidSyntaxException)
-        e.message.contains("Invalid syntax")
+        e.message.contains("Invalid Syntax")
     }
 
     def "three quotation marks is an illegal string"() {
@@ -618,7 +617,7 @@ class ParserTest extends Specification {
 
         then:
         def e = thrown(InvalidSyntaxException)
-        e.message.contains("Invalid syntax")
+        e.message.contains("Invalid Syntax")
     }
 
     def "escaped triple quote inside block string"() {
@@ -837,7 +836,7 @@ triple3 : """edge cases \\""" "" " \\"" \\" edge cases"""
         println document
         then:
         def e = thrown(InvalidSyntaxException)
-        e.message.contains("Invalid syntax")
+        e.message.contains("Invalid Syntax")
         e.sourcePreview == input + "\n"
         e.location.line == 3
         e.location.column == 20
@@ -887,9 +886,9 @@ triple3 : """edge cases \\""" "" " \\"" \\" edge cases"""
         when:
         Parser parser = new Parser() {
             @Override
-            protected GraphqlAntlrToLanguage getAntlrToLanguage(CommonTokenStream tokens, MultiSourceReader multiSourceReader, ParserEnvironment environment) {
+            protected GraphqlAntlrToLanguage getAntlrToLanguage(CommonTokenStream tokens, MultiSourceReader multiSourceReader) {
                 // this pattern is used in Nadel - its backdoor but needed
-                return new GraphqlAntlrToLanguage(tokens, multiSourceReader, environment.parserOptions, environment.i18N) {
+                return new GraphqlAntlrToLanguage(tokens, multiSourceReader) {
                     @Override
                     protected void addCommonData(NodeBuilder nodeBuilder, ParserRuleContext parserRuleContext) {
                         super.addCommonData(nodeBuilder, parserRuleContext)
@@ -909,8 +908,8 @@ triple3 : """edge cases \\""" "" " \\"" \\" edge cases"""
         parser = new Parser() {
 
             @Override
-            protected GraphqlAntlrToLanguage getAntlrToLanguage(CommonTokenStream tokens, MultiSourceReader multiSourceReader, ParserEnvironment environment) {
-                return new GraphqlAntlrToLanguage(tokens, multiSourceReader, environment.parserOptions, environment.i18N) {
+            protected GraphqlAntlrToLanguage getAntlrToLanguage(CommonTokenStream tokens, MultiSourceReader multiSourceReader, ParserOptions parserOptions) {
+                return new GraphqlAntlrToLanguage(tokens, multiSourceReader, parserOptions) {
                     @Override
                     protected void addCommonData(NodeBuilder nodeBuilder, ParserRuleContext parserRuleContext) {
                         super.addCommonData(nodeBuilder, parserRuleContext)
@@ -952,7 +951,7 @@ triple3 : """edge cases \\""" "" " \\"" \\" edge cases"""
 
         then:
         def e = thrown(InvalidSyntaxException)
-        e.message.contains("Invalid syntax")
+        e.message.contains("Invalid Syntax")
         where:
         value  | _
         '00'   | _
@@ -972,7 +971,7 @@ triple3 : """edge cases \\""" "" " \\"" \\" edge cases"""
 
         then:
         def e = thrown(InvalidSyntaxException)
-        e.message.contains("Invalid syntax")
+        e.message.contains("Invalid Syntax")
         where:
         value     | _
         '01.23'   | _
@@ -1127,7 +1126,7 @@ triple3 : """edge cases \\""" "" " \\"" \\" edge cases"""
 
         then:
         InvalidSyntaxException e = thrown(InvalidSyntaxException)
-        e.message == "Invalid unicode encountered. Leading surrogate must be followed by a trailing surrogate. Offending token '\\ud83c' at line 3 column 24"
+        e.message == "Invalid Syntax : Invalid unicode - leading surrogate must be followed by a trailing surrogate - offending token '\\ud83c' at line 3 column 24"
     }
 
     def "invalid surrogate pair - no leading value"() {
@@ -1143,7 +1142,7 @@ triple3 : """edge cases \\""" "" " \\"" \\" edge cases"""
 
         then:
         InvalidSyntaxException e = thrown(InvalidSyntaxException)
-        e.message == "Invalid unicode encountered. Trailing surrogate must be preceded with a leading surrogate. Offending token '\\uDC00' at line 3 column 24"
+        e.message == "Invalid Syntax : Invalid unicode - trailing surrogate must be preceded with a leading surrogate - offending token '\\uDC00' at line 3 column 24"
     }
 
     def "source locations are on by default but can be turned off"() {

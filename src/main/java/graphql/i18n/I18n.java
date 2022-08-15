@@ -21,7 +21,6 @@ public class I18n {
      * This enum is a type safe way to control what resource bundle to load from
      */
     public enum BundleType {
-        Parsing,
         Scalars,
         Validation,
         Execution,

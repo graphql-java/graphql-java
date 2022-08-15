@@ -2,7 +2,6 @@ package graphql.parser;
 
 import graphql.Assert;
 import graphql.Internal;
-import graphql.i18n.I18n;
 import graphql.language.SourceLocation;
 
 import java.io.StringWriter;
@@ -104,7 +103,7 @@ public class StringValueParsing {
         return leadingWhitespace(str) == str.length();
     }
 
-    public static String parseSingleQuotedString(I18n i18n, String string, SourceLocation sourceLocation) {
+    public static String parseSingleQuotedString(String string, SourceLocation sourceLocation) {
         StringWriter writer = new StringWriter(string.length() - 2);
         int end = string.length() - 1;
         for (int i = 1; i < end; i++) {
@@ -141,12 +140,16 @@ public class StringValueParsing {
                     writer.write('\t');
                     continue;
                 case 'u':
-                    i = UnicodeUtil.parseAndWriteUnicode(i18n, writer, string, i, sourceLocation);
+                    i = UnicodeUtil.parseAndWriteUnicode(writer, string, i, sourceLocation);
                     continue;
                 default:
                     Assert.assertShouldNeverHappen();
             }
         }
         return writer.toString();
+    }
+
+    public static String parseSingleQuotedString(String string) {
+        return parseSingleQuotedString(string, null);
     }
 }

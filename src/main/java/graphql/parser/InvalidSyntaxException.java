@@ -2,14 +2,12 @@ package graphql.parser;
 
 
 import graphql.GraphQLException;
-import graphql.Internal;
 import graphql.InvalidSyntaxError;
 import graphql.PublicApi;
 import graphql.language.SourceLocation;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.function.Supplier;
 
 /**
  * This exception is thrown by the {@link Parser} if the graphql syntax is not valid
@@ -22,19 +20,34 @@ public class InvalidSyntaxException extends GraphQLException {
     private final String offendingToken;
     private final SourceLocation location;
 
-    @Internal
-    protected InvalidSyntaxException(Supplier<String> msgMaker, SourceLocation location, String offendingToken, String sourcePreview, Exception cause) {
+    InvalidSyntaxException(SourceLocation location, String msg, String sourcePreview, String offendingToken, Exception cause) {
         super(cause);
-        this.message = msgMaker.get();
+        this.message = mkMessage(msg, offendingToken, location);
         this.sourcePreview = sourcePreview;
         this.offendingToken = offendingToken;
         this.location = location;
+    }
+
+    private String mkMessage(String msg, String offendingToken, SourceLocation location) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("Invalid Syntax :");
+        if (msg != null) {
+            sb.append(" ").append(msg);
+        }
+        if (offendingToken != null) {
+            sb.append(String.format(" offending token '%s'", offendingToken));
+        }
+        if (location != null) {
+            sb.append(String.format(" at line %d column %d", location.getLine(), location.getColumn()));
+        }
+        return sb.toString();
     }
 
     public InvalidSyntaxError toInvalidSyntaxError() {
         List<SourceLocation> sourceLocations = location == null ? null : Collections.singletonList(location);
         return new InvalidSyntaxError(sourceLocations, message, sourcePreview, offendingToken);
     }
+
 
     @Override
     public String getMessage() {

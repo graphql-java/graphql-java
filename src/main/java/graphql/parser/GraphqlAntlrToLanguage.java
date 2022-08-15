@@ -5,7 +5,6 @@ import com.google.common.collect.ImmutableList;
 import graphql.Assert;
 import graphql.Internal;
 import graphql.collect.ImmutableKit;
-import graphql.i18n.I18n;
 import graphql.language.Argument;
 import graphql.language.ArrayValue;
 import graphql.language.BooleanValue;
@@ -89,18 +88,16 @@ public class GraphqlAntlrToLanguage {
     private final CommonTokenStream tokens;
     private final MultiSourceReader multiSourceReader;
     private final ParserOptions parserOptions;
-    private final I18n i18N;
 
 
     public GraphqlAntlrToLanguage(CommonTokenStream tokens, MultiSourceReader multiSourceReader) {
-        this(tokens, multiSourceReader, null, null);
+        this(tokens, multiSourceReader, null);
     }
 
-    public GraphqlAntlrToLanguage(CommonTokenStream tokens, MultiSourceReader multiSourceReader, ParserOptions parserOptions, I18n i18N) {
+    public GraphqlAntlrToLanguage(CommonTokenStream tokens, MultiSourceReader multiSourceReader, ParserOptions parserOptions) {
         this.tokens = tokens;
         this.multiSourceReader = multiSourceReader;
         this.parserOptions = ofNullable(parserOptions).orElse(ParserOptions.getDefaultParserOptions());
-        this.i18N = i18N;
     }
 
     public ParserOptions getParserOptions() {
@@ -775,7 +772,7 @@ public class GraphqlAntlrToLanguage {
         if (multiLine) {
             return parseTripleQuotedString(strText);
         } else {
-            return parseSingleQuotedString(i18N, strText, sourceLocation);
+            return parseSingleQuotedString(strText, sourceLocation);
         }
     }
 
@@ -852,7 +849,7 @@ public class GraphqlAntlrToLanguage {
         if (multiLine) {
             content = parseTripleQuotedString(content);
         } else {
-            content = parseSingleQuotedString(i18N, content, sourceLocation);
+            content = parseSingleQuotedString(content, sourceLocation);
         }
         return new Description(content, sourceLocation, multiLine);
     }
