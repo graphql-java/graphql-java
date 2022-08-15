@@ -205,7 +205,7 @@ class GraphQLTest extends Specification {
         then:
         errors.size() == 1
         errors[0].errorType == ErrorType.InvalidSyntax
-        errors[0].message == "Invalid Syntax : Invalid unicode - leading surrogate must be followed by a trailing surrogate - offending token '\\ud83c' at line 1 column 13"
+        errors[0].message == "Invalid unicode encountered. Leading surrogate must be followed by a trailing surrogate. Offending token '\\ud83c' at line 1 column 13"
         errors[0].locations == [new SourceLocation(1, 13)]
     }
 

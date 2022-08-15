@@ -1,12 +1,14 @@
 package graphql.parser
 
-import graphql.language.Document
-import graphql.language.Field
-import graphql.language.OperationDefinition
-import graphql.language.StringValue
+import graphql.i18n.I18n
+import graphql.language.SourceLocation
 import spock.lang.Specification
 
 class StringValueParsingUnicodeTest extends Specification {
+
+    def i18n = I18n.i18n(I18n.BundleType.Parsing, Locale.ENGLISH)
+    def sourceLocation = SourceLocation.EMPTY
+
     /**
      * Implements RFC to support full Unicode https://github.com/graphql/graphql-spec/pull/849
      *
@@ -25,7 +27,7 @@ class StringValueParsingUnicodeTest extends Specification {
         def input = '''"\\u{1F37A} hello"'''
 
         when:
-        String parsed = StringValueParsing.parseSingleQuotedString(input)
+        String parsed = StringValueParsing.parseSingleQuotedString(i18n, input,sourceLocation)
 
         then:
         parsed == '''🍺 hello''' // contains the beer icon U+1F37A : http://www.charbase.com/1f37a-unicode-beer-mug
@@ -36,7 +38,7 @@ class StringValueParsingUnicodeTest extends Specification {
         def input = '''"🍺 hello"'''
 
         when:
-        String parsed = StringValueParsing.parseSingleQuotedString(input)
+        String parsed = StringValueParsing.parseSingleQuotedString(i18n, input,sourceLocation)
 
         then:
         parsed == '''🍺 hello''' // contains the beer icon U+1F37A : http://www.charbase.com/1f37a-unicode-beer-mug
@@ -60,11 +62,11 @@ class StringValueParsingUnicodeTest extends Specification {
         def input = '''"\\uD83D hello"'''
 
         when:
-        StringValueParsing.parseSingleQuotedString(input)
+        StringValueParsing.parseSingleQuotedString(i18n, input,sourceLocation)
 
         then:
         InvalidSyntaxException e = thrown(InvalidSyntaxException)
-        e.message == "Invalid Syntax : Invalid unicode - leading surrogate must be followed by a trailing surrogate - offending token '\\uD83D'"
+        e.message == "Invalid unicode encountered. Leading surrogate must be followed by a trailing surrogate. Offending token '\\uD83D' at line -1 column -1"
     }
 
     def "invalid surrogate pair - end of string"() {
@@ -72,11 +74,11 @@ class StringValueParsingUnicodeTest extends Specification {
         def input = '''"\\uD83D"'''
 
         when:
-        StringValueParsing.parseSingleQuotedString(input)
+        StringValueParsing.parseSingleQuotedString(i18n, input,sourceLocation)
 
         then:
         InvalidSyntaxException e = thrown(InvalidSyntaxException)
-        e.message == "Invalid Syntax : Invalid unicode - leading surrogate must be followed by a trailing surrogate - offending token '\\uD83D'"
+        e.message == "Invalid unicode encountered. Leading surrogate must be followed by a trailing surrogate. Offending token '\\uD83D' at line -1 column -1"
     }
 
     def "invalid surrogate pair - invalid trailing value"() {
@@ -84,11 +86,11 @@ class StringValueParsingUnicodeTest extends Specification {
         def input = '''"\\uD83D\\uDBFF"'''
 
         when:
-        StringValueParsing.parseSingleQuotedString(input)
+        StringValueParsing.parseSingleQuotedString(i18n, input,sourceLocation)
 
         then:
         InvalidSyntaxException e = thrown(InvalidSyntaxException)
-        e.message == "Invalid Syntax : Invalid unicode - leading surrogate must be followed by a trailing surrogate - offending token '\\uDBFF'"
+        e.message == "Invalid unicode encountered. Leading surrogate must be followed by a trailing surrogate. Offending token '\\uDBFF' at line -1 column -1"
     }
 
     def "invalid surrogate pair - no leading value"() {
@@ -96,11 +98,11 @@ class StringValueParsingUnicodeTest extends Specification {
         def input = '''"\\uDC00"'''
 
         when:
-        StringValueParsing.parseSingleQuotedString(input)
+        StringValueParsing.parseSingleQuotedString(i18n, input,sourceLocation)
 
         then:
         InvalidSyntaxException e = thrown(InvalidSyntaxException)
-        e.message == "Invalid Syntax : Invalid unicode - trailing surrogate must be preceded with a leading surrogate - offending token '\\uDC00'"
+        e.message == "Invalid unicode encountered. Trailing surrogate must be preceded with a leading surrogate. Offending token '\\uDC00' at line -1 column -1"
     }
 
     def "invalid surrogate pair - invalid leading value"() {
@@ -108,11 +110,11 @@ class StringValueParsingUnicodeTest extends Specification {
         def input = '''"\\uD700\\uDC00"'''
 
         when:
-        StringValueParsing.parseSingleQuotedString(input)
+        StringValueParsing.parseSingleQuotedString(i18n, input,sourceLocation)
 
         then:
         InvalidSyntaxException e = thrown(InvalidSyntaxException)
-        e.message == "Invalid Syntax : Invalid unicode - trailing surrogate must be preceded with a leading surrogate - offending token '\\uDC00'"
+        e.message == "Invalid unicode encountered. Trailing surrogate must be preceded with a leading surrogate. Offending token '\\uDC00' at line -1 column -1"
     }
 
     def "valid surrogate pair - leading code with braces"() {
@@ -120,7 +122,7 @@ class StringValueParsingUnicodeTest extends Specification {
         def input = '''"hello \\u{d83c}\\udf7a"'''
 
         when:
-        String parsed = StringValueParsing.parseSingleQuotedString(input)
+        String parsed = StringValueParsing.parseSingleQuotedString(i18n, input,sourceLocation)
 
         then:
         parsed == '''hello 🍺''' // contains the beer icon U+1F37 A : http://www.charbase.com/1f37a-unicode-beer-mug
@@ -131,7 +133,7 @@ class StringValueParsingUnicodeTest extends Specification {
         def input = '''"hello \\ud83c\\u{df7a}"'''
 
         when:
-        String parsed = StringValueParsing.parseSingleQuotedString(input)
+        String parsed = StringValueParsing.parseSingleQuotedString(i18n, input,sourceLocation)
 
         then:
         parsed == '''hello 🍺''' // contains the beer icon U+1F37A : http://www.charbase.com/1f37a-unicode-beer-mug
@@ -142,7 +144,7 @@ class StringValueParsingUnicodeTest extends Specification {
         def input = '''"hello \\u{d83c}\\u{df7a}"'''
 
         when:
-        String parsed = StringValueParsing.parseSingleQuotedString(input)
+        String parsed = StringValueParsing.parseSingleQuotedString(i18n, input,sourceLocation)
 
         then:
         parsed == '''hello 🍺''' // contains the beer icon U+1F37A : http://www.charbase.com/1f37a-unicode-beer-mug
@@ -153,11 +155,11 @@ class StringValueParsingUnicodeTest extends Specification {
         def input = '''"hello \\u{d83c}\\"'''
 
         when:
-        StringValueParsing.parseSingleQuotedString(input)
+        StringValueParsing.parseSingleQuotedString(i18n, input,sourceLocation)
 
         then:
         InvalidSyntaxException e = thrown(InvalidSyntaxException)
-        e.message == "Invalid Syntax : Invalid unicode - leading surrogate must be followed by a trailing surrogate - offending token '\\u{d83c}'"
+        e.message == "Invalid unicode encountered. Leading surrogate must be followed by a trailing surrogate. Offending token '\\u{d83c}' at line -1 column -1"
     }
 
     def "invalid surrogate pair - leading code with only \\u at end of string"() {
@@ -165,11 +167,11 @@ class StringValueParsingUnicodeTest extends Specification {
         def input = '''"hello \\u{d83c}\\u"'''
 
         when:
-        StringValueParsing.parseSingleQuotedString(input)
+        StringValueParsing.parseSingleQuotedString(i18n, input,sourceLocation)
 
         then:
         InvalidSyntaxException e = thrown(InvalidSyntaxException)
-        e.message == "Invalid Syntax : Invalid unicode - incorrectly formatted escape - offending token '\\u\"'"
+        e.message == "Invalid unicode encountered. Incorrectly formatted escape sequence. Offending token '\\u\"' at line -1 column -1"
     }
 
     def "invalid surrogate pair - trailing code without closing brace"() {
@@ -177,11 +179,11 @@ class StringValueParsingUnicodeTest extends Specification {
         def input = '''"hello \\u{d83c}\\u{df7a"'''
 
         when:
-        StringValueParsing.parseSingleQuotedString(input)
+        StringValueParsing.parseSingleQuotedString(i18n, input,sourceLocation)
 
         then:
         InvalidSyntaxException e = thrown(InvalidSyntaxException)
-        e.message == "Invalid Syntax : Invalid unicode - incorrectly formatted escape - offending token '\\u{df7a'"
+        e.message == "Invalid unicode encountered. Incorrectly formatted escape sequence. Offending token '\\u{df7a' at line -1 column -1"
     }
 
     def "invalid surrogate pair - invalid trailing code without unicode escape 1"() {
@@ -189,11 +191,11 @@ class StringValueParsingUnicodeTest extends Specification {
         def input = '''"hello \\u{d83c}{df7a}"'''
 
         when:
-        StringValueParsing.parseSingleQuotedString(input)
+        StringValueParsing.parseSingleQuotedString(i18n, input,sourceLocation)
 
         then:
         InvalidSyntaxException e = thrown(InvalidSyntaxException)
-        e.message == "Invalid Syntax : Invalid unicode - leading surrogate must be followed by a trailing surrogate - offending token '\\u{d83c}'"
+        e.message == "Invalid unicode encountered. Leading surrogate must be followed by a trailing surrogate. Offending token '\\u{d83c}' at line -1 column -1"
     }
 
     def "invalid surrogate pair - invalid trailing code without unicode escape 2"() {
@@ -201,11 +203,11 @@ class StringValueParsingUnicodeTest extends Specification {
         def input = '''"hello \\u{d83c}df7a"'''
 
         when:
-        StringValueParsing.parseSingleQuotedString(input)
+        StringValueParsing.parseSingleQuotedString(i18n, input,sourceLocation)
 
         then:
         InvalidSyntaxException e = thrown(InvalidSyntaxException)
-        e.message == "Invalid Syntax : Invalid unicode - leading surrogate must be followed by a trailing surrogate - offending token '\\u{d83c}'"
+        e.message == "Invalid unicode encountered. Leading surrogate must be followed by a trailing surrogate. Offending token '\\u{d83c}' at line -1 column -1"
     }
 
     def "invalid surrogate pair - invalid leading code"() {
@@ -213,11 +215,11 @@ class StringValueParsingUnicodeTest extends Specification {
         def input = '''"hello d83c\\u{df7a}"'''
 
         when:
-        StringValueParsing.parseSingleQuotedString(input)
+        StringValueParsing.parseSingleQuotedString(i18n, input,sourceLocation)
 
         then:
         InvalidSyntaxException e = thrown(InvalidSyntaxException)
-        e.message == "Invalid Syntax : Invalid unicode - trailing surrogate must be preceded with a leading surrogate - offending token '\\u{df7a}'"
+        e.message == "Invalid unicode encountered. Trailing surrogate must be preceded with a leading surrogate. Offending token '\\u{df7a}' at line -1 column -1"
     }
 
     def "invalid surrogate pair - invalid leading value with braces"() {
@@ -225,11 +227,11 @@ class StringValueParsingUnicodeTest extends Specification {
         def input = '''"\\u{5B57}\\uDC00"'''
 
         when:
-        StringValueParsing.parseSingleQuotedString(input)
+        StringValueParsing.parseSingleQuotedString(i18n, input,sourceLocation)
 
         then:
         InvalidSyntaxException e = thrown(InvalidSyntaxException)
-        e.message == "Invalid Syntax : Invalid unicode - trailing surrogate must be preceded with a leading surrogate - offending token '\\uDC00'"
+        e.message == "Invalid unicode encountered. Trailing surrogate must be preceded with a leading surrogate. Offending token '\\uDC00' at line -1 column -1"
     }
 
     def "invalid surrogate pair - invalid trailing value with braces"() {
@@ -237,11 +239,11 @@ class StringValueParsingUnicodeTest extends Specification {
         def input = '''"\\uD83D\\u{DBFF}"'''
 
         when:
-        StringValueParsing.parseSingleQuotedString(input)
+        StringValueParsing.parseSingleQuotedString(i18n, input,sourceLocation)
 
         then:
         InvalidSyntaxException e = thrown(InvalidSyntaxException)
-        e.message == "Invalid Syntax : Invalid unicode - leading surrogate must be followed by a trailing surrogate - offending token '\\u{DBFF}'"
+        e.message == "Invalid unicode encountered. Leading surrogate must be followed by a trailing surrogate. Offending token '\\u{DBFF}' at line -1 column -1"
     }
 
     def "invalid unicode code point - value is too high"() {
@@ -249,10 +251,10 @@ class StringValueParsingUnicodeTest extends Specification {
         def input = '''"\\u{fffffff}"'''
 
         when:
-        StringValueParsing.parseSingleQuotedString(input)
+        StringValueParsing.parseSingleQuotedString(i18n, input,sourceLocation)
 
         then:
         InvalidSyntaxException e = thrown(InvalidSyntaxException)
-        e.message == "Invalid Syntax : Invalid unicode - not a valid code point - offending token '\\u{fffffff}'"
+        e.message == "Invalid unicode encountered. Not a valid code point. Offending token '\\u{fffffff}' at line -1 column -1"
     }
 }
