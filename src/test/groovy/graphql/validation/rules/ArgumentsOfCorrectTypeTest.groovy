@@ -80,7 +80,7 @@ class ArgumentsOfCorrectTypeTest extends Specification {
         !validationErrors.empty
         validationErrors.size() == 1
         validationErrors.get(0).getValidationErrorType() == ValidationErrorType.WrongType
-        validationErrors.get(0).message == "Validation error (WrongType@[dog]) : argument 'arg1' with value 'IntValue{value=1}' is not a valid 'String' - Expected AST type 'StringValue' but was 'IntValue'."
+        validationErrors.get(0).message == "Validation error (WrongType@[dog]) : argument 'arg1' with value 'IntValue{value=1}' is not a valid 'String' - Expected an AST type of 'StringValue' but it was a 'IntValue'."
     }
 
     def "invalid input object type results in error"() {

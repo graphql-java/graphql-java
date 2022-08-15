@@ -7,7 +7,6 @@ import graphql.DirectivesUtil;
 import graphql.GraphQLContext;
 import graphql.Internal;
 import graphql.PublicApi;
-import graphql.i18n.I18n;
 import graphql.language.EnumTypeDefinition;
 import graphql.language.EnumTypeExtensionDefinition;
 import graphql.language.EnumValue;
@@ -28,6 +27,8 @@ import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertShouldNeverHappen;
 import static graphql.Assert.assertValidName;
 import static graphql.collect.ImmutableKit.emptyList;
+import static graphql.scalar.CoercingUtil.i18nMsg;
+import static graphql.scalar.CoercingUtil.typeName;
 import static graphql.schema.GraphQLEnumValueDefinition.newEnumValueDefinition;
 import static graphql.util.FpKit.getByName;
 
@@ -105,17 +106,16 @@ public class GraphQLEnumType implements GraphQLNamedInputType, GraphQLNamedOutpu
     }
 
     private Object parseLiteralImpl(Object input, GraphQLContext graphQLContext, Locale locale) {
-        // TODO - use I18N
         if (!(input instanceof EnumValue)) {
             throw new CoercingParseLiteralException(
-                    i18n(locale).msg("Enum.unexpectedType", typeName(input))
+                    i18nMsg(locale, "Scalar.unexpectedAstType", "EnumValue", typeName(input))
             );
         }
         EnumValue enumValue = (EnumValue) input;
         GraphQLEnumValueDefinition enumValueDefinition = valueDefinitionMap.get(enumValue.getName());
         if (enumValueDefinition == null) {
             throw new CoercingParseLiteralException(
-                    i18n(locale).msg("Enum.unallowableValue", getName(), input)
+                    i18nMsg(locale, "Enum.unallowableValue", getName(), input)
             );
         }
         return enumValueDefinition.getValue();
@@ -131,23 +131,9 @@ public class GraphQLEnumType implements GraphQLNamedInputType, GraphQLNamedOutpu
     @Internal
     public Value<?> valueToLiteral(Object input, GraphQLContext graphQLContext, Locale locale) {
         GraphQLEnumValueDefinition enumValueDefinition = valueDefinitionMap.get(input.toString());
-        assertNotNull(enumValueDefinition, () -> {
-            I18n i18n = i18n(locale);
-            return i18n.msg("Enum.badName", name, input.toString());
-        });
+        assertNotNull(enumValueDefinition, () -> i18nMsg(locale, "Enum.badName", name, input.toString()));
         return EnumValue.newEnumValue(enumValueDefinition.getName()).build();
 
-    }
-
-    private static I18n i18n(Locale locale) {
-        return I18n.i18n(I18n.BundleType.Scalars, locale);
-    }
-
-    private String typeName(Object input) {
-        if (input == null) {
-            return "null";
-        }
-        return input.getClass().getSimpleName();
     }
 
     public List<GraphQLEnumValueDefinition> getValues() {
@@ -168,8 +154,7 @@ public class GraphQLEnumType implements GraphQLNamedInputType, GraphQLNamedOutpu
         if (enumValueDefinition != null) {
             return enumValueDefinition.getValue();
         }
-        I18n i18n = i18n(locale);
-        throw new CoercingParseValueException(i18n.msg("Enum.badName", name, value.toString()));
+        throw new CoercingParseValueException(i18nMsg(locale, "Enum.badName", name, value.toString()));
     }
 
     private Object getNameByValue(Object value, GraphQLContext graphQLContext, Locale locale) {
@@ -195,8 +180,7 @@ public class GraphQLEnumType implements GraphQLNamedInputType, GraphQLNamedOutpu
                 }
             }
         }
-        I18n i18n = i18n(locale);
-        throw new CoercingSerializeException(i18n.msg("Enum.badInput", name, value));
+        throw new CoercingSerializeException(i18nMsg(locale, "Enum.badInput", name, value));
     }
 
     @Override

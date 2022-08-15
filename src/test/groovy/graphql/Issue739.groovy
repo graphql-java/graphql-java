@@ -106,7 +106,7 @@ class Issue739 extends Specification {
         varResult.data == null
         varResult.errors.size() == 1
         varResult.errors[0].errorType == ErrorType.ValidationError
-        varResult.errors[0].message == "Variable 'input' has an invalid value: Expected type 'Int' but was 'String'."
+        varResult.errors[0].message == "Variable 'input' has an invalid value: Expected a value that can be converted to type Int but it was a 'String'"
         varResult.errors[0].locations == [new SourceLocation(1, 11)]
     }
 }
