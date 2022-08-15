@@ -220,22 +220,22 @@ public class ValuesResolver {
                                           @NotNull GraphQLType type,
                                           GraphQLContext graphqlContext,
                                           Locale locale) {
-        return (Value<?>) valueToLiteral(fieldVisibility, inputValueWithState, type, ValueMode.LITERAL, graphqlContext, locale);
+        return (Value<?>) valueToLiteralImpl(fieldVisibility, inputValueWithState, type, ValueMode.LITERAL, graphqlContext, locale);
     }
 
     public static Value<?> valueToLiteral(@NotNull InputValueWithState inputValueWithState,
                                           @NotNull GraphQLType type,
                                           GraphQLContext graphqlContext,
                                           Locale locale) {
-        return (Value<?>) valueToLiteral(DEFAULT_FIELD_VISIBILITY, inputValueWithState, type, ValueMode.LITERAL, graphqlContext, locale);
+        return (Value<?>) valueToLiteralImpl(DEFAULT_FIELD_VISIBILITY, inputValueWithState, type, ValueMode.LITERAL, graphqlContext, locale);
     }
 
-    private static Object valueToLiteral(GraphqlFieldVisibility fieldVisibility,
-                                         InputValueWithState inputValueWithState,
-                                         GraphQLType type,
-                                         ValueMode valueMode,
-                                         GraphQLContext graphqlContext,
-                                         Locale locale) {
+    private static Object valueToLiteralImpl(GraphqlFieldVisibility fieldVisibility,
+                                             InputValueWithState inputValueWithState,
+                                             GraphQLType type,
+                                             ValueMode valueMode,
+                                             GraphQLContext graphqlContext,
+                                             Locale locale) {
         if (inputValueWithState.isInternal()) {
             if (valueMode == NORMALIZED) {
                 return assertShouldNeverHappen("can't infer normalized structure");
@@ -387,7 +387,7 @@ public class ValuesResolver {
             Object fieldValue = inputMap.getOrDefault(fieldName, null);
             if (!hasValue && inputFieldDefinition.hasSetDefaultValue()) {
                 //TODO: consider valueMode
-                Object defaultValueLiteral = valueToLiteral(fieldVisibility, inputFieldDefinition.getInputFieldDefaultValue(), fieldType, graphqlContext, locale);
+                Object defaultValueLiteral = valueToLiteralImpl(fieldVisibility, inputFieldDefinition.getInputFieldDefaultValue(), fieldType, ValueMode.LITERAL, graphqlContext, locale);
                 if (valueMode == ValueMode.LITERAL) {
                     normalizedResult.put(fieldName, new NormalizedInputValue(simplePrint(fieldType), defaultValueLiteral));
                 } else {
