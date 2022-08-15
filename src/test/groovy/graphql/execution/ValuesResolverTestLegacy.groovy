@@ -11,7 +11,7 @@ import static graphql.Scalars.GraphQLFloat
 import static graphql.Scalars.GraphQLID
 import static graphql.Scalars.GraphQLInt
 import static graphql.Scalars.GraphQLString
-import static graphql.execution.ValuesResolver.valueToLiteralLegacy
+import static graphql.execution.ValuesResolverLegacy.valueToLiteralLegacy
 import static graphql.language.BooleanValue.newBooleanValue
 import static graphql.schema.GraphQLList.list
 import static graphql.schema.GraphQLNonNull.nonNull
