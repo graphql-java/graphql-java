@@ -1,5 +1,6 @@
 package graphql.execution.directives
 
+import graphql.GraphQLContext
 import graphql.TestUtil
 import graphql.execution.MergedField
 import spock.lang.Specification
@@ -30,7 +31,7 @@ class QueryDirectivesImplTest extends Specification {
 
         def mergedField = MergedField.newMergedField([f1, f2]).build()
 
-        def impl = new QueryDirectivesImpl(mergedField, schema, [var: 10])
+        def impl = new QueryDirectivesImpl(mergedField, schema, [var: 10], GraphQLContext.getDefault(), Locale.getDefault())
 
         when:
         def directives = impl.getImmediateDirectivesByName()

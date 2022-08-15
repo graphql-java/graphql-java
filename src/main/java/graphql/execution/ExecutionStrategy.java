@@ -250,7 +250,11 @@ public abstract class ExecutionStrategy {
 
         // DataFetchingFieldSelectionSet and QueryDirectives is a supplier of sorts - eg a lazy pattern
         DataFetchingFieldSelectionSet fieldCollector = DataFetchingFieldSelectionSetImpl.newCollector(executionContext.getGraphQLSchema(), fieldType, normalizedFieldSupplier);
-        QueryDirectives queryDirectives = new QueryDirectivesImpl(field, executionContext.getGraphQLSchema(), executionContext.getVariables());
+        QueryDirectives queryDirectives = new QueryDirectivesImpl(field,
+                executionContext.getGraphQLSchema(),
+                executionContext.getCoercedVariables().toMap(),
+                executionContext.getGraphQLContext(),
+                executionContext.getLocale());
 
 
         DataFetchingEnvironment environment = newDataFetchingEnvironment(executionContext)
