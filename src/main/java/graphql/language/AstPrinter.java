@@ -25,7 +25,7 @@ public class AstPrinter {
 
     private final boolean compactMode;
 
-    protected AstPrinter(boolean compactMode) {
+    AstPrinter(boolean compactMode) {
         this.compactMode = compactMode;
         printers.put(Argument.class, argument());
         printers.put(ArrayValue.class, value());
@@ -463,11 +463,11 @@ public class AstPrinter {
     }
 
     @SuppressWarnings("unchecked")
-    protected <T extends Node> NodePrinter<T> _findPrinter(Node node) {
+    <T extends Node> NodePrinter<T> _findPrinter(Node node) {
         return _findPrinter(node, null);
     }
 
-    protected <T extends Node> NodePrinter<T> _findPrinter(Node node, Class startClass) {
+    <T extends Node> NodePrinter<T> _findPrinter(Node node, Class startClass) {
         if (node == null) {
             return (out, type) -> {
             };
@@ -712,7 +712,7 @@ public class AstPrinter {
      *
      * @param <T> the type of node
      */
-    protected interface NodePrinter<T extends Node> {
+    interface NodePrinter<T extends Node> {
         void print(StringBuilder out, T node);
     }
 
@@ -721,7 +721,7 @@ public class AstPrinter {
      * @param nodeClass the class of the {@link Node}
      * @param nodePrinter the custom {@link NodePrinter}
      */
-    protected void replacePrinter(Class<? extends Node> nodeClass, NodePrinter<? extends Node> nodePrinter) {
+    void replacePrinter(Class<? extends Node> nodeClass, NodePrinter<? extends Node> nodePrinter) {
         this.printers.put(nodeClass, nodePrinter);
     }
 }
