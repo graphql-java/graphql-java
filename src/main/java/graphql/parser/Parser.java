@@ -385,26 +385,11 @@ public class Parser {
      *
      * @param tokens            the token stream
      * @param multiSourceReader the source of the query document
-     *
-     * @return a new GraphqlAntlrToLanguage instance
-     *
-     * @deprecated - really should use {@link #getAntlrToLanguage(CommonTokenStream, MultiSourceReader, ParserEnvironment)}
-     */
-    @Deprecated
-    protected GraphqlAntlrToLanguage getAntlrToLanguage(CommonTokenStream tokens, MultiSourceReader multiSourceReader) {
-        return null;
-    }
-
-    /**
-     * Allows you to override the ANTLR to AST code.
-     *
-     * @param tokens            the token stream
-     * @param multiSourceReader the source of the query document
      * @param environment       the parser environment
      *
      * @return a new GraphqlAntlrToLanguage instance
      */
     protected GraphqlAntlrToLanguage getAntlrToLanguage(CommonTokenStream tokens, MultiSourceReader multiSourceReader, ParserEnvironment environment) {
-        return new GraphqlAntlrToLanguage(tokens, multiSourceReader, environment.getParserOptions(), environment.getI18N());
+        return new GraphqlAntlrToLanguage(tokens, multiSourceReader, environment.getParserOptions(), environment.getI18N(), null);
     }
 }

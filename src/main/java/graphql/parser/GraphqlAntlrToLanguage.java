@@ -95,7 +95,7 @@ public class GraphqlAntlrToLanguage {
     private final Map<Node<?>, ParserRuleContext> nodeToRuleMap;
     private final I18n i18N;
 
-    public GraphqlAntlrToLanguage(CommonTokenStream tokens, MultiSourceReader multiSourceReader, ParserOptions parserOptions, @Nullable Map<Node<?>, ParserRuleContext> nodeToRuleMap, I18n i18N) {
+    public GraphqlAntlrToLanguage(CommonTokenStream tokens, MultiSourceReader multiSourceReader, ParserOptions parserOptions, I18n i18N, @Nullable Map<Node<?>, ParserRuleContext> nodeToRuleMap) {
         this.tokens = tokens;
         this.multiSourceReader = multiSourceReader;
         this.parserOptions = ofNullable(parserOptions).orElse(ParserOptions.getDefaultParserOptions());

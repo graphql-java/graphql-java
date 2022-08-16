@@ -889,7 +889,7 @@ triple3 : """edge cases \\""" "" " \\"" \\" edge cases"""
             @Override
             protected GraphqlAntlrToLanguage getAntlrToLanguage(CommonTokenStream tokens, MultiSourceReader multiSourceReader, ParserEnvironment environment) {
                 // this pattern is used in Nadel - its backdoor but needed
-                return new GraphqlAntlrToLanguage(tokens, multiSourceReader, environment.parserOptions, environment.i18N) {
+                return new GraphqlAntlrToLanguage(tokens, multiSourceReader, environment.parserOptions, environment.i18N, null) {
                     @Override
                     protected void addCommonData(NodeBuilder nodeBuilder, ParserRuleContext parserRuleContext) {
                         super.addCommonData(nodeBuilder, parserRuleContext)
@@ -910,7 +910,7 @@ triple3 : """edge cases \\""" "" " \\"" \\" edge cases"""
 
             @Override
             protected GraphqlAntlrToLanguage getAntlrToLanguage(CommonTokenStream tokens, MultiSourceReader multiSourceReader, ParserEnvironment environment) {
-                return new GraphqlAntlrToLanguage(tokens, multiSourceReader, environment.parserOptions, environment.i18N) {
+                return new GraphqlAntlrToLanguage(tokens, multiSourceReader, environment.parserOptions, environment.i18N, null) {
                     @Override
                     protected void addCommonData(NodeBuilder nodeBuilder, ParserRuleContext parserRuleContext) {
                         super.addCommonData(nodeBuilder, parserRuleContext)
