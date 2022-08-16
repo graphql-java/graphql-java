@@ -4,7 +4,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Sets;
 import graphql.Internal;
 import graphql.collect.ImmutableKit;
 import graphql.execution.CoercedVariables;
@@ -50,6 +49,7 @@ import static graphql.execution.MergedField.newMergedField;
 import static graphql.schema.GraphQLTypeUtil.unwrapAll;
 import static graphql.util.FpKit.filterSet;
 import static graphql.util.FpKit.groupingBy;
+import static graphql.util.FpKit.intersection;
 import static java.util.Collections.singleton;
 import static java.util.Collections.singletonList;
 
@@ -453,7 +453,9 @@ public class ExecutableNormalizedOperationFactory {
         if (currentOnes.isEmpty()) {
             return resolvedTypeCondition;
         }
-        return Sets.intersection(currentOnes, resolvedTypeCondition);
+
+        // Faster intersection, as either set often has a size of 1.
+        return intersection(currentOnes, resolvedTypeCondition);
     }
 
     private ImmutableSet<GraphQLObjectType> resolvePossibleObjects(List<GraphQLFieldDefinition> defs, GraphQLSchema graphQLSchema) {

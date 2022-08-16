@@ -3,6 +3,7 @@ package graphql.util;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Sets;
 import graphql.Internal;
 
 import java.lang.reflect.Array;
@@ -10,7 +11,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -328,6 +328,29 @@ public class FpKit {
      */
     public static <T> Supplier<T> interThreadMemoize(Supplier<T> delegate) {
         return new InterThreadMemoizedSupplier<>(delegate);
+    }
+
+    /**
+     * Faster set intersection.
+     *
+     * @param set1 first set
+     * @param set2 second set
+     * @return intersection set
+     */
+    public static <T> Set<T> intersection(Set<T> set1, Set<T> set2) {
+        // Set intersection calculation is expensive when either set is large. Often, either set has only one member.
+        // When either set contains only one member, it is equivalent and much cheaper to calculate intersection via contains.
+        if (set1.size() == 1 && set2.contains(set1.iterator().next())) {
+            return set1;
+        } else if (set2.size() == 1 && set1.contains(set2.iterator().next())) {
+            return set2;
+        }
+
+        // Guava's Sets.intersection is faster when the smaller set is passed as the first argument.
+        if (set1.size() < set2.size()) {
+            return Sets.intersection(set1, set2);
+        }
+        return Sets.intersection(set2, set1);
     }
 
 }

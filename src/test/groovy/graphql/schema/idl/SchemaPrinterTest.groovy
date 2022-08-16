@@ -938,7 +938,7 @@ directive @single on OBJECT
 
 directive @singleField on FIELD_DEFINITION
 
-"Directs the executor to skip this field or fragment when the `if`'argument is true."
+"Directs the executor to skip this field or fragment when the `if` argument is true."
 directive @skip(
     "Skipped when true."
     if: Boolean!
@@ -1079,7 +1079,7 @@ directive @include(
     if: Boolean!
   ) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
 
-"Directs the executor to skip this field or fragment when the `if`'argument is true."
+"Directs the executor to skip this field or fragment when the `if` argument is true."
 directive @skip(
     "Skipped when true."
     if: Boolean!
@@ -1176,7 +1176,7 @@ directive @include(
 
 directive @moreComplex(arg1: String = "default", arg2: Int) on FIELD_DEFINITION | INPUT_FIELD_DEFINITION
 
-"Directs the executor to skip this field or fragment when the `if`'argument is true."
+"Directs the executor to skip this field or fragment when the `if` argument is true."
 directive @skip(
     "Skipped when true."
     if: Boolean!
@@ -1241,7 +1241,7 @@ directive @include(
 
 directive @moreComplex(arg1: String = "default", arg2: Int) on FIELD_DEFINITION | INPUT_FIELD_DEFINITION
 
-"Directs the executor to skip this field or fragment when the `if`'argument is true."
+"Directs the executor to skip this field or fragment when the `if` argument is true."
 directive @skip(
     "Skipped when true."
     if: Boolean!
@@ -1373,7 +1373,7 @@ directive @include(
     if: Boolean!
   ) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
 
-"Directs the executor to skip this field or fragment when the `if`'argument is true."
+"Directs the executor to skip this field or fragment when the `if` argument is true."
 directive @skip(
     "Skipped when true."
     if: Boolean!
@@ -1875,7 +1875,7 @@ directive @include(
     if: Boolean!
   ) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
 
-"Directs the executor to skip this field or fragment when the `if`'argument is true."
+"Directs the executor to skip this field or fragment when the `if` argument is true."
 directive @skip(
     "Skipped when true."
     if: Boolean!
@@ -2012,6 +2012,28 @@ type Query {
 '''
     }
 
+    def "directive containing formatting specifiers"() {
+        def constraintDirective = GraphQLDirective.newDirective().name("constraint")
+                .argument({
+                    it.name("regex").type(GraphQLString).valueProgrammatic("%")
+                })
+                .build()
+        GraphQLInputObjectType type = GraphQLInputObjectType.newInputObject().name("Person")
+                .field({ it.name("thisMustBeAPercentageSign").type(GraphQLString).withDirective(constraintDirective) })
+                .build()
+
+        when:
+
+        def result = new SchemaPrinter().print(type)
+
+
+        then:
+        result == '''input Person {
+  thisMustBeAPercentageSign: String @constraint(regex : "%")
+}
+'''
+    }
+
     def "can specify a new ordering for the schema printer"() {
 
         def sdl = """
@@ -2053,7 +2075,7 @@ directive @specifiedBy(
     url: String!
   ) on SCALAR
 
-"Directs the executor to skip this field or fragment when the `if`'argument is true."
+"Directs the executor to skip this field or fragment when the `if` argument is true."
 directive @skip(
     "Skipped when true."
     if: Boolean!

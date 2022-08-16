@@ -672,7 +672,7 @@ public class SchemaPrinter {
                                     String astValue = printAst(defaultValue, fd.getType());
                                     out.format(" = %s", astValue);
                                 }
-                                out.format(directivesString(GraphQLInputObjectField.class, fd.isDeprecated(), fd));
+                                out.print(directivesString(GraphQLInputObjectField.class, fd.isDeprecated(), fd));
                                 out.format("\n");
                             });
                     out.format("}");
