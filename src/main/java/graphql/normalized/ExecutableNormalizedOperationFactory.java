@@ -11,7 +11,6 @@ import graphql.execution.ConditionalNodes;
 import graphql.execution.MergedField;
 import graphql.execution.RawVariables;
 import graphql.execution.ValuesResolver;
-import graphql.execution.nextgen.Common;
 import graphql.introspection.Introspection;
 import graphql.language.Document;
 import graphql.language.Field;
@@ -33,6 +32,7 @@ import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLTypeUtil;
 import graphql.schema.GraphQLUnionType;
 import graphql.schema.GraphQLUnmodifiedType;
+import graphql.schema.impl.SchemaUtil;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -109,7 +109,7 @@ public class ExecutableNormalizedOperationFactory {
                 .normalizedVariables(normalizedVariableValues)
                 .build();
 
-        GraphQLObjectType rootType = Common.getOperationRootType(graphQLSchema, operationDefinition);
+        GraphQLObjectType rootType = SchemaUtil.getOperationRootType(graphQLSchema, operationDefinition);
 
         CollectNFResult collectFromOperationResult = collectFromOperation(parameters, operationDefinition, rootType);
 
