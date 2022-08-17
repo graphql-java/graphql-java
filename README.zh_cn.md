@@ -6,7 +6,7 @@
 
 [![Build](https://github.com/graphql-java/graphql-java/actions/workflows/master.yml/badge.svg)](https://github.com/graphql-java/graphql-java/actions/workflows/master.yml)
 [![Latest Release](https://img.shields.io/maven-central/v/com.graphql-java/graphql-java?versionPrefix=19)](https://maven-badges.herokuapp.com/maven-central/com.graphql-java/graphql-java/)
-[![Latest Snapshot](https://img.shields.io/maven-central/v/com.graphql-java/graphql-java?label=maven-central%20snapshot)](https://maven-badges.herokuapp.com/maven-central/com.graphql-java/graphql-java/)
+[![Latest Snapshot](https://img.shields.io/maven-central/v/com.graphql-java/graphql-java?label=maven-central%20snapshot&versionPrefix=0)](https://maven-badges.herokuapp.com/maven-central/com.graphql-java/graphql-java/)
 [![MIT licensed](https://img.shields.io/badge/license-MIT-green)](https://github.com/graphql-java/graphql-java/blob/master/LICENSE.md)
 
 ### 文档

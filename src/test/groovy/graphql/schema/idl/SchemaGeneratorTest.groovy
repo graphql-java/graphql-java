@@ -1786,39 +1786,6 @@ class SchemaGeneratorTest extends Specification {
 
     }
 
-    def "@fetch directive is respected if added"() {
-        def spec = """             
-
-            directive @fetch(from : String!) on FIELD_DEFINITION
-
-            type Query {
-                name : String,
-                homePlanet: String @fetch(from : "planetOfBirth")
-            }
-        """
-
-        def wiring = RuntimeWiring.newRuntimeWiring().directiveWiring(new FetchSchemaDirectiveWiring()).build()
-        def schema = schema(spec, wiring)
-
-        GraphQLObjectType type = schema.getType("Query") as GraphQLObjectType
-
-        expect:
-        def fetcher = schema.getCodeRegistry().getDataFetcher(type, type.getFieldDefinition("homePlanet"))
-        fetcher instanceof PropertyDataFetcher
-
-        PropertyDataFetcher propertyDataFetcher = fetcher as PropertyDataFetcher
-        propertyDataFetcher.getPropertyName() == "planetOfBirth"
-        //
-        // no directive - plain name
-        //
-        def fetcher2 = schema.getCodeRegistry().getDataFetcher(type, type.getFieldDefinition("name"))
-        fetcher2 instanceof PropertyDataFetcher
-
-        PropertyDataFetcher propertyDataFetcher2 = fetcher2 as PropertyDataFetcher
-        propertyDataFetcher2.getPropertyName() == "name"
-    }
-
-
     def "does not break for circular references to interfaces"() {
         def spec = """
           interface MyInterface {
