@@ -305,45 +305,6 @@ class WiringFactoryTest extends Specification {
         wiringFactory.fields == ["id", "homePlanet"]
     }
 
-    def "@fetch directive is respected by default data fetcher wiring if added"() {
-        def spec = """
-
-            directive @fetch(from : String!) on FIELD_DEFINITION              
-
-            type Query {
-                name : String,
-                homePlanet: String @fetch(from : "planetOfBirth")
-            }
-        """
-
-        def wiringFactory = new WiringFactory() {
-        }
-        def wiring = RuntimeWiring.newRuntimeWiring()
-                .wiringFactory(wiringFactory)
-                .directiveWiring(new FetchSchemaDirectiveWiring())
-                .build()
-
-        def schema = TestUtil.schema(spec, wiring)
-
-        GraphQLObjectType type = schema.getType("Query") as GraphQLObjectType
-
-        expect:
-        def fetcher = schema.getCodeRegistry().getDataFetcher(type, type.getFieldDefinition("homePlanet"))
-        fetcher instanceof PropertyDataFetcher
-
-        PropertyDataFetcher propertyDataFetcher = fetcher as PropertyDataFetcher
-        propertyDataFetcher.getPropertyName() == "planetOfBirth"
-        //
-        // no directive - plain name
-        //
-        def fetcher2 = schema.getCodeRegistry().getDataFetcher(type, type.getFieldDefinition("name"))
-        fetcher2 instanceof PropertyDataFetcher
-
-        PropertyDataFetcher propertyDataFetcher2 = fetcher2 as PropertyDataFetcher
-        propertyDataFetcher2.getPropertyName() == "name"
-
-    }
-
     def "Name"() {
         WiringFactory wf = new WiringFactory() {
             @Override
