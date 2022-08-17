@@ -638,7 +638,7 @@ class ValuesResolverTest extends Specification {
         executionResult.data == null
         executionResult.errors.size() == 1
         executionResult.errors[0].errorType == ErrorType.ValidationError
-        executionResult.errors[0].message == "Variable 'input' has an invalid value: Expected a value that can be converted to type Boolean but it was a 'String'"
+        executionResult.errors[0].message == "Variable 'input' has an invalid value: Expected a value that can be converted to type 'Boolean' but it was a 'String'"
         executionResult.errors[0].locations == [new SourceLocation(2, 35)]
     }
 
@@ -676,7 +676,7 @@ class ValuesResolverTest extends Specification {
         executionResult.data == null
         executionResult.errors.size() == 1
         executionResult.errors[0].errorType == ErrorType.ValidationError
-        executionResult.errors[0].message == "Variable 'input' has an invalid value: Expected a value that can be converted to type Float but it was a 'String'"
+        executionResult.errors[0].message == "Variable 'input' has an invalid value: Expected a value that can be converted to type 'Float' but it was a 'String'"
         executionResult.errors[0].locations == [new SourceLocation(2, 35)]
     }
 }
