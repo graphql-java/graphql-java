@@ -7,6 +7,7 @@ import graphql.collect.ImmutableKit;
 import graphql.execution.AsyncExecutionStrategy;
 import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionStrategy;
+import graphql.execution.SubscriptionExecutionStrategy;
 import graphql.execution.instrumentation.ExecutionStrategyInstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationState;
@@ -115,7 +116,7 @@ public class DataLoaderDispatcherInstrumentation extends SimpleInstrumentation {
         //
         OperationDefinition.Operation operation = executionContext.getOperationDefinition().getOperation();
         ExecutionStrategy strategy = executionContext.getStrategy(operation);
-        return (strategy instanceof AsyncExecutionStrategy);
+        return (strategy instanceof AsyncExecutionStrategy || strategy instanceof SubscriptionExecutionStrategy);
     }
 
     @Override
