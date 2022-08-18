@@ -18,11 +18,14 @@ import graphql.execution.instrumentation.parameters.InstrumentationExecuteOperat
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters;
+import graphql.execution.instrumentation.parameters.InstrumentationFieldParameters;
 import graphql.language.OperationDefinition;
 import graphql.schema.DataFetcher;
 import org.dataloader.DataLoader;
 import org.dataloader.DataLoaderRegistry;
 import org.dataloader.stats.Statistics;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -95,8 +98,8 @@ public class DataLoaderDispatcherInstrumentation extends SimpleInstrumentation {
     }
 
     @Override
-    public InstrumentationContext<ExecutionResult> beginExecuteOperation(InstrumentationExecuteOperationParameters parameters) {
-        DataLoaderDispatcherInstrumentationState state = parameters.getInstrumentationState();
+    public @Nullable InstrumentationContext<ExecutionResult> beginExecuteOperation(InstrumentationExecuteOperationParameters parameters, InstrumentationState rawState) {
+        DataLoaderDispatcherInstrumentationState state = (DataLoaderDispatcherInstrumentationState) rawState;
         //
         // during #instrumentExecutionInput they could have enhanced the data loader registry
         // so we grab it now just before the query operation gets started
@@ -120,8 +123,8 @@ public class DataLoaderDispatcherInstrumentation extends SimpleInstrumentation {
     }
 
     @Override
-    public ExecutionStrategyInstrumentationContext beginExecutionStrategy(InstrumentationExecutionStrategyParameters parameters) {
-        DataLoaderDispatcherInstrumentationState state = parameters.getInstrumentationState();
+    public @Nullable ExecutionStrategyInstrumentationContext beginExecutionStrategy(InstrumentationExecutionStrategyParameters parameters, InstrumentationState rawState) {
+        DataLoaderDispatcherInstrumentationState state = (DataLoaderDispatcherInstrumentationState) rawState;
         //
         // if there are no data loaders, there is nothing to do
         //
@@ -137,28 +140,40 @@ public class DataLoaderDispatcherInstrumentation extends SimpleInstrumentation {
             };
 
         }
-        return state.getApproach().beginExecutionStrategy(parameters.withNewState(state.getState()));
+        return state.getApproach().beginExecutionStrategy(parameters, state.getState());
     }
 
 
     @Override
-    public InstrumentationContext<Object> beginFieldFetch(InstrumentationFieldFetchParameters parameters) {
-        DataLoaderDispatcherInstrumentationState state = parameters.getInstrumentationState();
+    public @Nullable InstrumentationContext<Object> beginFieldFetch(InstrumentationFieldFetchParameters parameters, InstrumentationState rawState) {
+        DataLoaderDispatcherInstrumentationState state = (DataLoaderDispatcherInstrumentationState) rawState;
         //
         // if there are no data loaders, there is nothing to do
         //
         if (state.hasNoDataLoaders()) {
             return new SimpleInstrumentationContext<>();
         }
-        return state.getApproach().beginFieldFetch(parameters.withNewState(state.getState()));
+        return state.getApproach().beginFieldFetch(parameters,state.getState());
     }
 
     @Override
-    public CompletableFuture<ExecutionResult> instrumentExecutionResult(ExecutionResult executionResult, InstrumentationExecutionParameters parameters) {
+    public @Nullable InstrumentationContext<ExecutionResult> beginSubscribedFieldEvent(InstrumentationFieldParameters parameters, InstrumentationState rawState) {
+        DataLoaderDispatcherInstrumentationState state = (DataLoaderDispatcherInstrumentationState) rawState;
+        //
+        // if there are no data loaders, there is nothing to do
+        //
+        if (state.hasNoDataLoaders()) {
+            return new SimpleInstrumentationContext<>();
+        }
+        return state.getApproach().beginSubscribedFieldEvent(parameters,state.getState());
+    }
+
+    @Override
+    public @NotNull CompletableFuture<ExecutionResult> instrumentExecutionResult(ExecutionResult executionResult, InstrumentationExecutionParameters parameters, InstrumentationState rawState) {
         if (!options.isIncludeStatistics()) {
             return CompletableFuture.completedFuture(executionResult);
         }
-        DataLoaderDispatcherInstrumentationState state = parameters.getInstrumentationState();
+        DataLoaderDispatcherInstrumentationState state = (DataLoaderDispatcherInstrumentationState) rawState;
         Map<Object, Object> currentExt = executionResult.getExtensions();
         Map<Object, Object> statsMap = new LinkedHashMap<>(currentExt == null ? ImmutableKit.emptyMap() : currentExt);
         Map<Object, Object> dataLoaderStats = buildStatsMap(state);

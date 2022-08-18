@@ -22,13 +22,12 @@ import graphql.schema.DataFetcher
 import graphql.schema.DataFetchingEnvironment
 import graphql.schema.idl.RuntimeWiring
 import org.awaitility.Awaitility
-import org.awaitility.Duration
 import org.dataloader.BatchLoader
 import org.dataloader.DataLoader
 import org.dataloader.DataLoaderFactory
+import org.dataloader.DataLoaderOptions
 import org.dataloader.DataLoaderRegistry
 import org.reactivestreams.Publisher
-import spock.lang.Ignore
 import spock.lang.Specification
 import spock.lang.Unroll
 
@@ -56,6 +55,7 @@ class SubscriptionExecutionStrategyTest extends Specification {
             type User {
                 id : ID
                 name : String
+                friends : [User!]
             }
             
             type Subscription {
@@ -64,7 +64,42 @@ class SubscriptionExecutionStrategyTest extends Specification {
             }
         """
 
-    RuntimeWiring.Builder buildBaseSubscriptionWiring(DataFetcher senderDF, DataFetcher textDF, DataFetcher receiversDF, DataFetcher approversDF) {
+    def allUsers = [
+            "u1": ["id": "u1", "name": "User1", "friends": ["u2", "u3"]],
+            "u2": ["id": "u2", "name": "User2", "friends": ["u4"]],
+            "u3": ["id": "u3", "name": "User3", "friends": ["u1"]],
+            "u4": ["id": "u2", "name": "User4"],
+    ]
+
+    BatchLoader<String, Object> userBatchLoader = { List<String> keys ->
+        def values = []
+        keys.forEach(k -> {
+            values.add(allUsers.get(k))
+        })
+        return completedFuture(values)
+    }
+
+    def options = DataLoaderOptions.newOptions().setCachingEnabled(false).setBatchingEnabled(true)
+    DataLoader dlUsers = DataLoaderFactory.newDataLoader(userBatchLoader, options)
+
+    private CompletableFuture<List<Object>> loadUsers(DataFetchingEnvironment env, String useridProp) {
+        Map<String, Object> source = env.getSource()
+        List<String> userIds = source.get(useridProp) as List
+        userIds = userIds == null ? [] : userIds
+        return env.getDataLoader("users").loadMany(userIds)
+    }
+
+    DataFetcher receiversDF = { DataFetchingEnvironment env ->
+        return loadUsers(env, "receivers")
+    }
+    DataFetcher approversDF = { DataFetchingEnvironment env ->
+        return loadUsers(env, "approvers")
+    }
+    DataFetcher friendsDF = { DataFetchingEnvironment env ->
+        return loadUsers(env, "friends")
+    }
+
+    RuntimeWiring.Builder buildBaseSubscriptionWiring(DataFetcher senderDF, DataFetcher textDF) {
         return RuntimeWiring.newRuntimeWiring()
                 .type(newTypeWiring("Message")
                         .dataFetcher("sender", senderDF)
@@ -72,14 +107,15 @@ class SubscriptionExecutionStrategyTest extends Specification {
                         .dataFetcher("receivers", receiversDF)
                         .dataFetcher("approvers", approversDF)
                         .build())
+                .type(newTypeWiring("User")
+                        .dataFetcher("friends", friendsDF)
+                        .build())
     }
 
     GraphQL buildSubscriptionQL(DataFetcher newMessageDF) {
         buildSubscriptionQL(newMessageDF,
                 fetching("sender"),
-                fetching("text"),
-                fetching("receivers"),
-                fetching("approvers")
+                fetching("text")
         )
     }
 
@@ -87,22 +123,20 @@ class SubscriptionExecutionStrategyTest extends Specification {
         return buildSubscriptionListQL(newListOfMessagesDF,
                 fetching("sender"),
                 fetching("text"),
-                fetching("receivers"),
-                fetching("approvers")
         )
 
     }
 
-    GraphQL buildSubscriptionListQL(DataFetcher newListOfMessagesDF, DataFetcher senderDF, DataFetcher textDF, DataFetcher receiversDF, DataFetcher approversDF) {
-        RuntimeWiring runtimeWiring = buildBaseSubscriptionWiring(senderDF, textDF, receiversDF, approversDF)
+    GraphQL buildSubscriptionListQL(DataFetcher newListOfMessagesDF, DataFetcher senderDF, DataFetcher textDF) {
+        RuntimeWiring runtimeWiring = buildBaseSubscriptionWiring(senderDF, textDF)
                 .type(newTypeWiring("Subscription").dataFetcher("newListOfMessages", newListOfMessagesDF).build())
                 .build()
 
         return TestUtil.graphQL(idl, runtimeWiring).subscriptionExecutionStrategy(new SubscriptionExecutionStrategy()).build()
     }
 
-    GraphQL buildSubscriptionQL(DataFetcher newMessageDF, DataFetcher senderDF, DataFetcher textDF, DataFetcher receiversDF, DataFetcher approversDF) {
-        RuntimeWiring runtimeWiring = buildBaseSubscriptionWiring(senderDF, textDF, receiversDF, approversDF)
+    GraphQL buildSubscriptionQL(DataFetcher newMessageDF, DataFetcher senderDF, DataFetcher textDF) {
+        RuntimeWiring runtimeWiring = buildBaseSubscriptionWiring(senderDF, textDF)
                 .type(newTypeWiring("Subscription").dataFetcher("newMessage", newMessageDF).build())
                 .build()
 
@@ -493,8 +527,7 @@ class SubscriptionExecutionStrategyTest extends Specification {
             }
         }
 
-        GraphQL graphQL = buildSubscriptionQL(newMessageDF,
-                senderDF, fetching("text"), fetching("receivers"), fetching("approvers"))
+        GraphQL graphQL = buildSubscriptionQL(newMessageDF, senderDF, fetching("text"))
 
         def executionInput = ExecutionInput.newExecutionInput().query("""
             subscription NewMessages {
@@ -561,8 +594,7 @@ class SubscriptionExecutionStrategyTest extends Specification {
             }
         }
 
-        GraphQL graphQL = buildSubscriptionQL(newMessageDF, senderDF,
-                fetching("text"), fetching("receivers"), fetching("approvers"))
+        GraphQL graphQL = buildSubscriptionQL(newMessageDF, senderDF, fetching("text"))
 
         def executionInput = ExecutionInput.newExecutionInput().query("""
             subscription NewMessages {
@@ -659,8 +691,6 @@ class SubscriptionExecutionStrategyTest extends Specification {
     }
 
     def "data loader instrumentation gets called on subscriptions"() {
-
-
         //
         // make sure local context is preserved down the subscription
         DataFetcher newMessageDF = new DataFetcher() {
@@ -668,7 +698,7 @@ class SubscriptionExecutionStrategyTest extends Specification {
             Object get(DataFetchingEnvironment environment) {
                 new ReactiveStreamsObjectPublisher(10, { int index ->
                     [
-                            "sender"   : "x", "text": "t",
+                            "sender"   : "s", "text": "t",
                             "receivers": ["u1", "u3", "u4"],
                             "approvers": ["u1", "u2"],
                     ]
@@ -676,66 +706,39 @@ class SubscriptionExecutionStrategyTest extends Specification {
             }
         }
 
-        def allUsers = [
-                "u1": ["id": "u1", "name": "User1"],
-                "u2": ["id": "u2", "name": "User2"],
-                "u3": ["id": "u3", "name": "User3"],
-                "u4": ["id": "u2", "name": "User4"],
-        ]
-
-        BatchLoader<String, Object> userBatchLoader = { List<String> keys ->
-            def values = []
-            keys.forEach(k -> {
-                values.add(allUsers.get(k))
-            })
-            return completedFuture(values)
-        }
-        DataLoader dlUsers = DataLoaderFactory.newDataLoader(userBatchLoader)
-
-        DataFetcher receiversDF = { DataFetchingEnvironment env ->
-            Map<String, Object> source = env.getSource()
-            List<String> userIds = source.get("receivers") as List
-            return env.getDataLoader("users").loadMany(userIds)
-        }
-        DataFetcher approversDF = { DataFetchingEnvironment env ->
-            Map<String, Object> source = env.getSource()
-            List<String> userIds = source.get("approvers") as List
-            return env.getDataLoader("users").loadMany(userIds)
-        }
 
         Instrumentation instrumentation = new DataLoaderDispatcherInstrumentation()
-        GraphQL graphQL = buildSubscriptionQL(newMessageDF,
-                fetching("sender"), fetching("text"),
-                receiversDF, approversDF
-        )
+        GraphQL graphQL = buildSubscriptionQL(newMessageDF)
         graphQL = graphQL.transform({ builder -> builder.instrumentation(instrumentation) })
-
 
         def dataLoaderReg = DataLoaderRegistry.newRegistry()
                 .register("users", dlUsers)
                 .build()
-
-        def executionInput = ExecutionInput.newExecutionInput().query("""
+        def executionInput = ExecutionInput.newExecutionInput()
+                .dataLoaderRegistry(dataLoaderReg)
+                .query("""
             subscription NewMessages {
               newMessage(roomId: 123) {
-                sender
-                text
                 receivers {
                     name
                 }
                 approvers {
                    name
+                   friends {
+                      name
+                      friends {
+                         name
+                      }
+                   }
                 }
               }
             }
-        """)
-                .dataLoaderRegistry(dataLoaderReg)
-                .build()
+        """).build()
+
 
         when:
 
         def executionResult = graphQL.execute(executionInput)
-
         Publisher<ExecutionResult> msgStream = executionResult.getData()
 
         def capturingSubscriber = new CapturingSubscriber<ExecutionResult>()
@@ -744,8 +747,39 @@ class SubscriptionExecutionStrategyTest extends Specification {
         then:
         Awaitility.await().untilTrue(capturingSubscriber.isDone())
 
-        def messages = capturingSubscriber.events
-        messages.size() == 10
+        def results = capturingSubscriber.events
+        results.size() == 10
+
+        def expectedMsg = [
+                "newMessage": [
+                        "receivers": [
+                                ["name": "User1"],
+                                ["name": "User3"],
+                                ["name": "User4"]
+                        ],
+                        "approvers": [
+                                ["name"   : "User1",
+                                 "friends": [
+                                         ["name": "User2", "friends":[
+                                                 ["name":"User4"]]
+                                         ],
+                                         ["name": "User3", "friends":[
+                                                 ["name":"User1"]]
+                                         ]
+                                 ]
+                                ],
+                                ["name"   : "User2",
+                                 "friends": [
+                                         ["name": "User4", "friends":[]]
+                                 ]
+                                ]
+                        ]
+                ]
+        ]
+        def msg1 = results[0]["data"]
+        msg1 == expectedMsg
+        def msgEnd = results[9]["data"]
+        msgEnd == expectedMsg
 
     }
 }

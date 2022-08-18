@@ -24,6 +24,7 @@ import static graphql.Assert.assertTrue;
 import static graphql.execution.FieldValueInfo.CompleteValueType.OBJECT;
 import static graphql.execution.instrumentation.SimpleInstrumentationContext.nonNullCtx;
 import static java.util.Collections.singletonMap;
+import static java.util.concurrent.CompletableFuture.*;
 
 /**
  * An execution strategy that implements graphql subscriptions by using reactive-streams
@@ -114,10 +115,10 @@ public class SubscriptionExecutionStrategy extends ExecutionStrategy {
         });
     }
 
-    private static void invokeOnFieldValuesInfo(ExecutionStrategyInstrumentationContext executionStrategyCtx, Publisher<Object> publisher) {
+    private static void invokeOnFieldValuesInfo(ExecutionStrategyInstrumentationContext executionStrategyCtx, Object value) {
         // this will tell instrumentation that the subscription field publisher has been fetched and completed
-        ExecutionResult result = ExecutionResultImpl.newExecutionResult().data(publisher).build();
-        FieldValueInfo fieldValueInfo = FieldValueInfo.newFieldValueInfo(OBJECT).fieldValue(CompletableFuture.completedFuture(result)).build();
+        ExecutionResult result = ExecutionResultImpl.newExecutionResult().data(value).build();
+        FieldValueInfo fieldValueInfo = FieldValueInfo.newFieldValueInfo(OBJECT).fieldValue(completedFuture(result)).build();
 
         executionStrategyCtx.onFieldValuesInfo(Collections.singletonList(fieldValueInfo));
     }

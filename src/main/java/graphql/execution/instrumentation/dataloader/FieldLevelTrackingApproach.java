@@ -10,6 +10,7 @@ import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationState;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters;
+import graphql.execution.instrumentation.parameters.InstrumentationFieldParameters;
 import org.dataloader.DataLoaderRegistry;
 import org.slf4j.Logger;
 
@@ -34,7 +35,6 @@ public class FieldLevelTrackingApproach {
         private final LevelMap expectedStrategyCallsPerLevel = new LevelMap();
         private final LevelMap happenedStrategyCallsPerLevel = new LevelMap();
         private final LevelMap happenedOnFieldValueCallsPerLevel = new LevelMap();
-
         private final Set<Integer> dispatchedLevels = new LinkedHashSet<>();
 
         CallStack() {
@@ -76,13 +76,13 @@ public class FieldLevelTrackingApproach {
         @Override
         public String toString() {
             return "CallStack{" +
-                "expectedFetchCountPerLevel=" + expectedFetchCountPerLevel +
-                ", fetchCountPerLevel=" + fetchCountPerLevel +
-                ", expectedStrategyCallsPerLevel=" + expectedStrategyCallsPerLevel +
-                ", happenedStrategyCallsPerLevel=" + happenedStrategyCallsPerLevel +
-                ", happenedOnFieldValueCallsPerLevel=" + happenedOnFieldValueCallsPerLevel +
-                ", dispatchedLevels" + dispatchedLevels +
-                '}';
+                    "expectedFetchCountPerLevel=" + expectedFetchCountPerLevel +
+                    ", fetchCountPerLevel=" + fetchCountPerLevel +
+                    ", expectedStrategyCallsPerLevel=" + expectedStrategyCallsPerLevel +
+                    ", happenedStrategyCallsPerLevel=" + happenedStrategyCallsPerLevel +
+                    ", happenedOnFieldValueCallsPerLevel=" + happenedOnFieldValueCallsPerLevel +
+                    ", dispatchedLevels" + dispatchedLevels +
+                    '}';
         }
 
         public boolean dispatchIfNotDispatchedBefore(int level) {
@@ -94,7 +94,7 @@ public class FieldLevelTrackingApproach {
             return true;
         }
 
-        public void clearAndMarkCurrentLevelAsReady(int level) {
+        public void clearStateForSubscriptions() {
             expectedFetchCountPerLevel.clear();
             fetchCountPerLevel.clear();
             expectedStrategyCallsPerLevel.clear();
@@ -102,10 +102,18 @@ public class FieldLevelTrackingApproach {
             happenedOnFieldValueCallsPerLevel.clear();
             dispatchedLevels.clear();
 
-            // make sure the level is ready
-            expectedFetchCountPerLevel.increment(level, 1);
-            expectedStrategyCallsPerLevel.increment(level, 1);
-            happenedStrategyCallsPerLevel.increment(level, 1);
+            // level 1 for subscriptions is always completed - e.g. the subscription Publisher top level field
+            // but every event after that starts from level 2
+            expectedFetchCountPerLevel.set(1,1);
+            fetchCountPerLevel.set(1,1);
+            // with subscriptions, we don't re-enter the execution strategy
+            // for levels 1 or 2 like we might on a normal run, so we set it up
+            // pre-set so the call counts match
+            expectedStrategyCallsPerLevel.set(1,1);
+            expectedStrategyCallsPerLevel.set(2,1);
+            happenedStrategyCallsPerLevel.set(1,1);
+            happenedOnFieldValueCallsPerLevel.set(1,1);
+            dispatchedLevels.add(1);
         }
     }
 
@@ -118,8 +126,8 @@ public class FieldLevelTrackingApproach {
         return new CallStack();
     }
 
-    ExecutionStrategyInstrumentationContext beginExecutionStrategy(InstrumentationExecutionStrategyParameters parameters) {
-        CallStack callStack = parameters.getInstrumentationState();
+    ExecutionStrategyInstrumentationContext beginExecutionStrategy(InstrumentationExecutionStrategyParameters parameters, InstrumentationState rawState) {
+        CallStack callStack = (CallStack) rawState;
         ResultPath path = parameters.getExecutionStrategyParameters().getPath();
         int parentLevel = path.getLevel();
         int curLevel = parentLevel + 1;
@@ -132,12 +140,10 @@ public class FieldLevelTrackingApproach {
         return new ExecutionStrategyInstrumentationContext() {
             @Override
             public void onDispatched(CompletableFuture<ExecutionResult> result) {
-
             }
 
             @Override
             public void onCompleted(ExecutionResult result, Throwable t) {
-
             }
 
             @Override
@@ -183,8 +189,8 @@ public class FieldLevelTrackingApproach {
     }
 
 
-    public InstrumentationContext<Object> beginFieldFetch(InstrumentationFieldFetchParameters parameters) {
-        CallStack callStack = parameters.getInstrumentationState();
+    public InstrumentationContext<Object> beginFieldFetch(InstrumentationFieldFetchParameters parameters, InstrumentationState rawState) {
+        CallStack callStack = (CallStack) rawState;
         ResultPath path = parameters.getEnvironment().getExecutionStepInfo().getPath();
         int level = path.getLevel();
         return new InstrumentationContext<Object>() {
@@ -208,15 +214,34 @@ public class FieldLevelTrackingApproach {
         };
     }
 
+    public InstrumentationContext<ExecutionResult> beginSubscribedFieldEvent(InstrumentationFieldParameters parameters, InstrumentationState rawState) {
+        CallStack callStack = (CallStack) rawState;
+        return new InstrumentationContext<ExecutionResult>() {
+
+            @Override
+            public void onDispatched(CompletableFuture<ExecutionResult> result) {
+            }
+
+            @Override
+            public void onCompleted(ExecutionResult result, Throwable t) {
+                synchronized (callStack) {
+                    callStack.clearStateForSubscriptions();
+                }
+            }
+        };
+    }
+
 
     //
     // thread safety : called with synchronised(callStack)
     //
     private boolean dispatchIfNeeded(CallStack callStack, int level) {
-        if (levelReady(callStack, level)) {
-            return callStack.dispatchIfNotDispatchedBefore(level);
+        boolean dispatchNeeded = false;
+        boolean levelReady = levelReady(callStack, level);
+        if (levelReady) {
+            dispatchNeeded = callStack.dispatchIfNotDispatchedBefore(level);
         }
-        return false;
+        return dispatchNeeded;
     }
 
     //
@@ -227,11 +252,12 @@ public class FieldLevelTrackingApproach {
             // level 1 is special: there is only one strategy call and that's it
             return callStack.allFetchesHappened(1);
         }
-        if (levelReady(callStack, level - 1) && callStack.allOnFieldCallsHappened(level - 1)
-            && callStack.allStrategyCallsHappened(level) && callStack.allFetchesHappened(level)) {
-            return true;
-        }
-        return false;
+        boolean levelBeforeReady = levelReady(callStack, level - 1);
+        boolean onFieldCallsHappened = callStack.allOnFieldCallsHappened(level - 1);
+        boolean allStrategyCallsHappened = callStack.allStrategyCallsHappened(level);
+        boolean allFetchesHappened = callStack.allFetchesHappened(level);
+        // is the level ready
+        return levelBeforeReady && onFieldCallsHappened && allStrategyCallsHappened && allFetchesHappened;
     }
 
     void dispatch() {
