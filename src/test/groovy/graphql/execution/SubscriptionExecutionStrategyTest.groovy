@@ -22,6 +22,7 @@ import graphql.schema.DataFetcher
 import graphql.schema.DataFetchingEnvironment
 import graphql.schema.idl.RuntimeWiring
 import org.awaitility.Awaitility
+import org.awaitility.Duration
 import org.dataloader.BatchLoader
 import org.dataloader.DataLoader
 import org.dataloader.DataLoaderFactory
@@ -35,6 +36,7 @@ import java.util.concurrent.CompletableFuture
 
 import static graphql.schema.PropertyDataFetcher.fetching
 import static graphql.schema.idl.TypeRuntimeWiring.newTypeWiring
+import static java.util.concurrent.CompletableFuture.completedFuture
 
 class SubscriptionExecutionStrategyTest extends Specification {
 
@@ -610,7 +612,7 @@ class SubscriptionExecutionStrategyTest extends Specification {
             @Override
             CompletableFuture<ExecutionResult> instrumentExecutionResult(ExecutionResult executionResult, InstrumentationExecutionParameters parameters) {
                 instrumentResultCalls.add("instrumentExecutionResult")
-                return CompletableFuture.completedFuture(executionResult)
+                return completedFuture(executionResult)
             }
         }
         GraphQL graphQL = buildSubscriptionQL(newMessageDF)
@@ -656,7 +658,6 @@ class SubscriptionExecutionStrategyTest extends Specification {
         instrumentResultCalls.size() == 11 // one for the initial execution and then one for each stream event
     }
 
-    @Ignore
     def "data loader instrumentation gets called on subscriptions"() {
 
 
@@ -687,7 +688,7 @@ class SubscriptionExecutionStrategyTest extends Specification {
             keys.forEach(k -> {
                 values.add(allUsers.get(k))
             })
-            return values
+            return completedFuture(values)
         }
         DataLoader dlUsers = DataLoaderFactory.newDataLoader(userBatchLoader)
 

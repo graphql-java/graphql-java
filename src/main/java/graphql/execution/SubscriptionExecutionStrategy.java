@@ -15,11 +15,13 @@ import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLObjectType;
 import org.reactivestreams.Publisher;
 
+import java.util.Collections;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.function.Function;
 
 import static graphql.Assert.assertTrue;
+import static graphql.execution.FieldValueInfo.CompleteValueType.OBJECT;
 import static graphql.execution.instrumentation.SimpleInstrumentationContext.nonNullCtx;
 import static java.util.Collections.singletonMap;
 
@@ -54,11 +56,12 @@ public class SubscriptionExecutionStrategy extends ExecutionStrategy {
                 executionContext.getInstrumentationState()
         ));
 
-        CompletableFuture<Publisher<Object>> sourceEventStream = createSourceEventStream(executionContext, parameters);
+        CompletableFuture<Publisher<Object>> sourceEventStream = createSourceEventStream(executionContext, parameters, executionStrategyCtx);
 
         //
         // when the upstream source event stream completes, subscribe to it and wire in our adapter
         CompletableFuture<ExecutionResult> overallResult = sourceEventStream.thenApply((publisher) -> {
+
             if (publisher == null) {
                 return new ExecutionResultImpl(null, executionContext.getErrors());
             }
@@ -89,18 +92,34 @@ public class SubscriptionExecutionStrategy extends ExecutionStrategy {
             Return {fieldStream}.
      */
 
-    private CompletableFuture<Publisher<Object>> createSourceEventStream(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
+    private CompletableFuture<Publisher<Object>> createSourceEventStream(ExecutionContext executionContext, ExecutionStrategyParameters parameters, ExecutionStrategyInstrumentationContext executionStrategyCtx) {
         ExecutionStrategyParameters newParameters = firstFieldOfSubscriptionSelection(parameters);
 
         CompletableFuture<FetchedValue> fieldFetched = fetchField(executionContext, newParameters);
+
         return fieldFetched.thenApply(fetchedValue -> {
-            Object publisher = fetchedValue.getFetchedValue();
-            if (publisher != null) {
-                assertTrue(publisher instanceof Publisher, () -> "Your data fetcher must return a Publisher of events when using graphql subscriptions");
+
+            Object publisherObj = fetchedValue.getFetchedValue();
+            if (publisherObj != null) {
+                assertTrue(publisherObj instanceof Publisher, () -> "Your data fetcher must return a Publisher of events when using graphql subscriptions");
             }
+
             //noinspection unchecked
-            return (Publisher<Object>) publisher;
+            Publisher<Object> publisher = (Publisher<Object>) publisherObj;
+
+            // so instrumentation knows the field has completed to a resolved value
+            invokeOnFieldValuesInfo(executionStrategyCtx, publisher);
+
+            return publisher;
         });
+    }
+
+    private static void invokeOnFieldValuesInfo(ExecutionStrategyInstrumentationContext executionStrategyCtx, Publisher<Object> publisher) {
+        // this will tell instrumentation that the subscription field publisher has been fetched and completed
+        ExecutionResult result = ExecutionResultImpl.newExecutionResult().data(publisher).build();
+        FieldValueInfo fieldValueInfo = FieldValueInfo.newFieldValueInfo(OBJECT).fieldValue(CompletableFuture.completedFuture(result)).build();
+
+        executionStrategyCtx.onFieldValuesInfo(Collections.singletonList(fieldValueInfo));
     }
 
     /*
