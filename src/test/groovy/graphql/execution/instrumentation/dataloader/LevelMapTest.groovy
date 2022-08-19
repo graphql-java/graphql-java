@@ -86,19 +86,19 @@ class LevelMapTest extends Specification {
         sut.toString()
 
         then:
-        sut.toString() == "IntMap[]"
+        sut.toString() == "LevelMap[ ]"
 
         when:
         sut.increment(0, 42)
 
         then:
-        sut.toString() == "IntMap[level=0,count=42 ]"
+        sut.toString() == "LevelMap[ (0=42) ]"
 
         when:
         sut.increment(1, 1)
 
         then:
-        sut.toString() == "IntMap[level=0,count=42 level=1,count=1 ]"
+        sut.toString() == "LevelMap[ (0=42) (1=1) ]"
     }
 
     def "can get outside of its size"() {

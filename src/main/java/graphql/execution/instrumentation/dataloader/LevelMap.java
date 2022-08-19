@@ -54,7 +54,7 @@ public class LevelMap {
     @Override
     public String toString() {
         StringBuilder result = new StringBuilder();
-        result.append("IntMap[ ");
+        result.append("LevelMap[ ");
         for (int i = 0; i < countsByLevel.length; i++) {
             result.append("(").append(i).append("=").append(countsByLevel[i]).append(") ");
         }
