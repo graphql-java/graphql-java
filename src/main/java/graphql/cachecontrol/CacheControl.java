@@ -1,5 +1,6 @@
 package graphql.cachecontrol;
 
+import graphql.DeprecatedAt;
 import graphql.ExecutionInput;
 import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
@@ -34,6 +35,7 @@ import static graphql.collect.ImmutableKit.map;
  * extensions map as per the specification.
  */
 @Deprecated
+@DeprecatedAt("2022-07-26")
 @PublicApi
 public class CacheControl {
 
@@ -91,6 +93,7 @@ public class CacheControl {
      * @deprecated - Apollo has deprecated the Cache Control specification
      */
     @Deprecated
+    @DeprecatedAt("2022-07-26")
     public CacheControl hint(ResultPath path, Integer maxAge, Scope scope) {
         assertNotNull(path);
         assertNotNull(scope);
@@ -108,6 +111,7 @@ public class CacheControl {
      * @deprecated - Apollo has deprecated the Cache Control specification
      */
     @Deprecated
+    @DeprecatedAt("2022-07-26")
     public CacheControl hint(ResultPath path, Scope scope) {
         return hint(path, null, scope);
     }
@@ -122,6 +126,7 @@ public class CacheControl {
      * @deprecated - Apollo has deprecated the Cache Control specification
      */
     @Deprecated
+    @DeprecatedAt("2022-07-26")
     public CacheControl hint(ResultPath path, Integer maxAge) {
         return hint(path, maxAge, Scope.PUBLIC);
     }
@@ -137,6 +142,7 @@ public class CacheControl {
      * @deprecated - Apollo has deprecated the Cache Control specification
      */
     @Deprecated
+    @DeprecatedAt("2022-07-26")
     public CacheControl hint(DataFetchingEnvironment dataFetchingEnvironment, Integer maxAge, Scope scope) {
         assertNotNull(dataFetchingEnvironment);
         assertNotNull(scope);
@@ -154,6 +160,7 @@ public class CacheControl {
      * @deprecated - Apollo has deprecated the Cache Control specification
      */
     @Deprecated
+    @DeprecatedAt("2022-07-26")
     public CacheControl hint(DataFetchingEnvironment dataFetchingEnvironment, Integer maxAge) {
         hint(dataFetchingEnvironment, maxAge, Scope.PUBLIC);
         return this;
@@ -169,6 +176,7 @@ public class CacheControl {
      * @deprecated - Apollo has deprecated the Cache Control specification
      */
     @Deprecated
+    @DeprecatedAt("2022-07-26")
     public CacheControl hint(DataFetchingEnvironment dataFetchingEnvironment, Scope scope) {
         return hint(dataFetchingEnvironment, null, scope);
     }
@@ -181,6 +189,7 @@ public class CacheControl {
      * @deprecated - Apollo has deprecated the Cache Control specification
      */
     @Deprecated
+    @DeprecatedAt("2022-07-26")
     public static CacheControl newCacheControl() {
         return new CacheControl();
     }
@@ -195,6 +204,7 @@ public class CacheControl {
      * @deprecated - Apollo has deprecated the Cache Control specification
      */
     @Deprecated
+    @DeprecatedAt("2022-07-26")
     public ExecutionResult addTo(ExecutionResult executionResult) {
         return ExecutionResultImpl.newExecutionResult()
                 .from(executionResult)
