@@ -68,7 +68,6 @@ class DataFetchingEnvironmentImplTest extends Specification {
                 .build()
         then:
         dfe.getRoot() == "root"
-        dfe.getContext() == "context"
         dfe.getGraphQlContext().get("key") == "context"
         dfe.getGraphQLSchema() == starWarsSchema
         dfe.getDocument() == document
@@ -80,7 +79,7 @@ class DataFetchingEnvironmentImplTest extends Specification {
 
     def "create environment from existing one will copy everything to new instance"() {
         def dfe = newDataFetchingEnvironment()
-                .context("Test Context")
+                .context("Test Context") // Retain deprecated builder for coverage
                 .graphQLContext(GraphQLContext.of(["key": "context"]))
                 .source("Test Source")
                 .root("Test Root")
@@ -106,7 +105,7 @@ class DataFetchingEnvironmentImplTest extends Specification {
 
         then:
         dfe != dfeCopy
-        dfe.getContext() == dfeCopy.getContext()
+        dfe.getContext() == dfeCopy.getContext() // Retain deprecated method for coverage
         dfe.getGraphQlContext() == dfeCopy.getGraphQlContext()
         dfe.getSource() == dfeCopy.getSource()
         dfe.getRoot() == dfeCopy.getRoot()

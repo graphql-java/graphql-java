@@ -289,7 +289,7 @@ class DataLoaderHangingTest extends Specification {
         @Override
         Object get(DataFetchingEnvironment environment) {
             Product source = environment.getSource()
-            DataLoaderRegistry dlRegistry = environment.getContext()
+            DataLoaderRegistry dlRegistry = environment.getGraphQlContext()
             DataLoader<Integer, Person> personDL = dlRegistry.getDataLoader("person")
             return personDL.load(source.getSuppliedById()).thenApply({ person ->
                 if (person.id == 0) {
@@ -304,7 +304,7 @@ class DataLoaderHangingTest extends Specification {
         @Override
         Object get(DataFetchingEnvironment environment) {
             Person source = environment.getSource()
-            DataLoaderRegistry dlRegistry = environment.getContext()
+            DataLoaderRegistry dlRegistry = environment.getGraphQlContext()
             DataLoader<Integer, Company> companyDL = dlRegistry.getDataLoader("company")
             return companyDL.load(source.getCompanyId())
         }
