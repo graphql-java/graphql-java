@@ -25,13 +25,11 @@ class ExecutionInputTest extends Specification {
                 .cacheControl(cacheControl)
                 .variables(variables)
                 .root(root)
-                .context(context)
                 .graphQLContext({ it.of(["a": "b"]) })
                 .locale(Locale.GERMAN)
                 .extensions([some: "map"])
                 .build()
         then:
-        executionInput.context == context
         executionInput.graphQLContext.get("a") == "b"
         executionInput.root == root
         executionInput.variables == variables
@@ -53,6 +51,7 @@ class ExecutionInputTest extends Specification {
     }
 
     def "legacy context methods work"() {
+        // Retaining deprecated method tests for coverage
         when:
         def executionInput = ExecutionInput.newExecutionInput().query(query)
                 .context({ builder -> builder.of("k1", "v1") } as UnaryOperator)
@@ -69,6 +68,7 @@ class ExecutionInputTest extends Specification {
     }
 
     def "legacy context is defaulted"() {
+        // Retaining deprecated method tests for coverage
         when:
         def executionInput = ExecutionInput.newExecutionInput().query(query)
                 .build()
@@ -101,7 +101,6 @@ class ExecutionInputTest extends Specification {
                 .variables(variables)
                 .extensions([some: "map"])
                 .root(root)
-                .context(context)
                 .graphQLContext({ it.of(["a": "b"]) })
                 .locale(Locale.GERMAN)
                 .build()
@@ -109,7 +108,6 @@ class ExecutionInputTest extends Specification {
         def executionInput = executionInputOld.transform({ bldg -> bldg.query("new query") })
 
         then:
-        executionInput.context == context
         executionInput.graphQLContext == graphQLContext
         executionInput.root == root
         executionInput.variables == variables
