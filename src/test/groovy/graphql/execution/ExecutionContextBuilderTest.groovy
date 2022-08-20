@@ -42,7 +42,7 @@ class ExecutionContextBuilderTest extends Specification {
             .root(root)
             .operationDefinition(operation)
             .fragmentsByName([MyFragment: fragment])
-            .variables([var: 'value'])
+            .variables([var: 'value']) // Retain deprecated builder for test coverage
             .dataLoaderRegistry(dataLoaderRegistry)
             .cacheControl(cacheControl)
             .build()
@@ -55,9 +55,9 @@ class ExecutionContextBuilderTest extends Specification {
         executionContext.mutationStrategy == mutationStrategy
         executionContext.subscriptionStrategy == subscriptionStrategy
         executionContext.root == root
-        executionContext.context == context
+        executionContext.context == context // Retain deprecated method for test coverage
         executionContext.graphQLContext == graphQLContext
-        executionContext.variables == [var: 'value']
+        executionContext.variables == [var: 'value'] // Retain deprecated method for test coverage
         executionContext.getFragmentsByName() == [MyFragment: fragment]
         executionContext.operationDefinition == operation
         executionContext.dataLoaderRegistry == dataLoaderRegistry
@@ -94,7 +94,6 @@ class ExecutionContextBuilderTest extends Specification {
         executionContext.mutationStrategy == mutationStrategy
         executionContext.subscriptionStrategy == subscriptionStrategy
         executionContext.root == root
-        executionContext.context == context
         executionContext.graphQLContext == graphQLContext
         executionContext.coercedVariables == coercedVariables
         executionContext.getFragmentsByName() == [MyFragment: fragment]
@@ -120,7 +119,6 @@ class ExecutionContextBuilderTest extends Specification {
                 .root(root)
                 .operationDefinition(operation)
                 .fragmentsByName([MyFragment: fragment])
-                .variables([var: 'value'])
                 .coercedVariables(coercedVariables)
                 .dataLoaderRegistry(dataLoaderRegistry)
                 .cacheControl(cacheControl)
@@ -134,7 +132,6 @@ class ExecutionContextBuilderTest extends Specification {
         executionContext.mutationStrategy == mutationStrategy
         executionContext.subscriptionStrategy == subscriptionStrategy
         executionContext.root == root
-        executionContext.context == context
         executionContext.graphQLContext == graphQLContext
         executionContext.coercedVariables == coercedVariables
         executionContext.getFragmentsByName() == [MyFragment: fragment]
@@ -176,7 +173,6 @@ class ExecutionContextBuilderTest extends Specification {
         executionContext.mutationStrategy == mutationStrategy
         executionContext.subscriptionStrategy == subscriptionStrategy
         executionContext.root == root
-        executionContext.context == context
         executionContext.graphQLContext == graphQLContext
         executionContext.coercedVariables == coercedVariables
         executionContext.getFragmentsByName() == [MyFragment: fragment]
@@ -199,7 +195,6 @@ class ExecutionContextBuilderTest extends Specification {
                 .graphQLContext(graphQLContext)
                 .root(root)
                 .operationDefinition(operation)
-                .variables([:])
                 .coercedVariables(oldCoercedVariables)
                 .fragmentsByName([MyFragment: fragment])
                 .dataLoaderRegistry(dataLoaderRegistry)
@@ -209,7 +204,6 @@ class ExecutionContextBuilderTest extends Specification {
         when:
         def coercedVariables = CoercedVariables.of([var: 'value'])
         def executionContext = executionContextOld.transform(builder -> builder
-                .variables([var: 'value'])
                 .coercedVariables(coercedVariables))
 
         then:
@@ -220,7 +214,6 @@ class ExecutionContextBuilderTest extends Specification {
         executionContext.mutationStrategy == mutationStrategy
         executionContext.subscriptionStrategy == subscriptionStrategy
         executionContext.root == root
-        executionContext.context == context
         executionContext.graphQLContext == graphQLContext
         executionContext.coercedVariables == coercedVariables
         executionContext.getFragmentsByName() == [MyFragment: fragment]
