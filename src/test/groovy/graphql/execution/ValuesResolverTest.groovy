@@ -240,12 +240,12 @@ class ValuesResolverTest extends Specification {
                 .field(newInputObjectField()
                         .name("intKey")
                         .type(nonNull(GraphQLInt))
-                        .defaultValue(3)
+                        .defaultValueProgrammatic(3)
                         .build())
                 .field(newInputObjectField()
                         .name("stringKey")
                         .type(GraphQLString)
-                        .defaultValue("defaultString")
+                        .defaultValueProgrammatic("defaultString")
                         .build())
                 .build()
         def fieldArgument = newArgument().name("arg").type(inputObjectType).build()
@@ -370,7 +370,7 @@ class ValuesResolverTest extends Specification {
                 .field(newInputObjectField()
                         .name("stringKey")
                         .type(GraphQLString)
-                        .defaultValue("defaultString"))
+                        .defaultValueProgrammatic("defaultString"))
                 .build()
 
         def schema = TestUtil.schemaWithInputType(inputObjectType)
@@ -510,7 +510,7 @@ class ValuesResolverTest extends Specification {
                 .name("inputObject")
                 .build()
 
-        def fieldArgument = newArgument().name("arg").type(inputObjectType).defaultValue("hello").build()
+        def fieldArgument = newArgument().name("arg").type(inputObjectType).defaultValueProgrammatic("hello").build()
         def argument = new Argument("arg", NullValue.newNullValue().build())
 
         when:
