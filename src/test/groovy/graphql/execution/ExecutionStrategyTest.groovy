@@ -21,6 +21,8 @@ import graphql.parser.Parser
 import graphql.schema.Coercing
 import graphql.schema.DataFetcher
 import graphql.schema.DataFetchingEnvironment
+import graphql.schema.FieldCoordinates
+import graphql.schema.GraphQLCodeRegistry
 import graphql.schema.GraphQLEnumType
 import graphql.schema.GraphQLFieldDefinition
 import graphql.schema.GraphQLScalarType
@@ -71,7 +73,7 @@ class ExecutionStrategyTest extends Specification {
                 .queryStrategy(executionStrategy)
                 .mutationStrategy(executionStrategy)
                 .subscriptionStrategy(executionStrategy)
-                .variables(variables)
+                .coercedVariables(CoercedVariables.of(variables))
                 .context("context")
                 .graphQLContext(GraphQLContext.newContext().of("key","context").build())
                 .root("root")
@@ -86,6 +88,7 @@ class ExecutionStrategyTest extends Specification {
     def "complete values always calls query strategy to execute more"() {
         given:
         def dataFetcher = Mock(DataFetcher)
+
         def fieldDefinition = newFieldDefinition()
                 .name("someField")
                 .type(GraphQLString)
