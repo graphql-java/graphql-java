@@ -841,4 +841,33 @@ type Query {
 }
 '''
     }
+
+    def "can rename scalars"() {
+
+        def schema = TestUtil.schema("""
+            scalar Foo
+            type Query {
+                field : Foo
+            }
+""")
+
+        def visitor = new GraphQLTypeVisitorStub() {
+
+            @Override
+            TraversalControl visitGraphQLScalarType(GraphQLScalarType node, TraverserContext<GraphQLSchemaElement> context) {
+                if (node.getName().equals("Foo")) {
+                    GraphQLScalarType newNode = node.transform({sc -> sc.name("Bar")})
+                    return changeNode(context, newNode)
+                }
+                return super.visitGraphQLScalarType(node, context)
+            }
+        }
+
+        when:
+        def newSchema = SchemaTransformer.transformSchema(schema, visitor)
+        then:
+        newSchema.getType("Bar") instanceof GraphQLScalarType
+        newSchema.getType("Foo") == null
+        (newSchema.getObjectType("Query").getFieldDefinition("field").getType() as GraphQLScalarType).getName() == "Bar"
+    }
 }
