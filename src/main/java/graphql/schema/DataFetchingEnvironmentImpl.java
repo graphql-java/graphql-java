@@ -2,6 +2,7 @@ package graphql.schema;
 
 
 import com.google.common.collect.ImmutableMap;
+import graphql.DeprecatedAt;
 import graphql.GraphQLContext;
 import graphql.Internal;
 import graphql.cachecontrol.CacheControl;
@@ -219,6 +220,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
 
     @Override
     @Deprecated
+    @DeprecatedAt("2022-07-26")
     public CacheControl getCacheControl() {
         return cacheControl;
     }
@@ -318,6 +320,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
         }
 
         @Deprecated
+        @DeprecatedAt("2021-07-05")
         public Builder context(Object context) {
             this.context = context;
             return this;
@@ -393,6 +396,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
         }
 
         @Deprecated
+        @DeprecatedAt("2022-07-26")
         public Builder cacheControl(CacheControl cacheControl) {
             this.cacheControl = cacheControl;
             return this;
