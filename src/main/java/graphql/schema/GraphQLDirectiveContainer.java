@@ -1,5 +1,6 @@
 package graphql.schema;
 
+import graphql.DeprecatedAt;
 import graphql.PublicApi;
 
 import java.util.List;
@@ -76,6 +77,7 @@ public interface GraphQLDirectiveContainer extends GraphQLNamedSchemaElement {
      * @deprecated use {@link #hasAppliedDirective(String)} instead
      */
     @Deprecated
+    @DeprecatedAt("2022-02-24")
     default boolean hasDirective(String directiveName) {
         return getAllDirectivesByName().containsKey(directiveName);
     }
@@ -100,6 +102,7 @@ public interface GraphQLDirectiveContainer extends GraphQLNamedSchemaElement {
      * @deprecated - use the {@link GraphQLAppliedDirective} methods instead
      */
     @Deprecated
+    @DeprecatedAt("2022-02-24")
     List<GraphQLDirective> getDirectives();
 
     /**
@@ -111,6 +114,7 @@ public interface GraphQLDirectiveContainer extends GraphQLNamedSchemaElement {
      * @deprecated - use the {@link GraphQLAppliedDirective} methods instead
      */
     @Deprecated
+    @DeprecatedAt("2022-02-24")
     Map<String, GraphQLDirective> getDirectivesByName();
 
     /**
@@ -122,6 +126,7 @@ public interface GraphQLDirectiveContainer extends GraphQLNamedSchemaElement {
      * @deprecated - use the {@link GraphQLAppliedDirective} methods instead
      */
     @Deprecated
+    @DeprecatedAt("2022-02-24")
     Map<String, List<GraphQLDirective>> getAllDirectivesByName();
 
     /**
@@ -135,6 +140,7 @@ public interface GraphQLDirectiveContainer extends GraphQLNamedSchemaElement {
      * @deprecated - use the {@link GraphQLAppliedDirective} methods instead
      */
     @Deprecated
+    @DeprecatedAt("2022-02-24")
     GraphQLDirective getDirective(String directiveName);
 
     /**
@@ -147,6 +153,7 @@ public interface GraphQLDirectiveContainer extends GraphQLNamedSchemaElement {
      * @deprecated - use the {@link GraphQLAppliedDirective} methods instead
      */
     @Deprecated
+    @DeprecatedAt("2022-02-24")
     default List<GraphQLDirective> getDirectives(String directiveName) {
         return getAllDirectivesByName().getOrDefault(directiveName, emptyList());
     }

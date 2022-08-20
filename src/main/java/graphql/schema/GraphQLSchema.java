@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import graphql.Assert;
+import graphql.DeprecatedAt;
 import graphql.Directives;
 import graphql.DirectivesUtil;
 import graphql.Internal;
@@ -418,6 +419,7 @@ public class GraphQLSchema {
      * @deprecated use {@link GraphQLCodeRegistry#getFieldVisibility()} instead
      */
     @Deprecated
+    @DeprecatedAt("2018-12-03")
     public GraphqlFieldVisibility getFieldVisibility() {
         return codeRegistry.getFieldVisibility();
     }
@@ -463,6 +465,7 @@ public class GraphQLSchema {
      * @deprecated Use the {@link GraphQLAppliedDirective} methods instead
      */
     @Deprecated
+    @DeprecatedAt("2022-02-24")
     public List<GraphQLDirective> getSchemaDirectives() {
         return schemaAppliedDirectivesHolder.getDirectives();
     }
@@ -478,6 +481,7 @@ public class GraphQLSchema {
      * @deprecated Use the {@link GraphQLAppliedDirective} methods instead
      */
     @Deprecated
+    @DeprecatedAt("2022-02-24")
     public Map<String, GraphQLDirective> getSchemaDirectiveByName() {
         return schemaAppliedDirectivesHolder.getDirectivesByName();
     }
@@ -493,6 +497,7 @@ public class GraphQLSchema {
      * @deprecated Use the {@link GraphQLAppliedDirective} methods instead
      */
     @Deprecated
+    @DeprecatedAt("2022-02-24")
     public Map<String, List<GraphQLDirective>> getAllSchemaDirectivesByName() {
         return schemaAppliedDirectivesHolder.getAllDirectivesByName();
     }
@@ -510,6 +515,7 @@ public class GraphQLSchema {
      * @deprecated Use the {@link GraphQLAppliedDirective} methods instead
      */
     @Deprecated
+    @DeprecatedAt("2022-02-24")
     public GraphQLDirective getSchemaDirective(String directiveName) {
         return schemaAppliedDirectivesHolder.getDirective(directiveName);
     }
@@ -525,6 +531,7 @@ public class GraphQLSchema {
      * @deprecated Use the {@link GraphQLAppliedDirective} methods instead
      */
     @Deprecated
+    @DeprecatedAt("2022-02-24")
     public List<GraphQLDirective> getSchemaDirectives(String directiveName) {
         return schemaAppliedDirectivesHolder.getDirectives(directiveName);
     }
@@ -736,6 +743,7 @@ public class GraphQLSchema {
          * @deprecated use {@link graphql.schema.GraphQLCodeRegistry.Builder#fieldVisibility(graphql.schema.visibility.GraphqlFieldVisibility)} instead
          */
         @Deprecated
+        @DeprecatedAt("2018-12-03")
         public Builder fieldVisibility(GraphqlFieldVisibility fieldVisibility) {
             this.codeRegistry = this.codeRegistry.transform(builder -> builder.fieldVisibility(fieldVisibility));
             return this;
@@ -866,6 +874,7 @@ public class GraphQLSchema {
          * @deprecated - Use the {@link #additionalType(GraphQLType)} methods
          */
         @Deprecated
+        @DeprecatedAt("2018-07-30")
         public GraphQLSchema build(Set<GraphQLType> additionalTypes) {
             return additionalTypes(additionalTypes).build();
         }
@@ -881,6 +890,7 @@ public class GraphQLSchema {
          * @deprecated - Use the {@link #additionalType(GraphQLType)} and {@link #additionalDirective(GraphQLDirective)} methods
          */
         @Deprecated
+        @DeprecatedAt("2018-07-30")
         public GraphQLSchema build(Set<GraphQLType> additionalTypes, Set<GraphQLDirective> additionalDirectives) {
             return additionalTypes(additionalTypes).additionalDirectives(additionalDirectives).build();
         }

@@ -1,5 +1,6 @@
 package graphql.execution;
 
+import graphql.DeprecatedAt;
 import graphql.ExecutionResult;
 import graphql.PublicSpi;
 import graphql.schema.DataFetcher;
@@ -27,6 +28,7 @@ public interface DataFetcherExceptionHandler {
      * version
      */
     @Deprecated
+    @DeprecatedAt("2021-06-23")
     default DataFetcherExceptionHandlerResult onException(DataFetcherExceptionHandlerParameters handlerParameters) {
         return SimpleDataFetcherExceptionHandler.defaultImpl.onException(handlerParameters);
     }
