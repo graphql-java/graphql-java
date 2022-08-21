@@ -5,10 +5,12 @@ import graphql.Assert;
 import graphql.Internal;
 import graphql.TrivialDataFetcher;
 import graphql.execution.Async;
+import graphql.execution.instrumentation.InstrumentationState;
 import graphql.execution.instrumentation.SimpleInstrumentation;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -24,13 +26,13 @@ import static graphql.execution.instrumentation.threadpools.ExecutorInstrumentat
  * This instrumentation can be used to control on what thread calls to {@link DataFetcher}s happen on.
  * <p>
  * If your data fetching is inherently IO bound then you could use a IO oriented thread pool for your fetches and transfer control
- * back to a CPU oriented thread pool and allow graphql-java code to run the post processing of results there.
+ * back to a CPU oriented thread pool and allow graphql-java code to run the post-processing of results there.
  * <p>
  * An IO oriented thread pool is typically a multiple of {@link Runtime#availableProcessors()} while a CPU oriented thread pool
  * is typically no more than {@link Runtime#availableProcessors()}.
  * <p>
- * The instrumentation will use the {@link graphql.execution.instrumentation.Instrumentation#instrumentDataFetcher(DataFetcher, InstrumentationFieldFetchParameters)}
- * method to change your data fetchers so they are executed on a thread pool dedicated to fetching (if you provide one).
+ * The instrumentation will use the {@link graphql.execution.instrumentation.Instrumentation#instrumentDataFetcher(DataFetcher, InstrumentationFieldFetchParameters, InstrumentationState)}
+ * method to change your data fetchers, so they are executed on a thread pool dedicated to fetching (if you provide one).
  * <p>
  * Once the data fetcher value is returns it will transfer control back to a processing thread pool (if you provide one).
  * <p>
@@ -106,7 +108,7 @@ public class ExecutorInstrumentation extends SimpleInstrumentation {
     }
 
     @Override
-    public DataFetcher<?> instrumentDataFetcher(DataFetcher<?> originalDataFetcher, InstrumentationFieldFetchParameters parameters) {
+    public @NotNull DataFetcher<?> instrumentDataFetcher(DataFetcher<?> originalDataFetcher, InstrumentationFieldFetchParameters parameters, InstrumentationState state) {
         if (originalDataFetcher instanceof TrivialDataFetcher) {
             return originalDataFetcher;
         }
@@ -117,7 +119,7 @@ public class ExecutorInstrumentation extends SimpleInstrumentation {
                 // the CF will be left running on that fetch executors thread
                 invokedCF = CompletableFuture.supplyAsync(invokedAsync(originalDataFetcher, environment), fetchExecutor);
             } else {
-                invokedCF = invokedSynch(originalDataFetcher, environment);
+                invokedCF = invokedSync(originalDataFetcher, environment);
             }
             if (processingExecutor != null) {
                 invokedCF = invokedCF.thenApplyAsync(processingControl(), processingExecutor);
@@ -136,7 +138,7 @@ public class ExecutorInstrumentation extends SimpleInstrumentation {
         };
     }
 
-    private CompletableFuture<CompletionStage<?>> invokedSynch(DataFetcher<?> originalDataFetcher, DataFetchingEnvironment environment) {
+    private CompletableFuture<CompletionStage<?>> invokedSync(DataFetcher<?> originalDataFetcher, DataFetchingEnvironment environment) {
         actionObserver.accept(FETCHING);
         return CompletableFuture.completedFuture(invokeOriginalDF(originalDataFetcher, environment));
     }

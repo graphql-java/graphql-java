@@ -11,6 +11,7 @@ import graphql.execution.instrumentation.parameters.InstrumentationCreateStatePa
 import graphql.execution.instrumentation.parameters.InstrumentationExecuteOperationParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationValidationParameters;
 import graphql.validation.ValidationError;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,7 +27,7 @@ import static java.util.Optional.ofNullable;
 
 /**
  * Prevents execution if the query complexity is greater than the specified maxComplexity.
- *
+ * <p>
  * Use the {@code Function<QueryComplexityInfo, Boolean>} parameter to supply a function to perform a custom action when the max complexity
  * is exceeded. If the function returns {@code true} a {@link AbortExecutionException} is thrown.
  */
@@ -87,25 +88,26 @@ public class MaxQueryComplexityInstrumentation extends SimpleInstrumentation {
         return new State();
     }
 
+
     @Override
-    public InstrumentationContext<List<ValidationError>> beginValidation(InstrumentationValidationParameters parameters) {
-        State state = parameters.getInstrumentationState();
+    public @Nullable InstrumentationContext<List<ValidationError>> beginValidation(InstrumentationValidationParameters parameters, InstrumentationState rawState) {
+        State state = (State) rawState;
         // for API backwards compatibility reasons we capture the validation parameters, so we can put them into QueryComplexityInfo
         state.instrumentationValidationParameters.set(parameters);
         return noOp();
     }
 
     @Override
-    public InstrumentationContext<ExecutionResult> beginExecuteOperation(InstrumentationExecuteOperationParameters instrumentationExecuteOperationParameters) {
-        State state = instrumentationExecuteOperationParameters.getInstrumentationState();
+    public @Nullable InstrumentationContext<ExecutionResult> beginExecuteOperation(InstrumentationExecuteOperationParameters instrumentationExecuteOperationParameters, InstrumentationState rawState) {
+        State state = (State) rawState;
         QueryTraverser queryTraverser = newQueryTraverser(instrumentationExecuteOperationParameters.getExecutionContext());
 
         Map<QueryVisitorFieldEnvironment, Integer> valuesByParent = new LinkedHashMap<>();
         queryTraverser.visitPostOrder(new QueryVisitorStub() {
             @Override
             public void visitField(QueryVisitorFieldEnvironment env) {
-                int childsComplexity = valuesByParent.getOrDefault(env, 0);
-                int value = calculateComplexity(env, childsComplexity);
+                int childComplexity = valuesByParent.getOrDefault(env, 0);
+                int value = calculateComplexity(env, childComplexity);
 
                 valuesByParent.compute(env.getParentEnvironment(), (key, oldValue) ->
                         ofNullable(oldValue).orElse(0) + value
@@ -136,7 +138,7 @@ public class MaxQueryComplexityInstrumentation extends SimpleInstrumentation {
      * @param totalComplexity the complexity of the query
      * @param maxComplexity   the maximum complexity allowed
      *
-     * @return a instance of AbortExecutionException
+     * @return an instance of AbortExecutionException
      */
     protected AbortExecutionException mkAbortException(int totalComplexity, int maxComplexity) {
         return new AbortExecutionException("maximum query complexity exceeded " + totalComplexity + " > " + maxComplexity);
@@ -151,12 +153,12 @@ public class MaxQueryComplexityInstrumentation extends SimpleInstrumentation {
                 .build();
     }
 
-    private int calculateComplexity(QueryVisitorFieldEnvironment queryVisitorFieldEnvironment, int childsComplexity) {
+    private int calculateComplexity(QueryVisitorFieldEnvironment queryVisitorFieldEnvironment, int childComplexity) {
         if (queryVisitorFieldEnvironment.isTypeNameIntrospectionField()) {
             return 0;
         }
         FieldComplexityEnvironment fieldComplexityEnvironment = convertEnv(queryVisitorFieldEnvironment);
-        return fieldComplexityCalculator.calculate(fieldComplexityEnvironment, childsComplexity);
+        return fieldComplexityCalculator.calculate(fieldComplexityEnvironment, childComplexity);
     }
 
     private FieldComplexityEnvironment convertEnv(QueryVisitorFieldEnvironment queryVisitorFieldEnvironment) {
