@@ -25,6 +25,7 @@ public class DirectivesUtil {
 
 
     @Deprecated // use GraphQLAppliedDirectives eventually
+    @DeprecatedAt("2022-02-24")
     public static Map<String, GraphQLDirective> nonRepeatableDirectivesByName(List<GraphQLDirective> directives) {
         // filter the repeatable directives
         List<GraphQLDirective> singletonDirectives = directives.stream()
@@ -34,12 +35,14 @@ public class DirectivesUtil {
     }
 
     @Deprecated // use GraphQLAppliedDirectives eventually
+    @DeprecatedAt("2022-02-24")
     public static Map<String, ImmutableList<GraphQLDirective>> allDirectivesByName(List<GraphQLDirective> directives) {
 
         return ImmutableMap.copyOf(FpKit.groupingBy(directives, GraphQLDirective::getName));
     }
 
     @Deprecated // use GraphQLAppliedDirectives eventually
+    @DeprecatedAt("2022-02-24")
     public static Optional<GraphQLArgument> directiveWithArg(List<GraphQLDirective> directives, String directiveName, String argumentName) {
         GraphQLDirective directive = nonRepeatableDirectivesByName(directives).get(directiveName);
         GraphQLArgument argument = null;
@@ -51,6 +54,7 @@ public class DirectivesUtil {
 
 
     @Deprecated // use GraphQLAppliedDirectives eventually
+    @DeprecatedAt("2022-02-24")
     public static boolean isAllNonRepeatable(List<GraphQLDirective> directives) {
         if (directives == null || directives.isEmpty()) {
             return false;
@@ -64,6 +68,7 @@ public class DirectivesUtil {
     }
 
     @Deprecated // use GraphQLAppliedDirectives eventually
+    @DeprecatedAt("2022-02-24")
     public static List<GraphQLDirective> add(List<GraphQLDirective> targetList, GraphQLDirective newDirective) {
         assertNotNull(targetList, () -> "directive list can't be null");
         assertNotNull(newDirective, () -> "directive can't be null");
@@ -72,6 +77,7 @@ public class DirectivesUtil {
     }
 
     @Deprecated // use GraphQLAppliedDirectives eventually
+    @DeprecatedAt("2022-02-24")
     public static List<GraphQLDirective> addAll(List<GraphQLDirective> targetList, List<GraphQLDirective> newDirectives) {
         assertNotNull(targetList, () -> "directive list can't be null");
         assertNotNull(newDirectives, () -> "directive list can't be null");
@@ -80,6 +86,7 @@ public class DirectivesUtil {
     }
 
     @Deprecated // use GraphQLAppliedDirectives eventually
+    @DeprecatedAt("2022-02-24")
     public static GraphQLDirective getFirstDirective(String name, Map<String, List<GraphQLDirective>> allDirectivesByName) {
         List<GraphQLDirective> directives = allDirectivesByName.getOrDefault(name, emptyList());
         if (directives.isEmpty()) {

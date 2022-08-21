@@ -1,5 +1,6 @@
 package graphql.parser;
 
+import graphql.DeprecatedAt;
 import graphql.Internal;
 import graphql.PublicApi;
 import graphql.language.Document;
@@ -345,6 +346,7 @@ public class Parser {
      * @deprecated - really should use {@link #getAntlrToLanguage(CommonTokenStream, MultiSourceReader, ParserOptions)}
      */
     @Deprecated
+    @DeprecatedAt("2021-06-23")
     protected GraphqlAntlrToLanguage getAntlrToLanguage(CommonTokenStream tokens, MultiSourceReader multiSourceReader) {
         return null;
     }

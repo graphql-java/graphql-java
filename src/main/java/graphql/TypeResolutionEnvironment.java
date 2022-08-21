@@ -96,6 +96,7 @@ public class TypeResolutionEnvironment {
      * @deprecated use {@link #getGraphQLContext()} instead
      */
     @Deprecated
+    @DeprecatedAt("2021-12-27")
     public <T> T getContext() {
         //noinspection unchecked
         return (T) context;
