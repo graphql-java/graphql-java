@@ -523,10 +523,9 @@ class ExecutionStrategyTest extends Specification {
         1 * dataFetcher.get(_) >> { args -> environment = args[0] }
         environment.fieldDefinition == fieldDefinition
         environment.graphQLSchema == schema
-        environment.context == "context"
         environment.graphQlContext.get("key") == "context"
         environment.source == "source"
-        environment.fields == [field]
+        environment.fields == [field] // Retain deprecated for test coverage
         environment.root == "root"
         environment.parentType == objectType
         environment.arguments == ["arg1": "argVal"]

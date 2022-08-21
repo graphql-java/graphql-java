@@ -25,14 +25,10 @@ import static graphql.schema.visibility.NoIntrospectionGraphqlFieldVisibility.NO
 class GraphqlFieldVisibilityTest extends Specification {
 
     def "visibility is enforced"() {
-
         GraphqlFieldVisibility banNameVisibility = newBlock().addPattern(".*\\.name").build()
-        GraphQLCodeRegistry codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
-                .fieldVisibility(banNameVisibility)
-                .build()
         def schema = GraphQLSchema.newSchema()
                 .query(StarWarsSchema.queryType)
-                .codeRegistry(codeRegistry)
+                .fieldVisibility(banNameVisibility) // Retain deprecated builder for test coverage
                 .build()
 
         def graphQL = GraphQL.newGraphQL(schema).build()

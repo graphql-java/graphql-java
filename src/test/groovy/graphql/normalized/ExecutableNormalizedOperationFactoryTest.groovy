@@ -1314,7 +1314,7 @@ schema {
 
     private void assertValidQuery(GraphQLSchema graphQLSchema, String query, Map variables = [:]) {
         GraphQL graphQL = GraphQL.newGraphQL(graphQLSchema).build()
-        assert graphQL.execute(query, null, variables).errors.size() == 0
+        assert graphQL.execute(query, null, variables).errors.size() == 0 // Retain deprecated method for test coverage
     }
 
     def "normalized arguments"() {

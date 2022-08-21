@@ -190,7 +190,7 @@ class StarWarsQueryTest extends Specification {
                 ]
         ]
         when:
-        def result = GraphQL.newGraphQL(StarWarsSchema.starWarsSchema).build().execute(query, null, params).data
+        def result = GraphQL.newGraphQL(StarWarsSchema.starWarsSchema).build().execute(query, null, params).data // Retain deprecated method for test coverage
 
         then:
         result == expected
@@ -212,7 +212,11 @@ class StarWarsQueryTest extends Specification {
                 human: null
         ]
         when:
-        def result = GraphQL.newGraphQL(StarWarsSchema.starWarsSchema).build().execute(query, null, params).data
+        def executionInput = ExecutionInput.newExecutionInput()
+                .query(query)
+                .root(null)
+                .variables(params)
+        def result = GraphQL.newGraphQL(StarWarsSchema.starWarsSchema).build().execute(executionInput).data
 
         then:
         result == expected
