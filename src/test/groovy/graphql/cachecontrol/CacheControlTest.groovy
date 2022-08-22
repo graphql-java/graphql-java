@@ -130,7 +130,7 @@ class CacheControlTest extends Specification {
     }
 
     def "transform works and copies values with cache control"() {
-        // Retain this ExecutionContext CacheControl test for coverage.
+        // Retain this ExecutionContext CacheControl test for coverage
         given:
         def cacheControl = CacheControl.newCacheControl()
         def oldCoercedVariables = CoercedVariables.emptyVariables()
