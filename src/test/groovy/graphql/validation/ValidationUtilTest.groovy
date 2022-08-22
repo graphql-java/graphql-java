@@ -190,7 +190,7 @@ class ValidationUtilTest extends Specification {
                 .field(GraphQLInputObjectField.newInputObjectField()
                 .name("hello")
                 .type(nonNull(GraphQLString))
-                .defaultValue("default")) // Retain deprecated builder for test coverage
+                .defaultValueProgrammatic("default"))
                 .build()
         def objectValue = ObjectValue.newObjectValue()
 
