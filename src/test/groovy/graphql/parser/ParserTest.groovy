@@ -858,6 +858,24 @@ triple3 : """edge cases \\""" "" " \\"" \\" edge cases"""
         operationDefinition.getComments()[0].content == " Represents the 😕 emoji."
     }
 
+
+    def "the parser can be invoked via parser environment"() {
+        def input = '''
+              # Represents the 😕 emoji.
+              {
+              foo
+               }
+    '''
+        when:
+        def parserEnvironment = ParserEnvironment.newParserEnvironment().document(input).build()
+
+        Document document = Parser.parse(parserEnvironment)
+        OperationDefinition operationDefinition = (document.definitions[0] as OperationDefinition)
+
+        then:
+        operationDefinition.getComments()[0].content == " Represents the 😕 emoji."
+    }
+
     def "can override antlr to ast"() {
 
         def query = '''

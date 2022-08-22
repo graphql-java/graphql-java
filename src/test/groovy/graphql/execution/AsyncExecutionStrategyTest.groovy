@@ -2,6 +2,7 @@ package graphql.execution
 
 import graphql.ErrorType
 import graphql.ExecutionResult
+import graphql.GraphQLContext
 import graphql.execution.instrumentation.ExecutionStrategyInstrumentationContext
 import graphql.execution.instrumentation.SimpleInstrumentation
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters
@@ -82,6 +83,8 @@ class AsyncExecutionStrategyTest extends Specification {
                 .operationDefinition(operation)
                 .instrumentation(SimpleInstrumentation.INSTANCE)
                 .valueUnboxer(ValueUnboxer.DEFAULT)
+                .graphQLContext(GraphQLContext.getDefault())
+                .locale(Locale.getDefault())
                 .build()
         ExecutionStrategyParameters executionStrategyParameters = ExecutionStrategyParameters
                 .newParameters()
@@ -121,6 +124,8 @@ class AsyncExecutionStrategyTest extends Specification {
                 .operationDefinition(operation)
                 .valueUnboxer(ValueUnboxer.DEFAULT)
                 .instrumentation(SimpleInstrumentation.INSTANCE)
+                .locale(Locale.getDefault())
+                .graphQLContext(GraphQLContext.getDefault())
                 .build()
         ExecutionStrategyParameters executionStrategyParameters = ExecutionStrategyParameters
                 .newParameters()
@@ -162,6 +167,8 @@ class AsyncExecutionStrategyTest extends Specification {
                 .operationDefinition(operation)
                 .valueUnboxer(ValueUnboxer.DEFAULT)
                 .instrumentation(SimpleInstrumentation.INSTANCE)
+                .graphQLContext(GraphQLContext.getDefault())
+                .locale(Locale.getDefault())
                 .build()
         ExecutionStrategyParameters executionStrategyParameters = ExecutionStrategyParameters
                 .newParameters()
@@ -202,6 +209,8 @@ class AsyncExecutionStrategyTest extends Specification {
                 .operationDefinition(operation)
                 .instrumentation(SimpleInstrumentation.INSTANCE)
                 .valueUnboxer(ValueUnboxer.DEFAULT)
+                .locale(Locale.getDefault())
+                .graphQLContext(GraphQLContext.getDefault())
                 .build()
         ExecutionStrategyParameters executionStrategyParameters = ExecutionStrategyParameters
                 .newParameters()
@@ -240,6 +249,8 @@ class AsyncExecutionStrategyTest extends Specification {
                 .executionId(ExecutionId.generate())
                 .operationDefinition(operation)
                 .valueUnboxer(ValueUnboxer.DEFAULT)
+                .graphQLContext(GraphQLContext.getDefault())
+                .locale(Locale.getDefault())
                 .instrumentation(new SimpleInstrumentation() {
                     @Override
                     ExecutionStrategyInstrumentationContext beginExecutionStrategy(InstrumentationExecutionStrategyParameters parameters) {
@@ -251,13 +262,11 @@ class AsyncExecutionStrategyTest extends Specification {
                             }
 
                             @Override
-                            public void onDispatched(CompletableFuture<ExecutionResult> result) {
-
+                            void onDispatched(CompletableFuture<ExecutionResult> result) {
                             }
 
                             @Override
-                            public void onCompleted(ExecutionResult result, Throwable t) {
-
+                            void onCompleted(ExecutionResult result, Throwable t) {
                             }
                         }
                     }

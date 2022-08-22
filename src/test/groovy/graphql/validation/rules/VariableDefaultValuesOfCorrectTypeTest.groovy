@@ -1,6 +1,8 @@
 package graphql.validation.rules
 
+import graphql.GraphQLContext
 import graphql.TestUtil
+import graphql.i18n.I18n
 import graphql.language.BooleanValue
 import graphql.language.TypeName
 import graphql.language.VariableDefinition
@@ -17,6 +19,11 @@ class VariableDefaultValuesOfCorrectTypeTest extends Specification {
     ValidationContext validationContext = Mock(ValidationContext)
     ValidationErrorCollector errorCollector = new ValidationErrorCollector()
     VariableDefaultValuesOfCorrectType defaultValuesOfCorrectType = new VariableDefaultValuesOfCorrectType(validationContext, errorCollector)
+
+    void setup() {
+        def context = GraphQLContext.getDefault()
+        validationContext.getGraphQLContext() >> context
+    }
 
     def "default value has wrong type"() {
         given:

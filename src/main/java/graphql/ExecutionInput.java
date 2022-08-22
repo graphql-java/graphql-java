@@ -44,7 +44,7 @@ public class ExecutionInput {
         this.dataLoaderRegistry = builder.dataLoaderRegistry;
         this.cacheControl = builder.cacheControl;
         this.executionId = builder.executionId;
-        this.locale = builder.locale;
+        this.locale = builder.locale != null ? builder.locale : Locale.getDefault(); // always have a locale in place
         this.localContext = builder.localContext;
         this.extensions = builder.extensions;
     }
