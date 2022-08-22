@@ -1,7 +1,7 @@
 package graphql.schema
 
 import graphql.GraphQLContext
-import graphql.cachecontrol.CacheControl
+import graphql.execution.CoercedVariables
 import graphql.execution.ExecutionId
 import graphql.execution.ExecutionStepInfo
 import graphql.language.FragmentDefinition
@@ -30,7 +30,6 @@ class DataFetchingEnvironmentImplTest extends Specification {
     def fragmentByName = [frag: frag]
     def variables = [var: "able"]
     def dataLoaderRegistry = new DataLoaderRegistry().register("dataLoader", dataLoader)
-    def cacheControl = CacheControl.newCacheControl()
 
     def executionContext = newExecutionContextBuilder()
             .root("root")
@@ -39,11 +38,10 @@ class DataFetchingEnvironmentImplTest extends Specification {
             .executionId(executionId)
             .operationDefinition(operationDefinition)
             .document(document)
-            .variables(variables)
+            .coercedVariables(CoercedVariables.of(variables))
             .graphQLSchema(starWarsSchema)
             .fragmentsByName(fragmentByName)
             .dataLoaderRegistry(dataLoaderRegistry)
-            .cacheControl(cacheControl)
             .build()
 
 
@@ -95,7 +93,6 @@ class DataFetchingEnvironmentImplTest extends Specification {
                 .document(document)
                 .variables(variables)
                 .dataLoaderRegistry(dataLoaderRegistry)
-                .cacheControl(cacheControl)
                 .locale(Locale.CANADA)
                 .localContext("localContext")
                 .build()
@@ -121,7 +118,6 @@ class DataFetchingEnvironmentImplTest extends Specification {
         dfe.getOperationDefinition() == dfeCopy.getOperationDefinition()
         dfe.getVariables() == dfeCopy.getVariables()
         dfe.getDataLoader("dataLoader") == dataLoader
-        dfe.getCacheControl() == cacheControl
         dfe.getLocale() == dfeCopy.getLocale()
         dfe.getLocalContext() == dfeCopy.getLocalContext()
     }

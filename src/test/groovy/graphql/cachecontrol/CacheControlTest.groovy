@@ -2,12 +2,25 @@ package graphql.cachecontrol
 
 import graphql.ExecutionInput
 import graphql.ExecutionResultImpl
+import graphql.GraphQLContext
 import graphql.TestUtil
+import graphql.execution.CoercedVariables
+import graphql.execution.ExecutionContextBuilder
+import graphql.execution.ExecutionId
+import graphql.execution.ExecutionStrategy
 import graphql.execution.ResultPath
+import graphql.execution.instrumentation.Instrumentation
+import graphql.language.Document
+import graphql.language.FragmentDefinition
+import graphql.language.OperationDefinition
+import graphql.parser.Parser
 import graphql.schema.DataFetcher
+import graphql.schema.GraphQLSchema
+import org.dataloader.DataLoaderRegistry
 import spock.lang.Specification
 
 class CacheControlTest extends Specification {
+    // All tests in this file will be deleted when CacheControl code is removed.
 
     def "can build up hints when there is no extensions present"() {
         def cc = CacheControl.newCacheControl()
@@ -114,5 +127,60 @@ class CacheControlTest extends Specification {
                         ]
                 ]
         ]
+    }
+
+    def "transform works and copies values with cache control"() {
+        // Retain this ExecutionContext CacheControl test for coverage.
+        given:
+        def cacheControl = CacheControl.newCacheControl()
+        def oldCoercedVariables = CoercedVariables.emptyVariables()
+        Instrumentation instrumentation = Mock(Instrumentation)
+        ExecutionStrategy queryStrategy = Mock(ExecutionStrategy)
+        ExecutionStrategy mutationStrategy = Mock(ExecutionStrategy)
+        ExecutionStrategy subscriptionStrategy = Mock(ExecutionStrategy)
+        GraphQLSchema schema = Mock(GraphQLSchema)
+        def executionId = ExecutionId.generate()
+        def graphQLContext = GraphQLContext.newContext().build()
+        def root = "root"
+        Document document = new Parser().parseDocument("query myQuery(\$var: String){...MyFragment} fragment MyFragment on Query{foo}")
+        def operation = document.definitions[0] as OperationDefinition
+        def fragment = document.definitions[1] as FragmentDefinition
+        def dataLoaderRegistry = new DataLoaderRegistry()
+
+        def executionContextOld = new ExecutionContextBuilder()
+                .cacheControl(cacheControl)
+                .executionId(executionId)
+                .instrumentation(instrumentation)
+                .graphQLSchema(schema)
+                .queryStrategy(queryStrategy)
+                .mutationStrategy(mutationStrategy)
+                .subscriptionStrategy(subscriptionStrategy)
+                .root(root)
+                .graphQLContext(graphQLContext)
+                .coercedVariables(oldCoercedVariables)
+                .fragmentsByName([MyFragment: fragment])
+                .operationDefinition(operation)
+                .dataLoaderRegistry(dataLoaderRegistry)
+                .build()
+
+        when:
+        def coercedVariables = CoercedVariables.of([var: 'value'])
+        def executionContext = executionContextOld.transform(builder -> builder
+                .coercedVariables(coercedVariables))
+
+        then:
+        executionContext.cacheControl == cacheControl
+        executionContext.executionId == executionId
+        executionContext.instrumentation == instrumentation
+        executionContext.graphQLSchema == schema
+        executionContext.queryStrategy == queryStrategy
+        executionContext.mutationStrategy == mutationStrategy
+        executionContext.subscriptionStrategy == subscriptionStrategy
+        executionContext.root == root
+        executionContext.graphQLContext == graphQLContext
+        executionContext.coercedVariables == coercedVariables
+        executionContext.getFragmentsByName() == [MyFragment: fragment]
+        executionContext.operationDefinition == operation
+        executionContext.dataLoaderRegistry == dataLoaderRegistry
     }
 }

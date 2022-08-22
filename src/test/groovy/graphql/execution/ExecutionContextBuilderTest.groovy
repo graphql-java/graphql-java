@@ -1,7 +1,6 @@
 package graphql.execution
 
 import graphql.GraphQLContext
-import graphql.cachecontrol.CacheControl
 import graphql.execution.instrumentation.Instrumentation
 import graphql.language.Document
 import graphql.language.FragmentDefinition
@@ -26,7 +25,6 @@ class ExecutionContextBuilderTest extends Specification {
     def operation = document.definitions[0] as OperationDefinition
     def fragment = document.definitions[1] as FragmentDefinition
     def dataLoaderRegistry = new DataLoaderRegistry()
-    def cacheControl = CacheControl.newCacheControl()
 
     def "builds the correct ExecutionContext"() {
         when:
@@ -44,7 +42,6 @@ class ExecutionContextBuilderTest extends Specification {
             .fragmentsByName([MyFragment: fragment])
             .variables([var: 'value']) // Retain deprecated builder for test coverage
             .dataLoaderRegistry(dataLoaderRegistry)
-            .cacheControl(cacheControl)
             .build()
 
         then:
@@ -61,7 +58,6 @@ class ExecutionContextBuilderTest extends Specification {
         executionContext.getFragmentsByName() == [MyFragment: fragment]
         executionContext.operationDefinition == operation
         executionContext.dataLoaderRegistry == dataLoaderRegistry
-        executionContext.cacheControl == cacheControl
     }
 
     def "builds the correct ExecutionContext with coerced variables"() {
@@ -83,7 +79,6 @@ class ExecutionContextBuilderTest extends Specification {
             .fragmentsByName([MyFragment: fragment])
             .coercedVariables(coercedVariables)
             .dataLoaderRegistry(dataLoaderRegistry)
-            .cacheControl(cacheControl)
             .build()
 
         then:
@@ -99,7 +94,6 @@ class ExecutionContextBuilderTest extends Specification {
         executionContext.getFragmentsByName() == [MyFragment: fragment]
         executionContext.operationDefinition == operation
         executionContext.dataLoaderRegistry == dataLoaderRegistry
-        executionContext.cacheControl == cacheControl
     }
 
     def "builds the correct ExecutionContext, if both variables and coercedVariables are set, latest value set takes precedence"() {
@@ -121,7 +115,6 @@ class ExecutionContextBuilderTest extends Specification {
                 .fragmentsByName([MyFragment: fragment])
                 .coercedVariables(coercedVariables)
                 .dataLoaderRegistry(dataLoaderRegistry)
-                .cacheControl(cacheControl)
                 .build()
 
         then:
@@ -137,7 +130,6 @@ class ExecutionContextBuilderTest extends Specification {
         executionContext.getFragmentsByName() == [MyFragment: fragment]
         executionContext.operationDefinition == operation
         executionContext.dataLoaderRegistry == dataLoaderRegistry
-        executionContext.cacheControl == cacheControl
     }
 
     def "transform works and copies values with coerced variables"() {
@@ -157,7 +149,6 @@ class ExecutionContextBuilderTest extends Specification {
             .coercedVariables(oldCoercedVariables)
             .fragmentsByName([MyFragment: fragment])
             .dataLoaderRegistry(dataLoaderRegistry)
-            .cacheControl(cacheControl)
             .build()
 
         when:
@@ -178,7 +169,6 @@ class ExecutionContextBuilderTest extends Specification {
         executionContext.getFragmentsByName() == [MyFragment: fragment]
         executionContext.operationDefinition == operation
         executionContext.dataLoaderRegistry == dataLoaderRegistry
-        executionContext.cacheControl == cacheControl
     }
 
     def "transform copies values, if both variables and coercedVariables set, latest value set takes precedence"() {
@@ -198,7 +188,6 @@ class ExecutionContextBuilderTest extends Specification {
                 .coercedVariables(oldCoercedVariables)
                 .fragmentsByName([MyFragment: fragment])
                 .dataLoaderRegistry(dataLoaderRegistry)
-                .cacheControl(cacheControl)
                 .build()
 
         when:
@@ -219,6 +208,5 @@ class ExecutionContextBuilderTest extends Specification {
         executionContext.getFragmentsByName() == [MyFragment: fragment]
         executionContext.operationDefinition == operation
         executionContext.dataLoaderRegistry == dataLoaderRegistry
-        executionContext.cacheControl == cacheControl
     }
 }
