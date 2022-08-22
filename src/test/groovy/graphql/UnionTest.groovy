@@ -96,7 +96,8 @@ class UnionTest extends Specification {
         ]
 
         when:
-        def executionResult = GraphQL.newGraphQL(GarfieldSchema.GarfieldSchema).build().execute(query, GarfieldSchema.john)
+        def ei = ExecutionInput.newExecutionInput(query).root(GarfieldSchema.john).build()
+        def executionResult = GraphQL.newGraphQL(GarfieldSchema.GarfieldSchema).build().execute(ei)
 
         then:
         executionResult.data == expectedResult
@@ -148,7 +149,8 @@ class UnionTest extends Specification {
                 ]
         ]
         when:
-        def executionResult = GraphQL.newGraphQL(GarfieldSchema.GarfieldSchema).build().execute(query, GarfieldSchema.john)
+        def ei = ExecutionInput.newExecutionInput(query).root(GarfieldSchema.john).build()
+        def executionResult = GraphQL.newGraphQL(GarfieldSchema.GarfieldSchema).build().execute(ei)
 
         then:
         executionResult.data == expectedResult
