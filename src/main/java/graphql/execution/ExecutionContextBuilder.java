@@ -2,6 +2,7 @@ package graphql.execution;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import graphql.DeprecatedAt;
 import graphql.ExecutionInput;
 import graphql.GraphQLContext;
 import graphql.GraphQLError;
@@ -157,6 +158,7 @@ public class ExecutionContextBuilder {
      * @deprecated use {@link #coercedVariables(CoercedVariables)} instead
      */
     @Deprecated
+    @DeprecatedAt("2022-05-24")
     public ExecutionContextBuilder variables(Map<String, Object> variables) {
         this.coercedVariables = CoercedVariables.of(variables);
         return this;
@@ -188,6 +190,7 @@ public class ExecutionContextBuilder {
     }
 
     @Deprecated
+    @DeprecatedAt("2022-07-26")
     public ExecutionContextBuilder cacheControl(CacheControl cacheControl) {
         this.cacheControl = cacheControl;
         return this;

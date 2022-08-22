@@ -335,6 +335,7 @@ public class GraphQL {
      * @deprecated Use {@link #execute(ExecutionInput)}
      */
     @Deprecated
+    @DeprecatedAt("2017-06-02")
     public ExecutionResult execute(String query, Object context) {
         ExecutionInput executionInput = ExecutionInput.newExecutionInput()
                 .query(query)
@@ -356,6 +357,7 @@ public class GraphQL {
      * @deprecated Use {@link #execute(ExecutionInput)}
      */
     @Deprecated
+    @DeprecatedAt("2017-06-02")
     public ExecutionResult execute(String query, String operationName, Object context) {
         ExecutionInput executionInput = ExecutionInput.newExecutionInput()
                 .query(query)
@@ -378,6 +380,7 @@ public class GraphQL {
      * @deprecated Use {@link #execute(ExecutionInput)}
      */
     @Deprecated
+    @DeprecatedAt("2017-06-02")
     public ExecutionResult execute(String query, Object context, Map<String, Object> variables) {
         ExecutionInput executionInput = ExecutionInput.newExecutionInput()
                 .query(query)
@@ -401,6 +404,7 @@ public class GraphQL {
      * @deprecated Use {@link #execute(ExecutionInput)}
      */
     @Deprecated
+    @DeprecatedAt("2017-06-02")
     public ExecutionResult execute(String query, String operationName, Object context, Map<String, Object> variables) {
         ExecutionInput executionInput = ExecutionInput.newExecutionInput()
                 .query(query)

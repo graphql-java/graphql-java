@@ -1,5 +1,6 @@
 package graphql.schema;
 
+import graphql.DeprecatedAt;
 import graphql.GraphQLContext;
 import graphql.PublicApi;
 import graphql.cachecontrol.CacheControl;
@@ -88,6 +89,7 @@ public interface DataFetchingEnvironment extends IntrospectionDataFetchingEnviro
      * @deprecated - use {@link #getGraphQlContext()} instead
      */
     @Deprecated
+    @DeprecatedAt("2021-07-05")
     <T> T getContext();
 
     /**
@@ -138,6 +140,7 @@ public interface DataFetchingEnvironment extends IntrospectionDataFetchingEnviro
      * @deprecated Use {@link #getMergedField()}.
      */
     @Deprecated
+    @DeprecatedAt("2018-12-20")
     List<Field> getFields();
 
     /**
@@ -242,6 +245,7 @@ public interface DataFetchingEnvironment extends IntrospectionDataFetchingEnviro
      * @deprecated - Apollo has deprecated the Cache Control specification
      */
     @Deprecated
+    @DeprecatedAt("2022-07-26")
     CacheControl getCacheControl();
 
     /**

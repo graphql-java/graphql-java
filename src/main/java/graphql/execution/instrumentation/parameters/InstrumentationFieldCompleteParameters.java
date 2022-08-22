@@ -1,5 +1,6 @@
 package graphql.execution.instrumentation.parameters;
 
+import graphql.DeprecatedAt;
 import graphql.PublicApi;
 import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionStepInfo;
@@ -43,6 +44,7 @@ public class InstrumentationFieldCompleteParameters {
      * @deprecated state is now passed in direct to instrumentation methods
      */
     @Deprecated
+    @DeprecatedAt("2022-07-26")
     public InstrumentationFieldCompleteParameters withNewState(InstrumentationState instrumentationState) {
         return new InstrumentationFieldCompleteParameters(
                 this.executionContext, executionStrategyParameters, this.executionStepInfo, this.fetchedValue, instrumentationState);
@@ -62,6 +64,7 @@ public class InstrumentationFieldCompleteParameters {
     }
 
     @Deprecated
+    @DeprecatedAt("2020-09-08")
     public ExecutionStepInfo getTypeInfo() {
         return getExecutionStepInfo();
     }
@@ -85,6 +88,7 @@ public class InstrumentationFieldCompleteParameters {
      * @deprecated state is now passed in direct to instrumentation methods
      */
     @Deprecated
+    @DeprecatedAt("2022-07-26")
     @SuppressWarnings("TypeParameterUnusedInFormals")
     public <T extends InstrumentationState> T getInstrumentationState() {
         //noinspection unchecked

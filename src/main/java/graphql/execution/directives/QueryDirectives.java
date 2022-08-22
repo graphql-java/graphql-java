@@ -1,5 +1,6 @@
 package graphql.execution.directives;
 
+import graphql.DeprecatedAt;
 import graphql.PublicApi;
 import graphql.language.Field;
 import graphql.schema.GraphQLDirective;
@@ -51,6 +52,7 @@ public interface QueryDirectives {
      * @deprecated - use the {@link QueryAppliedDirective} methods instead
      */
     @Deprecated
+    @DeprecatedAt("2022-02-24")
     Map<String, List<GraphQLDirective>> getImmediateDirectivesByName();
 
     /**
@@ -73,6 +75,7 @@ public interface QueryDirectives {
      * @deprecated - use the {@link QueryAppliedDirective} methods instead
      */
     @Deprecated
+    @DeprecatedAt("2022-02-24")
     List<GraphQLDirective> getImmediateDirective(String directiveName);
 
     /**
@@ -84,5 +87,6 @@ public interface QueryDirectives {
      * @deprecated - use the {@link QueryAppliedDirective} methods instead
      */
     @Deprecated
+    @DeprecatedAt("2022-02-24")
     Map<Field, List<GraphQLDirective>> getImmediateDirectivesByField();
 }

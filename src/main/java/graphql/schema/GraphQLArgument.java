@@ -1,6 +1,7 @@
 package graphql.schema;
 
 
+import graphql.DeprecatedAt;
 import graphql.DirectivesUtil;
 import graphql.PublicApi;
 import graphql.language.InputValueDefinition;
@@ -123,6 +124,7 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
      * @deprecated use {@link GraphQLAppliedDirectiveArgument} instead
      */
     @Deprecated
+    @DeprecatedAt("2022-02-24")
     public @NotNull InputValueWithState getArgumentValue() {
         return value;
     }
@@ -146,6 +148,7 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
      * @deprecated use {@link GraphQLAppliedDirectiveArgument} instead
      */
     @Deprecated
+    @DeprecatedAt("2022-02-24")
     public static <T> T getArgumentValue(GraphQLArgument argument) {
         return getInputValueImpl(argument.getType(), argument.getArgumentValue());
     }
@@ -370,6 +373,7 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
          * @deprecated use {@link #defaultValueLiteral(Value)} or {@link #defaultValueProgrammatic(Object)}
          */
         @Deprecated
+        @DeprecatedAt("2021-05-10")
         public Builder defaultValue(Object defaultValue) {
             this.defaultValue = InputValueWithState.newInternalValue(defaultValue);
             return this;
@@ -415,6 +419,7 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
          * @deprecated use {@link #valueLiteral(Value)} or {@link #valueProgrammatic(Object)}
          */
         @Deprecated
+        @DeprecatedAt("2021-05-10")
         public Builder value(@Nullable Object value) {
             this.value = InputValueWithState.newInternalValue(value);
             return this;
@@ -430,6 +435,7 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
          * @deprecated use {@link  GraphQLAppliedDirectiveArgument} methods instead
          */
         @Deprecated
+        @DeprecatedAt("2022-02-24")
         public Builder valueLiteral(@NotNull Value value) {
             this.value = InputValueWithState.newLiteralValue(value);
             return this;
@@ -443,6 +449,7 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
          * @deprecated use {@link  GraphQLAppliedDirectiveArgument} methods instead
          */
         @Deprecated
+        @DeprecatedAt("2022-02-24")
         public Builder valueProgrammatic(@Nullable Object value) {
             this.value = InputValueWithState.newExternalValue(value);
             return this;
@@ -456,6 +463,7 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
          * @deprecated use {@link  GraphQLAppliedDirectiveArgument} methods instead
          */
         @Deprecated
+        @DeprecatedAt("2022-02-24")
         public Builder clearValue() {
             this.value = InputValueWithState.NOT_SET;
             return this;

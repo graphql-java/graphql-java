@@ -1,5 +1,6 @@
 package graphql.execution.instrumentation.parameters;
 
+import graphql.DeprecatedAt;
 import graphql.PublicApi;
 import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionStrategyParameters;
@@ -36,6 +37,7 @@ public class InstrumentationExecutionStrategyParameters {
      * @deprecated state is now passed in direct to instrumentation methods
      */
     @Deprecated
+    @DeprecatedAt("2022-07-26")
     public InstrumentationExecutionStrategyParameters withNewState(InstrumentationState instrumentationState) {
         return new InstrumentationExecutionStrategyParameters(executionContext, executionStrategyParameters, instrumentationState);
     }
@@ -59,6 +61,7 @@ public class InstrumentationExecutionStrategyParameters {
      * @deprecated state is now passed in direct to instrumentation methods
      */
     @Deprecated
+    @DeprecatedAt("2022-07-26")
     @SuppressWarnings("TypeParameterUnusedInFormals")
     public <T extends InstrumentationState> T getInstrumentationState() {
         //noinspection unchecked
