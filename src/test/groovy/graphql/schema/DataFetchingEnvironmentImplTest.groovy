@@ -4,8 +4,11 @@ import graphql.GraphQLContext
 import graphql.execution.CoercedVariables
 import graphql.execution.ExecutionId
 import graphql.execution.ExecutionStepInfo
+import graphql.language.Argument
+import graphql.language.Field
 import graphql.language.FragmentDefinition
 import graphql.language.OperationDefinition
+import graphql.language.StringValue
 import graphql.language.TypeName
 import org.dataloader.BatchLoader
 import org.dataloader.DataLoader
@@ -15,6 +18,7 @@ import spock.lang.Specification
 import java.util.concurrent.CompletableFuture
 
 import static graphql.StarWarsSchema.starWarsSchema
+import static graphql.TestUtil.mergedField
 import static graphql.TestUtil.toDocument
 import static graphql.execution.ExecutionContextBuilder.newExecutionContextBuilder
 import static graphql.schema.DataFetchingEnvironmentImpl.newDataFetchingEnvironment
@@ -133,4 +137,18 @@ class DataFetchingEnvironmentImplTest extends Specification {
         dfe.getArgument("x") == "y"
         dfe.getArgumentOrDefault("x", "default") == "y"
     }
+
+    def "deprecated getFields() method works"() {
+        when:
+        Argument argument = new Argument("arg1", new StringValue("argVal"))
+        Field field = new Field("someField", [argument])
+
+        def environment = newDataFetchingEnvironment(executionContext)
+                .mergedField(mergedField(field))
+                .build()
+
+        then:
+        environment.fields == [field] // Retain deprecated method for test coverage
+    }
+
 }

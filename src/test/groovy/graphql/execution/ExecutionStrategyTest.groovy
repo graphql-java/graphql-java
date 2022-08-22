@@ -21,8 +21,6 @@ import graphql.parser.Parser
 import graphql.schema.Coercing
 import graphql.schema.DataFetcher
 import graphql.schema.DataFetchingEnvironment
-import graphql.schema.FieldCoordinates
-import graphql.schema.GraphQLCodeRegistry
 import graphql.schema.GraphQLEnumType
 import graphql.schema.GraphQLFieldDefinition
 import graphql.schema.GraphQLScalarType
@@ -504,13 +502,14 @@ class ExecutionStrategyTest extends Specification {
         NonNullableFieldValidator nullableFieldValidator = new NonNullableFieldValidator(executionContext, typeInfo)
         Argument argument = new Argument("arg1", new StringValue("argVal"))
         Field field = new Field("someField", [argument])
+        MergedField mergedField = mergedField(field)
         ResultPath resultPath = ResultPath.rootPath().segment("test")
 
         def parameters = newParameters()
                 .executionStepInfo(typeInfo)
                 .source("source")
                 .fields(mergedSelectionSet(["someField": [field]]))
-                .field(mergedField(field))
+                .field(mergedField)
                 .nonNullFieldValidator(nullableFieldValidator)
                 .path(resultPath)
                 .build()
@@ -525,7 +524,7 @@ class ExecutionStrategyTest extends Specification {
         environment.graphQLSchema == schema
         environment.graphQlContext.get("key") == "context"
         environment.source == "source"
-        environment.fields == [field] // Retain deprecated for test coverage
+        environment.mergedField == mergedField
         environment.root == "root"
         environment.parentType == objectType
         environment.arguments == ["arg1": "argVal"]
@@ -745,7 +744,7 @@ class ExecutionStrategyTest extends Specification {
     def "#842 completes value for java.util.Stream"() {
         given:
         ExecutionContext executionContext = buildContext()
-        Stream<Long> result = Stream.of(1, 2, 3)
+        Stream<Long> result = Stream.of(1L, 2L, 3L)
         def fieldType = list(Scalars.GraphQLInt)
         def fldDef = newFieldDefinition().name("test").type(fieldType).build()
         def executionStepInfo = ExecutionStepInfo.newExecutionStepInfo().type(fieldType).path(ResultPath.rootPath()).fieldDefinition(fldDef).build()
