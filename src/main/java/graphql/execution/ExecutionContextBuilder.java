@@ -131,6 +131,11 @@ public class ExecutionContextBuilder {
         return this;
     }
 
+    /*
+     * @deprecated use {@link #graphQLContext(GraphQLContext)} instead
+     */
+    @Deprecated
+    @DeprecatedAt("2021-07-05")
     public ExecutionContextBuilder context(Object context) {
         this.context = context;
         return this;

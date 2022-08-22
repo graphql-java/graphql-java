@@ -72,7 +72,6 @@ class ExecutionStrategyTest extends Specification {
                 .mutationStrategy(executionStrategy)
                 .subscriptionStrategy(executionStrategy)
                 .coercedVariables(CoercedVariables.of(variables))
-                .context("context")
                 .graphQLContext(GraphQLContext.newContext().of("key","context").build())
                 .root("root")
                 .dataLoaderRegistry(new DataLoaderRegistry())

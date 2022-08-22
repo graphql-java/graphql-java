@@ -37,7 +37,6 @@ class DataFetchingEnvironmentImplTest extends Specification {
 
     def executionContext = newExecutionContextBuilder()
             .root("root")
-            .context("context")
             .graphQLContext(GraphQLContext.of(["key":"context"]))
             .executionId(executionId)
             .operationDefinition(operationDefinition)
@@ -47,7 +46,6 @@ class DataFetchingEnvironmentImplTest extends Specification {
             .fragmentsByName(fragmentByName)
             .dataLoaderRegistry(dataLoaderRegistry)
             .build()
-
 
     def "immutable arguments"() {
         def dataFetchingEnvironment = newDataFetchingEnvironment(executionContext).arguments([arg: "argVal"])
@@ -64,7 +62,6 @@ class DataFetchingEnvironmentImplTest extends Specification {
     }
 
     def "copying works as expected from execution context"() {
-
         when:
         def dfe = newDataFetchingEnvironment(executionContext)
                 .build()
