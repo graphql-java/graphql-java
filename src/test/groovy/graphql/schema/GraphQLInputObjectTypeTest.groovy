@@ -1,5 +1,6 @@
 package graphql.schema
 
+import graphql.GraphQLContext
 import graphql.StarWarsSchema
 import graphql.language.ObjectValue
 import graphql.validation.ValidationUtil
@@ -60,6 +61,7 @@ class GraphQLInputObjectTypeTest extends Specification {
 
     def "deprecated default value builder works"() {
         given:
+        def graphQLContext = GraphQLContext.getDefault()
         def schema = GraphQLSchema.newSchema().query(StarWarsSchema.queryType).build()
         def validationUtil = new ValidationUtil()
         def inputObjectType = GraphQLInputObjectType.newInputObject()
@@ -72,6 +74,6 @@ class GraphQLInputObjectTypeTest extends Specification {
         def objectValue = ObjectValue.newObjectValue()
 
         expect:
-        validationUtil.isValidLiteralValue(objectValue.build(), inputObjectType, schema)
+        validationUtil.isValidLiteralValue(objectValue.build(), inputObjectType, schema, graphQLContext, Locale.ENGLISH)
     }
 }
