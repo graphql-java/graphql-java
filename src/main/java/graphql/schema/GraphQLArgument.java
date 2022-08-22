@@ -3,6 +3,7 @@ package graphql.schema;
 
 import graphql.DeprecatedAt;
 import graphql.DirectivesUtil;
+import graphql.GraphQLContext;
 import graphql.PublicApi;
 import graphql.language.InputValueDefinition;
 import graphql.language.Value;
@@ -13,6 +14,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.function.Consumer;
 
@@ -150,7 +152,7 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
     @Deprecated
     @DeprecatedAt("2022-02-24")
     public static <T> T getArgumentValue(GraphQLArgument argument) {
-        return getInputValueImpl(argument.getType(), argument.getArgumentValue());
+        return getInputValueImpl(argument.getType(), argument.getArgumentValue(), GraphQLContext.getDefault(), Locale.getDefault());
     }
 
     /**
@@ -170,7 +172,7 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
      * @return a value of type T which is the java value of the argument default
      */
     public static <T> T getArgumentDefaultValue(GraphQLArgument argument) {
-        return getInputValueImpl(argument.getType(), argument.getArgumentDefaultValue());
+        return getInputValueImpl(argument.getType(), argument.getArgumentDefaultValue(), GraphQLContext.getDefault(), Locale.getDefault());
     }
 
     public String getDescription() {

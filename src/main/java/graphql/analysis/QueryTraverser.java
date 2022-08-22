@@ -1,5 +1,6 @@
 package graphql.analysis;
 
+import graphql.GraphQLContext;
 import graphql.PublicApi;
 import graphql.execution.CoercedVariables;
 import graphql.execution.RawVariables;
@@ -20,6 +21,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import static graphql.Assert.assertNotNull;
@@ -70,7 +72,7 @@ public class QueryTraverser {
         this.fragmentsByName = getOperationResult.fragmentsByName;
         this.roots = singletonList(getOperationResult.operationDefinition);
         this.rootParentType = getRootTypeFromOperation(getOperationResult.operationDefinition);
-        this.coercedVariables = ValuesResolver.coerceVariableValues(schema, variableDefinitions, rawVariables);
+        this.coercedVariables = ValuesResolver.coerceVariableValues(schema, variableDefinitions, rawVariables, GraphQLContext.getDefault(), Locale.getDefault());
     }
 
     private QueryTraverser(GraphQLSchema schema,

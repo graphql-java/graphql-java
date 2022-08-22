@@ -2,6 +2,7 @@ package graphql.execution.directives;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import graphql.GraphQLContext;
 import graphql.Internal;
 import graphql.collect.ImmutableKit;
 import graphql.execution.MergedField;
@@ -14,6 +15,7 @@ import graphql.schema.GraphQLSchema;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import static graphql.collect.ImmutableKit.emptyList;
@@ -30,15 +32,19 @@ public class QueryDirectivesImpl implements QueryDirectives {
     private final MergedField mergedField;
     private final GraphQLSchema schema;
     private final Map<String, Object> variables;
+    private final GraphQLContext graphQLContext;
+    private final Locale locale;
     private volatile ImmutableMap<Field, List<GraphQLDirective>> fieldDirectivesByField;
     private volatile ImmutableMap<String, List<GraphQLDirective>> fieldDirectivesByName;
     private volatile ImmutableMap<Field, List<QueryAppliedDirective>> fieldAppliedDirectivesByField;
     private volatile ImmutableMap<String, List<QueryAppliedDirective>> fieldAppliedDirectivesByName;
 
-    public QueryDirectivesImpl(MergedField mergedField, GraphQLSchema schema, Map<String, Object> variables) {
+    public QueryDirectivesImpl(MergedField mergedField, GraphQLSchema schema, Map<String, Object> variables, GraphQLContext graphQLContext, Locale locale) {
         this.mergedField = mergedField;
         this.schema = schema;
         this.variables = variables;
+        this.graphQLContext = graphQLContext;
+        this.locale = locale;
     }
 
     private void computeValuesLazily() {
@@ -53,7 +59,7 @@ public class QueryDirectivesImpl implements QueryDirectives {
                 List<Directive> directives = field.getDirectives();
                 ImmutableList<GraphQLDirective> resolvedDirectives = ImmutableList.copyOf(
                         directivesResolver
-                                .resolveDirectives(directives, schema, variables)
+                                .resolveDirectives(directives, schema, variables, graphQLContext, locale)
                                 .values()
                 );
                 byField.put(field, resolvedDirectives);

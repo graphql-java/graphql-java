@@ -2,6 +2,7 @@ package graphql.execution
 
 import graphql.ErrorType
 import graphql.ExecutionInput
+import graphql.GraphQLContext
 import graphql.GraphQLException
 import graphql.TestUtil
 import graphql.language.Argument
@@ -37,13 +38,17 @@ import static graphql.schema.GraphQLNonNull.nonNull
 
 class ValuesResolverTest extends Specification {
 
+    def graphQLContext = GraphQLContext.getDefault()
+    def locale = Locale.getDefault()
+
+
     @Unroll
     def "getVariableValues: simple variable input #inputValue"() {
         given:
         def schema = TestUtil.schemaWithInputType(inputType)
         VariableDefinition variableDefinition = new VariableDefinition("variable", variableType, null)
         when:
-        def resolvedValues = ValuesResolver.coerceVariableValues(schema, [variableDefinition], RawVariables.of([variable: inputValue]))
+        def resolvedValues = ValuesResolver.coerceVariableValues(schema, [variableDefinition], RawVariables.of([variable: inputValue]), graphQLContext, locale)
         then:
         resolvedValues.get('variable') == outputValue
 
@@ -72,7 +77,7 @@ class ValuesResolverTest extends Specification {
         VariableDefinition variableDefinition = new VariableDefinition("variable", new TypeName("Person"))
 
         when:
-        def resolvedValues = ValuesResolver.coerceVariableValues(schema, [variableDefinition], RawVariables.of([variable: inputValue]))
+        def resolvedValues = ValuesResolver.coerceVariableValues(schema, [variableDefinition], RawVariables.of([variable: inputValue]), graphQLContext, locale)
         then:
         resolvedValues.get('variable') == outputValue
         where:
@@ -112,7 +117,7 @@ class ValuesResolverTest extends Specification {
 
         when:
         def obj = new Person('a', 123)
-        ValuesResolver.coerceVariableValues(schema, [variableDefinition], RawVariables.of([variable: obj]))
+        ValuesResolver.coerceVariableValues(schema, [variableDefinition], RawVariables.of([variable: obj]), graphQLContext, locale)
         then:
         thrown(CoercingParseValueException)
     }
@@ -123,7 +128,7 @@ class ValuesResolverTest extends Specification {
         VariableDefinition variableDefinition = new VariableDefinition("variable", new ListType(new TypeName("String")))
         String value = "world"
         when:
-        def resolvedValues = ValuesResolver.coerceVariableValues(schema, [variableDefinition], RawVariables.of([variable: value]))
+        def resolvedValues = ValuesResolver.coerceVariableValues(schema, [variableDefinition], RawVariables.of([variable: value]), graphQLContext, locale)
         then:
         resolvedValues.get('variable') == ['world']
     }
@@ -134,7 +139,7 @@ class ValuesResolverTest extends Specification {
         VariableDefinition variableDefinition = new VariableDefinition("variable", new ListType(new TypeName("String")))
         List<String> value = ["hello","world"]
         when:
-        def resolvedValues = ValuesResolver.coerceVariableValues(schema, [variableDefinition], RawVariables.of([variable: value]))
+        def resolvedValues = ValuesResolver.coerceVariableValues(schema, [variableDefinition], RawVariables.of([variable: value]), graphQLContext, locale)
         then:
         resolvedValues.get('variable') == ['hello','world']
     }
@@ -145,7 +150,7 @@ class ValuesResolverTest extends Specification {
         VariableDefinition variableDefinition = new VariableDefinition("variable", new ListType(new TypeName("String")))
         String[] value = ["hello","world"] as String[]
         when:
-        def resolvedValues = ValuesResolver.coerceVariableValues(schema, [variableDefinition], RawVariables.of([variable: value]))
+        def resolvedValues = ValuesResolver.coerceVariableValues(schema, [variableDefinition], RawVariables.of([variable: value]), graphQLContext, locale)
         then:
         resolvedValues.get('variable') == ['hello','world']
     }
@@ -157,7 +162,7 @@ class ValuesResolverTest extends Specification {
         def argument = new Argument("arg", new VariableReference("var"))
 
         when:
-        def values = ValuesResolver.getArgumentValues([fieldArgument], [argument], variables)
+        def values = ValuesResolver.getArgumentValues([fieldArgument], [argument], variables, graphQLContext, locale)
 
         then:
         values['arg'] == 'hello'
@@ -174,7 +179,7 @@ class ValuesResolverTest extends Specification {
 
         when:
         def variables = CoercedVariables.emptyVariables()
-        def values = ValuesResolver.getArgumentValues([fieldArgument], [argument], variables)
+        def values = ValuesResolver.getArgumentValues([fieldArgument], [argument], variables, graphQLContext, locale)
 
         then:
         values['arg'] == 'hello'
@@ -204,7 +209,7 @@ class ValuesResolverTest extends Specification {
 
         when:
         def argument = new Argument("arg", inputValue)
-        def values = ValuesResolver.getArgumentValues([fieldArgument], [argument], CoercedVariables.emptyVariables())
+        def values = ValuesResolver.getArgumentValues([fieldArgument], [argument], CoercedVariables.emptyVariables(), graphQLContext, locale)
 
         then:
         values['arg'] == outputValue
@@ -252,7 +257,7 @@ class ValuesResolverTest extends Specification {
 
         when:
         def argument = new Argument("arg", inputValue)
-        def values = ValuesResolver.getArgumentValues([fieldArgument], [argument], CoercedVariables.emptyVariables())
+        def values = ValuesResolver.getArgumentValues([fieldArgument], [argument], CoercedVariables.emptyVariables(), graphQLContext, locale)
 
         then:
         values['arg'] == outputValue
@@ -300,7 +305,7 @@ class ValuesResolverTest extends Specification {
         def fieldArgument1 = newArgument().name("arg1").type(enumType).build()
         def fieldArgument2 = newArgument().name("arg2").type(enumType).build()
         when:
-        def values = ValuesResolver.getArgumentValues([fieldArgument1, fieldArgument2], [argument1, argument2], CoercedVariables.emptyVariables())
+        def values = ValuesResolver.getArgumentValues([fieldArgument1, fieldArgument2], [argument1, argument2], CoercedVariables.emptyVariables(), graphQLContext, locale)
 
         then:
         values['arg1'] == 'PLUTO'
@@ -317,7 +322,7 @@ class ValuesResolverTest extends Specification {
         def fieldArgument = newArgument().name("arg").type(list(GraphQLBoolean)).build()
 
         when:
-        def values = ValuesResolver.getArgumentValues([fieldArgument], [argument], CoercedVariables.emptyVariables())
+        def values = ValuesResolver.getArgumentValues([fieldArgument], [argument], CoercedVariables.emptyVariables(), graphQLContext, locale)
 
         then:
         values['arg'] == [true, false]
@@ -331,7 +336,7 @@ class ValuesResolverTest extends Specification {
         def fieldArgument = newArgument().name("arg").type(list(GraphQLString)).build()
 
         when:
-        def values = ValuesResolver.getArgumentValues([fieldArgument], [argument], CoercedVariables.emptyVariables())
+        def values = ValuesResolver.getArgumentValues([fieldArgument], [argument], CoercedVariables.emptyVariables(), graphQLContext, locale)
 
         then:
         values['arg'] == ['world']
@@ -349,7 +354,7 @@ class ValuesResolverTest extends Specification {
         VariableDefinition variableDefinition = new VariableDefinition("variable", new TypeName("Test"))
 
         when:
-        def resolvedValues = ValuesResolver.coerceVariableValues(schema, [variableDefinition], RawVariables.of([variable: inputValue]))
+        def resolvedValues = ValuesResolver.coerceVariableValues(schema, [variableDefinition], RawVariables.of([variable: inputValue]), graphQLContext, locale)
         then:
         resolvedValues.get('variable') == outputValue
         where:
@@ -377,7 +382,7 @@ class ValuesResolverTest extends Specification {
         VariableDefinition variableDefinition = new VariableDefinition("variable", new TypeName("InputObject"))
 
         when:
-        def resolvedValues = ValuesResolver.coerceVariableValues(schema, [variableDefinition], RawVariables.of([variable: inputValue]))
+        def resolvedValues = ValuesResolver.coerceVariableValues(schema, [variableDefinition], RawVariables.of([variable: inputValue]), graphQLContext, locale)
 
         then:
         resolvedValues.get('variable') == outputValue
@@ -404,7 +409,7 @@ class ValuesResolverTest extends Specification {
         VariableDefinition variableDefinition = new VariableDefinition("variable", new TypeName("InputObject"))
 
         when:
-        ValuesResolver.coerceVariableValues(schema, [variableDefinition], RawVariables.of([variable: inputValue]))
+        ValuesResolver.coerceVariableValues(schema, [variableDefinition], RawVariables.of([variable: inputValue]), graphQLContext, locale)
 
         then:
         thrown(GraphQLException)
@@ -423,7 +428,7 @@ class ValuesResolverTest extends Specification {
         VariableDefinition barVarDef = new VariableDefinition("bar", new TypeName("String"))
 
         when:
-        def resolvedValues = ValuesResolver.coerceVariableValues(schema, [fooVarDef, barVarDef], RawVariables.of(InputValue))
+        def resolvedValues = ValuesResolver.coerceVariableValues(schema, [fooVarDef, barVarDef], RawVariables.of(InputValue), graphQLContext, locale)
 
         then:
         resolvedValues.toMap() == outputValue
@@ -441,7 +446,7 @@ class ValuesResolverTest extends Specification {
         VariableDefinition fooVarDef = new VariableDefinition("foo", new NonNullType(new TypeName("String")))
 
         when:
-        ValuesResolver.coerceVariableValues(schema, [fooVarDef], RawVariables.emptyVariables())
+        ValuesResolver.coerceVariableValues(schema, [fooVarDef], RawVariables.emptyVariables(), graphQLContext, locale)
 
         then:
         thrown(GraphQLException)
@@ -460,7 +465,7 @@ class ValuesResolverTest extends Specification {
         def variableValuesMap = RawVariables.of(["foo": null, "bar": "barValue"])
 
         when:
-        def resolvedVars = ValuesResolver.coerceVariableValues(schema, [fooVarDef, barVarDef], variableValuesMap)
+        def resolvedVars = ValuesResolver.coerceVariableValues(schema, [fooVarDef, barVarDef], variableValuesMap, graphQLContext, locale)
 
         then:
         resolvedVars.get('foo') == null
@@ -477,7 +482,7 @@ class ValuesResolverTest extends Specification {
         def variableValuesMap = RawVariables.of(["foo": null])
 
         when:
-        ValuesResolver.coerceVariableValues(schema, [fooVarDef], variableValuesMap)
+        ValuesResolver.coerceVariableValues(schema, [fooVarDef], variableValuesMap, graphQLContext, locale)
 
         then:
         def error = thrown(NonNullableValueCoercedAsNullException)
@@ -495,7 +500,7 @@ class ValuesResolverTest extends Specification {
         def variableValuesMap = RawVariables.of(["foo": [null]])
 
         when:
-        ValuesResolver.coerceVariableValues(schema, [fooVarDef], variableValuesMap)
+        ValuesResolver.coerceVariableValues(schema, [fooVarDef], variableValuesMap, graphQLContext, locale)
 
         then:
         def error = thrown(NonNullableValueCoercedAsNullException)
@@ -515,7 +520,7 @@ class ValuesResolverTest extends Specification {
 
         when:
         def variables = CoercedVariables.emptyVariables()
-        def values = ValuesResolver.getArgumentValues([fieldArgument], [argument], variables)
+        def values = ValuesResolver.getArgumentValues([fieldArgument], [argument], variables, graphQLContext, locale)
 
         then:
         values['arg'] == null
@@ -532,7 +537,7 @@ class ValuesResolverTest extends Specification {
 
         when:
         def variables = CoercedVariables.of(["var": null])
-        def values = ValuesResolver.getArgumentValues([fieldArgument], [argument], variables)
+        def values = ValuesResolver.getArgumentValues([fieldArgument], [argument], variables, graphQLContext, locale)
 
         then:
         values['arg'] == null
@@ -549,7 +554,7 @@ class ValuesResolverTest extends Specification {
 
         when:
         def variables = CoercedVariables.of(["var": null])
-        ValuesResolver.getArgumentValues([fieldArgument], [argument], variables)
+        ValuesResolver.getArgumentValues([fieldArgument], [argument], variables, graphQLContext, locale)
 
         then:
         def error = thrown(NonNullableValueCoercedAsNullException)
@@ -595,7 +600,7 @@ class ValuesResolverTest extends Specification {
         executionResult.data == null
         executionResult.errors.size() == 1
         executionResult.errors[0].errorType == ErrorType.ValidationError
-        executionResult.errors[0].message == 'Variable \'input\' has an invalid value: Invalid input for Enum \'PositionType\'. No value found for name \'UNKNOWN_POSITION\''
+        executionResult.errors[0].message == "Variable 'input' has an invalid value: Invalid input for enum 'PositionType'. No value found for name 'UNKNOWN_POSITION'"
         executionResult.errors[0].locations == [new SourceLocation(2, 35)]
     }
 
@@ -633,7 +638,7 @@ class ValuesResolverTest extends Specification {
         executionResult.data == null
         executionResult.errors.size() == 1
         executionResult.errors[0].errorType == ErrorType.ValidationError
-        executionResult.errors[0].message == 'Variable \'input\' has an invalid value: Expected type \'Boolean\' but was \'String\'.'
+        executionResult.errors[0].message == "Variable 'input' has an invalid value: Expected a value that can be converted to type 'Boolean' but it was a 'String'"
         executionResult.errors[0].locations == [new SourceLocation(2, 35)]
     }
 
@@ -671,7 +676,7 @@ class ValuesResolverTest extends Specification {
         executionResult.data == null
         executionResult.errors.size() == 1
         executionResult.errors[0].errorType == ErrorType.ValidationError
-        executionResult.errors[0].message == 'Variable \'input\' has an invalid value: Expected type \'Float\' but was \'String\'.'
+        executionResult.errors[0].message == "Variable 'input' has an invalid value: Expected a value that can be converted to type 'Float' but it was a 'String'"
         executionResult.errors[0].locations == [new SourceLocation(2, 35)]
     }
 }
