@@ -333,6 +333,7 @@ public class FpKit {
     /**
      * Faster set intersection.
      *
+     * @param <T> for two
      * @param set1 first set
      * @param set2 second set
      * @return intersection set

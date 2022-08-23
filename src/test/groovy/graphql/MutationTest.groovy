@@ -50,7 +50,6 @@ class MutationTest extends Specification {
         def ei = ExecutionInput.newExecutionInput(query).root(new MutationSchema.SubscriptionRoot(6)).build()
         def executionResult = GraphQL.newGraphQL(MutationSchema.schema).build().execute(ei)
 
-
         then:
         executionResult.data == expectedResult
 
@@ -96,7 +95,6 @@ class MutationTest extends Specification {
         when:
         def ei = ExecutionInput.newExecutionInput(query).root(new MutationSchema.SubscriptionRoot(6)).build()
         def executionResult = GraphQL.newGraphQL(MutationSchema.schema).build().execute(ei)
-
 
         then:
         executionResult.data == expectedResult

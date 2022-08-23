@@ -1395,9 +1395,8 @@ schema {
         assertValidQuery(graphQLSchema, query)
         def document = TestUtil.parseQuery(query)
         def dependencyGraph = new ExecutableNormalizedOperationFactory()
-        def variables = [:]
         when:
-        def tree = dependencyGraph.createExecutableNormalizedOperationWithRawVariables(graphQLSchema, document, null, RawVariables.of(variables))
+        def tree = dependencyGraph.createExecutableNormalizedOperationWithRawVariables(graphQLSchema, document, null, RawVariables.emptyVariables())
 
         then:
         def topLevelField = tree.getTopLevelFields().get(0)

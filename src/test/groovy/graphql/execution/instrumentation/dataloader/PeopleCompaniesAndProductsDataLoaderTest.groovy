@@ -105,7 +105,7 @@ class PeopleCompaniesAndProductsDataLoaderTest extends Specification {
         @Override
         Object get(DataFetchingEnvironment environment) {
             Product source = environment.getSource()
-            DataLoaderRegistry dlRegistry = environment.getContext()
+            DataLoaderRegistry dlRegistry = environment.getGraphQlContext().get("registry")
             DataLoader<Integer, Person> personDL = dlRegistry.getDataLoader("person")
             return personDL.load(source.getSuppliedById())
         }
@@ -115,7 +115,7 @@ class PeopleCompaniesAndProductsDataLoaderTest extends Specification {
         @Override
         Object get(DataFetchingEnvironment environment) {
             Product source = environment.getSource()
-            DataLoaderRegistry dlRegistry = environment.getContext()
+            DataLoaderRegistry dlRegistry = environment.getGraphQlContext().get("registry")
             DataLoader<Integer, Person> personDL = dlRegistry.getDataLoader("person")
 
             return personDL.loadMany(source.getMadeByIds())
@@ -126,7 +126,7 @@ class PeopleCompaniesAndProductsDataLoaderTest extends Specification {
         @Override
         Object get(DataFetchingEnvironment environment) {
             Person source = environment.getSource()
-            DataLoaderRegistry dlRegistry = environment.getContext()
+            DataLoaderRegistry dlRegistry = environment.getGraphQlContext().get("registry")
             DataLoader<Integer, Company> companyDL = dlRegistry.getDataLoader("company")
             return companyDL.load(source.getCompanyId())
         }
@@ -191,7 +191,7 @@ class PeopleCompaniesAndProductsDataLoaderTest extends Specification {
 
         ExecutionInput executionInput = ExecutionInput.newExecutionInput()
                 .query(query)
-                .context(registry)
+                .graphQLContext(["registry": registry])
                 .dataLoaderRegistry(registry)
                 .build()
 

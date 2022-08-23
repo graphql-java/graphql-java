@@ -203,6 +203,7 @@ public interface Coercing<I, O> {
      *
      * @param input          an external input value
      * @param graphQLContext the graphql context in place
+     * @param locale         the locale to use
      *
      * @return The literal matching the external input value.
      */

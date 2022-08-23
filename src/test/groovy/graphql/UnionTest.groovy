@@ -4,7 +4,6 @@ import spock.lang.Specification
 
 class UnionTest extends Specification {
 
-
     def "can introspect on union and intersection types"() {
         def query = """
             {

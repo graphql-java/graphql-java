@@ -278,7 +278,7 @@ class DataFetcherWithErrorsAndDataTest extends Specification {
         def result = TestUtil.graphQL(spec, runtimeWiring)
                 .queryExecutionStrategy(executionStrategy)
                 .build()
-                .execute(newExecutionInput().query(query).root("").context(1))
+                .execute(newExecutionInput().query(query).root("").graphQLContext(["key": 1]))
 
         expect:
 

@@ -167,11 +167,15 @@ class GraphQLCodeRegistryTest extends Specification {
     }
 
     def "schema delegates field visibility to code registry"() {
-
         when:
-        def schema = GraphQLSchema.newSchema().fieldVisibility(new NamedFieldVisibility("B")).query(objectType("query")).build()
+        def codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+                .fieldVisibility(new NamedFieldVisibility("B"))
+                .build()
+        def schema = GraphQLSchema.newSchema()
+                                  .codeRegistry(codeRegistry)
+                                  .query(objectType("query"))
+                                  .build()
         then:
-        (schema.getFieldVisibility() as NamedFieldVisibility).name == "B"
         (schema.getCodeRegistry().getFieldVisibility() as NamedFieldVisibility).name == "B"
     }
 
