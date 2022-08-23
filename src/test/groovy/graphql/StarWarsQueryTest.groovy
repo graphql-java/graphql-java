@@ -190,11 +190,8 @@ class StarWarsQueryTest extends Specification {
                 ]
         ]
         when:
-        def executionInput = ExecutionInput.newExecutionInput()
-                .query(query)
-                .root(null)
-                .variables(params)
-        def result = GraphQL.newGraphQL(StarWarsSchema.starWarsSchema).build().execute(executionInput).data
+        def ei = ExecutionInput.newExecutionInput(query).variables(params).build()
+        def result = GraphQL.newGraphQL(StarWarsSchema.starWarsSchema).build().execute(ei).data
 
         then:
         result == expected
@@ -216,11 +213,8 @@ class StarWarsQueryTest extends Specification {
                 human: null
         ]
         when:
-        def executionInput = ExecutionInput.newExecutionInput()
-                .query(query)
-                .root(null)
-                .variables(params)
-        def result = GraphQL.newGraphQL(StarWarsSchema.starWarsSchema).build().execute(executionInput).data
+        def ei = ExecutionInput.newExecutionInput(query).variables(params).build()
+        def result = GraphQL.newGraphQL(StarWarsSchema.starWarsSchema).build().execute(ei).data
 
         then:
         result == expected

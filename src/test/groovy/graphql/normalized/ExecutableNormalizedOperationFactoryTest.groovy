@@ -1315,11 +1315,8 @@ schema {
 
     private void assertValidQuery(GraphQLSchema graphQLSchema, String query, Map variables = [:]) {
         GraphQL graphQL = GraphQL.newGraphQL(graphQLSchema).build()
-        def executionInput = ExecutionInput.newExecutionInput()
-                .query(query)
-                .root(null)
-                .variables(variables)
-        assert graphQL.execute(executionInput).errors.size() == 0
+        def ei = ExecutionInput.newExecutionInput(query).variables(variables).build()
+        assert graphQL.execute(ei).errors.size() == 0
     }
 
     def "normalized arguments"() {

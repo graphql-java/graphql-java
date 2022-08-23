@@ -47,12 +47,8 @@ class MutationTest extends Specification {
         ]
 
         when:
-        def executionInput = ExecutionInput.newExecutionInput()
-                .query(query)
-                .root(new MutationSchema.SubscriptionRoot(6))
-
-        def executionResult = GraphQL.newGraphQL(MutationSchema.schema).build().execute(executionInput)
-
+        def ei = ExecutionInput.newExecutionInput(query).root(new MutationSchema.SubscriptionRoot(6)).build()
+        def executionResult = GraphQL.newGraphQL(MutationSchema.schema).build().execute(ei)
 
         then:
         executionResult.data == expectedResult
@@ -97,12 +93,8 @@ class MutationTest extends Specification {
         ]
 
         when:
-        def executionInput = ExecutionInput.newExecutionInput()
-                .query(query)
-                .root(new MutationSchema.SubscriptionRoot(6))
-
-        def executionResult = GraphQL.newGraphQL(MutationSchema.schema).build().execute(executionInput)
-
+        def ei = ExecutionInput.newExecutionInput(query).root(new MutationSchema.SubscriptionRoot(6)).build()
+        def executionResult = GraphQL.newGraphQL(MutationSchema.schema).build().execute(ei)
 
         then:
         executionResult.data == expectedResult
