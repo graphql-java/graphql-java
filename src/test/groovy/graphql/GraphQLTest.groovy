@@ -1363,28 +1363,4 @@ many lines''']
         then:
         ! er.errors.isEmpty()
     }
-
-    def "deprecated execute method works"() {
-        given:
-        def query = """
-        query FetchSomeIDQuery(\$someId: String!) {
-            human(id: \$someId) {
-                name
-            }
-        }
-        """
-        def params = [
-                someId: '1000'
-        ]
-        def expected = [
-                human: [
-                        name: 'Luke Skywalker'
-                ]
-        ]
-        when:
-        def result = GraphQL.newGraphQL(StarWarsSchema.starWarsSchema).build().execute(query, null, params).data // Retain deprecated method for test coverage
-
-        then:
-        result == expected
-    }
 }
