@@ -875,9 +875,9 @@ type Query {
 
         def schema = TestUtil.schema("""
             scalar Foo
-            directive @myDirective(foo: Foo) on FIELD_DEFINITION
+            directive @myDirective(fooArgOnDirective: Foo) on FIELD_DEFINITION
             type Query {
-              foo(foo: Foo) : Foo @myDirective
+              foo(fooArgOnField: Foo) : Foo @myDirective
             }
 """)
 
@@ -900,18 +900,20 @@ type Query {
         def fieldDef = newSchema.getObjectType("Query").getFieldDefinition("foo")
         def appliedDirective = fieldDef.getAppliedDirective("myDirective")
         def oldSkoolDirective = fieldDef.getDirective("myDirective")
-        def argument = fieldDef.getArgument("foo")
-        def directive = newSchema.getDirective("myDirective")
-        def directiveArgument = directive.getArgument("foo")
+        def argument = fieldDef.getArgument("fooArgOnField")
+        def directiveDecl = newSchema.getDirective("myDirective")
+        def directiveArgument = directiveDecl.getArgument("fooArgOnDirective")
 
         (fieldDef.getType() as GraphQLScalarType).getName() == "Bar"
         (argument.getType() as GraphQLScalarType).getName() == "Bar"
         (directiveArgument.getType() as GraphQLScalarType).getName() == "Bar"
 
-        (oldSkoolDirective.getArgument("foo").getType() as GraphQLScalarType).getName() == "Bar"
-        (appliedDirective.getArgument("foo").getType() as GraphQLScalarType).getName() == "Bar"
+        (oldSkoolDirective.getArgument("fooArgOnDirective").getType() as GraphQLScalarType).getName() == "Bar"
 
         newSchema.getType("Bar") instanceof GraphQLScalarType
+
+        // not working at this stage
+        (appliedDirective.getArgument("fooArgOnDirective").getType() as GraphQLScalarType).getName() == "Bar"
         newSchema.getType("Foo") == null
     }
 }
