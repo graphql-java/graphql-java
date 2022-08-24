@@ -877,7 +877,7 @@ type Query {
             scalar Foo
             directive @myDirective(foo: Foo) on FIELD_DEFINITION
             type Query {
-              field: Foo @myDirective
+              foo(foo: Foo) : Foo @myDirective
             }
 """)
 
@@ -897,17 +897,21 @@ type Query {
         def newSchema = SchemaTransformer.transformSchema(schema, visitor)
         then:
 
-        def fieldDef = newSchema.getObjectType("Query").getFieldDefinition("field")
+        def fieldDef = newSchema.getObjectType("Query").getFieldDefinition("foo")
         def appliedDirective = fieldDef.getAppliedDirective("myDirective")
-        def oldDirective = fieldDef.getDirective("myDirective")
+        def oldSkoolDirective = fieldDef.getDirective("myDirective")
+        def argument = fieldDef.getArgument("foo")
+        def directive = newSchema.getDirective("myDirective")
+        def directiveArgument = directive.getArgument("foo")
 
         (fieldDef.getType() as GraphQLScalarType).getName() == "Bar"
-        (oldDirective.getArgument("foo").getType() as GraphQLScalarType).getName() == "Bar"
+        (argument.getType() as GraphQLScalarType).getName() == "Bar"
+        (directiveArgument.getType() as GraphQLScalarType).getName() == "Bar"
+
+        (oldSkoolDirective.getArgument("foo").getType() as GraphQLScalarType).getName() == "Bar"
         (appliedDirective.getArgument("foo").getType() as GraphQLScalarType).getName() == "Bar"
 
         newSchema.getType("Bar") instanceof GraphQLScalarType
         newSchema.getType("Foo") == null
-
-
     }
 }
