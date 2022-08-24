@@ -896,14 +896,17 @@ type Query {
         when:
         def newSchema = SchemaTransformer.transformSchema(schema, visitor)
         then:
-        newSchema.getType("Bar") instanceof GraphQLScalarType
-        newSchema.getType("Foo") == null
 
         def fieldDef = newSchema.getObjectType("Query").getFieldDefinition("field")
-        (fieldDef.getType() as GraphQLScalarType).getName() == "Bar"
-
         def appliedDirective = fieldDef.getAppliedDirective("myDirective")
+        def oldDirective = fieldDef.getDirective("myDirective")
+
+        (fieldDef.getType() as GraphQLScalarType).getName() == "Bar"
+        (oldDirective.getArgument("foo").getType() as GraphQLScalarType).getName() == "Bar"
         (appliedDirective.getArgument("foo").getType() as GraphQLScalarType).getName() == "Bar"
+
+        newSchema.getType("Bar") instanceof GraphQLScalarType
+        newSchema.getType("Foo") == null
 
 
     }
