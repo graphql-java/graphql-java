@@ -3,6 +3,7 @@ package graphql.util;
 import graphql.PublicApi;
 
 import java.util.Objects;
+import java.util.StringJoiner;
 
 /**
  * A specific {@link NodeLocation} inside a node. This means  {@link #getNode()} returns a Node which has a child
@@ -47,9 +48,16 @@ public class Breadcrumb<T> {
     @Override
     public int hashCode() {
         int result = 1;
-        result = 31 * result +  Objects.hashCode(node);
+        result = 31 * result + Objects.hashCode(node);
         result = 31 * result + Objects.hashCode(location);
         return result;
     }
 
+    @Override
+    public String toString() {
+        return new StringJoiner(", ", "[", "]")
+                .add("" + location)
+                .add("" + node)
+                .toString();
+    }
 }
