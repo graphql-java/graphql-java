@@ -18,7 +18,8 @@ public class GraphQLSchemaElementAdapter implements NodeAdapter<GraphQLSchemaEle
 
     @Override
     public Map<String, List<GraphQLSchemaElement>> getNamedChildren(GraphQLSchemaElement node) {
-        return node.getChildrenWithTypeReferences().getChildren();
+        SchemaElementChildrenContainer childrenWithTypeReferences = node.getChildrenWithTypeReferences();
+        return childrenWithTypeReferences.getChildren();
     }
 
     @Override
