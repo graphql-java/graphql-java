@@ -11,6 +11,7 @@ import graphql.util.TraverserContext;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -33,6 +34,8 @@ public class GraphQLAppliedDirectiveArgument implements GraphQLNamedSchemaElemen
 
     private final Argument definition;
 
+
+    public static final String CHILD_TYPE = "type";
 
     private GraphQLAppliedDirectiveArgument(String name,
                                             InputValueWithState value,
@@ -104,19 +107,23 @@ public class GraphQLAppliedDirectiveArgument implements GraphQLNamedSchemaElemen
 
     @Override
     public List<GraphQLSchemaElement> getChildren() {
-        return ImmutableKit.emptyList();
+        List<GraphQLSchemaElement> children = new ArrayList<>();
+        children.add(getType());
+        return children;
     }
-
 
     @Override
     public SchemaElementChildrenContainer getChildrenWithTypeReferences() {
         return SchemaElementChildrenContainer.newSchemaElementChildrenContainer()
+                .child(CHILD_TYPE, originalType)
                 .build();
     }
 
     @Override
     public GraphQLAppliedDirectiveArgument withNewChildren(SchemaElementChildrenContainer newChildren) {
-        return this;
+            return transform(builder ->
+                    builder.type(newChildren.getChildOrNull(CHILD_TYPE))
+            );
     }
 
     @Override
