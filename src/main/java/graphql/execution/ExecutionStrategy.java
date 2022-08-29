@@ -599,11 +599,6 @@ public abstract class ExecutionStrategy {
             serialized = handleCoercionProblem(executionContext, parameters, e);
         }
 
-        // TODO: fix that: this should not be handled here
-        //6.6.1 http://facebook.github.io/graphql/#sec-Field-entries
-        if (serialized instanceof Double && ((Double) serialized).isNaN()) {
-            serialized = null;
-        }
         try {
             serialized = parameters.getNonNullFieldValidator().validate(parameters.getPath(), serialized);
         } catch (NonNullableFieldWasNullException e) {
