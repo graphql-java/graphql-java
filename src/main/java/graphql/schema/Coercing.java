@@ -1,6 +1,7 @@
 package graphql.schema;
 
 
+import graphql.DeprecatedAt;
 import graphql.GraphQLContext;
 import graphql.PublicSpi;
 import graphql.execution.CoercedVariables;
@@ -52,6 +53,7 @@ public interface Coercing<I, O> {
      * @throws graphql.schema.CoercingSerializeException if value input can't be serialized
      */
     @Deprecated
+    @DeprecatedAt("2022-08-22")
     @Nullable O serialize(@NotNull Object dataFetcherResult) throws CoercingSerializeException;
 
     /**
@@ -92,6 +94,7 @@ public interface Coercing<I, O> {
      * @throws graphql.schema.CoercingParseValueException if value input can't be parsed
      */
     @Deprecated
+    @DeprecatedAt("2022-08-22")
     @Nullable I parseValue(@NotNull Object input) throws CoercingParseValueException;
 
     /**
@@ -133,6 +136,7 @@ public interface Coercing<I, O> {
      * @throws graphql.schema.CoercingParseLiteralException if input literal can't be parsed
      */
     @Deprecated
+    @DeprecatedAt("2022-08-22")
     @Nullable I parseLiteral(@NotNull Object input) throws CoercingParseLiteralException;
 
     /**
@@ -157,6 +161,7 @@ public interface Coercing<I, O> {
      */
     @SuppressWarnings("unused")
     @Deprecated
+    @DeprecatedAt("2022-08-22")
     default @Nullable I parseLiteral(Object input, Map<String, Object> variables) throws CoercingParseLiteralException {
         return parseLiteral(input);
     }
@@ -201,6 +206,7 @@ public interface Coercing<I, O> {
      * @return The literal matching the external input value.
      */
     @Deprecated
+    @DeprecatedAt("2022-08-22")
     default @NotNull Value valueToLiteral(@NotNull Object input) {
         throw new UnsupportedOperationException("This is not implemented by this Scalar " + this.getClass());
     }
