@@ -65,14 +65,14 @@ public class VariableTypesMatch extends AbstractRule {
         if (schemaDefault.isPresent() && schemaDefault.get().isLiteral()) {
             schemaDefaultValue = (Value) schemaDefault.get().getValue();
         } else if (schemaDefault.isPresent() && schemaDefault.get().isSet()) {
-            schemaDefaultValue = ValuesResolver.valueToLiteral(schemaDefault.get(), expectedType);
+            schemaDefaultValue = ValuesResolver.valueToLiteral(schemaDefault.get(), expectedType, getValidationContext().getGraphQLContext(), getValidationContext().getI18n().getLocale());
         }
         if (expectedType == null) {
             // we must have a unknown variable say to not have a known type
             return;
         }
         if (!variablesTypesMatcher.doesVariableTypesMatch(variableType, variableDefinition.getDefaultValue(), expectedType) &&
-            !variablesTypesMatcher.doesVariableTypesMatch(variableType, schemaDefaultValue, expectedType)) {
+                !variablesTypesMatcher.doesVariableTypesMatch(variableType, schemaDefaultValue, expectedType)) {
             GraphQLType effectiveType = variablesTypesMatcher.effectiveType(variableType, variableDefinition.getDefaultValue());
             String message = i18n(VariableTypeMismatch, "VariableTypesMatchRule.unexpectedType",
                     GraphQLTypeUtil.simplePrint(effectiveType),

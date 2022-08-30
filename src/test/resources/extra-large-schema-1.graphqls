@@ -824,12 +824,10 @@ enum JiraAttachmentsPermissions {
 
 input JiraOrderDirection {
     id: ID
-    #TODO
 }
 
 input JiraAttachmentsOrderField {
     id: ID
-    #TODO
 }
 """
 Represents the avatar size urls.
@@ -1655,7 +1653,6 @@ type JiraComponent implements Node {
     Component description.
     """
     description: String
-    # TODO: lead, default assignee ...
 }
 
 """

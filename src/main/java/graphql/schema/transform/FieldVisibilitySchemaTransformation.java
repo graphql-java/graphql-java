@@ -1,10 +1,12 @@
 package graphql.schema.transform;
 
+import com.google.common.collect.ImmutableList;
 import graphql.PublicApi;
 import graphql.schema.GraphQLEnumType;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLImplementingType;
 import graphql.schema.GraphQLInputObjectField;
+import graphql.schema.GraphQLInputObjectType;
 import graphql.schema.GraphQLInterfaceType;
 import graphql.schema.GraphQLNamedSchemaElement;
 import graphql.schema.GraphQLNamedType;
@@ -60,7 +62,7 @@ public class FieldVisibilitySchemaTransformation {
         Set<GraphQLType> markedForRemovalTypes = new HashSet<>();
 
         // query, mutation, and subscription types should not be removed
-        final Set<String> protectedTypeNames = getRootTypes(schema).stream()
+        final Set<String> protectedTypeNames = getOperationTypes(schema).stream()
                 .map(GraphQLObjectType::getName)
                 .collect(Collectors.toSet());
 
@@ -216,6 +218,7 @@ public class FieldVisibilitySchemaTransformation {
                     !observedAfterTransform.contains(node) &&
                     (node instanceof GraphQLObjectType ||
                             node instanceof GraphQLEnumType ||
+                            node instanceof GraphQLInputObjectType ||
                             node instanceof GraphQLInterfaceType ||
                             node instanceof GraphQLUnionType)) {
 
@@ -250,12 +253,21 @@ public class FieldVisibilitySchemaTransformation {
         }
     }
 
-    private List<GraphQLObjectType> getRootTypes(GraphQLSchema schema) {
+    private List<GraphQLSchemaElement> getRootTypes(GraphQLSchema schema) {
+        return ImmutableList.<GraphQLSchemaElement>builder()
+                .addAll(getOperationTypes(schema))
+                // Include directive definitions as roots, since they won't be removed in the filtering process.
+                // Some types (enums, input types, etc.) might be reachable only by directive definitions (and
+                // not by other types or fields).
+                .addAll(schema.getDirectives())
+                .build();
+    }
+
+    private List<GraphQLObjectType> getOperationTypes(GraphQLSchema schema) {
         return Stream.of(
                 schema.getQueryType(),
                 schema.getSubscriptionType(),
                 schema.getMutationType()
         ).filter(Objects::nonNull).collect(Collectors.toList());
     }
-
 }

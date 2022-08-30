@@ -2,6 +2,7 @@ package graphql.execution.directives;
 
 
 import graphql.Assert;
+import graphql.GraphQLContext;
 import graphql.PublicApi;
 import graphql.language.Argument;
 import graphql.language.Value;
@@ -12,6 +13,7 @@ import graphql.schema.InputValueWithState;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Locale;
 import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotNull;
@@ -83,7 +85,7 @@ public class QueryAppliedDirectiveArgument {
      */
     @Nullable
     public <T> T getValue() {
-        return getInputValueImpl(getType(), value);
+        return getInputValueImpl(getType(), value, GraphQLContext.getDefault(), Locale.getDefault());
     }
 
     /**

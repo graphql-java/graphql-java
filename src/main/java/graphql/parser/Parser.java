@@ -1,5 +1,6 @@
 package graphql.parser;
 
+import graphql.DeprecatedAt;
 import com.google.common.collect.ImmutableList;
 import graphql.Internal;
 import graphql.PublicApi;
@@ -80,6 +81,10 @@ public class Parser {
      */
     public static Document parse(String input) throws InvalidSyntaxException {
         return new Parser().parseDocument(input);
+    }
+
+    public static Document parse(ParserEnvironment environment) throws InvalidSyntaxException {
+        return new Parser().parseDocument(environment);
     }
 
     /**
@@ -391,5 +396,21 @@ public class Parser {
      */
     protected GraphqlAntlrToLanguage getAntlrToLanguage(CommonTokenStream tokens, MultiSourceReader multiSourceReader, ParserEnvironment environment) {
         return new GraphqlAntlrToLanguage(tokens, multiSourceReader, environment.getParserOptions(), environment.getI18N(), null);
+    }
+
+    /**
+     * Allows you to override the ANTLR to AST code.
+     *
+     * @param tokens            the token stream
+     * @param multiSourceReader the source of the query document
+     *
+     * @return a new GraphqlAntlrToLanguage instance
+     *
+     * @deprecated - really should use {@link #getAntlrToLanguage(CommonTokenStream, MultiSourceReader, ParserOptions)}
+     */
+    @Deprecated
+    @DeprecatedAt("2021-06-23")
+    protected GraphqlAntlrToLanguage getAntlrToLanguage(CommonTokenStream tokens, MultiSourceReader multiSourceReader) {
+        return null;
     }
 }

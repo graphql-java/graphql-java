@@ -1,5 +1,6 @@
 package graphql.schema.validation;
 
+import graphql.GraphQLContext;
 import graphql.Internal;
 import graphql.execution.NonNullableValueCoercedAsNullException;
 import graphql.execution.ValuesResolver;
@@ -15,6 +16,8 @@ import graphql.schema.InputValueWithState;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 import graphql.validation.ValidationUtil;
+
+import java.util.Locale;
 
 import static java.lang.String.format;
 
@@ -44,10 +47,10 @@ public class AppliedDirectiveArgumentsAreValid extends GraphQLTypeVisitorStub {
         InputValueWithState argumentValue = argument.getArgumentValue();
         boolean invalid = false;
         if (argumentValue.isLiteral() &&
-                !validationUtil.isValidLiteralValue((Value<?>) argumentValue.getValue(), argument.getType(), schema)) {
+                !validationUtil.isValidLiteralValue((Value<?>) argumentValue.getValue(), argument.getType(), schema, GraphQLContext.getDefault(), Locale.getDefault())) {
             invalid = true;
         } else if (argumentValue.isExternal() &&
-                !isValidExternalValue(schema, argumentValue.getValue(), argument.getType())) {
+                !isValidExternalValue(schema, argumentValue.getValue(), argument.getType(), GraphQLContext.getDefault(), Locale.getDefault())) {
             invalid = true;
         }
         if (invalid) {
@@ -56,9 +59,9 @@ public class AppliedDirectiveArgumentsAreValid extends GraphQLTypeVisitorStub {
         }
     }
 
-    private boolean isValidExternalValue(GraphQLSchema schema, Object externalValue, GraphQLInputType type) {
+    private boolean isValidExternalValue(GraphQLSchema schema, Object externalValue, GraphQLInputType type, GraphQLContext graphQLContext, Locale locale) {
         try {
-            ValuesResolver.externalValueToInternalValue(schema.getCodeRegistry().getFieldVisibility(), externalValue, type);
+            ValuesResolver.externalValueToInternalValue(schema.getCodeRegistry().getFieldVisibility(), externalValue, type, graphQLContext, locale);
             return true;
         } catch (CoercingParseValueException | NonNullableValueCoercedAsNullException e) {
             return false;

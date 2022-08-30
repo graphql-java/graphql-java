@@ -25,7 +25,7 @@ class ContextPassingDataFetcher implements DataFetcher {
 
         Integer localCtx = env.getLocalContext()
         if (localCtx == null) {
-            localCtx = env.getContext()
+            localCtx = env.getGraphQlContext().get("key")
         }
 
         def newData = data + localCtx + ","

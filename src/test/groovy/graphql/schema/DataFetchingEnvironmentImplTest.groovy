@@ -1,11 +1,14 @@
 package graphql.schema
 
 import graphql.GraphQLContext
-import graphql.cachecontrol.CacheControl
+import graphql.execution.CoercedVariables
 import graphql.execution.ExecutionId
 import graphql.execution.ExecutionStepInfo
+import graphql.language.Argument
+import graphql.language.Field
 import graphql.language.FragmentDefinition
 import graphql.language.OperationDefinition
+import graphql.language.StringValue
 import graphql.language.TypeName
 import org.dataloader.BatchLoader
 import org.dataloader.DataLoader
@@ -15,6 +18,7 @@ import spock.lang.Specification
 import java.util.concurrent.CompletableFuture
 
 import static graphql.StarWarsSchema.starWarsSchema
+import static graphql.TestUtil.mergedField
 import static graphql.TestUtil.toDocument
 import static graphql.execution.ExecutionContextBuilder.newExecutionContextBuilder
 import static graphql.schema.DataFetchingEnvironmentImpl.newDataFetchingEnvironment
@@ -30,22 +34,18 @@ class DataFetchingEnvironmentImplTest extends Specification {
     def fragmentByName = [frag: frag]
     def variables = [var: "able"]
     def dataLoaderRegistry = new DataLoaderRegistry().register("dataLoader", dataLoader)
-    def cacheControl = CacheControl.newCacheControl()
 
     def executionContext = newExecutionContextBuilder()
             .root("root")
-            .context("context")
             .graphQLContext(GraphQLContext.of(["key":"context"]))
             .executionId(executionId)
             .operationDefinition(operationDefinition)
             .document(document)
-            .variables(variables)
+            .coercedVariables(CoercedVariables.of(variables))
             .graphQLSchema(starWarsSchema)
             .fragmentsByName(fragmentByName)
             .dataLoaderRegistry(dataLoaderRegistry)
-            .cacheControl(cacheControl)
             .build()
-
 
     def "immutable arguments"() {
         def dataFetchingEnvironment = newDataFetchingEnvironment(executionContext).arguments([arg: "argVal"])
@@ -62,13 +62,11 @@ class DataFetchingEnvironmentImplTest extends Specification {
     }
 
     def "copying works as expected from execution context"() {
-
         when:
         def dfe = newDataFetchingEnvironment(executionContext)
                 .build()
         then:
         dfe.getRoot() == "root"
-        dfe.getContext() == "context"
         dfe.getGraphQlContext().get("key") == "context"
         dfe.getGraphQLSchema() == starWarsSchema
         dfe.getDocument() == document
@@ -80,7 +78,7 @@ class DataFetchingEnvironmentImplTest extends Specification {
 
     def "create environment from existing one will copy everything to new instance"() {
         def dfe = newDataFetchingEnvironment()
-                .context("Test Context")
+                .context("Test Context") // Retain deprecated builder for coverage
                 .graphQLContext(GraphQLContext.of(["key": "context"]))
                 .source("Test Source")
                 .root("Test Root")
@@ -96,7 +94,6 @@ class DataFetchingEnvironmentImplTest extends Specification {
                 .document(document)
                 .variables(variables)
                 .dataLoaderRegistry(dataLoaderRegistry)
-                .cacheControl(cacheControl)
                 .locale(Locale.CANADA)
                 .localContext("localContext")
                 .build()
@@ -106,7 +103,7 @@ class DataFetchingEnvironmentImplTest extends Specification {
 
         then:
         dfe != dfeCopy
-        dfe.getContext() == dfeCopy.getContext()
+        dfe.getContext() == dfeCopy.getContext() // Retain deprecated method for coverage
         dfe.getGraphQlContext() == dfeCopy.getGraphQlContext()
         dfe.getSource() == dfeCopy.getSource()
         dfe.getRoot() == dfeCopy.getRoot()
@@ -122,7 +119,6 @@ class DataFetchingEnvironmentImplTest extends Specification {
         dfe.getOperationDefinition() == dfeCopy.getOperationDefinition()
         dfe.getVariables() == dfeCopy.getVariables()
         dfe.getDataLoader("dataLoader") == dataLoader
-        dfe.getCacheControl() == cacheControl
         dfe.getLocale() == dfeCopy.getLocale()
         dfe.getLocalContext() == dfeCopy.getLocalContext()
     }
@@ -138,4 +134,18 @@ class DataFetchingEnvironmentImplTest extends Specification {
         dfe.getArgument("x") == "y"
         dfe.getArgumentOrDefault("x", "default") == "y"
     }
+
+    def "deprecated getFields() method works"() {
+        when:
+        Argument argument = new Argument("arg1", new StringValue("argVal"))
+        Field field = new Field("someField", [argument])
+
+        def environment = newDataFetchingEnvironment(executionContext)
+                .mergedField(mergedField(field))
+                .build()
+
+        then:
+        environment.fields == [field] // Retain deprecated method for test coverage
+    }
+
 }

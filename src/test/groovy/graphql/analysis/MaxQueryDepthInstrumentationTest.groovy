@@ -43,7 +43,7 @@ class MaxQueryDepthInstrumentationTest extends Specification {
         def executionContext = executionCtx(executionInput, query, schema)
         def executeOperationParameters = new InstrumentationExecuteOperationParameters(executionContext)
         when:
-        maximumQueryDepthInstrumentation.beginExecuteOperation(executeOperationParameters)
+        maximumQueryDepthInstrumentation.beginExecuteOperation(executeOperationParameters, null)
         then:
         def e = thrown(AbortExecutionException)
         e.message.contains("maximum query depth exceeded 7 > 6")
@@ -102,7 +102,7 @@ class MaxQueryDepthInstrumentationTest extends Specification {
         def executionContext = executionCtx(executionInput, query, schema)
         def executeOperationParameters = new InstrumentationExecuteOperationParameters(executionContext)
         when:
-        maximumQueryDepthInstrumentation.beginExecuteOperation(executeOperationParameters)
+        maximumQueryDepthInstrumentation.beginExecuteOperation(executeOperationParameters, null)
         then:
         calledFunction
         notThrown(Exception)

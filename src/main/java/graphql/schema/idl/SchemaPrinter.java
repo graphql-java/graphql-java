@@ -2,6 +2,7 @@ package graphql.schema.idl;
 
 import graphql.Assert;
 import graphql.DirectivesUtil;
+import graphql.GraphQLContext;
 import graphql.PublicApi;
 import graphql.execution.ValuesResolver;
 import graphql.language.AstPrinter;
@@ -53,6 +54,7 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -713,7 +715,7 @@ public class SchemaPrinter {
     }
 
     private static String printAst(InputValueWithState value, GraphQLInputType type) {
-        return AstPrinter.printAst(ValuesResolver.valueToLiteral(value, type));
+        return AstPrinter.printAst(ValuesResolver.valueToLiteral(value, type, GraphQLContext.getDefault(), Locale.getDefault()));
     }
 
     private SchemaElementPrinter<GraphQLSchema> schemaPrinter() {

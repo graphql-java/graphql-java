@@ -71,8 +71,7 @@ class ExecutionStrategyTest extends Specification {
                 .queryStrategy(executionStrategy)
                 .mutationStrategy(executionStrategy)
                 .subscriptionStrategy(executionStrategy)
-                .variables(variables)
-                .context("context")
+                .coercedVariables(CoercedVariables.of(variables))
                 .graphQLContext(GraphQLContext.newContext().of("key","context").build())
                 .root("root")
                 .dataLoaderRegistry(new DataLoaderRegistry())
@@ -86,6 +85,7 @@ class ExecutionStrategyTest extends Specification {
     def "complete values always calls query strategy to execute more"() {
         given:
         def dataFetcher = Mock(DataFetcher)
+
         def fieldDefinition = newFieldDefinition()
                 .name("someField")
                 .type(GraphQLString)
@@ -501,13 +501,14 @@ class ExecutionStrategyTest extends Specification {
         NonNullableFieldValidator nullableFieldValidator = new NonNullableFieldValidator(executionContext, typeInfo)
         Argument argument = new Argument("arg1", new StringValue("argVal"))
         Field field = new Field("someField", [argument])
+        MergedField mergedField = mergedField(field)
         ResultPath resultPath = ResultPath.rootPath().segment("test")
 
         def parameters = newParameters()
                 .executionStepInfo(typeInfo)
                 .source("source")
                 .fields(mergedSelectionSet(["someField": [field]]))
-                .field(mergedField(field))
+                .field(mergedField)
                 .nonNullFieldValidator(nullableFieldValidator)
                 .path(resultPath)
                 .build()
@@ -520,10 +521,9 @@ class ExecutionStrategyTest extends Specification {
         1 * dataFetcher.get(_) >> { args -> environment = args[0] }
         environment.fieldDefinition == fieldDefinition
         environment.graphQLSchema == schema
-        environment.context == "context"
         environment.graphQlContext.get("key") == "context"
         environment.source == "source"
-        environment.fields == [field]
+        environment.mergedField == mergedField
         environment.root == "root"
         environment.parentType == objectType
         environment.arguments == ["arg1": "argVal"]
@@ -743,7 +743,7 @@ class ExecutionStrategyTest extends Specification {
     def "#842 completes value for java.util.Stream"() {
         given:
         ExecutionContext executionContext = buildContext()
-        Stream<Long> result = Stream.of(1, 2, 3)
+        Stream<Long> result = Stream.of(1L, 2L, 3L)
         def fieldType = list(Scalars.GraphQLInt)
         def fldDef = newFieldDefinition().name("test").type(fieldType).build()
         def executionStepInfo = ExecutionStepInfo.newExecutionStepInfo().type(fieldType).path(ResultPath.rootPath()).fieldDefinition(fldDef).build()
