@@ -1,6 +1,7 @@
 package graphql.schema;
 
 
+import graphql.DeprecatedAt;
 import graphql.GraphQLContext;
 import graphql.PublicSpi;
 import graphql.execution.CoercedVariables;
@@ -52,6 +53,7 @@ public interface Coercing<I, O> {
      * @throws graphql.schema.CoercingSerializeException if value input can't be serialized
      */
     @Deprecated
+    @DeprecatedAt("2022-08-22")
     @Nullable O serialize(@NotNull Object dataFetcherResult) throws CoercingSerializeException;
 
     /**
@@ -77,37 +79,41 @@ public interface Coercing<I, O> {
         return serialize(dataFetcherResult);
     }
 
-
     /**
      * Called to resolve an input from a query variable into a Java object acceptable for the scalar type.
      * <p>
      * Note : You should not allow {@link java.lang.RuntimeException}s to come out of your parseValue method, but rather
      * catch them and fire them as {@link graphql.schema.CoercingParseValueException} instead as per the method contract.
      *
+     * Note : if input is explicit/raw value null, input coercion will return null before this method is called
+     *
      * @param input is never null
      *
-     * @return a parsed value which is never null
+     * @return a parsed value which may be null
      *
      * @throws graphql.schema.CoercingParseValueException if value input can't be parsed
      */
     @Deprecated
-    @NotNull I parseValue(@NotNull Object input) throws CoercingParseValueException;
+    @DeprecatedAt("2022-08-22")
+    @Nullable I parseValue(@NotNull Object input) throws CoercingParseValueException;
 
     /**
      * Called to resolve an input from a query variable into a Java object acceptable for the scalar type.
      * <p>
      * Note : You should not allow {@link java.lang.RuntimeException}s to come out of your parseValue method, but rather
      * catch them and fire them as {@link graphql.schema.CoercingParseValueException} instead as per the method contract.
+     *
+     * Note : if input is explicit/raw value null, input coercion will return null before this method is called
      *
      * @param input          is never null
      * @param graphQLContext the graphql context in place
      * @param locale         the locale to use
      *
-     * @return a parsed value which is never null
+     * @return a parsed value which may be null
      *
      * @throws graphql.schema.CoercingParseValueException if value input can't be parsed
      */
-    default I parseValue(@NotNull Object input, @NotNull GraphQLContext graphQLContext, @NotNull Locale locale) throws CoercingParseValueException {
+    @Nullable default I parseValue(@NotNull Object input, @NotNull GraphQLContext graphQLContext, @NotNull Locale locale) throws CoercingParseValueException {
         assertNotNull(input);
         assertNotNull(graphQLContext);
         assertNotNull(locale);
@@ -121,13 +127,16 @@ public interface Coercing<I, O> {
      * Note : You should not allow {@link java.lang.RuntimeException}s to come out of your parseLiteral method, but rather
      * catch them and fire them as {@link graphql.schema.CoercingParseLiteralException} instead as per the method contract.
      *
+     * Note : if input is literal {@link graphql.language.NullValue}, input coercion will return null before this method is called
+     *
      * @param input is never null
      *
-     * @return a parsed value which is never null
+     * @return a parsed value which may be null
      *
      * @throws graphql.schema.CoercingParseLiteralException if input literal can't be parsed
      */
     @Deprecated
+    @DeprecatedAt("2022-08-22")
     @Nullable I parseLiteral(@NotNull Object input) throws CoercingParseLiteralException;
 
     /**
@@ -141,15 +150,18 @@ public interface Coercing<I, O> {
      * objects and convert them into actual values.  But for those scalar types that want to do this, then this
      * method should be implemented.
      *
+     * Note : if input is literal {@link graphql.language.NullValue}, input coercion will return null before this method is called
+     *
      * @param input     is never null
      * @param variables the resolved variables passed to the query
      *
-     * @return a parsed value which is never null
+     * @return a parsed value which may be null
      *
      * @throws graphql.schema.CoercingParseLiteralException if input literal can't be parsed
      */
     @SuppressWarnings("unused")
     @Deprecated
+    @DeprecatedAt("2022-08-22")
     default @Nullable I parseLiteral(Object input, Map<String, Object> variables) throws CoercingParseLiteralException {
         return parseLiteral(input);
     }
@@ -165,12 +177,14 @@ public interface Coercing<I, O> {
      * objects and convert them into actual values.  But for those scalar types that want to do this, then this
      * method should be implemented.
      *
+     * Note : if input is literal {@link graphql.language.NullValue}, input coercion will return null before this method is called
+     *
      * @param input          is never null
      * @param variables      the resolved variables passed to the query
      * @param graphQLContext the graphql context in place
      * @param locale         the locale to use
      *
-     * @return a parsed value which may be null, say for {@link graphql.language.NullValue} as input
+     * @return a parsed value which may be null
      *
      * @throws graphql.schema.CoercingParseLiteralException if input literal can't be parsed
      */
@@ -192,6 +206,7 @@ public interface Coercing<I, O> {
      * @return The literal matching the external input value.
      */
     @Deprecated
+    @DeprecatedAt("2022-08-22")
     default @NotNull Value valueToLiteral(@NotNull Object input) {
         throw new UnsupportedOperationException("This is not implemented by this Scalar " + this.getClass());
     }
