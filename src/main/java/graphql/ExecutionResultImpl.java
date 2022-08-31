@@ -104,22 +104,17 @@ public class ExecutionResultImpl implements ExecutionResult {
                 '}';
     }
 
-    public ExecutionResultImpl transform(Consumer<Builder> builderConsumer) {
-        Builder builder = newExecutionResult().from(this);
-        builderConsumer.accept(builder);
-        return builder.build();
-    }
-
     public static Builder newExecutionResult() {
         return new Builder();
     }
 
-    public static class Builder {
+    public static class Builder implements ExecutionResult.Builder<Builder> {
         private boolean dataPresent;
         private Object data;
         private List<GraphQLError> errors = new ArrayList<>();
         private Map<Object, Object> extensions;
 
+        @Override
         public Builder from(ExecutionResult executionResult) {
             dataPresent = executionResult.isDataPresent();
             data = executionResult.getData();
@@ -128,39 +123,46 @@ public class ExecutionResultImpl implements ExecutionResult {
             return this;
         }
 
+        @Override
         public Builder data(Object data) {
             dataPresent = true;
             this.data = data;
             return this;
         }
 
+        @Override
         public Builder errors(List<GraphQLError> errors) {
             this.errors = errors;
             return this;
         }
 
+        @Override
         public Builder addErrors(List<GraphQLError> errors) {
             this.errors.addAll(errors);
             return this;
         }
 
+        @Override
         public Builder addError(GraphQLError error) {
             this.errors.add(error);
             return this;
         }
 
+        @Override
         public Builder extensions(Map<Object, Object> extensions) {
             this.extensions = extensions;
             return this;
         }
 
+        @Override
         public Builder addExtension(String key, Object value) {
             this.extensions = (this.extensions == null ? new LinkedHashMap<>() : this.extensions);
             this.extensions.put(key, value);
             return this;
         }
 
-        public ExecutionResultImpl build() {
+        @Override
+        public ExecutionResult build() {
             return new ExecutionResultImpl(dataPresent, data, errors, extensions);
         }
     }
