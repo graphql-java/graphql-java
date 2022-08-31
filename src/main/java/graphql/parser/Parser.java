@@ -1,7 +1,7 @@
 package graphql.parser;
 
-import graphql.DeprecatedAt;
 import com.google.common.collect.ImmutableList;
+import graphql.DeprecatedAt;
 import graphql.Internal;
 import graphql.PublicApi;
 import graphql.language.Document;
@@ -83,9 +83,6 @@ public class Parser {
         return new Parser().parseDocument(input);
     }
 
-    public static Document parse(ParserEnvironment environment) throws InvalidSyntaxException {
-        return new Parser().parseDocument(environment);
-    }
 
     /**
      * Parses a string input into a graphql AST {@link Value}
@@ -140,6 +137,22 @@ public class Parser {
     }
 
     /**
+     * Parses reader  input into a graphql AST {@link Document}
+     *
+     * @param reader the reader input to parse
+     *
+     * @return an AST {@link Document}
+     *
+     * @throws InvalidSyntaxException if the input is not valid graphql syntax
+     */
+    public Document parseDocument(Reader reader) throws InvalidSyntaxException {
+        ParserEnvironment parserEnvironment = ParserEnvironment.newParserEnvironment()
+                .document(reader)
+                .build();
+        return parseDocumentImpl(parserEnvironment);
+    }
+
+    /**
      * Parses a string input into a graphql AST {@link Document}
      *
      * @param input      the input to parse
@@ -148,7 +161,10 @@ public class Parser {
      * @return an AST {@link Document}
      *
      * @throws InvalidSyntaxException if the input is not valid graphql syntax
+     * @deprecated use {#{@link #parse(ParserEnvironment)}} instead
      */
+    @DeprecatedAt("2022-08-31")
+    @Deprecated
     public Document parseDocument(String input, String sourceName) throws InvalidSyntaxException {
         MultiSourceReader multiSourceReader = MultiSourceReader.newMultiSourceReader()
                 .string(input, sourceName)
@@ -166,7 +182,10 @@ public class Parser {
      * @return an AST {@link Document}
      *
      * @throws InvalidSyntaxException if the input is not valid graphql syntax
+     * @deprecated use {#{@link #parse(ParserEnvironment)}} instead
      */
+    @DeprecatedAt("2022-08-31")
+    @Deprecated
     public Document parseDocument(String input, ParserOptions parserOptions) throws InvalidSyntaxException {
         MultiSourceReader multiSourceReader = MultiSourceReader.newMultiSourceReader()
                 .string(input, null)
@@ -178,29 +197,16 @@ public class Parser {
     /**
      * Parses reader  input into a graphql AST {@link Document}
      *
-     * @param reader the reader input to parse
-     *
-     * @return an AST {@link Document}
-     *
-     * @throws InvalidSyntaxException if the input is not valid graphql syntax
-     */
-    public Document parseDocument(Reader reader) throws InvalidSyntaxException {
-        ParserEnvironment parserEnvironment = ParserEnvironment.newParserEnvironment()
-                .document(reader)
-                .build();
-        return parseDocumentImpl(parserEnvironment);
-    }
-
-    /**
-     * Parses reader  input into a graphql AST {@link Document}
-     *
      * @param reader        the reader input to parse
      * @param parserOptions the parser options
      *
      * @return an AST {@link Document}
      *
      * @throws InvalidSyntaxException if the input is not valid graphql syntax
+     * @deprecated use {#{@link #parse(ParserEnvironment)}} instead
      */
+    @DeprecatedAt("2022-08-31")
+    @Deprecated
     public Document parseDocument(Reader reader, ParserOptions parserOptions) throws InvalidSyntaxException {
         ParserEnvironment parserEnvironment = ParserEnvironment.newParserEnvironment()
                 .document(reader)
@@ -396,21 +402,5 @@ public class Parser {
      */
     protected GraphqlAntlrToLanguage getAntlrToLanguage(CommonTokenStream tokens, MultiSourceReader multiSourceReader, ParserEnvironment environment) {
         return new GraphqlAntlrToLanguage(tokens, multiSourceReader, environment.getParserOptions(), environment.getI18N(), null);
-    }
-
-    /**
-     * Allows you to override the ANTLR to AST code.
-     *
-     * @param tokens            the token stream
-     * @param multiSourceReader the source of the query document
-     *
-     * @return a new GraphqlAntlrToLanguage instance
-     *
-     * @deprecated - really should use {@link #getAntlrToLanguage(CommonTokenStream, MultiSourceReader, ParserOptions)}
-     */
-    @Deprecated
-    @DeprecatedAt("2021-06-23")
-    protected GraphqlAntlrToLanguage getAntlrToLanguage(CommonTokenStream tokens, MultiSourceReader multiSourceReader) {
-        return null;
     }
 }

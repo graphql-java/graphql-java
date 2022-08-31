@@ -45,9 +45,7 @@ public interface ParserEnvironment {
     class Builder {
         Reader reader;
         ParserOptions parserOptions = ParserOptions.getDefaultParserOptions();
-
         Locale locale = Locale.getDefault();
-
 
         public Builder() {
         }
