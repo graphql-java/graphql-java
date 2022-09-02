@@ -80,8 +80,10 @@ import java.util.stream.Collectors;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.Directives.DEPRECATED_DIRECTIVE_DEFINITION;
+import static graphql.Directives.IncludeDirective;
 import static graphql.Directives.NO_LONGER_SUPPORTED;
 import static graphql.Directives.SPECIFIED_BY_DIRECTIVE_DEFINITION;
+import static graphql.Directives.SkipDirective;
 import static graphql.Directives.SpecifiedByDirective;
 import static graphql.collect.ImmutableKit.emptyList;
 import static graphql.introspection.Introspection.DirectiveLocation.ARGUMENT_DEFINITION;
@@ -1055,6 +1057,11 @@ public class SchemaGeneratorHelper {
         TypeDefinitionRegistry typeRegistry = buildCtx.getTypeRegistry();
 
         for (DirectiveDefinition directiveDefinition : typeRegistry.getDirectiveDefinitions().values()) {
+            if (IncludeDirective.getName().equals(directiveDefinition.getName())
+                    || SkipDirective.getName().equals(directiveDefinition.getName())) {
+                // skip and include directives are added by default to the GraphQLSchema via the GraphQLSchema builder.
+                continue;
+            }
             GraphQLDirective directive = buildDirectiveDefinitionFromAst(buildCtx, directiveDefinition, inputTypeFactory(buildCtx));
             buildCtx.addDirectiveDefinition(directive);
             additionalDirectives.add(directive);
