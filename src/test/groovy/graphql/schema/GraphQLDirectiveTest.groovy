@@ -1,6 +1,5 @@
 package graphql.schema
 
-import graphql.AssertException
 import graphql.TestUtil
 import graphql.language.Node
 import spock.lang.Specification
