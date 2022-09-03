@@ -2012,6 +2012,28 @@ type Query {
 '''
     }
 
+    def "directive containing formatting specifiers"() {
+        def constraintDirective = GraphQLDirective.newDirective().name("constraint")
+                .argument({
+                    it.name("regex").type(GraphQLString).valueProgrammatic("%")
+                })
+                .build()
+        GraphQLInputObjectType type = GraphQLInputObjectType.newInputObject().name("Person")
+                .field({ it.name("thisMustBeAPercentageSign").type(GraphQLString).withDirective(constraintDirective) })
+                .build()
+
+        when:
+
+        def result = new SchemaPrinter().print(type)
+
+
+        then:
+        result == '''input Person {
+  thisMustBeAPercentageSign: String @constraint(regex : "%")
+}
+'''
+    }
+
     def "can specify a new ordering for the schema printer"() {
 
         def sdl = """

@@ -1,7 +1,6 @@
 package graphql.execution
 
 import graphql.GraphQLContext
-import graphql.cachecontrol.CacheControl
 import graphql.execution.instrumentation.Instrumentation
 import graphql.language.Document
 import graphql.language.FragmentDefinition
@@ -26,7 +25,6 @@ class ExecutionContextBuilderTest extends Specification {
     def operation = document.definitions[0] as OperationDefinition
     def fragment = document.definitions[1] as FragmentDefinition
     def dataLoaderRegistry = new DataLoaderRegistry()
-    def cacheControl = CacheControl.newCacheControl()
 
     def "builds the correct ExecutionContext"() {
         when:
@@ -37,14 +35,13 @@ class ExecutionContextBuilderTest extends Specification {
             .subscriptionStrategy(subscriptionStrategy)
             .graphQLSchema(schema)
             .executionId(executionId)
-            .context(context)
+            .context(context) // Retain deprecated builder for test coverage
             .graphQLContext(graphQLContext)
             .root(root)
             .operationDefinition(operation)
             .fragmentsByName([MyFragment: fragment])
-            .variables([var: 'value'])
+            .variables([var: 'value']) // Retain deprecated builder for test coverage
             .dataLoaderRegistry(dataLoaderRegistry)
-            .cacheControl(cacheControl)
             .build()
 
         then:
@@ -55,13 +52,12 @@ class ExecutionContextBuilderTest extends Specification {
         executionContext.mutationStrategy == mutationStrategy
         executionContext.subscriptionStrategy == subscriptionStrategy
         executionContext.root == root
-        executionContext.context == context
+        executionContext.context == context // Retain deprecated method for test coverage
         executionContext.graphQLContext == graphQLContext
-        executionContext.variables == [var: 'value']
+        executionContext.variables == [var: 'value'] // Retain deprecated method for test coverage
         executionContext.getFragmentsByName() == [MyFragment: fragment]
         executionContext.operationDefinition == operation
         executionContext.dataLoaderRegistry == dataLoaderRegistry
-        executionContext.cacheControl == cacheControl
     }
 
     def "builds the correct ExecutionContext with coerced variables"() {
@@ -76,14 +72,12 @@ class ExecutionContextBuilderTest extends Specification {
             .subscriptionStrategy(subscriptionStrategy)
             .graphQLSchema(schema)
             .executionId(executionId)
-            .context(context)
             .graphQLContext(graphQLContext)
             .root(root)
             .operationDefinition(operation)
             .fragmentsByName([MyFragment: fragment])
             .coercedVariables(coercedVariables)
             .dataLoaderRegistry(dataLoaderRegistry)
-            .cacheControl(cacheControl)
             .build()
 
         then:
@@ -94,13 +88,11 @@ class ExecutionContextBuilderTest extends Specification {
         executionContext.mutationStrategy == mutationStrategy
         executionContext.subscriptionStrategy == subscriptionStrategy
         executionContext.root == root
-        executionContext.context == context
         executionContext.graphQLContext == graphQLContext
         executionContext.coercedVariables == coercedVariables
         executionContext.getFragmentsByName() == [MyFragment: fragment]
         executionContext.operationDefinition == operation
         executionContext.dataLoaderRegistry == dataLoaderRegistry
-        executionContext.cacheControl == cacheControl
     }
 
     def "builds the correct ExecutionContext, if both variables and coercedVariables are set, latest value set takes precedence"() {
@@ -115,15 +107,12 @@ class ExecutionContextBuilderTest extends Specification {
                 .subscriptionStrategy(subscriptionStrategy)
                 .graphQLSchema(schema)
                 .executionId(executionId)
-                .context(context)
                 .graphQLContext(graphQLContext)
                 .root(root)
                 .operationDefinition(operation)
                 .fragmentsByName([MyFragment: fragment])
-                .variables([var: 'value'])
                 .coercedVariables(coercedVariables)
                 .dataLoaderRegistry(dataLoaderRegistry)
-                .cacheControl(cacheControl)
                 .build()
 
         then:
@@ -134,13 +123,11 @@ class ExecutionContextBuilderTest extends Specification {
         executionContext.mutationStrategy == mutationStrategy
         executionContext.subscriptionStrategy == subscriptionStrategy
         executionContext.root == root
-        executionContext.context == context
         executionContext.graphQLContext == graphQLContext
         executionContext.coercedVariables == coercedVariables
         executionContext.getFragmentsByName() == [MyFragment: fragment]
         executionContext.operationDefinition == operation
         executionContext.dataLoaderRegistry == dataLoaderRegistry
-        executionContext.cacheControl == cacheControl
     }
 
     def "transform works and copies values with coerced variables"() {
@@ -153,14 +140,12 @@ class ExecutionContextBuilderTest extends Specification {
             .subscriptionStrategy(subscriptionStrategy)
             .graphQLSchema(schema)
             .executionId(executionId)
-            .context(context)
             .graphQLContext(graphQLContext)
             .root(root)
             .operationDefinition(operation)
             .coercedVariables(oldCoercedVariables)
             .fragmentsByName([MyFragment: fragment])
             .dataLoaderRegistry(dataLoaderRegistry)
-            .cacheControl(cacheControl)
             .build()
 
         when:
@@ -176,13 +161,11 @@ class ExecutionContextBuilderTest extends Specification {
         executionContext.mutationStrategy == mutationStrategy
         executionContext.subscriptionStrategy == subscriptionStrategy
         executionContext.root == root
-        executionContext.context == context
         executionContext.graphQLContext == graphQLContext
         executionContext.coercedVariables == coercedVariables
         executionContext.getFragmentsByName() == [MyFragment: fragment]
         executionContext.operationDefinition == operation
         executionContext.dataLoaderRegistry == dataLoaderRegistry
-        executionContext.cacheControl == cacheControl
     }
 
     def "transform copies values, if both variables and coercedVariables set, latest value set takes precedence"() {
@@ -195,21 +178,17 @@ class ExecutionContextBuilderTest extends Specification {
                 .subscriptionStrategy(subscriptionStrategy)
                 .graphQLSchema(schema)
                 .executionId(executionId)
-                .context(context)
                 .graphQLContext(graphQLContext)
                 .root(root)
                 .operationDefinition(operation)
-                .variables([:])
                 .coercedVariables(oldCoercedVariables)
                 .fragmentsByName([MyFragment: fragment])
                 .dataLoaderRegistry(dataLoaderRegistry)
-                .cacheControl(cacheControl)
                 .build()
 
         when:
         def coercedVariables = CoercedVariables.of([var: 'value'])
         def executionContext = executionContextOld.transform(builder -> builder
-                .variables([var: 'value'])
                 .coercedVariables(coercedVariables))
 
         then:
@@ -220,12 +199,10 @@ class ExecutionContextBuilderTest extends Specification {
         executionContext.mutationStrategy == mutationStrategy
         executionContext.subscriptionStrategy == subscriptionStrategy
         executionContext.root == root
-        executionContext.context == context
         executionContext.graphQLContext == graphQLContext
         executionContext.coercedVariables == coercedVariables
         executionContext.getFragmentsByName() == [MyFragment: fragment]
         executionContext.operationDefinition == operation
         executionContext.dataLoaderRegistry == dataLoaderRegistry
-        executionContext.cacheControl == cacheControl
     }
 }

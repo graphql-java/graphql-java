@@ -1178,4 +1178,67 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
         (restrictedSchema.getType("Account") as GraphQLObjectType).getFieldDefinition("billingStatus") == null
         restrictedSchema.getType("BillingStatus") != null
     }
+
+    def "can remove a field with a directive containing enum argument"() {
+        given:
+        GraphQLSchema schema = TestUtil.schema("""
+
+        directive @private(privateType: SecretType) on FIELD_DEFINITION
+        enum SecretType {
+            SUPER_SECRET
+            NOT_SO_SECRET
+        }
+
+        type Query {
+            account: Account
+        }
+        
+        type Account {
+            name: String
+            billingStatus: BillingStatus @private(privateType: NOT_SO_SECRET)
+        }
+        
+        type BillingStatus {
+            accountNumber: String
+        }
+        """)
+
+        when:
+        GraphQLSchema restrictedSchema = visibilitySchemaTransformation.apply(schema)
+
+        then:
+        (restrictedSchema.getType("Account") as GraphQLObjectType).getFieldDefinition("billingStatus") == null
+        restrictedSchema.getType("BillingStatus") == null
+    }
+
+    def "can remove a field with a directive containing type argument"() {
+        given:
+        GraphQLSchema schema = TestUtil.schema("""
+
+        directive @private(privateType: SecretType) on FIELD_DEFINITION
+        input SecretType {
+            description: String
+        }
+
+        type Query {
+            account: Account
+        }
+        
+        type Account {
+            name: String
+            billingStatus: BillingStatus @private(privateType: { description: "secret" })
+        }
+        
+        type BillingStatus {
+            accountNumber: String
+        }
+        """)
+
+        when:
+        GraphQLSchema restrictedSchema = visibilitySchemaTransformation.apply(schema)
+
+        then:
+        (restrictedSchema.getType("Account") as GraphQLObjectType).getFieldDefinition("billingStatus") == null
+        restrictedSchema.getType("BillingStatus") == null
+    }
 }

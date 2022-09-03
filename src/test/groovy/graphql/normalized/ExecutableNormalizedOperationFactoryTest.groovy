@@ -1,5 +1,6 @@
 package graphql.normalized
 
+import graphql.ExecutionInput
 import graphql.GraphQL
 import graphql.TestUtil
 import graphql.execution.CoercedVariables
@@ -1314,7 +1315,8 @@ schema {
 
     private void assertValidQuery(GraphQLSchema graphQLSchema, String query, Map variables = [:]) {
         GraphQL graphQL = GraphQL.newGraphQL(graphQLSchema).build()
-        assert graphQL.execute(query, null, variables).errors.size() == 0
+        def ei = ExecutionInput.newExecutionInput(query).variables(variables).build()
+        assert graphQL.execute(ei).errors.size() == 0
     }
 
     def "normalized arguments"() {
@@ -1393,9 +1395,8 @@ schema {
         assertValidQuery(graphQLSchema, query)
         def document = TestUtil.parseQuery(query)
         def dependencyGraph = new ExecutableNormalizedOperationFactory()
-        def variables = [:]
         when:
-        def tree = dependencyGraph.createExecutableNormalizedOperationWithRawVariables(graphQLSchema, document, null, RawVariables.of(variables))
+        def tree = dependencyGraph.createExecutableNormalizedOperationWithRawVariables(graphQLSchema, document, null, RawVariables.emptyVariables())
 
         then:
         def topLevelField = tree.getTopLevelFields().get(0)

@@ -1,7 +1,9 @@
 package graphql.schema;
 
 
+import graphql.DeprecatedAt;
 import graphql.DirectivesUtil;
+import graphql.GraphQLContext;
 import graphql.PublicApi;
 import graphql.language.InputValueDefinition;
 import graphql.language.Value;
@@ -12,6 +14,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.function.Consumer;
 
@@ -123,6 +126,7 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
      * @deprecated use {@link GraphQLAppliedDirectiveArgument} instead
      */
     @Deprecated
+    @DeprecatedAt("2022-02-24")
     public @NotNull InputValueWithState getArgumentValue() {
         return value;
     }
@@ -146,8 +150,9 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
      * @deprecated use {@link GraphQLAppliedDirectiveArgument} instead
      */
     @Deprecated
+    @DeprecatedAt("2022-02-24")
     public static <T> T getArgumentValue(GraphQLArgument argument) {
-        return getInputValueImpl(argument.getType(), argument.getArgumentValue());
+        return getInputValueImpl(argument.getType(), argument.getArgumentValue(), GraphQLContext.getDefault(), Locale.getDefault());
     }
 
     /**
@@ -167,7 +172,7 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
      * @return a value of type T which is the java value of the argument default
      */
     public static <T> T getArgumentDefaultValue(GraphQLArgument argument) {
-        return getInputValueImpl(argument.getType(), argument.getArgumentDefaultValue());
+        return getInputValueImpl(argument.getType(), argument.getArgumentDefaultValue(), GraphQLContext.getDefault(), Locale.getDefault());
     }
 
     public String getDescription() {
@@ -370,6 +375,7 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
          * @deprecated use {@link #defaultValueLiteral(Value)} or {@link #defaultValueProgrammatic(Object)}
          */
         @Deprecated
+        @DeprecatedAt("2021-05-10")
         public Builder defaultValue(Object defaultValue) {
             this.defaultValue = InputValueWithState.newInternalValue(defaultValue);
             return this;
@@ -415,6 +421,7 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
          * @deprecated use {@link #valueLiteral(Value)} or {@link #valueProgrammatic(Object)}
          */
         @Deprecated
+        @DeprecatedAt("2021-05-10")
         public Builder value(@Nullable Object value) {
             this.value = InputValueWithState.newInternalValue(value);
             return this;
@@ -430,6 +437,7 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
          * @deprecated use {@link  GraphQLAppliedDirectiveArgument} methods instead
          */
         @Deprecated
+        @DeprecatedAt("2022-02-24")
         public Builder valueLiteral(@NotNull Value value) {
             this.value = InputValueWithState.newLiteralValue(value);
             return this;
@@ -443,6 +451,7 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
          * @deprecated use {@link  GraphQLAppliedDirectiveArgument} methods instead
          */
         @Deprecated
+        @DeprecatedAt("2022-02-24")
         public Builder valueProgrammatic(@Nullable Object value) {
             this.value = InputValueWithState.newExternalValue(value);
             return this;
@@ -456,6 +465,7 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
          * @deprecated use {@link  GraphQLAppliedDirectiveArgument} methods instead
          */
         @Deprecated
+        @DeprecatedAt("2022-02-24")
         public Builder clearValue() {
             this.value = InputValueWithState.NOT_SET;
             return this;

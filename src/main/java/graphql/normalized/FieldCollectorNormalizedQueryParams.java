@@ -1,6 +1,7 @@
 package graphql.normalized;
 
 import graphql.Assert;
+import graphql.GraphQLContext;
 import graphql.Internal;
 import graphql.language.FragmentDefinition;
 import graphql.schema.GraphQLSchema;
@@ -10,6 +11,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 @Internal
@@ -18,6 +20,8 @@ public class FieldCollectorNormalizedQueryParams {
     private final Map<String, FragmentDefinition> fragmentsByName;
     private final Map<String, Object> coercedVariableValues;
     private final Map<String, NormalizedInputValue> normalizedVariableValues;
+    private final GraphQLContext graphQLContext;
+    private final Locale locale;
 
     public List<PossibleMerger> possibleMergerList = new ArrayList<>();
 
@@ -53,14 +57,21 @@ public class FieldCollectorNormalizedQueryParams {
         return normalizedVariableValues;
     }
 
-    private FieldCollectorNormalizedQueryParams(GraphQLSchema graphQLSchema,
-                                                Map<String, Object> coercedVariableValues,
-                                                Map<String, NormalizedInputValue> normalizedVariableValues,
-                                                Map<String, FragmentDefinition> fragmentsByName) {
-        this.fragmentsByName = fragmentsByName;
-        this.graphQLSchema = graphQLSchema;
-        this.coercedVariableValues = coercedVariableValues;
-        this.normalizedVariableValues = normalizedVariableValues;
+    public GraphQLContext getGraphQLContext() {
+        return graphQLContext;
+    }
+
+    public Locale getLocale() {
+        return locale;
+    }
+
+    private FieldCollectorNormalizedQueryParams(Builder builder) {
+        this.fragmentsByName = builder.fragmentsByName;
+        this.graphQLSchema = builder.graphQLSchema;
+        this.coercedVariableValues = builder.coercedVariableValues;
+        this.normalizedVariableValues = builder.normalizedVariableValues;
+        this.graphQLContext = builder.graphQLContext;
+        this.locale = builder.locale;
     }
 
     public static Builder newParameters() {
@@ -72,6 +83,8 @@ public class FieldCollectorNormalizedQueryParams {
         private final Map<String, FragmentDefinition> fragmentsByName = new LinkedHashMap<>();
         private final Map<String, Object> coercedVariableValues = new LinkedHashMap<>();
         private Map<String, NormalizedInputValue> normalizedVariableValues;
+        private GraphQLContext graphQLContext = GraphQLContext.getDefault();
+        private Locale locale = Locale.getDefault();
 
         /**
          * @see FieldCollectorNormalizedQueryParams#newParameters()
@@ -100,9 +113,19 @@ public class FieldCollectorNormalizedQueryParams {
             return this;
         }
 
+        public Builder graphQLContext(GraphQLContext graphQLContext) {
+            this.graphQLContext = graphQLContext;
+            return this;
+        }
+
+        public Builder locale(Locale locale) {
+            this.locale = locale;
+            return this;
+        }
+
         public FieldCollectorNormalizedQueryParams build() {
             Assert.assertNotNull(graphQLSchema, () -> "You must provide a schema");
-            return new FieldCollectorNormalizedQueryParams(graphQLSchema, coercedVariableValues, normalizedVariableValues, fragmentsByName);
+            return new FieldCollectorNormalizedQueryParams(this);
         }
 
     }

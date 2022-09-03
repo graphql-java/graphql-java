@@ -1,5 +1,6 @@
 package graphql.execution;
 
+import graphql.DeprecatedAt;
 import graphql.PublicApi;
 import graphql.collect.ImmutableMapWithNullValues;
 import graphql.schema.GraphQLFieldDefinition;
@@ -84,6 +85,7 @@ public class ExecutionStepInfo {
      * @deprecated use {@link #getObjectType()} instead as it is named better
      */
     @Deprecated
+    @DeprecatedAt("2022-02-03")
     public GraphQLObjectType getFieldContainer() {
         return fieldContainer;
     }

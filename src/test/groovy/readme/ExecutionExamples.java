@@ -15,6 +15,7 @@ import graphql.execution.ExecutionStrategy;
 import graphql.language.SourceLocation;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
+import graphql.schema.GraphQLCodeRegistry;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLFieldsContainer;
 import graphql.schema.GraphQLSchema;
@@ -164,21 +165,26 @@ public class ExecutionExamples {
                 .addPattern("Droid.appearsIn")
                 .addPattern(".*\\.hero") // it uses regular expressions
                 .build();
-
-        GraphQLSchema schema = GraphQLSchema.newSchema()
-                .query(StarWarsSchema.queryType)
+        GraphQLCodeRegistry codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
                 .fieldVisibility(blockedFields)
                 .build();
 
+        GraphQLSchema schema = GraphQLSchema.newSchema()
+                .query(StarWarsSchema.queryType)
+                .codeRegistry(codeRegistry)
+                .build();
         //::/FigureJ
     }
 
     private void noIntrospection() {
         //::FigureK
 
+        GraphQLCodeRegistry codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+                .fieldVisibility(NoIntrospectionGraphqlFieldVisibility.NO_INTROSPECTION_FIELD_VISIBILITY)
+                .build();
         GraphQLSchema schema = GraphQLSchema.newSchema()
                 .query(StarWarsSchema.queryType)
-                .fieldVisibility(NoIntrospectionGraphqlFieldVisibility.NO_INTROSPECTION_FIELD_VISIBILITY)
+                .codeRegistry(codeRegistry)
                 .build();
         //::/FigureK
     }

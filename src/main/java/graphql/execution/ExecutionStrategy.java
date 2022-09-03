@@ -250,7 +250,11 @@ public abstract class ExecutionStrategy {
 
         // DataFetchingFieldSelectionSet and QueryDirectives is a supplier of sorts - eg a lazy pattern
         DataFetchingFieldSelectionSet fieldCollector = DataFetchingFieldSelectionSetImpl.newCollector(executionContext.getGraphQLSchema(), fieldType, normalizedFieldSupplier);
-        QueryDirectives queryDirectives = new QueryDirectivesImpl(field, executionContext.getGraphQLSchema(), executionContext.getVariables());
+        QueryDirectives queryDirectives = new QueryDirectivesImpl(field,
+                executionContext.getGraphQLSchema(),
+                executionContext.getCoercedVariables().toMap(),
+                executionContext.getGraphQLContext(),
+                executionContext.getLocale());
 
 
         DataFetchingEnvironment environment = newDataFetchingEnvironment(executionContext)
@@ -590,16 +594,11 @@ public abstract class ExecutionStrategy {
     protected CompletableFuture<ExecutionResult> completeValueForScalar(ExecutionContext executionContext, ExecutionStrategyParameters parameters, GraphQLScalarType scalarType, Object result) {
         Object serialized;
         try {
-            serialized = scalarType.getCoercing().serialize(result);
+            serialized = scalarType.getCoercing().serialize(result, executionContext.getGraphQLContext(), executionContext.getLocale());
         } catch (CoercingSerializeException e) {
             serialized = handleCoercionProblem(executionContext, parameters, e);
         }
 
-        // TODO: fix that: this should not be handled here
-        //6.6.1 http://facebook.github.io/graphql/#sec-Field-entries
-        if (serialized instanceof Double && ((Double) serialized).isNaN()) {
-            serialized = null;
-        }
         try {
             serialized = parameters.getNonNullFieldValidator().validate(parameters.getPath(), serialized);
         } catch (NonNullableFieldWasNullException e) {
@@ -820,7 +819,13 @@ public abstract class ExecutionStrategy {
         if (!fieldArgDefs.isEmpty()) {
             List<Argument> fieldArgs = field.getArguments();
             GraphQLCodeRegistry codeRegistry = executionContext.getGraphQLSchema().getCodeRegistry();
-            argumentValues = FpKit.intraThreadMemoize(() -> ValuesResolver.getArgumentValues(codeRegistry, fieldArgDefs, fieldArgs, executionContext.getCoercedVariables()));
+            Supplier<Map<String, Object>> argValuesSupplier = () -> ValuesResolver.getArgumentValues(codeRegistry,
+                    fieldArgDefs,
+                    fieldArgs,
+                    executionContext.getCoercedVariables(),
+                    executionContext.getGraphQLContext(),
+                    executionContext.getLocale());
+            argumentValues = FpKit.intraThreadMemoize(argValuesSupplier);
         }
 
 

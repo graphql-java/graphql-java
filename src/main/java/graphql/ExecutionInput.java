@@ -44,7 +44,7 @@ public class ExecutionInput {
         this.dataLoaderRegistry = builder.dataLoaderRegistry;
         this.cacheControl = builder.cacheControl;
         this.executionId = builder.executionId;
-        this.locale = builder.locale;
+        this.locale = builder.locale != null ? builder.locale : Locale.getDefault(); // always have a locale in place
         this.localContext = builder.localContext;
         this.extensions = builder.extensions;
     }
@@ -72,6 +72,7 @@ public class ExecutionInput {
      * @deprecated - use {@link #getGraphQLContext()}
      */
     @Deprecated
+    @DeprecatedAt("2021-07-05")
     public Object getContext() {
         return context;
     }
@@ -124,6 +125,7 @@ public class ExecutionInput {
      * @deprecated - Apollo has deprecated the Cache Control specification
      */
     @Deprecated
+    @DeprecatedAt("2022-07-26")
     public CacheControl getCacheControl() {
         return cacheControl;
     }
@@ -227,6 +229,7 @@ public class ExecutionInput {
         // dataloader field tracking away.
         //
         private DataLoaderRegistry dataLoaderRegistry = DataLoaderDispatcherInstrumentationState.EMPTY_DATALOADER_REGISTRY;
+        @DeprecatedAt("2022-07-26")
         private CacheControl cacheControl = CacheControl.newCacheControl();
         private Locale locale = Locale.getDefault();
         private ExecutionId executionId;
@@ -287,6 +290,7 @@ public class ExecutionInput {
          * @deprecated - the {@link ExecutionInput#getGraphQLContext()} is a fixed mutable instance now
          */
         @Deprecated
+        @DeprecatedAt("2021-07-05")
         public Builder context(Object context) {
             this.context = context;
             return this;
@@ -302,6 +306,7 @@ public class ExecutionInput {
          * @deprecated - the {@link ExecutionInput#getGraphQLContext()} is a fixed mutable instance now
          */
         @Deprecated
+        @DeprecatedAt("2021-07-05")
         public Builder context(GraphQLContext.Builder contextBuilder) {
             this.context = contextBuilder.build();
             return this;
@@ -317,6 +322,7 @@ public class ExecutionInput {
          * @deprecated - the {@link ExecutionInput#getGraphQLContext()} is a fixed mutable instance now
          */
         @Deprecated
+        @DeprecatedAt("2021-07-05")
         public Builder context(UnaryOperator<GraphQLContext.Builder> contextBuilderFunction) {
             GraphQLContext.Builder builder = GraphQLContext.newContext();
             builder = contextBuilderFunction.apply(builder);
@@ -394,6 +400,7 @@ public class ExecutionInput {
         }
 
         @Deprecated
+        @DeprecatedAt("2022-07-26")
         public Builder cacheControl(CacheControl cacheControl) {
             this.cacheControl = assertNotNull(cacheControl);
             return this;

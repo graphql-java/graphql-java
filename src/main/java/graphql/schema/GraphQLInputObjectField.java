@@ -1,7 +1,9 @@
 package graphql.schema;
 
 
+import graphql.DeprecatedAt;
 import graphql.DirectivesUtil;
+import graphql.GraphQLContext;
 import graphql.PublicApi;
 import graphql.language.InputValueDefinition;
 import graphql.language.Value;
@@ -11,6 +13,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.function.Consumer;
 
@@ -106,7 +109,7 @@ public class GraphQLInputObjectField implements GraphQLNamedSchemaElement, Graph
      * @return a value of type T which is the java value of the input field default
      */
     public static <T> T getInputFieldDefaultValue(GraphQLInputObjectField inputObjectField) {
-        return getInputValueImpl(inputObjectField.getType(), inputObjectField.getInputFieldDefaultValue());
+        return getInputValueImpl(inputObjectField.getType(), inputObjectField.getInputFieldDefaultValue(), GraphQLContext.getDefault(), Locale.getDefault());
     }
 
 
@@ -313,6 +316,7 @@ public class GraphQLInputObjectField implements GraphQLNamedSchemaElement, Graph
          * @deprecated use {@link #defaultValueLiteral(Value)}
          */
         @Deprecated
+        @DeprecatedAt("2021-05-10")
         public Builder defaultValue(Object defaultValue) {
             this.defaultValue = InputValueWithState.newInternalValue(defaultValue);
             return this;

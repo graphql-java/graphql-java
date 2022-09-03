@@ -18,6 +18,7 @@ import graphql.language.OperationDefinition;
 import graphql.language.VariableDefinition;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
+import graphql.schema.impl.SchemaUtil;
 import graphql.util.LogKit;
 import org.slf4j.Logger;
 
@@ -26,14 +27,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
-import static graphql.Assert.assertShouldNeverHappen;
 import static graphql.execution.ExecutionContextBuilder.newExecutionContextBuilder;
 import static graphql.execution.ExecutionStepInfo.newExecutionStepInfo;
 import static graphql.execution.ExecutionStrategyParameters.newParameters;
 import static graphql.execution.instrumentation.SimpleInstrumentationContext.nonNullCtx;
-import static graphql.language.OperationDefinition.Operation.MUTATION;
-import static graphql.language.OperationDefinition.Operation.QUERY;
-import static graphql.language.OperationDefinition.Operation.SUBSCRIPTION;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 
 @Internal
@@ -66,7 +63,7 @@ public class Execution {
 
         CoercedVariables coercedVariables;
         try {
-            coercedVariables = ValuesResolver.coerceVariableValues(graphQLSchema, variableDefinitions, inputVariables);
+            coercedVariables = ValuesResolver.coerceVariableValues(graphQLSchema, variableDefinitions, inputVariables, executionInput.getGraphQLContext(), executionInput.getLocale());
         } catch (RuntimeException rte) {
             if (rte instanceof GraphQLError) {
                 return completedFuture(new ExecutionResultImpl((GraphQLError) rte));
@@ -115,7 +112,7 @@ public class Execution {
         GraphQLObjectType operationRootType;
 
         try {
-            operationRootType = getOperationRootType(executionContext.getGraphQLSchema(), operationDefinition);
+            operationRootType = SchemaUtil.getOperationRootType(executionContext.getGraphQLSchema(), operationDefinition);
         } catch (RuntimeException rte) {
             if (rte instanceof GraphQLError) {
                 ExecutionResult executionResult = new ExecutionResultImpl(Collections.singletonList((GraphQLError) rte));
@@ -174,31 +171,5 @@ public class Execution {
         result = result.whenComplete(executeOperationCtx::onCompleted);
 
         return result;
-    }
-
-
-    private GraphQLObjectType getOperationRootType(GraphQLSchema graphQLSchema, OperationDefinition operationDefinition) {
-        OperationDefinition.Operation operation = operationDefinition.getOperation();
-        if (operation == MUTATION) {
-            GraphQLObjectType mutationType = graphQLSchema.getMutationType();
-            if (mutationType == null) {
-                throw new MissingRootTypeException("Schema is not configured for mutations.", operationDefinition.getSourceLocation());
-            }
-            return mutationType;
-        } else if (operation == QUERY) {
-            GraphQLObjectType queryType = graphQLSchema.getQueryType();
-            if (queryType == null) {
-                throw new MissingRootTypeException("Schema does not define the required query root type.", operationDefinition.getSourceLocation());
-            }
-            return queryType;
-        } else if (operation == SUBSCRIPTION) {
-            GraphQLObjectType subscriptionType = graphQLSchema.getSubscriptionType();
-            if (subscriptionType == null) {
-                throw new MissingRootTypeException("Schema is not configured for subscriptions.", operationDefinition.getSourceLocation());
-            }
-            return subscriptionType;
-        } else {
-            return assertShouldNeverHappen("Unhandled case.  An extra operation enum has been added without code support");
-        }
     }
 }

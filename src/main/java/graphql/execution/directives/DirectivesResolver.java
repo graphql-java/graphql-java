@@ -1,6 +1,7 @@
 package graphql.execution.directives;
 
 import com.google.common.collect.ImmutableMap;
+import graphql.GraphQLContext;
 import graphql.Internal;
 import graphql.execution.CoercedVariables;
 import graphql.execution.ValuesResolver;
@@ -12,6 +13,7 @@ import graphql.schema.GraphQLSchema;
 
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -23,21 +25,27 @@ public class DirectivesResolver {
     public DirectivesResolver() {
     }
 
-    public Map<String, GraphQLDirective> resolveDirectives(List<Directive> directives, GraphQLSchema schema, Map<String, Object> variables) {
+    public Map<String, GraphQLDirective> resolveDirectives(List<Directive> directives, GraphQLSchema schema, Map<String, Object> variables, GraphQLContext graphQLContext, Locale locale) {
         GraphQLCodeRegistry codeRegistry = schema.getCodeRegistry();
         Map<String, GraphQLDirective> directiveMap = new LinkedHashMap<>();
         directives.forEach(directive -> {
             GraphQLDirective protoType = schema.getDirective(directive.getName());
             if (protoType != null) {
-                GraphQLDirective newDirective = protoType.transform(builder -> buildArguments(builder, codeRegistry, protoType, directive, variables));
+                GraphQLDirective newDirective = protoType.transform(builder -> buildArguments(builder, codeRegistry, protoType, directive, variables, graphQLContext, locale));
                 directiveMap.put(newDirective.getName(), newDirective);
             }
         });
         return ImmutableMap.copyOf(directiveMap);
     }
 
-    private void buildArguments(GraphQLDirective.Builder directiveBuilder, GraphQLCodeRegistry codeRegistry, GraphQLDirective protoType, Directive fieldDirective, Map<String, Object> variables) {
-        Map<String, Object> argumentValues = ValuesResolver.getArgumentValues(codeRegistry, protoType.getArguments(), fieldDirective.getArguments(), CoercedVariables.of(variables));
+    private void buildArguments(GraphQLDirective.Builder directiveBuilder,
+                                GraphQLCodeRegistry codeRegistry,
+                                GraphQLDirective protoType,
+                                Directive fieldDirective,
+                                Map<String, Object> variables,
+                                GraphQLContext graphQLContext,
+                                Locale locale) {
+        Map<String, Object> argumentValues = ValuesResolver.getArgumentValues(codeRegistry, protoType.getArguments(), fieldDirective.getArguments(), CoercedVariables.of(variables), graphQLContext, locale);
         directiveBuilder.clearArguments();
         protoType.getArguments().forEach(protoArg -> {
             if (argumentValues.containsKey(protoArg.getName())) {

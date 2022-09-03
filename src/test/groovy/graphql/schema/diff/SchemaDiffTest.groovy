@@ -570,4 +570,25 @@ class SchemaDiffTest extends Specification {
 
     }
 
+    def "SchemaDiff and CapturingReporter have the same diff counts"() {
+        def schema1 = TestUtil.schema("type Query { f : String }")
+        def schema2 = TestUtil.schema("type Query { f : Int }")
+
+        when:
+        def capturingReporter = new CapturingReporter()
+        def schemaDiff = new SchemaDiff()
+        def breakingCount = schemaDiff.diffSchema(DiffSet.diffSet(schema1, schema1), capturingReporter)
+        then:
+        breakingCount == capturingReporter.getBreakageCount()
+        breakingCount == 0
+
+        when:
+        capturingReporter = new CapturingReporter()
+        schemaDiff = new SchemaDiff()
+        breakingCount = schemaDiff.diffSchema(DiffSet.diffSet(schema1, schema2), capturingReporter)
+
+        then:
+        breakingCount == capturingReporter.getBreakageCount()
+        breakingCount == 1
+    }
 }

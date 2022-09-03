@@ -12,6 +12,7 @@ import graphql.execution.ExecutionId
 import graphql.execution.ResultPath
 import graphql.execution.ValueUnboxer
 import graphql.execution.instrumentation.SimpleInstrumentation
+import graphql.execution.instrumentation.parameters.InstrumentationCreateStateParameters
 import spock.lang.Specification
 
 import java.util.concurrent.CompletableFuture
@@ -308,7 +309,7 @@ class FieldValidationTest extends Specification {
         def execution = new Execution(strategy, strategy, strategy, instrumentation, ValueUnboxer.DEFAULT)
 
         def executionInput = ExecutionInput.newExecutionInput().query(query).variables(variables).build()
-        execution.execute(document, schema, ExecutionId.generate(), executionInput, SimpleInstrumentation.INSTANCE.createState())
+        execution.execute(document, schema, ExecutionId.generate(), executionInput, SimpleInstrumentation.INSTANCE.createState(new InstrumentationCreateStateParameters(schema, executionInput)))
     }
 
 }

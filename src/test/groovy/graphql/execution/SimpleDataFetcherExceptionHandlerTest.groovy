@@ -52,7 +52,7 @@ class SimpleDataFetcherExceptionHandlerTest extends Specification {
         when:
         DataFetcherExceptionHandler handler = new MyHandler()
         def handlerParameters = mkParams(new RuntimeException("RTE"))
-        def result = handler.onException(handlerParameters)
+        def result = handler.onException(handlerParameters) // Retain deprecated method for test coverage
 
         then:
         result.errors[0] instanceof ExceptionWhileDataFetching
