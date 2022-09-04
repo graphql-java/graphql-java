@@ -49,17 +49,17 @@ class ExecutionInputTest extends Specification {
         // Retaining deprecated method tests for coverage
         when:
         def executionInput = ExecutionInput.newExecutionInput().query(query)
-                .context({ builder -> builder.of("k1", "v1") } as UnaryOperator)
+                .context({ builder -> builder.of("k1", "v1") } as UnaryOperator) // Retain deprecated for test coverage
                 .build()
         then:
-        (executionInput.context as GraphQLContext).get("k1") == "v1"
+        (executionInput.context as GraphQLContext).get("k1") == "v1" // Retain deprecated for test coverage
 
         when:
         executionInput = ExecutionInput.newExecutionInput().query(query)
-                .context(GraphQLContext.newContext().of("k2", "v2"))
+                .context(GraphQLContext.newContext().of("k2", "v2")) // Retain deprecated for test coverage
                 .build()
         then:
-        (executionInput.context as GraphQLContext).get("k2") == "v2"
+        (executionInput.context as GraphQLContext).get("k2") == "v2" // Retain deprecated for test coverage
     }
 
     def "legacy context is defaulted"() {
@@ -68,8 +68,8 @@ class ExecutionInputTest extends Specification {
         def executionInput = ExecutionInput.newExecutionInput().query(query)
                 .build()
         then:
-        executionInput.context instanceof GraphQLContext
-        executionInput.getGraphQLContext() == executionInput.getContext()
+        executionInput.context instanceof GraphQLContext // Retain deprecated for test coverage
+        executionInput.getGraphQLContext() == executionInput.getContext() // Retain deprecated for test coverage
     }
 
     def "graphql context is defaulted"() {

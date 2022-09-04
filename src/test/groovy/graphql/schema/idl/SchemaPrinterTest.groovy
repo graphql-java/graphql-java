@@ -5,9 +5,11 @@ import graphql.TestUtil
 import graphql.TypeResolutionEnvironment
 import graphql.introspection.IntrospectionQuery
 import graphql.introspection.IntrospectionResultToSchema
+import graphql.language.IntValue
+import graphql.language.StringValue
 import graphql.schema.Coercing
+import graphql.schema.GraphQLAppliedDirective
 import graphql.schema.GraphQLCodeRegistry
-import graphql.schema.GraphQLDirective
 import graphql.schema.GraphQLEnumType
 import graphql.schema.GraphQLEnumValueDefinition
 import graphql.schema.GraphQLFieldDefinition
@@ -99,9 +101,20 @@ class SchemaPrinterTest extends Specification {
     }
 
     def "argsString"() {
-        def argument1 = newArgument().name("arg1").type(list(nonNull(GraphQLInt))).defaultValue(10).build()
-        def argument2 = newArgument().name("arg2").type(GraphQLString).build();
-        def argument3 = newArgument().name("arg3").type(GraphQLString).defaultValue("default").build()
+        def argument1 = newArgument()
+                .name("arg1")
+                .type(list(nonNull(GraphQLInt)))
+                .defaultValueLiteral(IntValue.newIntValue().value(10).build())
+                .build()
+        def argument2 = newArgument()
+                .name("arg2")
+                .type(GraphQLString)
+                .build()
+        def argument3 = newArgument()
+                .name("arg3")
+                .type(GraphQLString)
+                .defaultValueLiteral(StringValue.newStringValue().value("default").build())
+                .build()
         def argStr = new SchemaPrinter().argsString([argument1, argument2, argument3])
 
         expect:
@@ -110,9 +123,20 @@ class SchemaPrinterTest extends Specification {
     }
 
     def "argsString_sorts"() {
-        def argument1 = newArgument().name("arg1").type(list(nonNull(GraphQLInt))).defaultValue(10).build()
-        def argument2 = newArgument().name("arg2").type(GraphQLString).build();
-        def argument3 = newArgument().name("arg3").type(GraphQLString).defaultValue("default").build()
+        def argument1 = newArgument()
+                .name("arg1")
+                .type(list(nonNull(GraphQLInt)))
+                .defaultValueLiteral(IntValue.newIntValue().value(10).build())
+                .build()
+        def argument2 = newArgument()
+                .name("arg2")
+                .type(GraphQLString)
+                .build()
+        def argument3 = newArgument()
+                .name("arg3")
+                .type(GraphQLString)
+                .defaultValueLiteral(StringValue.newStringValue().value("default").build())
+                .build()
         def argStr = new SchemaPrinter().argsString([argument2, argument1, argument3])
 
         expect:
@@ -121,8 +145,18 @@ class SchemaPrinterTest extends Specification {
     }
 
     def "argsString_comments"() {
-        def argument1 = newArgument().name("arg1").description("A multiline\ncomment").type(list(nonNull(GraphQLInt))).defaultValue(10).build()
-        def argument2 = newArgument().name("arg2").description("A single line comment").type(list(nonNull(GraphQLInt))).defaultValue(10).build()
+        def argument1 = newArgument()
+                .name("arg1")
+                .description("A multiline\ncomment")
+                .type(list(nonNull(GraphQLInt)))
+                .defaultValueLiteral(IntValue.newIntValue().value(10).build())
+                .build()
+        def argument2 = newArgument()
+                .name("arg2")
+                .description("A single line comment")
+                .type(list(nonNull(GraphQLInt)))
+                .defaultValueLiteral(IntValue.newIntValue().value(10).build())
+                .build()
         def argStr = new SchemaPrinter().argsString([argument1, argument2])
 
         expect:
@@ -1992,14 +2026,14 @@ type Query {
 '''
 
         when:
-        def newDirective = GraphQLDirective.newDirective().name("foo")
+        def newAppliedDirective = GraphQLAppliedDirective.newDirective().name("foo")
                 .argument({
                     it.name("arg").type(compoundType).valueProgrammatic(["a": "A", "b": "B"])
                 })
                 .build()
 
         objType = newObject().name("obj").field({
-            it.name("f").type(GraphQLString).withDirective(newDirective)
+            it.name("f").type(GraphQLString).withAppliedDirective(newAppliedDirective)
         }).build()
 
         result = new SchemaPrinter().print(objType)
@@ -2013,17 +2047,17 @@ type Query {
     }
 
     def "directive containing formatting specifiers"() {
-        def constraintDirective = GraphQLDirective.newDirective().name("constraint")
+        def constraintAppliedDirective = GraphQLAppliedDirective.newDirective().name("constraint")
                 .argument({
                     it.name("regex").type(GraphQLString).valueProgrammatic("%")
                 })
                 .build()
+
         GraphQLInputObjectType type = GraphQLInputObjectType.newInputObject().name("Person")
-                .field({ it.name("thisMustBeAPercentageSign").type(GraphQLString).withDirective(constraintDirective) })
+                .field({ it.name("thisMustBeAPercentageSign").type(GraphQLString).withAppliedDirective(constraintAppliedDirective) })
                 .build()
 
         when:
-
         def result = new SchemaPrinter().print(type)
 
 

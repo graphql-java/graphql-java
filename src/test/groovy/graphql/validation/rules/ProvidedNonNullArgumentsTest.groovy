@@ -68,7 +68,7 @@ class ProvidedNonNullArgumentsTest extends Specification {
         given:
         def fieldArg = GraphQLArgument.newArgument().name("arg")
                 .type(GraphQLNonNull.nonNull(GraphQLString))
-                .defaultValue("defaultVal")
+                .defaultValueProgrammatic("defaultVal")
         def fieldDef = GraphQLFieldDefinition.newFieldDefinition()
                 .name("field")
                 .type(GraphQLString)
@@ -146,7 +146,7 @@ class ProvidedNonNullArgumentsTest extends Specification {
         given:
         def directiveArg = GraphQLArgument.newArgument()
                 .name("arg").type(GraphQLNonNull.nonNull(GraphQLString))
-                .defaultValue("defaultVal")
+                .defaultValueProgrammatic("defaultVal")
         def graphQLDirective = GraphQLDirective.newDirective()
                 .name("directive")
                 .argument(directiveArg)
