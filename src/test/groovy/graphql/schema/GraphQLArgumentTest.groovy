@@ -25,9 +25,9 @@ class GraphQLArgumentTest extends Specification {
                     .description("A2_description")
                     .type(GraphQLString)
                     .withDirective(newDirective().name("directive3"))
-                    .value("VALUE")
+                    .value("VALUE") // Retain deprecated for test coverage
                     .deprecate(null)
-                    .defaultValue("DEFAULT")
+                    .defaultValue("DEFAULT") // Retain deprecated for test coverage
         })
 
         then:
@@ -43,7 +43,7 @@ class GraphQLArgumentTest extends Specification {
         transformedArgument.name == "A2"
         transformedArgument.description == "A2_description"
         transformedArgument.type == GraphQLString
-        transformedArgument.argumentValue.value == "VALUE"
+        transformedArgument.argumentValue.value == "VALUE" // Retain deprecated for test coverage
         transformedArgument.argumentDefaultValue.value == "DEFAULT"
         transformedArgument.deprecationReason == null
         !transformedArgument.isDeprecated()
@@ -116,16 +116,17 @@ class GraphQLArgumentTest extends Specification {
     }
 
     def "can get values statically"() {
+        // Retain deprecated API usages in this test for test coverage
         when:
         GraphQLArgument startingArg = GraphQLArgument.newArgument()
                 .name("F1")
                 .type(GraphQLFloat)
                 .description("F1_description")
-                .valueProgrammatic(4.56d)
+                .valueProgrammatic(4.56d) // Retain deprecated for test coverage
                 .defaultValueProgrammatic(1.23d)
                 .build()
-        def inputValue = startingArg.getArgumentValue()
-        def resolvedValue = GraphQLArgument.getArgumentValue(startingArg)
+        def inputValue = startingArg.getArgumentValue() // Retain deprecated for test coverage
+        def resolvedValue = GraphQLArgument.getArgumentValue(startingArg) // Retain deprecated for test coverage
 
         def inputDefaultValue = startingArg.getArgumentDefaultValue()
         def resolvedDefaultValue = GraphQLArgument.getArgumentDefaultValue(startingArg)
@@ -144,12 +145,12 @@ class GraphQLArgumentTest extends Specification {
                 .name("F1")
                 .type(GraphQLFloat)
                 .description("F1_description")
-                .valueLiteral(FloatValue.newFloatValue().value(4.56d).build())
+                .valueLiteral(FloatValue.newFloatValue().value(4.56d).build()) // Retain deprecated for test coverage
                 .defaultValueLiteral(FloatValue.newFloatValue().value(1.23d).build())
                 .build()
 
-        inputValue = startingArg.getArgumentValue()
-        resolvedValue = GraphQLArgument.getArgumentValue(startingArg)
+        inputValue = startingArg.getArgumentValue() // Retain deprecated for test coverage
+        resolvedValue = GraphQLArgument.getArgumentValue(startingArg) // Retain deprecated for test coverage
 
         inputDefaultValue = startingArg.getArgumentDefaultValue()
         resolvedDefaultValue = GraphQLArgument.getArgumentDefaultValue(startingArg)
@@ -171,8 +172,8 @@ class GraphQLArgumentTest extends Specification {
                 .description("F1_description")
                 .build()
 
-        inputValue = startingArg.getArgumentValue()
-        resolvedValue = GraphQLArgument.getArgumentValue(startingArg)
+        inputValue = startingArg.getArgumentValue() // Retain deprecated for test coverage
+        resolvedValue = GraphQLArgument.getArgumentValue(startingArg) // Retain deprecated for test coverage
 
         inputDefaultValue = startingArg.getArgumentDefaultValue()
         resolvedDefaultValue = GraphQLArgument.getArgumentDefaultValue(startingArg)

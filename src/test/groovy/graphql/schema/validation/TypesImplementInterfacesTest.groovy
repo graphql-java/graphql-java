@@ -39,7 +39,7 @@ class TypesImplementInterfacesTest extends Specification {
             .argument(newArgument().name("arg1").type(GraphQLString))
             .argument(newArgument().name("arg2").type(GraphQLInt))
             .argument(newArgument().name("arg3").type(GraphQLBoolean))
-            .argument(newArgument().name("arg4").type(GraphQLString).defaultValue("ABC"))
+            .argument(newArgument().name("arg4").type(GraphQLString).defaultValueProgrammatic("ABC"))
     )
 
             .field(newFieldDefinition().name("argField2").type(GraphQLString)
@@ -54,7 +54,7 @@ class TypesImplementInterfacesTest extends Specification {
         given:
 
         SchemaValidationErrorCollector errorCollector = new SchemaValidationErrorCollector()
-        GraphQLObjectType objType = GraphQLObjectType.newObject()
+        GraphQLObjectType objType = newObject()
                 .name("obj")
                 .withInterface(InterfaceType)
                 .field(newFieldDefinition().name("name").type(GraphQLString))
@@ -66,7 +66,7 @@ class TypesImplementInterfacesTest extends Specification {
                 .argument(newArgument().name("arg1").type(GraphQLInt))
                 .argument(newArgument().name("arg2").type(GraphQLInt))
                 .argument(newArgument().name("arg3").type(GraphQLInt))
-                .argument(newArgument().name("arg4").type(GraphQLString).defaultValue("XYZ"))
+                .argument(newArgument().name("arg4").type(GraphQLString).defaultValueProgrammatic("XYZ"))
         )
 
                 .field(newFieldDefinition().name("argField2").type(GraphQLString)
@@ -376,7 +376,7 @@ class TypesImplementInterfacesTest extends Specification {
 
         SchemaValidationErrorCollector errorCollector = new SchemaValidationErrorCollector()
 
-        GraphQLObjectType objType = GraphQLObjectType.newObject()
+        GraphQLObjectType objType = newObject()
                 .name("Object")
                 .withInterface(InterfaceType)
                 .field(newFieldDefinition().name("argField").type(GraphQLString)
@@ -405,7 +405,7 @@ class TypesImplementInterfacesTest extends Specification {
 
         SchemaValidationErrorCollector errorCollector = new SchemaValidationErrorCollector()
 
-        GraphQLObjectType objType = GraphQLObjectType.newObject()
+        GraphQLObjectType objType = newObject()
                 .name("Object")
                 .withInterface(InterfaceType)
                 .field(newFieldDefinition().name("argField").type(GraphQLString)
@@ -433,7 +433,7 @@ class TypesImplementInterfacesTest extends Specification {
 
         SchemaValidationErrorCollector errorCollector = new SchemaValidationErrorCollector()
 
-        GraphQLObjectType objType = GraphQLObjectType.newObject()
+        GraphQLObjectType objType = newObject()
                 .name("Object")
                 .withInterface(InterfaceType)
                 .field(newFieldDefinition().name("argField").type(GraphQLString)
@@ -461,7 +461,7 @@ class TypesImplementInterfacesTest extends Specification {
 
         SchemaValidationErrorCollector errorCollector = new SchemaValidationErrorCollector()
 
-        GraphQLObjectType objType = GraphQLObjectType.newObject()
+        GraphQLObjectType objType = newObject()
                 .name("Object")
                 .withInterface(InterfaceType)
                 .field(newFieldDefinition().name("argField2").type(GraphQLString))
