@@ -21,6 +21,8 @@ import graphql.parser.Parser
 import graphql.schema.Coercing
 import graphql.schema.DataFetcher
 import graphql.schema.DataFetchingEnvironment
+import graphql.schema.FieldCoordinates
+import graphql.schema.GraphQLCodeRegistry
 import graphql.schema.GraphQLEnumType
 import graphql.schema.GraphQLFieldDefinition
 import graphql.schema.GraphQLScalarType
@@ -86,20 +88,31 @@ class ExecutionStrategyTest extends Specification {
         given:
         def dataFetcher = Mock(DataFetcher)
 
+        def someFieldName = "someField"
+        def testTypeName = "Test"
         def fieldDefinition = newFieldDefinition()
-                .name("someField")
+                .name(someFieldName)
                 .type(GraphQLString)
-                .dataFetcher(dataFetcher)
                 .build()
         def objectType = newObject()
-                .name("Test")
+                .name(testTypeName)
                 .field(fieldDefinition)
+                .build()
+
+        def someFieldCoordinates = FieldCoordinates.coordinates(testTypeName, someFieldName)
+
+        GraphQLCodeRegistry codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+                .dataFetcher(someFieldCoordinates, dataFetcher)
                 .build()
 
         def document = new Parser().parseDocument("{someField}")
         def operation = document.definitions[0] as OperationDefinition
 
-        GraphQLSchema schema = GraphQLSchema.newSchema().query(objectType).build()
+        GraphQLSchema schema = GraphQLSchema.newSchema()
+                .codeRegistry(codeRegistry)
+                .query(objectType)
+                .build()
+
         def builder = new ExecutionContextBuilder()
         builder.queryStrategy(Mock(ExecutionStrategy))
         builder.mutationStrategy(Mock(ExecutionStrategy))
@@ -484,23 +497,33 @@ class ExecutionStrategyTest extends Specification {
     @SuppressWarnings("GroovyVariableNotAssigned")
     def "resolveField creates correct DataFetchingEnvironment"() {
         def dataFetcher = Mock(DataFetcher)
+        def someFieldName = "someField"
+        def testTypeName = "Type"
         def fieldDefinition = newFieldDefinition()
-                .name("someField")
+                .name(someFieldName)
                 .type(GraphQLString)
-                .dataFetcher(dataFetcher)
                 .argument(newArgument().name("arg1").type(GraphQLString))
                 .build()
         def objectType = newObject()
-                .name("Test")
+                .name(testTypeName)
                 .field(fieldDefinition)
                 .build()
 
-        GraphQLSchema schema = GraphQLSchema.newSchema().query(objectType).build()
+        def someFieldCoordinates = FieldCoordinates.coordinates(testTypeName, someFieldName)
+
+        GraphQLCodeRegistry codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+                .dataFetcher(someFieldCoordinates, dataFetcher)
+                .build()
+
+        GraphQLSchema schema = GraphQLSchema.newSchema()
+                .codeRegistry(codeRegistry)
+                .query(objectType)
+                .build()
         ExecutionContext executionContext = buildContext(schema)
         ExecutionStepInfo typeInfo = ExecutionStepInfo.newExecutionStepInfo().type(objectType).build()
         NonNullableFieldValidator nullableFieldValidator = new NonNullableFieldValidator(executionContext, typeInfo)
         Argument argument = new Argument("arg1", new StringValue("argVal"))
-        Field field = new Field("someField", [argument])
+        Field field = new Field(someFieldName, [argument])
         MergedField mergedField = mergedField(field)
         ResultPath resultPath = ResultPath.rootPath().segment("test")
 
@@ -540,19 +563,34 @@ class ExecutionStrategyTest extends Specification {
                 throw expectedException
             }
         }
-        def fieldDefinition = newFieldDefinition().name("someField").type(GraphQLString).dataFetcher(dataFetcher).build()
+
+        def someFieldName = "someField"
+        def testTypeName = "Test"
+        def fieldDefinition = newFieldDefinition()
+                .name(someFieldName)
+                .type(GraphQLString)
+                .build()
         def objectType = newObject()
-                .name("Test")
+                .name(testTypeName)
                 .field(fieldDefinition)
                 .build()
-        def schema = GraphQLSchema.newSchema().query(objectType).build()
+
+        def someFieldCoordinates = FieldCoordinates.coordinates(testTypeName, someFieldName)
+
+        GraphQLCodeRegistry codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+                .dataFetcher(someFieldCoordinates, dataFetcher)
+                .build()
+        def schema = GraphQLSchema.newSchema()
+                .codeRegistry(codeRegistry)
+                .query(objectType)
+                .build()
         ExecutionContext executionContext = buildContext(schema)
         def typeInfo = ExecutionStepInfo.newExecutionStepInfo().type(objectType).build()
         NonNullableFieldValidator nullableFieldValidator = new NonNullableFieldValidator(executionContext, typeInfo)
-        ResultPath expectedPath = ResultPath.rootPath().segment("someField")
+        ResultPath expectedPath = ResultPath.rootPath().segment(someFieldName)
 
         SourceLocation sourceLocation = new SourceLocation(666, 999)
-        Field field = Field.newField("someField").sourceLocation(sourceLocation).build()
+        Field field = Field.newField(someFieldName).sourceLocation(sourceLocation).build()
         def parameters = newParameters()
                 .executionStepInfo(typeInfo)
                 .source("source")
@@ -563,7 +601,6 @@ class ExecutionStrategyTest extends Specification {
                 .build()
         [executionContext, fieldDefinition, expectedPath, parameters, field, sourceLocation]
     }
-
 
     def "test that the new data fetcher error handler interface is called"() {
 
@@ -681,22 +718,34 @@ class ExecutionStrategyTest extends Specification {
                 throw new RuntimeException("bang")
             }
         }
+
+        def someFieldName = "someField"
+        def testTypeName = "Test"
+
         def fieldDefinition = newFieldDefinition()
-                .name("someField")
+                .name(someFieldName)
                 .type(nonNull(GraphQLString))
-                .dataFetcher(dataFetcher)
                 .build()
         def objectType = newObject()
-                .name("Test")
+                .name(testTypeName)
                 .field(fieldDefinition)
                 .build()
 
-        GraphQLSchema schema = GraphQLSchema.newSchema().query(objectType).build()
+        def someFieldCoordinates = FieldCoordinates.coordinates(testTypeName, someFieldName)
+
+        GraphQLCodeRegistry codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+                .dataFetcher(someFieldCoordinates, dataFetcher)
+                .build()
+
+        GraphQLSchema schema = GraphQLSchema.newSchema()
+                .codeRegistry(codeRegistry)
+                .query(objectType)
+                .build()
         ExecutionContext executionContext = buildContext(schema)
 
         def typeInfo = ExecutionStepInfo.newExecutionStepInfo().type(objectType).build()
         NonNullableFieldValidator nullableFieldValidator = new NonNullableFieldValidator(executionContext, typeInfo)
-        Field field = new Field("someField")
+        Field field = new Field(someFieldName)
 
         def parameters = newParameters()
                 .executionStepInfo(typeInfo)

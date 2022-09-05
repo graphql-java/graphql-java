@@ -15,7 +15,7 @@ class GraphQLFieldDefinitionTest extends Specification {
 
     def "dataFetcher can't be null"() {
         when:
-        newFieldDefinition().dataFetcher(null)
+        newFieldDefinition().dataFetcher(null) // Retain for test coverage
         then:
         def exception = thrown(AssertException)
         exception.getMessage().contains("dataFetcher")
