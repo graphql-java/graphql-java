@@ -6,14 +6,16 @@ const client = new CloudTasksClient();
 const constructPayload = () => {
   const jobId = String(uuidv4());
   const commitHash = process.env.COMMIT_HASH;
+  const branch = process.env.BRANCH;
   const classes = process.env.CLASSES;
   const pullRequestNumber = process.env.PULL_REQUEST_NUMBER;
 
   const payloadStructure = {
     "jobId": jobId,
-    "commitHash": commitHash,
+    "commitHash": commitHash.trim(),
+    "branch": branch.trim(),
     "classes":  convertClassesStringToArray(classes),
-    "pullRequest": pullRequestNumber,
+    "pullRequest": pullRequestNumber.trim(),
   }
   return payloadStructure;
 }

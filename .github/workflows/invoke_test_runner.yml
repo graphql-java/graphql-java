@@ -5,6 +5,9 @@ on:
       - master
   workflow_dispatch:
     inputs:
+      BRANCH_INPUT:
+        description: 'Branch'
+        required: true
       COMMIT_HASH_INPUT:
         description: 'Commit hash'
         required: true
@@ -22,6 +25,7 @@ env:
   WORKFLOW_URL: ${{ secrets.WORKFLOW_URL }}
   #Payload variables
   COMMIT_HASH: ${{ (github.sha) }}
+  BRANCH: ${{ (github.ref_name) }}
   CLASSES: ${{ (github.event.inputs.CLASSES_TO_EXECUTE_INPUT) }}
   PULL_REQUEST_NUMBER: ${{ (github.event.inputs.PULL_REQUEST_NUMBER_INPUT) }}
 
@@ -33,11 +37,15 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: '14'
-      - run: npm install
+      - run: npm install --prefix .github/workflows
 
       - name: Update COMMIT_HASH
         if: ${{ github.event_name == 'workflow_dispatch' }}
         run: echo "COMMIT_HASH=${{ (github.event.inputs.COMMIT_HASH_INPUT) }} " >> $GITHUB_ENV
+
+      - name: Update BRANCH
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        run: echo "BRANCH=${{ (github.event.inputs.BRANCH_INPUT) }} " >> $GITHUB_ENV
 
       - id: 'auth'
         name: 'Authenticate to Google Cloud'
