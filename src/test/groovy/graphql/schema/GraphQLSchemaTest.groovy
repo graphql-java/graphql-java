@@ -106,30 +106,28 @@ class GraphQLSchemaTest extends Specification {
     }
 
     static def basicSchemaBuilder() {
+        def queryTypeName = "QueryType"
+        def fooCoordinates = FieldCoordinates.coordinates(queryTypeName, "hero")
+        DataFetcher<?> basicDataFetcher = new DataFetcher<Object>() {
+            @Override
+            Object get(DataFetchingEnvironment environment) throws Exception {
+                return null
+            }
+        }
+
+        GraphQLCodeRegistry codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+                .dataFetcher(fooCoordinates, basicDataFetcher)
+                .build()
+
         GraphQLSchema.newSchema()
+                .codeRegistry(codeRegistry)
                 .query(newObject()
                         .name("QueryType")
                         .field(newFieldDefinition()
                                 .name("hero")
                                 .type(GraphQLString)
-                                .dataFetcher({ env -> null })))
+                ))
     }
-
-    def additionalType1 = newObject()
-            .name("Additional1")
-            .field(newFieldDefinition()
-                    .name("field")
-                    .type(GraphQLString)
-                    .dataFetcher({ env -> null }))
-            .build()
-
-    def additionalType2 = newObject()
-            .name("Additional2")
-            .field(newFieldDefinition()
-                    .name("field")
-                    .type(GraphQLString)
-                    .dataFetcher({ env -> null }))
-            .build()
 
     def "clear directives works as expected"() {
         setup:
@@ -156,7 +154,7 @@ class GraphQLSchemaTest extends Specification {
         schema.directives.size() == 4
     }
 
-    def "clear additional types  works as expected"() {
+    def "clear additional types works as expected"() {
         setup:
         def schemaBuilder = basicSchemaBuilder()
 
@@ -171,12 +169,47 @@ class GraphQLSchemaTest extends Specification {
         schema.additionalTypes.empty
 
         when: "clear types is called with additional types"
-        schema = schemaBuilder.clearAdditionalTypes().additionalType(additionalType1).build()
+        def additional1TypeName = "Additional1"
+        def additional2TypeName = "Additional2"
+        def fieldName = "field"
+        def additionalType1 = newObject()
+                .name(additional1TypeName)
+                .field(newFieldDefinition()
+                        .name(fieldName)
+                        .type(GraphQLString))
+                .build()
+        def additionalType2 = newObject()
+                .name("Additional2")
+                .field(newFieldDefinition()
+                        .name(fieldName)
+                        .type(GraphQLString))
+                .build()
+
+        def additional1Coordinates = FieldCoordinates.coordinates(additionalType1, fieldName)
+        DataFetcher<?> basicDataFetcher = new DataFetcher<Object>() {
+            @Override
+            Object get(DataFetchingEnvironment environment) throws Exception {
+                return null
+            }
+        }
+
+        GraphQLCodeRegistry codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+                .dataFetcher(additional1Coordinates, basicDataFetcher)
+                .build()
+
+        schema = schemaBuilder
+                .clearAdditionalTypes()
+                .additionalType(additionalType1)
+                .codeRegistry(codeRegistry)
+                .build()
+
         then:
         schema.additionalTypes.size() == 1
 
         when: "the schema is transformed, things are copied"
-        schema = schema.transform({ builder -> builder.additionalType(additionalType2) })
+        def additional2Coordinates = FieldCoordinates.coordinates(additional2TypeName, fieldName)
+        codeRegistry = codeRegistry.transform({ builder -> builder.dataFetcher(additional2Coordinates, basicDataFetcher) })
+        schema = schema.transform({ builder -> builder.additionalType(additionalType2).codeRegistry(codeRegistry) })
         then:
         schema.additionalTypes.size() == 2
     }
@@ -294,7 +327,7 @@ class GraphQLSchemaTest extends Specification {
                         it.replaceFields(fields)
                     })
 
-                    return changeNode(context, newObjectType);
+                    return changeNode(context, newObjectType)
                 }
                 return TraversalControl.CONTINUE
             }

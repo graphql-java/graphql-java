@@ -2,6 +2,10 @@ package graphql
 
 import graphql.execution.AsyncExecutionStrategy
 import graphql.execution.AsyncSerialExecutionStrategy
+import graphql.schema.DataFetcher
+import graphql.schema.DataFetchingEnvironment
+import graphql.schema.FieldCoordinates
+import graphql.schema.GraphQLCodeRegistry
 import graphql.schema.GraphQLOutputType
 import graphql.schema.GraphQLSchema
 import spock.lang.Specification
@@ -32,36 +36,47 @@ class NonNullHandlingTest extends Specification {
         SimpleObject nonNullParent = new SimpleObject()
     }
 
-    def executionInput(String query) {
+    static def executionInput(String query) {
         ExecutionInput.newExecutionInput().query(query).build()
     }
 
     @Unroll
     def "#268 - null child field values are allowed in nullable parent type (strategy: #strategyName)"() {
-
         // see https://github.com/graphql-java/graphql-java/issues/268
 
         given:
-
-
+        def rootTypeName = "RootQueryType"
+        def parentFieldName = "parent"
         GraphQLOutputType parentType = newObject()
                 .name("currentType")
-                .field(newFieldDefinition().name("nullChild")
+                .field(newFieldDefinition()
+                        .name("nullChild")
                         .type(nonNull(GraphQLString)))
-                .field(newFieldDefinition().name("nonNullChild")
+                .field(newFieldDefinition()
+                        .name("nonNullChild")
                         .type(nonNull(GraphQLString)))
                 .build()
 
-        GraphQLSchema schema = newSchema().query(
-                newObject()
-                        .name("RootQueryType")
+        def parentCoordinates = FieldCoordinates.coordinates(rootTypeName, parentFieldName)
+        DataFetcher<?> dataFetcher = new DataFetcher<Object>() {
+            @Override
+            Object get(DataFetchingEnvironment environment) throws Exception {
+                return new SimpleObject()
+            }
+        }
+        GraphQLCodeRegistry codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+                .dataFetcher(parentCoordinates, dataFetcher)
+                .build()
+
+        GraphQLSchema schema = newSchema()
+                .codeRegistry(codeRegistry)
+                .query(newObject()
+                        .name(rootTypeName)
                         .field(newFieldDefinition()
-                                .name("parent")
+                                .name(parentFieldName)
                                 .type(parentType) // nullable parent
-                                .dataFetcher({ env -> new SimpleObject() })
-
-                        ))
-                .build()
+                        )
+                ).build()
 
         def query = """
         query { 
@@ -92,11 +107,11 @@ class NonNullHandlingTest extends Specification {
 
     @Unroll
     def "#268 - null child field values are NOT allowed in non nullable parent types (strategy: #strategyName)"() {
-
         // see https://github.com/graphql-java/graphql-java/issues/268
 
         given:
-
+        def rootTypeName = "RootQueryType"
+        def parentFieldName = "parent"
 
         GraphQLOutputType parentType = newObject()
                 .name("currentType")
@@ -106,17 +121,27 @@ class NonNullHandlingTest extends Specification {
                         .type(nonNull(GraphQLString)))
                 .build()
 
-        GraphQLSchema schema = newSchema().query(
-                newObject()
-                        .name("RootQueryType")
+        def parentCoordinates = FieldCoordinates.coordinates(rootTypeName, parentFieldName)
+        DataFetcher<?> dataFetcher = new DataFetcher<Object>() {
+            @Override
+            Object get(DataFetchingEnvironment environment) throws Exception {
+                return new SimpleObject()
+            }
+        }
+        GraphQLCodeRegistry codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+                .dataFetcher(parentCoordinates, dataFetcher)
+                .build()
+
+        GraphQLSchema schema = newSchema()
+                .codeRegistry(codeRegistry)
+                .query(newObject()
+                        .name(rootTypeName)
                         .field(
                                 newFieldDefinition()
-                                        .name("parent")
+                                        .name(parentFieldName)
                                         .type(nonNull(parentType)) // non nullable parent
-                                        .dataFetcher({ env -> new SimpleObject() })
-
-                        ))
-                .build()
+                        )
+                ).build()
 
         def query = """
         query { 
@@ -148,37 +173,52 @@ class NonNullHandlingTest extends Specification {
 
     @Unroll
     def "#581 - null child field values are allowed in nullable grand parent type (strategy: #strategyName)"() {
-
         given:
 
+        def rootTypeName = "RootQueryType"
+        def topFieldName = "top"
 
         GraphQLOutputType parentType = newObject()
                 .name("parentType")
-                .field(newFieldDefinition().name("nullChild")
+                .field(newFieldDefinition()
+                        .name("nullChild")
                         .type(nonNull(GraphQLString)))
-                .field(newFieldDefinition().name("nonNullChild")
+                .field(newFieldDefinition()
+                        .name("nonNullChild")
                         .type(nonNull(GraphQLString)))
                 .build()
 
         GraphQLOutputType topType = newObject()
                 .name("topType")
-                .field(newFieldDefinition().name("nullParent")
+                .field(newFieldDefinition()
+                        .name("nullParent")
                         .type(nonNull(parentType)))
-                .field(newFieldDefinition().name("nonNullParent")
+                .field(newFieldDefinition()
+                        .name("nonNullParent")
                         .type(nonNull(parentType)))
                 .build()
 
-        GraphQLSchema schema = newSchema().query(
-                newObject()
-                        .name("RootQueryType")
-                        .field(
-                                newFieldDefinition()
-                                        .name("top")
-                                        .type(topType) // nullable grand parent
-                                        .dataFetcher({ env -> new ContainingObject() })
-
-                        ))
+        def topCoordinates = FieldCoordinates.coordinates(rootTypeName, topFieldName)
+        DataFetcher<?> dataFetcher = new DataFetcher<Object>() {
+            @Override
+            Object get(DataFetchingEnvironment environment) throws Exception {
+                return new ContainingObject()
+            }
+        }
+        GraphQLCodeRegistry codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+                .dataFetcher(topCoordinates, dataFetcher)
                 .build()
+
+        GraphQLSchema schema = newSchema()
+                .codeRegistry(codeRegistry)
+                .query(newObject()
+                        .name(rootTypeName)
+                        .field(newFieldDefinition()
+                                .name(topFieldName)
+                                .type(topType) // nullable grand parent
+
+                        )
+                ).build()
 
         def query = """
         query { 
@@ -215,35 +255,49 @@ class NonNullHandlingTest extends Specification {
     def "#581 - null child field values are NOT allowed in non nullable grand parent types (strategy: #strategyName)"() {
 
         given:
-
+        def rootTypeName = "RootQueryType"
+        def topFieldName = "top"
 
         GraphQLOutputType parentType = newObject()
                 .name("parentType")
-                .field(newFieldDefinition().name("nullChild")
+                .field(newFieldDefinition()
+                        .name("nullChild")
                         .type(nonNull(GraphQLString)))
-                .field(newFieldDefinition().name("nonNullChild")
+                .field(newFieldDefinition()
+                        .name("nonNullChild")
                         .type(nonNull(GraphQLString)))
                 .build()
 
         GraphQLOutputType topType = newObject()
                 .name("topType")
-                .field(newFieldDefinition().name("nullParent")
+                .field(newFieldDefinition()
+                        .name("nullParent")
                         .type(nonNull(parentType)))
-                .field(newFieldDefinition().name("nonNullParent")
+                .field(newFieldDefinition()
+                        .name("nonNullParent")
                         .type(nonNull(parentType)))
                 .build()
 
-        GraphQLSchema schema = newSchema().query(
-                newObject()
-                        .name("RootQueryType")
-                        .field(
-                                newFieldDefinition()
-                                        .name("top")
-                                        .type(nonNull(topType)) // non nullable grand parent
-                                        .dataFetcher({ env -> new ContainingObject() })
-
-                        ))
+        def topCoordinates = FieldCoordinates.coordinates(rootTypeName, topFieldName)
+        DataFetcher<?> dataFetcher = new DataFetcher<Object>() {
+            @Override
+            Object get(DataFetchingEnvironment environment) throws Exception {
+                return new ContainingObject()
+            }
+        }
+        GraphQLCodeRegistry codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+                .dataFetcher(topCoordinates, dataFetcher)
                 .build()
+
+        GraphQLSchema schema = newSchema()
+                .codeRegistry(codeRegistry)
+                .query(newObject()
+                        .name(rootTypeName)
+                        .field(newFieldDefinition()
+                                .name(topFieldName)
+                                .type(nonNull(topType)) // non nullable grand parent
+                        )
+                ).build()
 
         def query = """
         query { 
@@ -280,33 +334,46 @@ class NonNullHandlingTest extends Specification {
     def "#561 - null entry in non null list type with non null wrapper list (strategy: #strategyName)"() {
 
         given:
-
+        def rootTypeName = "RootQueryType"
+        def topFieldName = "top"
 
         GraphQLOutputType parentType = newObject()
                 .name("parentType")
-                .field(newFieldDefinition().name("nonNullListWithNull")
+                .field(newFieldDefinition()
+                        .name("nonNullListWithNull")
                         .type(nonNull(list(nonNull(GraphQLString)))))
                 .build()
 
         GraphQLOutputType topType = newObject()
                 .name("topType")
-                .field(newFieldDefinition().name("nullParent")
+                .field(newFieldDefinition()
+                        .name("nullParent")
                         .type(nonNull(parentType)))
-                .field(newFieldDefinition().name("nonNullParent")
+                .field(newFieldDefinition()
+                        .name("nonNullParent")
                         .type(nonNull(parentType)))
                 .build()
 
-        GraphQLSchema schema = newSchema().query(
-                newObject()
-                        .name("RootQueryType")
-                        .field(
-                                newFieldDefinition()
-                                        .name("top")
-                                        .type(nonNull(topType)) // non nullable grand parent
-                                        .dataFetcher({ env -> new ContainingObject() })
-
-                        ))
+        def topCoordinates = FieldCoordinates.coordinates(rootTypeName, topFieldName)
+        DataFetcher<?> dataFetcher = new DataFetcher<Object>() {
+            @Override
+            Object get(DataFetchingEnvironment environment) throws Exception {
+                return new ContainingObject()
+            }
+        }
+        GraphQLCodeRegistry codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+                .dataFetcher(topCoordinates, dataFetcher)
                 .build()
+
+        GraphQLSchema schema = newSchema()
+                .codeRegistry(codeRegistry)
+                .query(newObject()
+                        .name(rootTypeName)
+                        .field(newFieldDefinition()
+                                .name(topFieldName)
+                                .type(nonNull(topType)) // non nullable grand parent
+                        )
+                ).build()
 
         def query = """
         query { 
@@ -344,32 +411,46 @@ class NonNullHandlingTest extends Specification {
 
         given:
 
+        def rootTypeName = "RootQueryType"
+        def topFieldName = "top"
 
         GraphQLOutputType parentType = newObject()
                 .name("parentType")
-                .field(newFieldDefinition().name("nullableListWithNull")
+                .field(newFieldDefinition()
+                        .name("nullableListWithNull")
                         .type(list(nonNull(GraphQLString))))
                 .build()
 
         GraphQLOutputType topType = newObject()
                 .name("topType")
-                .field(newFieldDefinition().name("nullParent")
+                .field(newFieldDefinition()
+                        .name("nullParent")
                         .type(nonNull(parentType)))
-                .field(newFieldDefinition().name("nonNullParent")
+                .field(newFieldDefinition()
+                        .name("nonNullParent")
                         .type(nonNull(parentType)))
                 .build()
 
-        GraphQLSchema schema = newSchema().query(
-                newObject()
-                        .name("RootQueryType")
-                        .field(
-                                newFieldDefinition()
-                                        .name("top")
-                                        .type(nonNull(topType)) // non nullable grand parent
-                                        .dataFetcher({ env -> new ContainingObject() })
-
-                        ))
+        def topCoordinates = FieldCoordinates.coordinates(rootTypeName, topFieldName)
+        DataFetcher<?> dataFetcher = new DataFetcher<Object>() {
+            @Override
+            Object get(DataFetchingEnvironment environment) throws Exception {
+                return new ContainingObject()
+            }
+        }
+        GraphQLCodeRegistry codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+                .dataFetcher(topCoordinates, dataFetcher)
                 .build()
+
+        GraphQLSchema schema = newSchema()
+                .codeRegistry(codeRegistry)
+                .query(newObject()
+                        .name(rootTypeName)
+                        .field(newFieldDefinition()
+                                .name(topFieldName)
+                                .type(nonNull(topType)) // non nullable grand parent
+                        )
+                ).build()
 
         def query = """
         query { 

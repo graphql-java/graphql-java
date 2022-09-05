@@ -6,6 +6,8 @@ import graphql.StarWarsSchema
 import graphql.execution.AsyncExecutionStrategy
 import graphql.introspection.IntrospectionQuery
 import graphql.language.Field
+import graphql.schema.DataFetcher
+import graphql.schema.FieldCoordinates
 import graphql.schema.GraphQLCodeRegistry
 import graphql.schema.GraphQLFieldDefinition
 import graphql.schema.GraphQLObjectType
@@ -310,17 +312,28 @@ enum Episode {
             .field(newInputObjectField().name("closedField").type(GraphQLString))
             .build()
 
-    def inputQueryType = GraphQLObjectType.newObject().name("InputQuery")
-            .field(newFieldDefinition().name("hello").type(GraphQLString)
-            .argument(newArgument().name("arg").type(inputType))
-            .dataFetcher({ env -> return "world" })
-    )
-            .build()
+    DataFetcher<?> inputDataFetcher = { env -> return "world" }
+
+    def inputQueryType = GraphQLObjectType.newObject()
+            .name("InputQuery")
+            .field(newFieldDefinition()
+                    .name("hello")
+                    .type(GraphQLString)
+                    .argument(newArgument()
+                            .name("arg")
+                            .type(inputType))
+            ).build()
 
     def "ensure input field are blocked"() {
 
         when:
+        def inputTypeCoordinates = FieldCoordinates.coordinates("InputQuery", "hello")
+        GraphQLCodeRegistry codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+                .dataFetcher(inputTypeCoordinates, inputDataFetcher)
+                .build()
+
         def schema = GraphQLSchema.newSchema()
+                .codeRegistry(codeRegistry)
                 .query(inputQueryType)
                 .build()
 
@@ -340,9 +353,7 @@ enum Episode {
         er.getData() == ["hello": "world"]
 
         when:
-        GraphQLCodeRegistry codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
-                .fieldVisibility(ban(['InputType.closedField']))
-                .build()
+        codeRegistry = codeRegistry.transform({builder -> builder.fieldVisibility(ban(['InputType.closedField']))})
         schema = GraphQLSchema.newSchema()
                 .query(inputQueryType)
                 .codeRegistry(codeRegistry)
