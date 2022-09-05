@@ -1,6 +1,9 @@
 package graphql;
 
+import graphql.schema.DataFetcher;
+import graphql.schema.FieldCoordinates;
 import graphql.schema.GraphQLArgument;
+import graphql.schema.GraphQLCodeRegistry;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLInputObjectField;
 import graphql.schema.GraphQLInputObjectType;
@@ -14,47 +17,49 @@ import static graphql.Scalars.GraphQLInt;
 
 public class NestedInputSchema {
 
-
     public static GraphQLSchema createSchema() {
-
-
         GraphQLObjectType root = rootType();
 
+        FieldCoordinates valueCoordinates = FieldCoordinates.coordinates("Root", "value");
+        DataFetcher<?> valueDataFetcher = environment -> {
+            Integer initialValue = environment.getArgument("initialValue");
+            Map<String, Object> filter = environment.getArgument("filter");
+            if (filter != null) {
+                if (filter.containsKey("even")) {
+                    Boolean even = (Boolean) filter.get("even");
+                    if (even && (initialValue % 2 != 0)) {
+                        return 0;
+                    } else if (!even && (initialValue % 2 == 0)) {
+                        return 0;
+                    }
+                }
+                if (filter.containsKey("range")) {
+                    Map<String, Integer> range = (Map<String, Integer>) filter.get("range");
+                    if (initialValue < range.get("lowerBound") ||
+                            initialValue > range.get("upperBound")) {
+                        return 0;
+                    }
+                }
+            }
+            return initialValue;
+        };
+
+        GraphQLCodeRegistry codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+                .dataFetcher(valueCoordinates, valueDataFetcher)
+                .build();
+
         return GraphQLSchema.newSchema()
+                .codeRegistry(codeRegistry)
                 .query(root)
                 .build();
     }
 
-    @SuppressWarnings("unchecked")
     public static GraphQLObjectType rootType() {
         return GraphQLObjectType.newObject()
-
                 .name("Root")
                 .field(GraphQLFieldDefinition.newFieldDefinition()
                         .name("value")
                         .type(GraphQLInt)
-                        .dataFetcher(environment -> {
-                            Integer initialValue = environment.getArgument("initialValue");
-                            Map<String, Object> filter = environment.getArgument("filter");
-                            if (filter != null) {
-                                if (filter.containsKey("even")) {
-                                    Boolean even = (Boolean) filter.get("even");
-                                    if (even && (initialValue % 2 != 0)) {
-                                        return 0;
-                                    } else if (!even && (initialValue % 2 == 0)) {
-                                        return 0;
-                                    }
-                                }
-                                if (filter.containsKey("range")) {
-                                    Map<String, Integer> range = (Map<String, Integer>) filter.get("range");
-                                    if (initialValue < range.get("lowerBound") ||
-                                            initialValue > range.get("upperBound")) {
-                                        return 0;
-                                    }
-                                }
-                            }
-                            return initialValue;
-                        })
                         .argument(GraphQLArgument.newArgument()
                                 .name("intialValue")
                                 .type(GraphQLInt)
