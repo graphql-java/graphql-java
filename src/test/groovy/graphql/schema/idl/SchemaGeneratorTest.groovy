@@ -2500,4 +2500,35 @@ class SchemaGeneratorTest extends Specification {
         then:
         noExceptionThrown()
     }
+
+    def "skip and include should be added to the schema only if not already defined"() {
+        def sdl = '''
+            "Directs the executor to skip this field or fragment when the `if`'argument is true."
+            directive @skip(
+                "Skipped when true."
+                if: Boolean!
+              ) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
+              
+            "Directs the executor to include this field or fragment only when the `if` argument is true"
+            directive @include(
+                "Included when true."
+                if: Boolean!
+              ) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
+              
+            type Query {
+                hello: String
+            }
+        '''
+        when:
+        def schema = TestUtil.schema(sdl)
+        then:
+        schema.getDirectives().findAll { it.name == "skip" }.size() == 1
+        schema.getDirectives().findAll { it.name == "include" }.size() == 1
+
+        and:
+        def newSchema = GraphQLSchema.newSchema(schema).build()
+        then:
+        newSchema.getDirectives().findAll { it.name == "skip" }.size() == 1
+        newSchema.getDirectives().findAll { it.name == "include" }.size() == 1
+    }
 }
