@@ -841,4 +841,79 @@ type Query {
 }
 '''
     }
+
+    def "can rename scalars"() {
+
+        def schema = TestUtil.schema("""
+            scalar Foo
+            type Query {
+                field : Foo
+            }
+""")
+
+        def visitor = new GraphQLTypeVisitorStub() {
+
+            @Override
+            TraversalControl visitGraphQLScalarType(GraphQLScalarType node, TraverserContext<GraphQLSchemaElement> context) {
+                if (node.getName().equals("Foo")) {
+                    GraphQLScalarType newNode = node.transform({sc -> sc.name("Bar")})
+                    return changeNode(context, newNode)
+                }
+                return super.visitGraphQLScalarType(node, context)
+            }
+        }
+
+        when:
+        def newSchema = SchemaTransformer.transformSchema(schema, visitor)
+        then:
+        newSchema.getType("Bar") instanceof GraphQLScalarType
+        newSchema.getType("Foo") == null
+        (newSchema.getObjectType("Query").getFieldDefinition("field").getType() as GraphQLScalarType).getName() == "Bar"
+    }
+
+    def "rename scalars are changed in applied arguments"() {
+
+        def schema = TestUtil.schema("""
+            scalar Foo
+            directive @myDirective(fooArgOnDirective: Foo) on FIELD_DEFINITION
+            type Query {
+              foo(fooArgOnField: Foo) : Foo @myDirective
+            }
+""")
+
+        def visitor = new GraphQLTypeVisitorStub() {
+
+            @Override
+            TraversalControl visitGraphQLScalarType(GraphQLScalarType node, TraverserContext<GraphQLSchemaElement> context) {
+                if (node.getName().equals("Foo")) {
+                    GraphQLScalarType newNode = node.transform({sc -> sc.name("Bar")})
+                    return changeNode(context, newNode)
+                }
+                return super.visitGraphQLScalarType(node, context)
+            }
+        }
+
+        when:
+        def newSchema = SchemaTransformer.transformSchema(schema, visitor)
+        then:
+
+        def fieldDef = newSchema.getObjectType("Query").getFieldDefinition("foo")
+        def appliedDirective = fieldDef.getAppliedDirective("myDirective")
+        def oldSkoolDirective = fieldDef.getDirective("myDirective")
+        def argument = fieldDef.getArgument("fooArgOnField")
+        def directiveDecl = newSchema.getDirective("myDirective")
+        def directiveArgument = directiveDecl.getArgument("fooArgOnDirective")
+
+        (fieldDef.getType() as GraphQLScalarType).getName() == "Bar"
+        (argument.getType() as GraphQLScalarType).getName() == "Bar"
+        (directiveArgument.getType() as GraphQLScalarType).getName() == "Bar"
+
+        (oldSkoolDirective.getArgument("fooArgOnDirective").getType() as GraphQLScalarType).getName() == "Bar"
+
+        newSchema.getType("Bar") instanceof GraphQLScalarType
+
+        // not working at this stage
+        (appliedDirective.getArgument("fooArgOnDirective").getType() as GraphQLScalarType).getName() == "Bar"
+        newSchema.getType("Foo") == null
+    }
 }
