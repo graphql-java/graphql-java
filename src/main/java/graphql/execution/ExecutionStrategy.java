@@ -330,12 +330,14 @@ public abstract class ExecutionStrategy {
                     .rawFetchedValue(dataFetcherResult.getData())
                     .errors(dataFetcherResult.getErrors())
                     .localContext(localContext)
+                    .stopPathExecution(dataFetcherResult.isStopPathExecution())
                     .build();
         } else {
             return FetchedValue.newFetchedValue()
                     .fetchedValue(executionContext.getValueUnboxer().unbox(result))
                     .rawFetchedValue(result)
                     .localContext(parameters.getLocalContext())
+                    .stopPathExecution(false)
                     .build();
         }
     }
@@ -402,6 +404,7 @@ public abstract class ExecutionStrategy {
                         .source(fetchedValue.getFetchedValue())
                         .localContext(fetchedValue.getLocalContext())
                         .nonNullFieldValidator(nonNullableFieldValidator)
+                        .stopPathExecution(fetchedValue.isStopPathExecution())
         );
 
         if (log.isDebugEnabled()) {
@@ -504,6 +507,10 @@ public abstract class ExecutionStrategy {
         if (resultIterable == null) {
             return FieldValueInfo.newFieldValueInfo(LIST).fieldValue(completedFuture(new ExecutionResultImpl(null, executionContext.getErrors()))).build();
         }
+        if (parameters.isStopPathExecution()) {
+            // they have asked us to stop execution of this path and accept the value as is!
+            return FieldValueInfo.newFieldValueInfo(LIST).fieldValue(completedFuture(new ExecutionResultImpl(resultIterable, executionContext.getErrors()))).build();
+        }
         return completeValueForList(executionContext, parameters, resultIterable);
     }
 
@@ -539,16 +546,17 @@ public abstract class ExecutionStrategy {
             NonNullableFieldValidator nonNullableFieldValidator = new NonNullableFieldValidator(executionContext, stepInfoForListElement);
 
             int finalIndex = index;
-            FetchedValue value = unboxPossibleDataFetcherResult(executionContext, parameters, item);
+            FetchedValue fetchedValue = unboxPossibleDataFetcherResult(executionContext, parameters, item);
 
             ExecutionStrategyParameters newParameters = parameters.transform(builder ->
                     builder.executionStepInfo(stepInfoForListElement)
                             .nonNullFieldValidator(nonNullableFieldValidator)
                             .listSize(size.orElse(-1)) // -1 signals that we don't know the size
-                            .localContext(value.getLocalContext())
+                            .localContext(fetchedValue.getLocalContext())
                             .currentListIndex(finalIndex)
                             .path(indexedPath)
-                            .source(value.getFetchedValue())
+                            .source(fetchedValue.getFetchedValue())
+                            .stopPathExecution(fetchedValue.isStopPathExecution())
             );
             fieldValueInfos.add(completeValue(executionContext, newParameters));
             index++;
@@ -643,6 +651,10 @@ public abstract class ExecutionStrategy {
      * @return a promise to an {@link ExecutionResult}
      */
     protected CompletableFuture<ExecutionResult> completeValueForObject(ExecutionContext executionContext, ExecutionStrategyParameters parameters, GraphQLObjectType resolvedObjectType, Object result) {
+        if (parameters.isStopPathExecution()) {
+            // they have asked us to stop execution and hence we send back the object AS IS - no coercing - no sub selection
+            return CompletableFuture.completedFuture(new ExecutionResultImpl(result, executionContext.getErrors()));
+        }
         ExecutionStepInfo executionStepInfo = parameters.getExecutionStepInfo();
 
         FieldCollectorParameters collectorParameters = newParameters()

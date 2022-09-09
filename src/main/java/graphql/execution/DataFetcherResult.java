@@ -29,6 +29,7 @@ import static graphql.Assert.assertNotNull;
 public class DataFetcherResult<T> {
 
     private final T data;
+    private final boolean stopPathExecution;
     private final List<GraphQLError> errors;
     private final Object localContext;
 
@@ -44,13 +45,14 @@ public class DataFetcherResult<T> {
     @Deprecated
     @DeprecatedAt("2019-01-11")
     public DataFetcherResult(T data, List<GraphQLError> errors) {
-        this(data, errors, null);
+        this(data, errors, null, false);
     }
 
-    private DataFetcherResult(T data, List<GraphQLError> errors, Object localContext) {
+    private DataFetcherResult(T data, List<GraphQLError> errors, Object localContext, boolean stopPathExecution) {
         this.data = data;
         this.errors = ImmutableList.copyOf(assertNotNull(errors));
         this.localContext = localContext;
+        this.stopPathExecution = stopPathExecution;
     }
 
     /**
@@ -58,6 +60,15 @@ public class DataFetcherResult<T> {
      */
     public T getData() {
         return data;
+    }
+
+    /**
+     * if this is set then the graphql engine will stop executing any path under this value
+     *
+     * @return true if you want the engine to stop execution on this path and accept the value as is
+     */
+    public boolean isStopPathExecution() {
+        return stopPathExecution;
     }
 
     /**
@@ -110,11 +121,13 @@ public class DataFetcherResult<T> {
 
     public static class Builder<T> {
         private T data;
+        private boolean stopPathExecution  =false;
         private Object localContext;
         private final List<GraphQLError> errors = new ArrayList<>();
 
         public Builder(DataFetcherResult<T> existing) {
             data = existing.getData();
+            stopPathExecution = existing.isStopPathExecution();
             localContext = existing.getLocalContext();
             errors.addAll(existing.getErrors());
         }
@@ -128,6 +141,11 @@ public class DataFetcherResult<T> {
 
         public Builder<T> data(T data) {
             this.data = data;
+            return this;
+        }
+
+        public Builder<T> stopPathExecution(boolean stopPathExecution) {
+            this.stopPathExecution = stopPathExecution;
             return this;
         }
 
@@ -159,7 +177,7 @@ public class DataFetcherResult<T> {
         }
 
         public DataFetcherResult<T> build() {
-            return new DataFetcherResult<>(data, errors, localContext);
+            return new DataFetcherResult<>(data, errors, localContext, stopPathExecution);
         }
     }
 }

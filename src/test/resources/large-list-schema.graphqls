@@ -1,0 +1,10 @@
+type Query {
+   longList : [Thing]
+   stopList : [Thing]
+}
+
+type Thing {
+    name : String
+    age : Int
+    active : Boolean
+}

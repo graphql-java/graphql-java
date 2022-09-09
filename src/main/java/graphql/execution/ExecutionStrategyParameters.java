@@ -23,6 +23,8 @@ public class ExecutionStrategyParameters {
     private final int currentListIndex;
     private final ExecutionStrategyParameters parent;
 
+    private final boolean stopPathExecution;
+
     private ExecutionStrategyParameters(ExecutionStepInfo executionStepInfo,
                                         Object source,
                                         Object localContext,
@@ -32,6 +34,7 @@ public class ExecutionStrategyParameters {
                                         MergedField currentField,
                                         int listSize,
                                         int currentListIndex,
+                                        boolean stopPathExecution,
                                         ExecutionStrategyParameters parent) {
 
         this.executionStepInfo = assertNotNull(executionStepInfo, () -> "executionStepInfo is null");
@@ -43,6 +46,7 @@ public class ExecutionStrategyParameters {
         this.currentField = currentField;
         this.listSize = listSize;
         this.currentListIndex = currentListIndex;
+        this.stopPathExecution = stopPathExecution;
         this.parent = parent;
     }
 
@@ -76,6 +80,10 @@ public class ExecutionStrategyParameters {
 
     public int getCurrentListIndex() {
         return currentListIndex;
+    }
+
+    public boolean isStopPathExecution() {
+        return stopPathExecution;
     }
 
     public ExecutionStrategyParameters getParent() {
@@ -121,6 +129,7 @@ public class ExecutionStrategyParameters {
         MergedField currentField;
         int listSize;
         int currentListIndex;
+        boolean stopPathExecution = false;
         ExecutionStrategyParameters parent;
 
         /**
@@ -143,6 +152,7 @@ public class ExecutionStrategyParameters {
             this.parent = oldParameters.parent;
             this.listSize = oldParameters.listSize;
             this.currentListIndex = oldParameters.currentListIndex;
+            this.stopPathExecution = oldParameters.stopPathExecution;
         }
 
         public Builder executionStepInfo(ExecutionStepInfo executionStepInfo) {
@@ -195,6 +205,11 @@ public class ExecutionStrategyParameters {
             return this;
         }
 
+        public Builder stopPathExecution(boolean stopPathExecution) {
+            this.stopPathExecution = stopPathExecution;
+            return this;
+        }
+
         public Builder parent(ExecutionStrategyParameters parent) {
             this.parent = parent;
             return this;
@@ -202,7 +217,7 @@ public class ExecutionStrategyParameters {
 
 
         public ExecutionStrategyParameters build() {
-            return new ExecutionStrategyParameters(executionStepInfo, source, localContext, fields, nonNullableFieldValidator, path, currentField, listSize, currentListIndex, parent);
+            return new ExecutionStrategyParameters(executionStepInfo, source, localContext, fields, nonNullableFieldValidator, path, currentField, listSize, currentListIndex, stopPathExecution, parent);
         }
     }
 }

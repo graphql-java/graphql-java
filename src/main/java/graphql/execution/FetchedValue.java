@@ -15,12 +15,15 @@ import java.util.function.Consumer;
 @PublicApi
 public class FetchedValue {
     private final Object fetchedValue;
+
+    private final boolean stopPathExecution;
     private final Object rawFetchedValue;
     private final Object localContext;
     private final ImmutableList<GraphQLError> errors;
 
-    private FetchedValue(Object fetchedValue, Object rawFetchedValue, ImmutableList<GraphQLError> errors, Object localContext) {
+    private FetchedValue(Object fetchedValue, Object rawFetchedValue, ImmutableList<GraphQLError> errors, Object localContext, boolean stopPathExecution) {
         this.fetchedValue = fetchedValue;
+        this.stopPathExecution = stopPathExecution;
         this.rawFetchedValue = rawFetchedValue;
         this.errors = errors;
         this.localContext = localContext;
@@ -43,6 +46,10 @@ public class FetchedValue {
 
     public Object getLocalContext() {
         return localContext;
+    }
+
+    public boolean isStopPathExecution() {
+        return stopPathExecution;
     }
 
     public FetchedValue transform(Consumer<Builder> builderConsumer) {
@@ -77,12 +84,18 @@ public class FetchedValue {
     public static class Builder {
 
         private Object fetchedValue;
+        private boolean stopPathExecution = false;
         private Object rawFetchedValue;
         private Object localContext;
         private ImmutableList<GraphQLError> errors = ImmutableList.of();
 
         public Builder fetchedValue(Object fetchedValue) {
             this.fetchedValue = fetchedValue;
+            return this;
+        }
+
+        public Builder stopPathExecution(boolean stopPathExecution) {
+            this.stopPathExecution = stopPathExecution;
             return this;
         }
 
@@ -102,7 +115,7 @@ public class FetchedValue {
         }
 
         public FetchedValue build() {
-            return new FetchedValue(fetchedValue, rawFetchedValue, errors, localContext);
+            return new FetchedValue(fetchedValue, rawFetchedValue, errors, localContext, stopPathExecution);
         }
     }
 }
