@@ -64,13 +64,19 @@ class GraphQLTest extends Specification {
         GraphQLFieldDefinition.Builder fieldDefinition = newFieldDefinition()
                 .name("hello")
                 .type(GraphQLString)
-                .staticValue("world")
-        GraphQLSchema schema = newSchema().query(
-                newObject()
+        FieldCoordinates fieldCoordinates = FieldCoordinates.coordinates("RootQueryType", "hello")
+        DataFetcher<?> dataFetcher = { env -> "world" }
+        GraphQLCodeRegistry codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+                .dataFetcher(fieldCoordinates, dataFetcher)
+                .build()
+
+        GraphQLSchema schema = newSchema()
+                .codeRegistry(codeRegistry)
+                .query(newObject()
                         .name("RootQueryType")
                         .field(fieldDefinition)
-                        .build()
-        ).build()
+                        .build())
+                .build()
         schema
     }
 
@@ -83,7 +89,6 @@ class GraphQLTest extends Specification {
 
         then:
         result == [hello: 'world']
-
     }
 
     def "query with sub-fields"() {
@@ -103,14 +108,20 @@ class GraphQLTest extends Specification {
         GraphQLFieldDefinition.Builder simpsonField = newFieldDefinition()
                 .name("simpson")
                 .type(heroType)
-                .staticValue([id: '123', name: 'homer'])
 
-        GraphQLSchema graphQLSchema = newSchema().query(
-                newObject()
+        FieldCoordinates fieldCoordinates = FieldCoordinates.coordinates("RootQueryType", "simpson")
+        DataFetcher<?> dataFetcher = { env -> [id: '123', name: 'homer'] }
+        GraphQLCodeRegistry codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+                .dataFetcher(fieldCoordinates, dataFetcher)
+                .build()
+
+        GraphQLSchema graphQLSchema = newSchema()
+                .codeRegistry(codeRegistry)
+                .query(newObject()
                         .name("RootQueryType")
                         .field(simpsonField)
-                        .build()
-        ).build()
+                        .build())
+                .build()
 
         when:
         def result = GraphQL.newGraphQL(graphQLSchema).build().execute('{ simpson { id, name } }').data
@@ -125,13 +136,20 @@ class GraphQLTest extends Specification {
                 .name("hello")
                 .type(GraphQLString)
                 .argument(newArgument().name("arg").type(GraphQLString))
-                .staticValue("world")
-        GraphQLSchema schema = newSchema().query(
-                newObject()
+
+        FieldCoordinates fieldCoordinates = FieldCoordinates.coordinates("RootQueryType", "hello")
+        DataFetcher<?> dataFetcher = { env -> "hello" }
+        GraphQLCodeRegistry codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+                .dataFetcher(fieldCoordinates, dataFetcher)
+                .build()
+
+        GraphQLSchema schema = newSchema()
+                .codeRegistry(codeRegistry)
+                .query(newObject()
                         .name("RootQueryType")
                         .field(fieldDefinition)
-                        .build()
-        ).build()
+                        .build())
+                .build()
 
         when:
         def errors = GraphQL.newGraphQL(schema).build().execute('{ hello(arg:11) }').errors
@@ -696,7 +714,6 @@ class GraphQLTest extends Specification {
 
     }
 
-
     def "execution input passing builder"() {
         given:
         GraphQLSchema schema = simpleSchema()
@@ -714,7 +731,6 @@ class GraphQLTest extends Specification {
         GraphQLSchema schema = simpleSchema()
 
         when:
-
         def builderFunction = { it.query('{hello}') } as UnaryOperator<Builder>
         def result = GraphQL.newGraphQL(schema).build().execute(builderFunction).data
 
