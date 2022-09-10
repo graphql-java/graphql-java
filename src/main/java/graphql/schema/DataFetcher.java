@@ -3,6 +3,8 @@ package graphql.schema;
 
 import graphql.PublicSpi;
 
+import java.util.function.Supplier;
+
 /**
  * A data fetcher is responsible for returning a data value back for a given graphql field.  The graphql engine
  * uses data fetchers to resolve / fetch a logical field into a runtime object that will be sent back as part
@@ -30,5 +32,22 @@ public interface DataFetcher<T> {
      */
     T get(DataFetchingEnvironment environment) throws Exception;
 
+
+    /**
+     * This is called to by the engine to get a value from the source object
+     *
+     * @param fieldDefinition     the graphql field definition
+     * @param sourceObject        the source object to get a value from
+     * @param environmentSupplier a supplier of the {@link DataFetchingEnvironment}
+     *
+     * @return a value of type T. May be wrapped in a {@link graphql.execution.DataFetcherResult}
+     *
+     * @throws Exception to relieve the implementations from having to wrap checked exceptions. Any exception thrown
+     *                   from a {@code DataFetcher} will eventually be handled by the registered {@link graphql.execution.DataFetcherExceptionHandler}
+     *                   and the related field will have a value of {@code null} in the result.
+     */
+    default T get(GraphQLFieldDefinition fieldDefinition, Object sourceObject, Supplier<DataFetchingEnvironment> environmentSupplier) throws Exception {
+        return get(environmentSupplier.get());
+    }
 
 }

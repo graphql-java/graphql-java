@@ -32,6 +32,7 @@ import spock.lang.Specification
 
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionException
+import java.util.function.Supplier
 import java.util.stream.Stream
 
 import static ExecutionStrategyParameters.newParameters
@@ -74,7 +75,7 @@ class ExecutionStrategyTest extends Specification {
                 .mutationStrategy(executionStrategy)
                 .subscriptionStrategy(executionStrategy)
                 .coercedVariables(CoercedVariables.of(variables))
-                .graphQLContext(GraphQLContext.newContext().of("key","context").build())
+                .graphQLContext(GraphQLContext.newContext().of("key", "context").build())
                 .root("root")
                 .dataLoaderRegistry(new DataLoaderRegistry())
                 .locale(Locale.getDefault())
@@ -454,7 +455,7 @@ class ExecutionStrategyTest extends Specification {
                 throw new UnsupportedOperationException("Not implemented")
             }
         })
-        .build()
+                .build()
 
 
         ExecutionContext executionContext = buildContext()
@@ -541,7 +542,7 @@ class ExecutionStrategyTest extends Specification {
         executionStrategy.resolveField(executionContext, parameters)
 
         then:
-        1 * dataFetcher.get(_) >> { args -> environment = args[0] }
+        1 * dataFetcher.get(_,_,_) >> { environment = (it[2] as Supplier<DataFetchingEnvironment>).get() }
         environment.fieldDefinition == fieldDefinition
         environment.graphQLSchema == schema
         environment.graphQlContext.get("key") == "context"
@@ -865,7 +866,7 @@ class ExecutionStrategyTest extends Specification {
         fetchedValue.getFetchedValue() == executionData
 //        executionContext.getErrors()[0].locations == [new SourceLocation(7, 20)]
         executionContext.getErrors()[0].message == "bad foo"
-        executionContext.getErrors()[0].path == [ "child", "foo"]
+        executionContext.getErrors()[0].path == ["child", "foo"]
     }
 
     def "#1558 forward localContext on nonBoxed return from DataFetcher"() {

@@ -3,10 +3,8 @@ package graphql.execution;
 import com.google.common.collect.ImmutableList;
 import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
-import graphql.GraphQL;
 import graphql.GraphQLError;
 import graphql.Internal;
-import graphql.LightWeightDataFetcher;
 import graphql.PublicSpi;
 import graphql.SerializationError;
 import graphql.TrivialDataFetcher;
@@ -243,7 +241,7 @@ public abstract class ExecutionStrategy {
 
         // if the DF (like PropertyDataFetcher) does not use the arguments or execution step info then dont build any
 
-        Supplier<DataFetchingEnvironment> dataFetchingEnvironment = FpKit.intraThreadMemoize(() -> {
+        Supplier<DataFetchingEnvironment> dataFetchingEnvironment = () -> FpKit.intraThreadMemoize(() -> {
 
             Supplier<ExecutionStepInfo> executionStepInfo = FpKit.intraThreadMemoize(
                     () -> createExecutionStepInfo(executionContext, parameters, fieldDef, parentType));
@@ -273,7 +271,7 @@ public abstract class ExecutionStrategy {
                     .selectionSet(fieldCollector)
                     .queryDirectives(queryDirectives)
                     .build();
-        });
+        }).get();
         DataFetcher<?> dataFetcher = codeRegistry.getDataFetcher(parentType, fieldDef);
 
         Instrumentation instrumentation = executionContext.getInstrumentation();
@@ -303,13 +301,7 @@ public abstract class ExecutionStrategy {
     private CompletableFuture<Object> invokeDataFetcher(ExecutionContext executionContext, ExecutionStrategyParameters parameters, GraphQLFieldDefinition fieldDef, Supplier<DataFetchingEnvironment> dataFetchingEnvironment, DataFetcher<?> dataFetcher) {
         CompletableFuture<Object> fetchedValue;
         try {
-            Object fetchedValueRaw;
-            if (dataFetcher instanceof LightWeightDataFetcher && GraphQL.lightWeightDataFetching()) {
-                LightWeightDataFetcher<?> lightWeightDataFetcher = (LightWeightDataFetcher<?>) dataFetcher;
-                fetchedValueRaw = lightWeightDataFetcher.get(fieldDef, parameters.getSource(), dataFetchingEnvironment);
-            } else {
-                fetchedValueRaw = dataFetcher.get(dataFetchingEnvironment.get());
-            }
+            Object fetchedValueRaw = dataFetcher.get(fieldDef, parameters.getSource(), dataFetchingEnvironment);
             fetchedValue = Async.toCompletableFuture(fetchedValueRaw);
         } catch (Exception e) {
             if (logNotSafe.isDebugEnabled()) {

@@ -2,7 +2,6 @@ package graphql.schema;
 
 
 import graphql.Assert;
-import graphql.LightWeightDataFetcher;
 import graphql.PublicApi;
 import graphql.TrivialDataFetcher;
 
@@ -33,7 +32,7 @@ import java.util.function.Supplier;
  * @see graphql.schema.DataFetcher
  */
 @PublicApi
-public class PropertyDataFetcher<T> implements DataFetcher<T>, TrivialDataFetcher<T>, LightWeightDataFetcher<T> {
+public class PropertyDataFetcher<T> implements DataFetcher<T>, TrivialDataFetcher<T> {
 
     private final String propertyName;
     private final Function<Object, Object> function;
