@@ -104,10 +104,10 @@ class TypeResolutionEnvironmentTest extends Specification {
                 String source = env.getObject()
                 assert source == "source"
                 assert env.getGraphQLContext().get("a") == "b"
-                if ("FooBar" == env.getContext()) {
+                if ("FooBar" == env.getContext()) { // Retain for test coverage
                     return schema.getObjectType("FooBar")
                 }
-                if ("Foo" == env.getContext()) {
+                if ("Foo" == env.getContext()) { // Retain for test coverage
                     return schema.getObjectType("FooImpl")
                 }
                 return null
@@ -121,7 +121,7 @@ class TypeResolutionEnvironmentTest extends Specification {
                 .field(mergedField(new Field("field")))
                 .fieldType(interfaceType)
                 .schema(schema)
-                .context("FooBar")
+                .context("FooBar") // Retain for test coverage
                 .graphQLContext(graphqlContext)
                 .build()
 
@@ -137,7 +137,7 @@ class TypeResolutionEnvironmentTest extends Specification {
                 .field(mergedField(new Field("field")))
                 .fieldType(interfaceType)
                 .schema(schema)
-                .context("Foo")
+                .context("Foo") // Retain for test coverage
                 .graphQLContext(graphqlContext)
                 .build()
 
