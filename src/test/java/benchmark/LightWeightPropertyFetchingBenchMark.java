@@ -10,6 +10,7 @@ import graphql.schema.idl.RuntimeWiring;
 import graphql.schema.idl.SchemaGenerator;
 import graphql.schema.idl.SchemaParser;
 import graphql.schema.idl.TypeDefinitionRegistry;
+import graphql.util.BackDoor;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Measurement;
@@ -48,7 +49,7 @@ public class LightWeightPropertyFetchingBenchMark {
     @BenchmarkMode(Mode.Throughput)
     @OutputTimeUnit(TimeUnit.SECONDS)
     public void benchMarkHeavyWeightFetchingThroughput() {
-        GraphQL.useLightWeightDataFetching(false);
+        BackDoor.useLightWeightDataFetching(false);
         executeQuery();
     }
 
@@ -56,7 +57,7 @@ public class LightWeightPropertyFetchingBenchMark {
     @BenchmarkMode(Mode.AverageTime)
     @OutputTimeUnit(TimeUnit.MILLISECONDS)
     public void benchMarkHeavyWeightFetchingAvgTime() {
-        GraphQL.useLightWeightDataFetching(false);
+        BackDoor.useLightWeightDataFetching(false);
         executeQuery();
     }
 
@@ -64,7 +65,7 @@ public class LightWeightPropertyFetchingBenchMark {
     @BenchmarkMode(Mode.Throughput)
     @OutputTimeUnit(TimeUnit.SECONDS)
     public void benchMarkLightWeightFetchingThroughput() {
-        GraphQL.useLightWeightDataFetching(true);
+        BackDoor.useLightWeightDataFetching(true);
         executeQuery();
     }
 
@@ -72,7 +73,7 @@ public class LightWeightPropertyFetchingBenchMark {
     @BenchmarkMode(Mode.AverageTime)
     @OutputTimeUnit(TimeUnit.MILLISECONDS)
     public void benchMarkLightWeightFetchingAvgTime() {
-        GraphQL.useLightWeightDataFetching(true);
+        BackDoor.useLightWeightDataFetching(true);
         executeQuery();
     }
 

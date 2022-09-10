@@ -3,7 +3,6 @@ package graphql.execution;
 import com.google.common.collect.ImmutableList;
 import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
-import graphql.GraphQL;
 import graphql.GraphQLError;
 import graphql.Internal;
 import graphql.PublicSpi;
@@ -38,6 +37,7 @@ import graphql.schema.GraphQLOutputType;
 import graphql.schema.GraphQLScalarType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLType;
+import graphql.util.BackDoor;
 import graphql.util.FpKit;
 import graphql.util.LogKit;
 import org.slf4j.Logger;
@@ -303,7 +303,7 @@ public abstract class ExecutionStrategy {
         CompletableFuture<Object> fetchedValue;
         try {
             Object fetchedValueRaw;
-            if (GraphQL.lightWeightDataFetching()) {
+            if (BackDoor.lightWeightDataFetching()) {
                 fetchedValueRaw = dataFetcher.get(fieldDef, parameters.getSource(), dataFetchingEnvironment);
             } else {
                 fetchedValueRaw = dataFetcher.get(dataFetchingEnvironment.get());
