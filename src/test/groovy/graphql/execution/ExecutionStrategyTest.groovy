@@ -10,6 +10,7 @@ import graphql.SerializationError
 import graphql.StarWarsSchema
 import graphql.TypeMismatchError
 import graphql.execution.instrumentation.InstrumentationContext
+import graphql.execution.instrumentation.InstrumentationState
 import graphql.execution.instrumentation.SimpleInstrumentation
 import graphql.execution.instrumentation.parameters.InstrumentationFieldCompleteParameters
 import graphql.language.Argument
@@ -678,12 +679,12 @@ class ExecutionStrategyTest extends Specification {
             Map<String, FetchedValue> fetchedValues = [:]
 
             @Override
-            InstrumentationContext<ExecutionResult> beginFieldComplete(InstrumentationFieldCompleteParameters parameters) {
+            InstrumentationContext<ExecutionResult> beginFieldComplete(InstrumentationFieldCompleteParameters parameters, InstrumentationState state) {
                 if (parameters.fetchedValue instanceof FetchedValue) {
                     FetchedValue value = (FetchedValue) parameters.fetchedValue
                     fetchedValues.put(parameters.field.name, value)
                 }
-                return super.beginFieldComplete(parameters)
+                return super.beginFieldComplete(parameters, state)
             }
         }
         ExecutionContext instrumentedExecutionContext = executionContextBuilder.instrumentation(instrumentation).build()

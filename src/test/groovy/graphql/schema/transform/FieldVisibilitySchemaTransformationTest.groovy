@@ -2,6 +2,7 @@ package graphql.schema.transform
 
 import graphql.Scalars
 import graphql.TestUtil
+import graphql.schema.GraphQLAppliedDirective
 import graphql.schema.GraphQLCodeRegistry
 import graphql.schema.GraphQLDirectiveContainer
 import graphql.schema.GraphQLInputObjectType
@@ -11,7 +12,6 @@ import graphql.schema.TypeResolver
 import graphql.schema.idl.SchemaPrinter
 import spock.lang.Specification
 
-import static graphql.schema.GraphQLDirective.newDirective
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition
 import static graphql.schema.GraphQLInterfaceType.newInterface
 import static graphql.schema.GraphQLObjectType.newObject
@@ -20,7 +20,7 @@ import static graphql.schema.GraphQLTypeReference.typeRef
 class FieldVisibilitySchemaTransformationTest extends Specification {
 
     def visibilitySchemaTransformation = new FieldVisibilitySchemaTransformation({ environment ->
-        def directives = (environment.schemaElement as GraphQLDirectiveContainer).directives
+        def directives = (environment.schemaElement as GraphQLDirectiveContainer).appliedDirectives
         return directives.find({ directive -> directive.name == "private" }) == null
     })
 
@@ -941,11 +941,11 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
                 .field(newFieldDefinition().name("account").type(typeRef("Account")).build())
                 .build()
 
-        def privateDirective = newDirective().name("private").build()
+        def privateDirective = GraphQLAppliedDirective.newDirective().name("private").build()
         def account = newObject()
                 .name("Account")
                 .field(newFieldDefinition().name("name").type(Scalars.GraphQLString).build())
-                .field(newFieldDefinition().name("billingStatus").type(typeRef("SuperSecretCustomerData")).withDirective(privateDirective).build())
+                .field(newFieldDefinition().name("billingStatus").type(typeRef("SuperSecretCustomerData")).withAppliedDirective(privateDirective).build())
                 .build()
 
         def billingStatus = newObject()
@@ -970,7 +970,6 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
                 .additionalType(account)
                 .additionalType(billingStatus)
                 .additionalType(secretData)
-                .additionalDirective(privateDirective)
                 .build()
         when:
 
@@ -991,11 +990,11 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
                 .field(newFieldDefinition().name("account").type(typeRef("Account")).build())
                 .build()
 
-        def privateDirective = newDirective().name("private").build()
+        def privateDirective = GraphQLAppliedDirective.newDirective().name("private").build()
         def account = newObject()
                 .name("Account")
                 .field(newFieldDefinition().name("name").type(Scalars.GraphQLString).build())
-                .field(newFieldDefinition().name("billingStatus").type(typeRef("BillingStatus")).withDirective(privateDirective).build())
+                .field(newFieldDefinition().name("billingStatus").type(typeRef("BillingStatus")).withAppliedDirective(privateDirective).build())
                 .build()
 
         def billingStatus = newObject()
@@ -1020,7 +1019,6 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
                 .additionalType(account)
                 .additionalType(billingStatus)
                 .additionalType(secretData)
-                .additionalDirective(privateDirective)
                 .build()
         when:
 
@@ -1040,11 +1038,11 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
                 .field(newFieldDefinition().name("account").type(typeRef("Account")).build())
                 .build()
 
-        def privateDirective = newDirective().name("private").build()
+        def privateDirective = GraphQLAppliedDirective.newDirective().name("private").build()
         def account = newObject()
                 .name("Account")
                 .field(newFieldDefinition().name("name").type(Scalars.GraphQLString).build())
-                .field(newFieldDefinition().name("billingStatus").type(typeRef("BillingStatus")).withDirective(privateDirective).build())
+                .field(newFieldDefinition().name("billingStatus").type(typeRef("BillingStatus")).withAppliedDirective(privateDirective).build())
                 .build()
 
         def billingStatus = newObject()
@@ -1056,7 +1054,6 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
                 .query(query)
                 .additionalType(billingStatus)
                 .additionalType(account)
-                .additionalDirective(privateDirective)
                 .build()
         when:
 
@@ -1074,7 +1071,7 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
         def callbacks = []
 
         def visibilitySchemaTransformation = new FieldVisibilitySchemaTransformation({ environment ->
-            def directives = (environment.schemaElement as GraphQLDirectiveContainer).directives
+            def directives = (environment.schemaElement as GraphQLDirectiveContainer).appliedDirectives
             return directives.find({ directive -> directive.name == "private" }) == null
         }, { -> callbacks << "before" }, { -> callbacks << "after"} )
 
