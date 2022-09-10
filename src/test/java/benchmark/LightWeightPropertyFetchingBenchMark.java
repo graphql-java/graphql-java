@@ -35,8 +35,8 @@ import static graphql.schema.idl.TypeRuntimeWiring.newTypeWiring;
  * <p>
  * Install it and then just hit "Run" on a certain benchmark method
  */
-@Warmup(iterations = 1, time = 2, batchSize = 3)
-@Measurement(iterations = 3, time = 5, batchSize = 3)
+@Warmup(iterations = 2, time = 2, batchSize = 3)
+@Measurement(iterations = 5, time = 5, batchSize = 3)
 public class LightWeightPropertyFetchingBenchMark {
 
 

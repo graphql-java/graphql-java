@@ -242,7 +242,7 @@ public abstract class ExecutionStrategy {
 
         // if the DF (like PropertyDataFetcher) does not use the arguments or execution step info then dont build any
 
-        Supplier<DataFetchingEnvironment> dataFetchingEnvironment = () -> FpKit.intraThreadMemoize(() -> {
+        Supplier<DataFetchingEnvironment> dataFetchingEnvironment = FpKit.intraThreadMemoize(() -> {
 
             Supplier<ExecutionStepInfo> executionStepInfo = FpKit.intraThreadMemoize(
                     () -> createExecutionStepInfo(executionContext, parameters, fieldDef, parentType));
@@ -272,7 +272,7 @@ public abstract class ExecutionStrategy {
                     .selectionSet(fieldCollector)
                     .queryDirectives(queryDirectives)
                     .build();
-        }).get();
+        });
         DataFetcher<?> dataFetcher = codeRegistry.getDataFetcher(parentType, fieldDef);
 
         Instrumentation instrumentation = executionContext.getInstrumentation();
