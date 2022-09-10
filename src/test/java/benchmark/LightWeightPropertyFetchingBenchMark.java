@@ -39,7 +39,7 @@ import static graphql.schema.idl.TypeRuntimeWiring.newTypeWiring;
 public class LightWeightPropertyFetchingBenchMark {
 
 
-    private static final int NUMBER_OF_FRIENDS = 10 * 100;
+    private static final int NUMBER_OF_FRIENDS = 1000;
 
     static GraphQL graphQL = buildGraphQL();
 
@@ -81,7 +81,7 @@ public class LightWeightPropertyFetchingBenchMark {
         graphQL.execute(query);
     }
 
-    private static final CharacterDTO R2D2 = CharacterDTO.mkCharacter(0, 20, "r2d2", NUMBER_OF_FRIENDS);
+    private static final CharacterDTO R2D2 = CharacterDTO.mkCharacter(0, 3, "r2d2", NUMBER_OF_FRIENDS);
 
 
     @SuppressWarnings("unused")
@@ -141,7 +141,7 @@ public class LightWeightPropertyFetchingBenchMark {
             }
             List<CharacterDTO> friends = new ArrayList<>(friendCount);
             for (int i = 0; i < friendCount; i++) {
-                friends.add(mkCharacter(depth + 1, maxDepth, "friend" + i, 30));
+                friends.add(mkCharacter(depth + 1, maxDepth, "friend" + i, 2));
             }
             return new CharacterDTO(name, friends);
         }
