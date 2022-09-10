@@ -3,8 +3,10 @@ package graphql.execution;
 import com.google.common.collect.ImmutableList;
 import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
+import graphql.GraphQL;
 import graphql.GraphQLError;
 import graphql.Internal;
+import graphql.LightWeightDataFetcher;
 import graphql.PublicSpi;
 import graphql.SerializationError;
 import graphql.TrivialDataFetcher;
@@ -237,74 +239,85 @@ public abstract class ExecutionStrategy {
         MergedField field = parameters.getField();
         GraphQLObjectType parentType = (GraphQLObjectType) parameters.getExecutionStepInfo().getUnwrappedNonNullType();
         GraphQLFieldDefinition fieldDef = getFieldDef(executionContext.getGraphQLSchema(), parentType, field.getSingleField());
-
         GraphQLCodeRegistry codeRegistry = executionContext.getGraphQLSchema().getCodeRegistry();
-        GraphQLOutputType fieldType = fieldDef.getType();
 
-        // if the DF (like PropertyDataFetcher) does not use the arguments of execution step info then dont build any
-        Supplier<ExecutionStepInfo> executionStepInfo = FpKit.intraThreadMemoize(
-                () -> createExecutionStepInfo(executionContext, parameters, fieldDef, parentType));
-        Supplier<Map<String, Object>> argumentValues = () -> executionStepInfo.get().getArguments();
+        // if the DF (like PropertyDataFetcher) does not use the arguments or execution step info then dont build any
 
-        Supplier<ExecutableNormalizedField> normalizedFieldSupplier = getNormalizedField(executionContext, parameters, executionStepInfo);
+        Supplier<DataFetchingEnvironment> dataFetchingEnvironment = FpKit.intraThreadMemoize(() -> {
 
-        // DataFetchingFieldSelectionSet and QueryDirectives is a supplier of sorts - eg a lazy pattern
-        DataFetchingFieldSelectionSet fieldCollector = DataFetchingFieldSelectionSetImpl.newCollector(executionContext.getGraphQLSchema(), fieldType, normalizedFieldSupplier);
-        QueryDirectives queryDirectives = new QueryDirectivesImpl(field,
-                executionContext.getGraphQLSchema(),
-                executionContext.getCoercedVariables().toMap(),
-                executionContext.getGraphQLContext(),
-                executionContext.getLocale());
+            Supplier<ExecutionStepInfo> executionStepInfo = FpKit.intraThreadMemoize(
+                    () -> createExecutionStepInfo(executionContext, parameters, fieldDef, parentType));
+
+            Supplier<Map<String, Object>> argumentValues = () -> executionStepInfo.get().getArguments();
+
+            Supplier<ExecutableNormalizedField> normalizedFieldSupplier = getNormalizedField(executionContext, parameters, executionStepInfo);
+
+            // DataFetchingFieldSelectionSet and QueryDirectives is a supplier of sorts - eg a lazy pattern
+            DataFetchingFieldSelectionSet fieldCollector = DataFetchingFieldSelectionSetImpl.newCollector(executionContext.getGraphQLSchema(), fieldDef.getType(), normalizedFieldSupplier);
+            QueryDirectives queryDirectives = new QueryDirectivesImpl(field,
+                    executionContext.getGraphQLSchema(),
+                    executionContext.getCoercedVariables().toMap(),
+                    executionContext.getGraphQLContext(),
+                    executionContext.getLocale());
 
 
-        DataFetchingEnvironment environment = newDataFetchingEnvironment(executionContext)
-                .source(parameters.getSource())
-                .localContext(parameters.getLocalContext())
-                .arguments(argumentValues)
-                .fieldDefinition(fieldDef)
-                .mergedField(parameters.getField())
-                .fieldType(fieldType)
-                .executionStepInfo(executionStepInfo)
-                .parentType(parentType)
-                .selectionSet(fieldCollector)
-                .queryDirectives(queryDirectives)
-                .build();
-
+            return newDataFetchingEnvironment(executionContext)
+                    .source(parameters.getSource())
+                    .localContext(parameters.getLocalContext())
+                    .arguments(argumentValues)
+                    .fieldDefinition(fieldDef)
+                    .mergedField(parameters.getField())
+                    .fieldType(fieldDef.getType())
+                    .executionStepInfo(executionStepInfo)
+                    .parentType(parentType)
+                    .selectionSet(fieldCollector)
+                    .queryDirectives(queryDirectives)
+                    .build();
+        });
         DataFetcher<?> dataFetcher = codeRegistry.getDataFetcher(parentType, fieldDef);
 
         Instrumentation instrumentation = executionContext.getInstrumentation();
 
-        InstrumentationFieldFetchParameters instrumentationFieldFetchParams = new InstrumentationFieldFetchParameters(executionContext, environment, parameters, dataFetcher instanceof TrivialDataFetcher);
+        InstrumentationFieldFetchParameters instrumentationFieldFetchParams = new InstrumentationFieldFetchParameters(executionContext, dataFetchingEnvironment, parameters, dataFetcher instanceof TrivialDataFetcher);
         InstrumentationContext<Object> fetchCtx = nonNullCtx(instrumentation.beginFieldFetch(instrumentationFieldFetchParams,
                 executionContext.getInstrumentationState())
         );
 
-        CompletableFuture<Object> fetchedValue;
         dataFetcher = instrumentation.instrumentDataFetcher(dataFetcher, instrumentationFieldFetchParams, executionContext.getInstrumentationState());
-        ExecutionId executionId = executionContext.getExecutionId();
-        try {
-            Object fetchedValueRaw = dataFetcher.get(environment);
-            fetchedValue = Async.toCompletableFuture(fetchedValueRaw);
-        } catch (Exception e) {
-            if (logNotSafe.isDebugEnabled()) {
-                logNotSafe.debug(String.format("'%s', field '%s' fetch threw exception", executionId, executionStepInfo.get().getPath()), e);
-            }
+        CompletableFuture<Object> fetchedValue = invokeDataFetcher(executionContext, parameters, fieldDef, dataFetchingEnvironment, dataFetcher);
 
-            fetchedValue = new CompletableFuture<>();
-            fetchedValue.completeExceptionally(e);
-        }
         fetchCtx.onDispatched(fetchedValue);
         return fetchedValue
                 .handle((result, exception) -> {
                     fetchCtx.onCompleted(result, exception);
                     if (exception != null) {
-                        return handleFetchingException(executionContext, environment, exception);
+                        return handleFetchingException(executionContext, dataFetchingEnvironment.get(), exception);
                     } else {
                         return CompletableFuture.completedFuture(result);
                     }
                 })
                 .thenCompose(Function.identity())
                 .thenApply(result -> unboxPossibleDataFetcherResult(executionContext, parameters, result));
+    }
+
+    private CompletableFuture<Object> invokeDataFetcher(ExecutionContext executionContext, ExecutionStrategyParameters parameters, GraphQLFieldDefinition fieldDef, Supplier<DataFetchingEnvironment> dataFetchingEnvironment, DataFetcher<?> dataFetcher) {
+        CompletableFuture<Object> fetchedValue;
+        try {
+            Object fetchedValueRaw;
+            if (dataFetcher instanceof LightWeightDataFetcher && GraphQL.lightWeightDataFetching()) {
+                LightWeightDataFetcher<?> lightWeightDataFetcher = (LightWeightDataFetcher<?>) dataFetcher;
+                fetchedValueRaw = lightWeightDataFetcher.get(fieldDef, parameters.getSource(), dataFetchingEnvironment);
+            } else {
+                fetchedValueRaw = dataFetcher.get(dataFetchingEnvironment.get());
+            }
+            fetchedValue = Async.toCompletableFuture(fetchedValueRaw);
+        } catch (Exception e) {
+            if (logNotSafe.isDebugEnabled()) {
+                logNotSafe.debug(String.format("'%s', field '%s' fetch threw exception", executionContext.getExecutionId(), parameters.getPath()), e);
+            }
+            fetchedValue = Async.exceptionallyCompletedFuture(e);
+        }
+        return fetchedValue;
     }
 
     protected Supplier<ExecutableNormalizedField> getNormalizedField(ExecutionContext executionContext, ExecutionStrategyParameters parameters, Supplier<ExecutionStepInfo> executionStepInfo) {

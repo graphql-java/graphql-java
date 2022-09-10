@@ -35,7 +35,6 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
@@ -603,4 +602,18 @@ public class GraphQL {
         }
         return new ChainedInstrumentation(instrumentationList);
     }
+
+
+    private static boolean USE_LIGHTWEIGHT_DFS = true;
+
+    @Internal
+    public static boolean lightWeightDataFetching() {
+        return USE_LIGHTWEIGHT_DFS;
+    }
+
+    @Internal
+    public static void useLightWeightDataFetching(boolean flag) {
+        USE_LIGHTWEIGHT_DFS = flag;
+    }
+
 }

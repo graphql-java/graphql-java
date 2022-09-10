@@ -2,10 +2,12 @@ package graphql.schema;
 
 
 import graphql.Assert;
+import graphql.LightWeightDataFetcher;
 import graphql.PublicApi;
 import graphql.TrivialDataFetcher;
 
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 /**
  * This is the default data fetcher used in graphql-java.  It will examine
@@ -31,7 +33,7 @@ import java.util.function.Function;
  * @see graphql.schema.DataFetcher
  */
 @PublicApi
-public class PropertyDataFetcher<T> implements DataFetcher<T>, TrivialDataFetcher<T> {
+public class PropertyDataFetcher<T> implements DataFetcher<T>, TrivialDataFetcher<T>, LightWeightDataFetcher<T> {
 
     private final String propertyName;
     private final Function<Object, Object> function;
@@ -69,6 +71,7 @@ public class PropertyDataFetcher<T> implements DataFetcher<T>, TrivialDataFetche
      *
      * @param propertyName the name of the property to retrieve
      * @param <T>          the type of result
+     *
      * @return a new PropertyDataFetcher using the provided function as its source of values
      */
     public static <T> PropertyDataFetcher<T> fetching(String propertyName) {
@@ -92,6 +95,7 @@ public class PropertyDataFetcher<T> implements DataFetcher<T>, TrivialDataFetche
      * @param function the function to use to obtain a value from the source object
      * @param <O>      the type of the source object
      * @param <T>      the type of result
+     *
      * @return a new PropertyDataFetcher using the provided function as its source of values
      */
     public static <T, O> PropertyDataFetcher<T> fetching(Function<O, T> function) {
@@ -107,6 +111,20 @@ public class PropertyDataFetcher<T> implements DataFetcher<T>, TrivialDataFetche
 
     @SuppressWarnings("unchecked")
     @Override
+    public T get(GraphQLFieldDefinition fieldDefinition, Object source, Supplier<DataFetchingEnvironment> environmentSupplier) throws Exception {
+        if (source == null) {
+            return null;
+        }
+
+        if (function != null) {
+            return (T) function.apply(source);
+        }
+
+        return (T) PropertyDataFetcherHelper.getPropertyValue(propertyName, source, fieldDefinition.getType(), environmentSupplier);
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
     public T get(DataFetchingEnvironment environment) {
         Object source = environment.getSource();
         if (source == null) {
@@ -117,7 +135,7 @@ public class PropertyDataFetcher<T> implements DataFetcher<T>, TrivialDataFetche
             return (T) function.apply(source);
         }
 
-        return (T) PropertyDataFetcherHelper.getPropertyValue(propertyName, source, environment.getFieldType(), environment);
+        return (T) PropertyDataFetcherHelper.getPropertyValue(propertyName, source, environment.getFieldType(), () -> environment);
     }
 
     /**
@@ -138,6 +156,7 @@ public class PropertyDataFetcher<T> implements DataFetcher<T>, TrivialDataFetche
      * values.  By default it PropertyDataFetcher WILL use setAccessible.
      *
      * @param flag whether to use setAccessible
+     *
      * @return the previous value of the flag
      */
     public static boolean setUseSetAccessible(boolean flag) {
@@ -148,6 +167,7 @@ public class PropertyDataFetcher<T> implements DataFetcher<T>, TrivialDataFetche
      * This can be used to control whether PropertyDataFetcher will cache negative lookups for a property for performance reasons.  By default it PropertyDataFetcher WILL cache misses.
      *
      * @param flag whether to cache misses
+     *
      * @return the previous value of the flag
      */
     public static boolean setUseNegativeCache(boolean flag) {
