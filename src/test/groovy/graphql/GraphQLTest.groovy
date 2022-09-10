@@ -856,7 +856,6 @@ class GraphQLTest extends Specification {
                                     .name("id")
                                     .type(Scalars.GraphQLID)
                         } as UnaryOperator)
-                .typeResolver({ type -> foo })
                 .build()
 
         GraphQLObjectType query = newObject()
@@ -869,7 +868,12 @@ class GraphQLTest extends Specification {
                         } as UnaryOperator)
                 .build()
 
+        def codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+                .typeResolver(node, {type -> foo })
+                .build()
+
         GraphQLSchema schema = newSchema()
+                .codeRegistry(codeRegistry)
                 .query(query)
                 .build()
 

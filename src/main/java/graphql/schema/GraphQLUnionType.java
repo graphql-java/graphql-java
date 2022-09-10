@@ -275,6 +275,13 @@ public class GraphQLUnionType implements GraphQLNamedOutputType, GraphQLComposit
             return this;
         }
 
+        /**
+         * @param typeResolver the type resolver
+         *
+         * @return this builder
+         *
+         * @deprecated use {@link graphql.schema.GraphQLCodeRegistry.Builder#typeResolver(GraphQLUnionType, TypeResolver)} instead
+         */
         @Deprecated
         @DeprecatedAt("2018-12-03")
         public Builder typeResolver(TypeResolver typeResolver) {

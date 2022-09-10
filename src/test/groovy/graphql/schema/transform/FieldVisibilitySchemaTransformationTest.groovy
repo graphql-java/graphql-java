@@ -2,7 +2,7 @@ package graphql.schema.transform
 
 import graphql.Scalars
 import graphql.TestUtil
-import graphql.introspection.Introspection
+import graphql.schema.GraphQLCodeRegistry
 import graphql.schema.GraphQLDirectiveContainer
 import graphql.schema.GraphQLInputObjectType
 import graphql.schema.GraphQLObjectType
@@ -957,10 +957,14 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
         def secretData = newInterface()
                 .name("SuperSecretCustomerData")
                 .field(newFieldDefinition().name("id").type(Scalars.GraphQLString).build())
-                .typeResolver(Mock(TypeResolver))
+                .build()
+
+        def codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+                .typeResolver(secretData, Mock(TypeResolver))
                 .build()
 
         def schema = GraphQLSchema.newSchema()
+                .codeRegistry(codeRegistry)
                 .query(query)
                 .additionalType(billingStatus)
                 .additionalType(account)
@@ -1003,10 +1007,14 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
         def secretData = newInterface()
                 .name("SuperSecretCustomerData")
                 .field(newFieldDefinition().name("id").type(Scalars.GraphQLString).build())
-                .typeResolver(Mock(TypeResolver))
+                .build()
+
+        def codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+                .typeResolver(secretData, Mock(TypeResolver))
                 .build()
 
         def schema = GraphQLSchema.newSchema()
+                .codeRegistry(codeRegistry)
                 .query(query)
                 .additionalType(billingStatus)
                 .additionalType(account)
