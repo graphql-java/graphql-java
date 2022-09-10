@@ -141,7 +141,7 @@ public class LightWeightPropertyFetchingBenchMark {
             }
             List<CharacterDTO> friends = new ArrayList<>(friendCount);
             for (int i = 0; i < friendCount; i++) {
-                friends.add(mkCharacter(depth + 1, maxDepth, "friend" + i, 0));
+                friends.add(mkCharacter(depth + 1, maxDepth, "friend" + i, 30));
             }
             return new CharacterDTO(name, friends);
         }
