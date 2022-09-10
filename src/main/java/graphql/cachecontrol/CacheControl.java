@@ -206,7 +206,7 @@ public class CacheControl {
     @Deprecated
     @DeprecatedAt("2022-07-26")
     public ExecutionResult addTo(ExecutionResult executionResult) {
-        return ExecutionResultImpl.newExecutionResult()
+        return ExecutionResult.newExecutionResult()
                 .from(executionResult)
                 .addExtension(CACHE_CONTROL_EXTENSION_KEY, hintsToCacheControlProperties())
                 .build();
