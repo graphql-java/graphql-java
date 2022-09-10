@@ -1366,7 +1366,7 @@ class SchemaGeneratorTest extends Specification {
 
         expect:
 
-        container.getDirective(directiveName) != null
+        container.getAppliedDirective(directiveName) != null
 
         if (container instanceof GraphQLEnumType) {
             def evd = ((GraphQLEnumType) container).getValue("X").getDirective("EnumValueDirective")
@@ -2027,16 +2027,16 @@ class SchemaGeneratorTest extends Specification {
         schema.getMutationType().name == 'Mutation'
 
         when:
-        def directives = schema.getSchemaDirectives()
+        def directives = schema.getSchemaDirectives() // Retain for test coverage
 
         then:
         directives.size() == 3
-        schema.getSchemaDirective("sd1") != null
-        schema.getSchemaDirective("sd2") != null
-        schema.getSchemaDirective("sd3") != null
+        schema.getSchemaDirective("sd1") != null // Retain for test coverage
+        schema.getSchemaDirective("sd2") != null // Retain for test coverage
+        schema.getSchemaDirective("sd3") != null // Retain for test coverage
 
         when:
-        def directivesMap = schema.getSchemaDirectiveByName()
+        def directivesMap = schema.getSchemaDirectiveByName() // Retain for test coverage
         then:
         directives.size() == 3
         directivesMap["sd1"] != null

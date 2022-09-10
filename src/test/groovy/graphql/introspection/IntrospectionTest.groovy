@@ -421,7 +421,7 @@ class IntrospectionTest extends Specification {
                                                         .name("inputField")
                                                         .type(GraphQLString))
                                                 .build())
-                                        .defaultValue(new FooBar())
+                                        .defaultValue(new FooBar()) // Retain for test coverage. There is no alternative method that sets an internal value.
                                 )
                         )
                 )
