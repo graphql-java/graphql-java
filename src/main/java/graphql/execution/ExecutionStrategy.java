@@ -3,6 +3,7 @@ package graphql.execution;
 import com.google.common.collect.ImmutableList;
 import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
+import graphql.GraphQL;
 import graphql.GraphQLError;
 import graphql.Internal;
 import graphql.PublicSpi;
@@ -301,7 +302,12 @@ public abstract class ExecutionStrategy {
     private CompletableFuture<Object> invokeDataFetcher(ExecutionContext executionContext, ExecutionStrategyParameters parameters, GraphQLFieldDefinition fieldDef, Supplier<DataFetchingEnvironment> dataFetchingEnvironment, DataFetcher<?> dataFetcher) {
         CompletableFuture<Object> fetchedValue;
         try {
-            Object fetchedValueRaw = dataFetcher.get(fieldDef, parameters.getSource(), dataFetchingEnvironment);
+            Object fetchedValueRaw;
+            if (GraphQL.lightWeightDataFetching()) {
+                fetchedValueRaw = dataFetcher.get(fieldDef, parameters.getSource(), dataFetchingEnvironment);
+            } else {
+                fetchedValueRaw = dataFetcher.get(dataFetchingEnvironment.get());
+            }
             fetchedValue = Async.toCompletableFuture(fetchedValueRaw);
         } catch (Exception e) {
             if (logNotSafe.isDebugEnabled()) {
