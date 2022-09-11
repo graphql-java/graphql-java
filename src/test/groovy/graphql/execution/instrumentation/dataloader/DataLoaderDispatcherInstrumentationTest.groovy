@@ -14,7 +14,7 @@ import graphql.execution.instrumentation.SimpleInstrumentation
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters
 import graphql.schema.DataFetcher
 import org.dataloader.BatchLoader
-import org.dataloader.DataLoader
+import org.dataloader.DataLoaderFactory
 import org.dataloader.DataLoaderRegistry
 import spock.lang.Specification
 import spock.lang.Unroll
@@ -38,7 +38,6 @@ class DataLoaderDispatcherInstrumentationTest extends Specification {
             return super.execute(executionContext, parameters)
         }
     }
-
 
     def query = """
         query {
@@ -104,7 +103,7 @@ class DataLoaderDispatcherInstrumentationTest extends Specification {
                 super.dispatchAll()
             }
         }
-        def dataLoader = DataLoader.newDataLoader(new BatchLoader() {
+        def dataLoader = DataLoaderFactory.newDataLoader(new BatchLoader() {
             @Override
             CompletionStage<List> load(List keys) {
                 return CompletableFuture.completedFuture(keys)
@@ -127,7 +126,7 @@ class DataLoaderDispatcherInstrumentationTest extends Specification {
         def starWarsWiring = new StarWarsDataLoaderWiring()
 
 
-        DataLoaderRegistry startingDataLoaderRegistry = new DataLoaderRegistry();
+        DataLoaderRegistry startingDataLoaderRegistry = new DataLoaderRegistry()
         def enhancedDataLoaderRegistry = starWarsWiring.newDataLoaderRegistry()
 
         def dlInstrumentation = new DataLoaderDispatcherInstrumentation()
@@ -274,7 +273,7 @@ class DataLoaderDispatcherInstrumentationTest extends Specification {
         BatchLoader batchLoader = { keys -> CompletableFuture.completedFuture(keys) }
 
         DataFetcher df = { env ->
-            def dataLoader = env.getDataLoaderRegistry().computeIfAbsent("key", { key -> DataLoader.newDataLoader(batchLoader) })
+            def dataLoader = env.getDataLoaderRegistry().computeIfAbsent("key", { key -> DataLoaderFactory.newDataLoader(batchLoader) })
 
             return dataLoader.load("working as expected")
         }

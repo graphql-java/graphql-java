@@ -2,7 +2,6 @@ package graphql
 
 import graphql.introspection.Introspection
 import graphql.schema.GraphQLType
-import graphql.schema.TypeResolverProxy
 import spock.lang.Specification
 import spock.lang.Unroll
 
@@ -22,14 +21,14 @@ class TypeMismatchErrorTest extends Specification {
         TypeMismatchError.GraphQLTypeToTypeKindMapping.getTypeKindFromGraphQLType(type) == typeKind
 
         where:
-        type                                                                                            || typeKind
-        list(Scalars.GraphQLInt)                                                                        || Introspection.TypeKind.LIST
-        Scalars.GraphQLInt                                                                              || Introspection.TypeKind.SCALAR
-        newObject().name("myObject").fields([]).build()                                                 || Introspection.TypeKind.OBJECT
-        newEnum().name("myEnum").values([]).build()                                                     || Introspection.TypeKind.ENUM
-        newInputObject().name("myInputType").fields([]).build()                                         || Introspection.TypeKind.INPUT_OBJECT
-        newInterface().name("myInterfaceType").fields([]).typeResolver(new TypeResolverProxy()).build() || Introspection.TypeKind.INTERFACE
-        nonNull(Scalars.GraphQLInt)                                                                     || Introspection.TypeKind.NON_NULL
-        newUnionType().name("myUnion").possibleType(newObject().name("test").build()).build()           || Introspection.TypeKind.UNION
+        type                                                                                   || typeKind
+        list(Scalars.GraphQLInt)                                                               || Introspection.TypeKind.LIST
+        Scalars.GraphQLInt                                                                     || Introspection.TypeKind.SCALAR
+        newObject().name("myObject").fields([]).build()                                        || Introspection.TypeKind.OBJECT
+        newEnum().name("myEnum").values([]).build()                                            || Introspection.TypeKind.ENUM
+        newInputObject().name("myInputType").fields([]).build()                                || Introspection.TypeKind.INPUT_OBJECT
+        newInterface().name("myInterfaceType").fields([]).build()                              || Introspection.TypeKind.INTERFACE
+        nonNull(Scalars.GraphQLInt)                                                            || Introspection.TypeKind.NON_NULL
+        newUnionType().name("myUnion").possibleType(newObject().name("test").build()).build()  || Introspection.TypeKind.UNION
     }
 }

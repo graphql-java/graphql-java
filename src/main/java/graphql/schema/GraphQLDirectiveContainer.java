@@ -9,15 +9,15 @@ import java.util.Map;
 import static graphql.collect.ImmutableKit.emptyList;
 
 /**
- * Represents a graphql runtime type that can have {@link graphql.schema.GraphQLAppliedDirective}'s.
+ * Represents a graphql runtime type that can have {@link graphql.schema.GraphQLAppliedDirective}s.
  * <p>
  * Directives can be repeatable and (by default) non-repeatable.
  * <p>
  * There are access methods here that get the two different types.
  * <p>
  * The use of {@link GraphQLDirective} to represent a directive applied to an element is deprecated in favour of
- * {@link GraphQLAppliedDirective}.   A {@link GraphQLDirective} really should represent the definition of a directive in a schema not its use
- * on schema elements.  However, it has been left in place for legacy reasons and will be removed in a
+ * {@link GraphQLAppliedDirective}. A {@link GraphQLDirective} really should represent the definition of a directive in a schema, not its use
+ * on schema elements. However, it has been left in place for legacy reasons and will be removed in a
  * future version.
  *
  * @see graphql.language.DirectiveDefinition

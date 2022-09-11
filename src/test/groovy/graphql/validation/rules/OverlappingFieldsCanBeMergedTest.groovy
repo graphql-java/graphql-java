@@ -1,14 +1,11 @@
 package graphql.validation.rules
 
-
-import graphql.TypeResolutionEnvironment
 import graphql.i18n.I18n
 import graphql.language.Document
 import graphql.language.SourceLocation
 import graphql.parser.Parser
-import graphql.schema.GraphQLObjectType
+import graphql.schema.GraphQLCodeRegistry
 import graphql.schema.GraphQLSchema
-import graphql.schema.TypeResolver
 import graphql.validation.LanguageTraversal
 import graphql.validation.RulesVisitor
 import graphql.validation.ValidationContext
@@ -79,7 +76,7 @@ class OverlappingFieldsCanBeMergedTest extends Specification {
         errorCollector.getErrors()[0].locations == [new SourceLocation(3, 17), new SourceLocation(4, 17)]
     }
 
-    GraphQLSchema unionSchema() {
+    static GraphQLSchema unionSchema() {
         def StringBox = newObject().name("StringBox")
                 .field(newFieldDefinition().name("scalar").type(GraphQLString))
                 .build()
@@ -102,17 +99,18 @@ class OverlappingFieldsCanBeMergedTest extends Specification {
         def BoxUnion = newUnionType()
                 .name("BoxUnion")
                 .possibleTypes(StringBox, IntBox, NonNullStringBox1, NonNullStringBox2, ListStringBox1)
-                .typeResolver(new TypeResolver() {
-                    @Override
-                    GraphQLObjectType getType(TypeResolutionEnvironment env) {
-                        return null
-                    }
-                })
+                .build()
+        def codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+                .typeResolver(BoxUnion, { env -> null })
                 .build()
         def QueryRoot = newObject()
                 .name("QueryRoot")
                 .field(newFieldDefinition().name("boxUnion").type(BoxUnion)).build()
-        return GraphQLSchema.newSchema().query(QueryRoot).build()
+
+        return GraphQLSchema.newSchema()
+                .codeRegistry(codeRegistry)
+                .query(QueryRoot)
+                .build()
     }
 
     def 'conflicting scalar return types'() {
