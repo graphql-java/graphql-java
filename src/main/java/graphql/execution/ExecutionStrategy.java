@@ -204,7 +204,7 @@ public abstract class ExecutionStrategy {
         Supplier<ExecutionStepInfo> executionStepInfo = FpKit.intraThreadMemoize(() -> createExecutionStepInfo(executionContext, parameters, fieldDef, null));
 
         Instrumentation instrumentation = executionContext.getInstrumentation();
-        InstrumentationContext<ExecutionResult> fieldCtx = nonNullCtx(instrumentation.beginField(
+        InstrumentationContext<ExecutionResult> fieldCtx = nonNullCtx(() -> instrumentation.beginField(
                 new InstrumentationFieldParameters(executionContext, executionStepInfo), executionContext.getInstrumentationState()
         ));
 
@@ -274,16 +274,22 @@ public abstract class ExecutionStrategy {
 
         Instrumentation instrumentation = executionContext.getInstrumentation();
 
-        InstrumentationFieldFetchParameters instrumentationFieldFetchParams = new InstrumentationFieldFetchParameters(executionContext, environment, parameters, dataFetcher instanceof TrivialDataFetcher);
-        InstrumentationContext<Object> fetchCtx = nonNullCtx(instrumentation.beginFieldFetch(instrumentationFieldFetchParams,
-                executionContext.getInstrumentationState())
+        InstrumentationContext<Object> fetchCtx = nonNullCtx(() -> {
+            InstrumentationFieldFetchParameters instrumentationFieldFetchParams = new InstrumentationFieldFetchParameters(executionContext, environment, parameters, dataFetcher instanceof TrivialDataFetcher);
+            return instrumentation.beginFieldFetch(instrumentationFieldFetchParams,
+                            executionContext.getInstrumentationState());
+                }
         );
 
         CompletableFuture<Object> fetchedValue;
-        dataFetcher = instrumentation.instrumentDataFetcher(dataFetcher, instrumentationFieldFetchParams, executionContext.getInstrumentationState());
+        DataFetcher<?> newDataFetcher= dataFetcher;
+        if (Backdoor.isUseInstrumentation()) {
+            InstrumentationFieldFetchParameters instrumentationFieldFetchParams = new InstrumentationFieldFetchParameters(executionContext, environment, parameters, dataFetcher instanceof TrivialDataFetcher);
+            newDataFetcher = instrumentation.instrumentDataFetcher(dataFetcher, instrumentationFieldFetchParams, executionContext.getInstrumentationState());
+        }
         ExecutionId executionId = executionContext.getExecutionId();
         try {
-            Object fetchedValueRaw = dataFetcher.get(environment);
+            Object fetchedValueRaw = newDataFetcher.get(environment);
             fetchedValue = Async.toCompletableFuture(fetchedValueRaw);
         } catch (Exception e) {
             if (logNotSafe.isDebugEnabled()) {
@@ -390,10 +396,12 @@ public abstract class ExecutionStrategy {
         ExecutionStepInfo executionStepInfo = createExecutionStepInfo(executionContext, parameters, fieldDef, parentType);
 
         Instrumentation instrumentation = executionContext.getInstrumentation();
-        InstrumentationFieldCompleteParameters instrumentationParams = new InstrumentationFieldCompleteParameters(executionContext, parameters, () -> executionStepInfo, fetchedValue);
-        InstrumentationContext<ExecutionResult> ctxCompleteField = nonNullCtx(instrumentation.beginFieldComplete(
-                instrumentationParams, executionContext.getInstrumentationState()
-        ));
+        InstrumentationContext<ExecutionResult> ctxCompleteField = nonNullCtx(() -> {
+            InstrumentationFieldCompleteParameters instrumentationParams = new InstrumentationFieldCompleteParameters(executionContext, parameters, () -> executionStepInfo, fetchedValue);
+            return instrumentation.beginFieldComplete(
+                    instrumentationParams, executionContext.getInstrumentationState()
+            );
+        });
 
         NonNullableFieldValidator nonNullableFieldValidator = new NonNullableFieldValidator(executionContext, executionStepInfo);
 
@@ -522,12 +530,14 @@ public abstract class ExecutionStrategy {
         OptionalInt size = FpKit.toSize(iterableValues);
         ExecutionStepInfo executionStepInfo = parameters.getExecutionStepInfo();
 
-        InstrumentationFieldCompleteParameters instrumentationParams = new InstrumentationFieldCompleteParameters(executionContext, parameters, () -> executionStepInfo, iterableValues);
         Instrumentation instrumentation = executionContext.getInstrumentation();
 
-        InstrumentationContext<ExecutionResult> completeListCtx = nonNullCtx(instrumentation.beginFieldListComplete(
-                instrumentationParams, executionContext.getInstrumentationState()
-        ));
+        InstrumentationContext<ExecutionResult> completeListCtx = nonNullCtx(() -> {
+            InstrumentationFieldCompleteParameters instrumentationParams = new InstrumentationFieldCompleteParameters(executionContext, parameters, () -> executionStepInfo, iterableValues);
+            return instrumentation.beginFieldListComplete(
+                    instrumentationParams, executionContext.getInstrumentationState()
+            );
+        });
 
         List<FieldValueInfo> fieldValueInfos = new ArrayList<>(size.orElse(1));
         int index = 0;

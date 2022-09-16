@@ -1,11 +1,13 @@
 package graphql.execution.instrumentation;
 
 import graphql.PublicApi;
+import graphql.execution.Backdoor;
 
 import javax.annotation.Nonnull;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 /**
  * A simple implementation of {@link InstrumentationContext}
@@ -46,6 +48,15 @@ public class SimpleInstrumentationContext<T> implements InstrumentationContext<T
     @Nonnull
     public static <T> InstrumentationContext<T> nonNullCtx(InstrumentationContext<T> nullableContext) {
         return nullableContext == null ? noOp() : nullableContext;
+    }
+
+    @Nonnull
+    public static <T> InstrumentationContext<T> nonNullCtx(Supplier<InstrumentationContext<T>> nullableContext) {
+        if (Backdoor.isUseInstrumentation()) {
+            return nonNullCtx(nullableContext.get());
+        } else {
+            return noOp();
+        }
     }
 
     private final BiConsumer<T, Throwable> codeToRunOnComplete;

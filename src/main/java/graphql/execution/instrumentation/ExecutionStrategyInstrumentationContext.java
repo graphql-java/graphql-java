@@ -3,11 +3,13 @@ package graphql.execution.instrumentation;
 import graphql.ExecutionResult;
 import graphql.Internal;
 import graphql.PublicSpi;
+import graphql.execution.Backdoor;
 import graphql.execution.FieldValueInfo;
 
 import javax.annotation.Nonnull;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Supplier;
 
 @PublicSpi
 public interface ExecutionStrategyInstrumentationContext extends InstrumentationContext<ExecutionResult> {
@@ -31,6 +33,13 @@ public interface ExecutionStrategyInstrumentationContext extends Instrumentation
     @Internal
     static ExecutionStrategyInstrumentationContext nonNullCtx(ExecutionStrategyInstrumentationContext nullableContext) {
         return nullableContext == null ? NOOP : nullableContext;
+    }
+
+    static ExecutionStrategyInstrumentationContext nonNullCtx(Supplier<ExecutionStrategyInstrumentationContext> nullableContext) {
+        if (Backdoor.isUseInstrumentation()) {
+            return nonNullCtx(nullableContext.get());
+        }
+        return NOOP;
     }
 
     @Internal

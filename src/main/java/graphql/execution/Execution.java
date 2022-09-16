@@ -71,8 +71,9 @@ public class Execution {
             throw rte;
         }
 
+        Instrumentation instrumentationToUse = Backdoor.instrumentationToUse(instrumentation);
         ExecutionContext executionContext = newExecutionContextBuilder()
-                .instrumentation(instrumentation)
+                .instrumentation(instrumentationToUse)
                 .instrumentationState(instrumentationState)
                 .executionId(executionId)
                 .graphQLSchema(graphQLSchema)

@@ -32,9 +32,11 @@ public class AsyncSerialExecutionStrategy extends AbstractAsyncExecutionStrategy
     public CompletableFuture<ExecutionResult> execute(ExecutionContext executionContext, ExecutionStrategyParameters parameters) throws NonNullableFieldWasNullException {
 
         Instrumentation instrumentation = executionContext.getInstrumentation();
-        InstrumentationExecutionStrategyParameters instrumentationParameters = new InstrumentationExecutionStrategyParameters(executionContext, parameters);
-        InstrumentationContext<ExecutionResult> executionStrategyCtx = nonNullCtx(instrumentation.beginExecutionStrategy(instrumentationParameters,
-                executionContext.getInstrumentationState())
+        InstrumentationContext<ExecutionResult> executionStrategyCtx = nonNullCtx(() -> {
+                    InstrumentationExecutionStrategyParameters instrumentationParameters = new InstrumentationExecutionStrategyParameters(executionContext, parameters);
+                    return instrumentation.beginExecutionStrategy(instrumentationParameters,
+                            executionContext.getInstrumentationState());
+                }
         );
         MergedSelectionSet fields = parameters.getFields();
         ImmutableList<String> fieldNames = ImmutableList.copyOf(fields.keySet());
