@@ -22,6 +22,10 @@ public class ResolveType {
 
     public GraphQLObjectType resolveType(ExecutionContext executionContext, MergedField field, Object source, ExecutionStepInfo executionStepInfo, GraphQLType fieldType, Object localContext) {
         GraphQLObjectType resolvedType;
+        //
+        // We are building a DataFetchingFieldSelectionSet and a TypeResolutionEnvironment here ALWAYS
+        // but if it's an object type then its never needed.  This should be fixed
+        //
         DataFetchingFieldSelectionSet fieldSelectionSet = buildSelectionSet(executionContext, field, (GraphQLOutputType) fieldType, executionStepInfo);
         TypeResolutionEnvironment env = TypeResolutionParameters.newParameters()
                 .field(field)

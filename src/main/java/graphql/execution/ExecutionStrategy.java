@@ -208,7 +208,25 @@ public abstract class ExecutionStrategy {
                 new InstrumentationFieldParameters(executionContext, executionStepInfo), executionContext.getInstrumentationState()
         ));
 
+        //
+        // Fetching the field here allocates a graphql.execution.FetchedValue here from data fetching
+        // a FetchedValue has the value (unboxed) the raw fetched value (from the DF) and the locale context and
+        // any errors.  It's a quasi representation of the outcomes of a DF - which can be more than just a value
+        //
         CompletableFuture<FetchedValue> fetchFieldFuture = fetchField(executionContext, parameters);
+        //
+        // graphql.execution.FieldValueInfo here represents the completed value once the coercing or object / list expansion
+        // has take place.  It captures the type of object (OBJECT,LIST,NULL,SCALAR, ENUM), a CF<ExecutionResult> of the
+        // value and if the completed value is a list then it has a List<FieldValueInfo> of the inner list objects.
+        //
+        // The FieldValueInfo is used by the DataLoader code to know when a field value completes what type if was
+        // (from the enum) and if it's a list it uses the List<FieldValueInfo> enums for tracking reasons.  Its never
+        // uses the actual field value in that child list so List<graphql.execution.FieldValueInfo.CompleteValueType> would
+        // actually suffice for DataLoader code.
+        //
+        // completeField() returns a FieldValueInfo BUT its other is never used here.  Only the completed field value
+        // and hence no need for the enum etc here.  Inside the method that maybe needed - but not here
+        //
         CompletableFuture<FieldValueInfo> result = fetchFieldFuture.thenApply((fetchedValue) ->
                 completeField(executionContext, parameters, fetchedValue));
 
@@ -240,6 +258,19 @@ public abstract class ExecutionStrategy {
 
         GraphQLCodeRegistry codeRegistry = executionContext.getGraphQLSchema().getCodeRegistry();
         GraphQLOutputType fieldType = fieldDef.getType();
+
+        //
+        //
+        // Currently these are suppliers and hence there is an allocation of the lambda object.  The ExecutionStepInfo
+        // one is probably useless - since later code will ask for ExecutionStepInfo anyway I think.  This needs to be
+        // looked at since we might be able to removed this supplier and get a tiny gain
+        //
+        // The others ARE useful - we have already proven that they save memory and time, since if you never ask for args
+        // and selection set we don't need to collect field values or generate the ENF.
+        //
+        // The other PR on allowing NO DFE at all shows that much of this can be avoided for simple property fetches,
+        // and we saw a 5% increase in throughput because of that for certain list intensive cases
+        //
 
         // if the DF (like PropertyDataFetcher) does not use the arguments of execution step info then dont build any
         Supplier<ExecutionStepInfo> executionStepInfo = FpKit.intraThreadMemoize(
@@ -284,6 +315,9 @@ public abstract class ExecutionStrategy {
         ExecutionId executionId = executionContext.getExecutionId();
         try {
             Object fetchedValueRaw = dataFetcher.get(environment);
+
+            //
+            // This will wrap the value into a CF if it's not one
             fetchedValue = Async.toCompletableFuture(fetchedValueRaw);
         } catch (Exception e) {
             if (logNotSafe.isDebugEnabled()) {
@@ -304,6 +338,12 @@ public abstract class ExecutionStrategy {
                     }
                 })
                 .thenCompose(Function.identity())
+                //
+                // This is what creates the FetchedValue.  This does 3 things.  It unwraps DataFetcher results
+                // and unboxes the value and captures localContext OR it propagates locale context from the
+                // parameters.  It also captures the raw fetched value but as far as I can see this is never used.
+                // We could stop doing that say in the future
+                //
                 .thenApply(result -> unboxPossibleDataFetcherResult(executionContext, parameters, result));
     }
 
@@ -387,6 +427,9 @@ public abstract class ExecutionStrategy {
         Field field = parameters.getField().getSingleField();
         GraphQLObjectType parentType = (GraphQLObjectType) parameters.getExecutionStepInfo().getUnwrappedNonNullType();
         GraphQLFieldDefinition fieldDef = getFieldDef(executionContext.getGraphQLSchema(), parentType, field);
+        //
+        // This creates a new ExecutionStepInfo here - it maybe that we could save this creation by passing it in some how
+        // worth an investigation
         ExecutionStepInfo executionStepInfo = createExecutionStepInfo(executionContext, parameters, fieldDef, parentType);
 
         Instrumentation instrumentation = executionContext.getInstrumentation();
@@ -395,6 +438,12 @@ public abstract class ExecutionStrategy {
                 instrumentationParams, executionContext.getInstrumentationState()
         ));
 
+        //
+        // NonNullableFieldValidator holds the executionStepInfo at this point (so it can put it into exception)
+        // and the execution context - I suspect this could be unwrapped as a class - just call a static method
+        // with these two variables as parameters.  The trick will be if the executionStepInfo has moved
+        // on when this is later called.  I think we should look into this to see if its possible to unwind.
+        //
         NonNullableFieldValidator nonNullableFieldValidator = new NonNullableFieldValidator(executionContext, executionStepInfo);
 
         ExecutionStrategyParameters newParameters = parameters.transform(builder ->
@@ -407,6 +456,14 @@ public abstract class ExecutionStrategy {
         if (log.isDebugEnabled()) {
             log.debug("'{}' completing field '{}'...", executionContext.getExecutionId(), executionStepInfo.getPath());
         }
+
+        //
+        // This is where the FieldValueInfo is allocated (inside completeValue()) however its never used.
+        // The CF<ExecutionResult> is used for completing beginFieldComplete instrumentation say
+        // So this is a place where this is friction in removing a  ExecutionResult as a returned value from object
+        // completion (we could make it lazy say and only those that need this could get it if we collapse
+        // passing back ER -> <data> as an improvement
+        //
 
         FieldValueInfo fieldValueInfo = completeValue(executionContext, newParameters);
 
@@ -441,6 +498,9 @@ public abstract class ExecutionStrategy {
 
         if (result == null) {
             fieldValue = completeValueForNull(executionContext, parameters);
+            //
+            // This could be a static NULL FieldValueInfo - no need for allocation
+            //
             return FieldValueInfo.newFieldValueInfo(NULL).fieldValue(fieldValue).build();
         } else if (isList(fieldType)) {
             return completeValueForList(executionContext, parameters, result);
@@ -479,6 +539,12 @@ public abstract class ExecutionStrategy {
 
     protected CompletableFuture<ExecutionResult> completeValueForNull(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
         return Async.tryCatch(() -> {
+            //
+            // A possible optimisation here is to always return a static NULL result.  Null is null
+            //
+            // Also the executionContext.getErrors() is NOT needed.  Its ignored actually when the ER
+            // is later put into the top level ER on the way out.
+            //
             Object nullValue = parameters.getNonNullFieldValidator().validate(parameters.getPath(), null);
             return completedFuture(new ExecutionResultImpl(nullValue, executionContext.getErrors()));
         });
@@ -532,13 +598,22 @@ public abstract class ExecutionStrategy {
         List<FieldValueInfo> fieldValueInfos = new ArrayList<>(size.orElse(1));
         int index = 0;
         for (Object item : iterableValues) {
+            //
+            // Allocates a new result path by index
+            //
             ResultPath indexedPath = parameters.getPath().segment(index);
 
+            //
+            // Howefver inside this method we do the same thing again, allocating a new result path by index
             ExecutionStepInfo stepInfoForListElement = executionStepInfoFactory.newExecutionStepInfoForListElement(executionStepInfo, index);
 
             NonNullableFieldValidator nonNullableFieldValidator = new NonNullableFieldValidator(executionContext, stepInfoForListElement);
 
             int finalIndex = index;
+            //
+            // For every item in the list we will create a FetchedValue - we will then turn it into a FieldValueInfo
+            // as we complete each list item.
+            //
             FetchedValue value = unboxPossibleDataFetcherResult(executionContext, parameters, item);
 
             ExecutionStrategyParameters newParameters = parameters.transform(builder ->
@@ -565,6 +640,11 @@ public abstract class ExecutionStrategy {
                 completeListCtx.onCompleted(executionResult, exception);
                 return;
             }
+            //
+            // Each of the list ER objects is now unwrapped right here and put into an list of values
+            // but again asa single ER - which comes back to the idea of the completeValueXXX methods
+            // returning an ER
+            //
             List<Object> completedResults = new ArrayList<>(results.size());
             for (ExecutionResult completedValue : results) {
                 completedResults.add(completedValue.getData());
@@ -574,6 +654,15 @@ public abstract class ExecutionStrategy {
         });
         overallResult.whenComplete(completeListCtx::onCompleted);
 
+        //
+        // This allocates an object that points to all the values in the list as well as the list.  This is never
+        // used.  The DataLoader code tracks the individual enums for each item but never the value.
+        //
+        // See graphql.execution.instrumentation.dataloader.FieldLevelTrackingApproach.getCountForList
+        //
+        // We would need a object with structure because it allows for lists within list and objects with lists within
+        // objects so it might be hard to make real savings here.
+        //
         return FieldValueInfo.newFieldValueInfo(LIST)
                 .fieldValue(overallResult)
                 .fieldValueInfos(fieldValueInfos)
@@ -604,6 +693,10 @@ public abstract class ExecutionStrategy {
         } catch (NonNullableFieldWasNullException e) {
             return exceptionallyCompletedFuture(e);
         }
+        //
+        // again the ER is not actually needed since it will be unpacked as a value and the errors never
+        // used
+        //
         return completedFuture(new ExecutionResultImpl(serialized, executionContext.getErrors()));
     }
 
@@ -629,6 +722,9 @@ public abstract class ExecutionStrategy {
         } catch (NonNullableFieldWasNullException e) {
             return exceptionallyCompletedFuture(e);
         }
+        //
+        // Same ER jiggery pokery here.  No need for the ER and the errors are not used
+        //
         return completedFuture(new ExecutionResultImpl(serialized, executionContext.getErrors()));
     }
 
