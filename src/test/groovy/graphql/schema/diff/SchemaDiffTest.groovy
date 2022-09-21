@@ -105,7 +105,7 @@ class SchemaDiffTest extends Specification {
     }
 
 
-    def "change_in_null_ness"() {
+    def "change_in_null_ness_input_or_arg"() {
 
         given:
         Type baseLine = new NonNullType(new ListType(new TypeName("foo")))
@@ -116,12 +116,12 @@ class SchemaDiffTest extends Specification {
 
         def diff = new SchemaDiff()
 
-        def sameType = diff.checkTypeWithNonNullAndList(baseLine, same)
+        def sameType = diff.checkTypeWithNonNullAndListOnInputOrArg(baseLine, same)
 
-        def lessStrict = diff.checkTypeWithNonNullAndList(baseLine, less)
+        def lessStrict = diff.checkTypeWithNonNullAndListOnInputOrArg(baseLine, less)
 
         // not allowed as old clients wont work
-        def moreStrict = diff.checkTypeWithNonNullAndList(less, baseLine)
+        def moreStrict = diff.checkTypeWithNonNullAndListOnInputOrArg(less, baseLine)
 
 
         expect:
@@ -130,7 +130,31 @@ class SchemaDiffTest extends Specification {
         moreStrict == DiffCategory.STRICTER
     }
 
-    def "change_in_list_ness"() {
+    def "change_in_null_ness_object_or_interface"() {
+
+        given:
+        Type nonNull = new NonNullType(new ListType(new TypeName("foo")))
+        Type nonNullDuplicate = new NonNullType(new ListType(new TypeName("foo")))
+
+        Type nullable = new ListType(new TypeName("foo"))
+
+
+        def diff = new SchemaDiff()
+
+        def sameType = diff.checkTypeWithNonNullAndListOnObjectOrInterface(nonNull, nonNullDuplicate)
+
+        def removeGuarantee = diff.checkTypeWithNonNullAndListOnObjectOrInterface(nonNull, nullable)
+
+        def addGuarantee = diff.checkTypeWithNonNullAndListOnObjectOrInterface(nullable, nonNull)
+
+
+        expect:
+        sameType == null
+        removeGuarantee == DiffCategory.STRICTER
+        addGuarantee == null
+    }
+
+    def "change_in_list_ness_input_or_arg"() {
 
         given:
         Type baseLine = new NonNullType(new ListType(new TypeName("foo")))
@@ -138,7 +162,21 @@ class SchemaDiffTest extends Specification {
 
         def diff = new SchemaDiff()
 
-        def noLongerList = diff.checkTypeWithNonNullAndList(baseLine, notList)
+        def noLongerList = diff.checkTypeWithNonNullAndListOnInputOrArg(baseLine, notList)
+
+        expect:
+        noLongerList == DiffCategory.INVALID
+    }
+
+    def "change_in_list_ness_object_or_interface"() {
+
+        given:
+        Type baseLine = new NonNullType(new ListType(new TypeName("foo")))
+        Type notList = new NonNullType(new TypeName("foo"))
+
+        def diff = new SchemaDiff()
+
+        def noLongerList = diff.checkTypeWithNonNullAndListOnObjectOrInterface(baseLine, notList)
 
         expect:
         noLongerList == DiffCategory.INVALID
@@ -344,16 +382,21 @@ class SchemaDiffTest extends Specification {
         diff.diffSchema(diffSet, chainedReporter)
 
         expect:
-        reporter.breakageCount == 2
-        reporter.breakages[0].category == DiffCategory.INVALID
+        reporter.breakageCount == 3
+        reporter.breakages[0].category == DiffCategory.STRICTER
         reporter.breakages[0].typeName == 'Questor'
         reporter.breakages[0].typeKind == TypeKind.InputObject
-        reporter.breakages[0].fieldName == 'queryTarget'
+        reporter.breakages[0].fieldName == 'nestedInput'
 
-        reporter.breakages[1].category == DiffCategory.STRICTER
+        reporter.breakages[1].category == DiffCategory.INVALID
         reporter.breakages[1].typeName == 'Questor'
         reporter.breakages[1].typeKind == TypeKind.InputObject
-        reporter.breakages[1].fieldName == 'newMandatoryField'
+        reporter.breakages[1].fieldName == 'queryTarget'
+
+        reporter.breakages[2].category == DiffCategory.STRICTER
+        reporter.breakages[2].typeName == 'Questor'
+        reporter.breakages[2].typeKind == TypeKind.InputObject
+        reporter.breakages[2].fieldName == 'newMandatoryField'
 
     }
 
@@ -433,7 +476,7 @@ class SchemaDiffTest extends Specification {
         diff.diffSchema(diffSet, chainedReporter)
 
         expect:
-        reporter.breakageCount == 4
+        reporter.breakageCount == 3
         reporter.breakages[0].category == DiffCategory.STRICTER
         reporter.breakages[0].typeName == 'Query'
         reporter.breakages[0].typeKind == TypeKind.Object
@@ -444,16 +487,10 @@ class SchemaDiffTest extends Specification {
         reporter.breakages[1].typeKind == TypeKind.Object
         reporter.breakages[1].fieldName == 'beings'
 
-        reporter.breakages[2].category == DiffCategory.STRICTER
+        reporter.breakages[2].category == DiffCategory.INVALID
         reporter.breakages[2].typeName == 'Query'
         reporter.breakages[2].typeKind == TypeKind.Object
         reporter.breakages[2].fieldName == 'customScalar'
-
-        reporter.breakages[3].category == DiffCategory.STRICTER
-        reporter.breakages[3].typeName == 'Query'
-        reporter.breakages[3].typeKind == TypeKind.Object
-        reporter.breakages[3].fieldName == 'wizards'
-
     }
 
     def "dangerous changes"() {
@@ -504,7 +541,7 @@ class SchemaDiffTest extends Specification {
         diff.diffSchema(diffSet, chainedReporter)
 
         expect:
-        reporter.dangerCount == 13
+        reporter.dangerCount == 14
         reporter.breakageCount == 0
         reporter.dangers.every {
             it.getCategory() == DiffCategory.DEPRECATION_ADDED
@@ -523,7 +560,7 @@ class SchemaDiffTest extends Specification {
 
         expect:
         reporter.dangerCount == 0
-        reporter.breakageCount == 11
+        reporter.breakageCount == 12
         reporter.breakages.every {
             it.getCategory() == DiffCategory.DEPRECATION_REMOVED
         }

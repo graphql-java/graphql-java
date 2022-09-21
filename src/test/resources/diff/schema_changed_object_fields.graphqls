@@ -18,6 +18,9 @@ type Query {
     #allCharacters : [Character!] @deprecated(reason: "no longer supported")
     allCharacters : [Character!]
 
+    #allCharactersByTemperament : [[Character]]
+    allCharactersByTemperament : [[Character!]]!
+
     #customScalar : CustomScalar
     customScalar : [CustomScalar]!
 }
@@ -28,7 +31,7 @@ type Mutation {
 }
 
 input Questor {
-    beingID : ID
+    beingID : ID!
     queryTarget : String
     nestedInput : NestedInput
 }
@@ -41,7 +44,8 @@ scalar CustomScalar
 
 
 interface Being {
-    id : ID
+    #id : ID
+    id : ID!
     name : String
     nameInQuenyan : String
     invitedBy(id : ID) : Being
@@ -49,7 +53,8 @@ interface Being {
 
 
 type Ainur implements Being {
-    id : ID
+    #id : ID
+    id : ID!
     name : String
     nameInQuenyan : String
     invitedBy(id : ID) : Being
@@ -58,7 +63,8 @@ type Ainur implements Being {
 
 
 type Istari implements Being {
-    id : ID
+    #id : ID
+    id : ID!
     name : String
     nameInQuenyan : String
     invitedBy(id : ID) : Being
@@ -68,7 +74,8 @@ type Istari implements Being {
 }
 
 type Deity implements Being {
-    id : ID
+    #id : ID
+    id : ID!
     name : String
     nameInQuenyan : String
     invitedBy(id : ID) : Being
