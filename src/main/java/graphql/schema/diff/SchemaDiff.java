@@ -840,34 +840,39 @@ public class SchemaDiff {
         }
 
         while (true) {
-            if (oldTypeInfo.isNonNull() && newTypeInfo.isNonNull()) {
-                // if they're both non-null, compare the unwrapped types
-                oldTypeInfo = oldTypeInfo.unwrapOne();
-                newTypeInfo = newTypeInfo.unwrapOne();
-            } else if (oldTypeInfo.isNonNull() && !newTypeInfo.isNonNull()) {
-                // inputs and arguments are allowed to become less strict (go from non-null to nullable)
-                oldTypeInfo = oldTypeInfo.unwrapOne();
-            } else if (!oldTypeInfo.isNonNull() && newTypeInfo.isNonNull()) {
-                // nullable to non-null creates a stricter requirement for clients to specify
-                return DiffCategory.STRICTER;
-            } else if (oldTypeInfo.isList() && newTypeInfo.isList()) {
-                // if they're both list, compare the unwrapped types
-                oldTypeInfo = oldTypeInfo.unwrapOne();
-                newTypeInfo = newTypeInfo.unwrapOne();
-            } else if (oldTypeInfo.isList() && !newTypeInfo.isList()) {
-                return DiffCategory.INVALID;
-            } else if (oldTypeInfo.isPlain()) {
-                // we've unwrapped all the types of `old`
-                if (newTypeInfo.isList()) {
-                    return DiffCategory.INVALID;
-                } else if (newTypeInfo.isNonNull()) {
-                    // nullable to non-null creates a stricter requirement for clients to specify
-                    return DiffCategory.STRICTER;
+            if (oldTypeInfo.isNonNull()) {
+                if (newTypeInfo.isNonNull()) {
+                    // if they're both non-null, compare the unwrapped types
+                    oldTypeInfo = oldTypeInfo.unwrapOne();
+                    newTypeInfo = newTypeInfo.unwrapOne();
+                } else {
+                    // non-null to nullable is valid, as long as the underlying types are also valid
+                    oldTypeInfo = oldTypeInfo.unwrapOne();
                 }
-                break;
+            } else if (oldTypeInfo.isList()) {
+                if (newTypeInfo.isList()) {
+                    // if they're both lists, compare the unwrapped types
+                    oldTypeInfo = oldTypeInfo.unwrapOne();
+                    newTypeInfo = newTypeInfo.unwrapOne();
+                } else if (newTypeInfo.isNonNull()){
+                    // nullable to non-null creates a stricter input requirement for clients to specify
+                    return DiffCategory.STRICTER;
+                } else {
+                    // list to non-list is not valid
+                    return DiffCategory.INVALID;
+                }
+            } else {
+                if (newTypeInfo.isNonNull()) {
+                    // nullable to non-null creates a stricter input requirement for clients to specify
+                    return DiffCategory.STRICTER;
+                } else if (newTypeInfo.isList()) {
+                    // non-list to list is not valid
+                    return DiffCategory.INVALID;
+                } else {
+                   return null;
+                }
             }
         }
-        return null;
     }
 
     DiffCategory checkTypeWithNonNullAndListOnObjectOrInterface(Type oldType, Type newType) {
@@ -879,34 +884,39 @@ public class SchemaDiff {
         }
 
         while (true) {
-            if (oldTypeInfo.isNonNull() && newTypeInfo.isNonNull()) {
-                // if they're both non-null, compare the unwrapped types
-                oldTypeInfo = oldTypeInfo.unwrapOne();
-                newTypeInfo = newTypeInfo.unwrapOne();
-            } else if (!oldTypeInfo.isNonNull() && newTypeInfo.isNonNull()) {
-                // objects and interfaces are allowed to add more guarantees (go from nullable to non-null)
-                newTypeInfo = newTypeInfo.unwrapOne();
-            } else if (oldTypeInfo.isNonNull() && !newTypeInfo.isNonNull()) {
-                // non-null to nullable revokes a previous guarantee and unguarded client code may try to access null
-                return DiffCategory.STRICTER;
-            } else if (oldTypeInfo.isList() && newTypeInfo.isList()) {
-                // if they're both list, compare the unwrapped types
-                oldTypeInfo = oldTypeInfo.unwrapOne();
-                newTypeInfo = newTypeInfo.unwrapOne();
-            } else if (oldTypeInfo.isList() && newTypeInfo.isNonNull()) {
-                // objects and interfaces are allowed to add more guarantees (go from nullable to non-null)
-                newTypeInfo = newTypeInfo.unwrapOne();
-            } else if (oldTypeInfo.isList() && !newTypeInfo.isList()) {
-                return DiffCategory.INVALID;
-            } else if (oldTypeInfo.isPlain()) {
-                // we've unwrapped all the types of `old`
+            if (oldTypeInfo.isNonNull()) {
+                if (newTypeInfo.isNonNull()) {
+                    // if they're both non-null, compare the unwrapped types
+                    oldTypeInfo = oldTypeInfo.unwrapOne();
+                    newTypeInfo = newTypeInfo.unwrapOne();
+                } else {
+                    // non-null to nullable requires a stricter check from clients since it removes the guarantee of presence
+                    return DiffCategory.STRICTER;
+                }
+            } else if (oldTypeInfo.isList()) {
                 if (newTypeInfo.isList()) {
+                    // if they're both lists, compare the unwrapped types
+                    oldTypeInfo = oldTypeInfo.unwrapOne();
+                    newTypeInfo = newTypeInfo.unwrapOne();
+                } else if (newTypeInfo.isNonNull()){
+                    // nullable to non-null is valid, as long as the underlying types are also valid
+                    newTypeInfo = newTypeInfo.unwrapOne();
+                } else {
+                    // list to non-list is not valid
                     return DiffCategory.INVALID;
                 }
-                break;
+            } else {
+                if (newTypeInfo.isNonNull()) {
+                    // nullable to non-null is valid, as long as the underlying types are also valid
+                    newTypeInfo = newTypeInfo.unwrapOne();
+                } else if (newTypeInfo.isList()) {
+                    // non-list to list is not valid
+                    return DiffCategory.INVALID;
+                } else {
+                    return null;
+                }
             }
         }
-        return null;
     }
 
 
