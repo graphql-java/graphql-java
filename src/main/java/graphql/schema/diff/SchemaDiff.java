@@ -854,7 +854,7 @@ public class SchemaDiff {
                     // if they're both lists, compare the unwrapped types
                     oldTypeInfo = oldTypeInfo.unwrapOne();
                     newTypeInfo = newTypeInfo.unwrapOne();
-                } else if (newTypeInfo.isNonNull()){
+                } else if (newTypeInfo.isNonNull()) {
                     // nullable to non-null creates a stricter input requirement for clients to specify
                     return DiffCategory.STRICTER;
                 } else {
@@ -869,7 +869,7 @@ public class SchemaDiff {
                     // non-list to list is not valid
                     return DiffCategory.INVALID;
                 } else {
-                   return null;
+                    return null;
                 }
             }
         }
@@ -898,7 +898,7 @@ public class SchemaDiff {
                     // if they're both lists, compare the unwrapped types
                     oldTypeInfo = oldTypeInfo.unwrapOne();
                     newTypeInfo = newTypeInfo.unwrapOne();
-                } else if (newTypeInfo.isNonNull()){
+                } else if (newTypeInfo.isNonNull()) {
                     // nullable to non-null is valid, as long as the underlying types are also valid
                     newTypeInfo = newTypeInfo.unwrapOne();
                 } else {
