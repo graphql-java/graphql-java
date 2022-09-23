@@ -157,29 +157,33 @@ class SchemaDiffTest extends Specification {
     def "change_in_list_ness_input_or_arg"() {
 
         given:
-        Type baseLine = new NonNullType(new ListType(new TypeName("foo")))
+        Type list = new NonNullType(new ListType(new TypeName("foo")))
         Type notList = new NonNullType(new TypeName("foo"))
 
         def diff = new SchemaDiff()
 
-        def noLongerList = diff.checkTypeWithNonNullAndListOnInputOrArg(baseLine, notList)
+        def noLongerList = diff.checkTypeWithNonNullAndListOnInputOrArg(list, notList)
+        def nowList = diff.checkTypeWithNonNullAndListOnInputOrArg(notList, list)
 
         expect:
         noLongerList == DiffCategory.INVALID
+        nowList == DiffCategory.INVALID
     }
 
     def "change_in_list_ness_object_or_interface"() {
 
         given:
-        Type baseLine = new NonNullType(new ListType(new TypeName("foo")))
+        Type list = new NonNullType(new ListType(new TypeName("foo")))
         Type notList = new NonNullType(new TypeName("foo"))
 
         def diff = new SchemaDiff()
 
-        def noLongerList = diff.checkTypeWithNonNullAndListOnObjectOrInterface(baseLine, notList)
+        def noLongerList = diff.checkTypeWithNonNullAndListOnObjectOrInterface(list, notList)
+        def nowList = diff.checkTypeWithNonNullAndListOnObjectOrInterface(list, notList)
 
         expect:
         noLongerList == DiffCategory.INVALID
+        nowList == DiffCategory.INVALID
     }
 
     DiffEvent lastBreakage(CapturingReporter capturingReporter) {
@@ -382,21 +386,26 @@ class SchemaDiffTest extends Specification {
         diff.diffSchema(diffSet, chainedReporter)
 
         expect:
-        reporter.breakageCount == 3
+        reporter.breakageCount == 4
         reporter.breakages[0].category == DiffCategory.STRICTER
-        reporter.breakages[0].typeName == 'Questor'
-        reporter.breakages[0].typeKind == TypeKind.InputObject
-        reporter.breakages[0].fieldName == 'nestedInput'
+        reporter.breakages[0].typeName == 'Query'
+        reporter.breakages[0].typeKind == TypeKind.Object
+        reporter.breakages[0].fieldName == 'being'
 
-        reporter.breakages[1].category == DiffCategory.INVALID
+        reporter.breakages[1].category == DiffCategory.STRICTER
         reporter.breakages[1].typeName == 'Questor'
         reporter.breakages[1].typeKind == TypeKind.InputObject
-        reporter.breakages[1].fieldName == 'queryTarget'
+        reporter.breakages[1].fieldName == 'nestedInput'
 
-        reporter.breakages[2].category == DiffCategory.STRICTER
+        reporter.breakages[2].category == DiffCategory.INVALID
         reporter.breakages[2].typeName == 'Questor'
         reporter.breakages[2].typeKind == TypeKind.InputObject
-        reporter.breakages[2].fieldName == 'newMandatoryField'
+        reporter.breakages[2].fieldName == 'queryTarget'
+
+        reporter.breakages[3].category == DiffCategory.STRICTER
+        reporter.breakages[3].typeName == 'Questor'
+        reporter.breakages[3].typeKind == TypeKind.InputObject
+        reporter.breakages[3].fieldName == 'newMandatoryField'
 
     }
 
@@ -478,9 +487,9 @@ class SchemaDiffTest extends Specification {
         expect:
         reporter.breakageCount == 3
         reporter.breakages[0].category == DiffCategory.STRICTER
-        reporter.breakages[0].typeName == 'Query'
+        reporter.breakages[0].typeName == 'Istari'
         reporter.breakages[0].typeKind == TypeKind.Object
-        reporter.breakages[0].fieldName == 'being'
+        reporter.breakages[0].fieldName == 'temperament'
 
         reporter.breakages[1].category == DiffCategory.INVALID
         reporter.breakages[1].typeName == 'Query'

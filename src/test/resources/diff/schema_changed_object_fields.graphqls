@@ -4,8 +4,7 @@ schema {
 }
 
 type Query {
-    #being(id : ID, type : String = "wizard") : Being
-    being(id : ID, type : String, newArg : String!) : Being
+    being(id : ID, type : String = "wizard") : Being
 
     #beings(type : String) : [Being]
     beings(type : String) : Being
@@ -69,7 +68,9 @@ type Istari implements Being {
     nameInQuenyan : String
     invitedBy(id : ID) : Being
     colour : String
-    temperament : Temperament!
+
+    #temperament : Temperament!
+    temperament : Temperament
 
 }
 

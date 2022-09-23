@@ -4,7 +4,8 @@ schema {
 }
 
 type Query {
-    being(id : ID, type : String = "wizard") : Being
+    #being(id : ID, type : String = "wizard") : Being
+    being(id : ID, type : String, newArg : String!) : Being
     beings(type : String) : [Being]
 
     wizards : [Istari]
