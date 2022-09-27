@@ -62,7 +62,10 @@ class GraphQLInputObjectTypeTest extends Specification {
     def "deprecated default value builder works"() {
         given:
         def graphQLContext = GraphQLContext.getDefault()
-        def schema = GraphQLSchema.newSchema().query(StarWarsSchema.queryType).build()
+        def schema = GraphQLSchema.newSchema()
+                .query(StarWarsSchema.queryType)
+                .codeRegistry(StarWarsSchema.codeRegistry)
+                .build()
         def validationUtil = new ValidationUtil()
         def inputObjectType = GraphQLInputObjectType.newInputObject()
                 .name("inputObjectType")

@@ -55,7 +55,6 @@ public class StarWarsSchema {
                     .name("appearsIn")
                     .description("Which movies they appear in.")
                     .type(list(episodeEnum)))
-            .typeResolver(StarWarsData.getCharacterTypeResolver())
             .comparatorRegistry(BY_NAME_REGISTRY)
             .build();
 
@@ -180,6 +179,7 @@ public class StarWarsSchema {
             .dataFetcher(humanCoordinates, humanDataFetcher)
             .dataFetcher(droidCoordinates, droidDataFetcher)
             .dataFetcher(createHumanCoordinates, createHumanDataFetcher)
+            .typeResolver("Character", StarWarsData.getCharacterTypeResolver())
             .build();
 
     public static GraphQLSchema starWarsSchema = GraphQLSchema.newSchema()
