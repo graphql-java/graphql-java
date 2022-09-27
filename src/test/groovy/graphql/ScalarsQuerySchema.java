@@ -22,7 +22,7 @@ public class ScalarsQuerySchema {
             .field(newFieldDefinition()
                     .name("floatNaN")
                     .type(Scalars.GraphQLFloat)
-                    .staticValue(Double.NaN))
+                    .staticValue(Double.NaN)) // Retain for test coverage
             // Scalars with input of same type, value echoed back
             .field(newFieldDefinition()
                     .name("floatNaNInput")

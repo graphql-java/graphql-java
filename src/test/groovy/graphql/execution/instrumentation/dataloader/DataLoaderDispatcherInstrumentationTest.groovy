@@ -10,6 +10,7 @@ import graphql.execution.ExecutionContext
 import graphql.execution.ExecutionStrategyParameters
 import graphql.execution.instrumentation.ChainedInstrumentation
 import graphql.execution.instrumentation.Instrumentation
+import graphql.execution.instrumentation.InstrumentationState
 import graphql.execution.instrumentation.SimpleInstrumentation
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters
 import graphql.schema.DataFetcher
@@ -132,7 +133,7 @@ class DataLoaderDispatcherInstrumentationTest extends Specification {
         def dlInstrumentation = new DataLoaderDispatcherInstrumentation()
         def enhancingInstrumentation = new SimpleInstrumentation() {
             @Override
-            ExecutionInput instrumentExecutionInput(ExecutionInput executionInput, InstrumentationExecutionParameters parameters) {
+            ExecutionInput instrumentExecutionInput(ExecutionInput executionInput, InstrumentationExecutionParameters parameters, InstrumentationState state) {
                 assert executionInput.getDataLoaderRegistry() == startingDataLoaderRegistry
                 return executionInput.transform({ builder -> builder.dataLoaderRegistry(enhancedDataLoaderRegistry) })
             }

@@ -4,6 +4,7 @@ import graphql.ErrorType
 import graphql.ExecutionResult
 import graphql.GraphQLContext
 import graphql.execution.instrumentation.ExecutionStrategyInstrumentationContext
+import graphql.execution.instrumentation.InstrumentationState
 import graphql.execution.instrumentation.SimpleInstrumentation
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters
 import graphql.language.Field
@@ -267,7 +268,7 @@ class AsyncExecutionStrategyTest extends Specification {
                 .locale(Locale.getDefault())
                 .instrumentation(new SimpleInstrumentation() {
                     @Override
-                    ExecutionStrategyInstrumentationContext beginExecutionStrategy(InstrumentationExecutionStrategyParameters parameters) {
+                    ExecutionStrategyInstrumentationContext beginExecutionStrategy(InstrumentationExecutionStrategyParameters parameters, InstrumentationState state) {
                         return new ExecutionStrategyInstrumentationContext() {
 
                             @Override

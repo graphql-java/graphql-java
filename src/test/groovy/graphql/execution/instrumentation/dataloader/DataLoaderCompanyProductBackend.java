@@ -3,9 +3,8 @@ package graphql.execution.instrumentation.dataloader;
 
 import com.google.common.collect.ImmutableList;
 import org.dataloader.DataLoader;
+import org.dataloader.DataLoaderFactory;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -27,7 +26,7 @@ public class DataLoaderCompanyProductBackend {
             mkCompany(projectCount);
         }
 
-        projectsLoader = new DataLoader<>(keys -> getProjectsForCompanies(keys).thenApply(projects -> keys
+        projectsLoader = DataLoaderFactory.newDataLoader(keys -> getProjectsForCompanies(keys).thenApply(projects -> keys
                 .stream()
                 .map(companyId -> projects.stream()
                         .filter(project -> project.getCompanyId().equals(companyId))

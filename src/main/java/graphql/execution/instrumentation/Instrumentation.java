@@ -468,7 +468,7 @@ public interface Instrumentation {
      *
      * @return a non null instrumented ExecutionContext, the default is to return to the same object
      *
-     * @deprecated use {@link #instrumentExecutionContext(ExecutionContext, InstrumentationExecutionParameters)} instead
+     * @deprecated use {@link #instrumentExecutionContext(ExecutionContext, InstrumentationExecutionParameters, InstrumentationState)} instead
      */
     @Deprecated
     @DeprecatedAt("2022-07-26")
