@@ -50,6 +50,28 @@ class SchemaDiffingTest extends Specification {
         diff.size() == 1
 
     }
+    def "test rename field 2"() {
+        given:
+        def schema1 = schema("""
+           type Query {
+            fixed: String
+            hello: String
+           } 
+        """)
+        def schema2 = schema("""
+           type Query {
+            hello2: String
+            fixed: String
+           } 
+        """)
+
+        when:
+        def diff = new SchemaDiffing().diffGraphQLSchema(schema1, schema2)
+        diff.each { println it }
+        then:
+        diff.size() == 1
+
+    }
 
     def "adding fields and rename and delete"() {
         given:

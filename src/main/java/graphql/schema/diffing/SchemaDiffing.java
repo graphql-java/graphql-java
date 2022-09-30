@@ -159,6 +159,7 @@ public class SchemaDiffing {
     List<EditOperation> diffImpl(SchemaGraph sourceGraph, SchemaGraph targetGraph) throws Exception {
         int sizeDiff = targetGraph.size() - sourceGraph.size();
         System.out.println("graph diff: " + sizeDiff);
+        PossibleMappings possibleMappings = new PossibleMappings(sourceGraph, targetGraph);
         FillupIsolatedVertices fillupIsolatedVertices = new FillupIsolatedVertices(sourceGraph, targetGraph);
         fillupIsolatedVertices.ensureGraphAreSameSize();
         FillupIsolatedVertices.IsolatedVertices isolatedVertices = fillupIsolatedVertices.isolatedVertices;
@@ -408,44 +409,22 @@ public class SchemaDiffing {
         Set<Vertex> partialMappingTargetSet = new LinkedHashSet<>(partialMapping.getTargets());
 
 
-        List<Callable<Void>> callables = new ArrayList<>();
         // costMatrix[0] is the row for  v_i
         for (int i = level - 1; i < sourceList.size(); i++) {
             Vertex v = sourceList.get(i);
-            int finalI = i;
-            Callable<Void> callable = () -> {
-                try {
-                    int j = 0;
-                    for (Vertex u : availableTargetVertices) {
-                        double cost = calcLowerBoundMappingCost(v, u, sourceGraph, targetGraph, partialMapping.getSources(), partialMappingSourceSet, partialMapping.getTargets(), partialMappingTargetSet, isolatedInfo);
-                        costMatrix[finalI - level + 1].set(j, cost);
-                        costMatrixCopy[finalI - level + 1].set(j, cost);
-//                        if (v.getType().equals("AppliedArgument") && ((String) v.get("value")).contains("jira-software") && cost != Integer.MAX_VALUE) {
-//                            System.out.println((finalI - level + 1) + ", " + j + ": cost: " + cost + " for " + v + " to " + u);
-//                        }
-                        j++;
-                    }
-                    return null;
-                } catch (Throwable t) {
-                    t.printStackTrace();
-                    return null;
-                }
-            };
-            callables.add(callable);
-//            callable.call();
+            int j = 0;
+            for (Vertex u : availableTargetVertices) {
+                double cost = calcLowerBoundMappingCost(v, u, sourceGraph, targetGraph, partialMapping.getSources(), partialMappingSourceSet, partialMapping.getTargets(), partialMappingTargetSet, isolatedInfo);
+                costMatrix[i - level + 1].set(j, cost);
+                costMatrixCopy[i - level + 1].set(j, cost);
+                j++;
+            }
         }
-        forkJoinPool.invokeAll(callables);
-        forkJoinPool.awaitTermination(10000, TimeUnit.DAYS);
-
         HungarianAlgorithm hungarianAlgorithm = new HungarianAlgorithm(costMatrix);
 
         int[] assignments = hungarianAlgorithm.execute();
         int editorialCostForMapping = editorialCostForMapping(partialMapping, sourceGraph, targetGraph, new ArrayList<>());
         double costMatrixSum = getCostMatrixSum(costMatrixCopy, assignments);
-//        if (costMatrixSum >= Integer.MAX_VALUE) {
-//            logUnmappable(costMatrixCopy, assignments, sourceList, availableTargetVertices, level);
-//            throw new RuntimeException("should not happen");
-//        }
 
 
         double lowerBoundForPartialMapping = editorialCostForMapping + costMatrixSum;
@@ -979,6 +958,7 @@ public class SchemaDiffing {
     }
 
     // lower bound mapping cost between for v -> u in respect to a partial mapping
+    // this is BMa
     private double calcLowerBoundMappingCost(Vertex v,
                                              Vertex u,
                                              SchemaGraph sourceGraph,
@@ -1035,6 +1015,7 @@ public class SchemaDiffing {
 
         Multiset<String> intersection = Multisets.intersection(multisetLabelsV, multisetLabelsU);
         int multiSetEditDistance = Math.max(multisetLabelsV.size(), multisetLabelsU.size()) - intersection.size();
+
         double result = (equalNodes ? 0 : 1) + multiSetEditDistance / 2.0 + anchoredVerticesCost;
         return result;
     }
