@@ -239,7 +239,7 @@ class SchemaDiffingTest extends Specification {
         """)
 
         when:
-        def diff = new SchemaDiffing().diffGraphQLSchema(schema1, schema2, false)
+        def diff = new SchemaDiffing().diffGraphQLSchema(schema1, schema2)
 
         then:
         /**
@@ -594,7 +594,7 @@ class SchemaDiffingTest extends Specification {
         """)
 
         when:
-        def diff = new SchemaDiffing().diffGraphQLSchema(schema1, schema2, false)
+        def diff = new SchemaDiffing().diffGraphQLSchema(schema1, schema2)
         diff.each { println it }
 
         then:
