@@ -79,7 +79,7 @@ class SchemaDiffingTest extends Specification {
         def diff = new SchemaDiffing().diffGraphQLSchema(schema1, schema2)
         diff.each { println it }
         then:
-        diff.size() == 1
+        diff.size() == 6
 
     }
 

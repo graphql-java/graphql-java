@@ -6,14 +6,12 @@ import com.google.common.collect.Multiset;
 import com.google.common.collect.Multisets;
 import com.google.common.util.concurrent.AtomicDouble;
 import com.google.common.util.concurrent.AtomicDoubleArray;
-import graphql.Assert;
 import graphql.schema.GraphQLSchema;
 import graphql.util.FpKit;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -31,22 +29,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 
 import static graphql.Assert.assertTrue;
-import static graphql.schema.diffing.SchemaGraph.APPLIED_ARGUMENT;
-import static graphql.schema.diffing.SchemaGraph.APPLIED_DIRECTIVE;
-import static graphql.schema.diffing.SchemaGraph.ARGUMENT;
-import static graphql.schema.diffing.SchemaGraph.DIRECTIVE;
-import static graphql.schema.diffing.SchemaGraph.DUMMY_TYPE_VERTEX;
-import static graphql.schema.diffing.SchemaGraph.ENUM;
-import static graphql.schema.diffing.SchemaGraph.ENUM_VALUE;
-import static graphql.schema.diffing.SchemaGraph.FIELD;
-import static graphql.schema.diffing.SchemaGraph.INPUT_FIELD;
-import static graphql.schema.diffing.SchemaGraph.INPUT_OBJECT;
-import static graphql.schema.diffing.SchemaGraph.INTERFACE;
-import static graphql.schema.diffing.SchemaGraph.OBJECT;
-import static graphql.schema.diffing.SchemaGraph.SCALAR;
-import static graphql.schema.diffing.SchemaGraph.UNION;
-import static java.lang.String.format;
-import static java.util.Collections.synchronizedMap;
 
 public class SchemaDiffing {
 
@@ -89,72 +71,6 @@ public class SchemaDiffing {
         return diffGraphQLSchema(graphQLSchema1, graphQLSchema2, false);
     }
 
-    public static void diffNamedVertices(Collection<Vertex> sourceVertices,
-                                         Collection<Vertex> targetVertices,
-                                         List<Vertex> deleted, // sourceVertices
-                                         List<Vertex> inserted, // targetVertices
-                                         BiMap<Vertex, Vertex> same) {
-        Map<String, Vertex> sourceByName = FpKit.groupingByUniqueKey(sourceVertices, Vertex::getName);
-        Map<String, Vertex> targetByName = FpKit.groupingByUniqueKey(targetVertices, Vertex::getName);
-        for (Vertex sourceVertex : sourceVertices) {
-            Vertex targetVertex = targetByName.get(sourceVertex.getName());
-            if (targetVertex == null) {
-                deleted.add(sourceVertex);
-            } else {
-                same.put(sourceVertex, targetVertex);
-            }
-        }
-
-        for (Vertex targetVertex : targetVertices) {
-            if (sourceByName.get((String) targetVertex.get("name")) == null) {
-                inserted.add(targetVertex);
-            }
-        }
-    }
-
-    public static void diffVertices(Collection<Vertex> sourceVertices,
-                                    Collection<Vertex> targetVertices,
-                                    List<Vertex> deleted, // sourceVertices
-                                    List<Vertex> inserted, // targetVertices
-                                    BiMap<Vertex, Vertex> same,
-                                    Function<Vertex, Object> keyFn) {
-        Map<Object, Vertex> sourceByKey = FpKit.groupingByUniqueKey(sourceVertices, keyFn);
-        Map<Object, Vertex> targetByKey = FpKit.groupingByUniqueKey(targetVertices, keyFn);
-        for (Vertex sourceVertex : sourceVertices) {
-            Vertex targetVertex = targetByKey.get(keyFn.apply(sourceVertex));
-            if (targetVertex == null) {
-                deleted.add(sourceVertex);
-            } else {
-                same.put(sourceVertex, targetVertex);
-            }
-        }
-
-        for (Vertex targetVertex : targetVertices) {
-            if (sourceByKey.get(keyFn.apply(targetVertex)) == null) {
-                inserted.add(targetVertex);
-            }
-        }
-    }
-
-    public static void diffNamedList(Set<String> sourceNames,
-                                     Set<String> targetNames,
-                                     List<String> deleted,
-                                     List<String> inserted,
-                                     List<String> same) {
-        for (String sourceName : sourceNames) {
-            if (targetNames.contains(sourceName)) {
-                same.add(sourceName);
-            } else {
-                deleted.add(sourceName);
-            }
-        }
-
-        for (String targetName : targetNames) {
-            if (!sourceNames.contains(targetName)) {
-                inserted.add(targetName);
-            }
-        }
-    }
 
     List<EditOperation> diffImpl(SchemaGraph sourceGraph, SchemaGraph targetGraph) throws Exception {
         int sizeDiff = targetGraph.size() - sourceGraph.size();
@@ -294,7 +210,7 @@ public class SchemaDiffing {
 
             // which ones of the candidates has the highest infrequency weight relatively to the current result set of vertices
             for (Vertex candidate : nextCandidates) {
-                List<Edge> allAdjacentEdges = allAdjacentEdges(sourceGraph, result, candidate);
+                List<Edge> allAdjacentEdges = sourceGraph.getAllAdjacentEdges( result, candidate);
                 int totalWeight = totalInfrequencyWeightWithSomeEdges(candidate, allAdjacentEdges, vertexInfrequencyWeights, edgesInfrequencyWeights);
                 if (totalWeight > curMaxWeight) {
                     nextOne = candidate;
@@ -309,17 +225,6 @@ public class SchemaDiffing {
         sourceGraph.setVertices(result);
     }
 
-    private List<Edge> allAdjacentEdges(SchemaGraph schemaGraph, List<Vertex> fromList, Vertex to) {
-        List<Edge> result = new ArrayList<>();
-        for (Vertex from : fromList) {
-            Edge edge = schemaGraph.getEdge(from, to);
-            if (edge == null) {
-                continue;
-            }
-            result.add(edge);
-        }
-        return result;
-    }
 
     private int totalInfrequencyWeightWithSomeEdges(Vertex vertex,
                                                     List<Edge> edges,

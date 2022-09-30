@@ -21,7 +21,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static graphql.schema.diffing.SchemaDiffing.diffNamedList;
 import static graphql.schema.diffing.SchemaGraph.APPLIED_ARGUMENT;
 import static graphql.schema.diffing.SchemaGraph.APPLIED_DIRECTIVE;
 import static graphql.schema.diffing.SchemaGraph.ARGUMENT;
@@ -730,7 +729,7 @@ public class FillupIsolatedVertices {
         List<String> deletedContexts = new ArrayList<>();
         List<String> insertedContexts = new ArrayList<>();
         List<String> sameContexts = new ArrayList<>();
-        diffNamedList(sourceGroups.keySet(), targetGroups.keySet(), deletedContexts, insertedContexts, sameContexts);
+        Util.diffNamedList(sourceGroups.keySet(), targetGroups.keySet(), deletedContexts, insertedContexts, sameContexts);
 
         // for each unchanged context we descend recursively into
         for (String sameContext : sameContexts) {

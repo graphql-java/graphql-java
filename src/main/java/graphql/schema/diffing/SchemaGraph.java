@@ -273,4 +273,17 @@ public class SchemaGraph {
         assertTrue(adjacentVertices.size() == 1, () -> format("No field or input field found for %s", enumValue));
         return adjacentVertices.get(0);
     }
+
+    public List<Edge> getAllAdjacentEdges(List<Vertex> fromList, Vertex to) {
+        List<Edge> result = new ArrayList<>();
+        for (Vertex from : fromList) {
+            Edge edge = getEdge(from, to);
+            if (edge == null) {
+                continue;
+            }
+            result.add(edge);
+        }
+        return result;
+    }
+
 }
