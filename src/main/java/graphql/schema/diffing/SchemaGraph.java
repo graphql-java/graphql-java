@@ -11,6 +11,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -78,6 +79,19 @@ public class SchemaGraph {
     public void addVertex(Vertex vertex) {
         vertices.add(vertex);
         typeToVertices.put(vertex.getType(), vertex);
+    }
+
+    public void removeVertexAndEdges(Vertex vertex) {
+        vertices.remove(vertex);
+        typeToVertices.remove(vertex.getType(), vertex);
+        for (Iterator<Edge> it = edges.iterator(); it.hasNext(); ) {
+            Edge edge = it.next();
+            if (edge.getOne().equals(vertex) || edge.getTwo().equals(vertex)) {
+                edgeByVertexPair.remove(edge.getOne(), edge.getTwo());
+                edgeByVertexPair.remove(edge.getTwo(), edge.getOne());
+                it.remove();
+            }
+        }
     }
 
     public void addVertices(Collection<Vertex> vertices) {

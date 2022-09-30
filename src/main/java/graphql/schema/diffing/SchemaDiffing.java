@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -21,12 +22,11 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.PriorityQueue;
 import java.util.Set;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 
@@ -159,7 +159,6 @@ public class SchemaDiffing {
     List<EditOperation> diffImpl(SchemaGraph sourceGraph, SchemaGraph targetGraph) throws Exception {
         int sizeDiff = targetGraph.size() - sourceGraph.size();
         System.out.println("graph diff: " + sizeDiff);
-        PossibleMappings possibleMappings = new PossibleMappings(sourceGraph, targetGraph);
         FillupIsolatedVertices fillupIsolatedVertices = new FillupIsolatedVertices(sourceGraph, targetGraph);
         fillupIsolatedVertices.ensureGraphAreSameSize();
         FillupIsolatedVertices.IsolatedVertices isolatedVertices = fillupIsolatedVertices.isolatedVertices;
@@ -234,80 +233,80 @@ public class SchemaDiffing {
 
 
     private void sortSourceGraph(SchemaGraph sourceGraph, SchemaGraph targetGraph, FillupIsolatedVertices.IsolatedVertices isolatedVertices) {
-        // we sort descending by number of possible target vertices
-        Collections.sort(sourceGraph.getVertices(), (v1, v2) ->
-
-        {
-
-            int v2Count = v2.isBuiltInType() ? -1 : (v2.isIsolated() ? 0 : isolatedVertices.possibleMappings.get(v2).size());
-            int v1Count = v1.isBuiltInType() ? -1 : (v1.isIsolated() ? 0 : isolatedVertices.possibleMappings.get(v1).size());
-            return Integer.compare(v2Count, v1Count);
-        });
-
-        for (Vertex vertex : sourceGraph.getVertices()) {
-            System.out.println("c: " + isolatedVertices.possibleMappings.get(vertex).size() + " v: " + vertex);
-        }
+//        // we sort descending by number of possible target vertices
+//        Collections.sort(sourceGraph.getVertices(), (v1, v2) ->
+//
+//        {
+//
+//            int v2Count = v2.isBuiltInType() ? -1 : (v2.isIsolated() ? 0 : isolatedVertices.possibleMappings.get(v2).size());
+//            int v1Count = v1.isBuiltInType() ? -1 : (v1.isIsolated() ? 0 : isolatedVertices.possibleMappings.get(v1).size());
+//            return Integer.compare(v2Count, v1Count);
+//        });
+//
+//        for (Vertex vertex : sourceGraph.getVertices()) {
+//            System.out.println("c: " + isolatedVertices.possibleMappings.get(vertex).size() + " v: " + vertex);
+//        }
 
 //
 //
 //        // how often does each source edge (based on the label) appear in target graph
-//        Map<String, AtomicInteger> targetLabelCount = new LinkedHashMap<>();
-//        for (Edge targetEdge : targetGraph.getEdges()) {
-//            targetLabelCount.computeIfAbsent(targetEdge.getLabel(), __ -> new AtomicInteger()).incrementAndGet();
-//        }
-//        // how often does each source vertex (based on the data) appear in the target graph
-//        Map<Vertex.VertexData, AtomicInteger> targetVertexDataCount = new LinkedHashMap<>();
-//        for (Vertex targetVertex : targetGraph.getVertices()) {
-//            targetVertexDataCount.computeIfAbsent(targetVertex.toData(), __ -> new AtomicInteger()).incrementAndGet();
-//        }
-//
-//        // an infrequency weight is 1 - count in target. Meaning the higher the
-//        // value, the smaller the count, the less frequent it.
-//        // Higher Infrequency => more unique is the vertex/label
-//        Map<Vertex, Integer> vertexInfrequencyWeights = new LinkedHashMap<>();
-//        Map<Edge, Integer> edgesInfrequencyWeights = new LinkedHashMap<>();
-//        for (Vertex vertex : sourceGraph.getVertices()) {
-//            vertexInfrequencyWeights.put(vertex, 1 - targetVertexDataCount.getOrDefault(vertex.toData(), new AtomicInteger()).get());
-//        }
-//        for (Edge edge : sourceGraph.getEdges()) {
-//            edgesInfrequencyWeights.put(edge, 1 - targetLabelCount.getOrDefault(edge.getLabel(), new AtomicInteger()).get());
-//        }
-//
-//        /**
-//         * vertices are sorted by increasing frequency/decreasing infrequency/decreasing uniqueness
-//         * we start with the most unique/least frequent/most infrequent and add incrementally the next most infrequent.
-//         */
-//
-//        //TODO: improve this: this is doing to much: we just want the max infrequent vertex, not all sorted
-//        ArrayList<Vertex> nextCandidates = new ArrayList<>(sourceGraph.getVertices());
-//        nextCandidates.sort(Comparator.comparingInt(o -> totalInfrequencyWeightWithAdjacentEdges(sourceGraph, o, vertexInfrequencyWeights, edgesInfrequencyWeights)));
-//
-//        Vertex curVertex = nextCandidates.get(nextCandidates.size() - 1);
-//        nextCandidates.remove(nextCandidates.size() - 1);
-//
-//        List<Vertex> result = new ArrayList<>();
-//        result.add(curVertex);
-//        while (nextCandidates.size() > 0) {
-//            Vertex nextOne = null;
-//            int curMaxWeight = Integer.MIN_VALUE;
-//            int index = 0;
-//            int nextOneIndex = -1;
-//
-//            // which ones of the candidates has the highest infrequency weight relatively to the current result set of vertices
-//            for (Vertex candidate : nextCandidates) {
-//                List<Edge> allAdjacentEdges = allAdjacentEdges(sourceGraph, result, candidate);
-//                int totalWeight = totalInfrequencyWeightWithSomeEdges(candidate, allAdjacentEdges, vertexInfrequencyWeights, edgesInfrequencyWeights);
-//                if (totalWeight > curMaxWeight) {
-//                    nextOne = candidate;
-//                    nextOneIndex = index;
-//                    curMaxWeight = totalWeight;
-//                }
-//                index++;
-//            }
-//            result.add(nextOne);
-//            nextCandidates.remove(nextOneIndex);
-//        }
-//        sourceGraph.setVertices(result);
+        Map<String, AtomicInteger> targetLabelCount = new LinkedHashMap<>();
+        for (Edge targetEdge : targetGraph.getEdges()) {
+            targetLabelCount.computeIfAbsent(targetEdge.getLabel(), __ -> new AtomicInteger()).incrementAndGet();
+        }
+        // how often does each source vertex (based on the data) appear in the target graph
+        Map<Vertex.VertexData, AtomicInteger> targetVertexDataCount = new LinkedHashMap<>();
+        for (Vertex targetVertex : targetGraph.getVertices()) {
+            targetVertexDataCount.computeIfAbsent(targetVertex.toData(), __ -> new AtomicInteger()).incrementAndGet();
+        }
+
+        // an infrequency weight is 1 - count in target. Meaning the higher the
+        // value, the smaller the count, the less frequent it.
+        // Higher Infrequency => more unique is the vertex/label
+        Map<Vertex, Integer> vertexInfrequencyWeights = new LinkedHashMap<>();
+        Map<Edge, Integer> edgesInfrequencyWeights = new LinkedHashMap<>();
+        for (Vertex vertex : sourceGraph.getVertices()) {
+            vertexInfrequencyWeights.put(vertex, 1 - targetVertexDataCount.getOrDefault(vertex.toData(), new AtomicInteger()).get());
+        }
+        for (Edge edge : sourceGraph.getEdges()) {
+            edgesInfrequencyWeights.put(edge, 1 - targetLabelCount.getOrDefault(edge.getLabel(), new AtomicInteger()).get());
+        }
+
+        /**
+         * vertices are sorted by increasing frequency/decreasing infrequency/decreasing uniqueness
+         * we start with the most unique/least frequent/most infrequent and add incrementally the next most infrequent.
+         */
+
+        //TODO: improve this: this is doing to much: we just want the max infrequent vertex, not all sorted
+        ArrayList<Vertex> nextCandidates = new ArrayList<>(sourceGraph.getVertices());
+        nextCandidates.sort(Comparator.comparingInt(o -> totalInfrequencyWeightWithAdjacentEdges(sourceGraph, o, vertexInfrequencyWeights, edgesInfrequencyWeights)));
+
+        Vertex curVertex = nextCandidates.get(nextCandidates.size() - 1);
+        nextCandidates.remove(nextCandidates.size() - 1);
+
+        List<Vertex> result = new ArrayList<>();
+        result.add(curVertex);
+        while (nextCandidates.size() > 0) {
+            Vertex nextOne = null;
+            int curMaxWeight = Integer.MIN_VALUE;
+            int index = 0;
+            int nextOneIndex = -1;
+
+            // which ones of the candidates has the highest infrequency weight relatively to the current result set of vertices
+            for (Vertex candidate : nextCandidates) {
+                List<Edge> allAdjacentEdges = allAdjacentEdges(sourceGraph, result, candidate);
+                int totalWeight = totalInfrequencyWeightWithSomeEdges(candidate, allAdjacentEdges, vertexInfrequencyWeights, edgesInfrequencyWeights);
+                if (totalWeight > curMaxWeight) {
+                    nextOne = candidate;
+                    nextOneIndex = index;
+                    curMaxWeight = totalWeight;
+                }
+                index++;
+            }
+            result.add(nextOne);
+            nextCandidates.remove(nextOneIndex);
+        }
+        sourceGraph.setVertices(result);
     }
 
     private List<Edge> allAdjacentEdges(SchemaGraph schemaGraph, List<Vertex> fromList, Vertex to) {
@@ -650,313 +649,6 @@ public class SchemaDiffing {
     }
 
 
-    private Map<Vertex, Vertex> forcedMatchingCache = synchronizedMap(new LinkedHashMap<>());
-
-    private boolean isMappingPossible(Vertex v,
-                                      Vertex u,
-                                      SchemaGraph sourceGraph,
-                                      SchemaGraph targetGraph,
-                                      Set<Vertex> partialMappingTargetSet,
-                                      FillupIsolatedVertices.IsolatedVertices isolatedInfo
-    ) {
-        return isolatedInfo.mappingPossible(v, u);
-
-//        Vertex forcedMatch = forcedMatchingCache.get(v);
-//        if (forcedMatch != null) {
-//            return forcedMatch == u;
-//        }
-//        if (v.isIsolated() && u.isIsolated()) {
-//            return false;
-//        }
-//        Set<Vertex> isolatedBuiltInSourceVertices = isolatedInfo.isolatedBuiltInSourceVertices;
-//        Set<Vertex> isolatedBuiltInTargetVertices = isolatedInfo.isolatedBuiltInTargetVertices;
-
-//        if (v.isIsolated()) {
-//            if (u.isBuiltInType()) {
-//                return isolatedBuiltInSourceVertices.contains(v);
-//            }
-//        }
-//            } else {
-//                return isolatedInfo.mappingPossible(v, u);
-////                if (u.getType().equals(FIELD)) {
-////                    Vertex fieldsContainer = targetGraph.getFieldsContainerForField(u);
-////                    String containerName = fieldsContainer.get("name");
-////                    String fieldName = u.get("name");
-////                    if (isolatedSourceVerticesForFields.contains(containerName, fieldName)) {
-////                        return isolatedSourceVerticesForFields.get(containerName, fieldName).contains(v);
-////                    }
-////                }
-////                if (u.getType().equals(INPUT_FIELD)) {
-////                    Vertex inputObject = targetGraph.getInputObjectForInputField(u);
-////                    String inputObjectName = inputObject.get("name");
-////                    String fieldName = u.get("name");
-////                    if (isolatedSourceVerticesForInputFields.contains(inputObjectName, fieldName)) {
-////                        return isolatedSourceVerticesForInputFields.get(inputObjectName, fieldName).contains(v);
-////                    }
-////                }
-////                return isolatedSourceVertices.getOrDefault(u.getType(), emptySet()).contains(v);
-//            }
-//        }
-//        if (u.isIsolated()) {
-//            if (v.isBuiltInType()) {
-//                return isolatedBuiltInTargetVertices.contains(u);
-//            }
-//        }
-//            } else {
-//                return isolatedInfo.mappingPossibleForIsolatedTarget(v, u);
-////                if (v.getType().equals(FIELD)) {
-////                    Vertex fieldsContainer = sourceGraph.getFieldsContainerForField(v);
-////                    String containerName = fieldsContainer.get("name");
-////                    String fieldName = v.get("name");
-////                    if (isolatedTargetVerticesForFields.contains(containerName, fieldName)) {
-////                        return isolatedTargetVerticesForFields.get(containerName, fieldName).contains(u);
-////                    }
-////                }
-////                if (v.getType().equals(INPUT_FIELD)) {
-////                    Vertex inputObject = sourceGraph.getInputObjectForInputField(v);
-////                    String inputObjectName = inputObject.get("name");
-////                    String fieldName = v.get("name");
-////                    if (isolatedTargetVerticesForInputFields.contains(inputObjectName, fieldName)) {
-////                        return isolatedTargetVerticesForInputFields.get(inputObjectName, fieldName).contains(u);
-////                    }
-////                }
-////                return isolatedTargetVertices.getOrDefault(v.getType(), emptySet()).contains(u);
-//            }
-//        }
-//        // the types of the vertices need to match: we don't allow to change the type
-//        if (!v.getType().equals(u.getType())) {
-//            return false;
-//        }
-//        Boolean result = checkNamedTypes(v, u, targetGraph);
-//        if (result != null) {
-//            return result;
-//        }
-//        result = checkNamedTypes(u, v, sourceGraph);
-//        if (result != null) {
-//            return result;
-//        }
-//        result = checkSpecificTypes(v, u, sourceGraph, targetGraph);
-//        if (result != null) {
-//            return result;
-//        }
-//        result = checkSpecificTypes(u, v, targetGraph, sourceGraph);
-//        if (result != null) {
-//            return result;
-//        }
-//
-//        return true;
-    }
-
-    private Boolean checkSpecificTypes(Vertex v, Vertex u, SchemaGraph sourceGraph, SchemaGraph targetGraph) {
-        Vertex matchingTargetVertex = findMatchingTargetVertex(v, sourceGraph, targetGraph);
-        if (matchingTargetVertex != null) {
-            forcedMatchingCache.put(v, matchingTargetVertex);
-            forcedMatchingCache.put(matchingTargetVertex, v);
-            return u == matchingTargetVertex;
-        }
-        return null;
-
-    }
-
-    private Vertex findMatchingTargetVertex(Vertex v, SchemaGraph sourceGraph, SchemaGraph targetGraph) {
-        if (isNamedType(v.getType())) {
-            Vertex targetVertex = targetGraph.getType(v.get("name"));
-            // the type of the target vertex must match v
-            return targetVertex != null && targetVertex.getType().equals(v.getType()) ? targetVertex : null;
-        }
-        if (DIRECTIVE.equals(v.getType())) {
-            return targetGraph.getDirective(v.get("name"));
-        }
-
-        if (DUMMY_TYPE_VERTEX.equals(v.getType())) {
-            List<Vertex> adjacentVertices = sourceGraph.getAdjacentVertices(v);
-            for (Vertex vertex : adjacentVertices) {
-                if (vertex.getType().equals(FIELD)) {
-                    Vertex matchingTargetField = findMatchingTargetField(vertex, sourceGraph, targetGraph);
-                    if (matchingTargetField != null) {
-                        return getDummyTypeVertex(matchingTargetField, targetGraph);
-                    }
-                } else if (vertex.getType().equals(INPUT_FIELD)) {
-                    Vertex matchingTargetInputField = findMatchingTargetInputField(vertex, sourceGraph, targetGraph);
-                    if (matchingTargetInputField != null) {
-                        return getDummyTypeVertex(matchingTargetInputField, targetGraph);
-                    }
-                }
-            }
-            return null;
-        }
-        if (INPUT_FIELD.equals(v.getType())) {
-            Vertex matchingTargetInputField = findMatchingTargetInputField(v, sourceGraph, targetGraph);
-            return matchingTargetInputField;
-        }
-        if (FIELD.equals(v.getType())) {
-            Vertex matchingTargetField = findMatchingTargetField(v, sourceGraph, targetGraph);
-            return matchingTargetField;
-        }
-        if (ENUM_VALUE.equals(v.getType())) {
-            Vertex matchingTargetEnumValue = findMatchingEnumValue(v, sourceGraph, targetGraph);
-            return matchingTargetEnumValue;
-        }
-        if (ARGUMENT.equals(v.getType())) {
-            Vertex matchingTargetArgument = findMatchingTargetArgument(v, sourceGraph, targetGraph);
-            return matchingTargetArgument;
-        }
-
-        if (APPLIED_DIRECTIVE.equals(v.getType())) {
-            return findMatchingAppliedDirective(v, sourceGraph, targetGraph);
-        }
-        if (APPLIED_ARGUMENT.equals(v.getType())) {
-            return findMatchingAppliedArgument(v, sourceGraph, targetGraph);
-        }
-
-        return Assert.assertShouldNeverHappen();
-    }
-
-    private Boolean checkNamedTypes(Vertex v, Vertex u, SchemaGraph targetGraph) {
-        if (isNamedType(v.getType())) {
-            Vertex targetVertex = targetGraph.getType(v.get("name"));
-            if (targetVertex != null && Objects.equals(v.getType(), targetVertex.getType())) {
-                forcedMatchingCache.put(v, targetVertex);
-                forcedMatchingCache.put(targetVertex, v);
-                return u == targetVertex;
-            }
-        }
-        return null;
-    }
-
-    private Vertex getDummyTypeVertex(Vertex vertex, SchemaGraph schemaGraph) {
-        List<Vertex> adjacentVertices = schemaGraph.getAdjacentVertices(vertex, v -> v.getType().equals(DUMMY_TYPE_VERTEX));
-        assertTrue(adjacentVertices.size() == 1);
-        return adjacentVertices.get(0);
-    }
-
-    private Vertex findMatchingEnumValue(Vertex enumValue, SchemaGraph sourceGraph, SchemaGraph targetGraph) {
-        Vertex enumVertex = getEnum(enumValue, sourceGraph);
-        Vertex targetEnumWithSameName = targetGraph.getType(enumVertex.get("name"));
-        if (targetEnumWithSameName != null) {
-            Vertex matchingTarget = getEnumValue(targetEnumWithSameName, enumValue.get("name"), targetGraph);
-            return matchingTarget;
-        }
-        return null;
-    }
-
-    private Vertex findMatchingTargetInputField(Vertex inputField, SchemaGraph sourceGraph, SchemaGraph targetGraph) {
-        Vertex sourceInputObject = getInputFieldsObject(inputField, sourceGraph);
-        Vertex targetInputObject = targetGraph.getType(sourceInputObject.get("name"));
-        if (targetInputObject != null) {
-            Vertex matchingInputField = getInputField(targetInputObject, inputField.get("name"), targetGraph);
-            return matchingInputField;
-        }
-        return null;
-
-    }
-
-    private Vertex findMatchingTargetArgument(Vertex argument, SchemaGraph sourceGraph, SchemaGraph targetGraph) {
-        Vertex fieldOrDirective = getFieldOrDirectiveForArgument(argument, sourceGraph);
-        if (FIELD.equals(fieldOrDirective.getType())) {
-            Vertex matchingTargetField = findMatchingTargetField(fieldOrDirective, sourceGraph, targetGraph);
-            if (matchingTargetField != null) {
-                return getArgumentForFieldOrDirective(matchingTargetField, argument.get("name"), targetGraph);
-            }
-        } else {
-            // we have an Argument for a Directive
-            Vertex matchingDirective = targetGraph.getDirective(fieldOrDirective.get("name"));
-            if (matchingDirective != null) {
-                return getArgumentForFieldOrDirective(matchingDirective, argument.get("name"), targetGraph);
-            }
-        }
-        return null;
-    }
-
-    private Vertex findMatchingAppliedDirective(Vertex appliedDirective, SchemaGraph sourceGraph, SchemaGraph targetGraph) {
-        Vertex targetDirectiveWithSameName = targetGraph.getDirective(appliedDirective.get("name"));
-        if (targetDirectiveWithSameName == null) {
-            return null;
-        }
-        List<Vertex> adjacentVertices = sourceGraph.getAdjacentVertices(appliedDirective, vertex -> !vertex.getType().equals(APPLIED_ARGUMENT));
-        assertTrue(adjacentVertices.size() == 1);
-        Vertex elementDirectiveAppliedTo = adjacentVertices.get(0);
-        //TODO: handle repeatable directives
-        Vertex targetMatchingAppliedTo = findMatchingTargetVertex(elementDirectiveAppliedTo, sourceGraph, targetGraph);
-        if (targetMatchingAppliedTo == null) {
-            return null;
-        }
-        List<Vertex> targetAppliedDirectives = targetGraph.getAdjacentVertices(targetMatchingAppliedTo, vertex -> vertex.getType().equals(APPLIED_DIRECTIVE) && vertex.get("name").equals(appliedDirective.get("name")));
-        return targetAppliedDirectives.size() == 0 ? null : targetAppliedDirectives.get(0);
-    }
-
-    private Vertex findMatchingAppliedArgument(Vertex appliedArgument, SchemaGraph sourceGraph, SchemaGraph targetGraph) {
-        List<Vertex> appliedDirectives = sourceGraph.getAdjacentVertices(appliedArgument, vertex -> vertex.getType().equals(APPLIED_DIRECTIVE));
-        assertTrue(appliedDirectives.size() == 1);
-        Vertex appliedDirective = appliedDirectives.get(0);
-        Vertex matchingAppliedDirective = findMatchingAppliedDirective(appliedDirective, sourceGraph, targetGraph);
-        if (matchingAppliedDirective == null) {
-            return null;
-        }
-        List<Vertex> matchingAppliedArguments = targetGraph.getAdjacentVertices(matchingAppliedDirective, vertex -> vertex.getType().equals(APPLIED_ARGUMENT) && vertex.get("name").equals(appliedArgument.get("name")));
-        assertTrue(matchingAppliedArguments.size() <= 1);
-        return matchingAppliedArguments.size() == 0 ? null : matchingAppliedArguments.get(0);
-
-    }
-
-    private Vertex findMatchingTargetField(Vertex field, SchemaGraph sourceGraph, SchemaGraph targetGraph) {
-        Vertex sourceFieldsContainer = sourceGraph.getFieldsContainerForField(field);
-        Vertex targetFieldsContainerWithSameName = targetGraph.getType(sourceFieldsContainer.get("name"));
-        if (targetFieldsContainerWithSameName != null && targetFieldsContainerWithSameName.getType().equals(sourceFieldsContainer.getType())) {
-            Vertex matchingField = getFieldForContainer(targetFieldsContainerWithSameName, field.get("name"), targetGraph);
-            return matchingField;
-        }
-        return null;
-    }
-
-    private Vertex getInputField(Vertex inputObject, String fieldName, SchemaGraph schemaGraph) {
-        List<Vertex> adjacentVertices = schemaGraph.getAdjacentVertices(inputObject, v -> v.getType().equals(INPUT_FIELD) && fieldName.equals(v.get("name")));
-        assertTrue(adjacentVertices.size() <= 1);
-        return adjacentVertices.size() == 0 ? null : adjacentVertices.get(0);
-    }
-
-    private Vertex getFieldForContainer(Vertex fieldsContainer, String fieldName, SchemaGraph schemaGraph) {
-        List<Vertex> adjacentVertices = schemaGraph.getAdjacentVertices(fieldsContainer, v -> v.getType().equals(FIELD) && fieldName.equals(v.get("name")));
-        assertTrue(adjacentVertices.size() <= 1);
-        return adjacentVertices.size() == 0 ? null : adjacentVertices.get(0);
-    }
-
-    private Vertex getEnumValue(Vertex enumVertex, String valueName, SchemaGraph schemaGraph) {
-        List<Vertex> adjacentVertices = schemaGraph.getAdjacentVertices(enumVertex, v -> valueName.equals(v.get("name")));
-        assertTrue(adjacentVertices.size() <= 1);
-        return adjacentVertices.size() == 0 ? null : adjacentVertices.get(0);
-    }
-
-    private Vertex getInputFieldsObject(Vertex inputField, SchemaGraph schemaGraph) {
-        List<Vertex> adjacentVertices = schemaGraph.getAdjacentVertices(inputField, vertex -> vertex.getType().equals(INPUT_OBJECT));
-        assertTrue(adjacentVertices.size() == 1, () -> format("No fields container found for %s", inputField));
-        return adjacentVertices.get(0);
-    }
-
-    private Vertex getFieldOrDirectiveForArgument(Vertex argument, SchemaGraph schemaGraph) {
-        List<Vertex> adjacentVertices = schemaGraph.getAdjacentVertices(argument, vertex -> vertex.getType().equals(FIELD) || vertex.getType().equals(DIRECTIVE));
-        assertTrue(adjacentVertices.size() == 1, () -> format("No field or directive found for %s", argument));
-        return adjacentVertices.get(0);
-    }
-
-    private Vertex getArgumentForFieldOrDirective(Vertex fieldOrDirective, String argumentName, SchemaGraph schemaGraph) {
-        assertTrue(DIRECTIVE.equals(fieldOrDirective.getType()) || FIELD.equals(fieldOrDirective.getType()));
-        List<Vertex> adjacentVertices = schemaGraph.getAdjacentVertices(fieldOrDirective, vertex -> vertex.getType().equals(ARGUMENT) && vertex.get("name").equals(argumentName));
-        assertTrue(adjacentVertices.size() <= 1);
-        return adjacentVertices.size() == 0 ? null : adjacentVertices.get(0);
-    }
-
-
-    private Vertex getEnum(Vertex enumValue, SchemaGraph schemaGraph) {
-        List<Vertex> adjacentVertices = schemaGraph.getAdjacentVertices(enumValue, vertex -> vertex.getType().equals(ENUM));
-        assertTrue(adjacentVertices.size() == 1, () -> format("No enum found for value %s", enumValue));
-        return adjacentVertices.get(0);
-    }
-
-    private boolean isNamedType(String type) {
-        return Arrays.asList(OBJECT, INTERFACE, INPUT_OBJECT, ENUM, UNION, SCALAR).contains(type);
-    }
-
     // lower bound mapping cost between for v -> u in respect to a partial mapping
     // this is BMa
     private double calcLowerBoundMappingCost(Vertex v,
@@ -970,7 +662,7 @@ public class SchemaDiffing {
                                              FillupIsolatedVertices.IsolatedVertices isolatedInfo
 
     ) {
-        if (!isMappingPossible(v, u, sourceGraph, targetGraph, partialMappingTargetSet, isolatedInfo)) {
+        if (!isolatedInfo.mappingPossible(v, u)) {
             return Integer.MAX_VALUE;
         }
         boolean equalNodes = v.getType().equals(u.getType()) && v.getProperties().equals(u.getProperties());

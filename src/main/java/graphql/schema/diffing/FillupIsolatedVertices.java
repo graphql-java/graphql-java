@@ -1,8 +1,13 @@
 package graphql.schema.diffing;
 
+import com.google.common.collect.ArrayTable;
+import com.google.common.collect.BiMap;
+import com.google.common.collect.HashBasedTable;
+import com.google.common.collect.HashBiMap;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Multimap;
+import com.google.common.collect.Table;
 import graphql.Assert;
 import graphql.util.FpKit;
 
@@ -40,6 +45,8 @@ public class FillupIsolatedVertices {
     SchemaGraph sourceGraph;
     SchemaGraph targetGraph;
     IsolatedVertices isolatedVertices;
+
+    private BiMap<Vertex, Vertex> toRemove = HashBiMap.create();
 
     static Map<String, List<VertexContextSegment>> typeContexts = new LinkedHashMap<>();
 
@@ -584,17 +591,23 @@ public class FillupIsolatedVertices {
         calcPossibleMappings(typeContexts.get(APPLIED_ARGUMENT), APPLIED_ARGUMENT);
         calcPossibleMappings(typeContexts.get(DIRECTIVE), DIRECTIVE);
 
+//        for (Vertex sourceVertex : toRemove.keySet()) {
+//            sourceGraph.removeVertexAndEdges(sourceVertex);
+//            Vertex targetVertex = toRemove.get(sourceVertex);
+//            targetGraph.removeVertexAndEdges(targetVertex);
+//        }
+
 
         sourceGraph.addVertices(isolatedVertices.allIsolatedSource);
         targetGraph.addVertices(isolatedVertices.allIsolatedTarget);
 
         Assert.assertTrue(sourceGraph.size() == targetGraph.size());
-        for (Vertex vertex : isolatedVertices.possibleMappings.keySet()) {
-            Collection<Vertex> vertices = isolatedVertices.possibleMappings.get(vertex);
-            if (vertices.size() > 1) {
-                System.out.println("multiple for " + vertex);
-            }
-        }
+//        for (Vertex vertex : isolatedVertices.possibleMappings.keySet()) {
+//            Collection<Vertex> vertices = isolatedVertices.possibleMappings.get(vertex);
+//            if (vertices.size() > 1) {
+//                System.out.println("multiple for " + vertex);
+//            }
+//        }
         System.out.println("done isolated");
 //        if (sourceGraph.size() < targetGraph.size()) {
 //            isolatedVertices.isolatedBuiltInSourceVertices.addAll(sourceGraph.addIsolatedVertices(targetGraph.size() - sourceGraph.size(), "source-isolated-builtin-"));
@@ -633,6 +646,8 @@ public class FillupIsolatedVertices {
         public Set<Vertex> allIsolatedSource = new LinkedHashSet<>();
         public Set<Vertex> allIsolatedTarget = new LinkedHashSet<>();
 
+        public Table<List<String>, Set<Vertex>, Set<Vertex>> contexts = HashBasedTable.create();
+
         public final Set<Vertex> isolatedBuiltInSourceVertices = new LinkedHashSet<>();
         public final Set<Vertex> isolatedBuiltInTargetVertices = new LinkedHashSet<>();
 
@@ -665,6 +680,13 @@ public class FillupIsolatedVertices {
 
         public boolean mappingPossible(Vertex sourceVertex, Vertex targetVertex) {
             return possibleMappings.containsEntry(sourceVertex, targetVertex);
+        }
+
+        public void putContext(List<String> contextId, Set<Vertex> source, Set<Vertex> target) {
+            if (contexts.containsRow(contextId)) {
+                throw new IllegalArgumentException("Already context " + contextId);
+            }
+            contexts.put(contextId, source, target);
         }
 
     }
@@ -714,6 +736,7 @@ public class FillupIsolatedVertices {
         for (String sameContext : sameContexts) {
             ImmutableList<Vertex> sourceVerticesInContext = sourceGroups.get(sameContext);
             ImmutableList<Vertex> targetVerticesInContext = targetGroups.get(sameContext);
+
             List<String> currentContextId = concat(contextId, sameContext);
             if (contexts.size() > contextIx + 1) {
                 calcPossibleMappingImpl(sourceVerticesInContext, targetVerticesInContext, currentContextId, contextIx + 1, contexts, usedSourceVertices, usedTargetVertices, typeNameForDebug);
@@ -727,6 +750,7 @@ public class FillupIsolatedVertices {
             Set<Vertex> notUsedTarget = new LinkedHashSet<>(targetVerticesInContext);
             notUsedTarget.removeAll(usedTargetVertices);
 
+            // make sure the current context is the same size
             if (notUsedSource.size() > notUsedTarget.size()) {
                 Set<Vertex> newTargetVertices = Vertex.newIsolatedNodes(notUsedSource.size() - notUsedTarget.size(), "target-isolated-" + typeNameForDebug + "-");
                 isolatedVertices.addIsolatedTarget(newTargetVertices);
@@ -739,6 +763,9 @@ public class FillupIsolatedVertices {
             isolatedVertices.putPossibleMappings(notUsedSource, notUsedTarget);
             usedSourceVertices.addAll(notUsedSource);
             usedTargetVertices.addAll(notUsedTarget);
+            if(notUsedSource.size() > 0 ) {
+                isolatedVertices.putContext(currentContextId, notUsedSource, notUsedTarget);
+            }
         }
 
         Set<Vertex> possibleTargetVertices = new LinkedHashSet<>();
@@ -772,8 +799,14 @@ public class FillupIsolatedVertices {
             isolatedVertices.addIsolatedSource(newSourceVertices);
             possibleSourceVertices.addAll(newSourceVertices);
         }
+        // if there are only added or removed vertices in the current context, contextId might be empty
+        if(possibleSourceVertices.size() > 0) {
+            if(contextId.size() == 0) {
+               contextId = singletonList(typeNameForDebug);
+            }
+            isolatedVertices.putContext(contextId, possibleSourceVertices, possibleTargetVertices);
+        }
         isolatedVertices.putPossibleMappings(possibleSourceVertices, possibleTargetVertices);
-
     }
 
 
