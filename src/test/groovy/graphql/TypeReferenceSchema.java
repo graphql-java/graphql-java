@@ -318,6 +318,7 @@ public class TypeReferenceSchema {
     public static GraphQLCodeRegistry codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
             .typeResolver("Pet", new TypeResolverProxy())
             .typeResolver("Addressable", new TypeResolverProxy())
+            .typeResolver("Named", GarfieldSchema.namedTypeResolver)
             .build();
 
     public static GraphQLSchema SchemaWithReferences = GraphQLSchema.newSchema()
