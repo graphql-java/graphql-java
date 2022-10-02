@@ -112,9 +112,9 @@ public class SpecValidationSchema {
             .field(newFieldDefinition().name("nickname").type(Scalars.GraphQLString))
             .field(newFieldDefinition().name("barkVolume").type(Scalars.GraphQLInt))
             .field(newFieldDefinition().name("doesKnowCommand").type(nonNull(Scalars.GraphQLBoolean))
-                    .argument(singletonList(dogCommandArg)))
+                    .arguments(singletonList(dogCommandArg)))
             .field(newFieldDefinition().name("isHousetrained").type(Scalars.GraphQLBoolean)
-                    .argument(singletonList(atOtherHomesArg)))
+                    .arguments(singletonList(atOtherHomesArg)))
             .field(newFieldDefinition().name("owner").type(human))
             .withInterface(SpecValidationSchema.pet)
             .build();
@@ -125,7 +125,7 @@ public class SpecValidationSchema {
             .field(newFieldDefinition().name("nickname").type(Scalars.GraphQLString))
             .field(newFieldDefinition().name("meowVolume").type(Scalars.GraphQLInt))
             .field(newFieldDefinition().name("doesKnowCommand").type(nonNull(Scalars.GraphQLBoolean))
-                    .argument(singletonList(catCommandArg)))
+                    .arguments(singletonList(catCommandArg)))
             .withInterface(SpecValidationSchema.pet)
             .build();
 
@@ -237,6 +237,7 @@ public class SpecValidationSchema {
             .additionalDirective(dogDirective)
             .additionalDirective(nonNullDirective)
             .additionalDirective(objectArgumentDirective)
-            .build(specValidationDictionary);
+            .additionalTypes(specValidationDictionary)
+            .build();
 
 }
