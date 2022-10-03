@@ -133,6 +133,7 @@ public class SubscriptionExecutionStrategy extends ExecutionStrategy {
 
         FetchedValue fetchedValue = unboxPossibleDataFetcherResult(newExecutionContext, parameters, eventPayload);
         FieldValueInfo fieldValueInfo = completeField(newExecutionContext, newParameters, fetchedValue);
+        // potential change here
         CompletableFuture<ExecutionResult> overallResult = fieldValueInfo
                 .getFieldValue()
                 .thenApply(executionResult -> wrapWithRootFieldName(newParameters, executionResult));
