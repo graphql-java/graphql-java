@@ -23,6 +23,7 @@ public class DiffImpl {
     private static MappingEntry LAST_ELEMENT = new MappingEntry();
     private SchemaGraph completeSourceGraph;
     private SchemaGraph completeTargetGraph;
+    private FillupIsolatedVertices.IsolatedVertices isolatedVertices;
 
     private static class MappingEntry {
         public boolean siblingsFinished;
@@ -46,9 +47,10 @@ public class DiffImpl {
         }
     }
 
-    public DiffImpl(SchemaGraph completeSourceGraph, SchemaGraph completeTargetGraph) {
+    public DiffImpl(SchemaGraph completeSourceGraph, SchemaGraph completeTargetGraph, FillupIsolatedVertices.IsolatedVertices isolatedVertices) {
         this.completeSourceGraph = completeSourceGraph;
         this.completeTargetGraph = completeTargetGraph;
+        this.isolatedVertices = isolatedVertices;
     }
 
     List<EditOperation> diffImpl(Mapping startMapping, List<Vertex> relevantSourceList, List<Vertex> relevantTargetList) throws Exception {
@@ -369,9 +371,9 @@ public class DiffImpl {
                                              Set<Vertex> partialMappingTargetSet
 
     ) {
-//        if (!isolatedInfo.mappingPossible(v, u)) {
-//            return Integer.MAX_VALUE;
-//        }
+        if (!isolatedVertices.mappingPossible(v, u)) {
+            return Integer.MAX_VALUE;
+        }
         boolean equalNodes = v.getType().equals(u.getType()) && v.getProperties().equals(u.getProperties());
 
         // inner edge labels of u (resp. v) in regards to the partial mapping: all labels of edges

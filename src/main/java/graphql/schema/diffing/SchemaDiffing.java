@@ -51,7 +51,7 @@ public class SchemaDiffing {
             DiffImpl.editorialCostForMapping(fixedMappings, sourceGraph, targetGraph, result);
             return result;
         }
-        DiffImpl diffImpl = new DiffImpl(sourceGraph, targetGraph);
+        DiffImpl diffImpl = new DiffImpl(sourceGraph, targetGraph, isolatedVertices);
         List<Vertex> nonMappedSource = new ArrayList<>(sourceGraph.getVertices());
         nonMappedSource.removeAll(fixedMappings.getSources());
 

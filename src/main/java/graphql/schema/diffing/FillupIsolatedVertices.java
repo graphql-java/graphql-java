@@ -674,9 +674,9 @@ public class FillupIsolatedVertices {
 //            allIsolatedTarget.addAll(isolatedTargetVertices);
 //        }
 //
-//        public boolean mappingPossible(Vertex sourceVertex, Vertex targetVertex) {
-//            return possibleMappings.containsEntry(sourceVertex, targetVertex);
-//        }
+        public boolean mappingPossible(Vertex sourceVertex, Vertex targetVertex) {
+            return possibleMappings.containsEntry(sourceVertex, targetVertex);
+        }
 
         public void putContext(List<String> contextId, Set<Vertex> source, Set<Vertex> target) {
             if (contexts.containsRow(contextId)) {
