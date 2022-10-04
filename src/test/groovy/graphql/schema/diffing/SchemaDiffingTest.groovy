@@ -415,29 +415,28 @@ class SchemaDiffingTest extends Specification {
         diff.size() == 171
     }
 
-//    @spock.lang.Ignore
-//    def "change large schema a bit 2"() {
-//        given:
-//        def largeSchema = TestUtil.schemaFromResource("large-schema-2.graphqls", TestUtil.mockRuntimeWiring)
-//        int counter = 0;
-//        def changedOne = SchemaTransformer.transformSchema(largeSchema, new GraphQLTypeVisitorStub() {
-//            @Override
-//            TraversalControl visitGraphQLFieldDefinition(GraphQLFieldDefinition fieldDefinition, TraverserContext<GraphQLSchemaElement> context) {
-//                if (fieldDefinition.getName() == "field50") {
-//                    counter++;
-//                    return deleteNode(context);
-//                }
-//                return TraversalControl.CONTINUE
-//            }
-//        })
-//        println "deleted fields: " + counter
-//        when:
-//        def diff = new SchemaDiffing().diffGraphQLSchema(largeSchema, changedOne)
-//        diff.each { println it }
-//        then:
-//        // deleting 171 fields + dummyTypes + 3 edges for each field,dummyType pair = 5*171
-//        diff.size() == 5 * 171
-//    }
+    def "change large schema a bit 2"() {
+        given:
+        def largeSchema = TestUtil.schemaFromResource("large-schema-2.graphqls", TestUtil.mockRuntimeWiring)
+        int counter = 0;
+        def changedOne = SchemaTransformer.transformSchema(largeSchema, new GraphQLTypeVisitorStub() {
+            @Override
+            TraversalControl visitGraphQLFieldDefinition(GraphQLFieldDefinition fieldDefinition, TraverserContext<GraphQLSchemaElement> context) {
+                if (fieldDefinition.getName() == "field50") {
+                    counter++;
+                    return deleteNode(context);
+                }
+                return TraversalControl.CONTINUE
+            }
+        })
+        println "deleted fields: " + counter
+        when:
+        def diff = new SchemaDiffing().diffGraphQLSchema(largeSchema, changedOne)
+        diff.each { println it }
+        then:
+        // deleting 171 fields + dummyTypes + 3 edges for each field,dummyType pair = 5*171
+        diff.size() == 5 * 171
+    }
 
     def "change object type name used twice"() {
         given:

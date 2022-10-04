@@ -639,19 +639,16 @@ public class FillupIsolatedVertices {
 
     public class IsolatedVertices {
 
-        public Multimap<Object, Vertex> contextToIsolatedSourceVertices = HashMultimap.create();
-        public Multimap<Object, Vertex> contextToIsolatedTargetVertices = HashMultimap.create();
+//        public Multimap<Object, Vertex> contextToIsolatedSourceVertices = HashMultimap.create();
+//        public Multimap<Object, Vertex> contextToIsolatedTargetVertices = HashMultimap.create();
 
         public Set<Vertex> allIsolatedSource = new LinkedHashSet<>();
         public Set<Vertex> allIsolatedTarget = new LinkedHashSet<>();
 
         public Table<List<String>, Set<Vertex>, Set<Vertex>> contexts = HashBasedTable.create();
 
-        public final Set<Vertex> isolatedBuiltInSourceVertices = new LinkedHashSet<>();
-        public final Set<Vertex> isolatedBuiltInTargetVertices = new LinkedHashSet<>();
-
-        // from source to target
         public Multimap<Vertex, Vertex> possibleMappings = HashMultimap.create();
+        public Mapping mapping = new Mapping();
 
         public void putPossibleMappings(Collection<Vertex> sourceVertices, Collection<Vertex> targetVertex) {
             for (Vertex sourceVertex : sourceVertices) {
@@ -667,23 +664,27 @@ public class FillupIsolatedVertices {
             allIsolatedTarget.addAll(isolatedTarget);
         }
 
-        public void putSource(Object contextId, Collection<Vertex> isolatedSourcedVertices) {
-            contextToIsolatedSourceVertices.putAll(contextId, isolatedSourcedVertices);
-            allIsolatedSource.addAll(isolatedSourcedVertices);
-        }
-
-        public void putTarget(Object contextId, Collection<Vertex> isolatedTargetVertices) {
-            contextToIsolatedTargetVertices.putAll(contextId, isolatedTargetVertices);
-            allIsolatedTarget.addAll(isolatedTargetVertices);
-        }
-
-        public boolean mappingPossible(Vertex sourceVertex, Vertex targetVertex) {
-            return possibleMappings.containsEntry(sourceVertex, targetVertex);
-        }
+//        public void putSource(Object contextId, Collection<Vertex> isolatedSourcedVertices) {
+//            contextToIsolatedSourceVertices.putAll(contextId, isolatedSourcedVertices);
+//            allIsolatedSource.addAll(isolatedSourcedVertices);
+//        }
+//
+//        public void putTarget(Object contextId, Collection<Vertex> isolatedTargetVertices) {
+//            contextToIsolatedTargetVertices.putAll(contextId, isolatedTargetVertices);
+//            allIsolatedTarget.addAll(isolatedTargetVertices);
+//        }
+//
+//        public boolean mappingPossible(Vertex sourceVertex, Vertex targetVertex) {
+//            return possibleMappings.containsEntry(sourceVertex, targetVertex);
+//        }
 
         public void putContext(List<String> contextId, Set<Vertex> source, Set<Vertex> target) {
             if (contexts.containsRow(contextId)) {
                 throw new IllegalArgumentException("Already context " + contextId);
+            }
+            Assert.assertTrue(source.size() == target.size());
+            if (source.size() == 1) {
+                mapping.add(source.iterator().next(), target.iterator().next());
             }
             contexts.put(contextId, source, target);
         }
@@ -762,7 +763,7 @@ public class FillupIsolatedVertices {
             isolatedVertices.putPossibleMappings(notUsedSource, notUsedTarget);
             usedSourceVertices.addAll(notUsedSource);
             usedTargetVertices.addAll(notUsedTarget);
-            if(notUsedSource.size() > 0 ) {
+            if (notUsedSource.size() > 0) {
                 isolatedVertices.putContext(currentContextId, notUsedSource, notUsedTarget);
             }
         }
@@ -799,9 +800,9 @@ public class FillupIsolatedVertices {
             possibleSourceVertices.addAll(newSourceVertices);
         }
         // if there are only added or removed vertices in the current context, contextId might be empty
-        if(possibleSourceVertices.size() > 0) {
-            if(contextId.size() == 0) {
-               contextId = singletonList(typeNameForDebug);
+        if (possibleSourceVertices.size() > 0) {
+            if (contextId.size() == 0) {
+                contextId = singletonList(typeNameForDebug);
             }
             isolatedVertices.putContext(contextId, possibleSourceVertices, possibleTargetVertices);
         }
