@@ -100,7 +100,6 @@ public class DiffImpl {
             }
             if (mappingEntry.level < graphSize) {
                 addChildToQueue(mappingEntry,
-                        mappingEntry.level + 1,
                         queue,
                         upperBoundCost,
                         bestFullMapping,
@@ -119,7 +118,6 @@ public class DiffImpl {
 
     // this calculates all children for the provided parentEntry, but only the first is directly added to the queue
     private void addChildToQueue(MappingEntry parentEntry,
-                                 int level, // the level of the new Mapping Entry we want to add
                                  PriorityQueue<MappingEntry> queue,
                                  AtomicDouble upperBound,
                                  AtomicReference<Mapping> bestFullMapping,
@@ -129,16 +127,17 @@ public class DiffImpl {
 
     ) throws Exception {
         Mapping partialMapping = parentEntry.partialMapping;
-        assertTrue(level - 1 == partialMapping.size());
+        int level = parentEntry.level;;
+        assertTrue(level == partialMapping.size());
 
         ArrayList<Vertex> availableTargetVertices = new ArrayList<>(targetList);
         availableTargetVertices.removeAll(partialMapping.getTargets());
         assertTrue(availableTargetVertices.size() + partialMapping.size() == targetList.size());
-        // level starts at 1 ... therefore level - 1 is the current one we want to extend
-        Vertex v_i = sourceList.get(level - 1);
+        Vertex v_i = sourceList.get(level);
 
         // the cost matrix is for the non mapped vertices
-        int costMatrixSize = sourceList.size() - level + 1;
+        int costMatrixSize = sourceList.size() - level;
+        System.out.println("matrix size: " + costMatrixSize);
 
         // costMatrix gets modified by the hungarian algorithm ... therefore we create two of them
         AtomicDoubleArray[] costMatrixForHungarianAlgo = new AtomicDoubleArray[costMatrixSize];
@@ -152,13 +151,13 @@ public class DiffImpl {
 
 
         // costMatrix[0] is the row for  v_i
-        for (int i = level - 1; i < sourceList.size(); i++) {
+        for (int i = level; i < sourceList.size(); i++) {
             Vertex v = sourceList.get(i);
             int j = 0;
             for (Vertex u : availableTargetVertices) {
                 double cost = calcLowerBoundMappingCost(v, u, partialMapping.getSources(), partialMappingSourceSet, partialMapping.getTargets(), partialMappingTargetSet);
-                costMatrixForHungarianAlgo[i - level + 1].set(j, cost);
-                costMatrix[i - level + 1].set(j, cost);
+                costMatrixForHungarianAlgo[i - level].set(j, cost);
+                costMatrix[i - level].set(j, cost);
                 j++;
             }
         }
@@ -178,7 +177,7 @@ public class DiffImpl {
         if (lowerBoundForPartialMapping >= upperBound.doubleValue()) {
             return;
         }
-        MappingEntry newMappingEntry = new MappingEntry(newMappingSibling, level, lowerBoundForPartialMapping);
+        MappingEntry newMappingEntry = new MappingEntry(newMappingSibling, level + 1, lowerBoundForPartialMapping);
         LinkedBlockingQueue<MappingEntry> siblings = new LinkedBlockingQueue<>();
         newMappingEntry.mappingEntriesSiblings = siblings;
         newMappingEntry.assignments = assignments;
@@ -187,7 +186,7 @@ public class DiffImpl {
         queue.add(newMappingEntry);
         Mapping fullMapping = partialMapping.copy();
         for (int i = 0; i < assignments.length; i++) {
-            fullMapping.add(sourceList.get(level - 1 + i), availableTargetVertices.get(assignments[i]));
+            fullMapping.add(sourceList.get(level + i), availableTargetVertices.get(assignments[i]));
         }
 
 //        assertTrue(fullMapping.size() == sourceGraph.size());
@@ -197,7 +196,7 @@ public class DiffImpl {
             upperBound.set(costForFullMapping);
             bestFullMapping.set(fullMapping);
             bestEdit.set(editOperations);
-            System.out.println("setting new best edit at level " + level + " with size " + editOperations.size() + " at level " + level);
+            System.out.println("setting new best edit at level " + (level + 1) + " with size " + editOperations.size() + " at level " + level);
         }
 
         calculateRestOfChildren(
@@ -208,7 +207,7 @@ public class DiffImpl {
                 partialMapping,
                 v_i,
                 upperBound.get(),
-                level,
+                level + 1,
                 siblings
         );
     }
