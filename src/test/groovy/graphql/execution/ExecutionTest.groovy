@@ -5,9 +5,10 @@ import graphql.ExecutionResult
 import graphql.ExecutionResultImpl
 import graphql.MutationSchema
 import graphql.execution.instrumentation.InstrumentationState
-import graphql.execution.instrumentation.SimpleInstrumentation
+import graphql.execution.instrumentation.SimplePerformantInstrumentation
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters
 import graphql.parser.Parser
+import org.jetbrains.annotations.NotNull
 import spock.lang.Specification
 
 import java.util.concurrent.CompletableFuture
@@ -35,7 +36,7 @@ class ExecutionTest extends Specification {
     def subscriptionStrategy = new CountingExecutionStrategy()
     def mutationStrategy = new CountingExecutionStrategy()
     def queryStrategy = new CountingExecutionStrategy()
-    def execution = new Execution(queryStrategy, mutationStrategy, subscriptionStrategy, SimpleInstrumentation.INSTANCE, ValueUnboxer.DEFAULT)
+    def execution = new Execution(queryStrategy, mutationStrategy, subscriptionStrategy, SimplePerformantInstrumentation.INSTANCE, ValueUnboxer.DEFAULT)
     def emptyExecutionInput = ExecutionInput.newExecutionInput().query("query").build()
     def instrumentationState = new InstrumentationState() {}
 
@@ -98,43 +99,42 @@ class ExecutionTest extends Specification {
         mutationStrategy.execute == 0
         subscriptionStrategy.execute == 1
     }
-	
-	def "Update query strategy when instrumenting execution context" (){
-		given:
-		def query = '''
+
+    def "Update query strategy when instrumenting execution context"() {
+        given:
+        def query = '''
             query {
                 numberHolder {
                     theNumber
                 }
             }
         '''
-		def document = parser.parseDocument(query)
-		def queryStrategyUpdatedToDuringExecutionContextInstrument = new CountingExecutionStrategy()
-		
-		def instrumentation = new SimpleInstrumentation() {
+        def document = parser.parseDocument(query)
+        def queryStrategyUpdatedToDuringExecutionContextInstrument = new CountingExecutionStrategy()
 
-			@Override
-            ExecutionContext instrumentExecutionContext(ExecutionContext executionContext,
-                                                        InstrumentationExecutionParameters parameters) {
-					
-					return ExecutionContextBuilder.newExecutionContextBuilder(executionContext)
-					.queryStrategy(queryStrategyUpdatedToDuringExecutionContextInstrument)
-					.build()
-			}
-		}
+        def instrumentation = new SimplePerformantInstrumentation() {
+
+            @NotNull
+            @Override
+            ExecutionContext instrumentExecutionContext(ExecutionContext executionContext, InstrumentationExecutionParameters parameters, InstrumentationState state) {
+                return ExecutionContextBuilder.newExecutionContextBuilder(executionContext)
+                        .queryStrategy(queryStrategyUpdatedToDuringExecutionContextInstrument)
+                        .build()
+            }
+        }
 
         def execution = new Execution(queryStrategy, mutationStrategy, subscriptionStrategy, instrumentation, ValueUnboxer.DEFAULT)
-		
-		
-		when:
-		execution.execute(document, MutationSchema.schema, ExecutionId.generate(), emptyExecutionInput, instrumentationState)
 
-		then:
-		queryStrategy.execute == 0
-		mutationStrategy.execute == 0
-		subscriptionStrategy.execute == 0
-		queryStrategyUpdatedToDuringExecutionContextInstrument.execute == 1
-	}
-	
-	
+
+        when:
+        execution.execute(document, MutationSchema.schema, ExecutionId.generate(), emptyExecutionInput, instrumentationState)
+
+        then:
+        queryStrategy.execute == 0
+        mutationStrategy.execute == 0
+        subscriptionStrategy.execute == 0
+        queryStrategyUpdatedToDuringExecutionContextInstrument.execute == 1
+    }
+
+
 }

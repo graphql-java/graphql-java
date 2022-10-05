@@ -4,7 +4,8 @@ import graphql.ExecutionInput
 import graphql.GraphQL
 import graphql.StarWarsSchema
 import graphql.execution.instrumentation.InstrumentationContext
-import graphql.execution.instrumentation.SimpleInstrumentation
+import graphql.execution.instrumentation.InstrumentationState
+import graphql.execution.instrumentation.SimplePerformantInstrumentation
 import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters
 import graphql.validation.ValidationError
 import graphql.validation.ValidationErrorType
@@ -13,10 +14,10 @@ import spock.lang.Unroll
 
 class ExecutionStrategyExceptionHandlingEquivalenceTest extends Specification {
 
-    class TestInstrumentation extends SimpleInstrumentation {
+    class TestInstrumentation extends SimplePerformantInstrumentation {
 
         @Override
-        InstrumentationContext<Object> beginFieldFetch(InstrumentationFieldFetchParameters parameters) {
+        InstrumentationContext<Object> beginFieldFetch(InstrumentationFieldFetchParameters parameters, InstrumentationState state) {
             throw new AbortExecutionException([new ValidationError(ValidationErrorType.UnknownType)])
         }
     }

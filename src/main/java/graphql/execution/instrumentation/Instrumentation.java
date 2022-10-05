@@ -27,13 +27,13 @@ import static graphql.execution.instrumentation.SimpleInstrumentationContext.noO
 
 /**
  * Provides the capability to instrument the execution steps of a GraphQL query.
- *
+ * <p>
  * For example you might want to track which fields are taking the most time to fetch from the backing database
  * or log what fields are being asked for.
- *
+ * <p>
  * Remember that graphql calls can cross threads so make sure you think about the thread safety of any instrumentation
  * code when you are writing it.
- *
+ * <p>
  * Each step gives back an {@link graphql.execution.instrumentation.InstrumentationContext} object.  This has two callbacks on it,
  * one for the step is `dispatched` and one for when the step has `completed`.  This is done because many of the "steps" are asynchronous
  * operations such as fetching data and resolving it into objects.
@@ -63,7 +63,7 @@ public interface Instrumentation {
      *
      * @return a state object that is passed to each method
      */
-    @Nullable 
+    @Nullable
     default InstrumentationState createState(InstrumentationCreateStateParameters parameters) {
         return createState();
     }

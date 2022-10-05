@@ -6,7 +6,7 @@ import graphql.execution.AbortExecutionException;
 import graphql.execution.ExecutionContext;
 import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationState;
-import graphql.execution.instrumentation.SimpleInstrumentation;
+import graphql.execution.instrumentation.SimplePerformantInstrumentation;
 import graphql.execution.instrumentation.parameters.InstrumentationCreateStateParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecuteOperationParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationValidationParameters;
@@ -22,6 +22,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 
 import static graphql.Assert.assertNotNull;
+import static graphql.execution.instrumentation.InstrumentationState.ofState;
 import static graphql.execution.instrumentation.SimpleInstrumentationContext.noOp;
 import static java.util.Optional.ofNullable;
 
@@ -32,7 +33,7 @@ import static java.util.Optional.ofNullable;
  * is exceeded. If the function returns {@code true} a {@link AbortExecutionException} is thrown.
  */
 @PublicApi
-public class MaxQueryComplexityInstrumentation extends SimpleInstrumentation {
+public class MaxQueryComplexityInstrumentation extends SimplePerformantInstrumentation {
 
     private static final Logger log = LoggerFactory.getLogger(MaxQueryComplexityInstrumentation.class);
 
@@ -91,7 +92,7 @@ public class MaxQueryComplexityInstrumentation extends SimpleInstrumentation {
 
     @Override
     public @Nullable InstrumentationContext<List<ValidationError>> beginValidation(InstrumentationValidationParameters parameters, InstrumentationState rawState) {
-        State state = (State) rawState;
+        State state = ofState(rawState);
         // for API backwards compatibility reasons we capture the validation parameters, so we can put them into QueryComplexityInfo
         state.instrumentationValidationParameters.set(parameters);
         return noOp();
@@ -99,7 +100,7 @@ public class MaxQueryComplexityInstrumentation extends SimpleInstrumentation {
 
     @Override
     public @Nullable InstrumentationContext<ExecutionResult> beginExecuteOperation(InstrumentationExecuteOperationParameters instrumentationExecuteOperationParameters, InstrumentationState rawState) {
-        State state = (State) rawState;
+        State state = ofState(rawState);
         QueryTraverser queryTraverser = newQueryTraverser(instrumentationExecuteOperationParameters.getExecutionContext());
 
         Map<QueryVisitorFieldEnvironment, Integer> valuesByParent = new LinkedHashMap<>();

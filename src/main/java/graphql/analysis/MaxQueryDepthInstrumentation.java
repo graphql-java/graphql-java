@@ -6,7 +6,7 @@ import graphql.execution.AbortExecutionException;
 import graphql.execution.ExecutionContext;
 import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationState;
-import graphql.execution.instrumentation.SimpleInstrumentation;
+import graphql.execution.instrumentation.SimplePerformantInstrumentation;
 import graphql.execution.instrumentation.parameters.InstrumentationExecuteOperationParameters;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
@@ -23,7 +23,7 @@ import static graphql.execution.instrumentation.SimpleInstrumentationContext.noO
  * exceeded. If the function returns {@code true} a {@link AbortExecutionException} is thrown.
  */
 @PublicApi
-public class MaxQueryDepthInstrumentation extends SimpleInstrumentation {
+public class MaxQueryDepthInstrumentation extends SimplePerformantInstrumentation {
 
     private static final Logger log = LoggerFactory.getLogger(MaxQueryDepthInstrumentation.class);
 
