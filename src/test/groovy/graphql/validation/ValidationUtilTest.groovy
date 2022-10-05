@@ -26,7 +26,10 @@ import static graphql.schema.GraphQLNonNull.nonNull
 
 class ValidationUtilTest extends Specification {
 
-    def schema = GraphQLSchema.newSchema().query(StarWarsSchema.queryType).build()
+    def schema = GraphQLSchema.newSchema()
+            .query(StarWarsSchema.queryType)
+            .codeRegistry(StarWarsSchema.codeRegistry)
+            .build()
     def validationUtil = new ValidationUtil()
     def graphQLContext = GraphQLContext.getDefault()
     def locale = Locale.getDefault()
