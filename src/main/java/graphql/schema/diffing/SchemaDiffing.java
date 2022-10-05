@@ -9,6 +9,7 @@ import graphql.schema.GraphQLSchema;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -58,6 +59,8 @@ public class SchemaDiffing {
         List<Vertex> nonMappedTarget = new ArrayList<>(targetGraph.getVertices());
         nonMappedTarget.removeAll(fixedMappings.getTargets());
 
+        sortListBasedOnPossibleMapping(nonMappedSource, isolatedVertices);
+
         // the non mapped vertices go to the end
         List<Vertex> sourceVertices = new ArrayList<>();
         sourceVertices.addAll(fixedMappings.getSources());
@@ -102,6 +105,20 @@ public class SchemaDiffing {
 //        overallEdits.addAll(edgeOperations);
         return editOperations;
     }
+
+    private void sortListBasedOnPossibleMapping(List<Vertex> sourceVertices, FillupIsolatedVertices.IsolatedVertices isolatedVertices) {
+        Collections.sort(sourceVertices, (v1, v2) ->
+        {
+            int v2Count = isolatedVertices.possibleMappings.get(v2).size();
+            int v1Count = isolatedVertices.possibleMappings.get(v1).size();
+            return Integer.compare(v2Count, v1Count);
+        });
+
+//        for (Vertex vertex : sourceGraph.getVertices()) {
+//            System.out.println("c: " + isolatedVertices.possibleMappings.get(vertex).size() + " v: " + vertex);
+//        }
+    }
+
 
     private List<EditOperation> calcEdgeOperations(Mapping mapping) {
         List<Edge> edges = sourceGraph.getEdges();
