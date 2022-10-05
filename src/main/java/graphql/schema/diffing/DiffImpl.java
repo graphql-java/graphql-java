@@ -88,7 +88,7 @@ public class DiffImpl {
                 continue;
             }
             if (mappingEntry.level > 0 && !mappingEntry.siblingsFinished) {
-                getSibling(
+                addSiblingToQueue(
                         mappingEntry.level,
                         queue,
                         upperBoundCost,
@@ -99,7 +99,7 @@ public class DiffImpl {
                         mappingEntry);
             }
             if (mappingEntry.level < graphSize) {
-                generateChildren(mappingEntry,
+                addChildToQueue(mappingEntry,
                         mappingEntry.level + 1,
                         queue,
                         upperBoundCost,
@@ -117,37 +117,35 @@ public class DiffImpl {
     }
 
 
-    // level starts at 1 indicating the level in the search tree to look for the next mapping
-    private void generateChildren(MappingEntry parentEntry,
-                                  int level,
-                                  PriorityQueue<MappingEntry> queue,
-                                  AtomicDouble upperBound,
-                                  AtomicReference<Mapping> bestFullMapping,
-                                  AtomicReference<List<EditOperation>> bestEdit,
-                                  List<Vertex> sourceList,
-                                  List<Vertex> targetList
+    // this calculates all children for the provided parentEntry, but only the first is directly added to the queue
+    private void addChildToQueue(MappingEntry parentEntry,
+                                 int level, // the level of the new Mapping Entry we want to add
+                                 PriorityQueue<MappingEntry> queue,
+                                 AtomicDouble upperBound,
+                                 AtomicReference<Mapping> bestFullMapping,
+                                 AtomicReference<List<EditOperation>> bestEdit,
+                                 List<Vertex> sourceList,
+                                 List<Vertex> targetList
 
     ) throws Exception {
         Mapping partialMapping = parentEntry.partialMapping;
         assertTrue(level - 1 == partialMapping.size());
 
-        // TODO: iterates over all target vertices
         ArrayList<Vertex> availableTargetVertices = new ArrayList<>(targetList);
         availableTargetVertices.removeAll(partialMapping.getTargets());
         assertTrue(availableTargetVertices.size() + partialMapping.size() == targetList.size());
         // level starts at 1 ... therefore level - 1 is the current one we want to extend
         Vertex v_i = sourceList.get(level - 1);
 
-
+        // the cost matrix is for the non mapped vertices
         int costMatrixSize = sourceList.size() - level + 1;
-//        double[][] costMatrix = new double[costMatrixSize][costMatrixSize];
 
+        // costMatrix gets modified by the hungarian algorithm ... therefore we create two of them
+        AtomicDoubleArray[] costMatrixForHungarianAlgo = new AtomicDoubleArray[costMatrixSize];
+        Arrays.setAll(costMatrixForHungarianAlgo, (index) -> new AtomicDoubleArray(costMatrixSize));
         AtomicDoubleArray[] costMatrix = new AtomicDoubleArray[costMatrixSize];
         Arrays.setAll(costMatrix, (index) -> new AtomicDoubleArray(costMatrixSize));
-        // costMatrix gets modified by the hungarian algorithm ... therefore we create two of them
-        AtomicDoubleArray[] costMatrixCopy = new AtomicDoubleArray[costMatrixSize];
-        Arrays.setAll(costMatrixCopy, (index) -> new AtomicDoubleArray(costMatrixSize));
-//
+
         // we are skipping the first level -i indices
         Set<Vertex> partialMappingSourceSet = new LinkedHashSet<>(partialMapping.getSources());
         Set<Vertex> partialMappingTargetSet = new LinkedHashSet<>(partialMapping.getTargets());
@@ -159,16 +157,16 @@ public class DiffImpl {
             int j = 0;
             for (Vertex u : availableTargetVertices) {
                 double cost = calcLowerBoundMappingCost(v, u, partialMapping.getSources(), partialMappingSourceSet, partialMapping.getTargets(), partialMappingTargetSet);
+                costMatrixForHungarianAlgo[i - level + 1].set(j, cost);
                 costMatrix[i - level + 1].set(j, cost);
-                costMatrixCopy[i - level + 1].set(j, cost);
                 j++;
             }
         }
-        HungarianAlgorithm hungarianAlgorithm = new HungarianAlgorithm(costMatrix);
+        HungarianAlgorithm hungarianAlgorithm = new HungarianAlgorithm(costMatrixForHungarianAlgo);
 
         int[] assignments = hungarianAlgorithm.execute();
         int editorialCostForMapping = editorialCostForMapping(partialMapping, completeSourceGraph, completeTargetGraph, new ArrayList<>());
-        double costMatrixSum = getCostMatrixSum(costMatrixCopy, assignments);
+        double costMatrixSum = getCostMatrixSum(costMatrix, assignments);
 
 
         double lowerBoundForPartialMapping = editorialCostForMapping + costMatrixSum;
@@ -182,7 +180,6 @@ public class DiffImpl {
         }
         MappingEntry newMappingEntry = new MappingEntry(newMappingSibling, level, lowerBoundForPartialMapping);
         LinkedBlockingQueue<MappingEntry> siblings = new LinkedBlockingQueue<>();
-//        newMappingEntry.siblingsReady = new AtomicBoolean();
         newMappingEntry.mappingEntriesSiblings = siblings;
         newMappingEntry.assignments = assignments;
         newMappingEntry.availableTargetVertices = availableTargetVertices;
@@ -203,10 +200,10 @@ public class DiffImpl {
             System.out.println("setting new best edit at level " + level + " with size " + editOperations.size() + " at level " + level);
         }
 
-        calculateChildren(
+        calculateRestOfChildren(
                 availableTargetVertices,
                 hungarianAlgorithm,
-                costMatrixCopy,
+                costMatrix,
                 editorialCostForMapping,
                 partialMapping,
                 v_i,
@@ -216,16 +213,18 @@ public class DiffImpl {
         );
     }
 
-    private void calculateChildren(List<Vertex> availableTargetVertices,
-                                   HungarianAlgorithm hungarianAlgorithm,
-                                   AtomicDoubleArray[] costMatrixCopy,
-                                   double editorialCostForMapping,
-                                   Mapping partialMapping,
-                                   Vertex v_i,
-                                   double upperBound,
-                                   int level,
-                                   LinkedBlockingQueue<MappingEntry> siblings
+    // generate all children mappings and save in MappingEntry.sibling
+    private void calculateRestOfChildren(List<Vertex> availableTargetVertices,
+                                         HungarianAlgorithm hungarianAlgorithm,
+                                         AtomicDoubleArray[] costMatrixCopy,
+                                         double editorialCostForMapping,
+                                         Mapping partialMapping,
+                                         Vertex v_i,
+                                         double upperBound,
+                                         int level,
+                                         LinkedBlockingQueue<MappingEntry> siblings
     ) {
+        // starting from 1 as we already generated the first one
         for (int child = 1; child < availableTargetVertices.size(); child++) {
             int[] assignments = hungarianAlgorithm.nextChild();
             if (hungarianAlgorithm.costMatrix[0].get(assignments[0]) == Integer.MAX_VALUE) {
@@ -247,15 +246,14 @@ public class DiffImpl {
             sibling.assignments = assignments;
             sibling.availableTargetVertices = availableTargetVertices;
 
-            // first child we add to the queue, otherwise save it for later
-//            System.out.println("add child " + child);
             siblings.add(sibling);
         }
         siblings.add(LAST_ELEMENT);
 
     }
 
-    private void getSibling(
+    // this retrieves the next sibling  from MappingEntry.sibling and adds it to the queue if the lowerBound is less than the current upperBound
+    private void addSiblingToQueue(
             int level,
             PriorityQueue<MappingEntry> queue,
             AtomicDouble upperBoundCost,
@@ -304,14 +302,17 @@ public class DiffImpl {
         return costMatrixSum;
     }
 
-    public static int editorialCostForMapping(Mapping partialOrFullMapping,
+    /**
+     * a partial mapping introduces a sub graph. The editorial cost is only calculated with respect to this sub graph.
+     */
+    public static int editorialCostForMapping(Mapping mapping,
                                               SchemaGraph sourceGraph,
                                               SchemaGraph targetGraph,
                                               List<EditOperation> editOperationsResult) {
         int cost = 0;
-        for (int i = 0; i < partialOrFullMapping.size(); i++) {
-            Vertex sourceVertex = partialOrFullMapping.getSource(i);
-            Vertex targetVertex = partialOrFullMapping.getTarget(i);
+        for (int i = 0; i < mapping.size(); i++) {
+            Vertex sourceVertex = mapping.getSource(i);
+            Vertex targetVertex = mapping.getTarget(i);
             // Vertex changing (relabeling)
             boolean equalNodes = sourceVertex.getType().equals(targetVertex.getType()) && sourceVertex.getProperties().equals(targetVertex.getProperties());
             if (!equalNodes) {
@@ -329,11 +330,11 @@ public class DiffImpl {
         // edge deletion or relabeling
         for (Edge sourceEdge : edges) {
             // only edges relevant to the subgraph
-            if (!partialOrFullMapping.containsSource(sourceEdge.getOne()) || !partialOrFullMapping.containsSource(sourceEdge.getTwo())) {
+            if (!mapping.containsSource(sourceEdge.getOne()) || !mapping.containsSource(sourceEdge.getTwo())) {
                 continue;
             }
-            Vertex target1 = partialOrFullMapping.getTarget(sourceEdge.getOne());
-            Vertex target2 = partialOrFullMapping.getTarget(sourceEdge.getTwo());
+            Vertex target1 = mapping.getTarget(sourceEdge.getOne());
+            Vertex target2 = mapping.getTarget(sourceEdge.getTwo());
             Edge targetEdge = targetGraph.getEdge(target1, target2);
             if (targetEdge == null) {
                 editOperationsResult.add(EditOperation.deleteEdge("Delete edge " + sourceEdge, sourceEdge));
@@ -347,11 +348,11 @@ public class DiffImpl {
         //TODO: iterates over all edges in the target Graph
         for (Edge targetEdge : targetGraph.getEdges()) {
             // only subgraph edges
-            if (!partialOrFullMapping.containsTarget(targetEdge.getOne()) || !partialOrFullMapping.containsTarget(targetEdge.getTwo())) {
+            if (!mapping.containsTarget(targetEdge.getOne()) || !mapping.containsTarget(targetEdge.getTwo())) {
                 continue;
             }
-            Vertex sourceFrom = partialOrFullMapping.getSource(targetEdge.getOne());
-            Vertex sourceTo = partialOrFullMapping.getSource(targetEdge.getTwo());
+            Vertex sourceFrom = mapping.getSource(targetEdge.getOne());
+            Vertex sourceTo = mapping.getSource(targetEdge.getTwo());
             if (sourceGraph.getEdge(sourceFrom, sourceTo) == null) {
                 editOperationsResult.add(EditOperation.insertEdge("Insert edge " + targetEdge, targetEdge));
                 cost++;
