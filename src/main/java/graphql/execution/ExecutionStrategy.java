@@ -679,6 +679,18 @@ public abstract class ExecutionStrategy {
         return null;
     }
 
+    /**
+     * Converts an object that is known to should be an Iterable into one
+     *
+     * @param result the result object
+     *
+     * @return an Iterable from that object
+     *
+     * @throws java.lang.ClassCastException if it's not an Iterable
+     */
+    protected Iterable<Object> toIterable(Object result) {
+        return FpKit.toIterable(result);
+    }
 
     protected GraphQLObjectType resolveType(ExecutionContext executionContext, ExecutionStrategyParameters parameters, GraphQLType fieldType) {
         // we can avoid a method call and type resolver environment allocation if we know it's an object type
