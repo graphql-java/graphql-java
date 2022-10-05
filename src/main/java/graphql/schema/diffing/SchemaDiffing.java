@@ -1,25 +1,13 @@
 package graphql.schema.diffing;
 
-import com.google.common.collect.HashMultiset;
-import com.google.common.collect.Multiset;
-import com.google.common.collect.Multisets;
-import com.google.common.util.concurrent.AtomicDouble;
-import com.google.common.util.concurrent.AtomicDoubleArray;
 import graphql.schema.GraphQLSchema;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.PriorityQueue;
-import java.util.Set;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.atomic.AtomicReference;
 
 import static graphql.Assert.assertTrue;
+import static graphql.schema.diffing.EditorialCostForMapping.editorialCostForMapping;
 
 public class SchemaDiffing {
 
@@ -49,7 +37,7 @@ public class SchemaDiffing {
         System.out.println("fixed mappings: " + fixedMappings.size() + " vs " + sourceGraph.size());
         if (fixedMappings.size() == sourceGraph.size()) {
             ArrayList<EditOperation> result = new ArrayList<>();
-            DiffImpl.editorialCostForMapping(fixedMappings, sourceGraph, targetGraph, result);
+            editorialCostForMapping(fixedMappings, sourceGraph, targetGraph, result);
             return result;
         }
         DiffImpl diffImpl = new DiffImpl(sourceGraph, targetGraph, isolatedVertices);
