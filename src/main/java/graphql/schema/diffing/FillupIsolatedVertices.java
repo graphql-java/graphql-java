@@ -411,9 +411,6 @@ public class FillupIsolatedVertices {
         VertexContextSegment appliedDirectiveContainer = new VertexContextSegment() {
             @Override
             public String idForVertex(Vertex appliedDirective, SchemaGraph schemaGraph) {
-                if ("source-5".equals(appliedDirective.getDebugName())) {
-                    System.out.println("yo");
-                }
                 Vertex appliedDirectiveContainer = schemaGraph.getAppliedDirectiveContainerForAppliedDirective(appliedDirective);
                 return appliedDirectiveContainer.getType() + "." + appliedDirectiveContainer.getName();
             }
@@ -426,9 +423,6 @@ public class FillupIsolatedVertices {
         VertexContextSegment parentOfContainer = new VertexContextSegment() {
             @Override
             public String idForVertex(Vertex appliedDirective, SchemaGraph schemaGraph) {
-                if ("source-5".equals(appliedDirective.getDebugName())) {
-                    System.out.println("yo");
-                }
                 Vertex container = schemaGraph.getAppliedDirectiveContainerForAppliedDirective(appliedDirective);
                 switch (container.getType()) {
                     case FIELD:
@@ -469,9 +463,6 @@ public class FillupIsolatedVertices {
         VertexContextSegment parentOfParentOfContainer = new VertexContextSegment() {
             @Override
             public String idForVertex(Vertex appliedDirective, SchemaGraph schemaGraph) {
-                if ("source-5".equals(appliedDirective.getDebugName())) {
-                    System.out.println("yo");
-                }
                 Vertex container = schemaGraph.getAppliedDirectiveContainerForAppliedDirective(appliedDirective);
                 switch (container.getType()) {
                     case FIELD:

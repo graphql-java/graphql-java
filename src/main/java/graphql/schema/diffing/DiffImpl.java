@@ -49,9 +49,18 @@ public class DiffImpl {
     }
 
     public static class OptimalEdit {
-        List<Mapping> mappings = new ArrayList<>();
-        List<List<EditOperation>> listOfEditOperations = new ArrayList<>();
-        int ged = Integer.MAX_VALUE;
+        public List<Mapping> mappings = new ArrayList<>();
+        public List<List<EditOperation>> listOfEditOperations = new ArrayList<>();
+        public int ged = Integer.MAX_VALUE;
+
+        public OptimalEdit() {
+
+        }
+        public OptimalEdit(List<Mapping> mappings, List<List<EditOperation>> listOfEditOperations, int ged) {
+            this.mappings = mappings;
+            this.listOfEditOperations = listOfEditOperations;
+            this.ged = ged;
+        }
     }
 
     public DiffImpl(SchemaGraph completeSourceGraph, SchemaGraph completeTargetGraph, FillupIsolatedVertices.IsolatedVertices isolatedVertices) {
@@ -110,10 +119,7 @@ public class DiffImpl {
                 );
             }
         }
-        System.out.println("ged cost: " + optimalEdit.ged);
-
         return optimalEdit;
-
     }
 
 

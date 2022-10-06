@@ -8,6 +8,7 @@ import java.util.List;
 
 import static graphql.Assert.assertTrue;
 import static graphql.schema.diffing.EditorialCostForMapping.editorialCostForMapping;
+import static java.util.Collections.singletonList;
 
 public class SchemaDiffing {
 
@@ -18,17 +19,18 @@ public class SchemaDiffing {
     public List<EditOperation> diffGraphQLSchema(GraphQLSchema graphQLSchema1, GraphQLSchema graphQLSchema2) throws Exception {
         sourceGraph = new SchemaGraphFactory("source-").createGraph(graphQLSchema1);
         targetGraph = new SchemaGraphFactory("target-").createGraph(graphQLSchema2);
-        return diffImpl(sourceGraph, targetGraph).get(0);
+        return diffImpl(sourceGraph, targetGraph).listOfEditOperations.get(0);
 
     }
-    public List<List<EditOperation>> diffGraphQLSchemaAllEdits(GraphQLSchema graphQLSchema1, GraphQLSchema graphQLSchema2) throws Exception {
+
+    public DiffImpl.OptimalEdit diffGraphQLSchemaAllEdits(GraphQLSchema graphQLSchema1, GraphQLSchema graphQLSchema2) throws Exception {
         sourceGraph = new SchemaGraphFactory("source-").createGraph(graphQLSchema1);
         targetGraph = new SchemaGraphFactory("target-").createGraph(graphQLSchema2);
         return diffImpl(sourceGraph, targetGraph);
     }
 
 
-    private List<List<EditOperation>> diffImpl(SchemaGraph sourceGraph, SchemaGraph targetGraph) throws Exception {
+    private DiffImpl.OptimalEdit diffImpl(SchemaGraph sourceGraph, SchemaGraph targetGraph) throws Exception {
         int sizeDiff = targetGraph.size() - sourceGraph.size();
         System.out.println("graph diff: " + sizeDiff);
         FillupIsolatedVertices fillupIsolatedVertices = new FillupIsolatedVertices(sourceGraph, targetGraph);
@@ -42,16 +44,16 @@ public class SchemaDiffing {
         Mapping fixedMappings = isolatedVertices.mapping;
         System.out.println("fixed mappings: " + fixedMappings.size() + " vs " + sourceGraph.size());
         if (fixedMappings.size() == sourceGraph.size()) {
-            ArrayList<EditOperation> result = new ArrayList<>();
+            List<EditOperation> result = new ArrayList<>();
             editorialCostForMapping(fixedMappings, sourceGraph, targetGraph, result);
-            return Collections.singletonList(result);
+            return new DiffImpl.OptimalEdit(singletonList(fixedMappings), singletonList(result), result.size());
         }
         DiffImpl diffImpl = new DiffImpl(sourceGraph, targetGraph, isolatedVertices);
         List<Vertex> nonMappedSource = new ArrayList<>(sourceGraph.getVertices());
         nonMappedSource.removeAll(fixedMappings.getSources());
-        for(Vertex vertex: nonMappedSource) {
-            System.out.println("non mapped: " + vertex);
-        }
+//        for(Vertex vertex: nonMappedSource) {
+//            System.out.println("non mapped: " + vertex);
+//        }
 
         List<Vertex> nonMappedTarget = new ArrayList<>(targetGraph.getVertices());
         nonMappedTarget.removeAll(fixedMappings.getTargets());
@@ -69,7 +71,7 @@ public class SchemaDiffing {
 
 
         DiffImpl.OptimalEdit optimalEdit = diffImpl.diffImpl(fixedMappings, sourceVertices, targetGraphVertices);
-        return optimalEdit.listOfEditOperations;
+        return optimalEdit;
     }
 
     private void sortListBasedOnPossibleMapping(List<Vertex> sourceVertices, FillupIsolatedVertices.IsolatedVertices isolatedVertices) {
