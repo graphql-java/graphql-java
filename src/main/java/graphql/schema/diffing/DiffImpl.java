@@ -51,11 +51,15 @@ public class DiffImpl {
     public static class OptimalEdit {
         public List<Mapping> mappings = new ArrayList<>();
         public List<List<EditOperation>> listOfEditOperations = new ArrayList<>();
+
+        public List<Set<EditOperation>> listOfSets = new ArrayList<>();
+
         public int ged = Integer.MAX_VALUE;
 
         public OptimalEdit() {
 
         }
+
         public OptimalEdit(List<Mapping> mappings, List<List<EditOperation>> listOfEditOperations, int ged) {
             this.mappings = mappings;
             this.listOfEditOperations = listOfEditOperations;
@@ -213,12 +217,24 @@ public class DiffImpl {
     private void updateOptimalEdit(OptimalEdit optimalEdit, int newGed, Mapping mapping, List<EditOperation> editOperations) {
         if (newGed < optimalEdit.ged) {
             optimalEdit.ged = newGed;
+
             optimalEdit.listOfEditOperations.clear();
-            optimalEdit.mappings.clear();
             optimalEdit.listOfEditOperations.add(editOperations);
+
+            optimalEdit.listOfSets.clear();
+            optimalEdit.listOfSets.add(new LinkedHashSet<>(editOperations));
+
+            optimalEdit.mappings.clear();
             optimalEdit.mappings.add(mapping);
             System.out.println("setting new best edit at level " + (mapping.size()) + " with size " + editOperations.size());
         } else if (newGed == optimalEdit.ged) {
+            Set<EditOperation> newSet = new LinkedHashSet<>(editOperations);
+            for (Set<EditOperation> set : optimalEdit.listOfSets) {
+                if (set.equals(newSet)) {
+                    return;
+                }
+            }
+            optimalEdit.listOfSets.add(newSet);
             optimalEdit.listOfEditOperations.add(editOperations);
             optimalEdit.mappings.add(mapping);
         }

@@ -71,6 +71,17 @@ public class SchemaDiffing {
 
 
         DiffImpl.OptimalEdit optimalEdit = diffImpl.diffImpl(fixedMappings, sourceVertices, targetGraphVertices);
+        System.out.println("different edit counts: " + optimalEdit.listOfEditOperations.size());
+        for(int i = 0; i < optimalEdit.listOfEditOperations.size(); i++) {
+            System.out.println("--------------");
+            System.out.println("edit: " + i);
+            System.out.println("--------------");
+            for(EditOperation editOperation: optimalEdit.listOfEditOperations.get(i)) {
+                System.out.println(editOperation);
+            }
+            System.out.println("--------------");
+            System.out.println("--------------");
+        }
         return optimalEdit;
     }
 

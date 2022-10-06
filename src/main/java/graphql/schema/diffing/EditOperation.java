@@ -1,5 +1,7 @@
 package graphql.schema.diffing;
 
+import java.util.Objects;
+
 public class EditOperation {
 
     private EditOperation(Operation operation,
@@ -71,5 +73,22 @@ public class EditOperation {
                 "operation=" + operation +
                 ", description='" + description + '\'' +
                 '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        EditOperation that = (EditOperation) o;
+        return operation == that.operation && Objects.equals(description, that.description) && Objects.equals(sourceVertex, that.sourceVertex) && Objects.equals(targetVertex, that.targetVertex) && Objects.equals(sourceEdge, that.sourceEdge) && Objects.equals(targetEdge, that.targetEdge);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(operation, description, sourceVertex, targetVertex, sourceEdge, targetEdge);
     }
 }

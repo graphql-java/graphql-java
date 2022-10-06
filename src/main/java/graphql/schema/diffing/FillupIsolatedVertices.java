@@ -773,7 +773,6 @@ public class FillupIsolatedVertices {
 //                System.out.println("multiple for " + vertex);
 //            }
 //        }
-        System.out.println("done isolated");
 //        if (sourceGraph.size() < targetGraph.size()) {
 //            isolatedVertices.isolatedBuiltInSourceVertices.addAll(sourceGraph.addIsolatedVertices(targetGraph.size() - sourceGraph.size(), "source-isolated-builtin-"));
 //        } else if (sourceGraph.size() > targetGraph.size()) {
