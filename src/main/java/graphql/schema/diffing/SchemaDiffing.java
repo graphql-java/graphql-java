@@ -18,11 +18,17 @@ public class SchemaDiffing {
     public List<EditOperation> diffGraphQLSchema(GraphQLSchema graphQLSchema1, GraphQLSchema graphQLSchema2) throws Exception {
         sourceGraph = new SchemaGraphFactory("source-").createGraph(graphQLSchema1);
         targetGraph = new SchemaGraphFactory("target-").createGraph(graphQLSchema2);
-        return diffImpl(sourceGraph, targetGraph);
+        return diffImpl(sourceGraph, targetGraph).get(0);
 
     }
+    public List<List<EditOperation>> diffGraphQLSchemaAllEdits(GraphQLSchema graphQLSchema1, GraphQLSchema graphQLSchema2) throws Exception {
+        sourceGraph = new SchemaGraphFactory("source-").createGraph(graphQLSchema1);
+        targetGraph = new SchemaGraphFactory("target-").createGraph(graphQLSchema2);
+        return diffImpl(sourceGraph, targetGraph);
+    }
 
-    List<EditOperation> diffImpl(SchemaGraph sourceGraph, SchemaGraph targetGraph) throws Exception {
+
+    private List<List<EditOperation>> diffImpl(SchemaGraph sourceGraph, SchemaGraph targetGraph) throws Exception {
         int sizeDiff = targetGraph.size() - sourceGraph.size();
         System.out.println("graph diff: " + sizeDiff);
         FillupIsolatedVertices fillupIsolatedVertices = new FillupIsolatedVertices(sourceGraph, targetGraph);
@@ -38,7 +44,7 @@ public class SchemaDiffing {
         if (fixedMappings.size() == sourceGraph.size()) {
             ArrayList<EditOperation> result = new ArrayList<>();
             editorialCostForMapping(fixedMappings, sourceGraph, targetGraph, result);
-            return result;
+            return Collections.singletonList(result);
         }
         DiffImpl diffImpl = new DiffImpl(sourceGraph, targetGraph, isolatedVertices);
         List<Vertex> nonMappedSource = new ArrayList<>(sourceGraph.getVertices());
@@ -59,8 +65,8 @@ public class SchemaDiffing {
         targetGraphVertices.addAll(nonMappedTarget);
 
 
-        List<EditOperation> editOperations = diffImpl.diffImpl(fixedMappings, sourceVertices, targetGraphVertices);
-        return editOperations;
+        DiffImpl.OptimalEdit optimalEdit = diffImpl.diffImpl(fixedMappings, sourceVertices, targetGraphVertices);
+        return optimalEdit.listOfEditOperations;
     }
 
     private void sortListBasedOnPossibleMapping(List<Vertex> sourceVertices, FillupIsolatedVertices.IsolatedVertices isolatedVertices) {
