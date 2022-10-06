@@ -49,6 +49,9 @@ public class SchemaDiffing {
         DiffImpl diffImpl = new DiffImpl(sourceGraph, targetGraph, isolatedVertices);
         List<Vertex> nonMappedSource = new ArrayList<>(sourceGraph.getVertices());
         nonMappedSource.removeAll(fixedMappings.getSources());
+        for(Vertex vertex: nonMappedSource) {
+            System.out.println("non mapped: " + vertex);
+        }
 
         List<Vertex> nonMappedTarget = new ArrayList<>(targetGraph.getVertices());
         nonMappedTarget.removeAll(fixedMappings.getTargets());

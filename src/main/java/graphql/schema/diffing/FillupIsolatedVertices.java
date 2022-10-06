@@ -1,6 +1,5 @@
 package graphql.schema.diffing;
 
-import com.google.common.collect.ArrayTable;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.HashBiMap;
@@ -51,7 +50,7 @@ public class FillupIsolatedVertices {
 
     static {
         typeContexts.put(FIELD, fieldContext());
-        typeContexts.put(ARGUMENT, argumentsForFieldsContexts());
+        typeContexts.put(ARGUMENT, argumentsContexts());
         typeContexts.put(INPUT_FIELD, inputFieldContexts());
         typeContexts.put(DUMMY_TYPE_VERTEX, dummyTypeContext());
         typeContexts.put(OBJECT, objectContext());
@@ -192,7 +191,18 @@ public class FillupIsolatedVertices {
                 return INPUT_OBJECT.equals(vertex.getType());
             }
         };
-        List<VertexContextSegment> contexts = Arrays.asList(inputObject);
+        VertexContextSegment inputObjectName = new VertexContextSegment() {
+            @Override
+            public String idForVertex(Vertex inputObject, SchemaGraph schemaGraph) {
+                return inputObject.getName();
+            }
+
+            @Override
+            public boolean filter(Vertex vertex, SchemaGraph schemaGraph) {
+                return true;
+            }
+        };
+        List<VertexContextSegment> contexts = Arrays.asList(inputObject, inputObjectName);
         return contexts;
     }
 
@@ -388,7 +398,8 @@ public class FillupIsolatedVertices {
         VertexContextSegment appliedDirectiveName = new VertexContextSegment() {
             @Override
             public String idForVertex(Vertex appliedDirective, SchemaGraph schemaGraph) {
-                return appliedDirective.getName();
+                int appliedDirectiveIndex = schemaGraph.getAppliedDirectiveIndex(appliedDirective);
+                return appliedDirectiveIndex + ":" + appliedDirective.getName();
             }
 
             @Override
@@ -397,9 +408,107 @@ public class FillupIsolatedVertices {
             }
         };
 
-        List<VertexContextSegment> contexts = Arrays.asList(appliedDirectiveType, appliedDirectiveName);
+        VertexContextSegment appliedDirectiveContainer = new VertexContextSegment() {
+            @Override
+            public String idForVertex(Vertex appliedDirective, SchemaGraph schemaGraph) {
+                if ("source-5".equals(appliedDirective.getDebugName())) {
+                    System.out.println("yo");
+                }
+                Vertex appliedDirectiveContainer = schemaGraph.getAppliedDirectiveContainerForAppliedDirective(appliedDirective);
+                return appliedDirectiveContainer.getType() + "." + appliedDirectiveContainer.getName();
+            }
+
+            @Override
+            public boolean filter(Vertex vertex, SchemaGraph schemaGraph) {
+                return true;
+            }
+        };
+        VertexContextSegment parentOfContainer = new VertexContextSegment() {
+            @Override
+            public String idForVertex(Vertex appliedDirective, SchemaGraph schemaGraph) {
+                if ("source-5".equals(appliedDirective.getDebugName())) {
+                    System.out.println("yo");
+                }
+                Vertex container = schemaGraph.getAppliedDirectiveContainerForAppliedDirective(appliedDirective);
+                switch (container.getType()) {
+                    case FIELD:
+                        Vertex fieldsContainer = schemaGraph.getFieldsContainerForField(container);
+                        return fieldsContainer.getType() + "." + fieldsContainer.getName();
+                    case OBJECT:
+                        return OBJECT;
+                    case INTERFACE:
+                        return INTERFACE;
+                    case INPUT_FIELD:
+                        Vertex inputObject = schemaGraph.getInputObjectForInputField(container);
+                        return inputObject.getType() + "." + inputObject.getName();
+                    case ARGUMENT:
+                        Vertex fieldOrDirective = schemaGraph.getFieldOrDirectiveForArgument(container);
+                        return fieldOrDirective.getType() + "." + fieldOrDirective.getName();
+                    case INPUT_OBJECT:
+                        return INPUT_OBJECT;
+                    case ENUM:
+                        return ENUM;
+                    case UNION:
+                        return UNION;
+                    case SCALAR:
+                        return SCALAR;
+                    case ENUM_VALUE:
+                        Vertex enumVertex = schemaGraph.getEnumForEnumValue(container);
+                        return enumVertex.getType() + "." + enumVertex.getName();
+                    default:
+                        throw new IllegalStateException("Unexpected directive container type " + container.getType());
+                }
+            }
+
+            @Override
+            public boolean filter(Vertex vertex, SchemaGraph schemaGraph) {
+                return true;
+            }
+        };
+
+        VertexContextSegment parentOfParentOfContainer = new VertexContextSegment() {
+            @Override
+            public String idForVertex(Vertex appliedDirective, SchemaGraph schemaGraph) {
+                if ("source-5".equals(appliedDirective.getDebugName())) {
+                    System.out.println("yo");
+                }
+                Vertex container = schemaGraph.getAppliedDirectiveContainerForAppliedDirective(appliedDirective);
+                switch (container.getType()) {
+                    case FIELD:
+                    case OBJECT:
+                    case INTERFACE:
+                    case INPUT_FIELD:
+                    case INPUT_OBJECT:
+                    case ENUM:
+                    case ENUM_VALUE:
+                    case UNION:
+                    case SCALAR:
+                        return "";
+                    case ARGUMENT:
+                        Vertex fieldOrDirective = schemaGraph.getFieldOrDirectiveForArgument(container);
+                        switch (fieldOrDirective.getType()) {
+                            case FIELD:
+                                Vertex fieldsContainer = schemaGraph.getFieldsContainerForField(fieldOrDirective);
+                                return fieldsContainer.getType() + "." + fieldsContainer.getName();
+                            case DIRECTIVE:
+                                return "";
+                            default:
+                                return Assert.assertShouldNeverHappen();
+                        }
+                    default:
+                        throw new IllegalStateException("Unexpected directive container type " + container.getType());
+                }
+            }
+
+            @Override
+            public boolean filter(Vertex vertex, SchemaGraph schemaGraph) {
+                return true;
+            }
+        };
+        List<VertexContextSegment> contexts = Arrays.asList(appliedDirectiveType, parentOfParentOfContainer, parentOfContainer, appliedDirectiveContainer, appliedDirectiveName);
         return contexts;
     }
+
 
     private static List<VertexContextSegment> appliedArgumentContext() {
         VertexContextSegment appliedArgumentType = new VertexContextSegment() {
@@ -417,7 +526,8 @@ public class FillupIsolatedVertices {
             @Override
             public String idForVertex(Vertex appliedArgument, SchemaGraph schemaGraph) {
                 Vertex appliedDirective = schemaGraph.getAppliedDirectiveForAppliedArgument(appliedArgument);
-                return appliedDirective.getName();
+                int appliedDirectiveIndex = schemaGraph.getAppliedDirectiveIndex(appliedDirective);
+                return appliedDirectiveIndex + ":" + appliedDirective.getName();
             }
 
             @Override
@@ -425,6 +535,7 @@ public class FillupIsolatedVertices {
                 return true;
             }
         };
+
         VertexContextSegment appliedDirectiveContainer = new VertexContextSegment() {
             @Override
             public String idForVertex(Vertex appliedArgument, SchemaGraph schemaGraph) {
@@ -438,13 +549,77 @@ public class FillupIsolatedVertices {
                 return true;
             }
         };
-        VertexContextSegment parentOfAppliedDirectiveContainer = new VertexContextSegment() {
+        VertexContextSegment parentOfContainer = new VertexContextSegment() {
             @Override
             public String idForVertex(Vertex appliedArgument, SchemaGraph schemaGraph) {
                 Vertex appliedDirective = schemaGraph.getAppliedDirectiveForAppliedArgument(appliedArgument);
-                Vertex appliedDirectiveContainer = schemaGraph.getAppliedDirectiveContainerForAppliedDirective(appliedDirective);
-                Vertex parent = schemaGraph.getParentSchemaElement(appliedDirectiveContainer);
-                return parent.getName();
+                Vertex container = schemaGraph.getAppliedDirectiveContainerForAppliedDirective(appliedDirective);
+                switch (container.getType()) {
+                    case FIELD:
+                        Vertex fieldsContainer = schemaGraph.getFieldsContainerForField(container);
+                        return fieldsContainer.getType() + "." + fieldsContainer.getName();
+                    case OBJECT:
+                        return OBJECT;
+                    case INTERFACE:
+                        return INTERFACE;
+                    case INPUT_FIELD:
+                        Vertex inputObject = schemaGraph.getInputObjectForInputField(container);
+                        return inputObject.getType() + "." + inputObject.getName();
+                    case ARGUMENT:
+                        Vertex fieldOrDirective = schemaGraph.getFieldOrDirectiveForArgument(container);
+                        return fieldOrDirective.getType() + "." + fieldOrDirective.getName();
+                    case INPUT_OBJECT:
+                        return INPUT_OBJECT;
+                    case ENUM:
+                        return ENUM;
+                    case UNION:
+                        return UNION;
+                    case SCALAR:
+                        return SCALAR;
+                    case ENUM_VALUE:
+                        Vertex enumVertex = schemaGraph.getEnumForEnumValue(container);
+                        return enumVertex.getType() + "." + enumVertex.getName();
+                    default:
+                        throw new IllegalStateException("Unexpected directive container type " + container.getType());
+                }
+            }
+
+            @Override
+            public boolean filter(Vertex vertex, SchemaGraph schemaGraph) {
+                return true;
+            }
+        };
+
+        VertexContextSegment parentOfParentOfContainer = new VertexContextSegment() {
+            @Override
+            public String idForVertex(Vertex appliedArgument, SchemaGraph schemaGraph) {
+                Vertex appliedDirective = schemaGraph.getAppliedDirectiveForAppliedArgument(appliedArgument);
+                Vertex container = schemaGraph.getAppliedDirectiveContainerForAppliedDirective(appliedDirective);
+                switch (container.getType()) {
+                    case FIELD:
+                    case OBJECT:
+                    case INTERFACE:
+                    case INPUT_FIELD:
+                    case INPUT_OBJECT:
+                    case ENUM:
+                    case ENUM_VALUE:
+                    case UNION:
+                    case SCALAR:
+                        return "";
+                    case ARGUMENT:
+                        Vertex fieldOrDirective = schemaGraph.getFieldOrDirectiveForArgument(container);
+                        switch (fieldOrDirective.getType()) {
+                            case FIELD:
+                                Vertex fieldsContainer = schemaGraph.getFieldsContainerForField(fieldOrDirective);
+                                return fieldsContainer.getType() + "." + fieldsContainer.getName();
+                            case DIRECTIVE:
+                                return "";
+                            default:
+                                return Assert.assertShouldNeverHappen();
+                        }
+                    default:
+                        throw new IllegalStateException("Unexpected directive container type " + container.getType());
+                }
             }
 
             @Override
@@ -463,7 +638,7 @@ public class FillupIsolatedVertices {
                 return true;
             }
         };
-        List<VertexContextSegment> contexts = Arrays.asList(appliedArgumentType, parentOfAppliedDirectiveContainer, appliedDirectiveContainer, appliedDirective, appliedArgumentName);
+        List<VertexContextSegment> contexts = Arrays.asList(appliedArgumentType, parentOfParentOfContainer, parentOfContainer, appliedDirectiveContainer, appliedDirective, appliedArgumentName);
         return contexts;
     }
 
@@ -507,7 +682,7 @@ public class FillupIsolatedVertices {
         return contexts;
     }
 
-    private static List<VertexContextSegment> argumentsForFieldsContexts() {
+    private static List<VertexContextSegment> argumentsContexts() {
 
         VertexContextSegment argumentType = new VertexContextSegment() {
             @Override
@@ -664,7 +839,7 @@ public class FillupIsolatedVertices {
             allIsolatedTarget.addAll(isolatedTarget);
         }
 
-//        public void putSource(Object contextId, Collection<Vertex> isolatedSourcedVertices) {
+        //        public void putSource(Object contextId, Collection<Vertex> isolatedSourcedVertices) {
 //            contextToIsolatedSourceVertices.putAll(contextId, isolatedSourcedVertices);
 //            allIsolatedSource.addAll(isolatedSourcedVertices);
 //        }

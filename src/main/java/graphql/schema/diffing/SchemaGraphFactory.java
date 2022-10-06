@@ -12,8 +12,10 @@ import graphql.util.TraverserContext;
 import graphql.util.TraverserVisitor;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import static graphql.Assert.assertNotNull;
@@ -330,6 +332,7 @@ public class SchemaGraphFactory {
 
     private void cratedAppliedDirectives(Vertex from, List<GraphQLDirective> appliedDirectives, SchemaGraph
             schemaGraph) {
+        Map<String, Integer> countByName = new LinkedHashMap<>();
         for (GraphQLDirective appliedDirective : appliedDirectives) {
             Vertex appliedDirectiveVertex = new Vertex(SchemaGraph.APPLIED_DIRECTIVE, debugPrefix + String.valueOf(counter++));
             appliedDirectiveVertex.add("name", appliedDirective.getName());
@@ -343,7 +346,12 @@ public class SchemaGraphFactory {
                 }
             }
             schemaGraph.addVertex(appliedDirectiveVertex);
-            schemaGraph.addEdge(new Edge(from, appliedDirectiveVertex));
+
+            // repeatable directives means we can have multiple directives with the same name
+            // the edge label indicates the applied directive index
+            Integer count = countByName.getOrDefault(appliedDirective.getName(), 0);
+            schemaGraph.addEdge(new Edge(from, appliedDirectiveVertex, String.valueOf(count)));
+            countByName.put(appliedDirective.getName(), count + 1);
         }
     }
 

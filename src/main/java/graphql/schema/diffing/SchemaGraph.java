@@ -135,6 +135,22 @@ public class SchemaGraph {
         return result;
     }
 
+    public List<Edge> getAdjacentEdges(Vertex from, Predicate<Vertex> predicate) {
+        List<Edge> result = new ArrayList<>();
+        for (Edge edge : edgeByVertexPair.row(from).values()) {
+            Vertex v;
+            if (edge.getOne() == from) {
+                v = edge.getTwo();
+            } else {
+                v = edge.getOne();
+            }
+            if (predicate.test(v)) {
+                result.add(edge);
+            }
+        }
+        return result;
+    }
+
     public Edge getSingleAdjacentEdge(Vertex from, Predicate<Edge> predicate) {
         for (Edge edge : edgeByVertexPair.row(from).values()) {
             if (predicate.test(edge)) {
@@ -224,6 +240,12 @@ public class SchemaGraph {
         List<Vertex> adjacentVertices = this.getAdjacentVertices(appliedDirective, vertex -> !vertex.getType().equals(APPLIED_ARGUMENT));
         assertTrue(adjacentVertices.size() == 1, () -> format("No applied directive container found for %s", appliedDirective));
         return adjacentVertices.get(0);
+    }
+
+    public int getAppliedDirectiveIndex(Vertex appliedDirective) {
+        List<Edge> adjacentEdges = this.getAdjacentEdges(appliedDirective, vertex -> !vertex.getType().equals(APPLIED_ARGUMENT));
+        assertTrue(adjacentEdges.size() == 1, () -> format("No applied directive container found for %s", appliedDirective));
+        return Integer.parseInt(adjacentEdges.get(0).getLabel());
     }
 
     public Vertex getParentSchemaElement(Vertex vertex) {
