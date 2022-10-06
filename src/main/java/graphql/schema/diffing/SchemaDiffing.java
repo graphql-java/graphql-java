@@ -60,37 +60,6 @@ public class SchemaDiffing {
 
 
         List<EditOperation> editOperations = diffImpl.diffImpl(fixedMappings, sourceVertices, targetGraphVertices);
-
-
-//        Mapping overallMapping = new Mapping();
-//        ArrayList<EditOperation> overallEdits = new ArrayList<>();
-//
-//        for (List<String> contextId : isolatedVertices.contexts.rowKeySet()) {
-//            Set<Vertex> sourceList = isolatedVertices.contexts.row(contextId).keySet().iterator().next();
-//            Set<Vertex> targetList = isolatedVertices.contexts.get(contextId, sourceList);
-//            assertTrue(sourceList.size() == targetList.size());
-//            System.out.println();
-//            if (sourceList.size() == 1) {
-//                Vertex sourceVertex = sourceList.iterator().next();
-//                Vertex targetVertex = targetList.iterator().next();
-//                overallMapping.add(sourceVertex, targetVertex);
-//                continue;
-//            }
-//            System.out.println("contextId: " + contextId + " with vertices: " + sourceList.size());
-//            List<EditOperation> editOperations = diffImpl.diffImpl(new ArrayList<>(sourceList), new ArrayList<>(targetList));
-//
-//            for (EditOperation editOperation : editOperations) {
-//                if (editOperation.getOperation() == EditOperation.Operation.CHANGE_VERTEX ||
-//                        editOperation.getOperation() == EditOperation.Operation.INSERT_VERTEX ||
-//                        editOperation.getOperation() == EditOperation.Operation.DELETE_VERTEX) {
-//                    overallMapping.add(editOperation.getSourceVertex(), editOperation.getTargetVertex());
-//                    overallEdits.add(editOperation);
-//                }
-//            }
-//        }
-
-//        List<EditOperation> edgeOperations = calcEdgeOperations(overallMapping);
-//        overallEdits.addAll(edgeOperations);
         return editOperations;
     }
 

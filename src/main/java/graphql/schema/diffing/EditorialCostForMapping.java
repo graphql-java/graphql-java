@@ -4,6 +4,9 @@ import java.util.List;
 
 public class EditorialCostForMapping {
 
+    /**
+     * a mapping introduces a subgraph consisting of all vertices and all edges between these vertices
+     */
     public static int editorialCostForMapping(Mapping mapping, // can be a partial mapping
                                               SchemaGraph sourceGraph, // the whole graph
                                               SchemaGraph targetGraph, // the whole graph

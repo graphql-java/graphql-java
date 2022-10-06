@@ -14,6 +14,7 @@ import java.util.Objects;
 import java.util.PriorityQueue;
 import java.util.Set;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static graphql.Assert.assertTrue;
@@ -47,6 +48,12 @@ public class DiffImpl {
         }
     }
 
+    static class OptimalEdit {
+        List<Mapping> mappings = new ArrayList<>();
+        List<List<EditOperation>> listOfEditOperations = new ArrayList<>();
+        int ged = Integer.MAX_VALUE;
+    }
+
     public DiffImpl(SchemaGraph completeSourceGraph, SchemaGraph completeTargetGraph, FillupIsolatedVertices.IsolatedVertices isolatedVertices) {
         this.completeSourceGraph = completeSourceGraph;
         this.completeTargetGraph = completeTargetGraph;
@@ -55,16 +62,14 @@ public class DiffImpl {
 
     List<EditOperation> diffImpl(Mapping startMapping, List<Vertex> relevantSourceList, List<Vertex> relevantTargetList) throws Exception {
 
-        AtomicDouble upperBoundCost = new AtomicDouble(Double.MAX_VALUE);
-        AtomicReference<Mapping> bestFullMapping = new AtomicReference<>();
-        AtomicReference<List<EditOperation>> bestEdit = new AtomicReference<>();
+        OptimalEdit optimalEdit = new OptimalEdit();
 
         int graphSize = relevantSourceList.size();
 
         int mappingCost = editorialCostForMapping(startMapping, completeSourceGraph, completeTargetGraph, new ArrayList<>());
         int level = startMapping.size();
-        MappingEntry firstMappingEntry = new MappingEntry(startMapping,level,mappingCost);
-        System.out.println("first entry: lower bound: " + mappingCost + " at level " + level );
+        MappingEntry firstMappingEntry = new MappingEntry(startMapping, level, mappingCost);
+        System.out.println("first entry: lower bound: " + mappingCost + " at level " + level);
 
         PriorityQueue<MappingEntry> queue = new PriorityQueue<>((mappingEntry1, mappingEntry2) -> {
             int compareResult = Double.compare(mappingEntry1.lowerBoundCost, mappingEntry2.lowerBoundCost);
@@ -84,16 +89,14 @@ public class DiffImpl {
 //            if ((++counter) % 100 == 0) {
 //                System.out.println((counter) + " entry at level");
 //            }
-            if (mappingEntry.lowerBoundCost >= upperBoundCost.doubleValue()) {
+            if (mappingEntry.lowerBoundCost >= optimalEdit.ged) {
                 continue;
             }
             if (mappingEntry.level > 0 && !mappingEntry.siblingsFinished) {
                 addSiblingToQueue(
                         mappingEntry.level,
                         queue,
-                        upperBoundCost,
-                        bestFullMapping,
-                        bestEdit,
+                        optimalEdit,
                         relevantSourceList,
                         relevantTargetList,
                         mappingEntry);
@@ -101,17 +104,15 @@ public class DiffImpl {
             if (mappingEntry.level < graphSize) {
                 addChildToQueue(mappingEntry,
                         queue,
-                        upperBoundCost,
-                        bestFullMapping,
-                        bestEdit,
+                        optimalEdit,
                         relevantSourceList,
                         relevantTargetList
                 );
             }
         }
-        System.out.println("ged cost: " + upperBoundCost.doubleValue());
+        System.out.println("ged cost: " + optimalEdit.ged);
 
-        return bestEdit.get();
+        return optimalEdit.listOfEditOperations.get(0);
 
     }
 
@@ -119,15 +120,14 @@ public class DiffImpl {
     // this calculates all children for the provided parentEntry, but only the first is directly added to the queue
     private void addChildToQueue(MappingEntry parentEntry,
                                  PriorityQueue<MappingEntry> queue,
-                                 AtomicDouble upperBound,
-                                 AtomicReference<Mapping> bestFullMapping,
-                                 AtomicReference<List<EditOperation>> bestEdit,
+                                 OptimalEdit optimalEdit,
                                  List<Vertex> sourceList,
                                  List<Vertex> targetList
 
     ) throws Exception {
         Mapping partialMapping = parentEntry.partialMapping;
-        int level = parentEntry.level;;
+        int level = parentEntry.level;
+        ;
         assertTrue(level == partialMapping.size());
 
         ArrayList<Vertex> availableTargetVertices = new ArrayList<>(targetList);
@@ -173,7 +173,7 @@ public class DiffImpl {
         Mapping newMappingSibling = partialMapping.extendMapping(v_i, bestExtensionTargetVertexSibling);
 
 
-        if (lowerBoundForPartialMapping >= upperBound.doubleValue()) {
+        if (lowerBoundForPartialMapping >= optimalEdit.ged) {
             return;
         }
         MappingEntry newMappingEntry = new MappingEntry(newMappingSibling, level + 1, lowerBoundForPartialMapping);
@@ -191,11 +191,8 @@ public class DiffImpl {
 //        assertTrue(fullMapping.size() == sourceGraph.size());
         List<EditOperation> editOperations = new ArrayList<>();
         int costForFullMapping = editorialCostForMapping(fullMapping, completeSourceGraph, completeTargetGraph, editOperations);
-        if (costForFullMapping < upperBound.doubleValue()) {
-            upperBound.set(costForFullMapping);
-            bestFullMapping.set(fullMapping);
-            bestEdit.set(editOperations);
-            System.out.println("setting new best edit at level " + (level + 1) + " with size " + editOperations.size() + " at level " + level);
+        if (costForFullMapping < optimalEdit.ged) {
+            updateOptimalEdit(optimalEdit, costForFullMapping, fullMapping, editOperations);
         }
 
         calculateRestOfChildren(
@@ -205,10 +202,21 @@ public class DiffImpl {
                 editorialCostForMapping,
                 partialMapping,
                 v_i,
-                upperBound.get(),
+                optimalEdit.ged,
                 level + 1,
                 siblings
         );
+    }
+
+    private void updateOptimalEdit(OptimalEdit optimalEdit, int newGed, Mapping mapping, List<EditOperation> editOperations) {
+        if (newGed < optimalEdit.ged) {
+            optimalEdit.ged = newGed;
+            optimalEdit.listOfEditOperations.clear();
+            optimalEdit.mappings.clear();
+            optimalEdit.listOfEditOperations.add(editOperations);
+            optimalEdit.mappings.add(mapping);
+            System.out.println("setting new best edit at level " + (mapping.size()) + " with size " + editOperations.size());
+        }
     }
 
     // generate all children mappings and save in MappingEntry.sibling
@@ -218,7 +226,7 @@ public class DiffImpl {
                                          double editorialCostForMapping,
                                          Mapping partialMapping,
                                          Vertex v_i,
-                                         double upperBound,
+                                         int upperBound,
                                          int level,
                                          LinkedBlockingQueue<MappingEntry> siblings
     ) {
@@ -254,9 +262,7 @@ public class DiffImpl {
     private void addSiblingToQueue(
             int level,
             PriorityQueue<MappingEntry> queue,
-            AtomicDouble upperBoundCost,
-            AtomicReference<Mapping> bestFullMapping,
-            AtomicReference<List<EditOperation>> bestEdit,
+            OptimalEdit optimalEdit,
             List<Vertex> sourceList,
             List<Vertex> targetGraph,
             MappingEntry mappingEntry) throws InterruptedException {
@@ -266,7 +272,7 @@ public class DiffImpl {
             mappingEntry.siblingsFinished = true;
             return;
         }
-        if (sibling.lowerBoundCost < upperBoundCost.doubleValue()) {
+        if (sibling.lowerBoundCost < optimalEdit.ged) {
 //            System.out.println("adding new sibling entry " + getDebugMap(sibling.partialMapping) + "  at level " + level + " with candidates left: " + sibling.availableTargetVertices.size() + " at lower bound: " + sibling.lowerBoundCost);
 
             queue.add(sibling);
@@ -279,16 +285,17 @@ public class DiffImpl {
 //            assertTrue(fullMapping.size() == this.sourceGraph.size());
             List<EditOperation> editOperations = new ArrayList<>();
             int costForFullMapping = editorialCostForMapping(fullMapping, completeSourceGraph, completeTargetGraph, editOperations);
-            if (costForFullMapping < upperBoundCost.doubleValue()) {
-                upperBoundCost.set(costForFullMapping);
-                bestFullMapping.set(fullMapping);
-                bestEdit.set(editOperations);
-                System.out.println("setting new best edit at level " + level + " with size " + editOperations.size() + " at level " + level);
-
+            if (costForFullMapping < optimalEdit.ged) {
+                updateOptimalEdit(optimalEdit, costForFullMapping, fullMapping, editOperations);
             }
         } else {
 //            System.out.println("sibling not good enough");
         }
+    }
+
+    private void updateBestEdit(int cost, List<EditOperation> editOperations) {
+
+
     }
 
 
