@@ -50,7 +50,7 @@ public class EditOperation {
     private Edge targetEdge;
 
 
-    enum Operation {
+    public enum Operation {
         CHANGE_VERTEX, DELETE_VERTEX, INSERT_VERTEX, CHANGE_EDGE, INSERT_EDGE, DELETE_EDGE
     }
 
@@ -74,6 +74,8 @@ public class EditOperation {
                 ", description='" + description + '\'' +
                 '}';
     }
+
+
 
     @Override
     public boolean equals(Object o) {

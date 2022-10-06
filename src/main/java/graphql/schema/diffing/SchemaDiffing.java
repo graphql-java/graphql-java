@@ -1,6 +1,8 @@
 package graphql.schema.diffing;
 
 import graphql.schema.GraphQLSchema;
+import graphql.schema.diffing.ana.EditOperationAnalyzer;
+import graphql.schema.diffing.ana.SchemaChanges;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -20,7 +22,14 @@ public class SchemaDiffing {
         sourceGraph = new SchemaGraphFactory("source-").createGraph(graphQLSchema1);
         targetGraph = new SchemaGraphFactory("target-").createGraph(graphQLSchema2);
         return diffImpl(sourceGraph, targetGraph).listOfEditOperations.get(0);
+    }
 
+    public List<SchemaChanges.SchemaChange> diffAndAnalyze(GraphQLSchema graphQLSchema1, GraphQLSchema graphQLSchema2) throws Exception {
+        sourceGraph = new SchemaGraphFactory("source-").createGraph(graphQLSchema1);
+        targetGraph = new SchemaGraphFactory("target-").createGraph(graphQLSchema2);
+        DiffImpl.OptimalEdit optimalEdit = diffImpl(sourceGraph, targetGraph);
+        EditOperationAnalyzer editOperationAnalyzer = new EditOperationAnalyzer(graphQLSchema1, graphQLSchema1, sourceGraph, targetGraph);
+        return editOperationAnalyzer.analyzeEdits(optimalEdit.listOfEditOperations.get(0));
     }
 
     public DiffImpl.OptimalEdit diffGraphQLSchemaAllEdits(GraphQLSchema graphQLSchema1, GraphQLSchema graphQLSchema2) throws Exception {
@@ -72,11 +81,11 @@ public class SchemaDiffing {
 
         DiffImpl.OptimalEdit optimalEdit = diffImpl.diffImpl(fixedMappings, sourceVertices, targetGraphVertices);
         System.out.println("different edit counts: " + optimalEdit.listOfEditOperations.size());
-        for(int i = 0; i < optimalEdit.listOfEditOperations.size(); i++) {
+        for (int i = 0; i < optimalEdit.listOfEditOperations.size(); i++) {
             System.out.println("--------------");
             System.out.println("edit: " + i);
             System.out.println("--------------");
-            for(EditOperation editOperation: optimalEdit.listOfEditOperations.get(i)) {
+            for (EditOperation editOperation : optimalEdit.listOfEditOperations.get(i)) {
                 System.out.println(editOperation);
             }
             System.out.println("--------------");
