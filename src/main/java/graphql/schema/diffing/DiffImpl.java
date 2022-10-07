@@ -102,7 +102,7 @@ public class DiffImpl {
 //            if ((++counter) % 100 == 0) {
 //                System.out.println((counter) + " entry at level");
 //            }
-            if (mappingEntry.lowerBoundCost > optimalEdit.ged) {
+            if (mappingEntry.lowerBoundCost >= optimalEdit.ged) {
                 continue;
             }
             if (mappingEntry.level > 0 && !mappingEntry.siblingsFinished) {
@@ -137,7 +137,7 @@ public class DiffImpl {
     ) throws Exception {
         Mapping partialMapping = parentEntry.partialMapping;
         int level = parentEntry.level;
-        ;
+
         assertTrue(level == partialMapping.size());
 
         ArrayList<Vertex> availableTargetVertices = new ArrayList<>(targetList);
@@ -293,7 +293,7 @@ public class DiffImpl {
             mappingEntry.siblingsFinished = true;
             return;
         }
-        if (sibling.lowerBoundCost <= optimalEdit.ged) {
+        if (sibling.lowerBoundCost < optimalEdit.ged) {
 //            System.out.println("adding new sibling entry " + getDebugMap(sibling.partialMapping) + "  at level " + level + " with candidates left: " + sibling.availableTargetVertices.size() + " at lower bound: " + sibling.lowerBoundCost);
 
             queue.add(sibling);
