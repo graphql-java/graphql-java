@@ -2,6 +2,7 @@ package graphql.schema.diffing;
 
 import graphql.schema.GraphQLSchema;
 import graphql.schema.diffing.ana.EditOperationAnalyzer;
+import graphql.schema.diffing.ana.SchemaChange;
 import graphql.schema.diffing.ana.SchemaChanges;
 
 import java.util.ArrayList;
@@ -24,7 +25,7 @@ public class SchemaDiffing {
         return diffImpl(sourceGraph, targetGraph).listOfEditOperations.get(0);
     }
 
-    public List<SchemaChanges.SchemaChange> diffAndAnalyze(GraphQLSchema graphQLSchema1, GraphQLSchema graphQLSchema2) throws Exception {
+    public List<SchemaChange> diffAndAnalyze(GraphQLSchema graphQLSchema1, GraphQLSchema graphQLSchema2) throws Exception {
         sourceGraph = new SchemaGraphFactory("source-").createGraph(graphQLSchema1);
         targetGraph = new SchemaGraphFactory("target-").createGraph(graphQLSchema2);
         DiffImpl.OptimalEdit optimalEdit = diffImpl(sourceGraph, targetGraph);

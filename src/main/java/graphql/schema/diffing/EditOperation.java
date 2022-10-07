@@ -67,6 +67,14 @@ public class EditOperation {
         return targetVertex;
     }
 
+    public Edge getSourceEdge() {
+        return sourceEdge;
+    }
+
+    public Edge getTargetEdge() {
+        return targetEdge;
+    }
+
     @Override
     public String toString() {
         return "EditOperation{" +

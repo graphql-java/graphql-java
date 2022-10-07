@@ -72,6 +72,10 @@ public class Vertex {
         return debugName;
     }
 
+    public boolean isOfType(String type) {
+        return this.type.equals(type);
+    }
+
     public boolean isEqualTo(Vertex other) {
         return other != null &&
                 Objects.equals(this.type, other.type) &&

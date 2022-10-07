@@ -1,15 +1,16 @@
 package graphql.schema.diffing.ana;
 
-import graphql.Scalars;
 import graphql.schema.GraphQLSchema;
+import graphql.schema.diffing.Edge;
 import graphql.schema.diffing.EditOperation;
 import graphql.schema.diffing.SchemaGraph;
 import graphql.schema.diffing.Vertex;
-import graphql.schema.diffing.ana.SchemaChanges.SchemaChange;
 import graphql.schema.idl.ScalarInfo;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Predicate;
 
 import static graphql.Assert.assertTrue;
@@ -26,6 +27,7 @@ public class EditOperationAnalyzer {
     private SchemaGraph newSchemaGraph;
 
     private List<SchemaChange> changes = new ArrayList<>();
+    private Map<String, ObjectChanged> objectChangedMap = new LinkedHashMap<>();
 
     public EditOperationAnalyzer(GraphQLSchema oldSchema,
                                  GraphQLSchema newSchema,
@@ -61,6 +63,7 @@ public class EditOperationAnalyzer {
                     break;
             }
         }
+        changes.addAll(objectChangedMap.values());
         return changes;
     }
 
@@ -148,7 +151,29 @@ public class EditOperationAnalyzer {
     }
 
     private void insertedEdge(EditOperation editOperation) {
+        Edge newEdge = editOperation.getTargetEdge();
+        Vertex one = newEdge.getOne();
+        Vertex two = newEdge.getTwo();
+        if (newEdge.getLabel().startsWith("implements ")) {
+            Vertex objectVertex;
+            Vertex interfaceVertex;
+            if (newEdge.getOne().isOfType(SchemaGraph.OBJECT)) {
+                objectVertex = newEdge.getOne();
+                interfaceVertex = newEdge.getTwo();
+            } else {
+                objectVertex = newEdge.getTwo();
+                interfaceVertex = newEdge.getOne();
+            }
+            ObjectChanged.AddedInterfaceObjectChangeDetail addedInterfaceObjectChangeDetail = new ObjectChanged.AddedInterfaceObjectChangeDetail(interfaceVertex.getName());
+            getObjectChanged(objectVertex.getName()).getObjectChangeDetails().add(addedInterfaceObjectChangeDetail);
+        }
+    }
 
+    private ObjectChanged getObjectChanged(String newName) {
+        if (!objectChangedMap.containsKey(newName)) {
+            objectChangedMap.put(newName, new ObjectChanged(newName));
+        }
+        return objectChangedMap.get(newName);
     }
 
     private void deletedEdge(EditOperation editOperation) {
@@ -170,8 +195,8 @@ public class EditOperationAnalyzer {
     private void addedInterface(EditOperation editOperation) {
         String objectName = editOperation.getTargetVertex().getName();
 
-        ObjectAdded objectAdded = new ObjectAdded(objectName);
-        changes.add(objectAdded);
+        InterfaceAdded interfacedAdded = new InterfaceAdded(objectName);
+        changes.add(interfacedAdded);
     }
 
     private void addedUnion(EditOperation editOperation) {
@@ -199,7 +224,7 @@ public class EditOperationAnalyzer {
         String scalarName = editOperation.getTargetVertex().getName();
         // build in scalars can appear as added when not used in the old schema, but
         // we don't want to register them as new Scalars
-        if(ScalarInfo.isGraphqlSpecifiedScalar(scalarName)) {
+        if (ScalarInfo.isGraphqlSpecifiedScalar(scalarName)) {
             return;
         }
 

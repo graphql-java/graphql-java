@@ -2,30 +2,40 @@ package graphql.schema.diffing.ana;
 
 public class SchemaChanges {
 
-    public interface SchemaChange {
-
-    }
-
     /**
      * Type means Object, Interface, Union, InputObject, Scalar, Enum
      */
-
     public static class ObjectAdded implements SchemaChange {
         private String name;
 
         public ObjectAdded(String name) {
             this.name = name;
         }
+
         public String getName() {
             return name;
         }
     }
+
+    public static class InterfaceAdded implements SchemaChange {
+        private String name;
+
+        public InterfaceAdded(String name) {
+            this.name = name;
+        }
+
+        public String getName() {
+            return name;
+        }
+    }
+
     public static class ScalarAdded implements SchemaChange {
         private String name;
 
         public ScalarAdded(String name) {
             this.name = name;
         }
+
         public String getName() {
             return name;
         }
@@ -71,9 +81,6 @@ public class SchemaChanges {
 
     }
 
-    public static class ObjectChanged implements SchemaChange {
-
-    }
 
     public static class ObjectRemoved implements SchemaChange {
         private String name;
@@ -84,8 +91,6 @@ public class SchemaChanges {
 
 
     }
-
-
 
 
     public static class FieldRemoved {
