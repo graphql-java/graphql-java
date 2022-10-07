@@ -98,10 +98,10 @@ public class DiffImpl {
         int counter = 0;
         while (!queue.isEmpty()) {
             MappingEntry mappingEntry = queue.poll();
-//            System.out.println((++counter) + " check entry at level " + mappingEntry.level + " queue size: " + queue.size() + " lower bound " + mappingEntry.lowerBoundCost + " map " + getDebugMap(mappingEntry.partialMapping));
-//            if ((++counter) % 100 == 0) {
-//                System.out.println((counter) + " entry at level");
-//            }
+            System.out.println((++counter) + " check entry at level " + mappingEntry.level + " queue size: " + queue.size() + " lower bound " + mappingEntry.lowerBoundCost + " map ");
+            if ((++counter) % 100 == 0) {
+                System.out.println((counter) + " entry at level");
+            }
             if (mappingEntry.lowerBoundCost >= optimalEdit.ged) {
                 continue;
             }
