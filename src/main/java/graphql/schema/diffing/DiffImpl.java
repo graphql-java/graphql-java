@@ -96,10 +96,10 @@ public class DiffImpl {
         int counter = 0;
         while (!queue.isEmpty()) {
             MappingEntry mappingEntry = queue.poll();
-            System.out.println((++counter) + " check entry at level " + mappingEntry.level + " queue size: " + queue.size() + " lower bound " + mappingEntry.lowerBoundCost + " map " + getDebugMap(mappingEntry.partialMapping));
-            if ((++counter) % 100 == 0) {
-                System.out.println((counter) + " entry at level");
-            }
+//            System.out.println((++counter) + " check entry at level " + mappingEntry.level + " queue size: " + queue.size() + " lower bound " + mappingEntry.lowerBoundCost + " map " + getDebugMap(mappingEntry.partialMapping));
+//            if ((++counter) % 100 == 0) {
+//                System.out.println((counter) + " entry at level");
+//            }
             if (mappingEntry.lowerBoundCost >= optimalEdit.ged) {
                 continue;
             }
@@ -367,6 +367,7 @@ public class DiffImpl {
         for (int i = 0; i < partialMappingSourceList.size(); i++) {
             Vertex vPrime = partialMappingSourceList.get(i);
             Vertex mappedVPrime = partialMappingTargetList.get(i);
+
             Edge sourceEdge = completeSourceGraph.getEdge(v, vPrime);
             String labelSourceEdge = sourceEdge != null ? sourceEdge.getLabel() : null;
             Edge targetEdge = completeTargetGraph.getEdge(u, mappedVPrime);
@@ -374,6 +375,15 @@ public class DiffImpl {
             if (!Objects.equals(labelSourceEdge, labelTargetEdge)) {
                 anchoredVerticesCost++;
             }
+
+            Edge sourceEdgeInverse = completeSourceGraph.getEdge(vPrime,v);
+            String labelSourceEdgeInverse = sourceEdgeInverse != null ? sourceEdgeInverse.getLabel() : null;
+            Edge targetEdgeInverse = completeTargetGraph.getEdge(mappedVPrime,u);
+            String labelTargetEdgeInverse = targetEdgeInverse != null ? targetEdgeInverse.getLabel() : null;
+            if (!Objects.equals(labelSourceEdgeInverse, labelTargetEdgeInverse)) {
+                anchoredVerticesCost++;
+            }
+
         }
 
         Multiset<String> intersection = Multisets.intersection(multisetLabelsV, multisetLabelsU);

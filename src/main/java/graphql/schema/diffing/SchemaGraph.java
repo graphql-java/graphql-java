@@ -114,6 +114,7 @@ public class SchemaGraph {
     public List<Edge> getAdjacentEdges(Vertex from) {
         return new ArrayList<>(edgesByDirection.row(from).values());
     }
+
     public List<Edge> getAdjacentEdgesAndInverse(Vertex fromAndTo) {
         List<Edge> result = new ArrayList<>(edgesByDirection.row(fromAndTo).values());
         result.addAll(edgesByInverseDirection.row(fromAndTo).values());
@@ -162,8 +163,9 @@ public class SchemaGraph {
     }
 
     public List<Edge> getAdjacentEdgesInverse(Vertex to) {
-        return getAdjacentEdgesInverse(to,x -> true);
+        return getAdjacentEdgesInverse(to, x -> true);
     }
+
     public List<Edge> getAdjacentEdgesInverse(Vertex to, Predicate<Vertex> predicate) {
         List<Edge> result = new ArrayList<>();
         for (Edge edge : edgesByInverseDirection.row(to).values()) {
@@ -193,6 +195,10 @@ public class SchemaGraph {
         return edgesByDirection.get(from, to);
     }
 
+    public @Nullable Edge getEdgeOrInverse(Vertex from, Vertex to) {
+        Edge result = edgesByDirection.get(from, to);
+        return result != null ? result : edgesByInverseDirection.get(from, to);
+    }
 
     public List<Vertex> getVertices() {
         return vertices;

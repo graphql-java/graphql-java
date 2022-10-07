@@ -62,13 +62,13 @@ public class SchemaDiffing {
         DiffImpl diffImpl = new DiffImpl(sourceGraph, targetGraph, isolatedVertices);
         List<Vertex> nonMappedSource = new ArrayList<>(sourceGraph.getVertices());
         nonMappedSource.removeAll(fixedMappings.getSources());
-        for(Vertex vertex: nonMappedSource) {
-            System.out.println("non mapped: " + vertex);
-        }
-        for (List<String> context : isolatedVertices.contexts.rowKeySet()) {
-            Map<Set<Vertex>, Set<Vertex>> row = isolatedVertices.contexts.row(context);
-            System.out.println("context: " + context + " from " + row.keySet().iterator().next().size() + " to " + row.values().iterator().next().size());
-        }
+//        for(Vertex vertex: nonMappedSource) {
+//            System.out.println("non mapped: " + vertex);
+//        }
+//        for (List<String> context : isolatedVertices.contexts.rowKeySet()) {
+//            Map<Set<Vertex>, Set<Vertex>> row = isolatedVertices.contexts.row(context);
+//            System.out.println("context: " + context + " from " + row.keySet().iterator().next().size() + " to " + row.values().iterator().next().size());
+//        }
 
         List<Vertex> nonMappedTarget = new ArrayList<>(targetGraph.getVertices());
         nonMappedTarget.removeAll(fixedMappings.getTargets());
@@ -86,17 +86,17 @@ public class SchemaDiffing {
 
 
         DiffImpl.OptimalEdit optimalEdit = diffImpl.diffImpl(fixedMappings, sourceVertices, targetGraphVertices);
-        System.out.println("different edit counts: " + optimalEdit.listOfEditOperations.size());
-        for (int i = 0; i < optimalEdit.listOfEditOperations.size(); i++) {
-            System.out.println("--------------");
-            System.out.println("edit: " + i);
-            System.out.println("--------------");
-            for (EditOperation editOperation : optimalEdit.listOfEditOperations.get(i)) {
-                System.out.println(editOperation);
-            }
-            System.out.println("--------------");
-            System.out.println("--------------");
-        }
+//        System.out.println("different edit counts: " + optimalEdit.listOfEditOperations.size());
+//        for (int i = 0; i < optimalEdit.listOfEditOperations.size(); i++) {
+//            System.out.println("--------------");
+//            System.out.println("edit: " + i);
+//            System.out.println("--------------");
+//            for (EditOperation editOperation : optimalEdit.listOfEditOperations.get(i)) {
+//                System.out.println(editOperation);
+//            }
+//            System.out.println("--------------");
+//            System.out.println("--------------");
+//        }
         return optimalEdit;
     }
 
