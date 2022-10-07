@@ -27,7 +27,7 @@ class SchemaDiffingTest extends Specification {
         def schemaGraph = new SchemaGraphFactory().createGraph(schema)
 
         then:
-        schemaGraph.size() == 132
+        schemaGraph.size() == 91
 
     }
 
@@ -119,7 +119,7 @@ class SchemaDiffingTest extends Specification {
         def diff = new SchemaDiffing().diffGraphQLSchema(schema1, schema2)
         diff.each { println it }
         then:
-        diff.size() == 6
+        diff.size() == 4
 
     }
 
@@ -155,7 +155,7 @@ class SchemaDiffingTest extends Specification {
         def diff = new SchemaDiffing().diffGraphQLSchema(schema1, schema2)
         diff.each { println it }
         then:
-        diff.size() == 7
+        diff.size() == 5
 
     }
 
@@ -193,7 +193,7 @@ class SchemaDiffingTest extends Specification {
          * 3-8: Three new Fields + DummyTypes
          * 9-17: Edges from Object to new Fields (3) + Edges from Field to Dummy Type (3) + Edges from DummyType to String
          * */
-        diff.size() == 17
+        diff.size() == 11
 
     }
 
@@ -350,7 +350,7 @@ class SchemaDiffingTest extends Specification {
         /**
          * If we would allow to map Object to Interface this would have a result of 8
          */
-        diff.size() == 10
+        diff.size() == 8
 
     }
 
@@ -390,7 +390,7 @@ class SchemaDiffingTest extends Specification {
         }
 
         then:
-        diff.size() == 19
+        diff.size() == 15
 
     }
 
@@ -435,7 +435,7 @@ class SchemaDiffingTest extends Specification {
         diff.each { println it }
         then:
         // deleting 171 fields + dummyTypes + 3 edges for each field,dummyType pair = 5*171
-        diff.size() == 5 * 171
+        diff.size() == 3 * 171
     }
 
     def "change object type name used twice"() {
@@ -542,7 +542,7 @@ class SchemaDiffingTest extends Specification {
         }
 
         then:
-        diff.size() == 5
+        diff.size() == 3
     }
 
 
@@ -893,12 +893,12 @@ class SchemaDiffingTest extends Specification {
         then:
         /**
          * 1. Change Cat to Bird
-         * 2,3,4: Insert Fish, Insert Fish.name, Insert __DummyTypeVertice
-         * 5. Insert Edge from Fish to Fish.name
-         * 6.7. Insert Edge from Fish.name -> __DummyType --> String
-         * 8. Insert edge from Pet -> Fish
+         * 2,3: Insert Fish, Insert Fish.name
+         * 4. Insert Edge from Fish to Fish.name
+         * 5 Insert Edge from Fish.name -> String
+         * 6. Insert edge from Pet -> Fish
          */
-        diff.size() == 8
+        diff.size() == 6
 
     }
 
@@ -981,7 +981,7 @@ class SchemaDiffingTest extends Specification {
          * It would be less operations with f2 renamed to g3, but this would defy expectations.
          *
          */
-        operations.size() == 11
+        operations.size() == 7
     }
 
     def "arguments in fields"() {

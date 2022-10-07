@@ -3,11 +3,12 @@ package graphql.schema.diffing;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.diffing.ana.EditOperationAnalyzer;
 import graphql.schema.diffing.ana.SchemaChange;
-import graphql.schema.diffing.ana.SchemaChanges;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import static graphql.Assert.assertTrue;
 import static graphql.schema.diffing.EditorialCostForMapping.editorialCostForMapping;
@@ -61,9 +62,13 @@ public class SchemaDiffing {
         DiffImpl diffImpl = new DiffImpl(sourceGraph, targetGraph, isolatedVertices);
         List<Vertex> nonMappedSource = new ArrayList<>(sourceGraph.getVertices());
         nonMappedSource.removeAll(fixedMappings.getSources());
-//        for(Vertex vertex: nonMappedSource) {
-//            System.out.println("non mapped: " + vertex);
-//        }
+        for(Vertex vertex: nonMappedSource) {
+            System.out.println("non mapped: " + vertex);
+        }
+        for (List<String> context : isolatedVertices.contexts.rowKeySet()) {
+            Map<Set<Vertex>, Set<Vertex>> row = isolatedVertices.contexts.row(context);
+            System.out.println("context: " + context + " from " + row.keySet().iterator().next().size() + " to " + row.values().iterator().next().size());
+        }
 
         List<Vertex> nonMappedTarget = new ArrayList<>(targetGraph.getVertices());
         nonMappedTarget.removeAll(fixedMappings.getTargets());
@@ -114,8 +119,8 @@ public class SchemaDiffing {
         List<EditOperation> result = new ArrayList<>();
         // edge deletion or relabeling
         for (Edge sourceEdge : edges) {
-            Vertex target1 = mapping.getTarget(sourceEdge.getOne());
-            Vertex target2 = mapping.getTarget(sourceEdge.getTwo());
+            Vertex target1 = mapping.getTarget(sourceEdge.getFrom());
+            Vertex target2 = mapping.getTarget(sourceEdge.getTo());
             Edge targetEdge = targetGraph.getEdge(target1, target2);
             if (targetEdge == null) {
                 result.add(EditOperation.deleteEdge("Delete edge " + sourceEdge, sourceEdge));
@@ -127,8 +132,8 @@ public class SchemaDiffing {
         //TODO: iterates over all edges in the target Graph
         for (Edge targetEdge : targetGraph.getEdges()) {
             // only subgraph edges
-            Vertex sourceFrom = mapping.getSource(targetEdge.getOne());
-            Vertex sourceTo = mapping.getSource(targetEdge.getTwo());
+            Vertex sourceFrom = mapping.getSource(targetEdge.getFrom());
+            Vertex sourceTo = mapping.getSource(targetEdge.getTo());
             if (sourceGraph.getEdge(sourceFrom, sourceTo) == null) {
                 result.add(EditOperation.insertEdge("Insert edge " + targetEdge, targetEdge));
             }
@@ -159,19 +164,6 @@ public class SchemaDiffing {
 //        }
 //    }
 //
-//    private List<String> getDebugMap(Mapping mapping) {
-//        List<String> result = new ArrayList<>();
-////        if (mapping.size() > 0) {
-////            result.add(mapping.getSource(mapping.size() - 1).getType() + " -> " + mapping.getTarget(mapping.size() - 1).getType());
-////        }
-//        for (Map.Entry<Vertex, Vertex> entry : mapping.getMap().entrySet()) {
-////            if (!entry.getKey().getType().equals(entry.getValue().getType())) {
-////                result.add(entry.getKey().getType() + "->" + entry.getValue().getType());
-////            }
-//            result.add(entry.getKey().getDebugName() + "->" + entry.getValue().getDebugName());
-//        }
-//        return result;
-//    }
 //
 //    // minimum number of edit operations for a full mapping
 //

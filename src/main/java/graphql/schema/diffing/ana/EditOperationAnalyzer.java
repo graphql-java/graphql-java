@@ -11,7 +11,6 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Predicate;
 
 import static graphql.Assert.assertTrue;
 import static graphql.schema.diffing.ana.SchemaChanges.*;
@@ -154,19 +153,19 @@ public class EditOperationAnalyzer {
 
     private void insertedEdge(EditOperation editOperation) {
         Edge newEdge = editOperation.getTargetEdge();
-        Vertex one = newEdge.getOne();
-        Vertex two = newEdge.getTwo();
+        Vertex one = newEdge.getFrom();
+        Vertex two = newEdge.getTo();
         if (newEdge.getLabel().startsWith("implements ")) {
             Vertex objectVertex;
             Vertex interfaceVertex;
             if (one.isOfType(SchemaGraph.OBJECT) && two.isOfType(SchemaGraph.INTERFACE)) {
-                objectVertex = newEdge.getOne();
-                interfaceVertex = newEdge.getTwo();
+                objectVertex = newEdge.getFrom();
+                interfaceVertex = newEdge.getTo();
                 ObjectChanged.AddedInterfaceToObjectDetail addedInterfaceToObjectDetail = new ObjectChanged.AddedInterfaceToObjectDetail(interfaceVertex.getName());
                 getObjectChanged(objectVertex.getName()).getObjectChangeDetails().add(addedInterfaceToObjectDetail);
             } else if (two.isOfType(SchemaGraph.INTERFACE) && one.isOfType(SchemaGraph.OBJECT)) {
-                objectVertex = newEdge.getTwo();
-                interfaceVertex = newEdge.getOne();
+                objectVertex = newEdge.getTo();
+                interfaceVertex = newEdge.getFrom();
                 ObjectChanged.AddedInterfaceToObjectDetail addedInterfaceToObjectDetail = new ObjectChanged.AddedInterfaceToObjectDetail(interfaceVertex.getName());
                 getObjectChanged(objectVertex.getName()).getObjectChangeDetails().add(addedInterfaceToObjectDetail);
             }else{

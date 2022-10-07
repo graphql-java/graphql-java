@@ -3,19 +3,17 @@ package graphql.schema.diffing;
 import com.google.common.collect.HashMultiset;
 import com.google.common.collect.Multiset;
 import com.google.common.collect.Multisets;
-import com.google.common.util.concurrent.AtomicDouble;
 import com.google.common.util.concurrent.AtomicDoubleArray;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.PriorityQueue;
 import java.util.Set;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
 
 import static graphql.Assert.assertTrue;
 import static graphql.schema.diffing.EditorialCostForMapping.editorialCostForMapping;
@@ -98,10 +96,10 @@ public class DiffImpl {
         int counter = 0;
         while (!queue.isEmpty()) {
             MappingEntry mappingEntry = queue.poll();
-//            System.out.println((++counter) + " check entry at level " + mappingEntry.level + " queue size: " + queue.size() + " lower bound " + mappingEntry.lowerBoundCost + " map " + getDebugMap(mappingEntry.partialMapping));
-//            if ((++counter) % 100 == 0) {
-//                System.out.println((counter) + " entry at level");
-//            }
+            System.out.println((++counter) + " check entry at level " + mappingEntry.level + " queue size: " + queue.size() + " lower bound " + mappingEntry.lowerBoundCost + " map " + getDebugMap(mappingEntry.partialMapping));
+            if ((++counter) % 100 == 0) {
+                System.out.println((counter) + " entry at level");
+            }
             if (mappingEntry.lowerBoundCost >= optimalEdit.ged) {
                 continue;
             }
@@ -182,7 +180,7 @@ public class DiffImpl {
         Mapping newMappingSibling = partialMapping.extendMapping(v_i, bestExtensionTargetVertexSibling);
 
 
-        if (lowerBoundForPartialMapping > optimalEdit.ged) {
+        if (lowerBoundForPartialMapping >= optimalEdit.ged) {
             return;
         }
         MappingEntry newMappingEntry = new MappingEntry(newMappingSibling, level + 1, lowerBoundForPartialMapping);
@@ -312,11 +310,6 @@ public class DiffImpl {
         }
     }
 
-    private void updateBestEdit(int cost, List<EditOperation> editOperations) {
-
-
-    }
-
 
     private double getCostMatrixSum(AtomicDoubleArray[] costMatrix, int[] assignments) {
         double costMatrixSum = 0;
@@ -353,7 +346,7 @@ public class DiffImpl {
         for (Edge edge : adjacentEdgesV) {
             // test if this an inner edge: meaning both edges vertices are part of the non mapped vertices
             // or: at least one edge is part of the partial mapping
-            if (!partialMappingSourceSet.contains(edge.getOne()) && !partialMappingSourceSet.contains(edge.getTwo())) {
+            if (!partialMappingSourceSet.contains(edge.getFrom()) && !partialMappingSourceSet.contains(edge.getTo())) {
                 multisetLabelsV.add(edge.getLabel());
             }
         }
@@ -361,8 +354,8 @@ public class DiffImpl {
         List<Edge> adjacentEdgesU = completeTargetGraph.getAdjacentEdges(u);
         Multiset<String> multisetLabelsU = HashMultiset.create();
         for (Edge edge : adjacentEdgesU) {
-            // test if this is an inner edge
-            if (!partialMappingTargetSet.contains(edge.getOne()) && !partialMappingTargetSet.contains(edge.getTwo())) {
+            // test if this is an inner edge (meaning it not part of the subgraph induced by the partial mapping)
+            if (!partialMappingTargetSet.contains(edge.getFrom()) && !partialMappingTargetSet.contains(edge.getTo())) {
                 multisetLabelsU.add(edge.getLabel());
             }
         }
@@ -386,7 +379,23 @@ public class DiffImpl {
         Multiset<String> intersection = Multisets.intersection(multisetLabelsV, multisetLabelsU);
         int multiSetEditDistance = Math.max(multisetLabelsV.size(), multisetLabelsU.size()) - intersection.size();
 
-        double result = (equalNodes ? 0 : 1) + multiSetEditDistance / 2.0 + anchoredVerticesCost;
+        // in the paper the multiSetEditDistance is divided by 2, because the edges are undirected and considered from both direction
+        // here we don't divide because the edges are directed and not counted twice
+        double result = (equalNodes ? 0 : 1) + multiSetEditDistance + anchoredVerticesCost;
+        return result;
+    }
+
+    private List<String> getDebugMap(Mapping mapping) {
+        List<String> result = new ArrayList<>();
+//        if (mapping.size() > 0) {
+//            result.add(mapping.getSource(mapping.size() - 1).getType() + " -> " + mapping.getTarget(mapping.size() - 1).getType());
+//        }
+        for (Map.Entry<Vertex, Vertex> entry : mapping.getMap().entrySet()) {
+//            if (!entry.getKey().getType().equals(entry.getValue().getType())) {
+//                result.add(entry.getKey().getType() + "->" + entry.getValue().getType());
+//            }
+            result.add(entry.getKey().getDebugName() + "->" + entry.getValue().getDebugName());
+        }
         return result;
     }
 

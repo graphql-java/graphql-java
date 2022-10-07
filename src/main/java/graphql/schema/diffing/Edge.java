@@ -3,36 +3,36 @@ package graphql.schema.diffing;
 import java.util.Objects;
 
 public class Edge {
-    private Vertex one;
-    private Vertex two;
+    private Vertex from;
+    private Vertex to;
 
     private String label = "";
 
     public Edge(Vertex from, Vertex to) {
-        this.one = from;
-        this.two = to;
+        this.from = from;
+        this.to = to;
     }
 
     public Edge(Vertex from, Vertex to, String label) {
-        this.one = from;
-        this.two = to;
+        this.from = from;
+        this.to = to;
         this.label = label;
     }
 
-    public Vertex getOne() {
-        return one;
+    public Vertex getFrom() {
+        return from;
     }
 
-    public void setOne(Vertex one) {
-        this.one = one;
+    public void setFrom(Vertex from) {
+        this.from = from;
     }
 
-    public Vertex getTwo() {
-        return two;
+    public Vertex getTo() {
+        return to;
     }
 
-    public void setTwo(Vertex two) {
-        this.two = two;
+    public void setTo(Vertex to) {
+        this.to = to;
     }
 
 
@@ -47,8 +47,8 @@ public class Edge {
     @Override
     public String toString() {
         return "Edge{" +
-                "one=" + one +
-                ", two=" + two +
+                "from=" + from +
+                ", to=" + to +
                 ", label='" + label + '\'' +
                 '}';
     }

@@ -136,12 +136,12 @@ public class SchemaGraphFactory {
             schemaGraph, GraphQLSchema graphQLSchema) {
         GraphQLInputType type = inputField.getType();
         GraphQLUnmodifiedType graphQLUnmodifiedType = GraphQLTypeUtil.unwrapAll(type);
-        Vertex dummyTypeVertex = new Vertex(SchemaGraph.DUMMY_TYPE_VERTEX, debugPrefix + String.valueOf(counter++));
-        dummyTypeVertex.setBuiltInType(inputFieldVertex.isBuiltInType());
-        schemaGraph.addVertex(dummyTypeVertex);
-        schemaGraph.addEdge(new Edge(inputFieldVertex, dummyTypeVertex));
+//        Vertex dummyTypeVertex = new Vertex(SchemaGraph.DUMMY_TYPE_VERTEX, debugPrefix + String.valueOf(counter++));
+//        dummyTypeVertex.setBuiltInType(inputFieldVertex.isBuiltInType());
+//        schemaGraph.addVertex(dummyTypeVertex);
+//        schemaGraph.addEdge(new Edge(inputFieldVertex, dummyTypeVertex));
         Vertex typeVertex = assertNotNull(schemaGraph.getType(graphQLUnmodifiedType.getName()));
-        Edge typeEdge = new Edge(dummyTypeVertex, typeVertex);
+        Edge typeEdge = new Edge(inputFieldVertex, typeVertex);
         typeEdge.setLabel(GraphQLTypeUtil.simplePrint(type));
         schemaGraph.addEdge(typeEdge);
     }
@@ -192,12 +192,12 @@ public class SchemaGraphFactory {
             schemaGraph, GraphQLSchema graphQLSchema) {
         GraphQLOutputType type = fieldDefinition.getType();
         GraphQLUnmodifiedType graphQLUnmodifiedType = GraphQLTypeUtil.unwrapAll(type);
-        Vertex dummyTypeVertex = new Vertex(SchemaGraph.DUMMY_TYPE_VERTEX, debugPrefix + String.valueOf(counter++));
-        dummyTypeVertex.setBuiltInType(fieldVertex.isBuiltInType());
-        schemaGraph.addVertex(dummyTypeVertex);
-        schemaGraph.addEdge(new Edge(fieldVertex, dummyTypeVertex));
+//        Vertex dummyTypeVertex = new Vertex(SchemaGraph.DUMMY_TYPE_VERTEX, debugPrefix + String.valueOf(counter++));
+//        dummyTypeVertex.setBuiltInType(fieldVertex.isBuiltInType());
+//        schemaGraph.addVertex(dummyTypeVertex);
+//        schemaGraph.addEdge(new Edge(fieldVertex, dummyTypeVertex));
         Vertex typeVertex = assertNotNull(schemaGraph.getType(graphQLUnmodifiedType.getName()));
-        Edge typeEdge = new Edge(dummyTypeVertex, typeVertex);
+        Edge typeEdge = new Edge(fieldVertex, typeVertex);
         typeEdge.setLabel(GraphQLTypeUtil.simplePrint(type));
         schemaGraph.addEdge(typeEdge);
 

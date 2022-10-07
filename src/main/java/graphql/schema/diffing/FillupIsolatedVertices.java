@@ -52,7 +52,7 @@ public class FillupIsolatedVertices {
         typeContexts.put(FIELD, fieldContext());
         typeContexts.put(ARGUMENT, argumentsContexts());
         typeContexts.put(INPUT_FIELD, inputFieldContexts());
-        typeContexts.put(DUMMY_TYPE_VERTEX, dummyTypeContext());
+//        typeContexts.put(DUMMY_TYPE_VERTEX, dummyTypeContext());
         typeContexts.put(OBJECT, objectContext());
         typeContexts.put(INTERFACE, interfaceContext());
         typeContexts.put(UNION, unionContext());
@@ -105,52 +105,52 @@ public class FillupIsolatedVertices {
     }
 
 
-    private static List<VertexContextSegment> dummyTypeContext() {
-
-        VertexContextSegment dummyType = new VertexContextSegment() {
-            @Override
-            public String idForVertex(Vertex vertex, SchemaGraph schemaGraph) {
-                return vertex.getType();
-            }
-
-            @Override
-            public boolean filter(Vertex vertex, SchemaGraph schemaGraph) {
-                return DUMMY_TYPE_VERTEX.equals(vertex.getType());
-            }
-        };
-        VertexContextSegment inputObjectOrFieldContainerContext = new VertexContextSegment() {
-            @Override
-            public String idForVertex(Vertex dummyType, SchemaGraph schemaGraph) {
-                Vertex fieldOrInputField = schemaGraph.getFieldOrInputFieldForDummyType(dummyType);
-                if (fieldOrInputField.getType().equals(FIELD)) {
-                    Vertex fieldsContainer = schemaGraph.getFieldsContainerForField(fieldOrInputField);
-                    return fieldsContainer.getType() + "." + fieldsContainer.getName();
-                } else {
-                    return schemaGraph.getInputObjectForInputField(fieldOrInputField).getName();
-                }
-            }
-
-            @Override
-            public boolean filter(Vertex vertex, SchemaGraph schemaGraph) {
-                return true;
-            }
-        };
-        VertexContextSegment inputFieldOrFieldName = new VertexContextSegment() {
-            @Override
-            public String idForVertex(Vertex dummyType, SchemaGraph schemaGraph) {
-                Vertex fieldOrInputField = schemaGraph.getFieldOrInputFieldForDummyType(dummyType);
-                return fieldOrInputField.getName();
-            }
-
-            @Override
-            public boolean filter(Vertex vertex, SchemaGraph schemaGraph) {
-                return true;
-            }
-        };
-
-        List<VertexContextSegment> contexts = Arrays.asList(dummyType, inputObjectOrFieldContainerContext, inputFieldOrFieldName);
-        return contexts;
-    }
+//    private static List<VertexContextSegment> dummyTypeContext() {
+//
+//        VertexContextSegment dummyType = new VertexContextSegment() {
+//            @Override
+//            public String idForVertex(Vertex vertex, SchemaGraph schemaGraph) {
+//                return vertex.getType();
+//            }
+//
+//            @Override
+//            public boolean filter(Vertex vertex, SchemaGraph schemaGraph) {
+//                return DUMMY_TYPE_VERTEX.equals(vertex.getType());
+//            }
+//        };
+//        VertexContextSegment inputObjectOrFieldContainerContext = new VertexContextSegment() {
+//            @Override
+//            public String idForVertex(Vertex dummyType, SchemaGraph schemaGraph) {
+//                Vertex fieldOrInputField = schemaGraph.getFieldOrInputFieldForDummyType(dummyType);
+//                if (fieldOrInputField.getType().equals(FIELD)) {
+//                    Vertex fieldsContainer = schemaGraph.getFieldsContainerForField(fieldOrInputField);
+//                    return fieldsContainer.getType() + "." + fieldsContainer.getName();
+//                } else {
+//                    return schemaGraph.getInputObjectForInputField(fieldOrInputField).getName();
+//                }
+//            }
+//
+//            @Override
+//            public boolean filter(Vertex vertex, SchemaGraph schemaGraph) {
+//                return true;
+//            }
+//        };
+//        VertexContextSegment inputFieldOrFieldName = new VertexContextSegment() {
+//            @Override
+//            public String idForVertex(Vertex dummyType, SchemaGraph schemaGraph) {
+//                Vertex fieldOrInputField = schemaGraph.getFieldOrInputFieldForDummyType(dummyType);
+//                return fieldOrInputField.getName();
+//            }
+//
+//            @Override
+//            public boolean filter(Vertex vertex, SchemaGraph schemaGraph) {
+//                return true;
+//            }
+//        };
+//
+//        List<VertexContextSegment> contexts = Arrays.asList(dummyType, inputObjectOrFieldContainerContext, inputFieldOrFieldName);
+//        return contexts;
+//    }
 
     private static List<VertexContextSegment> scalarContext() {
         VertexContextSegment scalar = new VertexContextSegment() {
@@ -744,7 +744,7 @@ public class FillupIsolatedVertices {
         calcPossibleMappings(typeContexts.get(FIELD), FIELD);
         calcPossibleMappings(typeContexts.get(ARGUMENT), ARGUMENT);
         calcPossibleMappings(typeContexts.get(INPUT_FIELD), INPUT_FIELD);
-        calcPossibleMappings(typeContexts.get(DUMMY_TYPE_VERTEX), DUMMY_TYPE_VERTEX);
+//        calcPossibleMappings(typeContexts.get(DUMMY_TYPE_VERTEX), DUMMY_TYPE_VERTEX);
         calcPossibleMappings(typeContexts.get(OBJECT), OBJECT);
         calcPossibleMappings(typeContexts.get(INTERFACE), INTERFACE);
         calcPossibleMappings(typeContexts.get(UNION), UNION);

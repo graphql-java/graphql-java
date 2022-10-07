@@ -14,7 +14,7 @@ public class GraphPrinter {
             dotfile.addNode("V" + Integer.toHexString(vertex.hashCode()), name, "blue");
         }
         for (Edge edge : schemaGraph.getEdges()) {
-            dotfile.addEdge("V" + Integer.toHexString(edge.getOne().hashCode()), "V" + Integer.toHexString(edge.getTwo().hashCode()), edge.getLabel());
+            dotfile.addEdge("V" + Integer.toHexString(edge.getFrom().hashCode()), "V" + Integer.toHexString(edge.getTo().hashCode()), edge.getLabel());
         }
         return dotfile.print();
     }

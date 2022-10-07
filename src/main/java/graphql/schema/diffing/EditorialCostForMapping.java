@@ -32,12 +32,12 @@ public class EditorialCostForMapping {
         // edge deletion or relabeling
         for (Edge sourceEdge : edges) {
             // only edges relevant to the subgraph
-            if (!mapping.containsSource(sourceEdge.getOne()) || !mapping.containsSource(sourceEdge.getTwo())) {
+            if (!mapping.containsSource(sourceEdge.getFrom()) || !mapping.containsSource(sourceEdge.getTo())) {
                 continue;
             }
-            Vertex target1 = mapping.getTarget(sourceEdge.getOne());
-            Vertex target2 = mapping.getTarget(sourceEdge.getTwo());
-            Edge targetEdge = targetGraph.getEdge(target1, target2);
+            Vertex targetFrom = mapping.getTarget(sourceEdge.getFrom());
+            Vertex targetTo = mapping.getTarget(sourceEdge.getTo());
+            Edge targetEdge = targetGraph.getEdge(targetFrom, targetTo);
             if (targetEdge == null) {
                 editOperationsResult.add(EditOperation.deleteEdge("Delete edge " + sourceEdge, sourceEdge));
                 cost++;
@@ -50,11 +50,11 @@ public class EditorialCostForMapping {
         //TODO: iterates over all edges in the target Graph
         for (Edge targetEdge : targetGraph.getEdges()) {
             // only subgraph edges
-            if (!mapping.containsTarget(targetEdge.getOne()) || !mapping.containsTarget(targetEdge.getTwo())) {
+            if (!mapping.containsTarget(targetEdge.getFrom()) || !mapping.containsTarget(targetEdge.getTo())) {
                 continue;
             }
-            Vertex sourceFrom = mapping.getSource(targetEdge.getOne());
-            Vertex sourceTo = mapping.getSource(targetEdge.getTwo());
+            Vertex sourceFrom = mapping.getSource(targetEdge.getFrom());
+            Vertex sourceTo = mapping.getSource(targetEdge.getTo());
             if (sourceGraph.getEdge(sourceFrom, sourceTo) == null) {
                 editOperationsResult.add(EditOperation.insertEdge("Insert edge " + targetEdge, targetEdge));
                 cost++;
