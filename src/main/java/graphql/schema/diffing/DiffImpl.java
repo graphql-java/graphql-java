@@ -340,7 +340,7 @@ public class DiffImpl {
 
         // inner edge labels of u (resp. v) in regards to the partial mapping: all labels of edges
         // which are adjacent of u (resp. v) which are inner edges
-        List<Edge> adjacentEdgesV = completeSourceGraph.getAdjacentEdges(v);
+        List<Edge> adjacentEdgesV = completeSourceGraph.getAdjacentEdgesAndInverse(v);
         Multiset<String> multisetLabelsV = HashMultiset.create();
 
         for (Edge edge : adjacentEdgesV) {
@@ -351,7 +351,7 @@ public class DiffImpl {
             }
         }
 
-        List<Edge> adjacentEdgesU = completeTargetGraph.getAdjacentEdges(u);
+        List<Edge> adjacentEdgesU = completeTargetGraph.getAdjacentEdgesAndInverse(u);
         Multiset<String> multisetLabelsU = HashMultiset.create();
         for (Edge edge : adjacentEdgesU) {
             // test if this is an inner edge (meaning it not part of the subgraph induced by the partial mapping)
@@ -379,9 +379,7 @@ public class DiffImpl {
         Multiset<String> intersection = Multisets.intersection(multisetLabelsV, multisetLabelsU);
         int multiSetEditDistance = Math.max(multisetLabelsV.size(), multisetLabelsU.size()) - intersection.size();
 
-        // in the paper the multiSetEditDistance is divided by 2, because the edges are undirected and considered from both direction
-        // here we don't divide because the edges are directed and not counted twice
-        double result = (equalNodes ? 0 : 1) + multiSetEditDistance + anchoredVerticesCost;
+        double result = (equalNodes ? 0 : 1) + multiSetEditDistance/2.0 + anchoredVerticesCost;
         return result;
     }
 
