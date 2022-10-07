@@ -103,9 +103,78 @@ class EditOperationAnalyzerTest extends Specification {
         interfaceAdded[0].name == "Node"
         objectChanged.size() == 1
         objectChanged[0].name == "Foo"
-        def addedInterfaceDetails = objectChanged[0].objectChangeDetails.findAll({ it instanceof ObjectChanged.AddedInterfaceObjectChangeDetail }) as List<ObjectChanged.AddedInterfaceObjectChangeDetail>
+        def addedInterfaceDetails = objectChanged[0].objectChangeDetails.findAll({ it instanceof ObjectChanged.AddedInterfaceToObjectDetail }) as List<ObjectChanged.AddedInterfaceToObjectDetail>
         addedInterfaceDetails.size() == 1
         addedInterfaceDetails[0].name == "Node"
+    }
+
+    def "interfaced renamed"() {
+        given:
+        def oldSdl = '''
+        type Query {
+          foo: Foo
+        }
+        type Foo implements Node{
+            id: ID!
+        }
+        interface Node {
+            id: ID!
+        }
+        '''
+        def newSdl = '''
+        type Query {
+            foo: Foo
+        }
+        interface Node2 {
+            id: ID!
+        }
+        type Foo implements Node2{
+            id: ID!
+        }
+        '''
+        when:
+        def changes = changes(oldSdl, newSdl)
+        def interfaceChanged = changes.findAll({ it instanceof InterfaceChanged }) as List<InterfaceChanged>
+        then:
+        interfaceChanged.size() == 1
+        interfaceChanged[0].name == "Node2"
+    }
+
+    def "interfaced renamed and another interface added to it"() {
+        given:
+        def oldSdl = '''
+        type Query {
+          foo: Foo
+        }
+        type Foo implements Node{
+            id: ID!
+        }
+        interface Node {
+            id: ID!
+        }
+        '''
+        def newSdl = '''
+        type Query {
+            foo: Foo
+        }
+        interface NewI {
+            hello: String
+        }
+        interface Node2 {
+            id: ID!
+        }
+        type Foo implements Node2 & NewI{
+            id: ID!
+            hello: String
+        }
+        '''
+        when:
+        def changes = changes(oldSdl, newSdl)
+        def interfaceChanged = changes.findAll({ it instanceof InterfaceChanged }) as List<InterfaceChanged>
+        then:
+        interfaceChanged.size() == 1
+        interfaceChanged.interfaceChangeDetails.size() == 1
+        (interfaceChanged.interfaceChangeDetails[0] as InterfaceChanged.AddedInterfaceToInterfaceDetail).name == "NewI"
     }
 
 

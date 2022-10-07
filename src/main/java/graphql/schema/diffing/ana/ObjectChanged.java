@@ -12,10 +12,21 @@ public class ObjectChanged implements SchemaChange {
 
     }
 
-    public static class AddedInterfaceObjectChangeDetail implements ObjectChangeDetail {
+    public static class AddedInterfaceToObjectDetail implements ObjectChangeDetail {
         private final String name;
 
-        public AddedInterfaceObjectChangeDetail(String name) {
+        public AddedInterfaceToObjectDetail(String name) {
+            this.name = name;
+        }
+
+        public String getName() {
+            return name;
+        }
+    }
+    public static class RemovedInterfaceToObjectDetail implements ObjectChangeDetail {
+        private final String name;
+
+        public RemovedInterfaceToObjectDetail(String name) {
             this.name = name;
         }
 

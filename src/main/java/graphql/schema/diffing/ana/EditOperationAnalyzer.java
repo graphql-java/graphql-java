@@ -28,6 +28,7 @@ public class EditOperationAnalyzer {
 
     private List<SchemaChange> changes = new ArrayList<>();
     private Map<String, ObjectChanged> objectChangedMap = new LinkedHashMap<>();
+    private Map<String, InterfaceChanged> interfaceChangedMap = new LinkedHashMap<>();
 
     public EditOperationAnalyzer(GraphQLSchema oldSchema,
                                  GraphQLSchema newSchema,
@@ -64,6 +65,7 @@ public class EditOperationAnalyzer {
             }
         }
         changes.addAll(objectChangedMap.values());
+        changes.addAll(interfaceChangedMap.values());
         return changes;
     }
 
@@ -157,15 +159,19 @@ public class EditOperationAnalyzer {
         if (newEdge.getLabel().startsWith("implements ")) {
             Vertex objectVertex;
             Vertex interfaceVertex;
-            if (newEdge.getOne().isOfType(SchemaGraph.OBJECT)) {
+            if (one.isOfType(SchemaGraph.OBJECT) && two.isOfType(SchemaGraph.INTERFACE)) {
                 objectVertex = newEdge.getOne();
                 interfaceVertex = newEdge.getTwo();
-            } else {
+                ObjectChanged.AddedInterfaceToObjectDetail addedInterfaceToObjectDetail = new ObjectChanged.AddedInterfaceToObjectDetail(interfaceVertex.getName());
+                getObjectChanged(objectVertex.getName()).getObjectChangeDetails().add(addedInterfaceToObjectDetail);
+            } else if (two.isOfType(SchemaGraph.INTERFACE) && one.isOfType(SchemaGraph.OBJECT)) {
                 objectVertex = newEdge.getTwo();
                 interfaceVertex = newEdge.getOne();
+                ObjectChanged.AddedInterfaceToObjectDetail addedInterfaceToObjectDetail = new ObjectChanged.AddedInterfaceToObjectDetail(interfaceVertex.getName());
+                getObjectChanged(objectVertex.getName()).getObjectChangeDetails().add(addedInterfaceToObjectDetail);
+            }else{
+                // this means we need to have an interface implementing another interface
             }
-            ObjectChanged.AddedInterfaceObjectChangeDetail addedInterfaceObjectChangeDetail = new ObjectChanged.AddedInterfaceObjectChangeDetail(interfaceVertex.getName());
-            getObjectChanged(objectVertex.getName()).getObjectChangeDetails().add(addedInterfaceObjectChangeDetail);
         }
     }
 
@@ -174,6 +180,13 @@ public class EditOperationAnalyzer {
             objectChangedMap.put(newName, new ObjectChanged(newName));
         }
         return objectChangedMap.get(newName);
+    }
+
+    private InterfaceChanged getInterfaceChanged(String newName) {
+        if (!interfaceChangedMap.containsKey(newName)) {
+            interfaceChangedMap.put(newName, new InterfaceChanged(newName));
+        }
+        return interfaceChangedMap.get(newName);
     }
 
     private void deletedEdge(EditOperation editOperation) {
@@ -297,11 +310,9 @@ public class EditOperationAnalyzer {
     }
 
     private void changedInterface(EditOperation editOperation) {
-        // object changes include: adding/removing Interface, adding/removing applied directives, changing name
-        String objectName = editOperation.getTargetVertex().getName();
+        String interfaceName = editOperation.getTargetVertex().getName();
+        InterfaceChanged interfaceChanged = getInterfaceChanged(interfaceName);
 
-        ObjectAdded objectAdded = new ObjectAdded(objectName);
-        changes.add(objectAdded);
     }
 
     private void changedUnion(EditOperation editOperation) {
@@ -353,16 +364,5 @@ public class EditOperationAnalyzer {
         changes.add(objectAdded);
     }
 
-    private List<EditOperation> searchForOperations(List<EditOperation> editOperations, List<Predicate<EditOperation>> predicates) {
-        List<EditOperation> result = new ArrayList<>();
-        for (EditOperation editOperation : editOperations) {
-            for (Predicate<EditOperation> predicate : predicates) {
-                if (predicate.test(editOperation)) {
-                    result.add(editOperation);
-                }
-            }
-        }
-        return result;
-    }
 
 }
