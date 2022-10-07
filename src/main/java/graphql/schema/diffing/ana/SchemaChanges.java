@@ -16,16 +16,37 @@ public class SchemaChanges {
         public ObjectAdded(String name) {
             this.name = name;
         }
+        public String getName() {
+            return name;
+        }
+    }
+    public static class ScalarAdded implements SchemaChange {
+        private String name;
+
+        public ScalarAdded(String name) {
+            this.name = name;
+        }
+        public String getName() {
+            return name;
+        }
     }
 
     public static class FieldAdded implements SchemaChange {
 
-        private String name;
-        private String fieldsContainer;
+        private final String name;
+        private final String fieldsContainer;
 
         public FieldAdded(String name, String fieldsContainer) {
             this.name = name;
             this.fieldsContainer = fieldsContainer;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public String getFieldsContainer() {
+            return fieldsContainer;
         }
     }
 

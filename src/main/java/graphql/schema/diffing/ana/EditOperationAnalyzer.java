@@ -1,10 +1,12 @@
 package graphql.schema.diffing.ana;
 
+import graphql.Scalars;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.diffing.EditOperation;
 import graphql.schema.diffing.SchemaGraph;
 import graphql.schema.diffing.Vertex;
 import graphql.schema.diffing.ana.SchemaChanges.SchemaChange;
+import graphql.schema.idl.ScalarInfo;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -139,7 +141,7 @@ public class EditOperationAnalyzer {
                 changedField(editOperation);
                 break;
             case SchemaGraph.INPUT_FIELD:
-                changedInputFIeld(editOperation);
+                changedInputField(editOperation);
                 break;
         }
 
@@ -194,10 +196,15 @@ public class EditOperationAnalyzer {
     }
 
     private void addedScalar(EditOperation editOperation) {
-        String objectName = editOperation.getTargetVertex().getName();
+        String scalarName = editOperation.getTargetVertex().getName();
+        // build in scalars can appear as added when not used in the old schema, but
+        // we don't want to register them as new Scalars
+        if(ScalarInfo.isGraphqlSpecifiedScalar(scalarName)) {
+            return;
+        }
 
-        ObjectAdded objectAdded = new ObjectAdded(objectName);
-        changes.add(objectAdded);
+        ScalarAdded scalarAdded = new ScalarAdded(scalarName);
+        changes.add(scalarAdded);
     }
 
     private void addedField(EditOperation editOperation) {
@@ -313,7 +320,7 @@ public class EditOperationAnalyzer {
         changes.add(objectAdded);
     }
 
-    private void changedInputFIeld(EditOperation editOperation) {
+    private void changedInputField(EditOperation editOperation) {
         // object changes include: adding/removing Interface, adding/removing applied directives, changing name
         String objectName = editOperation.getTargetVertex().getName();
 
