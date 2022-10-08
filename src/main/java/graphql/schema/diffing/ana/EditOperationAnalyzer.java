@@ -49,29 +49,31 @@ public class EditOperationAnalyzer {
     public EditOperationAnalysisResult analyzeEdits(List<EditOperation> editOperations) {
         handleTypeVertexChanges(editOperations);
         handleEdgeChanges(editOperations);
-//        for (EditOperation editOperation : editOperations) {
-//            switch (editOperation.getOperation()) {
-//                case INSERT_VERTEX:
-//                    insertedVertex(editOperation);
-//                    break;
-//                case DELETE_VERTEX:
-//                    deletedVertex(editOperation);
-//                    break;
-//                case CHANGE_VERTEX:
-//                    changeVertex(editOperation);
-//                    break;
-//                case INSERT_EDGE:
-//                    insertedEdge(editOperation);
-//                    break;
-//                case DELETE_EDGE:
-//                    deletedEdge(editOperation);
-//                    break;
-//                case CHANGE_EDGE:
-//                    changedEdge(editOperation);
-//                    break;
-//            }
-//        }
+        handleOtherChanges(editOperations);
         return new EditOperationAnalysisResult(objectChanges, interfaceChanges, unionChanges, enumChanges, inputObjectChanges, scalarChanges);
+    }
+
+    private void handleOtherChanges(List<EditOperation> editOperations) {
+        for (EditOperation editOperation : editOperations) {
+            switch (editOperation.getOperation()) {
+                case CHANGE_VERTEX:
+                    if (editOperation.getTargetVertex().isOfType(SchemaGraph.FIELD)) {
+                        fieldChanged(editOperation);
+                    }
+            }
+        }
+
+    }
+
+    private void fieldChanged(EditOperation editOperation) {
+        Vertex field = editOperation.getTargetVertex();
+        Vertex fieldsContainerForField = newSchemaGraph.getFieldsContainerForField(field);
+        if (fieldsContainerForField.isOfType(SchemaGraph.OBJECT)) {
+            ObjectModified objectModified = getObjectModified(fieldsContainerForField.getName());
+            String oldName = editOperation.getSourceVertex().getName();
+            String newName = field.getName();
+            objectModified.getObjectChangeDetails().add(new ObjectModified.FieldRenamed(oldName, newName));
+        }
     }
 
     private void handleTypeVertexChanges(List<EditOperation> editOperations) {

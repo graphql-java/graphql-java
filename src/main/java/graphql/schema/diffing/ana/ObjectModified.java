@@ -34,6 +34,23 @@ public class ObjectModified implements SchemaChange.ObjectChange {
             return name;
         }
     }
+    public static class FieldRenamed implements ObjectChangeDetail {
+        private final String oldName;
+        private final String newName;
+
+        public FieldRenamed(String oldName, String newName) {
+            this.oldName = oldName;
+            this.newName = newName;
+        }
+
+        public String getNewName() {
+            return newName;
+        }
+
+        public String getOldName() {
+            return oldName;
+        }
+    }
 
 
     public ObjectModified(String name) {
