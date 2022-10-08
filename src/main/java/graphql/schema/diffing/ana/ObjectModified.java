@@ -6,13 +6,13 @@ import java.util.List;
 public class ObjectModified implements SchemaChange.ObjectChange {
     private final String name;
 
-    private final List<ObjectChangeDetail> objectChangeDetails = new ArrayList<>();
+    private final List<ObjectModifiedDetails> objectModifiedDetails = new ArrayList<>();
 
-    interface ObjectChangeDetail {
+    public interface ObjectModifiedDetails {
 
     }
 
-    public static class AddedInterfaceToObjectDetail implements ObjectChangeDetail {
+    public static class AddedInterfaceToObjectDetail implements ObjectModifiedDetails {
         private final String name;
 
         public AddedInterfaceToObjectDetail(String name) {
@@ -23,7 +23,7 @@ public class ObjectModified implements SchemaChange.ObjectChange {
             return name;
         }
     }
-    public static class RemovedInterfaceToObjectDetail implements ObjectChangeDetail {
+    public static class RemovedInterfaceToObjectDetail implements ObjectModifiedDetails {
         private final String name;
 
         public RemovedInterfaceToObjectDetail(String name) {
@@ -34,7 +34,7 @@ public class ObjectModified implements SchemaChange.ObjectChange {
             return name;
         }
     }
-    public static class FieldRenamed implements ObjectChangeDetail {
+    public static class FieldRenamed implements ObjectModifiedDetails {
         private final String oldName;
         private final String newName;
 
@@ -51,6 +51,17 @@ public class ObjectModified implements SchemaChange.ObjectChange {
             return oldName;
         }
     }
+    public static class FieldAdded implements ObjectModifiedDetails {
+        private final String name;
+
+        public FieldAdded(String name) {
+            this.name = name;
+        }
+
+        public String getName() {
+            return name;
+        }
+    }
 
 
     public ObjectModified(String name) {
@@ -62,7 +73,8 @@ public class ObjectModified implements SchemaChange.ObjectChange {
     }
 
     // this will be mutated
-    public List<ObjectChangeDetail> getObjectChangeDetails() {
-        return objectChangeDetails;
+
+    public List<ObjectModifiedDetails> getObjectModifiedDetails() {
+        return objectModifiedDetails;
     }
 }

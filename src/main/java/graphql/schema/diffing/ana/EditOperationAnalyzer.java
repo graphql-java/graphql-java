@@ -60,6 +60,11 @@ public class EditOperationAnalyzer {
                     if (editOperation.getTargetVertex().isOfType(SchemaGraph.FIELD)) {
                         fieldChanged(editOperation);
                     }
+                    break;
+                case INSERT_VERTEX:
+                    if(editOperation.getTargetVertex().isOfType(SchemaGraph.FIELD)) {
+                        fieldAdded(editOperation);
+                    }
             }
         }
 
@@ -72,9 +77,23 @@ public class EditOperationAnalyzer {
             ObjectModified objectModified = getObjectModified(fieldsContainerForField.getName());
             String oldName = editOperation.getSourceVertex().getName();
             String newName = field.getName();
-            objectModified.getObjectChangeDetails().add(new ObjectModified.FieldRenamed(oldName, newName));
+            objectModified.getObjectModifiedDetails().add(new ObjectModified.FieldRenamed(oldName, newName));
         }
     }
+
+    private void fieldAdded(EditOperation editOperation) {
+        Vertex field = editOperation.getTargetVertex();
+        Vertex fieldsContainerForField = newSchemaGraph.getFieldsContainerForField(field);
+        if (fieldsContainerForField.isOfType(SchemaGraph.OBJECT)) {
+            if(isNewObject(fieldsContainerForField.getName())) {
+                return;
+            }
+            ObjectModified objectModified = getObjectModified(fieldsContainerForField.getName());
+            String name = field.getName();
+            objectModified.getObjectModifiedDetails().add(new ObjectModified.FieldAdded(name));
+        }
+    }
+
 
     private void handleTypeVertexChanges(List<EditOperation> editOperations) {
         for (EditOperation editOperation : editOperations) {
@@ -196,7 +215,7 @@ public class EditOperationAnalyzer {
             Vertex objectVertex = newEdge.getFrom();
             Vertex interfaceVertex = newEdge.getTo();
             ObjectModified.AddedInterfaceToObjectDetail addedInterfaceToObjectDetail = new ObjectModified.AddedInterfaceToObjectDetail(interfaceVertex.getName());
-            getObjectModified(objectVertex.getName()).getObjectChangeDetails().add(addedInterfaceToObjectDetail);
+            getObjectModified(objectVertex.getName()).getObjectModifiedDetails().add(addedInterfaceToObjectDetail);
 
         } else if (from.isOfType(SchemaGraph.INTERFACE)) {
             if (isNewInterface(from.getName())) {
@@ -235,21 +254,7 @@ public class EditOperationAnalyzer {
         assertTrue(interfaceChanges.get(newName) instanceof InterfaceModified);
         return (InterfaceModified) interfaceChanges.get(newName);
     }
-////
-//    private InterfaceChanged getInterfaceChanged(String newName) {
-//        if (!interfaceChangedMap.containsKey(newName)) {
-//            interfaceChangedMap.put(newName, new InterfaceChanged(newName));
-//        }
-//        return interfaceChangedMap.get(newName);
-//    }
 
-    private void deletedEdge(EditOperation editOperation) {
-
-    }
-
-    private void changedEdge(EditOperation editOperation) {
-
-    }
 
 
     private void addedObject(EditOperation editOperation) {
@@ -298,19 +303,7 @@ public class EditOperationAnalyzer {
         scalarChanges.put(scalarName, scalarAdded);
     }
 
-//    private void addedField(EditOperation editOperation) {
-//        Vertex newField = editOperation.getTargetVertex();
-//        Vertex fieldsContainerForField = newSchemaGraph.getFieldsContainerForField(newField);
-//        FieldAdded objectAdded = new FieldAdded(newField.getName(), fieldsContainerForField.getName());
-//        changes.add(objectAdded);
-//    }
-//
-//    private void addedInputField(EditOperation editOperation) {
-//        String objectName = editOperation.getTargetVertex().getName();
-//
-//        ObjectAdded objectAdded = new ObjectAdded(objectName);
-//        changes.add(objectAdded);
-//    }
+
 
     private void removedObject(EditOperation editOperation) {
         String objectName = editOperation.getSourceVertex().getName();

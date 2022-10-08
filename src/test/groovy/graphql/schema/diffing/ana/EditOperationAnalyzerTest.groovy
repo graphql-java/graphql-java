@@ -25,31 +25,33 @@ class EditOperationAnalyzerTest extends Specification {
         then:
         changes.objectChanges["Query"] instanceof ObjectModified
         def objectModified = changes.objectChanges["Query"] as ObjectModified
-        def fieldRenames = objectModified.objectChangeDetails.findAll({ it instanceof ObjectModified.FieldRenamed }) as List<ObjectModified.FieldRenamed>
+        def fieldRenames = objectModified.objectModifiedDetails.findAll({ it instanceof ObjectModified.FieldRenamed }) as List<ObjectModified.FieldRenamed>
         fieldRenames[0].oldName == "hello"
         fieldRenames[0].newName == "hello2"
     }
-//
-//    def "test field added"() {
-//        given:
-//        def oldSdl = '''
-//        type Query {
-//            hello: String
-//        }
-//        '''
-//        def newSdl = '''
-//        type Query {
-//            hello: String
-//            newOne: String
-//        }
-//        '''
-//        when:
-//        def changes = changes(oldSdl, newSdl)
-//        then:
-//        changes.size() == 1
-//        (changes[0] as FieldAdded).name == "newOne"
-//        (changes[0] as FieldAdded).fieldsContainer == "Query"
-//    }
+
+    def "test field added"() {
+        given:
+        def oldSdl = '''
+        type Query {
+            hello: String
+        }
+        '''
+        def newSdl = '''
+        type Query {
+            hello: String
+            newOne: String
+        }
+        '''
+        when:
+        when:
+        def changes = changes(oldSdl, newSdl)
+        then:
+        changes.objectChanges["Query"] instanceof ObjectModified
+        def objectModified = changes.objectChanges["Query"] as ObjectModified
+        def fieldAdded = objectModified.objectModifiedDetails.findAll({ it instanceof ObjectModified.FieldAdded }) as List<ObjectModified.FieldAdded>
+        fieldAdded[0].name == "newOne"
+    }
 
     def "test Object added"() {
         given:
@@ -70,8 +72,7 @@ class EditOperationAnalyzerTest extends Specification {
         when:
         def changes = changes(oldSdl, newSdl)
         then:
-        changes.objectChanges.size() == 1
-        changes.objectChanges["Foo"]instanceof ObjectAdded
+        changes.objectChanges["Foo"] instanceof ObjectAdded
     }
 
     def "new Interface introduced"() {
@@ -103,7 +104,7 @@ class EditOperationAnalyzerTest extends Specification {
         changes.objectChanges.size() == 1
         changes.objectChanges["Foo"] instanceof ObjectModified
         def objectModified = changes.objectChanges["Foo"] as ObjectModified
-        def addedInterfaceDetails = objectModified.objectChangeDetails.findAll({ it instanceof ObjectModified.AddedInterfaceToObjectDetail }) as List<ObjectModified.AddedInterfaceToObjectDetail>
+        def addedInterfaceDetails = objectModified.objectModifiedDetails.findAll({ it instanceof ObjectModified.AddedInterfaceToObjectDetail }) as List<ObjectModified.AddedInterfaceToObjectDetail>
         addedInterfaceDetails.size() == 1
         addedInterfaceDetails[0].name == "Node"
     }
@@ -203,7 +204,7 @@ class EditOperationAnalyzerTest extends Specification {
         changes.objectChanges.size() == 1
         changes.objectChanges["Foo"] instanceof ObjectModified
         def objectModified = changes.objectChanges["Foo"] as ObjectModified
-        def addedInterfaceDetails = objectModified.objectChangeDetails.findAll({ it instanceof ObjectModified.AddedInterfaceToObjectDetail }) as List<ObjectModified.AddedInterfaceToObjectDetail>
+        def addedInterfaceDetails = objectModified.objectModifiedDetails.findAll({ it instanceof ObjectModified.AddedInterfaceToObjectDetail }) as List<ObjectModified.AddedInterfaceToObjectDetail>
         addedInterfaceDetails.size() == 1
         addedInterfaceDetails[0].name == "NewI"
 
