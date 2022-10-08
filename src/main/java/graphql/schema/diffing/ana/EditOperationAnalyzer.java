@@ -1,5 +1,6 @@
 package graphql.schema.diffing.ana;
 
+import graphql.Assert;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.diffing.Edge;
 import graphql.schema.diffing.EditOperation;
@@ -181,38 +182,57 @@ public class EditOperationAnalyzer {
         if (newEdge.getLabel().startsWith("implements ")) {
             newInterfaceAddedToInterfaceOrObject(newEdge);
         }
+//        else if(newEdge)
     }
 
     private void newInterfaceAddedToInterfaceOrObject(Edge newEdge) {
-        Vertex objectVertex;
-        Vertex interfaceVertex;
         Vertex from = newEdge.getFrom();
-        Vertex to = newEdge.getTo();
-        if (from.isOfType(SchemaGraph.OBJECT)){
-            objectVertex = newEdge.getFrom();
-            interfaceVertex = newEdge.getTo();
+        if (from.isOfType(SchemaGraph.OBJECT)) {
+            if (isNewObject(from.getName())) {
+                return;
+            }
+            Vertex objectVertex = newEdge.getFrom();
+            Vertex interfaceVertex = newEdge.getTo();
             ObjectModified.AddedInterfaceToObjectDetail addedInterfaceToObjectDetail = new ObjectModified.AddedInterfaceToObjectDetail(interfaceVertex.getName());
+            getObjectModified(objectVertex.getName()).getObjectChangeDetails().add(addedInterfaceToObjectDetail);
 
-            // It could be a completely new Object or a modified one
-
-
-//        } else if (two.isOfType(SchemaGraph.INTERFACE) && one.isOfType(SchemaGraph.OBJECT)) {
-//            objectVertex = newEdge.getTo();
-//            interfaceVertex = newEdge.getFrom();
-//            ObjectModification.AddedInterfaceToObjectDetail addedInterfaceToObjectDetail = new ObjectModification.AddedInterfaceToObjectDetail(interfaceVertex.getName());
-//            getObjectChanged(objectVertex.getName()).getObjectChangeDetails().add(addedInterfaceToObjectDetail);
-//        } else {
-            // this means we need to have an interface implementing another interface
+        } else if (from.isOfType(SchemaGraph.INTERFACE)) {
+            if (isNewInterface(from.getName())) {
+                return;
+            }
+            Vertex interfaceFromVertex = newEdge.getFrom();
+            Vertex interfaceVertex = newEdge.getTo();
+            InterfaceModified.AddedInterfaceToInterfaceDetail addedInterfaceToObjectDetail = new InterfaceModified.AddedInterfaceToInterfaceDetail(interfaceVertex.getName());
+            getInterfaceModified(interfaceFromVertex.getName()).getInterfaceChangeDetails().add(addedInterfaceToObjectDetail);
+        } else {
+            Assert.assertShouldNeverHappen("expected an implementation edge");
         }
 
     }
 
-//    private SchemaChange.ObjectChange getObjectChanged(String newName) {
-//        if (!objectChangedMap.containsKey(newName)) {
-//            objectChangedMap.put(newName, new ObjectModification(newName));
-//        }
-//        return objectChangedMap.get(newName);
-//    }
+    private boolean isNewObject(String name) {
+        return objectChanges.containsKey(name) && objectChanges.get(name) instanceof ObjectAdded;
+    }
+
+    private boolean isNewInterface(String name) {
+        return interfaceChanges.containsKey(name) && interfaceChanges.get(name) instanceof InterfaceAdded;
+    }
+
+    private ObjectModified getObjectModified(String newName) {
+        if (!objectChanges.containsKey(newName)) {
+            objectChanges.put(newName, new ObjectModified(newName));
+        }
+        assertTrue(objectChanges.get(newName) instanceof ObjectModified);
+        return (ObjectModified) objectChanges.get(newName);
+    }
+
+    private InterfaceModified getInterfaceModified(String newName) {
+        if (!interfaceChanges.containsKey(newName)) {
+            interfaceChanges.put(newName, new InterfaceModified(newName));
+        }
+        assertTrue(interfaceChanges.get(newName) instanceof InterfaceModified);
+        return (InterfaceModified) interfaceChanges.get(newName);
+    }
 ////
 //    private InterfaceChanged getInterfaceChanged(String newName) {
 //        if (!interfaceChangedMap.containsKey(newName)) {
@@ -343,6 +363,7 @@ public class EditOperationAnalyzer {
     private void modifiedInterface(EditOperation editOperation) {
         String interfaceName = editOperation.getTargetVertex().getName();
         InterfaceModified interfaceModified = new InterfaceModified(interfaceName);
+        // we store the modification against the new name
         interfaceChanges.put(interfaceName, interfaceModified);
     }
 //

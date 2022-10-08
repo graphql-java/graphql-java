@@ -72,7 +72,7 @@ class EditOperationAnalyzerTest extends Specification {
         changes.objectChanges["Foo"]instanceof ObjectAdded
     }
 
-    def "test new Interface introduced"() {
+    def "new Interface introduced"() {
         given:
         def oldSdl = '''
         type Query {
@@ -100,9 +100,37 @@ class EditOperationAnalyzerTest extends Specification {
         changes.interfaceChanges["Node"] instanceof InterfaceAdded
         changes.objectChanges.size() == 1
         changes.objectChanges["Foo"] instanceof ObjectModified
-        def addedInterfaceDetails = objectChanged[0].objectChangeDetails.findAll({ it instanceof ObjectModified.AddedInterfaceToObjectDetail }) as List<ObjectModified.AddedInterfaceToObjectDetail>
+        def objectModified = changes.objectChanges["Foo"] as ObjectModified
+        def addedInterfaceDetails = objectModified.objectChangeDetails.findAll({ it instanceof ObjectModified.AddedInterfaceToObjectDetail }) as List<ObjectModified.AddedInterfaceToObjectDetail>
         addedInterfaceDetails.size() == 1
         addedInterfaceDetails[0].name == "Node"
+    }
+
+    def "Object and Interface added"() {
+        given:
+        def oldSdl = '''
+        type Query {
+            foo: String
+        }
+        '''
+        def newSdl = '''
+        type Query {
+            foo: Foo
+        }
+        type Foo implements Node{
+            id: ID!
+        }
+        interface Node {
+            id: ID!
+        }
+        '''
+        when:
+        def changes = changes(oldSdl, newSdl)
+        then:
+        changes.interfaceChanges.size() == 1
+        changes.interfaceChanges["Node"] instanceof InterfaceAdded
+        changes.objectChanges.size() == 1
+        changes.objectChanges["Foo"] instanceof ObjectAdded
     }
 
     def "interfaced renamed"() {
@@ -131,10 +159,9 @@ class EditOperationAnalyzerTest extends Specification {
         '''
         when:
         def changes = changes(oldSdl, newSdl)
-        def interfaceChanged = changes.findAll({ it instanceof InterfaceModified }) as List<InterfaceModified>
         then:
-        interfaceChanged.size() == 1
-        interfaceChanged[0].name == "Node2"
+        changes.interfaceChanges.size() == 1
+        changes.interfaceChanges["Node2"] instanceof InterfaceModified
     }
 
     def "interfaced renamed and another interface added to it"() {
@@ -167,11 +194,17 @@ class EditOperationAnalyzerTest extends Specification {
         '''
         when:
         def changes = changes(oldSdl, newSdl)
-        def interfaceChanged = changes.findAll({ it instanceof InterfaceModified }) as List<InterfaceModified>
         then:
-        interfaceChanged.size() == 1
-        interfaceChanged.interfaceChangeDetails.size() == 1
-        (interfaceChanged.interfaceChangeDetails[0] as InterfaceModified.AddedInterfaceToInterfaceDetail).name == "NewI"
+        changes.interfaceChanges.size() == 2
+        changes.interfaceChanges["Node2"] instanceof InterfaceModified
+        changes.interfaceChanges["NewI"] instanceof InterfaceAdded
+        changes.objectChanges.size() == 1
+        changes.objectChanges["Foo"] instanceof ObjectModified
+        def objectModified = changes.objectChanges["Foo"] as ObjectModified
+        def addedInterfaceDetails = objectModified.objectChangeDetails.findAll({ it instanceof ObjectModified.AddedInterfaceToObjectDetail }) as List<ObjectModified.AddedInterfaceToObjectDetail>
+        addedInterfaceDetails.size() == 1
+        addedInterfaceDetails[0].name == "NewI"
+
     }
 
 
