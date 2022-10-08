@@ -597,7 +597,7 @@ class SchemaDiffingTest extends Specification {
         diff.each { println it }
 
         then:
-        diff.size() == 59
+        diff.size() == 41
 
     }
 
@@ -643,7 +643,7 @@ class SchemaDiffingTest extends Specification {
         def operations = new SchemaDiffing().diffGraphQLSchema(schema1, schema2)
 
         then:
-        operations.size() == 18
+        operations.size() == 12
     }
 
     def "adding a few things plus introducing new interface"() {
@@ -688,7 +688,7 @@ class SchemaDiffingTest extends Specification {
         def operations = new SchemaDiffing().diffGraphQLSchema(schema1, schema2)
 
         then:
-        operations.size() == 22
+        operations.size() == 16
     }
 
     def "adding a few things plus introducing new interface plus changing return type"() {
@@ -733,7 +733,7 @@ class SchemaDiffingTest extends Specification {
         def operations = new SchemaDiffing().diffGraphQLSchema(schema1, schema2)
 
         then:
-        operations.size() == 24
+        operations.size() == 18
     }
 
     def "adding a few things plus introducing new interface plus changing return type plus adding field in Interface"() {
@@ -782,7 +782,7 @@ class SchemaDiffingTest extends Specification {
         def operations = new SchemaDiffing().diffGraphQLSchema(schema1, schema2)
 
         then:
-        operations.size() == 42
+        operations.size() == 28
     }
 
     def "add a field"() {
@@ -826,9 +826,10 @@ class SchemaDiffingTest extends Specification {
 
         when:
         def diff = new SchemaDiffing().diffGraphQLSchema(schema1, schema2)
+        diff.each { println it }
 
         then:
-        diff.size() == 11
+        diff.size() == 7
 
     }
 
@@ -852,7 +853,7 @@ class SchemaDiffingTest extends Specification {
         def diff = new SchemaDiffing().diffGraphQLSchema(schema1, schema2)
 
         then:
-        diff.size() == 9
+        diff.size() == 7
 
     }
 
@@ -1042,7 +1043,7 @@ class SchemaDiffingTest extends Specification {
         operations.each { println it }
 
         then:
-        operations.size() == 18
+        operations.size() == 14
     }
 
     def "adding enum value"() {
