@@ -3,7 +3,7 @@ package graphql.schema.diffing.ana;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ObjectChanged implements SchemaChange {
+public class ObjectModified implements SchemaChange.ObjectChange {
     private final String name;
 
     private final List<ObjectChangeDetail> objectChangeDetails = new ArrayList<>();
@@ -36,7 +36,7 @@ public class ObjectChanged implements SchemaChange {
     }
 
 
-    public ObjectChanged(String name) {
+    public ObjectModified(String name) {
         this.name = name;
     }
 
