@@ -3,13 +3,10 @@ package graphql.schema.diffing;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.diffing.ana.EditOperationAnalysisResult;
 import graphql.schema.diffing.ana.EditOperationAnalyzer;
-import graphql.schema.diffing.ana.SchemaChange;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 import static graphql.Assert.assertTrue;
 import static graphql.schema.diffing.EditorialCostForMapping.editorialCostForMapping;

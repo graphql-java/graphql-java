@@ -23,6 +23,7 @@ import static java.lang.String.format;
 
 public class SchemaGraph {
 
+    public static final String SCHEMA = "Schema";
     public static final String OBJECT = "Object";
     public static final String INTERFACE = "Interface";
     public static final String UNION = "Union";

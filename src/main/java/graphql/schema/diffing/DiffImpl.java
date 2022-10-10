@@ -7,6 +7,7 @@ import com.google.common.util.concurrent.AtomicDoubleArray;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -17,6 +18,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 import static graphql.Assert.assertTrue;
 import static graphql.schema.diffing.EditorialCostForMapping.editorialCostForMapping;
+import static java.util.Collections.singletonList;
 
 public class DiffImpl {
 
@@ -73,15 +75,15 @@ public class DiffImpl {
 
     OptimalEdit diffImpl(Mapping startMapping, List<Vertex> relevantSourceList, List<Vertex> relevantTargetList) throws Exception {
 
-        OptimalEdit optimalEdit = new OptimalEdit();
-
         int graphSize = relevantSourceList.size();
 
-        int mappingCost = editorialCostForMapping(startMapping, completeSourceGraph, completeTargetGraph, new ArrayList<>());
+        ArrayList<EditOperation> initialEditOperations = new ArrayList<>();
+        int mappingCost = editorialCostForMapping(startMapping, completeSourceGraph, completeTargetGraph, initialEditOperations);
         int level = startMapping.size();
         MappingEntry firstMappingEntry = new MappingEntry(startMapping, level, mappingCost);
         System.out.println("first entry: lower bound: " + mappingCost + " at level " + level);
 
+        OptimalEdit optimalEdit = new OptimalEdit();
         PriorityQueue<MappingEntry> queue = new PriorityQueue<>((mappingEntry1, mappingEntry2) -> {
             int compareResult = Double.compare(mappingEntry1.lowerBoundCost, mappingEntry2.lowerBoundCost);
             if (compareResult == 0) {
@@ -376,9 +378,9 @@ public class DiffImpl {
                 anchoredVerticesCost++;
             }
 
-            Edge sourceEdgeInverse = completeSourceGraph.getEdge(vPrime,v);
+            Edge sourceEdgeInverse = completeSourceGraph.getEdge(vPrime, v);
             String labelSourceEdgeInverse = sourceEdgeInverse != null ? sourceEdgeInverse.getLabel() : null;
-            Edge targetEdgeInverse = completeTargetGraph.getEdge(mappedVPrime,u);
+            Edge targetEdgeInverse = completeTargetGraph.getEdge(mappedVPrime, u);
             String labelTargetEdgeInverse = targetEdgeInverse != null ? targetEdgeInverse.getLabel() : null;
             if (!Objects.equals(labelSourceEdgeInverse, labelTargetEdgeInverse)) {
                 anchoredVerticesCost++;

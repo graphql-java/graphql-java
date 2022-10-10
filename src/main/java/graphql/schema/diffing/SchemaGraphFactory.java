@@ -95,6 +95,7 @@ public class SchemaGraphFactory {
                 return TraversalControl.CONTINUE;
             }
         });
+        addSchemaVertex(schemaGraph, schema);
 
         ArrayList<Vertex> copyOfVertices = new ArrayList<>(schemaGraph.getVertices());
         for (Vertex vertex : copyOfVertices) {
@@ -115,6 +116,25 @@ public class SchemaGraphFactory {
             }
         }
         return schemaGraph;
+    }
+
+    private void addSchemaVertex(SchemaGraph schemaGraph, GraphQLSchema graphQLSchema) {
+        GraphQLObjectType queryType = graphQLSchema.getQueryType();
+        GraphQLObjectType mutationType = graphQLSchema.getMutationType();
+        GraphQLObjectType subscriptionType = graphQLSchema.getSubscriptionType();
+        Vertex schemaVertex = new Vertex(SchemaGraph.SCHEMA, "schema");
+        schemaGraph.addVertex(schemaVertex);
+
+        Vertex queryVertex = schemaGraph.getType(queryType.getName());
+        schemaGraph.addEdge(new Edge(schemaVertex, queryVertex, "query"));
+        if (mutationType != null) {
+            Vertex mutationVertex = schemaGraph.getType(mutationType.getName());
+            schemaGraph.addEdge(new Edge(schemaVertex, mutationVertex, "mutation"));
+        }
+        if (subscriptionType != null) {
+            Vertex subscriptionVertex = schemaGraph.getType(subscriptionType.getName());
+            schemaGraph.addEdge(new Edge(schemaVertex, subscriptionVertex, "subscription"));
+        }
     }
 
     private void handleAppliedDirective(Vertex appliedDirectiveVertex, SchemaGraph schemaGraph, GraphQLSchema graphQLSchema) {
@@ -229,7 +249,7 @@ public class SchemaGraphFactory {
         }
         schemaGraph.addVertex(objectVertex);
         schemaGraph.addType(graphQLObjectType.getName(), objectVertex);
-        cratedAppliedDirectives(objectVertex, graphQLObjectType.getDirectives(), schemaGraph);
+        createAppliedDirectives(objectVertex, graphQLObjectType.getDirectives(), schemaGraph);
     }
 
     private Vertex newField(GraphQLFieldDefinition graphQLFieldDefinition, SchemaGraph schemaGraph, boolean isIntrospectionNode) {
@@ -242,7 +262,7 @@ public class SchemaGraphFactory {
             schemaGraph.addVertex(argumentVertex);
             schemaGraph.addEdge(new Edge(fieldVertex, argumentVertex));
         }
-        cratedAppliedDirectives(fieldVertex, graphQLFieldDefinition.getDirectives(), schemaGraph);
+        createAppliedDirectives(fieldVertex, graphQLFieldDefinition.getDirectives(), schemaGraph);
         return fieldVertex;
     }
 
@@ -254,7 +274,7 @@ public class SchemaGraphFactory {
         if (graphQLArgument.hasSetDefaultValue()) {
             vertex.add("defaultValue", AstPrinter.printAst(ValuesResolver.valueToLiteral(graphQLArgument.getArgumentDefaultValue(), graphQLArgument.getType())));
         }
-        cratedAppliedDirectives(vertex, graphQLArgument.getDirectives(), schemaGraph);
+        createAppliedDirectives(vertex, graphQLArgument.getDirectives(), schemaGraph);
         return vertex;
     }
 
@@ -269,7 +289,7 @@ public class SchemaGraphFactory {
         scalarVertex.add("specifiedByUrl", scalarType.getSpecifiedByUrl());
         schemaGraph.addVertex(scalarVertex);
         schemaGraph.addType(scalarType.getName(), scalarVertex);
-        cratedAppliedDirectives(scalarVertex, scalarType.getDirectives(), schemaGraph);
+        createAppliedDirectives(scalarVertex, scalarType.getDirectives(), schemaGraph);
     }
 
     private void newInterface(GraphQLInterfaceType interfaceType, SchemaGraph schemaGraph, boolean isIntrospectionNode) {
@@ -284,7 +304,7 @@ public class SchemaGraphFactory {
         }
         schemaGraph.addVertex(interfaceVertex);
         schemaGraph.addType(interfaceType.getName(), interfaceVertex);
-        cratedAppliedDirectives(interfaceVertex, interfaceType.getDirectives(), schemaGraph);
+        createAppliedDirectives(interfaceVertex, interfaceType.getDirectives(), schemaGraph);
     }
 
     private void newEnum(GraphQLEnumType enumType, SchemaGraph schemaGraph, boolean isIntrospectionNode) {
@@ -298,11 +318,11 @@ public class SchemaGraphFactory {
             enumValueVertex.add("name", enumValue.getName());
             schemaGraph.addVertex(enumValueVertex);
             schemaGraph.addEdge(new Edge(enumVertex, enumValueVertex));
-            cratedAppliedDirectives(enumValueVertex, enumValue.getDirectives(), schemaGraph);
+            createAppliedDirectives(enumValueVertex, enumValue.getDirectives(), schemaGraph);
         }
         schemaGraph.addVertex(enumVertex);
         schemaGraph.addType(enumType.getName(), enumVertex);
-        cratedAppliedDirectives(enumVertex, enumType.getDirectives(), schemaGraph);
+        createAppliedDirectives(enumVertex, enumType.getDirectives(), schemaGraph);
     }
 
     private void newUnion(GraphQLUnionType unionType, SchemaGraph schemaGraph, boolean isIntrospectionNode) {
@@ -312,7 +332,7 @@ public class SchemaGraphFactory {
         unionVertex.add("description", desc(unionType.getDescription()));
         schemaGraph.addVertex(unionVertex);
         schemaGraph.addType(unionType.getName(), unionVertex);
-        cratedAppliedDirectives(unionVertex, unionType.getDirectives(), schemaGraph);
+        createAppliedDirectives(unionVertex, unionType.getDirectives(), schemaGraph);
     }
 
     private void newInputObject(GraphQLInputObjectType inputObject, SchemaGraph schemaGraph, boolean isIntrospectionNode) {
@@ -327,11 +347,12 @@ public class SchemaGraphFactory {
         }
         schemaGraph.addVertex(inputObjectVertex);
         schemaGraph.addType(inputObject.getName(), inputObjectVertex);
-        cratedAppliedDirectives(inputObjectVertex, inputObject.getDirectives(), schemaGraph);
+        createAppliedDirectives(inputObjectVertex, inputObject.getDirectives(), schemaGraph);
     }
 
-    private void cratedAppliedDirectives(Vertex from, List<GraphQLDirective> appliedDirectives, SchemaGraph
-            schemaGraph) {
+    private void createAppliedDirectives(Vertex from,
+                                         List<GraphQLDirective> appliedDirectives,
+                                         SchemaGraph schemaGraph) {
         Map<String, Integer> countByName = new LinkedHashMap<>();
         for (GraphQLDirective appliedDirective : appliedDirectives) {
             Vertex appliedDirectiveVertex = new Vertex(SchemaGraph.APPLIED_DIRECTIVE, debugPrefix + String.valueOf(counter++));
@@ -381,7 +402,7 @@ public class SchemaGraphFactory {
         if (inputField.hasSetDefaultValue()) {
             vertex.add("defaultValue", AstPrinter.printAst(ValuesResolver.valueToLiteral(inputField.getInputFieldDefaultValue(), inputField.getType())));
         }
-        cratedAppliedDirectives(vertex, inputField.getDirectives(), schemaGraph);
+        createAppliedDirectives(vertex, inputField.getDirectives(), schemaGraph);
         return vertex;
     }
 

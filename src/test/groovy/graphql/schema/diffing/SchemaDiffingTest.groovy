@@ -27,7 +27,7 @@ class SchemaDiffingTest extends Specification {
         def schemaGraph = new SchemaGraphFactory().createGraph(schema)
 
         then:
-        schemaGraph.size() == 91
+        schemaGraph.size() == 92
 
     }
 
@@ -1256,6 +1256,37 @@ class SchemaDiffingTest extends Specification {
 
         then:
         operations.size() == 0
+    }
+
+    def "changed query operation type "() {
+        given:
+        def schema1 = schema('''
+            type Query {
+                foo: String
+            }
+            type MyQuery {
+                foo: String
+            } 
+        ''')
+        def schema2 = schema('''
+            schema {
+                query: MyQuery
+            }
+            type Query {
+                foo: String
+            }
+            type MyQuery {
+                foo: String
+            } 
+        ''')
+
+        when:
+        def operations = new SchemaDiffing().diffGraphQLSchema(schema1, schema2)
+        operations.each { println it }
+
+        then:
+        // delete edge and insert new one
+        operations.size() == 2
     }
 }
 

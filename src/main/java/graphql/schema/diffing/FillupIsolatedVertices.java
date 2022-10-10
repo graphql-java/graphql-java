@@ -33,6 +33,7 @@ import static graphql.schema.diffing.SchemaGraph.INPUT_OBJECT;
 import static graphql.schema.diffing.SchemaGraph.INTERFACE;
 import static graphql.schema.diffing.SchemaGraph.OBJECT;
 import static graphql.schema.diffing.SchemaGraph.SCALAR;
+import static graphql.schema.diffing.SchemaGraph.SCHEMA;
 import static graphql.schema.diffing.SchemaGraph.UNION;
 import static graphql.util.FpKit.concat;
 import static java.util.Collections.emptyList;
@@ -49,6 +50,7 @@ public class FillupIsolatedVertices {
     static Map<String, List<VertexContextSegment>> typeContexts = new LinkedHashMap<>();
 
     static {
+        typeContexts.put(SCHEMA, schemaContext());
         typeContexts.put(FIELD, fieldContext());
         typeContexts.put(ARGUMENT, argumentsContexts());
         typeContexts.put(INPUT_FIELD, inputFieldContexts());
@@ -633,6 +635,20 @@ public class FillupIsolatedVertices {
         return contexts;
     }
 
+    private static List<VertexContextSegment> schemaContext() {
+        VertexContextSegment schema = new VertexContextSegment() {
+            @Override
+            public String idForVertex(Vertex vertex, SchemaGraph schemaGraph) {
+                return vertex.getType();
+            }
+
+            @Override
+            public boolean filter(Vertex vertex, SchemaGraph schemaGraph) {
+                return SCHEMA.equals(vertex.getType());
+            }
+        };
+        return singletonList(schema);
+    }
     private static List<VertexContextSegment> fieldContext() {
         VertexContextSegment field = new VertexContextSegment() {
             @Override
@@ -741,6 +757,7 @@ public class FillupIsolatedVertices {
     }
 
     public void ensureGraphAreSameSize() {
+        calcPossibleMappings(typeContexts.get(SCHEMA), SCHEMA);
         calcPossibleMappings(typeContexts.get(FIELD), FIELD);
         calcPossibleMappings(typeContexts.get(ARGUMENT), ARGUMENT);
         calcPossibleMappings(typeContexts.get(INPUT_FIELD), INPUT_FIELD);
