@@ -427,6 +427,8 @@ public class FillupIsolatedVertices {
             public String idForVertex(Vertex appliedDirective, SchemaGraph schemaGraph) {
                 Vertex container = schemaGraph.getAppliedDirectiveContainerForAppliedDirective(appliedDirective);
                 switch (container.getType()) {
+                    case SCHEMA:
+                            return SCHEMA;
                     case FIELD:
                         Vertex fieldsContainer = schemaGraph.getFieldsContainerForField(container);
                         return fieldsContainer.getType() + "." + fieldsContainer.getName();
@@ -467,6 +469,7 @@ public class FillupIsolatedVertices {
             public String idForVertex(Vertex appliedDirective, SchemaGraph schemaGraph) {
                 Vertex container = schemaGraph.getAppliedDirectiveContainerForAppliedDirective(appliedDirective);
                 switch (container.getType()) {
+                    case SCHEMA:
                     case FIELD:
                     case OBJECT:
                     case INTERFACE:
@@ -548,6 +551,8 @@ public class FillupIsolatedVertices {
                 Vertex appliedDirective = schemaGraph.getAppliedDirectiveForAppliedArgument(appliedArgument);
                 Vertex container = schemaGraph.getAppliedDirectiveContainerForAppliedDirective(appliedDirective);
                 switch (container.getType()) {
+                    case SCHEMA:
+                        return SCHEMA;
                     case FIELD:
                         Vertex fieldsContainer = schemaGraph.getFieldsContainerForField(container);
                         return fieldsContainer.getType() + "." + fieldsContainer.getName();
@@ -589,6 +594,7 @@ public class FillupIsolatedVertices {
                 Vertex appliedDirective = schemaGraph.getAppliedDirectiveForAppliedArgument(appliedArgument);
                 Vertex container = schemaGraph.getAppliedDirectiveContainerForAppliedDirective(appliedDirective);
                 switch (container.getType()) {
+                    case SCHEMA:
                     case FIELD:
                     case OBJECT:
                     case INTERFACE:

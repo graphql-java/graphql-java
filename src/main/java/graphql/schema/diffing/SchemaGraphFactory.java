@@ -123,6 +123,7 @@ public class SchemaGraphFactory {
         GraphQLObjectType mutationType = graphQLSchema.getMutationType();
         GraphQLObjectType subscriptionType = graphQLSchema.getSubscriptionType();
         Vertex schemaVertex = new Vertex(SchemaGraph.SCHEMA, "schema");
+        schemaVertex.add("name", SchemaGraph.SCHEMA);
         schemaGraph.addVertex(schemaVertex);
 
         Vertex queryVertex = schemaGraph.getType(queryType.getName());
@@ -135,6 +136,7 @@ public class SchemaGraphFactory {
             Vertex subscriptionVertex = schemaGraph.getType(subscriptionType.getName());
             schemaGraph.addEdge(new Edge(schemaVertex, subscriptionVertex, "subscription"));
         }
+        createAppliedDirectives(schemaVertex, graphQLSchema.getSchemaDirectives(), schemaGraph);
     }
 
     private void handleAppliedDirective(Vertex appliedDirectiveVertex, SchemaGraph schemaGraph, GraphQLSchema graphQLSchema) {

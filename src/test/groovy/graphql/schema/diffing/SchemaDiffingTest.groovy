@@ -1288,6 +1288,39 @@ class SchemaDiffingTest extends Specification {
         // delete edge and insert new one
         operations.size() == 2
     }
+
+    def "applied schema directives"() {
+        given:
+        def schema1 = schema('''
+            directive @foo(arg: String) on SCHEMA
+            
+            schema @foo(arg: "bar") {
+                query: MyQuery
+            }
+            type MyQuery {
+                foo: String
+            } 
+        ''')
+        def schema2 = schema('''
+            directive @foo(arg: String) on SCHEMA
+            
+            schema @foo(arg: "barChanged") {
+                query: MyQuery
+            }
+            type MyQuery {
+                foo: String
+            } 
+        ''')
+
+        when:
+        def operations = new SchemaDiffing().diffGraphQLSchema(schema1, schema2)
+        operations.each { println it }
+
+        then:
+        // applied argument changed
+        operations.size() == 1
+
+    }
 }
 
 
