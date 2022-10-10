@@ -114,10 +114,15 @@ class ScalarsFloatTest extends Specification {
         thrown(CoercingSerializeException)
 
         where:
-        value           | _
-        ""              | _
-        "not a number " | _
-        Double.NaN      | _
+        value                    | _
+        ""                       | _
+        "not a number "          | _
+        Double.NaN               | _
+        Double.POSITIVE_INFINITY | _
+        Double.NEGATIVE_INFINITY | _
+        Float.NaN                | _
+        Float.POSITIVE_INFINITY  | _
+        Float.NEGATIVE_INFINITY  | _
     }
 
     @Unroll
@@ -128,10 +133,15 @@ class ScalarsFloatTest extends Specification {
         thrown(CoercingParseValueException)
 
         where:
-        value           | _
-        ""              | _
-        "not a number " | _
-        Double.NaN      | _
+        value                    | _
+        ""                       | _
+        "not a number "          | _
+        Double.NaN               | _
+        Double.POSITIVE_INFINITY | _
+        Double.NEGATIVE_INFINITY | _
+        Float.NaN                | _
+        Float.POSITIVE_INFINITY  | _
+        Float.NEGATIVE_INFINITY  | _
     }
 
 }
