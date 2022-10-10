@@ -558,4 +558,66 @@ class SchemaDiffTest extends Specification {
 
     }
 
+    def "field renamed"() {
+        def oldSchema = TestUtil.schema('''
+        type Query {
+            hello: String 
+        }
+       ''')
+        def newSchema = TestUtil.schema('''
+        type Query {
+            hello2: String
+        }
+       ''')
+        def reporter = new CapturingReporter()
+        DiffSet diffSet = DiffSet.diffSet(oldSchema, newSchema)
+        def diff = new SchemaDiff()
+        when:
+        diff.diffSchema(diffSet, reporter)
+
+        then:
+        // the old hello field is missing
+        reporter.breakageCount == 1
+        reporter.breakages.every {
+            it.getCategory() == DiffCategory.MISSING
+        }
+
+    }
+    def "interface renamed"() {
+        def oldSchema = TestUtil.schema('''
+        type Query implements Hello{
+            hello: String 
+            world: World
+        }
+        type World implements Hello {
+            hello: String
+        }
+        interface Hello {
+            hello: String
+        }
+       ''')
+        def newSchema = TestUtil.schema('''
+        type Query implements Hello2{
+            hello: String 
+            world: World
+        }
+        type World implements Hello2 {
+            hello: String
+        }
+        interface Hello2 {
+            hello: String
+        }
+       ''')
+        def reporter = new CapturingReporter()
+        DiffSet diffSet = DiffSet.diffSet(oldSchema, newSchema)
+        def diff = new SchemaDiff()
+        when:
+        diff.diffSchema(diffSet, reporter)
+
+        then:
+        // two breakages for World and Query not implementing Hello anymore
+        reporter.breakageCount == 2
+
+    }
+
 }
