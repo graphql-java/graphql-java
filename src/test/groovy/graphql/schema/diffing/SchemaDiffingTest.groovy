@@ -51,6 +51,7 @@ class SchemaDiffingTest extends Specification {
         diff.size() == 1
 
     }
+
     def "test rename field 2"() {
         given:
         def schema1 = schema("""
@@ -1345,6 +1346,59 @@ class SchemaDiffingTest extends Specification {
 
         then:
         operations.size() == 2
+
+    }
+
+    def "change default value"() {
+        given:
+        def schema1 = schema('''
+            input I {
+                someNumber: Int = 100 
+            }
+            type Query {
+                hello(arg: String = "defaultValue", i: I): String
+            } 
+        ''')
+        def schema2 = schema('''
+            input I {
+                someNumber: Int = 200 
+            }
+            type Query {
+                hello(arg: String = "defaultValueChanged",i: I): String
+            } 
+        ''')
+
+        when:
+        def operations = new SchemaDiffing().diffGraphQLSchema(schema1, schema2)
+        operations.each { println it }
+
+        then:
+        operations.size() == 2
+
+    }
+
+    def "change field type, but not the wrapped type "() {
+        given:
+        def schema1 = schema('''
+            type Query {
+                hello: String
+                hello2: String
+            } 
+        ''')
+        def schema2 = schema('''
+            type Query {
+                hello: String!
+                hello2: [[String!]]
+            } 
+        ''')
+
+        when:
+        def operations = new SchemaDiffing().diffGraphQLSchema(schema1, schema2)
+        operations.each { println it }
+
+        then:
+        operations.size() == 2
+        operations.findAll({ it.operation == EditOperation.Operation.CHANGE_EDGE }).size() == 2
 
     }
 }
