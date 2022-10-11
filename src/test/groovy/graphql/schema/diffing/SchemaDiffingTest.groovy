@@ -27,7 +27,7 @@ class SchemaDiffingTest extends Specification {
         def schemaGraph = new SchemaGraphFactory().createGraph(schema)
 
         then:
-        schemaGraph.size() == 92
+        schemaGraph.size() == 93
 
     }
 
