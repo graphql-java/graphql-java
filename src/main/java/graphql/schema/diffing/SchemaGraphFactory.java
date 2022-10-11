@@ -150,13 +150,14 @@ public class SchemaGraphFactory {
             schemaGraph, GraphQLSchema graphQLSchema) {
         GraphQLInputType type = inputField.getType();
         GraphQLUnmodifiedType graphQLUnmodifiedType = GraphQLTypeUtil.unwrapAll(type);
-//        Vertex dummyTypeVertex = new Vertex(SchemaGraph.DUMMY_TYPE_VERTEX, debugPrefix + String.valueOf(counter++));
-//        dummyTypeVertex.setBuiltInType(inputFieldVertex.isBuiltInType());
-//        schemaGraph.addVertex(dummyTypeVertex);
-//        schemaGraph.addEdge(new Edge(inputFieldVertex, dummyTypeVertex));
         Vertex typeVertex = assertNotNull(schemaGraph.getType(graphQLUnmodifiedType.getName()));
         Edge typeEdge = new Edge(inputFieldVertex, typeVertex);
-        typeEdge.setLabel(GraphQLTypeUtil.simplePrint(type));
+        String typeEdgeLabel = "type=" + GraphQLTypeUtil.simplePrint(type);
+        if (inputField.hasSetDefaultValue()) {
+            typeEdgeLabel += ";defaultValue='" + AstPrinter.printAst(ValuesResolver.valueToLiteral(inputField.getInputFieldDefaultValue(), inputField.getType())) + "'";
+        }
+
+        typeEdge.setLabel(typeEdgeLabel);
         schemaGraph.addEdge(typeEdge);
     }
 
@@ -227,7 +228,11 @@ public class SchemaGraphFactory {
         GraphQLUnmodifiedType graphQLUnmodifiedType = GraphQLTypeUtil.unwrapAll(type);
         Vertex typeVertex = assertNotNull(schemaGraph.getType(graphQLUnmodifiedType.getName()));
         Edge typeEdge = new Edge(argumentVertex, typeVertex);
-        typeEdge.setLabel(GraphQLTypeUtil.simplePrint(type));
+        String typeEdgeLabel = "type=" + GraphQLTypeUtil.simplePrint(type);
+        if (graphQLArgument.hasSetDefaultValue()) {
+            typeEdgeLabel += ";defaultValue='" + AstPrinter.printAst(ValuesResolver.valueToLiteral(graphQLArgument.getArgumentDefaultValue(), graphQLArgument.getType())) + "'";
+        }
+        typeEdge.setLabel(typeEdgeLabel);
         schemaGraph.addEdge(typeEdge);
     }
 
@@ -265,9 +270,6 @@ public class SchemaGraphFactory {
         vertex.setBuiltInType(isIntrospectionNode);
         vertex.add("name", graphQLArgument.getName());
         vertex.add("description", desc(graphQLArgument.getDescription()));
-        if (graphQLArgument.hasSetDefaultValue()) {
-            vertex.add("defaultValue", AstPrinter.printAst(ValuesResolver.valueToLiteral(graphQLArgument.getArgumentDefaultValue(), graphQLArgument.getType())));
-        }
         createAppliedDirectives(vertex, graphQLArgument.getDirectives(), schemaGraph);
         return vertex;
     }
@@ -393,9 +395,6 @@ public class SchemaGraphFactory {
         vertex.setBuiltInType(isIntrospectionNode);
         vertex.add("name", inputField.getName());
         vertex.add("description", desc(inputField.getDescription()));
-        if (inputField.hasSetDefaultValue()) {
-            vertex.add("defaultValue", AstPrinter.printAst(ValuesResolver.valueToLiteral(inputField.getInputFieldDefaultValue(), inputField.getType())));
-        }
         createAppliedDirectives(vertex, inputField.getDirectives(), schemaGraph);
         return vertex;
     }

@@ -1401,6 +1401,38 @@ class SchemaDiffingTest extends Specification {
         operations.findAll({ it.operation == EditOperation.Operation.CHANGE_EDGE }).size() == 2
 
     }
+
+    def "Recursive input field with default  "() {
+        given:
+        def schema1 = schema('''
+            input I {
+                name: String
+                field: I = {name: "default name"}
+            }
+            type Query {
+                foo(arg: I): String
+            } 
+        ''')
+        def schema2 = schema('''
+            input I {
+                name: String
+                field: [I] = [{name: "default name"}]
+            }
+            type Query {
+                foo(arg: I): String
+            } 
+        ''')
+
+        when:
+        def operations = new SchemaDiffing().diffGraphQLSchema(schema1, schema2)
+        operations.each { println it }
+
+        then:
+        // changing the label of the edge to the type
+        operations.size() == 1
+        operations.findAll({ it.operation == EditOperation.Operation.CHANGE_EDGE }).size() == 1
+
+    }
 }
 
 
