@@ -37,26 +37,8 @@ public class SchemaGraph {
     public static final String DIRECTIVE = "Directive";
     public static final String APPLIED_DIRECTIVE = "AppliedDirective";
     public static final String APPLIED_ARGUMENT = "AppliedArgument";
-    public static final String DUMMY_TYPE_VERTEX = "__DUMMY_TYPE_VERTEX";
     public static final String ISOLATED = "__ISOLATED";
 
-    public static final List<String> ALL_TYPES = Arrays.asList(DUMMY_TYPE_VERTEX, OBJECT, INTERFACE, UNION, INPUT_OBJECT, SCALAR, ENUM, ENUM_VALUE, APPLIED_DIRECTIVE, FIELD, ARGUMENT, APPLIED_ARGUMENT, DIRECTIVE, INPUT_FIELD);
-    public static final List<String> ALL_NAMED_TYPES = Arrays.asList(OBJECT, INTERFACE, UNION, INPUT_OBJECT, SCALAR, ENUM);
-
-    /**
-     * SCHEMA,
-     * SCALAR,
-     * OBJECT,
-     * FIELD_DEFINITION,
-     * ARGUMENT_DEFINITION,
-     * INTERFACE,
-     * UNION,
-     * ENUM,
-     * ENUM_VALUE,
-     * INPUT_OBJECT,
-     * INPUT_FIELD_DEFINITION
-     */
-    public static final List<String> appliedDirectiveContainerTypes = Arrays.asList(SCALAR, OBJECT, FIELD, ARGUMENT, INTERFACE, UNION, ENUM, ENUM_VALUE, INPUT_OBJECT, INPUT_FIELD);
 
     private List<Vertex> vertices = new ArrayList<>();
     private List<Edge> edges = new ArrayList<>();
@@ -82,19 +64,6 @@ public class SchemaGraph {
         typeToVertices.put(vertex.getType(), vertex);
     }
 
-    //
-//    public void removeVertexAndEdges(Vertex vertex) {
-//        vertices.remove(vertex);
-//        typeToVertices.remove(vertex.getType(), vertex);
-//        for (Iterator<Edge> it = edges.iterator(); it.hasNext(); ) {
-//            Edge edge = it.next();
-//            if (edge.getFrom().equals(vertex) || edge.getTo().equals(vertex)) {
-//                edgeByVertexPair.remove(edge.getFrom(), edge.getTo());
-//                it.remove();
-//            }
-//        }
-//    }
-//
     public void addVertices(Collection<Vertex> vertices) {
         for (Vertex vertex : vertices) {
             this.vertices.add(vertex);
@@ -279,41 +248,6 @@ public class SchemaGraph {
         return Integer.parseInt(adjacentEdges.get(0).getLabel());
     }
 
-    public Vertex getParentSchemaElement(Vertex vertex) {
-        switch (vertex.getType()) {
-            case OBJECT:
-                break;
-            case INTERFACE:
-                break;
-            case UNION:
-                break;
-            case FIELD:
-                return getFieldsContainerForField(vertex);
-            case ARGUMENT:
-                return getFieldOrDirectiveForArgument(vertex);
-            case SCALAR:
-                break;
-            case ENUM:
-                break;
-            case ENUM_VALUE:
-                break;
-            case INPUT_OBJECT:
-                break;
-            case INPUT_FIELD:
-                return getInputObjectForInputField(vertex);
-            case DIRECTIVE:
-                break;
-            case APPLIED_DIRECTIVE:
-                break;
-            case APPLIED_ARGUMENT:
-                break;
-            case DUMMY_TYPE_VERTEX:
-                break;
-            case ISOLATED:
-                return Assert.assertShouldNeverHappen();
-        }
-        return assertShouldNeverHappen();
-    }
 
     public Vertex getEnumForEnumValue(Vertex enumValue) {
         List<Vertex> adjacentVertices = this.getAdjacentVerticesInverse(enumValue);
@@ -321,11 +255,6 @@ public class SchemaGraph {
         return adjacentVertices.get(0);
     }
 
-//    public Vertex getFieldOrInputFieldForDummyType(Vertex enumValue) {
-//        List<Vertex> adjacentVertices = this.getAdjacentVertices(enumValue, vertex -> vertex.getType().equals(FIELD) || vertex.getType().equals(INPUT_FIELD));
-//        assertTrue(adjacentVertices.size() == 1, () -> format("No field or input field found for %s", enumValue));
-//        return adjacentVertices.get(0);
-//    }
 
     public List<Edge> getAllAdjacentEdges(List<Vertex> fromList, Vertex to) {
         List<Edge> result = new ArrayList<>();

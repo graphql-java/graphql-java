@@ -24,7 +24,6 @@ import static graphql.schema.diffing.SchemaGraph.APPLIED_ARGUMENT;
 import static graphql.schema.diffing.SchemaGraph.APPLIED_DIRECTIVE;
 import static graphql.schema.diffing.SchemaGraph.ARGUMENT;
 import static graphql.schema.diffing.SchemaGraph.DIRECTIVE;
-import static graphql.schema.diffing.SchemaGraph.DUMMY_TYPE_VERTEX;
 import static graphql.schema.diffing.SchemaGraph.ENUM;
 import static graphql.schema.diffing.SchemaGraph.ENUM_VALUE;
 import static graphql.schema.diffing.SchemaGraph.FIELD;
