@@ -3,6 +3,7 @@ package graphql.schema.idl;
 import graphql.Internal;
 import graphql.language.NamedNode;
 import graphql.language.NodeParentTree;
+import graphql.schema.GraphQLAppliedDirective;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLCodeRegistry;
 import graphql.schema.GraphQLDirective;
@@ -19,6 +20,7 @@ import graphql.schema.GraphQLScalarType;
 import graphql.schema.GraphQLSchemaElement;
 import graphql.schema.GraphQLUnionType;
 import graphql.schema.GraphqlElementParentTree;
+import graphql.util.FpKit;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
@@ -39,7 +41,7 @@ public class SchemaGeneratorDirectiveHelper {
 
     /**
      * This will return true if something in the RuntimeWiring requires a {@link SchemaDirectiveWiring}.  This is to allow
-     * a shortcut to decide that that we dont need ANY SchemaDirectiveWiring post processing
+     * a shortcut to decide that we don't need ANY SchemaDirectiveWiring post processing
      *
      * @param directiveContainer the element that has directives
      * @param typeRegistry       the type registry
@@ -60,7 +62,12 @@ public class SchemaGeneratorDirectiveHelper {
         }
 
         Parameters params = new Parameters(typeRegistry, runtimeWiring, new HashMap<>(), null);
-        SchemaDirectiveWiringEnvironment<T> env = new SchemaDirectiveWiringEnvironmentImpl<>(directiveContainer, directiveContainer.getDirectives(), null, params);
+        SchemaDirectiveWiringEnvironment<T> env = new SchemaDirectiveWiringEnvironmentImpl<>(directiveContainer,
+                directiveContainer.getDirectives(),
+                directiveContainer.getAppliedDirectives(),
+                null,
+                null,
+                params);
         // do they dynamically provide a wiring for this element?
         return wiringFactory.providesSchemaDirectiveWiring(env);
     }
@@ -197,8 +204,17 @@ public class SchemaGeneratorDirectiveHelper {
         GraphqlElementParentTree elementParentTree = buildRuntimeTree(newObjectType);
         Parameters newParams = params.newParams(newObjectType, nodeParentTree, elementParentTree);
 
-        return wireDirectives(params, newObjectType, newObjectType.getDirectives(),
-                (outputElement, directives, registeredDirective) -> new SchemaDirectiveWiringEnvironmentImpl<>(outputElement, directives, registeredDirective, newParams), SchemaDirectiveWiring::onObject);
+        return wireDirectives(params,
+                newObjectType,
+                newObjectType.getDirectives(),
+                newObjectType.getAppliedDirectives(),
+                (outputElement, directives, appliedDirectives, registeredAppliedDirective, registeredDirective) -> new SchemaDirectiveWiringEnvironmentImpl<>(outputElement,
+                        directives,
+                        appliedDirectives,
+                        registeredAppliedDirective,
+                        registeredDirective,
+                        newParams),
+                SchemaDirectiveWiring::onObject);
     }
 
     public GraphQLInterfaceType onInterface(GraphQLInterfaceType interfaceType, Parameters params) {
@@ -214,8 +230,17 @@ public class SchemaGeneratorDirectiveHelper {
         GraphqlElementParentTree elementParentTree = buildRuntimeTree(newInterfaceType);
         Parameters newParams = params.newParams(newInterfaceType, nodeParentTree, elementParentTree);
 
-        return wireDirectives(params, newInterfaceType, newInterfaceType.getDirectives(),
-                (outputElement, directives, registeredDirective) -> new SchemaDirectiveWiringEnvironmentImpl<>(outputElement, directives, registeredDirective, newParams), SchemaDirectiveWiring::onInterface);
+        return wireDirectives(params,
+                newInterfaceType,
+                newInterfaceType.getDirectives(),
+                newInterfaceType.getAppliedDirectives(),
+                (outputElement, directives, appliedDirectives, registeredAppliedDirective, registeredDirective) -> new SchemaDirectiveWiringEnvironmentImpl<>(outputElement,
+                        directives,
+                        appliedDirectives,
+                        registeredAppliedDirective,
+                        registeredDirective,
+                        newParams),
+                SchemaDirectiveWiring::onInterface);
     }
 
     public GraphQLEnumType onEnum(final GraphQLEnumType enumType, Parameters params) {
@@ -240,8 +265,17 @@ public class SchemaGeneratorDirectiveHelper {
         GraphqlElementParentTree elementParentTree = buildRuntimeTree(newEnumType);
         Parameters newParams = params.newParams(nodeParentTree, elementParentTree);
 
-        return wireDirectives(params, newEnumType, newEnumType.getDirectives(),
-                (outputElement, directives, registeredDirective) -> new SchemaDirectiveWiringEnvironmentImpl<>(outputElement, directives, registeredDirective, newParams), SchemaDirectiveWiring::onEnum);
+        return wireDirectives(params,
+                newEnumType,
+                newEnumType.getDirectives(),
+                newEnumType.getAppliedDirectives(),
+                (outputElement, directives, appliedDirectives, registeredAppliedDirective, registeredDirective) -> new SchemaDirectiveWiringEnvironmentImpl<>(outputElement,
+                        directives,
+                        appliedDirectives,
+                        registeredAppliedDirective,
+                        registeredDirective,
+                        newParams),
+                SchemaDirectiveWiring::onEnum);
     }
 
     public GraphQLInputObjectType onInputObjectType(GraphQLInputObjectType inputObjectType, Parameters params) {
@@ -264,8 +298,17 @@ public class SchemaGeneratorDirectiveHelper {
         GraphqlElementParentTree elementParentTree = buildRuntimeTree(newInputObjectType);
         Parameters newParams = params.newParams(nodeParentTree, elementParentTree);
 
-        return wireDirectives(params, newInputObjectType, newInputObjectType.getDirectives(),
-                (outputElement, directives, registeredDirective) -> new SchemaDirectiveWiringEnvironmentImpl<>(outputElement, directives, registeredDirective, newParams), SchemaDirectiveWiring::onInputObjectType);
+        return wireDirectives(params,
+                newInputObjectType,
+                newInputObjectType.getDirectives(),
+                newInputObjectType.getAppliedDirectives(),
+                (outputElement, directives, appliedDirectives, registeredAppliedDirective, registeredDirective) -> new SchemaDirectiveWiringEnvironmentImpl<>(outputElement,
+                        directives,
+                        appliedDirectives,
+                        registeredAppliedDirective,
+                        registeredDirective,
+                        newParams),
+                SchemaDirectiveWiring::onInputObjectType);
     }
 
 
@@ -274,8 +317,17 @@ public class SchemaGeneratorDirectiveHelper {
         GraphqlElementParentTree elementParentTree = buildRuntimeTree(element);
         Parameters newParams = params.newParams(nodeParentTree, elementParentTree);
 
-        return wireDirectives(params, element, element.getDirectives(),
-                (outputElement, directives, registeredDirective) -> new SchemaDirectiveWiringEnvironmentImpl<>(outputElement, directives, registeredDirective, newParams), SchemaDirectiveWiring::onUnion);
+        return wireDirectives(params,
+                element,
+                element.getDirectives(),
+                element.getAppliedDirectives(),
+                (outputElement, directives, appliedDirectives, registeredAppliedDirective, registeredDirective) -> new SchemaDirectiveWiringEnvironmentImpl<>(outputElement,
+                        directives,
+                        appliedDirectives,
+                        registeredAppliedDirective,
+                        registeredDirective,
+                        newParams),
+                SchemaDirectiveWiring::onUnion);
     }
 
     public GraphQLScalarType onScalar(GraphQLScalarType element, Parameters params) {
@@ -283,28 +335,73 @@ public class SchemaGeneratorDirectiveHelper {
         GraphqlElementParentTree elementParentTree = buildRuntimeTree(element);
         Parameters newParams = params.newParams(nodeParentTree, elementParentTree);
 
-        return wireDirectives(params, element, element.getDirectives(),
-                (outputElement, directives, registeredDirective) -> new SchemaDirectiveWiringEnvironmentImpl<>(outputElement, directives, registeredDirective, newParams), SchemaDirectiveWiring::onScalar);
+        return wireDirectives(params,
+                element,
+                element.getDirectives(),
+                element.getAppliedDirectives(),
+                (outputElement, directives, appliedDirectives, registeredAppliedDirective, registeredDirective) -> new SchemaDirectiveWiringEnvironmentImpl<>(outputElement,
+                        directives,
+                        appliedDirectives,
+                        registeredAppliedDirective,
+                        registeredDirective,
+                        newParams),
+                SchemaDirectiveWiring::onScalar);
     }
 
     private GraphQLFieldDefinition onField(GraphQLFieldDefinition fieldDefinition, Parameters params) {
-        return wireDirectives(params, fieldDefinition, fieldDefinition.getDirectives(),
-                (outputElement, directives, registeredDirective) -> new SchemaDirectiveWiringEnvironmentImpl<>(outputElement, directives, registeredDirective, params), SchemaDirectiveWiring::onField);
+        return wireDirectives(params,
+                fieldDefinition,
+                fieldDefinition.getDirectives(),
+                fieldDefinition.getAppliedDirectives(),
+                (outputElement, directives, appliedDirectives, registeredAppliedDirective, registeredDirective) -> new SchemaDirectiveWiringEnvironmentImpl<>(outputElement,
+                        directives,
+                        appliedDirectives,
+                        registeredAppliedDirective,
+                        registeredDirective,
+                        params),
+                SchemaDirectiveWiring::onField);
     }
 
     private GraphQLInputObjectField onInputObjectField(GraphQLInputObjectField element, Parameters params) {
-        return wireDirectives(params, element, element.getDirectives(),
-                (outputElement, directives, registeredDirective) -> new SchemaDirectiveWiringEnvironmentImpl<>(outputElement, directives, registeredDirective, params), SchemaDirectiveWiring::onInputObjectField);
+        return wireDirectives(params,
+                element,
+                element.getDirectives(),
+                element.getAppliedDirectives(),
+                (outputElement, directives, appliedDirectives, registeredAppliedDirective, registeredDirective) -> new SchemaDirectiveWiringEnvironmentImpl<>(outputElement,
+                        directives,
+                        appliedDirectives,
+                        registeredAppliedDirective,
+                        registeredDirective,
+                        params),
+                SchemaDirectiveWiring::onInputObjectField);
     }
 
     private GraphQLEnumValueDefinition onEnumValue(GraphQLEnumValueDefinition enumValueDefinition, Parameters params) {
-        return wireDirectives(params, enumValueDefinition, enumValueDefinition.getDirectives(),
-                (outputElement, directives, registeredDirective) -> new SchemaDirectiveWiringEnvironmentImpl<>(outputElement, directives, registeredDirective, params), SchemaDirectiveWiring::onEnumValue);
+        return wireDirectives(params,
+                enumValueDefinition,
+                enumValueDefinition.getDirectives(),
+                enumValueDefinition.getAppliedDirectives(),
+                (outputElement, directives, appliedDirectives, registeredAppliedDirective, registeredDirective) -> new SchemaDirectiveWiringEnvironmentImpl<>(outputElement,
+                        directives,
+                        appliedDirectives,
+                        registeredAppliedDirective,
+                        registeredDirective,
+                        params),
+                SchemaDirectiveWiring::onEnumValue);
     }
 
     private GraphQLArgument onArgument(GraphQLArgument argument, Parameters params) {
-        return wireDirectives(params, argument, argument.getDirectives(),
-                (outputElement, directives, registeredDirective) -> new SchemaDirectiveWiringEnvironmentImpl<>(outputElement, directives, registeredDirective, params), SchemaDirectiveWiring::onArgument);
+        return wireDirectives(params,
+                argument,
+                argument.getDirectives(),
+                argument.getAppliedDirectives(),
+                (outputElement, directives, appliedDirectives, registeredAppliedDirective, registeredDirective) -> new SchemaDirectiveWiringEnvironmentImpl<>(outputElement,
+                        directives,
+                        appliedDirectives,
+                        registeredAppliedDirective,
+                        registeredDirective,
+                        params),
+                SchemaDirectiveWiring::onArgument);
     }
 
 
@@ -312,7 +409,7 @@ public class SchemaGeneratorDirectiveHelper {
     // builds a type safe SchemaDirectiveWiringEnvironment
     //
     interface EnvBuilder<T extends GraphQLDirectiveContainer> {
-        SchemaDirectiveWiringEnvironment<T> apply(T outputElement, List<GraphQLDirective> allDirectives, GraphQLDirective registeredDirective);
+        SchemaDirectiveWiringEnvironment<T> apply(T outputElement, List<GraphQLDirective> allDirectives, List<GraphQLAppliedDirective> allAppliedDirectives, GraphQLAppliedDirective registeredAppliedDirective, GraphQLDirective registeredDirective);
     }
 
     //
@@ -325,6 +422,7 @@ public class SchemaGeneratorDirectiveHelper {
     private <T extends GraphQLDirectiveContainer> T wireDirectives(
             Parameters parameters, T element,
             List<GraphQLDirective> allDirectives,
+            List<GraphQLAppliedDirective> allAppliedDirectives,
             EnvBuilder<T> envBuilder,
             EnvInvoker<T> invoker) {
 
@@ -334,25 +432,28 @@ public class SchemaGeneratorDirectiveHelper {
 
         SchemaDirectiveWiringEnvironment<T> env;
         T outputObject = element;
+
+        Map<String, GraphQLDirective> allDirectivesByName = FpKit.getByName(allDirectives, GraphQLDirective::getName);
         //
         // first the specific named directives
         Map<String, SchemaDirectiveWiring> mapOfWiring = runtimeWiring.getRegisteredDirectiveWiring();
-        for (GraphQLDirective directive : allDirectives) {
-            schemaDirectiveWiring = mapOfWiring.get(directive.getName());
+        for (GraphQLAppliedDirective appliedDirective : allAppliedDirectives) {
+            schemaDirectiveWiring = mapOfWiring.get(appliedDirective.getName());
             if (schemaDirectiveWiring != null) {
-                env = envBuilder.apply(outputObject, allDirectives, directive);
+                GraphQLDirective directive = allDirectivesByName.get(appliedDirective.getName());
+                env = envBuilder.apply(outputObject, allDirectives, allAppliedDirectives, appliedDirective, directive);
                 outputObject = invokeWiring(outputObject, invoker, schemaDirectiveWiring, env);
             }
         }
         //
-        // now call any statically added to the the runtime
+        // now call any statically added to the runtime
         for (SchemaDirectiveWiring directiveWiring : runtimeWiring.getDirectiveWiring()) {
-            env = envBuilder.apply(outputObject, allDirectives, null);
+            env = envBuilder.apply(outputObject, allDirectives, allAppliedDirectives, null, null);
             outputObject = invokeWiring(outputObject, invoker, directiveWiring, env);
         }
         //
         // wiring factory is last (if present)
-        env = envBuilder.apply(outputObject, allDirectives, null);
+        env = envBuilder.apply(outputObject, allDirectives, allAppliedDirectives, null, null);
         if (wiringFactory.providesSchemaDirectiveWiring(env)) {
             schemaDirectiveWiring = assertNotNull(wiringFactory.getSchemaDirectiveWiring(env), () -> "Your WiringFactory MUST provide a non null SchemaDirectiveWiring");
             outputObject = invokeWiring(outputObject, invoker, schemaDirectiveWiring, env);

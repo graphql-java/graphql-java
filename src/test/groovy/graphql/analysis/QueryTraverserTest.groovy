@@ -1,6 +1,8 @@
 package graphql.analysis
 
+import graphql.AssertException
 import graphql.TestUtil
+import graphql.execution.CoercedVariables
 import graphql.language.ArrayValue
 import graphql.language.Document
 import graphql.language.Field
@@ -428,7 +430,7 @@ class QueryTraverserTest extends Specification {
     }
 
 
-    def "test preOrder and postOrder order for fragment definitions"() {
+    def "test preOrder and postOrder order for fragment definitions and raw variables"() {
         given:
         def schema = TestUtil.schema("""
             type Query{
@@ -460,6 +462,53 @@ class QueryTraverserTest extends Specification {
                 .rootParentType(schema.getQueryType())
                 .fragmentsByName(fragments)
                 .variables([:])
+                .build()
+
+        when:
+        queryTraversal.visitPreOrder(visitor)
+
+        then:
+        1 * visitor.visitFragmentDefinition({ QueryVisitorFragmentDefinitionEnvironment env -> env.fragmentDefinition == fragments["F1"] })
+
+        when:
+        queryTraversal.visitPostOrder(visitor)
+
+        then:
+        1 * visitor.visitFragmentDefinition({ QueryVisitorFragmentDefinitionEnvironment env -> env.fragmentDefinition == fragments["F1"] })
+    }
+
+    def "test preOrder and postOrder order for fragment definitions and coerced variables"() {
+        given:
+        def schema = TestUtil.schema("""
+            type Query{
+                foo: Foo
+                bar: String
+            }
+            type Foo {
+                subFoo: String  
+            }
+        """)
+        def visitor = mockQueryVisitor()
+        def query = createQuery("""
+                {
+                    ...F1
+                }
+                
+                fragment F1 on Query {
+                    foo {
+                        subFoo
+                    }
+                }
+                """)
+
+        def fragments = NodeUtil.getFragmentsByName(query)
+
+        QueryTraverser queryTraversal = QueryTraverser.newQueryTraverser()
+                .schema(schema)
+                .root(fragments["F1"])
+                .rootParentType(schema.getQueryType())
+                .fragmentsByName(fragments)
+                .coercedVariables(CoercedVariables.emptyVariables())
                 .build()
 
         when:
@@ -1378,7 +1427,9 @@ class QueryTraverserTest extends Specification {
     }
 
 
-    def "can select an arbitrary root node"() {
+    def "can select an arbitrary root node with coerced variables as plain map"() {
+        // When using an arbitrary root node, there is no variable definition context available.
+        // Thus the variables must have already been coerced, but may appear as a plain map rather than CoercedVariables
         given:
         def schema = TestUtil.schema("""
             type Query{
@@ -1418,9 +1469,48 @@ class QueryTraverserTest extends Specification {
 
     }
 
+    def "can select an arbitrary root node with coerced variables"() {
+        given:
+        def schema = TestUtil.schema("""
+            type Query{
+                foo: Foo
+            }
+            type Foo {
+                subFoo: SubFoo
+            }
+            type SubFoo {
+               id: String 
+            }
+        """)
+        def visitor = mockQueryVisitor()
+        def query = createQuery("""
+            {foo { subFoo {id}} }
+            """)
+        def subFooAsRoot = query.children[0].children[0].children[0].children[0].children[0]
+        assert subFooAsRoot instanceof Field
+        ((Field) subFooAsRoot).name == "subFoo"
+        def rootParentType = schema.getType("Foo")
+        QueryTraverser queryTraversal = QueryTraverser.newQueryTraverser()
+                .schema(schema)
+                .root(subFooAsRoot)
+                .rootParentType(rootParentType)
+                .coercedVariables(CoercedVariables.emptyVariables())
+                .fragmentsByName(emptyMap())
+                .build()
+        when:
+        queryTraversal.visitPreOrder(visitor)
+
+        then:
+        1 * visitor.visitField({ QueryVisitorFieldEnvironmentImpl it ->
+            it.field.name == "subFoo" && it.fieldDefinition.type.name == "SubFoo"
+        })
+        then:
+        1 * visitor.visitField({ QueryVisitorFieldEnvironmentImpl it -> it.field.name == "id" && it.fieldDefinition.type.name == "String" && it.parentType.name == "SubFoo" })
+
+    }
 
     @Unroll
-    def "builder doesn't allow ambiguous arguments"() {
+    def "builder doesn't allow null arguments"() {
         when:
         QueryTraverser.newQueryTraverser()
                 .document(document)
@@ -1431,7 +1521,7 @@ class QueryTraverserTest extends Specification {
                 .build()
 
         then:
-        thrown(IllegalStateException)
+        thrown(AssertException)
 
         where:
         document             | operationName | root                     | rootParentType          | fragmentsByName
@@ -1446,11 +1536,24 @@ class QueryTraverserTest extends Specification {
         null                 | "foo"         | null                     | Mock(GraphQLObjectType) | emptyMap()
         null                 | "foo"         | null                     | Mock(GraphQLObjectType) | null
         null                 | "foo"         | null                     | null                    | emptyMap()
-
-
     }
 
-    def "typename special field doens't have a fields container and throws exception"() {
+    @Unroll
+    def "builder doesn't allow ambiguous arguments"() {
+        when:
+        QueryTraverser.newQueryTraverser()
+                .document(createQuery("{foo}"))
+                .operationName("foo")
+                .root(Field.newField().build())
+                .rootParentType(Mock(GraphQLObjectType))
+                .fragmentsByName(emptyMap())
+                .build()
+
+        then:
+        thrown(IllegalStateException)
+    }
+
+    def "typename special field doesn't have a fields container and throws exception"() {
         given:
         def schema = TestUtil.schema("""
             type Query{
@@ -1585,7 +1688,7 @@ class QueryTraverserTest extends Specification {
 
     }
 
-    def "test accumulate  is returned"() {
+    def "test accumulate is returned"() {
         given:
         def schema = TestUtil.schema("""
             type Query{

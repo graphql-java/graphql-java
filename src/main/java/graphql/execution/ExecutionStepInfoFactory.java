@@ -8,16 +8,14 @@ import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLList;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLOutputType;
+import graphql.util.FpKit;
 
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 
 @Internal
 public class ExecutionStepInfoFactory {
-
-
-    ValuesResolver valuesResolver = new ValuesResolver();
-
 
     public ExecutionStepInfo newExecutionStepInfoForSubField(ExecutionContext executionContext, MergedField mergedField, ExecutionStepInfo parentInfo) {
         GraphQLObjectType parentType = (GraphQLObjectType) parentInfo.getUnwrappedNonNullType();
@@ -25,7 +23,13 @@ public class ExecutionStepInfoFactory {
         GraphQLOutputType fieldType = fieldDefinition.getType();
         List<Argument> fieldArgs = mergedField.getArguments();
         GraphQLCodeRegistry codeRegistry = executionContext.getGraphQLSchema().getCodeRegistry();
-        Map<String, Object> argumentValues = valuesResolver.getArgumentValues(codeRegistry, fieldDefinition.getArguments(), fieldArgs, executionContext.getVariables());
+        Supplier<Map<String, Object>> argumentValuesSupplier = () -> ValuesResolver.getArgumentValues(codeRegistry,
+                fieldDefinition.getArguments(),
+                fieldArgs,
+                executionContext.getCoercedVariables(),
+                executionContext.getGraphQLContext(),
+                executionContext.getLocale());
+        Supplier<Map<String, Object>> argumentValues = FpKit.intraThreadMemoize(argumentValuesSupplier);
 
         ResultPath newPath = parentInfo.getPath().segment(mergedField.getResultKey());
 

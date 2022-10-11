@@ -1,7 +1,6 @@
 package graphql.schema
 
 import graphql.Scalars
-import graphql.TypeResolutionEnvironment
 import graphql.util.TraversalControl
 import graphql.util.TraverserContext
 import spock.lang.Specification
@@ -97,9 +96,9 @@ class SchemaTraverserTest extends Specification {
         new SchemaTraverser().depthFirst(visitor, GraphQLInputObjectType.newInputObject()
                 .name("foo")
                 .field(GraphQLInputObjectField.newInputObjectField()
-                .name("bar")
-                .type(Scalars.GraphQLString)
-                .build())
+                        .name("bar")
+                        .type(Scalars.GraphQLString)
+                        .build())
                 .build())
         then:
         visitor.getStack() == ["input object: foo", "fallback: foo",
@@ -114,10 +113,9 @@ class SchemaTraverserTest extends Specification {
         new SchemaTraverser().depthFirst(visitor, GraphQLInterfaceType.newInterface()
                 .name("foo")
                 .field(GraphQLFieldDefinition.newFieldDefinition()
-                .name("bar")
-                .type(Scalars.GraphQLString)
-                .build())
-                .typeResolver(NOOP_RESOLVER)
+                        .name("bar")
+                        .type(Scalars.GraphQLString)
+                        .build())
                 .build())
         then:
         visitor.getStack() == ["interface: foo", "fallback: foo",
@@ -150,13 +148,12 @@ class SchemaTraverserTest extends Specification {
         new SchemaTraverser().depthFirst(visitor, GraphQLObjectType.newObject()
                 .name("myObject")
                 .field(GraphQLFieldDefinition.newFieldDefinition()
-                .name("foo")
-                .type(Scalars.GraphQLString)
-                .build())
+                        .name("foo")
+                        .type(Scalars.GraphQLString)
+                        .build())
                 .withInterface(GraphQLInterfaceType.newInterface()
-                .name("bar")
-                .typeResolver(NOOP_RESOLVER)
-                .build())
+                        .name("bar")
+                        .build())
                 .build())
         then:
         visitor.getStack() == ["object: myObject", "fallback: myObject",
@@ -181,7 +178,6 @@ class SchemaTraverserTest extends Specification {
                 .name("foo")
                 .possibleType(GraphQLObjectType.newObject().name("dummy").build())
                 .possibleType(typeRef("dummyRef"))
-                .typeResolver(NOOP_RESOLVER)
                 .build())
         then:
         visitor.getStack() == ["union: foo", "fallback: foo",
@@ -193,32 +189,36 @@ class SchemaTraverserTest extends Specification {
         when:
         def visitor = new GraphQLTestingVisitor()
         def coercing = new Coercing() {
-            private static final String TEST_ONLY = "For testing only";
+            private static final String TEST_ONLY = "For testing only"
 
             @Override
             Object serialize(Object dataFetcherResult) throws CoercingSerializeException {
-                throw new UnsupportedOperationException(TEST_ONLY);
+                throw new UnsupportedOperationException(TEST_ONLY)
             }
 
             @Override
             Object parseValue(Object input) throws CoercingParseValueException {
-                throw new UnsupportedOperationException(TEST_ONLY);
+                throw new UnsupportedOperationException(TEST_ONLY)
             }
 
             @Override
             Object parseLiteral(Object input) throws CoercingParseLiteralException {
-                throw new UnsupportedOperationException(TEST_ONLY);
+                throw new UnsupportedOperationException(TEST_ONLY)
             }
         }
         def scalarType = GraphQLScalarType.newScalar()
                 .name("foo")
                 .coercing(coercing)
                 .withDirective(GraphQLDirective.newDirective()
-                .name("bar"))
+                        .name("bar"))
+                .withAppliedDirective(GraphQLAppliedDirective.newDirective()
+                        .name("barApplied"))
                 .build()
         new SchemaTraverser().depthFirst(visitor, scalarType)
         then:
-        visitor.getStack() == ["scalar: foo", "fallback: foo", "directive: bar", "fallback: bar"]
+        visitor.getStack() == [
+                "scalar: foo", "fallback: foo", "directive: bar", "fallback: bar", "appliedDirective: barApplied", "fallback: barApplied"
+        ]
     }
 
     def "reachable object directive"() {
@@ -227,11 +227,15 @@ class SchemaTraverserTest extends Specification {
         def objectType = GraphQLObjectType.newObject()
                 .name("foo")
                 .withDirective(GraphQLDirective.newDirective()
-                .name("bar"))
+                        .name("bar"))
+                .withAppliedDirective(GraphQLAppliedDirective.newDirective()
+                        .name("barApplied"))
                 .build()
         new SchemaTraverser().depthFirst(visitor, objectType)
         then:
-        visitor.getStack() == ["object: foo", "fallback: foo", "directive: bar", "fallback: bar"]
+        visitor.getStack() == [
+                "object: foo", "fallback: foo", "directive: bar", "fallback: bar", "appliedDirective: barApplied", "fallback: barApplied"
+        ]
     }
 
     def "reachable field definition directive"() {
@@ -241,11 +245,15 @@ class SchemaTraverserTest extends Specification {
                 .name("foo")
                 .type(Scalars.GraphQLString)
                 .withDirective(GraphQLDirective.newDirective()
-                .name("bar"))
+                        .name("bar"))
+                .withAppliedDirective(GraphQLAppliedDirective.newDirective()
+                        .name("barApplied"))
                 .build()
         new SchemaTraverser().depthFirst(visitor, fieldDefinition)
         then:
-        visitor.getStack() == ["field: foo", "fallback: foo", "scalar: String", "fallback: String", "directive: bar", "fallback: bar"]
+        visitor.getStack() == [
+                "field: foo", "fallback: foo", "scalar: String", "fallback: String", "directive: bar", "fallback: bar", "appliedDirective: barApplied", "fallback: barApplied"
+        ]
     }
 
     def "reachable argument directive"() {
@@ -255,11 +263,15 @@ class SchemaTraverserTest extends Specification {
                 .name("foo")
                 .type(Scalars.GraphQLString)
                 .withDirective(GraphQLDirective.newDirective()
-                .name("bar"))
+                        .name("bar"))
+                .withAppliedDirective(GraphQLAppliedDirective.newDirective()
+                        .name("barApplied"))
                 .build()
         new SchemaTraverser().depthFirst(visitor, argument)
         then:
-        visitor.getStack() == ["argument: foo", "fallback: foo", "scalar: String", "fallback: String", "directive: bar", "fallback: bar"]
+        visitor.getStack() == [
+                "argument: foo", "fallback: foo", "scalar: String", "fallback: String", "directive: bar", "fallback: bar", "appliedDirective: barApplied", "fallback: barApplied"
+        ]
     }
 
     def "reachable interface directive"() {
@@ -267,13 +279,16 @@ class SchemaTraverserTest extends Specification {
         def visitor = new GraphQLTestingVisitor()
         def interfaceType = GraphQLInterfaceType.newInterface()
                 .name("foo")
-                .typeResolver(NOOP_RESOLVER)
                 .withDirective(GraphQLDirective.newDirective()
-                .name("bar"))
+                        .name("bar"))
+                .withAppliedDirective(GraphQLAppliedDirective.newDirective()
+                        .name("barApplied"))
                 .build()
         new SchemaTraverser().depthFirst(visitor, interfaceType)
         then:
-        visitor.getStack() == ["interface: foo", "fallback: foo", "directive: bar", "fallback: bar"]
+        visitor.getStack() == [
+                "interface: foo", "fallback: foo", "directive: bar", "fallback: bar", "appliedDirective: barApplied", "fallback: barApplied"
+        ]
     }
 
     def "reachable union directive"() {
@@ -282,9 +297,8 @@ class SchemaTraverserTest extends Specification {
         def unionType = GraphQLUnionType.newUnionType()
                 .name("foo")
                 .possibleType(GraphQLObjectType.newObject().name("dummy").build())
-                .typeResolver(NOOP_RESOLVER)
                 .withDirective(GraphQLDirective.newDirective()
-                .name("bar"))
+                        .name("bar"))
                 .build()
         new SchemaTraverser().depthFirst(visitor, unionType)
         then:
@@ -298,7 +312,7 @@ class SchemaTraverserTest extends Specification {
                 .name("foo")
                 .value("dummy")
                 .withDirective(GraphQLDirective.newDirective()
-                .name("bar"))
+                        .name("bar"))
                 .build()
         new SchemaTraverser().depthFirst(visitor, enumType)
         then:
@@ -311,7 +325,7 @@ class SchemaTraverserTest extends Specification {
         def enumValue = GraphQLEnumValueDefinition.newEnumValueDefinition()
                 .name("foo")
                 .withDirective(GraphQLDirective.newDirective()
-                .name("bar"))
+                        .name("bar"))
                 .build()
         new SchemaTraverser().depthFirst(visitor, enumValue)
         then:
@@ -324,7 +338,7 @@ class SchemaTraverserTest extends Specification {
         def inputObjectType = GraphQLInputObjectType.newInputObject()
                 .name("foo")
                 .withDirective(GraphQLDirective.newDirective()
-                .name("bar"))
+                        .name("bar"))
                 .build()
         new SchemaTraverser().depthFirst(visitor, inputObjectType)
         then:
@@ -338,7 +352,7 @@ class SchemaTraverserTest extends Specification {
                 .name("foo")
                 .type(Scalars.GraphQLString)
                 .withDirective(GraphQLDirective.newDirective()
-                .name("bar"))
+                        .name("bar"))
                 .build()
         new SchemaTraverser().depthFirst(visitor, inputField)
         then:
@@ -368,18 +382,21 @@ class SchemaTraverserTest extends Specification {
 
     }
 
-
-    def NOOP_RESOLVER = new TypeResolver() {
-        @Override
-        GraphQLObjectType getType(TypeResolutionEnvironment env) {
-            return null
-        }
-    }
-
-
     class GraphQLTestingVisitor extends GraphQLTypeVisitorStub {
 
         def stack = []
+
+        @Override
+        TraversalControl visitGraphQLAppliedDirectiveArgument(GraphQLAppliedDirectiveArgument node, TraverserContext<GraphQLSchemaElement> context) {
+            stack.add("appliedArgument: ${node.getName()}")
+            return super.visitGraphQLAppliedDirectiveArgument(node, context)
+        }
+
+        @Override
+        TraversalControl visitGraphQLAppliedDirective(GraphQLAppliedDirective node, TraverserContext<GraphQLSchemaElement> context) {
+            stack.add("appliedDirective: ${node.getName()}")
+            return super.visitGraphQLAppliedDirective(node, context)
+        }
 
         @Override
         TraversalControl visitGraphQLArgument(GraphQLArgument node, TraverserContext<GraphQLSchemaElement> context) {

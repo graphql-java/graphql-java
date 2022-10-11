@@ -8,8 +8,6 @@ import graphql.validation.ValidationErrorType
 import graphql.validation.Validator
 import spock.lang.Specification
 
-import static graphql.validation.rules.UniqueOperationNames.duplicateOperationNameMessage
-
 class UniqueOperationNamesTest extends Specification {
 
     def '5.1.1.1 Operation Name Uniqueness Not Valid'() {
@@ -34,7 +32,9 @@ class UniqueOperationNamesTest extends Specification {
         then:
         !validationErrors.empty
         validationErrors.size() == 1
-        validationErrors[0] == duplicateOperationName("getName", 8, 1)
+        validationErrors[0].validationErrorType == ValidationErrorType.DuplicateOperationName
+        validationErrors[0].locations == [new SourceLocation(8, 1)]
+        validationErrors[0].message == "Validation error (DuplicateOperationName) : There can be only one operation named 'getName'"
     }
 
     def '5.1.1.1 Operation Name Uniqueness Not Valid Different Operations'() {
@@ -57,17 +57,13 @@ class UniqueOperationNamesTest extends Specification {
         then:
         !validationErrors.empty
         validationErrors.size() == 1
-        validationErrors[0] == duplicateOperationName("dogOperation", 8, 1)
+        validationErrors[0].validationErrorType == ValidationErrorType.DuplicateOperationName
+        validationErrors[0].locations == [new SourceLocation(8, 1)]
+        validationErrors[0].message == "Validation error (DuplicateOperationName) : There can be only one operation named 'dogOperation'"
     }
 
-    ValidationError duplicateOperationName(String defName, int line, int column) {
-        return new ValidationError(ValidationErrorType.DuplicateOperationName,
-                [new SourceLocation(line, column)],
-                duplicateOperationNameMessage(defName))
-    }
-
-    List<ValidationError> validate(String query) {
+    static List<ValidationError> validate(String query) {
         def document = new Parser().parseDocument(query)
-        return new Validator().validateDocument(SpecValidationSchema.specValidationSchema, document)
+        return new Validator().validateDocument(SpecValidationSchema.specValidationSchema, document, Locale.ENGLISH)
     }
 }

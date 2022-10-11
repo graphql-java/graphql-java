@@ -1,8 +1,10 @@
 package graphql.schema.idl;
 
 import graphql.AssertException;
+import graphql.GraphQLContext;
 import graphql.GraphQLError;
 import graphql.Internal;
+import graphql.execution.CoercedVariables;
 import graphql.language.Argument;
 import graphql.language.ArrayValue;
 import graphql.language.Directive;
@@ -20,6 +22,7 @@ import graphql.language.NullValue;
 import graphql.language.ObjectField;
 import graphql.language.ObjectValue;
 import graphql.language.ScalarTypeDefinition;
+import graphql.language.ScalarTypeExtensionDefinition;
 import graphql.language.Type;
 import graphql.language.TypeDefinition;
 import graphql.language.TypeName;
@@ -31,11 +34,13 @@ import graphql.util.LogKit;
 import org.slf4j.Logger;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
 import static graphql.Assert.assertShouldNeverHappen;
+import static graphql.collect.ImmutableKit.emptyList;
 import static graphql.schema.idl.errors.DirectiveIllegalArgumentTypeError.DUPLICATED_KEYS_MESSAGE;
 import static graphql.schema.idl.errors.DirectiveIllegalArgumentTypeError.EXPECTED_ENUM_MESSAGE;
 import static graphql.schema.idl.errors.DirectiveIllegalArgumentTypeError.EXPECTED_LIST_MESSAGE;
@@ -46,7 +51,6 @@ import static graphql.schema.idl.errors.DirectiveIllegalArgumentTypeError.MUST_B
 import static graphql.schema.idl.errors.DirectiveIllegalArgumentTypeError.NOT_A_VALID_SCALAR_LITERAL_MESSAGE;
 import static graphql.schema.idl.errors.DirectiveIllegalArgumentTypeError.UNKNOWN_FIELDS_MESSAGE;
 import static java.lang.String.format;
-import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.counting;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.joining;
@@ -126,7 +130,7 @@ class ArgValueOfAllowedTypeChecker {
                 .orElseThrow(() -> new AssertException(format("Directive unknown argument type '%s'. This should have been validated before.", allowedTypeName)));
 
         if (allowedTypeDefinition instanceof ScalarTypeDefinition) {
-            checkArgValueMatchesAllowedScalar(errors, instanceValue, allowedTypeName);
+            checkArgValueMatchesAllowedScalar(errors, instanceValue, (ScalarTypeDefinition) allowedTypeDefinition);
         } else if (allowedTypeDefinition instanceof EnumTypeDefinition) {
             checkArgValueMatchesAllowedEnum(errors, instanceValue, (EnumTypeDefinition) allowedTypeDefinition);
         } else if (allowedTypeDefinition instanceof InputObjectTypeDefinition) {
@@ -212,13 +216,22 @@ class ArgValueOfAllowedTypeChecker {
         }
     }
 
-    private void checkArgValueMatchesAllowedScalar(List<GraphQLError> errors, Value<?> instanceValue, String allowedTypeName) {
+    private void checkArgValueMatchesAllowedScalar(List<GraphQLError> errors, Value<?> instanceValue, ScalarTypeDefinition allowedTypeDefinition) {
         // scalars are allowed to accept ANY literal value - its up to their coercion to decide if its valid or not
-        GraphQLScalarType scalarType = runtimeWiring.getScalars().get(allowedTypeName);
+        List<ScalarTypeExtensionDefinition> extensions = typeRegistry.scalarTypeExtensions().getOrDefault(allowedTypeDefinition.getName(), emptyList());
+        ScalarWiringEnvironment environment = new ScalarWiringEnvironment(typeRegistry, allowedTypeDefinition, extensions);
+        WiringFactory wiringFactory = runtimeWiring.getWiringFactory();
+
+        GraphQLScalarType scalarType;
+        if (wiringFactory.providesScalar(environment)) {
+            scalarType = wiringFactory.getScalar(environment);
+        } else {
+            scalarType = runtimeWiring.getScalars().get(allowedTypeDefinition.getName());
+        }
         // scalarType will always be present as
         // scalar implementation validation has been performed earlier
         if (!isArgumentValueScalarLiteral(scalarType, instanceValue)) {
-            addValidationError(errors, NOT_A_VALID_SCALAR_LITERAL_MESSAGE, allowedTypeName);
+            addValidationError(errors, NOT_A_VALID_SCALAR_LITERAL_MESSAGE, allowedTypeDefinition.getName());
         }
     }
 
@@ -275,7 +288,7 @@ class ArgValueOfAllowedTypeChecker {
 
     private boolean isArgumentValueScalarLiteral(GraphQLScalarType scalarType, Value<?> instanceValue) {
         try {
-            scalarType.getCoercing().parseLiteral(instanceValue);
+            scalarType.getCoercing().parseLiteral(instanceValue, CoercedVariables.emptyVariables(), GraphQLContext.getDefault(), Locale.getDefault());
             return true;
         } catch (CoercingParseLiteralException ex) {
             if (logNotSafe.isDebugEnabled()) {

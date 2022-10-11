@@ -4,12 +4,14 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Sets;
+import graphql.GraphQLContext;
 import graphql.Internal;
+import graphql.collect.ImmutableKit;
+import graphql.execution.CoercedVariables;
 import graphql.execution.ConditionalNodes;
 import graphql.execution.MergedField;
+import graphql.execution.RawVariables;
 import graphql.execution.ValuesResolver;
-import graphql.execution.nextgen.Common;
 import graphql.introspection.Introspection;
 import graphql.language.Document;
 import graphql.language.Field;
@@ -31,14 +33,14 @@ import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLTypeUtil;
 import graphql.schema.GraphQLUnionType;
 import graphql.schema.GraphQLUnmodifiedType;
+import graphql.schema.impl.SchemaUtil;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
@@ -49,49 +51,58 @@ import static graphql.execution.MergedField.newMergedField;
 import static graphql.schema.GraphQLTypeUtil.unwrapAll;
 import static graphql.util.FpKit.filterSet;
 import static graphql.util.FpKit.groupingBy;
+import static graphql.util.FpKit.intersection;
 import static java.util.Collections.singleton;
 import static java.util.Collections.singletonList;
 
 @Internal
 public class ExecutableNormalizedOperationFactory {
 
-    private final ValuesResolver valuesResolver = new ValuesResolver();
     private final ConditionalNodes conditionalNodes = new ConditionalNodes();
 
     public static ExecutableNormalizedOperation createExecutableNormalizedOperation(GraphQLSchema graphQLSchema,
                                                                                     Document document,
                                                                                     String operationName,
-                                                                                    Map<String, Object> coercedVariableValues) {
+                                                                                    CoercedVariables coercedVariableValues) {
         NodeUtil.GetOperationResult getOperationResult = NodeUtil.getOperation(document, operationName);
         return new ExecutableNormalizedOperationFactory().createNormalizedQueryImpl(graphQLSchema, getOperationResult.operationDefinition, getOperationResult.fragmentsByName, coercedVariableValues, null);
     }
 
-
     public static ExecutableNormalizedOperation createExecutableNormalizedOperation(GraphQLSchema graphQLSchema,
                                                                                     OperationDefinition operationDefinition,
                                                                                     Map<String, FragmentDefinition> fragments,
-                                                                                    Map<String, Object> coercedVariableValues) {
+                                                                                    CoercedVariables coercedVariableValues) {
         return new ExecutableNormalizedOperationFactory().createNormalizedQueryImpl(graphQLSchema, operationDefinition, fragments, coercedVariableValues, null);
     }
 
     public static ExecutableNormalizedOperation createExecutableNormalizedOperationWithRawVariables(GraphQLSchema graphQLSchema,
                                                                                                     Document document,
                                                                                                     String operationName,
-                                                                                                    Map<String, Object> rawVariables) {
+                                                                                                    RawVariables rawVariables) {
+        return createExecutableNormalizedOperationWithRawVariables(graphQLSchema, document, operationName, rawVariables, GraphQLContext.getDefault(), Locale.getDefault());
+    }
+
+    public static ExecutableNormalizedOperation createExecutableNormalizedOperationWithRawVariables(GraphQLSchema graphQLSchema,
+                                                                                                    Document document,
+                                                                                                    String operationName,
+                                                                                                    RawVariables rawVariables,
+                                                                                                    GraphQLContext graphQLContext,
+                                                                                                    Locale locale) {
         NodeUtil.GetOperationResult getOperationResult = NodeUtil.getOperation(document, operationName);
-        return new ExecutableNormalizedOperationFactory().createExecutableNormalizedOperationImplWithRawVariables(graphQLSchema, getOperationResult.operationDefinition, getOperationResult.fragmentsByName, rawVariables);
+        return new ExecutableNormalizedOperationFactory().createExecutableNormalizedOperationImplWithRawVariables(graphQLSchema, getOperationResult.operationDefinition, getOperationResult.fragmentsByName, rawVariables, graphQLContext, locale);
     }
 
     private ExecutableNormalizedOperation createExecutableNormalizedOperationImplWithRawVariables(GraphQLSchema graphQLSchema,
                                                                                                   OperationDefinition operationDefinition,
                                                                                                   Map<String, FragmentDefinition> fragments,
-                                                                                                  Map<String, Object> rawVariables
-    ) {
+                                                                                                  RawVariables rawVariables,
+                                                                                                  GraphQLContext graphQLContext,
+                                                                                                  Locale locale) {
 
         List<VariableDefinition> variableDefinitions = operationDefinition.getVariableDefinitions();
-        Map<String, Object> coerceVariableValues = valuesResolver.coerceVariableValues(graphQLSchema, variableDefinitions, rawVariables);
-        Map<String, NormalizedInputValue> normalizedVariableValues = valuesResolver.getNormalizedVariableValues(graphQLSchema, variableDefinitions, rawVariables);
-        return createNormalizedQueryImpl(graphQLSchema, operationDefinition, fragments, coerceVariableValues, normalizedVariableValues);
+        CoercedVariables coercedVariableValues = ValuesResolver.coerceVariableValues(graphQLSchema, variableDefinitions, rawVariables, graphQLContext, locale);
+        Map<String, NormalizedInputValue> normalizedVariableValues = ValuesResolver.getNormalizedVariableValues(graphQLSchema, variableDefinitions, rawVariables, graphQLContext, locale);
+        return createNormalizedQueryImpl(graphQLSchema, operationDefinition, fragments, coercedVariableValues, normalizedVariableValues);
     }
 
     /**
@@ -100,17 +111,17 @@ public class ExecutableNormalizedOperationFactory {
     private ExecutableNormalizedOperation createNormalizedQueryImpl(GraphQLSchema graphQLSchema,
                                                                     OperationDefinition operationDefinition,
                                                                     Map<String, FragmentDefinition> fragments,
-                                                                    Map<String, Object> coercedVariableValues,
+                                                                    CoercedVariables coercedVariableValues,
                                                                     @Nullable Map<String, NormalizedInputValue> normalizedVariableValues) {
         FieldCollectorNormalizedQueryParams parameters = FieldCollectorNormalizedQueryParams
                 .newParameters()
                 .fragments(fragments)
                 .schema(graphQLSchema)
-                .coercedVariables(coercedVariableValues)
+                .coercedVariables(coercedVariableValues.toMap())
                 .normalizedVariables(normalizedVariableValues)
                 .build();
 
-        GraphQLObjectType rootType = Common.getOperationRootType(graphQLSchema, operationDefinition);
+        GraphQLObjectType rootType = SchemaUtil.getOperationRootType(graphQLSchema, operationDefinition);
 
         CollectNFResult collectFromOperationResult = collectFromOperation(parameters, operationDefinition, rootType);
 
@@ -158,7 +169,6 @@ public class ExecutableNormalizedOperationFactory {
         CollectNFResult nextLevel = collectFromMergedField(fieldCollectorNormalizedQueryParams, field, mergedField, curLevel + 1);
 
         for (ExecutableNormalizedField child : nextLevel.children) {
-
             field.addChild(child);
             ImmutableList<FieldAndAstParent> mergedFieldForChild = nextLevel.normalizedFieldToAstFields.get(child);
             normalizedFieldToMergedField.put(child, newMergedField(map(mergedFieldForChild, fieldAndAstParent -> fieldAndAstParent.field)).build());
@@ -172,8 +182,6 @@ public class ExecutableNormalizedOperationFactory {
                     normalizedFieldToMergedField,
                     coordinatesToNormalizedFields,
                     curLevel + 1);
-
-
         }
     }
 
@@ -218,13 +226,11 @@ public class ExecutableNormalizedOperationFactory {
                                                   ExecutableNormalizedField executableNormalizedField,
                                                   ImmutableList<FieldAndAstParent> mergedField,
                                                   int level) {
-        GraphQLUnmodifiedType fieldType = unwrapAll(executableNormalizedField.getType(parameters.getGraphQLSchema()));
-        // if not composite we don't have any selectionSet because it is a Scalar or enum
-        if (!(fieldType instanceof GraphQLCompositeType)) {
-            return new CollectNFResult(Collections.emptyList(), ImmutableListMultimap.of());
+        List<GraphQLFieldDefinition> fieldDefs = executableNormalizedField.getFieldDefinitions(parameters.getGraphQLSchema());
+        Set<GraphQLObjectType> possibleObjects = resolvePossibleObjects(fieldDefs, parameters.getGraphQLSchema());
+        if (possibleObjects.isEmpty()) {
+            return new CollectNFResult(ImmutableKit.emptyList(), ImmutableListMultimap.of());
         }
-
-        Set<GraphQLObjectType> possibleObjects = resolvePossibleObjects((GraphQLCompositeType) fieldType, parameters.getGraphQLSchema());
 
         List<CollectedField> collectedFields = new ArrayList<>();
         for (FieldAndAstParent fieldAndAstParent : mergedField) {
@@ -240,16 +246,21 @@ public class ExecutableNormalizedOperationFactory {
                     possibleObjects
             );
         }
+        Map<String, List<CollectedField>> fieldsByName = fieldsByResultKey(collectedFields);
+        ImmutableList.Builder<ExecutableNormalizedField> resultNFs = ImmutableList.builder();
+        ImmutableListMultimap.Builder<ExecutableNormalizedField, FieldAndAstParent> normalizedFieldToAstFields = ImmutableListMultimap.builder();
+
+        createNFs(resultNFs, parameters, fieldsByName, normalizedFieldToAstFields, level, executableNormalizedField);
+
+        return new CollectNFResult(resultNFs.build(), normalizedFieldToAstFields.build());
+    }
+
+    private Map<String, List<CollectedField>> fieldsByResultKey(List<CollectedField> collectedFields) {
         Map<String, List<CollectedField>> fieldsByName = new LinkedHashMap<>();
         for (CollectedField collectedField : collectedFields) {
             fieldsByName.computeIfAbsent(collectedField.field.getResultKey(), ignored -> new ArrayList<>()).add(collectedField);
         }
-        List<ExecutableNormalizedField> resultNFs = new ArrayList<>();
-        ImmutableListMultimap.Builder<ExecutableNormalizedField, FieldAndAstParent> normalizedFieldToAstFields = ImmutableListMultimap.builder();
-
-        createNFs(parameters, fieldsByName, resultNFs, normalizedFieldToAstFields, level, executableNormalizedField);
-
-        return new CollectNFResult(resultNFs, normalizedFieldToAstFields.build());
+        return fieldsByName;
     }
 
     public CollectNFResult collectFromOperation(FieldCollectorNormalizedQueryParams parameters,
@@ -257,26 +268,22 @@ public class ExecutableNormalizedOperationFactory {
                                                 GraphQLObjectType rootType) {
 
 
-        Set<GraphQLObjectType> possibleObjects = new LinkedHashSet<>();
-        possibleObjects.add(rootType);
+        Set<GraphQLObjectType> possibleObjects = ImmutableSet.of(rootType);
         List<CollectedField> collectedFields = new ArrayList<>();
         collectFromSelectionSet(parameters, operationDefinition.getSelectionSet(), collectedFields, rootType, possibleObjects);
         // group by result key
-        Map<String, List<CollectedField>> fieldsByName = new LinkedHashMap<>();
-        for (CollectedField collectedField : collectedFields) {
-            fieldsByName.computeIfAbsent(collectedField.field.getResultKey(), ignored -> new ArrayList<>()).add(collectedField);
-        }
-        List<ExecutableNormalizedField> resultNFs = new ArrayList<>();
+        Map<String, List<CollectedField>> fieldsByName = fieldsByResultKey(collectedFields);
+        ImmutableList.Builder<ExecutableNormalizedField> resultNFs = ImmutableList.builder();
         ImmutableListMultimap.Builder<ExecutableNormalizedField, FieldAndAstParent> normalizedFieldToAstFields = ImmutableListMultimap.builder();
 
-        createNFs(parameters, fieldsByName, resultNFs, normalizedFieldToAstFields, 1, null);
+        createNFs(resultNFs, parameters, fieldsByName, normalizedFieldToAstFields, 1, null);
 
-        return new CollectNFResult(resultNFs, normalizedFieldToAstFields.build());
+        return new CollectNFResult(resultNFs.build(), normalizedFieldToAstFields.build());
     }
 
-    private void createNFs(FieldCollectorNormalizedQueryParams parameters,
+    private void createNFs(ImmutableList.Builder<ExecutableNormalizedField> nfListBuilder,
+                           FieldCollectorNormalizedQueryParams parameters,
                            Map<String, List<CollectedField>> fieldsByName,
-                           List<ExecutableNormalizedField> resultNFs,
                            ImmutableListMultimap.Builder<ExecutableNormalizedField, FieldAndAstParent> normalizedFieldToAstFields,
                            int level,
                            ExecutableNormalizedField parent) {
@@ -291,7 +298,7 @@ public class ExecutableNormalizedOperationFactory {
                 for (CollectedField collectedField : fieldGroup.fields) {
                     normalizedFieldToAstFields.put(nf, new FieldAndAstParent(collectedField.field, collectedField.astTypeCondition));
                 }
-                resultNFs.add(nf);
+                nfListBuilder.add(nf);
             }
             if (commonParentsGroups.size() > 1) {
                 parameters.addPossibleMergers(parent, resultKey);
@@ -309,13 +316,14 @@ public class ExecutableNormalizedOperationFactory {
         String fieldName = field.getName();
         GraphQLFieldDefinition fieldDefinition = Introspection.getFieldDef(parameters.getGraphQLSchema(), objectTypes.iterator().next(), fieldName);
 
-        Map<String, Object> argumentValues = valuesResolver.getArgumentValues(fieldDefinition.getArguments(), field.getArguments(), parameters.getCoercedVariableValues());
+        Map<String, Object> argumentValues = ValuesResolver.getArgumentValues(fieldDefinition.getArguments(), field.getArguments(), CoercedVariables.of(parameters.getCoercedVariableValues()), parameters.getGraphQLContext(), parameters.getLocale());
         Map<String, NormalizedInputValue> normalizedArgumentValues = null;
         if (parameters.getNormalizedVariableValues() != null) {
-            normalizedArgumentValues = valuesResolver.getNormalizedArgumentValues(fieldDefinition.getArguments(), field.getArguments(), parameters.getNormalizedVariableValues());
+            normalizedArgumentValues = ValuesResolver.getNormalizedArgumentValues(fieldDefinition.getArguments(), field.getArguments(), parameters.getNormalizedVariableValues());
         }
         ImmutableList<String> objectTypeNames = map(objectTypes, GraphQLObjectType::getName);
-        ExecutableNormalizedField executableNormalizedField = ExecutableNormalizedField.newNormalizedField()
+
+        return ExecutableNormalizedField.newNormalizedField()
                 .alias(field.getAlias())
                 .resolvedArguments(argumentValues)
                 .normalizedArguments(normalizedArgumentValues)
@@ -325,8 +333,6 @@ public class ExecutableNormalizedOperationFactory {
                 .level(level)
                 .parent(parent)
                 .build();
-
-        return executableNormalizedField;
     }
 
     private static class CollectedFieldGroup {
@@ -340,20 +346,21 @@ public class ExecutableNormalizedOperationFactory {
     }
 
     private List<CollectedFieldGroup> groupByCommonParents(Collection<CollectedField> fields) {
-        Set<GraphQLObjectType> allRelevantObjects = new LinkedHashSet<>();
+        ImmutableSet.Builder<GraphQLObjectType> objectTypes = ImmutableSet.builder();
         for (CollectedField collectedField : fields) {
-            allRelevantObjects.addAll(collectedField.objectTypes);
+            objectTypes.addAll(collectedField.objectTypes);
         }
+        Set<GraphQLObjectType> allRelevantObjects = objectTypes.build();
         Map<GraphQLType, ImmutableList<CollectedField>> groupByAstParent = groupingBy(fields, fieldAndType -> fieldAndType.astTypeCondition);
         if (groupByAstParent.size() == 1) {
-            return singletonList(new CollectedFieldGroup(new LinkedHashSet<>(fields), allRelevantObjects));
+            return singletonList(new CollectedFieldGroup(ImmutableSet.copyOf(fields), allRelevantObjects));
         }
-        List<CollectedFieldGroup> result = new ArrayList<>();
+        ImmutableList.Builder<CollectedFieldGroup> result = ImmutableList.builder();
         for (GraphQLObjectType objectType : allRelevantObjects) {
             Set<CollectedField> relevantFields = filterSet(fields, field -> field.objectTypes.contains(objectType));
             result.add(new CollectedFieldGroup(relevantFields, singleton(objectType)));
         }
-        return result;
+        return result.build();
     }
 
 
@@ -363,7 +370,6 @@ public class ExecutableNormalizedOperationFactory {
                                          GraphQLCompositeType astTypeCondition,
                                          Set<GraphQLObjectType> possibleObjects
     ) {
-
         for (Selection<?> selection : selectionSet.getSelections()) {
             if (selection instanceof Field) {
                 collectField(parameters, result, (Field) selection, possibleObjects, astTypeCondition);
@@ -445,22 +451,36 @@ public class ExecutableNormalizedOperationFactory {
             return;
         }
         // this means there is actually no possible type for this field and we are done
-        if (possibleObjectTypes.size() == 0) {
+        if (possibleObjectTypes.isEmpty()) {
             return;
         }
         result.add(new CollectedField(field, possibleObjectTypes, astTypeCondition));
     }
-
 
     private Set<GraphQLObjectType> narrowDownPossibleObjects(Set<GraphQLObjectType> currentOnes,
                                                              GraphQLCompositeType typeCondition,
                                                              GraphQLSchema graphQLSchema) {
 
         ImmutableSet<GraphQLObjectType> resolvedTypeCondition = resolvePossibleObjects(typeCondition, graphQLSchema);
-        if (currentOnes.size() == 0) {
+        if (currentOnes.isEmpty()) {
             return resolvedTypeCondition;
         }
-        return Sets.intersection(currentOnes, resolvedTypeCondition);
+
+        // Faster intersection, as either set often has a size of 1.
+        return intersection(currentOnes, resolvedTypeCondition);
+    }
+
+    private ImmutableSet<GraphQLObjectType> resolvePossibleObjects(List<GraphQLFieldDefinition> defs, GraphQLSchema graphQLSchema) {
+        ImmutableSet.Builder<GraphQLObjectType> builder = ImmutableSet.builder();
+
+        for (GraphQLFieldDefinition def : defs) {
+            GraphQLUnmodifiedType outputType = unwrapAll(def.getType());
+            if (outputType instanceof GraphQLCompositeType) {
+                builder.addAll(resolvePossibleObjects((GraphQLCompositeType) outputType, graphQLSchema));
+            }
+        }
+
+        return builder.build();
     }
 
     private ImmutableSet<GraphQLObjectType> resolvePossibleObjects(GraphQLCompositeType type, GraphQLSchema graphQLSchema) {
@@ -470,11 +490,9 @@ public class ExecutableNormalizedOperationFactory {
             return ImmutableSet.copyOf(graphQLSchema.getImplementations((GraphQLInterfaceType) type));
         } else if (type instanceof GraphQLUnionType) {
             List types = ((GraphQLUnionType) type).getTypes();
-            return ImmutableSet.copyOf((types));
+            return ImmutableSet.copyOf(types);
         } else {
             return assertShouldNeverHappen();
         }
-
     }
-
 }

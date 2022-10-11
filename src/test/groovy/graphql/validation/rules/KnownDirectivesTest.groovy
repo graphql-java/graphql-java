@@ -250,8 +250,7 @@ class KnownDirectivesTest extends Specification {
 
     def schema = TestUtil.schema(sdl)
 
-
-    def "invalid  directive on SUBSCRIPTION"() {
+    def "invalid directive on SUBSCRIPTION"() {
         def spec = '''
             subscription sub @queryDirective{
                 field 
@@ -260,15 +259,34 @@ class KnownDirectivesTest extends Specification {
 
         when:
         def document = TestUtil.parseQuery(spec)
-        def validator = new Validator();
-        def validationErrors = validator.validateDocument(schema, document);
+        def validator = new Validator()
+        def validationErrors = validator.validateDocument(schema, document, Locale.ENGLISH)
 
         then:
         validationErrors.size() == 1
-        validationErrors.get(0).message == "Validation error of type MisplacedDirective: Directive queryDirective not allowed here"
+        validationErrors.get(0).validationErrorType == ValidationErrorType.MisplacedDirective
+        validationErrors.get(0).message == "Validation error (MisplacedDirective) : Directive 'queryDirective' not allowed here"
     }
 
-    def "valid  directive on SUBSCRIPTION"() {
+    def "unknown directive on SUBSCRIPTION"() {
+        def spec = '''
+            subscription sub @unknownDirective{
+                field 
+            }
+        '''
+
+        when:
+        def document = TestUtil.parseQuery(spec)
+        def validator = new Validator()
+        def validationErrors = validator.validateDocument(schema, document, Locale.ENGLISH)
+
+        then:
+        validationErrors.size() == 1
+        validationErrors.get(0).validationErrorType == ValidationErrorType.UnknownDirective
+        validationErrors.get(0).message == "Validation error (UnknownDirective) : Unknown directive 'unknownDirective'"
+    }
+
+    def "valid directive on SUBSCRIPTION"() {
         def spec = '''
             subscription sub @subDirective{
                 field 
@@ -277,8 +295,8 @@ class KnownDirectivesTest extends Specification {
 
         when:
         def document = TestUtil.parseQuery(spec)
-        def validator = new Validator();
-        def validationErrors = validator.validateDocument(schema, document);
+        def validator = new Validator()
+        def validationErrors = validator.validateDocument(schema, document, Locale.ENGLISH)
 
         then:
         validationErrors.size() == 0

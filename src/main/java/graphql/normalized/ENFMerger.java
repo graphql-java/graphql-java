@@ -1,6 +1,7 @@
 package graphql.normalized;
 
 import graphql.Internal;
+import graphql.introspection.Introspection;
 import graphql.language.Argument;
 import graphql.language.AstComparator;
 import graphql.schema.GraphQLInterfaceType;
@@ -27,6 +28,11 @@ public class ENFMerger {
             overPossibleGroups:
             for (Set<ExecutableNormalizedField> group : possibleGroupsToMerge) {
                 for (ExecutableNormalizedField fieldInGroup : group) {
+                    if(field.getFieldName().equals(Introspection.TypeNameMetaFieldDef.getName())) {
+                        addToGroup = true;
+                        group.add(field);
+                        continue overPossibleGroups;
+                    }
                     if (field.getFieldName().equals(fieldInGroup.getFieldName()) &&
                             sameArguments(field.getAstArguments(), fieldInGroup.getAstArguments())
                             && isFieldInSharedInterface(field, fieldInGroup, schema)
@@ -66,7 +72,8 @@ public class ENFMerger {
     }
 
     private static boolean isFieldInSharedInterface(ExecutableNormalizedField fieldOne, ExecutableNormalizedField fieldTwo, GraphQLSchema schema) {
-        /**
+
+        /*
          * we can get away with only checking one of the object names, because all object names in one ENF are guaranteed to be the same field.
          * This comes from how the ENFs are created in the factory before.
          */

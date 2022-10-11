@@ -1,32 +1,32 @@
 package graphql.validation.rules
 
 import graphql.TestUtil
+import graphql.i18n.I18n
 import graphql.language.Document
 import graphql.parser.Parser
 import graphql.validation.LanguageTraversal
 import graphql.validation.RulesVisitor
+import graphql.validation.SpecValidationSchema
 import graphql.validation.ValidationContext
 import graphql.validation.ValidationErrorCollector
 import graphql.validation.ValidationErrorType
+import graphql.validation.Validator
 import spock.lang.Specification
 
 class NoUnusedVariablesTest extends Specification {
-
-
     ValidationErrorCollector errorCollector = new ValidationErrorCollector()
-
 
     def traverse(String query) {
         Document document = new Parser().parseDocument(query)
-        ValidationContext validationContext = new ValidationContext(TestUtil.dummySchema, document)
+        I18n i18n = I18n.i18n(I18n.BundleType.Validation, Locale.ENGLISH)
+        ValidationContext validationContext = new ValidationContext(TestUtil.dummySchema, document, i18n)
         NoUnusedVariables noUnusedVariables = new NoUnusedVariables(validationContext, errorCollector)
         LanguageTraversal languageTraversal = new LanguageTraversal()
 
         languageTraversal.traverse(document, new RulesVisitor(validationContext, [noUnusedVariables]))
     }
 
-
-    def 'uses all variables in fragments'() {
+    def "uses all variables in fragments"() {
         given:
         def query = """
         fragment FragA on Type {
@@ -56,7 +56,7 @@ class NoUnusedVariablesTest extends Specification {
     def "variable used by fragment in multiple operations"() {
         given:
         def query = """
-        query Foo(\$a: String) {
+          query Foo(\$a: String) {
             ...FragA
           }
           query Bar(\$b: String) {
@@ -68,7 +68,7 @@ class NoUnusedVariablesTest extends Specification {
           fragment FragB on Type {
             field(b: \$b)
           }
-            """
+          """
 
         when:
         traverse(query)
@@ -89,8 +89,52 @@ class NoUnusedVariablesTest extends Specification {
 
         then:
         errorCollector.containsValidationError(ValidationErrorType.UnusedVariable)
-
     }
 
+    def "variables not used in fragments"() {
+        given:
+        def query = """
+        fragment FragA on Type {
+            field(a: \$a) {
+                ...FragB
+            }
+        }
+        fragment FragB on Type {
+            field(b: \$b) {
+                ...FragC
+            }
+        }
+        fragment FragC on Type {
+            __typename
+        }
+        query Foo(\$a: String, \$b: String, \$c: String) {
+            ...FragA
+        }
+        """
 
+        when:
+        traverse(query)
+
+        then:
+        errorCollector.containsValidationError(ValidationErrorType.UnusedVariable)
+    }
+
+    def "variables not used in fragments with error message"() {
+        def query = '''
+                query getDogName($arg1: String, $unusedArg: Int) {
+                  dog(arg1: $arg1) {
+                      name
+                  }           
+                }
+            '''
+        when:
+        def document = Parser.parse(query)
+        def validationErrors = new Validator().validateDocument(SpecValidationSchema.specValidationSchema, document, Locale.ENGLISH)
+
+        then:
+        !validationErrors.empty
+        validationErrors.size() == 1
+        validationErrors.get(0).getValidationErrorType() == ValidationErrorType.UnusedVariable
+        validationErrors.get(0).message == "Validation error (UnusedVariable) : Unused variable 'unusedArg'"
+    }
 }

@@ -6,10 +6,11 @@ import graphql.schema.GraphQLInputType;
 import graphql.validation.AbstractRule;
 import graphql.validation.ValidationContext;
 import graphql.validation.ValidationErrorCollector;
-import graphql.validation.ValidationErrorType;
+
+import java.util.Locale;
 
 import static graphql.schema.GraphQLTypeUtil.simplePrint;
-
+import static graphql.validation.ValidationErrorType.BadValueForDefaultArg;
 
 @Internal
 public class VariableDefaultValuesOfCorrectType extends AbstractRule {
@@ -19,15 +20,16 @@ public class VariableDefaultValuesOfCorrectType extends AbstractRule {
         super(validationContext, validationErrorCollector);
     }
 
-
     @Override
     public void checkVariableDefinition(VariableDefinition variableDefinition) {
         GraphQLInputType inputType = getValidationContext().getInputType();
-        if (inputType == null) return;
+        if (inputType == null) {
+            return;
+        }
         if (variableDefinition.getDefaultValue() != null
-                && !getValidationUtil().isValidLiteralValue(variableDefinition.getDefaultValue(), inputType, getValidationContext().getSchema())) {
-            String message = String.format("Bad default value %s for type %s", variableDefinition.getDefaultValue(), simplePrint(inputType));
-            addError(ValidationErrorType.BadValueForDefaultArg, variableDefinition.getSourceLocation(), message);
+                && !getValidationUtil().isValidLiteralValue(variableDefinition.getDefaultValue(), inputType, getValidationContext().getSchema(), getValidationContext().getGraphQLContext(), Locale.getDefault())) {
+            String message = i18n(BadValueForDefaultArg, "VariableDefaultValuesOfCorrectType.badDefault", variableDefinition.getDefaultValue(), simplePrint(inputType));
+            addError(BadValueForDefaultArg, variableDefinition.getSourceLocation(), message);
         }
     }
 }

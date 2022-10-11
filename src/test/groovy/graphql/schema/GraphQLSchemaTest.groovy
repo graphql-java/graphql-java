@@ -7,6 +7,8 @@ import graphql.GraphQL
 import graphql.TestUtil
 import graphql.schema.idl.RuntimeWiring
 import graphql.schema.idl.TypeRuntimeWiring
+import graphql.util.TraversalControl
+import graphql.util.TraverserContext
 import spock.lang.Specification
 
 import java.util.function.UnaryOperator
@@ -16,8 +18,14 @@ import static graphql.StarWarsSchema.characterInterface
 import static graphql.StarWarsSchema.droidType
 import static graphql.StarWarsSchema.humanType
 import static graphql.StarWarsSchema.starWarsSchema
+import static graphql.schema.GraphQLArgument.newArgument
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition
+import static graphql.schema.GraphQLInputObjectField.newInputObjectField
+import static graphql.schema.GraphQLInputObjectType.newInputObject
+import static graphql.schema.GraphQLNonNull.nonNull
 import static graphql.schema.GraphQLObjectType.newObject
+import static graphql.schema.GraphQLTypeReference.typeRef
+import static java.util.stream.Collectors.toList
 
 class GraphQLSchemaTest extends Specification {
 
@@ -98,30 +106,28 @@ class GraphQLSchemaTest extends Specification {
     }
 
     static def basicSchemaBuilder() {
+        def queryTypeName = "QueryType"
+        def fooCoordinates = FieldCoordinates.coordinates(queryTypeName, "hero")
+        DataFetcher<?> basicDataFetcher = new DataFetcher<Object>() {
+            @Override
+            Object get(DataFetchingEnvironment environment) throws Exception {
+                return null
+            }
+        }
+
+        GraphQLCodeRegistry codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+                .dataFetcher(fooCoordinates, basicDataFetcher)
+                .build()
+
         GraphQLSchema.newSchema()
+                .codeRegistry(codeRegistry)
                 .query(newObject()
                         .name("QueryType")
                         .field(newFieldDefinition()
                                 .name("hero")
                                 .type(GraphQLString)
-                                .dataFetcher({ env -> null })))
+                ))
     }
-
-    def additionalType1 = newObject()
-            .name("Additional1")
-            .field(newFieldDefinition()
-                    .name("field")
-                    .type(GraphQLString)
-                    .dataFetcher({ env -> null }))
-            .build()
-
-    def additionalType2 = newObject()
-            .name("Additional2")
-            .field(newFieldDefinition()
-                    .name("field")
-                    .type(GraphQLString)
-                    .dataFetcher({ env -> null }))
-            .build()
 
     def "clear directives works as expected"() {
         setup:
@@ -148,7 +154,7 @@ class GraphQLSchemaTest extends Specification {
         schema.directives.size() == 4
     }
 
-    def "clear additional types  works as expected"() {
+    def "clear additional types works as expected"() {
         setup:
         def schemaBuilder = basicSchemaBuilder()
 
@@ -163,12 +169,47 @@ class GraphQLSchemaTest extends Specification {
         schema.additionalTypes.empty
 
         when: "clear types is called with additional types"
-        schema = schemaBuilder.clearAdditionalTypes().additionalType(additionalType1).build()
+        def additional1TypeName = "Additional1"
+        def additional2TypeName = "Additional2"
+        def fieldName = "field"
+        def additionalType1 = newObject()
+                .name(additional1TypeName)
+                .field(newFieldDefinition()
+                        .name(fieldName)
+                        .type(GraphQLString))
+                .build()
+        def additionalType2 = newObject()
+                .name("Additional2")
+                .field(newFieldDefinition()
+                        .name(fieldName)
+                        .type(GraphQLString))
+                .build()
+
+        def additional1Coordinates = FieldCoordinates.coordinates(additionalType1, fieldName)
+        DataFetcher<?> basicDataFetcher = new DataFetcher<Object>() {
+            @Override
+            Object get(DataFetchingEnvironment environment) throws Exception {
+                return null
+            }
+        }
+
+        GraphQLCodeRegistry codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+                .dataFetcher(additional1Coordinates, basicDataFetcher)
+                .build()
+
+        schema = schemaBuilder
+                .clearAdditionalTypes()
+                .additionalType(additionalType1)
+                .codeRegistry(codeRegistry)
+                .build()
+
         then:
         schema.additionalTypes.size() == 1
 
         when: "the schema is transformed, things are copied"
-        schema = schema.transform({ builder -> builder.additionalType(additionalType2) })
+        def additional2Coordinates = FieldCoordinates.coordinates(additional2TypeName, fieldName)
+        codeRegistry = codeRegistry.transform({ builder -> builder.dataFetcher(additional2Coordinates, basicDataFetcher) })
+        schema = schema.transform({ builder -> builder.additionalType(additionalType2).codeRegistry(codeRegistry) })
         then:
         schema.additionalTypes.size() == 2
     }
@@ -187,7 +228,6 @@ class GraphQLSchemaTest extends Specification {
         type Dog implements Pet {
             name : String
         }
-
         type Cat implements Pet {
             name : String
         }
@@ -212,6 +252,187 @@ class GraphQLSchemaTest extends Specification {
 
         GraphQLObjectType dogType = schema.getTypeAs("Dog")
         dogType.getName() == "Dog"
+    }
+
+    def "issue with type references when original type is transformed away"() {
+        def sdl = '''
+            type Query {
+              # The b fields leads to the addition of the B type (actual definition)
+              b: B
+              # When we filter out the `b` field, we can still access B through A
+              # however they are GraphQLTypeReferences and not an actual GraphQL Object
+              a: A
+            } 
+
+            type A {
+              b: B
+            }
+
+            type B {
+              a: A
+              b: B
+            }
+        '''
+
+        when:
+        def schema = TestUtil.schema(sdl)
+        // When field `b` is filtered out
+        List<GraphQLFieldDefinition> fields = schema.queryType.fieldDefinitions.stream().filter({
+            it.name == "a"
+        }).collect(toList())
+        // And we transform the schema's query root, the schema building
+        // will throw because type B won't be in the type map anymore, since
+        // there are no more actual B object types in the schema tree.
+        def transformed = schema.transform({
+            it.query(schema.queryType.transform({
+                it.replaceFields(fields)
+            }))
+        })
+
+        then:
+        transformed.containsType("B")
+
+    }
+
+    def "can change types via SchemaTransformer and visitor"() {
+        def sdl = '''
+            type Query {
+              b: B
+              a: A
+            } 
+
+            type A {
+              b: B
+            }
+
+            type B {
+              a: A
+              b: B
+            }
+        '''
+
+        when:
+        def schema = TestUtil.schema(sdl)
+
+        GraphQLTypeVisitorStub visitor = new GraphQLTypeVisitorStub() {
+            @Override
+            TraversalControl visitGraphQLObjectType(GraphQLObjectType objectType, TraverserContext<GraphQLSchemaElement> context) {
+                if (objectType.getName() == "Query") {
+                    def queryType = objectType
+                    List<GraphQLFieldDefinition> fields = queryType.fieldDefinitions.stream().filter({
+                        it.name == "a"
+                    }).collect(toList())
+
+                    GraphQLObjectType newObjectType = queryType.transform({
+                        it.replaceFields(fields)
+                    })
+
+                    return changeNode(context, newObjectType)
+                }
+                return TraversalControl.CONTINUE
+            }
+        }
+        GraphQLSchema transformedSchema = SchemaTransformer.transformSchema(schema, visitor)
+
+        then:
+        transformedSchema.containsType("B")
+    }
+
+    def "fields edited from type references should still built valid schemas"() {
+        def typeB = newObject().name("B")
+                .field(newFieldDefinition().name("a").type(typeRef("A")))
+                .field(newFieldDefinition().name("b").type(typeRef("B")))
+                .build()
+
+
+        def typeAFieldB = newFieldDefinition().name("b").type(typeRef("B")).build()
+        // at the line above typeB is never strongly referenced
+        // and this simulates an edit situation that wont happen with direct java declaration
+        // but where the type reference is replaced to an actual but its the ONLY direct reference
+        // to that type``
+        typeAFieldB.replaceType(typeB)
+
+        def typeA = newObject().name("A")
+                .field(typeAFieldB)
+                .build()
+
+        //
+        // the same pattern above applies ot other replaceable types like arguments and input fields
+        def inputTypeY = newInputObject().name("InputTypeY")
+                .field(newInputObjectField().name("in2").type(GraphQLString))
+                .build()
+
+        def inputFieldOfY = newInputObjectField().name("inY").type(typeRef("InputTypeY")).build()
+        // only reference to InputTypeY
+        inputFieldOfY.replaceType(inputTypeY)
+
+        def inputTypeZ = newInputObject().name("InputTypeZ")
+                .field(inputFieldOfY)
+                .build()
+
+        def inputTypeX = newInputObject().name("InputTypeX")
+                .field(newInputObjectField().name("inX").type(GraphQLString))
+                .build()
+
+        GraphQLArgument argOfX = newArgument().name("argOfX").type(typeRef("InputTypeX")).build()
+        // only reference to InputTypeX
+        argOfX.replaceType(inputTypeX)
+
+        GraphQLArgument argOfZ = newArgument().name("argOfZ").type(inputTypeZ).build()
+
+        def typeC = newObject().name("C")
+                .field(newFieldDefinition().name("f1").type(GraphQLString).argument(argOfX))
+                .field(newFieldDefinition().name("f2").type(GraphQLString).argument(argOfZ))
+                .build()
+
+        def queryType = newObject().name("Query")
+                .field(newFieldDefinition().name("a").type(typeA))
+                .field(newFieldDefinition().name("c").type(typeC))
+                .build()
+
+        when:
+        def schema = GraphQLSchema.newSchema().query(queryType).build()
+        then:
+        schema.getType("A") != null
+        schema.getType("B") != null
+        schema.getType("InputTypeX") != null
+        schema.getType("InputTypeY") != null
+        schema.getType("InputTypeZ") != null
+    }
+
+    def "list and non nulls work when direct references are edited"() {
+
+        def typeX = newObject().name("TypeX")
+                .field(newFieldDefinition().name("f1").type(GraphQLString))
+                .build()
+        def queryType = newObject().name("Query")
+                .field(newFieldDefinition().name("direct").type(typeX))
+                .field(newFieldDefinition().name("indirectNonNull").type(nonNull(typeRef("TypeX"))))
+                .field(newFieldDefinition().name("indirectList").type(GraphQLList.list(nonNull(typeRef("TypeX")))))
+                .build()
+
+        when:
+        def schema = GraphQLSchema.newSchema().query(queryType).build()
+        then:
+        schema.getType("TypeX") != null
+
+        // now edit away the actual strong reference
+        when:
+        GraphQLTypeVisitor visitor = new GraphQLTypeVisitorStub() {
+
+            @Override
+            TraversalControl visitGraphQLFieldDefinition(GraphQLFieldDefinition node, TraverserContext<GraphQLSchemaElement> context) {
+                if (node.getName() == "direct") {
+                    return deleteNode(context)
+                }
+                return TraversalControl.CONTINUE
+            }
+        }
+
+        GraphQLSchema transformedSchema = SchemaTransformer.transformSchema(schema, visitor)
+
+        then:
+        transformedSchema.getType("TypeX") != null
     }
 
     def "cheap transform without types transformation works"() {
@@ -324,4 +545,5 @@ class GraphQLSchemaTest extends Specification {
         thrown(AssertException)
 
     }
+
 }

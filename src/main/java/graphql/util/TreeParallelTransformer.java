@@ -1,6 +1,7 @@
 package graphql.util;
 
 import graphql.Internal;
+import graphql.collect.ImmutableKit;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -104,7 +105,7 @@ public class TreeParallelTransformer<T> {
             assertNotNull(traversalControl, () -> "result of enter must not be null");
             assertTrue(QUIT != traversalControl, () -> "can't return QUIT for parallel traversing");
             if (traversalControl == ABORT) {
-                this.children = Collections.emptyList();
+                this.children = ImmutableKit.emptyList();
                 tryComplete();
                 return;
             }

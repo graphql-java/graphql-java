@@ -1,5 +1,6 @@
 package graphql.schema.validation;
 
+import graphql.GraphQLContext;
 import graphql.Internal;
 import graphql.execution.ValuesResolver;
 import graphql.language.Value;
@@ -20,6 +21,7 @@ import graphql.util.TraverserContext;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -70,7 +72,7 @@ public class TypesImplementInterfaces extends GraphQLTypeVisitorStub {
 
     }
 
-    // this deliberately has open field visibility here since its validating the schema
+    // this deliberately has open field visibility here since it's validating the schema
     // when completely open
     private void checkObjectImplementsInterface(GraphQLImplementingType implementingType, GraphQLInterfaceType interfaceType, SchemaValidationErrorCollector validationErrorCollector) {
         List<GraphQLFieldDefinition> fieldDefinitions = interfaceType.getFieldDefinitions();
@@ -151,8 +153,8 @@ public class TypesImplementInterfaces extends GraphQLTypeVisitorStub {
                         same = false;
                     }
                     if (objectArg.hasSetDefaultValue() && interfaceArg.hasSetDefaultValue()) {
-                        Value<?> objectDefaultValue = ValuesResolver.valueToLiteral(objectArg.getArgumentDefaultValue(), objectArg.getType());
-                        Value<?> interfaceDefaultValue = ValuesResolver.valueToLiteral(interfaceArg.getArgumentDefaultValue(), interfaceArg.getType());
+                        Value<?> objectDefaultValue = ValuesResolver.valueToLiteral(objectArg.getArgumentDefaultValue(), objectArg.getType(), GraphQLContext.getDefault(), Locale.getDefault());
+                        Value<?> interfaceDefaultValue = ValuesResolver.valueToLiteral(interfaceArg.getArgumentDefaultValue(), interfaceArg.getType(), GraphQLContext.getDefault(), Locale.getDefault());
                         if (!Objects.equals(printAst(objectDefaultValue), printAst(interfaceDefaultValue))) {
                             same = false;
                         }

@@ -3,6 +3,10 @@ package graphql
 import graphql.execution.AsyncExecutionStrategy
 import graphql.execution.AsyncSerialExecutionStrategy
 import graphql.language.SourceLocation
+import graphql.schema.DataFetcher
+import graphql.schema.DataFetchingEnvironment
+import graphql.schema.FieldCoordinates
+import graphql.schema.GraphQLCodeRegistry
 import graphql.schema.GraphQLOutputType
 import graphql.schema.GraphQLSchema
 import graphql.schema.idl.RuntimeWiring
@@ -32,55 +36,91 @@ class DataFetcherWithErrorsAndDataTest extends Specification {
         ChildObject child = new ChildObject()
     }
 
-    def executionInput(String query) {
+    static def executionInput(String query) {
         newExecutionInput().query(query).build()
+    }
+
+    class ParentDataFetcher implements DataFetcher {
+        @Override
+        Object get(DataFetchingEnvironment environment) throws Exception {
+            return newResult()
+                    .data(new ParentObject())
+                    .errors([newError()
+                                     .message("badField is bad")
+                                     .path(["root", "parent", "child", "badField"])
+                                     .location(environment.getField().getSourceLocation())
+                                     .build()])
+                    .build()
+        }
+    }
+
+    class ChildDataFetcher implements DataFetcher {
+        @Override
+        Object get(DataFetchingEnvironment environment) throws Exception {
+            return newResult()
+                    .data(["goodField": null, "badField": null])
+                    .errors([newError()
+                                     .message("goodField is bad")
+                                     .path(["root", "parent", "child", "goodField"])
+                                     .location(environment.getField().getSourceLocation())
+                                     .build(),
+                             newError().message("badField is bad")
+                                     .path(["root", "parent", "child", "badField"])
+                                     .location(environment.getField().getSourceLocation())
+                                     .build()])
+                    .build()
+        }
     }
 
     @Unroll
     def "#820 - data fetcher can return data and errors (strategy: #strategyName)"() {
-
         // see https://github.com/graphql-java/graphql-java/issues/820
 
         given:
-
+        def queryTypeName = "QueryType"
+        def rootFieldName = "root"
+        def rootTypeName = "rootType"
+        def parentFieldName = "parent"
 
         GraphQLOutputType childType = newObject()
                 .name("childType")
-                .field(newFieldDefinition().name("goodField")
+                .field(newFieldDefinition()
+                        .name("goodField")
                         .type(GraphQLString))
-                .field(newFieldDefinition().name("badField")
+                .field(newFieldDefinition()
+                        .name("badField")
                         .type(GraphQLString))
                 .build()
         GraphQLOutputType parentType = newObject()
                 .name("parentType")
-                .field(newFieldDefinition().name("child")
+                .field(newFieldDefinition()
+                        .name("child")
                         .type(childType))
                 .build()
         GraphQLOutputType rootType = newObject()
-                .name("rootType")
-                .field(newFieldDefinition().name("parent")
-                        .type(parentType)
-                        .dataFetcher({ env ->
-                            newResult()
-                                    .data(new ParentObject())
-                                    .errors([newError()
-                                                     .message("badField is bad")
-                                                     .path(["root", "parent", "child", "badField"])
-                                                     .location(env.getField().getSourceLocation())
-                                                     .build()])
-                                    .build()
-
-                        }))
+                .name(rootTypeName)
+                .field(newFieldDefinition()
+                        .name(parentFieldName)
+                        .type(parentType))
                 .build()
 
-        GraphQLSchema schema = newSchema().query(
-                newObject()
-                        .name("QueryType")
-                        .field(newFieldDefinition()
-                                .name("root")
-                                .type(rootType)
-                                .dataFetcher({ env -> [:] })
+        def rootTypeCoordinates = FieldCoordinates.coordinates(queryTypeName, rootFieldName)
+        def parentTypeCoordinates = FieldCoordinates.coordinates(rootTypeName, parentFieldName)
+        DataFetcher<?> rootTypeDataFetcher = { env -> [:] }
+        DataFetcher<?> parentTypeDataFetcher = new ParentDataFetcher()
 
+        GraphQLCodeRegistry codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+                .dataFetcher(rootTypeCoordinates, rootTypeDataFetcher)
+                .dataFetcher(parentTypeCoordinates, parentTypeDataFetcher)
+                .build()
+
+        GraphQLSchema schema = newSchema()
+                .codeRegistry(codeRegistry)
+                .query(newObject()
+                        .name(queryTypeName)
+                        .field(newFieldDefinition()
+                                .name(rootFieldName)
+                                .type(rootType)
                         ))
                 .build()
 
@@ -122,52 +162,53 @@ class DataFetcherWithErrorsAndDataTest extends Specification {
 
     @Unroll
     def "#820 - data fetcher can return multiple errors (strategy: #strategyName)"() {
-
         // see https://github.com/graphql-java/graphql-java/issues/820
 
         given:
-
+        def queryTypeName = "QueryType"
+        def rootFieldName = "root"
+        def parentTypeName = "parentType"
+        def childFieldName = "child"
 
         GraphQLOutputType childType = newObject()
                 .name("childType")
-                .field(newFieldDefinition().name("goodField")
+                .field(newFieldDefinition()
+                        .name("goodField")
                         .type(GraphQLString))
-                .field(newFieldDefinition().name("badField")
+                .field(newFieldDefinition()
+                        .name("badField")
                         .type(GraphQLString))
                 .build()
         GraphQLOutputType parentType = newObject()
-                .name("parentType")
-                .field(newFieldDefinition().name("child")
-                        .type(childType)
-                        .dataFetcher({ env ->
-                            newResult()
-                                    .data(["goodField": null, "badField": null])
-                                    .errors([
-                                            newError().message("goodField is bad")
-                                                    .path(["root", "parent", "child", "goodField"])
-                                                    .location(env.getField().getSourceLocation())
-                                                    .build(),
-                                            newError().message("badField is bad")
-                                                    .path(["root", "parent", "child", "badField"])
-                                                    .location(env.getField().getSourceLocation())
-                                                    .build()
-                                    ]).build()
-                        }))
+                .name(parentTypeName)
+                .field(newFieldDefinition()
+                        .name(childFieldName)
+                        .type(childType))
                 .build()
         GraphQLOutputType rootType = newObject()
                 .name("rootType")
-                .field(newFieldDefinition().name("parent")
+                .field(newFieldDefinition()
+                        .name("parent")
                         .type(parentType))
                 .build()
 
-        GraphQLSchema schema = newSchema().query(
-                newObject()
-                        .name("QueryType")
-                        .field(newFieldDefinition()
-                                .name("root")
-                                .type(rootType)
-                                .dataFetcher({ env -> ["parent": [:]] })
+        def rootTypeCoordinates = FieldCoordinates.coordinates(queryTypeName, rootFieldName)
+        def childTypeCoordinates = FieldCoordinates.coordinates(parentTypeName, childFieldName)
+        DataFetcher<?> rootTypeDataFetcher = { env -> ["parent": [:]] }
+        DataFetcher<?> childTypeDataFetcher = new ChildDataFetcher()
 
+        GraphQLCodeRegistry codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+                .dataFetcher(rootTypeCoordinates, rootTypeDataFetcher)
+                .dataFetcher(childTypeCoordinates, childTypeDataFetcher)
+                .build()
+
+        GraphQLSchema schema = newSchema()
+                .codeRegistry(codeRegistry)
+                .query(newObject()
+                        .name(queryTypeName)
+                        .field(newFieldDefinition()
+                                .name(rootFieldName)
+                                .type(rootType)
                         ))
                 .build()
 
@@ -209,7 +250,6 @@ class DataFetcherWithErrorsAndDataTest extends Specification {
         'async'       | new AsyncExecutionStrategy()
         'asyncSerial' | new AsyncSerialExecutionStrategy()
     }
-
 
     @Unroll
     def "data fetcher can return context down each level (strategy: #strategyName)"() {
@@ -278,7 +318,7 @@ class DataFetcherWithErrorsAndDataTest extends Specification {
         def result = TestUtil.graphQL(spec, runtimeWiring)
                 .queryExecutionStrategy(executionStrategy)
                 .build()
-                .execute(newExecutionInput().query(query).root("").context(1))
+                .execute(newExecutionInput().query(query).root("").graphQLContext(["key": 1]))
 
         expect:
 

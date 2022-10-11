@@ -6,6 +6,7 @@ import static graphql.Scalars.GraphQLString
 import static graphql.schema.GraphQLList.list
 import static graphql.schema.GraphQLNonNull.nonNull
 import static graphql.schema.GraphQLObjectType.newObject
+import static graphql.schema.GraphQLTypeReference.*
 
 class GraphQLTypeUtilTest extends Specification {
 
@@ -124,6 +125,38 @@ class GraphQLTypeUtilTest extends Specification {
 
         then:
         type == GraphQLString
+
+    }
+
+    def "unwrapAllAs tests"() {
+        def type = list(nonNull(list(nonNull(GraphQLString))))
+        def typeRef = list(nonNull(list(nonNull(typeRef("A")))))
+
+        when:
+        type = GraphQLTypeUtil.unwrapAllAs(type)
+
+        then:
+        type == GraphQLString
+
+        when:
+        type = GraphQLTypeUtil.unwrapAllAs(type)
+
+        then:
+        type == GraphQLString
+
+        when:
+        typeRef = GraphQLTypeUtil.unwrapAllAs(typeRef)
+
+        then:
+        typeRef instanceof GraphQLTypeReference
+        (typeRef as GraphQLTypeReference).name == "A"
+
+        when:
+        typeRef = GraphQLTypeUtil.unwrapAllAs(typeRef)
+
+        then:
+        typeRef instanceof GraphQLTypeReference
+        (typeRef as GraphQLTypeReference).name == "A"
 
     }
 

@@ -2,6 +2,7 @@ package graphql.execution;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import graphql.DeprecatedAt;
 import graphql.ExecutionInput;
 import graphql.GraphQLContext;
 import graphql.GraphQLError;
@@ -9,7 +10,6 @@ import graphql.Internal;
 import graphql.PublicApi;
 import graphql.cachecontrol.CacheControl;
 import graphql.collect.ImmutableKit;
-import graphql.collect.ImmutableMapWithNullValues;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationState;
 import graphql.language.Document;
@@ -39,7 +39,7 @@ public class ExecutionContextBuilder {
     Object root;
     Document document;
     OperationDefinition operationDefinition;
-    ImmutableMapWithNullValues<String, Object> variables = ImmutableMapWithNullValues.emptyMap();
+    CoercedVariables coercedVariables = CoercedVariables.emptyVariables();
     ImmutableMap<String, FragmentDefinition> fragmentsByName = ImmutableKit.emptyMap();
     DataLoaderRegistry dataLoaderRegistry;
     CacheControl cacheControl;
@@ -86,7 +86,7 @@ public class ExecutionContextBuilder {
         root = other.getRoot();
         document = other.getDocument();
         operationDefinition = other.getOperationDefinition();
-        variables = ImmutableMapWithNullValues.copyOf(other.getVariables());
+        coercedVariables = other.getCoercedVariables();
         fragmentsByName = ImmutableMap.copyOf(other.getFragmentsByName());
         dataLoaderRegistry = other.getDataLoaderRegistry();
         cacheControl = other.getCacheControl();
@@ -131,6 +131,11 @@ public class ExecutionContextBuilder {
         return this;
     }
 
+    /*
+     * @deprecated use {@link #graphQLContext(GraphQLContext)} instead
+     */
+    @Deprecated
+    @DeprecatedAt("2021-07-05")
     public ExecutionContextBuilder context(Object context) {
         this.context = context;
         return this;
@@ -151,8 +156,21 @@ public class ExecutionContextBuilder {
         return this;
     }
 
+    /**
+     * @param variables map of already coerced variables
+     * @return this builder
+     *
+     * @deprecated use {@link #coercedVariables(CoercedVariables)} instead
+     */
+    @Deprecated
+    @DeprecatedAt("2022-05-24")
     public ExecutionContextBuilder variables(Map<String, Object> variables) {
-        this.variables = ImmutableMapWithNullValues.copyOf(variables);
+        this.coercedVariables = CoercedVariables.of(variables);
+        return this;
+    }
+
+    public ExecutionContextBuilder coercedVariables(CoercedVariables coercedVariables) {
+        this.coercedVariables = coercedVariables;
         return this;
     }
 
@@ -176,6 +194,8 @@ public class ExecutionContextBuilder {
         return this;
     }
 
+    @Deprecated
+    @DeprecatedAt("2022-07-26")
     public ExecutionContextBuilder cacheControl(CacheControl cacheControl) {
         this.cacheControl = cacheControl;
         return this;

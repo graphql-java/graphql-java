@@ -57,9 +57,11 @@ class DataFetcherExceptionHandlerTest extends Specification {
     def "integration test to prove custom error handle can be made"() {
         DataFetcherExceptionHandler handler = new DataFetcherExceptionHandler() {
             @Override
-            DataFetcherExceptionHandlerResult onException(DataFetcherExceptionHandlerParameters handlerParameters) {
+            CompletableFuture<DataFetcherExceptionHandlerResult> handleException(DataFetcherExceptionHandlerParameters handlerParameters) {
                 def msg = "The thing went " + handlerParameters.getException().getMessage()
-                return DataFetcherExceptionHandlerResult.newResult().error(new CustomError(msg, handlerParameters.getSourceLocation())).build()
+                return CompletableFuture.completedFuture(
+                        DataFetcherExceptionHandlerResult.newResult().error(new CustomError(msg, handlerParameters.getSourceLocation())).build()
+                )
             }
         }
 
@@ -74,11 +76,6 @@ class DataFetcherExceptionHandlerTest extends Specification {
 
     def "integration test to prove an async custom error handle can be made"() {
         DataFetcherExceptionHandler handler = new DataFetcherExceptionHandler() {
-            @Override
-            DataFetcherExceptionHandlerResult onException(DataFetcherExceptionHandlerParameters handlerParameters) {
-                return null
-            }
-
             @Override
             CompletableFuture<DataFetcherExceptionHandlerResult> handleException(DataFetcherExceptionHandlerParameters params) {
                 def msg = "The thing went " + params.getException().getMessage()
@@ -99,7 +96,7 @@ class DataFetcherExceptionHandlerTest extends Specification {
     def "if an exception handler itself throws an exception than that is handled"() {
         DataFetcherExceptionHandler handler = new DataFetcherExceptionHandler() {
             @Override
-            DataFetcherExceptionHandlerResult onException(DataFetcherExceptionHandlerParameters handlerParameters) {
+            CompletableFuture<DataFetcherExceptionHandlerResult> handleException(DataFetcherExceptionHandlerParameters handlerParameters) {
                 throw new RuntimeException("The handler itself went BANG!")
             }
         }
@@ -115,11 +112,6 @@ class DataFetcherExceptionHandlerTest extends Specification {
 
     def "if an async exception handler itself throws an exception than that is handled"() {
         DataFetcherExceptionHandler handler = new DataFetcherExceptionHandler() {
-            @Override
-            DataFetcherExceptionHandlerResult onException(DataFetcherExceptionHandlerParameters handlerParameters) {
-                return null
-            }
-
             @Override
             CompletableFuture<DataFetcherExceptionHandlerResult> handleException(DataFetcherExceptionHandlerParameters handlerParameters) {
                 throw new RuntimeException("The handler itself went BANG!")
@@ -138,11 +130,6 @@ class DataFetcherExceptionHandlerTest extends Specification {
 
     def "multiple errors can be returned in a handler"() {
         DataFetcherExceptionHandler handler = new DataFetcherExceptionHandler() {
-            @Override
-            DataFetcherExceptionHandlerResult onException(DataFetcherExceptionHandlerParameters handlerParameters) {
-                return null
-            }
-
             @Override
             CompletableFuture<DataFetcherExceptionHandlerResult> handleException(DataFetcherExceptionHandlerParameters params) {
                 def result = DataFetcherExceptionHandlerResult.newResult()

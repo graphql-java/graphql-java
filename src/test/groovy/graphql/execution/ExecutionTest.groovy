@@ -99,7 +99,7 @@ class ExecutionTest extends Specification {
         subscriptionStrategy.execute == 1
     }
 	
-	def "Update query strategy when instrumenting exection context" (){
+	def "Update query strategy when instrumenting execution context" (){
 		given:
 		def query = '''
             query {
@@ -114,12 +114,13 @@ class ExecutionTest extends Specification {
 		def instrumentation = new SimpleInstrumentation() {
 
 			@Override
-			public ExecutionContext instrumentExecutionContext(ExecutionContext executionContext,
-					InstrumentationExecutionParameters parameters) {
+            ExecutionContext instrumentExecutionContext(ExecutionContext executionContext,
+                                                        InstrumentationExecutionParameters parameters,
+                                                        InstrumentationState state) {
 					
 					return ExecutionContextBuilder.newExecutionContextBuilder(executionContext)
 					.queryStrategy(queryStrategyUpdatedToDuringExecutionContextInstrument)
-					.build();
+					.build()
 			}
 		}
 

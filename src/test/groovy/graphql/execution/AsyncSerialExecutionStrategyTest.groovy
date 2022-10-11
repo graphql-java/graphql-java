@@ -1,11 +1,13 @@
 package graphql.execution
 
-
+import graphql.GraphQLContext
 import graphql.execution.instrumentation.SimpleInstrumentation
 import graphql.language.Field
 import graphql.language.OperationDefinition
 import graphql.parser.Parser
 import graphql.schema.DataFetcher
+import graphql.schema.FieldCoordinates
+import graphql.schema.GraphQLCodeRegistry
 import graphql.schema.GraphQLFieldDefinition
 import graphql.schema.GraphQLSchema
 import spock.lang.Specification
@@ -23,27 +25,42 @@ import static graphql.schema.GraphQLSchema.newSchema
 
 class AsyncSerialExecutionStrategyTest extends Specification {
     GraphQLSchema schema(DataFetcher dataFetcher1, DataFetcher dataFetcher2, DataFetcher dataFetcher3) {
-        GraphQLFieldDefinition.Builder fieldDefinition = newFieldDefinition()
-                .name("hello")
-                .type(GraphQLString)
-                .dataFetcher(dataFetcher1)
-        GraphQLFieldDefinition.Builder fieldDefinition2 = newFieldDefinition()
-                .name("hello2")
-                .type(GraphQLString)
-                .dataFetcher(dataFetcher2)
-        GraphQLFieldDefinition.Builder fieldDefinition3 = newFieldDefinition()
-                .name("hello3")
-                .type(GraphQLString)
-                .dataFetcher(dataFetcher3)
+        def queryName = "RootQueryType"
+        def field1Name = "hello"
+        def field2Name = "hello2"
+        def field3Name = "hello3"
 
-        GraphQLSchema schema = newSchema().query(
-                newObject()
-                        .name("RootQueryType")
-                        .field(fieldDefinition)
+        GraphQLFieldDefinition.Builder fieldDefinition1 = newFieldDefinition()
+                .name(field1Name)
+                .type(GraphQLString)
+        GraphQLFieldDefinition.Builder fieldDefinition2 = newFieldDefinition()
+                .name(field2Name)
+                .type(GraphQLString)
+        GraphQLFieldDefinition.Builder fieldDefinition3 = newFieldDefinition()
+                .name(field3Name)
+                .type(GraphQLString)
+
+        def field1Coordinates = FieldCoordinates.coordinates(queryName, field1Name)
+        def field2Coordinates = FieldCoordinates.coordinates(queryName, field2Name)
+        def field3Coordinates = FieldCoordinates.coordinates(queryName, field3Name)
+
+        GraphQLCodeRegistry codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+                .dataFetcher(field1Coordinates, dataFetcher1)
+                .dataFetcher(field2Coordinates, dataFetcher2)
+                .dataFetcher(field3Coordinates, dataFetcher3)
+                .build()
+
+        GraphQLSchema schema = newSchema()
+                .codeRegistry(codeRegistry)
+                .query(newObject()
+                        .name(queryName)
+                        .field(fieldDefinition1)
                         .field(fieldDefinition2)
                         .field(fieldDefinition3)
                         .build()
-        ).build()
+                )
+                .build()
+
         schema
     }
 
@@ -86,6 +103,8 @@ class AsyncSerialExecutionStrategyTest extends Specification {
                 .operationDefinition(operation)
                 .instrumentation(SimpleInstrumentation.INSTANCE)
                 .valueUnboxer(ValueUnboxer.DEFAULT)
+                .locale(Locale.getDefault())
+                .graphQLContext(GraphQLContext.getDefault())
                 .build()
         ExecutionStrategyParameters executionStrategyParameters = ExecutionStrategyParameters
                 .newParameters()
@@ -130,6 +149,8 @@ class AsyncSerialExecutionStrategyTest extends Specification {
                 .operationDefinition(operation)
                 .instrumentation(SimpleInstrumentation.INSTANCE)
                 .valueUnboxer(ValueUnboxer.DEFAULT)
+                .locale(Locale.getDefault())
+                .graphQLContext(GraphQLContext.getDefault())
                 .build()
         ExecutionStrategyParameters executionStrategyParameters = ExecutionStrategyParameters
                 .newParameters()

@@ -3,6 +3,7 @@ package graphql.schema;
 import com.google.common.collect.LinkedHashMultimap;
 import com.google.common.collect.Multimap;
 import graphql.PublicApi;
+import graphql.collect.ImmutableKit;
 import graphql.util.Breadcrumb;
 import graphql.util.NodeAdapter;
 import graphql.util.NodeLocation;
@@ -14,7 +15,6 @@ import graphql.util.TraverserVisitor;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -63,7 +63,7 @@ import static java.lang.String.format;
  * <p>
  * To insert elements use either {@link GraphQLTypeVisitor#insertAfter(TraverserContext, GraphQLSchemaElement)} or
  * {@link GraphQLTypeVisitor#insertBefore(TraverserContext, GraphQLSchemaElement)}
- * which will insert the new node before or afgter the current node being visited
+ * which will insert the new node before or after the current node being visited
  * <pre>
  * {@code
  *  public TraversalControl visitGraphQLObjectType(GraphQLObjectType objectType, TraverserContext<GraphQLSchemaElement> context) {
@@ -504,7 +504,7 @@ public class SchemaTransformer {
         if (oldBreadcrumbs.size() > 1) {
             newBreadcrumbs = oldBreadcrumbs.subList(1, oldBreadcrumbs.size());
         } else {
-            newBreadcrumbs = Collections.emptyList();
+            newBreadcrumbs = ImmutableKit.emptyList();
         }
         return new NodeZipper<>(newNode, newBreadcrumbs, SCHEMA_ELEMENT_ADAPTER);
     }
@@ -528,6 +528,7 @@ public class SchemaTransformer {
         static final String ADD_TYPES = "addTypes";
         static final String DIRECTIVES = "directives";
         static final String SCHEMA_DIRECTIVES = "schemaDirectives";
+        static final String SCHEMA_APPLIED_DIRECTIVES = "schemaAppliedDirectives";
         static final String INTROSPECTION = "introspection";
         static final String SCHEMA_ELEMENT = "schemaElement";
 
@@ -539,6 +540,7 @@ public class SchemaTransformer {
         Set<GraphQLType> additionalTypes;
         Set<GraphQLDirective> directives;
         Set<GraphQLDirective> schemaDirectives;
+        Set<GraphQLAppliedDirective> schemaAppliedDirectives;
         GraphQLSchemaElement schemaElement;
 
         DummyRoot(GraphQLSchema schema) {
@@ -548,6 +550,7 @@ public class SchemaTransformer {
             subscription = schema.isSupportingSubscriptions() ? schema.getSubscriptionType() : null;
             additionalTypes = schema.getAdditionalTypes();
             schemaDirectives = new LinkedHashSet<>(schema.getSchemaDirectives());
+            schemaAppliedDirectives = new LinkedHashSet<>(schema.getSchemaAppliedDirectives());
             directives = new LinkedHashSet<>(schema.getDirectives());
             introspectionSchemaType = schema.getIntrospectionSchemaType();
         }
@@ -582,6 +585,7 @@ public class SchemaTransformer {
                 builder.children(ADD_TYPES, additionalTypes);
                 builder.children(DIRECTIVES, directives);
                 builder.children(SCHEMA_DIRECTIVES, schemaDirectives);
+                builder.children(SCHEMA_APPLIED_DIRECTIVES, schemaAppliedDirectives);
                 builder.child(INTROSPECTION, introspectionSchemaType);
             }
             return builder.build();
@@ -601,6 +605,7 @@ public class SchemaTransformer {
             additionalTypes = new LinkedHashSet<>(newChildren.getChildren(ADD_TYPES));
             directives = new LinkedHashSet<>(newChildren.getChildren(DIRECTIVES));
             schemaDirectives = new LinkedHashSet<>(newChildren.getChildren(SCHEMA_DIRECTIVES));
+            schemaAppliedDirectives = new LinkedHashSet<>(newChildren.getChildren(SCHEMA_APPLIED_DIRECTIVES));
             return this;
         }
 
@@ -618,6 +623,7 @@ public class SchemaTransformer {
                     .additionalDirectives(this.directives)
                     .introspectionSchemaType(this.introspectionSchemaType)
                     .withSchemaDirectives(this.schemaDirectives)
+                    .withSchemaAppliedDirectives(this.schemaAppliedDirectives)
                     .codeRegistry(codeRegistry.build())
                     .description(schema.getDescription())
                     .build();

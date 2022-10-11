@@ -1,6 +1,5 @@
 package graphql
 
-import graphql.cachecontrol.CacheControl
 import graphql.execution.ExecutionId
 import graphql.schema.DataFetcher
 import graphql.schema.DataFetchingEnvironment
@@ -13,30 +12,25 @@ class ExecutionInputTest extends Specification {
 
     def query = "query { hello }"
     def registry = new DataLoaderRegistry()
-    def cacheControl = CacheControl.newCacheControl()
     def root = "root"
-    def context = "context"
     def variables = [key: "value"]
 
     def "build works"() {
         when:
         def executionInput = ExecutionInput.newExecutionInput().query(query)
                 .dataLoaderRegistry(registry)
-                .cacheControl(cacheControl)
                 .variables(variables)
                 .root(root)
-                .context(context)
                 .graphQLContext({ it.of(["a": "b"]) })
                 .locale(Locale.GERMAN)
                 .extensions([some: "map"])
                 .build()
         then:
-        executionInput.context == context
         executionInput.graphQLContext.get("a") == "b"
         executionInput.root == root
         executionInput.variables == variables
+        executionInput.rawVariables.toMap() == variables
         executionInput.dataLoaderRegistry == registry
-        executionInput.cacheControl == cacheControl
         executionInput.query == query
         executionInput.locale == Locale.GERMAN
         executionInput.extensions == [some: "map"]
@@ -52,28 +46,30 @@ class ExecutionInputTest extends Specification {
     }
 
     def "legacy context methods work"() {
+        // Retaining deprecated method tests for coverage
         when:
         def executionInput = ExecutionInput.newExecutionInput().query(query)
-                .context({ builder -> builder.of("k1", "v1") } as UnaryOperator)
+                .context({ builder -> builder.of("k1", "v1") } as UnaryOperator) // Retain deprecated for test coverage
                 .build()
         then:
-        (executionInput.context as GraphQLContext).get("k1") == "v1"
+        (executionInput.context as GraphQLContext).get("k1") == "v1" // Retain deprecated for test coverage
 
         when:
         executionInput = ExecutionInput.newExecutionInput().query(query)
-                .context(GraphQLContext.newContext().of("k2", "v2"))
+                .context(GraphQLContext.newContext().of("k2", "v2")) // Retain deprecated for test coverage
                 .build()
         then:
-        (executionInput.context as GraphQLContext).get("k2") == "v2"
+        (executionInput.context as GraphQLContext).get("k2") == "v2" // Retain deprecated for test coverage
     }
 
     def "legacy context is defaulted"() {
+        // Retaining deprecated method tests for coverage
         when:
         def executionInput = ExecutionInput.newExecutionInput().query(query)
                 .build()
         then:
-        executionInput.context instanceof GraphQLContext
-        executionInput.getGraphQLContext() == executionInput.getContext()
+        executionInput.context instanceof GraphQLContext // Retain deprecated for test coverage
+        executionInput.getGraphQLContext() == executionInput.getContext() // Retain deprecated for test coverage
     }
 
     def "graphql context is defaulted"() {
@@ -84,15 +80,21 @@ class ExecutionInputTest extends Specification {
         executionInput.graphQLContext instanceof GraphQLContext
     }
 
+    def "locale defaults to JVM default"() {
+        when:
+        def executionInput = ExecutionInput.newExecutionInput().query(query)
+                .build()
+        then:
+        executionInput.getLocale() == Locale.getDefault()
+    }
+
     def "transform works and copies values"() {
         when:
         def executionInputOld = ExecutionInput.newExecutionInput().query(query)
                 .dataLoaderRegistry(registry)
-                .cacheControl(cacheControl)
                 .variables(variables)
                 .extensions([some: "map"])
                 .root(root)
-                .context(context)
                 .graphQLContext({ it.of(["a": "b"]) })
                 .locale(Locale.GERMAN)
                 .build()
@@ -100,12 +102,34 @@ class ExecutionInputTest extends Specification {
         def executionInput = executionInputOld.transform({ bldg -> bldg.query("new query") })
 
         then:
-        executionInput.context == context
         executionInput.graphQLContext == graphQLContext
         executionInput.root == root
         executionInput.variables == variables
         executionInput.dataLoaderRegistry == registry
-        executionInput.cacheControl == cacheControl
+        executionInput.locale == Locale.GERMAN
+        executionInput.extensions == [some: "map"]
+        executionInput.query == "new query"
+    }
+
+    def "transform works and sets variables"() {
+        when:
+        def executionInputOld = ExecutionInput.newExecutionInput().query(query)
+                .dataLoaderRegistry(registry)
+                .extensions([some: "map"])
+                .root(root)
+                .graphQLContext({ it.of(["a": "b"]) })
+                .locale(Locale.GERMAN)
+                .build()
+        def graphQLContext = executionInputOld.getGraphQLContext()
+        def executionInput = executionInputOld.transform({ bldg -> bldg
+                .query("new query")
+                .variables(variables) })
+
+        then:
+        executionInput.graphQLContext == graphQLContext
+        executionInput.root == root
+        executionInput.rawVariables.toMap() == variables
+        executionInput.dataLoaderRegistry == registry
         executionInput.locale == Locale.GERMAN
         executionInput.extensions == [some: "map"]
         executionInput.query == "new query"
@@ -113,11 +137,12 @@ class ExecutionInputTest extends Specification {
 
     def "defaults query into builder as expected"() {
         when:
-        def executionInput = ExecutionInput.newExecutionInput("{ q }").build()
+        def executionInput = ExecutionInput.newExecutionInput("{ q }")
+                .locale(Locale.ENGLISH)
+                .build()
         then:
         executionInput.query == "{ q }"
-        executionInput.cacheControl != null
-        executionInput.locale == null
+        executionInput.locale == Locale.ENGLISH
         executionInput.dataLoaderRegistry != null
         executionInput.variables == [:]
     }
@@ -131,8 +156,7 @@ class ExecutionInputTest extends Specification {
         '''
         DataFetcher df = { DataFetchingEnvironment env ->
             return [
-                    "locale"        : env.getLocale().getDisplayName(),
-                    "cacheControl"  : env.getCacheControl() == cacheControl,
+                    "locale"        : env.getLocale().getDisplayName(Locale.ENGLISH),
                     "executionId"   : env.getExecutionId().toString(),
                     "graphqlContext": env.getGraphQlContext().get("a")
 
@@ -145,7 +169,6 @@ class ExecutionInputTest extends Specification {
         ExecutionInput executionInput = ExecutionInput.newExecutionInput()
                 .query("{ fetch }")
                 .locale(Locale.GERMAN)
-                .cacheControl(cacheControl)
                 .executionId(ExecutionId.from("ID123"))
                 .build()
         executionInput.getGraphQLContext().putAll([a: "b"])
@@ -154,6 +177,6 @@ class ExecutionInputTest extends Specification {
 
         then:
         er.errors.isEmpty()
-        er.data["fetch"] == "{locale=German, cacheControl=true, executionId=ID123, graphqlContext=b}"
+        er.data["fetch"] == "{locale=German, executionId=ID123, graphqlContext=b}"
     }
 }

@@ -18,6 +18,7 @@ import graphql.language.OperationDefinition;
 import graphql.language.VariableDefinition;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
+import graphql.schema.impl.SchemaUtil;
 import graphql.util.LogKit;
 import org.slf4j.Logger;
 
@@ -26,13 +27,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
-import static graphql.Assert.assertShouldNeverHappen;
 import static graphql.execution.ExecutionContextBuilder.newExecutionContextBuilder;
 import static graphql.execution.ExecutionStepInfo.newExecutionStepInfo;
 import static graphql.execution.ExecutionStrategyParameters.newParameters;
-import static graphql.language.OperationDefinition.Operation.MUTATION;
-import static graphql.language.OperationDefinition.Operation.QUERY;
-import static graphql.language.OperationDefinition.Operation.SUBSCRIPTION;
+import static graphql.execution.instrumentation.SimpleInstrumentationContext.nonNullCtx;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 
 @Internal
@@ -40,7 +38,6 @@ public class Execution {
     private static final Logger logNotSafe = LogKit.getNotPrivacySafeLogger(Execution.class);
 
     private final FieldCollector fieldCollector = new FieldCollector();
-    private final ValuesResolver valuesResolver = new ValuesResolver();
     private final ExecutionStrategy queryStrategy;
     private final ExecutionStrategy mutationStrategy;
     private final ExecutionStrategy subscriptionStrategy;
@@ -61,12 +58,12 @@ public class Execution {
         Map<String, FragmentDefinition> fragmentsByName = getOperationResult.fragmentsByName;
         OperationDefinition operationDefinition = getOperationResult.operationDefinition;
 
-        Map<String, Object> inputVariables = executionInput.getVariables();
+        RawVariables inputVariables = executionInput.getRawVariables();
         List<VariableDefinition> variableDefinitions = operationDefinition.getVariableDefinitions();
 
-        Map<String, Object> coercedVariables;
+        CoercedVariables coercedVariables;
         try {
-            coercedVariables = valuesResolver.coerceVariableValues(graphQLSchema, variableDefinitions, inputVariables);
+            coercedVariables = ValuesResolver.coerceVariableValues(graphQLSchema, variableDefinitions, inputVariables, executionInput.getGraphQLContext(), executionInput.getLocale());
         } catch (RuntimeException rte) {
             if (rte instanceof GraphQLError) {
                 return completedFuture(new ExecutionResultImpl((GraphQLError) rte));
@@ -87,7 +84,7 @@ public class Execution {
                 .localContext(executionInput.getLocalContext())
                 .root(executionInput.getRoot())
                 .fragmentsByName(fragmentsByName)
-                .variables(coercedVariables)
+                .coercedVariables(coercedVariables)
                 .document(document)
                 .operationDefinition(operationDefinition)
                 .dataLoaderRegistry(executionInput.getDataLoaderRegistry())
@@ -101,7 +98,7 @@ public class Execution {
         InstrumentationExecutionParameters parameters = new InstrumentationExecutionParameters(
                 executionInput, graphQLSchema, instrumentationState
         );
-        executionContext = instrumentation.instrumentExecutionContext(executionContext, parameters);
+        executionContext = instrumentation.instrumentExecutionContext(executionContext, parameters, instrumentationState);
         return executeOperation(executionContext, executionInput.getRoot(), executionContext.getOperationDefinition());
     }
 
@@ -109,13 +106,13 @@ public class Execution {
     private CompletableFuture<ExecutionResult> executeOperation(ExecutionContext executionContext, Object root, OperationDefinition operationDefinition) {
 
         InstrumentationExecuteOperationParameters instrumentationParams = new InstrumentationExecuteOperationParameters(executionContext);
-        InstrumentationContext<ExecutionResult> executeOperationCtx = instrumentation.beginExecuteOperation(instrumentationParams);
+        InstrumentationContext<ExecutionResult> executeOperationCtx = nonNullCtx(instrumentation.beginExecuteOperation(instrumentationParams, executionContext.getInstrumentationState()));
 
         OperationDefinition.Operation operation = operationDefinition.getOperation();
         GraphQLObjectType operationRootType;
 
         try {
-            operationRootType = getOperationRootType(executionContext.getGraphQLSchema(), operationDefinition);
+            operationRootType = SchemaUtil.getOperationRootType(executionContext.getGraphQLSchema(), operationDefinition);
         } catch (RuntimeException rte) {
             if (rte instanceof GraphQLError) {
                 ExecutionResult executionResult = new ExecutionResultImpl(Collections.singletonList((GraphQLError) rte));
@@ -174,31 +171,5 @@ public class Execution {
         result = result.whenComplete(executeOperationCtx::onCompleted);
 
         return result;
-    }
-
-
-    private GraphQLObjectType getOperationRootType(GraphQLSchema graphQLSchema, OperationDefinition operationDefinition) {
-        OperationDefinition.Operation operation = operationDefinition.getOperation();
-        if (operation == MUTATION) {
-            GraphQLObjectType mutationType = graphQLSchema.getMutationType();
-            if (mutationType == null) {
-                throw new MissingRootTypeException("Schema is not configured for mutations.", operationDefinition.getSourceLocation());
-            }
-            return mutationType;
-        } else if (operation == QUERY) {
-            GraphQLObjectType queryType = graphQLSchema.getQueryType();
-            if (queryType == null) {
-                throw new MissingRootTypeException("Schema does not define the required query root type.", operationDefinition.getSourceLocation());
-            }
-            return queryType;
-        } else if (operation == SUBSCRIPTION) {
-            GraphQLObjectType subscriptionType = graphQLSchema.getSubscriptionType();
-            if (subscriptionType == null) {
-                throw new MissingRootTypeException("Schema is not configured for subscriptions.", operationDefinition.getSourceLocation());
-            }
-            return subscriptionType;
-        } else {
-            return assertShouldNeverHappen("Unhandled case.  An extra operation enum has been added without code support");
-        }
     }
 }

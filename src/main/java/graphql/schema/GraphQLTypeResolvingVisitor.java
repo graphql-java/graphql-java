@@ -60,8 +60,8 @@ public class GraphQLTypeResolvingVisitor extends GraphQLTypeVisitorStub {
         return CONTINUE;
     }
 
-    private class TypeRefResolvingVisitor extends GraphQLTypeVisitorStub {
-        protected final GraphQLType resolvedType;
+    private static final class TypeRefResolvingVisitor extends GraphQLTypeVisitorStub {
+        private final GraphQLType resolvedType;
 
         TypeRefResolvingVisitor(GraphQLType resolvedType) {
             this.resolvedType = resolvedType;
@@ -77,6 +77,12 @@ public class GraphQLTypeResolvingVisitor extends GraphQLTypeVisitorStub {
         public TraversalControl visitGraphQLArgument(GraphQLArgument node, TraverserContext<GraphQLSchemaElement> context) {
             node.replaceType((GraphQLInputType) resolvedType);
             return super.visitGraphQLArgument(node, context);
+        }
+
+        @Override
+        public TraversalControl visitGraphQLAppliedDirectiveArgument(GraphQLAppliedDirectiveArgument node, TraverserContext<GraphQLSchemaElement> context) {
+            node.replaceType((GraphQLInputType) resolvedType);
+            return super.visitGraphQLAppliedDirectiveArgument(node, context);
         }
 
         @Override

@@ -1,5 +1,9 @@
 package graphql.schema
 
+import graphql.GraphQLContext
+import graphql.StarWarsSchema
+import graphql.language.ObjectValue
+import graphql.validation.ValidationUtil
 import spock.lang.Specification
 
 import static graphql.Scalars.GraphQLBoolean
@@ -7,6 +11,7 @@ import static graphql.Scalars.GraphQLInt
 import static graphql.Scalars.GraphQLString
 import static graphql.schema.GraphQLInputObjectField.newInputObjectField
 import static graphql.schema.GraphQLInputObjectType.newInputObject
+import static graphql.schema.GraphQLNonNull.nonNull
 
 class GraphQLInputObjectTypeTest extends Specification {
 
@@ -54,4 +59,24 @@ class GraphQLInputObjectTypeTest extends Specification {
         transformedInputType.getFieldDefinition("Str").getType() == GraphQLBoolean
     }
 
+    def "deprecated default value builder works"() {
+        given:
+        def graphQLContext = GraphQLContext.getDefault()
+        def schema = GraphQLSchema.newSchema()
+                .query(StarWarsSchema.queryType)
+                .codeRegistry(StarWarsSchema.codeRegistry)
+                .build()
+        def validationUtil = new ValidationUtil()
+        def inputObjectType = GraphQLInputObjectType.newInputObject()
+                .name("inputObjectType")
+                .field(GraphQLInputObjectField.newInputObjectField()
+                        .name("hello")
+                        .type(nonNull(GraphQLString))
+                        .defaultValue("default")) // Retain deprecated builder for test coverage
+                .build()
+        def objectValue = ObjectValue.newObjectValue()
+
+        expect:
+        validationUtil.isValidLiteralValue(objectValue.build(), inputObjectType, schema, graphQLContext, Locale.ENGLISH)
+    }
 }

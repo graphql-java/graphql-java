@@ -10,11 +10,12 @@ import graphql.execution.ExecutionContext
 import graphql.execution.ExecutionStrategyParameters
 import graphql.execution.instrumentation.ChainedInstrumentation
 import graphql.execution.instrumentation.Instrumentation
+import graphql.execution.instrumentation.InstrumentationState
 import graphql.execution.instrumentation.SimpleInstrumentation
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters
 import graphql.schema.DataFetcher
 import org.dataloader.BatchLoader
-import org.dataloader.DataLoader
+import org.dataloader.DataLoaderFactory
 import org.dataloader.DataLoaderRegistry
 import spock.lang.Specification
 import spock.lang.Unroll
@@ -38,7 +39,6 @@ class DataLoaderDispatcherInstrumentationTest extends Specification {
             return super.execute(executionContext, parameters)
         }
     }
-
 
     def query = """
         query {
@@ -79,7 +79,7 @@ class DataLoaderDispatcherInstrumentationTest extends Specification {
         chainedInstrumentation.instrumentations.any { instr -> instr instanceof DataLoaderDispatcherInstrumentation }
     }
 
-    def "dispatch is never called if not data loader registry is set in"() {
+    def "dispatch is never called if data loader registry is not set"() {
         def dataLoaderRegistry = new DataLoaderRegistry() {
             @Override
             void dispatchAll() {
@@ -104,7 +104,7 @@ class DataLoaderDispatcherInstrumentationTest extends Specification {
                 super.dispatchAll()
             }
         }
-        def dataLoader = DataLoader.newDataLoader(new BatchLoader() {
+        def dataLoader = DataLoaderFactory.newDataLoader(new BatchLoader() {
             @Override
             CompletionStage<List> load(List keys) {
                 return CompletableFuture.completedFuture(keys)
@@ -127,13 +127,13 @@ class DataLoaderDispatcherInstrumentationTest extends Specification {
         def starWarsWiring = new StarWarsDataLoaderWiring()
 
 
-        DataLoaderRegistry startingDataLoaderRegistry = new DataLoaderRegistry();
+        DataLoaderRegistry startingDataLoaderRegistry = new DataLoaderRegistry()
         def enhancedDataLoaderRegistry = starWarsWiring.newDataLoaderRegistry()
 
         def dlInstrumentation = new DataLoaderDispatcherInstrumentation()
         def enhancingInstrumentation = new SimpleInstrumentation() {
             @Override
-            ExecutionInput instrumentExecutionInput(ExecutionInput executionInput, InstrumentationExecutionParameters parameters) {
+            ExecutionInput instrumentExecutionInput(ExecutionInput executionInput, InstrumentationExecutionParameters parameters, InstrumentationState state) {
                 assert executionInput.getDataLoaderRegistry() == startingDataLoaderRegistry
                 return executionInput.transform({ builder -> builder.dataLoaderRegistry(enhancedDataLoaderRegistry) })
             }
@@ -274,7 +274,7 @@ class DataLoaderDispatcherInstrumentationTest extends Specification {
         BatchLoader batchLoader = { keys -> CompletableFuture.completedFuture(keys) }
 
         DataFetcher df = { env ->
-            def dataLoader = env.getDataLoaderRegistry().computeIfAbsent("key", { key -> DataLoader.newDataLoader(batchLoader) })
+            def dataLoader = env.getDataLoaderRegistry().computeIfAbsent("key", { key -> DataLoaderFactory.newDataLoader(batchLoader) })
 
             return dataLoader.load("working as expected")
         }
@@ -293,5 +293,31 @@ class DataLoaderDispatcherInstrumentationTest extends Specification {
         then:
         er.errors.isEmpty()
         er.data["field"] == "working as expected"
+    }
+
+    def "handles deep async queries when a data loader registry is present"() {
+        given:
+        def support = new DeepDataFetchers()
+        def dummyDataloaderRegistry = new DataLoaderRegistry()
+        def batchingInstrumentation = new DataLoaderDispatcherInstrumentation()
+        def graphql = GraphQL.newGraphQL(support.schema())
+                .instrumentation(batchingInstrumentation)
+                .build()
+        // FieldLevelTrackingApproach uses LevelMaps with a default size of 16.
+        // Use a value greater than 16 to ensure that the underlying LevelMaps are resized
+        // as expected
+        def depth = 50
+
+        when:
+        def asyncResult = graphql.executeAsync(
+                newExecutionInput()
+                        .query(support.buildQuery(depth))
+                        .dataLoaderRegistry(dummyDataloaderRegistry)
+        )
+        def er = asyncResult.join()
+
+        then:
+        er.errors.isEmpty()
+        er.data == support.buildResponse(depth)
     }
 }

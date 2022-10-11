@@ -1,6 +1,7 @@
 package graphql.validation;
 
 
+import graphql.DeprecatedAt;
 import graphql.ErrorType;
 import graphql.GraphQLError;
 import graphql.GraphqlErrorHelper;
@@ -22,11 +23,15 @@ public class ValidationError implements GraphQLError {
     private final List<String> queryPath;
     private final Map<String, Object> extensions;
 
+    @Deprecated
+    @DeprecatedAt("2022-07-10")
     public ValidationError(ValidationErrorClassification validationErrorType) {
         this(newValidationError()
                 .validationErrorType(validationErrorType));
     }
 
+    @Deprecated
+    @DeprecatedAt("2022-07-10")
     public ValidationError(ValidationErrorClassification validationErrorType, SourceLocation sourceLocation, String description) {
         this(newValidationError()
                 .validationErrorType(validationErrorType)
@@ -34,6 +39,8 @@ public class ValidationError implements GraphQLError {
                 .description(description));
     }
 
+    @Deprecated
+    @DeprecatedAt("2022-07-10")
     public ValidationError(ValidationErrorType validationErrorType, SourceLocation sourceLocation, String description, List<String> queryPath) {
         this(newValidationError()
                 .validationErrorType(validationErrorType)
@@ -42,6 +49,8 @@ public class ValidationError implements GraphQLError {
                 .queryPath(queryPath));
     }
 
+    @Deprecated
+    @DeprecatedAt("2022-07-10")
     public ValidationError(ValidationErrorType validationErrorType, List<SourceLocation> sourceLocations, String description) {
         this(newValidationError()
                 .validationErrorType(validationErrorType)
@@ -49,6 +58,8 @@ public class ValidationError implements GraphQLError {
                 .description(description));
     }
 
+    @Deprecated
+    @DeprecatedAt("2022-07-10")
     public ValidationError(ValidationErrorType validationErrorType, List<SourceLocation> sourceLocations, String description, List<String> queryPath) {
         this(newValidationError()
                 .validationErrorType(validationErrorType)
@@ -63,20 +74,9 @@ public class ValidationError implements GraphQLError {
             this.locations.addAll(builder.sourceLocations);
         }
         this.description = builder.description;
-        this.message = mkMessage(builder.validationErrorType, builder.description, builder.queryPath);
+        this.message = builder.description;
         this.queryPath = builder.queryPath;
         this.extensions = builder.extensions;
-    }
-
-    private String mkMessage(ValidationErrorClassification validationErrorType, String description, List<String> queryPath) {
-        return String.format("Validation error of type %s: %s%s", validationErrorType, description, toPath(queryPath));
-    }
-
-    private String toPath(List<String> queryPath) {
-        if (queryPath == null) {
-            return "";
-        }
-        return String.format(" @ '%s'", String.join("/", queryPath));
     }
 
     public ValidationErrorClassification getValidationErrorType() {

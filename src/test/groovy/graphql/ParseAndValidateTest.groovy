@@ -3,7 +3,10 @@ package graphql
 import graphql.parser.InvalidSyntaxException
 import graphql.validation.ValidationError
 import graphql.validation.ValidationErrorType
+import graphql.validation.rules.NoUnusedFragments
 import spock.lang.Specification
+
+import java.util.function.Predicate
 
 /**
  * We trust that other unit tests of the parser and validation catch ALL of the combinations.  These tests
@@ -45,7 +48,7 @@ class ParseAndValidateTest extends Specification {
         def result = ParseAndValidate.parse(input)
 
         when:
-        def errors = ParseAndValidate.validate(StarWarsSchema.starWarsSchema, result.getDocument())
+        def errors = ParseAndValidate.validate(StarWarsSchema.starWarsSchema, result.getDocument(), input.getLocale())
 
         then:
         errors.isEmpty()
@@ -57,11 +60,11 @@ class ParseAndValidateTest extends Specification {
         def result = ParseAndValidate.parse(input)
 
         when:
-        def errors = ParseAndValidate.validate(StarWarsSchema.starWarsSchema, result.getDocument())
+        def errors = ParseAndValidate.validate(StarWarsSchema.starWarsSchema, result.getDocument(), input.getLocale())
 
         then:
         !errors.isEmpty()
-        errors[0].validationErrorType == ValidationErrorType.SubSelectionRequired
+        errors[0].validationErrorType == ValidationErrorType.SubselectionRequired
     }
 
     def "can combine parse and validation on valid input"() {
@@ -91,7 +94,7 @@ class ParseAndValidateTest extends Specification {
         result.variables == [var1: 1]
         result.syntaxException == null
 
-        (result.errors[0] as ValidationError).validationErrorType == ValidationErrorType.SubSelectionRequired
+        (result.errors[0] as ValidationError).validationErrorType == ValidationErrorType.SubselectionRequired
     }
 
     def "can shortcut on parse and validation on INVALID syntax"() {
@@ -108,5 +111,48 @@ class ParseAndValidateTest extends Specification {
         result.syntaxException != null
 
         (result.errors[0] as InvalidSyntaxError).message.contains("Invalid Syntax")
+    }
+
+    def "can use the graphql context to stop certain validation rules"() {
+
+        def sdl = '''type Query { foo : ID } '''
+        def graphQL = TestUtil.graphQL(sdl).build()
+
+        Predicate<Class<?>> predicate = new Predicate<Class<?>>() {
+            @Override
+            boolean test(Class<?> aClass) {
+                if (aClass == NoUnusedFragments.class) {
+                    return false
+                }
+                return true
+            }
+        }
+
+        def query = '''
+            query { foo }
+            
+            fragment UnusedFrag on Query {
+                foo
+            }
+        '''
+
+        when:
+        def ei = ExecutionInput.newExecutionInput(query)
+                .graphQLContext(["graphql.ParseAndValidate.Predicate": predicate])
+                .build()
+        def rs = graphQL.execute(ei)
+
+        then:
+        rs.errors.isEmpty() // we skipped a rule
+
+        when:
+        predicate = { it -> true }
+        ei = ExecutionInput.newExecutionInput(query)
+                .graphQLContext(["graphql.ParseAndValidate.Predicate": predicate])
+                .build()
+        rs = graphQL.execute(ei)
+
+        then:
+        !rs.errors.isEmpty() // all rules apply - we have errors
     }
 }

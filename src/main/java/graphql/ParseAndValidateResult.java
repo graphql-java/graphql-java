@@ -1,12 +1,12 @@
 package graphql;
 
+import graphql.collect.ImmutableKit;
 import graphql.execution.instrumentation.DocumentAndVariables;
 import graphql.language.Document;
 import graphql.parser.InvalidSyntaxException;
 import graphql.validation.ValidationError;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -25,9 +25,9 @@ public class ParseAndValidateResult {
 
     private ParseAndValidateResult(Builder builder) {
         this.document = builder.document;
-        this.variables = builder.variables == null ? Collections.emptyMap() : builder.variables;
+        this.variables = builder.variables == null ? ImmutableKit.emptyMap() : builder.variables;
         this.syntaxException = builder.syntaxException;
-        this.validationErrors = builder.validationErrors == null ? Collections.emptyList() : builder.validationErrors;
+        this.validationErrors = builder.validationErrors == null ? ImmutableKit.emptyList() : builder.validationErrors;
     }
 
     /**
@@ -38,21 +38,21 @@ public class ParseAndValidateResult {
     }
 
     /**
-     * @return the parsed document or null if its syntactically invalid.
+     * @return the parsed document or null if it's syntactically invalid.
      */
     public Document getDocument() {
         return document;
     }
 
     /**
-     * @return the document variables or null if its syntactically invalid.
+     * @return the document variables or null if it's syntactically invalid.
      */
     public Map<String, Object> getVariables() {
         return variables;
     }
 
     /**
-     * @return the parsed document and variables or null if its syntactically invalid.
+     * @return the parsed document and variables or null if it's syntactically invalid.
      */
     public DocumentAndVariables getDocumentAndVariables() {
         if (document != null) {
@@ -62,14 +62,14 @@ public class ParseAndValidateResult {
     }
 
     /**
-     * @return the syntax exception or null if its syntactically valid.
+     * @return the syntax exception or null if it's syntactically valid.
      */
     public InvalidSyntaxException getSyntaxException() {
         return syntaxException;
     }
 
     /**
-     * @return a list of validation errors, which might be empty if its syntactically invalid.
+     * @return a list of validation errors, which might be empty if it's syntactically invalid.
      */
     public List<ValidationError> getValidationErrors() {
         return validationErrors;
@@ -102,9 +102,9 @@ public class ParseAndValidateResult {
 
     public static class Builder {
         private Document document;
-        private Map<String, Object> variables = Collections.emptyMap();
+        private Map<String, Object> variables = ImmutableKit.emptyMap();
         private InvalidSyntaxException syntaxException;
-        private List<ValidationError> validationErrors = Collections.emptyList();
+        private List<ValidationError> validationErrors = ImmutableKit.emptyList();
 
         public Builder document(Document document) {
             this.document = document;

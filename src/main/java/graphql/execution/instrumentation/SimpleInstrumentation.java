@@ -16,7 +16,9 @@ import java.util.concurrent.CompletableFuture;
 
 /**
  * An implementation of {@link graphql.execution.instrumentation.Instrumentation} that does nothing.  It can be used
- * as a base for derived classes where you only implement the methods you want to
+ * as a base for derived classes where you only implement the methods you want to.  With all the methods in {@link Instrumentation}
+ * now defaulted (post Java 6) this class is really not needed anymore but has been retained for backwards compatibility
+ * reasons.
  */
 @PublicApi
 public class SimpleInstrumentation implements Instrumentation {
@@ -26,48 +28,4 @@ public class SimpleInstrumentation implements Instrumentation {
      */
     public static final SimpleInstrumentation INSTANCE = new SimpleInstrumentation();
 
-    @Override
-    public InstrumentationContext<ExecutionResult> beginExecution(InstrumentationExecutionParameters parameters) {
-        return SimpleInstrumentationContext.noOp();
-    }
-
-    @Override
-    public InstrumentationContext<Document> beginParse(InstrumentationExecutionParameters parameters) {
-        return SimpleInstrumentationContext.noOp();
-    }
-
-    @Override
-    public InstrumentationContext<List<ValidationError>> beginValidation(InstrumentationValidationParameters parameters) {
-        return SimpleInstrumentationContext.noOp();
-    }
-
-    @Override
-    public ExecutionStrategyInstrumentationContext beginExecutionStrategy(InstrumentationExecutionStrategyParameters parameters) {
-        return new ExecutionStrategyInstrumentationContext() {
-            @Override
-            public void onDispatched(CompletableFuture<ExecutionResult> result) {
-
-            }
-
-            @Override
-            public void onCompleted(ExecutionResult result, Throwable t) {
-
-            }
-        };
-    }
-
-    @Override
-    public InstrumentationContext<ExecutionResult> beginExecuteOperation(InstrumentationExecuteOperationParameters parameters) {
-        return SimpleInstrumentationContext.noOp();
-    }
-
-    @Override
-    public InstrumentationContext<ExecutionResult> beginField(InstrumentationFieldParameters parameters) {
-        return SimpleInstrumentationContext.noOp();
-    }
-
-    @Override
-    public InstrumentationContext<Object> beginFieldFetch(InstrumentationFieldFetchParameters parameters) {
-        return SimpleInstrumentationContext.noOp();
-    }
 }

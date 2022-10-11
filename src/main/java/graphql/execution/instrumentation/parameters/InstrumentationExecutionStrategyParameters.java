@@ -1,8 +1,10 @@
 package graphql.execution.instrumentation.parameters;
 
+import graphql.DeprecatedAt;
 import graphql.PublicApi;
 import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionStrategyParameters;
+import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationState;
 
 /**
@@ -31,7 +33,11 @@ public class InstrumentationExecutionStrategyParameters {
      * @param instrumentationState the new state for this parameters object
      *
      * @return a new parameters object with the new state
+     *
+     * @deprecated state is now passed in direct to instrumentation methods
      */
+    @Deprecated
+    @DeprecatedAt("2022-07-26")
     public InstrumentationExecutionStrategyParameters withNewState(InstrumentationState instrumentationState) {
         return new InstrumentationExecutionStrategyParameters(executionContext, executionStrategyParameters, instrumentationState);
     }
@@ -44,6 +50,18 @@ public class InstrumentationExecutionStrategyParameters {
         return executionStrategyParameters;
     }
 
+    /**
+     * Previously the instrumentation parameters had access to the state created via {@link Instrumentation#createState(InstrumentationCreateStateParameters)} but now
+     * to save object allocations, the state is passed directly into instrumentation methods
+     *
+     * @param <T> for two
+     *
+     * @return the state created previously during a call to {@link Instrumentation#createState(InstrumentationCreateStateParameters)}
+     *
+     * @deprecated state is now passed in direct to instrumentation methods
+     */
+    @Deprecated
+    @DeprecatedAt("2022-07-26")
     @SuppressWarnings("TypeParameterUnusedInFormals")
     public <T extends InstrumentationState> T getInstrumentationState() {
         //noinspection unchecked

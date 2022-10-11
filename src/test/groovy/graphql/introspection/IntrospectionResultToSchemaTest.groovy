@@ -3,7 +3,7 @@ package graphql.introspection
 import com.fasterxml.jackson.databind.ObjectMapper
 import graphql.Assert
 import graphql.ExecutionInput
-import graphql.ExecutionResultImpl
+import graphql.ExecutionResult
 import graphql.GraphQL
 import graphql.TestUtil
 import graphql.language.Document
@@ -104,13 +104,11 @@ class IntrospectionResultToSchemaTest extends Specification {
 
         then:
         result == """type QueryType implements Query {
-  hero(
-  \"\"\"
+  hero(\"\"\"
   comment about episode
   on two lines
   \"\"\"
-  episode: Episode
-  foo: String = \"bar\"): Character @deprecated(reason: "killed off character")
+  episode: Episode, foo: String = \"bar\"): Character @deprecated(reason: "killed off character")
 }"""
 
     }
@@ -212,9 +210,13 @@ class IntrospectionResultToSchemaTest extends Specification {
         then:
         result == """"A character in the Star Wars Trilogy"
 interface Character {
+  "The id of the character."
   id: String!
+  "The name of the character."
   name: String
+  "The friends of the character, or an empty list if they have none."
   friends: [Character]
+  "Which movies they appear in."
   appearsIn: [Episode]
 }"""
 
@@ -260,8 +262,11 @@ interface Character {
         then:
         result == """"One of the films in the Star Wars Trilogy"
 enum Episode {
+  "Released in 1977."
   NEWHOPE
+  "Released in 1980."
   EMPIRE
+  "Released in 1983."
   JEDI @deprecated(reason: "killed by clones")
 }"""
 
@@ -404,47 +409,61 @@ input CharacterInput {
 }
 
 type QueryType {
-  hero(
-  "If omitted, returns the hero of the whole saga. If provided, returns the hero of that particular episode."
+  hero("If omitted, returns the hero of the whole saga. If provided, returns the hero of that particular episode."
   episode: Episode): Character
-  human(
-  "id of the human"
+  human("id of the human"
   id: String!): Human
-  droid(
-  "id of the droid"
+  droid("id of the droid"
   id: String!): Droid
 }
 
 "A character in the Star Wars Trilogy"
 interface Character {
+  "The id of the character."
   id: String!
+  "The name of the character."
   name: String
+  "The friends of the character, or an empty list if they have none."
   friends: [Character]
+  "Which movies they appear in."
   appearsIn: [Episode]
 }
 
 "One of the films in the Star Wars Trilogy"
 enum Episode {
+  "Released in 1977."
   NEWHOPE
+  "Released in 1980."
   EMPIRE
+  "Released in 1983."
   JEDI
 }
 
 "A humanoid creature in the Star Wars universe."
 type Human implements Character {
+  "The id of the human."
   id: String!
+  "The name of the human."
   name: String
+  "The friends of the human, or an empty list if they have none."
   friends: [Character]
+  "Which movies they appear in."
   appearsIn: [Episode]
+  "The home planet of the human, or null if unknown."
   homePlanet: String
 }
 
 "A mechanical creature in the Star Wars universe."
 type Droid implements Character {
+  "The id of the droid."
   id: String!
+  "The name of the droid."
   name: String
+  "The friends of the droid, or an empty list if they have none."
   friends: [Character]
+  "Which movies they appear in."
   appearsIn: [Episode]
+  "The primary function of the droid."
   primaryFunction: String
 }
 """
@@ -492,14 +511,17 @@ type Episode {
 
 " Simpson seasons"
 enum Season {
+  " the beginning"
   Season1
   Season2
   Season3
   Season4
+  " Another one"
   Season5
   Season6
   Season7
   Season8
+  " Not really the last one :-)"
   Season9
 }
 
@@ -678,7 +700,7 @@ input InputType {
 
     def "create schema fail"() {
         given:
-        def failResult = ExecutionResultImpl.newExecutionResult().build()
+        def failResult = ExecutionResult.newExecutionResult().build()
 
         when:
         Document document = introspectionResultToSchema.createSchemaDefinition(failResult)
@@ -965,5 +987,72 @@ scalar EmployeeRef
 
 scalar EmployeeRef
 '''
+    }
+
+    def "copes when isDeprecated is not defined"() {
+        def input = ''' {
+            "kind": "OBJECT",
+            "name": "QueryType",
+            "description": null,
+            "fields": [
+              {
+                "name": "hero",
+                "description": null,
+                "args": [
+                  {
+                    "name": "episode",
+                    "description": "comment about episode\non two lines",
+                    "type": {
+                      "kind": "ENUM",
+                      "name": "Episode",
+                      "ofType": null
+                    },
+                    "defaultValue": null
+                  },
+                  {
+                    "name": "foo",
+                    "description": null,
+                    "type": {
+                        "kind": "SCALAR",
+                        "name": "String",
+                        "ofType": null
+                    },
+                    "defaultValue": "\\"bar\\""
+                  }
+                ],
+                "type": {
+                  "kind": "INTERFACE",
+                  "name": "Character",
+                  "ofType": null
+                },
+                "isDeprecatedISNOTYDEFINED": false,
+                "deprecationReason": "killed off character"
+              }
+            ],
+            "inputFields": null,
+            "interfaces": [{
+                    "kind": "INTERFACE",
+                    "name": "Query",
+                    "ofType": null
+                }],
+            "enumValues": null,
+            "possibleTypes": null
+      }
+      '''
+        def parsed = slurp(input)
+
+        when:
+        ObjectTypeDefinition objectTypeDefinition = introspectionResultToSchema.createObject(parsed)
+        def result = printAst(objectTypeDefinition)
+
+        then:
+        result == """type QueryType implements Query {
+  hero(\"\"\"
+  comment about episode
+  on two lines
+  \"\"\"
+  episode: Episode, foo: String = \"bar\"): Character
+}"""
+
     }
 }

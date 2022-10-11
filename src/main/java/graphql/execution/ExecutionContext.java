@@ -3,13 +3,13 @@ package graphql.execution;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import graphql.DeprecatedAt;
 import graphql.ExecutionInput;
 import graphql.GraphQLContext;
 import graphql.GraphQLError;
 import graphql.PublicApi;
 import graphql.cachecontrol.CacheControl;
 import graphql.collect.ImmutableKit;
-import graphql.collect.ImmutableMapWithNullValues;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationState;
 import graphql.language.Document;
@@ -43,7 +43,7 @@ public class ExecutionContext {
     private final ImmutableMap<String, FragmentDefinition> fragmentsByName;
     private final OperationDefinition operationDefinition;
     private final Document document;
-    private final ImmutableMapWithNullValues<String, Object> variables;
+    private final CoercedVariables coercedVariables;
     private final Object root;
     private final Object context;
     private final GraphQLContext graphQLContext;
@@ -66,7 +66,7 @@ public class ExecutionContext {
         this.mutationStrategy = builder.mutationStrategy;
         this.subscriptionStrategy = builder.subscriptionStrategy;
         this.fragmentsByName = builder.fragmentsByName;
-        this.variables = ImmutableMapWithNullValues.copyOf(builder.variables);
+        this.coercedVariables = builder.coercedVariables;
         this.document = builder.document;
         this.operationDefinition = builder.operationDefinition;
         this.context = builder.context;
@@ -80,7 +80,7 @@ public class ExecutionContext {
         this.errors.set(builder.errors);
         this.localContext = builder.localContext;
         this.executionInput = builder.executionInput;
-        queryTree = FpKit.interThreadMemoize(() -> ExecutableNormalizedOperationFactory.createExecutableNormalizedOperation(graphQLSchema, operationDefinition, fragmentsByName, variables));
+        queryTree = FpKit.interThreadMemoize(() -> ExecutableNormalizedOperationFactory.createExecutableNormalizedOperation(graphQLSchema, operationDefinition, fragmentsByName, coercedVariables));
     }
 
 
@@ -116,8 +116,19 @@ public class ExecutionContext {
         return operationDefinition;
     }
 
+    /**
+     * @return map of coerced variables
+     *
+     * @deprecated use {@link #getCoercedVariables()} instead
+     */
+    @Deprecated
+    @DeprecatedAt("2022-05-24")
     public Map<String, Object> getVariables() {
-        return variables;
+        return coercedVariables.toMap();
+    }
+
+    public CoercedVariables getCoercedVariables() {
+        return coercedVariables;
     }
 
     /**
@@ -127,6 +138,7 @@ public class ExecutionContext {
      * @deprecated use {@link #getGraphQLContext()} instead
      */
     @Deprecated
+    @DeprecatedAt("2021-07-05")
     @SuppressWarnings({"unchecked", "TypeParameterUnusedInFormals"})
     public <T> T getContext() {
         return (T) context;
@@ -154,6 +166,8 @@ public class ExecutionContext {
         return dataLoaderRegistry;
     }
 
+    @Deprecated
+    @DeprecatedAt("2022-07-26")
     public CacheControl getCacheControl() {
         return cacheControl;
     }
@@ -176,8 +190,8 @@ public class ExecutionContext {
         synchronized (this) {
             //
             // see http://facebook.github.io/graphql/#sec-Errors-and-Non-Nullability about how per
-            // field errors should be handled - ie only once per field if its already there for nullability
-            // but unclear if its not that error path
+            // field errors should be handled - ie only once per field if it's already there for nullability
+            // but unclear if it's not that error path
             //
             if (!errorPaths.add(fieldPath)) {
                 return;

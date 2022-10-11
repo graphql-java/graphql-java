@@ -2,6 +2,7 @@ package graphql.validation;
 
 
 import graphql.Internal;
+import graphql.i18n.I18n;
 import graphql.language.Document;
 import graphql.schema.GraphQLSchema;
 import graphql.validation.rules.ArgumentsOfCorrectType;
@@ -20,18 +21,22 @@ import graphql.validation.rules.NoUnusedVariables;
 import graphql.validation.rules.OverlappingFieldsCanBeMerged;
 import graphql.validation.rules.PossibleFragmentSpreads;
 import graphql.validation.rules.ProvidedNonNullArguments;
-import graphql.validation.rules.ScalarLeafs;
-import graphql.validation.rules.UniqueArgumentNamesRule;
+import graphql.validation.rules.ScalarLeaves;
+import graphql.validation.rules.SubscriptionUniqueRootField;
+import graphql.validation.rules.UniqueArgumentNames;
 import graphql.validation.rules.UniqueDirectiveNamesPerLocation;
 import graphql.validation.rules.UniqueFragmentNames;
 import graphql.validation.rules.UniqueOperationNames;
-import graphql.validation.rules.UniqueVariableNamesRule;
+import graphql.validation.rules.UniqueVariableNames;
 import graphql.validation.rules.VariableDefaultValuesOfCorrectType;
-import graphql.validation.rules.VariableTypesMatchRule;
+import graphql.validation.rules.VariableTypesMatch;
 import graphql.validation.rules.VariablesAreInputTypes;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 @Internal
 public class Validator {
@@ -55,11 +60,18 @@ public class Validator {
         return MAX_VALIDATION_ERRORS;
     }
 
-    public List<ValidationError> validateDocument(GraphQLSchema schema, Document document) {
-        ValidationContext validationContext = new ValidationContext(schema, document);
+    public List<ValidationError> validateDocument(GraphQLSchema schema, Document document, Locale locale) {
+        return validateDocument(schema, document, ruleClass -> true, locale);
+    }
+
+    public List<ValidationError> validateDocument(GraphQLSchema schema, Document document, Predicate<Class<?>> applyRule, Locale locale) {
+        I18n i18n = I18n.i18n(I18n.BundleType.Validation, locale);
+        ValidationContext validationContext = new ValidationContext(schema, document, i18n);
 
         ValidationErrorCollector validationErrorCollector = new ValidationErrorCollector(MAX_VALIDATION_ERRORS);
         List<AbstractRule> rules = createRules(validationContext, validationErrorCollector);
+        // filter out any rules they don't want applied
+        rules = rules.stream().filter(r -> applyRule.test(r.getClass())).collect(Collectors.toList());
         LanguageTraversal languageTraversal = new LanguageTraversal();
         try {
             languageTraversal.traverse(document, new RulesVisitor(validationContext, rules));
@@ -110,15 +122,15 @@ public class Validator {
         ProvidedNonNullArguments providedNonNullArguments = new ProvidedNonNullArguments(validationContext, validationErrorCollector);
         rules.add(providedNonNullArguments);
 
-        ScalarLeafs scalarLeafs = new ScalarLeafs(validationContext, validationErrorCollector);
-        rules.add(scalarLeafs);
+        ScalarLeaves scalarLeaves = new ScalarLeaves(validationContext, validationErrorCollector);
+        rules.add(scalarLeaves);
 
         VariableDefaultValuesOfCorrectType variableDefaultValuesOfCorrectType = new VariableDefaultValuesOfCorrectType(validationContext, validationErrorCollector);
         rules.add(variableDefaultValuesOfCorrectType);
         VariablesAreInputTypes variablesAreInputTypes = new VariablesAreInputTypes(validationContext, validationErrorCollector);
         rules.add(variablesAreInputTypes);
-        VariableTypesMatchRule variableTypesMatchRule = new VariableTypesMatchRule(validationContext, validationErrorCollector);
-        rules.add(variableTypesMatchRule);
+        VariableTypesMatch variableTypesMatch = new VariableTypesMatch(validationContext, validationErrorCollector);
+        rules.add(variableTypesMatch);
 
         LoneAnonymousOperation loneAnonymousOperation = new LoneAnonymousOperation(validationContext, validationErrorCollector);
         rules.add(loneAnonymousOperation);
@@ -132,11 +144,14 @@ public class Validator {
         UniqueDirectiveNamesPerLocation uniqueDirectiveNamesPerLocation = new UniqueDirectiveNamesPerLocation(validationContext, validationErrorCollector);
         rules.add(uniqueDirectiveNamesPerLocation);
 
-        UniqueArgumentNamesRule uniqueArgumentNamesRule = new UniqueArgumentNamesRule(validationContext, validationErrorCollector);
+        UniqueArgumentNames uniqueArgumentNamesRule = new UniqueArgumentNames(validationContext, validationErrorCollector);
         rules.add(uniqueArgumentNamesRule);
 
-        UniqueVariableNamesRule uniqueVariableNamesRule = new UniqueVariableNamesRule(validationContext, validationErrorCollector);
+        UniqueVariableNames uniqueVariableNamesRule = new UniqueVariableNames(validationContext, validationErrorCollector);
         rules.add(uniqueVariableNamesRule);
+
+        SubscriptionUniqueRootField uniqueSubscriptionRootField = new SubscriptionUniqueRootField(validationContext, validationErrorCollector);
+        rules.add(uniqueSubscriptionRootField);
 
         return rules;
     }

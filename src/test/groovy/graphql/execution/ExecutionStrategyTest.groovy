@@ -10,6 +10,7 @@ import graphql.SerializationError
 import graphql.StarWarsSchema
 import graphql.TypeMismatchError
 import graphql.execution.instrumentation.InstrumentationContext
+import graphql.execution.instrumentation.InstrumentationState
 import graphql.execution.instrumentation.SimpleInstrumentation
 import graphql.execution.instrumentation.parameters.InstrumentationFieldCompleteParameters
 import graphql.language.Argument
@@ -21,6 +22,8 @@ import graphql.parser.Parser
 import graphql.schema.Coercing
 import graphql.schema.DataFetcher
 import graphql.schema.DataFetchingEnvironment
+import graphql.schema.FieldCoordinates
+import graphql.schema.GraphQLCodeRegistry
 import graphql.schema.GraphQLEnumType
 import graphql.schema.GraphQLFieldDefinition
 import graphql.schema.GraphQLScalarType
@@ -71,8 +74,7 @@ class ExecutionStrategyTest extends Specification {
                 .queryStrategy(executionStrategy)
                 .mutationStrategy(executionStrategy)
                 .subscriptionStrategy(executionStrategy)
-                .variables(variables)
-                .context("context")
+                .coercedVariables(CoercedVariables.of(variables))
                 .graphQLContext(GraphQLContext.newContext().of("key","context").build())
                 .root("root")
                 .dataLoaderRegistry(new DataLoaderRegistry())
@@ -86,20 +88,32 @@ class ExecutionStrategyTest extends Specification {
     def "complete values always calls query strategy to execute more"() {
         given:
         def dataFetcher = Mock(DataFetcher)
+
+        def someFieldName = "someField"
+        def testTypeName = "Test"
         def fieldDefinition = newFieldDefinition()
-                .name("someField")
+                .name(someFieldName)
                 .type(GraphQLString)
-                .dataFetcher(dataFetcher)
                 .build()
         def objectType = newObject()
-                .name("Test")
+                .name(testTypeName)
                 .field(fieldDefinition)
+                .build()
+
+        def someFieldCoordinates = FieldCoordinates.coordinates(testTypeName, someFieldName)
+
+        GraphQLCodeRegistry codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+                .dataFetcher(someFieldCoordinates, dataFetcher)
                 .build()
 
         def document = new Parser().parseDocument("{someField}")
         def operation = document.definitions[0] as OperationDefinition
 
-        GraphQLSchema schema = GraphQLSchema.newSchema().query(objectType).build()
+        GraphQLSchema schema = GraphQLSchema.newSchema()
+                .codeRegistry(codeRegistry)
+                .query(objectType)
+                .build()
+
         def builder = new ExecutionContextBuilder()
         builder.queryStrategy(Mock(ExecutionStrategy))
         builder.mutationStrategy(Mock(ExecutionStrategy))
@@ -484,30 +498,41 @@ class ExecutionStrategyTest extends Specification {
     @SuppressWarnings("GroovyVariableNotAssigned")
     def "resolveField creates correct DataFetchingEnvironment"() {
         def dataFetcher = Mock(DataFetcher)
+        def someFieldName = "someField"
+        def testTypeName = "Type"
         def fieldDefinition = newFieldDefinition()
-                .name("someField")
+                .name(someFieldName)
                 .type(GraphQLString)
-                .dataFetcher(dataFetcher)
                 .argument(newArgument().name("arg1").type(GraphQLString))
                 .build()
         def objectType = newObject()
-                .name("Test")
+                .name(testTypeName)
                 .field(fieldDefinition)
                 .build()
 
-        GraphQLSchema schema = GraphQLSchema.newSchema().query(objectType).build()
+        def someFieldCoordinates = FieldCoordinates.coordinates(testTypeName, someFieldName)
+
+        GraphQLCodeRegistry codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+                .dataFetcher(someFieldCoordinates, dataFetcher)
+                .build()
+
+        GraphQLSchema schema = GraphQLSchema.newSchema()
+                .codeRegistry(codeRegistry)
+                .query(objectType)
+                .build()
         ExecutionContext executionContext = buildContext(schema)
         ExecutionStepInfo typeInfo = ExecutionStepInfo.newExecutionStepInfo().type(objectType).build()
         NonNullableFieldValidator nullableFieldValidator = new NonNullableFieldValidator(executionContext, typeInfo)
         Argument argument = new Argument("arg1", new StringValue("argVal"))
-        Field field = new Field("someField", [argument])
+        Field field = new Field(someFieldName, [argument])
+        MergedField mergedField = mergedField(field)
         ResultPath resultPath = ResultPath.rootPath().segment("test")
 
         def parameters = newParameters()
                 .executionStepInfo(typeInfo)
                 .source("source")
                 .fields(mergedSelectionSet(["someField": [field]]))
-                .field(mergedField(field))
+                .field(mergedField)
                 .nonNullFieldValidator(nullableFieldValidator)
                 .path(resultPath)
                 .build()
@@ -520,10 +545,9 @@ class ExecutionStrategyTest extends Specification {
         1 * dataFetcher.get(_) >> { args -> environment = args[0] }
         environment.fieldDefinition == fieldDefinition
         environment.graphQLSchema == schema
-        environment.context == "context"
         environment.graphQlContext.get("key") == "context"
         environment.source == "source"
-        environment.fields == [field]
+        environment.mergedField == mergedField
         environment.root == "root"
         environment.parentType == objectType
         environment.arguments == ["arg1": "argVal"]
@@ -540,19 +564,34 @@ class ExecutionStrategyTest extends Specification {
                 throw expectedException
             }
         }
-        def fieldDefinition = newFieldDefinition().name("someField").type(GraphQLString).dataFetcher(dataFetcher).build()
+
+        def someFieldName = "someField"
+        def testTypeName = "Test"
+        def fieldDefinition = newFieldDefinition()
+                .name(someFieldName)
+                .type(GraphQLString)
+                .build()
         def objectType = newObject()
-                .name("Test")
+                .name(testTypeName)
                 .field(fieldDefinition)
                 .build()
-        def schema = GraphQLSchema.newSchema().query(objectType).build()
+
+        def someFieldCoordinates = FieldCoordinates.coordinates(testTypeName, someFieldName)
+
+        GraphQLCodeRegistry codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+                .dataFetcher(someFieldCoordinates, dataFetcher)
+                .build()
+        def schema = GraphQLSchema.newSchema()
+                .codeRegistry(codeRegistry)
+                .query(objectType)
+                .build()
         ExecutionContext executionContext = buildContext(schema)
         def typeInfo = ExecutionStepInfo.newExecutionStepInfo().type(objectType).build()
         NonNullableFieldValidator nullableFieldValidator = new NonNullableFieldValidator(executionContext, typeInfo)
-        ResultPath expectedPath = ResultPath.rootPath().segment("someField")
+        ResultPath expectedPath = ResultPath.rootPath().segment(someFieldName)
 
         SourceLocation sourceLocation = new SourceLocation(666, 999)
-        Field field = Field.newField("someField").sourceLocation(sourceLocation).build()
+        Field field = Field.newField(someFieldName).sourceLocation(sourceLocation).build()
         def parameters = newParameters()
                 .executionStepInfo(typeInfo)
                 .source("source")
@@ -564,7 +603,6 @@ class ExecutionStrategyTest extends Specification {
         [executionContext, fieldDefinition, expectedPath, parameters, field, sourceLocation]
     }
 
-
     def "test that the new data fetcher error handler interface is called"() {
 
         def expectedException = new UnsupportedOperationException("This is the exception you are looking for")
@@ -575,8 +613,10 @@ class ExecutionStrategyTest extends Specification {
 
         boolean handlerCalled = false
         ExecutionStrategy overridingStrategy = new AsyncExecutionStrategy(new SimpleDataFetcherExceptionHandler() {
+
+
             @Override
-            DataFetcherExceptionHandlerResult onException(DataFetcherExceptionHandlerParameters handlerParameters) {
+            CompletableFuture<DataFetcherExceptionHandlerResult> handleException(DataFetcherExceptionHandlerParameters handlerParameters) {
                 handlerCalled = true
                 assert handlerParameters.exception == expectedException
                 assert handlerParameters.fieldDefinition == fieldDefinition
@@ -584,7 +624,7 @@ class ExecutionStrategyTest extends Specification {
                 assert handlerParameters.path == expectedPath
 
                 // by calling down we are testing the base class as well
-                super.onException(handlerParameters)
+                super.handleException(handlerParameters)
             }
         }) {
             @Override
@@ -639,12 +679,12 @@ class ExecutionStrategyTest extends Specification {
             Map<String, FetchedValue> fetchedValues = [:]
 
             @Override
-            InstrumentationContext<ExecutionResult> beginFieldComplete(InstrumentationFieldCompleteParameters parameters) {
+            InstrumentationContext<ExecutionResult> beginFieldComplete(InstrumentationFieldCompleteParameters parameters, InstrumentationState state) {
                 if (parameters.fetchedValue instanceof FetchedValue) {
                     FetchedValue value = (FetchedValue) parameters.fetchedValue
                     fetchedValues.put(parameters.field.name, value)
                 }
-                return super.beginFieldComplete(parameters)
+                return super.beginFieldComplete(parameters, state)
             }
         }
         ExecutionContext instrumentedExecutionContext = executionContextBuilder.instrumentation(instrumentation).build()
@@ -679,22 +719,34 @@ class ExecutionStrategyTest extends Specification {
                 throw new RuntimeException("bang")
             }
         }
+
+        def someFieldName = "someField"
+        def testTypeName = "Test"
+
         def fieldDefinition = newFieldDefinition()
-                .name("someField")
+                .name(someFieldName)
                 .type(nonNull(GraphQLString))
-                .dataFetcher(dataFetcher)
                 .build()
         def objectType = newObject()
-                .name("Test")
+                .name(testTypeName)
                 .field(fieldDefinition)
                 .build()
 
-        GraphQLSchema schema = GraphQLSchema.newSchema().query(objectType).build()
+        def someFieldCoordinates = FieldCoordinates.coordinates(testTypeName, someFieldName)
+
+        GraphQLCodeRegistry codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+                .dataFetcher(someFieldCoordinates, dataFetcher)
+                .build()
+
+        GraphQLSchema schema = GraphQLSchema.newSchema()
+                .codeRegistry(codeRegistry)
+                .query(objectType)
+                .build()
         ExecutionContext executionContext = buildContext(schema)
 
         def typeInfo = ExecutionStepInfo.newExecutionStepInfo().type(objectType).build()
         NonNullableFieldValidator nullableFieldValidator = new NonNullableFieldValidator(executionContext, typeInfo)
-        Field field = new Field("someField")
+        Field field = new Field(someFieldName)
 
         def parameters = newParameters()
                 .executionStepInfo(typeInfo)
@@ -741,7 +793,7 @@ class ExecutionStrategyTest extends Specification {
     def "#842 completes value for java.util.Stream"() {
         given:
         ExecutionContext executionContext = buildContext()
-        Stream<Long> result = Stream.of(1, 2, 3)
+        Stream<Long> result = Stream.of(1L, 2L, 3L)
         def fieldType = list(Scalars.GraphQLInt)
         def fldDef = newFieldDefinition().name("test").type(fieldType).build()
         def executionStepInfo = ExecutionStepInfo.newExecutionStepInfo().type(fieldType).path(ResultPath.rootPath()).fieldDefinition(fldDef).build()

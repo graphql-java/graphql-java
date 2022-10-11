@@ -1,6 +1,9 @@
 package graphql;
 
 import graphql.relay.Relay;
+import graphql.schema.DataFetcher;
+import graphql.schema.FieldCoordinates;
+import graphql.schema.GraphQLCodeRegistry;
 import graphql.schema.GraphQLInterfaceType;
 import graphql.schema.GraphQLNonNull;
 import graphql.schema.GraphQLObjectType;
@@ -57,15 +60,18 @@ public class RelaySchema {
                     .argument(newArgument()
                             .name("id")
                             .description("id of the thing")
-                            .type(GraphQLNonNull.nonNull(GraphQLString)))
-                    .dataFetcher(environment -> {
-                        //TODO: implement
-                        return null;
-                    }))
+                            .type(GraphQLNonNull.nonNull(GraphQLString))))
             .build();
 
+    public static FieldCoordinates thingCoordinates = FieldCoordinates.coordinates("RelayQuery", "thing");
+    public static DataFetcher<?> thingDataFetcher = environment -> null;
+
+    public static GraphQLCodeRegistry codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+            .dataFetcher(thingCoordinates, thingDataFetcher)
+            .build();
 
     public static GraphQLSchema Schema = GraphQLSchema.newSchema()
+            .codeRegistry(codeRegistry)
             .query(RelayQueryType)
             .additionalType(Relay.pageInfoType)
             .build();

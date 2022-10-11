@@ -1,5 +1,6 @@
 package graphql.execution.directives
 
+import graphql.GraphQLContext
 import graphql.TestUtil
 import graphql.execution.MergedField
 import spock.lang.Specification
@@ -30,30 +31,39 @@ class QueryDirectivesImplTest extends Specification {
 
         def mergedField = MergedField.newMergedField([f1, f2]).build()
 
-        def impl = new QueryDirectivesImpl(mergedField, schema, [var: 10])
+        def impl = new QueryDirectivesImpl(mergedField, schema, [var: 10], GraphQLContext.getDefault(), Locale.getDefault())
 
         when:
         def directives = impl.getImmediateDirectivesByName()
         then:
         directives.keySet().sort() == ["cached", "timeout", "upper"]
+        impl.getImmediateAppliedDirectivesByName().keySet().sort() == ["cached", "timeout", "upper"]
 
         when:
         def result = impl.getImmediateDirective("cached")
+        def appliedResult = impl.getImmediateAppliedDirective("cached")
 
         then:
         result.size() == 2
         result[0].getName() == "cached"
         result[1].getName() == "cached"
 
-        result[0].getArgument("forMillis").getArgumentValue().value == 99 // defaults
+        result[0].getArgument("forMillis").getArgumentValue().value == 99 // defaults. Retain deprecated method to test getImmediateDirective
         printAst(result[0].getArgument("forMillis").getArgumentDefaultValue().getValue()) == "99"
 
-        result[1].getArgument("forMillis").getArgumentValue().value == 10
+        result[1].getArgument("forMillis").getArgumentValue().value == 10 // Retain deprecated method to test getImmediateDirective
         printAst(result[1].getArgument("forMillis").getArgumentDefaultValue().getValue()) == "99"
 
         // the prototypical other properties are copied ok
         result[0].validLocations().collect({ it.name() }).sort() == ["FIELD", "QUERY"]
         result[1].validLocations().collect({ it.name() }).sort() == ["FIELD", "QUERY"]
+
+        appliedResult.size() == 2
+        appliedResult[0].getName() == "cached"
+        appliedResult[1].getName() == "cached"
+
+        appliedResult[0].getArgument("forMillis").getValue() == 99
+        appliedResult[1].getArgument("forMillis").getValue() == 10
     }
 
 }

@@ -2,6 +2,7 @@ package graphql.schema;
 
 
 import com.google.common.collect.ImmutableList;
+import graphql.DeprecatedAt;
 import graphql.DirectivesUtil;
 import graphql.Internal;
 import graphql.PublicApi;
@@ -40,17 +41,24 @@ public class GraphQLFieldDefinition implements GraphQLNamedSchemaElement, GraphQ
     private final DataFetcherFactory dataFetcherFactory;
     private final String deprecationReason;
     private final ImmutableList<GraphQLArgument> arguments;
-    private final DirectivesUtil.DirectivesHolder directives;
+    private final DirectivesUtil.DirectivesHolder directivesHolder;
     private final FieldDefinition definition;
 
     private GraphQLOutputType replacedType;
 
     public static final String CHILD_ARGUMENTS = "arguments";
-    public static final String CHILD_DIRECTIVES = "directives";
     public static final String CHILD_TYPE = "type";
 
     @Internal
-    private GraphQLFieldDefinition(String name, String description, GraphQLOutputType type, DataFetcherFactory dataFetcherFactory, List<GraphQLArgument> arguments, String deprecationReason, List<GraphQLDirective> directives, FieldDefinition definition) {
+    private GraphQLFieldDefinition(String name,
+                                   String description,
+                                   GraphQLOutputType type,
+                                   DataFetcherFactory dataFetcherFactory,
+                                   List<GraphQLArgument> arguments,
+                                   String deprecationReason,
+                                   List<GraphQLDirective> directives,
+                                   List<GraphQLAppliedDirective> appliedDirectives,
+                                   FieldDefinition definition) {
         assertValidName(name);
         assertNotNull(type, () -> "type can't be null");
         assertNotNull(arguments, () -> "arguments can't be null");
@@ -59,7 +67,7 @@ public class GraphQLFieldDefinition implements GraphQLNamedSchemaElement, GraphQ
         this.originalType = type;
         this.dataFetcherFactory = dataFetcherFactory;
         this.arguments = ImmutableList.copyOf(arguments);
-        this.directives = new DirectivesUtil.DirectivesHolder(directives);
+        this.directivesHolder = new DirectivesUtil.DirectivesHolder(directives, appliedDirectives);
         this.deprecationReason = deprecationReason;
         this.definition = definition;
     }
@@ -79,6 +87,9 @@ public class GraphQLFieldDefinition implements GraphQLNamedSchemaElement, GraphQ
     }
 
     // to be removed in a future version when all code is in the code registry
+    @Internal
+    @Deprecated
+    @DeprecatedAt("2018-12-03")
     DataFetcher<?> getDataFetcher() {
         if (dataFetcherFactory == null) {
             return null;
@@ -99,22 +110,37 @@ public class GraphQLFieldDefinition implements GraphQLNamedSchemaElement, GraphQ
 
     @Override
     public List<GraphQLDirective> getDirectives() {
-        return directives.getDirectives();
+        return directivesHolder.getDirectives();
     }
 
     @Override
     public Map<String, GraphQLDirective> getDirectivesByName() {
-        return directives.getDirectivesByName();
+        return directivesHolder.getDirectivesByName();
     }
 
     @Override
     public Map<String, List<GraphQLDirective>> getAllDirectivesByName() {
-        return directives.getAllDirectivesByName();
+        return directivesHolder.getAllDirectivesByName();
     }
 
     @Override
     public GraphQLDirective getDirective(String directiveName) {
-        return directives.getDirective(directiveName);
+        return directivesHolder.getDirective(directiveName);
+    }
+
+    @Override
+    public List<GraphQLAppliedDirective> getAppliedDirectives() {
+        return directivesHolder.getAppliedDirectives();
+    }
+
+    @Override
+    public Map<String, List<GraphQLAppliedDirective>> getAllAppliedDirectivesByName() {
+        return directivesHolder.getAllAppliedDirectivesByName();
+    }
+
+    @Override
+    public GraphQLAppliedDirective getAppliedDirective(String directiveName) {
+        return directivesHolder.getAppliedDirective(directiveName);
     }
 
     public List<GraphQLArgument> getArguments() {
@@ -180,7 +206,8 @@ public class GraphQLFieldDefinition implements GraphQLNamedSchemaElement, GraphQ
         List<GraphQLSchemaElement> children = new ArrayList<>();
         children.add(getType());
         children.addAll(arguments);
-        children.addAll(directives.getDirectives());
+        children.addAll(directivesHolder.getDirectives());
+        children.addAll(directivesHolder.getAppliedDirectives());
         return children;
     }
 
@@ -189,7 +216,8 @@ public class GraphQLFieldDefinition implements GraphQLNamedSchemaElement, GraphQ
         return SchemaElementChildrenContainer.newSchemaElementChildrenContainer()
                 .child(CHILD_TYPE, originalType)
                 .children(CHILD_ARGUMENTS, arguments)
-                .children(CHILD_DIRECTIVES, directives.getDirectives())
+                .children(CHILD_DIRECTIVES, directivesHolder.getDirectives())
+                .children(CHILD_APPLIED_DIRECTIVES, directivesHolder.getAppliedDirectives())
                 .build();
     }
 
@@ -197,9 +225,10 @@ public class GraphQLFieldDefinition implements GraphQLNamedSchemaElement, GraphQ
     @Override
     public GraphQLSchemaElement withNewChildren(SchemaElementChildrenContainer newChildren) {
         return transform(builder ->
-                builder.replaceDirectives(newChildren.getChildren(CHILD_DIRECTIVES))
-                        .replaceArguments(newChildren.getChildren(CHILD_ARGUMENTS))
+                builder.replaceArguments(newChildren.getChildren(CHILD_ARGUMENTS))
                         .type((GraphQLOutputType) newChildren.getChildOrNull(CHILD_TYPE))
+                        .replaceDirectives(newChildren.getChildren(CHILD_DIRECTIVES))
+                        .replaceAppliedDirectives(newChildren.getChildren(CHILD_APPLIED_DIRECTIVES))
         );
     }
 
@@ -228,14 +257,13 @@ public class GraphQLFieldDefinition implements GraphQLNamedSchemaElement, GraphQ
     }
 
     @PublicApi
-    public static class Builder extends GraphqlTypeBuilder {
+    public static class Builder extends GraphqlDirectivesContainerTypeBuilder<Builder,Builder> {
 
         private GraphQLOutputType type;
         private DataFetcherFactory<?> dataFetcherFactory;
         private String deprecationReason;
         private FieldDefinition definition;
         private final Map<String, GraphQLArgument> arguments = new LinkedHashMap<>();
-        private final List<GraphQLDirective> directives = new ArrayList<>();
 
         public Builder() {
         }
@@ -248,26 +276,7 @@ public class GraphQLFieldDefinition implements GraphQLNamedSchemaElement, GraphQ
             this.deprecationReason = existing.getDeprecationReason();
             this.definition = existing.getDefinition();
             this.arguments.putAll(getByName(existing.getArguments(), GraphQLArgument::getName));
-            DirectivesUtil.enforceAddAll(this.directives, existing.getDirectives());
-        }
-
-
-        @Override
-        public Builder name(String name) {
-            super.name(name);
-            return this;
-        }
-
-        @Override
-        public Builder description(String description) {
-            super.description(description);
-            return this;
-        }
-
-        @Override
-        public Builder comparatorRegistry(GraphqlTypeComparatorRegistry comparatorRegistry) {
-            super.comparatorRegistry(comparatorRegistry);
-            return this;
+            copyExistingDirectives(existing);
         }
 
         public Builder definition(FieldDefinition definition) {
@@ -302,6 +311,7 @@ public class GraphQLFieldDefinition implements GraphQLNamedSchemaElement, GraphQ
          * @deprecated use {@link graphql.schema.GraphQLCodeRegistry} instead
          */
         @Deprecated
+        @DeprecatedAt("2018-12-03")
         public Builder dataFetcher(DataFetcher<?> dataFetcher) {
             assertNotNull(dataFetcher, () -> "dataFetcher must be not null");
             this.dataFetcherFactory = DataFetcherFactories.useDataFetcher(dataFetcher);
@@ -318,6 +328,7 @@ public class GraphQLFieldDefinition implements GraphQLNamedSchemaElement, GraphQ
          * @deprecated use {@link graphql.schema.GraphQLCodeRegistry} instead
          */
         @Deprecated
+        @DeprecatedAt("2018-12-03")
         public Builder dataFetcherFactory(DataFetcherFactory<?> dataFetcherFactory) {
             assertNotNull(dataFetcherFactory, () -> "dataFetcherFactory must be not null");
             this.dataFetcherFactory = dataFetcherFactory;
@@ -334,6 +345,7 @@ public class GraphQLFieldDefinition implements GraphQLNamedSchemaElement, GraphQ
          * @deprecated use {@link graphql.schema.GraphQLCodeRegistry} instead
          */
         @Deprecated
+        @DeprecatedAt("2018-12-03")
         public Builder staticValue(final Object value) {
             this.dataFetcherFactory = DataFetcherFactories.useDataFetcher(environment -> value);
             return this;
@@ -387,6 +399,7 @@ public class GraphQLFieldDefinition implements GraphQLNamedSchemaElement, GraphQ
          * @deprecated This is a badly named method and is replaced by {@link #arguments(java.util.List)}
          */
         @Deprecated
+        @DeprecatedAt("2019-02-06")
         public Builder argument(List<GraphQLArgument> arguments) {
             return arguments(arguments);
         }
@@ -431,40 +444,41 @@ public class GraphQLFieldDefinition implements GraphQLNamedSchemaElement, GraphQ
             return this;
         }
 
-        public Builder withDirectives(GraphQLDirective... directives) {
-            assertNotNull(directives, () -> "directives can't be null");
-            this.directives.clear();
-            for (GraphQLDirective directive : directives) {
-                withDirective(directive);
-            }
-            return this;
-        }
+        // -- the following are repeated to avoid a binary incompatibility problem --
 
-        public Builder withDirective(GraphQLDirective directive) {
-            assertNotNull(directive, () -> "directive can't be null");
-            DirectivesUtil.enforceAdd(this.directives, directive);
-            return this;
-        }
-
+        @Override
         public Builder replaceDirectives(List<GraphQLDirective> directives) {
-            assertNotNull(directives, () -> "directive can't be null");
-            this.directives.clear();
-            DirectivesUtil.enforceAddAll(this.directives, directives);
-            return this;
+            return super.replaceDirectives(directives);
         }
 
+        @Override
+        public Builder withDirectives(GraphQLDirective... directives) {
+            return super.withDirectives(directives);
+        }
+
+        @Override
+        public Builder withDirective(GraphQLDirective directive) {
+            return super.withDirective(directive);
+        }
+
+        @Override
         public Builder withDirective(GraphQLDirective.Builder builder) {
-            return withDirective(builder.build());
+            return super.withDirective(builder);
         }
 
-        /**
-         * This is used to clear all the directives in the builder so far.
-         *
-         * @return the builder
-         */
+        @Override
         public Builder clearDirectives() {
-            directives.clear();
-            return this;
+            return super.clearDirectives();
+        }
+
+        @Override
+        public Builder name(String name) {
+            return super.name(name);
+        }
+
+        @Override
+        public Builder description(String description) {
+            return super.description(description);
         }
 
         public GraphQLFieldDefinition build() {
@@ -476,6 +490,7 @@ public class GraphQLFieldDefinition implements GraphQLNamedSchemaElement, GraphQ
                     sort(arguments, GraphQLFieldDefinition.class, GraphQLArgument.class),
                     deprecationReason,
                     sort(directives, GraphQLFieldDefinition.class, GraphQLDirective.class),
+                    sort(appliedDirectives, GraphQLScalarType.class, GraphQLAppliedDirective.class),
                     definition);
         }
     }

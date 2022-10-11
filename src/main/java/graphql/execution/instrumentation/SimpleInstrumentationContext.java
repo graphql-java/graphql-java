@@ -2,6 +2,7 @@ package graphql.execution.instrumentation;
 
 import graphql.PublicApi;
 
+import javax.annotation.Nonnull;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -12,7 +13,15 @@ import java.util.function.Consumer;
 @PublicApi
 public class SimpleInstrumentationContext<T> implements InstrumentationContext<T> {
 
-    private static final InstrumentationContext<Object> NO_OP = new SimpleInstrumentationContext<>();
+    private static final InstrumentationContext<Object> NO_OP = new InstrumentationContext<Object>() {
+        @Override
+        public void onDispatched(CompletableFuture<Object> result) {
+        }
+
+        @Override
+        public void onCompleted(Object result, Throwable t) {
+        }
+    };
 
     /**
      * A context that does nothing
@@ -24,6 +33,19 @@ public class SimpleInstrumentationContext<T> implements InstrumentationContext<T
     @SuppressWarnings("unchecked")
     public static <T> InstrumentationContext<T> noOp() {
         return (InstrumentationContext<T>) NO_OP;
+    }
+
+    /**
+     * This creates a no-op {@link InstrumentationContext} if the one pass in is null
+     *
+     * @param nullableContext a {@link InstrumentationContext} that can be null
+     * @param <T>             for two
+     *
+     * @return a non null {@link InstrumentationContext} that maybe a no-op
+     */
+    @Nonnull
+    public static <T> InstrumentationContext<T> nonNullCtx(InstrumentationContext<T> nullableContext) {
+        return nullableContext == null ? noOp() : nullableContext;
     }
 
     private final BiConsumer<T, Throwable> codeToRunOnComplete;
@@ -77,4 +99,17 @@ public class SimpleInstrumentationContext<T> implements InstrumentationContext<T
     public static <U> SimpleInstrumentationContext<U> whenCompleted(BiConsumer<U, Throwable> codeToRun) {
         return new SimpleInstrumentationContext<>(null, codeToRun);
     }
+
+    public static <T> BiConsumer<? super T, ? super Throwable> completeInstrumentationCtxCF(
+            InstrumentationContext<T> instrumentationContext, CompletableFuture<T> targetCF) {
+        return (result, throwable) -> {
+            if (throwable != null) {
+                targetCF.completeExceptionally(throwable);
+            } else {
+                targetCF.complete(result);
+            }
+            nonNullCtx(instrumentationContext).onCompleted(result, throwable);
+        };
+    }
+
 }

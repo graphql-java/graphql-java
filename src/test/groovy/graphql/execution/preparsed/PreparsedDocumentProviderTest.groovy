@@ -6,13 +6,18 @@ import graphql.GraphQL
 import graphql.StarWarsSchema
 import graphql.execution.AsyncExecutionStrategy
 import graphql.execution.instrumentation.InstrumentationContext
+import graphql.execution.instrumentation.InstrumentationState
+import graphql.execution.instrumentation.LegacyTestingInstrumentation
 import graphql.execution.instrumentation.SimpleInstrumentation
-import graphql.execution.instrumentation.TestingInstrumentation
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters
 import graphql.language.Document
+import graphql.parser.Parser
 import spock.lang.Specification
 
 import java.util.function.Function
+
+import static graphql.ExecutionInput.newExecutionInput
+import static graphql.execution.instrumentation.SimpleInstrumentationContext.noOp
 
 class PreparsedDocumentProviderTest extends Specification {
 
@@ -97,8 +102,8 @@ class PreparsedDocumentProviderTest extends Specification {
 
         when:
 
-        def instrumentation = new TestingInstrumentation()
-        def instrumentationPreparsed = new TestingInstrumentation()
+        def instrumentation = new LegacyTestingInstrumentation()
+        def instrumentationPreparsed = new LegacyTestingInstrumentation()
         def preparsedCache = new TestingPreparsedDocumentProvider()
 
         def strategy = new AsyncExecutionStrategy()
@@ -107,14 +112,14 @@ class PreparsedDocumentProviderTest extends Specification {
                 .instrumentation(instrumentation)
                 .preparsedDocumentProvider(preparsedCache)
                 .build()
-                .execute(ExecutionInput.newExecutionInput().query(query).build()).data
+                .execute(newExecutionInput().query(query).build()).data
 
         def data2 = GraphQL.newGraphQL(StarWarsSchema.starWarsSchema)
                 .queryExecutionStrategy(strategy)
                 .instrumentation(instrumentationPreparsed)
                 .preparsedDocumentProvider(preparsedCache)
                 .build()
-                .execute(ExecutionInput.newExecutionInput().query(query).build()).data
+                .execute(newExecutionInput().query(query).build()).data
 
 
         then:
@@ -142,12 +147,12 @@ class PreparsedDocumentProviderTest extends Specification {
         def result1 = GraphQL.newGraphQL(StarWarsSchema.starWarsSchema)
                 .preparsedDocumentProvider(preparsedCache)
                 .build()
-                .execute(ExecutionInput.newExecutionInput().query(query).build())
+                .execute(newExecutionInput().query(query).build())
 
         def result2 = GraphQL.newGraphQL(StarWarsSchema.starWarsSchema)
                 .preparsedDocumentProvider(preparsedCache)
                 .build()
-                .execute(ExecutionInput.newExecutionInput().query(query).build())
+                .execute(newExecutionInput().query(query).build())
 
         then: "Both the first and the second result should give the same validation error"
         result1.errors.size() == 1
@@ -162,9 +167,9 @@ class PreparsedDocumentProviderTest extends Specification {
         ExecutionInput capturedInput
 
         @Override
-        InstrumentationContext<Document> beginParse(InstrumentationExecutionParameters parameters) {
+        InstrumentationContext<Document> beginParse(InstrumentationExecutionParameters parameters, InstrumentationState state) {
             capturedInput = parameters.getExecutionInput()
-            return super.beginParse(parameters)
+            return noOp()
         }
     }
 
@@ -203,14 +208,14 @@ class PreparsedDocumentProviderTest extends Specification {
                 .preparsedDocumentProvider(documentProvider)
                 .instrumentation(instrumentationA)
                 .build()
-                .execute(ExecutionInput.newExecutionInput().query("#A").build())
+                .execute(newExecutionInput().query("#A").build())
 
         def instrumentationB = new InputCapturingInstrumentation()
         def resultB = GraphQL.newGraphQL(StarWarsSchema.starWarsSchema)
                 .preparsedDocumentProvider(documentProvider)
                 .instrumentation(instrumentationB)
                 .build()
-                .execute(ExecutionInput.newExecutionInput().query("#B").build())
+                .execute(newExecutionInput().query("#B").build())
 
         expect:
 
@@ -219,5 +224,29 @@ class PreparsedDocumentProviderTest extends Specification {
 
         resultB.data == [hero: [name: "R2-D2"]]
         instrumentationB.capturedInput.getQuery() == queryB
+    }
+
+    def "sync method and async method result is same"() {
+        given:
+        def provider = new TestingPreparsedDocumentProvider()
+        def queryA = """
+              query A {
+                  hero {
+                      id
+                  }
+              }
+              """
+        def engineParser = {
+            ExecutionInput ei ->
+                def doc = new Parser().parseDocument(ei.getQuery())
+                return new PreparsedDocumentEntry(doc)
+        }
+        when:
+        def syncMethod = provider.getDocument(newExecutionInput(queryA).build(), engineParser)
+        def asyncMethod = provider.getDocumentAsync(newExecutionInput(queryA).build(), engineParser)
+
+        then:
+        asyncMethod != null
+        asyncMethod.get().equals(syncMethod)
     }
 }

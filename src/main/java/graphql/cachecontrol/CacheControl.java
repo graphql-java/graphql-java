@@ -1,5 +1,6 @@
 package graphql.cachecontrol;
 
+import graphql.DeprecatedAt;
 import graphql.ExecutionInput;
 import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
@@ -17,6 +18,11 @@ import static graphql.Assert.assertNotNull;
 import static graphql.collect.ImmutableKit.map;
 
 /**
+ * Apollo has deprecated their Cache Control specification https://github.com/apollographql/apollo-cache-control
+ * This has been deprecated/removed from Apollo some time.
+ * Apollo now provides an alternative approach via the @cacheControl directive https://www.apollographql.com/docs/apollo-server/performance/caching/
+ * We are deprecating CacheControl inside graphql-java and this will be deleted in a future release.
+ *
  * This class implements the graphql Cache Control specification as outlined in https://github.com/apollographql/apollo-cache-control
  * <p>
  * To best use this class you need to pass a CacheControl object to each {@link graphql.schema.DataFetcher} and have them decide on
@@ -28,6 +34,8 @@ import static graphql.collect.ImmutableKit.map;
  * Then at the end of the query you would call {@link #addTo(graphql.ExecutionResult)} to record the cache control hints into the {@link graphql.ExecutionResult}
  * extensions map as per the specification.
  */
+@Deprecated
+@DeprecatedAt("2022-07-26")
 @PublicApi
 public class CacheControl {
 
@@ -42,7 +50,7 @@ public class CacheControl {
         PUBLIC, PRIVATE
     }
 
-    private class Hint {
+    private static final class Hint {
         private final List<Object> path;
         private final Integer maxAge;
         private final Scope scope;
@@ -81,7 +89,11 @@ public class CacheControl {
      * @param maxAge the caching time in seconds
      * @param scope  the scope of the cache control hint
      * @return this object builder style
+     *
+     * @deprecated - Apollo has deprecated the Cache Control specification
      */
+    @Deprecated
+    @DeprecatedAt("2022-07-26")
     public CacheControl hint(ResultPath path, Integer maxAge, Scope scope) {
         assertNotNull(path);
         assertNotNull(scope);
@@ -95,7 +107,11 @@ public class CacheControl {
      * @param path  the path to the field that has the cache control hint
      * @param scope the scope of the cache control hint
      * @return this object builder style
+     *
+     * @deprecated - Apollo has deprecated the Cache Control specification
      */
+    @Deprecated
+    @DeprecatedAt("2022-07-26")
     public CacheControl hint(ResultPath path, Scope scope) {
         return hint(path, null, scope);
     }
@@ -106,7 +122,11 @@ public class CacheControl {
      * @param path   the path to the field that has the cache control hint
      * @param maxAge the caching time in seconds
      * @return this object builder style
+     *
+     * @deprecated - Apollo has deprecated the Cache Control specification
      */
+    @Deprecated
+    @DeprecatedAt("2022-07-26")
     public CacheControl hint(ResultPath path, Integer maxAge) {
         return hint(path, maxAge, Scope.PUBLIC);
     }
@@ -118,7 +138,11 @@ public class CacheControl {
      * @param maxAge                  the caching time in seconds
      * @param scope                   the scope of the cache control hint
      * @return this object builder style
+     *
+     * @deprecated - Apollo has deprecated the Cache Control specification
      */
+    @Deprecated
+    @DeprecatedAt("2022-07-26")
     public CacheControl hint(DataFetchingEnvironment dataFetchingEnvironment, Integer maxAge, Scope scope) {
         assertNotNull(dataFetchingEnvironment);
         assertNotNull(scope);
@@ -132,7 +156,11 @@ public class CacheControl {
      * @param dataFetchingEnvironment the path to the field that has the cache control hint
      * @param maxAge                  the caching time in seconds
      * @return this object builder style
+     *
+     * @deprecated - Apollo has deprecated the Cache Control specification
      */
+    @Deprecated
+    @DeprecatedAt("2022-07-26")
     public CacheControl hint(DataFetchingEnvironment dataFetchingEnvironment, Integer maxAge) {
         hint(dataFetchingEnvironment, maxAge, Scope.PUBLIC);
         return this;
@@ -144,7 +172,11 @@ public class CacheControl {
      * @param dataFetchingEnvironment the path to the field that has the cache control hint
      * @param scope                   the scope of the cache control hint
      * @return this object builder style
+     *
+     * @deprecated - Apollo has deprecated the Cache Control specification
      */
+    @Deprecated
+    @DeprecatedAt("2022-07-26")
     public CacheControl hint(DataFetchingEnvironment dataFetchingEnvironment, Scope scope) {
         return hint(dataFetchingEnvironment, null, scope);
     }
@@ -153,7 +185,11 @@ public class CacheControl {
      * Creates a new CacheControl object that can be used to trick caching hints
      *
      * @return the new object
+     *
+     * @deprecated - Apollo has deprecated the Cache Control specification
      */
+    @Deprecated
+    @DeprecatedAt("2022-07-26")
     public static CacheControl newCacheControl() {
         return new CacheControl();
     }
@@ -164,9 +200,13 @@ public class CacheControl {
      *
      * @param executionResult the starting execution result object
      * @return a new execution result with the hints in the extensions map.
+     *
+     * @deprecated - Apollo has deprecated the Cache Control specification
      */
+    @Deprecated
+    @DeprecatedAt("2022-07-26")
     public ExecutionResult addTo(ExecutionResult executionResult) {
-        return ExecutionResultImpl.newExecutionResult()
+        return ExecutionResult.newExecutionResult()
                 .from(executionResult)
                 .addExtension(CACHE_CONTROL_EXTENSION_KEY, hintsToCacheControlProperties())
                 .build();

@@ -126,6 +126,6 @@ directiveDefinition : description? DIRECTIVE '@' name argumentsDefinition? REPEA
 directiveLocation : name;
 
 directiveLocations :
-directiveLocation |
+'|'? directiveLocation |
 directiveLocations '|' directiveLocation
 ;

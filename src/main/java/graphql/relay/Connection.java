@@ -19,7 +19,7 @@ public interface Connection<T> {
     List<Edge<T>> getEdges();
 
     /**
-     * @return {@link graphql.relay.PageInfo} pagination data about about that list of edges
+     * @return {@link graphql.relay.PageInfo} pagination data about that list of edges
      */
     PageInfo getPageInfo();
 

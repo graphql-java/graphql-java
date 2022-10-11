@@ -241,18 +241,14 @@ union UnionName @d1 @d2 = Type1 | Type2
 """
 
         and: "expected schema"
-        def schema = UnionTypeDefinition.newUnionTypeDefinition().name("UnionName")
-        schema.directive(new Directive("d1"))
-        schema.directive(new Directive("d2"))
-        schema.memberType(new TypeName("Type1"))
-        schema.memberType(new TypeName("Type2"))
+        def unionTypeTestDefinition = unionDefinition()
 
         when:
         def document = new Parser().parseDocument(input)
 
         then:
         document.definitions.size() == 1
-        isEqual(document.definitions[0], schema.build())
+        isEqual(document.definitions[0], unionTypeTestDefinition)
     }
 
     def "input object schema"() {
@@ -860,6 +856,215 @@ input Gun {
         description == "Represents the 😕 emoji."
     }
 
+    def unionDefinition() {
+        def schema = UnionTypeDefinition.newUnionTypeDefinition().name("UnionName")
+        schema.directive(new Directive("d1"))
+        schema.directive(new Directive("d2"))
+        schema.memberType(new TypeName("Type1"))
+        schema.memberType(new TypeName("Type2"))
+        return schema.build()
+    }
 
+    def "union with two types and leading pipe"() {
+        given:
+        def input = """
+union UnionName @d1 @d2 = | Type1 | Type2
+"""
+
+        when:
+        def document = new Parser().parseDocument(input)
+
+        then:
+        document.definitions.size() == 1
+        isEqual(document.definitions[0], unionDefinition())
+    }
+
+    def "union with leading pipe"() {
+        given:
+        def input = """
+union UnionName @d1 @d2 = | Type1
+"""
+
+        and: "expected schema"
+        def schema = UnionTypeDefinition.newUnionTypeDefinition().name("UnionName")
+        schema.directive(new Directive("d1"))
+        schema.directive(new Directive("d2"))
+        schema.memberType(new TypeName("Type1"))
+
+        when:
+        def document = new Parser().parseDocument(input)
+
+        then:
+        document.definitions.size() == 1
+        isEqual(document.definitions[0], schema.build())
+    }
+
+    def "union fails with double leading pipe"() {
+        given:
+        def input = """
+union UnionName @d1 @d2 = || Type1 | Type2
+"""
+
+        when:
+        new Parser().parseDocument(input)
+
+        then:
+        def e = thrown(InvalidSyntaxException)
+
+        e.location.line == 2
+        e.location.column == 28
+        e.offendingToken == "|"
+    }
+
+    def "union fails with double inner pipe"() {
+        given:
+        def input = """
+union UnionName @d1 @d2 = Type1 || Type2
+"""
+
+        when:
+        new Parser().parseDocument(input)
+
+        then:
+        def e = thrown(InvalidSyntaxException)
+
+        e.location.line == 2
+        e.location.column == 34
+        e.offendingToken == "|"
+    }
+
+    def "union fails with trailing pipe"() {
+        given:
+        def input = """
+union UnionName @d1 @d2 = Type1 | Type2 |
+"""
+
+        when:
+        new Parser().parseDocument(input)
+
+        then:
+        def e = thrown(InvalidSyntaxException)
+
+        e.location.line == 3
+        e.location.column == 1
+        e.offendingToken == "<EOF>"
+    }
+
+    def "directive with two locations and leading pipe"() {
+        given:
+        def input = """
+directive @myDirective on
+  | OBJECT
+  | INTERFACE
+"""
+
+        when:
+        def directive = new Parser().parseDocument(input)
+
+        then:
+        directive.definitions.size() == 1
+        def first = directive.definitions[0]
+        first instanceof DirectiveDefinition
+        def resultDirective = (DirectiveDefinition) first
+        resultDirective.name == "myDirective"
+        resultDirective.inputValueDefinitions.size() == 0
+        resultDirective.directiveLocations.size() == 2
+        resultDirective.directiveLocations[0].name == "OBJECT"
+        resultDirective.directiveLocations[1].name == "INTERFACE"
+    }
+
+    def "directive with leading pipe"() {
+        given:
+        def input = """
+directive @myDirective on
+  | OBJECT
+"""
+
+        when:
+        def directive = new Parser().parseDocument(input)
+
+        then:
+        directive.definitions.size() == 1
+        def first = directive.definitions[0]
+        first instanceof DirectiveDefinition
+        def resultDirective = (DirectiveDefinition) first
+        resultDirective.name == "myDirective"
+        resultDirective.inputValueDefinitions.size() == 0
+        resultDirective.directiveLocations.size() == 1
+        resultDirective.directiveLocations[0].name == "OBJECT"
+    }
+
+    def "directive with leading pipe INLINE"() {
+        given:
+        def input = """
+directive @myDirective on | OBJECT
+"""
+
+        when:
+        def directive = new Parser().parseDocument(input)
+
+        then:
+        directive.definitions.size() == 1
+        def first = directive.definitions[0]
+        first instanceof DirectiveDefinition
+        def resultDirective = (DirectiveDefinition) first
+        resultDirective.name == "myDirective"
+        resultDirective.inputValueDefinitions.size() == 0
+        resultDirective.directiveLocations.size() == 1
+        resultDirective.directiveLocations[0].name == "OBJECT"
+    }
+
+    def "directive fails with double leading pipe"() {
+        given:
+        def input = """
+directive @myDirective on || OBJECT | INTERFACE
+"""
+
+        when:
+        new Parser().parseDocument(input)
+
+        then:
+        def e = thrown(InvalidSyntaxException)
+
+        e.location.line == 2
+        e.location.column == 28
+        e.offendingToken == "|"
+    }
+
+    def "directive fails with double inner pipe between locations"() {
+        given:
+        def input = """
+directive @myDirective on OBJECT || INTERFACE
+"""
+
+        when:
+        new Parser().parseDocument(input)
+
+        then:
+        def e = thrown(InvalidSyntaxException)
+
+        e.location.line == 2
+        e.location.column == 35
+        e.offendingToken == "|"
+    }
+
+    def "directive fails with trailing pipe"() {
+        given:
+        def input = """
+directive @myDirective on
+  OBJECT
+  | INTERFACE |
+"""
+
+        when:
+        new Parser().parseDocument(input)
+
+        then:
+        def e = thrown(InvalidSyntaxException)
+
+        e.location.line == 5
+        e.location.column == 1
+        e.offendingToken == "<EOF>"
+    }
 }
 

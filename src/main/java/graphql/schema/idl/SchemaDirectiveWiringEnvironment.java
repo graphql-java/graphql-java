@@ -1,9 +1,11 @@
 package graphql.schema.idl;
 
+import graphql.DeprecatedAt;
 import graphql.PublicApi;
 import graphql.language.NamedNode;
 import graphql.language.NodeParentTree;
 import graphql.schema.DataFetcher;
+import graphql.schema.GraphQLAppliedDirective;
 import graphql.schema.GraphQLCodeRegistry;
 import graphql.schema.GraphQLDirective;
 import graphql.schema.GraphQLDirectiveContainer;
@@ -38,12 +40,34 @@ public interface SchemaDirectiveWiringEnvironment<T extends GraphQLDirectiveCont
      *
      * @return the directive that was registered under specific directive name or null if it was not
      * registered this way
+     *
+     * @deprecated use {@link #getAppliedDirective()}
      */
+    @Deprecated
+    @DeprecatedAt("2022-06-21")
     GraphQLDirective getDirective();
 
     /**
-     * @return all of the directives that are on the runtime element
+     * This returns the applied directive that the {@link graphql.schema.idl.SchemaDirectiveWiring} was registered
+     * against during calls to {@link graphql.schema.idl.RuntimeWiring.Builder#directive(String, SchemaDirectiveWiring)}
+     * <p>
+     * If this method of registration is not used (say because
+     * {@link graphql.schema.idl.WiringFactory#providesSchemaDirectiveWiring(SchemaDirectiveWiringEnvironment)} or
+     * {@link graphql.schema.idl.RuntimeWiring.Builder#directiveWiring(SchemaDirectiveWiring)} was used)
+     * then this will return null.
+     *
+     * @return the applied directive that was registered under specific directive name or null if it was not
+     * registered this way
      */
+    GraphQLAppliedDirective getAppliedDirective();
+
+    /**
+     * @return all of the directives that are on the runtime element
+     *
+     * @deprecated use {@link #getAppliedDirectives()} instead
+     */
+    @Deprecated
+    @DeprecatedAt("2022-06-21")
     Map<String, GraphQLDirective> getDirectives();
 
     /**
@@ -52,8 +76,26 @@ public interface SchemaDirectiveWiringEnvironment<T extends GraphQLDirectiveCont
      * @param directiveName the name of the directive
      *
      * @return a named directive or null
+     *
+     * @deprecated use {@link #getAppliedDirective(String)}  instead
      */
+    @Deprecated
+    @DeprecatedAt("2022-06-21")
     GraphQLDirective getDirective(String directiveName);
+
+    /**
+     * @return all of the directives that are on the runtime element
+     */
+    Map<String, GraphQLAppliedDirective> getAppliedDirectives();
+
+    /**
+     * Returns a named applied directive or null
+     *
+     * @param directiveName the name of the directive
+     *
+     * @return a named directive or null
+     */
+    GraphQLAppliedDirective getAppliedDirective(String directiveName);
 
     /**
      * Returns true if the named directive is present

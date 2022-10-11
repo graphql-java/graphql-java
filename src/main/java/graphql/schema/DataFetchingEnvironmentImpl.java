@@ -2,6 +2,7 @@ package graphql.schema;
 
 
 import com.google.common.collect.ImmutableMap;
+import graphql.DeprecatedAt;
 import graphql.GraphQLContext;
 import graphql.Internal;
 import graphql.cachecontrol.CacheControl;
@@ -19,7 +20,6 @@ import graphql.language.OperationDefinition;
 import org.dataloader.DataLoader;
 import org.dataloader.DataLoaderRegistry;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -53,7 +53,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
 
     private DataFetchingEnvironmentImpl(Builder builder) {
         this.source = builder.source;
-        this.arguments = builder.arguments == null ? Collections::emptyMap : builder.arguments;
+        this.arguments = builder.arguments == null ? ImmutableKit::emptyMap : builder.arguments;
         this.context = builder.context;
         this.graphQLContext = builder.graphQLContext;
         this.localContext = builder.localContext;
@@ -219,6 +219,8 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
     }
 
     @Override
+    @Deprecated
+    @DeprecatedAt("2022-07-26")
     public CacheControl getCacheControl() {
         return cacheControl;
     }
@@ -318,6 +320,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
         }
 
         @Deprecated
+        @DeprecatedAt("2021-07-05")
         public Builder context(Object context) {
             this.context = context;
             return this;
@@ -392,6 +395,8 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
             return this;
         }
 
+        @Deprecated
+        @DeprecatedAt("2022-07-26")
         public Builder cacheControl(CacheControl cacheControl) {
             this.cacheControl = cacheControl;
             return this;

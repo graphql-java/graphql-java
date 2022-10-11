@@ -1,10 +1,13 @@
 package graphql;
 
 
+import com.google.common.collect.ImmutableSet;
 import graphql.language.Description;
 import graphql.language.DirectiveDefinition;
 import graphql.language.StringValue;
 import graphql.schema.GraphQLDirective;
+
+import java.util.Set;
 
 import static graphql.Scalars.GraphQLBoolean;
 import static graphql.Scalars.GraphQLString;
@@ -79,7 +82,7 @@ public class Directives {
 
     public static final GraphQLDirective SkipDirective = GraphQLDirective.newDirective()
             .name("skip")
-            .description("Directs the executor to skip this field or fragment when the `if`'argument is true.")
+            .description("Directs the executor to skip this field or fragment when the `if` argument is true.")
             .argument(newArgument()
                     .name("if")
                     .type(nonNull(GraphQLBoolean))
@@ -99,7 +102,7 @@ public class Directives {
             .argument(newArgument()
                     .name("reason")
                     .type(GraphQLString)
-                    .defaultValue(NO_LONGER_SUPPORTED)
+                    .defaultValueProgrammatic(NO_LONGER_SUPPORTED)
                     .description("The reason for the deprecation"))
             .validLocations(FIELD_DEFINITION, ENUM_VALUE, ARGUMENT_DEFINITION, INPUT_FIELD_DEFINITION)
             .definition(DEPRECATED_DIRECTIVE_DEFINITION)
@@ -122,6 +125,4 @@ public class Directives {
     private static Description createDescription(String s) {
         return new Description(s, null, false);
     }
-
-
 }

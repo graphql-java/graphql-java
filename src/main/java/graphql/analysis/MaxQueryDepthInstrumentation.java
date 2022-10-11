@@ -1,22 +1,24 @@
 package graphql.analysis;
 
+import graphql.ExecutionResult;
 import graphql.PublicApi;
 import graphql.execution.AbortExecutionException;
+import graphql.execution.ExecutionContext;
 import graphql.execution.instrumentation.InstrumentationContext;
+import graphql.execution.instrumentation.InstrumentationState;
 import graphql.execution.instrumentation.SimpleInstrumentation;
-import graphql.execution.instrumentation.parameters.InstrumentationValidationParameters;
-import graphql.validation.ValidationError;
+import graphql.execution.instrumentation.parameters.InstrumentationExecuteOperationParameters;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.List;
 import java.util.function.Function;
 
-import static graphql.execution.instrumentation.SimpleInstrumentationContext.whenCompleted;
+import static graphql.execution.instrumentation.SimpleInstrumentationContext.noOp;
 
 /**
  * Prevents execution if the query depth is greater than the specified maxDepth.
- *
+ * <p>
  * Use the {@code Function<QueryDepthInfo, Boolean>} parameter to supply a function to perform a custom action when the max depth is
  * exceeded. If the function returns {@code true} a {@link AbortExecutionException} is thrown.
  */
@@ -49,26 +51,22 @@ public class MaxQueryDepthInstrumentation extends SimpleInstrumentation {
     }
 
     @Override
-    public InstrumentationContext<List<ValidationError>> beginValidation(InstrumentationValidationParameters parameters) {
-        return whenCompleted((errors, throwable) -> {
-            if ((errors != null && errors.size() > 0) || throwable != null) {
-                return;
+    public @Nullable InstrumentationContext<ExecutionResult> beginExecuteOperation(InstrumentationExecuteOperationParameters parameters, InstrumentationState state) {
+        QueryTraverser queryTraverser = newQueryTraverser(parameters.getExecutionContext());
+        int depth = queryTraverser.reducePreOrder((env, acc) -> Math.max(getPathLength(env.getParentEnvironment()), acc), 0);
+        if (log.isDebugEnabled()) {
+            log.debug("Query depth info: {}", depth);
+        }
+        if (depth > maxDepth) {
+            QueryDepthInfo queryDepthInfo = QueryDepthInfo.newQueryDepthInfo()
+                    .depth(depth)
+                    .build();
+            boolean throwAbortException = maxQueryDepthExceededFunction.apply(queryDepthInfo);
+            if (throwAbortException) {
+                throw mkAbortException(depth, maxDepth);
             }
-            QueryTraverser queryTraverser = newQueryTraverser(parameters);
-            int depth = queryTraverser.reducePreOrder((env, acc) -> Math.max(getPathLength(env.getParentEnvironment()), acc), 0);
-            if (log.isDebugEnabled()) {
-                log.debug("Query depth info: {}", depth);
-            }
-            if (depth > maxDepth) {
-                QueryDepthInfo queryDepthInfo = QueryDepthInfo.newQueryDepthInfo()
-                        .depth(depth)
-                        .build();
-                boolean throwAbortException = maxQueryDepthExceededFunction.apply(queryDepthInfo);
-                if (throwAbortException) {
-                    throw mkAbortException(depth, maxDepth);
-                }
-            }
-        });
+        }
+        return noOp();
     }
 
     /**
@@ -77,18 +75,18 @@ public class MaxQueryDepthInstrumentation extends SimpleInstrumentation {
      * @param depth    the depth of the query
      * @param maxDepth the maximum depth allowed
      *
-     * @return a instance of AbortExecutionException
+     * @return an instance of AbortExecutionException
      */
     protected AbortExecutionException mkAbortException(int depth, int maxDepth) {
         return new AbortExecutionException("maximum query depth exceeded " + depth + " > " + maxDepth);
     }
 
-    QueryTraverser newQueryTraverser(InstrumentationValidationParameters parameters) {
+    QueryTraverser newQueryTraverser(ExecutionContext executionContext) {
         return QueryTraverser.newQueryTraverser()
-                .schema(parameters.getSchema())
-                .document(parameters.getDocument())
-                .operationName(parameters.getOperation())
-                .variables(parameters.getVariables())
+                .schema(executionContext.getGraphQLSchema())
+                .document(executionContext.getDocument())
+                .operationName(executionContext.getExecutionInput().getOperationName())
+                .coercedVariables(executionContext.getCoercedVariables())
                 .build();
     }
 

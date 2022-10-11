@@ -1,5 +1,6 @@
 package graphql.schema.diffing;
 
+import graphql.GraphQLContext;
 import graphql.execution.ValuesResolver;
 import graphql.introspection.Introspection;
 import graphql.language.AstPrinter;
@@ -15,6 +16,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
@@ -154,7 +156,7 @@ public class SchemaGraphFactory {
         Edge typeEdge = new Edge(inputFieldVertex, typeVertex);
         String typeEdgeLabel = "type=" + GraphQLTypeUtil.simplePrint(type);
         if (inputField.hasSetDefaultValue()) {
-            typeEdgeLabel += ";defaultValue='" + AstPrinter.printAst(ValuesResolver.valueToLiteral(inputField.getInputFieldDefaultValue(), inputField.getType())) + "'";
+            typeEdgeLabel += ";defaultValue='" + AstPrinter.printAst(ValuesResolver.valueToLiteral(inputField.getInputFieldDefaultValue(), inputField.getType(), GraphQLContext.getDefault(), Locale.getDefault())) + "'";
         }
 
         typeEdge.setLabel(typeEdgeLabel);
@@ -230,7 +232,7 @@ public class SchemaGraphFactory {
         Edge typeEdge = new Edge(argumentVertex, typeVertex);
         String typeEdgeLabel = "type=" + GraphQLTypeUtil.simplePrint(type);
         if (graphQLArgument.hasSetDefaultValue()) {
-            typeEdgeLabel += ";defaultValue='" + AstPrinter.printAst(ValuesResolver.valueToLiteral(graphQLArgument.getArgumentDefaultValue(), graphQLArgument.getType())) + "'";
+            typeEdgeLabel += ";defaultValue='" + AstPrinter.printAst(ValuesResolver.valueToLiteral(graphQLArgument.getArgumentDefaultValue(), graphQLArgument.getType(), GraphQLContext.getDefault(), Locale.getDefault())) + "'";
         }
         typeEdge.setLabel(typeEdgeLabel);
         schemaGraph.addEdge(typeEdge);
@@ -357,7 +359,7 @@ public class SchemaGraphFactory {
                 if (appliedArgument.hasSetValue()) {
                     Vertex appliedArgumentVertex = new Vertex(SchemaGraph.APPLIED_ARGUMENT, debugPrefix + String.valueOf(counter++));
                     appliedArgumentVertex.add("name", appliedArgument.getName());
-                    appliedArgumentVertex.add("value", AstPrinter.printAst(ValuesResolver.valueToLiteral(appliedArgument.getArgumentValue(), appliedArgument.getType())));
+                    appliedArgumentVertex.add("value", AstPrinter.printAst(ValuesResolver.valueToLiteral(appliedArgument.getArgumentValue(), appliedArgument.getType(), GraphQLContext.getDefault(), Locale.getDefault())));
                     schemaGraph.addVertex(appliedArgumentVertex);
                     schemaGraph.addEdge(new Edge(appliedDirectiveVertex, appliedArgumentVertex));
                 }

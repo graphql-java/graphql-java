@@ -1,5 +1,6 @@
 package graphql.schema.validation;
 
+import graphql.collect.ImmutableKit;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLEnumType;
 import graphql.schema.GraphQLEnumValueDefinition;
@@ -206,7 +207,7 @@ public class TypeAndFieldRule extends GraphQLTypeVisitorStub {
 
     private List<GraphQLNamedType> filterBuiltInTypes(List<GraphQLNamedType> graphQLNamedTypes) {
         if (graphQLNamedTypes == null || graphQLNamedTypes.isEmpty()) {
-            return Collections.emptyList();
+            return ImmutableKit.emptyList();
         }
 
         Predicate<GraphQLNamedType> filterFunction = namedType -> {

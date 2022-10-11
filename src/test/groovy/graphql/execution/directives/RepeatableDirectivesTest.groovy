@@ -38,7 +38,7 @@ class RepeatableDirectivesTest extends Specification {
         when:
         def document = TestUtil.parseQuery(spec)
         def validator = new Validator()
-        def validationErrors = validator.validateDocument(schema, document)
+        def validationErrors = validator.validateDocument(schema, document, Locale.ENGLISH)
 
         then:
         validationErrors.size() == 0
@@ -55,11 +55,11 @@ class RepeatableDirectivesTest extends Specification {
         when:
         def document = TestUtil.parseQuery(spec)
         def validator = new Validator()
-        def validationErrors = validator.validateDocument(schema, document)
+        def validationErrors = validator.validateDocument(schema, document, Locale.ENGLISH)
 
         then:
         validationErrors.size() == 1
-        validationErrors[0].message == "Validation error of type DuplicateDirectiveName: Non repeatable directives must be uniquely named within a location. The directive 'nonRepeatableDirective' used on a 'Field' is not unique. @ 'namedField'"
+        validationErrors[0].message == "Validation error (DuplicateDirectiveName@[namedField]) : Non repeatable directives must be uniquely named within a location. The directive 'nonRepeatableDirective' used on a 'Field' is not unique"
     }
 
     def "getRepeatableDirectivesInfo"() {
@@ -73,7 +73,7 @@ class RepeatableDirectivesTest extends Specification {
         when:
         def document = TestUtil.parseQuery(spec)
         def validator = new Validator()
-        def validationErrors = validator.validateDocument(schema, document)
+        def validationErrors = validator.validateDocument(schema, document, Locale.ENGLISH)
 
         OperationDefinition operationDefinition = document.getDefinitions()[0]
         Field field = operationDefinition.getSelectionSet().getSelections()[0]
@@ -105,13 +105,13 @@ class RepeatableDirectivesTest extends Specification {
         '''
 
         when:
-        SchemaParser parser = new SchemaParser();
-        def typeDefinitionRegistry = parser.parse(spec);
+        SchemaParser parser = new SchemaParser()
+        def typeDefinitionRegistry = parser.parse(spec)
         def runtimeWiring = RuntimeWiring.newRuntimeWiring()
                 .wiringFactory(new MockedWiringFactory())
-                .build();
-        def schemaGenerator = new SchemaGenerator();
-        def schema = schemaGenerator.makeExecutableSchema(typeDefinitionRegistry, runtimeWiring);
+                .build()
+        def schemaGenerator = new SchemaGenerator()
+        def schema = schemaGenerator.makeExecutableSchema(typeDefinitionRegistry, runtimeWiring)
         def pType = schema.getObjectType("PType")
 
         then:

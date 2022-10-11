@@ -2,6 +2,8 @@ package graphql.schema.impl;
 
 import graphql.Assert;
 import graphql.Internal;
+import graphql.schema.GraphQLAppliedDirectiveArgument;
+import graphql.schema.GraphQLAppliedDirective;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLCompositeType;
 import graphql.schema.GraphQLDirective;
@@ -43,6 +45,18 @@ public class MultiReadOnlyGraphQLTypeVisitor implements GraphQLTypeVisitor {
 
     public MultiReadOnlyGraphQLTypeVisitor(List<GraphQLTypeVisitor> visitors) {
         this.visitors = visitors;
+    }
+
+    @Override
+    public TraversalControl visitGraphQLAppliedDirective(GraphQLAppliedDirective node, TraverserContext<GraphQLSchemaElement> context) {
+        visitors.forEach(v -> v.visitGraphQLAppliedDirective(node, context));
+        return TraversalControl.CONTINUE;
+    }
+
+    @Override
+    public TraversalControl visitGraphQLAppliedDirectiveArgument(GraphQLAppliedDirectiveArgument node, TraverserContext<GraphQLSchemaElement> context) {
+        visitors.forEach(v -> v.visitGraphQLAppliedDirectiveArgument(node, context));
+        return TraversalControl.CONTINUE;
     }
 
     @Override

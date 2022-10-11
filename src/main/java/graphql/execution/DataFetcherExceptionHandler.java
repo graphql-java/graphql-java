@@ -1,12 +1,12 @@
 package graphql.execution;
 
+import graphql.DeprecatedAt;
 import graphql.ExecutionResult;
 import graphql.PublicSpi;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
 
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
 
 /**
  * This is called when an exception is thrown during {@link graphql.schema.DataFetcher#get(DataFetchingEnvironment)} execution
@@ -27,7 +27,10 @@ public interface DataFetcherExceptionHandler {
      * version
      */
     @Deprecated
-    DataFetcherExceptionHandlerResult onException(DataFetcherExceptionHandlerParameters handlerParameters);
+    @DeprecatedAt("2021-06-23")
+    default DataFetcherExceptionHandlerResult onException(DataFetcherExceptionHandlerParameters handlerParameters) {
+        return SimpleDataFetcherExceptionHandler.defaultImpl.onException(handlerParameters);
+    }
 
     /**
      * When an exception occurs during a call to a {@link DataFetcher} then this handler

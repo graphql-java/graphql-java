@@ -1,5 +1,6 @@
 package graphql.validation.rules
 
+import graphql.GraphQLContext
 import graphql.language.Argument
 import graphql.language.ArrayValue
 import graphql.language.BooleanValue
@@ -8,14 +9,18 @@ import graphql.language.ObjectField
 import graphql.language.ObjectValue
 import graphql.language.StringValue
 import graphql.language.VariableReference
+import graphql.parser.Parser
 import graphql.schema.GraphQLArgument
 import graphql.schema.GraphQLInputObjectField
 import graphql.schema.GraphQLInputObjectType
 import graphql.schema.GraphQLList
 import graphql.schema.GraphQLNonNull
+import graphql.validation.SpecValidationSchema
 import graphql.validation.ValidationContext
+import graphql.validation.ValidationError
 import graphql.validation.ValidationErrorCollector
 import graphql.validation.ValidationErrorType
+import graphql.validation.Validator
 import spock.lang.Specification
 
 import static graphql.Scalars.GraphQLBoolean
@@ -31,6 +36,8 @@ class ArgumentsOfCorrectTypeTest extends Specification {
 
     def setup() {
         argumentsOfCorrectType = new ArgumentsOfCorrectType(validationContext, errorCollector)
+        def context = GraphQLContext.getDefault()
+        validationContext.getGraphQLContext() >> context
     }
 
     def "valid type results in no error"() {
@@ -56,8 +63,24 @@ class ArgumentsOfCorrectTypeTest extends Specification {
         then:
         errorCollector.containsValidationError(ValidationErrorType.WrongType)
         errorCollector.errors.size() == 1
-        errorCollector.errors[0].message ==
-                "Validation error of type WrongType: argument 'arg' with value 'StringValue{value='string'}' is not a valid 'Boolean' - Expected AST type 'BooleanValue' but was 'StringValue'."
+    }
+
+    def "invalid type scalar results in error with message"() {
+        def query = """
+            query getDog {
+              dog(arg1: 1) {
+                name
+              }           
+            }
+        """
+        when:
+        def validationErrors = validate(query)
+
+        then:
+        !validationErrors.empty
+        validationErrors.size() == 1
+        validationErrors.get(0).getValidationErrorType() == ValidationErrorType.WrongType
+        validationErrors.get(0).message == "Validation error (WrongType@[dog]) : argument 'arg1' with value 'IntValue{value=1}' is not a valid 'String' - Expected an AST type of 'StringValue' but it was a 'IntValue'."
     }
 
     def "invalid input object type results in error"() {
@@ -73,8 +96,6 @@ class ArgumentsOfCorrectTypeTest extends Specification {
         then:
         errorCollector.containsValidationError(ValidationErrorType.WrongType)
         errorCollector.errors.size() == 1
-        errorCollector.errors[0].message ==
-                "Validation error of type WrongType: argument 'arg.foo' with value 'StringValue{value='string'}' is not a valid 'Boolean' - Expected AST type 'BooleanValue' but was 'StringValue'."
     }
 
     def "invalid list object type results in error"() {
@@ -94,8 +115,6 @@ class ArgumentsOfCorrectTypeTest extends Specification {
         then:
         errorCollector.containsValidationError(ValidationErrorType.WrongType)
         errorCollector.errors.size() == 1
-        errorCollector.errors[0].message ==
-                "Validation error of type WrongType: argument 'arg[1].foo' with value 'StringValue{value='string'}' is not a valid 'Boolean' - Expected AST type 'BooleanValue' but was 'StringValue'."
     }
 
     def "invalid list inside object type results in error"() {
@@ -115,8 +134,6 @@ class ArgumentsOfCorrectTypeTest extends Specification {
         then:
         errorCollector.containsValidationError(ValidationErrorType.WrongType)
         errorCollector.errors.size() == 1
-        errorCollector.errors[0].message ==
-                "Validation error of type WrongType: argument 'arg[0].foo[1]' with value 'StringValue{value='string'}' is not a valid 'Boolean' - Expected AST type 'BooleanValue' but was 'StringValue'."
     }
 
     def "invalid list simple type results in error"() {
@@ -134,8 +151,6 @@ class ArgumentsOfCorrectTypeTest extends Specification {
         then:
         errorCollector.containsValidationError(ValidationErrorType.WrongType)
         errorCollector.errors.size() == 1
-        errorCollector.errors[0].message ==
-                "Validation error of type WrongType: argument 'arg[1]' with value 'StringValue{value='string'}' is not a valid 'Boolean' - Expected AST type 'BooleanValue' but was 'StringValue'."
     }
 
     def "type missing fields results in error"() {
@@ -157,8 +172,24 @@ class ArgumentsOfCorrectTypeTest extends Specification {
         then:
         errorCollector.containsValidationError(ValidationErrorType.WrongType)
         errorCollector.errors.size() == 1
-        errorCollector.errors[0].message ==
-                "Validation error of type WrongType: argument 'arg' with value 'ObjectValue{objectFields=[ObjectField{name='foo', value=StringValue{value='string'}}]}' is missing required fields '[bar]'"
+    }
+
+    def "type missing fields results in error with message"() {
+        def query = """
+            query getDog {
+              dog @objectArgumentDirective(myObject: { id: "1" }) {
+                name
+              }           
+            }
+        """
+        when:
+        def validationErrors = validate(query)
+
+        then:
+        !validationErrors.empty
+        validationErrors.size() == 1
+        validationErrors.get(0).getValidationErrorType() == ValidationErrorType.WrongType
+        validationErrors.get(0).message == "Validation error (WrongType@[dog]) : argument 'myObject' with value 'ObjectValue{objectFields=[ObjectField{name='id', value=StringValue{value='1'}}]}' is missing required fields '[name]'"
     }
 
     def "type not object results in error"() {
@@ -178,8 +209,24 @@ class ArgumentsOfCorrectTypeTest extends Specification {
         then:
         errorCollector.containsValidationError(ValidationErrorType.WrongType)
         errorCollector.errors.size() == 1
-        errorCollector.errors[0].message ==
-                "Validation error of type WrongType: argument 'arg' with value 'StringValue{value='string'}' must be an object type"
+    }
+
+    def "invalid not object type results in error with message"() {
+        def query = """
+            query getDog {
+              dog @objectArgumentDirective(myObject: 1) {
+                name
+              }           
+            }
+        """
+        when:
+        def validationErrors = validate(query)
+
+        then:
+        !validationErrors.empty
+        validationErrors.size() == 1
+        validationErrors.get(0).getValidationErrorType() == ValidationErrorType.WrongType
+        validationErrors.get(0).message == "Validation error (WrongType@[dog]) : argument 'myObject' with value 'IntValue{value=1}' must be an object type"
     }
 
     def "type null fields results in error"() {
@@ -201,8 +248,24 @@ class ArgumentsOfCorrectTypeTest extends Specification {
         then:
         errorCollector.containsValidationError(ValidationErrorType.WrongType)
         errorCollector.errors.size() == 1
-        errorCollector.errors[0].message ==
-                "Validation error of type WrongType: argument 'arg.bar' with value 'NullValue{}' must not be null"
+    }
+
+    def "type null results in error with message"() {
+        def query = """
+            query getDog {
+              dog {
+                  doesKnowCommand(dogCommand: null)
+              }           
+            }
+        """
+        when:
+        def validationErrors = validate(query)
+
+        then:
+        !validationErrors.empty
+        validationErrors.size() == 2 // First error is NullValueForNonNullArgument
+        validationErrors.get(1).getValidationErrorType() == ValidationErrorType.WrongType
+        validationErrors.get(1).message == "Validation error (WrongType@[dog/doesKnowCommand]) : argument 'dogCommand' with value 'NullValue{}' must not be null"
     }
 
     def "type with extra fields results in error"() {
@@ -224,8 +287,24 @@ class ArgumentsOfCorrectTypeTest extends Specification {
         then:
         errorCollector.containsValidationError(ValidationErrorType.WrongType)
         errorCollector.errors.size() == 1
-        errorCollector.errors[0].message ==
-                "Validation error of type WrongType: argument 'arg' with value 'ObjectValue{objectFields=[ObjectField{name='foo', value=StringValue{value='string'}}, ObjectField{name='bar', value=StringValue{value='string'}}, ObjectField{name='fooBar', value=BooleanValue{value=true}}]}' contains a field not in 'ArgumentObjectType': 'fooBar'"
+    }
+
+    def "type with extra fields results in error with message"() {
+        def query = """
+            query getDog {
+              dog @objectArgumentDirective(myObject: { name: "Gary", extraField: "ShouldNotBeHere" }) {
+                name
+              }           
+            }
+        """
+        when:
+        def validationErrors = validate(query)
+
+        then:
+        !validationErrors.empty
+        validationErrors.size() == 1
+        validationErrors.get(0).getValidationErrorType() == ValidationErrorType.WrongType
+        validationErrors.get(0).message == "Validation error (WrongType@[dog]) : argument 'myObject' with value 'ObjectValue{objectFields=[ObjectField{name='name', value=StringValue{value='Gary'}}, ObjectField{name='extraField', value=StringValue{value='ShouldNotBeHere'}}]}' contains a field not in 'Input': 'extraField'"
     }
 
     def "current null argument from context is no error"() {
@@ -236,5 +315,28 @@ class ArgumentsOfCorrectTypeTest extends Specification {
         argumentsOfCorrectType.checkArgument(argumentLiteral)
         then:
         argumentsOfCorrectType.getErrors().isEmpty()
+    }
+
+    def "invalid enum type results in error with message"() {
+        def query = """
+            query getDog {
+              dog {
+                  doesKnowCommand(dogCommand: PRETTY)
+              }           
+            }
+        """
+        when:
+        def validationErrors = validate(query)
+
+        then:
+        !validationErrors.empty
+        validationErrors.size() == 1
+        validationErrors.get(0).getValidationErrorType() == ValidationErrorType.WrongType
+        validationErrors.get(0).message == "Validation error (WrongType@[dog/doesKnowCommand]) : argument 'dogCommand' with value 'EnumValue{name='PRETTY'}' is not a valid 'DogCommand' - Literal value not in allowable values for enum 'DogCommand' - 'EnumValue{name='PRETTY'}'."
+    }
+
+    static List<ValidationError> validate(String query) {
+        def document = new Parser().parseDocument(query)
+        return new Validator().validateDocument(SpecValidationSchema.specValidationSchema, document, Locale.ENGLISH)
     }
 }

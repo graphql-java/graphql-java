@@ -1,5 +1,6 @@
 package graphql.schema;
 
+import graphql.DeprecatedAt;
 import graphql.GraphQLContext;
 import graphql.PublicApi;
 import graphql.cachecontrol.CacheControl;
@@ -39,26 +40,34 @@ public class DelegatingDataFetchingEnvironment implements DataFetchingEnvironmen
         this.delegateEnvironment = delegateEnvironment;
     }
 
+    @Override
     public <T> T getSource() {
         return delegateEnvironment.getSource();
     }
 
+    @Override
     public Map<String, Object> getArguments() {
         return delegateEnvironment.getArguments();
     }
 
+    @Override
     public boolean containsArgument(String name) {
         return delegateEnvironment.containsArgument(name);
     }
 
+    @Override
     public <T> T getArgument(String name) {
         return delegateEnvironment.getArgument(name);
     }
 
+    @Override
     public <T> T getArgumentOrDefault(String name, T defaultValue) {
         return delegateEnvironment.getArgumentOrDefault(name, defaultValue);
     }
 
+    @Deprecated
+    @DeprecatedAt("2022-04-17")
+    @Override
     public <T> T getContext() {
         return delegateEnvironment.getContext();
     }
@@ -68,63 +77,79 @@ public class DelegatingDataFetchingEnvironment implements DataFetchingEnvironmen
         return delegateEnvironment.getGraphQlContext();
     }
 
+    @Override
     public <T> T getLocalContext() {
         return delegateEnvironment.getLocalContext();
     }
 
+    @Override
     public <T> T getRoot() {
         return delegateEnvironment.getRoot();
     }
 
+    @Override
     public GraphQLFieldDefinition getFieldDefinition() {
         return delegateEnvironment.getFieldDefinition();
     }
 
     @Deprecated
+    @DeprecatedAt("2019-10-07")
+    @Override
     public List<Field> getFields() {
         return delegateEnvironment.getFields();
     }
 
+    @Override
     public MergedField getMergedField() {
         return delegateEnvironment.getMergedField();
     }
 
+    @Override
     public Field getField() {
         return delegateEnvironment.getField();
     }
 
+    @Override
     public GraphQLOutputType getFieldType() {
         return delegateEnvironment.getFieldType();
     }
 
+    @Override
     public ExecutionStepInfo getExecutionStepInfo() {
         return delegateEnvironment.getExecutionStepInfo();
     }
 
+    @Override
     public GraphQLType getParentType() {
         return delegateEnvironment.getParentType();
     }
 
+    @Override
     public GraphQLSchema getGraphQLSchema() {
         return delegateEnvironment.getGraphQLSchema();
     }
 
+    @Override
     public Map<String, FragmentDefinition> getFragmentsByName() {
         return delegateEnvironment.getFragmentsByName();
     }
 
+    @Override
     public ExecutionId getExecutionId() {
         return delegateEnvironment.getExecutionId();
     }
 
+    @Override
     public DataFetchingFieldSelectionSet getSelectionSet() {
         return delegateEnvironment.getSelectionSet();
     }
 
+    @Override
     public QueryDirectives getQueryDirectives() {
         return delegateEnvironment.getQueryDirectives();
     }
 
+    @Override
     public <K, V> DataLoader<K, V> getDataLoader(String dataLoaderName) {
         return delegateEnvironment.getDataLoader(dataLoaderName);
     }
@@ -139,18 +164,24 @@ public class DelegatingDataFetchingEnvironment implements DataFetchingEnvironmen
         return delegateEnvironment.getLocale();
     }
 
+    @Override
+    @Deprecated
+    @DeprecatedAt("2022-07-26")
     public CacheControl getCacheControl() {
         return delegateEnvironment.getCacheControl();
     }
 
+    @Override
     public OperationDefinition getOperationDefinition() {
         return delegateEnvironment.getOperationDefinition();
     }
 
+    @Override
     public Document getDocument() {
         return delegateEnvironment.getDocument();
     }
 
+    @Override
     public Map<String, Object> getVariables() {
         return delegateEnvironment.getVariables();
     }

@@ -46,6 +46,26 @@ class SimpleDataFetcherExceptionHandlerTest extends Specification {
         ! result.errors[0].getMessage().contains("BANG")
     }
 
+    static class MyHandler implements DataFetcherExceptionHandler {}
+
+    def "a class can work without implementing anything"() {
+        when:
+        DataFetcherExceptionHandler handler = new MyHandler()
+        def handlerParameters = mkParams(new RuntimeException("RTE"))
+        def result = handler.onException(handlerParameters) // Retain deprecated method for test coverage
+
+        then:
+        result.errors[0] instanceof ExceptionWhileDataFetching
+        result.errors[0].getMessage().contains("RTE")
+
+        when:
+        def resultCF = handler.handleException(handlerParameters)
+
+        then:
+        resultCF.join().errors[0] instanceof ExceptionWhileDataFetching
+        resultCF.join().errors[0].getMessage().contains("RTE")
+    }
+
     private static DataFetcherExceptionHandlerParameters mkParams(Exception exception) {
         def mergedField = newMergedField(newField("f").build()).build()
         def esi = newExecutionStepInfo()

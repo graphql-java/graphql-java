@@ -6,9 +6,18 @@ import graphql.schema.FieldCoordinates
 import graphql.schema.GraphQLCodeRegistry
 import graphql.schema.GraphQLFieldsContainer
 import graphql.schema.GraphQLNamedType
+import spock.lang.Issue
+import spock.lang.See
 import spock.lang.Specification
 
 import static graphql.GraphQL.newGraphQL
+import static graphql.Scalars.GraphQLString
+import static graphql.schema.GraphQLArgument.newArgument
+import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition
+import static graphql.schema.GraphQLInputObjectField.newInputObjectField
+import static graphql.schema.GraphQLInputObjectType.newInputObject
+import static graphql.schema.GraphQLObjectType.newObject
+import static graphql.schema.GraphQLSchema.newSchema
 
 class IntrospectionTest extends Specification {
 
@@ -64,6 +73,43 @@ class IntrospectionTest extends Specification {
         ]
     }
 
+    @Issue("https://github.com/graphql-java/graphql-java/issues/2702")
+    def "Introspection#__DirectiveLocation(GraphQLEnumType) `name` should match `value`'s DirectiveLocation#name() #2702"() {
+        given:
+        def directiveLocationValues = Introspection.__DirectiveLocation.values
+
+        expect:
+        directiveLocationValues.each {
+            def value = it.value
+            assert value instanceof Introspection.DirectiveLocation
+            assert it.name == (value as Introspection.DirectiveLocation).name()
+        }
+    }
+
+    @See("https://spec.graphql.org/October2021/#sec-Schema-Introspection.Schema-Introspection-Schema")
+    def "Introspection#__DirectiveLocation(GraphQLEnumType) should have 19 distinct values"() {
+        given:
+        def directiveLocationValues = Introspection.__DirectiveLocation.values
+        def numValues = 19
+
+        expect:
+        directiveLocationValues.size() == numValues
+        directiveLocationValues.unique(false).size() == numValues
+    }
+
+    def "Introspection#__DirectiveLocation(GraphQLEnumType) should contain all Introspection.DirectiveLocation"() {
+        given:
+        def directiveLocationValues = new ArrayList<>(Introspection.__DirectiveLocation.values)
+        def possibleLocations = new ArrayList<>(Introspection.DirectiveLocation.values().toList()).iterator()
+
+        expect:
+        while (possibleLocations.hasNext()) {
+            def nextPossibleLocation = possibleLocations.next()
+            assert directiveLocationValues.retainAll { (it.value != nextPossibleLocation) }
+        }
+        assert directiveLocationValues.isEmpty()
+    }
+
     def "schema description can be defined in SDL and queried via introspection"() {
         given:
         def sdl = ''' 
@@ -104,13 +150,19 @@ class IntrospectionTest extends Specification {
         then:
         executionResult.errors.isEmpty()
 
-        def directives = executionResult.data.getAt("__schema").getAt("directives") as List
+        def directives = executionResult.data["__schema"]["directives"] as List
         def geoPolygonType = directives.find { it['name'] == 'repeatableDirective' }
         geoPolygonType["isRepeatable"] == true
     }
 
     def "introspection for deprecated support"() {
         def spec = '''
+
+            directive @someDirective(
+                deprecatedArg : String @deprecated
+                notDeprecatedArg : String
+            ) on FIELD 
+
             type Query {
                namedField(arg : InputType @deprecated ) : Enum @deprecated
                notDeprecated(arg : InputType) : Enum
@@ -133,10 +185,10 @@ class IntrospectionTest extends Specification {
 
         def types = executionResult.data['__schema']['types'] as List
         def queryType = types.find { it['name'] == 'Query' }
-        def namedField = (queryType['fields'] as List).find({ it["name"] == "namedField"})
+        def namedField = (queryType['fields'] as List).find({ it["name"] == "namedField" })
         namedField["isDeprecated"]
 
-        def notDeprecatedField = (queryType['fields'] as List).find({ it["name"] == "notDeprecated"})
+        def notDeprecatedField = (queryType['fields'] as List).find({ it["name"] == "notDeprecated" })
         !notDeprecatedField["isDeprecated"]
         notDeprecatedField["deprecationReason"] == null
 
@@ -150,13 +202,108 @@ class IntrospectionTest extends Specification {
         inputField["isDeprecated"]
         inputField["deprecationReason"] == "No longer supported"
 
-        def argument = (namedField["args"] as List).find({ it["name"] == "arg"})
+        def argument = (namedField["args"] as List).find({ it["name"] == "arg" })
         argument["isDeprecated"]
         argument["deprecationReason"] == "No longer supported"
 
-        def argument2 = (notDeprecatedField["args"] as List).find({ it["name"] == "arg"})
+        def argument2 = (notDeprecatedField["args"] as List).find({ it["name"] == "arg" })
         !argument2["isDeprecated"]
         argument2["deprecationReason"] == null
+
+
+        def directives = executionResult.data['__schema']['directives'] as List
+        def directive = directives.find { it['name'] == "someDirective" }
+
+        def directiveArgs = directive["args"] as List
+        directiveArgs.collect({ it["name"] }).sort() == ["deprecatedArg", "notDeprecatedArg"]
+
+        def dArgument = directiveArgs.find({ it["name"] == "deprecatedArg" })
+        dArgument["isDeprecated"]
+        dArgument["deprecationReason"] == "No longer supported"
+
+    }
+
+    def "can filter out deprecated things in introspection"() {
+
+        def spec = '''
+
+            directive @someDirective(
+                deprecatedArg : String @deprecated
+                notDeprecatedArg : String
+            ) on FIELD 
+
+            type Query {
+               namedField(arg : InputType @deprecated,  notDeprecatedArg : InputType ) : Enum @deprecated
+               notDeprecated(arg : InputType @deprecated,  notDeprecatedArg : InputType) : Enum
+            }
+            enum Enum {
+                RED @deprecated
+                BLUE
+            }
+            input InputType {
+                inputField : String @deprecated
+                notDeprecatedInputField : String 
+            }
+        '''
+
+        def graphQL = TestUtil.graphQL(spec).build()
+
+        when: "we dont include deprecated things"
+        def introspectionQueryWithoutDeprecated = IntrospectionQuery.INTROSPECTION_QUERY.replace("includeDeprecated: true", "includeDeprecated: false")
+
+        def executionResult = graphQL.execute(introspectionQueryWithoutDeprecated)
+
+        then:
+        executionResult.errors.isEmpty()
+
+        def types = executionResult.data['__schema']['types'] as List
+        def queryType = types.find { it['name'] == 'Query' }
+        def fields = (queryType['fields'] as List)
+        fields.size() == 1
+
+        def notDeprecatedField = fields[0]
+        notDeprecatedField["name"] == "notDeprecated"
+
+        def fieldArgs = notDeprecatedField["args"] as List
+        fieldArgs.size() == 1
+        fieldArgs[0]["name"] == "notDeprecatedArg"
+
+        def enumType = types.find { it['name'] == 'Enum' }
+        def enumValues = (enumType['enumValues'] as List)
+        enumValues.size() == 1
+        enumValues[0]["name"] == "BLUE"
+
+        def inputType = types.find { it['name'] == 'InputType' }
+        def inputFields = (inputType['inputFields'] as List)
+        inputFields.size() == 1
+        inputFields[0]["name"] == "notDeprecatedInputField"
+
+        when: "we DO include deprecated things"
+        executionResult = graphQL.execute(IntrospectionQuery.INTROSPECTION_QUERY)
+
+        types = executionResult.data['__schema']['types'] as List
+        queryType = types.find { it['name'] == 'Query' }
+        fields = (queryType['fields'] as List)
+
+        notDeprecatedField = fields.find { it["name"] == "notDeprecated" }
+        fieldArgs = notDeprecatedField["args"] as List
+
+        enumType = types.find { it['name'] == 'Enum' }
+        enumValues = (enumType['enumValues'] as List)
+
+        inputType = types.find { it['name'] == 'InputType' }
+        inputFields = (inputType['inputFields'] as List)
+
+        then:
+        executionResult.errors.isEmpty()
+
+        fields.size() == 2
+
+        fieldArgs.size() == 2
+
+        enumValues.size() == 2
+
+        inputFields.size() == 2
     }
 
     def "can change data fetchers for introspection types"() {
@@ -212,5 +359,80 @@ class IntrospectionTest extends Specification {
 
         then:
         queryTypeFields == [[name: "inA"], [name: "inB"], [name: "inC"]]
+    }
+
+    def "test introspection for #296 with map"() {
+
+        def graphql = newGraphQL(newSchema()
+                .query(newObject()
+                        .name("Query")
+                        .field(newFieldDefinition()
+                                .name("field")
+                                .type(GraphQLString)
+                                .argument(newArgument()
+                                        .name("argument")
+                                        .type(newInputObject()
+                                                .name("InputObjectType")
+                                                .field(newInputObjectField()
+                                                        .name("inputField")
+                                                        .type(GraphQLString))
+                                                .build())
+                                        .defaultValueProgrammatic([inputField: 'value1'])
+                                )
+                        )
+                )
+                .build()
+        ).build()
+
+        def query = '{ __type(name: "Query") { fields { args { defaultValue } } } }'
+
+        expect:
+        // converts the default object value to AST, then graphql pretty prints that as the value
+        graphql.execute(query).data ==
+                [__type: [fields: [[args: [[defaultValue: '{inputField : "value1"}']]]]]]
+    }
+
+    class FooBar {
+        final String inputField = "foo"
+        final String bar = "bar"
+
+        String getInputField() {
+            return inputField
+        }
+
+        String getBar() {
+            return bar
+        }
+    }
+
+    def "test introspection for #296 with some object"() {
+
+        def graphql = newGraphQL(newSchema()
+                .query(newObject()
+                        .name("Query")
+                        .field(newFieldDefinition()
+                                .name("field")
+                                .type(GraphQLString)
+                                .argument(newArgument()
+                                        .name("argument")
+                                        .type(newInputObject()
+                                                .name("InputObjectType")
+                                                .field(newInputObjectField()
+                                                        .name("inputField")
+                                                        .type(GraphQLString))
+                                                .build())
+                                        .defaultValue(new FooBar()) // Retain for test coverage. There is no alternative method that sets an internal value.
+                                )
+                        )
+                )
+                .build()
+        ).build()
+
+        def query = '{ __type(name: "Query") { fields { args { defaultValue } } } }'
+
+        expect:
+        // converts the default object value to AST, then graphql pretty prints that as the value
+        graphql.execute(query).data ==
+                [__type: [fields: [[args: [[defaultValue: '{inputField : "foo"}']]]]]]
     }
 }

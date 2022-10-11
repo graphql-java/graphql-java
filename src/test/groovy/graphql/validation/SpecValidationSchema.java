@@ -1,10 +1,12 @@
 package graphql.validation;
 
 import graphql.Scalars;
-import graphql.TypeResolutionEnvironment;
 import graphql.schema.GraphQLArgument;
+import graphql.schema.GraphQLCodeRegistry;
 import graphql.schema.GraphQLDirective;
 import graphql.schema.GraphQLEnumType;
+import graphql.schema.GraphQLInputObjectField;
+import graphql.schema.GraphQLInputObjectType;
 import graphql.schema.GraphQLInterfaceType;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
@@ -53,27 +55,6 @@ public class SpecValidationSchema {
     public static final GraphQLInterfaceType sentient = GraphQLInterfaceType.newInterface()
             .name("Sentient")
             .field(newFieldDefinition().name("name").type(nonNull(Scalars.GraphQLString)))
-            .typeResolver(new TypeResolver() {
-                @Override
-                public GraphQLObjectType getType(TypeResolutionEnvironment env) {
-                    if (env.getObject() instanceof Human) return human;
-                    if (env.getObject() instanceof Alien) return alien;
-                    return null;
-                }
-            })
-            .build();
-
-    public static final GraphQLInterfaceType pet = GraphQLInterfaceType.newInterface()
-            .name("Pet")
-            .field(newFieldDefinition().name("name").type(nonNull(Scalars.GraphQLString)))
-            .typeResolver(new TypeResolver() {
-                @Override
-                public GraphQLObjectType getType(TypeResolutionEnvironment env) {
-                    if (env.getObject() instanceof Dog) return dog;
-                    if (env.getObject() instanceof Cat) return cat;
-                    return null;
-                }
-            })
             .build();
 
     public static final GraphQLObjectType human = GraphQLObjectType.newObject()
@@ -89,6 +70,21 @@ public class SpecValidationSchema {
             .withInterface(SpecValidationSchema.sentient)
             .build();
 
+    public static final TypeResolver sentientTypeResolver = env -> {
+        if (env.getObject() instanceof Human) {
+            return human;
+        }
+        if (env.getObject() instanceof Alien) {
+            return alien;
+        }
+        return null;
+    };
+
+    public static final GraphQLArgument catCommandArg = GraphQLArgument.newArgument()
+            .name("catCommand")
+            .type(nonNull(catCommand))
+            .build();
+
     public static final GraphQLArgument dogCommandArg = GraphQLArgument.newArgument()
             .name("dogCommand")
             .type(nonNull(dogCommand))
@@ -99,9 +95,9 @@ public class SpecValidationSchema {
             .type(Scalars.GraphQLBoolean)
             .build();
 
-    public static final GraphQLArgument catCommandArg = GraphQLArgument.newArgument()
-            .name("catCommand")
-            .type(nonNull(catCommand))
+    public static final GraphQLInterfaceType pet = GraphQLInterfaceType.newInterface()
+            .name("Pet")
+            .field(newFieldDefinition().name("name").type(nonNull(Scalars.GraphQLString)))
             .build();
 
     public static final GraphQLObjectType dog = GraphQLObjectType.newObject()
@@ -110,9 +106,9 @@ public class SpecValidationSchema {
             .field(newFieldDefinition().name("nickname").type(Scalars.GraphQLString))
             .field(newFieldDefinition().name("barkVolume").type(Scalars.GraphQLInt))
             .field(newFieldDefinition().name("doesKnowCommand").type(nonNull(Scalars.GraphQLBoolean))
-                    .argument(singletonList(dogCommandArg)))
+                    .arguments(singletonList(dogCommandArg)))
             .field(newFieldDefinition().name("isHousetrained").type(Scalars.GraphQLBoolean)
-                    .argument(singletonList(atOtherHomesArg)))
+                    .arguments(singletonList(atOtherHomesArg)))
             .field(newFieldDefinition().name("owner").type(human))
             .withInterface(SpecValidationSchema.pet)
             .build();
@@ -123,39 +119,64 @@ public class SpecValidationSchema {
             .field(newFieldDefinition().name("nickname").type(Scalars.GraphQLString))
             .field(newFieldDefinition().name("meowVolume").type(Scalars.GraphQLInt))
             .field(newFieldDefinition().name("doesKnowCommand").type(nonNull(Scalars.GraphQLBoolean))
-                    .argument(singletonList(catCommandArg)))
+                    .arguments(singletonList(catCommandArg)))
             .withInterface(SpecValidationSchema.pet)
             .build();
+
+    public static final TypeResolver petTypeResolver = env -> {
+        if (env.getObject() instanceof Dog) {
+            return dog;
+        }
+        if (env.getObject() instanceof Cat) {
+            return cat;
+        }
+        return null;
+    };
 
     public static final GraphQLUnionType catOrDog = GraphQLUnionType.newUnionType()
             .name("CatOrDog")
             .possibleTypes(cat, dog)
-            .typeResolver(env -> {
-                if (env.getObject() instanceof Cat) return cat;
-                if (env.getObject() instanceof Dog) return dog;
-                return null;
-            })
             .build();
+
+    public static final TypeResolver catOrDogTypeResolver = env -> {
+        if (env.getObject() instanceof Cat) {
+            return cat;
+        }
+        if (env.getObject() instanceof Dog) {
+            return dog;
+        }
+        return null;
+    };
 
     public static final GraphQLUnionType dogOrHuman = GraphQLUnionType.newUnionType()
             .name("DogOrHuman")
             .possibleTypes(dog, human)
-            .typeResolver(env -> {
-                if (env.getObject() instanceof Human) return human;
-                if (env.getObject() instanceof Dog) return dog;
-                return null;
-            })
             .build();
+
+    public static final TypeResolver dogOrHumanTypeResolver = env -> {
+        if (env.getObject() instanceof Human) {
+            return human;
+        }
+        if (env.getObject() instanceof Dog) {
+            return dog;
+        }
+        return null;
+    };
 
     public static final GraphQLUnionType humanOrAlien = GraphQLUnionType.newUnionType()
             .name("HumanOrAlien")
             .possibleTypes(human, alien)
-            .typeResolver(env -> {
-                if (env.getObject() instanceof Human) return human;
-                if (env.getObject() instanceof Alien) return alien;
-                return null;
-            })
             .build();
+
+    public static final TypeResolver humanOrAlienTypeResolver = env -> {
+        if (env.getObject() instanceof Human) {
+            return human;
+        }
+        if (env.getObject() instanceof Alien) {
+            return alien;
+        }
+        return null;
+    };
 
     public static final GraphQLDirective dogDirective = GraphQLDirective.newDirective()
             .name("dogDirective")
@@ -172,7 +193,12 @@ public class SpecValidationSchema {
             .field(newFieldDefinition().name("pet").type(pet))
             .build();
 
-    @SuppressWarnings("serial")
+    public static final GraphQLObjectType subscriptionRoot = GraphQLObjectType.newObject()
+            .name("SubscriptionRoot")
+            .field(newFieldDefinition().name("dog").type(dog))
+            .field(newFieldDefinition().name("cat").type(cat))
+            .build();
+
     public static final Set<GraphQLType> specValidationDictionary = new HashSet<GraphQLType>() {{
         add(dogCommand);
         add(catCommand);
@@ -197,12 +223,48 @@ public class SpecValidationSchema {
             .validLocations(FIELD, FRAGMENT_SPREAD, FRAGMENT_DEFINITION, INLINE_FRAGMENT, QUERY)
             .build();
 
+    public static final GraphQLDirective nonNullDirective = GraphQLDirective.newDirective()
+            .name("nonNullDirective")
+            .argument(newArgument().name("arg1").type(nonNull(GraphQLString)).build())
+            .validLocations(FIELD, FRAGMENT_SPREAD, FRAGMENT_DEFINITION, INLINE_FRAGMENT, QUERY)
+            .build();
+
+    public static final GraphQLInputObjectType inputType = GraphQLInputObjectType.newInputObject()
+            .name("Input")
+            .field(GraphQLInputObjectField.newInputObjectField()
+                    .name("id")
+                    .type(GraphQLString)
+                    .build())
+            .field(GraphQLInputObjectField.newInputObjectField()
+                    .name("name")
+                    .type(nonNull(GraphQLString))
+                    .build())
+            .build();
+
+    public static final GraphQLDirective objectArgumentDirective = GraphQLDirective.newDirective()
+            .name("objectArgumentDirective")
+            .argument(newArgument().name("myObject").type(nonNull(inputType)).build())
+            .validLocations(FIELD, FRAGMENT_SPREAD, FRAGMENT_DEFINITION, INLINE_FRAGMENT, QUERY)
+            .build();
+
+    public static final GraphQLCodeRegistry codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+            .typeResolver("Sentient", sentientTypeResolver)
+            .typeResolver("Pet", petTypeResolver)
+            .typeResolver("CatOrDog", catOrDogTypeResolver)
+            .typeResolver("DogOrHuman", dogOrHumanTypeResolver)
+            .typeResolver("HumanOrAlien", humanOrAlienTypeResolver)
+            .build();
+
     public static final GraphQLSchema specValidationSchema = GraphQLSchema.newSchema()
             .query(queryRoot)
+            .codeRegistry(codeRegistry)
+            .subscription(subscriptionRoot)
             .additionalDirective(upperDirective)
             .additionalDirective(lowerDirective)
             .additionalDirective(dogDirective)
-            .build(specValidationDictionary);
-
+            .additionalDirective(nonNullDirective)
+            .additionalDirective(objectArgumentDirective)
+            .additionalTypes(specValidationDictionary)
+            .build();
 
 }

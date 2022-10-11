@@ -1,6 +1,8 @@
 package graphql.analysis;
 
+import graphql.GraphQLContext;
 import graphql.Internal;
+import graphql.execution.CoercedVariables;
 import graphql.execution.ConditionalNodes;
 import graphql.execution.ValuesResolver;
 import graphql.introspection.Introspection;
@@ -28,6 +30,7 @@ import graphql.schema.GraphQLUnmodifiedType;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
+import java.util.Locale;
 import java.util.Map;
 
 import static graphql.Assert.assertNotNull;
@@ -42,16 +45,12 @@ import static java.lang.String.format;
 @Internal
 public class NodeVisitorWithTypeTracking extends NodeVisitorStub {
 
-
     private final QueryVisitor preOrderCallback;
     private final QueryVisitor postOrderCallback;
     private final Map<String, Object> variables;
     private final GraphQLSchema schema;
     private final Map<String, FragmentDefinition> fragmentsByName;
-
     private final ConditionalNodes conditionalNodes = new ConditionalNodes();
-    private final ValuesResolver valuesResolver = new ValuesResolver();
-
 
     public NodeVisitorWithTypeTracking(QueryVisitor preOrderCallback, QueryVisitor postOrderCallback, Map<String, Object> variables, GraphQLSchema schema, Map<String, FragmentDefinition> fragmentsByName) {
         this.preOrderCallback = preOrderCallback;
@@ -154,7 +153,12 @@ public class NodeVisitorWithTypeTracking extends NodeVisitorStub {
         boolean isTypeNameIntrospectionField = fieldDefinition == schema.getIntrospectionTypenameFieldDefinition();
         GraphQLFieldsContainer fieldsContainer = !isTypeNameIntrospectionField ? (GraphQLFieldsContainer) unwrapAll(parentEnv.getOutputType()) : null;
         GraphQLCodeRegistry codeRegistry = schema.getCodeRegistry();
-        Map<String, Object> argumentValues = valuesResolver.getArgumentValues(codeRegistry, fieldDefinition.getArguments(), field.getArguments(), variables);
+        Map<String, Object> argumentValues = ValuesResolver.getArgumentValues(codeRegistry,
+                fieldDefinition.getArguments(),
+                field.getArguments(),
+                CoercedVariables.of(variables),
+                GraphQLContext.getDefault(),
+                Locale.getDefault());
         QueryVisitorFieldEnvironment environment = new QueryVisitorFieldEnvironmentImpl(isTypeNameIntrospectionField,
                 field,
                 fieldDefinition,

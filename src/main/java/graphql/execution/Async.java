@@ -6,6 +6,7 @@ import graphql.collect.ImmutableKit;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -18,6 +19,116 @@ import java.util.function.Supplier;
 @Internal
 @SuppressWarnings("FutureReturnValueIgnored")
 public class Async {
+
+    public interface CombinedBuilder<T> {
+
+        void add(CompletableFuture<T> completableFuture);
+
+        CompletableFuture<List<T>> await();
+    }
+
+    /**
+     * Combines 1 or more CF. It is a wrapper around CompletableFuture.allOf.
+     *
+     * @param expectedSize how many we expect
+     * @param <T>          for two
+     *
+     * @return a combined builder of CFs
+     */
+    public static <T> CombinedBuilder<T> ofExpectedSize(int expectedSize) {
+        if (expectedSize == 0) {
+            return new Empty<>();
+        } else if (expectedSize == 1) {
+            return new Single<>();
+        } else {
+            return new Many<>(expectedSize);
+        }
+    }
+
+    private static class Empty<T> implements CombinedBuilder<T> {
+
+        private int ix;
+
+        @Override
+        public void add(CompletableFuture<T> completableFuture) {
+            this.ix++;
+        }
+
+
+        @Override
+        public CompletableFuture<List<T>> await() {
+            Assert.assertTrue(ix == 0, () -> "expected size was " + 0 + " got " + ix);
+            return CompletableFuture.completedFuture(Collections.emptyList());
+        }
+    }
+
+    private static class Single<T> implements CombinedBuilder<T> {
+
+        // avoiding array allocation as there is only 1 CF
+        private CompletableFuture<T> completableFuture;
+        private int ix;
+
+        @Override
+        public void add(CompletableFuture<T> completableFuture) {
+            this.completableFuture = completableFuture;
+            this.ix++;
+        }
+
+        @Override
+        public CompletableFuture<List<T>> await() {
+            Assert.assertTrue(ix == 1, () -> "expected size was " + 1 + " got " + ix);
+
+            CompletableFuture<List<T>> overallResult = new CompletableFuture<>();
+            completableFuture
+                    .whenComplete((ignored, exception) -> {
+                        if (exception != null) {
+                            overallResult.completeExceptionally(exception);
+                            return;
+                        }
+                        List<T> results = Collections.singletonList(completableFuture.join());
+                        overallResult.complete(results);
+                    });
+            return overallResult;
+        }
+    }
+
+    private static class Many<T> implements CombinedBuilder<T> {
+
+        private final CompletableFuture<T>[] array;
+        private int ix;
+
+        @SuppressWarnings("unchecked")
+        private Many(int size) {
+            this.array = new CompletableFuture[size];
+            this.ix = 0;
+        }
+
+        @Override
+        public void add(CompletableFuture<T> completableFuture) {
+            array[ix++] = completableFuture;
+        }
+
+        @Override
+        public CompletableFuture<List<T>> await() {
+            Assert.assertTrue(ix == array.length, () -> "expected size was " + array.length + " got " + ix);
+
+            CompletableFuture<List<T>> overallResult = new CompletableFuture<>();
+            CompletableFuture.allOf(array)
+                    .whenComplete((ignored, exception) -> {
+                        if (exception != null) {
+                            overallResult.completeExceptionally(exception);
+                            return;
+                        }
+                        List<T> results = new ArrayList<>(array.length);
+                        for (CompletableFuture<T> future : array) {
+                            results.add(future.join());
+                        }
+                        overallResult.complete(results);
+                    });
+            return overallResult;
+        }
+
+    }
 
     @FunctionalInterface
     public interface CFFactory<T, U> {
@@ -95,10 +206,11 @@ public class Async {
 
 
     /**
-     * Turns an object T into a CompletableFuture if its not already
+     * Turns an object T into a CompletableFuture if it's not already
      *
      * @param t   - the object to check
      * @param <T> for two
+     *
      * @return a CompletableFuture
      */
     public static <T> CompletableFuture<T> toCompletableFuture(T t) {

@@ -1,26 +1,33 @@
 package graphql.analysis;
 
+import graphql.ExecutionResult;
 import graphql.PublicApi;
 import graphql.execution.AbortExecutionException;
+import graphql.execution.ExecutionContext;
 import graphql.execution.instrumentation.InstrumentationContext;
+import graphql.execution.instrumentation.InstrumentationState;
 import graphql.execution.instrumentation.SimpleInstrumentation;
+import graphql.execution.instrumentation.parameters.InstrumentationCreateStateParameters;
+import graphql.execution.instrumentation.parameters.InstrumentationExecuteOperationParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationValidationParameters;
 import graphql.validation.ValidationError;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 
 import static graphql.Assert.assertNotNull;
-import static graphql.execution.instrumentation.SimpleInstrumentationContext.whenCompleted;
+import static graphql.execution.instrumentation.SimpleInstrumentationContext.noOp;
 import static java.util.Optional.ofNullable;
 
 /**
  * Prevents execution if the query complexity is greater than the specified maxComplexity.
- *
+ * <p>
  * Use the {@code Function<QueryComplexityInfo, Boolean>} parameter to supply a function to perform a custom action when the max complexity
  * is exceeded. If the function returns {@code true} a {@link AbortExecutionException} is thrown.
  */
@@ -77,40 +84,52 @@ public class MaxQueryComplexityInstrumentation extends SimpleInstrumentation {
     }
 
     @Override
-    public InstrumentationContext<List<ValidationError>> beginValidation(InstrumentationValidationParameters parameters) {
-        return whenCompleted((errors, throwable) -> {
-            if ((errors != null && errors.size() > 0) || throwable != null) {
-                return;
-            }
-            QueryTraverser queryTraverser = newQueryTraverser(parameters);
+    public InstrumentationState createState(InstrumentationCreateStateParameters parameters) {
+        return new State();
+    }
 
-            Map<QueryVisitorFieldEnvironment, Integer> valuesByParent = new LinkedHashMap<>();
-            queryTraverser.visitPostOrder(new QueryVisitorStub() {
-                @Override
-                public void visitField(QueryVisitorFieldEnvironment env) {
-                    int childsComplexity = valuesByParent.getOrDefault(env, 0);
-                    int value = calculateComplexity(env, childsComplexity);
 
-                    valuesByParent.compute(env.getParentEnvironment(), (key, oldValue) ->
-                            ofNullable(oldValue).orElse(0) + value
-                    );
-                }
-            });
-            int totalComplexity = valuesByParent.getOrDefault(null, 0);
-            if (log.isDebugEnabled()) {
-                log.debug("Query complexity: {}", totalComplexity);
-            }
-            if (totalComplexity > maxComplexity) {
-                QueryComplexityInfo queryComplexityInfo = QueryComplexityInfo.newQueryComplexityInfo()
-                        .complexity(totalComplexity)
-                        .instrumentationValidationParameters(parameters)
-                        .build();
-                boolean throwAbortException = maxQueryComplexityExceededFunction.apply(queryComplexityInfo);
-                if (throwAbortException) {
-                    throw mkAbortException(totalComplexity, maxComplexity);
-                }
+    @Override
+    public @Nullable InstrumentationContext<List<ValidationError>> beginValidation(InstrumentationValidationParameters parameters, InstrumentationState rawState) {
+        State state = (State) rawState;
+        // for API backwards compatibility reasons we capture the validation parameters, so we can put them into QueryComplexityInfo
+        state.instrumentationValidationParameters.set(parameters);
+        return noOp();
+    }
+
+    @Override
+    public @Nullable InstrumentationContext<ExecutionResult> beginExecuteOperation(InstrumentationExecuteOperationParameters instrumentationExecuteOperationParameters, InstrumentationState rawState) {
+        State state = (State) rawState;
+        QueryTraverser queryTraverser = newQueryTraverser(instrumentationExecuteOperationParameters.getExecutionContext());
+
+        Map<QueryVisitorFieldEnvironment, Integer> valuesByParent = new LinkedHashMap<>();
+        queryTraverser.visitPostOrder(new QueryVisitorStub() {
+            @Override
+            public void visitField(QueryVisitorFieldEnvironment env) {
+                int childComplexity = valuesByParent.getOrDefault(env, 0);
+                int value = calculateComplexity(env, childComplexity);
+
+                valuesByParent.compute(env.getParentEnvironment(), (key, oldValue) ->
+                        ofNullable(oldValue).orElse(0) + value
+                );
             }
         });
+        int totalComplexity = valuesByParent.getOrDefault(null, 0);
+        if (log.isDebugEnabled()) {
+            log.debug("Query complexity: {}", totalComplexity);
+        }
+        if (totalComplexity > maxComplexity) {
+            QueryComplexityInfo queryComplexityInfo = QueryComplexityInfo.newQueryComplexityInfo()
+                    .complexity(totalComplexity)
+                    .instrumentationValidationParameters(state.instrumentationValidationParameters.get())
+                    .instrumentationExecuteOperationParameters(instrumentationExecuteOperationParameters)
+                    .build();
+            boolean throwAbortException = maxQueryComplexityExceededFunction.apply(queryComplexityInfo);
+            if (throwAbortException) {
+                throw mkAbortException(totalComplexity, maxComplexity);
+            }
+        }
+        return noOp();
     }
 
     /**
@@ -119,27 +138,27 @@ public class MaxQueryComplexityInstrumentation extends SimpleInstrumentation {
      * @param totalComplexity the complexity of the query
      * @param maxComplexity   the maximum complexity allowed
      *
-     * @return a instance of AbortExecutionException
+     * @return an instance of AbortExecutionException
      */
     protected AbortExecutionException mkAbortException(int totalComplexity, int maxComplexity) {
         return new AbortExecutionException("maximum query complexity exceeded " + totalComplexity + " > " + maxComplexity);
     }
 
-    QueryTraverser newQueryTraverser(InstrumentationValidationParameters parameters) {
+    QueryTraverser newQueryTraverser(ExecutionContext executionContext) {
         return QueryTraverser.newQueryTraverser()
-                .schema(parameters.getSchema())
-                .document(parameters.getDocument())
-                .operationName(parameters.getOperation())
-                .variables(parameters.getVariables())
+                .schema(executionContext.getGraphQLSchema())
+                .document(executionContext.getDocument())
+                .operationName(executionContext.getExecutionInput().getOperationName())
+                .coercedVariables(executionContext.getCoercedVariables())
                 .build();
     }
 
-    private int calculateComplexity(QueryVisitorFieldEnvironment queryVisitorFieldEnvironment, int childsComplexity) {
+    private int calculateComplexity(QueryVisitorFieldEnvironment queryVisitorFieldEnvironment, int childComplexity) {
         if (queryVisitorFieldEnvironment.isTypeNameIntrospectionField()) {
             return 0;
         }
         FieldComplexityEnvironment fieldComplexityEnvironment = convertEnv(queryVisitorFieldEnvironment);
-        return fieldComplexityCalculator.calculate(fieldComplexityEnvironment, childsComplexity);
+        return fieldComplexityCalculator.calculate(fieldComplexityEnvironment, childComplexity);
     }
 
     private FieldComplexityEnvironment convertEnv(QueryVisitorFieldEnvironment queryVisitorFieldEnvironment) {
@@ -156,5 +175,8 @@ public class MaxQueryComplexityInstrumentation extends SimpleInstrumentation {
         );
     }
 
+    private static class State implements InstrumentationState {
+        AtomicReference<InstrumentationValidationParameters> instrumentationValidationParameters = new AtomicReference<>();
+    }
 
 }

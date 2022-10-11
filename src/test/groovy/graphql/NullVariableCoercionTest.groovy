@@ -1,6 +1,6 @@
 package graphql
 
-
+import graphql.language.SourceLocation
 import graphql.schema.DataFetcher
 import graphql.schema.GraphQLObjectType
 import graphql.schema.idl.RuntimeWiring
@@ -68,8 +68,8 @@ class NullVariableCoercionTest extends Specification {
         varResult.data == null
         varResult.errors.size() == 1
         varResult.errors[0].errorType == ErrorType.ValidationError
-        varResult.errors[0].message == "Field 'baz' has coerced Null value for NonNull type 'String!'"
-//        varResult.errors[0].locations == [new SourceLocation(1, 11)]
+        varResult.errors[0].message == "Variable 'input' has an invalid value: Field 'baz' has coerced Null value for NonNull type 'String!'"
+        varResult.errors[0].locations == [new SourceLocation(1, 11)]
     }
 
     def "can handle defaulting on complex input objects"() {

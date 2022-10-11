@@ -4,10 +4,10 @@ package graphql.language;
 import com.google.common.collect.ImmutableList;
 import graphql.Internal;
 import graphql.PublicApi;
+import graphql.collect.ImmutableKit;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -26,9 +26,13 @@ public class NullValue extends AbstractNode<NullValue> implements Value<NullValu
         super(sourceLocation, comments, ignoredChars, additionalData);
     }
 
+    public static NullValue of() {
+        return NullValue.newNullValue().build();
+    }
+
     @Override
     public List<Node> getChildren() {
-        return Collections.emptyList();
+        return ImmutableKit.emptyList();
     }
 
     @Override

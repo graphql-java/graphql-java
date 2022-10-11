@@ -4,6 +4,7 @@ import com.google.common.base.Charsets;
 import com.google.common.io.Resources;
 import graphql.ExecutionResult;
 import graphql.GraphQL;
+import graphql.i18n.I18n;
 import graphql.language.Document;
 import graphql.parser.Parser;
 import graphql.schema.GraphQLSchema;
@@ -25,11 +26,13 @@ import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Threads;
 import org.openjdk.jmh.annotations.Warmup;
+import org.openjdk.jmh.infra.Blackhole;
 
 import java.io.IOException;
 import java.net.URL;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 
 import static com.google.common.io.Resources.getResource;
@@ -75,14 +78,21 @@ public class OverlappingFieldValidationBenchmark {
     }
 
     @Benchmark
-    public List<ValidationError> overlappingFieldValidation(MyState myState) {
-        return validateQuery(myState.schema, myState.document);
+    public void overlappingFieldValidationAbgTime(MyState myState, Blackhole blackhole) {
+        blackhole.consume(validateQuery(myState.schema, myState.document));
     }
 
+    @Benchmark
+    @BenchmarkMode(Mode.Throughput)
+    @OutputTimeUnit(TimeUnit.SECONDS)
+    public void overlappingFieldValidationThroughput(MyState myState, Blackhole blackhole) {
+        blackhole.consume(validateQuery(myState.schema, myState.document));
+    }
 
     private List<ValidationError> validateQuery(GraphQLSchema schema, Document document) {
         ValidationErrorCollector errorCollector = new ValidationErrorCollector();
-        ValidationContext validationContext = new ValidationContext(schema, document);
+        I18n i18n = I18n.i18n(I18n.BundleType.Validation, Locale.ENGLISH);
+        ValidationContext validationContext = new ValidationContext(schema, document, i18n);
         OverlappingFieldsCanBeMerged overlappingFieldsCanBeMerged = new OverlappingFieldsCanBeMerged(validationContext, errorCollector);
         LanguageTraversal languageTraversal = new LanguageTraversal();
         languageTraversal.traverse(document, new RulesVisitor(validationContext, Collections.singletonList(overlappingFieldsCanBeMerged)));

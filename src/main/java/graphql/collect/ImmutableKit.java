@@ -28,7 +28,7 @@ public final class ImmutableKit {
     }
 
     /**
-     * ImmutableMaps are hard to build via {@link Map#computeIfAbsent(Object, Function)} style.  This methods
+     * ImmutableMaps are hard to build via {@link Map#computeIfAbsent(Object, Function)} style.  This method
      * allows you to take a mutable map with mutable list of keys and make it immutable.
      * <p>
      * This of course has a cost - if the map is very large you will be using more memory.  But for static
@@ -61,10 +61,36 @@ public final class ImmutableKit {
     }
 
     public static <T> ImmutableList<T> concatLists(List<T> l1, List<T> l2) {
-        return ImmutableList.<T>builder().addAll(l1).addAll(l2).build();
+        //noinspection UnstableApiUsage
+        return ImmutableList.<T>builderWithExpectedSize(l1.size() + l2.size()).addAll(l1).addAll(l2).build();
     }
 
     /**
+     * This is more efficient than `c.stream().map().collect()` because it does not create the intermediate objects needed
+     * for the flexible style.  Benchmarking has shown this to outperform `stream()`.
+     *
+     * @param collection the collection to map
+     * @param mapper   the mapper function
+     * @param <T>      for two
+     * @param <R>      for result
+     *
+     * @return a map immutable list of results
+     */
+    public static <T, R> ImmutableList<R> map(Collection<? extends T> collection, Function<? super T, ? extends R> mapper) {
+        assertNotNull(collection);
+        assertNotNull(mapper);
+        @SuppressWarnings({"RedundantTypeArguments", "UnstableApiUsage"})
+        ImmutableList.Builder<R> builder = ImmutableList.<R>builderWithExpectedSize(collection.size());
+        for (T t : collection) {
+            R r = mapper.apply(t);
+            builder.add(r);
+        }
+        return builder.build();
+    }
+
+    /**
+     * This will map an iterable of items but drop any that are null from the mapped list
+     *
      * This is more efficient than `c.stream().map().collect()` because it does not create the intermediate objects needed
      * for the flexible style.  Benchmarking has shown this to outperform `stream()`.
      *
@@ -75,17 +101,17 @@ public final class ImmutableKit {
      *
      * @return a map immutable list of results
      */
-    public static <T, R> ImmutableList<R> map(Iterable<? extends T> iterable, Function<? super T, ? extends R> mapper) {
-        assertNotNull(iterable);
-        assertNotNull(mapper);
-        @SuppressWarnings("RedundantTypeArguments")
-        ImmutableList.Builder<R> builder = ImmutableList.<R>builder();
+    public static <T, R> ImmutableList<R> mapAndDropNulls(Iterable<? extends T> iterable, Function<? super T, ? extends R> mapper) {
+        ImmutableList.Builder<R> builder = ImmutableList.builder();
         for (T t : iterable) {
             R r = mapper.apply(t);
-            builder.add(r);
+            if (r != null) {
+                builder.add(r);
+            }
         }
         return builder.build();
     }
+
 
     /**
      * This constructs a new Immutable list from an existing collection and adds a new element to it.
@@ -101,6 +127,7 @@ public final class ImmutableKit {
         assertNotNull(existing);
         assertNotNull(newValue);
         int expectedSize = existing.size() + 1 + extraValues.length;
+        @SuppressWarnings("UnstableApiUsage")
         ImmutableList.Builder<T> newList = ImmutableList.builderWithExpectedSize(expectedSize);
         newList.addAll(existing);
         newList.add(newValue);
@@ -118,12 +145,13 @@ public final class ImmutableKit {
      * @param extraValues more values to add
      * @param <T>         for two
      *
-     * @return an Immutable Set with the extra itens.
+     * @return an Immutable Set with the extra items.
      */
     public static <T> ImmutableSet<T> addToSet(Collection<? extends T> existing, T newValue, T... extraValues) {
         assertNotNull(existing);
         assertNotNull(newValue);
         int expectedSize = existing.size() + 1 + extraValues.length;
+        @SuppressWarnings("UnstableApiUsage")
         ImmutableSet.Builder<T> newSet = ImmutableSet.builderWithExpectedSize(expectedSize);
         newSet.addAll(existing);
         newSet.add(newValue);

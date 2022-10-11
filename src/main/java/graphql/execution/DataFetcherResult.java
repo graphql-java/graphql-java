@@ -1,6 +1,7 @@
 package graphql.execution;
 
 import com.google.common.collect.ImmutableList;
+import graphql.DeprecatedAt;
 import graphql.GraphQLError;
 import graphql.Internal;
 import graphql.PublicApi;
@@ -41,6 +42,7 @@ public class DataFetcherResult<T> {
      */
     @Internal
     @Deprecated
+    @DeprecatedAt("2019-01-11")
     public DataFetcherResult(T data, List<GraphQLError> errors) {
         this(data, errors, null);
     }
@@ -136,6 +138,11 @@ public class DataFetcherResult<T> {
 
         public Builder<T> error(GraphQLError error) {
             this.errors.add(error);
+            return this;
+        }
+
+        public Builder<T> clearErrors() {
+            this.errors.clear();
             return this;
         }
 

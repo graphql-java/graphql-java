@@ -1,6 +1,7 @@
 package graphql.execution;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import graphql.Assert;
 import graphql.PublicApi;
 
@@ -13,10 +14,10 @@ import java.util.Set;
 @PublicApi
 public class MergedSelectionSet {
 
-    private final Map<String, MergedField> subFields;
+    private final ImmutableMap<String, MergedField> subFields;
 
     private MergedSelectionSet(Map<String, MergedField> subFields) {
-        this.subFields = Assert.assertNotNull(subFields);
+        this.subFields = ImmutableMap.copyOf(Assert.assertNotNull(subFields));
     }
 
     public Map<String, MergedField> getSubFields() {

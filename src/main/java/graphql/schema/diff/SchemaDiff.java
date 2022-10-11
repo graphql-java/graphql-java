@@ -70,7 +70,7 @@ public class SchemaDiff {
 
     private static class CountingReporter implements DifferenceReporter {
         final DifferenceReporter delegate;
-        int breakingCount = 1;
+        int breakingCount = 0;
 
         private CountingReporter(DifferenceReporter delegate) {
             this.delegate = delegate;
@@ -397,7 +397,7 @@ public class SchemaDiff {
                         .reasonMsg(message, mkDotName(old.getName(), oldField.getName()))
                         .build());
             } else {
-                DiffCategory category = checkTypeWithNonNullAndList(oldField.getType(), newField.get().getType());
+                DiffCategory category = checkTypeWithNonNullAndListOnInputOrArg(oldField.getType(), newField.get().getType());
                 if (category != null) {
                     ctx.report(DiffEvent.apiBreakage()
                             .category(category)
@@ -477,7 +477,7 @@ public class SchemaDiff {
                         .components(enumName)
                         .reasonMsg("The new API has added a new enum value '%s'", enumName)
                         .build());
-            } else if (isDeprecated(newDefinitionMap.get(enumName))) {
+            } else if (isDeprecated(newDefinitionMap.get(enumName)) && !isDeprecated(oldEnum)) {
                 ctx.report(DiffEvent.apiDanger()
                         .category(DiffCategory.DEPRECATION_ADDED)
                         .typeName(oldDef.getName())
@@ -612,7 +612,7 @@ public class SchemaDiff {
         Type oldFieldType = oldField.getType();
         Type newFieldType = newField.getType();
 
-        DiffCategory category = checkTypeWithNonNullAndList(oldFieldType, newFieldType);
+        DiffCategory category = checkTypeWithNonNullAndListOnObjectOrInterface(oldFieldType, newFieldType);
         if (category != null) {
             ctx.report(DiffEvent.apiBreakage()
                     .category(category)
@@ -701,7 +701,7 @@ public class SchemaDiff {
         Type oldArgType = oldArg.getType();
         Type newArgType = newArg.getType();
 
-        DiffCategory category = checkTypeWithNonNullAndList(oldArgType, newArgType);
+        DiffCategory category = checkTypeWithNonNullAndListOnInputOrArg(oldArgType, newArgType);
         if (category != null) {
             ctx.report(DiffEvent.apiBreakage()
                     .category(category)
@@ -831,7 +831,7 @@ public class SchemaDiff {
         }
     }
 
-    DiffCategory checkTypeWithNonNullAndList(Type oldType, Type newType) {
+    DiffCategory checkTypeWithNonNullAndListOnInputOrArg(Type oldType, Type newType) {
         TypeInfo oldTypeInfo = typeInfo(oldType);
         TypeInfo newTypeInfo = typeInfo(newType);
 
@@ -840,31 +840,83 @@ public class SchemaDiff {
         }
 
         while (true) {
-            //
-            // its allowed to get more less strict in the new but not more strict
-            if (oldTypeInfo.isNonNull() && newTypeInfo.isNonNull()) {
-                oldTypeInfo = oldTypeInfo.unwrapOne();
-                newTypeInfo = newTypeInfo.unwrapOne();
-            } else if (oldTypeInfo.isNonNull() && !newTypeInfo.isNonNull()) {
-                oldTypeInfo = oldTypeInfo.unwrapOne();
-            } else if (!oldTypeInfo.isNonNull() && newTypeInfo.isNonNull()) {
-                return DiffCategory.STRICTER;
-            }
-            // lists
-            if (oldTypeInfo.isList() && !newTypeInfo.isList()) {
-                return DiffCategory.INVALID;
-            }
-            // plain
-            if (oldTypeInfo.isPlain()) {
-                if (!newTypeInfo.isPlain()) {
+            if (oldTypeInfo.isNonNull()) {
+                if (newTypeInfo.isNonNull()) {
+                    // if they're both non-null, compare the unwrapped types
+                    oldTypeInfo = oldTypeInfo.unwrapOne();
+                    newTypeInfo = newTypeInfo.unwrapOne();
+                } else {
+                    // non-null to nullable is valid, as long as the underlying types are also valid
+                    oldTypeInfo = oldTypeInfo.unwrapOne();
+                }
+            } else if (oldTypeInfo.isList()) {
+                if (newTypeInfo.isList()) {
+                    // if they're both lists, compare the unwrapped types
+                    oldTypeInfo = oldTypeInfo.unwrapOne();
+                    newTypeInfo = newTypeInfo.unwrapOne();
+                } else if (newTypeInfo.isNonNull()) {
+                    // nullable to non-null creates a stricter input requirement for clients to specify
+                    return DiffCategory.STRICTER;
+                } else {
+                    // list to non-list is not valid
                     return DiffCategory.INVALID;
                 }
-                break;
+            } else {
+                if (newTypeInfo.isNonNull()) {
+                    // nullable to non-null creates a stricter input requirement for clients to specify
+                    return DiffCategory.STRICTER;
+                } else if (newTypeInfo.isList()) {
+                    // non-list to list is not valid
+                    return DiffCategory.INVALID;
+                } else {
+                    return null;
+                }
             }
-            oldTypeInfo = oldTypeInfo.unwrapOne();
-            newTypeInfo = newTypeInfo.unwrapOne();
         }
-        return null;
+    }
+
+    DiffCategory checkTypeWithNonNullAndListOnObjectOrInterface(Type oldType, Type newType) {
+        TypeInfo oldTypeInfo = typeInfo(oldType);
+        TypeInfo newTypeInfo = typeInfo(newType);
+
+        if (!oldTypeInfo.getName().equals(newTypeInfo.getName())) {
+            return DiffCategory.INVALID;
+        }
+
+        while (true) {
+            if (oldTypeInfo.isNonNull()) {
+                if (newTypeInfo.isNonNull()) {
+                    // if they're both non-null, compare the unwrapped types
+                    oldTypeInfo = oldTypeInfo.unwrapOne();
+                    newTypeInfo = newTypeInfo.unwrapOne();
+                } else {
+                    // non-null to nullable requires a stricter check from clients since it removes the guarantee of presence
+                    return DiffCategory.STRICTER;
+                }
+            } else if (oldTypeInfo.isList()) {
+                if (newTypeInfo.isList()) {
+                    // if they're both lists, compare the unwrapped types
+                    oldTypeInfo = oldTypeInfo.unwrapOne();
+                    newTypeInfo = newTypeInfo.unwrapOne();
+                } else if (newTypeInfo.isNonNull()) {
+                    // nullable to non-null is valid, as long as the underlying types are also valid
+                    newTypeInfo = newTypeInfo.unwrapOne();
+                } else {
+                    // list to non-list is not valid
+                    return DiffCategory.INVALID;
+                }
+            } else {
+                if (newTypeInfo.isNonNull()) {
+                    // nullable to non-null is valid, as long as the underlying types are also valid
+                    newTypeInfo = newTypeInfo.unwrapOne();
+                } else if (newTypeInfo.isList()) {
+                    // non-list to list is not valid
+                    return DiffCategory.INVALID;
+                } else {
+                    return null;
+                }
+            }
+        }
     }
 
 
@@ -893,9 +945,9 @@ public class SchemaDiff {
 
     // looks for a type called `Query|Mutation|Subscription` and if it exist then assumes it as an operation def
 
-    private Optional<OperationTypeDefinition> synthOperationTypeDefinition(Function<Type, Optional<ObjectTypeDefinition>> typeReteriver, String opName) {
+    private Optional<OperationTypeDefinition> synthOperationTypeDefinition(Function<Type, Optional<ObjectTypeDefinition>> typeRetriever, String opName) {
         TypeName type = TypeName.newTypeName().name(capitalize(opName)).build();
-        Optional<ObjectTypeDefinition> typeDef = typeReteriver.apply(type);
+        Optional<ObjectTypeDefinition> typeDef = typeRetriever.apply(type);
         return typeDef.map(objectTypeDefinition -> OperationTypeDefinition.newOperationTypeDefinition().name(opName).typeName(type).build());
     }
 

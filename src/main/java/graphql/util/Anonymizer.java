@@ -2,6 +2,7 @@ package graphql.util;
 
 import graphql.AssertException;
 import graphql.Directives;
+import graphql.GraphQLContext;
 import graphql.PublicApi;
 import graphql.Scalars;
 import graphql.analysis.QueryTraverser;
@@ -12,6 +13,7 @@ import graphql.analysis.QueryVisitorFieldArgumentValueEnvironment;
 import graphql.analysis.QueryVisitorFieldEnvironment;
 import graphql.analysis.QueryVisitorFragmentSpreadEnvironment;
 import graphql.analysis.QueryVisitorInlineFragmentEnvironment;
+import graphql.collect.ImmutableKit;
 import graphql.execution.ValuesResolver;
 import graphql.introspection.Introspection;
 import graphql.language.Argument;
@@ -41,6 +43,8 @@ import graphql.language.Value;
 import graphql.language.VariableDefinition;
 import graphql.language.VariableReference;
 import graphql.parser.Parser;
+import graphql.schema.GraphQLAppliedDirective;
+import graphql.schema.GraphQLAppliedDirectiveArgument;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLCodeRegistry;
 import graphql.schema.GraphQLDirective;
@@ -75,15 +79,17 @@ import graphql.schema.impl.SchemaUtil;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.schema.GraphQLArgument.newArgument;
@@ -121,19 +127,19 @@ public class Anonymizer {
     }
 
     public static GraphQLSchema anonymizeSchema(String sdl) {
-        return anonymizeSchemaAndQueries(createdMockedSchema(sdl), Collections.emptyList(), Collections.emptyMap()).schema;
+        return anonymizeSchemaAndQueries(createdMockedSchema(sdl), ImmutableKit.emptyList(), ImmutableKit.emptyMap()).schema;
     }
 
     public static GraphQLSchema anonymizeSchema(GraphQLSchema schema) {
-        return anonymizeSchemaAndQueries(schema, Collections.emptyList(), Collections.emptyMap()).schema;
+        return anonymizeSchemaAndQueries(schema, ImmutableKit.emptyList(), ImmutableKit.emptyMap()).schema;
     }
 
     public static AnonymizeResult anonymizeSchemaAndQueries(String sdl, List<String> queries) {
-        return anonymizeSchemaAndQueries(createdMockedSchema(sdl), queries, Collections.emptyMap());
+        return anonymizeSchemaAndQueries(createdMockedSchema(sdl), queries, ImmutableKit.emptyMap());
     }
 
     public static AnonymizeResult anonymizeSchemaAndQueries(GraphQLSchema schema, List<String> queries) {
-        return anonymizeSchemaAndQueries(schema, queries, Collections.emptyMap());
+        return anonymizeSchemaAndQueries(schema, queries, ImmutableKit.emptyMap());
     }
 
     public static AnonymizeResult anonymizeSchemaAndQueries(String sdl, List<String> queries, Map<String, Object> variables) {
@@ -179,17 +185,31 @@ public class Anonymizer {
                 GraphQLArgument newElement = graphQLArgument.transform(builder -> {
                     builder.name(newName).description(null).definition(null);
                     if (graphQLArgument.hasSetDefaultValue()) {
-                        Value<?> defaultValueLiteral = ValuesResolver.valueToLiteral(graphQLArgument.getArgumentDefaultValue(), graphQLArgument.getType());
+                        Value<?> defaultValueLiteral = ValuesResolver.valueToLiteral(graphQLArgument.getArgumentDefaultValue(), graphQLArgument.getType(), GraphQLContext.getDefault(), Locale.getDefault());
                         builder.defaultValueLiteral(replaceValue(defaultValueLiteral, graphQLArgument.getType(), newNameMap, defaultStringValueCounter, defaultIntValueCounter));
                     }
 
                     if (graphQLArgument.hasSetValue()) {
-                        Value<?> valueLiteral = ValuesResolver.valueToLiteral(graphQLArgument.getArgumentValue(), graphQLArgument.getType());
+                        Value<?> valueLiteral = ValuesResolver.valueToLiteral(graphQLArgument.getArgumentValue(), graphQLArgument.getType(), GraphQLContext.getDefault(), Locale.getDefault());
                         builder.valueLiteral(replaceValue(valueLiteral, graphQLArgument.getType(), newNameMap, defaultStringValueCounter, defaultIntValueCounter));
                     }
                 });
 
                 renamedArgumentsMap.put(newName, newElement);
+                return changeNode(context, newElement);
+            }
+
+            @Override
+            public TraversalControl visitGraphQLAppliedDirectiveArgument(GraphQLAppliedDirectiveArgument graphQLArgument, TraverserContext<GraphQLSchemaElement> context) {
+                String newName = assertNotNull(newNameMap.get(graphQLArgument));
+
+                GraphQLAppliedDirectiveArgument newElement = graphQLArgument.transform(builder -> {
+                    builder.name(newName).description(null).definition(null);
+                    if (graphQLArgument.hasSetValue()) {
+                        Value<?> valueLiteral = ValuesResolver.valueToLiteral(graphQLArgument.getArgumentValue(), graphQLArgument.getType(), GraphQLContext.getDefault(), Locale.getDefault());
+                        builder.valueLiteral(replaceValue(valueLiteral, graphQLArgument.getType(), newNameMap, defaultStringValueCounter, defaultIntValueCounter));
+                    }
+                });
                 return changeNode(context, newElement);
             }
 
@@ -250,11 +270,33 @@ public class Anonymizer {
                     changeNode(context, newElement);
                     return TraversalControl.ABORT;
                 }
-                if (DirectiveInfo.isGraphqlSpecifiedDirective(graphQLDirective)) {
+                if (DirectiveInfo.isGraphqlSpecifiedDirective(graphQLDirective.getName())) {
                     return TraversalControl.ABORT;
                 }
                 String newName = assertNotNull(newNameMap.get(graphQLDirective));
                 GraphQLDirective newElement = graphQLDirective.transform(builder -> {
+                    builder.name(newName).description(null).definition(null);
+                });
+                return changeNode(context, newElement);
+            }
+
+            @Override
+            public TraversalControl visitGraphQLAppliedDirective(GraphQLAppliedDirective graphQLDirective, TraverserContext<GraphQLSchemaElement> context) {
+                if (Directives.DEPRECATED_DIRECTIVE_DEFINITION.getName().equals(graphQLDirective.getName())) {
+                    GraphQLAppliedDirectiveArgument reason = GraphQLAppliedDirectiveArgument.newArgument().name("reason")
+                            .type(Scalars.GraphQLString)
+                            .clearValue().build();
+                    GraphQLAppliedDirective newElement = graphQLDirective.transform(builder -> {
+                        builder.description(null).argument(reason);
+                    });
+                    changeNode(context, newElement);
+                    return TraversalControl.ABORT;
+                }
+                if (DirectiveInfo.isGraphqlSpecifiedDirective(graphQLDirective.getName())) {
+                    return TraversalControl.ABORT;
+                }
+                String newName = assertNotNull(newNameMap.get(graphQLDirective));
+                GraphQLAppliedDirective newElement = graphQLDirective.transform(builder -> {
                     builder.name(newName).description(null).definition(null);
                 });
                 return changeNode(context, newElement);
@@ -266,7 +308,7 @@ public class Anonymizer {
 
                 Value<?> defaultValue = null;
                 if (graphQLInputObjectField.hasSetDefaultValue()) {
-                    defaultValue = ValuesResolver.valueToLiteral(graphQLInputObjectField.getInputFieldDefaultValue(), graphQLInputObjectField.getType());
+                    defaultValue = ValuesResolver.valueToLiteral(graphQLInputObjectField.getInputFieldDefaultValue(), graphQLInputObjectField.getType(), GraphQLContext.getDefault(), Locale.getDefault());
                     defaultValue = replaceValue(defaultValue, graphQLInputObjectField.getType(), newNameMap, defaultStringValueCounter, defaultIntValueCounter);
                 }
 
@@ -405,6 +447,28 @@ public class Anonymizer {
         Map<String, List<GraphQLImplementingType>> interfaceToImplementations =
                 new SchemaUtil().groupImplementationsForInterfacesAndObjects(schema);
 
+        Consumer<GraphQLNamedSchemaElement> recordDirectiveName = (graphQLDirective) -> {
+            String directiveName = graphQLDirective.getName();
+            if (directivesOriginalToNewNameMap.containsKey(directiveName)) {
+                newNameMap.put(graphQLDirective, directivesOriginalToNewNameMap.get(directiveName));
+                return;
+            }
+
+            String newName = "Directive" + directiveCounter.getAndIncrement();
+            newNameMap.put(graphQLDirective, newName);
+            directivesOriginalToNewNameMap.put(directiveName, newName);
+        };
+
+        BiConsumer<GraphQLNamedSchemaElement, String> recordDirectiveArgumentName = (graphQLArgument, directiveArgumentKey) -> {
+            if (seenArgumentsOnDirectivesMap.containsKey(directiveArgumentKey)) {
+                newNameMap.put(graphQLArgument, seenArgumentsOnDirectivesMap.get(directiveArgumentKey));
+                return;
+            }
+            String newName = "argument" + argumentCounter.getAndIncrement();
+            newNameMap.put(graphQLArgument, newName);
+            seenArgumentsOnDirectivesMap.put(directiveArgumentKey, newName);
+        };
+
         GraphQLTypeVisitor visitor = new GraphQLTypeVisitorStub() {
             @Override
             public TraversalControl visitGraphQLArgument(GraphQLArgument graphQLArgument, TraverserContext<GraphQLSchemaElement> context) {
@@ -412,13 +476,8 @@ public class Anonymizer {
                 GraphQLSchemaElement parentNode = context.getParentNode();
                 if (parentNode instanceof GraphQLDirective) {
                     // if we already went over the argument for this directive name, no need to add new names
-                    if (seenArgumentsOnDirectivesMap.containsKey(((GraphQLDirective) parentNode).getName() + graphQLArgument.getName())) {
-                        newNameMap.put(graphQLArgument, seenArgumentsOnDirectivesMap.get(((GraphQLDirective) parentNode).getName() + graphQLArgument.getName()));
-                        return CONTINUE;
-                    }
-                    String newName = "argument" + argumentCounter.getAndIncrement();
-                    newNameMap.put(graphQLArgument, newName);
-                    seenArgumentsOnDirectivesMap.put(((GraphQLDirective) parentNode).getName() + graphQLArgument.getName(), newName);
+                    String directiveArgumentKey = ((GraphQLDirective) parentNode).getName() + graphQLArgument.getName();
+                    recordDirectiveArgumentName.accept(graphQLArgument, directiveArgumentKey);
                     return CONTINUE;
                 }
 
@@ -453,6 +512,36 @@ public class Anonymizer {
 
                 return CONTINUE;
             }
+
+            @Override
+            public TraversalControl visitGraphQLAppliedDirectiveArgument(GraphQLAppliedDirectiveArgument graphQLArgument, TraverserContext<GraphQLSchemaElement> context) {
+                GraphQLSchemaElement parentNode = context.getParentNode();
+                if (parentNode instanceof GraphQLAppliedDirective) {
+                    // if we already went over the argument for this directive name, no need to add new names
+                    String directiveArgumentKey = ((GraphQLAppliedDirective) parentNode).getName() + graphQLArgument.getName();
+                    recordDirectiveArgumentName.accept(graphQLArgument, directiveArgumentKey);
+                }
+                return CONTINUE;
+            }
+
+            @Override
+            public TraversalControl visitGraphQLDirective(GraphQLDirective graphQLDirective, TraverserContext<GraphQLSchemaElement> context) {
+                if (DirectiveInfo.isGraphqlSpecifiedDirective(graphQLDirective)) {
+                    return TraversalControl.ABORT;
+                }
+                recordDirectiveName.accept(graphQLDirective);
+                return CONTINUE;
+            }
+
+            @Override
+            public TraversalControl visitGraphQLAppliedDirective(GraphQLAppliedDirective graphQLAppliedDirective, TraverserContext<GraphQLSchemaElement> context) {
+                if (DirectiveInfo.isGraphqlSpecifiedDirective(graphQLAppliedDirective.getName())) {
+                    return TraversalControl.ABORT;
+                }
+                recordDirectiveName.accept(graphQLAppliedDirective);
+                return CONTINUE;
+            }
+
 
             @Override
             public TraversalControl visitGraphQLInterfaceType(GraphQLInterfaceType graphQLInterfaceType, TraverserContext<GraphQLSchemaElement> context) {
@@ -500,24 +589,6 @@ public class Anonymizer {
                     }
                 }
                 newNameMap.put(graphQLFieldDefinition, newName);
-                return CONTINUE;
-            }
-
-            @Override
-            public TraversalControl visitGraphQLDirective(GraphQLDirective graphQLDirective, TraverserContext<GraphQLSchemaElement> context) {
-                if (DirectiveInfo.isGraphqlSpecifiedDirective(graphQLDirective)) {
-                    return TraversalControl.ABORT;
-                }
-
-                String directiveName = graphQLDirective.getName();
-                if (directivesOriginalToNewNameMap.containsKey(directiveName)) {
-                    newNameMap.put(graphQLDirective, directivesOriginalToNewNameMap.get(directiveName));
-                    return CONTINUE;
-                }
-
-                String newName = "Directive" + directiveCounter.getAndIncrement();
-                newNameMap.put(graphQLDirective, newName);
-                directivesOriginalToNewNameMap.put(directiveName, newName);
                 return CONTINUE;
             }
 
@@ -633,7 +704,7 @@ public class Anonymizer {
             Set<GraphQLFieldDefinition> fieldDefinitions) {
         List<GraphQLArgument> result = new ArrayList<>();
         for (GraphQLFieldDefinition fieldDefinition : fieldDefinitions) {
-            Optional.ofNullable(fieldDefinition.getArgument(name)).map(result::add);
+            Optional.ofNullable(fieldDefinition.getArgument(name)).ifPresent(result::add);
         }
         return result;
     }
@@ -669,7 +740,7 @@ public class Anonymizer {
 
                     for (Argument argument : directive.getArguments()) {
                         GraphQLArgument argumentDefinition = directiveDefinition.getArgument(argument.getName());
-                        String newArgumentName = assertNotNull(newNames.get(argumentDefinition), () -> format("%s no new name found for directive argument %s %s", directiveName, argument.getName()));
+                        String newArgumentName = assertNotNull(newNames.get(argumentDefinition), () -> format("No new name found for directive %s argument %s", directiveName, argument.getName()));
                         astNodeToNewName.put(argument, newArgumentName);
                         visitDirectiveArgumentValues(directive, argument.getValue());
                     }
@@ -771,7 +842,7 @@ public class Anonymizer {
             public TraversalControl visitVariableDefinition(VariableDefinition node, TraverserContext<Node> context) {
                 String newName = assertNotNull(variableNames.get(node.getName()));
                 VariableDefinition newNode = node.transform(builder -> {
-                    builder.name(newName).comments(Collections.emptyList());
+                    builder.name(newName).comments(ImmutableKit.emptyList());
 
                     // convert variable language type to renamed language type
                     TypeName typeName = TypeUtil.unwrapAll(node.getType());
