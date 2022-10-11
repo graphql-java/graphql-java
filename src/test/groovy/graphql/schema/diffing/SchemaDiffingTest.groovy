@@ -528,13 +528,6 @@ class SchemaDiffingTest extends Specification {
            } 
         """)
 
-        def changeHandler = new SchemaChangedHandler() {
-            @Override
-            void fieldRemoved(String description) {
-                println "field removed: " + description
-            }
-        }
-
         def diffing = new SchemaDiffing()
         when:
         def diff = diffing.diffGraphQLSchema(schema1, schema2)

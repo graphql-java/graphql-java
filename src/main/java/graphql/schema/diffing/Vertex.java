@@ -1,6 +1,7 @@
 package graphql.schema.diffing;
 
 import graphql.Assert;
+import graphql.ExperimentalApi;
 
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -9,6 +10,7 @@ import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
 
+@ExperimentalApi
 public class Vertex {
 
     private String type;

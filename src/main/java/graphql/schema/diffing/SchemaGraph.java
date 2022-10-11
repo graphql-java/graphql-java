@@ -6,6 +6,7 @@ import com.google.common.collect.LinkedHashMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Table;
 import graphql.Assert;
+import graphql.ExperimentalApi;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -21,6 +22,7 @@ import static graphql.Assert.assertShouldNeverHappen;
 import static graphql.Assert.assertTrue;
 import static java.lang.String.format;
 
+@ExperimentalApi
 public class SchemaGraph {
 
     public static final String SCHEMA = "Schema";

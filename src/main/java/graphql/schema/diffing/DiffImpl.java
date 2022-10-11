@@ -4,6 +4,7 @@ import com.google.common.collect.HashMultiset;
 import com.google.common.collect.Multiset;
 import com.google.common.collect.Multisets;
 import com.google.common.util.concurrent.AtomicDoubleArray;
+import graphql.Internal;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -20,6 +21,7 @@ import static graphql.Assert.assertTrue;
 import static graphql.schema.diffing.EditorialCostForMapping.editorialCostForMapping;
 import static java.util.Collections.singletonList;
 
+@Internal
 public class DiffImpl {
 
     private static MappingEntry LAST_ELEMENT = new MappingEntry();

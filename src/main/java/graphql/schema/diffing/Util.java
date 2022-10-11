@@ -1,8 +1,11 @@
 package graphql.schema.diffing;
 
+import graphql.Internal;
+
 import java.util.List;
 import java.util.Set;
 
+@Internal
 public class Util {
     public static void diffNamedList(Set<String> sourceNames,
                                      Set<String> targetNames,

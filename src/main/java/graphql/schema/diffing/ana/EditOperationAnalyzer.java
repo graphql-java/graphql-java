@@ -1,6 +1,7 @@
 package graphql.schema.diffing.ana;
 
 import graphql.Assert;
+import graphql.ExperimentalApi;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.diffing.Edge;
 import graphql.schema.diffing.EditOperation;
@@ -19,6 +20,7 @@ import static graphql.schema.diffing.ana.SchemaChanges.*;
 /**
  * Higher level GraphQL semantic assigned to
  */
+@ExperimentalApi
 public class EditOperationAnalyzer {
 
     private GraphQLSchema oldSchema;

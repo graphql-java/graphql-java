@@ -1,7 +1,9 @@
 package graphql.schema.diffing;
 
+import graphql.Internal;
 import graphql.schema.diffing.dot.Dotfile;
 
+@Internal
 public class GraphPrinter {
 
     public static String print(SchemaGraph schemaGraph) {

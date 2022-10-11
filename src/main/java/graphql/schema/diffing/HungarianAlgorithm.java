@@ -1,6 +1,7 @@
 package graphql.schema.diffing;
 
 import com.google.common.util.concurrent.AtomicDoubleArray;
+import graphql.Internal;
 
 import java.util.Arrays;
 
@@ -49,6 +50,7 @@ import java.util.Arrays;
  *
  * @author Kevin L. Stern
  */
+@Internal
 public class HungarianAlgorithm {
     // changed by reduce
     public final AtomicDoubleArray[] costMatrix;

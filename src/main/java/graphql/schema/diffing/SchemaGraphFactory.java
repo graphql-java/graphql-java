@@ -1,6 +1,7 @@
 package graphql.schema.diffing;
 
 import graphql.GraphQLContext;
+import graphql.Internal;
 import graphql.execution.ValuesResolver;
 import graphql.introspection.Introspection;
 import graphql.language.AstPrinter;
@@ -22,6 +23,7 @@ import java.util.Set;
 
 import static graphql.Assert.assertNotNull;
 
+@Internal
 public class SchemaGraphFactory {
 
     private int counter = 1;

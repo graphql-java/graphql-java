@@ -1,5 +1,8 @@
 package graphql.schema.diffing.ana;
 
+import graphql.ExperimentalApi;
+
+@ExperimentalApi
 public class SchemaChanges {
 
     /**

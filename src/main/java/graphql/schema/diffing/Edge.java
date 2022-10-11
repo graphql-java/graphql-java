@@ -1,7 +1,10 @@
 package graphql.schema.diffing;
 
+import graphql.ExperimentalApi;
+
 import java.util.Objects;
 
+@ExperimentalApi
 public class Edge {
     private Vertex from;
     private Vertex to;

@@ -1,8 +1,11 @@
 package graphql.schema.diffing.ana;
 
+import graphql.ExperimentalApi;
+
 import java.util.ArrayList;
 import java.util.List;
 
+@ExperimentalApi
 public class InterfaceModified implements SchemaChange.InterfaceChange {
     private final String name;
 

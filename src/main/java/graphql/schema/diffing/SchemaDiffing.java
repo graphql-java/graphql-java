@@ -1,5 +1,6 @@
 package graphql.schema.diffing;
 
+import graphql.ExperimentalApi;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.diffing.ana.EditOperationAnalysisResult;
 import graphql.schema.diffing.ana.EditOperationAnalyzer;
@@ -12,7 +13,9 @@ import static graphql.Assert.assertTrue;
 import static graphql.schema.diffing.EditorialCostForMapping.editorialCostForMapping;
 import static java.util.Collections.singletonList;
 
+@ExperimentalApi
 public class SchemaDiffing {
+
 
 
     SchemaGraph sourceGraph;
@@ -139,31 +142,5 @@ public class SchemaDiffing {
         return result;
     }
 
-
-//        List<String> debugMap = getDebugMap(bestFullMapping.get());
-//        for (String debugLine : debugMap) {
-//            System.out.println(debugLine);
-//        }
-//        System.out.println("edit : " + bestEdit);
-//        for (EditOperation editOperation : bestEdit.get()) {
-//            System.out.println(editOperation);
-//        }
-//    private List<EditOperation> diffImplImpl() {
-
-//    private void logUnmappable(AtomicDoubleArray[] costMatrix, int[] assignments, List<Vertex> sourceList, ArrayList<Vertex> availableTargetVertices, int level) {
-//        for (int i = 0; i < assignments.length; i++) {
-//            double value = costMatrix[i].get(assignments[i]);
-//            if (value >= Integer.MAX_VALUE) {
-//                System.out.println("i " + i + " can't mapped");
-//                Vertex v = sourceList.get(i + level - 1);
-//                Vertex u = availableTargetVertices.get(assignments[i]);
-//                System.out.println("from " + v + " to " + u);
-//            }
-//        }
-//    }
-//
-//
-//    // minimum number of edit operations for a full mapping
-//
 
 }

@@ -1,5 +1,7 @@
 package graphql.schema.diffing;
 
+import graphql.Internal;
+
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
@@ -7,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
+@Internal
 public class SortSourceGraph {
 
     public static void sortSourceGraph(SchemaGraph sourceGraph, SchemaGraph targetGraph, FillupIsolatedVertices.IsolatedVertices isolatedVertices) {

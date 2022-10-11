@@ -1,7 +1,10 @@
 package graphql.schema.diffing;
 
+import graphql.Internal;
+
 import java.util.List;
 
+@Internal
 public class EditorialCostForMapping {
 
     /**
