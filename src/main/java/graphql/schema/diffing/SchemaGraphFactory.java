@@ -111,9 +111,6 @@ public class SchemaGraphFactory {
             if (SchemaGraph.INPUT_OBJECT.equals(vertex.getType())) {
                 handleInputObject(vertex, schemaGraph, schema);
             }
-            if (SchemaGraph.APPLIED_DIRECTIVE.equals(vertex.getType())) {
-                handleAppliedDirective(vertex, schemaGraph, schema);
-            }
         }
         return schemaGraph;
     }
@@ -137,11 +134,6 @@ public class SchemaGraphFactory {
             schemaGraph.addEdge(new Edge(schemaVertex, subscriptionVertex, "subscription"));
         }
         createAppliedDirectives(schemaVertex, graphQLSchema.getSchemaDirectives(), schemaGraph);
-    }
-
-    private void handleAppliedDirective(Vertex appliedDirectiveVertex, SchemaGraph schemaGraph, GraphQLSchema graphQLSchema) {
-//        Vertex directiveVertex = schemaGraph.getDirective(appliedDirectiveVertex.get("name"));
-//        schemaGraph.addEdge(new Edge(appliedDirectiveVertex, directiveVertex));
     }
 
     private void handleInputObject(Vertex inputObject, SchemaGraph schemaGraph, GraphQLSchema graphQLSchema) {
