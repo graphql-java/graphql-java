@@ -1321,6 +1321,32 @@ class SchemaDiffingTest extends Specification {
         operations.size() == 1
 
     }
+
+    def "change description"() {
+        given:
+        def schema1 = schema('''
+            "Hello World"
+            type Query {
+                "helloDesc"
+                hello: String
+            } 
+        ''')
+        def schema2 = schema('''
+            "Hello World now"
+            type Query {
+                "helloDescChanged"
+                hello: String
+            } 
+        ''')
+
+        when:
+        def operations = new SchemaDiffing().diffGraphQLSchema(schema1, schema2)
+        operations.each { println it }
+
+        then:
+        operations.size() == 2
+
+    }
 }
 
 

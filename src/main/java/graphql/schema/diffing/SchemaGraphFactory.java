@@ -401,7 +401,7 @@ public class SchemaGraphFactory {
     }
 
     private String desc(String desc) {
-        return "";
+        return desc;
 //        return desc != null ? desc.replace("\n", "\\n") : null;
     }
 
