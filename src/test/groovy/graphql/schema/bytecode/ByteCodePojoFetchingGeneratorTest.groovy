@@ -129,14 +129,12 @@ class ByteCodePojoFetchingGeneratorTest extends Specification {
 
     def "can generate class for simple pojo"() {
         when:
-        def generatedClass = ByteCodePojoFetchingGenerator.generateClassFor(SimplePojo.class)
+        def result = ByteCodePojoFetchingGenerator.generateClassFor(SimplePojo.class)
         then:
-        generatedClass.getName() == "graphql.schema.bytecode.graphql.schema.bytecode.Fetcher4graphql.schema.bytecode.SimplePojoGen"
-        ByteCodeFetcher.class.isAssignableFrom(generatedClass)
+        result.fetcher.class.getName() == "graphql.schema.bytecode.graphql.schema.bytecode.Fetcher4graphql.schema.bytecode.SimplePojoGen"
 
         when:
-        // it can be created
-        ByteCodeFetcher byteCodeFetcher = generatedClass.newInstance()
+        ByteCodeFetcher byteCodeFetcher = result.fetcher
         def simplePojo = new SimplePojo(["name1"], 42, false)
 
         then:

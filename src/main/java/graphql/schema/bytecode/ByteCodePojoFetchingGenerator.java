@@ -6,6 +6,7 @@ import javassist.CtClass;
 import javassist.CtMethod;
 import javassist.CtNewMethod;
 import javassist.LoaderClassPath;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -33,26 +34,70 @@ public class ByteCodePojoFetchingGenerator {
     }
 
 
-    public static Class<ByteCodeFetcher> generateClassFor(Class<?> sourceClass) {
-        try {
-            ClassPool pool = ClassPool.getDefault();
+    public static class Result {
+        private final ByteCodeFetcher fetcher;
+        private final Set<String> handledProperties;
 
+        private Result(ByteCodeFetcher fetcher, Set<String> handledProperties) {
+            this.fetcher = fetcher;
+            this.handledProperties = handledProperties;
+        }
+
+        public ByteCodeFetcher getFetcher() {
+            return fetcher;
+        }
+
+        public Set<String> getHandledProperties() {
+            return handledProperties;
+        }
+
+        public boolean handlesProperty(String propertyName) {
+            return handledProperties.contains(propertyName);
+        }
+    }
+
+    public static Result generateClassFor(Class<?> sourceClass) {
+        // this can throw exceptions so don't make any class code until we are ready
+        String methodBody = generateMethodBody(sourceClass);
+        try {
+
+            ClassPool pool = ClassPool.getDefault();
             pool.insertClassPath(new LoaderClassPath(ByteCodePojoFetchingGenerator.class.getClassLoader()));
             CtClass cc = pool.makeClass("graphql.schema.bytecode." + mkClassName(sourceClass));
             CtClass ci = pool.get("graphql.schema.bytecode.ByteCodeFetcher");
             cc.setSuperclass(pool.get("java.lang.Object"));
             cc.addInterface(ci);
 
-            String methodBody = generateMethodBody(sourceClass);
             CtMethod m = CtNewMethod.make(
                     methodBody,
                     cc);
             cc.addMethod(m);
             //noinspection unchecked
-            return (Class<ByteCodeFetcher>) cc.toClass();
+            Class<ByteCodeFetcher> clazz = (Class<ByteCodeFetcher>) cc.toClass();
+            ByteCodeFetcher fetcher = clazz.newInstance();
+
+            Set<String> properties = getHandledProperties(sourceClass);
+            return new Result(fetcher, properties);
         } catch (Exception e) {
             throw new CantGenerateClassException(sourceClass, e);
         }
+    }
+
+    @NotNull
+    private static Set<String> getHandledProperties(Class<?> sourceClass) {
+        List<Method> methods = getAppropriateMethods(sourceClass).stream()
+                .sorted(Comparator.comparing(Method::getName))
+                .collect(Collectors.toList());
+
+        Set<String> properties = new HashSet<>();
+        for (Method method : methods) {
+            String propertyName = mkPropertyName(method);
+            if (properties.contains(propertyName)) {
+                continue;
+            }
+            properties.add(propertyName);
+        }
+        return properties;
     }
 
     private static String mkClassName(Class<?> sourceClass) {

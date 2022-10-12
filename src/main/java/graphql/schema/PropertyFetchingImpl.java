@@ -2,7 +2,6 @@ package graphql.schema;
 
 import graphql.GraphQLException;
 import graphql.Internal;
-import graphql.schema.bytecode.ByteCodeFetcher;
 import graphql.schema.bytecode.ByteCodePojoFetchingGenerator;
 import org.slf4j.Logger;
 
@@ -37,7 +36,7 @@ public class PropertyFetchingImpl {
 
     private final AtomicBoolean USE_SET_ACCESSIBLE = new AtomicBoolean(true);
     private final AtomicBoolean USE_NEGATIVE_CACHE = new AtomicBoolean(true);
-    private final ConcurrentMap<GenClassCacheKey, ByteCodeFetcher> GENERATED_CACHE = new ConcurrentHashMap<>();
+    private final ConcurrentMap<GenClassCacheKey, ByteCodePojoFetchingGenerator.Result> GENERATED_CACHE = new ConcurrentHashMap<>();
     private final ConcurrentMap<CacheKey, CachedMethod> METHOD_CACHE = new ConcurrentHashMap<>();
     private final ConcurrentMap<CacheKey, Field> FIELD_CACHE = new ConcurrentHashMap<>();
     private final ConcurrentMap<CacheKey, CacheKey> NEGATIVE_CACHE = new ConcurrentHashMap<>();
@@ -68,12 +67,14 @@ public class PropertyFetchingImpl {
         // let's try positive cache mechanisms first.  If we have seen the method or field before
         // then we invoke it directly without burning any cycles doing reflection.
 
-        ByteCodeFetcher byteCodeFetcher = GENERATED_CACHE.get(genClassCacheKey);
-        if (byteCodeFetcher != null) {
-            try {
-                return byteCodeFetcher.fetch(object, propertyName);
-            } catch (Exception e) {
-                // we don't expect this but let's go to old way
+        ByteCodePojoFetchingGenerator.Result generatedFetcher = GENERATED_CACHE.get(genClassCacheKey);
+        if (generatedFetcher != null) {
+            if (generatedFetcher.handlesProperty(propertyName)) {
+                try {
+                    return generatedFetcher.getFetcher().fetch(object, propertyName);
+                } catch (Exception e) {
+                    // we don't expect this but let's go to the old way
+                }
             }
         }
 
@@ -105,10 +106,11 @@ public class PropertyFetchingImpl {
         //
         // we can try to generate a dynamic class for the object which can prove faster
         try {
-            Class<ByteCodeFetcher> generatedClass = ByteCodePojoFetchingGenerator.generateClassFor(object.getClass());
-            ByteCodeFetcher fetcher = generatedClass.newInstance();
-            GENERATED_CACHE.put(genClassCacheKey, fetcher);
-            return fetcher.fetch(object, propertyName);
+            ByteCodePojoFetchingGenerator.Result result = ByteCodePojoFetchingGenerator.generateClassFor(object.getClass());
+            GENERATED_CACHE.put(genClassCacheKey, result);
+            if (result.handlesProperty(propertyName)) {
+                return result.getFetcher().fetch(object, propertyName);
+            }
         } catch (Exception e) {
             // We might not have enough
             log.warn("Unable to generate a dynamic class for {}", object.getClass(), e);
