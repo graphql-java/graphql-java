@@ -2,6 +2,9 @@ package graphql.schema;
 
 import graphql.GraphQLException;
 import graphql.Internal;
+import graphql.schema.bytecode.ByteCodeFetcher;
+import graphql.schema.bytecode.ByteCodePojoFetchingGenerator;
+import org.slf4j.Logger;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -12,6 +15,7 @@ import java.util.Comparator;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.StringJoiner;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -21,6 +25,7 @@ import static graphql.Assert.assertShouldNeverHappen;
 import static graphql.Scalars.GraphQLBoolean;
 import static graphql.schema.GraphQLTypeUtil.isNonNull;
 import static graphql.schema.GraphQLTypeUtil.unwrapOne;
+import static org.slf4j.LoggerFactory.getLogger;
 
 /**
  * A re-usable class that can fetch from POJOs
@@ -28,8 +33,11 @@ import static graphql.schema.GraphQLTypeUtil.unwrapOne;
 @Internal
 public class PropertyFetchingImpl {
 
+    private static final Logger log = getLogger(PropertyFetchingImpl.class);
+
     private final AtomicBoolean USE_SET_ACCESSIBLE = new AtomicBoolean(true);
     private final AtomicBoolean USE_NEGATIVE_CACHE = new AtomicBoolean(true);
+    private final ConcurrentMap<GenClassCacheKey, ByteCodeFetcher> GENERATED_CACHE = new ConcurrentHashMap<>();
     private final ConcurrentMap<CacheKey, CachedMethod> METHOD_CACHE = new ConcurrentHashMap<>();
     private final ConcurrentMap<CacheKey, Field> FIELD_CACHE = new ConcurrentHashMap<>();
     private final ConcurrentMap<CacheKey, CacheKey> NEGATIVE_CACHE = new ConcurrentHashMap<>();
@@ -56,8 +64,19 @@ public class PropertyFetchingImpl {
         }
 
         CacheKey cacheKey = mkCacheKey(object, propertyName);
-        // lets try positive cache mechanisms first.  If we have seen the method or field before
+        GenClassCacheKey genClassCacheKey = mkGenCacheKey(object);
+        // let's try positive cache mechanisms first.  If we have seen the method or field before
         // then we invoke it directly without burning any cycles doing reflection.
+
+        ByteCodeFetcher byteCodeFetcher = GENERATED_CACHE.get(genClassCacheKey);
+        if (byteCodeFetcher != null) {
+            try {
+                return byteCodeFetcher.fetch(object, propertyName);
+            } catch (Exception e) {
+                // we don't expect this but let's go to old way
+            }
+        }
+
         CachedMethod cachedMethod = METHOD_CACHE.get(cacheKey);
         if (cachedMethod != null) {
             try {
@@ -84,7 +103,19 @@ public class PropertyFetchingImpl {
             return null;
         }
         //
-        // ok we haven't cached it and we haven't negatively cached it so we have to find the POJO method which is the most
+        // we can try to generate a dynamic class for the object which can prove faster
+        try {
+            Class<ByteCodeFetcher> generatedClass = ByteCodePojoFetchingGenerator.generateClassFor(object.getClass());
+            ByteCodeFetcher fetcher = generatedClass.newInstance();
+            GENERATED_CACHE.put(genClassCacheKey, fetcher);
+            return fetcher.fetch(object, propertyName);
+        } catch (Exception e) {
+            // We might not have enough
+            log.warn("Unable to generate a dynamic class for {}", object.getClass(), e);
+        }
+
+        //
+        // ok we haven't cached it, and we haven't negatively cached it, so we have to find the POJO method which is the most
         // expensive operation here
         //
         boolean dfeInUse = singleArgumentValue != null;
@@ -272,6 +303,7 @@ public class PropertyFetchingImpl {
     }
 
     public void clearReflectionCache() {
+        GENERATED_CACHE.clear();
         METHOD_CACHE.clear();
         FIELD_CACHE.clear();
         NEGATIVE_CACHE.clear();
@@ -287,8 +319,47 @@ public class PropertyFetchingImpl {
 
     private CacheKey mkCacheKey(Object object, String propertyName) {
         Class<?> clazz = object.getClass();
-        ClassLoader classLoader = clazz.getClassLoader();
-        return new CacheKey(classLoader, clazz.getName(), propertyName);
+        return new CacheKey(clazz.getClassLoader(), clazz.getName(), propertyName);
+    }
+
+    private GenClassCacheKey mkGenCacheKey(Object object) {
+        Class<?> clazz = object.getClass();
+        return new GenClassCacheKey(clazz.getClassLoader(), clazz.getName());
+    }
+
+    public static final class GenClassCacheKey {
+        private final ClassLoader classLoader;
+        private final String className;
+
+        private GenClassCacheKey(ClassLoader classLoader, String className) {
+            this.classLoader = classLoader;
+            this.className = className;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            GenClassCacheKey that = (GenClassCacheKey) o;
+            return classLoader.equals(that.classLoader) && className.equals(that.className);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(classLoader, className);
+        }
+
+        @Override
+        public String toString() {
+            return new StringJoiner(", ", GenClassCacheKey.class.getSimpleName() + "[", "]")
+                    .add("classLoader=" + classLoader)
+                    .add("className='" + className + "'")
+                    .toString();
+        }
     }
 
     private static final class CacheKey {
@@ -304,8 +375,12 @@ public class PropertyFetchingImpl {
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) return true;
-            if (!(o instanceof CacheKey)) return false;
+            if (this == o) {
+                return true;
+            }
+            if (!(o instanceof CacheKey)) {
+                return false;
+            }
             CacheKey cacheKey = (CacheKey) o;
             return Objects.equals(classLoader, cacheKey.classLoader) && Objects.equals(className, cacheKey.className) && Objects.equals(propertyName, cacheKey.propertyName);
         }
@@ -322,10 +397,10 @@ public class PropertyFetchingImpl {
         @Override
         public String toString() {
             return "CacheKey{" +
-                "classLoader=" + classLoader +
-                ", className='" + className + '\'' +
-                ", propertyName='" + propertyName + '\'' +
-                '}';
+                    "classLoader=" + classLoader +
+                    ", className='" + className + '\'' +
+                    ", propertyName='" + propertyName + '\'' +
+                    '}';
         }
     }
 
@@ -343,7 +418,6 @@ public class PropertyFetchingImpl {
         return Comparator.comparingInt(Method::getParameterCount).reversed();
     }
 
-    @SuppressWarnings("serial")
     private static class FastNoSuchMethodException extends NoSuchMethodException {
         public FastNoSuchMethodException(String methodName) {
             super(methodName);
