@@ -172,9 +172,12 @@ class ValuesResolverTest extends Specification {
         given: "schema defining input object"
         def inputObjectType = newInputObject()
                 .name("inputObject")
+                .field(newInputObjectField()
+                        .name("inputField")
+                        .type(GraphQLString))
                 .build()
 
-        def fieldArgument = newArgument().name("arg").type(inputObjectType).defaultValue("hello").build()
+        def fieldArgument = newArgument().name("arg").type(inputObjectType).defaultValueProgrammatic([inputField: "hello"]).build()
         def argument = new Argument("arg", new VariableReference("var"))
 
         when:
@@ -182,7 +185,7 @@ class ValuesResolverTest extends Specification {
         def values = ValuesResolver.getArgumentValues([fieldArgument], [argument], variables, graphQLContext, locale)
 
         then:
-        values['arg'] == 'hello'
+        values['arg'] == [inputField: 'hello']
     }
 
     def "getArgumentValues: resolves object literal"() {
@@ -532,7 +535,7 @@ class ValuesResolverTest extends Specification {
                 .name("inputObject")
                 .build()
 
-        def fieldArgument = newArgument().name("arg").type(inputObjectType).defaultValue("hello").build()
+        def fieldArgument = newArgument().name("arg").type(inputObjectType).defaultValueProgrammatic("hello").build()
         def argument = new Argument("arg", new VariableReference("var"))
 
         when:

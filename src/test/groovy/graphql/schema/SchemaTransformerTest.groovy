@@ -28,7 +28,7 @@ class SchemaTransformerTest extends Specification {
            bar: String
        } 
         """)
-        schema.getQueryType();
+        schema.getQueryType()
         SchemaTransformer schemaTransformer = new SchemaTransformer()
         when:
         GraphQLSchema newSchema = schemaTransformer.transform(schema, new GraphQLTypeVisitorStub() {
@@ -39,7 +39,7 @@ class SchemaTransformerTest extends Specification {
                     def changedNode = fieldDefinition.transform({ builder -> builder.name("barChanged") })
                     return changeNode(context, changedNode)
                 }
-                return TraversalControl.CONTINUE;
+                return TraversalControl.CONTINUE
             }
         })
 
@@ -59,7 +59,7 @@ class SchemaTransformerTest extends Specification {
            baz: String
        } 
         """)
-        schema.getQueryType();
+        schema.getQueryType()
         SchemaTransformer schemaTransformer = new SchemaTransformer()
         when:
         GraphQLSchema newSchema = schemaTransformer.transform(schema, new GraphQLTypeVisitorStub() {
@@ -69,7 +69,7 @@ class SchemaTransformerTest extends Specification {
                 if (fieldDefinition.name == "baz") {
                     return deleteNode(context)
                 }
-                return TraversalControl.CONTINUE;
+                return TraversalControl.CONTINUE
             }
         })
 
@@ -133,7 +133,7 @@ class SchemaTransformerTest extends Specification {
            baz: String
         } 
         """)
-        schema.getQueryType();
+        schema.getQueryType()
         SchemaTransformer schemaTransformer = new SchemaTransformer()
         when:
         GraphQLSchema newSchema = schemaTransformer.transform(schema, new GraphQLTypeVisitorStub() {
@@ -143,7 +143,7 @@ class SchemaTransformerTest extends Specification {
                 if (fieldDefinition.name == "baz") {
                     return deleteNode(context)
                 }
-                return TraversalControl.CONTINUE;
+                return TraversalControl.CONTINUE
             }
         })
 
@@ -182,7 +182,7 @@ class SchemaTransformerTest extends Specification {
                     def changedNode = fieldDefinition.transform({ builder -> builder.name("helloChanged") })
                     return changeNode(context, changedNode)
                 }
-                return TraversalControl.CONTINUE;
+                return TraversalControl.CONTINUE
             }
 
             @Override
@@ -201,7 +201,7 @@ class SchemaTransformerTest extends Specification {
             @Override
             TraversalControl visitGraphQLTypeReference(GraphQLTypeReference node, TraverserContext<GraphQLSchemaElement> context) {
                 if (node.name == "Parent") {
-                    return changeNode(context, typeRef("ParentChanged"));
+                    return changeNode(context, typeRef("ParentChanged"))
                 }
                 return super.visitGraphQLTypeReference(node, context)
             }
@@ -303,21 +303,30 @@ type SubChildChanged {
         def queryObject = newObject()
                 .name("Query")
                 .field({ builder ->
-                    builder.name("foo").type(Scalars.GraphQLString).dataFetcher(new DataFetcher<Object>() {
-                        @Override
-                        Object get(DataFetchingEnvironment environment) throws Exception {
-                            return "bar";
-                        }
-                    })
-                }).build();
+                    builder.name("foo")
+                           .type(Scalars.GraphQLString)
+                }).build()
+
+        def fooCoordinates = FieldCoordinates.coordinates("Query", "foo")
+        DataFetcher<?> dataFetcher = new DataFetcher<Object>() {
+            @Override
+            Object get(DataFetchingEnvironment environment) throws Exception {
+                return "bar"
+            }
+        }
+        GraphQLCodeRegistry codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+                .dataFetcher(fooCoordinates, dataFetcher)
+                .build()
 
         def schemaObject = newSchema()
+                .codeRegistry(codeRegistry)
                 .query(queryObject)
                 .build()
 
         when:
         def result = GraphQL.newGraphQL(schemaObject)
-                .build().execute('''
+                .build()
+                .execute('''
             { foo } 
         ''').getData()
 
@@ -336,14 +345,20 @@ type SubChildChanged {
                 return TraversalControl.CONTINUE
             }
         })
+
+        def fooTransformedCoordinates = FieldCoordinates.coordinates("Query", "fooChanged")
+        codeRegistry = codeRegistry.transform({it.dataFetcher(fooTransformedCoordinates, dataFetcher)})
+        newSchema = newSchema.transform({
+            builder -> builder.codeRegistry(codeRegistry)
+        })
         result = GraphQL.newGraphQL(newSchema)
-                .build().execute('''
+                .build()
+                .execute('''
             { fooChanged }
         ''').getData()
 
         then:
         (result as Map)['fooChanged'] == 'bar'
-
     }
 
     def "transformed schema can be executed"() {
@@ -430,7 +445,7 @@ type SubChildChanged {
                 if (fieldDefinition.name == "billingStatus") {
                     return deleteNode(context)
                 }
-                return TraversalControl.CONTINUE;
+                return TraversalControl.CONTINUE
             }
         })
 
@@ -448,11 +463,11 @@ type SubChildChanged {
             @Override
             TraversalControl visitGraphQLDirective(GraphQLDirective node,
                                                    TraverserContext<GraphQLSchemaElement> context) {
-                if ("internalnote".equals(node.getName())) {
+                if ("internalnote" == node.getName()) {
                     // this deletes the declaration and the two usages of it
-                    deleteNode(context);
+                    deleteNode(context)
                 }
-                return TraversalControl.CONTINUE;
+                return TraversalControl.CONTINUE
             }
         }
 
@@ -628,7 +643,7 @@ type Query {
 
             @Override
             TraversalControl visitGraphQLObjectType(GraphQLObjectType node, TraverserContext<GraphQLSchemaElement> context) {
-                if (node.getName().startsWith("__")) return TraversalControl.ABORT;
+                if (node.getName().startsWith("__")) return TraversalControl.ABORT
                 node = node.transform({ b -> b.name(node.getName().toUpperCase()) })
                 return changeNode(context, node)
             }
@@ -716,7 +731,7 @@ type Query {
 
             @Override
             TraversalControl visitGraphQLObjectType(GraphQLObjectType node, TraverserContext<GraphQLSchemaElement> context) {
-                if (node.getName().equals('ToDel')) {
+                if (node.getName() == 'ToDel') {
                     return deleteNode(context)
                 }
                 return TraversalControl.CONTINUE
@@ -774,7 +789,7 @@ type Query {
                 if (node.name == "__Field") {
                     return changeNode(context, node.transform({ it.name("__FieldChanged") }))
                 }
-                return TraversalControl.CONTINUE;
+                return TraversalControl.CONTINUE
             }
         }
 
@@ -855,7 +870,7 @@ type Query {
 
             @Override
             TraversalControl visitGraphQLScalarType(GraphQLScalarType node, TraverserContext<GraphQLSchemaElement> context) {
-                if (node.getName().equals("Foo")) {
+                if (node.getName() == "Foo") {
                     GraphQLScalarType newNode = node.transform({sc -> sc.name("Bar")})
                     return changeNode(context, newNode)
                 }
@@ -885,7 +900,7 @@ type Query {
 
             @Override
             TraversalControl visitGraphQLScalarType(GraphQLScalarType node, TraverserContext<GraphQLSchemaElement> context) {
-                if (node.getName().equals("Foo")) {
+                if (node.getName() == "Foo") {
                     GraphQLScalarType newNode = node.transform({sc -> sc.name("Bar")})
                     return changeNode(context, newNode)
                 }

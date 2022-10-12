@@ -76,7 +76,7 @@ public class GraphQLAppliedDirectiveArgument implements GraphQLNamedSchemaElemen
     }
 
     /**
-     * This swill give out an internal java value based on the semantics captured
+     * This will give out an internal java value based on the semantics captured
      * in the {@link InputValueWithState} from {@link GraphQLAppliedDirectiveArgument#getArgumentValue()}
      *
      * Note : You MUST only call this on a {@link GraphQLAppliedDirectiveArgument} that is part of a fully formed schema.  We need

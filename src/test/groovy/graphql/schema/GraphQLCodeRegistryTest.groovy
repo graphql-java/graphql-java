@@ -230,7 +230,7 @@ class GraphQLCodeRegistryTest extends Specification {
                 .field(newFieldDefinition().name("codeRegistryField").type(Scalars.GraphQLString))
                 .field(newFieldDefinition().name("nonCodeRegistryField").type(Scalars.GraphQLString)
                 // df comes from the field itself here
-                        .dataFetcher(new NamedDF("nonCodeRegistryFieldValue")))
+                        .dataFetcher(new NamedDF("nonCodeRegistryFieldValue"))) // Retain to test Field Definition DataFetcher
                 .field(newFieldDefinition().name("neitherSpecified").type(Scalars.GraphQLString))
                 .build()
 

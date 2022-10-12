@@ -476,7 +476,7 @@ public class GraphQLSchema {
      * directives for all schema elements, whereas this is just for the schema
      * element itself
      *
-     * @return a map  of directives
+     * @return a map of directives
      *
      * @deprecated Use the {@link GraphQLAppliedDirective} methods instead
      */

@@ -612,13 +612,11 @@ class TypeResolverExecutionTest extends Specification {
             GraphQLObjectType getType(TypeResolutionEnvironment env) {
                 assert env.getField().getName() == "foo"
                 assert env.getFieldType() == env.getSchema().getType("BarInterface")
-                assert env.getContext() == "Context"
                 assert env.getGraphQLContext().get("x") == "graphqlContext"
                 assert env.getLocalContext() == "LocalContext"
                 return env.getSchema().getObjectType("NewBar")
             }
         }
-
 
         def df = { env ->
             DataFetcherResult.newResult().data([name: "NAME"]).localContext("LocalContext").build()
@@ -648,7 +646,6 @@ class TypeResolverExecutionTest extends Specification {
 
         when:
         def ei = newExecutionInput(query)
-                .context("Context")
                 .graphQLContext(["x" : "graphqlContext"])
                 .build()
         def er = graphQL.execute(ei)
