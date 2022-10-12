@@ -2,6 +2,7 @@ package graphql.schema.bytecode
 
 import graphql.ExecutionInput
 import graphql.TestUtil
+import graphql.introspection.IntrospectionQuery
 import spock.lang.Specification
 
 class ByteCodePojoFetchingGeneratorTest extends Specification {
@@ -89,6 +90,22 @@ class ByteCodePojoFetchingGeneratorTest extends Specification {
 """
     }
 
+    def "can handle inheritance of public methods"() {
+        when:
+        def body = ByteCodePojoFetchingGenerator.generateMethodBody(DerivedPojo.class)
+        then:
+        body == """public Object fetch(Object sourceObject, String propertyName) {
+   if (sourceObject == null) { return null; }
+   graphql.schema.bytecode.DerivedPojo source = (graphql.schema.bytecode.DerivedPojo) sourceObject;
+   if("name".equals(propertyName)) {
+      return source.getName();
+   } else {
+      return null;
+   }
+}
+"""
+    }
+
     def "can handle empty method pojo"() {
         when:
         ByteCodePojoFetchingGenerator.generateMethodBody(EmptyPropertyPojo.class)
@@ -155,5 +172,27 @@ class ByteCodePojoFetchingGeneratorTest extends Specification {
         er.errors.isEmpty()
         er.data == [simplePojo: [names: ["brad"], age: 42, interesting: true, foo: null]]
 
+    }
+
+    def "can do introspection via generation"() {
+        def sdl = """
+            type Query {
+                simplePojo : SimplePojo
+            }
+            
+            type SimplePojo {
+                names : [String]
+                age : Int
+                interesting: Boolean
+                foo : ID
+            }
+                    
+        """
+
+        def graphQL = TestUtil.graphQL(sdl).build()
+        when:
+        def er = graphQL.execute(ExecutionInput.newExecutionInput(IntrospectionQuery.INTROSPECTION_QUERY))
+        then:
+        er.errors.isEmpty()
     }
 }

@@ -11,7 +11,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
@@ -20,13 +20,6 @@ import java.util.stream.Collectors;
 
 @Internal
 public class ByteCodePojoFetchingGenerator {
-
-    public static class DualPropertyException extends ByteCodeException {
-        public DualPropertyException(String property) {
-            super("The property '" + property + "' has two definitions");
-        }
-    }
-
     public static class NoMethodsException extends ByteCodeException {
         public NoMethodsException(Class<?> clazz) {
             super("There are no publicly accessible methods on " + clazz.getName());
@@ -78,29 +71,28 @@ public class ByteCodePojoFetchingGenerator {
         out.printf("   %s source = (%s) sourceObject;\n", canonicalName, canonicalName);
 
         Set<String> properties = new HashSet<>();
-        List<Method> methods = Arrays.stream(sourceClass.getMethods())
+        List<Method> methods = getAppropriateMethods(sourceClass).stream()
                 .sorted(Comparator.comparing(Method::getName))
                 .collect(Collectors.toList());
+
         for (Method method : methods) {
-            if (isPojoMethod(method)) {
-                String propertyName = mkPropertyName(method);
-                if (properties.contains(propertyName)) {
-                    throw new DualPropertyException(propertyName);
-                }
-
-                String returnStatement = mkMethodCall(method);
-
-                String ifOrElseIf = "} else if";
-                if (properties.isEmpty()) {
-                    ifOrElseIf = "if";
-                }
-                out.printf("" +
-                        "   %s(\"%s\".equals(propertyName)) {\n" +
-                        "      return %s;\n" +
-                        "", ifOrElseIf, propertyName, returnStatement);
-
-                properties.add(propertyName);
+            String propertyName = mkPropertyName(method);
+            if (properties.contains(propertyName)) {
+                continue;
             }
+
+            String returnStatement = mkMethodCall(method);
+
+            String ifOrElseIf = "} else if";
+            if (properties.isEmpty()) {
+                ifOrElseIf = "if";
+            }
+            out.printf("" +
+                    "   %s(\"%s\".equals(propertyName)) {\n" +
+                    "      return %s;\n" +
+                    "", ifOrElseIf, propertyName, returnStatement);
+
+            properties.add(propertyName);
         }
         if (properties.isEmpty()) {
             throw new NoMethodsException(sourceClass);
@@ -112,6 +104,21 @@ public class ByteCodePojoFetchingGenerator {
 
         out.println("}");
         return sw.toString();
+    }
+
+    private static List<Method> getAppropriateMethods(Class<?> sourceClass) {
+        List<Method> methods = new ArrayList<>();
+        Class<?> currentClass = sourceClass;
+        while (currentClass != null) {
+            Method[] declaredMethods = currentClass.getDeclaredMethods();
+            for (Method declaredMethod : declaredMethods) {
+                if (isPojoMethod(declaredMethod)) {
+                    methods.add(declaredMethod);
+                }
+            }
+            currentClass = currentClass.getSuperclass();
+        }
+        return methods;
     }
 
     private static String mkPropertyName(Method method) {
