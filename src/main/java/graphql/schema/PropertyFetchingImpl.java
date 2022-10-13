@@ -2,6 +2,7 @@ package graphql.schema;
 
 import graphql.GraphQLException;
 import graphql.Internal;
+import graphql.schema.fetching.LambdaFetchingSupport;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -15,6 +16,7 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Function;
 import java.util.function.Predicate;
 
 import static graphql.Assert.assertShouldNeverHappen;
@@ -30,6 +32,7 @@ public class PropertyFetchingImpl {
 
     private final AtomicBoolean USE_SET_ACCESSIBLE = new AtomicBoolean(true);
     private final AtomicBoolean USE_NEGATIVE_CACHE = new AtomicBoolean(true);
+    private final ConcurrentMap<CacheKey, CachedFunction> GETTER_CACHE = new ConcurrentHashMap<>();
     private final ConcurrentMap<CacheKey, CachedMethod> METHOD_CACHE = new ConcurrentHashMap<>();
     private final ConcurrentMap<CacheKey, Field> FIELD_CACHE = new ConcurrentHashMap<>();
     private final ConcurrentMap<CacheKey, CacheKey> NEGATIVE_CACHE = new ConcurrentHashMap<>();
@@ -50,14 +53,27 @@ public class PropertyFetchingImpl {
 
     }
 
+    private static class CachedFunction {
+        Function<Object, Object> getter;
+
+        CachedFunction(Function<Object, Object> getter) {
+            this.getter = getter;
+        }
+    }
+
     public Object getPropertyValue(String propertyName, Object object, GraphQLType graphQLType, Object singleArgumentValue) {
         if (object instanceof Map) {
             return ((Map<?, ?>) object).get(propertyName);
         }
 
         CacheKey cacheKey = mkCacheKey(object, propertyName);
-        // lets try positive cache mechanisms first.  If we have seen the method or field before
+
+        // let's try positive cache mechanisms first.  If we have seen the method or field before
         // then we invoke it directly without burning any cycles doing reflection.
+        CachedFunction cachedFunction = GETTER_CACHE.get(cacheKey);
+        if (cachedFunction != null) {
+            return cachedFunction.getter.apply(object);
+        }
         CachedMethod cachedMethod = METHOD_CACHE.get(cacheKey);
         if (cachedMethod != null) {
             try {
@@ -72,9 +88,9 @@ public class PropertyFetchingImpl {
         }
 
         //
-        // if we have tried all strategies before and they have all failed then we negatively cache
+        // if we have tried all strategies before, and they have all failed then we negatively cache
         // the cacheKey and assume that it's never going to turn up.  This shortcuts the property lookup
-        // in systems where there was a `foo` graphql property but they never provided an POJO
+        // in systems where there was a `foo` graphql property, but they never provided an POJO
         // version of `foo`.
         //
         // we do this second because we believe in the positive cached version will mostly prevail
@@ -83,10 +99,20 @@ public class PropertyFetchingImpl {
         if (isNegativelyCached(cacheKey)) {
             return null;
         }
+
         //
-        // ok we haven't cached it and we haven't negatively cached it so we have to find the POJO method which is the most
+        // ok we haven't cached it, and we haven't negatively cached it, so we have to find the POJO method which is the most
         // expensive operation here
         //
+
+        Optional<Function<Object, Object>> getterOpt = LambdaFetchingSupport.createGetter(object.getClass(), propertyName);
+        if (getterOpt.isPresent()) {
+            Function<Object, Object> getter = getterOpt.get();
+            cachedFunction = new CachedFunction(getter);
+            GETTER_CACHE.putIfAbsent(cacheKey, cachedFunction);
+            return getter.apply(object);
+        }
+
         boolean dfeInUse = singleArgumentValue != null;
         try {
             MethodFinder methodFinder = (root, methodName) -> findPubliclyAccessibleMethod(cacheKey, root, methodName, dfeInUse);
@@ -99,7 +125,7 @@ public class PropertyFetchingImpl {
                 try {
                     return getPropertyViaFieldAccess(cacheKey, object, propertyName);
                 } catch (FastNoSuchMethodException e) {
-                    // we have nothing to ask for and we have exhausted our lookup strategies
+                    // we have nothing to ask for, and we have exhausted our lookup strategies
                     putInNegativeCache(cacheKey);
                     return null;
                 }
@@ -272,6 +298,7 @@ public class PropertyFetchingImpl {
     }
 
     public void clearReflectionCache() {
+        GETTER_CACHE.clear();
         METHOD_CACHE.clear();
         FIELD_CACHE.clear();
         NEGATIVE_CACHE.clear();
@@ -304,8 +331,12 @@ public class PropertyFetchingImpl {
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) return true;
-            if (!(o instanceof CacheKey)) return false;
+            if (this == o) {
+                return true;
+            }
+            if (!(o instanceof CacheKey)) {
+                return false;
+            }
             CacheKey cacheKey = (CacheKey) o;
             return Objects.equals(classLoader, cacheKey.classLoader) && Objects.equals(className, cacheKey.className) && Objects.equals(propertyName, cacheKey.propertyName);
         }
@@ -322,10 +353,10 @@ public class PropertyFetchingImpl {
         @Override
         public String toString() {
             return "CacheKey{" +
-                "classLoader=" + classLoader +
-                ", className='" + className + '\'' +
-                ", propertyName='" + propertyName + '\'' +
-                '}';
+                    "classLoader=" + classLoader +
+                    ", className='" + className + '\'' +
+                    ", propertyName='" + propertyName + '\'' +
+                    '}';
         }
     }
 
@@ -343,7 +374,6 @@ public class PropertyFetchingImpl {
         return Comparator.comparingInt(Method::getParameterCount).reversed();
     }
 
-    @SuppressWarnings("serial")
     private static class FastNoSuchMethodException extends NoSuchMethodException {
         public FastNoSuchMethodException(String methodName) {
             super(methodName);
