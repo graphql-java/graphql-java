@@ -68,6 +68,7 @@ public class PropertyFetchingImpl {
         // then we invoke it directly without burning any cycles doing reflection.
 
         ByteCodePojoFetchingGenerator.Result generatedFetcher = GENERATED_CACHE.get(genClassCacheKey);
+        boolean performGeneration = true;
         if (generatedFetcher != null) {
             if (generatedFetcher.handlesProperty(propertyName)) {
                 try {
@@ -76,6 +77,7 @@ public class PropertyFetchingImpl {
                     // we don't expect this but let's go to the old way
                 }
             }
+            performGeneration = false;
         }
 
         CachedMethod cachedMethod = METHOD_CACHE.get(cacheKey);
@@ -105,15 +107,24 @@ public class PropertyFetchingImpl {
         }
         //
         // we can try to generate a dynamic class for the object which can prove faster
-        try {
-            ByteCodePojoFetchingGenerator.Result result = ByteCodePojoFetchingGenerator.generateClassFor(object.getClass());
-            GENERATED_CACHE.put(genClassCacheKey, result);
-            if (result.handlesProperty(propertyName)) {
-                return result.getFetcher().fetch(object, propertyName);
+        if (performGeneration) {
+            ByteCodePojoFetchingGenerator.Result result = null;
+            try {
+                result = ByteCodePojoFetchingGenerator.generateClassFor(object.getClass());
+                GENERATED_CACHE.put(genClassCacheKey, result);
+            } catch (Exception e) {
+                // We might not have enough
+                log.debug("Unable to generate a dynamic class for {}", object.getClass(), e);
             }
-        } catch (Exception e) {
-            // We might not have enough
-            log.warn("Unable to generate a dynamic class for {}", object.getClass(), e);
+            if (result != null) {
+                if (result.handlesProperty(propertyName)) {
+                    try {
+                        return result.getFetcher().fetch(object, propertyName);
+                    } catch (Exception e) {
+                        // ok ignore it - we will use the old way
+                    }
+                }
+            }
         }
 
         //

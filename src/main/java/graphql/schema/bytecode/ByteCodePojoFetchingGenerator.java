@@ -1,12 +1,12 @@
 package graphql.schema.bytecode;
 
 import graphql.Internal;
+import graphql.VisibleForTesting;
 import javassist.ClassPool;
 import javassist.CtClass;
 import javassist.CtMethod;
 import javassist.CtNewMethod;
 import javassist.LoaderClassPath;
-import org.jetbrains.annotations.NotNull;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -14,10 +14,14 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
+
+import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.toList;
 
 @Internal
 public class ByteCodePojoFetchingGenerator {
@@ -58,12 +62,16 @@ public class ByteCodePojoFetchingGenerator {
 
     public static Result generateClassFor(Class<?> sourceClass) {
         // this can throw exceptions so don't make any class code until we are ready
-        String methodBody = generateMethodBody(sourceClass);
+        Map<String, List<Method>> methods = getMethods(sourceClass);
+        if (methods.isEmpty()) {
+            return new Result(null,methods.keySet());
+        }
+        String methodBody = generateFetchMethodBody(sourceClass, methods);
         try {
-
             ClassPool pool = ClassPool.getDefault();
             pool.insertClassPath(new LoaderClassPath(ByteCodePojoFetchingGenerator.class.getClassLoader()));
-            CtClass cc = pool.makeClass("graphql.schema.bytecode." + mkClassName(sourceClass));
+            String className = mkClassName(sourceClass, pool);
+            CtClass cc = pool.makeClass(className);
             CtClass ci = pool.get("graphql.schema.bytecode.ByteCodeFetcher");
             cc.setSuperclass(pool.get("java.lang.Object"));
             cc.addInterface(ci);
@@ -72,39 +80,36 @@ public class ByteCodePojoFetchingGenerator {
                     methodBody,
                     cc);
             cc.addMethod(m);
+
             //noinspection unchecked
             Class<ByteCodeFetcher> clazz = (Class<ByteCodeFetcher>) cc.toClass();
             ByteCodeFetcher fetcher = clazz.newInstance();
 
-            Set<String> properties = getHandledProperties(sourceClass);
-            return new Result(fetcher, properties);
+            return new Result(fetcher, methods.keySet());
         } catch (Exception e) {
             throw new CantGenerateClassException(sourceClass, e);
         }
     }
 
-    @NotNull
-    private static Set<String> getHandledProperties(Class<?> sourceClass) {
-        List<Method> methods = getAppropriateMethods(sourceClass).stream()
-                .sorted(Comparator.comparing(Method::getName))
-                .collect(Collectors.toList());
 
-        Set<String> properties = new HashSet<>();
-        for (Method method : methods) {
-            String propertyName = mkPropertyName(method);
-            if (properties.contains(propertyName)) {
-                continue;
+    private static String mkClassName(Class<?> sourceClass, ClassPool pool) {
+        int i = 0;
+        while (true) {
+            String name = ByteCodePojoFetchingGenerator.class.getPackage().getName() + ".Fetcher_4_" + sourceClass.getCanonicalName() + "Gen" + i;
+            if (pool.getOrNull(name) == null) {
+                return name;
             }
-            properties.add(propertyName);
+            i++;
         }
-        return properties;
     }
 
-    private static String mkClassName(Class<?> sourceClass) {
-        return ByteCodePojoFetchingGenerator.class.getPackage().getName() + ".Fetcher4" + sourceClass.getCanonicalName() + "Gen";
+    @VisibleForTesting
+    static String generateFetchMethodBody(Class<?> sourceClass) {
+        Map<String, List<Method>> methods = getMethods(sourceClass);
+        return generateFetchMethodBody(sourceClass, methods);
     }
 
-    public static String generateMethodBody(Class<?> sourceClass) {
+    private static String generateFetchMethodBody(Class<?> sourceClass, Map<String, List<Method>> methods) {
         StringWriter sw = new StringWriter();
         PrintWriter out = new PrintWriter(sw);
 
@@ -115,21 +120,13 @@ public class ByteCodePojoFetchingGenerator {
         out.println("   if (sourceObject == null) { return null; }");
         out.printf("   %s source = (%s) sourceObject;\n", canonicalName, canonicalName);
 
-        Set<String> properties = new HashSet<>();
-        List<Method> methods = getAppropriateMethods(sourceClass).stream()
-                .sorted(Comparator.comparing(Method::getName))
-                .collect(Collectors.toList());
-
-        for (Method method : methods) {
-            String propertyName = mkPropertyName(method);
-            if (properties.contains(propertyName)) {
-                continue;
-            }
-
+        int count = 0;
+        for (String propertyName : methods.keySet()) {
+            Method method = appropriateMethod(propertyName, methods);
             String returnStatement = mkMethodCall(method);
 
             String ifOrElseIf = "} else if";
-            if (properties.isEmpty()) {
+            if (count == 0) {
                 ifOrElseIf = "if";
             }
             out.printf("" +
@@ -137,10 +134,7 @@ public class ByteCodePojoFetchingGenerator {
                     "      return %s;\n" +
                     "", ifOrElseIf, propertyName, returnStatement);
 
-            properties.add(propertyName);
-        }
-        if (properties.isEmpty()) {
-            throw new NoMethodsException(sourceClass);
+            count++;
         }
         out.println("" +
                 "   } else {\n" +
@@ -151,13 +145,69 @@ public class ByteCodePojoFetchingGenerator {
         return sw.toString();
     }
 
-    private static List<Method> getAppropriateMethods(Class<?> sourceClass) {
+    private static Method appropriateMethod(String propertyName, Map<String, List<Method>> allMethods) {
+        List<Method> methods = allMethods.get(propertyName);
+        Method chosenMethod = methods.get(0);
+        if (methods.size() == 1) {
+            return chosenMethod;
+        }
+        Class<?> returnType = chosenMethod.getReturnType();
+        if (returnType.equals(Boolean.class) || returnType.equals(Boolean.TYPE)) {
+            chosenMethod = preferIsForBoolean(methods);
+        }
+        return chosenMethod;
+    }
+
+    private static Method preferIsForBoolean(List<Method> methods) {
+        return methods.stream().filter(method -> method.getName().startsWith("is")).findFirst().orElse(methods.get(0));
+    }
+
+    private static Map<String, List<Method>> getMethods(Class<?> sourceClass) {
+        // these will be in name order and in declaring class hierarchy order
+        LinkedHashMap<String, List<Method>> mapOfMethods = getCandidateMethods(sourceClass).stream()
+                .sorted(Comparator.comparing(Method::getName))
+                .collect(
+                        groupingBy(ByteCodePojoFetchingGenerator::mkPropertyName, LinkedHashMap::new, toList()));
+        Iterator<Map.Entry<String, List<Method>>> iterator = mapOfMethods.entrySet().iterator();
+        while (iterator.hasNext()) {
+            Map.Entry<String, List<Method>> entry = iterator.next();
+            List<Method> methods = entry.getValue();
+            boolean remove = false;
+            boolean hasPublic = false;
+            for (Method method : methods) {
+                if (method.getParameterCount() > 0) {
+                    // if any of the methods for a property take a parameter,
+                    // then ignore them all
+                    // we will rely on the old behavior for that
+                    remove = true;
+                }
+                if (isPublic(method)) {
+                    hasPublic = true;
+                }
+            }
+            Method method = methods.get(0);
+            if (!isPublic(method)) {
+                // if the first method (first declaring class) is not public then we cant access the method
+                // at call time - its possible for a declaring class to widen access
+                remove = true;
+            }
+            if (!hasPublic) {
+                remove = true;
+            }
+            if (remove) {
+                iterator.remove();
+            }
+        }
+        return mapOfMethods;
+    }
+
+    private static List<Method> getCandidateMethods(Class<?> sourceClass) {
         List<Method> methods = new ArrayList<>();
         Class<?> currentClass = sourceClass;
         while (currentClass != null) {
             Method[] declaredMethods = currentClass.getDeclaredMethods();
             for (Method declaredMethod : declaredMethods) {
-                if (isPojoMethod(declaredMethod)) {
+                if (isPossiblePojoMethod(declaredMethod)) {
                     methods.add(declaredMethod);
                 }
             }
@@ -177,7 +227,15 @@ public class ByteCodePojoFetchingGenerator {
         } else if (name.startsWith("is")) {
             name = name.substring(2);
         }
+        return decapitalize(name);
+    }
+
+    private static String decapitalize(String name) {
         return name.substring(0, 1).toLowerCase() + name.substring(1);
+    }
+
+    private static String capitalize(String name) {
+        return name.substring(0, 1).toUpperCase() + name.substring(1);
     }
 
     private static String mkMethodCall(Method method) {
@@ -206,17 +264,15 @@ public class ByteCodePojoFetchingGenerator {
         }
     }
 
-    private static boolean isPojoMethod(Method method) {
-        return isPublic(method) &&
-                !isObjectMethod(method) &&
+    private static boolean isPossiblePojoMethod(Method method) {
+        return !isObjectMethod(method) &&
                 returnsSomething(method) &&
-                isGetter(method);
+                isGetterNamed(method);
     }
 
-    private static boolean isGetter(Method method) {
+    private static boolean isGetterNamed(Method method) {
         String name = method.getName();
-        return method.getParameterCount() == 0 &&
-                ((name.startsWith("get") && name.length() > 4) || (name.startsWith("is") && name.length() > 3));
+        return ((name.startsWith("get") && name.length() > 4) || (name.startsWith("is") && name.length() > 3));
     }
 
     private static boolean returnsSomething(Method method) {

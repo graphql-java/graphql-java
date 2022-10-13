@@ -9,7 +9,7 @@ class ByteCodePojoFetchingGeneratorTest extends Specification {
 
     def "can handle simple pojo"() {
         when:
-        def body = ByteCodePojoFetchingGenerator.generateMethodBody(SimplePojo.class)
+        def body = ByteCodePojoFetchingGenerator.generateFetchMethodBody(SimplePojo.class)
         then:
         body == """public Object fetch(Object sourceObject, String propertyName) {
    if (sourceObject == null) { return null; }
@@ -30,7 +30,7 @@ class ByteCodePojoFetchingGeneratorTest extends Specification {
     def "can generate method body for primitive methods"() {
 
         when:
-        def body = ByteCodePojoFetchingGenerator.generateMethodBody(PrimitivePojo.class)
+        def body = ByteCodePojoFetchingGenerator.generateFetchMethodBody(PrimitivePojo.class)
         then:
         body == """public Object fetch(Object sourceObject, String propertyName) {
    if (sourceObject == null) { return null; }
@@ -60,7 +60,7 @@ class ByteCodePojoFetchingGeneratorTest extends Specification {
 
     def "can handle single method pojo"() {
         when:
-        def body = ByteCodePojoFetchingGenerator.generateMethodBody(SinglePropertyPojo.class)
+        def body = ByteCodePojoFetchingGenerator.generateFetchMethodBody(SinglePropertyPojo.class)
         then:
         body == """public Object fetch(Object sourceObject, String propertyName) {
    if (sourceObject == null) { return null; }
@@ -76,7 +76,7 @@ class ByteCodePojoFetchingGeneratorTest extends Specification {
 
     def "can handle setter methods and void pojo"() {
         when:
-        def body = ByteCodePojoFetchingGenerator.generateMethodBody(SettersAndVoidPojo.class)
+        def body = ByteCodePojoFetchingGenerator.generateFetchMethodBody(SettersAndVoidPojo.class)
         then:
         body == """public Object fetch(Object sourceObject, String propertyName) {
    if (sourceObject == null) { return null; }
@@ -92,7 +92,7 @@ class ByteCodePojoFetchingGeneratorTest extends Specification {
 
     def "can handle inheritance of public methods"() {
         when:
-        def body = ByteCodePojoFetchingGenerator.generateMethodBody(DerivedPojo.class)
+        def body = ByteCodePojoFetchingGenerator.generateFetchMethodBody(DerivedPojo.class)
         then:
         body == """public Object fetch(Object sourceObject, String propertyName) {
    if (sourceObject == null) { return null; }
@@ -108,21 +108,21 @@ class ByteCodePojoFetchingGeneratorTest extends Specification {
 
     def "can handle empty method pojo"() {
         when:
-        ByteCodePojoFetchingGenerator.generateMethodBody(EmptyPropertyPojo.class)
+        ByteCodePojoFetchingGenerator.generateFetchMethodBody(EmptyPropertyPojo.class)
         then:
         thrown(ByteCodePojoFetchingGenerator.NoMethodsException)
     }
 
     def "can handle non accessible class pojo"() {
         when:
-        ByteCodePojoFetchingGenerator.generateMethodBody(NotOpenPojo.class)
+        ByteCodePojoFetchingGenerator.generateFetchMethodBody(NotOpenPojo.class)
         then:
         thrown(ByteCodePojoFetchingGenerator.NoMethodsException)
     }
 
     def "can handle non accessible methods pojo"() {
         when:
-        ByteCodePojoFetchingGenerator.generateMethodBody(NotAccessibleMethodsPojo.class)
+        ByteCodePojoFetchingGenerator.generateFetchMethodBody(NotAccessibleMethodsPojo.class)
         then:
         thrown(ByteCodePojoFetchingGenerator.NoMethodsException)
     }
@@ -131,7 +131,7 @@ class ByteCodePojoFetchingGeneratorTest extends Specification {
         when:
         def result = ByteCodePojoFetchingGenerator.generateClassFor(SimplePojo.class)
         then:
-        result.fetcher.class.getName() == "graphql.schema.bytecode.graphql.schema.bytecode.Fetcher4graphql.schema.bytecode.SimplePojoGen"
+        result.fetcher.class.getName() == "graphql.schema.bytecode.Fetcher_4_graphql.schema.bytecode.SimplePojoGen0"
 
         when:
         ByteCodeFetcher byteCodeFetcher = result.fetcher
