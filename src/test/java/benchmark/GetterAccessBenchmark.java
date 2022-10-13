@@ -1,7 +1,6 @@
 package benchmark;
 
 import graphql.schema.fetching.LambdaFetchingSupport;
-import graphql.schema.fetching.Pojo;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Warmup;
@@ -14,6 +13,24 @@ import java.util.function.Function;
 @Warmup(iterations = 2, time = 2, batchSize = 3)
 @Measurement(iterations = 3, time = 2, batchSize = 4)
 public class GetterAccessBenchmark {
+
+    public static class Pojo {
+        final String name;
+        final int age;
+
+        public Pojo(String name, int age) {
+            this.name = name;
+            this.age = age;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public int getAge() {
+            return age;
+        }
+    }
 
     static Pojo pojo = new Pojo("Brad", 42);
 
