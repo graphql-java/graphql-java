@@ -1,6 +1,5 @@
 package graphql.schema.fetching;
 
-import graphql.Assert;
 import graphql.Internal;
 import graphql.VisibleForTesting;
 
@@ -12,9 +11,12 @@ import java.lang.invoke.MethodType;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
+
+import static java.util.stream.Collectors.toList;
 
 @Internal
 public class LambdaFetchingSupport {
@@ -48,45 +50,69 @@ public class LambdaFetchingSupport {
 
 
     private static Method getCandidateMethod(Class<?> sourceClass, String propertyName) {
-        Class<?> currentClass = sourceClass;
-        while (currentClass != null) {
-            Method[] declaredMethods = currentClass.getDeclaredMethods();
-            for (Method declaredMethod : declaredMethods) {
-                if (isPossiblePojoMethod(declaredMethod)) {
-                    if (nameMatches(propertyName, declaredMethod)) {
-                        if (isBooleanGetter(declaredMethod)) {
-                            declaredMethod = findBestBooleanGetter(sourceClass, propertyName);
-                        }
-                        return declaredMethod;
-                    }
-                }
+        List<Method> allGetterMethods = findGetterMethodsForProperty(sourceClass, propertyName);
+        List<Method> pojoGetterMethods = allGetterMethods.stream()
+                .filter(LambdaFetchingSupport::isPossiblePojoMethod)
+                .collect(toList());
+        if (!pojoGetterMethods.isEmpty()) {
+            Method method = pojoGetterMethods.get(0);
+            if (isBooleanGetter(method)) {
+                method = findBestBooleanGetter(pojoGetterMethods);
             }
-            currentClass = currentClass.getSuperclass();
+            return checkForSingleParameterPeer(method, allGetterMethods);
+        } else {
+            return null;
         }
-        return null;
+
     }
 
-    private static Method findBestBooleanGetter(Class<?> sourceClass, String propertyName) {
-        List<Method> boolGetters = new ArrayList<>();
+    private static Method checkForSingleParameterPeer(Method candidateMethod, List<Method> allMethods) {
+        // getFoo(DataFetchingEnv ev) is allowed, but we don't want to handle it in this class
+        // so this find those edge cases
+        for (Method allMethod : allMethods) {
+            if (allMethod.getParameterCount() > 0) {
+                // we have some method with the property name that takes more than 1 argument
+                // we don't want to handle this here, so we are saying there is one
+                return null;
+            }
+        }
+        return candidateMethod;
+    }
+
+    private static Method findBestBooleanGetter(List<Method> methods) {
+        // we prefer isX() over getX() if both happen to be present
+        Optional<Method> isMethod = methods.stream().filter(method -> method.getName().startsWith("is")).findFirst();
+        return isMethod.orElse(methods.get(0));
+    }
+
+    /**
+     * Finds all methods in a class hierarchy that match the property name - they might not be suitable but they
+     *
+     * @param sourceClass  the class we are looking to work on
+     * @param propertyName the name of the property
+     *
+     * @return a list of getter methods for that property
+     */
+    private static List<Method> findGetterMethodsForProperty(Class<?> sourceClass, String propertyName) {
+        List<Method> methods = new ArrayList<>();
         Class<?> currentClass = sourceClass;
         while (currentClass != null) {
             Method[] declaredMethods = currentClass.getDeclaredMethods();
             for (Method declaredMethod : declaredMethods) {
-                if (isPossiblePojoMethod(declaredMethod)) {
+                if (isGetterNamed(declaredMethod)) {
                     if (nameMatches(propertyName, declaredMethod)) {
-                        if (isBooleanGetter(declaredMethod)) {
-                            boolGetters.add(declaredMethod);
-                        }
+                        methods.add(declaredMethod);
                     }
                 }
             }
             currentClass = currentClass.getSuperclass();
         }
-        Assert.assertFalse(boolGetters.isEmpty(), () ->
-                "How did it come to this?");
-        Optional<Method> isMethod = boolGetters.stream().filter(method -> method.getName().startsWith("is")).findFirst();
-        return isMethod.orElse(boolGetters.get(0));
+
+        return methods.stream()
+                .sorted(Comparator.comparing(Method::getName))
+                .collect(toList());
     }
+
 
     private static boolean nameMatches(String propertyName, Method declaredMethod) {
         String methodPropName = mkPropertyName(declaredMethod);
