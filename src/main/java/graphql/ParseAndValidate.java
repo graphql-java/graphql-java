@@ -3,6 +3,7 @@ package graphql;
 import graphql.language.Document;
 import graphql.parser.InvalidSyntaxException;
 import graphql.parser.Parser;
+import graphql.parser.ParserEnvironment;
 import graphql.parser.ParserOptions;
 import graphql.schema.GraphQLSchema;
 import graphql.validation.ValidationError;
@@ -65,7 +66,12 @@ public class ParseAndValidate {
             // we use the query parser options by default if they are not specified
             parserOptions = ofNullable(parserOptions).orElse(ParserOptions.getDefaultOperationParserOptions());
             Parser parser = new Parser();
-            Document document = parser.parseDocument(executionInput.getQuery(), parserOptions);
+            Locale locale = executionInput.getLocale() == null ? Locale.getDefault() : executionInput.getLocale();
+            ParserEnvironment parserEnvironment = ParserEnvironment.newParserEnvironment()
+                    .document(executionInput.getQuery()).parserOptions(parserOptions)
+                    .locale(locale)
+                    .build();
+            Document document = parser.parseDocument(parserEnvironment);
             return ParseAndValidateResult.newResult().document(document).variables(executionInput.getVariables()).build();
         } catch (InvalidSyntaxException e) {
             return ParseAndValidateResult.newResult().syntaxException(e).variables(executionInput.getVariables()).build();

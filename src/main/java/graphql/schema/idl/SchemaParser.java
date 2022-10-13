@@ -8,6 +8,7 @@ import graphql.language.Document;
 import graphql.language.SDLDefinition;
 import graphql.parser.InvalidSyntaxException;
 import graphql.parser.Parser;
+import graphql.parser.ParserEnvironment;
 import graphql.parser.ParserOptions;
 import graphql.schema.idl.errors.NonSDLDefinitionError;
 import graphql.schema.idl.errors.SchemaProblem;
@@ -23,6 +24,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import static graphql.parser.ParserEnvironment.newParserEnvironment;
 import static java.nio.charset.Charset.defaultCharset;
 
 /**
@@ -116,8 +118,8 @@ public class SchemaParser {
             if (parseOptions == null) {
                 parseOptions = ParserOptions.getDefaultSdlParserOptions();
             }
-            Parser parser = new Parser();
-            Document document = parser.parseDocument(schemaInput, parseOptions);
+            ParserEnvironment parserEnvironment = newParserEnvironment().document(schemaInput).parserOptions(parseOptions).build();
+            Document document = Parser.parse(parserEnvironment);
 
             return buildRegistry(document);
         } catch (InvalidSyntaxException e) {
