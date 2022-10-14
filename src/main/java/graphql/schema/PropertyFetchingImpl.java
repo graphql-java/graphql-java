@@ -62,7 +62,7 @@ public class PropertyFetchingImpl {
         }
     }
 
-    public Object getPropertyValue(String propertyName, Object object, GraphQLType graphQLType, Object singleArgumentValue) {
+    public Object getPropertyValue(String propertyName, Object object, GraphQLType graphQLType, boolean dfeInUse, Supplier<Object> singleArgumentValue) {
         if (object instanceof Map) {
             return ((Map<?, ?>) object).get(propertyName);
         }
@@ -114,7 +114,6 @@ public class PropertyFetchingImpl {
             return getter.apply(object);
         }
 
-        boolean dfeInUse = singleArgumentValue != null;
         try {
             MethodFinder methodFinder = (root, methodName) -> findPubliclyAccessibleMethod(cacheKey, root, methodName, dfeInUse);
             return getPropertyViaGetterMethod(object, propertyName, graphQLType, methodFinder, singleArgumentValue);
