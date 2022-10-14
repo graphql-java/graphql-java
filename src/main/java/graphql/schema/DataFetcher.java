@@ -34,11 +34,17 @@ public interface DataFetcher<T> {
 
 
     /**
-     * This is called to by the engine to get a value from the source object
+     * This is called to by the engine to get a value from the source object in a lightweight fashion.  Only the field
+     * and source object are passed in a materialised way.  The more heavy weight {@link DataFetchingEnvironment} is wrapped
+     * in a supplier that is only created on demand.
+     * <p>
+     * If you are a lightweight data fetcher (like {@link PropertyDataFetcher} is) then you can implement this method to have a more lightweight
+     * method invocation.  However, if you need field arguments etc. during fetching (most custom fetchers will) then you should use implement
+     * {@link #get(DataFetchingEnvironment)}.  This method delegates to {@link #get(DataFetchingEnvironment)}.
      *
      * @param fieldDefinition     the graphql field definition
      * @param sourceObject        the source object to get a value from
-     * @param environmentSupplier a supplier of the {@link DataFetchingEnvironment}
+     * @param environmentSupplier a supplier of the {@link DataFetchingEnvironment} that creates it lazily
      *
      * @return a value of type T. May be wrapped in a {@link graphql.execution.DataFetcherResult}
      *
