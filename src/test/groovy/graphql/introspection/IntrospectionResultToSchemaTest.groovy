@@ -3,7 +3,7 @@ package graphql.introspection
 import com.fasterxml.jackson.databind.ObjectMapper
 import graphql.Assert
 import graphql.ExecutionInput
-import graphql.ExecutionResultImpl
+import graphql.ExecutionResult
 import graphql.GraphQL
 import graphql.TestUtil
 import graphql.language.Document
@@ -700,7 +700,7 @@ input InputType {
 
     def "create schema fail"() {
         given:
-        def failResult = ExecutionResultImpl.newExecutionResult().build()
+        def failResult = ExecutionResult.newExecutionResult().build()
 
         when:
         Document document = introspectionResultToSchema.createSchemaDefinition(failResult)

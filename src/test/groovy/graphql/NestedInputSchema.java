@@ -63,7 +63,7 @@ public class NestedInputSchema {
                         .argument(GraphQLArgument.newArgument()
                                 .name("intialValue")
                                 .type(GraphQLInt)
-                                .defaultValue(5))
+                                .defaultValueProgrammatic(5))
                         .argument(GraphQLArgument.newArgument()
                                 .name("filter")
                                 .type(filterType())))

@@ -886,7 +886,7 @@ triple3 : """edge cases \\""" "" " \\"" \\" edge cases"""
         when:
         Parser parser = new Parser() {
             @Override
-            protected GraphqlAntlrToLanguage getAntlrToLanguage(CommonTokenStream tokens, MultiSourceReader multiSourceReader) {
+            protected GraphqlAntlrToLanguage getAntlrToLanguage(CommonTokenStream tokens, MultiSourceReader multiSourceReader, ParserOptions parserOptions) {
                 // this pattern is used in Nadel - its backdoor but needed
                 return new GraphqlAntlrToLanguage(tokens, multiSourceReader) {
                     @Override

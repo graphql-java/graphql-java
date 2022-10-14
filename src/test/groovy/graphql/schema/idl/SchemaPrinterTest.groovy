@@ -428,12 +428,19 @@ enum Enum {
                 .name("Union")
                 .description("About union")
                 .possibleType(possibleType)
-                .typeResolver({ it -> null })
                 .build()
         GraphQLFieldDefinition fieldDefinition2 = newFieldDefinition()
                 .name("field").type(unionType).build()
+
+        def codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+                .typeResolver(unionType, { it -> null })
+                .build()
         def queryType = newObject().name("Query").field(fieldDefinition2).build()
-        def schema = GraphQLSchema.newSchema().query(queryType).build()
+        def schema = GraphQLSchema.newSchema()
+                .codeRegistry(codeRegistry)
+                .query(queryType)
+                .build()
+
         when:
         def result = new SchemaPrinter(noDirectivesOption).print(schema)
 
@@ -463,12 +470,19 @@ type Query {
                 .name("Union")
                 .possibleType(possibleType1)
                 .possibleType(possibleType2)
-                .typeResolver({ it -> null })
                 .build()
         GraphQLFieldDefinition fieldDefinition2 = newFieldDefinition()
                 .name("field").type(unionType).build()
+
+        def codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+                .typeResolver(unionType, { it -> null })
+                .build()
         def queryType = newObject().name("Query").field(fieldDefinition2).build()
-        def schema = GraphQLSchema.newSchema().query(queryType).build()
+        def schema = GraphQLSchema.newSchema()
+                .codeRegistry(codeRegistry)
+                .query(queryType)
+                .build()
+
         when:
         def result = new SchemaPrinter(noDirectivesOption).print(schema)
 
@@ -526,12 +540,19 @@ input Input {
                 .name("Interface")
                 .description("about interface")
                 .field(newFieldDefinition().name("field").description("about field").type(GraphQLString).build())
-                .typeResolver({ it -> null })
                 .build()
         GraphQLFieldDefinition fieldDefinition = newFieldDefinition()
                 .name("field").type(graphQLInterfaceType).build()
+
+        def codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+                .typeResolver(graphQLInterfaceType, { it -> null })
+                .build()
         def queryType = newObject().name("Query").field(fieldDefinition).build()
-        def schema = GraphQLSchema.newSchema().query(queryType).build()
+        def schema = GraphQLSchema.newSchema()
+                .codeRegistry(codeRegistry)
+                .query(queryType)
+                .build()
+
         when:
         def result = new SchemaPrinter(noDirectivesOption).print(schema)
 
@@ -851,7 +872,6 @@ type Query {
 }
 '''
     }
-
 
     def idlWithDirectives() {
         return """

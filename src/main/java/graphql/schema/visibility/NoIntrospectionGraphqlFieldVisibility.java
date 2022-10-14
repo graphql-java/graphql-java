@@ -10,8 +10,8 @@ import static graphql.schema.visibility.BlockedFields.newBlock;
 
 /**
  * This field visibility will prevent Introspection queries from being performed.  Technically this puts your
- * system in contravention of the specification - http://facebook.github.io/graphql/#sec-Introspection but some
- * production systems want this lock down in place.
+ * system in contravention of <a href="https://spec.graphql.org/October2021/#sec-Introspection">the specification</a>
+ * but some production systems want this lock down in place.
  */
 @PublicApi
 public class NoIntrospectionGraphqlFieldVisibility implements GraphqlFieldVisibility {

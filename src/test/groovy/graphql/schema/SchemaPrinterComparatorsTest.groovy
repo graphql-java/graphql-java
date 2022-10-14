@@ -534,7 +534,7 @@ scalar TestScalar @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
 
     def "argsString uses most specific registered comparators"() {
         given:
-        def field = newFieldDefinition().name("field").type(GraphQLInt).argument(mockArguments("a", "bb")).build()
+        def field = newFieldDefinition().name("field").type(GraphQLInt).arguments(mockArguments("a", "bb")).build()
 
         when:
         def registry = newComparators()
@@ -549,7 +549,7 @@ scalar TestScalar @bb(bb : 0, a : 0) @a(bb : 0, a : 0)
 
     def "argsString uses least specific registered comparators"() {
         given:
-        def field = newFieldDefinition().name("field").type(GraphQLInt).argument(mockArguments("a", "bb")).build()
+        def field = newFieldDefinition().name("field").type(GraphQLInt).arguments(mockArguments("a", "bb")).build()
 
         when:
         def registry = newComparators()

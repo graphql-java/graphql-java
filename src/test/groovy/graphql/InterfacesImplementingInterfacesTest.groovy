@@ -1,5 +1,6 @@
 package graphql
 
+import graphql.schema.GraphQLCodeRegistry
 import graphql.schema.GraphQLInterfaceType
 import graphql.schema.GraphQLObjectType
 import graphql.schema.GraphQLSchema
@@ -970,14 +971,12 @@ class InterfacesImplementingInterfacesTest extends Specification {
         def node1Type = newInterface()
                 .name("Node1")
                 .field(newFieldDefinition().name("id1").type(GraphQLString).build())
-                .typeResolver({ env -> Assert.assertShouldNeverHappen() })
-                .build();
+                .build()
 
         def node2Type = newInterface()
                 .name("Node2")
                 .field(newFieldDefinition().name("id2").type(GraphQLString).build())
-                .typeResolver({ env -> Assert.assertShouldNeverHappen() })
-                .build();
+                .build()
 
         // references two interfaces: directly and via type ref
         def resource = newInterface()
@@ -986,8 +985,7 @@ class InterfacesImplementingInterfacesTest extends Specification {
                 .field(newFieldDefinition().name("id2").type(GraphQLString).build())
                 .withInterface(GraphQLTypeReference.typeRef("Node1"))
                 .withInterface(node2Type)
-                .typeResolver({ env -> Assert.assertShouldNeverHappen() })
-                .build();
+                .build()
         def image = newObject()
                 .name("Image")
                 .field(newFieldDefinition().name("id1").type(GraphQLString).build())
@@ -1000,7 +998,17 @@ class InterfacesImplementingInterfacesTest extends Specification {
                 .name("Query")
                 .field(newFieldDefinition().name("image").type(image).build())
                 .build()
-        def schema = GraphQLSchema.newSchema().query(query).additionalType(node1Type).build();
+
+        def codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+                .typeResolver(node1Type, { env -> Assert.assertShouldNeverHappen() })
+                .typeResolver(node2Type, { env -> Assert.assertShouldNeverHappen() })
+                .typeResolver(resource, { env -> Assert.assertShouldNeverHappen() })
+                .build()
+        def schema = GraphQLSchema.newSchema()
+                .codeRegistry(codeRegistry)
+                .query(query)
+                .additionalType(node1Type)
+                .build()
 
         when:
         def printedSchema = new SchemaPrinter().print(schema)
@@ -1045,7 +1053,6 @@ type Query {
                                 .argument(newArgument().name("arg3").type(GraphQLString))
                 )
                 .field(newFieldDefinition().name("field4").type(GraphQLString))
-                .typeResolver({ env -> Assert.assertShouldNeverHappen() })
                 .build()
 
         def interface2 = newInterface()
@@ -1057,7 +1064,6 @@ type Query {
                 .field(newFieldDefinition().name("field2").type(GraphQLInt))
                 .field(newFieldDefinition().name("field3").type(GraphQLString))
                 .withInterface(interface1)
-                .typeResolver({ env -> Assert.assertShouldNeverHappen() })
                 .build()
 
         def query = newObject()
@@ -1065,9 +1071,16 @@ type Query {
                 .field(newFieldDefinition().name("interface2").type(interface2).build())
                 .build()
 
+        def codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+                .typeResolver(interface1, { env -> Assert.assertShouldNeverHappen() })
+                .typeResolver(interface2, { env -> Assert.assertShouldNeverHappen() })
+                .build()
 
         when:
-        GraphQLSchema.newSchema().query(query).build()
+        GraphQLSchema.newSchema()
+                .codeRegistry(codeRegistry)
+                .query(query)
+                .build()
 
         then:
         def error = thrown(InvalidSchemaException)
@@ -1094,7 +1107,6 @@ type Query {
                                 .argument(newArgument().name("arg3").type(GraphQLString))
                 )
                 .field(newFieldDefinition().name("field4").type(GraphQLString))
-                .typeResolver({ env -> Assert.assertShouldNeverHappen() })
                 .build()
 
         def interface2 = newInterface()
@@ -1110,7 +1122,6 @@ type Query {
                 )
                 .field(newFieldDefinition().name("field4").type(GraphQLString))
                 .withInterface(interface1)
-                .typeResolver({ env -> Assert.assertShouldNeverHappen() })
                 .build()
 
         def query = newObject()
@@ -1118,9 +1129,16 @@ type Query {
                 .field(newFieldDefinition().name("interface2").type(interface2).build())
                 .build()
 
+        def codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+                .typeResolver(interface1, { env -> Assert.assertShouldNeverHappen() })
+                .typeResolver(interface2, { env -> Assert.assertShouldNeverHappen() })
+                .build()
 
         when:
-        GraphQLSchema.newSchema().query(query).build()
+        GraphQLSchema.newSchema()
+                .codeRegistry(codeRegistry)
+                .query(query)
+                .build()
 
         then:
         noExceptionThrown()
@@ -1131,7 +1149,6 @@ type Query {
         def interface1 = newInterface()
                 .name("Interface1")
                 .field(newFieldDefinition().name("field1").type(GraphQLString))
-                .typeResolver({ env -> Assert.assertShouldNeverHappen() })
                 .build()
 
         def interface2 = newInterface()
@@ -1139,7 +1156,6 @@ type Query {
                 .field(newFieldDefinition().name("field1").type(GraphQLString))
                 .field(newFieldDefinition().name("field2").type(GraphQLString))
                 .withInterface(interface1)
-                .typeResolver({ env -> Assert.assertShouldNeverHappen() })
                 .build()
 
         def type = newObject()
@@ -1154,9 +1170,16 @@ type Query {
                 .field(newFieldDefinition().name("find").type(type).build())
                 .build()
 
+        def codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+                .typeResolver(interface1, { env -> Assert.assertShouldNeverHappen() })
+                .typeResolver(interface2, { env -> Assert.assertShouldNeverHappen() })
+                .build()
 
         when:
-        GraphQLSchema.newSchema().query(query).build()
+        GraphQLSchema.newSchema()
+                .codeRegistry(codeRegistry)
+                .query(query)
+                .build()
 
         then:
         def error = thrown(InvalidSchemaException)
@@ -1169,7 +1192,6 @@ type Query {
         def interface1 = newInterface()
                 .name("Interface1")
                 .field(newFieldDefinition().name("field1").type(GraphQLString))
-                .typeResolver({ env -> Assert.assertShouldNeverHappen() })
                 .build()
 
         def interface2 = newInterface()
@@ -1177,7 +1199,6 @@ type Query {
                 .field(newFieldDefinition().name("field1").type(GraphQLString))
                 .field(newFieldDefinition().name("field2").type(GraphQLString))
                 .withInterface(interface1)
-                .typeResolver({ env -> Assert.assertShouldNeverHappen() })
                 .build()
 
         def type = newObject()
@@ -1193,9 +1214,16 @@ type Query {
                 .field(newFieldDefinition().name("find").type(type).build())
                 .build()
 
+        def codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+                .typeResolver(interface1, { env -> Assert.assertShouldNeverHappen() })
+                .typeResolver(interface2, { env -> Assert.assertShouldNeverHappen() })
+                .build()
 
         when:
-        GraphQLSchema.newSchema().query(query).build()
+        GraphQLSchema.newSchema()
+                .codeRegistry(codeRegistry)
+                .query(query)
+                .build()
 
         then:
         noExceptionThrown()
@@ -1208,7 +1236,6 @@ type Query {
                 .field(newFieldDefinition().name("field1").type(GraphQLString))
                 .withInterface(GraphQLTypeReference.typeRef("Interface3"))
                 .withInterface(GraphQLTypeReference.typeRef("Interface2"))
-                .typeResolver({ env -> Assert.assertShouldNeverHappen() })
                 .build()
 
         def interface2 = newInterface()
@@ -1216,7 +1243,6 @@ type Query {
                 .field(newFieldDefinition().name("field1").type(GraphQLString))
                 .withInterface(interface1)
                 .withInterface(GraphQLTypeReference.typeRef("Interface3"))
-                .typeResolver({ env -> Assert.assertShouldNeverHappen() })
                 .build()
 
         def interface3 = newInterface()
@@ -1224,7 +1250,6 @@ type Query {
                 .field(newFieldDefinition().name("field1").type(GraphQLString))
                 .withInterface(interface1)
                 .withInterface(interface2)
-                .typeResolver({ env -> Assert.assertShouldNeverHappen() })
                 .build()
 
         def query = newObject()
@@ -1232,9 +1257,17 @@ type Query {
                 .field(newFieldDefinition().name("find").type(interface3).build())
                 .build()
 
+        def codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+                .typeResolver(interface1, { env -> Assert.assertShouldNeverHappen() })
+                .typeResolver(interface2, { env -> Assert.assertShouldNeverHappen() })
+                .typeResolver(interface3, { env -> Assert.assertShouldNeverHappen() })
+                .build()
 
         when:
-        GraphQLSchema.newSchema().query(query).build()
+        GraphQLSchema.newSchema()
+                .codeRegistry(codeRegistry)
+                .query(query)
+                .build()
 
         then:
         def error = thrown(InvalidSchemaException)
@@ -1305,14 +1338,14 @@ type Query {
         def typeDefinitionRegistry = new SchemaParser().parse(sdl)
 
         TypeResolver typeResolver = { env ->
-            Map<String, Object> obj = env.getObject();
-            String id = (String) obj.get("id");
+            Map<String, Object> obj = env.getObject()
+            String id = (String) obj.get("id")
             GraphQLSchema schema = env.getSchema()
 
             if (id == "1") {
-                return (GraphQLObjectType) schema.getType("Image");
+                return (GraphQLObjectType) schema.getType("Image")
             } else {
-                return (GraphQLObjectType) schema.getType("File");
+                return (GraphQLObjectType) schema.getType("File")
             }
         }
 

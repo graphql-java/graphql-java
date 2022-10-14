@@ -115,7 +115,8 @@ class ExecutionTest extends Specification {
 
 			@Override
             ExecutionContext instrumentExecutionContext(ExecutionContext executionContext,
-                                                        InstrumentationExecutionParameters parameters) {
+                                                        InstrumentationExecutionParameters parameters,
+                                                        InstrumentationState state) {
 					
 					return ExecutionContextBuilder.newExecutionContextBuilder(executionContext)
 					.queryStrategy(queryStrategyUpdatedToDuringExecutionContextInstrument)
