@@ -144,7 +144,7 @@ class ValuesResolverTestLegacy extends Specification {
     def 'converts list to lists'() {
         expect:
         valueToLiteralLegacy(['hello', 'world'], list(GraphQLString), graphQLContext, locale).isEqualTo(
-                new ArrayValue(['hello', 'world'])
+                new ArrayValue([new StringValue('hello'), new StringValue('world')])
         )
     }
 
@@ -152,7 +152,7 @@ class ValuesResolverTestLegacy extends Specification {
         String[] sArr = ['hello', 'world'] as String[]
         expect:
         valueToLiteralLegacy(sArr, list(GraphQLString), graphQLContext, locale).isEqualTo(
-                new ArrayValue(['hello', 'world'])
+                new ArrayValue([new StringValue('hello'), new StringValue('world')])
         )
     }
 
