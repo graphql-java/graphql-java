@@ -1,6 +1,13 @@
-package graphql.language
+package graphql.execution
 
 import graphql.GraphQLContext
+import graphql.language.ArrayValue
+import graphql.language.EnumValue
+import graphql.language.FloatValue
+import graphql.language.IntValue
+import graphql.language.ObjectField
+import graphql.language.ObjectValue
+import graphql.language.StringValue
 import graphql.schema.GraphQLEnumType
 import graphql.schema.GraphQLInputObjectType
 import spock.lang.Ignore
