@@ -2,7 +2,6 @@ package graphql
 
 import graphql.analysis.MaxQueryComplexityInstrumentation
 import graphql.analysis.MaxQueryDepthInstrumentation
-import graphql.collect.ImmutableKit
 import graphql.execution.AsyncExecutionStrategy
 import graphql.execution.AsyncSerialExecutionStrategy
 import graphql.execution.DataFetcherExceptionHandler
@@ -24,7 +23,8 @@ import graphql.execution.preparsed.NoOpPreparsedDocumentProvider
 import graphql.language.SourceLocation
 import graphql.schema.DataFetcher
 import graphql.schema.DataFetchingEnvironment
-import graphql.schema.GraphQLDirective
+import graphql.schema.FieldCoordinates
+import graphql.schema.GraphQLCodeRegistry
 import graphql.schema.GraphQLEnumType
 import graphql.schema.GraphQLFieldDefinition
 import graphql.schema.GraphQLInterfaceType
@@ -58,17 +58,23 @@ import static graphql.schema.GraphQLTypeReference.typeRef
 
 class GraphQLTest extends Specification {
 
-    GraphQLSchema simpleSchema() {
+    static GraphQLSchema simpleSchema() {
         GraphQLFieldDefinition.Builder fieldDefinition = newFieldDefinition()
                 .name("hello")
                 .type(GraphQLString)
-                .staticValue("world")
-        GraphQLSchema schema = newSchema().query(
-                newObject()
+        FieldCoordinates fieldCoordinates = FieldCoordinates.coordinates("RootQueryType", "hello")
+        DataFetcher<?> dataFetcher = { env -> "world" }
+        GraphQLCodeRegistry codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+                .dataFetcher(fieldCoordinates, dataFetcher)
+                .build()
+
+        GraphQLSchema schema = newSchema()
+                .codeRegistry(codeRegistry)
+                .query(newObject()
                         .name("RootQueryType")
                         .field(fieldDefinition)
-                        .build()
-        ).build()
+                        .build())
+                .build()
         schema
     }
 
@@ -81,7 +87,6 @@ class GraphQLTest extends Specification {
 
         then:
         result == [hello: 'world']
-
     }
 
     def "query with sub-fields"() {
@@ -101,14 +106,20 @@ class GraphQLTest extends Specification {
         GraphQLFieldDefinition.Builder simpsonField = newFieldDefinition()
                 .name("simpson")
                 .type(heroType)
-                .staticValue([id: '123', name: 'homer'])
 
-        GraphQLSchema graphQLSchema = newSchema().query(
-                newObject()
+        FieldCoordinates fieldCoordinates = FieldCoordinates.coordinates("RootQueryType", "simpson")
+        DataFetcher<?> dataFetcher = { env -> [id: '123', name: 'homer'] }
+        GraphQLCodeRegistry codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+                .dataFetcher(fieldCoordinates, dataFetcher)
+                .build()
+
+        GraphQLSchema graphQLSchema = newSchema()
+                .codeRegistry(codeRegistry)
+                .query(newObject()
                         .name("RootQueryType")
                         .field(simpsonField)
-                        .build()
-        ).build()
+                        .build())
+                .build()
 
         when:
         def result = GraphQL.newGraphQL(graphQLSchema).build().execute('{ simpson { id, name } }').data
@@ -123,13 +134,20 @@ class GraphQLTest extends Specification {
                 .name("hello")
                 .type(GraphQLString)
                 .argument(newArgument().name("arg").type(GraphQLString))
-                .staticValue("world")
-        GraphQLSchema schema = newSchema().query(
-                newObject()
+
+        FieldCoordinates fieldCoordinates = FieldCoordinates.coordinates("RootQueryType", "hello")
+        DataFetcher<?> dataFetcher = { env -> "hello" }
+        GraphQLCodeRegistry codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+                .dataFetcher(fieldCoordinates, dataFetcher)
+                .build()
+
+        GraphQLSchema schema = newSchema()
+                .codeRegistry(codeRegistry)
+                .query(newObject()
                         .name("RootQueryType")
                         .field(fieldDefinition)
-                        .build()
-        ).build()
+                        .build())
+                .build()
 
         when:
         def errors = GraphQL.newGraphQL(schema).build().execute('{ hello(arg:11) }').errors
@@ -205,7 +223,7 @@ class GraphQLTest extends Specification {
         then:
         errors.size() == 1
         errors[0].errorType == ErrorType.InvalidSyntax
-        errors[0].message == "Invalid Syntax : Invalid unicode - leading surrogate must be followed by a trailing surrogate - offending token '\\ud83c' at line 1 column 13"
+        errors[0].message == "Invalid unicode encountered. Leading surrogate must be followed by a trailing surrogate. Offending token '\\ud83c' at line 1 column 13"
         errors[0].locations == [new SourceLocation(1, 13)]
     }
 
@@ -239,14 +257,22 @@ class GraphQLTest extends Specification {
         set.add("One")
         set.add("Two")
 
-        def schema = newSchema()
-                .query(newObject()
-                        .name("QueryType")
-                        .field(newFieldDefinition()
-                                .name("set")
-                                .type(list(GraphQLString))
-                                .dataFetcher({ set })))
+        def queryType = "QueryType"
+        def fieldName = "set"
+        def fieldCoordinates = FieldCoordinates.coordinates(queryType, fieldName)
+        DataFetcher<?> dataFetcher = { set }
+        GraphQLCodeRegistry codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+                .dataFetcher(fieldCoordinates, dataFetcher)
                 .build()
+
+        def schema = newSchema()
+                .codeRegistry(codeRegistry)
+                .query(newObject()
+                        .name(queryType)
+                        .field(newFieldDefinition()
+                                .name(fieldName)
+                                .type(list(GraphQLString)))
+                ).build()
 
         when:
         def data = GraphQL.newGraphQL(schema).build().execute("query { set }").data
@@ -258,13 +284,29 @@ class GraphQLTest extends Specification {
     def "document with two operations executes specified operation"() {
         given:
 
-        GraphQLSchema schema = newSchema().query(
-                newObject()
-                        .name("RootQueryType")
-                        .field(newFieldDefinition().name("field1").type(GraphQLString).dataFetcher(new StaticDataFetcher("value1")))
-                        .field(newFieldDefinition().name("field2").type(GraphQLString).dataFetcher(new StaticDataFetcher("value2")))
-        )
+        def queryType = "RootQueryType"
+        def field1Name = "field1"
+        def field2Name = "field2"
+        def field1Coordinates = FieldCoordinates.coordinates(queryType, field1Name)
+        def field2Coordinates = FieldCoordinates.coordinates(queryType, field2Name)
+        DataFetcher<?> field1DataFetcher = new StaticDataFetcher("value1")
+        DataFetcher<?> field2DataFetcher = new StaticDataFetcher("value2")
+        GraphQLCodeRegistry codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+                .dataFetcher(field1Coordinates, field1DataFetcher)
+                .dataFetcher(field2Coordinates, field2DataFetcher)
                 .build()
+
+        GraphQLSchema schema = newSchema()
+                .codeRegistry(codeRegistry)
+                .query(newObject()
+                        .name(queryType)
+                        .field(newFieldDefinition()
+                                .name(field1Name)
+                                .type(GraphQLString))
+                        .field(newFieldDefinition()
+                                .name(field2Name)
+                                .type(GraphQLString))
+                ).build()
 
         def query = """
         query Query1 { field1 }
@@ -352,18 +394,25 @@ class GraphQLTest extends Specification {
 
     def "query with int literal too large"() {
         given:
-        GraphQLSchema schema = newSchema().query(
-                newObject()
-                        .name("QueryType")
-                        .field(
-                                newFieldDefinition()
-                                        .name("foo")
-                                        .type(GraphQLInt)
-                                        .argument(newArgument().name("bar").type(GraphQLInt).build())
-                                        .dataFetcher({ return it.getArgument("bar") })
-                        ))
+        def queryType = "QueryType"
+        def fooName = "foo"
+        def fooCoordinates = FieldCoordinates.coordinates(queryType, fooName)
+        DataFetcher<?> dataFetcher = { env -> env.getArgument("bar") }
+        GraphQLCodeRegistry codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+                .dataFetcher(fooCoordinates, dataFetcher)
                 .build()
+
+        GraphQLSchema schema = newSchema()
+                .codeRegistry(codeRegistry)
+                .query(newObject()
+                        .name("QueryType")
+                        .field(newFieldDefinition()
+                                .name("foo")
+                                .type(GraphQLInt)
+                                .argument(newArgument().name("bar").type(GraphQLInt).build()))
+                ).build()
         def query = "{foo(bar: 12345678910)}"
+
         when:
         def result = GraphQL.newGraphQL(schema).build().execute(query)
 
@@ -375,19 +424,24 @@ class GraphQLTest extends Specification {
     @SuppressWarnings("GroovyAssignabilityCheck")
     def "query with missing argument results in arguments map missing the key"() {
         given:
+        def queryType = "QueryType"
+        def fooName = "foo"
+        def fooCoordinates = FieldCoordinates.coordinates(queryType, fooName)
         def dataFetcher = Mock(DataFetcher)
-        GraphQLSchema schema = newSchema().query(
-                newObject()
-                        .name("QueryType")
-                        .field(
-                                newFieldDefinition()
-                                        .name("foo")
-                                        .type(GraphQLInt)
-                                        .argument(newArgument().name("bar").type(GraphQLInt).build())
-                                        .dataFetcher(dataFetcher)
-                        ))
+        GraphQLCodeRegistry codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+                .dataFetcher(fooCoordinates, dataFetcher)
                 .build()
+        GraphQLSchema schema = newSchema()
+                .codeRegistry(codeRegistry)
+                .query(newObject()
+                        .name(queryType)
+                        .field(newFieldDefinition()
+                                .name(fooName)
+                                .type(GraphQLInt)
+                                .argument(newArgument().name("bar").type(GraphQLInt).build()))
+                ).build()
         def query = "{foo}"
+
         when:
         GraphQL.newGraphQL(schema).build().execute(query)
 
@@ -401,20 +455,25 @@ class GraphQLTest extends Specification {
     @SuppressWarnings("GroovyAssignabilityCheck")
     def "query with null argument results in arguments map with value null "() {
         given:
+        def queryType = "QueryType"
+        def fooName = "foo"
+        def fooCoordinates = FieldCoordinates.coordinates(queryType, fooName)
         def dataFetcher = Mock(DataFetcher)
-        GraphQLSchema schema = newSchema().query(
-                newObject()
-                        .name("QueryType")
-                        .field(
-                                newFieldDefinition()
-                                        .name("foo")
-                                        .type(GraphQLInt)
-                                        .argument(newArgument().name("bar").type(GraphQLInt).build())
-                                        .dataFetcher(dataFetcher)
-                        ))
+        GraphQLCodeRegistry codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+                .dataFetcher(fooCoordinates, dataFetcher)
                 .build()
+        GraphQLSchema schema = newSchema()
+                .codeRegistry(codeRegistry)
+                .query(newObject()
+                        .name(queryType)
+                        .field(newFieldDefinition()
+                                .name(fooName)
+                                .type(GraphQLInt)
+                                .argument(newArgument().name("bar").type(GraphQLInt).build()))
+                ).build()
         def query = "{foo(bar: null)}"
         DataFetchingEnvironment dataFetchingEnvironment
+
         when:
         GraphQL.newGraphQL(schema).build().execute(query)
 
@@ -430,21 +489,27 @@ class GraphQLTest extends Specification {
     @SuppressWarnings("GroovyAssignabilityCheck")
     def "query with missing key in an input object result in a map with missing key"() {
         given:
-        def dataFetcher = Mock(DataFetcher)
         def inputObject = newInputObject().name("bar")
                 .field(newInputObjectField().name("someKey").type(GraphQLString).build())
                 .field(newInputObjectField().name("otherKey").type(GraphQLString).build()).build()
-        GraphQLSchema schema = newSchema().query(
-                newObject()
-                        .name("QueryType")
-                        .field(
-                                newFieldDefinition()
-                                        .name("foo")
-                                        .type(GraphQLInt)
-                                        .argument(newArgument().name("bar").type(inputObject).build())
-                                        .dataFetcher(dataFetcher)
-                        ))
+
+        def queryType = "QueryType"
+        def fooName = "foo"
+        def fooCoordinates = FieldCoordinates.coordinates(queryType, fooName)
+        def dataFetcher = Mock(DataFetcher)
+        GraphQLCodeRegistry codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+                .dataFetcher(fooCoordinates, dataFetcher)
                 .build()
+
+        GraphQLSchema schema = newSchema()
+                .codeRegistry(codeRegistry)
+                .query(newObject()
+                        .name(queryType)
+                        .field(newFieldDefinition()
+                                .name(fooName)
+                                .type(GraphQLInt)
+                                .argument(newArgument().name("bar").type(inputObject).build()))
+                ).build()
         def query = "{foo(bar: {someKey: \"value\"})}"
         when:
         def result = GraphQL.newGraphQL(schema).build().execute(query)
@@ -463,22 +528,28 @@ class GraphQLTest extends Specification {
     @SuppressWarnings("GroovyAssignabilityCheck")
     def "query with null value in an input object result in a map with null as value"() {
         given:
-        def dataFetcher = Mock(DataFetcher)
         def inputObject = newInputObject().name("bar")
                 .field(newInputObjectField().name("someKey").type(GraphQLString).build())
                 .field(newInputObjectField().name("otherKey").type(GraphQLString).build()).build()
-        GraphQLSchema schema = newSchema().query(
-                newObject()
-                        .name("QueryType")
-                        .field(
-                                newFieldDefinition()
-                                        .name("foo")
-                                        .type(GraphQLInt)
-                                        .argument(newArgument().name("bar").type(inputObject).build())
-                                        .dataFetcher(dataFetcher)
-                        ))
+
+        def queryType = "QueryType"
+        def fooName = "foo"
+        def fooCoordinates = FieldCoordinates.coordinates(queryType, fooName)
+        def dataFetcher = Mock(DataFetcher)
+        GraphQLCodeRegistry codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+                .dataFetcher(fooCoordinates, dataFetcher)
                 .build()
+        GraphQLSchema schema = newSchema()
+                .codeRegistry(codeRegistry)
+                .query(newObject()
+                        .name(queryType)
+                        .field(newFieldDefinition()
+                                .name(fooName)
+                                .type(GraphQLInt)
+                                .argument(newArgument().name("bar").type(inputObject).build()))
+                ).build()
         def query = "{foo(bar: {someKey: \"value\", otherKey: null})}"
+
         when:
         def result = GraphQL.newGraphQL(schema).build().execute(query)
 
@@ -496,22 +567,28 @@ class GraphQLTest extends Specification {
 
     def "query with missing List input field results in a map with a missing key"() {
         given:
-        def dataFetcher = Mock(DataFetcher)
         def inputObject = newInputObject().name("bar")
                 .field(newInputObjectField().name("list").type(list(GraphQLString)).build())
                 .build()
-        GraphQLSchema schema = newSchema().query(
-                newObject()
-                        .name("QueryType")
-                        .field(
-                                newFieldDefinition()
-                                        .name("foo")
-                                        .type(GraphQLInt)
-                                        .argument(newArgument().name("bar").type(inputObject).build())
-                                        .dataFetcher(dataFetcher)
-                        ))
+
+        def queryType = "QueryType"
+        def fooName = "foo"
+        def fooCoordinates = FieldCoordinates.coordinates(queryType, fooName)
+        def dataFetcher = Mock(DataFetcher)
+        GraphQLCodeRegistry codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+                .dataFetcher(fooCoordinates, dataFetcher)
                 .build()
+        GraphQLSchema schema = newSchema()
+                .codeRegistry(codeRegistry)
+                .query(newObject()
+                        .name(queryType)
+                        .field(newFieldDefinition()
+                                .name(fooName)
+                                .type(GraphQLInt)
+                                .argument(newArgument().name("bar").type(inputObject).build()))
+                ).build()
         def query = "{foo(bar: {})}"
+
         when:
         def result = GraphQL.newGraphQL(schema).build().execute(query)
 
@@ -527,22 +604,28 @@ class GraphQLTest extends Specification {
 
     def "query with null List input field results in a map with null as key"() {
         given:
-        def dataFetcher = Mock(DataFetcher)
         def inputObject = newInputObject().name("bar")
                 .field(newInputObjectField().name("list").type(list(GraphQLString)).build())
                 .build()
-        GraphQLSchema schema = newSchema().query(
-                newObject()
-                        .name("QueryType")
-                        .field(
-                                newFieldDefinition()
-                                        .name("foo")
-                                        .type(GraphQLInt)
-                                        .argument(newArgument().name("bar").type(inputObject).build())
-                                        .dataFetcher(dataFetcher)
-                        ))
+
+        def queryType = "QueryType"
+        def fooName = "foo"
+        def fooCoordinates = FieldCoordinates.coordinates(queryType, fooName)
+        def dataFetcher = Mock(DataFetcher)
+        GraphQLCodeRegistry codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+                .dataFetcher(fooCoordinates, dataFetcher)
                 .build()
+        GraphQLSchema schema = newSchema()
+                .codeRegistry(codeRegistry)
+                .query(newObject()
+                        .name(queryType)
+                        .field(newFieldDefinition()
+                                .name(fooName)
+                                .type(GraphQLInt)
+                                .argument(newArgument().name("bar").type(inputObject).build()))
+                ).build()
         def query = "{foo(bar: {list: null})}"
+
         when:
         def result = GraphQL.newGraphQL(schema).build().execute(query)
 
@@ -559,22 +642,28 @@ class GraphQLTest extends Specification {
 
     def "query with List containing null input field results in a map with a list containing null"() {
         given:
-        def dataFetcher = Mock(DataFetcher)
         def inputObject = newInputObject().name("bar")
                 .field(newInputObjectField().name("list").type(list(GraphQLString)).build())
                 .build()
-        GraphQLSchema schema = newSchema().query(
-                newObject()
-                        .name("QueryType")
-                        .field(
-                                newFieldDefinition()
-                                        .name("foo")
-                                        .type(GraphQLInt)
-                                        .argument(newArgument().name("bar").type(inputObject).build())
-                                        .dataFetcher(dataFetcher)
-                        ))
+
+        def queryType = "QueryType"
+        def fooName = "foo"
+        def fooCoordinates = FieldCoordinates.coordinates(queryType, fooName)
+        def dataFetcher = Mock(DataFetcher)
+        GraphQLCodeRegistry codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+                .dataFetcher(fooCoordinates, dataFetcher)
                 .build()
+        GraphQLSchema schema = newSchema()
+                .codeRegistry(codeRegistry)
+                .query(newObject()
+                        .name(queryType)
+                        .field(newFieldDefinition()
+                                .name(fooName)
+                                .type(GraphQLInt)
+                                .argument(newArgument().name("bar").type(inputObject).build()))
+                ).build()
         def query = "{foo(bar: {list: [null]})}"
+
         when:
         def result = GraphQL.newGraphQL(schema).build().execute(query)
 
@@ -623,7 +712,6 @@ class GraphQLTest extends Specification {
 
     }
 
-
     def "execution input passing builder"() {
         given:
         GraphQLSchema schema = simpleSchema()
@@ -641,7 +729,6 @@ class GraphQLTest extends Specification {
         GraphQLSchema schema = simpleSchema()
 
         when:
-
         def builderFunction = { it.query('{hello}') } as UnaryOperator<Builder>
         def result = GraphQL.newGraphQL(schema).build().execute(builderFunction).data
 
@@ -783,7 +870,6 @@ class GraphQLTest extends Specification {
                                     .name("id")
                                     .type(Scalars.GraphQLID)
                         } as UnaryOperator)
-                .typeResolver({ type -> foo })
                 .build()
 
         GraphQLObjectType query = newObject()
@@ -796,7 +882,12 @@ class GraphQLTest extends Specification {
                         } as UnaryOperator)
                 .build()
 
+        def codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+                .typeResolver(node, {type -> foo })
+                .build()
+
         GraphQLSchema schema = newSchema()
+                .codeRegistry(codeRegistry)
                 .query(query)
                 .build()
 
@@ -939,18 +1030,26 @@ class GraphQLTest extends Specification {
 
     def "query with triple quoted multi line strings"() {
         given:
+        def queryType = "Query"
+        def fieldName = "hello"
+        def fieldCoordinates = FieldCoordinates.coordinates(queryType, fieldName)
+        DataFetcher<?> dataFetcher = { env -> env.getArgument("arg") }
+        GraphQLCodeRegistry codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+                .dataFetcher(fieldCoordinates, dataFetcher)
+                .build()
+
         GraphQLFieldDefinition.Builder fieldDefinition = newFieldDefinition()
-                .name("hello")
+                .name(fieldName)
                 .type(GraphQLString)
                 .argument(newArgument().name("arg").type(GraphQLString))
-                .dataFetcher({ env -> env.getArgument("arg") }
-                )
-        GraphQLSchema schema = newSchema().query(
-                newObject()
-                        .name("Query")
+
+        GraphQLSchema schema = newSchema()
+                .codeRegistry(codeRegistry)
+                .query(newObject()
+                        .name(queryType)
                         .field(fieldDefinition)
-                        .build()
-        ).build()
+                        .build())
+                .build()
 
         when:
         def result = GraphQL.newGraphQL(schema).build().execute('''{ hello(arg:"""
@@ -1314,28 +1413,6 @@ many lines''']
         then:
         def e = thrown(SchemaProblem)
         e.message.contains("an illegal value for the argument ")
-    }
-
-    def "Applied schema directives arguments are validated for programmatic schemas"() {
-        given:
-        def arg = newArgument().name("arg").type(GraphQLInt).valueProgrammatic(ImmutableKit.emptyMap()).build()
-        def directive = GraphQLDirective.newDirective().name("cached").argument(arg).build()
-        def field = newFieldDefinition()
-                .name("hello")
-                .type(GraphQLString)
-                .argument(arg)
-                .withDirective(directive)
-                .build()
-        when:
-        newSchema().query(
-                newObject()
-                        .name("Query")
-                        .field(field)
-                        .build())
-                .build()
-        then:
-        def e = thrown(InvalidSchemaException)
-        e.message.contains("Invalid argument 'arg' for applied directive of name 'cached'")
     }
 
     def "getters work as expected"() {

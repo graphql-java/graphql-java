@@ -11,7 +11,7 @@ import graphql.language.OperationDefinition
 import graphql.language.StringValue
 import graphql.language.TypeName
 import org.dataloader.BatchLoader
-import org.dataloader.DataLoader
+import org.dataloader.DataLoaderFactory
 import org.dataloader.DataLoaderRegistry
 import spock.lang.Specification
 
@@ -27,7 +27,7 @@ class DataFetchingEnvironmentImplTest extends Specification {
 
     def frag = FragmentDefinition.newFragmentDefinition().name("frag").typeCondition(new TypeName("t")).build()
 
-    def dataLoader = DataLoader.newDataLoader({ keys -> CompletableFuture.completedFuture(keys) } as BatchLoader)
+    def dataLoader = DataLoaderFactory.newDataLoader({ keys -> CompletableFuture.completedFuture(keys) } as BatchLoader)
     def operationDefinition = new OperationDefinition("q")
     def document = toDocument("{ f }")
     def executionId = ExecutionId.from("123")

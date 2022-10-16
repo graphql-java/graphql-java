@@ -3,6 +3,10 @@ package graphql.execution.instrumentation.dataloader
 import graphql.ExecutionInput
 import graphql.ExecutionResult
 import graphql.GraphQL
+import graphql.schema.DataFetcher
+import graphql.schema.DataFetchingEnvironment
+import graphql.schema.FieldCoordinates
+import graphql.schema.GraphQLCodeRegistry
 import graphql.schema.GraphQLObjectType
 import graphql.schema.GraphQLSchema
 import graphql.schema.StaticDataFetcher
@@ -64,6 +68,19 @@ class DataLoaderNodeTest extends Specification {
 
     }
 
+    class NodeDataFetcher implements DataFetcher {
+        DataLoader loader
+
+        NodeDataFetcher(DataLoader loader) {
+            this.loader = loader
+        }
+
+        @Override
+        Object get(DataFetchingEnvironment environment) throws Exception {
+            return loader.load(environment.getSource())
+        }
+    }
+
     def "levels of loading"() {
 
         List<List<Node>> nodeLoads = []
@@ -78,31 +95,44 @@ class DataLoaderNodeTest extends Specification {
             return CompletableFuture.completedFuture(childNodes)
         })
 
-        GraphQLObjectType nodeType = GraphQLObjectType.newObject()
-                .name("Node")
+        DataFetcher<?> nodeDataFetcher = new NodeDataFetcher(loader)
+
+        def nodeTypeName = "Node"
+        def childNodesFieldName = "childNodes"
+        def queryTypeName = "Query"
+        def rootFieldName = "root"
+
+        GraphQLObjectType nodeType = GraphQLObjectType
+                .newObject()
+                .name(nodeTypeName)
                 .field(newFieldDefinition()
-                .name("id")
-                .type(GraphQLInt)
-                .build())
+                    .name("id")
+                    .type(GraphQLInt)
+                    .build())
                 .field(newFieldDefinition()
-                .name("childNodes")
-                .type(list(typeRef("Node")))
-                .dataFetcher({ environment -> loader.load(environment.getSource()) })
-                .build())
+                    .name(childNodesFieldName)
+                    .type(list(typeRef(nodeTypeName)))
+                    .build())
                 .build()
 
+        def childNodesCoordinates = FieldCoordinates.coordinates(nodeTypeName, childNodesFieldName)
+        def rootCoordinates = FieldCoordinates.coordinates(queryTypeName, rootFieldName)
+        GraphQLCodeRegistry codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+                .dataFetcher(childNodesCoordinates, nodeDataFetcher)
+                .dataFetcher(rootCoordinates, new StaticDataFetcher(root))
+                .build()
         GraphQLSchema schema = GraphQLSchema.newSchema()
+                .codeRegistry(codeRegistry)
                 .query(GraphQLObjectType.newObject()
-                .name("Query")
-                .field(newFieldDefinition()
-                .name("root")
-                .type(nodeType)
-                .dataFetcher(new StaticDataFetcher(root))
-                .build())
-                .build())
+                        .name(queryTypeName)
+                        .field(newFieldDefinition()
+                            .name(rootFieldName)
+                            .type(nodeType)
+                            .build())
+                        .build())
                 .build()
 
-        DataLoaderRegistry registry = new DataLoaderRegistry().register("childNodes", loader)
+        DataLoaderRegistry registry = new DataLoaderRegistry().register(childNodesFieldName, loader)
 
         ExecutionResult result = GraphQL.newGraphQL(schema)
                 .instrumentation(new DataLoaderDispatcherInstrumentation())
@@ -146,6 +176,5 @@ class DataLoaderNodeTest extends Specification {
         //
         // but currently is this
         nodeLoads.size() == 3 // WOOT!
-
     }
 }

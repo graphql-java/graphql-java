@@ -8,6 +8,7 @@ import graphql.schema.DataFetcher
 import graphql.schema.DataFetcherFactory
 import graphql.schema.DataFetcherFactoryEnvironment
 import graphql.schema.DataFetchingEnvironment
+import graphql.schema.GraphQLAppliedDirective
 import graphql.schema.GraphQLArgument
 import graphql.schema.GraphQLCodeRegistry
 import graphql.schema.GraphQLDirective
@@ -27,7 +28,6 @@ import graphql.schema.GraphQLType
 import graphql.schema.GraphQLTypeUtil
 import graphql.schema.GraphQLUnionType
 import graphql.schema.GraphqlTypeComparatorRegistry
-import graphql.schema.PropertyDataFetcher
 import graphql.schema.idl.errors.NotAnInputTypeError
 import graphql.schema.idl.errors.NotAnOutputTypeError
 import graphql.schema.idl.errors.SchemaProblem
@@ -1310,8 +1310,7 @@ class SchemaGeneratorTest extends Specification {
         def fieldDirective2 = field2.getDirectives()[0]
         fieldDirective2.getName() == "fieldDirective2"
 
-
-        def directive = type.getDirectives()[3] as GraphQLDirective
+        def directive = type.getAppliedDirectives()[3] as GraphQLAppliedDirective
         directive.name == "directiveWithArgs"
         directive.arguments.size() == 5
 
@@ -1366,7 +1365,7 @@ class SchemaGeneratorTest extends Specification {
 
         expect:
 
-        container.getDirective(directiveName) != null
+        container.getAppliedDirective(directiveName) != null
 
         if (container instanceof GraphQLEnumType) {
             def evd = ((GraphQLEnumType) container).getValue("X").getDirective("EnumValueDirective")
@@ -1634,13 +1633,14 @@ class SchemaGeneratorTest extends Specification {
         argInt.getDirective("thirdDirective") != null
 
         def intDirective = argInt.getDirective("intDirective")
-        intDirective.name == "intDirective"
-        intDirective.arguments.size() == 1
-        def directiveArg = intDirective.getArgument("inception")
+        def intAppliedDirective = argInt.getAppliedDirective("intDirective")
+        intAppliedDirective.name == "intDirective"
+        intAppliedDirective.arguments.size() == 1
+        def directiveArg = intAppliedDirective.getArgument("inception")
         directiveArg.name == "inception"
         directiveArg.type == GraphQLBoolean
         printAst(directiveArg.argumentValue.value as Node) == "true"
-        directiveArg.argumentDefaultValue.value == null
+        intDirective.getArgument("inception").argumentDefaultValue.value == null
     }
 
     def "directives definitions can be made"() {
@@ -1702,13 +1702,15 @@ class SchemaGeneratorTest extends Specification {
         then:
         def directiveTest1 = schema.getDirective("test1")
         GraphQLNonNull.nonNull(GraphQLBoolean).isEqualTo(directiveTest1.getArgument("include").type)
-        directiveTest1.getArgument("include").argumentValue.value == null
+        directiveTest1.getArgument("include").argumentDefaultValue.value == null
+        def appliedDirective1 = schema.getObjectType("Query").getFieldDefinition("f1").getAppliedDirective("test1")
+        printAst(appliedDirective1.getArgument("include").argumentValue.value as Node) == "false"
 
         def directiveTest2 = schema.getDirective("test2")
         GraphQLNonNull.nonNull(GraphQLBoolean).isEqualTo(directiveTest2.getArgument("include").type)
-        printAst(directiveTest2.getArgument("include").argumentValue.value as Node) == "true"
         printAst(directiveTest2.getArgument("include").argumentDefaultValue.value as Node) == "true"
-
+        def appliedDirective2 = schema.getObjectType("Query").getFieldDefinition("f2").getAppliedDirective("test2")
+        printAst(appliedDirective2.getArgument("include").argumentValue.value as Node) == "true"
     }
 
     def "missing directive arguments are transferred as are default values"() {
@@ -1733,16 +1735,17 @@ class SchemaGeneratorTest extends Specification {
         then:
         def directive = schema.getObjectType("Query").getFieldDefinition("f").getDirective("testDirective")
         directive.getArgument("knownArg1").type == GraphQLString
-        printAst(directive.getArgument("knownArg1").argumentValue.value as Node) == '"overrideVal1"'
         printAst(directive.getArgument("knownArg1").argumentDefaultValue.value as Node) == '"defaultValue1"'
+        def appliedDirective = schema.getObjectType("Query").getFieldDefinition("f").getAppliedDirective("testDirective")
+        printAst(appliedDirective.getArgument("knownArg1").argumentValue.value as Node) == '"overrideVal1"'
 
         directive.getArgument("knownArg2").type == GraphQLInt
-        printAst(directive.getArgument("knownArg2").argumentValue.value as Node) == "666"
         printAst(directive.getArgument("knownArg2").argumentDefaultValue.value as Node) == "666"
+        printAst(appliedDirective.getArgument("knownArg2").argumentValue.value as Node) == "666"
 
         directive.getArgument("knownArg3").type == GraphQLString
-        directive.getArgument("knownArg3").argumentValue.value == null
         directive.getArgument("knownArg3").argumentDefaultValue.value == null
+        appliedDirective.getArgument("knownArg3").argumentValue.value == null
     }
 
     def "deprecated directive is implicit"() {
@@ -1765,11 +1768,13 @@ class SchemaGeneratorTest extends Specification {
         f1.getDeprecationReason() == "No longer supported" // spec default text
 
         def directive = f1.getDirective("deprecated")
-        directive.name == "deprecated"
-        directive.getArgument("reason").type == GraphQLString
-        printAst(directive.getArgument("reason").argumentValue.value as Node) == '"No longer supported"'
         printAst(directive.getArgument("reason").argumentDefaultValue.value as Node) == '"No longer supported"'
         directive.validLocations().collect { it.name() } == [Introspection.DirectiveLocation.FIELD_DEFINITION.name()]
+
+        def appliedDirective = f1.getAppliedDirective("deprecated")
+        appliedDirective.name == "deprecated"
+        appliedDirective.getArgument("reason").type == GraphQLString
+        printAst(appliedDirective.getArgument("reason").argumentValue.value as Node) == '"No longer supported"'
 
         when:
         def f2 = schema.getObjectType("Query").getFieldDefinition("f2")
@@ -1777,13 +1782,13 @@ class SchemaGeneratorTest extends Specification {
         then:
         f2.getDeprecationReason() == "Just because"
 
+        def appliedDirective2 = f2.getAppliedDirective("deprecated")
+        appliedDirective2.name == "deprecated"
+        appliedDirective2.getArgument("reason").type == GraphQLString
+        printAst(appliedDirective2.getArgument("reason").argumentValue.value as Node) == '"Just because"'
         def directive2 = f2.getDirective("deprecated")
-        directive2.name == "deprecated"
-        directive2.getArgument("reason").type == GraphQLString
-        printAst(directive2.getArgument("reason").argumentValue.value as Node) == '"Just because"'
         printAst(directive2.getArgument("reason").argumentDefaultValue.value as Node) == '"No longer supported"'
         directive2.validLocations().collect { it.name() } == [Introspection.DirectiveLocation.FIELD_DEFINITION.name()]
-
     }
 
     def "does not break for circular references to interfaces"() {
@@ -2027,16 +2032,16 @@ class SchemaGeneratorTest extends Specification {
         schema.getMutationType().name == 'Mutation'
 
         when:
-        def directives = schema.getSchemaDirectives()
+        def directives = schema.getSchemaDirectives() // Retain for test coverage
 
         then:
         directives.size() == 3
-        schema.getSchemaDirective("sd1") != null
-        schema.getSchemaDirective("sd2") != null
-        schema.getSchemaDirective("sd3") != null
+        schema.getSchemaDirective("sd1") != null // Retain for test coverage
+        schema.getSchemaDirective("sd2") != null // Retain for test coverage
+        schema.getSchemaDirective("sd3") != null // Retain for test coverage
 
         when:
-        def directivesMap = schema.getSchemaDirectiveByName()
+        def directivesMap = schema.getSchemaDirectiveByName() // Retain for test coverage
         then:
         directives.size() == 3
         directivesMap["sd1"] != null
@@ -2499,5 +2504,36 @@ class SchemaGeneratorTest extends Specification {
 
         then:
         noExceptionThrown()
+    }
+
+    def "skip and include should be added to the schema only if not already defined"() {
+        def sdl = '''
+            "Directs the executor to skip this field or fragment when the `if`'argument is true."
+            directive @skip(
+                "Skipped when true."
+                if: Boolean!
+              ) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
+              
+            "Directs the executor to include this field or fragment only when the `if` argument is true"
+            directive @include(
+                "Included when true."
+                if: Boolean!
+              ) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
+              
+            type Query {
+                hello: String
+            }
+        '''
+        when:
+        def schema = TestUtil.schema(sdl)
+        then:
+        schema.getDirectives().findAll { it.name == "skip" }.size() == 1
+        schema.getDirectives().findAll { it.name == "include" }.size() == 1
+
+        and:
+        def newSchema = GraphQLSchema.newSchema(schema).build()
+        then:
+        newSchema.getDirectives().findAll { it.name == "skip" }.size() == 1
+        newSchema.getDirectives().findAll { it.name == "include" }.size() == 1
     }
 }

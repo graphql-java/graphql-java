@@ -11,7 +11,6 @@ import graphql.schema.GraphQLObjectType
 import graphql.schema.GraphQLType
 import graphql.schema.GraphQLTypeReference
 import graphql.schema.GraphQLUnionType
-import graphql.schema.impl.SchemaUtil
 import spock.lang.Specification
 
 import static graphql.Scalars.GraphQLBoolean
@@ -163,8 +162,23 @@ class SchemaUtilTest extends Specification {
         when:
         GraphQLUnionType pet = ((GraphQLUnionType) SchemaWithReferences.getType("Pet"))
         GraphQLObjectType person = ((GraphQLObjectType) SchemaWithReferences.getType("Person"))
-        GraphQLArgument cacheEnabled = DirectivesUtil.directiveWithArg(
-                SchemaWithReferences.getDirectives(), Cache.getName(), "enabled").get();
+        GraphQLArgument cacheEnabled = SchemaWithReferences.getDirectivesByName()
+                .get(Cache.getName()).getArgument("enabled")
+
+        then:
+        SchemaWithReferences.allTypesAsList.findIndexOf { it instanceof GraphQLTypeReference } == -1
+        pet.types.findIndexOf { it instanceof GraphQLTypeReference } == -1
+        person.interfaces.findIndexOf { it instanceof GraphQLTypeReference } == -1
+        !(cacheEnabled.getType() instanceof GraphQLTypeReference)
+    }
+
+    def "all references are replaced with deprecated directiveWithArg"() {
+        when:
+        GraphQLUnionType pet = ((GraphQLUnionType) SchemaWithReferences.getType("Pet"))
+        GraphQLObjectType person = ((GraphQLObjectType) SchemaWithReferences.getType("Person"))
+        GraphQLArgument cacheEnabled = DirectivesUtil.directiveWithArg( // Retain for test coverage
+                SchemaWithReferences.getDirectives(), Cache.getName(), "enabled").get()
+
         then:
         SchemaWithReferences.allTypesAsList.findIndexOf { it instanceof GraphQLTypeReference } == -1
         pet.types.findIndexOf { it instanceof GraphQLTypeReference } == -1

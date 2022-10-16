@@ -1,5 +1,6 @@
 package graphql
 
+import graphql.execution.CoercedVariables
 import graphql.language.BooleanValue
 import graphql.language.FloatValue
 import graphql.language.IntValue
@@ -15,19 +16,29 @@ class ScalarsBooleanTest extends Specification {
     @Unroll
     def "Boolean parse literal #literal.value as #result"() {
         expect:
-        Scalars.GraphQLBoolean.getCoercing().parseLiteral(literal) == result
+        Scalars.GraphQLBoolean.getCoercing().parseLiteral(literal, CoercedVariables.emptyVariables(), GraphQLContext.default, Locale.default) == result
 
         where:
         literal                 | result
         new BooleanValue(true)  | true
         new BooleanValue(false) | false
+    }
 
+    @Unroll
+    def "Boolean parse literal #literal.value as #result with deprecated method"() {
+        expect:
+        Scalars.GraphQLBoolean.getCoercing().parseLiteral(literal) == result // Retain deprecated method for test coverage
+
+        where:
+        literal                 | result
+        new BooleanValue(true)  | true
+        new BooleanValue(false) | false
     }
 
     @Unroll
     def "Boolean returns null for invalid #literal"() {
         when:
-        Scalars.GraphQLBoolean.getCoercing().parseLiteral(literal)
+        Scalars.GraphQLBoolean.getCoercing().parseLiteral(literal, CoercedVariables.emptyVariables(), GraphQLContext.default, Locale.default)
         then:
         thrown(CoercingParseLiteralException)
 
@@ -41,8 +52,30 @@ class ScalarsBooleanTest extends Specification {
     @Unroll
     def "Boolean serialize #value into #result (#result.class)"() {
         expect:
-        Scalars.GraphQLBoolean.getCoercing().serialize(value) == result
-        Scalars.GraphQLBoolean.getCoercing().parseValue(value) == result
+        Scalars.GraphQLBoolean.getCoercing().serialize(value, GraphQLContext.default, Locale.default) == result
+        Scalars.GraphQLBoolean.getCoercing().parseValue(value, GraphQLContext.default, Locale.default) == result
+
+        where:
+        value                        | result
+        true                         | true
+        "false"                      | false
+        "true"                       | true
+        "True"                       | true
+        0                            | false
+        1                            | true
+        -1                           | true
+        new Long(42345784398534785l) | true
+        new Double(42.3)             | true
+        new Float(42.3)              | true
+        Integer.MAX_VALUE + 1l       | true
+        Integer.MIN_VALUE - 1l       | true
+    }
+
+    @Unroll
+    def "Boolean serialize #value into #result (#result.class) with deprecated methods"() {
+        expect:
+        Scalars.GraphQLBoolean.getCoercing().serialize(value) == result // Retain deprecated method for test coverage
+        Scalars.GraphQLBoolean.getCoercing().parseValue(value) == result // Retain deprecated method for test coverage
 
         where:
         value                        | result
@@ -63,7 +96,7 @@ class ScalarsBooleanTest extends Specification {
     @Unroll
     def "serialize throws exception for invalid input #value"() {
         when:
-        Scalars.GraphQLBoolean.getCoercing().serialize(value)
+        Scalars.GraphQLBoolean.getCoercing().serialize(value, GraphQLContext.default, Locale.default)
         then:
         thrown(CoercingSerializeException)
 
@@ -81,7 +114,7 @@ class ScalarsBooleanTest extends Specification {
     @Unroll
     def "parseValue throws exception for invalid input #value"() {
         when:
-        Scalars.GraphQLBoolean.getCoercing().parseValue(value)
+        Scalars.GraphQLBoolean.getCoercing().parseValue(value, GraphQLContext.default, Locale.default)
         then:
         thrown(CoercingParseValueException)
 

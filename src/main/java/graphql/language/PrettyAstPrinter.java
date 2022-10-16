@@ -5,6 +5,7 @@ import graphql.PublicApi;
 import graphql.collect.ImmutableKit;
 import graphql.parser.CommentParser;
 import graphql.parser.NodeToRuleCapturingParser;
+import graphql.parser.ParserEnvironment;
 
 import java.util.Collections;
 import java.util.List;
@@ -14,6 +15,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static graphql.Assert.assertTrue;
+import static graphql.parser.ParserEnvironment.newParserEnvironment;
 
 /**
  * A printer that acts as a code formatter.
@@ -67,7 +69,8 @@ public class PrettyAstPrinter extends AstPrinter {
 
     public static String print(String schemaDefinition, PrettyPrinterOptions options) {
         NodeToRuleCapturingParser parser = new NodeToRuleCapturingParser();
-        Document document = parser.parseDocument(schemaDefinition);
+        ParserEnvironment parserEnvironment = newParserEnvironment().document(schemaDefinition).build();
+        Document document = parser.parseDocument(parserEnvironment);
 
         return new PrettyAstPrinter(parser.getParserContext(), options).print(document);
     }

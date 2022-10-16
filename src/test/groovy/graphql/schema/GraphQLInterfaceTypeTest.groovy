@@ -24,7 +24,6 @@ class GraphQLInterfaceTypeTest extends Specification {
                         newFieldDefinition().name("NAME").type(GraphQLString).build(),
                         newFieldDefinition().name("NAME").type(GraphQLInt).build()
                 ])
-                .typeResolver(new TypeResolverProxy())
                 .build()
         then:
         interfaceType.getName() == "TestInterfaceType"
@@ -37,7 +36,6 @@ class GraphQLInterfaceTypeTest extends Specification {
                 .description("StartingDescription")
                 .field(newFieldDefinition().name("Str").type(GraphQLString))
                 .field(newFieldDefinition().name("Int").type(GraphQLInt))
-                .typeResolver(new TypeResolverProxy())
                 .build()
 
         when:
@@ -106,5 +104,20 @@ class GraphQLInterfaceTypeTest extends Specification {
 
         then:
         noExceptionThrown()
+    }
+
+    def "deprecated typeResolver builder works"() {
+        when:
+        def interfaceType = newInterface().name("TestInterfaceType")
+                .description("description")
+                .fields([
+                        newFieldDefinition().name("NAME").type(GraphQLString).build(),
+                        newFieldDefinition().name("NAME").type(GraphQLInt).build()
+                ])
+                .typeResolver(new TypeResolverProxy()) // Retain for test coverage
+                .build()
+        then:
+        interfaceType.getName() == "TestInterfaceType"
+        interfaceType.getFieldDefinition("NAME").getType() == GraphQLInt
     }
 }

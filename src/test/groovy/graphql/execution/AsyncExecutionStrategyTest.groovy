@@ -4,12 +4,15 @@ import graphql.ErrorType
 import graphql.ExecutionResult
 import graphql.GraphQLContext
 import graphql.execution.instrumentation.ExecutionStrategyInstrumentationContext
+import graphql.execution.instrumentation.InstrumentationState
 import graphql.execution.instrumentation.SimpleInstrumentation
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters
 import graphql.language.Field
 import graphql.language.OperationDefinition
 import graphql.parser.Parser
 import graphql.schema.DataFetcher
+import graphql.schema.FieldCoordinates
+import graphql.schema.GraphQLCodeRegistry
 import graphql.schema.GraphQLFieldDefinition
 import graphql.schema.GraphQLSchema
 import spock.lang.Specification
@@ -30,25 +33,37 @@ import static org.awaitility.Awaitility.await
 class AsyncExecutionStrategyTest extends Specification {
 
     GraphQLSchema schema(DataFetcher dataFetcher1, DataFetcher dataFetcher2) {
-        GraphQLFieldDefinition.Builder fieldDefinition = newFieldDefinition()
-                .name("hello")
-                .type(GraphQLString)
-                .dataFetcher(dataFetcher1)
-        GraphQLFieldDefinition.Builder fieldDefinition2 = newFieldDefinition()
-                .name("hello2")
-                .type(GraphQLString)
-                .dataFetcher(dataFetcher2)
+        def queryName = "RootQueryType"
+        def field1Name = "hello"
+        def field2Name = "hello2"
 
-        GraphQLSchema schema = newSchema().query(
-                newObject()
-                        .name("RootQueryType")
-                        .field(fieldDefinition)
+        GraphQLFieldDefinition.Builder fieldDefinition1 = newFieldDefinition()
+                .name(field1Name)
+                .type(GraphQLString)
+        GraphQLFieldDefinition.Builder fieldDefinition2 = newFieldDefinition()
+                .name(field2Name)
+                .type(GraphQLString)
+
+        def field1Coordinates = FieldCoordinates.coordinates(queryName, field1Name)
+        def field2Coordinates = FieldCoordinates.coordinates(queryName, field2Name)
+
+        GraphQLCodeRegistry codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+                .dataFetcher(field1Coordinates, dataFetcher1)
+                .dataFetcher(field2Coordinates, dataFetcher2)
+                .build()
+
+        GraphQLSchema schema = newSchema()
+                .codeRegistry(codeRegistry)
+                .query(newObject()
+                        .name(queryName)
+                        .field(fieldDefinition1)
                         .field(fieldDefinition2)
                         .build()
-        ).build()
+                )
+                .build()
+
         schema
     }
-
 
     def "execution is serial if the dataFetchers are blocking"() {
         given:
@@ -253,7 +268,7 @@ class AsyncExecutionStrategyTest extends Specification {
                 .locale(Locale.getDefault())
                 .instrumentation(new SimpleInstrumentation() {
                     @Override
-                    ExecutionStrategyInstrumentationContext beginExecutionStrategy(InstrumentationExecutionStrategyParameters parameters) {
+                    ExecutionStrategyInstrumentationContext beginExecutionStrategy(InstrumentationExecutionStrategyParameters parameters, InstrumentationState state) {
                         return new ExecutionStrategyInstrumentationContext() {
 
                             @Override

@@ -77,7 +77,7 @@ public class Harness {
                     .argument(newArgument()
                             .name("atOtherHomes")
                             .type(GraphQLBoolean)
-                            .defaultValue(true)))
+                            .defaultValueProgrammatic(true)))
             .field(newFieldDefinition()
                     .name("isAtLocation")
                     .type(GraphQLBoolean)
