@@ -31,12 +31,9 @@ public class GraphqlFloatCoercing implements Coercing<Double, Double> {
     private Double convertImpl(Object input) {
         // From the GraphQL Float spec, non-finite floating-point internal values (NaN and Infinity)
         // must raise a field error on both result and input coercion
+        Double doubleInput;
         if (input instanceof Double) {
-            Double doubleInput = (Double) input;
-            if (Double.isNaN(doubleInput) || Double.isInfinite(doubleInput)) {
-                return null;
-            }
-            return doubleInput;
+            doubleInput = (Double) input;
         } else if (isNumberIsh(input)) {
             BigDecimal value;
             try {
@@ -44,10 +41,15 @@ public class GraphqlFloatCoercing implements Coercing<Double, Double> {
             } catch (NumberFormatException e) {
                 return null;
             }
-            return value.doubleValue();
+            doubleInput = value.doubleValue();
         } else {
             return null;
         }
+
+        if (Double.isNaN(doubleInput) || Double.isInfinite(doubleInput)) {
+            return null;
+        }
+        return doubleInput;
     }
 
     @NotNull

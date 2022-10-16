@@ -114,34 +114,46 @@ class ScalarsFloatTest extends Specification {
         thrown(CoercingSerializeException)
 
         where:
-        value                    | _
-        ""                       | _
-        "not a number "          | _
-        Double.NaN               | _
-        Double.POSITIVE_INFINITY | _
-        Double.NEGATIVE_INFINITY | _
-        Float.NaN                | _
-        Float.POSITIVE_INFINITY  | _
-        Float.NEGATIVE_INFINITY  | _
+        value                               | _
+        ""                                  | _
+        "not a number "                     | _
+        Double.NaN                          | _
+        Double.NaN.toString()               | _
+        Double.POSITIVE_INFINITY            | _
+        Double.POSITIVE_INFINITY.toString() | _
+        Double.NEGATIVE_INFINITY            | _
+        Double.NEGATIVE_INFINITY.toString() | _
+        Float.NaN                           | _
+        Float.NaN.toString()                | _
+        Float.POSITIVE_INFINITY             | _
+        Float.POSITIVE_INFINITY.toString()  | _
+        Float.NEGATIVE_INFINITY             | _
+        Float.NEGATIVE_INFINITY.toString()  | _
     }
 
     @Unroll
-    def "serialize/parseValue throws exception for invalid input #value"() {
+    def "parseValue throws exception for invalid input #value"() {
         when:
         Scalars.GraphQLFloat.getCoercing().parseValue(value, GraphQLContext.default, Locale.default)
         then:
         thrown(CoercingParseValueException)
 
         where:
-        value                    | _
-        ""                       | _
-        "not a number "          | _
-        Double.NaN               | _
-        Double.POSITIVE_INFINITY | _
-        Double.NEGATIVE_INFINITY | _
-        Float.NaN                | _
-        Float.POSITIVE_INFINITY  | _
-        Float.NEGATIVE_INFINITY  | _
+        value                               | _
+        ""                                  | _
+        "not a number "                     | _
+        Double.NaN                          | _
+        Double.NaN.toString()               | _
+        Double.POSITIVE_INFINITY            | _
+        Double.POSITIVE_INFINITY.toString() | _
+        Double.NEGATIVE_INFINITY            | _
+        Double.NEGATIVE_INFINITY.toString() | _
+        Float.NaN                           | _
+        Float.NaN.toString()                | _
+        Float.POSITIVE_INFINITY             | _
+        Float.POSITIVE_INFINITY.toString()  | _
+        Float.NEGATIVE_INFINITY             | _
+        Float.NEGATIVE_INFINITY.toString()  | _
     }
 
 }
