@@ -21,9 +21,9 @@ public class NodeToRuleCapturingParser extends Parser {
     }
 
     @Override
-    protected GraphqlAntlrToLanguage getAntlrToLanguage(CommonTokenStream tokens, MultiSourceReader multiSourceReader, ParserOptions parserOptions) {
+    protected GraphqlAntlrToLanguage getAntlrToLanguage(CommonTokenStream tokens, MultiSourceReader multiSourceReader, ParserEnvironment environment) {
         parserContext.tokens = tokens;
-        return new GraphqlAntlrToLanguage(tokens, multiSourceReader, parserOptions, parserContext.nodeToRuleMap);
+        return new GraphqlAntlrToLanguage(tokens, multiSourceReader, environment.getParserOptions(), environment.getI18N(), parserContext.nodeToRuleMap);
     }
 
     public ParserContext getParserContext() {

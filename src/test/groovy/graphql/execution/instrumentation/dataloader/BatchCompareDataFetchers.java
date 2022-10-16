@@ -6,6 +6,7 @@ import graphql.execution.instrumentation.dataloader.models.Shop;
 import graphql.schema.DataFetcher;
 import org.dataloader.BatchLoader;
 import org.dataloader.DataLoader;
+import org.dataloader.DataLoaderFactory;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -99,7 +100,7 @@ public class BatchCompareDataFetchers {
         return completedFuture(getDepartmentsForShops(shopList));
     });
 
-    public DataLoader<String, List<Department>> departmentsForShopDataLoader = new DataLoader<>(departmentsForShopsBatchLoader);
+    public DataLoader<String, List<Department>> departmentsForShopDataLoader = DataLoaderFactory.newDataLoader(departmentsForShopsBatchLoader);
 
     public DataFetcher<CompletableFuture<List<Department>>> departmentsForShopDataLoaderDataFetcher = environment -> {
         Shop shop = environment.getSource();
@@ -136,7 +137,7 @@ public class BatchCompareDataFetchers {
         return completedFuture(getProductsForDepartments(d));
     });
 
-    public DataLoader<String, List<Product>> productsForDepartmentDataLoader = new DataLoader<>(productsForDepartmentsBatchLoader);
+    public DataLoader<String, List<Product>> productsForDepartmentDataLoader = DataLoaderFactory.newDataLoader(productsForDepartmentsBatchLoader);
 
     public DataFetcher<CompletableFuture<List<Product>>> productsForDepartmentDataLoaderDataFetcher = environment -> {
         Department department = environment.getSource();

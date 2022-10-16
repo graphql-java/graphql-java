@@ -19,6 +19,7 @@ import graphql.schema.idl.RuntimeWiring
 import org.apache.commons.lang3.concurrent.BasicThreadFactory
 import org.dataloader.BatchLoader
 import org.dataloader.DataLoader
+import org.dataloader.DataLoaderFactory
 import org.dataloader.DataLoaderOptions
 import org.dataloader.DataLoaderRegistry
 import spock.lang.Specification
@@ -178,7 +179,7 @@ class DataLoaderHangingTest extends Specification {
     }
 
     private DataLoaderRegistry mkNewDataLoaderRegistry(executor) {
-        def dataLoaderAlbums = new DataLoader<Object, Object>(new BatchLoader<DataFetchingEnvironment, List<Object>>() {
+        def dataLoaderAlbums = DataLoaderFactory.newDataLoader(new BatchLoader<DataFetchingEnvironment, List<Object>>() {
             @Override
             CompletionStage<List<List<Object>>> load(List<DataFetchingEnvironment> keys) {
                 return CompletableFuture.supplyAsync({
@@ -195,7 +196,7 @@ class DataLoaderHangingTest extends Specification {
             }
         }, DataLoaderOptions.newOptions().setMaxBatchSize(5))
 
-        def dataLoaderSongs = new DataLoader<Object, Object>(new BatchLoader<DataFetchingEnvironment, List<Object>>() {
+        def dataLoaderSongs = DataLoaderFactory.newDataLoader(new BatchLoader<DataFetchingEnvironment, List<Object>>() {
             @Override
             CompletionStage<List<List<Object>>> load(List<DataFetchingEnvironment> keys) {
                 return CompletableFuture.supplyAsync({
@@ -242,7 +243,7 @@ class DataLoaderHangingTest extends Specification {
 
     DataFetcherExceptionHandler customExceptionHandlerThatThrows = new DataFetcherExceptionHandler() {
         @Override
-        DataFetcherExceptionHandlerResult onException(DataFetcherExceptionHandlerParameters handlerParameters) {
+        DataFetcherExceptionHandlerResult onException(DataFetcherExceptionHandlerParameters handlerParameters) { // Retain for test coverage, intentionally using sync version.
             throw handlerParameters.exception
         }
     }
@@ -332,8 +333,8 @@ class DataLoaderHangingTest extends Specification {
         """
 
     private DataLoaderRegistry buildRegistry() {
-        DataLoader<Integer, Person> personDataLoader = new DataLoader<>(personBatchLoader)
-        DataLoader<Integer, Company> companyDataLoader = new DataLoader<>(companyBatchLoader)
+        DataLoader<Integer, Person> personDataLoader = DataLoaderFactory.newDataLoader(personBatchLoader)
+        DataLoader<Integer, Company> companyDataLoader = DataLoaderFactory.newDataLoader(companyBatchLoader)
 
         DataLoaderRegistry registry = new DataLoaderRegistry()
         registry.register("person", personDataLoader)

@@ -19,6 +19,7 @@ class ValidateCustomDirectives extends Specification {
 
     GraphQLSchema customDirectiveSchema = GraphQLSchema.newSchema()
             .query(SpecValidationSchema.queryRoot)
+            .codeRegistry(SpecValidationSchema.codeRegistry)
             .additionalDirective(SpecValidationSchema.dogDirective)
             .additionalDirective(customDirective)
             .additionalTypes(SpecValidationSchema.specValidationDictionary)

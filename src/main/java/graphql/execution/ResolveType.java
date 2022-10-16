@@ -1,5 +1,6 @@
 package graphql.execution;
 
+import graphql.Assert;
 import graphql.Internal;
 import graphql.TypeResolutionEnvironment;
 import graphql.normalized.ExecutableNormalizedField;
@@ -19,9 +20,9 @@ import java.util.function.Supplier;
 @Internal
 public class ResolveType {
 
-
     public GraphQLObjectType resolveType(ExecutionContext executionContext, MergedField field, Object source, ExecutionStepInfo executionStepInfo, GraphQLType fieldType, Object localContext) {
-        GraphQLObjectType resolvedType;
+        Assert.assertTrue(fieldType instanceof GraphQLInterfaceType || fieldType instanceof GraphQLUnionType,
+                () -> "The passed in fieldType MUST be an interface or union type : " + fieldType.getClass().getName());
         DataFetchingFieldSelectionSet fieldSelectionSet = buildSelectionSet(executionContext, field, (GraphQLOutputType) fieldType, executionStepInfo);
         TypeResolutionEnvironment env = TypeResolutionParameters.newParameters()
                 .field(field)
@@ -35,13 +36,10 @@ public class ResolveType {
                 .schema(executionContext.getGraphQLSchema())
                 .build();
         if (fieldType instanceof GraphQLInterfaceType) {
-            resolvedType = resolveTypeForInterface(env, (GraphQLInterfaceType) fieldType);
-        } else if (fieldType instanceof GraphQLUnionType) {
-            resolvedType = resolveTypeForUnion(env, (GraphQLUnionType) fieldType);
+            return resolveTypeForInterface(env, (GraphQLInterfaceType) fieldType);
         } else {
-            resolvedType = (GraphQLObjectType) fieldType;
+            return resolveTypeForUnion(env, (GraphQLUnionType) fieldType);
         }
-        return resolvedType;
     }
 
     private DataFetchingFieldSelectionSet buildSelectionSet(ExecutionContext executionContext, MergedField field, GraphQLOutputType fieldType, ExecutionStepInfo executionStepInfo) {
@@ -65,11 +63,9 @@ public class ResolveType {
         if (result == null) {
             throw new UnresolvedTypeException(abstractType);
         }
-
         if (!env.getSchema().isPossibleType(abstractType, result)) {
             throw new UnresolvedTypeException(abstractType, result);
         }
-
         return result;
     }
 

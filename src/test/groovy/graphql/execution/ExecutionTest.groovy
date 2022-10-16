@@ -114,14 +114,16 @@ class ExecutionTest extends Specification {
 
         def instrumentation = new SimplePerformantInstrumentation() {
 
-            @NotNull
-            @Override
-            ExecutionContext instrumentExecutionContext(ExecutionContext executionContext, InstrumentationExecutionParameters parameters, InstrumentationState state) {
-                return ExecutionContextBuilder.newExecutionContextBuilder(executionContext)
-                        .queryStrategy(queryStrategyUpdatedToDuringExecutionContextInstrument)
-                        .build()
-            }
-        }
+			@Override
+            ExecutionContext instrumentExecutionContext(ExecutionContext executionContext,
+                                                        InstrumentationExecutionParameters parameters,
+                                                        InstrumentationState state) {
+					
+					return ExecutionContextBuilder.newExecutionContextBuilder(executionContext)
+					.queryStrategy(queryStrategyUpdatedToDuringExecutionContextInstrument)
+					.build()
+			}
+		}
 
         def execution = new Execution(queryStrategy, mutationStrategy, subscriptionStrategy, instrumentation, ValueUnboxer.DEFAULT)
 

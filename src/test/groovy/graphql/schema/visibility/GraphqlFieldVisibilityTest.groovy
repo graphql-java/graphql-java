@@ -30,6 +30,7 @@ class GraphqlFieldVisibilityTest extends Specification {
         GraphqlFieldVisibility banNameVisibility = newBlock().addPattern(".*\\.name").build()
         def schema = GraphQLSchema.newSchema()
                 .query(StarWarsSchema.queryType)
+                .codeRegistry(StarWarsSchema.codeRegistry)
                 .fieldVisibility(banNameVisibility) // Retain deprecated builder for test coverage
                 .build()
 
@@ -58,9 +59,9 @@ class GraphqlFieldVisibilityTest extends Specification {
 
     def "introspection visibility is enforced"() {
         given:
-        GraphQLCodeRegistry codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
-                .fieldVisibility(fieldVisibility)
-                .build()
+        GraphQLCodeRegistry codeRegistry = StarWarsSchema.codeRegistry.transform(builder -> {
+            builder.fieldVisibility(fieldVisibility)
+        })
         def schema = GraphQLSchema.newSchema()
                 .query(StarWarsSchema.queryType)
                 .codeRegistry(codeRegistry)
@@ -94,9 +95,9 @@ class GraphqlFieldVisibilityTest extends Specification {
 
     def "introspection turned off via field visibility"() {
         given:
-        GraphQLCodeRegistry codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
-                .fieldVisibility(NO_INTROSPECTION_FIELD_VISIBILITY)
-                .build()
+        GraphQLCodeRegistry codeRegistry = StarWarsSchema.codeRegistry.transform(builder -> {
+            builder.fieldVisibility(NO_INTROSPECTION_FIELD_VISIBILITY)
+        })
         def schema = GraphQLSchema.newSchema()
                 .query(StarWarsSchema.queryType)
                 .codeRegistry(codeRegistry)
@@ -118,7 +119,9 @@ class GraphqlFieldVisibilityTest extends Specification {
     def "schema printing filters on visibility"() {
 
         when:
-        def codeRegistry = GraphQLCodeRegistry.newCodeRegistry().fieldVisibility(DEFAULT_FIELD_VISIBILITY).build()
+        def codeRegistry = StarWarsSchema.codeRegistry.transform(builder -> {
+            builder.fieldVisibility(DEFAULT_FIELD_VISIBILITY)
+        })
         def schema = GraphQLSchema.newSchema()
                 .query(StarWarsSchema.queryType)
                 .codeRegistry(codeRegistry)
@@ -200,7 +203,9 @@ enum Episode {
         // and with specific bans
 
         when:
-        codeRegistry = GraphQLCodeRegistry.newCodeRegistry().fieldVisibility(ban(['Droid.id', 'Character.name', "QueryType.hero"])).build()
+        codeRegistry = StarWarsSchema.codeRegistry.transform(builder -> {
+            builder.fieldVisibility(ban(['Droid.id', 'Character.name', "QueryType.hero"]))
+        })
         schema = GraphQLSchema.newSchema()
                 .query(StarWarsSchema.queryType)
                 .codeRegistry(codeRegistry)
