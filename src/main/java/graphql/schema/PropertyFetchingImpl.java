@@ -43,8 +43,8 @@ public class PropertyFetchingImpl {
     }
 
     private class CachedMethod {
-        Method method;
-        boolean takesSingleArgumentTypeAsOnlyArgument;
+        private final Method method;
+        private final boolean takesSingleArgumentTypeAsOnlyArgument;
 
         CachedMethod(Method method) {
             this.method = method;
@@ -54,7 +54,7 @@ public class PropertyFetchingImpl {
     }
 
     private static class CachedFunction {
-        Function<Object, Object> getter;
+        private final Function<Object, Object> getter;
 
         CachedFunction(Function<Object, Object> getter) {
             this.getter = getter;
