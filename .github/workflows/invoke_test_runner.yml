@@ -18,11 +18,11 @@ on:
         description: 'Pull request number'
         required: false
 env:
-  PROJECT_ID: ${{ secrets.PROJECT_ID }}
-  QUEUE_ID: ${{ secrets.QUEUE_ID }}
-  LOCATION: ${{ secrets.LOCATION }}
-  SERVICE_ACCOUNT_EMAIL: ${{ secrets.SERVICE_ACCOUNT_EMAIL }}
-  WORKFLOW_URL: ${{ secrets.WORKFLOW_URL }}
+  PROJECT_ID: ${{ secrets.TEST_RUNNER_PROJECT_ID }}
+  QUEUE_ID: ${{ secrets.TEST_RUNNER_QUEUE_ID }}
+  LOCATION: ${{ secrets.TEST_RUNNER_LOCATION }}
+  SERVICE_ACCOUNT_EMAIL: ${{ secrets.TEST_RUNNER_SERVICE_ACCOUNT_EMAIL }}
+  WORKFLOW_URL: ${{ secrets.TEST_RUNNER_WORKFLOW_URL }}
   #Payload variables
   COMMIT_HASH: ${{ (github.sha) }}
   BRANCH: ${{ (github.ref_name) }}
@@ -51,7 +51,7 @@ jobs:
         name: 'Authenticate to Google Cloud'
         uses: google-github-actions/auth@v0.4.0
         with:
-          credentials_json: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}
+          credentials_json: ${{ secrets.TEST_RUNNER_GOOGLE_APPLICATION_CREDENTIALS }}
 
       - name: Execute JS script
         run: node .github/workflows/create_job.js
