@@ -64,7 +64,7 @@ public class EditOperationAnalyzer {
                     }
                     break;
                 case INSERT_VERTEX:
-                    if(editOperation.getTargetVertex().isOfType(SchemaGraph.FIELD)) {
+                    if (editOperation.getTargetVertex().isOfType(SchemaGraph.FIELD)) {
                         fieldAdded(editOperation);
                     }
             }
@@ -87,7 +87,7 @@ public class EditOperationAnalyzer {
         Vertex field = editOperation.getTargetVertex();
         Vertex fieldsContainerForField = newSchemaGraph.getFieldsContainerForField(field);
         if (fieldsContainerForField.isOfType(SchemaGraph.OBJECT)) {
-            if(isNewObject(fieldsContainerForField.getName())) {
+            if (isNewObject(fieldsContainerForField.getName())) {
                 return;
             }
             ObjectModified objectModified = getObjectModified(fieldsContainerForField.getName());
@@ -193,9 +193,9 @@ public class EditOperationAnalyzer {
 //                case DELETE_EDGE:
 //                    deletedEdge(editOperation);
 //                    break;
-//                case CHANGE_EDGE:
-//                    changedEdge(editOperation);
-//                    break;
+                case CHANGE_EDGE:
+                    changedEdge(editOperation);
+                    break;
             }
         }
     }
@@ -205,8 +205,42 @@ public class EditOperationAnalyzer {
         if (newEdge.getLabel().startsWith("implements ")) {
             newInterfaceAddedToInterfaceOrObject(newEdge);
         }
-//        else if(newEdge)
     }
+
+    private void changedEdge(EditOperation editOperation) {
+        Edge newEdge = editOperation.getTargetEdge();
+        if (newEdge.getLabel().startsWith("type=")) {
+            typeEdgeChanged(editOperation);
+        }
+    }
+
+    private void typeEdgeChanged(EditOperation editOperation) {
+        Edge targetEdge = editOperation.getTargetEdge();
+        Vertex from = targetEdge.getFrom();
+        Vertex to = targetEdge.getTo();
+        // edge goes from FIELD to the TYPE
+        if (from.isOfType(SchemaGraph.FIELD)) {
+            Vertex field = from;
+            Vertex container = newSchemaGraph.getFieldsContainerForField(field);
+            if (container.isOfType(SchemaGraph.OBJECT)) {
+                Vertex object = container;
+                ObjectModified objectModified = getObjectModified(object.getName());
+                String fieldName = field.getName();
+                String oldType = getTypeFromEdgeLabel(editOperation.getSourceEdge());
+                String newType = getTypeFromEdgeLabel(editOperation.getTargetEdge());
+                objectModified.getObjectModifiedDetails().add(new ObjectModified.FieldTypeModified(fieldName, oldType, newType));
+            }
+        }
+    }
+
+    // TODO: this is not great, we should avoid parsing string like that
+    private String getTypeFromEdgeLabel(Edge edge) {
+        String label = edge.getLabel();
+        assertTrue(label.startsWith("type="));
+        String type = label.substring("type=".length(), label.indexOf(";"));
+        return type;
+    }
+
 
     private void newInterfaceAddedToInterfaceOrObject(Edge newEdge) {
         Vertex from = newEdge.getFrom();
@@ -258,7 +292,6 @@ public class EditOperationAnalyzer {
     }
 
 
-
     private void addedObject(EditOperation editOperation) {
         String objectName = editOperation.getTargetVertex().getName();
         ObjectAdded objectAdded = new ObjectAdded(objectName);
@@ -304,7 +337,6 @@ public class EditOperationAnalyzer {
         ScalarAdded scalarAdded = new ScalarAdded(scalarName);
         scalarChanges.put(scalarName, scalarAdded);
     }
-
 
 
     private void removedObject(EditOperation editOperation) {

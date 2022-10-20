@@ -8,7 +8,7 @@ import static graphql.schema.diffing.ana.SchemaChanges.*
 
 class EditOperationAnalyzerTest extends Specification {
 
-    def "field name changed"() {
+    def "field renamed"() {
         given:
         def oldSdl = '''
         type Query {
@@ -30,7 +30,29 @@ class EditOperationAnalyzerTest extends Specification {
         fieldRenames[0].newName == "hello2"
     }
 
-    def "test field added"() {
+    def "field type modified"() {
+        given:
+        def oldSdl = '''
+        type Query {
+            hello: String
+        }
+        '''
+        def newSdl = '''
+        type Query {
+            hello: String!
+        }
+        '''
+        when:
+        def changes = changes(oldSdl, newSdl)
+        then:
+        changes.objectChanges["Query"] instanceof ObjectModified
+        def objectModified = changes.objectChanges["Query"] as ObjectModified
+        def fieldRenames = objectModified.getObjectModifiedDetails(ObjectModified.FieldTypeModified.class);
+        fieldRenames[0].oldType == "String"
+        fieldRenames[0].newType == "String!"
+    }
+
+    def "field added"() {
         given:
         def oldSdl = '''
         type Query {
@@ -53,7 +75,7 @@ class EditOperationAnalyzerTest extends Specification {
         fieldAdded[0].name == "newOne"
     }
 
-    def "test Object added"() {
+    def "Object added"() {
         given:
         def oldSdl = '''
         type Query {

@@ -217,7 +217,7 @@ public class SchemaGraphFactory {
 //        schemaGraph.addEdge(new Edge(fieldVertex, dummyTypeVertex));
         Vertex typeVertex = assertNotNull(schemaGraph.getType(graphQLUnmodifiedType.getName()));
         Edge typeEdge = new Edge(fieldVertex, typeVertex);
-        typeEdge.setLabel(GraphQLTypeUtil.simplePrint(type));
+        typeEdge.setLabel("type=" + GraphQLTypeUtil.simplePrint(type) + ";");
         schemaGraph.addEdge(typeEdge);
 
         for (GraphQLArgument graphQLArgument : fieldDefinition.getArguments()) {

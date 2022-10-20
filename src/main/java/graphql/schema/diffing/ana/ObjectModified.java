@@ -1,6 +1,7 @@
 package graphql.schema.diffing.ana;
 
 import graphql.ExperimentalApi;
+import graphql.util.FpKit;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -26,6 +27,7 @@ public class ObjectModified implements SchemaChange.ObjectChange {
             return name;
         }
     }
+
     public static class RemovedInterfaceToObjectDetail implements ObjectModifiedDetails {
         private final String name;
 
@@ -37,6 +39,7 @@ public class ObjectModified implements SchemaChange.ObjectChange {
             return name;
         }
     }
+
     public static class FieldRenamed implements ObjectModifiedDetails {
         private final String oldName;
         private final String newName;
@@ -54,6 +57,7 @@ public class ObjectModified implements SchemaChange.ObjectChange {
             return oldName;
         }
     }
+
     public static class FieldAdded implements ObjectModifiedDetails {
         private final String name;
 
@@ -63,6 +67,30 @@ public class ObjectModified implements SchemaChange.ObjectChange {
 
         public String getName() {
             return name;
+        }
+    }
+
+    public static class FieldTypeModified implements ObjectModifiedDetails {
+        private final String name;
+        private final String oldType;
+        private final String newType;
+
+        public FieldTypeModified(String name, String oldType, String newType) {
+            this.name = name;
+            this.oldType = oldType;
+            this.newType = newType;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public String getOldType() {
+            return oldType;
+        }
+
+        public String getNewType() {
+            return newType;
         }
     }
 
@@ -79,5 +107,9 @@ public class ObjectModified implements SchemaChange.ObjectChange {
 
     public List<ObjectModifiedDetails> getObjectModifiedDetails() {
         return objectModifiedDetails;
+    }
+
+    public <T extends ObjectModifiedDetails> List<T> getObjectModifiedDetails(Class<? extends T> clazz) {
+        return (List) FpKit.filterList(objectModifiedDetails, clazz::isInstance);
     }
 }
