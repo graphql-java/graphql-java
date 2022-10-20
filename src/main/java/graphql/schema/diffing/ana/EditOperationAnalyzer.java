@@ -67,6 +67,11 @@ public class EditOperationAnalyzer {
                     if (editOperation.getTargetVertex().isOfType(SchemaGraph.FIELD)) {
                         fieldAdded(editOperation);
                     }
+                    break;
+                case DELETE_VERTEX:
+                    if (editOperation.getSourceVertex().isOfType(SchemaGraph.ARGUMENT)) {
+                        removedArgument(editOperation);
+                    }
             }
         }
 
@@ -233,7 +238,7 @@ public class EditOperationAnalyzer {
         }
     }
 
-    // TODO: this is not great, we should avoid parsing string like that
+    // TODO: this is not great, we should avoid parsing the label like that
     private String getTypeFromEdgeLabel(Edge edge) {
         String label = edge.getLabel();
         assertTrue(label.startsWith("type="));
@@ -269,6 +274,10 @@ public class EditOperationAnalyzer {
 
     private boolean isNewObject(String name) {
         return objectChanges.containsKey(name) && objectChanges.get(name) instanceof ObjectAdded;
+    }
+
+    private boolean isRemovedObject(String name) {
+        return objectChanges.containsKey(name) && objectChanges.get(name) instanceof ObjectRemoved;
     }
 
     private boolean isNewInterface(String name) {
@@ -379,6 +388,20 @@ public class EditOperationAnalyzer {
 
         ScalarRemoved change = new ScalarRemoved(scalarName);
         scalarChanges.put(scalarName, change);
+    }
+
+    private void removedArgument(EditOperation editOperation) {
+        Vertex removedArgument = editOperation.getSourceVertex();
+        Vertex fieldOrDirective = oldSchemaGraph.getFieldOrDirectiveForArgument(removedArgument);
+        if (fieldOrDirective.isOfType(SchemaGraph.FIELD)) {
+            Vertex field = fieldOrDirective;
+            Vertex fieldsContainerForField = oldSchemaGraph.getFieldsContainerForField(field);
+            if (fieldsContainerForField.isOfType(SchemaGraph.OBJECT)) {
+                Vertex object = fieldsContainerForField;
+                getObjectModified(object.getName()).getObjectModifiedDetails().add(new ObjectModified.ArgumentRemoved(field.getName(), removedArgument.getName()));
+            }
+        }
+
     }
 
     private void modifiedObject(EditOperation editOperation) {

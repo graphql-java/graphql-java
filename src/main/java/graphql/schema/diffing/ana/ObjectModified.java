@@ -94,6 +94,25 @@ public class ObjectModified implements SchemaChange.ObjectChange {
         }
     }
 
+    public static class ArgumentRemoved implements ObjectModifiedDetails {
+
+        private final String fieldName;
+        private final String argumentName;
+
+        public ArgumentRemoved(String fieldName, String argumentName) {
+            this.fieldName = fieldName;
+            this.argumentName = argumentName;
+        }
+
+        public String getFieldName() {
+            return fieldName;
+        }
+
+        public String getArgumentName() {
+            return argumentName;
+        }
+    }
+
 
     public ObjectModified(String name) {
         this.name = name;

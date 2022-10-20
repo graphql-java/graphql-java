@@ -47,9 +47,31 @@ class EditOperationAnalyzerTest extends Specification {
         then:
         changes.objectChanges["Query"] instanceof ObjectModified
         def objectModified = changes.objectChanges["Query"] as ObjectModified
-        def fieldRenames = objectModified.getObjectModifiedDetails(ObjectModified.FieldTypeModified.class);
-        fieldRenames[0].oldType == "String"
-        fieldRenames[0].newType == "String!"
+        def typeModified = objectModified.getObjectModifiedDetails(ObjectModified.FieldTypeModified.class);
+        typeModified[0].oldType == "String"
+        typeModified[0].newType == "String!"
+    }
+
+    def "argument removed"() {
+        given:
+        def oldSdl = '''
+        type Query {
+            hello(arg: String): String
+        }
+        '''
+        def newSdl = '''
+        type Query {
+            hello: String
+        }
+        '''
+        when:
+        def changes = changes(oldSdl, newSdl)
+        then:
+        changes.objectChanges["Query"] instanceof ObjectModified
+        def objectModified = changes.objectChanges["Query"] as ObjectModified
+        def argumentRemoved = objectModified.getObjectModifiedDetails(ObjectModified.ArgumentRemoved.class);
+        argumentRemoved[0].fieldName == "hello"
+        argumentRemoved[0].argumentName == "arg"
     }
 
     def "field added"() {
