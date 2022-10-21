@@ -31,7 +31,7 @@ class I18nTest extends Specification {
         when:
         def message = i18n.msg("ExecutableDefinitions.notExecutableType")
         then:
-        message == "Validierungsfehler ({0}) : Die Typdefinition '{1}' ist nicht ausführbar"
+        message == "Validierungsfehler ({0}) : Type definition '{1}' ist nicht ausführbar"
     }
 
     static def assertBundleStaticShape(ResourceBundle bundle) {
