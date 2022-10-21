@@ -435,4 +435,33 @@ class IntrospectionTest extends Specification {
         graphql.execute(query).data ==
                 [__type: [fields: [[args: [[defaultValue: '{inputField : "foo"}']]]]]]
     }
+
+    def "test parameterized introspection queries"() {
+        def spec = '''
+
+            directive @someDirective(
+                deprecatedArg : String @deprecated
+                notDeprecatedArg : String
+            ) on FIELD 
+
+            type Query {
+               namedField(arg : InputType @deprecated,  notDeprecatedArg : InputType ) : Enum @deprecated
+               notDeprecated(arg : InputType @deprecated,  notDeprecatedArg : InputType) : Enum
+            }
+            enum Enum {
+                RED @deprecated
+                BLUE
+            }
+            input InputType {
+                inputField : String @deprecated
+                notDeprecatedInputField : String 
+            }
+        '''
+
+        def graphQL = TestUtil.graphQL(spec).build()
+
+        def allFalseExecutionResult = graphQL.execute(IntrospectionQuery.getIntrospectionQuery(false, false, false, false, false, 7))
+
+        def allTrueExecutionResult = graphQL.execute(IntrospectionQuery.getIntrospectionQuery(true, true, true, true, true, 7))
+    }
 }
