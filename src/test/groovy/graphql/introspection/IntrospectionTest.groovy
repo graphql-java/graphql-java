@@ -226,6 +226,7 @@ class IntrospectionTest extends Specification {
     def "can filter out deprecated things in introspection"() {
 
         def spec = '''
+            
 
             directive @someDirective(
                 deprecatedArg : String @deprecated
@@ -438,15 +439,24 @@ class IntrospectionTest extends Specification {
 
     def "test parameterized introspection queries"() {
         def spec = '''
+            scalar UUID @specifiedBy(url: "https://tools.ietf.org/html/rfc4122")
+
+            directive @repeatableDirective(arg: String) repeatable on FIELD
+
+            """schema description"""
+            schema {
+                query: Query
+            }
 
             directive @someDirective(
                 deprecatedArg : String @deprecated
                 notDeprecatedArg : String
-            ) on FIELD 
+            ) repeatable on FIELD 
 
             type Query {
-               namedField(arg : InputType @deprecated,  notDeprecatedArg : InputType ) : Enum @deprecated
+                """notDeprecated root field description"""
                notDeprecated(arg : InputType @deprecated,  notDeprecatedArg : InputType) : Enum
+               tenDimensionalList : [[[[[[[[[[String]]]]]]]]]]
             }
             enum Enum {
                 RED @deprecated
@@ -454,14 +464,33 @@ class IntrospectionTest extends Specification {
             }
             input InputType {
                 inputField : String @deprecated
-                notDeprecatedInputField : String 
             }
         '''
 
         def graphQL = TestUtil.graphQL(spec).build()
 
-        def allFalseExecutionResult = graphQL.execute(IntrospectionQuery.getIntrospectionQuery(false, false, false, false, false, 7))
+        def parseExecutionResult = {
+            [
+                it.data["__schema"]["types"].find{it["name"] == "Query"}["fields"].find{it["name"] == "notDeprecated"}["description"] == null, // descriptions
+                it.data["__schema"]["types"].find{it["name"] == "UUID"}["specifiedByUrl"] == null, // specifiedByUrl
+                it.data["__schema"]["directives"].find{it["name"] == "repeatableDirective"}["isRepeatable"] == null, // directiveIsRepeatable
+                it.data["__schema"]["description"] == null, // schemaDescription
+                it.data["__schema"]["types"].find { it['name'] == 'InputType' }["inputFields"].find({ it["name"] == "inputField" }) == null // inputValueDeprecation
+            ]
+        }
 
-        def allTrueExecutionResult = graphQL.execute(IntrospectionQuery.getIntrospectionQuery(true, true, true, true, true, 7))
+        when:
+            def allFalseExecutionResult = graphQL.execute(IntrospectionQuery.getIntrospectionQuery(false, false, false, false, false, 5))
+        then:
+            parseExecutionResult(allFalseExecutionResult).every()
+            allFalseExecutionResult.data["__schema"]["types"].find{it["name"] == "Query"}["fields"].find{it["name"] == "tenDimensionalList"}["type"]["ofType"]["ofType"]["ofType"]["ofType"]["ofType"]["ofType"] == null // typeRefFragmentDepth is 5
+            true
+
+        when:
+            def allTrueExecutionResult = graphQL.execute(IntrospectionQuery.getIntrospectionQuery(true, true, true, true, true, 7))
+        then:
+            !parseExecutionResult(allTrueExecutionResult).any()
+            allTrueExecutionResult.data["__schema"]["types"].find{it["name"] == "Query"}["fields"].find{it["name"] == "tenDimensionalList"}["type"]["ofType"]["ofType"]["ofType"]["ofType"]["ofType"]["ofType"]["ofType"]["ofType"] == null // typeRefFragmentDepth is 7
+        true
     }
 }

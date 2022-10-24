@@ -20,10 +20,6 @@ import java.util.stream.Collectors;
 
 @PublicApi
 public interface IntrospectionQuery { // todo iwds support
-    static void main(String... args) {
-        System.out.println(INTROSPECTION_QUERY);
-    }
-
     static <T> List<T> filter(T... args) {
         return Arrays.stream(args).filter(Objects::nonNull).collect(Collectors.toList());
     }
