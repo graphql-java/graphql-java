@@ -9,13 +9,25 @@ import graphql.schema.diffing.SchemaGraph;
 import graphql.schema.diffing.Vertex;
 import graphql.schema.idl.ScalarInfo;
 
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
 import static graphql.Assert.assertTrue;
-import static graphql.schema.diffing.ana.SchemaChanges.*;
+import static graphql.schema.diffing.ana.SchemaDifference.*;
+import static graphql.schema.diffing.ana.SchemaDifference.EnumDifference;
+import static graphql.schema.diffing.ana.SchemaDifference.InputObjectDeletion;
+import static graphql.schema.diffing.ana.SchemaDifference.InputObjectDifference;
+import static graphql.schema.diffing.ana.SchemaDifference.InterfaceDeletion;
+import static graphql.schema.diffing.ana.SchemaDifference.InterfaceDifference;
+import static graphql.schema.diffing.ana.SchemaDifference.InterfaceModification;
+import static graphql.schema.diffing.ana.SchemaDifference.ObjectDeletion;
+import static graphql.schema.diffing.ana.SchemaDifference.ObjectDifference;
+import static graphql.schema.diffing.ana.SchemaDifference.ObjectModification;
+import static graphql.schema.diffing.ana.SchemaDifference.ScalarDeletion;
+import static graphql.schema.diffing.ana.SchemaDifference.ScalarDifference;
+import static graphql.schema.diffing.ana.SchemaDifference.UnionDeletion;
+import static graphql.schema.diffing.ana.SchemaDifference.UnionDifference;
 
 /**
  * Higher level GraphQL semantic assigned to
@@ -30,12 +42,12 @@ public class EditOperationAnalyzer {
 
 //    private List<SchemaChange> changes = new ArrayList<>();
 
-    private Map<String, SchemaChange.ObjectChange> objectChanges = new LinkedHashMap<>();
-    private Map<String, SchemaChange.InterfaceChange> interfaceChanges = new LinkedHashMap<>();
-    private Map<String, SchemaChange.UnionChange> unionChanges = new LinkedHashMap<>();
-    private Map<String, SchemaChange.EnumChange> enumChanges = new LinkedHashMap<>();
-    private Map<String, SchemaChange.InputObjectChange> inputObjectChanges = new LinkedHashMap<>();
-    private Map<String, SchemaChange.ScalarChange> scalarChanges = new LinkedHashMap<>();
+    private Map<String, ObjectDifference> objectDifferences = new LinkedHashMap<>();
+    private Map<String, InterfaceDifference> interfaceDifferences = new LinkedHashMap<>();
+    private Map<String, UnionDifference> unionDifferences = new LinkedHashMap<>();
+    private Map<String, EnumDifference> enumDifferences = new LinkedHashMap<>();
+    private Map<String, InputObjectDifference> inputObjectDifferences = new LinkedHashMap<>();
+    private Map<String, ScalarDifference> scalarDifferences = new LinkedHashMap<>();
 
     public EditOperationAnalyzer(GraphQLSchema oldSchema,
                                  GraphQLSchema newSchema,
@@ -52,7 +64,7 @@ public class EditOperationAnalyzer {
         handleTypeVertexChanges(editOperations);
         handleEdgeChanges(editOperations);
         handleOtherChanges(editOperations);
-        return new EditOperationAnalysisResult(objectChanges, interfaceChanges, unionChanges, enumChanges, inputObjectChanges, scalarChanges);
+        return new EditOperationAnalysisResult(objectDifferences, interfaceDifferences, unionDifferences, enumDifferences, inputObjectDifferences, scalarDifferences);
     }
 
     private void handleOtherChanges(List<EditOperation> editOperations) {
@@ -81,10 +93,10 @@ public class EditOperationAnalyzer {
         Vertex field = editOperation.getTargetVertex();
         Vertex fieldsContainerForField = newSchemaGraph.getFieldsContainerForField(field);
         if (fieldsContainerForField.isOfType(SchemaGraph.OBJECT)) {
-            ObjectModified objectModified = getObjectModified(fieldsContainerForField.getName());
+            ObjectModification objectModification = getObjectModification(fieldsContainerForField.getName());
             String oldName = editOperation.getSourceVertex().getName();
             String newName = field.getName();
-            objectModified.getObjectModifiedDetails().add(new ObjectModified.FieldRenamed(oldName, newName));
+            objectModification.getDetails().add(new ObjectFieldRename(oldName, newName));
         }
     }
 
@@ -95,9 +107,9 @@ public class EditOperationAnalyzer {
             if (isNewObject(fieldsContainerForField.getName())) {
                 return;
             }
-            ObjectModified objectModified = getObjectModified(fieldsContainerForField.getName());
+            ObjectModification objectModification = getObjectModification(fieldsContainerForField.getName());
             String name = field.getName();
-            objectModified.getObjectModifiedDetails().add(new ObjectModified.FieldAdded(name));
+            objectModification.getDetails().add(new ObjectFieldAddition(name));
         }
     }
 
@@ -112,7 +124,7 @@ public class EditOperationAnalyzer {
                     deletedTypeVertex(editOperation);
                     break;
                 case CHANGE_VERTEX:
-                    modifiedTypeVertex(editOperation);
+                    ModificationTypeVertex(editOperation);
                     break;
             }
         }
@@ -165,13 +177,13 @@ public class EditOperationAnalyzer {
         }
     }
 
-    private void modifiedTypeVertex(EditOperation editOperation) {
+    private void ModificationTypeVertex(EditOperation editOperation) {
         switch (editOperation.getTargetVertex().getType()) {
             case SchemaGraph.OBJECT:
-                modifiedObject(editOperation);
+                ModificationObject(editOperation);
                 break;
             case SchemaGraph.INTERFACE:
-                modifiedInterface(editOperation);
+                ModificationInterface(editOperation);
                 break;
 //            case SchemaGraph.UNION:
 //                changedUnion(editOperation);
@@ -229,11 +241,11 @@ public class EditOperationAnalyzer {
             Vertex container = newSchemaGraph.getFieldsContainerForField(field);
             if (container.isOfType(SchemaGraph.OBJECT)) {
                 Vertex object = container;
-                ObjectModified objectModified = getObjectModified(object.getName());
+                ObjectModification objectModification = getObjectModification(object.getName());
                 String fieldName = field.getName();
                 String oldType = getTypeFromEdgeLabel(editOperation.getSourceEdge());
                 String newType = getTypeFromEdgeLabel(editOperation.getTargetEdge());
-                objectModified.getObjectModifiedDetails().add(new ObjectModified.FieldTypeModified(fieldName, oldType, newType));
+                objectModification.getDetails().add(new ObjectFieldTypeModification(fieldName, oldType, newType));
             }
         }
     }
@@ -255,8 +267,8 @@ public class EditOperationAnalyzer {
             }
             Vertex objectVertex = newEdge.getFrom();
             Vertex interfaceVertex = newEdge.getTo();
-            ObjectModified.AddedInterfaceToObjectDetail addedInterfaceToObjectDetail = new ObjectModified.AddedInterfaceToObjectDetail(interfaceVertex.getName());
-            getObjectModified(objectVertex.getName()).getObjectModifiedDetails().add(addedInterfaceToObjectDetail);
+            ObjectInterfaceImplementationAddition objectInterfaceImplementationAddition = new ObjectInterfaceImplementationAddition(interfaceVertex.getName());
+            getObjectModification(objectVertex.getName()).getDetails().add(objectInterfaceImplementationAddition);
 
         } else if (from.isOfType(SchemaGraph.INTERFACE)) {
             if (isNewInterface(from.getName())) {
@@ -264,8 +276,8 @@ public class EditOperationAnalyzer {
             }
             Vertex interfaceFromVertex = newEdge.getFrom();
             Vertex interfaceVertex = newEdge.getTo();
-            InterfaceModified.AddedInterfaceToInterfaceDetail addedInterfaceToObjectDetail = new InterfaceModified.AddedInterfaceToInterfaceDetail(interfaceVertex.getName());
-            getInterfaceModified(interfaceFromVertex.getName()).getInterfaceChangeDetails().add(addedInterfaceToObjectDetail);
+            InterfaceInterfaceImplementationAddition addition = new InterfaceInterfaceImplementationAddition(interfaceVertex.getName());
+            getInterfaceModification(interfaceFromVertex.getName()).getDetails().add(addition);
         } else {
             Assert.assertShouldNeverHappen("expected an implementation edge");
         }
@@ -273,66 +285,66 @@ public class EditOperationAnalyzer {
     }
 
     private boolean isNewObject(String name) {
-        return objectChanges.containsKey(name) && objectChanges.get(name) instanceof ObjectAdded;
+        return objectDifferences.containsKey(name) && objectDifferences.get(name) instanceof ObjectAddition;
     }
 
-    private boolean isRemovedObject(String name) {
-        return objectChanges.containsKey(name) && objectChanges.get(name) instanceof ObjectRemoved;
+    private boolean isDeletionObject(String name) {
+        return objectDifferences.containsKey(name) && objectDifferences.get(name) instanceof ObjectDeletion;
     }
 
     private boolean isNewInterface(String name) {
-        return interfaceChanges.containsKey(name) && interfaceChanges.get(name) instanceof InterfaceAdded;
+        return interfaceDifferences.containsKey(name) && interfaceDifferences.get(name) instanceof InterfaceAddition;
     }
 
-    private ObjectModified getObjectModified(String newName) {
-        if (!objectChanges.containsKey(newName)) {
-            objectChanges.put(newName, new ObjectModified(newName));
+    private ObjectModification getObjectModification(String newName) {
+        if (!objectDifferences.containsKey(newName)) {
+            objectDifferences.put(newName, new ObjectModification(newName));
         }
-        assertTrue(objectChanges.get(newName) instanceof ObjectModified);
-        return (ObjectModified) objectChanges.get(newName);
+        assertTrue(objectDifferences.get(newName) instanceof ObjectModification);
+        return (ObjectModification) objectDifferences.get(newName);
     }
 
-    private InterfaceModified getInterfaceModified(String newName) {
-        if (!interfaceChanges.containsKey(newName)) {
-            interfaceChanges.put(newName, new InterfaceModified(newName));
+    private InterfaceModification getInterfaceModification(String newName) {
+        if (!interfaceDifferences.containsKey(newName)) {
+            interfaceDifferences.put(newName, new InterfaceModification(newName));
         }
-        assertTrue(interfaceChanges.get(newName) instanceof InterfaceModified);
-        return (InterfaceModified) interfaceChanges.get(newName);
+        assertTrue(interfaceDifferences.get(newName) instanceof InterfaceModification);
+        return (InterfaceModification) interfaceDifferences.get(newName);
     }
 
 
     private void addedObject(EditOperation editOperation) {
         String objectName = editOperation.getTargetVertex().getName();
-        ObjectAdded objectAdded = new ObjectAdded(objectName);
-        objectChanges.put(objectName, objectAdded);
+        ObjectAddition objectAddition = new ObjectAddition(objectName);
+        objectDifferences.put(objectName, objectAddition);
     }
 
     private void addedInterface(EditOperation editOperation) {
         String objectName = editOperation.getTargetVertex().getName();
 
-        InterfaceAdded interfacedAdded = new InterfaceAdded(objectName);
-        interfaceChanges.put(objectName, interfacedAdded);
+        InterfaceAddition interfaceAddition = new InterfaceAddition(objectName);
+        interfaceDifferences.put(objectName, interfaceAddition);
     }
 
     private void addedUnion(EditOperation editOperation) {
         String unionName = editOperation.getTargetVertex().getName();
 
-        UnionAdded unionAdded = new UnionAdded(unionName);
-        unionChanges.put(unionName, unionAdded);
+        UnionAddition addition = new UnionAddition(unionName);
+        unionDifferences.put(unionName, addition);
     }
 
     private void addedInputObject(EditOperation editOperation) {
         String inputObjectName = editOperation.getTargetVertex().getName();
 
-        InputObjectAdded added = new InputObjectAdded(inputObjectName);
-        inputObjectChanges.put(inputObjectName, added);
+        InputObjectAddition addition = new InputObjectAddition(inputObjectName);
+        inputObjectDifferences.put(inputObjectName, addition);
     }
 
     private void addedEnum(EditOperation editOperation) {
         String enumName = editOperation.getTargetVertex().getName();
 
-        EnumAdded enumAdded = new EnumAdded(enumName);
-        enumChanges.put(enumName, enumAdded);
+        EnumAddition enumAddition = new EnumAddition(enumName);
+        enumDifferences.put(enumName, enumAddition);
     }
 
     private void addedScalar(EditOperation editOperation) {
@@ -343,51 +355,51 @@ public class EditOperationAnalyzer {
             return;
         }
 
-        ScalarAdded scalarAdded = new ScalarAdded(scalarName);
-        scalarChanges.put(scalarName, scalarAdded);
+        ScalarAddition addition = new ScalarAddition(scalarName);
+        scalarDifferences.put(scalarName, addition);
     }
 
 
     private void removedObject(EditOperation editOperation) {
         String objectName = editOperation.getSourceVertex().getName();
 
-        ObjectRemoved change = new ObjectRemoved(objectName);
-        objectChanges.put(objectName, change);
+        ObjectDeletion change = new ObjectDeletion(objectName);
+        objectDifferences.put(objectName, change);
     }
 
     private void removedInterface(EditOperation editOperation) {
         String interfaceName = editOperation.getSourceVertex().getName();
 
-        InterfaceRemoved change = new InterfaceRemoved(interfaceName);
-        interfaceChanges.put(interfaceName, change);
+        InterfaceDeletion change = new InterfaceDeletion(interfaceName);
+        interfaceDifferences.put(interfaceName, change);
     }
 
     private void removedUnion(EditOperation editOperation) {
         String unionName = editOperation.getSourceVertex().getName();
 
-        UnionRemoved change = new UnionRemoved(unionName);
-        unionChanges.put(unionName, change);
+        UnionDeletion change = new UnionDeletion(unionName);
+        unionDifferences.put(unionName, change);
     }
 
     private void removedInputObject(EditOperation editOperation) {
         String name = editOperation.getSourceVertex().getName();
 
-        InputObjectRemoved change = new InputObjectRemoved(name);
-        inputObjectChanges.put(name, change);
+        InputObjectDeletion change = new InputObjectDeletion(name);
+        inputObjectDifferences.put(name, change);
     }
 
     private void removedEnum(EditOperation editOperation) {
         String enumName = editOperation.getSourceVertex().getName();
 
-        EnumRemoved change = new EnumRemoved(enumName);
-        enumChanges.put(enumName, change);
+        EnumDeletion deletion = new EnumDeletion(enumName);
+        enumDifferences.put(enumName, deletion);
     }
 
     private void removedScalar(EditOperation editOperation) {
         String scalarName = editOperation.getSourceVertex().getName();
 
-        ScalarRemoved change = new ScalarRemoved(scalarName);
-        scalarChanges.put(scalarName, change);
+        ScalarDeletion change = new ScalarDeletion(scalarName);
+        scalarDifferences.put(scalarName, change);
     }
 
     private void removedArgument(EditOperation editOperation) {
@@ -398,25 +410,25 @@ public class EditOperationAnalyzer {
             Vertex fieldsContainerForField = oldSchemaGraph.getFieldsContainerForField(field);
             if (fieldsContainerForField.isOfType(SchemaGraph.OBJECT)) {
                 Vertex object = fieldsContainerForField;
-                getObjectModified(object.getName()).getObjectModifiedDetails().add(new ObjectModified.ArgumentRemoved(field.getName(), removedArgument.getName()));
+                getObjectModification(object.getName()).getDetails().add(new ObjectFieldArgumentDeletion(field.getName(), removedArgument.getName()));
             }
         }
 
     }
 
-    private void modifiedObject(EditOperation editOperation) {
+    private void ModificationObject(EditOperation editOperation) {
 //        // object changes include: adding/removing Interface, adding/removing applied directives, changing name
         String objectName = editOperation.getTargetVertex().getName();
 //
-        ObjectModified objectModified = new ObjectModified(objectName);
-        objectChanges.put(objectName, objectModified);
+        ObjectModification objectModification = new ObjectModification(objectName);
+        objectDifferences.put(objectName, objectModification);
     }
 
-    private void modifiedInterface(EditOperation editOperation) {
+    private void ModificationInterface(EditOperation editOperation) {
         String interfaceName = editOperation.getTargetVertex().getName();
-        InterfaceModified interfaceModified = new InterfaceModified(interfaceName);
+        InterfaceModification interfaceModification = new InterfaceModification(interfaceName);
         // we store the modification against the new name
-        interfaceChanges.put(interfaceName, interfaceModified);
+        interfaceDifferences.put(interfaceName, interfaceModification);
     }
 //
 //    private void changedUnion(EditOperation editOperation) {
@@ -456,7 +468,7 @@ public class EditOperationAnalyzer {
 //        Vertex field = editOperation.getTargetVertex();
 //        Vertex fieldsContainerForField = newSchemaGraph.getFieldsContainerForField(field);
 //
-//        FieldModified objectAdded = new FieldModified(field.getName(), fieldsContainerForField.getName());
+//        FieldModification objectAdded = new FieldModification(field.getName(), fieldsContainerForField.getName());
 //        changes.add(objectAdded);
 //    }
 //
