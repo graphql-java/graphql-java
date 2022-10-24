@@ -470,26 +470,24 @@ class IntrospectionTest extends Specification {
 
         def parseExecutionResult = {
             [
-                it.data["__schema"]["types"].find{it["name"] == "Query"}["fields"].find{it["name"] == "notDeprecated"}["description"] == null, // descriptions
-                it.data["__schema"]["types"].find{it["name"] == "UUID"}["specifiedByUrl"] == null, // specifiedByUrl
-                it.data["__schema"]["directives"].find{it["name"] == "repeatableDirective"}["isRepeatable"] == null, // directiveIsRepeatable
-                it.data["__schema"]["description"] == null, // schemaDescription
-                it.data["__schema"]["types"].find { it['name'] == 'InputType' }["inputFields"].find({ it["name"] == "inputField" }) == null // inputValueDeprecation
+                it.data["__schema"]["types"].find{it["name"] == "Query"}["fields"].find{it["name"] == "notDeprecated"}["description"] != null, // descriptions is true
+                it.data["__schema"]["types"].find{it["name"] == "UUID"}["specifiedByUrl"] != null, // specifiedByUrl is true
+                it.data["__schema"]["directives"].find{it["name"] == "repeatableDirective"}["isRepeatable"] != null, // directiveIsRepeatable is true
+                it.data["__schema"]["description"] != null, // schemaDescription is true
+                it.data["__schema"]["types"].find { it['name'] == 'InputType' }["inputFields"].find({ it["name"] == "inputField" }) != null // inputValueDeprecation is true
             ]
         }
 
         when:
             def allFalseExecutionResult = graphQL.execute(IntrospectionQuery.getIntrospectionQuery(false, false, false, false, false, 5))
         then:
-            parseExecutionResult(allFalseExecutionResult).every()
+            !parseExecutionResult(allFalseExecutionResult).any()
             allFalseExecutionResult.data["__schema"]["types"].find{it["name"] == "Query"}["fields"].find{it["name"] == "tenDimensionalList"}["type"]["ofType"]["ofType"]["ofType"]["ofType"]["ofType"]["ofType"] == null // typeRefFragmentDepth is 5
-            true
 
         when:
             def allTrueExecutionResult = graphQL.execute(IntrospectionQuery.getIntrospectionQuery(true, true, true, true, true, 7))
         then:
-            !parseExecutionResult(allTrueExecutionResult).any()
+            parseExecutionResult(allTrueExecutionResult).every()
             allTrueExecutionResult.data["__schema"]["types"].find{it["name"] == "Query"}["fields"].find{it["name"] == "tenDimensionalList"}["type"]["ofType"]["ofType"]["ofType"]["ofType"]["ofType"]["ofType"]["ofType"]["ofType"] == null // typeRefFragmentDepth is 7
-        true
     }
 }
