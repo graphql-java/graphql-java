@@ -471,7 +471,7 @@ class IntrospectionTest extends Specification {
         def parseExecutionResult = {
             [
                 it.data["__schema"]["types"].find{it["name"] == "Query"}["fields"].find{it["name"] == "notDeprecated"}["description"] != null, // descriptions is true
-                it.data["__schema"]["types"].find{it["name"] == "UUID"}["specifiedByUrl"] != null, // specifiedByUrl is true
+                it.data["__schema"]["types"].find{it["name"] == "UUID"}["specifiedByURL"] != null, // specifiedByUrl is true
                 it.data["__schema"]["directives"].find{it["name"] == "repeatableDirective"}["isRepeatable"] != null, // directiveIsRepeatable is true
                 it.data["__schema"]["description"] != null, // schemaDescription is true
                 it.data["__schema"]["types"].find { it['name'] == 'InputType' }["inputFields"].find({ it["name"] == "inputField" }) != null // inputValueDeprecation is true

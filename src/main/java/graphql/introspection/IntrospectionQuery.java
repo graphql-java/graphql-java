@@ -79,7 +79,7 @@ public interface IntrospectionQuery { // todo iwds support
             Field.newField("kind").build(),
             Field.newField("name").build(),
             descriptions ? Field.newField("description").build() : null,
-            specifiedByUrl ? Field.newField("specifiedByUrl").build() : null,
+            specifiedByUrl ? Field.newField("specifiedByURL").build() : null,
             Field.newField("fields")
                 .arguments( ImmutableList.of(
                     Argument.newArgument("includeDeprecated", BooleanValue.of(true)).build()
