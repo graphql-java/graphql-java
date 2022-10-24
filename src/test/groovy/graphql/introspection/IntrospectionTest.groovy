@@ -226,7 +226,6 @@ class IntrospectionTest extends Specification {
     def "can filter out deprecated things in introspection"() {
 
         def spec = '''
-            
 
             directive @someDirective(
                 deprecatedArg : String @deprecated
