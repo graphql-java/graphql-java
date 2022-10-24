@@ -124,7 +124,7 @@ public class EditOperationAnalyzer {
                     deletedTypeVertex(editOperation);
                     break;
                 case CHANGE_VERTEX:
-                    ModificationTypeVertex(editOperation);
+                    changedTypeVertex(editOperation);
                     break;
             }
         }
@@ -177,13 +177,13 @@ public class EditOperationAnalyzer {
         }
     }
 
-    private void ModificationTypeVertex(EditOperation editOperation) {
+    private void changedTypeVertex(EditOperation editOperation) {
         switch (editOperation.getTargetVertex().getType()) {
             case SchemaGraph.OBJECT:
-                ModificationObject(editOperation);
+                changedObject(editOperation);
                 break;
             case SchemaGraph.INTERFACE:
-                ModificationInterface(editOperation);
+                changedInterface(editOperation);
                 break;
 //            case SchemaGraph.UNION:
 //                changedUnion(editOperation);
@@ -235,19 +235,55 @@ public class EditOperationAnalyzer {
         Edge targetEdge = editOperation.getTargetEdge();
         Vertex from = targetEdge.getFrom();
         Vertex to = targetEdge.getTo();
-        // edge goes from FIELD to the TYPE
         if (from.isOfType(SchemaGraph.FIELD)) {
-            Vertex field = from;
-            Vertex container = newSchemaGraph.getFieldsContainerForField(field);
-            if (container.isOfType(SchemaGraph.OBJECT)) {
-                Vertex object = container;
-                ObjectModification objectModification = getObjectModification(object.getName());
-                String fieldName = field.getName();
-                String oldType = getTypeFromEdgeLabel(editOperation.getSourceEdge());
-                String newType = getTypeFromEdgeLabel(editOperation.getTargetEdge());
-                objectModification.getDetails().add(new ObjectFieldTypeModification(fieldName, oldType, newType));
-            }
+            fieldTypeChanged(editOperation);
+        } else if (from.isOfType(SchemaGraph.ARGUMENT)) {
+            argumentTypeChanged(editOperation);
         }
+    }
+
+    private void argumentTypeChanged(EditOperation editOperation) {
+        Edge targetEdge = editOperation.getTargetEdge();
+        Vertex argument = targetEdge.getFrom();
+        Vertex fieldOrDirective = newSchemaGraph.getFieldOrDirectiveForArgument(argument);
+        if (fieldOrDirective.isOfType(SchemaGraph.FIELD)) {
+            Vertex field = fieldOrDirective;
+            Vertex objectOrInterface = newSchemaGraph.getFieldsContainerForField(field);
+            String oldDefaultValue = getDefaultValueFromEdgeLabel(editOperation.getSourceEdge());
+            String newDefaultValue = getDefaultValueFromEdgeLabel(editOperation.getTargetEdge());
+            if (objectOrInterface.isOfType(SchemaGraph.OBJECT)) {
+                ObjectFieldArgumentDefaultValueModification defaultValueModification = new ObjectFieldArgumentDefaultValueModification(
+                        field.getName(),
+                        argument.getName(),
+                        oldDefaultValue,
+                        newDefaultValue);
+                getObjectModification(objectOrInterface.getName()).getDetails().add(defaultValueModification);
+            } else {
+                assertTrue(objectOrInterface.isOfType(SchemaGraph.INTERFACE));
+                InterfaceFieldArgumentDefaultValueModification defaultValueModification = new InterfaceFieldArgumentDefaultValueModification(
+                        field.getName(),
+                        argument.getName(),
+                        oldDefaultValue,
+                        newDefaultValue);
+                getInterfaceModification(objectOrInterface.getName()).getDetails().add(defaultValueModification);
+            }
+
+        }
+    }
+
+    private void fieldTypeChanged(EditOperation editOperation) {
+        Edge targetEdge = editOperation.getTargetEdge();
+        Vertex field = targetEdge.getFrom();
+        Vertex container = newSchemaGraph.getFieldsContainerForField(field);
+        if (container.isOfType(SchemaGraph.OBJECT)) {
+            Vertex object = container;
+            ObjectModification objectModification = getObjectModification(object.getName());
+            String fieldName = field.getName();
+            String oldType = getTypeFromEdgeLabel(editOperation.getSourceEdge());
+            String newType = getTypeFromEdgeLabel(editOperation.getTargetEdge());
+            objectModification.getDetails().add(new ObjectFieldTypeModification(fieldName, oldType, newType));
+        }
+
     }
 
     // TODO: this is not great, we should avoid parsing the label like that
@@ -256,6 +292,13 @@ public class EditOperationAnalyzer {
         assertTrue(label.startsWith("type="));
         String type = label.substring("type=".length(), label.indexOf(";"));
         return type;
+    }
+
+    private String getDefaultValueFromEdgeLabel(Edge edge) {
+        String label = edge.getLabel();
+        assertTrue(label.startsWith("type="));
+        String defaultValue = label.substring(label.indexOf(";defaultValue=") + ";defaultValue=".length());
+        return defaultValue;
     }
 
 
@@ -416,7 +459,7 @@ public class EditOperationAnalyzer {
 
     }
 
-    private void ModificationObject(EditOperation editOperation) {
+    private void changedObject(EditOperation editOperation) {
 //        // object changes include: adding/removing Interface, adding/removing applied directives, changing name
         String objectName = editOperation.getTargetVertex().getName();
 //
@@ -424,7 +467,7 @@ public class EditOperationAnalyzer {
         objectDifferences.put(objectName, objectModification);
     }
 
-    private void ModificationInterface(EditOperation editOperation) {
+    private void changedInterface(EditOperation editOperation) {
         String interfaceName = editOperation.getTargetVertex().getName();
         InterfaceModification interfaceModification = new InterfaceModification(interfaceName);
         // we store the modification against the new name

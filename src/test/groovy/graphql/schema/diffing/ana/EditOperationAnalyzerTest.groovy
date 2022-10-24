@@ -74,6 +74,46 @@ class EditOperationAnalyzerTest extends Specification {
         argumentRemoved[0].name == "arg"
     }
 
+    def "argument default value modified for Object and Interface"() {
+        given:
+        def oldSdl = '''
+        type Query implements Foo {
+            foo(arg: String = "bar"): String
+        }
+        interface Foo {
+            foo(arg: String = "bar"): String
+        }
+        
+        '''
+        def newSdl = '''
+        type Query implements Foo {
+            foo(arg: String = "barChanged"): String
+        }
+        interface Foo {
+            foo(arg: String = "barChanged"): String
+        }
+        '''
+        when:
+        def changes = changes(oldSdl, newSdl)
+
+        then:
+        changes.objectChanges["Query"] instanceof ObjectModification
+        def objectModification = changes.objectChanges["Query"] as ObjectModification
+        def objDefaultValueModified = objectModification.getDetails(ObjectFieldArgumentDefaultValueModification.class);
+        objDefaultValueModified[0].fieldName == "foo"
+        objDefaultValueModified[0].argumentName == "arg"
+        objDefaultValueModified[0].oldValue == '"bar"'
+        objDefaultValueModified[0].newValue == '"barChanged"'
+        and:
+        changes.interfaceChanges["Foo"] instanceof InterfaceModification
+        def interfaceModification = changes.interfaceChanges["Foo"] as InterfaceModification
+        def intDefaultValueModified = interfaceModification.getDetails(InterfaceFieldArgumentDefaultValueModification.class);
+        intDefaultValueModified[0].fieldName == "foo"
+        intDefaultValueModified[0].argumentName == "arg"
+        intDefaultValueModified[0].oldValue == '"bar"'
+        intDefaultValueModified[0].newValue == '"barChanged"'
+    }
+
     def "field added"() {
         given:
         def oldSdl = '''

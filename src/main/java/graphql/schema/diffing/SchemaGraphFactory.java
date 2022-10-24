@@ -158,7 +158,7 @@ public class SchemaGraphFactory {
         Edge typeEdge = new Edge(inputFieldVertex, typeVertex);
         String typeEdgeLabel = "type=" + GraphQLTypeUtil.simplePrint(type);
         if (inputField.hasSetDefaultValue()) {
-            typeEdgeLabel += ";defaultValue='" + AstPrinter.printAst(ValuesResolver.valueToLiteral(inputField.getInputFieldDefaultValue(), inputField.getType(), GraphQLContext.getDefault(), Locale.getDefault())) + "'";
+            typeEdgeLabel += ";defaultValue=" + AstPrinter.printAst(ValuesResolver.valueToLiteral(inputField.getInputFieldDefaultValue(), inputField.getType(), GraphQLContext.getDefault(), Locale.getDefault()));
         }
 
         typeEdge.setLabel(typeEdgeLabel);
@@ -234,7 +234,7 @@ public class SchemaGraphFactory {
         Edge typeEdge = new Edge(argumentVertex, typeVertex);
         String typeEdgeLabel = "type=" + GraphQLTypeUtil.simplePrint(type);
         if (graphQLArgument.hasSetDefaultValue()) {
-            typeEdgeLabel += ";defaultValue='" + AstPrinter.printAst(ValuesResolver.valueToLiteral(graphQLArgument.getArgumentDefaultValue(), graphQLArgument.getType(), GraphQLContext.getDefault(), Locale.getDefault())) + "'";
+            typeEdgeLabel += ";defaultValue=" + AstPrinter.printAst(ValuesResolver.valueToLiteral(graphQLArgument.getArgumentDefaultValue(), graphQLArgument.getType(), GraphQLContext.getDefault(), Locale.getDefault()));
         }
         typeEdge.setLabel(typeEdgeLabel);
         schemaGraph.addEdge(typeEdge);

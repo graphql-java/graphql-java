@@ -220,11 +220,15 @@ public interface SchemaDifference {
         }
     }
 
-    class ObjectFieldArgumentDefaultValueModification {
+    class ObjectFieldArgumentDefaultValueModification implements ObjectModificationDetail {
+        private final String fieldName;
+        private final String argumentName;
         private final String oldValue;
         private final String newValue;
 
-        public ObjectFieldArgumentDefaultValueModification(String oldValue, String newValue) {
+        public ObjectFieldArgumentDefaultValueModification(String fieldName, String argumentName, String oldValue, String newValue) {
+            this.fieldName = fieldName;
+            this.argumentName = argumentName;
             this.oldValue = oldValue;
             this.newValue = newValue;
         }
@@ -235,6 +239,14 @@ public interface SchemaDifference {
 
         public String getNewValue() {
             return newValue;
+        }
+
+        public String getFieldName() {
+            return fieldName;
+        }
+
+        public String getArgumentName() {
+            return argumentName;
         }
     }
 
@@ -282,7 +294,7 @@ public interface SchemaDifference {
             return details;
         }
 
-        public <T extends InterfaceModificationDetail> List<T> getInterfaceModifiedDetails(Class<? extends T> clazz) {
+        public <T extends InterfaceModificationDetail> List<T> getDetails(Class<? extends T> clazz) {
             return (List) FpKit.filterList(details, clazz::isInstance);
         }
     }
@@ -399,11 +411,16 @@ public interface SchemaDifference {
         }
     }
 
-    class InterfaceFieldArgumentDefaultValueModification {
+    class InterfaceFieldArgumentDefaultValueModification implements  InterfaceModificationDetail{
+        private final String fieldName;
+        private final String argumentName;
         private final String oldValue;
         private final String newValue;
 
-        public InterfaceFieldArgumentDefaultValueModification(String oldValue, String newValue) {
+
+        public InterfaceFieldArgumentDefaultValueModification(String fieldName, String argumentName, String oldValue, String newValue) {
+            this.fieldName = fieldName;
+            this.argumentName = argumentName;
             this.oldValue = oldValue;
             this.newValue = newValue;
         }
@@ -414,6 +431,14 @@ public interface SchemaDifference {
 
         public String getNewValue() {
             return newValue;
+        }
+
+        public String getFieldName() {
+            return fieldName;
+        }
+
+        public String getArgumentName() {
+            return argumentName;
         }
     }
 
