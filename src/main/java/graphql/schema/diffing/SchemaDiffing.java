@@ -32,7 +32,7 @@ public class SchemaDiffing {
         targetGraph = new SchemaGraphFactory("target-").createGraph(graphQLSchema2);
         DiffImpl.OptimalEdit optimalEdit = diffImpl(sourceGraph, targetGraph);
         EditOperationAnalyzer editOperationAnalyzer = new EditOperationAnalyzer(graphQLSchema1, graphQLSchema1, sourceGraph, targetGraph);
-        return editOperationAnalyzer.analyzeEdits(optimalEdit.listOfEditOperations.get(0));
+        return editOperationAnalyzer.analyzeEdits(optimalEdit.listOfEditOperations.get(0),optimalEdit.mappings.get(0));
     }
 
     public DiffImpl.OptimalEdit diffGraphQLSchemaAllEdits(GraphQLSchema graphQLSchema1, GraphQLSchema graphQLSchema2) throws Exception {

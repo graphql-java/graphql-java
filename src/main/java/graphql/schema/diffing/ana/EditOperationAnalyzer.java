@@ -5,6 +5,7 @@ import graphql.ExperimentalApi;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.diffing.Edge;
 import graphql.schema.diffing.EditOperation;
+import graphql.schema.diffing.Mapping;
 import graphql.schema.diffing.SchemaGraph;
 import graphql.schema.diffing.Vertex;
 import graphql.schema.idl.ScalarInfo;
@@ -60,14 +61,8 @@ public class EditOperationAnalyzer {
         this.newSchemaGraph = newSchemaGraph;
     }
 
-    public EditOperationAnalysisResult analyzeEdits(List<EditOperation> editOperations) {
+    public EditOperationAnalysisResult analyzeEdits(List<EditOperation> editOperations, Mapping mapping) {
         handleTypeVertexChanges(editOperations);
-        handleEdgeChanges(editOperations);
-        handleOtherChanges(editOperations);
-        return new EditOperationAnalysisResult(objectDifferences, interfaceDifferences, unionDifferences, enumDifferences, inputObjectDifferences, scalarDifferences);
-    }
-
-    private void handleOtherChanges(List<EditOperation> editOperations) {
         for (EditOperation editOperation : editOperations) {
             switch (editOperation.getOperation()) {
                 case CHANGE_VERTEX:
@@ -86,8 +81,43 @@ public class EditOperationAnalyzer {
                     }
             }
         }
+        handleTypeChanges(editOperations, mapping);
+        handleImplementsChanges(editOperations, mapping);
 
+        return new EditOperationAnalysisResult(objectDifferences, interfaceDifferences, unionDifferences, enumDifferences, inputObjectDifferences, scalarDifferences);
     }
+
+    private void handleTypeChanges(List<EditOperation> editOperations, Mapping mapping) {
+        for (EditOperation editOperation : editOperations) {
+            Edge newEdge = editOperation.getTargetEdge();
+            switch (editOperation.getOperation()) {
+                case INSERT_EDGE:
+                    if (newEdge.getLabel().startsWith("type=")) {
+                        typeEdgeInserted(editOperation, editOperations, mapping);
+                    }
+                    break;
+                case CHANGE_EDGE:
+                    if (newEdge.getLabel().startsWith("type=")) {
+                        typeEdgeChanged(editOperation);
+                    }
+                    break;
+            }
+        }
+    }
+
+    private void handleImplementsChanges(List<EditOperation> editOperations, Mapping mapping) {
+        for (EditOperation editOperation : editOperations) {
+            Edge newEdge = editOperation.getTargetEdge();
+            switch (editOperation.getOperation()) {
+                case INSERT_EDGE:
+                    if (newEdge.getLabel().startsWith("implements ")) {
+                        newInterfaceAddedToInterfaceOrObject(newEdge);
+                    }
+                    break;
+            }
+        }
+    }
+
 
     private void fieldChanged(EditOperation editOperation) {
         Vertex field = editOperation.getTargetVertex();
@@ -155,7 +185,7 @@ public class EditOperationAnalyzer {
     }
 
     private void deletedTypeVertex(EditOperation editOperation) {
-        switch (editOperation.getTargetVertex().getType()) {
+        switch (editOperation.getSourceVertex().getType()) {
             case SchemaGraph.OBJECT:
                 removedObject(editOperation);
                 break;
@@ -201,35 +231,60 @@ public class EditOperationAnalyzer {
 
     }
 
-    private void handleEdgeChanges(List<EditOperation> editOperations) {
-        for (EditOperation editOperation : editOperations) {
-            switch (editOperation.getOperation()) {
-                case INSERT_EDGE:
-                    insertedEdge(editOperation);
-                    break;
-//                case DELETE_EDGE:
-//                    deletedEdge(editOperation);
-//                    break;
-                case CHANGE_EDGE:
-                    changedEdge(editOperation);
-                    break;
+
+    private void typeEdgeInserted(EditOperation editOperation, List<EditOperation> editOperations, Mapping mapping) {
+        Edge newEdge = editOperation.getTargetEdge();
+        Vertex from = newEdge.getFrom();
+        if (from.isOfType(SchemaGraph.FIELD)) {
+            typeEdgeInsertedForField(editOperation, editOperations, mapping);
+        }
+
+    }
+
+    private void typeEdgeInsertedForField(EditOperation editOperation, List<EditOperation> editOperations, Mapping mapping) {
+        Vertex field = editOperation.getTargetEdge().getFrom();
+        Vertex objectOrInterface = newSchemaGraph.getFieldsContainerForField(field);
+        if (objectOrInterface.isOfType(SchemaGraph.OBJECT)) {
+            Vertex object = objectOrInterface;
+            // if the whole object is new we are done
+            if (isNewObject(object.getName())) {
+                return;
+            }
+            // if the field is new, we are done too
+            if (isNewFieldForExistingObject(object.getName(), field.getName())) {
+                return;
+            }
+            String newType = getTypeFromEdgeLabel(editOperation.getTargetEdge());
+            // this means we have an existing object changed its type
+            // and there must be a deleted edge with the old type information
+            EditOperation deletedTypeEdgeOperation = findDeletedEdge(field, editOperations, mapping);
+            String oldType = getTypeFromEdgeLabel(deletedTypeEdgeOperation.getSourceEdge());
+            ObjectFieldTypeModification objectFieldTypeModification = new ObjectFieldTypeModification(field.getName(), oldType, newType);
+            getObjectModification(object.getName()).getDetails().add(objectFieldTypeModification);
+
+        } else {
+            assertTrue(objectOrInterface.isOfType(SchemaGraph.INTERFACE));
+            Vertex interfaze = objectOrInterface;
+            if (isNewInterface(interfaze.getName())) {
+                return;
             }
         }
     }
 
-    private void insertedEdge(EditOperation editOperation) {
-        Edge newEdge = editOperation.getTargetEdge();
-        if (newEdge.getLabel().startsWith("implements ")) {
-            newInterfaceAddedToInterfaceOrObject(newEdge);
+
+    private EditOperation findDeletedEdge(Vertex targetVertexFrom, List<EditOperation> editOperations, Mapping mapping) {
+        Vertex sourceVertexFrom = mapping.getSource(targetVertexFrom);
+        for (EditOperation editOperation : editOperations) {
+            if (editOperation.getOperation() == EditOperation.Operation.DELETE_EDGE) {
+                Edge deletedEdge = editOperation.getSourceEdge();
+                if (deletedEdge.getFrom() == sourceVertexFrom) {
+                    return editOperation;
+                }
+            }
         }
+        return Assert.assertShouldNeverHappen();
     }
 
-    private void changedEdge(EditOperation editOperation) {
-        Edge newEdge = editOperation.getTargetEdge();
-        if (newEdge.getLabel().startsWith("type=")) {
-            typeEdgeChanged(editOperation);
-        }
-    }
 
     private void typeEdgeChanged(EditOperation editOperation) {
         Edge targetEdge = editOperation.getTargetEdge();
@@ -329,6 +384,18 @@ public class EditOperationAnalyzer {
 
     private boolean isNewObject(String name) {
         return objectDifferences.containsKey(name) && objectDifferences.get(name) instanceof ObjectAddition;
+    }
+
+    private boolean isNewFieldForExistingObject(String objectName, String fieldName) {
+        if (!objectDifferences.containsKey(objectName)) {
+            return false;
+        }
+        if (!(objectDifferences.get(objectName) instanceof ObjectModification)) {
+            return false;
+        }
+        ObjectModification objectModification = (ObjectModification) objectDifferences.get(objectName);
+        List<ObjectFieldAddition> newFields = objectModification.getDetails(ObjectFieldAddition.class);
+        return newFields.stream().anyMatch(detail -> detail.getName().equals(fieldName));
     }
 
     private boolean isDeletionObject(String name) {
@@ -460,9 +527,8 @@ public class EditOperationAnalyzer {
     }
 
     private void changedObject(EditOperation editOperation) {
-//        // object changes include: adding/removing Interface, adding/removing applied directives, changing name
         String objectName = editOperation.getTargetVertex().getName();
-//
+
         ObjectModification objectModification = new ObjectModification(objectName);
         objectDifferences.put(objectName, objectModification);
     }

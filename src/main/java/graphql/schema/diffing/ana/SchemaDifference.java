@@ -57,6 +57,10 @@ public interface SchemaDifference {
         public ObjectDeletion(String name) {
             this.name = name;
         }
+
+        public String getName() {
+            return name;
+        }
     }
 
     class ObjectModification implements SchemaModification, ObjectDifference {

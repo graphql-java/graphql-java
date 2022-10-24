@@ -128,7 +128,6 @@ class EditOperationAnalyzerTest extends Specification {
         }
         '''
         when:
-        when:
         def changes = changes(oldSdl, newSdl)
         then:
         changes.objectChanges["Query"] instanceof ObjectModification
@@ -137,7 +136,7 @@ class EditOperationAnalyzerTest extends Specification {
         fieldAdded[0].name == "newOne"
     }
 
-    def "Object added"() {
+    def "object added"() {
         given:
         def oldSdl = '''
         type Query {
@@ -157,6 +156,35 @@ class EditOperationAnalyzerTest extends Specification {
         def changes = changes(oldSdl, newSdl)
         then:
         changes.objectChanges["Foo"] instanceof ObjectAddition
+    }
+
+    def "object removed and field type changed"() {
+        given:
+        def oldSdl = '''
+        type Query {
+            foo: Foo
+        }
+        type Foo {
+            bar: String
+        }
+        '''
+        def newSdl = '''
+        type Query {
+            foo: String
+        }
+        '''
+        when:
+        def changes = changes(oldSdl, newSdl)
+        then:
+        changes.objectChanges["Foo"] instanceof ObjectDeletion
+        (changes.objectChanges["Foo"] as ObjectDeletion).name == "Foo"
+        changes.objectChanges["Query"] instanceof ObjectModification
+        def queryObjectModification = changes.objectChanges["Query"] as ObjectModification
+        queryObjectModification.details.size() == 1
+        queryObjectModification.details[0] instanceof ObjectFieldTypeModification
+        (queryObjectModification.details[0] as ObjectFieldTypeModification).oldType == "Foo"
+        (queryObjectModification.details[0] as ObjectFieldTypeModification).newType == "String"
+
     }
 
     def "new Interface introduced"() {
@@ -216,8 +244,10 @@ class EditOperationAnalyzerTest extends Specification {
         then:
         changes.interfaceChanges.size() == 1
         changes.interfaceChanges["Node"] instanceof InterfaceAddition
-        changes.objectChanges.size() == 1
+        changes.objectChanges.size() == 2
         changes.objectChanges["Foo"] instanceof ObjectAddition
+        changes.objectChanges["Query"] instanceof ObjectModification
+        (changes.objectChanges["Query"] as ObjectModification).getDetails()[0] instanceof ObjectFieldTypeModification
     }
 
     def "interfaced renamed"() {
