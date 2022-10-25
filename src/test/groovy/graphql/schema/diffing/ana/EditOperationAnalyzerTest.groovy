@@ -8,6 +8,31 @@ import static graphql.schema.diffing.ana.SchemaDifference.*
 
 class EditOperationAnalyzerTest extends Specification {
 
+    def "object renamed"() {
+        given:
+        def oldSdl = '''
+        type Query {
+            foo: String
+        }
+        '''
+        def newSdl = '''
+        schema {
+         query: MyQuery 
+        }
+        type MyQuery {
+            foo: String
+        }
+         
+        '''
+        when:
+        def changes = changes(oldSdl, newSdl)
+        then:
+        changes.objectChanges["Query"] === changes.objectChanges["MyQuery"]
+        changes.objectChanges["Query"] instanceof ObjectModification
+        (changes.objectChanges["Query"] as ObjectModification).oldName == "Query"
+        (changes.objectChanges["Query"] as ObjectModification).newName == "MyQuery"
+    }
+
     def "field renamed"() {
         given:
         def oldSdl = '''

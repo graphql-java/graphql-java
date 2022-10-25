@@ -672,10 +672,12 @@ public class EditOperationAnalyzer {
     }
 
     private void changedObject(EditOperation editOperation) {
-        String objectName = editOperation.getTargetVertex().getName();
+        String oldName = editOperation.getSourceVertex().getName();
+        String newName = editOperation.getTargetVertex().getName();
 
-        ObjectModification objectModification = new ObjectModification(objectName);
-        objectDifferences.put(objectName, objectModification);
+        ObjectModification objectModification = new ObjectModification(oldName,newName);
+        objectDifferences.put(oldName, objectModification);
+        objectDifferences.put(newName, objectModification);
     }
 
     private void changedInterface(EditOperation editOperation) {

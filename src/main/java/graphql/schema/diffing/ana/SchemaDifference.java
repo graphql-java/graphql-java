@@ -67,16 +67,19 @@ public interface SchemaDifference {
     class ObjectModification implements SchemaModification, ObjectDifference {
         private final String oldName;
         private final String newName;
+        private final boolean renamed;
         private final List<ObjectModificationDetail> details = new ArrayList<>();
 
         public ObjectModification(String oldName, String newName) {
             this.oldName = oldName;
             this.newName = newName;
+            this.renamed = oldName.equals(newName);
         }
 
         public ObjectModification(String newName) {
-            this.oldName = "";
+            this.oldName = newName;
             this.newName = newName;
+            this.renamed = false;
         }
 
         public List<ObjectModificationDetail> getDetails() {
