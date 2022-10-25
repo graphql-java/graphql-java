@@ -691,6 +691,7 @@ public class EditOperationAnalyzer {
 
         UnionModification objectModification = new UnionModification(oldUnionName, newUnionName);
         unionDifferences.put(oldUnionName, objectModification);
+        unionDifferences.put(newUnionName, objectModification);
     }
 //
 //    private void changedUnion(EditOperation editOperation) {

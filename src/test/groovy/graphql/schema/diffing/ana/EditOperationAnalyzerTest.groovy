@@ -114,6 +114,7 @@ class EditOperationAnalyzerTest extends Specification {
         when:
         def changes = changes(oldSdl, newSdl)
         then:
+        changes.unionChanges["X"] === changes.unionChanges["U"]
         changes.unionChanges["U"] instanceof UnionModification
         (changes.unionChanges["U"] as UnionModification).oldName == "U"
         (changes.unionChanges["U"] as UnionModification).newName == "X"
@@ -150,6 +151,40 @@ class EditOperationAnalyzerTest extends Specification {
         unionDiff.oldName == "U"
         unionDiff.newName == "X"
         unionDiff.getDetails(UnionMemberDeletion)[0].name == "B"
+    }
+
+    def "union renamed and member added"() {
+        given:
+        def oldSdl = '''
+        type Query {
+            u: U 
+        }
+        union U = A 
+        type A {
+            foo: String
+        } 
+
+        '''
+        def newSdl = '''
+        type Query {
+            u: X
+        }
+        union X = A | B
+        type A {
+            foo: String
+        } 
+        type B {
+            foo: String
+        } 
+        '''
+        when:
+        def changes = changes(oldSdl, newSdl)
+        then:
+        changes.unionChanges["U"] instanceof UnionModification
+        def unionDiff = changes.unionChanges["U"] as UnionModification
+        unionDiff.oldName == "U"
+        unionDiff.newName == "X"
+        unionDiff.getDetails(UnionMemberAddition)[0].name == "B"
     }
 
     def "union member added"() {
