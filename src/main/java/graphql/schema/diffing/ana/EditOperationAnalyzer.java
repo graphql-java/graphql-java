@@ -9,7 +9,6 @@ import graphql.schema.diffing.Mapping;
 import graphql.schema.diffing.SchemaGraph;
 import graphql.schema.diffing.Vertex;
 import graphql.schema.idl.ScalarInfo;
-import graphql.util.EscapeUtil;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -84,7 +83,7 @@ public class EditOperationAnalyzer {
         }
         handleTypeChanges(editOperations, mapping);
         handleImplementsChanges(editOperations, mapping);
-        handleUnionMemberChanges(editOperations,mapping);
+        handleUnionMemberChanges(editOperations, mapping);
 
         return new EditOperationAnalysisResult(objectDifferences, interfaceDifferences, unionDifferences, enumDifferences, inputObjectDifferences, scalarDifferences);
     }
@@ -109,11 +108,17 @@ public class EditOperationAnalyzer {
 
     private void handleUnionMemberChanges(List<EditOperation> editOperations, Mapping mapping) {
         for (EditOperation editOperation : editOperations) {
-            Edge newEdge = editOperation.getTargetEdge();
             switch (editOperation.getOperation()) {
                 case INSERT_EDGE:
+                    Edge newEdge = editOperation.getTargetEdge();
                     if (newEdge.getFrom().isOfType(SchemaGraph.UNION)) {
                         handleUnionMemberAdded(editOperation);
+                    }
+                    break;
+                case DELETE_EDGE:
+                    Edge oldEdge = editOperation.getSourceEdge();
+                    if (oldEdge.getFrom().isOfType(SchemaGraph.UNION)) {
+                        handleUnionMemberDeleted(editOperation);
                     }
                     break;
             }
@@ -136,12 +141,23 @@ public class EditOperationAnalyzer {
     private void handleUnionMemberAdded(EditOperation editOperation) {
         Edge newEdge = editOperation.getTargetEdge();
         Vertex union = newEdge.getFrom();
-        if(isNewUnion(union.getName())) {
+        if (isUnionAdded(union.getName())) {
             return;
         }
         Vertex newMemberObject = newEdge.getTo();
         UnionModification unionModification = getUnionModification(union.getName());
         unionModification.getDetails().add(new UnionMemberAddition(newMemberObject.getName()));
+    }
+
+    private void handleUnionMemberDeleted(EditOperation editOperation) {
+        Edge deletedEdge = editOperation.getSourceEdge();
+        Vertex union = deletedEdge.getFrom();
+        if (isUnionDeleted(union.getName())) {
+            return;
+        }
+        Vertex memberObject = deletedEdge.getTo();
+        UnionModification unionModification = getUnionModification(union.getName());
+        unionModification.getDetails().add(new UnionMemberDeletion(memberObject.getName()));
     }
 
 
@@ -160,7 +176,7 @@ public class EditOperationAnalyzer {
         Vertex field = editOperation.getTargetVertex();
         Vertex fieldsContainerForField = newSchemaGraph.getFieldsContainerForField(field);
         if (fieldsContainerForField.isOfType(SchemaGraph.OBJECT)) {
-            if (isNewObject(fieldsContainerForField.getName())) {
+            if (isObjectAdded(fieldsContainerForField.getName())) {
                 return;
             }
             ObjectModification objectModification = getObjectModification(fieldsContainerForField.getName());
@@ -273,11 +289,11 @@ public class EditOperationAnalyzer {
         if (objectOrInterface.isOfType(SchemaGraph.OBJECT)) {
             Vertex object = objectOrInterface;
             // if the whole object is new we are done
-            if (isNewObject(object.getName())) {
+            if (isObjectAdded(object.getName())) {
                 return;
             }
             // if the field is new, we are done too
-            if (isNewFieldForExistingObject(object.getName(), field.getName())) {
+            if (isFieldNewForExistingObject(object.getName(), field.getName())) {
                 return;
             }
             String newType = getTypeFromEdgeLabel(editOperation.getTargetEdge());
@@ -291,7 +307,7 @@ public class EditOperationAnalyzer {
         } else {
             assertTrue(objectOrInterface.isOfType(SchemaGraph.INTERFACE));
             Vertex interfaze = objectOrInterface;
-            if (isNewInterface(interfaze.getName())) {
+            if (isInterfaceAdded(interfaze.getName())) {
                 return;
             }
         }
@@ -386,7 +402,7 @@ public class EditOperationAnalyzer {
     private void newInterfaceAddedToInterfaceOrObject(Edge newEdge) {
         Vertex from = newEdge.getFrom();
         if (from.isOfType(SchemaGraph.OBJECT)) {
-            if (isNewObject(from.getName())) {
+            if (isObjectAdded(from.getName())) {
                 return;
             }
             Vertex objectVertex = newEdge.getFrom();
@@ -395,7 +411,7 @@ public class EditOperationAnalyzer {
             getObjectModification(objectVertex.getName()).getDetails().add(objectInterfaceImplementationAddition);
 
         } else if (from.isOfType(SchemaGraph.INTERFACE)) {
-            if (isNewInterface(from.getName())) {
+            if (isInterfaceAdded(from.getName())) {
                 return;
             }
             Vertex interfaceFromVertex = newEdge.getFrom();
@@ -408,15 +424,19 @@ public class EditOperationAnalyzer {
 
     }
 
-    private boolean isNewObject(String name) {
+    private boolean isObjectAdded(String name) {
         return objectDifferences.containsKey(name) && objectDifferences.get(name) instanceof ObjectAddition;
     }
 
-    private boolean isNewUnion(String name) {
+    private boolean isUnionAdded(String name) {
         return unionDifferences.containsKey(name) && unionDifferences.get(name) instanceof UnionAddition;
     }
 
-    private boolean isNewFieldForExistingObject(String objectName, String fieldName) {
+    private boolean isUnionDeleted(String name) {
+        return unionDifferences.containsKey(name) && unionDifferences.get(name) instanceof UnionDeletion;
+    }
+
+    private boolean isFieldNewForExistingObject(String objectName, String fieldName) {
         if (!objectDifferences.containsKey(objectName)) {
             return false;
         }
@@ -428,11 +448,11 @@ public class EditOperationAnalyzer {
         return newFields.stream().anyMatch(detail -> detail.getName().equals(fieldName));
     }
 
-    private boolean isDeletionObject(String name) {
+    private boolean isObjectDeleted(String name) {
         return objectDifferences.containsKey(name) && objectDifferences.get(name) instanceof ObjectDeletion;
     }
 
-    private boolean isNewInterface(String name) {
+    private boolean isInterfaceAdded(String name) {
         return interfaceDifferences.containsKey(name) && interfaceDifferences.get(name) instanceof InterfaceAddition;
     }
 
@@ -443,6 +463,7 @@ public class EditOperationAnalyzer {
         assertTrue(objectDifferences.get(newName) instanceof ObjectModification);
         return (ObjectModification) objectDifferences.get(newName);
     }
+
     private UnionModification getUnionModification(String newName) {
         if (!unionDifferences.containsKey(newName)) {
             unionDifferences.put(newName, new UnionModification(newName));

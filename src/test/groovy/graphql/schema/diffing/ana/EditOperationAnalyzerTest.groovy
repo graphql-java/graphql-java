@@ -121,6 +121,41 @@ class EditOperationAnalyzerTest extends Specification {
         def changes = changes(oldSdl, newSdl)
         then:
         changes.unionChanges["U"] instanceof UnionModification
+        def unionModification = changes.unionChanges["U"] as UnionModification
+        unionModification.getDetails(UnionMemberAddition)[0].name == "C"
+    }
+
+    def "union member deleted"() {
+        given:
+        def oldSdl = '''
+        type Query {
+            hello: String
+            u: U
+        }
+        union U = A | B
+        type A {
+            foo: String
+        } 
+        type B {
+            foo: String
+        } 
+        '''
+        def newSdl = '''
+        type Query {
+            hello: String
+            u: U
+        }
+        union U = A 
+        type A {
+            foo: String
+        } 
+        '''
+        when:
+        def changes = changes(oldSdl, newSdl)
+        then:
+        changes.unionChanges["U"] instanceof UnionModification
+        def unionModification = changes.unionChanges["U"] as UnionModification
+        unionModification.getDetails(UnionMemberDeletion)[0].name == "B"
     }
 
     def "field type modified"() {
