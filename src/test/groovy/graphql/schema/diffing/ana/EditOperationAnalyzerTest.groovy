@@ -634,6 +634,48 @@ class EditOperationAnalyzerTest extends Specification {
         (changes.inputObjectChanges["I"] as InputObjectDeletion).getName() == "I"
     }
 
+    def "directive added"() {
+        given:
+        def oldSdl = '''
+        type Query {
+            foo: String
+        }
+        '''
+        def newSdl = '''
+        type Query {
+            foo: String
+        }
+        directive @d on FIELD
+        '''
+        when:
+        def changes = changes(oldSdl, newSdl)
+        then:
+        changes.directiveChanges["d"] instanceof DirectiveAddition
+        (changes.directiveChanges["d"] as DirectiveAddition).getName() == "d"
+    }
+
+    def "directive deleted"() {
+        given:
+        def oldSdl = '''
+        type Query {
+            foo: String
+        }
+        directive @d on FIELD
+        '''
+        def newSdl = '''
+        type Query {
+            foo: String
+        }
+        '''
+        when:
+        def changes = changes(oldSdl, newSdl)
+        then:
+        changes.directiveChanges["d"] instanceof DirectiveDeletion
+        (changes.directiveChanges["d"] as DirectiveDeletion).getName() == "d"
+    }
+
+
+
     EditOperationAnalysisResult changes(
             String oldSdl,
             String newSdl

@@ -50,6 +50,8 @@ public class EditOperationAnalyzer {
     private Map<String, InputObjectDifference> inputObjectDifferences = new LinkedHashMap<>();
     private Map<String, ScalarDifference> scalarDifferences = new LinkedHashMap<>();
 
+    private Map<String, DirectiveDifference> directiveDifferences = new LinkedHashMap<>();
+
     public EditOperationAnalyzer(GraphQLSchema oldSchema,
                                  GraphQLSchema newSchema,
                                  SchemaGraph oldSchemaGraph,
@@ -86,7 +88,14 @@ public class EditOperationAnalyzer {
         handleUnionMemberChanges(editOperations, mapping);
         handleEnumValuesChanges(editOperations,mapping);
 
-        return new EditOperationAnalysisResult(objectDifferences, interfaceDifferences, unionDifferences, enumDifferences, inputObjectDifferences, scalarDifferences);
+        return new EditOperationAnalysisResult(
+                objectDifferences,
+                interfaceDifferences,
+                unionDifferences,
+                enumDifferences,
+                inputObjectDifferences,
+                scalarDifferences,
+                directiveDifferences);
     }
 
     private void handleTypeChanges(List<EditOperation> editOperations, Mapping mapping) {
@@ -263,6 +272,9 @@ public class EditOperationAnalyzer {
             case SchemaGraph.SCALAR:
                 addedScalar(editOperation);
                 break;
+            case SchemaGraph.DIRECTIVE:
+                addedDirective(editOperation);
+                break;
         }
 
     }
@@ -285,7 +297,10 @@ public class EditOperationAnalyzer {
                 removedEnum(editOperation);
                 break;
             case SchemaGraph.SCALAR:
-                removedScalar(editOperation);
+                deletedScalar(editOperation);
+                break;
+            case SchemaGraph.DIRECTIVE:
+                deletedDirective(editOperation);
                 break;
         }
     }
@@ -582,6 +597,14 @@ public class EditOperationAnalyzer {
         scalarDifferences.put(scalarName, addition);
     }
 
+    private void addedDirective(EditOperation editOperation) {
+        String directiveName= editOperation.getTargetVertex().getName();
+
+        DirectiveAddition addition = new DirectiveAddition(directiveName);
+        directiveDifferences.put(directiveName, addition);
+    }
+
+
 
     private void removedObject(EditOperation editOperation) {
         String objectName = editOperation.getSourceVertex().getName();
@@ -618,11 +641,18 @@ public class EditOperationAnalyzer {
         enumDifferences.put(enumName, deletion);
     }
 
-    private void removedScalar(EditOperation editOperation) {
+    private void deletedScalar(EditOperation editOperation) {
         String scalarName = editOperation.getSourceVertex().getName();
 
         ScalarDeletion change = new ScalarDeletion(scalarName);
         scalarDifferences.put(scalarName, change);
+    }
+
+    private void deletedDirective(EditOperation editOperation) {
+        String directiveName = editOperation.getSourceVertex().getName();
+
+        DirectiveDeletion change = new DirectiveDeletion(directiveName);
+        directiveDifferences.put(directiveName, change);
     }
 
     private void removedArgument(EditOperation editOperation) {

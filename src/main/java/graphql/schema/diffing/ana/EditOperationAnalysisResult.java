@@ -13,18 +13,22 @@ public class EditOperationAnalysisResult {
     private final Map<String, SchemaDifference.InputObjectDifference> inputObjectChanges;
     private final Map<String, SchemaDifference.ScalarDifference> scalarChanges;
 
+    private final Map<String, SchemaDifference.DirectiveDifference> directiveChanges;
+
     public EditOperationAnalysisResult(Map<String, SchemaDifference.ObjectDifference> objectChanges,
                                        Map<String, SchemaDifference.InterfaceDifference> interfaceChanges,
                                        Map<String, SchemaDifference.UnionDifference> unionChanges,
                                        Map<String, SchemaDifference.EnumDifference> enumChanges,
                                        Map<String, SchemaDifference.InputObjectDifference> inputObjectChanges,
-                                       Map<String, SchemaDifference.ScalarDifference> scalarChanges) {
+                                       Map<String, SchemaDifference.ScalarDifference> scalarChanges,
+                                       Map<String, SchemaDifference.DirectiveDifference> directiveChanges) {
         this.objectChanges = objectChanges;
         this.interfaceChanges = interfaceChanges;
         this.unionChanges = unionChanges;
         this.enumChanges = enumChanges;
         this.inputObjectChanges = inputObjectChanges;
         this.scalarChanges = scalarChanges;
+        this.directiveChanges = directiveChanges;
     }
 
     public Map<String, SchemaDifference.ObjectDifference> getObjectChanges() {
@@ -49,5 +53,9 @@ public class EditOperationAnalysisResult {
 
     public Map<String, SchemaDifference.ScalarDifference> getScalarChanges() {
         return scalarChanges;
+    }
+
+    public Map<String, SchemaDifference.DirectiveDifference> getDirectiveChanges() {
+        return directiveChanges;
     }
 }
