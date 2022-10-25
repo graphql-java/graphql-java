@@ -84,27 +84,40 @@ public class PropertyFetchingImpl {
             return null;
         }
         //
-        // ok we haven't cached it and we haven't negatively cached it so we have to find the POJO method which is the most
+        // ok we haven't cached it, and we haven't negatively cached it, so we have to find the POJO method which is the most
         // expensive operation here
         //
         boolean dfeInUse = singleArgumentValue != null;
+        //
+        // try by record name - object.propertyName()
         try {
-            MethodFinder methodFinder = (root, methodName) -> findPubliclyAccessibleMethod(cacheKey, root, methodName, dfeInUse);
+            MethodFinder methodFinder = (rootClass, methodName) -> findRecordMethod(cacheKey, rootClass, methodName);
+            return getPropertyViaRecordMethod(object, propertyName, methodFinder, singleArgumentValue);
+        } catch (NoSuchMethodException ignored) {
+        }
+        //
+        // try by public getters name -  object.getPropertyName()
+        try {
+            MethodFinder methodFinder = (rootClass, methodName) -> findPubliclyAccessibleMethod(cacheKey, rootClass, methodName, dfeInUse);
             return getPropertyViaGetterMethod(object, propertyName, graphQLType, methodFinder, singleArgumentValue);
         } catch (NoSuchMethodException ignored) {
-            try {
-                MethodFinder methodFinder = (aClass, methodName) -> findViaSetAccessible(cacheKey, aClass, methodName, dfeInUse);
-                return getPropertyViaGetterMethod(object, propertyName, graphQLType, methodFinder, singleArgumentValue);
-            } catch (NoSuchMethodException ignored2) {
-                try {
-                    return getPropertyViaFieldAccess(cacheKey, object, propertyName);
-                } catch (FastNoSuchMethodException e) {
-                    // we have nothing to ask for and we have exhausted our lookup strategies
-                    putInNegativeCache(cacheKey);
-                    return null;
-                }
-            }
         }
+        //
+        // try by accessible getters name -  object.getPropertyName()
+        try {
+            MethodFinder methodFinder = (aClass, methodName) -> findViaSetAccessible(cacheKey, aClass, methodName, dfeInUse);
+            return getPropertyViaGetterMethod(object, propertyName, graphQLType, methodFinder, singleArgumentValue);
+        } catch (NoSuchMethodException ignored) {
+        }
+        //
+        // try by field name -  object.getPropertyName()
+        try {
+            return getPropertyViaFieldAccess(cacheKey, object, propertyName);
+        } catch (NoSuchMethodException ignored) {
+        }
+        // we have nothing to ask for, and we have exhausted our lookup strategies
+        putInNegativeCache(cacheKey);
+        return null;
     }
 
     private boolean isNegativelyCached(CacheKey key) {
@@ -122,6 +135,11 @@ public class PropertyFetchingImpl {
 
     private interface MethodFinder {
         Method apply(Class<?> aClass, String s) throws NoSuchMethodException;
+    }
+
+    private Object getPropertyViaRecordMethod(Object object, String propertyName, MethodFinder methodFinder, Object singleArgumentValue) throws NoSuchMethodException {
+        Method method = methodFinder.apply(object.getClass(), propertyName);
+        return invokeMethod(object, singleArgumentValue, method, takesSingleArgumentTypeAsOnlyArgument(method));
     }
 
     private Object getPropertyViaGetterMethod(Object object, String propertyName, GraphQLType graphQLType, MethodFinder methodFinder, Object singleArgumentValue) throws NoSuchMethodException {
@@ -177,6 +195,28 @@ public class PropertyFetchingImpl {
         }
         assert rootClass != null;
         return rootClass.getMethod(methodName);
+    }
+
+    /*
+       https://docs.oracle.com/en/java/javase/15/language/records.html
+
+       A record class declares a sequence of fields, and then the appropriate accessors, constructors, equals, hashCode, and toString methods are created automatically.
+
+       Records cannot extend any class - so we need only check the root class for a publicly declared method with the propertyName
+     */
+    private Method findRecordMethod(CacheKey cacheKey, Class<?> rootClass, String methodName) throws NoSuchMethodException {
+        if (Modifier.isPublic(rootClass.getModifiers())) {
+            Method method = rootClass.getDeclaredMethod(methodName);
+            int modifiers = method.getModifiers();
+            if (Modifier.isPublic(modifiers) &&
+                    method.getParameterCount() == 0 &&
+                    !Modifier.isStatic(modifiers) &&
+                    !Modifier.isAbstract(modifiers)) {
+                METHOD_CACHE.putIfAbsent(cacheKey, new CachedMethod(method));
+                return method;
+            }
+        }
+        throw new FastNoSuchMethodException(methodName);
     }
 
     private Method findViaSetAccessible(CacheKey cacheKey, Class<?> aClass, String methodName, boolean dfeInUse) throws NoSuchMethodException {
@@ -304,8 +344,12 @@ public class PropertyFetchingImpl {
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) return true;
-            if (!(o instanceof CacheKey)) return false;
+            if (this == o) {
+                return true;
+            }
+            if (!(o instanceof CacheKey)) {
+                return false;
+            }
             CacheKey cacheKey = (CacheKey) o;
             return Objects.equals(classLoader, cacheKey.classLoader) && Objects.equals(className, cacheKey.className) && Objects.equals(propertyName, cacheKey.propertyName);
         }
@@ -322,10 +366,10 @@ public class PropertyFetchingImpl {
         @Override
         public String toString() {
             return "CacheKey{" +
-                "classLoader=" + classLoader +
-                ", className='" + className + '\'' +
-                ", propertyName='" + propertyName + '\'' +
-                '}';
+                    "classLoader=" + classLoader +
+                    ", className='" + className + '\'' +
+                    ", propertyName='" + propertyName + '\'' +
+                    '}';
         }
     }
 
