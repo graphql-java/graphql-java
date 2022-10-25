@@ -452,6 +452,103 @@ class EditOperationAnalyzerTest extends Specification {
 
     }
 
+    def "enum added"() {
+        given:
+        def oldSdl = '''
+        type Query {
+            foo: String
+        }
+        '''
+        def newSdl = '''
+        type Query {
+            foo: E
+        }
+        enum E {
+            A, B
+        }
+        '''
+        when:
+        def changes = changes(oldSdl, newSdl)
+        then:
+        changes.enumChanges["E"] instanceof EnumAddition
+        (changes.enumChanges["E"] as EnumAddition).getName() == "E"
+    }
+
+    def "enum deleted"() {
+        given:
+        def oldSdl = '''
+        type Query {
+            foo: E
+        }
+        enum E {
+            A, B
+        }
+        '''
+        def newSdl = '''
+        type Query {
+            foo: String
+        }
+        '''
+        when:
+        def changes = changes(oldSdl, newSdl)
+        then:
+        changes.enumChanges["E"] instanceof EnumDeletion
+        (changes.enumChanges["E"] as EnumDeletion).getName() == "E"
+    }
+
+
+
+    def "enum value added"() {
+        given:
+        def oldSdl = '''
+        type Query {
+            e: E
+        }
+        enum E {
+            A
+        }
+        '''
+        def newSdl = '''
+        type Query {
+            e: E
+        }
+        enum E {
+            A, B
+        }
+        '''
+        when:
+        def changes = changes(oldSdl, newSdl)
+        then:
+        changes.enumChanges["E"] instanceof EnumModification
+        def enumModification = changes.enumChanges["E"] as EnumModification
+        enumModification.getDetails(EnumValueAddition)[0].name == "B"
+    }
+
+    def "enum value deleted"() {
+        given:
+        def oldSdl = '''
+        type Query {
+            e: E
+        }
+        enum E {
+            A,B
+        }
+        '''
+        def newSdl = '''
+        type Query {
+            e: E
+        }
+        enum E {
+            A
+        }
+        '''
+        when:
+        def changes = changes(oldSdl, newSdl)
+        then:
+        changes.enumChanges["E"] instanceof EnumModification
+        def enumModification = changes.enumChanges["E"] as EnumModification
+        enumModification.getDetails(EnumValueDeletion)[0].name == "B"
+    }
 
     EditOperationAnalysisResult changes(
             String oldSdl,

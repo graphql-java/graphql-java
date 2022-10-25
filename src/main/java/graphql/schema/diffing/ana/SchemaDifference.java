@@ -626,6 +626,10 @@ public interface SchemaDifference {
             this.oldName = oldName;
             this.newName = newName;
         }
+        public EnumModification(String newName) {
+            this.oldName = "";
+            this.newName = newName;
+        }
 
         public String getNewName() {
             return newName;
@@ -649,10 +653,10 @@ public interface SchemaDifference {
 
     }
 
-    class EnumMemberDeletion implements EnumModificationDetail {
+    class EnumValueDeletion implements EnumModificationDetail {
         private final String name;
 
-        public EnumMemberDeletion(String name) {
+        public EnumValueDeletion(String name) {
             this.name = name;
         }
 
@@ -661,10 +665,10 @@ public interface SchemaDifference {
         }
     }
 
-    class EnumMemberAddition implements EnumModificationDetail {
+    class EnumValueAddition implements EnumModificationDetail {
         private final String name;
 
-        public EnumMemberAddition(String name) {
+        public EnumValueAddition(String name) {
             this.name = name;
         }
 

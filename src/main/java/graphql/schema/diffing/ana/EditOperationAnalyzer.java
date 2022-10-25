@@ -84,6 +84,7 @@ public class EditOperationAnalyzer {
         handleTypeChanges(editOperations, mapping);
         handleImplementsChanges(editOperations, mapping);
         handleUnionMemberChanges(editOperations, mapping);
+        handleEnumValuesChanges(editOperations,mapping);
 
         return new EditOperationAnalysisResult(objectDifferences, interfaceDifferences, unionDifferences, enumDifferences, inputObjectDifferences, scalarDifferences);
     }
@@ -124,6 +125,24 @@ public class EditOperationAnalyzer {
             }
         }
     }
+    private void handleEnumValuesChanges(List<EditOperation> editOperations, Mapping mapping) {
+        for (EditOperation editOperation : editOperations) {
+            switch (editOperation.getOperation()) {
+                case INSERT_EDGE:
+                    Edge newEdge = editOperation.getTargetEdge();
+                    if (newEdge.getFrom().isOfType(SchemaGraph.ENUM)) {
+                        handleEnumValueAdded(editOperation);
+                    }
+                    break;
+                case DELETE_EDGE:
+                    Edge oldEdge = editOperation.getSourceEdge();
+                    if (oldEdge.getFrom().isOfType(SchemaGraph.ENUM)) {
+                        handleEnumValueDeleted(editOperation);
+                    }
+                    break;
+            }
+        }
+    }
 
     private void handleImplementsChanges(List<EditOperation> editOperations, Mapping mapping) {
         for (EditOperation editOperation : editOperations) {
@@ -158,6 +177,28 @@ public class EditOperationAnalyzer {
         Vertex memberObject = deletedEdge.getTo();
         UnionModification unionModification = getUnionModification(union.getName());
         unionModification.getDetails().add(new UnionMemberDeletion(memberObject.getName()));
+    }
+
+    private void handleEnumValueAdded(EditOperation editOperation) {
+        Edge newEdge = editOperation.getTargetEdge();
+        Vertex enumVertex = newEdge.getFrom();
+        if (isEnumAdded(enumVertex.getName())) {
+            return;
+        }
+        Vertex newValue = newEdge.getTo();
+        EnumModification enumModification = getEnumModification(enumVertex.getName());
+        enumModification.getDetails().add(new EnumValueAddition(newValue.getName()));
+    }
+
+    private void handleEnumValueDeleted(EditOperation editOperation) {
+        Edge deletedEdge = editOperation.getSourceEdge();
+        Vertex enumVertex = deletedEdge.getFrom();
+        if (isEnumDeleted(enumVertex.getName())) {
+            return;
+        }
+        Vertex value = deletedEdge.getTo();
+        EnumModification enumModification = getEnumModification(enumVertex.getName());
+        enumModification.getDetails().add(new EnumValueDeletion(value.getName()));
     }
 
 
@@ -435,6 +476,12 @@ public class EditOperationAnalyzer {
     private boolean isUnionDeleted(String name) {
         return unionDifferences.containsKey(name) && unionDifferences.get(name) instanceof UnionDeletion;
     }
+    private boolean isEnumDeleted(String name) {
+        return enumDifferences.containsKey(name) && enumDifferences.get(name) instanceof EnumDeletion;
+    }
+    private boolean isEnumAdded(String name) {
+        return enumDifferences.containsKey(name) && enumDifferences.get(name) instanceof EnumAddition;
+    }
 
     private boolean isFieldNewForExistingObject(String objectName, String fieldName) {
         if (!objectDifferences.containsKey(objectName)) {
@@ -470,6 +517,14 @@ public class EditOperationAnalyzer {
         }
         assertTrue(unionDifferences.get(newName) instanceof UnionModification);
         return (UnionModification) unionDifferences.get(newName);
+    }
+
+    private EnumModification getEnumModification(String newName) {
+        if (!enumDifferences.containsKey(newName)) {
+            enumDifferences.put(newName, new EnumModification(newName));
+        }
+        assertTrue(enumDifferences.get(newName) instanceof EnumModification);
+        return (EnumModification) enumDifferences.get(newName);
     }
 
     private InterfaceModification getInterfaceModification(String newName) {
