@@ -58,7 +58,7 @@ class EditOperationAnalyzerTest extends Specification {
         (changes.unionChanges["U"] as UnionAddition).name == "U"
     }
 
-    def "union removed"() {
+    def "union deleted"() {
         given:
         def oldSdl = '''
         type Query {
@@ -83,6 +83,73 @@ class EditOperationAnalyzerTest extends Specification {
         then:
         changes.unionChanges["U"] instanceof UnionDeletion
         (changes.unionChanges["U"] as UnionDeletion).name == "U"
+    }
+
+    def "union renamed"() {
+        given:
+        def oldSdl = '''
+        type Query {
+            u: U
+        }
+        union U = A | B
+        type A {
+            foo: String
+        } 
+        type B {
+            foo: String
+        } 
+        '''
+        def newSdl = '''
+        type Query {
+            u: X 
+        }
+        union X = A | B
+        type A {
+            foo: String
+        } 
+        type B {
+            foo: String
+        } 
+        '''
+        when:
+        def changes = changes(oldSdl, newSdl)
+        then:
+        changes.unionChanges["U"] instanceof UnionModification
+        (changes.unionChanges["U"] as UnionModification).oldName == "U"
+        (changes.unionChanges["U"] as UnionModification).newName == "X"
+    }
+
+    def "union renamed and member removed"() {
+        given:
+        def oldSdl = '''
+        type Query {
+            u: U
+        }
+        union U = A | B
+        type A {
+            foo: String
+        } 
+        type B {
+            foo: String
+        } 
+        '''
+        def newSdl = '''
+        type Query {
+            u: X 
+        }
+        union X = A 
+        type A {
+            foo: String
+        } 
+        '''
+        when:
+        def changes = changes(oldSdl, newSdl)
+        then:
+        changes.unionChanges["U"] instanceof UnionModification
+        def unionDiff = changes.unionChanges["U"] as UnionModification
+        unionDiff.oldName == "U"
+        unionDiff.newName == "X"
+        unionDiff.getDetails(UnionMemberDeletion)[0].name == "B"
     }
 
     def "union member added"() {

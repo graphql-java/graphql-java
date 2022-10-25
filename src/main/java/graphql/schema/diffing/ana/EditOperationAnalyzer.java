@@ -86,7 +86,7 @@ public class EditOperationAnalyzer {
         handleTypeChanges(editOperations, mapping);
         handleImplementsChanges(editOperations, mapping);
         handleUnionMemberChanges(editOperations, mapping);
-        handleEnumValuesChanges(editOperations,mapping);
+        handleEnumValuesChanges(editOperations, mapping);
 
         return new EditOperationAnalysisResult(
                 objectDifferences,
@@ -134,6 +134,7 @@ public class EditOperationAnalyzer {
             }
         }
     }
+
     private void handleEnumValuesChanges(List<EditOperation> editOperations, Mapping mapping) {
         for (EditOperation editOperation : editOperations) {
             switch (editOperation.getOperation()) {
@@ -313,9 +314,9 @@ public class EditOperationAnalyzer {
             case SchemaGraph.INTERFACE:
                 changedInterface(editOperation);
                 break;
-//            case SchemaGraph.UNION:
-//                changedUnion(editOperation);
-//                break;
+            case SchemaGraph.UNION:
+                changedUnion(editOperation);
+                break;
 //            case SchemaGraph.INPUT_OBJECT:
 //                changedInputObject(editOperation);
 //                break;
@@ -491,9 +492,11 @@ public class EditOperationAnalyzer {
     private boolean isUnionDeleted(String name) {
         return unionDifferences.containsKey(name) && unionDifferences.get(name) instanceof UnionDeletion;
     }
+
     private boolean isEnumDeleted(String name) {
         return enumDifferences.containsKey(name) && enumDifferences.get(name) instanceof EnumDeletion;
     }
+
     private boolean isEnumAdded(String name) {
         return enumDifferences.containsKey(name) && enumDifferences.get(name) instanceof EnumAddition;
     }
@@ -598,12 +601,11 @@ public class EditOperationAnalyzer {
     }
 
     private void addedDirective(EditOperation editOperation) {
-        String directiveName= editOperation.getTargetVertex().getName();
+        String directiveName = editOperation.getTargetVertex().getName();
 
         DirectiveAddition addition = new DirectiveAddition(directiveName);
         directiveDifferences.put(directiveName, addition);
     }
-
 
 
     private void removedObject(EditOperation editOperation) {
@@ -681,6 +683,14 @@ public class EditOperationAnalyzer {
         InterfaceModification interfaceModification = new InterfaceModification(interfaceName);
         // we store the modification against the new name
         interfaceDifferences.put(interfaceName, interfaceModification);
+    }
+
+    private void changedUnion(EditOperation editOperation) {
+        String newUnionName = editOperation.getTargetVertex().getName();
+        String oldUnionName = editOperation.getSourceVertex().getName();
+
+        UnionModification objectModification = new UnionModification(oldUnionName, newUnionName);
+        unionDifferences.put(oldUnionName, objectModification);
     }
 //
 //    private void changedUnion(EditOperation editOperation) {

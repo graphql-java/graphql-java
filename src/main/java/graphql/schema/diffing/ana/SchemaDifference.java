@@ -5,6 +5,7 @@ import graphql.util.FpKit;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Any kind of difference between two schemas is a SchemaDifference.
@@ -480,17 +481,20 @@ public interface SchemaDifference {
     class UnionModification implements SchemaModification, UnionDifference {
         private final String oldName;
         private final String newName;
+        private final boolean nameChanged;
 
         private final List<UnionModificationDetail> details = new ArrayList<>();
 
         public UnionModification(String oldName, String newName) {
             this.oldName = oldName;
             this.newName = newName;
+            this.nameChanged = oldName.equals(newName);
         }
 
         public UnionModification(String newName) {
-            this.oldName = "";
+            this.oldName = newName;
             this.newName = newName;
+            this.nameChanged = false;
         }
 
         public String getNewName() {
@@ -509,6 +513,9 @@ public interface SchemaDifference {
             return (List) FpKit.filterList(details, clazz::isInstance);
         }
 
+        public boolean isNameChanged() {
+            return nameChanged;
+        }
     }
 
     interface UnionModificationDetail {
@@ -626,6 +633,7 @@ public interface SchemaDifference {
             this.oldName = oldName;
             this.newName = newName;
         }
+
         public EnumModification(String newName) {
             this.oldName = "";
             this.newName = newName;
