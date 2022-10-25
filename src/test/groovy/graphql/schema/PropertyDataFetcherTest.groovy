@@ -104,6 +104,13 @@ class PropertyDataFetcherTest extends Specification {
         then:
         result == "recordProperty"
 
+        // caching works
+        when:
+        fetcher = new PropertyDataFetcher("recordProperty")
+        result = fetcher.get(environment)
+        then:
+        result == "recordProperty"
+
         // recordArgumentMethod will not work because it takes a parameter
         when:
         fetcher = new PropertyDataFetcher("recordArgumentMethod")

@@ -56,7 +56,7 @@ public class PropertyFetchingImpl {
         }
 
         CacheKey cacheKey = mkCacheKey(object, propertyName);
-        // lets try positive cache mechanisms first.  If we have seen the method or field before
+        // let's try positive cache mechanisms first.  If we have seen the method or field before
         // then we invoke it directly without burning any cycles doing reflection.
         CachedMethod cachedMethod = METHOD_CACHE.get(cacheKey);
         if (cachedMethod != null) {
@@ -72,9 +72,9 @@ public class PropertyFetchingImpl {
         }
 
         //
-        // if we have tried all strategies before and they have all failed then we negatively cache
+        // if we have tried all strategies before, and they have all failed then we negatively cache
         // the cacheKey and assume that it's never going to turn up.  This shortcuts the property lookup
-        // in systems where there was a `foo` graphql property but they never provided an POJO
+        // in systems where there was a `foo` graphql property, but they never provided an POJO
         // version of `foo`.
         //
         // we do this second because we believe in the positive cached version will mostly prevail
@@ -387,7 +387,6 @@ public class PropertyFetchingImpl {
         return Comparator.comparingInt(Method::getParameterCount).reversed();
     }
 
-    @SuppressWarnings("serial")
     private static class FastNoSuchMethodException extends NoSuchMethodException {
         public FastNoSuchMethodException(String methodName) {
             super(methodName);
