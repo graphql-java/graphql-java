@@ -550,6 +550,90 @@ class EditOperationAnalyzerTest extends Specification {
         enumModification.getDetails(EnumValueDeletion)[0].name == "B"
     }
 
+    def "scalar added"() {
+        given:
+        def oldSdl = '''
+        type Query {
+            foo: String
+        }
+        '''
+        def newSdl = '''
+        type Query {
+            foo: E
+        }
+        scalar E
+        '''
+        when:
+        def changes = changes(oldSdl, newSdl)
+        then:
+        changes.scalarChanges["E"] instanceof ScalarAddition
+        (changes.scalarChanges["E"] as ScalarAddition).getName() == "E"
+    }
+
+    def "scalar deleted"() {
+        given:
+        def oldSdl = '''
+        type Query {
+            foo: E
+        }
+        scalar E
+        '''
+        def newSdl = '''
+        type Query {
+            foo: String
+        }
+        '''
+        when:
+        def changes = changes(oldSdl, newSdl)
+        then:
+        changes.scalarChanges["E"] instanceof ScalarDeletion
+        (changes.scalarChanges["E"] as ScalarDeletion).getName() == "E"
+    }
+
+    def "input object added"() {
+        given:
+        def oldSdl = '''
+        type Query {
+            foo: String
+        }
+        '''
+        def newSdl = '''
+        type Query {
+            foo(arg: I): String
+        }
+        input I {
+            bar: String
+        }
+        '''
+        when:
+        def changes = changes(oldSdl, newSdl)
+        then:
+        changes.inputObjectChanges["I"] instanceof InputObjectAddition
+        (changes.inputObjectChanges["I"] as InputObjectAddition).getName() == "I"
+    }
+
+    def "input object deleted"() {
+        given:
+        def oldSdl = '''
+        type Query {
+            foo(arg: I): String
+        }
+        input I {
+            bar: String
+        }
+        '''
+        def newSdl = '''
+        type Query {
+            foo: String
+        }
+        '''
+        when:
+        def changes = changes(oldSdl, newSdl)
+        then:
+        changes.inputObjectChanges["I"] instanceof InputObjectDeletion
+        (changes.inputObjectChanges["I"] as InputObjectDeletion).getName() == "I"
+    }
+
     EditOperationAnalysisResult changes(
             String oldSdl,
             String newSdl
