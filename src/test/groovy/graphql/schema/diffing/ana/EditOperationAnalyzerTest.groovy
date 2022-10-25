@@ -30,6 +30,99 @@ class EditOperationAnalyzerTest extends Specification {
         fieldRenames[0].newName == "hello2"
     }
 
+    def "union added"() {
+        given:
+        def oldSdl = '''
+        type Query {
+            hello: String
+        }
+        '''
+        def newSdl = '''
+        type Query {
+            hello: String
+            u: U
+        }
+        union U = A | B 
+        type A {
+            foo: String
+        } 
+        type B {
+            foo: String
+        } 
+        
+        '''
+        when:
+        def changes = changes(oldSdl, newSdl)
+        then:
+        changes.unionChanges["U"] instanceof UnionAddition
+        (changes.unionChanges["U"] as UnionAddition).name == "U"
+    }
+
+    def "union removed"() {
+        given:
+        def oldSdl = '''
+        type Query {
+            hello: String
+            u: U
+        }
+        union U = A | B
+        type A {
+            foo: String
+        } 
+        type B {
+            foo: String
+        } 
+        '''
+        def newSdl = '''
+        type Query {
+            hello: String
+        }
+        '''
+        when:
+        def changes = changes(oldSdl, newSdl)
+        then:
+        changes.unionChanges["U"] instanceof UnionDeletion
+        (changes.unionChanges["U"] as UnionDeletion).name == "U"
+    }
+
+    def "union member added"() {
+        given:
+        def oldSdl = '''
+        type Query {
+            hello: String
+            u: U
+        }
+        union U = A | B
+        type A {
+            foo: String
+        } 
+        type B {
+            foo: String
+        } 
+        '''
+        def newSdl = '''
+        type Query {
+            hello: String
+            u: U
+        }
+        union U = A | B | C
+        type A {
+            foo: String
+        } 
+        type B {
+            foo: String
+        } 
+        type C {
+            foo: String
+        } 
+
+        '''
+        when:
+        def changes = changes(oldSdl, newSdl)
+        then:
+        changes.unionChanges["U"] instanceof UnionModification
+    }
+
     def "field type modified"() {
         given:
         def oldSdl = '''

@@ -9,6 +9,7 @@ import graphql.schema.diffing.Mapping;
 import graphql.schema.diffing.SchemaGraph;
 import graphql.schema.diffing.Vertex;
 import graphql.schema.idl.ScalarInfo;
+import graphql.util.EscapeUtil;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -83,6 +84,7 @@ public class EditOperationAnalyzer {
         }
         handleTypeChanges(editOperations, mapping);
         handleImplementsChanges(editOperations, mapping);
+        handleUnionMemberChanges(editOperations,mapping);
 
         return new EditOperationAnalysisResult(objectDifferences, interfaceDifferences, unionDifferences, enumDifferences, inputObjectDifferences, scalarDifferences);
     }
@@ -105,6 +107,19 @@ public class EditOperationAnalyzer {
         }
     }
 
+    private void handleUnionMemberChanges(List<EditOperation> editOperations, Mapping mapping) {
+        for (EditOperation editOperation : editOperations) {
+            Edge newEdge = editOperation.getTargetEdge();
+            switch (editOperation.getOperation()) {
+                case INSERT_EDGE:
+                    if (newEdge.getFrom().isOfType(SchemaGraph.UNION)) {
+                        handleUnionMemberAdded(editOperation);
+                    }
+                    break;
+            }
+        }
+    }
+
     private void handleImplementsChanges(List<EditOperation> editOperations, Mapping mapping) {
         for (EditOperation editOperation : editOperations) {
             Edge newEdge = editOperation.getTargetEdge();
@@ -116,6 +131,17 @@ public class EditOperationAnalyzer {
                     break;
             }
         }
+    }
+
+    private void handleUnionMemberAdded(EditOperation editOperation) {
+        Edge newEdge = editOperation.getTargetEdge();
+        Vertex union = newEdge.getFrom();
+        if(isNewUnion(union.getName())) {
+            return;
+        }
+        Vertex newMemberObject = newEdge.getTo();
+        UnionModification unionModification = getUnionModification(union.getName());
+        unionModification.getDetails().add(new UnionMemberAddition(newMemberObject.getName()));
     }
 
 
@@ -386,6 +412,10 @@ public class EditOperationAnalyzer {
         return objectDifferences.containsKey(name) && objectDifferences.get(name) instanceof ObjectAddition;
     }
 
+    private boolean isNewUnion(String name) {
+        return unionDifferences.containsKey(name) && unionDifferences.get(name) instanceof UnionAddition;
+    }
+
     private boolean isNewFieldForExistingObject(String objectName, String fieldName) {
         if (!objectDifferences.containsKey(objectName)) {
             return false;
@@ -412,6 +442,13 @@ public class EditOperationAnalyzer {
         }
         assertTrue(objectDifferences.get(newName) instanceof ObjectModification);
         return (ObjectModification) objectDifferences.get(newName);
+    }
+    private UnionModification getUnionModification(String newName) {
+        if (!unionDifferences.containsKey(newName)) {
+            unionDifferences.put(newName, new UnionModification(newName));
+        }
+        assertTrue(unionDifferences.get(newName) instanceof UnionModification);
+        return (UnionModification) unionDifferences.get(newName);
     }
 
     private InterfaceModification getInterfaceModification(String newName) {

@@ -115,7 +115,7 @@ public interface SchemaDifference {
         }
     }
 
-    class ObjectFieldAddition implements  ObjectModificationDetail {
+    class ObjectFieldAddition implements ObjectModificationDetail {
         private final String name;
 
         public ObjectFieldAddition(String name) {
@@ -127,7 +127,7 @@ public interface SchemaDifference {
         }
     }
 
-    class ObjectFieldDeletion implements  ObjectModificationDetail {
+    class ObjectFieldDeletion implements ObjectModificationDetail {
         private final String name;
 
         public ObjectFieldDeletion(String name) {
@@ -156,6 +156,7 @@ public interface SchemaDifference {
             return oldName;
         }
     }
+
     class ObjectFieldTypeModification implements ObjectModificationDetail {
         private final String fieldName;
         private final String oldType;
@@ -331,7 +332,7 @@ public interface SchemaDifference {
         }
     }
 
-    class InterfaceFieldAddition implements  InterfaceModificationDetail {
+    class InterfaceFieldAddition implements InterfaceModificationDetail {
         private final String name;
 
         public InterfaceFieldAddition(String name) {
@@ -343,7 +344,7 @@ public interface SchemaDifference {
         }
     }
 
-    class InterfaceFieldDeletion implements  InterfaceModificationDetail {
+    class InterfaceFieldDeletion implements InterfaceModificationDetail {
         private final String name;
 
         public InterfaceFieldDeletion(String name) {
@@ -415,7 +416,7 @@ public interface SchemaDifference {
         }
     }
 
-    class InterfaceFieldArgumentDefaultValueModification implements  InterfaceModificationDetail{
+    class InterfaceFieldArgumentDefaultValueModification implements InterfaceModificationDetail {
         private final String fieldName;
         private final String argumentName;
         private final String oldValue;
@@ -480,8 +481,15 @@ public interface SchemaDifference {
         private final String oldName;
         private final String newName;
 
+        private final List<UnionModificationDetail> details = new ArrayList<>();
+
         public UnionModification(String oldName, String newName) {
             this.oldName = oldName;
+            this.newName = newName;
+        }
+
+        public UnionModification(String newName) {
+            this.oldName = "";
             this.newName = newName;
         }
 
@@ -491,6 +499,43 @@ public interface SchemaDifference {
 
         public String getOldName() {
             return oldName;
+        }
+
+        public List<UnionModificationDetail> getDetails() {
+            return details;
+        }
+
+        public <T extends UnionModificationDetail> List<T> getDetails(Class<? extends T> clazz) {
+            return (List) FpKit.filterList(details, clazz::isInstance);
+        }
+
+    }
+
+    interface UnionModificationDetail {
+
+    }
+
+    class UnionMemberAddition implements UnionModificationDetail {
+        private final String name;
+
+        public UnionMemberAddition(String name) {
+            this.name = name;
+        }
+
+        public String getName() {
+            return name;
+        }
+    }
+
+    class UnionMemberDeletion implements UnionModificationDetail {
+        private final String name;
+
+        public UnionMemberDeletion(String name) {
+            this.name = name;
+        }
+
+        public String getName() {
+            return name;
         }
     }
 
@@ -575,6 +620,8 @@ public interface SchemaDifference {
         private final String oldName;
         private final String newName;
 
+        private final List<EnumModificationDetail> details = new ArrayList<>();
+
         public EnumModification(String oldName, String newName) {
             this.oldName = oldName;
             this.newName = newName;
@@ -586,6 +633,43 @@ public interface SchemaDifference {
 
         public String getOldName() {
             return oldName;
+        }
+
+        public List<EnumModificationDetail> getDetails() {
+            return details;
+        }
+
+        public <T extends EnumModificationDetail> List<T> getDetails(Class<? extends T> clazz) {
+            return (List) FpKit.filterList(details, clazz::isInstance);
+        }
+
+    }
+
+    interface EnumModificationDetail {
+
+    }
+
+    class EnumMemberDeletion implements EnumModificationDetail {
+        private final String name;
+
+        public EnumMemberDeletion(String name) {
+            this.name = name;
+        }
+
+        public String getName() {
+            return name;
+        }
+    }
+
+    class EnumMemberAddition implements EnumModificationDetail {
+        private final String name;
+
+        public EnumMemberAddition(String name) {
+            this.name = name;
+        }
+
+        public String getName() {
+            return name;
         }
     }
 
