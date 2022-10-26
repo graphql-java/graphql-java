@@ -524,6 +524,52 @@ class QueryTraverserTest extends Specification {
         1 * visitor.visitFragmentDefinition({ QueryVisitorFragmentDefinitionEnvironment env -> env.fragmentDefinition == fragments["F1"] })
     }
 
+    def "test visitField for non-nullable variables"() {
+        given:
+        def schema = TestUtil.schema("""
+            type Query{
+                foo(id: ID!): Foo
+                bar: String
+            }
+            type Foo {
+                subFoo: String
+            }
+        """)
+        def visitor = mockQueryVisitor()
+        def query = createQuery("""
+                query(\$id: ID!) {
+                    foo(id: \$id) {
+                        subFoo
+                    }
+                    bar
+                }
+                """)
+
+        QueryTraverser queryTraversal = QueryTraverser.newQueryTraverser()
+                .document(query)
+                .schema(schema)
+                .build()
+
+        when:
+        queryTraversal.visitPreOrder(visitor)
+
+        then:
+        1 * visitor.visitField({ QueryVisitorFieldEnvironmentImpl it ->
+            it.field.name == "foo" && it.fieldDefinition.type.name == "Foo" && it.parentType.name == "Query" &&
+                    it.selectionSetContainer == null
+        })
+        then:
+        1 * visitor.visitField({ QueryVisitorFieldEnvironmentImpl it ->
+            it.field.name == "subFoo" && it.fieldDefinition.type.name == "String" &&
+                    it.parentType.name == "Foo" &&
+                    it.parentEnvironment.field.name == "foo" && it.parentEnvironment.fieldDefinition.type.name == "Foo" &&
+                    it.selectionSetContainer == it.parentEnvironment.field
+
+        })
+        then:
+        1 * visitor.visitField({ QueryVisitorFieldEnvironmentImpl it -> it.field.name == "bar" && it.fieldDefinition.type.name == "String" && it.parentType.name == "Query" })
+    }
+
     def "works for mutations()"() {
         given:
         def schema = TestUtil.schema("""

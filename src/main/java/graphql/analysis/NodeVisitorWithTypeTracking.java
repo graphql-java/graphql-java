@@ -30,6 +30,7 @@ import graphql.schema.GraphQLUnmodifiedType;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
+import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
@@ -153,12 +154,12 @@ public class NodeVisitorWithTypeTracking extends NodeVisitorStub {
         boolean isTypeNameIntrospectionField = fieldDefinition == schema.getIntrospectionTypenameFieldDefinition();
         GraphQLFieldsContainer fieldsContainer = !isTypeNameIntrospectionField ? (GraphQLFieldsContainer) unwrapAll(parentEnv.getOutputType()) : null;
         GraphQLCodeRegistry codeRegistry = schema.getCodeRegistry();
-        Map<String, Object> argumentValues = ValuesResolver.getArgumentValues(codeRegistry,
+        Map<String, Object> argumentValues = !variables.isEmpty() ? ValuesResolver.getArgumentValues(codeRegistry,
                 fieldDefinition.getArguments(),
                 field.getArguments(),
                 CoercedVariables.of(variables),
                 GraphQLContext.getDefault(),
-                Locale.getDefault());
+                Locale.getDefault()) : new HashMap<>();
         QueryVisitorFieldEnvironment environment = new QueryVisitorFieldEnvironmentImpl(isTypeNameIntrospectionField,
                 field,
                 fieldDefinition,
