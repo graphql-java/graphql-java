@@ -33,6 +33,34 @@ class EditOperationAnalyzerTest extends Specification {
         (changes.objectChanges["Query"] as ObjectModification).newName == "MyQuery"
     }
 
+    def "interface renamed"() {
+        given:
+        def oldSdl = '''
+        type Query implements I {
+            foo: String
+        }
+        interface I {
+            foo: String
+        }
+        '''
+        def newSdl = '''
+        type Query implements IRenamed {
+            foo: String
+        }
+        interface IRenamed {
+            foo: String
+        }
+         
+        '''
+        when:
+        def changes = changes(oldSdl, newSdl)
+        then:
+        changes.interfaceChanges["I"] === changes.interfaceChanges["IRenamed"]
+        changes.interfaceChanges["I"] instanceof InterfaceModification
+        (changes.interfaceChanges["I"] as InterfaceModification).oldName == "I"
+        (changes.interfaceChanges["I"] as InterfaceModification).newName == "IRenamed"
+    }
+
     def "field renamed"() {
         given:
         def oldSdl = '''
@@ -532,7 +560,8 @@ class EditOperationAnalyzerTest extends Specification {
         when:
         def changes = changes(oldSdl, newSdl)
         then:
-        changes.interfaceChanges.size() == 1
+        changes.interfaceChanges.size() == 2
+        changes.interfaceChanges["Node"] === changes.interfaceChanges["Node2"]
         changes.interfaceChanges["Node2"] instanceof InterfaceModification
     }
 
@@ -567,7 +596,8 @@ class EditOperationAnalyzerTest extends Specification {
         when:
         def changes = changes(oldSdl, newSdl)
         then:
-        changes.interfaceChanges.size() == 2
+        changes.interfaceChanges.size() == 3
+        changes.interfaceChanges["Node"] == changes.interfaceChanges["Node2"]
         changes.interfaceChanges["Node2"] instanceof InterfaceModification
         changes.interfaceChanges["NewI"] instanceof InterfaceAddition
         changes.objectChanges.size() == 1

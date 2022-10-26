@@ -681,10 +681,12 @@ public class EditOperationAnalyzer {
     }
 
     private void changedInterface(EditOperation editOperation) {
-        String interfaceName = editOperation.getTargetVertex().getName();
-        InterfaceModification interfaceModification = new InterfaceModification(interfaceName);
-        // we store the modification against the new name
-        interfaceDifferences.put(interfaceName, interfaceModification);
+        String oldName = editOperation.getSourceVertex().getName();
+        String newName = editOperation.getTargetVertex().getName();
+
+        InterfaceModification interfaceModification = new InterfaceModification(oldName,newName);
+        interfaceDifferences.put(oldName, interfaceModification);
+        interfaceDifferences.put(newName, interfaceModification);
     }
 
     private void changedUnion(EditOperation editOperation) {

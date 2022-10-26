@@ -287,20 +287,35 @@ public interface SchemaDifference {
     class InterfaceModification implements SchemaModification, InterfaceDifference {
         private final String oldName;
         private final String newName;
+        private final boolean renamed;
         private final List<InterfaceModificationDetail> details = new ArrayList<>();
 
         public InterfaceModification(String oldName, String newName) {
             this.oldName = oldName;
             this.newName = newName;
+            this.renamed = oldName.equals(newName);
         }
 
         public InterfaceModification(String newName) {
-            this.oldName = "";
+            this.oldName = newName;
             this.newName = newName;
+            this.renamed = false;
         }
 
         public List<InterfaceModificationDetail> getDetails() {
             return details;
+        }
+
+        public String getNewName() {
+            return newName;
+        }
+
+        public String getOldName() {
+            return oldName;
+        }
+
+        public boolean isRenamed() {
+            return renamed;
         }
 
         public <T extends InterfaceModificationDetail> List<T> getDetails(Class<? extends T> clazz) {
