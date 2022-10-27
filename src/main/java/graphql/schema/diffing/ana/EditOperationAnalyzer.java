@@ -80,7 +80,10 @@ public class EditOperationAnalyzer {
                     break;
                 case DELETE_VERTEX:
                     if (editOperation.getSourceVertex().isOfType(SchemaGraph.ARGUMENT)) {
-                        removedArgument(editOperation);
+                        argumentDeleted(editOperation);
+                    }
+                    if (editOperation.getSourceVertex().isOfType(SchemaGraph.FIELD)) {
+                        fieldDeleted(editOperation);
                     }
             }
         }
@@ -284,6 +287,28 @@ public class EditOperationAnalyzer {
             ObjectModification objectModification = getObjectModification(fieldsContainerForField.getName());
             String name = field.getName();
             objectModification.getDetails().add(new ObjectFieldAddition(name));
+        }
+    }
+    private void fieldDeleted(EditOperation editOperation) {
+        Vertex deletedField = editOperation.getSourceVertex();
+        Vertex fieldsContainerForField = oldSchemaGraph.getFieldsContainerForField(deletedField);
+        if (fieldsContainerForField.isOfType(SchemaGraph.OBJECT)) {
+            Vertex object = fieldsContainerForField;
+            if (isObjectDeleted(object.getName())) {
+                return;
+            }
+            ObjectModification objectModification = getObjectModification(object.getName());
+            String name = deletedField.getName();
+            objectModification.getDetails().add(new ObjectFieldDeletion(name));
+        }else {
+            assertTrue(fieldsContainerForField.isOfType(SchemaGraph.INTERFACE));
+            Vertex interfaze = fieldsContainerForField;
+            if (isInterfaceDeleted(interfaze.getName())) {
+                return;
+            }
+            InterfaceModification interfaceModification = getInterfaceModification(interfaze.getName());
+            String name = deletedField.getName();
+            interfaceModification.getDetails().add(new InterfaceFieldDeletion(name));
         }
     }
 
@@ -779,7 +804,7 @@ public class EditOperationAnalyzer {
         directiveDifferences.put(directiveName, change);
     }
 
-    private void removedArgument(EditOperation editOperation) {
+    private void argumentDeleted(EditOperation editOperation) {
         Vertex removedArgument = editOperation.getSourceVertex();
         Vertex fieldOrDirective = oldSchemaGraph.getFieldOrDirectiveForArgument(removedArgument);
         if (fieldOrDirective.isOfType(SchemaGraph.FIELD)) {
