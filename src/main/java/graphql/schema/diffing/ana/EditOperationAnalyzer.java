@@ -177,17 +177,17 @@ public class EditOperationAnalyzer {
             String newName = argument.getName();
             directiveModification.getDetails().add(new DirectiveArgumentRename(oldName, newName));
 
-        }else {
+        } else {
             assertTrue(fieldOrDirective.isOfType(SchemaGraph.FIELD));
             Vertex field = fieldOrDirective;
             Vertex fieldsContainerForField = newSchemaGraph.getFieldsContainerForField(field);
-            if(fieldsContainerForField.isOfType(SchemaGraph.OBJECT)) {
+            if (fieldsContainerForField.isOfType(SchemaGraph.OBJECT)) {
                 Vertex object = fieldsContainerForField;
                 ObjectModification objectModification = getObjectModification(object.getName());
                 String oldName = editOperation.getSourceVertex().getName();
                 String newName = argument.getName();
                 objectModification.getDetails().add(new ObjectFieldArgumentRename(oldName, newName));
-            }else {
+            } else {
                 assertTrue(fieldsContainerForField.isOfType(SchemaGraph.INTERFACE));
                 Vertex interfaze = fieldsContainerForField;
                 InterfaceModification interfaceModification = getInterfaceModification(interfaze.getName());
@@ -201,11 +201,17 @@ public class EditOperationAnalyzer {
 
     private void handleImplementsChanges(List<EditOperation> editOperations, Mapping mapping) {
         for (EditOperation editOperation : editOperations) {
-            Edge newEdge = editOperation.getTargetEdge();
             switch (editOperation.getOperation()) {
                 case INSERT_EDGE:
+                    Edge newEdge = editOperation.getTargetEdge();
                     if (newEdge.getLabel().startsWith("implements ")) {
                         newInterfaceAddedToInterfaceOrObject(newEdge);
+                    }
+                    break;
+                case DELETE_EDGE:
+                    Edge oldEdge = editOperation.getSourceEdge();
+                    if (oldEdge.getLabel().startsWith("implements ")) {
+                        interfaceImplementationDeleted(oldEdge);
                     }
                     break;
             }
@@ -495,7 +501,7 @@ public class EditOperationAnalyzer {
             String oldType = getTypeFromEdgeLabel(editOperation.getSourceEdge());
             String newType = getTypeFromEdgeLabel(editOperation.getTargetEdge());
             objectModification.getDetails().add(new ObjectFieldTypeModification(fieldName, oldType, newType));
-        }else {
+        } else {
             assertTrue(container.isOfType(SchemaGraph.INTERFACE));
             Vertex interfaze = container;
             InterfaceModification interfaceModification = getInterfaceModification(interfaze.getName());
@@ -525,6 +531,30 @@ public class EditOperationAnalyzer {
     }
 
 
+    private void interfaceImplementationDeleted(Edge deletedEdge) {
+        Vertex from = deletedEdge.getFrom();
+        if (from.isOfType(SchemaGraph.OBJECT)) {
+            if (isObjectDeleted(from.getName())) {
+                return;
+            }
+            Vertex objectVertex = deletedEdge.getFrom();
+            Vertex interfaceVertex = deletedEdge.getTo();
+            ObjectInterfaceImplementationDeletion deletion = new ObjectInterfaceImplementationDeletion(interfaceVertex.getName());
+            getObjectModification(objectVertex.getName()).getDetails().add(deletion);
+
+        } else {
+            assertTrue(from.isOfType(SchemaGraph.INTERFACE));
+            if (isInterfaceDeleted(from.getName())) {
+                return;
+            }
+            Vertex interfaceFromVertex = deletedEdge.getFrom();
+            Vertex interfaceVertex = deletedEdge.getTo();
+            InterfaceInterfaceImplementationDeletion deletion = new InterfaceInterfaceImplementationDeletion(interfaceVertex.getName());
+            getInterfaceModification(interfaceFromVertex.getName()).getDetails().add(deletion);
+        }
+
+    }
+
     private void newInterfaceAddedToInterfaceOrObject(Edge newEdge) {
         Vertex from = newEdge.getFrom();
         if (from.isOfType(SchemaGraph.OBJECT)) {
@@ -536,7 +566,8 @@ public class EditOperationAnalyzer {
             ObjectInterfaceImplementationAddition objectInterfaceImplementationAddition = new ObjectInterfaceImplementationAddition(interfaceVertex.getName());
             getObjectModification(objectVertex.getName()).getDetails().add(objectInterfaceImplementationAddition);
 
-        } else if (from.isOfType(SchemaGraph.INTERFACE)) {
+        } else {
+            assertTrue(from.isOfType(SchemaGraph.INTERFACE));
             if (isInterfaceAdded(from.getName())) {
                 return;
             }
@@ -544,8 +575,6 @@ public class EditOperationAnalyzer {
             Vertex interfaceVertex = newEdge.getTo();
             InterfaceInterfaceImplementationAddition addition = new InterfaceInterfaceImplementationAddition(interfaceVertex.getName());
             getInterfaceModification(interfaceFromVertex.getName()).getDetails().add(addition);
-        } else {
-            Assert.assertShouldNeverHappen("expected an implementation edge");
         }
 
     }
@@ -581,6 +610,7 @@ public class EditOperationAnalyzer {
         List<ObjectFieldAddition> newFields = objectModification.getDetails(ObjectFieldAddition.class);
         return newFields.stream().anyMatch(detail -> detail.getName().equals(fieldName));
     }
+
     private boolean isFieldNewForExistingInterface(String interfaceName, String fieldName) {
         if (!interfaceDifferences.containsKey(interfaceName)) {
             return false;
@@ -595,6 +625,10 @@ public class EditOperationAnalyzer {
 
     private boolean isObjectDeleted(String name) {
         return objectDifferences.containsKey(name) && objectDifferences.get(name) instanceof ObjectDeletion;
+    }
+
+    private boolean isInterfaceDeleted(String name) {
+        return interfaceDifferences.containsKey(name) && interfaceDifferences.get(name) instanceof InterfaceDeletion;
     }
 
     private boolean isInterfaceAdded(String name) {

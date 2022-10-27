@@ -62,6 +62,64 @@ class EditOperationAnalyzerTest extends Specification {
         (changes.interfaceChanges["I"] as InterfaceModification).newName == "IRenamed"
     }
 
+    def "interface removed from object"() {
+        given:
+        def oldSdl = '''
+        type Query implements I {
+            foo: String
+        }
+        interface I {
+            foo: String
+        }
+        '''
+        def newSdl = '''
+        type Query{
+            foo: String
+        }
+        '''
+        when:
+        def changes = changes(oldSdl, newSdl)
+        then:
+        changes.objectChanges["Query"] instanceof ObjectModification
+        def implementationDeletions = (changes.objectChanges["Query"] as ObjectModification).getDetails(ObjectInterfaceImplementationDeletion)
+        implementationDeletions[0].name == "I"
+    }
+
+    def "interface removed from interface"() {
+        given:
+        def oldSdl = '''
+        type Query {
+            foo: Foo
+        }
+        interface FooI {
+            foo: String
+        }
+        interface Foo implements FooI {
+            foo: String
+        }
+        type FooImpl implements Foo & FooI {
+            foo: String
+        }
+        '''
+        def newSdl = '''
+        type Query {
+            foo: Foo
+        }
+        interface Foo {
+            foo: String
+        }
+        type FooImpl implements Foo {
+            foo: String
+        }
+        '''
+        when:
+        def changes = changes(oldSdl, newSdl)
+        then:
+        changes.interfaceChanges["Foo"] instanceof InterfaceModification
+        def implementationDeletions = (changes.interfaceChanges["Foo"] as InterfaceModification).getDetails(InterfaceInterfaceImplementationDeletion)
+        implementationDeletions[0].name == "FooI"
+    }
+
     def "field renamed"() {
         given:
         def oldSdl = '''
