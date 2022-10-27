@@ -445,7 +445,53 @@ public class EditOperationAnalyzer {
         Vertex argument = editOperation.getTargetEdge().getFrom();
         Vertex fieldOrDirective = newSchemaGraph.getFieldOrDirectiveForArgument(argument);
         if (fieldOrDirective.isOfType(SchemaGraph.FIELD)) {
+            Vertex field = fieldOrDirective;
+            Vertex objectOrInterface = newSchemaGraph.getFieldsContainerForField(field);
 
+            if (objectOrInterface.isOfType(SchemaGraph.OBJECT)) {
+                Vertex object = objectOrInterface;
+                // if the whole object is new we are done
+                if (isObjectAdded(object.getName())) {
+                    return;
+                }
+                // if the field is new, we are done too
+                if (isFieldNewForExistingObject(object.getName(), field.getName())) {
+                    return;
+                }
+                // if the argument is new, we are done too
+                if (isArgumentNewForExistingObjectField(object.getName(), field.getName(), argument.getName())) {
+                    return;
+                }
+                String newType = getTypeFromEdgeLabel(editOperation.getTargetEdge());
+                // this means we have an existing object changed its type
+                // and there must be a deleted edge with the old type information
+                EditOperation deletedTypeEdgeOperation = findDeletedEdge(argument, editOperations, mapping);
+                String oldType = getTypeFromEdgeLabel(deletedTypeEdgeOperation.getSourceEdge());
+                ObjectFieldArgumentTypeModification objectFieldArgumentTypeModification = new ObjectFieldArgumentTypeModification(field.getName(), argument.getName(), oldType, newType);
+                getObjectModification(object.getName()).getDetails().add(objectFieldArgumentTypeModification);
+            } else {
+                assertTrue(objectOrInterface.isOfType(SchemaGraph.INTERFACE));
+                Vertex interfaze = objectOrInterface;
+                // if the whole object is new we are done
+                if (isInterfaceAdded(interfaze.getName())) {
+                    return;
+                }
+                // if the field is new, we are done too
+                if (isFieldNewForExistingInterface(interfaze.getName(), field.getName())) {
+                    return;
+                }
+                // if the argument is new, we are done too
+                if (isArgumentNewForExistingInterfaceField(interfaze.getName(), field.getName(), argument.getName())) {
+                    return;
+                }
+                String newType = getTypeFromEdgeLabel(editOperation.getTargetEdge());
+                // this means we have an existing object changed its type
+                // and there must be a deleted edge with the old type information
+                EditOperation deletedTypeEdgeOperation = findDeletedEdge(argument, editOperations, mapping);
+                String oldType = getTypeFromEdgeLabel(deletedTypeEdgeOperation.getSourceEdge());
+                InterfaceFieldArgumentTypeModification interfaceFieldArgumentTypeModification = new InterfaceFieldArgumentTypeModification(field.getName(), argument.getName(), oldType, newType);
+                getInterfaceModification(interfaze.getName()).getDetails().add(interfaceFieldArgumentTypeModification);
+            }
         } else {
             assertTrue(fieldOrDirective.isOfType(SchemaGraph.DIRECTIVE));
             Vertex directive = fieldOrDirective;
@@ -538,24 +584,41 @@ public class EditOperationAnalyzer {
         if (fieldOrDirective.isOfType(SchemaGraph.FIELD)) {
             Vertex field = fieldOrDirective;
             Vertex objectOrInterface = newSchemaGraph.getFieldsContainerForField(field);
+
             String oldDefaultValue = getDefaultValueFromEdgeLabel(editOperation.getSourceEdge());
             String newDefaultValue = getDefaultValueFromEdgeLabel(editOperation.getTargetEdge());
-            if (objectOrInterface.isOfType(SchemaGraph.OBJECT)) {
-                ObjectFieldArgumentDefaultValueModification defaultValueModification = new ObjectFieldArgumentDefaultValueModification(
-                        field.getName(),
-                        argument.getName(),
-                        oldDefaultValue,
-                        newDefaultValue);
-                getObjectModification(objectOrInterface.getName()).getDetails().add(defaultValueModification);
-            } else {
-                assertTrue(objectOrInterface.isOfType(SchemaGraph.INTERFACE));
-                InterfaceFieldArgumentDefaultValueModification defaultValueModification = new InterfaceFieldArgumentDefaultValueModification(
-                        field.getName(),
-                        argument.getName(),
-                        oldDefaultValue,
-                        newDefaultValue);
-                getInterfaceModification(objectOrInterface.getName()).getDetails().add(defaultValueModification);
+            if (!oldDefaultValue.equals(newDefaultValue)) {
+                if (objectOrInterface.isOfType(SchemaGraph.OBJECT)) {
+                    ObjectFieldArgumentDefaultValueModification defaultValueModification = new ObjectFieldArgumentDefaultValueModification(
+                            field.getName(),
+                            argument.getName(),
+                            oldDefaultValue,
+                            newDefaultValue);
+                    getObjectModification(objectOrInterface.getName()).getDetails().add(defaultValueModification);
+                } else {
+                    assertTrue(objectOrInterface.isOfType(SchemaGraph.INTERFACE));
+                    InterfaceFieldArgumentDefaultValueModification defaultValueModification = new InterfaceFieldArgumentDefaultValueModification(
+                            field.getName(),
+                            argument.getName(),
+                            oldDefaultValue,
+                            newDefaultValue);
+                    getInterfaceModification(objectOrInterface.getName()).getDetails().add(defaultValueModification);
+                }
             }
+
+            String oldType = getTypeFromEdgeLabel(editOperation.getSourceEdge());
+            String newType = getTypeFromEdgeLabel(editOperation.getTargetEdge());
+            if (!oldType.equals(newType)) {
+                if (objectOrInterface.isOfType(SchemaGraph.OBJECT)) {
+                    ObjectFieldArgumentTypeModification objectFieldArgumentTypeModification = new ObjectFieldArgumentTypeModification(field.getName(), argument.getName(), oldType, newType);
+                    getObjectModification(objectOrInterface.getName()).getDetails().add(objectFieldArgumentTypeModification);
+                } else {
+                    assertTrue(objectOrInterface.isOfType(SchemaGraph.INTERFACE));
+                    InterfaceFieldArgumentTypeModification interfaceFieldArgumentTypeModification = new InterfaceFieldArgumentTypeModification(field.getName(), argument.getName(), oldType, newType);
+                    getInterfaceModification(objectOrInterface.getName()).getDetails().add(interfaceFieldArgumentTypeModification);
+                }
+            }
+
         } else {
             assertTrue(fieldOrDirective.isOfType(SchemaGraph.DIRECTIVE));
             Vertex directive = fieldOrDirective;
@@ -700,6 +763,44 @@ public class EditOperationAnalyzer {
         DirectiveModification directiveModification = (DirectiveModification) directiveDifferences.get(directiveName);
         List<DirectiveArgumentAddition> newArgs = directiveModification.getDetails(DirectiveArgumentAddition.class);
         return newArgs.stream().anyMatch(detail -> detail.getName().equals(argumentName));
+    }
+
+    private boolean isArgumentNewForExistingObjectField(String objectName, String fieldName, String argumentName) {
+        if (!objectDifferences.containsKey(objectName)) {
+            return false;
+        }
+        if (!(objectDifferences.get(objectName) instanceof ObjectModification)) {
+            return false;
+        }
+        // finding out if the field was just added
+        ObjectModification objectModification = (ObjectModification) objectDifferences.get(objectName);
+        List<ObjectFieldAddition> newFields = objectModification.getDetails(ObjectFieldAddition.class);
+        boolean newField = newFields.stream().anyMatch(detail -> detail.getName().equals(fieldName));
+        if (newField) {
+            return false;
+        }
+        // now finding out if the argument is new
+        List<ObjectFieldArgumentAddition> newArgs = objectModification.getDetails(ObjectFieldArgumentAddition.class);
+        return newArgs.stream().anyMatch(detail -> detail.getFieldName().equals(fieldName) && detail.getName().equals(argumentName));
+    }
+
+    private boolean isArgumentNewForExistingInterfaceField(String objectName, String fieldName, String argumentName) {
+        if (!interfaceDifferences.containsKey(objectName)) {
+            return false;
+        }
+        if (!(interfaceDifferences.get(objectName) instanceof InterfaceModification)) {
+            return false;
+        }
+        // finding out if the field was just added
+        InterfaceModification interfaceModification = (InterfaceModification) interfaceDifferences.get(objectName);
+        List<InterfaceFieldAddition> newFields = interfaceModification.getDetails(InterfaceFieldAddition.class);
+        boolean newField = newFields.stream().anyMatch(detail -> detail.getName().equals(fieldName));
+        if (newField) {
+            return false;
+        }
+        // now finding out if the argument is new
+        List<InterfaceFieldArgumentAddition> newArgs = interfaceModification.getDetails(InterfaceFieldArgumentAddition.class);
+        return newArgs.stream().anyMatch(detail -> detail.getFieldName().equals(fieldName) && detail.getName().equals(argumentName));
     }
 
     private boolean isFieldNewForExistingObject(String objectName, String fieldName) {

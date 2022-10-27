@@ -585,6 +585,86 @@ class EditOperationAnalyzerTest extends Specification {
         intDefaultValueModified[0].newValue == '"barChanged"'
     }
 
+    def "object and interface argument type changed completely"() {
+        given:
+        def oldSdl = '''
+        type Query implements Foo {
+            foo(arg: String ): String
+        }
+        interface Foo {
+            foo(arg: String): String
+        }
+        
+        '''
+        def newSdl = '''
+        type Query implements Foo {
+            foo(arg: Int!): String
+        }
+        interface Foo {
+            foo(arg: Int!): String
+        }
+        '''
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+
+        then:
+        changes.objectDifferences["Query"] instanceof ObjectModification
+        def objectModification = changes.objectDifferences["Query"] as ObjectModification
+        def objDefaultValueModified = objectModification.getDetails(ObjectFieldArgumentTypeModification.class);
+        objDefaultValueModified[0].fieldName == "foo"
+        objDefaultValueModified[0].argumentName == "arg"
+        objDefaultValueModified[0].oldType == 'String'
+        objDefaultValueModified[0].newType == 'Int!'
+        and:
+        changes.interfaceDifferences["Foo"] instanceof InterfaceModification
+        def interfaceModification = changes.interfaceDifferences["Foo"] as InterfaceModification
+        def intDefaultValueModified = interfaceModification.getDetails(InterfaceFieldArgumentTypeModification.class);
+        intDefaultValueModified[0].fieldName == "foo"
+        intDefaultValueModified[0].argumentName == "arg"
+        intDefaultValueModified[0].oldType == 'String'
+        intDefaultValueModified[0].newType == 'Int!'
+    }
+
+    def "object and interface argument type changed wrapping type"() {
+        given:
+        def oldSdl = '''
+        type Query implements Foo {
+            foo(arg: String ): String
+        }
+        interface Foo {
+            foo(arg: String): String
+        }
+        
+        '''
+        def newSdl = '''
+        type Query implements Foo {
+            foo(arg: String!): String
+        }
+        interface Foo {
+            foo(arg: String!): String
+        }
+        '''
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+
+        then:
+        changes.objectDifferences["Query"] instanceof ObjectModification
+        def objectModification = changes.objectDifferences["Query"] as ObjectModification
+        def objDefaultValueModified = objectModification.getDetails(ObjectFieldArgumentTypeModification.class);
+        objDefaultValueModified[0].fieldName == "foo"
+        objDefaultValueModified[0].argumentName == "arg"
+        objDefaultValueModified[0].oldType == 'String'
+        objDefaultValueModified[0].newType == 'String!'
+        and:
+        changes.interfaceDifferences["Foo"] instanceof InterfaceModification
+        def interfaceModification = changes.interfaceDifferences["Foo"] as InterfaceModification
+        def intDefaultValueModified = interfaceModification.getDetails(InterfaceFieldArgumentTypeModification.class);
+        intDefaultValueModified[0].fieldName == "foo"
+        intDefaultValueModified[0].argumentName == "arg"
+        intDefaultValueModified[0].oldType == 'String'
+        intDefaultValueModified[0].newType == 'String!'
+    }
+
     def "object and interface field added"() {
         given:
         def oldSdl = '''
@@ -1327,8 +1407,30 @@ class EditOperationAnalyzerTest extends Specification {
         argTypeModification[0].argumentName == "foo"
         argTypeModification[0].oldType == 'String'
         argTypeModification[0].newType == 'ID'
+    }
 
-
+    def "directive argument wrapping type changed"() {
+        given:
+        def oldSdl = '''
+        type Query {
+            foo: String
+        }
+        directive @d(foo:String) on FIELD
+        '''
+        def newSdl = '''
+        type Query {
+            foo: String
+        }
+        directive @d(foo: [String]!)  on FIELD
+        '''
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+        then:
+        changes.directiveDifferences["d"] instanceof DirectiveModification
+        def argTypeModification = (changes.directiveDifferences["d"] as DirectiveModification).getDetails(DirectiveArgumentTypeModification)
+        argTypeModification[0].argumentName == "foo"
+        argTypeModification[0].oldType == 'String'
+        argTypeModification[0].newType == '[String]!'
     }
 
 

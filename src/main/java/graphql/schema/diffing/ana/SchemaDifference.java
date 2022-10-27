@@ -241,10 +241,14 @@ public interface SchemaDifference {
     }
 
     class ObjectFieldArgumentTypeModification implements ObjectModificationDetail {
+        private final String fieldName;
+        private final String argumentName;
         private final String oldType;
         private final String newType;
 
-        public ObjectFieldArgumentTypeModification(String oldType, String newType) {
+        public ObjectFieldArgumentTypeModification(String fieldName, String argumentName, String oldType, String newType) {
+            this.fieldName = fieldName;
+            this.argumentName = argumentName;
             this.oldType = oldType;
             this.newType = newType;
         }
@@ -255,6 +259,14 @@ public interface SchemaDifference {
 
         public String getOldType() {
             return oldType;
+        }
+
+        public String getFieldName() {
+            return fieldName;
+        }
+
+        public String getArgumentName() {
+            return argumentName;
         }
     }
 
@@ -486,11 +498,13 @@ public interface SchemaDifference {
     class InterfaceFieldArgumentTypeModification implements InterfaceModificationDetail {
 
         private String fieldName;
+        private final String argumentName;
         private final String oldType;
         private final String newType;
 
-        public InterfaceFieldArgumentTypeModification(String fieldName, String oldType, String newType) {
+        public InterfaceFieldArgumentTypeModification(String fieldName, String argumentName, String oldType, String newType) {
             this.fieldName = fieldName;
+            this.argumentName = argumentName;
             this.oldType = oldType;
             this.newType = newType;
         }
@@ -506,6 +520,11 @@ public interface SchemaDifference {
         public String getOldType() {
             return oldType;
         }
+
+        public String getArgumentName() {
+            return argumentName;
+        }
+
     }
 
     class InterfaceFieldArgumentDefaultValueModification implements InterfaceModificationDetail {
