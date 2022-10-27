@@ -88,6 +88,7 @@ public class EditOperationAnalyzer {
         handleImplementsChanges(editOperations, mapping);
         handleUnionMemberChanges(editOperations, mapping);
         handleEnumValuesChanges(editOperations, mapping);
+        handleArgumentChanges(editOperations, mapping);
 
         return new EditOperationAnalysisResult(
                 objectDifferences,
@@ -152,6 +153,30 @@ public class EditOperationAnalyzer {
                     }
                     break;
             }
+        }
+    }
+
+    private void handleArgumentChanges(List<EditOperation> editOperations, Mapping mapping) {
+        for (EditOperation editOperation : editOperations) {
+            switch (editOperation.getOperation()) {
+                case CHANGE_VERTEX:
+                    if (editOperation.getTargetVertex().isOfType(SchemaGraph.ARGUMENT)) {
+                        handleArgumentChange(editOperation);
+                    }
+            }
+        }
+    }
+
+    private void handleArgumentChange(EditOperation editOperation) {
+        Vertex argument = editOperation.getTargetVertex();
+        Vertex fieldOrDirective = newSchemaGraph.getFieldOrDirectiveForArgument(argument);
+        if (fieldOrDirective.isOfType(SchemaGraph.DIRECTIVE)) {
+            Vertex directive = fieldOrDirective;
+            DirectiveModification directiveModification = getDirectiveModification(directive.getName());
+            String oldName = editOperation.getSourceVertex().getName();
+            String newName = argument.getName();
+            directiveModification.getDetails().add(new DirectiveArgumentRename(oldName, newName));
+
         }
     }
 
@@ -547,6 +572,14 @@ public class EditOperationAnalyzer {
         }
         assertTrue(enumDifferences.get(newName) instanceof EnumModification);
         return (EnumModification) enumDifferences.get(newName);
+    }
+
+    private DirectiveModification getDirectiveModification(String newName) {
+        if (!directiveDifferences.containsKey(newName)) {
+            directiveDifferences.put(newName, new DirectiveModification(newName));
+        }
+        assertTrue(directiveDifferences.get(newName) instanceof DirectiveModification);
+        return (DirectiveModification) directiveDifferences.get(newName);
     }
 
     private InterfaceModification getInterfaceModification(String newName) {

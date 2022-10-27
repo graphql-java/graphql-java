@@ -934,6 +934,31 @@ class EditOperationAnalyzerTest extends Specification {
         modification.newName == "dRenamed"
     }
 
+    def "directive argument renamed"() {
+        given:
+        def oldSdl = '''
+        type Query {
+            foo: String
+        }
+        directive @d(foo: String) on FIELD
+        '''
+        def newSdl = '''
+        type Query {
+            foo: String
+        }
+        directive @d(bar:String) on FIELD
+        '''
+        when:
+        def changes = changes(oldSdl, newSdl)
+        then:
+        changes.directiveChanges["d"] instanceof DirectiveModification
+        def renames = (changes.directiveChanges["d"] as DirectiveModification).getDetails(DirectiveArgumentRename)
+        renames[0].oldName == "foo"
+        renames[0].newName == "bar"
+
+
+    }
+
 
     EditOperationAnalysisResult changes(
             String oldSdl,

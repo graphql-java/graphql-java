@@ -805,14 +805,118 @@ public interface SchemaDifference {
         private final String newName;
         private final boolean nameChanged;
 
+        private final List<DirectiveModificationDetail> details = new ArrayList<>();
+
         public DirectiveModification(String oldName, String newName) {
             this.oldName = oldName;
             this.newName = newName;
             this.nameChanged = oldName.equals(newName);
         }
+        public DirectiveModification( String newName) {
+            this.oldName = newName;
+            this.newName = newName;
+            this.nameChanged = false;
+        }
 
         public boolean isNameChanged() {
             return nameChanged;
+        }
+
+        public String getNewName() {
+            return newName;
+        }
+
+        public String getOldName() {
+            return oldName;
+        }
+
+        public List<DirectiveModificationDetail> getDetails() {
+            return details;
+        }
+
+        public <T extends DirectiveModificationDetail> List<T> getDetails(Class<? extends T> clazz) {
+            return (List) FpKit.filterList(details, clazz::isInstance);
+        }
+    }
+
+    interface DirectiveModificationDetail {
+
+    }
+
+    class DirectiveArgumentDeletion implements ObjectModificationDetail {
+        private final String name;
+
+        public DirectiveArgumentDeletion(String name) {
+            this.name = name;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+    }
+
+    class DirectiveArgumentAddition implements ObjectModificationDetail {
+        private final String name;
+
+        public DirectiveArgumentAddition(String name) {
+            this.name = name;
+        }
+
+        public String getName() {
+            return name;
+        }
+    }
+
+    class DirectiveArgumentTypeModification implements ObjectModificationDetail {
+        private final String oldType;
+        private final String newType;
+
+        public DirectiveArgumentTypeModification(String oldType, String newType) {
+            this.oldType = oldType;
+            this.newType = newType;
+        }
+
+        public String getNewType() {
+            return newType;
+        }
+
+        public String getOldType() {
+            return oldType;
+        }
+    }
+
+    class DirectiveArgumentDefaultValueModification implements ObjectModificationDetail {
+        private final String argumentName;
+        private final String oldValue;
+        private final String newValue;
+
+        public DirectiveArgumentDefaultValueModification(String argumentName, String oldValue, String newValue) {
+            this.argumentName = argumentName;
+            this.oldValue = oldValue;
+            this.newValue = newValue;
+        }
+
+        public String getOldValue() {
+            return oldValue;
+        }
+
+        public String getNewValue() {
+            return newValue;
+        }
+
+        public String getArgumentName() {
+            return argumentName;
+        }
+    }
+
+    class DirectiveArgumentRename implements DirectiveModificationDetail {
+        private final String oldName;
+        private final String newName;
+
+        public DirectiveArgumentRename(String oldName, String newName) {
+            this.oldName = oldName;
+            this.newName = newName;
         }
 
         public String getNewName() {
