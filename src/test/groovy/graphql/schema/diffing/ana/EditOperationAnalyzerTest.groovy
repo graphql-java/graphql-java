@@ -507,7 +507,7 @@ class EditOperationAnalyzerTest extends Specification {
 
     }
 
-    def "Interface and Object field type changed"() {
+    def "Interface and Object field type changed completely"() {
         given:
         def oldSdl = '''
         type Query implements I{
@@ -541,6 +541,42 @@ class EditOperationAnalyzerTest extends Specification {
         oFieldTypeModifications[0].fieldName == "foo"
         oFieldTypeModifications[0].oldType == "String"
         oFieldTypeModifications[0].newType == "ID"
+    }
+
+    def "Interface and Object field type changed wrapping type"() {
+        given:
+        def oldSdl = '''
+        type Query implements I{
+            foo: String
+        }
+        interface I {
+            foo: String
+        }
+        '''
+        def newSdl = '''
+        type Query implements I{
+            foo: [String!]
+        }
+        interface I {
+            foo: [String!]
+        }
+        '''
+        when:
+        def changes = changes(oldSdl, newSdl)
+        then:
+        changes.interfaceChanges["I"] instanceof InterfaceModification
+        def iModification = changes.interfaceChanges["I"] as InterfaceModification
+        def iFieldTypeModifications = iModification.getDetails(InterfaceFieldTypeModification)
+        iFieldTypeModifications[0].fieldName == "foo"
+        iFieldTypeModifications[0].oldType == "String"
+        iFieldTypeModifications[0].newType == "[String!]"
+        and:
+        changes.objectChanges["Query"] instanceof ObjectModification
+        def oModification = changes.objectChanges["Query"] as ObjectModification
+        def oFieldTypeModifications = oModification.getDetails(ObjectFieldTypeModification)
+        oFieldTypeModifications[0].fieldName == "foo"
+        oFieldTypeModifications[0].oldType == "String"
+        oFieldTypeModifications[0].newType == "[String!]"
 
 
     }

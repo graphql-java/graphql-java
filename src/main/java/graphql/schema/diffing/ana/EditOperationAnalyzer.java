@@ -495,7 +495,17 @@ public class EditOperationAnalyzer {
             String oldType = getTypeFromEdgeLabel(editOperation.getSourceEdge());
             String newType = getTypeFromEdgeLabel(editOperation.getTargetEdge());
             objectModification.getDetails().add(new ObjectFieldTypeModification(fieldName, oldType, newType));
+        }else {
+            assertTrue(container.isOfType(SchemaGraph.INTERFACE));
+            Vertex interfaze = container;
+            InterfaceModification interfaceModification = getInterfaceModification(interfaze.getName());
+            String fieldName = field.getName();
+            String oldType = getTypeFromEdgeLabel(editOperation.getSourceEdge());
+            String newType = getTypeFromEdgeLabel(editOperation.getTargetEdge());
+            interfaceModification.getDetails().add(new InterfaceFieldTypeModification(fieldName, oldType, newType));
+
         }
+
 
     }
 
