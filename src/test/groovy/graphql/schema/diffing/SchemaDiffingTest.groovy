@@ -1090,9 +1090,12 @@ class SchemaDiffingTest extends Specification {
 
         then:
         /**
-         * change argument, insert argument, new edge from Directive to new Argument
+         * change: a2 => a3
+         * insert: a4
+         * new edge from directive to a4
+         * new edge from a4 to String
          */
-        operations.size() == 3
+        operations.size() == 4
     }
 
     def "change applied argument"() {
@@ -1424,6 +1427,33 @@ class SchemaDiffingTest extends Specification {
         // changing the label of the edge to the type
         operations.size() == 1
         operations.findAll({ it.operation == EditOperation.Operation.CHANGE_EDGE }).size() == 1
+
+    }
+
+    def "directive argument default value changed"() {
+        given:
+        def schema1 = schema('''
+        type Query {
+            foo: String
+        }
+        directive @d(foo:String = "A") on FIELD
+        ''')
+        def schema2 = schema('''
+        type Query {
+            foo: String
+        }
+        directive @d(foo: String = "B") on FIELD
+        ''')
+
+        when:
+        def operations = new SchemaDiffing().diffGraphQLSchema(schema1, schema2)
+        operations.each { println it }
+
+        then:
+        // changing the label of the edge to the type
+        operations.size() == 1
+        operations.findAll({ it.operation == EditOperation.Operation.CHANGE_EDGE }).size() == 1
+
 
     }
 }

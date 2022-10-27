@@ -958,13 +958,20 @@ public interface SchemaDifference {
         }
     }
 
-    class DirectiveArgumentTypeModification implements ObjectModificationDetail {
+    class DirectiveArgumentTypeModification implements DirectiveModificationDetail {
+        private final String argumentName;
         private final String oldType;
         private final String newType;
 
-        public DirectiveArgumentTypeModification(String oldType, String newType) {
+
+        public DirectiveArgumentTypeModification(String argumentName, String oldType, String newType) {
+            this.argumentName = argumentName;
             this.oldType = oldType;
             this.newType = newType;
+        }
+
+        public String getArgumentName() {
+            return argumentName;
         }
 
         public String getNewType() {
@@ -976,7 +983,7 @@ public interface SchemaDifference {
         }
     }
 
-    class DirectiveArgumentDefaultValueModification implements ObjectModificationDetail {
+    class DirectiveArgumentDefaultValueModification implements DirectiveModificationDetail {
         private final String argumentName;
         private final String oldValue;
         private final String newValue;

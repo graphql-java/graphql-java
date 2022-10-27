@@ -1279,6 +1279,32 @@ class EditOperationAnalyzerTest extends Specification {
 
     }
 
+    def "directive argument default value changed"() {
+        given:
+        def oldSdl = '''
+        type Query {
+            foo: String
+        }
+        directive @d(foo:String = "A") on FIELD
+        '''
+        def newSdl = '''
+        type Query {
+            foo: String
+        }
+        directive @d(foo: String = "B") on FIELD
+        '''
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+        then:
+        changes.directiveDifferences["d"] instanceof DirectiveModification
+        def defaultValueChange = (changes.directiveDifferences["d"] as DirectiveModification).getDetails(DirectiveArgumentDefaultValueModification)
+        defaultValueChange[0].argumentName == "foo"
+        defaultValueChange[0].oldValue == '"A"'
+        defaultValueChange[0].newValue == '"B"'
+
+
+    }
+
 
     EditOperationAnalysisResult calcDiff(
             String oldSdl,

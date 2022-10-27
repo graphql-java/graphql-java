@@ -531,7 +531,12 @@ public class EditOperationAnalyzer {
                         newDefaultValue);
                 getInterfaceModification(objectOrInterface.getName()).getDetails().add(defaultValueModification);
             }
-
+        } else {
+            assertTrue(fieldOrDirective.isOfType(SchemaGraph.DIRECTIVE));
+            Vertex directive = fieldOrDirective;
+            String oldDefaultValue = getDefaultValueFromEdgeLabel(editOperation.getSourceEdge());
+            String newDefaultValue = getDefaultValueFromEdgeLabel(editOperation.getTargetEdge());
+            getDirectiveModification(directive.getName()).getDetails().add(new DirectiveArgumentDefaultValueModification(argument.getName(), oldDefaultValue, newDefaultValue));
         }
     }
 

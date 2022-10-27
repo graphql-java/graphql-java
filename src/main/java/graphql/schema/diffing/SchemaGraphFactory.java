@@ -115,6 +115,9 @@ public class SchemaGraphFactory {
             if (SchemaGraph.INPUT_OBJECT.equals(vertex.getType())) {
                 handleInputObject(vertex, schemaGraph, schema);
             }
+            if (SchemaGraph.DIRECTIVE.equals(vertex.getType())) {
+                handleDirective(vertex, schemaGraph, schema);
+            }
         }
         return schemaGraph;
     }
@@ -211,10 +214,6 @@ public class SchemaGraphFactory {
             schemaGraph, GraphQLSchema graphQLSchema) {
         GraphQLOutputType type = fieldDefinition.getType();
         GraphQLUnmodifiedType graphQLUnmodifiedType = GraphQLTypeUtil.unwrapAll(type);
-//        Vertex dummyTypeVertex = new Vertex(SchemaGraph.DUMMY_TYPE_VERTEX, debugPrefix + String.valueOf(counter++));
-//        dummyTypeVertex.setBuiltInType(fieldVertex.isBuiltInType());
-//        schemaGraph.addVertex(dummyTypeVertex);
-//        schemaGraph.addEdge(new Edge(fieldVertex, dummyTypeVertex));
         Vertex typeVertex = assertNotNull(schemaGraph.getType(graphQLUnmodifiedType.getName()));
         Edge typeEdge = new Edge(fieldVertex, typeVertex);
         typeEdge.setLabel("type=" + GraphQLTypeUtil.simplePrint(type) + ";");
@@ -225,6 +224,16 @@ public class SchemaGraphFactory {
                     vertex.get("name").equals(graphQLArgument.getName())).get();
             handleArgument(argumentVertex, graphQLArgument, schemaGraph);
         }
+    }
+
+    private void handleDirective(Vertex directive, SchemaGraph schemaGraph, GraphQLSchema graphQLSchema) {
+        GraphQLDirective graphQLDirective = graphQLSchema.getDirective(directive.getName());
+        for (GraphQLArgument graphQLArgument : graphQLDirective.getArguments()) {
+            Vertex argumentVertex = schemaGraph.findTargetVertex(directive, vertex -> vertex.isOfType(SchemaGraph.ARGUMENT) &&
+                    vertex.getName().equals(graphQLArgument.getName())).get();
+            handleArgument(argumentVertex, graphQLArgument, schemaGraph);
+        }
+
     }
 
     private void handleArgument(Vertex argumentVertex, GraphQLArgument graphQLArgument, SchemaGraph schemaGraph) {
