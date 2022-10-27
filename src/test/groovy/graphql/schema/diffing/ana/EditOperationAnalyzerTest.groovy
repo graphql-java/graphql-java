@@ -2,6 +2,7 @@ package graphql.schema.diffing.ana
 
 import graphql.TestUtil
 import graphql.schema.diffing.SchemaDiffing
+import graphql.schema.idl.errors.DirectiveMissingNonNullArgumentError
 import spock.lang.Specification
 
 import static graphql.schema.diffing.ana.SchemaDifference.*
@@ -609,6 +610,34 @@ class EditOperationAnalyzerTest extends Specification {
 
     }
 
+    def "enum renamed"() {
+        given:
+        def oldSdl = '''
+        type Query {
+            foo: String
+        }
+        enum E {
+            A, B
+        }
+        '''
+        def newSdl = '''
+        type Query {
+            foo: ERenamed
+        }
+        enum ERenamed {
+            A, B
+        }
+        '''
+        when:
+        def changes = changes(oldSdl, newSdl)
+        then:
+        changes.enumChanges["E"] === changes.enumChanges["ERenamed"]
+        def modification = changes.enumChanges["E"] as EnumModification
+        modification.oldName == "E"
+        modification.newName == "ERenamed"
+
+    }
+
     def "enum added"() {
         given:
         def oldSdl = '''
@@ -652,7 +681,6 @@ class EditOperationAnalyzerTest extends Specification {
         changes.enumChanges["E"] instanceof EnumDeletion
         (changes.enumChanges["E"] as EnumDeletion).getName() == "E"
     }
-
 
 
     def "enum value added"() {
@@ -747,6 +775,29 @@ class EditOperationAnalyzerTest extends Specification {
         (changes.scalarChanges["E"] as ScalarDeletion).getName() == "E"
     }
 
+    def "scalar renamed"() {
+        given:
+        def oldSdl = '''
+        type Query {
+            foo: Foo
+        }
+        scalar Foo
+        '''
+        def newSdl = '''
+        type Query {
+            foo: Bar
+        }
+        scalar Bar
+        '''
+        when:
+        def changes = changes(oldSdl, newSdl)
+        then:
+        changes.scalarChanges["Foo"] === changes.scalarChanges["Bar"]
+        def modification = changes.scalarChanges["Foo"] as ScalarModification
+        modification.oldName == "Foo"
+        modification.newName == "Bar"
+    }
+
     def "input object added"() {
         given:
         def oldSdl = '''
@@ -791,6 +842,35 @@ class EditOperationAnalyzerTest extends Specification {
         (changes.inputObjectChanges["I"] as InputObjectDeletion).getName() == "I"
     }
 
+    def "input object renamed"() {
+        given:
+        def oldSdl = '''
+        type Query {
+            foo(arg: I): String 
+        }
+        input I {
+            bar: String
+        }
+        '''
+        def newSdl = '''
+        type Query {
+            foo(arg: IRenamed): String 
+        }
+        input IRenamed {
+            bar: String
+        }
+        '''
+        when:
+        def changes = changes(oldSdl, newSdl)
+        then:
+        changes.inputObjectChanges["I"] === changes.inputObjectChanges["IRenamed"]
+        def modification = changes.inputObjectChanges["I"] as InputObjectModification
+        modification.oldName == "I"
+        modification.newName == "IRenamed"
+    }
+
+
+
     def "directive added"() {
         given:
         def oldSdl = '''
@@ -831,6 +911,28 @@ class EditOperationAnalyzerTest extends Specification {
         (changes.directiveChanges["d"] as DirectiveDeletion).getName() == "d"
     }
 
+    def "directive renamed"() {
+        given:
+        def oldSdl = '''
+        type Query {
+            foo: String
+        }
+        directive @d on FIELD
+        '''
+        def newSdl = '''
+        type Query {
+            foo: String
+        }
+        directive @dRenamed on FIELD
+        '''
+        when:
+        def changes = changes(oldSdl, newSdl)
+        then:
+        changes.directiveChanges["d"] === changes.directiveChanges["dRenamed"]
+        def modification = changes.directiveChanges["d"] as DirectiveModification
+        modification.oldName == "d"
+        modification.newName == "dRenamed"
+    }
 
 
     EditOperationAnalysisResult changes(

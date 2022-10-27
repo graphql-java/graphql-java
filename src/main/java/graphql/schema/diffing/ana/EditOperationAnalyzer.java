@@ -65,6 +65,7 @@ public class EditOperationAnalyzer {
 
     public EditOperationAnalysisResult analyzeEdits(List<EditOperation> editOperations, Mapping mapping) {
         handleTypeVertexChanges(editOperations);
+
         for (EditOperation editOperation : editOperations) {
             switch (editOperation.getOperation()) {
                 case CHANGE_VERTEX:
@@ -317,15 +318,18 @@ public class EditOperationAnalyzer {
             case SchemaGraph.UNION:
                 changedUnion(editOperation);
                 break;
-//            case SchemaGraph.INPUT_OBJECT:
-//                changedInputObject(editOperation);
-//                break;
-//            case SchemaGraph.ENUM:
-//                changedEnum(editOperation);
-//                break;
-//            case SchemaGraph.SCALAR:
-//                changedScalar(editOperation);
-//                break;
+            case SchemaGraph.INPUT_OBJECT:
+                changedInputObject(editOperation);
+                break;
+            case SchemaGraph.ENUM:
+                changedEnum(editOperation);
+                break;
+            case SchemaGraph.SCALAR:
+                changedScalar(editOperation);
+                break;
+            case SchemaGraph.DIRECTIVE:
+                changedDirective(editOperation);
+                break;
         }
 
     }
@@ -671,11 +675,47 @@ public class EditOperationAnalyzer {
 
     }
 
+    private void changedEnum(EditOperation editOperation) {
+        String oldName = editOperation.getSourceVertex().getName();
+        String newName = editOperation.getTargetVertex().getName();
+
+        EnumModification modification = new EnumModification(oldName, newName);
+        enumDifferences.put(oldName, modification);
+        enumDifferences.put(newName, modification);
+    }
+
+    private void changedScalar(EditOperation editOperation) {
+        String oldName = editOperation.getSourceVertex().getName();
+        String newName = editOperation.getTargetVertex().getName();
+
+        ScalarModification modification = new ScalarModification(oldName, newName);
+        scalarDifferences.put(oldName, modification);
+        scalarDifferences.put(newName, modification);
+    }
+
+    private void changedInputObject(EditOperation editOperation) {
+        String oldName = editOperation.getSourceVertex().getName();
+        String newName = editOperation.getTargetVertex().getName();
+
+        InputObjectModification modification = new InputObjectModification(oldName, newName);
+        inputObjectDifferences.put(oldName, modification);
+        inputObjectDifferences.put(newName, modification);
+    }
+
+    private void changedDirective(EditOperation editOperation) {
+        String oldName = editOperation.getSourceVertex().getName();
+        String newName = editOperation.getTargetVertex().getName();
+
+        DirectiveModification modification = new DirectiveModification(oldName, newName);
+        directiveDifferences.put(oldName, modification);
+        directiveDifferences.put(newName, modification);
+    }
+
     private void changedObject(EditOperation editOperation) {
         String oldName = editOperation.getSourceVertex().getName();
         String newName = editOperation.getTargetVertex().getName();
 
-        ObjectModification objectModification = new ObjectModification(oldName,newName);
+        ObjectModification objectModification = new ObjectModification(oldName, newName);
         objectDifferences.put(oldName, objectModification);
         objectDifferences.put(newName, objectModification);
     }
@@ -684,7 +724,7 @@ public class EditOperationAnalyzer {
         String oldName = editOperation.getSourceVertex().getName();
         String newName = editOperation.getTargetVertex().getName();
 
-        InterfaceModification interfaceModification = new InterfaceModification(oldName,newName);
+        InterfaceModification interfaceModification = new InterfaceModification(oldName, newName);
         interfaceDifferences.put(oldName, interfaceModification);
         interfaceDifferences.put(newName, interfaceModification);
     }
