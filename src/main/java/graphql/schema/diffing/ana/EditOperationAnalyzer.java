@@ -852,6 +852,11 @@ public class EditOperationAnalyzer {
                 Vertex interfaze = fieldsContainerForField;
                 getInterfaceModification(interfaze.getName()).getDetails().add(new InterfaceFieldArgumentAddition(field.getName(), addedArgument.getName()));
             }
+        }else {
+            assertTrue(fieldOrDirective.isOfType(SchemaGraph.DIRECTIVE));
+            Vertex directive = fieldOrDirective;
+            getDirectiveModification(directive.getName()).getDetails().add(new DirectiveArgumentAddition(addedArgument.getName()));
+
         }
 
     }

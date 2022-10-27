@@ -939,7 +939,7 @@ public interface SchemaDifference {
 
     }
 
-    class DirectiveArgumentAddition implements ObjectModificationDetail {
+    class DirectiveArgumentAddition implements DirectiveModificationDetail {
         private final String name;
 
         public DirectiveArgumentAddition(String name) {
