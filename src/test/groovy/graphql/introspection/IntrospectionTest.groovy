@@ -479,13 +479,33 @@ class IntrospectionTest extends Specification {
         }
 
         when:
-            def allFalseExecutionResult = graphQL.execute(IntrospectionQuery.getIntrospectionQuery(false, false, false, false, false, 5))
+            def allFalseExecutionResult = graphQL.execute(
+                IntrospectionQueryBuilder.build(
+                    IntrospectionQueryBuilder.Options.defaultOptions()
+                        .descriptions(false)
+                        .specifiedByUrl(false)
+                        .directiveIsRepeatable(false)
+                        .schemaDescription(false)
+                        .inputValueDeprecation(false)
+                        .typeRefFragmentDepth(5)
+                )
+            )
         then:
             !parseExecutionResult(allFalseExecutionResult).any()
             allFalseExecutionResult.data["__schema"]["types"].find{it["name"] == "Query"}["fields"].find{it["name"] == "tenDimensionalList"}["type"]["ofType"]["ofType"]["ofType"]["ofType"]["ofType"]["ofType"] == null // typeRefFragmentDepth is 5
 
         when:
-            def allTrueExecutionResult = graphQL.execute(IntrospectionQuery.getIntrospectionQuery(true, true, true, true, true, 7))
+            def allTrueExecutionResult = graphQL.execute(
+                IntrospectionQueryBuilder.build(
+                    IntrospectionQueryBuilder.Options.defaultOptions()
+                        .descriptions(true)
+                        .specifiedByUrl(true)
+                        .directiveIsRepeatable(true)
+                        .schemaDescription(true)
+                        .inputValueDeprecation(true)
+                        .typeRefFragmentDepth(7)
+                )
+            )
         then:
             parseExecutionResult(allTrueExecutionResult).every()
             allTrueExecutionResult.data["__schema"]["types"].find{it["name"] == "Query"}["fields"].find{it["name"] == "tenDimensionalList"}["type"]["ofType"]["ofType"]["ofType"]["ofType"]["ofType"]["ofType"]["ofType"]["ofType"] == null // typeRefFragmentDepth is 7

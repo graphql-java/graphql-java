@@ -400,6 +400,11 @@ public class Introspection {
             .field(newFieldDefinition()
                     .name("specifiedByURL")
                     .type(GraphQLString))
+            .field(newFieldDefinition()
+                .name("specifiedByUrl")
+                .type(GraphQLString)
+                .deprecate("see `specifiedByURL`")
+            )
             .build();
 
     static {
@@ -413,6 +418,7 @@ public class Introspection {
         register(__Type, "name", nameDataFetcher);
         register(__Type, "description", descriptionDataFetcher);
         register(__Type, "specifiedByURL", specifiedByUrlDataFetcher);
+        register(__Type, "specifiedByUrl", specifiedByUrlDataFetcher); // note that this field is deprecated
     }
 
 
