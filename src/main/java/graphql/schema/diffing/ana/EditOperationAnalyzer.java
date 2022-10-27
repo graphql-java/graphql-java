@@ -281,12 +281,22 @@ public class EditOperationAnalyzer {
         Vertex field = editOperation.getTargetVertex();
         Vertex fieldsContainerForField = newSchemaGraph.getFieldsContainerForField(field);
         if (fieldsContainerForField.isOfType(SchemaGraph.OBJECT)) {
-            if (isObjectAdded(fieldsContainerForField.getName())) {
+            Vertex object = fieldsContainerForField;
+            if (isObjectAdded(object.getName())) {
                 return;
             }
-            ObjectModification objectModification = getObjectModification(fieldsContainerForField.getName());
+            ObjectModification objectModification = getObjectModification(object.getName());
             String name = field.getName();
             objectModification.getDetails().add(new ObjectFieldAddition(name));
+        }else {
+            assertTrue(fieldsContainerForField.isOfType(SchemaGraph.INTERFACE));
+            Vertex interfaze = fieldsContainerForField;
+            if (isInterfaceAdded(interfaze.getName())) {
+                return;
+            }
+            InterfaceModification interfaceModification = getInterfaceModification(interfaze.getName());
+            String name = field.getName();
+            interfaceModification.getDetails().add(new InterfaceFieldAddition(name));
         }
     }
     private void fieldDeleted(EditOperation editOperation) {

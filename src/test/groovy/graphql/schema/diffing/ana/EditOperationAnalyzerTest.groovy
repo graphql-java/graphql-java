@@ -526,15 +526,22 @@ class EditOperationAnalyzerTest extends Specification {
         intDefaultValueModified[0].newValue == '"barChanged"'
     }
 
-    def "field added"() {
+    def "object and interface field added"() {
         given:
         def oldSdl = '''
-        type Query {
+        type Query implements I{
+            hello: String
+        }
+        interface I {
             hello: String
         }
         '''
         def newSdl = '''
-        type Query {
+        type Query implements I{
+            hello: String
+            newOne: String
+        }
+        interface I {
             hello: String
             newOne: String
         }
@@ -544,8 +551,14 @@ class EditOperationAnalyzerTest extends Specification {
         then:
         changes.objectDifferences["Query"] instanceof ObjectModification
         def objectModification = changes.objectDifferences["Query"] as ObjectModification
-        def fieldAdded = objectModification.getDetails(ObjectFieldAddition)
-        fieldAdded[0].name == "newOne"
+        def oFieldAdded = objectModification.getDetails(ObjectFieldAddition)
+        oFieldAdded[0].name == "newOne"
+        and:
+        changes.interfaceDifferences["I"] instanceof InterfaceModification
+        def iInterfaces = changes.interfaceDifferences["I"] as InterfaceModification
+        def iFieldAdded = iInterfaces.getDetails(InterfaceFieldAddition)
+        iFieldAdded[0].name == "newOne"
+
     }
 
     def "object added"() {
