@@ -177,6 +177,25 @@ public class EditOperationAnalyzer {
             String newName = argument.getName();
             directiveModification.getDetails().add(new DirectiveArgumentRename(oldName, newName));
 
+        }else {
+            assertTrue(fieldOrDirective.isOfType(SchemaGraph.FIELD));
+            Vertex field = fieldOrDirective;
+            Vertex fieldsContainerForField = newSchemaGraph.getFieldsContainerForField(field);
+            if(fieldsContainerForField.isOfType(SchemaGraph.OBJECT)) {
+                Vertex object = fieldsContainerForField;
+                ObjectModification objectModification = getObjectModification(object.getName());
+                String oldName = editOperation.getSourceVertex().getName();
+                String newName = argument.getName();
+                objectModification.getDetails().add(new ObjectFieldArgumentRename(oldName, newName));
+            }else {
+                assertTrue(fieldsContainerForField.isOfType(SchemaGraph.INTERFACE));
+                Vertex interfaze = fieldsContainerForField;
+                InterfaceModification interfaceModification = getInterfaceModification(interfaze.getName());
+                String oldName = editOperation.getSourceVertex().getName();
+                String newName = argument.getName();
+                interfaceModification.getDetails().add(new InterfaceFieldArgumentRename(oldName, newName));
+
+            }
         }
     }
 

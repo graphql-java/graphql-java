@@ -161,6 +161,24 @@ public interface SchemaDifference {
         }
     }
 
+    class ObjectFieldArgumentRename implements ObjectModificationDetail {
+        private final String oldName;
+        private final String newName;
+
+        public ObjectFieldArgumentRename(String oldName, String newName) {
+            this.oldName = oldName;
+            this.newName = newName;
+        }
+
+        public String getNewName() {
+            return newName;
+        }
+
+        public String getOldName() {
+            return oldName;
+        }
+    }
+
     class ObjectFieldTypeModification implements ObjectModificationDetail {
         private final String fieldName;
         private final String oldType;
@@ -463,6 +481,23 @@ public interface SchemaDifference {
 
         public String getArgumentName() {
             return argumentName;
+        }
+    }
+    class InterfaceFieldArgumentRename implements InterfaceModificationDetail {
+        private final String oldName;
+        private final String newName;
+
+        public InterfaceFieldArgumentRename(String oldName, String newName) {
+            this.oldName = oldName;
+            this.newName = newName;
+        }
+
+        public String getNewName() {
+            return newName;
+        }
+
+        public String getOldName() {
+            return oldName;
         }
     }
 
