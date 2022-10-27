@@ -119,15 +119,21 @@ class EditOperationAnalyzerTest extends Specification {
         implementationDeletions[0].name == "FooI"
     }
 
-    def "field renamed"() {
+    def "object and interface field renamed"() {
         given:
         def oldSdl = '''
-        type Query {
+        type Query implements I{
+            hello: String
+        }
+        interface I {
             hello: String
         }
         '''
         def newSdl = '''
-        type Query {
+        type Query implements I{
+            hello2: String
+        }
+        interface I {
             hello2: String
         }
         '''
@@ -136,9 +142,16 @@ class EditOperationAnalyzerTest extends Specification {
         then:
         changes.objectDifferences["Query"] instanceof ObjectModification
         def objectModification = changes.objectDifferences["Query"] as ObjectModification
-        def fieldRenames = objectModification.getDetails(ObjectFieldRename.class)
-        fieldRenames[0].oldName == "hello"
-        fieldRenames[0].newName == "hello2"
+        def oFieldRenames = objectModification.getDetails(ObjectFieldRename.class)
+        oFieldRenames[0].oldName == "hello"
+        oFieldRenames[0].newName == "hello2"
+        and:
+        changes.interfaceDifferences["I"] instanceof InterfaceModification
+        def interfaceModification = changes.interfaceDifferences["I"] as InterfaceModification
+        def iFieldRenames = interfaceModification.getDetails(InterfaceFieldRename.class)
+        iFieldRenames[0].oldName == "hello"
+        iFieldRenames[0].newName == "hello2"
+
     }
 
     def "object and interface field deleted"() {
@@ -1083,7 +1096,6 @@ class EditOperationAnalyzerTest extends Specification {
         modification.oldName == "I"
         modification.newName == "IRenamed"
     }
-
 
 
     def "directive added"() {

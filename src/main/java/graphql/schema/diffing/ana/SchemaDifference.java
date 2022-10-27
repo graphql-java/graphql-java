@@ -396,6 +396,24 @@ public interface SchemaDifference {
             return name;
         }
     }
+    class InterfaceFieldRename implements InterfaceModificationDetail {
+        private final String oldName;
+        private final String newName;
+
+        public InterfaceFieldRename(String oldName, String newName) {
+            this.oldName = oldName;
+            this.newName = newName;
+        }
+
+        public String getNewName() {
+            return newName;
+        }
+
+        public String getOldName() {
+            return oldName;
+        }
+    }
+
 
     class InterfaceFieldTypeModification implements InterfaceModificationDetail {
         private final String fieldName;
