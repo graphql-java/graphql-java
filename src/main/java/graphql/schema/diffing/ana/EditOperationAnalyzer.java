@@ -415,6 +415,17 @@ public class EditOperationAnalyzer {
             if (isInterfaceAdded(interfaze.getName())) {
                 return;
             }
+            if (isFieldNewForExistingInterface(interfaze.getName(), field.getName())) {
+                return;
+            }
+            String newType = getTypeFromEdgeLabel(editOperation.getTargetEdge());
+            // this means we have an existing object changed its type
+            // and there must be a deleted edge with the old type information
+            EditOperation deletedTypeEdgeOperation = findDeletedEdge(field, editOperations, mapping);
+            String oldType = getTypeFromEdgeLabel(deletedTypeEdgeOperation.getSourceEdge());
+            InterfaceFieldTypeModification interfaceFieldTypeModification = new InterfaceFieldTypeModification(field.getName(), oldType, newType);
+            getInterfaceModification(interfaze.getName()).getDetails().add(interfaceFieldTypeModification);
+
         }
     }
 
@@ -558,6 +569,17 @@ public class EditOperationAnalyzer {
         }
         ObjectModification objectModification = (ObjectModification) objectDifferences.get(objectName);
         List<ObjectFieldAddition> newFields = objectModification.getDetails(ObjectFieldAddition.class);
+        return newFields.stream().anyMatch(detail -> detail.getName().equals(fieldName));
+    }
+    private boolean isFieldNewForExistingInterface(String interfaceName, String fieldName) {
+        if (!interfaceDifferences.containsKey(interfaceName)) {
+            return false;
+        }
+        if (!(interfaceDifferences.get(interfaceName) instanceof InterfaceModification)) {
+            return false;
+        }
+        InterfaceModification interfaceModification = (InterfaceModification) interfaceDifferences.get(interfaceName);
+        List<InterfaceFieldAddition> newFields = interfaceModification.getDetails(InterfaceFieldAddition.class);
         return newFields.stream().anyMatch(detail -> detail.getName().equals(fieldName));
     }
 

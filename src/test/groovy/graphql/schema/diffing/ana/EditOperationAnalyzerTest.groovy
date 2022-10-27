@@ -507,6 +507,44 @@ class EditOperationAnalyzerTest extends Specification {
 
     }
 
+    def "Interface and Object field type changed"() {
+        given:
+        def oldSdl = '''
+        type Query implements I{
+            foo: String
+        }
+        interface I {
+            foo: String
+        }
+        '''
+        def newSdl = '''
+        type Query implements I{
+            foo: ID
+        }
+        interface I {
+            foo: ID
+        }
+        '''
+        when:
+        def changes = changes(oldSdl, newSdl)
+        then:
+        changes.interfaceChanges["I"] instanceof InterfaceModification
+        def iModification = changes.interfaceChanges["I"] as InterfaceModification
+        def iFieldTypeModifications = iModification.getDetails(InterfaceFieldTypeModification)
+        iFieldTypeModifications[0].fieldName == "foo"
+        iFieldTypeModifications[0].oldType == "String"
+        iFieldTypeModifications[0].newType == "ID"
+        and:
+        changes.objectChanges["Query"] instanceof ObjectModification
+        def oModification = changes.objectChanges["Query"] as ObjectModification
+        def oFieldTypeModifications = oModification.getDetails(ObjectFieldTypeModification)
+        oFieldTypeModifications[0].fieldName == "foo"
+        oFieldTypeModifications[0].oldType == "String"
+        oFieldTypeModifications[0].newType == "ID"
+
+
+    }
+
     def "new Interface introduced"() {
         given:
         def oldSdl = '''

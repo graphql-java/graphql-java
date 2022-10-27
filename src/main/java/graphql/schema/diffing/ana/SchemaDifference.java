@@ -190,6 +190,10 @@ public interface SchemaDifference {
             this.newType = newType;
         }
 
+        public String getFieldName() {
+            return fieldName;
+        }
+
         public String getNewType() {
             return newType;
         }
@@ -394,12 +398,18 @@ public interface SchemaDifference {
     }
 
     class InterfaceFieldTypeModification implements InterfaceModificationDetail {
+        private final String fieldName;
         private final String oldType;
         private final String newType;
 
-        public InterfaceFieldTypeModification(String oldType, String newType) {
+        public InterfaceFieldTypeModification(String fieldName, String oldType, String newType) {
+            this.fieldName = fieldName;
             this.oldType = oldType;
             this.newType = newType;
+        }
+
+        public String getFieldName() {
+            return fieldName;
         }
 
         public String getNewType() {
