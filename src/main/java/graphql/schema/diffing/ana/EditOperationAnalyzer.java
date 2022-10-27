@@ -825,15 +825,23 @@ public class EditOperationAnalyzer {
     }
 
     private void argumentDeleted(EditOperation editOperation) {
-        Vertex removedArgument = editOperation.getSourceVertex();
-        Vertex fieldOrDirective = oldSchemaGraph.getFieldOrDirectiveForArgument(removedArgument);
+        Vertex deletedArgument = editOperation.getSourceVertex();
+        Vertex fieldOrDirective = oldSchemaGraph.getFieldOrDirectiveForArgument(deletedArgument);
         if (fieldOrDirective.isOfType(SchemaGraph.FIELD)) {
             Vertex field = fieldOrDirective;
             Vertex fieldsContainerForField = oldSchemaGraph.getFieldsContainerForField(field);
             if (fieldsContainerForField.isOfType(SchemaGraph.OBJECT)) {
                 Vertex object = fieldsContainerForField;
-                getObjectModification(object.getName()).getDetails().add(new ObjectFieldArgumentDeletion(field.getName(), removedArgument.getName()));
+                getObjectModification(object.getName()).getDetails().add(new ObjectFieldArgumentDeletion(field.getName(), deletedArgument.getName()));
+            } else {
+                assertTrue(fieldsContainerForField.isOfType(SchemaGraph.INTERFACE));
+                Vertex interfaze = fieldsContainerForField;
+                getInterfaceModification(interfaze.getName()).getDetails().add(new InterfaceFieldArgumentDeletion(field.getName(), deletedArgument.getName()));
             }
+        } else {
+            assertTrue(fieldOrDirective.isOfType(SchemaGraph.DIRECTIVE));
+            Vertex directive = fieldOrDirective;
+            getDirectiveModification(directive.getName()).getDetails().add(new DirectiveArgumentDeletion(deletedArgument.getName()));
         }
 
     }
@@ -852,7 +860,7 @@ public class EditOperationAnalyzer {
                 Vertex interfaze = fieldsContainerForField;
                 getInterfaceModification(interfaze.getName()).getDetails().add(new InterfaceFieldArgumentAddition(field.getName(), addedArgument.getName()));
             }
-        }else {
+        } else {
             assertTrue(fieldOrDirective.isOfType(SchemaGraph.DIRECTIVE));
             Vertex directive = fieldOrDirective;
             getDirectiveModification(directive.getName()).getDetails().add(new DirectiveArgumentAddition(addedArgument.getName()));

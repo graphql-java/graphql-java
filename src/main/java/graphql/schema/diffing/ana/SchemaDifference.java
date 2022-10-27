@@ -447,10 +447,17 @@ public interface SchemaDifference {
     }
 
     class InterfaceFieldArgumentDeletion implements InterfaceModificationDetail {
+        private final String fieldName;
         private final String name;
 
-        public InterfaceFieldArgumentDeletion(String name) {
+
+        public InterfaceFieldArgumentDeletion(String fieldName, String name) {
+            this.fieldName = fieldName;
             this.name = name;
+        }
+
+        public String getFieldName() {
+            return fieldName;
         }
 
         public String getName() {
@@ -926,7 +933,7 @@ public interface SchemaDifference {
 
     }
 
-    class DirectiveArgumentDeletion implements ObjectModificationDetail {
+    class DirectiveArgumentDeletion implements DirectiveModificationDetail {
         private final String name;
 
         public DirectiveArgumentDeletion(String name) {

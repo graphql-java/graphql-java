@@ -510,15 +510,21 @@ class EditOperationAnalyzerTest extends Specification {
     }
 
 
-    def "object field argument removed"() {
+    def "object and interface field argument deleted"() {
         given:
         def oldSdl = '''
-        type Query {
+        type Query implements I{
+            hello(arg: String): String
+        }
+        interface I{
             hello(arg: String): String
         }
         '''
         def newSdl = '''
-        type Query {
+        type Query implements I {
+            hello: String
+        }
+        interface I {
             hello: String
         }
         '''
@@ -527,9 +533,16 @@ class EditOperationAnalyzerTest extends Specification {
         then:
         changes.objectDifferences["Query"] instanceof ObjectModification
         def objectModification = changes.objectDifferences["Query"] as ObjectModification
-        def argumentRemoved = objectModification.getDetails(ObjectFieldArgumentDeletion.class);
-        argumentRemoved[0].fieldName == "hello"
-        argumentRemoved[0].name == "arg"
+        def oArgumentRemoved = objectModification.getDetails(ObjectFieldArgumentDeletion.class);
+        oArgumentRemoved[0].fieldName == "hello"
+        oArgumentRemoved[0].name == "arg"
+        and:
+        changes.interfaceDifferences["I"] instanceof InterfaceModification
+        def interfaceModification = changes.interfaceDifferences["I"] as InterfaceModification
+        def iArgumentRemoved = interfaceModification.getDetails(InterfaceFieldArgumentDeletion.class);
+        iArgumentRemoved[0].fieldName == "hello"
+        iArgumentRemoved[0].name == "arg"
+
     }
 
     def "argument default value modified for Object and Interface"() {
@@ -1238,6 +1251,30 @@ class EditOperationAnalyzerTest extends Specification {
         changes.directiveDifferences["d"] instanceof DirectiveModification
         def addition = (changes.directiveDifferences["d"] as DirectiveModification).getDetails(DirectiveArgumentAddition)
         addition[0].name == "foo"
+
+
+    }
+
+    def "directive argument deleted"() {
+        given:
+        def oldSdl = '''
+        type Query {
+            foo: String
+        }
+        directive @d(foo:String) on FIELD
+        '''
+        def newSdl = '''
+        type Query {
+            foo: String
+        }
+        directive @d on FIELD
+        '''
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+        then:
+        changes.directiveDifferences["d"] instanceof DirectiveModification
+        def deletion = (changes.directiveDifferences["d"] as DirectiveModification).getDetails(DirectiveArgumentDeletion)
+        deletion[0].name == "foo"
 
 
     }
