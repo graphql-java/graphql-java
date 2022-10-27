@@ -222,10 +222,17 @@ public interface SchemaDifference {
     }
 
     class ObjectFieldArgumentAddition implements ObjectModificationDetail {
+        private final String fieldName;
         private final String name;
 
-        public ObjectFieldArgumentAddition(String name) {
+
+        public ObjectFieldArgumentAddition(String fieldName, String name) {
+            this.fieldName = fieldName;
             this.name = name;
+        }
+
+        public String getFieldName() {
+            return fieldName;
         }
 
         public String getName() {
@@ -452,10 +459,16 @@ public interface SchemaDifference {
     }
 
     class InterfaceFieldArgumentAddition implements InterfaceModificationDetail {
+        private final String fieldName;
         private final String name;
 
-        public InterfaceFieldArgumentAddition(String name) {
+        public InterfaceFieldArgumentAddition(String fieldName, String name) {
+            this.fieldName = fieldName;
             this.name = name;
+        }
+
+        public String getFieldName() {
+            return fieldName;
         }
 
         public String getName() {
@@ -464,12 +477,19 @@ public interface SchemaDifference {
     }
 
     class InterfaceFieldArgumentTypeModification implements InterfaceModificationDetail {
+
+        private String fieldName;
         private final String oldType;
         private final String newType;
 
-        public InterfaceFieldArgumentTypeModification(String oldType, String newType) {
+        public InterfaceFieldArgumentTypeModification(String fieldName, String oldType, String newType) {
+            this.fieldName = fieldName;
             this.oldType = oldType;
             this.newType = newType;
+        }
+
+        public String getFieldName() {
+            return fieldName;
         }
 
         public String getNewType() {

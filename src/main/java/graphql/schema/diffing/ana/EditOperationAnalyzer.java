@@ -76,13 +76,14 @@ public class EditOperationAnalyzer {
                 case INSERT_VERTEX:
                     if (editOperation.getTargetVertex().isOfType(SchemaGraph.FIELD)) {
                         fieldAdded(editOperation);
+                    } else if (editOperation.getTargetVertex().isOfType(SchemaGraph.ARGUMENT)) {
+                        argumentAdded(editOperation);
                     }
                     break;
                 case DELETE_VERTEX:
                     if (editOperation.getSourceVertex().isOfType(SchemaGraph.ARGUMENT)) {
                         argumentDeleted(editOperation);
-                    }
-                    if (editOperation.getSourceVertex().isOfType(SchemaGraph.FIELD)) {
+                    } else if (editOperation.getSourceVertex().isOfType(SchemaGraph.FIELD)) {
                         fieldDeleted(editOperation);
                     }
             }
@@ -275,7 +276,7 @@ public class EditOperationAnalyzer {
             String oldName = editOperation.getSourceVertex().getName();
             String newName = field.getName();
             objectModification.getDetails().add(new ObjectFieldRename(oldName, newName));
-        }else {
+        } else {
             assertTrue(fieldsContainerForField.isOfType(SchemaGraph.INTERFACE));
             Vertex interfaze = fieldsContainerForField;
             InterfaceModification interfaceModification = getInterfaceModification(interfaze.getName());
@@ -296,7 +297,7 @@ public class EditOperationAnalyzer {
             ObjectModification objectModification = getObjectModification(object.getName());
             String name = field.getName();
             objectModification.getDetails().add(new ObjectFieldAddition(name));
-        }else {
+        } else {
             assertTrue(fieldsContainerForField.isOfType(SchemaGraph.INTERFACE));
             Vertex interfaze = fieldsContainerForField;
             if (isInterfaceAdded(interfaze.getName())) {
@@ -307,6 +308,7 @@ public class EditOperationAnalyzer {
             interfaceModification.getDetails().add(new InterfaceFieldAddition(name));
         }
     }
+
     private void fieldDeleted(EditOperation editOperation) {
         Vertex deletedField = editOperation.getSourceVertex();
         Vertex fieldsContainerForField = oldSchemaGraph.getFieldsContainerForField(deletedField);
@@ -318,7 +320,7 @@ public class EditOperationAnalyzer {
             ObjectModification objectModification = getObjectModification(object.getName());
             String name = deletedField.getName();
             objectModification.getDetails().add(new ObjectFieldDeletion(name));
-        }else {
+        } else {
             assertTrue(fieldsContainerForField.isOfType(SchemaGraph.INTERFACE));
             Vertex interfaze = fieldsContainerForField;
             if (isInterfaceDeleted(interfaze.getName())) {
@@ -831,6 +833,24 @@ public class EditOperationAnalyzer {
             if (fieldsContainerForField.isOfType(SchemaGraph.OBJECT)) {
                 Vertex object = fieldsContainerForField;
                 getObjectModification(object.getName()).getDetails().add(new ObjectFieldArgumentDeletion(field.getName(), removedArgument.getName()));
+            }
+        }
+
+    }
+
+    private void argumentAdded(EditOperation editOperation) {
+        Vertex addedArgument = editOperation.getTargetVertex();
+        Vertex fieldOrDirective = newSchemaGraph.getFieldOrDirectiveForArgument(addedArgument);
+        if (fieldOrDirective.isOfType(SchemaGraph.FIELD)) {
+            Vertex field = fieldOrDirective;
+            Vertex fieldsContainerForField = newSchemaGraph.getFieldsContainerForField(field);
+            if (fieldsContainerForField.isOfType(SchemaGraph.OBJECT)) {
+                Vertex object = fieldsContainerForField;
+                getObjectModification(object.getName()).getDetails().add(new ObjectFieldArgumentAddition(field.getName(), addedArgument.getName()));
+            } else {
+                assertTrue(fieldsContainerForField.isOfType(SchemaGraph.INTERFACE));
+                Vertex interfaze = fieldsContainerForField;
+                getInterfaceModification(interfaze.getName()).getDetails().add(new InterfaceFieldArgumentAddition(field.getName(), addedArgument.getName()));
             }
         }
 

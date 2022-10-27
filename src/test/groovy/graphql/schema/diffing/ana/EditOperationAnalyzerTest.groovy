@@ -441,6 +441,39 @@ class EditOperationAnalyzerTest extends Specification {
         typeModification[0].newType == "String!"
     }
 
+    def "object and interface field argument added"() {
+        given:
+        def oldSdl = '''
+        type Query implements I{
+            hello: String
+        }
+        interface I {
+            hello: String
+        } 
+        '''
+        def newSdl = '''
+        type Query implements I{
+            hello(arg: String): String
+        }
+        interface I {
+            hello(arg: String): String
+        } 
+        '''
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+        then:
+        changes.objectDifferences["Query"] instanceof ObjectModification
+        def objectModification = changes.objectDifferences["Query"] as ObjectModification
+        def objectArgumentAdded = objectModification.getDetails(ObjectFieldArgumentAddition.class);
+        objectArgumentAdded[0].name == "arg"
+        and:
+        changes.interfaceDifferences["I"] instanceof InterfaceModification
+        def interfaceModification = changes.interfaceDifferences["I"] as InterfaceModification
+        def interfaceArgumentAdded = interfaceModification.getDetails(InterfaceFieldArgumentAddition.class);
+        interfaceArgumentAdded[0].name == "arg"
+
+    }
+
     def "object and interface field argument renamed"() {
         given:
         def oldSdl = '''
