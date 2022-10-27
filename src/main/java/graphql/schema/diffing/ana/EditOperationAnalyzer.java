@@ -435,6 +435,31 @@ public class EditOperationAnalyzer {
         Vertex from = newEdge.getFrom();
         if (from.isOfType(SchemaGraph.FIELD)) {
             typeEdgeInsertedForField(editOperation, editOperations, mapping);
+        } else if (from.isOfType(SchemaGraph.ARGUMENT)) {
+            typeEdgeInsertedForArgument(editOperation, editOperations, mapping);
+        }
+
+    }
+
+    private void typeEdgeInsertedForArgument(EditOperation editOperation, List<EditOperation> editOperations, Mapping mapping) {
+        Vertex argument = editOperation.getTargetEdge().getFrom();
+        Vertex fieldOrDirective = newSchemaGraph.getFieldOrDirectiveForArgument(argument);
+        if (fieldOrDirective.isOfType(SchemaGraph.FIELD)) {
+
+        } else {
+            assertTrue(fieldOrDirective.isOfType(SchemaGraph.DIRECTIVE));
+            Vertex directive = fieldOrDirective;
+            if (isDirectiveAdded(directive.getName())) {
+                return;
+            }
+            if (isArgumentNewForExistingDirective(directive.getName(), argument.getName())) {
+                return;
+            }
+            String newType = getTypeFromEdgeLabel(editOperation.getTargetEdge());
+            EditOperation deletedTypeEdgeOperation = findDeletedEdge(argument, editOperations, mapping);
+            String oldType = getTypeFromEdgeLabel(deletedTypeEdgeOperation.getSourceEdge());
+            DirectiveArgumentTypeModification directiveArgumentTypeModification = new DirectiveArgumentTypeModification(argument.getName(), oldType, newType);
+            getDirectiveModification(directive.getName()).getDetails().add(directiveArgumentTypeModification);
         }
 
     }
@@ -502,11 +527,11 @@ public class EditOperationAnalyzer {
         if (from.isOfType(SchemaGraph.FIELD)) {
             fieldTypeChanged(editOperation);
         } else if (from.isOfType(SchemaGraph.ARGUMENT)) {
-            argumentTypeChanged(editOperation);
+            argumentTypeOrDefaultValueChanged(editOperation);
         }
     }
 
-    private void argumentTypeChanged(EditOperation editOperation) {
+    private void argumentTypeOrDefaultValueChanged(EditOperation editOperation) {
         Edge targetEdge = editOperation.getTargetEdge();
         Vertex argument = targetEdge.getFrom();
         Vertex fieldOrDirective = newSchemaGraph.getFieldOrDirectiveForArgument(argument);
@@ -534,10 +559,22 @@ public class EditOperationAnalyzer {
         } else {
             assertTrue(fieldOrDirective.isOfType(SchemaGraph.DIRECTIVE));
             Vertex directive = fieldOrDirective;
+
             String oldDefaultValue = getDefaultValueFromEdgeLabel(editOperation.getSourceEdge());
             String newDefaultValue = getDefaultValueFromEdgeLabel(editOperation.getTargetEdge());
-            getDirectiveModification(directive.getName()).getDetails().add(new DirectiveArgumentDefaultValueModification(argument.getName(), oldDefaultValue, newDefaultValue));
+            if (!oldDefaultValue.equals(newDefaultValue)) {
+                getDirectiveModification(directive.getName()).getDetails().add(new DirectiveArgumentDefaultValueModification(argument.getName(), oldDefaultValue, newDefaultValue));
+            }
+
+            String oldType = getTypeFromEdgeLabel(editOperation.getSourceEdge());
+            String newType = getTypeFromEdgeLabel(editOperation.getTargetEdge());
+
+            if (!oldType.equals(newType)) {
+                getDirectiveModification(directive.getName()).getDetails().add(new DirectiveArgumentTypeModification(argument.getName(), oldType, newType));
+
+            }
         }
+
     }
 
     private void fieldTypeChanged(EditOperation editOperation) {
@@ -629,6 +666,10 @@ public class EditOperationAnalyzer {
 
     }
 
+    private boolean isDirectiveAdded(String name) {
+        return directiveDifferences.containsKey(name) && directiveDifferences.get(name) instanceof DirectiveAddition;
+    }
+
     private boolean isObjectAdded(String name) {
         return objectDifferences.containsKey(name) && objectDifferences.get(name) instanceof ObjectAddition;
     }
@@ -647,6 +688,18 @@ public class EditOperationAnalyzer {
 
     private boolean isEnumAdded(String name) {
         return enumDifferences.containsKey(name) && enumDifferences.get(name) instanceof EnumAddition;
+    }
+
+    private boolean isArgumentNewForExistingDirective(String directiveName, String argumentName) {
+        if (!directiveDifferences.containsKey(directiveName)) {
+            return false;
+        }
+        if (!(directiveDifferences.get(directiveName) instanceof DirectiveModification)) {
+            return false;
+        }
+        DirectiveModification directiveModification = (DirectiveModification) directiveDifferences.get(directiveName);
+        List<DirectiveArgumentAddition> newArgs = directiveModification.getDetails(DirectiveArgumentAddition.class);
+        return newArgs.stream().anyMatch(detail -> detail.getName().equals(argumentName));
     }
 
     private boolean isFieldNewForExistingObject(String objectName, String fieldName) {

@@ -1305,6 +1305,32 @@ class EditOperationAnalyzerTest extends Specification {
 
     }
 
+    def "directive argument type changed completely"() {
+        given:
+        def oldSdl = '''
+        type Query {
+            foo: String
+        }
+        directive @d(foo:String) on FIELD
+        '''
+        def newSdl = '''
+        type Query {
+            foo: String
+        }
+        directive @d(foo: ID)  on FIELD
+        '''
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+        then:
+        changes.directiveDifferences["d"] instanceof DirectiveModification
+        def argTypeModification = (changes.directiveDifferences["d"] as DirectiveModification).getDetails(DirectiveArgumentTypeModification)
+        argTypeModification[0].argumentName == "foo"
+        argTypeModification[0].oldType == 'String'
+        argTypeModification[0].newType == 'ID'
+
+
+    }
+
 
     EditOperationAnalysisResult calcDiff(
             String oldSdl,
