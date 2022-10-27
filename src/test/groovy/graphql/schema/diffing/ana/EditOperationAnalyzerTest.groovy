@@ -2,7 +2,6 @@ package graphql.schema.diffing.ana
 
 import graphql.TestUtil
 import graphql.schema.diffing.SchemaDiffing
-import graphql.schema.idl.errors.DirectiveMissingNonNullArgumentError
 import spock.lang.Specification
 
 import static graphql.schema.diffing.ana.SchemaDifference.*
@@ -28,10 +27,10 @@ class EditOperationAnalyzerTest extends Specification {
         when:
         def changes = changes(oldSdl, newSdl)
         then:
-        changes.objectChanges["Query"] === changes.objectChanges["MyQuery"]
-        changes.objectChanges["Query"] instanceof ObjectModification
-        (changes.objectChanges["Query"] as ObjectModification).oldName == "Query"
-        (changes.objectChanges["Query"] as ObjectModification).newName == "MyQuery"
+        changes.objectDifferences["Query"] === changes.objectDifferences["MyQuery"]
+        changes.objectDifferences["Query"] instanceof ObjectModification
+        (changes.objectDifferences["Query"] as ObjectModification).oldName == "Query"
+        (changes.objectDifferences["Query"] as ObjectModification).newName == "MyQuery"
     }
 
     def "interface renamed"() {
@@ -56,10 +55,10 @@ class EditOperationAnalyzerTest extends Specification {
         when:
         def changes = changes(oldSdl, newSdl)
         then:
-        changes.interfaceChanges["I"] === changes.interfaceChanges["IRenamed"]
-        changes.interfaceChanges["I"] instanceof InterfaceModification
-        (changes.interfaceChanges["I"] as InterfaceModification).oldName == "I"
-        (changes.interfaceChanges["I"] as InterfaceModification).newName == "IRenamed"
+        changes.interfaceDifferences["I"] === changes.interfaceDifferences["IRenamed"]
+        changes.interfaceDifferences["I"] instanceof InterfaceModification
+        (changes.interfaceDifferences["I"] as InterfaceModification).oldName == "I"
+        (changes.interfaceDifferences["I"] as InterfaceModification).newName == "IRenamed"
     }
 
     def "interface removed from object"() {
@@ -80,8 +79,8 @@ class EditOperationAnalyzerTest extends Specification {
         when:
         def changes = changes(oldSdl, newSdl)
         then:
-        changes.objectChanges["Query"] instanceof ObjectModification
-        def implementationDeletions = (changes.objectChanges["Query"] as ObjectModification).getDetails(ObjectInterfaceImplementationDeletion)
+        changes.objectDifferences["Query"] instanceof ObjectModification
+        def implementationDeletions = (changes.objectDifferences["Query"] as ObjectModification).getDetails(ObjectInterfaceImplementationDeletion)
         implementationDeletions[0].name == "I"
     }
 
@@ -115,8 +114,8 @@ class EditOperationAnalyzerTest extends Specification {
         when:
         def changes = changes(oldSdl, newSdl)
         then:
-        changes.interfaceChanges["Foo"] instanceof InterfaceModification
-        def implementationDeletions = (changes.interfaceChanges["Foo"] as InterfaceModification).getDetails(InterfaceInterfaceImplementationDeletion)
+        changes.interfaceDifferences["Foo"] instanceof InterfaceModification
+        def implementationDeletions = (changes.interfaceDifferences["Foo"] as InterfaceModification).getDetails(InterfaceInterfaceImplementationDeletion)
         implementationDeletions[0].name == "FooI"
     }
 
@@ -135,8 +134,8 @@ class EditOperationAnalyzerTest extends Specification {
         when:
         def changes = changes(oldSdl, newSdl)
         then:
-        changes.objectChanges["Query"] instanceof ObjectModification
-        def objectModification = changes.objectChanges["Query"] as ObjectModification
+        changes.objectDifferences["Query"] instanceof ObjectModification
+        def objectModification = changes.objectDifferences["Query"] as ObjectModification
         def fieldRenames = objectModification.getDetails(ObjectFieldRename.class)
         fieldRenames[0].oldName == "hello"
         fieldRenames[0].newName == "hello2"
@@ -166,8 +165,8 @@ class EditOperationAnalyzerTest extends Specification {
         when:
         def changes = changes(oldSdl, newSdl)
         then:
-        changes.unionChanges["U"] instanceof UnionAddition
-        (changes.unionChanges["U"] as UnionAddition).name == "U"
+        changes.unionDifferences["U"] instanceof UnionAddition
+        (changes.unionDifferences["U"] as UnionAddition).name == "U"
     }
 
     def "union deleted"() {
@@ -193,8 +192,8 @@ class EditOperationAnalyzerTest extends Specification {
         when:
         def changes = changes(oldSdl, newSdl)
         then:
-        changes.unionChanges["U"] instanceof UnionDeletion
-        (changes.unionChanges["U"] as UnionDeletion).name == "U"
+        changes.unionDifferences["U"] instanceof UnionDeletion
+        (changes.unionDifferences["U"] as UnionDeletion).name == "U"
     }
 
     def "union renamed"() {
@@ -226,10 +225,10 @@ class EditOperationAnalyzerTest extends Specification {
         when:
         def changes = changes(oldSdl, newSdl)
         then:
-        changes.unionChanges["X"] === changes.unionChanges["U"]
-        changes.unionChanges["U"] instanceof UnionModification
-        (changes.unionChanges["U"] as UnionModification).oldName == "U"
-        (changes.unionChanges["U"] as UnionModification).newName == "X"
+        changes.unionDifferences["X"] === changes.unionDifferences["U"]
+        changes.unionDifferences["U"] instanceof UnionModification
+        (changes.unionDifferences["U"] as UnionModification).oldName == "U"
+        (changes.unionDifferences["U"] as UnionModification).newName == "X"
     }
 
     def "union renamed and member removed"() {
@@ -258,8 +257,8 @@ class EditOperationAnalyzerTest extends Specification {
         when:
         def changes = changes(oldSdl, newSdl)
         then:
-        changes.unionChanges["U"] instanceof UnionModification
-        def unionDiff = changes.unionChanges["U"] as UnionModification
+        changes.unionDifferences["U"] instanceof UnionModification
+        def unionDiff = changes.unionDifferences["U"] as UnionModification
         unionDiff.oldName == "U"
         unionDiff.newName == "X"
         unionDiff.getDetails(UnionMemberDeletion)[0].name == "B"
@@ -292,8 +291,8 @@ class EditOperationAnalyzerTest extends Specification {
         when:
         def changes = changes(oldSdl, newSdl)
         then:
-        changes.unionChanges["U"] instanceof UnionModification
-        def unionDiff = changes.unionChanges["U"] as UnionModification
+        changes.unionDifferences["U"] instanceof UnionModification
+        def unionDiff = changes.unionDifferences["U"] as UnionModification
         unionDiff.oldName == "U"
         unionDiff.newName == "X"
         unionDiff.getDetails(UnionMemberAddition)[0].name == "B"
@@ -334,8 +333,8 @@ class EditOperationAnalyzerTest extends Specification {
         when:
         def changes = changes(oldSdl, newSdl)
         then:
-        changes.unionChanges["U"] instanceof UnionModification
-        def unionModification = changes.unionChanges["U"] as UnionModification
+        changes.unionDifferences["U"] instanceof UnionModification
+        def unionModification = changes.unionDifferences["U"] as UnionModification
         unionModification.getDetails(UnionMemberAddition)[0].name == "C"
     }
 
@@ -367,8 +366,8 @@ class EditOperationAnalyzerTest extends Specification {
         when:
         def changes = changes(oldSdl, newSdl)
         then:
-        changes.unionChanges["U"] instanceof UnionModification
-        def unionModification = changes.unionChanges["U"] as UnionModification
+        changes.unionDifferences["U"] instanceof UnionModification
+        def unionModification = changes.unionDifferences["U"] as UnionModification
         unionModification.getDetails(UnionMemberDeletion)[0].name == "B"
     }
 
@@ -387,8 +386,8 @@ class EditOperationAnalyzerTest extends Specification {
         when:
         def changes = changes(oldSdl, newSdl)
         then:
-        changes.objectChanges["Query"] instanceof ObjectModification
-        def objectModification = changes.objectChanges["Query"] as ObjectModification
+        changes.objectDifferences["Query"] instanceof ObjectModification
+        def objectModification = changes.objectDifferences["Query"] as ObjectModification
         def typeModification = objectModification.getDetails(ObjectFieldTypeModification.class)
         typeModification[0].oldType == "String"
         typeModification[0].newType == "String!"
@@ -415,14 +414,14 @@ class EditOperationAnalyzerTest extends Specification {
         when:
         def changes = changes(oldSdl, newSdl)
         then:
-        changes.objectChanges["Query"] instanceof ObjectModification
-        def objectModification = changes.objectChanges["Query"] as ObjectModification
+        changes.objectDifferences["Query"] instanceof ObjectModification
+        def objectModification = changes.objectDifferences["Query"] as ObjectModification
         def objectArgumentRenamed = objectModification.getDetails(ObjectFieldArgumentRename.class);
         objectArgumentRenamed[0].oldName == "arg"
         objectArgumentRenamed[0].newName == "argRename"
         and:
-        changes.interfaceChanges["I"] instanceof InterfaceModification
-        def interfaceModification = changes.interfaceChanges["I"] as InterfaceModification
+        changes.interfaceDifferences["I"] instanceof InterfaceModification
+        def interfaceModification = changes.interfaceDifferences["I"] as InterfaceModification
         def interfaceArgumentRenamed = interfaceModification.getDetails(InterfaceFieldArgumentRename.class);
         interfaceArgumentRenamed[0].oldName == "arg"
         interfaceArgumentRenamed[0].newName == "argRename"
@@ -445,8 +444,8 @@ class EditOperationAnalyzerTest extends Specification {
         when:
         def changes = changes(oldSdl, newSdl)
         then:
-        changes.objectChanges["Query"] instanceof ObjectModification
-        def objectModification = changes.objectChanges["Query"] as ObjectModification
+        changes.objectDifferences["Query"] instanceof ObjectModification
+        def objectModification = changes.objectDifferences["Query"] as ObjectModification
         def argumentRemoved = objectModification.getDetails(ObjectFieldArgumentDeletion.class);
         argumentRemoved[0].fieldName == "hello"
         argumentRemoved[0].name == "arg"
@@ -475,16 +474,16 @@ class EditOperationAnalyzerTest extends Specification {
         def changes = changes(oldSdl, newSdl)
 
         then:
-        changes.objectChanges["Query"] instanceof ObjectModification
-        def objectModification = changes.objectChanges["Query"] as ObjectModification
+        changes.objectDifferences["Query"] instanceof ObjectModification
+        def objectModification = changes.objectDifferences["Query"] as ObjectModification
         def objDefaultValueModified = objectModification.getDetails(ObjectFieldArgumentDefaultValueModification.class);
         objDefaultValueModified[0].fieldName == "foo"
         objDefaultValueModified[0].argumentName == "arg"
         objDefaultValueModified[0].oldValue == '"bar"'
         objDefaultValueModified[0].newValue == '"barChanged"'
         and:
-        changes.interfaceChanges["Foo"] instanceof InterfaceModification
-        def interfaceModification = changes.interfaceChanges["Foo"] as InterfaceModification
+        changes.interfaceDifferences["Foo"] instanceof InterfaceModification
+        def interfaceModification = changes.interfaceDifferences["Foo"] as InterfaceModification
         def intDefaultValueModified = interfaceModification.getDetails(InterfaceFieldArgumentDefaultValueModification.class);
         intDefaultValueModified[0].fieldName == "foo"
         intDefaultValueModified[0].argumentName == "arg"
@@ -508,8 +507,8 @@ class EditOperationAnalyzerTest extends Specification {
         when:
         def changes = changes(oldSdl, newSdl)
         then:
-        changes.objectChanges["Query"] instanceof ObjectModification
-        def objectModification = changes.objectChanges["Query"] as ObjectModification
+        changes.objectDifferences["Query"] instanceof ObjectModification
+        def objectModification = changes.objectDifferences["Query"] as ObjectModification
         def fieldAdded = objectModification.getDetails(ObjectFieldAddition)
         fieldAdded[0].name == "newOne"
     }
@@ -533,7 +532,7 @@ class EditOperationAnalyzerTest extends Specification {
         when:
         def changes = changes(oldSdl, newSdl)
         then:
-        changes.objectChanges["Foo"] instanceof ObjectAddition
+        changes.objectDifferences["Foo"] instanceof ObjectAddition
     }
 
     def "object removed and field type changed"() {
@@ -554,10 +553,10 @@ class EditOperationAnalyzerTest extends Specification {
         when:
         def changes = changes(oldSdl, newSdl)
         then:
-        changes.objectChanges["Foo"] instanceof ObjectDeletion
-        (changes.objectChanges["Foo"] as ObjectDeletion).name == "Foo"
-        changes.objectChanges["Query"] instanceof ObjectModification
-        def queryObjectModification = changes.objectChanges["Query"] as ObjectModification
+        changes.objectDifferences["Foo"] instanceof ObjectDeletion
+        (changes.objectDifferences["Foo"] as ObjectDeletion).name == "Foo"
+        changes.objectDifferences["Query"] instanceof ObjectModification
+        def queryObjectModification = changes.objectDifferences["Query"] as ObjectModification
         queryObjectModification.details.size() == 1
         queryObjectModification.details[0] instanceof ObjectFieldTypeModification
         (queryObjectModification.details[0] as ObjectFieldTypeModification).oldType == "Foo"
@@ -586,15 +585,15 @@ class EditOperationAnalyzerTest extends Specification {
         when:
         def changes = changes(oldSdl, newSdl)
         then:
-        changes.interfaceChanges["I"] instanceof InterfaceModification
-        def iModification = changes.interfaceChanges["I"] as InterfaceModification
+        changes.interfaceDifferences["I"] instanceof InterfaceModification
+        def iModification = changes.interfaceDifferences["I"] as InterfaceModification
         def iFieldTypeModifications = iModification.getDetails(InterfaceFieldTypeModification)
         iFieldTypeModifications[0].fieldName == "foo"
         iFieldTypeModifications[0].oldType == "String"
         iFieldTypeModifications[0].newType == "ID"
         and:
-        changes.objectChanges["Query"] instanceof ObjectModification
-        def oModification = changes.objectChanges["Query"] as ObjectModification
+        changes.objectDifferences["Query"] instanceof ObjectModification
+        def oModification = changes.objectDifferences["Query"] as ObjectModification
         def oFieldTypeModifications = oModification.getDetails(ObjectFieldTypeModification)
         oFieldTypeModifications[0].fieldName == "foo"
         oFieldTypeModifications[0].oldType == "String"
@@ -622,15 +621,15 @@ class EditOperationAnalyzerTest extends Specification {
         when:
         def changes = changes(oldSdl, newSdl)
         then:
-        changes.interfaceChanges["I"] instanceof InterfaceModification
-        def iModification = changes.interfaceChanges["I"] as InterfaceModification
+        changes.interfaceDifferences["I"] instanceof InterfaceModification
+        def iModification = changes.interfaceDifferences["I"] as InterfaceModification
         def iFieldTypeModifications = iModification.getDetails(InterfaceFieldTypeModification)
         iFieldTypeModifications[0].fieldName == "foo"
         iFieldTypeModifications[0].oldType == "String"
         iFieldTypeModifications[0].newType == "[String!]"
         and:
-        changes.objectChanges["Query"] instanceof ObjectModification
-        def oModification = changes.objectChanges["Query"] as ObjectModification
+        changes.objectDifferences["Query"] instanceof ObjectModification
+        def oModification = changes.objectDifferences["Query"] as ObjectModification
         def oFieldTypeModifications = oModification.getDetails(ObjectFieldTypeModification)
         oFieldTypeModifications[0].fieldName == "foo"
         oFieldTypeModifications[0].oldType == "String"
@@ -663,11 +662,11 @@ class EditOperationAnalyzerTest extends Specification {
         when:
         def changes = changes(oldSdl, newSdl)
         then:
-        changes.interfaceChanges.size() == 1
-        changes.interfaceChanges["Node"] instanceof InterfaceAddition
-        changes.objectChanges.size() == 1
-        changes.objectChanges["Foo"] instanceof ObjectModification
-        def objectModification = changes.objectChanges["Foo"] as ObjectModification
+        changes.interfaceDifferences.size() == 1
+        changes.interfaceDifferences["Node"] instanceof InterfaceAddition
+        changes.objectDifferences.size() == 1
+        changes.objectDifferences["Foo"] instanceof ObjectModification
+        def objectModification = changes.objectDifferences["Foo"] as ObjectModification
         def addedInterfaceDetails = objectModification.getDetails(ObjectInterfaceImplementationAddition.class)
         addedInterfaceDetails.size() == 1
         addedInterfaceDetails[0].name == "Node"
@@ -694,12 +693,12 @@ class EditOperationAnalyzerTest extends Specification {
         when:
         def changes = changes(oldSdl, newSdl)
         then:
-        changes.interfaceChanges.size() == 1
-        changes.interfaceChanges["Node"] instanceof InterfaceAddition
-        changes.objectChanges.size() == 2
-        changes.objectChanges["Foo"] instanceof ObjectAddition
-        changes.objectChanges["Query"] instanceof ObjectModification
-        (changes.objectChanges["Query"] as ObjectModification).getDetails()[0] instanceof ObjectFieldTypeModification
+        changes.interfaceDifferences.size() == 1
+        changes.interfaceDifferences["Node"] instanceof InterfaceAddition
+        changes.objectDifferences.size() == 2
+        changes.objectDifferences["Foo"] instanceof ObjectAddition
+        changes.objectDifferences["Query"] instanceof ObjectModification
+        (changes.objectDifferences["Query"] as ObjectModification).getDetails()[0] instanceof ObjectFieldTypeModification
     }
 
     def "interfaced renamed"() {
@@ -729,9 +728,9 @@ class EditOperationAnalyzerTest extends Specification {
         when:
         def changes = changes(oldSdl, newSdl)
         then:
-        changes.interfaceChanges.size() == 2
-        changes.interfaceChanges["Node"] === changes.interfaceChanges["Node2"]
-        changes.interfaceChanges["Node2"] instanceof InterfaceModification
+        changes.interfaceDifferences.size() == 2
+        changes.interfaceDifferences["Node"] === changes.interfaceDifferences["Node2"]
+        changes.interfaceDifferences["Node2"] instanceof InterfaceModification
     }
 
     def "interfaced renamed and another interface added to it"() {
@@ -765,13 +764,13 @@ class EditOperationAnalyzerTest extends Specification {
         when:
         def changes = changes(oldSdl, newSdl)
         then:
-        changes.interfaceChanges.size() == 3
-        changes.interfaceChanges["Node"] == changes.interfaceChanges["Node2"]
-        changes.interfaceChanges["Node2"] instanceof InterfaceModification
-        changes.interfaceChanges["NewI"] instanceof InterfaceAddition
-        changes.objectChanges.size() == 1
-        changes.objectChanges["Foo"] instanceof ObjectModification
-        def objectModification = changes.objectChanges["Foo"] as ObjectModification
+        changes.interfaceDifferences.size() == 3
+        changes.interfaceDifferences["Node"] == changes.interfaceDifferences["Node2"]
+        changes.interfaceDifferences["Node2"] instanceof InterfaceModification
+        changes.interfaceDifferences["NewI"] instanceof InterfaceAddition
+        changes.objectDifferences.size() == 1
+        changes.objectDifferences["Foo"] instanceof ObjectModification
+        def objectModification = changes.objectDifferences["Foo"] as ObjectModification
         def addedInterfaceDetails = objectModification.getDetails(ObjectInterfaceImplementationAddition)
         addedInterfaceDetails.size() == 1
         addedInterfaceDetails[0].name == "NewI"
@@ -799,8 +798,8 @@ class EditOperationAnalyzerTest extends Specification {
         when:
         def changes = changes(oldSdl, newSdl)
         then:
-        changes.enumChanges["E"] === changes.enumChanges["ERenamed"]
-        def modification = changes.enumChanges["E"] as EnumModification
+        changes.enumDifferences["E"] === changes.enumDifferences["ERenamed"]
+        def modification = changes.enumDifferences["E"] as EnumModification
         modification.oldName == "E"
         modification.newName == "ERenamed"
 
@@ -824,8 +823,8 @@ class EditOperationAnalyzerTest extends Specification {
         when:
         def changes = changes(oldSdl, newSdl)
         then:
-        changes.enumChanges["E"] instanceof EnumAddition
-        (changes.enumChanges["E"] as EnumAddition).getName() == "E"
+        changes.enumDifferences["E"] instanceof EnumAddition
+        (changes.enumDifferences["E"] as EnumAddition).getName() == "E"
     }
 
     def "enum deleted"() {
@@ -846,8 +845,8 @@ class EditOperationAnalyzerTest extends Specification {
         when:
         def changes = changes(oldSdl, newSdl)
         then:
-        changes.enumChanges["E"] instanceof EnumDeletion
-        (changes.enumChanges["E"] as EnumDeletion).getName() == "E"
+        changes.enumDifferences["E"] instanceof EnumDeletion
+        (changes.enumDifferences["E"] as EnumDeletion).getName() == "E"
     }
 
 
@@ -872,8 +871,8 @@ class EditOperationAnalyzerTest extends Specification {
         when:
         def changes = changes(oldSdl, newSdl)
         then:
-        changes.enumChanges["E"] instanceof EnumModification
-        def enumModification = changes.enumChanges["E"] as EnumModification
+        changes.enumDifferences["E"] instanceof EnumModification
+        def enumModification = changes.enumDifferences["E"] as EnumModification
         enumModification.getDetails(EnumValueAddition)[0].name == "B"
     }
 
@@ -898,8 +897,8 @@ class EditOperationAnalyzerTest extends Specification {
         when:
         def changes = changes(oldSdl, newSdl)
         then:
-        changes.enumChanges["E"] instanceof EnumModification
-        def enumModification = changes.enumChanges["E"] as EnumModification
+        changes.enumDifferences["E"] instanceof EnumModification
+        def enumModification = changes.enumDifferences["E"] as EnumModification
         enumModification.getDetails(EnumValueDeletion)[0].name == "B"
     }
 
@@ -919,8 +918,8 @@ class EditOperationAnalyzerTest extends Specification {
         when:
         def changes = changes(oldSdl, newSdl)
         then:
-        changes.scalarChanges["E"] instanceof ScalarAddition
-        (changes.scalarChanges["E"] as ScalarAddition).getName() == "E"
+        changes.scalarDifferences["E"] instanceof ScalarAddition
+        (changes.scalarDifferences["E"] as ScalarAddition).getName() == "E"
     }
 
     def "scalar deleted"() {
@@ -939,8 +938,8 @@ class EditOperationAnalyzerTest extends Specification {
         when:
         def changes = changes(oldSdl, newSdl)
         then:
-        changes.scalarChanges["E"] instanceof ScalarDeletion
-        (changes.scalarChanges["E"] as ScalarDeletion).getName() == "E"
+        changes.scalarDifferences["E"] instanceof ScalarDeletion
+        (changes.scalarDifferences["E"] as ScalarDeletion).getName() == "E"
     }
 
     def "scalar renamed"() {
@@ -960,8 +959,8 @@ class EditOperationAnalyzerTest extends Specification {
         when:
         def changes = changes(oldSdl, newSdl)
         then:
-        changes.scalarChanges["Foo"] === changes.scalarChanges["Bar"]
-        def modification = changes.scalarChanges["Foo"] as ScalarModification
+        changes.scalarDifferences["Foo"] === changes.scalarDifferences["Bar"]
+        def modification = changes.scalarDifferences["Foo"] as ScalarModification
         modification.oldName == "Foo"
         modification.newName == "Bar"
     }
@@ -984,8 +983,8 @@ class EditOperationAnalyzerTest extends Specification {
         when:
         def changes = changes(oldSdl, newSdl)
         then:
-        changes.inputObjectChanges["I"] instanceof InputObjectAddition
-        (changes.inputObjectChanges["I"] as InputObjectAddition).getName() == "I"
+        changes.inputObjectDifferences["I"] instanceof InputObjectAddition
+        (changes.inputObjectDifferences["I"] as InputObjectAddition).getName() == "I"
     }
 
     def "input object deleted"() {
@@ -1006,8 +1005,8 @@ class EditOperationAnalyzerTest extends Specification {
         when:
         def changes = changes(oldSdl, newSdl)
         then:
-        changes.inputObjectChanges["I"] instanceof InputObjectDeletion
-        (changes.inputObjectChanges["I"] as InputObjectDeletion).getName() == "I"
+        changes.inputObjectDifferences["I"] instanceof InputObjectDeletion
+        (changes.inputObjectDifferences["I"] as InputObjectDeletion).getName() == "I"
     }
 
     def "input object renamed"() {
@@ -1031,8 +1030,8 @@ class EditOperationAnalyzerTest extends Specification {
         when:
         def changes = changes(oldSdl, newSdl)
         then:
-        changes.inputObjectChanges["I"] === changes.inputObjectChanges["IRenamed"]
-        def modification = changes.inputObjectChanges["I"] as InputObjectModification
+        changes.inputObjectDifferences["I"] === changes.inputObjectDifferences["IRenamed"]
+        def modification = changes.inputObjectDifferences["I"] as InputObjectModification
         modification.oldName == "I"
         modification.newName == "IRenamed"
     }
@@ -1055,8 +1054,8 @@ class EditOperationAnalyzerTest extends Specification {
         when:
         def changes = changes(oldSdl, newSdl)
         then:
-        changes.directiveChanges["d"] instanceof DirectiveAddition
-        (changes.directiveChanges["d"] as DirectiveAddition).getName() == "d"
+        changes.directiveDifferences["d"] instanceof DirectiveAddition
+        (changes.directiveDifferences["d"] as DirectiveAddition).getName() == "d"
     }
 
     def "directive deleted"() {
@@ -1075,8 +1074,8 @@ class EditOperationAnalyzerTest extends Specification {
         when:
         def changes = changes(oldSdl, newSdl)
         then:
-        changes.directiveChanges["d"] instanceof DirectiveDeletion
-        (changes.directiveChanges["d"] as DirectiveDeletion).getName() == "d"
+        changes.directiveDifferences["d"] instanceof DirectiveDeletion
+        (changes.directiveDifferences["d"] as DirectiveDeletion).getName() == "d"
     }
 
     def "directive renamed"() {
@@ -1096,8 +1095,8 @@ class EditOperationAnalyzerTest extends Specification {
         when:
         def changes = changes(oldSdl, newSdl)
         then:
-        changes.directiveChanges["d"] === changes.directiveChanges["dRenamed"]
-        def modification = changes.directiveChanges["d"] as DirectiveModification
+        changes.directiveDifferences["d"] === changes.directiveDifferences["dRenamed"]
+        def modification = changes.directiveDifferences["d"] as DirectiveModification
         modification.oldName == "d"
         modification.newName == "dRenamed"
     }
@@ -1119,8 +1118,8 @@ class EditOperationAnalyzerTest extends Specification {
         when:
         def changes = changes(oldSdl, newSdl)
         then:
-        changes.directiveChanges["d"] instanceof DirectiveModification
-        def renames = (changes.directiveChanges["d"] as DirectiveModification).getDetails(DirectiveArgumentRename)
+        changes.directiveDifferences["d"] instanceof DirectiveModification
+        def renames = (changes.directiveDifferences["d"] as DirectiveModification).getDetails(DirectiveArgumentRename)
         renames[0].oldName == "foo"
         renames[0].newName == "bar"
 
