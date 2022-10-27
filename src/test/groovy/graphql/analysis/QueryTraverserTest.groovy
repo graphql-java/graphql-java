@@ -3,6 +3,7 @@ package graphql.analysis
 import graphql.AssertException
 import graphql.TestUtil
 import graphql.execution.CoercedVariables
+import graphql.execution.NonNullableValueCoercedAsNullException
 import graphql.language.ArrayValue
 import graphql.language.Document
 import graphql.language.Field
@@ -524,7 +525,7 @@ class QueryTraverserTest extends Specification {
         1 * visitor.visitFragmentDefinition({ QueryVisitorFragmentDefinitionEnvironment env -> env.fragmentDefinition == fragments["F1"] })
     }
 
-    def "test visitField for non-nullable variables"() {
+    def "test visitField with non-nullable variables for static query analysis with no variables passed in"() {
         given:
         def schema = TestUtil.schema("""
             type Query{
@@ -568,6 +569,53 @@ class QueryTraverserTest extends Specification {
         })
         then:
         1 * visitor.visitField({ QueryVisitorFieldEnvironmentImpl it -> it.field.name == "bar" && it.fieldDefinition.type.name == "String" && it.parentType.name == "Query" })
+    }
+
+    def "test visitField with non-nullable variables for static query analysis when variables are passed in"() {
+        given:
+        def schema = TestUtil.schema("""
+            type Query{
+                foo(id: ID!): Foo
+                bar: String
+            }
+            type Foo {
+                subFoo: String
+            }
+        """)
+        def visitor = mockQueryVisitor()
+        def query = createQuery("""
+                query(\$id: ID!) {
+                    foo(id: \$id) {
+                        subFoo
+                    }
+                    bar
+                }
+                """)
+
+        when:
+        QueryTraverser queryTraversal = QueryTraverser.newQueryTraverser()
+                .document(query)
+                .schema(schema)
+                .variables([id: null])
+                .build()
+
+        queryTraversal.visitPreOrder(visitor)
+
+        then:
+        thrown(NonNullableValueCoercedAsNullException)
+
+        when:
+        QueryTraverser coercedQueryTraversal = QueryTraverser.newQueryTraverser()
+                .document(query)
+                .schema(schema)
+                .coercedVariables(CoercedVariables.of([id: null]))
+                .build()
+
+        coercedQueryTraversal.visitPreOrder(visitor)
+
+        then:
+        thrown(NonNullableValueCoercedAsNullException)
+
     }
 
     def "works for mutations()"() {
