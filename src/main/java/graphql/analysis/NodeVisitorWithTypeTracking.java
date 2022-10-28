@@ -30,7 +30,7 @@ import graphql.schema.GraphQLUnmodifiedType;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
-import java.util.HashMap;
+import java.util.Collections;
 import java.util.Locale;
 import java.util.Map;
 
@@ -159,7 +159,7 @@ public class NodeVisitorWithTypeTracking extends NodeVisitorStub {
                 field.getArguments(),
                 CoercedVariables.of(variables),
                 GraphQLContext.getDefault(),
-                Locale.getDefault()) : new HashMap<>();
+                Locale.getDefault()) : Collections.emptyMap();
         QueryVisitorFieldEnvironment environment = new QueryVisitorFieldEnvironmentImpl(isTypeNameIntrospectionField,
                 field,
                 fieldDefinition,
