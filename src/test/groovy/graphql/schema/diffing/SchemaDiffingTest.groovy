@@ -5,6 +5,7 @@ import graphql.schema.GraphQLFieldDefinition
 import graphql.schema.GraphQLSchemaElement
 import graphql.schema.GraphQLTypeVisitorStub
 import graphql.schema.SchemaTransformer
+import graphql.schema.diffing.ana.SchemaDifference
 import graphql.util.TraversalControl
 import graphql.util.TraverserContext
 import org.junit.Ignore
@@ -1456,6 +1457,61 @@ class SchemaDiffingTest extends Specification {
 
 
     }
+
+    def "object applied directive argument change"() {
+        given:
+        def schema1 = schema('''
+        directive @d(arg:String) on FIELD_DEFINITION
+        
+        type Query {
+            foo: String @d(arg: "foo")
+        }
+
+        ''')
+        def schema2 = schema('''
+        directive @d(arg: String)  on FIELD_DEFINITION
+        
+        type Query {
+            foo: String @d(arg: "bar")
+        }
+        ''')
+
+        when:
+        def operations = new SchemaDiffing().diffGraphQLSchema(schema1, schema2)
+        operations.each { println it }
+
+        then:
+        operations.size() == 1
+    }
+
+    def "object applied directive rename"() {
+        given:
+        def schema1 = schema('''
+        directive @d1(arg:String) on FIELD_DEFINITION
+        directive @d2(arg:String) on FIELD_DEFINITION
+        
+        type Query {
+            foo: String @d1(arg: "foo")
+        }
+
+        ''')
+        def schema2 = schema('''
+        directive @d1(arg:String) on FIELD_DEFINITION
+        directive @d2(arg:String) on FIELD_DEFINITION
+        
+        type Query {
+            foo: String @d2(arg: "foo")
+        }
+        ''')
+
+        when:
+        def operations = new SchemaDiffing().diffGraphQLSchema(schema1, schema2)
+        operations.each { println it }
+
+        then:
+        operations.size() == 1
+    }
+
 }
 
 

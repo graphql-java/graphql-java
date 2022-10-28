@@ -1433,6 +1433,31 @@ class EditOperationAnalyzerTest extends Specification {
         argTypeModification[0].newType == '[String]!'
     }
 
+    def "object added applied directive"() {
+        given:
+        def oldSdl = '''
+        directive @d(arg:String) on FIELD_DEFINITION
+        
+        type Query {
+            foo: String 
+        }
+        '''
+        def newSdl = '''
+        directive @d(arg: String)  on FIELD_DEFINITION
+        
+        type Query {
+            foo: String @d(arg: "foo")
+        }
+        '''
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+        then:
+        changes.objectDifferences["Query"] instanceof ObjectModification
+        def appliedDirective = (changes.objectDifferences["Query"] as ObjectModification).getDetails(AppliedDirectiveFieldAddition)
+        appliedDirective[0].fieldName == "foo"
+        appliedDirective[0].name == "d"
+    }
+
 
     EditOperationAnalysisResult calcDiff(
             String oldSdl,

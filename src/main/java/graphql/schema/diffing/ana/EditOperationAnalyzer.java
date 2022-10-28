@@ -93,6 +93,7 @@ public class EditOperationAnalyzer {
         handleUnionMemberChanges(editOperations, mapping);
         handleEnumValuesChanges(editOperations, mapping);
         handleArgumentChanges(editOperations, mapping);
+        handleAppliedDirectives(editOperations, mapping);
 
         return new EditOperationAnalysisResult(
                 objectDifferences,
@@ -102,6 +103,34 @@ public class EditOperationAnalyzer {
                 inputObjectDifferences,
                 scalarDifferences,
                 directiveDifferences);
+    }
+
+    private void handleAppliedDirectives(List<EditOperation> editOperations, Mapping mapping) {
+
+        for (EditOperation editOperation : editOperations) {
+            switch (editOperation.getOperation()) {
+                case INSERT_VERTEX:
+                    if(editOperation.getTargetVertex().isOfType(SchemaGraph.APPLIED_DIRECTIVE)) {
+                        appliedDirectiveAdded(editOperation);
+                    }
+                    break;
+            }
+        }
+
+    }
+
+    private void appliedDirectiveAdded(EditOperation editOperation) {
+        Vertex appliedDirective = editOperation.getTargetVertex();
+        Vertex container = newSchemaGraph.getAppliedDirectiveContainerForAppliedDirective(appliedDirective);
+        if (container.isOfType(SchemaGraph.FIELD)) {
+            Vertex field = container;
+            Vertex interfaceOrObjective = newSchemaGraph.getFieldsContainerForField(field);
+            if (interfaceOrObjective.isOfType(SchemaGraph.OBJECT)) {
+                Vertex object = interfaceOrObjective;
+                AppliedDirectiveFieldAddition appliedDirectiveFieldAddition = new AppliedDirectiveFieldAddition(field.getName(), appliedDirective.getName());
+                getObjectModification(object.getName()).getDetails().add(appliedDirectiveFieldAddition);
+            }
+        }
     }
 
     private void handleTypeChanges(List<EditOperation> editOperations, Mapping mapping) {

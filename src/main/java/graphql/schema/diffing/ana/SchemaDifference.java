@@ -89,6 +89,18 @@ public interface SchemaDifference {
         public <T extends ObjectModificationDetail> List<T> getDetails(Class<? extends T> clazz) {
             return (List) FpKit.filterList(details, clazz::isInstance);
         }
+
+        public String getOldName() {
+            return oldName;
+        }
+
+        public String getNewName() {
+            return newName;
+        }
+
+        public boolean isRenamed() {
+            return renamed;
+        }
     }
 
     interface ObjectModificationDetail {
@@ -415,6 +427,7 @@ public interface SchemaDifference {
             return name;
         }
     }
+
     class InterfaceFieldRename implements InterfaceModificationDetail {
         private final String oldName;
         private final String newName;
@@ -557,6 +570,7 @@ public interface SchemaDifference {
             return argumentName;
         }
     }
+
     class InterfaceFieldArgumentRename implements InterfaceModificationDetail {
         private final String oldName;
         private final String newName;
@@ -921,7 +935,8 @@ public interface SchemaDifference {
             this.newName = newName;
             this.nameChanged = oldName.equals(newName);
         }
-        public DirectiveModification( String newName) {
+
+        public DirectiveModification(String newName) {
             this.oldName = newName;
             this.newName = newName;
             this.nameChanged = false;
@@ -1042,6 +1057,53 @@ public interface SchemaDifference {
         public String getOldName() {
             return oldName;
         }
+    }
+
+    //------Applied Directives
+    interface AppliedDirectiveDifference {
+
+    }
+
+    class AppliedDirectiveFieldAddition implements ObjectModificationDetail {
+        private final String fieldName;
+        private final String name;
+
+        public AppliedDirectiveFieldAddition(String fieldName, String name) {
+            this.fieldName = fieldName;
+            this.name = name;
+        }
+
+        public String getFieldName() {
+            return fieldName;
+        }
+
+        public String getName() {
+            return name;
+        }
+    }
+
+    class AppliedDirectiveDeletion {
+
+    }
+
+    class AppliedDirectiveRenamed {
+
+    }
+
+    class AppliedDirectiveArgumentAddition {
+
+    }
+
+    class AppliedDirectiveArgumentDeletion {
+
+    }
+
+    class AppliedDirectiveArgumentValueModification {
+
+    }
+
+    class AppliedDirectiveArgumentNameModification {
+
     }
 
 
