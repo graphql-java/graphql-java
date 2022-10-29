@@ -1,0 +1,29 @@
+{
+  "resources": {
+    "includes": [
+      {
+        "pattern": "\\Qgraphiql\\E"
+      },
+      {
+        "pattern": "\\Qgraphql\\E"
+      },
+      {
+        "pattern": "\\Qgraph\\E.*\\Qql\/\\E.*\\Q.\\E.*"
+      }
+    ]
+  },
+  "bundles": [
+    {
+      "name": "i18n\/Validation.properties"
+    },
+    {
+      "name": "i18n\/General.properties"
+    },
+    {
+      "name": "i18n\/Execution.properties"
+    },
+    {
+      "name": "i18n\/Validation"
+    }
+  ]
+}
