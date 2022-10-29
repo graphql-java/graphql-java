@@ -1251,10 +1251,10 @@ many lines''']
         GraphQLSchema schema = TestUtil.schema('type Query {foo: MyScalar} scalar MyScalar @specifiedBy(url:"myUrl")')
 
         when:
-        def result = GraphQL.newGraphQL(schema).build().execute('{__type(name: "MyScalar") {name specifiedByUrl}}').getData()
+        def result = GraphQL.newGraphQL(schema).build().execute('{__type(name: "MyScalar") {name specifiedByURL}}').getData()
 
         then:
-        result == [__type: [name: "MyScalar", specifiedByUrl: "myUrl"]]
+        result == [__type: [name: "MyScalar", specifiedByURL: "myUrl"]]
     }
 
     def "test DFR and CF"() {
