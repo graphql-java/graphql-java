@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableList;
 import graphql.Assert;
 import graphql.Internal;
 import graphql.collect.ImmutableKit;
+import graphql.i18n.I18n;
 import graphql.language.Argument;
 import graphql.language.ArrayValue;
 import graphql.language.BooleanValue;
@@ -91,44 +92,16 @@ public class GraphqlAntlrToLanguage {
     private final CommonTokenStream tokens;
     private final MultiSourceReader multiSourceReader;
     private final ParserOptions parserOptions;
-
     private final Map<Node<?>, ParserRuleContext> nodeToRuleMap;
+    private final I18n i18N;
 
-    /**
-     * @param tokens            the token stream
-     * @param multiSourceReader the source of the query document
-     */
-    public GraphqlAntlrToLanguage(CommonTokenStream tokens, MultiSourceReader multiSourceReader) {
-        this(tokens, multiSourceReader, null);
-    }
-
-    /**
-     * @param tokens            the token stream
-     * @param multiSourceReader the source of the query document
-     * @param parserOptions     the parser options
-     */
-    public GraphqlAntlrToLanguage(CommonTokenStream tokens, MultiSourceReader multiSourceReader, ParserOptions parserOptions) {
-        this(tokens, multiSourceReader, parserOptions, null);
-    }
-
-    /**
-     * @param tokens            the token stream
-     * @param multiSourceReader the source of the query document
-     * @param parserOptions     the parser options
-     * @param nodeToRuleMap     a map that will be used to accumulate the ParserRuleContext associated with each node.
-     *                          This information can be used after the parsing process is done to access some elements
-     *                          that are usually lost during parsing. If the map is "null", no accumulation will be performed.
-     */
-    public GraphqlAntlrToLanguage(
-            CommonTokenStream tokens,
-            MultiSourceReader multiSourceReader,
-            ParserOptions parserOptions,
-            @Nullable Map<Node<?>, ParserRuleContext> nodeToRuleMap
-    ) {
+    public GraphqlAntlrToLanguage(CommonTokenStream tokens, MultiSourceReader multiSourceReader, ParserOptions parserOptions, I18n i18N, @Nullable Map<Node<?>, ParserRuleContext> nodeToRuleMap) {
         this.tokens = tokens;
         this.multiSourceReader = multiSourceReader;
         this.parserOptions = ofNullable(parserOptions).orElse(ParserOptions.getDefaultParserOptions());
+        this.i18N = i18N;
         this.nodeToRuleMap = nodeToRuleMap;
+
     }
 
     public ParserOptions getParserOptions() {
@@ -244,7 +217,7 @@ public class GraphqlAntlrToLanguage {
             if (selectionContext.inlineFragment() != null) {
                 return createInlineFragment(selectionContext.inlineFragment());
             }
-            return (Selection) Assert.assertShouldNeverHappen();
+            return Assert.assertShouldNeverHappen();
 
         });
         builder.selections(selections);
@@ -803,7 +776,7 @@ public class GraphqlAntlrToLanguage {
         if (multiLine) {
             return parseTripleQuotedString(strText);
         } else {
-            return parseSingleQuotedString(strText, sourceLocation);
+            return parseSingleQuotedString(i18N, strText, sourceLocation);
         }
     }
 
@@ -880,7 +853,7 @@ public class GraphqlAntlrToLanguage {
         if (multiLine) {
             content = parseTripleQuotedString(content);
         } else {
-            content = parseSingleQuotedString(content, sourceLocation);
+            content = parseSingleQuotedString(i18N, content, sourceLocation);
         }
         return new Description(content, sourceLocation, multiLine);
     }

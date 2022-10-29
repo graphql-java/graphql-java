@@ -43,6 +43,7 @@ import graphql.language.Value;
 import graphql.language.VariableDefinition;
 import graphql.language.VariableReference;
 import graphql.parser.Parser;
+import graphql.parser.ParserEnvironment;
 import graphql.schema.GraphQLAppliedDirective;
 import graphql.schema.GraphQLAppliedDirectiveArgument;
 import graphql.schema.GraphQLArgument;
@@ -92,6 +93,7 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotNull;
+import static graphql.parser.ParserEnvironment.newParserEnvironment;
 import static graphql.schema.GraphQLArgument.newArgument;
 import static graphql.schema.GraphQLTypeUtil.unwrapNonNull;
 import static graphql.schema.GraphQLTypeUtil.unwrapNonNullAs;
@@ -715,7 +717,8 @@ public class Anonymizer {
         Map<Node, String> astNodeToNewName = new LinkedHashMap<>();
         Map<String, String> variableNames = new LinkedHashMap<>();
         Map<Field, GraphQLFieldDefinition> fieldToFieldDefinition = new LinkedHashMap<>();
-        Document document = new Parser().parseDocument(query);
+
+        Document document = Parser.parse(newParserEnvironment().document(query).build());
         assertUniqueOperation(document);
         QueryTraverser queryTraverser = QueryTraverser.newQueryTraverser().document(document).schema(schema).variables(variables).build();
         queryTraverser.visitDepthFirst(new QueryVisitor() {

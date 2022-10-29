@@ -90,7 +90,7 @@ public class Introspection {
     public static final GraphQLEnumType __TypeKind = GraphQLEnumType.newEnum()
             .name("__TypeKind")
             .description("An enum describing what kind of type a given __Type is")
-            .value("SCALAR", TypeKind.SCALAR, "Indicates this type is a scalar. 'specifiedByUrl' is a valid field")
+            .value("SCALAR", TypeKind.SCALAR, "Indicates this type is a scalar. 'specifiedByURL' is a valid field")
             .value("OBJECT", TypeKind.OBJECT, "Indicates this type is an object. `fields` and `interfaces` are valid fields.")
             .value("INTERFACE", TypeKind.INTERFACE, "Indicates this type is an interface. `fields` and `possibleTypes` are valid fields.")
             .value("UNION", TypeKind.UNION, "Indicates this type is a union. `possibleTypes` is a valid field.")
@@ -398,8 +398,13 @@ public class Introspection {
                     .name("ofType")
                     .type(typeRef("__Type")))
             .field(newFieldDefinition()
-                    .name("specifiedByUrl")
+                    .name("specifiedByURL")
                     .type(GraphQLString))
+            .field(newFieldDefinition()
+                .name("specifiedByUrl")
+                .type(GraphQLString)
+                .deprecate("see `specifiedByURL`")
+            )
             .build();
 
     static {
@@ -412,7 +417,8 @@ public class Introspection {
         register(__Type, "ofType", OfTypeFetcher);
         register(__Type, "name", nameDataFetcher);
         register(__Type, "description", descriptionDataFetcher);
-        register(__Type, "specifiedByUrl", specifiedByUrlDataFetcher);
+        register(__Type, "specifiedByURL", specifiedByUrlDataFetcher);
+        register(__Type, "specifiedByUrl", specifiedByUrlDataFetcher); // note that this field is deprecated
     }
 
 

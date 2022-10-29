@@ -223,7 +223,7 @@ class GraphQLTest extends Specification {
         then:
         errors.size() == 1
         errors[0].errorType == ErrorType.InvalidSyntax
-        errors[0].message == "Invalid Syntax : Invalid unicode - leading surrogate must be followed by a trailing surrogate - offending token '\\ud83c' at line 1 column 13"
+        errors[0].message == "Invalid unicode encountered. Leading surrogate must be followed by a trailing surrogate. Offending token '\\ud83c' at line 1 column 13"
         errors[0].locations == [new SourceLocation(1, 13)]
     }
 
@@ -1251,10 +1251,10 @@ many lines''']
         GraphQLSchema schema = TestUtil.schema('type Query {foo: MyScalar} scalar MyScalar @specifiedBy(url:"myUrl")')
 
         when:
-        def result = GraphQL.newGraphQL(schema).build().execute('{__type(name: "MyScalar") {name specifiedByUrl}}').getData()
+        def result = GraphQL.newGraphQL(schema).build().execute('{__type(name: "MyScalar") {name specifiedByURL}}').getData()
 
         then:
-        result == [__type: [name: "MyScalar", specifiedByUrl: "myUrl"]]
+        result == [__type: [name: "MyScalar", specifiedByURL: "myUrl"]]
     }
 
     def "test DFR and CF"() {

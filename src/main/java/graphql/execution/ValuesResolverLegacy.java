@@ -77,9 +77,6 @@ class ValuesResolverLegacy {
         // Since value is an internally represented value, it must be serialized
         // to an externally represented value before converting into an AST.
         final Object serialized = serializeLegacy(type, value, graphqlContext, locale);
-        if (isNullishLegacy(serialized)) {
-            return null;
-        }
 
         // Others serialize based on their corresponding JavaScript scalar types.
         if (serialized instanceof Boolean) {
@@ -156,12 +153,5 @@ class ValuesResolverLegacy {
         } else {
             return ((GraphQLEnumType) type).serialize(value, graphqlContext, locale);
         }
-    }
-
-    private static boolean isNullishLegacy(Object serialized) {
-        if (serialized instanceof Number) {
-            return Double.isNaN(((Number) serialized).doubleValue());
-        }
-        return serialized == null;
     }
 }
