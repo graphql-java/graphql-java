@@ -9,7 +9,6 @@ import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLType;
 import graphql.schema.idl.errors.SchemaProblem;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -116,22 +115,23 @@ public class SchemaGenerator {
         });
         GraphQLSchema graphQLSchema = schemaBuilder.build();
 
-        List<SchemaGeneratorPostProcessing> schemaTransformers = new ArrayList<>();
+
         // we check if there are any SchemaDirectiveWiring's in play and if there are
         // we add this to enable them.  By not adding it always, we save unnecessary
         // schema build traversals
         if (buildCtx.isDirectiveWiringRequired()) {
             // handle directive wiring AFTER the schema has been built and hence type references are resolved at callback time
-            schemaTransformers.add(
-                    new SchemaDirectiveWiringSchemaGeneratorPostProcessing(
-                            buildCtx.getTypeRegistry(),
-                            buildCtx.getWiring(),
-                            buildCtx.getCodeRegistry())
-            );
+            SchemaDirectiveWiringSchemaGeneratorPostProcessing directiveWiringProcessing = new SchemaDirectiveWiringSchemaGeneratorPostProcessing(
+                    buildCtx.getTypeRegistry(),
+                    buildCtx.getWiring(),
+                    buildCtx.getCodeRegistry());
+            graphQLSchema = directiveWiringProcessing.process(graphQLSchema);
         }
-        schemaTransformers.addAll(buildCtx.getWiring().getSchemaGeneratorPostProcessings());
 
-        for (SchemaGeneratorPostProcessing postProcessing : schemaTransformers) {
+        //
+        // SchemaGeneratorPostProcessing is deprecated but for now we continue to run them
+        //
+        for (SchemaGeneratorPostProcessing postProcessing : buildCtx.getWiring().getSchemaGeneratorPostProcessings()) {
             graphQLSchema = postProcessing.process(graphQLSchema);
         }
         return graphQLSchema;
