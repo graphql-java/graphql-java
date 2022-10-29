@@ -5,7 +5,6 @@ import graphql.util.FpKit;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 /**
  * Any kind of difference between two schemas is a SchemaDifference.
@@ -1065,23 +1064,24 @@ public interface SchemaDifference {
     }
 
     /**
-     *         SCHEMA,
-     *         SCALAR,
-     *         OBJECT,
-     *         FIELD_DEFINITION,
-     *         ARGUMENT_DEFINITION,
-     *         INTERFACE,
-     *         UNION,
-     *         ENUM,
-     *         ENUM_VALUE,
-     *         INPUT_OBJECT,
-     *         INPUT_FIELD_DEFINITION
+     * SCHEMA,
+     * SCALAR,
+     * OBJECT,
+     * FIELD_DEFINITION,
+     * ARGUMENT_DEFINITION,
+     * INTERFACE,
+     * UNION,
+     * ENUM,
+     * ENUM_VALUE,
+     * INPUT_OBJECT,
+     * INPUT_FIELD_DEFINITION
      */
 
     interface AppliedDirectiveLocationDetail {
 
     }
-    class AppliedDirectiveObjectFieldLocation implements AppliedDirectiveLocationDetail{
+
+    class AppliedDirectiveObjectFieldLocation implements AppliedDirectiveLocationDetail {
         private final String objectName;
         private final String fieldName;
 
@@ -1098,6 +1098,7 @@ public interface SchemaDifference {
             return objectName;
         }
     }
+
     class AppliedDirectiveInterfaceFieldLocation implements AppliedDirectiveLocationDetail {
         private final String interfaceName;
         private final String fieldName;
@@ -1108,39 +1109,48 @@ public interface SchemaDifference {
         }
     }
 
-    class AppliedDirectiveScalarLocation implements AppliedDirectiveLocationDetail{
+    class AppliedDirectiveScalarLocation implements AppliedDirectiveLocationDetail {
 
     }
-    class AppliedDirectiveSchemaLocation implements AppliedDirectiveLocationDetail{
+
+    class AppliedDirectiveSchemaLocation implements AppliedDirectiveLocationDetail {
 
     }
-    class AppliedDirectiveObjectLocation implements AppliedDirectiveLocationDetail{
+
+    class AppliedDirectiveObjectLocation implements AppliedDirectiveLocationDetail {
 
     }
-    class AppliedDirectiveInterfaceLocation implements AppliedDirectiveLocationDetail{
+
+    class AppliedDirectiveInterfaceLocation implements AppliedDirectiveLocationDetail {
 
     }
-    class AppliedDirectiveArgumentLocation implements AppliedDirectiveLocationDetail{
+
+    class AppliedDirectiveArgumentLocation implements AppliedDirectiveLocationDetail {
 
     }
-    class AppliedDirectiveUnionLocation implements AppliedDirectiveLocationDetail{
+
+    class AppliedDirectiveUnionLocation implements AppliedDirectiveLocationDetail {
 
     }
-    class AppliedDirectiveEnumLocation implements AppliedDirectiveLocationDetail{
+
+    class AppliedDirectiveEnumLocation implements AppliedDirectiveLocationDetail {
 
     }
-    class AppliedDirectiveEnumValueLocation implements AppliedDirectiveLocationDetail{
+
+    class AppliedDirectiveEnumValueLocation implements AppliedDirectiveLocationDetail {
 
     }
-    class AppliedDirectiveInputObjectLocation implements AppliedDirectiveLocationDetail{
+
+    class AppliedDirectiveInputObjectLocation implements AppliedDirectiveLocationDetail {
 
     }
-    class AppliedDirectiveInputObjectFieldLocation implements AppliedDirectiveLocationDetail{
+
+    class AppliedDirectiveInputObjectFieldLocation implements AppliedDirectiveLocationDetail {
 
     }
 
     class AppliedDirectiveAddition implements ObjectModificationDetail {
-        private  final AppliedDirectiveLocationDetail locationDetail;
+        private final AppliedDirectiveLocationDetail locationDetail;
         private final String name;
 
         public AppliedDirectiveAddition(AppliedDirectiveLocationDetail locationDetail, String name) {
@@ -1173,8 +1183,34 @@ public interface SchemaDifference {
 
     }
 
-    class AppliedDirectiveArgumentValueModification {
+    class AppliedDirectiveArgumentValueModification implements ObjectModificationDetail {
+        private final AppliedDirectiveLocationDetail locationDetail;
+        private final String argumentName;
+        private final String oldValue;
+        private final String newValue;
 
+        public AppliedDirectiveArgumentValueModification(AppliedDirectiveLocationDetail locationDetail, String argumentName, String oldValue, String newValue) {
+            this.locationDetail = locationDetail;
+            this.argumentName = argumentName;
+            this.oldValue = oldValue;
+            this.newValue = newValue;
+        }
+
+        public AppliedDirectiveLocationDetail getLocationDetail() {
+            return locationDetail;
+        }
+
+        public String getArgumentName() {
+            return argumentName;
+        }
+
+        public String getOldValue() {
+            return oldValue;
+        }
+
+        public String getNewValue() {
+            return newValue;
+        }
     }
 
     class AppliedDirectiveArgumentNameModification {

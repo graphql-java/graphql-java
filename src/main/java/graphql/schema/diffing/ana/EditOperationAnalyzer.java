@@ -15,20 +15,68 @@ import java.util.List;
 import java.util.Map;
 
 import static graphql.Assert.assertTrue;
-import static graphql.schema.diffing.ana.SchemaDifference.*;
+import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveAddition;
+import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveArgumentValueModification;
+import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveObjectFieldLocation;
+import static graphql.schema.diffing.ana.SchemaDifference.DirectiveAddition;
+import static graphql.schema.diffing.ana.SchemaDifference.DirectiveArgumentAddition;
+import static graphql.schema.diffing.ana.SchemaDifference.DirectiveArgumentDefaultValueModification;
+import static graphql.schema.diffing.ana.SchemaDifference.DirectiveArgumentDeletion;
+import static graphql.schema.diffing.ana.SchemaDifference.DirectiveArgumentRename;
+import static graphql.schema.diffing.ana.SchemaDifference.DirectiveArgumentTypeModification;
+import static graphql.schema.diffing.ana.SchemaDifference.DirectiveDeletion;
+import static graphql.schema.diffing.ana.SchemaDifference.DirectiveDifference;
+import static graphql.schema.diffing.ana.SchemaDifference.DirectiveModification;
+import static graphql.schema.diffing.ana.SchemaDifference.EnumAddition;
+import static graphql.schema.diffing.ana.SchemaDifference.EnumDeletion;
 import static graphql.schema.diffing.ana.SchemaDifference.EnumDifference;
+import static graphql.schema.diffing.ana.SchemaDifference.EnumModification;
+import static graphql.schema.diffing.ana.SchemaDifference.EnumValueAddition;
+import static graphql.schema.diffing.ana.SchemaDifference.EnumValueDeletion;
+import static graphql.schema.diffing.ana.SchemaDifference.InputObjectAddition;
 import static graphql.schema.diffing.ana.SchemaDifference.InputObjectDeletion;
 import static graphql.schema.diffing.ana.SchemaDifference.InputObjectDifference;
+import static graphql.schema.diffing.ana.SchemaDifference.InputObjectModification;
+import static graphql.schema.diffing.ana.SchemaDifference.InterfaceAddition;
 import static graphql.schema.diffing.ana.SchemaDifference.InterfaceDeletion;
 import static graphql.schema.diffing.ana.SchemaDifference.InterfaceDifference;
+import static graphql.schema.diffing.ana.SchemaDifference.InterfaceFieldAddition;
+import static graphql.schema.diffing.ana.SchemaDifference.InterfaceFieldArgumentAddition;
+import static graphql.schema.diffing.ana.SchemaDifference.InterfaceFieldArgumentDefaultValueModification;
+import static graphql.schema.diffing.ana.SchemaDifference.InterfaceFieldArgumentDeletion;
+import static graphql.schema.diffing.ana.SchemaDifference.InterfaceFieldArgumentRename;
+import static graphql.schema.diffing.ana.SchemaDifference.InterfaceFieldArgumentTypeModification;
+import static graphql.schema.diffing.ana.SchemaDifference.InterfaceFieldDeletion;
+import static graphql.schema.diffing.ana.SchemaDifference.InterfaceFieldRename;
+import static graphql.schema.diffing.ana.SchemaDifference.InterfaceFieldTypeModification;
+import static graphql.schema.diffing.ana.SchemaDifference.InterfaceInterfaceImplementationAddition;
+import static graphql.schema.diffing.ana.SchemaDifference.InterfaceInterfaceImplementationDeletion;
 import static graphql.schema.diffing.ana.SchemaDifference.InterfaceModification;
+import static graphql.schema.diffing.ana.SchemaDifference.ObjectAddition;
 import static graphql.schema.diffing.ana.SchemaDifference.ObjectDeletion;
 import static graphql.schema.diffing.ana.SchemaDifference.ObjectDifference;
+import static graphql.schema.diffing.ana.SchemaDifference.ObjectFieldAddition;
+import static graphql.schema.diffing.ana.SchemaDifference.ObjectFieldArgumentAddition;
+import static graphql.schema.diffing.ana.SchemaDifference.ObjectFieldArgumentDefaultValueModification;
+import static graphql.schema.diffing.ana.SchemaDifference.ObjectFieldArgumentDeletion;
+import static graphql.schema.diffing.ana.SchemaDifference.ObjectFieldArgumentRename;
+import static graphql.schema.diffing.ana.SchemaDifference.ObjectFieldArgumentTypeModification;
+import static graphql.schema.diffing.ana.SchemaDifference.ObjectFieldDeletion;
+import static graphql.schema.diffing.ana.SchemaDifference.ObjectFieldRename;
+import static graphql.schema.diffing.ana.SchemaDifference.ObjectFieldTypeModification;
+import static graphql.schema.diffing.ana.SchemaDifference.ObjectInterfaceImplementationAddition;
+import static graphql.schema.diffing.ana.SchemaDifference.ObjectInterfaceImplementationDeletion;
 import static graphql.schema.diffing.ana.SchemaDifference.ObjectModification;
+import static graphql.schema.diffing.ana.SchemaDifference.ScalarAddition;
 import static graphql.schema.diffing.ana.SchemaDifference.ScalarDeletion;
 import static graphql.schema.diffing.ana.SchemaDifference.ScalarDifference;
+import static graphql.schema.diffing.ana.SchemaDifference.ScalarModification;
+import static graphql.schema.diffing.ana.SchemaDifference.UnionAddition;
 import static graphql.schema.diffing.ana.SchemaDifference.UnionDeletion;
 import static graphql.schema.diffing.ana.SchemaDifference.UnionDifference;
+import static graphql.schema.diffing.ana.SchemaDifference.UnionMemberAddition;
+import static graphql.schema.diffing.ana.SchemaDifference.UnionMemberDeletion;
+import static graphql.schema.diffing.ana.SchemaDifference.UnionModification;
 
 /**
  * Higher level GraphQL semantic assigned to
@@ -108,10 +156,44 @@ public class EditOperationAnalyzer {
         for (EditOperation editOperation : editOperations) {
             switch (editOperation.getOperation()) {
                 case INSERT_VERTEX:
-                    if(editOperation.getTargetVertex().isOfType(SchemaGraph.APPLIED_DIRECTIVE)) {
+                    if (editOperation.getTargetVertex().isOfType(SchemaGraph.APPLIED_DIRECTIVE)) {
                         appliedDirectiveAdded(editOperation);
                     }
                     break;
+                case CHANGE_VERTEX:
+                    if (editOperation.getTargetVertex().isOfType(SchemaGraph.APPLIED_ARGUMENT)) {
+                        appliedDirectiveArgumentChanged(editOperation);
+                    }
+                    break;
+
+            }
+        }
+
+    }
+
+    private void appliedDirectiveArgumentChanged(EditOperation editOperation) {
+        Vertex appliedArgument = editOperation.getTargetVertex();
+        String oldArgumentName = editOperation.getSourceVertex().getName();
+        String newArgumentName = editOperation.getTargetVertex().getName();
+        boolean nameChanged = !oldArgumentName.equals(newArgumentName);
+
+        String oldValue = editOperation.getSourceVertex().get("value");
+        String newValue = editOperation.getTargetVertex().get("value");
+        boolean valueChanged = !oldValue.equals(newValue);
+
+
+        Vertex appliedDirective = newSchemaGraph.getAppliedDirectiveForAppliedArgument(appliedArgument);
+        Vertex container = newSchemaGraph.getAppliedDirectiveContainerForAppliedDirective(appliedDirective);
+        if (container.isOfType(SchemaGraph.FIELD)) {
+            Vertex field = container;
+            Vertex interfaceOrObjective = newSchemaGraph.getFieldsContainerForField(field);
+            if (interfaceOrObjective.isOfType(SchemaGraph.OBJECT)) {
+                Vertex object = interfaceOrObjective;
+                AppliedDirectiveObjectFieldLocation location = new AppliedDirectiveObjectFieldLocation(object.getName(), field.getName());
+                if (valueChanged) {
+                    AppliedDirectiveArgumentValueModification argumentValueModification = new AppliedDirectiveArgumentValueModification(location, newArgumentName, oldValue, newValue);
+                    getObjectModification(object.getName()).getDetails().add(argumentValueModification);
+                }
             }
         }
 
@@ -125,7 +207,7 @@ public class EditOperationAnalyzer {
             Vertex interfaceOrObjective = newSchemaGraph.getFieldsContainerForField(field);
             if (interfaceOrObjective.isOfType(SchemaGraph.OBJECT)) {
                 Vertex object = interfaceOrObjective;
-                AppliedDirectiveObjectFieldLocation location = new AppliedDirectiveObjectFieldLocation(object.getName(),field.getName());
+                AppliedDirectiveObjectFieldLocation location = new AppliedDirectiveObjectFieldLocation(object.getName(), field.getName());
                 AppliedDirectiveAddition appliedDirectiveAddition = new AppliedDirectiveAddition(location, appliedDirective.getName());
                 getObjectModification(object.getName()).getDetails().add(appliedDirectiveAddition);
             }

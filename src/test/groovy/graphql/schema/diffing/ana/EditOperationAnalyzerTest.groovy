@@ -4,7 +4,59 @@ import graphql.TestUtil
 import graphql.schema.diffing.SchemaDiffing
 import spock.lang.Specification
 
-import static graphql.schema.diffing.ana.SchemaDifference.*
+import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveAddition
+import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveArgumentValueModification
+import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveObjectFieldLocation
+import static graphql.schema.diffing.ana.SchemaDifference.DirectiveAddition
+import static graphql.schema.diffing.ana.SchemaDifference.DirectiveArgumentAddition
+import static graphql.schema.diffing.ana.SchemaDifference.DirectiveArgumentDefaultValueModification
+import static graphql.schema.diffing.ana.SchemaDifference.DirectiveArgumentDeletion
+import static graphql.schema.diffing.ana.SchemaDifference.DirectiveArgumentRename
+import static graphql.schema.diffing.ana.SchemaDifference.DirectiveArgumentTypeModification
+import static graphql.schema.diffing.ana.SchemaDifference.DirectiveDeletion
+import static graphql.schema.diffing.ana.SchemaDifference.DirectiveModification
+import static graphql.schema.diffing.ana.SchemaDifference.EnumAddition
+import static graphql.schema.diffing.ana.SchemaDifference.EnumDeletion
+import static graphql.schema.diffing.ana.SchemaDifference.EnumModification
+import static graphql.schema.diffing.ana.SchemaDifference.EnumValueAddition
+import static graphql.schema.diffing.ana.SchemaDifference.EnumValueDeletion
+import static graphql.schema.diffing.ana.SchemaDifference.InputObjectAddition
+import static graphql.schema.diffing.ana.SchemaDifference.InputObjectDeletion
+import static graphql.schema.diffing.ana.SchemaDifference.InputObjectModification
+import static graphql.schema.diffing.ana.SchemaDifference.InterfaceAddition
+import static graphql.schema.diffing.ana.SchemaDifference.InterfaceFieldAddition
+import static graphql.schema.diffing.ana.SchemaDifference.InterfaceFieldArgumentAddition
+import static graphql.schema.diffing.ana.SchemaDifference.InterfaceFieldArgumentDefaultValueModification
+import static graphql.schema.diffing.ana.SchemaDifference.InterfaceFieldArgumentDeletion
+import static graphql.schema.diffing.ana.SchemaDifference.InterfaceFieldArgumentRename
+import static graphql.schema.diffing.ana.SchemaDifference.InterfaceFieldArgumentTypeModification
+import static graphql.schema.diffing.ana.SchemaDifference.InterfaceFieldDeletion
+import static graphql.schema.diffing.ana.SchemaDifference.InterfaceFieldRename
+import static graphql.schema.diffing.ana.SchemaDifference.InterfaceFieldTypeModification
+import static graphql.schema.diffing.ana.SchemaDifference.InterfaceInterfaceImplementationDeletion
+import static graphql.schema.diffing.ana.SchemaDifference.InterfaceModification
+import static graphql.schema.diffing.ana.SchemaDifference.ObjectAddition
+import static graphql.schema.diffing.ana.SchemaDifference.ObjectDeletion
+import static graphql.schema.diffing.ana.SchemaDifference.ObjectFieldAddition
+import static graphql.schema.diffing.ana.SchemaDifference.ObjectFieldArgumentAddition
+import static graphql.schema.diffing.ana.SchemaDifference.ObjectFieldArgumentDefaultValueModification
+import static graphql.schema.diffing.ana.SchemaDifference.ObjectFieldArgumentDeletion
+import static graphql.schema.diffing.ana.SchemaDifference.ObjectFieldArgumentRename
+import static graphql.schema.diffing.ana.SchemaDifference.ObjectFieldArgumentTypeModification
+import static graphql.schema.diffing.ana.SchemaDifference.ObjectFieldDeletion
+import static graphql.schema.diffing.ana.SchemaDifference.ObjectFieldRename
+import static graphql.schema.diffing.ana.SchemaDifference.ObjectFieldTypeModification
+import static graphql.schema.diffing.ana.SchemaDifference.ObjectInterfaceImplementationAddition
+import static graphql.schema.diffing.ana.SchemaDifference.ObjectInterfaceImplementationDeletion
+import static graphql.schema.diffing.ana.SchemaDifference.ObjectModification
+import static graphql.schema.diffing.ana.SchemaDifference.ScalarAddition
+import static graphql.schema.diffing.ana.SchemaDifference.ScalarDeletion
+import static graphql.schema.diffing.ana.SchemaDifference.ScalarModification
+import static graphql.schema.diffing.ana.SchemaDifference.UnionAddition
+import static graphql.schema.diffing.ana.SchemaDifference.UnionDeletion
+import static graphql.schema.diffing.ana.SchemaDifference.UnionMemberAddition
+import static graphql.schema.diffing.ana.SchemaDifference.UnionMemberDeletion
+import static graphql.schema.diffing.ana.SchemaDifference.UnionModification
 
 class EditOperationAnalyzerTest extends Specification {
 
@@ -1433,7 +1485,7 @@ class EditOperationAnalyzerTest extends Specification {
         argTypeModification[0].newType == '[String]!'
     }
 
-    def "object added applied directive"() {
+    def "object field added applied directive"() {
         given:
         def oldSdl = '''
         directive @d(arg:String) on FIELD_DEFINITION
@@ -1457,6 +1509,34 @@ class EditOperationAnalyzerTest extends Specification {
         (appliedDirective[0].locationDetail as AppliedDirectiveObjectFieldLocation).objectName == "Query"
         (appliedDirective[0].locationDetail as AppliedDirectiveObjectFieldLocation).fieldName == "foo"
         appliedDirective[0].name == "d"
+    }
+
+    def "object field applied directive argument value changd"() {
+        given:
+        def oldSdl = '''
+        directive @d(arg:String) on FIELD_DEFINITION
+        
+        type Query {
+            foo: String @d(arg: "foo1")
+        }
+        '''
+        def newSdl = '''
+        directive @d(arg: String)  on FIELD_DEFINITION
+        
+        type Query {
+            foo: String @d(arg: "foo2")
+        }
+        '''
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+        then:
+        changes.objectDifferences["Query"] instanceof ObjectModification
+        def argumentValueModifications = (changes.objectDifferences["Query"] as ObjectModification).getDetails(AppliedDirectiveArgumentValueModification)
+        (argumentValueModifications[0].locationDetail as AppliedDirectiveObjectFieldLocation).objectName == "Query"
+        (argumentValueModifications[0].locationDetail as AppliedDirectiveObjectFieldLocation).fieldName == "foo"
+        argumentValueModifications[0].argumentName == "arg"
+        argumentValueModifications[0].oldValue == '"foo1"'
+        argumentValueModifications[0].newValue == '"foo2"'
     }
 
 
