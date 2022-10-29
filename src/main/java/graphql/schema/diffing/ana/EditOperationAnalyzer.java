@@ -41,8 +41,6 @@ public class EditOperationAnalyzer {
     private SchemaGraph oldSchemaGraph;
     private SchemaGraph newSchemaGraph;
 
-//    private List<SchemaChange> changes = new ArrayList<>();
-
     private Map<String, ObjectDifference> objectDifferences = new LinkedHashMap<>();
     private Map<String, InterfaceDifference> interfaceDifferences = new LinkedHashMap<>();
     private Map<String, UnionDifference> unionDifferences = new LinkedHashMap<>();
@@ -127,8 +125,9 @@ public class EditOperationAnalyzer {
             Vertex interfaceOrObjective = newSchemaGraph.getFieldsContainerForField(field);
             if (interfaceOrObjective.isOfType(SchemaGraph.OBJECT)) {
                 Vertex object = interfaceOrObjective;
-                AppliedDirectiveFieldAddition appliedDirectiveFieldAddition = new AppliedDirectiveFieldAddition(field.getName(), appliedDirective.getName());
-                getObjectModification(object.getName()).getDetails().add(appliedDirectiveFieldAddition);
+                AppliedDirectiveObjectFieldLocation location = new AppliedDirectiveObjectFieldLocation(object.getName(),field.getName());
+                AppliedDirectiveAddition appliedDirectiveAddition = new AppliedDirectiveAddition(location, appliedDirective.getName());
+                getObjectModification(object.getName()).getDetails().add(appliedDirectiveAddition);
             }
         }
     }

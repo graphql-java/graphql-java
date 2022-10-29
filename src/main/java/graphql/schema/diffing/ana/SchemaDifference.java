@@ -1064,21 +1064,96 @@ public interface SchemaDifference {
 
     }
 
-    class AppliedDirectiveFieldAddition implements ObjectModificationDetail {
-        private final String fieldName;
-        private final String name;
+    /**
+     *         SCHEMA,
+     *         SCALAR,
+     *         OBJECT,
+     *         FIELD_DEFINITION,
+     *         ARGUMENT_DEFINITION,
+     *         INTERFACE,
+     *         UNION,
+     *         ENUM,
+     *         ENUM_VALUE,
+     *         INPUT_OBJECT,
+     *         INPUT_FIELD_DEFINITION
+     */
 
-        public AppliedDirectiveFieldAddition(String fieldName, String name) {
+    interface AppliedDirectiveLocationDetail {
+
+    }
+    class AppliedDirectiveObjectFieldLocation implements AppliedDirectiveLocationDetail{
+        private final String objectName;
+        private final String fieldName;
+
+        public AppliedDirectiveObjectFieldLocation(String objectName, String fieldName) {
+            this.objectName = objectName;
             this.fieldName = fieldName;
-            this.name = name;
         }
 
         public String getFieldName() {
             return fieldName;
         }
 
+        public String getObjectName() {
+            return objectName;
+        }
+    }
+    class AppliedDirectiveInterfaceFieldLocation implements AppliedDirectiveLocationDetail {
+        private final String interfaceName;
+        private final String fieldName;
+
+        public AppliedDirectiveInterfaceFieldLocation(String interfaceName, String fieldName) {
+            this.interfaceName = interfaceName;
+            this.fieldName = fieldName;
+        }
+    }
+
+    class AppliedDirectiveScalarLocation implements AppliedDirectiveLocationDetail{
+
+    }
+    class AppliedDirectiveSchemaLocation implements AppliedDirectiveLocationDetail{
+
+    }
+    class AppliedDirectiveObjectLocation implements AppliedDirectiveLocationDetail{
+
+    }
+    class AppliedDirectiveInterfaceLocation implements AppliedDirectiveLocationDetail{
+
+    }
+    class AppliedDirectiveArgumentLocation implements AppliedDirectiveLocationDetail{
+
+    }
+    class AppliedDirectiveUnionLocation implements AppliedDirectiveLocationDetail{
+
+    }
+    class AppliedDirectiveEnumLocation implements AppliedDirectiveLocationDetail{
+
+    }
+    class AppliedDirectiveEnumValueLocation implements AppliedDirectiveLocationDetail{
+
+    }
+    class AppliedDirectiveInputObjectLocation implements AppliedDirectiveLocationDetail{
+
+    }
+    class AppliedDirectiveInputObjectFieldLocation implements AppliedDirectiveLocationDetail{
+
+    }
+
+    class AppliedDirectiveAddition implements ObjectModificationDetail {
+        private  final AppliedDirectiveLocationDetail locationDetail;
+        private final String name;
+
+        public AppliedDirectiveAddition(AppliedDirectiveLocationDetail locationDetail, String name) {
+            this.locationDetail = locationDetail;
+            this.name = name;
+        }
+
         public String getName() {
             return name;
+        }
+
+        public AppliedDirectiveLocationDetail getLocationDetail() {
+            return locationDetail;
         }
     }
 
