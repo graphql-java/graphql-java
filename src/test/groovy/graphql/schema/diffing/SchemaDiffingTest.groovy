@@ -5,10 +5,8 @@ import graphql.schema.GraphQLFieldDefinition
 import graphql.schema.GraphQLSchemaElement
 import graphql.schema.GraphQLTypeVisitorStub
 import graphql.schema.SchemaTransformer
-import graphql.schema.diffing.ana.SchemaDifference
 import graphql.util.TraversalControl
 import graphql.util.TraverserContext
-import org.junit.Ignore
 import spock.lang.Specification
 
 import static graphql.TestUtil.schema
@@ -28,7 +26,7 @@ class SchemaDiffingTest extends Specification {
         def schemaGraph = new SchemaGraphFactory().createGraph(schema)
 
         then:
-        schemaGraph.size() == 93
+        schemaGraph.size() == 94
 
     }
 
