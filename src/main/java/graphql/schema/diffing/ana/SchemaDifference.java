@@ -1213,8 +1213,28 @@ public interface SchemaDifference {
         }
     }
 
-    class AppliedDirectiveArgumentNameModification {
+    class AppliedDirectiveArgumentRename implements ObjectModificationDetail {
+        private final AppliedDirectiveLocationDetail locationDetail;
+        private final String oldName;
+        private final String newName;
 
+        public AppliedDirectiveArgumentRename(AppliedDirectiveLocationDetail locationDetail, String oldName, String newName) {
+            this.locationDetail = locationDetail;
+            this.oldName = oldName;
+            this.newName = newName;
+        }
+
+        public AppliedDirectiveLocationDetail getLocationDetail() {
+            return locationDetail;
+        }
+
+        public String getOldName() {
+            return oldName;
+        }
+
+        public String getNewName() {
+            return newName;
+        }
     }
 
 

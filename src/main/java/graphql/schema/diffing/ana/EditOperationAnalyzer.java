@@ -8,6 +8,7 @@ import graphql.schema.diffing.EditOperation;
 import graphql.schema.diffing.Mapping;
 import graphql.schema.diffing.SchemaGraph;
 import graphql.schema.diffing.Vertex;
+import graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveArgumentRename;
 import graphql.schema.idl.ScalarInfo;
 
 import java.util.LinkedHashMap;
@@ -193,6 +194,11 @@ public class EditOperationAnalyzer {
                 if (valueChanged) {
                     AppliedDirectiveArgumentValueModification argumentValueModification = new AppliedDirectiveArgumentValueModification(location, newArgumentName, oldValue, newValue);
                     getObjectModification(object.getName()).getDetails().add(argumentValueModification);
+                }
+                if (nameChanged) {
+                    AppliedDirectiveArgumentRename argumentRename = new AppliedDirectiveArgumentRename(location, oldArgumentName, newArgumentName);
+                    getObjectModification(object.getName()).getDetails().add(argumentRename);
+
                 }
             }
         }

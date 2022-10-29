@@ -1511,7 +1511,7 @@ class EditOperationAnalyzerTest extends Specification {
         appliedDirective[0].name == "d"
     }
 
-    def "object field applied directive argument value changd"() {
+    def "object field applied directive argument value changed"() {
         given:
         def oldSdl = '''
         directive @d(arg:String) on FIELD_DEFINITION
@@ -1537,6 +1537,34 @@ class EditOperationAnalyzerTest extends Specification {
         argumentValueModifications[0].argumentName == "arg"
         argumentValueModifications[0].oldValue == '"foo1"'
         argumentValueModifications[0].newValue == '"foo2"'
+    }
+
+    def "object field applied directive argument name changed"() {
+        given:
+        def oldSdl = '''
+        directive @d(arg1:String, arg2: String) on FIELD_DEFINITION
+        
+        type Query {
+            foo: String @d(arg1: "foo")
+        }
+        '''
+        def newSdl = '''
+        directive @d(arg1: String, arg2: String)  on FIELD_DEFINITION
+        
+        type Query {
+            foo: String @d(arg2: "foo")
+        }
+        '''
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+        then:
+        changes.objectDifferences["Query"] instanceof ObjectModification
+        def argumentRenames = (changes.objectDifferences["Query"] as ObjectModification).getDetails(SchemaDifference.AppliedDirectiveArgumentRename)
+        def location = argumentRenames[0].locationDetail as AppliedDirectiveObjectFieldLocation
+        location.objectName == "Query"
+        location.fieldName == "foo"
+        argumentRenames[0].oldName == "arg1"
+        argumentRenames[0].newName == "arg2"
     }
 
 
