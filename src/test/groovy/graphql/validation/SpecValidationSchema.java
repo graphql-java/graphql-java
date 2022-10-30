@@ -34,7 +34,7 @@ import static java.util.Collections.singletonList;
 
 /**
  * Sample schema used in the spec for validation examples
- * http://facebook.github.io/graphql/#sec-Validation
+ * https://spec.graphql.org/October2021/#sec-Validation
  *
  * @author dwinsor
  */

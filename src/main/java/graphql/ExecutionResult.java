@@ -50,7 +50,7 @@ public interface ExecutionResult {
      * should be present.  Certain JSON serializers may or may interpret {@link ExecutionResult} to spec, so this method
      * is provided to produce a map that strictly follows the specification.
      *
-     * See : <a href="http://facebook.github.io/graphql/#sec-Response-Format">http://facebook.github.io/graphql/#sec-Response-Format</a>
+     * See : <a href="https://spec.graphql.org/October2021/#sec-Response-Format">https://spec.graphql.org/October2021/#sec-Response-Format</a>
      *
      * @return a map of the result that strictly follows the spec
      */

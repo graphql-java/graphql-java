@@ -28,7 +28,7 @@ import static graphql.schema.SchemaElementChildrenContainer.newSchemaElementChil
  * for example, a GraphQL system could define a scalar called Time which, while serialized as a string, promises to
  * conform to ISO‐8601. When querying a field of type Time, you can then rely on the ability to parse the result with an ISO‐8601 parser and use a client‐specific primitive for time.
  * <p>
- * From the spec : http://facebook.github.io/graphql/#sec-Scalars
+ * From the spec : https://spec.graphql.org/October2021/#sec-Scalars
  * </blockquote>
  * <p>
  * graphql-java ships with a set of predefined scalar types via {@link graphql.Scalars}
