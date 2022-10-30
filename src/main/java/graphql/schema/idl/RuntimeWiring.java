@@ -357,7 +357,7 @@ public class RuntimeWiring {
          * after the schema is built
          */
         @Deprecated
-        @DeprecatedAt(value = "2012-10-29")
+        @DeprecatedAt(value = "2022-10-29")
         public Builder transformer(SchemaGeneratorPostProcessing schemaGeneratorPostProcessing) {
             this.schemaGeneratorPostProcessings.add(assertNotNull(schemaGeneratorPostProcessing));
             return this;

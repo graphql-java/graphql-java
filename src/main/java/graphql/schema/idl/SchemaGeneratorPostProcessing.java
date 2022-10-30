@@ -13,7 +13,7 @@ import graphql.schema.GraphQLSchema;
  */
 @PublicSpi
 @Deprecated
-@DeprecatedAt(value = "2012-10-29")
+@DeprecatedAt(value = "2022-10-29")
 public interface SchemaGeneratorPostProcessing {
 
     /**
