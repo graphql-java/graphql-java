@@ -32,7 +32,7 @@ public class PropertyFetchingImpl {
 
     private final AtomicBoolean USE_SET_ACCESSIBLE = new AtomicBoolean(true);
     private final AtomicBoolean USE_NEGATIVE_CACHE = new AtomicBoolean(true);
-    private final ConcurrentMap<CacheKey, CachedFunction> GETTER_CACHE = new ConcurrentHashMap<>();
+    private final ConcurrentMap<CacheKey, CachedLambdaFunction> LAMBDA_CACHE = new ConcurrentHashMap<>();
     private final ConcurrentMap<CacheKey, CachedMethod> METHOD_CACHE = new ConcurrentHashMap<>();
     private final ConcurrentMap<CacheKey, Field> FIELD_CACHE = new ConcurrentHashMap<>();
     private final ConcurrentMap<CacheKey, CacheKey> NEGATIVE_CACHE = new ConcurrentHashMap<>();
@@ -42,7 +42,7 @@ public class PropertyFetchingImpl {
         this.singleArgumentType = singleArgumentType;
     }
 
-    private class CachedMethod {
+    private final class CachedMethod {
         private final Method method;
         private final boolean takesSingleArgumentTypeAsOnlyArgument;
 
@@ -50,13 +50,12 @@ public class PropertyFetchingImpl {
             this.method = method;
             this.takesSingleArgumentTypeAsOnlyArgument = takesSingleArgumentTypeAsOnlyArgument(method);
         }
-
     }
 
-    private static class CachedFunction {
+    private static final class CachedLambdaFunction {
         private final Function<Object, Object> getter;
 
-        CachedFunction(Function<Object, Object> getter) {
+        CachedLambdaFunction(Function<Object, Object> getter) {
             this.getter = getter;
         }
     }
@@ -70,7 +69,7 @@ public class PropertyFetchingImpl {
 
         // let's try positive cache mechanisms first.  If we have seen the method or field before
         // then we invoke it directly without burning any cycles doing reflection.
-        CachedFunction cachedFunction = GETTER_CACHE.get(cacheKey);
+        CachedLambdaFunction cachedFunction = LAMBDA_CACHE.get(cacheKey);
         if (cachedFunction != null) {
             return cachedFunction.getter.apply(object);
         }
@@ -108,8 +107,8 @@ public class PropertyFetchingImpl {
         Optional<Function<Object, Object>> getterOpt = LambdaFetchingSupport.createGetter(object.getClass(), propertyName);
         if (getterOpt.isPresent()) {
             Function<Object, Object> getter = getterOpt.get();
-            cachedFunction = new CachedFunction(getter);
-            GETTER_CACHE.putIfAbsent(cacheKey, cachedFunction);
+            cachedFunction = new CachedLambdaFunction(getter);
+            LAMBDA_CACHE.putIfAbsent(cacheKey, cachedFunction);
             return getter.apply(object);
         }
 
@@ -298,7 +297,7 @@ public class PropertyFetchingImpl {
     }
 
     public void clearReflectionCache() {
-        GETTER_CACHE.clear();
+        LAMBDA_CACHE.clear();
         METHOD_CACHE.clear();
         FIELD_CACHE.clear();
         NEGATIVE_CACHE.clear();

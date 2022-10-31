@@ -42,7 +42,7 @@ public class LambdaFetchingSupport {
                 Function<Object, Object> getterFunction = mkCallFunction(sourceClass, candidateMethod.getName(), candidateMethod.getReturnType());
                 return Optional.of(getterFunction);
             } catch (Throwable ignore) {
-                // if we can make a dynamic lambda here, then we give up and let the old property fetching code do its thing
+                // if we cant make a dynamic lambda here, then we give up and let the old property fetching code do its thing
             }
         }
         return Optional.empty();
