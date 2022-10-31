@@ -78,9 +78,9 @@ public class Introspection {
      */
     private static <T> void register(GraphQLFieldsContainer parentType, String fieldName, Class<T> targetClass, Function<T, Object> getter) {
         IntrospectionDataFetcher<?> dataFetcher = env -> {
-            if (targetClass.isInstance(env.getSource())) {
-                T t = targetClass.cast(env.getSource());
-                return getter.apply(t);
+            Object source = env.getSource();
+            if (targetClass.isInstance(source)) {
+                return getter.apply(targetClass.cast(source));
             }
             return null;
         };
