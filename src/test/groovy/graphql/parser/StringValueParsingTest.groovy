@@ -1,5 +1,7 @@
 package graphql.parser
 
+import graphql.i18n.I18n
+import graphql.language.SourceLocation
 import spock.lang.Specification
 
 import static java.util.Arrays.asList
@@ -7,12 +9,15 @@ import static java.util.stream.Collectors.joining
 
 class StringValueParsingTest extends Specification {
 
+    def i18n = I18n.i18n(I18n.BundleType.Parsing, Locale.ENGLISH)
+    def sourceLocation = SourceLocation.EMPTY
+
     def "parsing quoted string should work"() {
         given:
         def input = '''"simple quoted"'''
 
         when:
-        String parsed = StringValueParsing.parseSingleQuotedString(input)
+        String parsed = StringValueParsing.parseSingleQuotedString(i18n, input,sourceLocation)
 
         then:
         parsed == "simple quoted"
@@ -23,7 +28,7 @@ class StringValueParsingTest extends Specification {
         def input = '''"{\"name\": \"graphql\", \"year\": 2015}"'''
 
         when:
-        String parsed = StringValueParsing.parseSingleQuotedString(input)
+        String parsed = StringValueParsing.parseSingleQuotedString(i18n, input,sourceLocation)
 
         then:
         parsed == '''{\"name\": \"graphql\", \"year\": 2015}'''
@@ -34,7 +39,7 @@ class StringValueParsingTest extends Specification {
         def input = '''"""'''
 
         when:
-        String parsed = StringValueParsing.parseSingleQuotedString(input)
+        String parsed = StringValueParsing.parseSingleQuotedString(i18n, input,sourceLocation)
 
         then:
         parsed == '''"'''
@@ -45,7 +50,7 @@ class StringValueParsingTest extends Specification {
         def input = '''"\\ud83c\\udf7a"'''
 
         when:
-        String parsed = StringValueParsing.parseSingleQuotedString(input)
+        String parsed = StringValueParsing.parseSingleQuotedString(i18n, input,sourceLocation)
 
         then:
         parsed == '''🍺''' // contains the beer icon 	U+1F37A  : http://www.charbase.com/1f37a-unicode-beer-mug
@@ -56,7 +61,7 @@ class StringValueParsingTest extends Specification {
         def input = '''"\\u5564\\u9152"'''
 
         when:
-        String parsed = StringValueParsing.parseSingleQuotedString(input)
+        String parsed = StringValueParsing.parseSingleQuotedString(i18n, input,sourceLocation)
 
         then:
         parsed == '''啤酒'''

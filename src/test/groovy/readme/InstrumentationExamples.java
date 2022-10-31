@@ -8,8 +8,8 @@ import graphql.execution.instrumentation.ChainedInstrumentation;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationState;
-import graphql.execution.instrumentation.SimpleInstrumentation;
 import graphql.execution.instrumentation.SimpleInstrumentationContext;
+import graphql.execution.instrumentation.SimplePerformantInstrumentation;
 import graphql.execution.instrumentation.fieldvalidation.FieldAndArguments;
 import graphql.execution.instrumentation.fieldvalidation.FieldValidation;
 import graphql.execution.instrumentation.fieldvalidation.FieldValidationEnvironment;
@@ -20,6 +20,8 @@ import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchPar
 import graphql.execution.instrumentation.tracing.TracingInstrumentation;
 import graphql.schema.DataFetcher;
 import graphql.schema.GraphQLSchema;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -60,7 +62,7 @@ public class InstrumentationExamples {
         }
     }
 
-    class CustomInstrumentation extends SimpleInstrumentation {
+    class CustomInstrumentation extends SimplePerformantInstrumentation {
         @Override
         public InstrumentationState createState() {
             //
@@ -71,7 +73,7 @@ public class InstrumentationExamples {
         }
 
         @Override
-        public InstrumentationContext<ExecutionResult> beginExecution(InstrumentationExecutionParameters parameters) {
+        public @Nullable InstrumentationContext<ExecutionResult> beginExecution(InstrumentationExecutionParameters parameters, InstrumentationState state) {
             long startNanos = System.nanoTime();
             return new SimpleInstrumentationContext<ExecutionResult>() {
                 @Override
@@ -83,7 +85,7 @@ public class InstrumentationExamples {
         }
 
         @Override
-        public DataFetcher<?> instrumentDataFetcher(DataFetcher<?> dataFetcher, InstrumentationFieldFetchParameters parameters) {
+        public @NotNull DataFetcher<?> instrumentDataFetcher(DataFetcher<?> dataFetcher, InstrumentationFieldFetchParameters parameters) {
             //
             // this allows you to intercept the data fetcher used to fetch a field and provide another one, perhaps
             // that enforces certain behaviours or has certain side effects on the data
@@ -92,7 +94,7 @@ public class InstrumentationExamples {
         }
 
         @Override
-        public CompletableFuture<ExecutionResult> instrumentExecutionResult(ExecutionResult executionResult, InstrumentationExecutionParameters parameters) {
+        public @NotNull CompletableFuture<ExecutionResult> instrumentExecutionResult(ExecutionResult executionResult, InstrumentationExecutionParameters parameters) {
             //
             // this allows you to instrument the execution result some how.  For example the Tracing support uses this to put
             // the `extensions` map of data in place

@@ -11,7 +11,7 @@ import graphql.StarWarsSchema
 import graphql.TypeMismatchError
 import graphql.execution.instrumentation.InstrumentationContext
 import graphql.execution.instrumentation.InstrumentationState
-import graphql.execution.instrumentation.SimpleInstrumentation
+import graphql.execution.instrumentation.SimplePerformantInstrumentation
 import graphql.execution.instrumentation.parameters.InstrumentationFieldCompleteParameters
 import graphql.language.Argument
 import graphql.language.Field
@@ -68,14 +68,14 @@ class ExecutionStrategyTest extends Specification {
         ExecutionId executionId = ExecutionId.from("executionId123")
         def variables = [arg1: "value1"]
         def builder = ExecutionContextBuilder.newExecutionContextBuilder()
-                .instrumentation(SimpleInstrumentation.INSTANCE)
+                .instrumentation(SimplePerformantInstrumentation.INSTANCE)
                 .executionId(executionId)
                 .graphQLSchema(schema ?: StarWarsSchema.starWarsSchema)
                 .queryStrategy(executionStrategy)
                 .mutationStrategy(executionStrategy)
                 .subscriptionStrategy(executionStrategy)
                 .coercedVariables(CoercedVariables.of(variables))
-                .graphQLContext(GraphQLContext.newContext().of("key","context").build())
+                .graphQLContext(GraphQLContext.newContext().of("key", "context").build())
                 .root("root")
                 .dataLoaderRegistry(new DataLoaderRegistry())
                 .locale(Locale.getDefault())
@@ -455,7 +455,7 @@ class ExecutionStrategyTest extends Specification {
                 throw new UnsupportedOperationException("Not implemented")
             }
         })
-        .build()
+                .build()
 
 
         ExecutionContext executionContext = buildContext()
@@ -675,7 +675,7 @@ class ExecutionStrategyTest extends Specification {
         def (ExecutionContext executionContext, GraphQLFieldDefinition fieldDefinition, ResultPath expectedPath, ExecutionStrategyParameters params, Field field, SourceLocation sourceLocation) = exceptionSetupFixture(expectedException)
 
         ExecutionContextBuilder executionContextBuilder = ExecutionContextBuilder.newExecutionContextBuilder(executionContext)
-        def instrumentation = new SimpleInstrumentation() {
+        def instrumentation = new SimplePerformantInstrumentation() {
             Map<String, FetchedValue> fetchedValues = [:]
 
             @Override
@@ -866,7 +866,7 @@ class ExecutionStrategyTest extends Specification {
         fetchedValue.getFetchedValue() == executionData
 //        executionContext.getErrors()[0].locations == [new SourceLocation(7, 20)]
         executionContext.getErrors()[0].message == "bad foo"
-        executionContext.getErrors()[0].path == [ "child", "foo"]
+        executionContext.getErrors()[0].path == ["child", "foo"]
     }
 
     def "#1558 forward localContext on nonBoxed return from DataFetcher"() {

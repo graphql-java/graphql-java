@@ -10,4 +10,17 @@ import graphql.PublicSpi;
  */
 @PublicSpi
 public interface InstrumentationState {
+
+    /**
+     * This helper method allows you to cast from {@link InstrumentationState} to a custom classes more easily.
+     *
+     * @param rawState the raw InstrumentationState
+     * @param <T>      for two
+     *
+     * @return a cast custom InstrumentationState
+     */
+    static <T extends InstrumentationState> T ofState(InstrumentationState rawState) {
+        //noinspection unchecked
+        return (T) rawState;
+    }
 }
