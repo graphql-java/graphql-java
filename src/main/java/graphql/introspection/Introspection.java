@@ -62,7 +62,7 @@ import static graphql.schema.GraphQLTypeUtil.unwrapOne;
 
 @PublicApi
 public class Introspection {
-    private static final Map<FieldCoordinates, DataFetcher<?>> introspectionDataFetchers = new LinkedHashMap<>();
+    private static final Map<FieldCoordinates, IntrospectionDataFetcher<?>> introspectionDataFetchers = new LinkedHashMap<>();
 
     private static void register(GraphQLFieldsContainer parentType, String fieldName, IntrospectionDataFetcher<?> introspectionDataFetcher) {
         introspectionDataFetchers.put(coordinates(parentType.getName(), fieldName), introspectionDataFetcher);
@@ -79,7 +79,7 @@ public class Introspection {
      * @param <T>         for two
      */
     private static <T> void register(GraphQLFieldsContainer parentType, String fieldName, Class<T> targetClass, Function<T, Object> getter) {
-        DataFetcher<?> dataFetcher = env -> {
+        IntrospectionDataFetcher<?> dataFetcher = env -> {
             if (targetClass.isInstance(env.getSource())) {
                 T t = targetClass.cast(env.getSource());
                 return getter.apply(t);
