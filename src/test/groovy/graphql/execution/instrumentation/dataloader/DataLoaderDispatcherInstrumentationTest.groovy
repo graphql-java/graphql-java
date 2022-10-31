@@ -11,12 +11,13 @@ import graphql.execution.ExecutionStrategyParameters
 import graphql.execution.instrumentation.ChainedInstrumentation
 import graphql.execution.instrumentation.Instrumentation
 import graphql.execution.instrumentation.InstrumentationState
-import graphql.execution.instrumentation.SimpleInstrumentation
+import graphql.execution.instrumentation.SimplePerformantInstrumentation
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters
 import graphql.schema.DataFetcher
 import org.dataloader.BatchLoader
 import org.dataloader.DataLoaderFactory
 import org.dataloader.DataLoaderRegistry
+import org.jetbrains.annotations.NotNull
 import spock.lang.Specification
 import spock.lang.Unroll
 
@@ -68,7 +69,7 @@ class DataLoaderDispatcherInstrumentationTest extends Specification {
 
         def captureStrategy = new CaptureStrategy()
         def graphQL = GraphQL.newGraphQL(starWarsSchema).queryExecutionStrategy(captureStrategy)
-                .instrumentation(new SimpleInstrumentation())
+                .instrumentation(new SimplePerformantInstrumentation())
                 .build()
         def executionInput = newExecutionInput().query('{ hero { name } }').build()
         when:
@@ -131,7 +132,9 @@ class DataLoaderDispatcherInstrumentationTest extends Specification {
         def enhancedDataLoaderRegistry = starWarsWiring.newDataLoaderRegistry()
 
         def dlInstrumentation = new DataLoaderDispatcherInstrumentation()
-        def enhancingInstrumentation = new SimpleInstrumentation() {
+        def enhancingInstrumentation = new SimplePerformantInstrumentation() {
+
+            @NotNull
             @Override
             ExecutionInput instrumentExecutionInput(ExecutionInput executionInput, InstrumentationExecutionParameters parameters, InstrumentationState state) {
                 assert executionInput.getDataLoaderRegistry() == startingDataLoaderRegistry
