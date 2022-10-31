@@ -25,7 +25,7 @@ import java.util.function.Function;
 import static graphql.util.TraversalControl.CONTINUE;
 
 @Internal
-class SchemaDirectiveWiringSchemaGeneratorPostProcessing implements SchemaGeneratorPostProcessing {
+class SchemaDirectiveWiringSchemaGeneratorPostProcessing {
 
     private final SchemaGeneratorDirectiveHelper generatorDirectiveHelper = new SchemaGeneratorDirectiveHelper();
     private final TypeDefinitionRegistry typeRegistry;
@@ -41,7 +41,6 @@ class SchemaDirectiveWiringSchemaGeneratorPostProcessing implements SchemaGenera
     }
 
 
-    @Override
     public GraphQLSchema process(GraphQLSchema originalSchema) {
         codeRegistryBuilder.trackChanges();
         Visitor visitor = new Visitor();
