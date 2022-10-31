@@ -15,6 +15,7 @@ import graphql.schema.DataFetchingEnvironment
 import graphql.schema.PropertyDataFetcher
 import graphql.schema.StaticDataFetcher
 import org.awaitility.Awaitility
+import org.jetbrains.annotations.NotNull
 import spock.lang.Specification
 
 import java.util.concurrent.CompletableFuture
@@ -158,7 +159,7 @@ class InstrumentationTest extends Specification {
      * java-dataloader works.  That is calls inside DataFetchers are "batched"
      * until a "dispatch" signal is made.
      */
-    class WaitingInstrumentation extends SimpleInstrumentation {
+    class WaitingInstrumentation extends SimplePerformantInstrumentation {
 
         final AtomicBoolean goSignal = new AtomicBoolean()
 
@@ -180,6 +181,7 @@ class InstrumentationTest extends Specification {
             }
         }
 
+        @NotNull
         @Override
         DataFetcher<?> instrumentDataFetcher(DataFetcher<?> dataFetcher, InstrumentationFieldFetchParameters parameters, InstrumentationState state) {
             System.out.println(String.format("t%s instrument DF for %s", Thread.currentThread().getId(), parameters.environment.getExecutionStepInfo().getPath()))

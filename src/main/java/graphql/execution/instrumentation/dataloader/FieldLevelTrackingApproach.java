@@ -76,13 +76,13 @@ public class FieldLevelTrackingApproach {
         @Override
         public String toString() {
             return "CallStack{" +
-                "expectedFetchCountPerLevel=" + expectedFetchCountPerLevel +
-                ", fetchCountPerLevel=" + fetchCountPerLevel +
-                ", expectedStrategyCallsPerLevel=" + expectedStrategyCallsPerLevel +
-                ", happenedStrategyCallsPerLevel=" + happenedStrategyCallsPerLevel +
-                ", happenedOnFieldValueCallsPerLevel=" + happenedOnFieldValueCallsPerLevel +
-                ", dispatchedLevels" + dispatchedLevels +
-                '}';
+                    "expectedFetchCountPerLevel=" + expectedFetchCountPerLevel +
+                    ", fetchCountPerLevel=" + fetchCountPerLevel +
+                    ", expectedStrategyCallsPerLevel=" + expectedStrategyCallsPerLevel +
+                    ", happenedStrategyCallsPerLevel=" + happenedStrategyCallsPerLevel +
+                    ", happenedOnFieldValueCallsPerLevel=" + happenedOnFieldValueCallsPerLevel +
+                    ", dispatchedLevels" + dispatchedLevels +
+                    '}';
         }
 
         public boolean dispatchIfNotDispatchedBefore(int level) {
@@ -118,8 +118,8 @@ public class FieldLevelTrackingApproach {
         return new CallStack();
     }
 
-    ExecutionStrategyInstrumentationContext beginExecutionStrategy(InstrumentationExecutionStrategyParameters parameters) {
-        CallStack callStack = parameters.getInstrumentationState();
+    ExecutionStrategyInstrumentationContext beginExecutionStrategy(InstrumentationExecutionStrategyParameters parameters, InstrumentationState rawState) {
+        CallStack callStack = (CallStack) rawState;
         ResultPath path = parameters.getExecutionStrategyParameters().getPath();
         int parentLevel = path.getLevel();
         int curLevel = parentLevel + 1;
@@ -183,8 +183,8 @@ public class FieldLevelTrackingApproach {
     }
 
 
-    public InstrumentationContext<Object> beginFieldFetch(InstrumentationFieldFetchParameters parameters) {
-        CallStack callStack = parameters.getInstrumentationState();
+    public InstrumentationContext<Object> beginFieldFetch(InstrumentationFieldFetchParameters parameters, InstrumentationState rawState) {
+        CallStack callStack = (CallStack) rawState;
         ResultPath path = parameters.getEnvironment().getExecutionStepInfo().getPath();
         int level = path.getLevel();
         return new InstrumentationContext<Object>() {
@@ -228,7 +228,7 @@ public class FieldLevelTrackingApproach {
             return callStack.allFetchesHappened(1);
         }
         if (levelReady(callStack, level - 1) && callStack.allOnFieldCallsHappened(level - 1)
-            && callStack.allStrategyCallsHappened(level) && callStack.allFetchesHappened(level)) {
+                && callStack.allStrategyCallsHappened(level) && callStack.allFetchesHappened(level)) {
             return true;
         }
         return false;
