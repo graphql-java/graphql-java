@@ -1,22 +1,32 @@
 package graphql.introspection;
 
 import com.google.common.collect.ImmutableList;
-import graphql.language.Argument;
+import graphql.PublicApi;
 import graphql.language.AstPrinter;
 import graphql.language.BooleanValue;
 import graphql.language.Document;
-import graphql.language.Field;
-import graphql.language.FragmentDefinition;
-import graphql.language.FragmentSpread;
 import graphql.language.OperationDefinition;
 import graphql.language.SelectionSet;
-import graphql.language.TypeName;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
+import static graphql.language.Argument.newArgument;
+import static graphql.language.Document.newDocument;
+import static graphql.language.Field.newField;
+import static graphql.language.FragmentDefinition.newFragmentDefinition;
+import static graphql.language.FragmentSpread.newFragmentSpread;
+import static graphql.language.OperationDefinition.newOperationDefinition;
+import static graphql.language.SelectionSet.newSelectionSet;
+import static graphql.language.TypeName.newTypeName;
+import static java.util.stream.Collectors.toList;
+
+/**
+ * {@link IntrospectionQueryBuilder} allows you to build introspection queries controlled
+ * by the options you specify
+ */
+@PublicApi
 public class IntrospectionQueryBuilder {
     public static class Options {
 
@@ -72,12 +82,12 @@ public class IntrospectionQueryBuilder {
 
         public static Options defaultOptions() {
             return new Options(
-                true,
-                false,
-                true,
-                false,
-                true,
-                7
+                    true,
+                    false,
+                    true,
+                    false,
+                    true,
+                    7
             );
         }
 
@@ -90,11 +100,11 @@ public class IntrospectionQueryBuilder {
          */
         public Options descriptions(boolean flag) {
             return new Options(flag,
-                this.specifiedByUrl,
-                this.directiveIsRepeatable,
-                this.schemaDescription,
-                this.inputValueDeprecation,
-                this.typeRefFragmentDepth);
+                    this.specifiedByUrl,
+                    this.directiveIsRepeatable,
+                    this.schemaDescription,
+                    this.inputValueDeprecation,
+                    this.typeRefFragmentDepth);
         }
 
         /**
@@ -106,11 +116,11 @@ public class IntrospectionQueryBuilder {
          */
         public Options specifiedByUrl(boolean flag) {
             return new Options(this.descriptions,
-                flag,
-                this.directiveIsRepeatable,
-                this.schemaDescription,
-                this.inputValueDeprecation,
-                this.typeRefFragmentDepth);
+                    flag,
+                    this.directiveIsRepeatable,
+                    this.schemaDescription,
+                    this.inputValueDeprecation,
+                    this.typeRefFragmentDepth);
         }
 
         /**
@@ -122,11 +132,11 @@ public class IntrospectionQueryBuilder {
          */
         public Options directiveIsRepeatable(boolean flag) {
             return new Options(this.descriptions,
-                this.specifiedByUrl,
-                flag,
-                this.schemaDescription,
-                this.inputValueDeprecation,
-                this.typeRefFragmentDepth);
+                    this.specifiedByUrl,
+                    flag,
+                    this.schemaDescription,
+                    this.inputValueDeprecation,
+                    this.typeRefFragmentDepth);
         }
 
         /**
@@ -138,11 +148,11 @@ public class IntrospectionQueryBuilder {
          */
         public Options schemaDescription(boolean flag) {
             return new Options(this.descriptions,
-                this.specifiedByUrl,
-                this.directiveIsRepeatable,
-                flag,
-                this.inputValueDeprecation,
-                this.typeRefFragmentDepth);
+                    this.specifiedByUrl,
+                    this.directiveIsRepeatable,
+                    flag,
+                    this.inputValueDeprecation,
+                    this.typeRefFragmentDepth);
         }
 
         /**
@@ -154,11 +164,11 @@ public class IntrospectionQueryBuilder {
          */
         public Options inputValueDeprecation(boolean flag) {
             return new Options(this.descriptions,
-                this.specifiedByUrl,
-                this.directiveIsRepeatable,
-                this.schemaDescription,
-                flag,
-                this.typeRefFragmentDepth);
+                    this.specifiedByUrl,
+                    this.directiveIsRepeatable,
+                    this.schemaDescription,
+                    flag,
+                    this.typeRefFragmentDepth);
         }
 
         /**
@@ -170,187 +180,210 @@ public class IntrospectionQueryBuilder {
          */
         public Options typeRefFragmentDepth(int typeRefFragmentDepth) {
             return new Options(this.descriptions,
-                this.specifiedByUrl,
-                this.directiveIsRepeatable,
-                this.schemaDescription,
-                this.inputValueDeprecation,
-                typeRefFragmentDepth);
+                    this.specifiedByUrl,
+                    this.directiveIsRepeatable,
+                    this.schemaDescription,
+                    this.inputValueDeprecation,
+                    typeRefFragmentDepth);
         }
     }
 
+    @SafeVarargs
     private static <T> List<T> filter(T... args) {
-        return Arrays.stream(args).filter(Objects::nonNull).collect(Collectors.toList());
+        return Arrays.stream(args).filter(Objects::nonNull).collect(toList());
     }
 
-    public static String build() {
-        return build(Options.defaultOptions());
-    }
-
-    public static String build(Options options) {
-        SelectionSet schemaSelectionSet = SelectionSet.newSelectionSet().selections( filter(
-            options.schemaDescription ? Field.newField("description").build() : null,
-            Field.newField("queryType", SelectionSet.newSelectionSet()
-                    .selection( Field.newField("name").build() )
-                    .build()
-                )
-                .build(),
-            Field.newField("mutationType", SelectionSet.newSelectionSet()
-                    .selection( Field.newField("name").build() )
-                    .build()
-                )
-                .build(),
-            Field.newField("subscriptionType", SelectionSet.newSelectionSet()
-                    .selection( Field.newField("name").build() )
-                    .build()
-                )
-                .build(),
-            Field.newField("types", SelectionSet.newSelectionSet()
-                    .selection( FragmentSpread.newFragmentSpread("FullType").build() )
-                    .build()
-                )
-                .build(),
-            Field.newField("directives", SelectionSet.newSelectionSet().selections( filter(
-                        Field.newField("name").build(),
-                        options.descriptions ? Field.newField("description").build() : null,
-                        Field.newField("locations").build(),
-                        Field.newField("args")
-                            .arguments( filter(
-                                options.inputValueDeprecation ? Argument.newArgument("includeDeprecated", BooleanValue.of(true)).build() : null
-                            ) )
-                            .selectionSet( SelectionSet.newSelectionSet()
-                                .selection( FragmentSpread.newFragmentSpread("InputValue").build() )
+    /**
+     * This will build an introspection query in {@link Document} form
+     *
+     * @param options the options to use
+     *
+     * @return an introspection query in document form
+     */
+    public static Document buildDocument(Options options) {
+        SelectionSet schemaSelectionSet = newSelectionSet().selections(filter(
+                        options.schemaDescription ? newField("description").build() : null,
+                        newField("queryType", newSelectionSet()
+                                .selection(newField("name").build())
                                 .build()
-                            )
-                            .build(),
-                        options.directiveIsRepeatable ? Field.newField("isRepeatable").build() : null
-                    ) )
-                    .build()
+                        )
+                                .build(),
+                        newField("mutationType", newSelectionSet()
+                                .selection(newField("name").build())
+                                .build()
+                        )
+                                .build(),
+                        newField("subscriptionType", newSelectionSet()
+                                .selection(newField("name").build())
+                                .build()
+                        )
+                                .build(),
+                        newField("types", newSelectionSet()
+                                .selection(newFragmentSpread("FullType").build())
+                                .build()
+                        )
+                                .build(),
+                        newField("directives", newSelectionSet().selections(filter(
+                                                newField("name").build(),
+                                                options.descriptions ? newField("description").build() : null,
+                                                newField("locations").build(),
+                                                newField("args")
+                                                        .arguments(filter(
+                                                                options.inputValueDeprecation ? newArgument("includeDeprecated", BooleanValue.of(true)).build() : null
+                                                        ))
+                                                        .selectionSet(newSelectionSet()
+                                                                .selection(newFragmentSpread("InputValue").build())
+                                                                .build()
+                                                        )
+                                                        .build(),
+                                                options.directiveIsRepeatable ? newField("isRepeatable").build() : null
+                                        ))
+                                        .build()
+                        )
+                                .build()
                 )
-                .build()
-            )
         ).build();
 
-        SelectionSet fullTypeSelectionSet = SelectionSet.newSelectionSet().selections( filter(
-            Field.newField("kind").build(),
-            Field.newField("name").build(),
-            options.descriptions ? Field.newField("description").build() : null,
-            options.specifiedByUrl ? Field.newField("specifiedByURL").build() : null,
-            Field.newField("fields")
-                .arguments( ImmutableList.of(
-                    Argument.newArgument("includeDeprecated", BooleanValue.of(true)).build()
-                ) )
-                .selectionSet( SelectionSet.newSelectionSet().selections( filter(
-                        Field.newField("name").build(),
-                        options.descriptions ? Field.newField("description").build() : null,
-                        Field.newField("args")
-                            .arguments( filter(
-                                options.inputValueDeprecation ? Argument.newArgument("includeDeprecated", BooleanValue.of(true)).build() : null
-                            ) )
-                            .selectionSet( SelectionSet.newSelectionSet()
-                                .selection( FragmentSpread.newFragmentSpread("InputValue").build() )
+        SelectionSet fullTypeSelectionSet = newSelectionSet().selections(filter(
+                newField("kind").build(),
+                newField("name").build(),
+                options.descriptions ? newField("description").build() : null,
+                options.specifiedByUrl ? newField("specifiedByURL").build() : null,
+                newField("fields")
+                        .arguments(ImmutableList.of(
+                                newArgument("includeDeprecated", BooleanValue.of(true)).build()
+                        ))
+                        .selectionSet(newSelectionSet().selections(filter(
+                                        newField("name").build(),
+                                        options.descriptions ? newField("description").build() : null,
+                                        newField("args")
+                                                .arguments(filter(
+                                                        options.inputValueDeprecation ? newArgument("includeDeprecated", BooleanValue.of(true)).build() : null
+                                                ))
+                                                .selectionSet(newSelectionSet()
+                                                        .selection(newFragmentSpread("InputValue").build())
+                                                        .build()
+                                                )
+                                                .build(),
+                                        newField("type", newSelectionSet()
+                                                .selection(newFragmentSpread("TypeRef").build())
+                                                .build()
+                                        )
+                                                .build(),
+                                        newField("isDeprecated").build(),
+                                        newField("deprecationReason").build()
+                                )).build()
+                        )
+                        .build(),
+                newField("inputFields")
+                        .arguments(filter(
+                                options.inputValueDeprecation ? newArgument("includeDeprecated", BooleanValue.of(true)).build() : null
+                        ))
+                        .selectionSet(newSelectionSet()
+                                .selection(newFragmentSpread("InputValue").build())
                                 .build()
-                            )
-                            .build(),
-                        Field.newField("type", SelectionSet.newSelectionSet()
-                                .selection( FragmentSpread.newFragmentSpread("TypeRef").build() )
-                                .build()
-                            )
-                            .build(),
-                        Field.newField("isDeprecated").build(),
-                        Field.newField("deprecationReason").build()
-                    ) ).build()
-                )
-                .build(),
-            Field.newField("inputFields")
-                .arguments( filter(
-                    options.inputValueDeprecation ? Argument.newArgument("includeDeprecated", BooleanValue.of(true)).build() : null
-                ) )
-                .selectionSet( SelectionSet.newSelectionSet()
-                    .selection( FragmentSpread.newFragmentSpread("InputValue").build() )
-                    .build()
-                )
-                .build(),
-            Field.newField("interfaces", SelectionSet.newSelectionSet()
-                    .selection( FragmentSpread.newFragmentSpread("TypeRef").build() )
-                    .build()
-                )
-                .build(),
-            Field.newField("enumValues")
-                .arguments( ImmutableList.of(
-                    Argument.newArgument("includeDeprecated", BooleanValue.of(true)).build()
-                ) )
-                .selectionSet( SelectionSet.newSelectionSet().selections( filter(
-                            Field.newField("name").build(),
-                            options.descriptions ? Field.newField("description").build() : null,
-                            Field.newField("isDeprecated").build(),
-                            Field.newField("deprecationReason").build()
-                        ) )
+                        )
+                        .build(),
+                newField("interfaces", newSelectionSet()
+                        .selection(newFragmentSpread("TypeRef").build())
                         .build()
                 )
-                .build(),
-            Field.newField("possibleTypes", SelectionSet.newSelectionSet()
-                    .selection( FragmentSpread.newFragmentSpread("TypeRef").build() )
-                    .build()
+                        .build(),
+                newField("enumValues")
+                        .arguments(ImmutableList.of(
+                                newArgument("includeDeprecated", BooleanValue.of(true)).build()
+                        ))
+                        .selectionSet(newSelectionSet().selections(filter(
+                                                newField("name").build(),
+                                                options.descriptions ? newField("description").build() : null,
+                                                newField("isDeprecated").build(),
+                                                newField("deprecationReason").build()
+                                        ))
+                                        .build()
+                        )
+                        .build(),
+                newField("possibleTypes", newSelectionSet()
+                        .selection(newFragmentSpread("TypeRef").build())
+                        .build()
                 )
-                .build()
-        ) ).build();
+                        .build()
+        )).build();
 
-        SelectionSet inputValueSelectionSet = SelectionSet.newSelectionSet().selections( filter(
-            Field.newField("name").build(),
-            options.descriptions ? Field.newField("description").build() : null,
-            Field.newField("type", SelectionSet.newSelectionSet()
-                    .selection( FragmentSpread.newFragmentSpread("TypeRef").build() )
-                    .build()
+        SelectionSet inputValueSelectionSet = newSelectionSet().selections(filter(
+                newField("name").build(),
+                options.descriptions ? newField("description").build() : null,
+                newField("type", newSelectionSet()
+                        .selection(newFragmentSpread("TypeRef").build())
+                        .build()
                 )
-                .build(),
-            Field.newField("defaultValue").build(),
-            options.inputValueDeprecation ? Field.newField("isDeprecated").build() : null,
-            options.inputValueDeprecation ? Field.newField("deprecationReason").build() : null
-        ) ).build();
+                        .build(),
+                newField("defaultValue").build(),
+                options.inputValueDeprecation ? newField("isDeprecated").build() : null,
+                options.inputValueDeprecation ? newField("deprecationReason").build() : null
+        )).build();
 
-        SelectionSet typeRefSelectionSet = SelectionSet.newSelectionSet().selections( filter(
-            Field.newField("kind").build(),
-            Field.newField("name").build()
-        ) ).build();
+        SelectionSet typeRefSelectionSet = newSelectionSet().selections(filter(
+                newField("kind").build(),
+                newField("name").build()
+        )).build();
 
-        for(int i=options.typeRefFragmentDepth; i>0; i-=1) {
-            typeRefSelectionSet = SelectionSet.newSelectionSet().selections( filter(
-                Field.newField("kind").build(),
-                Field.newField("name").build(),
-                Field.newField("ofType", typeRefSelectionSet).build()
-            ) ).build();
+        for (int i = options.typeRefFragmentDepth; i > 0; i -= 1) {
+            typeRefSelectionSet = newSelectionSet().selections(filter(
+                    newField("kind").build(),
+                    newField("name").build(),
+                    newField("ofType", typeRefSelectionSet).build()
+            )).build();
         }
 
-        Document query = Document.newDocument()
-            .definition( OperationDefinition.newOperationDefinition()
-                .operation(OperationDefinition.Operation.QUERY)
-                .name("IntrospectionQuery")
-                .selectionSet( SelectionSet.newSelectionSet()
-                    .selection( Field.newField("__schema", schemaSelectionSet).build() )
-                    .build()
+        return newDocument()
+                .definition(newOperationDefinition()
+                        .operation(OperationDefinition.Operation.QUERY)
+                        .name("IntrospectionQuery")
+                        .selectionSet(newSelectionSet()
+                                .selection(newField("__schema", schemaSelectionSet).build())
+                                .build()
+                        )
+                        .build()
                 )
-                .build()
-            )
-            .definition( FragmentDefinition.newFragmentDefinition()
-                .name("FullType")
-                .typeCondition( TypeName.newTypeName().name("__Type").build() )
-                .selectionSet(fullTypeSelectionSet)
-                .build()
-            )
-            .definition( FragmentDefinition.newFragmentDefinition()
-                .name("InputValue")
-                .typeCondition( TypeName.newTypeName().name("__InputValue").build() )
-                .selectionSet(inputValueSelectionSet)
-                .build()
-            )
-            .definition( FragmentDefinition.newFragmentDefinition()
-                .name("TypeRef")
-                .typeCondition( TypeName.newTypeName().name("__Type").build() )
-                .selectionSet(typeRefSelectionSet)
-                .build()
-            )
-            .build();
+                .definition(newFragmentDefinition()
+                        .name("FullType")
+                        .typeCondition(newTypeName().name("__Type").build())
+                        .selectionSet(fullTypeSelectionSet)
+                        .build()
+                )
+                .definition(newFragmentDefinition()
+                        .name("InputValue")
+                        .typeCondition(newTypeName().name("__InputValue").build())
+                        .selectionSet(inputValueSelectionSet)
+                        .build()
+                )
+                .definition(newFragmentDefinition()
+                        .name("TypeRef")
+                        .typeCondition(newTypeName().name("__Type").build())
+                        .selectionSet(typeRefSelectionSet)
+                        .build()
+                )
+                .build();
+    }
 
-        return AstPrinter.printAst(query);
+    /**
+     * This will build an introspection query in {@link String} form based on the options you provide
+     *
+     * @param options the options to use
+     *
+     * @return an introspection query in string form
+     */
+
+    public static String build(Options options) {
+        return AstPrinter.printAst(buildDocument(options));
+    }
+
+    /**
+     * This will build a default introspection query in {@link String} form
+     *
+     * @return an introspection query in string form
+     */
+    public static String build() {
+        return build(Options.defaultOptions());
     }
 }
