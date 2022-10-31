@@ -106,7 +106,7 @@ import static java.util.concurrent.CompletableFuture.completedFuture;
  * and the other "completeXXX" methods.
  * <p>
  * The order of fields fetching and completion is up to the execution strategy. As the graphql specification
- * <a href="http://facebook.github.io/graphql/#sec-Normal-and-Serial-Execution">http://facebook.github.io/graphql/#sec-Normal-and-Serial-Execution</a> says:
+ * <a href="https://spec.graphql.org/October2021/#sec-Normal-and-Serial-Execution">https://spec.graphql.org/October2021/#sec-Normal-and-Serial-Execution</a> says:
  * <blockquote>
  * Normally the executor can execute the entries in a grouped field set in whatever order it chooses (often in parallel). Because
  * the resolution of fields other than top-level mutation fields must always be side effect-free and idempotent, the
@@ -746,7 +746,7 @@ public abstract class ExecutionStrategy {
     }
 
     /**
-     * See (<a href="http://facebook.github.io/graphql/#sec-Errors-and-Non-Nullability">...</a>),
+     * See (<a href="https://spec.graphql.org/October2021/#sec-Errors-and-Non-Nullability">...</a>),
      * <p>
      * If a non nullable child field type actually resolves to a null value and the parent type is nullable
      * then the parent must in fact become null

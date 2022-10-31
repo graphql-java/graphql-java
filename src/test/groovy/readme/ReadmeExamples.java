@@ -304,7 +304,7 @@ public class ReadmeExamples {
                 // be maps.  You can convert them to POJOs inside the data fetcher if that
                 // suits your code better
                 //
-                // See http://facebook.github.io/graphql/October2016/#sec-Input-Objects
+                // See https://spec.graphql.org/October2021/#sec-Input-Objects
                 //
                 Map<String, Object> episodeInputMap = environment.getArgument("episode");
                 Map<String, Object> reviewInputMap = environment.getArgument("review");

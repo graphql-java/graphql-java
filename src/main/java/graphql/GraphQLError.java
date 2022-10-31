@@ -38,7 +38,7 @@ public interface GraphQLError extends Serializable {
 
     /**
      * The graphql spec says that the (optional) path field of any error should be a list
-     * of path entries - http://facebook.github.io/graphql/#sec-Errors
+     * of path entries https://spec.graphql.org/October2021/#sec-Handling-Field-Errors
      *
      * @return the path in list format
      */
