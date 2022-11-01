@@ -31,6 +31,7 @@ import static graphql.schema.GraphQLTypeUtil.unwrapOne;
 public class PropertyFetchingImpl {
 
     private final AtomicBoolean USE_SET_ACCESSIBLE = new AtomicBoolean(true);
+    private final AtomicBoolean USE_LAMBDA_FACTORY = new AtomicBoolean(true);
     private final AtomicBoolean USE_NEGATIVE_CACHE = new AtomicBoolean(true);
     private final ConcurrentMap<CacheKey, CachedLambdaFunction> LAMBDA_CACHE = new ConcurrentHashMap<>();
     private final ConcurrentMap<CacheKey, CachedMethod> METHOD_CACHE = new ConcurrentHashMap<>();
@@ -104,7 +105,7 @@ public class PropertyFetchingImpl {
         // expensive operation here
         //
 
-        Optional<Function<Object, Object>> getterOpt = LambdaFetchingSupport.createGetter(object.getClass(), propertyName);
+        Optional<Function<Object, Object>> getterOpt = lambdaGetter(propertyName, object);
         if (getterOpt.isPresent()) {
             Function<Object, Object> getter = getterOpt.get();
             cachedFunction = new CachedLambdaFunction(getter);
@@ -145,6 +146,13 @@ public class PropertyFetchingImpl {
         // we have nothing to ask for, and we have exhausted our lookup strategies
         putInNegativeCache(cacheKey);
         return null;
+    }
+
+    private Optional<Function<Object, Object>> lambdaGetter(String propertyName, Object object) {
+        if (USE_LAMBDA_FACTORY.get()) {
+            return LambdaFetchingSupport.createGetter(object.getClass(), propertyName);
+        }
+        return Optional.empty();
     }
 
     private boolean isNegativelyCached(CacheKey key) {
@@ -339,6 +347,9 @@ public class PropertyFetchingImpl {
 
     public boolean setUseSetAccessible(boolean flag) {
         return USE_SET_ACCESSIBLE.getAndSet(flag);
+    }
+    public boolean setUseLambdaFactory(boolean flag) {
+        return USE_LAMBDA_FACTORY.getAndSet(flag);
     }
 
     public boolean setUseNegativeCache(boolean flag) {

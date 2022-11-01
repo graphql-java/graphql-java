@@ -22,6 +22,7 @@ class PropertyDataFetcherTest extends Specification {
         PropertyDataFetcher.setUseSetAccessible(true)
         PropertyDataFetcher.setUseNegativeCache(true)
         PropertyDataFetcher.clearReflectionCache()
+        PropertyDataFetcherHelper.setUseLambdaFactory(true)
     }
 
     def env(obj) {
@@ -147,6 +148,25 @@ class PropertyDataFetcherTest extends Specification {
         when:
         def fetcher = new PropertyDataFetcher("recordProperty")
         def result = fetcher.get(environment)
+        then:
+        result == "recordProperty"
+    }
+
+    def "fetch via record method without lambda support"() {
+        PropertyDataFetcherHelper.setUseLambdaFactory(false)
+        PropertyDataFetcherHelper.clearReflectionCache()
+
+        when:
+        def environment = env(new RecordLikeClass())
+        def fetcher = new PropertyDataFetcher("recordProperty")
+        def result = fetcher.get(environment)
+        then:
+        result == "recordProperty"
+
+        when:
+        environment = env(new RecordLikeTwoClassesDown())
+        fetcher = new PropertyDataFetcher("recordProperty")
+        result = fetcher.get(environment)
         then:
         result == "recordProperty"
     }
