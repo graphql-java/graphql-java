@@ -3,7 +3,6 @@ package graphql.schema;
 
 import graphql.Assert;
 import graphql.PublicApi;
-import graphql.TrivialDataFetcher;
 
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -32,7 +31,7 @@ import java.util.function.Supplier;
  * @see graphql.schema.DataFetcher
  */
 @PublicApi
-public class PropertyDataFetcher<T> implements DataFetcher<T>, TrivialDataFetcher<T> {
+public class PropertyDataFetcher<T> implements LightDataFetcher<T> {
 
     private final String propertyName;
     private final Function<Object, Object> function;
@@ -108,24 +107,19 @@ public class PropertyDataFetcher<T> implements DataFetcher<T>, TrivialDataFetche
         return propertyName;
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public T get(GraphQLFieldDefinition fieldDefinition, Object source, Supplier<DataFetchingEnvironment> environmentSupplier) throws Exception {
-        if (source == null) {
-            return null;
-        }
-
-        if (function != null) {
-            return (T) function.apply(source);
-        }
-
-        return (T) PropertyDataFetcherHelper.getPropertyValue(propertyName, source, fieldDefinition.getType(), environmentSupplier);
+        return getImpl(source, fieldDefinition.getType(), environmentSupplier);
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public T get(DataFetchingEnvironment environment) {
         Object source = environment.getSource();
+        return getImpl(source, environment.getFieldType(), () -> environment);
+    }
+
+    @SuppressWarnings("unchecked")
+    private T getImpl(Object source, GraphQLOutputType fieldDefinition, Supplier<DataFetchingEnvironment> environmentSupplier) {
         if (source == null) {
             return null;
         }
@@ -134,7 +128,7 @@ public class PropertyDataFetcher<T> implements DataFetcher<T>, TrivialDataFetche
             return (T) function.apply(source);
         }
 
-        return (T) PropertyDataFetcherHelper.getPropertyValue(propertyName, source, environment.getFieldType(), () -> environment);
+        return (T) PropertyDataFetcherHelper.getPropertyValue(propertyName, source, fieldDefinition, environmentSupplier);
     }
 
     /**

@@ -31,6 +31,7 @@ import graphql.schema.GraphQLInterfaceType
 import graphql.schema.GraphQLNonNull
 import graphql.schema.GraphQLObjectType
 import graphql.schema.GraphQLSchema
+import graphql.schema.LightDataFetcher
 import graphql.schema.StaticDataFetcher
 import graphql.schema.idl.SchemaGenerator
 import graphql.schema.idl.errors.SchemaProblem
@@ -428,7 +429,7 @@ class GraphQLTest extends Specification {
         def queryType = "QueryType"
         def fooName = "foo"
         def fooCoordinates = FieldCoordinates.coordinates(queryType, fooName)
-        def dataFetcher = Mock(DataFetcher)
+        def dataFetcher = Mock(LightDataFetcher)
         GraphQLCodeRegistry codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
                 .dataFetcher(fooCoordinates, dataFetcher)
                 .build()
@@ -459,7 +460,7 @@ class GraphQLTest extends Specification {
         def queryType = "QueryType"
         def fooName = "foo"
         def fooCoordinates = FieldCoordinates.coordinates(queryType, fooName)
-        def dataFetcher = Mock(DataFetcher)
+        def dataFetcher = Mock(LightDataFetcher)
         GraphQLCodeRegistry codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
                 .dataFetcher(fooCoordinates, dataFetcher)
                 .build()
@@ -495,7 +496,7 @@ class GraphQLTest extends Specification {
         def queryType = "QueryType"
         def fooName = "foo"
         def fooCoordinates = FieldCoordinates.coordinates(queryType, fooName)
-        def dataFetcher = Mock(DataFetcher)
+        def dataFetcher = Mock(LightDataFetcher)
         GraphQLCodeRegistry codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
                 .dataFetcher(fooCoordinates, dataFetcher)
                 .build()
@@ -534,7 +535,7 @@ class GraphQLTest extends Specification {
         def queryType = "QueryType"
         def fooName = "foo"
         def fooCoordinates = FieldCoordinates.coordinates(queryType, fooName)
-        def dataFetcher = Mock(DataFetcher)
+        def dataFetcher = Mock(LightDataFetcher)
         GraphQLCodeRegistry codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
                 .dataFetcher(fooCoordinates, dataFetcher)
                 .build()
@@ -573,7 +574,7 @@ class GraphQLTest extends Specification {
         def queryType = "QueryType"
         def fooName = "foo"
         def fooCoordinates = FieldCoordinates.coordinates(queryType, fooName)
-        def dataFetcher = Mock(DataFetcher)
+        def dataFetcher = Mock(LightDataFetcher)
         GraphQLCodeRegistry codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
                 .dataFetcher(fooCoordinates, dataFetcher)
                 .build()
@@ -610,7 +611,7 @@ class GraphQLTest extends Specification {
         def queryType = "QueryType"
         def fooName = "foo"
         def fooCoordinates = FieldCoordinates.coordinates(queryType, fooName)
-        def dataFetcher = Mock(DataFetcher)
+        def dataFetcher = Mock(LightDataFetcher)
         GraphQLCodeRegistry codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
                 .dataFetcher(fooCoordinates, dataFetcher)
                 .build()
@@ -648,7 +649,7 @@ class GraphQLTest extends Specification {
         def queryType = "QueryType"
         def fooName = "foo"
         def fooCoordinates = FieldCoordinates.coordinates(queryType, fooName)
-        def dataFetcher = Mock(DataFetcher)
+        def dataFetcher = Mock(LightDataFetcher)
         GraphQLCodeRegistry codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
                 .dataFetcher(fooCoordinates, dataFetcher)
                 .build()

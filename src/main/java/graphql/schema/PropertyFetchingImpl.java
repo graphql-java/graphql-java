@@ -113,7 +113,6 @@ public class PropertyFetchingImpl {
             return getter.apply(object);
         }
 
-        boolean dfeInUse = singleArgumentValue != null;
         try {
             MethodFinder methodFinder = (root, methodName) -> findPubliclyAccessibleMethod(cacheKey, root, methodName, dfeInUse);
             return getPropertyViaGetterMethod(object, propertyName, graphQLType, methodFinder, singleArgumentValue);

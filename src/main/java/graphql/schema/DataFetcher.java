@@ -31,29 +31,4 @@ public interface DataFetcher<T> {
      *                   and the related field will have a value of {@code null} in the result.
      */
     T get(DataFetchingEnvironment environment) throws Exception;
-
-
-    /**
-     * This is called to by the engine to get a value from the source object in a lightweight fashion.  Only the field
-     * and source object are passed in a materialised way.  The more heavy weight {@link DataFetchingEnvironment} is wrapped
-     * in a supplier that is only created on demand.
-     * <p>
-     * If you are a lightweight data fetcher (like {@link PropertyDataFetcher} is) then you can implement this method to have a more lightweight
-     * method invocation.  However, if you need field arguments etc. during fetching (most custom fetchers will) then you should use implement
-     * {@link #get(DataFetchingEnvironment)}.  This method delegates to {@link #get(DataFetchingEnvironment)}.
-     *
-     * @param fieldDefinition     the graphql field definition
-     * @param sourceObject        the source object to get a value from
-     * @param environmentSupplier a supplier of the {@link DataFetchingEnvironment} that creates it lazily
-     *
-     * @return a value of type T. May be wrapped in a {@link graphql.execution.DataFetcherResult}
-     *
-     * @throws Exception to relieve the implementations from having to wrap checked exceptions. Any exception thrown
-     *                   from a {@code DataFetcher} will eventually be handled by the registered {@link graphql.execution.DataFetcherExceptionHandler}
-     *                   and the related field will have a value of {@code null} in the result.
-     */
-    default T get(GraphQLFieldDefinition fieldDefinition, Object sourceObject, Supplier<DataFetchingEnvironment> environmentSupplier) throws Exception {
-        return get(environmentSupplier.get());
-    }
-
 }

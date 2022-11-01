@@ -10,6 +10,7 @@ import graphql.schema.FieldCoordinates
 import graphql.schema.GraphQLCodeRegistry
 import graphql.schema.GraphQLFieldDefinition
 import graphql.schema.GraphQLSchema
+import graphql.schema.LightDataFetcher
 import spock.lang.Specification
 
 import java.util.concurrent.CompletableFuture
@@ -125,13 +126,13 @@ class AsyncSerialExecutionStrategyTest extends Specification {
     @SuppressWarnings("GroovyAssignabilityCheck")
     def "async serial execution test"() {
         given:
-        def df1 = Mock(DataFetcher)
+        def df1 = Mock(LightDataFetcher)
         def cf1 = new CompletableFuture()
 
-        def df2 = Mock(DataFetcher)
+        def df2 = Mock(LightDataFetcher)
         def cf2 = new CompletableFuture()
 
-        def df3 = Mock(DataFetcher)
+        def df3 = Mock(LightDataFetcher)
         def cf3 = new CompletableFuture()
 
         GraphQLSchema schema = schema(df1, df2, df3)

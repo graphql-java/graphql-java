@@ -37,6 +37,7 @@ import graphql.schema.GraphQLOutputType;
 import graphql.schema.GraphQLScalarType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLType;
+import graphql.schema.LightDataFetcher;
 import graphql.util.FpKit;
 import graphql.util.LogKit;
 import org.slf4j.Logger;
@@ -302,7 +303,11 @@ public abstract class ExecutionStrategy {
         CompletableFuture<Object> fetchedValue;
         try {
             Object fetchedValueRaw;
-            fetchedValueRaw = dataFetcher.get(fieldDef, parameters.getSource(), dataFetchingEnvironment);
+            if (dataFetcher instanceof LightDataFetcher) {
+                fetchedValueRaw = ((LightDataFetcher<?>) dataFetcher).get(fieldDef, parameters.getSource(), dataFetchingEnvironment);
+            } else {
+                fetchedValueRaw = dataFetcher.get(dataFetchingEnvironment.get());
+            }
             fetchedValue = Async.toCompletableFuture(fetchedValueRaw);
         } catch (Exception e) {
             if (logNotSafe.isDebugEnabled()) {

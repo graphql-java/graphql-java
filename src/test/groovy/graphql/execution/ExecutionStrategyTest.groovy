@@ -28,6 +28,7 @@ import graphql.schema.GraphQLEnumType
 import graphql.schema.GraphQLFieldDefinition
 import graphql.schema.GraphQLScalarType
 import graphql.schema.GraphQLSchema
+import graphql.schema.LightDataFetcher
 import org.dataloader.DataLoaderRegistry
 import spock.lang.Specification
 
@@ -498,7 +499,7 @@ class ExecutionStrategyTest extends Specification {
 
     @SuppressWarnings("GroovyVariableNotAssigned")
     def "resolveField creates correct DataFetchingEnvironment"() {
-        def dataFetcher = Mock(DataFetcher)
+        def dataFetcher = Mock(LightDataFetcher)
         def someFieldName = "someField"
         def testTypeName = "Type"
         def fieldDefinition = newFieldDefinition()
