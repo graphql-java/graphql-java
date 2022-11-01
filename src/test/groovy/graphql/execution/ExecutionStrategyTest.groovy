@@ -10,7 +10,8 @@ import graphql.SerializationError
 import graphql.StarWarsSchema
 import graphql.TypeMismatchError
 import graphql.execution.instrumentation.InstrumentationContext
-import graphql.execution.instrumentation.SimpleInstrumentation
+import graphql.execution.instrumentation.InstrumentationState
+import graphql.execution.instrumentation.SimplePerformantInstrumentation
 import graphql.execution.instrumentation.parameters.InstrumentationFieldCompleteParameters
 import graphql.language.Argument
 import graphql.language.Field
@@ -68,7 +69,7 @@ class ExecutionStrategyTest extends Specification {
         ExecutionId executionId = ExecutionId.from("executionId123")
         def variables = [arg1: "value1"]
         def builder = ExecutionContextBuilder.newExecutionContextBuilder()
-                .instrumentation(SimpleInstrumentation.INSTANCE)
+                .instrumentation(SimplePerformantInstrumentation.INSTANCE)
                 .executionId(executionId)
                 .graphQLSchema(schema ?: StarWarsSchema.starWarsSchema)
                 .queryStrategy(executionStrategy)
@@ -675,16 +676,16 @@ class ExecutionStrategyTest extends Specification {
         def (ExecutionContext executionContext, GraphQLFieldDefinition fieldDefinition, ResultPath expectedPath, ExecutionStrategyParameters params, Field field, SourceLocation sourceLocation) = exceptionSetupFixture(expectedException)
 
         ExecutionContextBuilder executionContextBuilder = ExecutionContextBuilder.newExecutionContextBuilder(executionContext)
-        def instrumentation = new SimpleInstrumentation() {
+        def instrumentation = new SimplePerformantInstrumentation() {
             Map<String, FetchedValue> fetchedValues = [:]
 
             @Override
-            InstrumentationContext<ExecutionResult> beginFieldComplete(InstrumentationFieldCompleteParameters parameters) {
+            InstrumentationContext<ExecutionResult> beginFieldComplete(InstrumentationFieldCompleteParameters parameters, InstrumentationState state) {
                 if (parameters.fetchedValue instanceof FetchedValue) {
                     FetchedValue value = (FetchedValue) parameters.fetchedValue
                     fetchedValues.put(parameters.field.name, value)
                 }
-                return super.beginFieldComplete(parameters)
+                return super.beginFieldComplete(parameters, state)
             }
         }
         ExecutionContext instrumentedExecutionContext = executionContextBuilder.instrumentation(instrumentation).build()

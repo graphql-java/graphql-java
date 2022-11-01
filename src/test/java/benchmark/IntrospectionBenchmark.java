@@ -5,7 +5,8 @@ import com.google.common.io.Resources;
 import graphql.ExecutionResult;
 import graphql.GraphQL;
 import graphql.execution.DataFetcherResult;
-import graphql.execution.instrumentation.SimpleInstrumentation;
+import graphql.execution.instrumentation.InstrumentationState;
+import graphql.execution.instrumentation.SimplePerformantInstrumentation;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters;
 import graphql.introspection.IntrospectionQuery;
 import graphql.schema.DataFetcher;
@@ -13,6 +14,7 @@ import graphql.schema.DataFetchingEnvironment;
 import graphql.schema.GraphQLNamedType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.idl.SchemaGenerator;
+import org.jetbrains.annotations.NotNull;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Measurement;
@@ -36,12 +38,12 @@ public class IntrospectionBenchmark {
     private final GraphQL graphQL;
     private final DFCountingInstrumentation countingInstrumentation = new DFCountingInstrumentation();
 
-    static class DFCountingInstrumentation extends SimpleInstrumentation {
+    static class DFCountingInstrumentation extends SimplePerformantInstrumentation {
         Map<String, Long> counts = new LinkedHashMap<>();
         Map<String, Long> times = new LinkedHashMap<>();
 
         @Override
-        public DataFetcher<?> instrumentDataFetcher(DataFetcher<?> dataFetcher, InstrumentationFieldFetchParameters parameters) {
+        public @NotNull DataFetcher<?> instrumentDataFetcher(DataFetcher<?> dataFetcher, InstrumentationFieldFetchParameters parameters, InstrumentationState state) {
             return (DataFetcher<Object>) env -> {
                 long then = System.nanoTime();
                 Object value = dataFetcher.get(env);

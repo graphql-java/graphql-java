@@ -1,7 +1,7 @@
 package graphql.cachecontrol
 
 import graphql.ExecutionInput
-import graphql.ExecutionResultImpl
+import graphql.ExecutionResult
 import graphql.GraphQLContext
 import graphql.TestUtil
 import graphql.execution.CoercedVariables
@@ -29,7 +29,7 @@ class CacheControlTest extends Specification {
         cc.hint(ResultPath.parse("/hint/33/private"), 33, CacheControl.Scope.PRIVATE)
         cc.hint(ResultPath.parse("/hint/private"), CacheControl.Scope.PRIVATE)
 
-        def er = ExecutionResultImpl.newExecutionResult().data("data").build()
+        def er = ExecutionResult.newExecutionResult().data("data").build()
 
         when:
         def newER = cc.addTo(er)
@@ -56,7 +56,7 @@ class CacheControlTest extends Specification {
 
         def startingExtensions = ["someExistingExt": "data"]
 
-        def er = ExecutionResultImpl.newExecutionResult().data("data").extensions(startingExtensions).build()
+        def er = ExecutionResult.newExecutionResult().data("data").extensions(startingExtensions).build()
 
         when:
         def newER = cc.addTo(er)

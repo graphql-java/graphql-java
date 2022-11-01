@@ -17,11 +17,10 @@ import java.util.function.Function
 
 class MaxQueryDepthInstrumentationTest extends Specification {
 
-    Document createQuery(String query) {
+    static Document createQuery(String query) {
         Parser parser = new Parser()
         parser.parseDocument(query)
     }
-
 
     def "throws exception if too deep"() {
         given:
@@ -68,8 +67,34 @@ class MaxQueryDepthInstrumentationTest extends Specification {
         ExecutionInput executionInput = Mock(ExecutionInput)
         def executionContext = executionCtx(executionInput, query, schema)
         def executeOperationParameters = new InstrumentationExecuteOperationParameters(executionContext)
+        def state = maximumQueryDepthInstrumentation.createState(null)
         when:
-        maximumQueryDepthInstrumentation.beginExecuteOperation(executeOperationParameters)
+        maximumQueryDepthInstrumentation.beginExecuteOperation(executeOperationParameters, state)
+        then:
+        notThrown(Exception)
+    }
+
+    def "doesn't throw exception if not deep enough with deprecated beginExecuteOperation"() {
+        given:
+        def schema = TestUtil.schema("""
+            type Query{
+                foo: Foo
+                bar: String
+            }
+            type Foo {
+                scalar: String  
+                foo: Foo
+            }
+        """)
+        def query = createQuery("""
+            {f1: foo {foo {foo {scalar}}} f2: foo { foo {foo {foo {foo{foo{scalar}}}}}} }
+            """)
+        MaxQueryDepthInstrumentation maximumQueryDepthInstrumentation = new MaxQueryDepthInstrumentation(7)
+        ExecutionInput executionInput = Mock(ExecutionInput)
+        def executionContext = executionCtx(executionInput, query, schema)
+        def executeOperationParameters = new InstrumentationExecuteOperationParameters(executionContext)
+        when:
+        maximumQueryDepthInstrumentation.beginExecuteOperation(executeOperationParameters, null) // Retain for test coverage
         then:
         notThrown(Exception)
     }
@@ -133,7 +158,7 @@ class MaxQueryDepthInstrumentationTest extends Specification {
         !er.errors.isEmpty()
     }
 
-    private ExecutionContext executionCtx(ExecutionInput executionInput, Document query, GraphQLSchema schema) {
+    static private ExecutionContext executionCtx(ExecutionInput executionInput, Document query, GraphQLSchema schema) {
         ExecutionContextBuilder.newExecutionContextBuilder()
                 .executionInput(executionInput).document(query).graphQLSchema(schema).executionId(ExecutionId.generate()).build()
     }

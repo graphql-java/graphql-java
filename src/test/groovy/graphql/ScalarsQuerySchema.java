@@ -18,18 +18,6 @@ public class ScalarsQuerySchema {
 
     public static final GraphQLObjectType queryType = newObject()
             .name("QueryType")
-            // Static scalars
-            .field(newFieldDefinition()
-                    .name("floatNaN")
-                    .type(Scalars.GraphQLFloat)
-                    .staticValue(Double.NaN))
-            // Scalars with input of same type, value echoed back
-            .field(newFieldDefinition()
-                    .name("floatNaNInput")
-                    .type(Scalars.GraphQLFloat)
-                    .argument(newArgument()
-                            .name("input")
-                            .type(GraphQLNonNull.nonNull(Scalars.GraphQLFloat))))
             .field(newFieldDefinition()
                     .name("stringInput")
                     .type(Scalars.GraphQLString)
@@ -51,12 +39,10 @@ public class ScalarsQuerySchema {
                             .type(Scalars.GraphQLString)))
             .build();
 
-    static FieldCoordinates floatNaNCoordinates = FieldCoordinates.coordinates("QueryType", "floatNaNInput");
     static FieldCoordinates stringInputCoordinates = FieldCoordinates.coordinates("QueryType", "stringInput");
     static FieldCoordinates floatStringCoordinates = FieldCoordinates.coordinates("QueryType", "floatString");
     static FieldCoordinates intStringCoordinates = FieldCoordinates.coordinates("QueryType", "intString");
     static GraphQLCodeRegistry codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
-            .dataFetcher(floatNaNCoordinates, inputDF)
             .dataFetcher(stringInputCoordinates, inputDF)
             .dataFetcher(floatStringCoordinates, inputDF)
             .dataFetcher(intStringCoordinates, inputDF)

@@ -4,10 +4,10 @@ package graphql.execution;
 import graphql.Internal;
 
 /**
- * This will check that a value is non null when the type definition says it must be and it will throw {@link NonNullableFieldWasNullException}
+ * This will check that a value is non-null when the type definition says it must be and, it will throw {@link NonNullableFieldWasNullException}
  * if this is not the case.
  *
- * See: http://facebook.github.io/graphql/#sec-Errors-and-Non-Nullability
+ * See: https://spec.graphql.org/October2021/#sec-Errors-and-Non-Nullability
  */
 @Internal
 public class NonNullableFieldValidator {
@@ -34,7 +34,7 @@ public class NonNullableFieldValidator {
     public <T> T validate(ResultPath path, T result) throws NonNullableFieldWasNullException {
         if (result == null) {
             if (executionStepInfo.isNonNullType()) {
-                // see http://facebook.github.io/graphql/#sec-Errors-and-Non-Nullability
+                // see https://spec.graphql.org/October2021/#sec-Errors-and-Non-Nullability
                 //
                 //    > If the field returns null because of an error which has already been added to the "errors" list in the response,
                 //    > the "errors" list must not be further affected. That is, only one error should be added to the errors list per field.

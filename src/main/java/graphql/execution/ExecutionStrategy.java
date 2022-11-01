@@ -106,7 +106,7 @@ import static java.util.concurrent.CompletableFuture.completedFuture;
  * and the other "completeXXX" methods.
  * <p>
  * The order of fields fetching and completion is up to the execution strategy. As the graphql specification
- * <a href="http://facebook.github.io/graphql/#sec-Normal-and-Serial-Execution">http://facebook.github.io/graphql/#sec-Normal-and-Serial-Execution</a> says:
+ * <a href="https://spec.graphql.org/October2021/#sec-Normal-and-Serial-Execution">https://spec.graphql.org/October2021/#sec-Normal-and-Serial-Execution</a> says:
  * <blockquote>
  * Normally the executor can execute the entries in a grouped field set in whatever order it chooses (often in parallel). Because
  * the resolution of fields other than top-level mutation fields must always be side effect-free and idempotent, the
@@ -355,21 +355,21 @@ public abstract class ExecutionStrategy {
                 .build();
 
         try {
-            return asyncHandleException(dataFetcherExceptionHandler, handlerParameters, executionContext);
+            return asyncHandleException(dataFetcherExceptionHandler, handlerParameters);
         } catch (Exception handlerException) {
             handlerParameters = DataFetcherExceptionHandlerParameters.newExceptionParameters()
                     .dataFetchingEnvironment(environment)
                     .exception(handlerException)
                     .build();
-            return asyncHandleException(new SimpleDataFetcherExceptionHandler(), handlerParameters, executionContext);
+            return asyncHandleException(new SimpleDataFetcherExceptionHandler(), handlerParameters);
         }
     }
 
-    private <T> CompletableFuture<T> asyncHandleException(DataFetcherExceptionHandler handler, DataFetcherExceptionHandlerParameters handlerParameters, ExecutionContext executionContext) {
+    private <T> CompletableFuture<T> asyncHandleException(DataFetcherExceptionHandler handler, DataFetcherExceptionHandlerParameters handlerParameters) {
         //noinspection unchecked
-        return handler.handleException(handlerParameters)
-                .thenApply(handlerResult -> (T) DataFetcherResult.<FetchedValue>newResult().errors(handlerResult.getErrors()).build()
-                );
+        return handler.handleException(handlerParameters).thenApply(
+                handlerResult -> (T) DataFetcherResult.<FetchedValue>newResult().errors(handlerResult.getErrors()).build()
+        );
     }
 
     /**
@@ -626,7 +626,7 @@ public abstract class ExecutionStrategy {
     protected CompletableFuture<ExecutionResult> completeValueForEnum(ExecutionContext executionContext, ExecutionStrategyParameters parameters, GraphQLEnumType enumType, Object result) {
         Object serialized;
         try {
-            serialized = enumType.serialize(result);
+            serialized = enumType.serialize(result, executionContext.getGraphQLContext(), executionContext.getLocale());
         } catch (CoercingSerializeException e) {
             serialized = handleCoercionProblem(executionContext, parameters, e);
         }
@@ -639,7 +639,7 @@ public abstract class ExecutionStrategy {
     }
 
     /**
-     * Called to turn an java object value into an graphql object value
+     * Called to turn a java object value into an graphql object value
      *
      * @param executionContext   contains the top level execution parameters
      * @param parameters         contains the parameters holding the fields to be executed and source object
@@ -655,7 +655,7 @@ public abstract class ExecutionStrategy {
                 .schema(executionContext.getGraphQLSchema())
                 .objectType(resolvedObjectType)
                 .fragments(executionContext.getFragmentsByName())
-                .variables(executionContext.getVariables())
+                .variables(executionContext.getCoercedVariables().toMap())
                 .build();
 
         MergedSelectionSet subFields = fieldCollector.collectFields(collectorParameters, parameters.getField());
@@ -685,7 +685,6 @@ public abstract class ExecutionStrategy {
         return null;
     }
 
-
     /**
      * Converts an object that is known to should be an Iterable into one
      *
@@ -700,6 +699,10 @@ public abstract class ExecutionStrategy {
     }
 
     protected GraphQLObjectType resolveType(ExecutionContext executionContext, ExecutionStrategyParameters parameters, GraphQLType fieldType) {
+        // we can avoid a method call and type resolver environment allocation if we know it's an object type
+        if (fieldType instanceof GraphQLObjectType) {
+            return (GraphQLObjectType) fieldType;
+        }
         return resolvedType.resolveType(executionContext, parameters.getField(), parameters.getSource(), parameters.getExecutionStepInfo(), fieldType, parameters.getLocalContext());
     }
 
@@ -749,7 +752,7 @@ public abstract class ExecutionStrategy {
     }
 
     /**
-     * See (http://facebook.github.io/graphql/#sec-Errors-and-Non-Nullability),
+     * See (<a href="https://spec.graphql.org/October2021/#sec-Errors-and-Non-Nullability">...</a>),
      * <p>
      * If a non nullable child field type actually resolves to a null value and the parent type is nullable
      * then the parent must in fact become null

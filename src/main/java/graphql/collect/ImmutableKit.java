@@ -27,37 +27,8 @@ public final class ImmutableKit {
         return ImmutableMap.of();
     }
 
-    /**
-     * ImmutableMaps are hard to build via {@link Map#computeIfAbsent(Object, Function)} style.  This method
-     * allows you to take a mutable map with mutable list of keys and make it immutable.
-     * <p>
-     * This of course has a cost - if the map is very large you will be using more memory.  But for static
-     * maps that live a long life it maybe be worth it.
-     *
-     * @param startingMap the starting input map
-     * @param <K>         for key
-     * @param <V>         for victory
-     *
-     * @return and Immutable map of ImmutableList values
-     */
-
-    public static <K, V> ImmutableMap<K, ImmutableList<V>> toImmutableMapOfLists(Map<K, List<V>> startingMap) {
-        assertNotNull(startingMap);
-        ImmutableMap.Builder<K, ImmutableList<V>> map = ImmutableMap.builder();
-        for (Map.Entry<K, List<V>> e : startingMap.entrySet()) {
-            ImmutableList<V> value = ImmutableList.copyOf(startingMap.getOrDefault(e.getKey(), emptyList()));
-            map.put(e.getKey(), value);
-        }
-        return map.build();
-    }
-
-
     public static <K, V> ImmutableMap<K, V> addToMap(Map<K, V> existing, K newKey, V newVal) {
         return ImmutableMap.<K, V>builder().putAll(existing).put(newKey, newVal).build();
-    }
-
-    public static <K, V> ImmutableMap<K, V> mergeMaps(Map<K, V> m1, Map<K, V> m2) {
-        return ImmutableMap.<K, V>builder().putAll(m1).putAll(m2).build();
     }
 
     public static <T> ImmutableList<T> concatLists(List<T> l1, List<T> l2) {
@@ -123,6 +94,7 @@ public final class ImmutableKit {
      *
      * @return an Immutable list with the extra items.
      */
+    @SafeVarargs
     public static <T> ImmutableList<T> addToList(Collection<? extends T> existing, T newValue, T... extraValues) {
         assertNotNull(existing);
         assertNotNull(newValue);
@@ -147,6 +119,7 @@ public final class ImmutableKit {
      *
      * @return an Immutable Set with the extra items.
      */
+    @SafeVarargs
     public static <T> ImmutableSet<T> addToSet(Collection<? extends T> existing, T newValue, T... extraValues) {
         assertNotNull(existing);
         assertNotNull(newValue);

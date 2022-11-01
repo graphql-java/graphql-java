@@ -2,7 +2,6 @@ package graphql
 
 import graphql.analysis.MaxQueryComplexityInstrumentation
 import graphql.analysis.MaxQueryDepthInstrumentation
-import graphql.collect.ImmutableKit
 import graphql.execution.AsyncExecutionStrategy
 import graphql.execution.AsyncSerialExecutionStrategy
 import graphql.execution.DataFetcherExceptionHandler
@@ -18,7 +17,7 @@ import graphql.execution.SubscriptionExecutionStrategy
 import graphql.execution.ValueUnboxer
 import graphql.execution.instrumentation.ChainedInstrumentation
 import graphql.execution.instrumentation.Instrumentation
-import graphql.execution.instrumentation.SimpleInstrumentation
+import graphql.execution.instrumentation.SimplePerformantInstrumentation
 import graphql.execution.instrumentation.dataloader.DataLoaderDispatcherInstrumentation
 import graphql.execution.preparsed.NoOpPreparsedDocumentProvider
 import graphql.language.SourceLocation
@@ -26,7 +25,6 @@ import graphql.schema.DataFetcher
 import graphql.schema.DataFetchingEnvironment
 import graphql.schema.FieldCoordinates
 import graphql.schema.GraphQLCodeRegistry
-import graphql.schema.GraphQLDirective
 import graphql.schema.GraphQLEnumType
 import graphql.schema.GraphQLFieldDefinition
 import graphql.schema.GraphQLInterfaceType
@@ -65,13 +63,19 @@ class GraphQLTest extends Specification {
         GraphQLFieldDefinition.Builder fieldDefinition = newFieldDefinition()
                 .name("hello")
                 .type(GraphQLString)
-                .staticValue("world")
-        GraphQLSchema schema = newSchema().query(
-                newObject()
+        FieldCoordinates fieldCoordinates = FieldCoordinates.coordinates("RootQueryType", "hello")
+        DataFetcher<?> dataFetcher = { env -> "world" }
+        GraphQLCodeRegistry codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+                .dataFetcher(fieldCoordinates, dataFetcher)
+                .build()
+
+        GraphQLSchema schema = newSchema()
+                .codeRegistry(codeRegistry)
+                .query(newObject()
                         .name("RootQueryType")
                         .field(fieldDefinition)
-                        .build()
-        ).build()
+                        .build())
+                .build()
         schema
     }
 
@@ -84,7 +88,6 @@ class GraphQLTest extends Specification {
 
         then:
         result == [hello: 'world']
-
     }
 
     def "query with sub-fields"() {
@@ -104,14 +107,20 @@ class GraphQLTest extends Specification {
         GraphQLFieldDefinition.Builder simpsonField = newFieldDefinition()
                 .name("simpson")
                 .type(heroType)
-                .staticValue([id: '123', name: 'homer'])
 
-        GraphQLSchema graphQLSchema = newSchema().query(
-                newObject()
+        FieldCoordinates fieldCoordinates = FieldCoordinates.coordinates("RootQueryType", "simpson")
+        DataFetcher<?> dataFetcher = { env -> [id: '123', name: 'homer'] }
+        GraphQLCodeRegistry codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+                .dataFetcher(fieldCoordinates, dataFetcher)
+                .build()
+
+        GraphQLSchema graphQLSchema = newSchema()
+                .codeRegistry(codeRegistry)
+                .query(newObject()
                         .name("RootQueryType")
                         .field(simpsonField)
-                        .build()
-        ).build()
+                        .build())
+                .build()
 
         when:
         def result = GraphQL.newGraphQL(graphQLSchema).build().execute('{ simpson { id, name } }').data
@@ -126,13 +135,20 @@ class GraphQLTest extends Specification {
                 .name("hello")
                 .type(GraphQLString)
                 .argument(newArgument().name("arg").type(GraphQLString))
-                .staticValue("world")
-        GraphQLSchema schema = newSchema().query(
-                newObject()
+
+        FieldCoordinates fieldCoordinates = FieldCoordinates.coordinates("RootQueryType", "hello")
+        DataFetcher<?> dataFetcher = { env -> "hello" }
+        GraphQLCodeRegistry codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+                .dataFetcher(fieldCoordinates, dataFetcher)
+                .build()
+
+        GraphQLSchema schema = newSchema()
+                .codeRegistry(codeRegistry)
+                .query(newObject()
                         .name("RootQueryType")
                         .field(fieldDefinition)
-                        .build()
-        ).build()
+                        .build())
+                .build()
 
         when:
         def errors = GraphQL.newGraphQL(schema).build().execute('{ hello(arg:11) }').errors
@@ -208,7 +224,7 @@ class GraphQLTest extends Specification {
         then:
         errors.size() == 1
         errors[0].errorType == ErrorType.InvalidSyntax
-        errors[0].message == "Invalid Syntax : Invalid unicode - leading surrogate must be followed by a trailing surrogate - offending token '\\ud83c' at line 1 column 13"
+        errors[0].message == "Invalid unicode encountered. Leading surrogate must be followed by a trailing surrogate. Offending token '\\ud83c' at line 1 column 13"
         errors[0].locations == [new SourceLocation(1, 13)]
     }
 
@@ -695,7 +711,6 @@ class GraphQLTest extends Specification {
 
     }
 
-
     def "execution input passing builder"() {
         given:
         GraphQLSchema schema = simpleSchema()
@@ -713,7 +728,6 @@ class GraphQLTest extends Specification {
         GraphQLSchema schema = simpleSchema()
 
         when:
-
         def builderFunction = { it.query('{hello}') } as UnaryOperator<Builder>
         def result = GraphQL.newGraphQL(schema).build().execute(builderFunction).data
 
@@ -855,7 +869,6 @@ class GraphQLTest extends Specification {
                                     .name("id")
                                     .type(Scalars.GraphQLID)
                         } as UnaryOperator)
-                .typeResolver({ type -> foo })
                 .build()
 
         GraphQLObjectType query = newObject()
@@ -868,7 +881,12 @@ class GraphQLTest extends Specification {
                         } as UnaryOperator)
                 .build()
 
+        def codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+                .typeResolver(node, { type -> foo })
+                .build()
+
         GraphQLSchema schema = newSchema()
+                .codeRegistry(codeRegistry)
                 .query(query)
                 .build()
 
@@ -907,7 +925,7 @@ class GraphQLTest extends Specification {
 
     def "graphql copying works as expected"() {
 
-        def instrumentation = new SimpleInstrumentation()
+        def instrumentation = new SimplePerformantInstrumentation()
         def hello = ExecutionId.from("hello")
         def executionIdProvider = new ExecutionIdProvider() {
             @Override
@@ -937,7 +955,7 @@ class GraphQLTest extends Specification {
         when:
 
         // now make some changes
-        def newInstrumentation = new SimpleInstrumentation()
+        def newInstrumentation = new SimplePerformantInstrumentation()
         def goodbye = ExecutionId.from("goodbye")
         def newExecutionIdProvider = new ExecutionIdProvider() {
             @Override
@@ -962,7 +980,7 @@ class GraphQLTest extends Specification {
     def "disabling data loader instrumentation leaves instrumentation as is"() {
         given:
         def queryStrategy = new CaptureStrategy()
-        def instrumentation = new SimpleInstrumentation()
+        def instrumentation = new SimplePerformantInstrumentation()
         def builder = GraphQL.newGraphQL(simpleSchema())
                 .queryExecutionStrategy(queryStrategy)
                 .instrumentation(instrumentation)
@@ -1232,10 +1250,10 @@ many lines''']
         GraphQLSchema schema = TestUtil.schema('type Query {foo: MyScalar} scalar MyScalar @specifiedBy(url:"myUrl")')
 
         when:
-        def result = GraphQL.newGraphQL(schema).build().execute('{__type(name: "MyScalar") {name specifiedByUrl}}').getData()
+        def result = GraphQL.newGraphQL(schema).build().execute('{__type(name: "MyScalar") {name specifiedByURL}}').getData()
 
         then:
-        result == [__type: [name: "MyScalar", specifiedByUrl: "myUrl"]]
+        result == [__type: [name: "MyScalar", specifiedByURL: "myUrl"]]
     }
 
     def "test DFR and CF"() {
@@ -1396,30 +1414,8 @@ many lines''']
         e.message.contains("an illegal value for the argument ")
     }
 
-    def "Applied schema directives arguments are validated for programmatic schemas"() {
-        given:
-        def arg = newArgument().name("arg").type(GraphQLInt).valueProgrammatic(ImmutableKit.emptyMap()).build()
-        def directive = GraphQLDirective.newDirective().name("cached").argument(arg).build()
-        def field = newFieldDefinition()
-                .name("hello")
-                .type(GraphQLString)
-                .argument(arg)
-                .withDirective(directive)
-                .build()
-        when:
-        newSchema().query(
-                newObject()
-                        .name("Query")
-                        .field(field)
-                        .build())
-                .build()
-        then:
-        def e = thrown(InvalidSchemaException)
-        e.message.contains("Invalid argument 'arg' for applied directive of name 'cached'")
-    }
-
     def "getters work as expected"() {
-        Instrumentation instrumentation = new SimpleInstrumentation()
+        Instrumentation instrumentation = new SimplePerformantInstrumentation()
         when:
         def graphQL = GraphQL.newGraphQL(StarWarsSchema.starWarsSchema).instrumentation(instrumentation).build()
         then:

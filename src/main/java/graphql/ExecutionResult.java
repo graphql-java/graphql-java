@@ -3,6 +3,7 @@ package graphql;
 
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 
 /**
  * This simple value class represents the result of performing a graphql query.
@@ -34,7 +35,7 @@ public interface ExecutionResult {
      * See : <a href="https://graphql.github.io/graphql-spec/June2018/#sec-Data">https://graphql.github.io/graphql-spec/June2018/#sec-Data</a>
      *
      * @return <code>true</code> if the entry "data" should be present in the result
-     *         <code>false</code> otherwise
+     * <code>false</code> otherwise
      */
     boolean isDataPresent();
 
@@ -49,9 +50,103 @@ public interface ExecutionResult {
      * should be present.  Certain JSON serializers may or may interpret {@link ExecutionResult} to spec, so this method
      * is provided to produce a map that strictly follows the specification.
      *
-     * See : <a href="http://facebook.github.io/graphql/#sec-Response-Format">http://facebook.github.io/graphql/#sec-Response-Format</a>
+     * See : <a href="https://spec.graphql.org/October2021/#sec-Response-Format">https://spec.graphql.org/October2021/#sec-Response-Format</a>
      *
      * @return a map of the result that strictly follows the spec
      */
     Map<String, Object> toSpecification();
+
+
+    /**
+     * This helps you transform the current {@link ExecutionResult} object into another one by starting a builder with all
+     * the current values and allows you to transform it how you want.
+     *
+     * @param builderConsumer the consumer code that will be given a builder to transform
+     *
+     * @return a new {@link ExecutionResult} object based on calling build on that builder
+     */
+    default ExecutionResult transform(Consumer<Builder<?>> builderConsumer) {
+        Builder<?> builder = newExecutionResult().from(this);
+        builderConsumer.accept(builder);
+        return builder.build();
+    }
+
+    /**
+     * @return a builder that allows you to build a new execution result
+     */
+    static Builder<?> newExecutionResult() {
+        return ExecutionResultImpl.newExecutionResult();
+    }
+
+    interface Builder<B extends Builder<B>> {
+
+        /**
+         * Sets values into the builder based on a previous {@link ExecutionResult}
+         *
+         * @param executionResult the previous {@link ExecutionResult}
+         *
+         * @return the builder
+         */
+        B from(ExecutionResult executionResult);
+
+        /**
+         * Sets new data into the builder
+         *
+         * @param data the data to use
+         *
+         * @return the builder
+         */
+        B data(Object data);
+
+        /**
+         * Sets error list as the errors for this builder
+         *
+         * @param errors the errors to use
+         *
+         * @return the builder
+         */
+        B errors(List<GraphQLError> errors);
+
+        /**
+         * Adds the error list to any existing the errors for this builder
+         *
+         * @param errors the errors to add
+         *
+         * @return the builder
+         */
+        B addErrors(List<GraphQLError> errors);
+
+        /**
+         * Adds the error to any existing the errors for this builder
+         *
+         * @param error the error to add
+         *
+         * @return the builder
+         */
+        B addError(GraphQLError error);
+
+        /**
+         * Sets the extension map for this builder
+         *
+         * @param extensions the extensions to use
+         *
+         * @return the builder
+         */
+        B extensions(Map<Object, Object> extensions);
+
+        /**
+         * Adds a new entry into the extensions map for this builder
+         *
+         * @param key   the key of the extension entry
+         * @param value the value of the extension entry
+         *
+         * @return the builder
+         */
+        B addExtension(String key, Object value);
+
+        /**
+         * @return a newly built {@link ExecutionResult}
+         */
+        ExecutionResult build();
+    }
 }

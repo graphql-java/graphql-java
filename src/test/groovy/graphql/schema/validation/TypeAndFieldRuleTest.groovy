@@ -1,6 +1,7 @@
 package graphql.schema.validation
 
 import graphql.TestUtil
+import graphql.schema.GraphQLCodeRegistry
 import graphql.schema.GraphQLObjectType
 import graphql.schema.GraphQLTypeReference
 import graphql.schema.TypeResolverProxy
@@ -9,7 +10,6 @@ import spock.lang.Specification
 import static graphql.schema.GraphQLUnionType.newUnionType
 
 class TypeAndFieldRuleTest extends Specification {
-
 
     def "type must define one or more fields."() {
         when:
@@ -55,7 +55,6 @@ class TypeAndFieldRuleTest extends Specification {
         e.message == "invalid schema:\n\"InputType\" must define one or more fields."
     }
 
-
     def "field name must not begin with \"__\""() {
         when:
         def sdl = '''
@@ -93,8 +92,6 @@ class TypeAndFieldRuleTest extends Specification {
         e.message == "invalid schema:\n\"Interface\" must define one or more fields."
     }
 
-
-
     def "union member types must be object types"() {
         def sdl = '''
         type Query { dummy: String }
@@ -108,7 +105,10 @@ class TypeAndFieldRuleTest extends Specification {
         }
         '''
         when:
-        def graphQLSchema = TestUtil.schema(sdl)
+        def codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+                .typeResolver("Interface", { null })
+                .build()
+        def graphQLSchema = TestUtil.schema(sdl).transform({it.codeRegistry(codeRegistry)})
 
         // this is a little convoluted, since this rule is repeated in the schemaChecker
         // we add the invalid union after schema creation so we can cover the validation from
@@ -116,10 +116,11 @@ class TypeAndFieldRuleTest extends Specification {
         def unionType = newUnionType().name("unionWithNonObjectTypes")
                 .possibleType(graphQLSchema.getObjectType("Object"))
                 .possibleType(GraphQLTypeReference.typeRef("Interface"))
-                .typeResolver(new TypeResolverProxy())
                 .build()
-
-        graphQLSchema.transform({ schema -> schema.additionalType(unionType) })
+        codeRegistry = codeRegistry.transform({it.typeResolver(unionType, new TypeResolverProxy())})
+        graphQLSchema.transform({ schema -> schema
+                .additionalType(unionType)
+                .codeRegistry(codeRegistry)})
 
         then:
         InvalidSchemaException e = thrown(InvalidSchemaException)
@@ -149,10 +150,15 @@ class TypeAndFieldRuleTest extends Specification {
         def unionType = newUnionType().name("unionWithNonObjectTypes")
                 .possibleType(graphQLSchema.getObjectType("Object"))
                 .possibleType(stubObjectType)
-                .typeResolver(new TypeResolverProxy())
                 .build()
 
-        graphQLSchema.transform({ schema -> schema.additionalType(unionType) })
+        def codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+                .typeResolver(unionType, new TypeResolverProxy())
+                .build()
+
+        graphQLSchema.transform({ schema -> schema
+                .additionalType(unionType)
+                .codeRegistry(codeRegistry) })
 
         then:
         InvalidSchemaException e = thrown(InvalidSchemaException)

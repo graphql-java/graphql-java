@@ -7,7 +7,7 @@ import static graphql.Assert.assertNotNull;
 import static graphql.schema.GraphQLTypeUtil.simplePrint;
 
 /**
- * See (http://facebook.github.io/graphql/#sec-Errors-and-Non-Nullability), but if a non nullable field
+ * See (https://spec.graphql.org/October2021/#sec-Errors-and-Non-Nullability), but if a non nullable field
  * actually resolves to a null value and the parent type is nullable then the parent must in fact become null
  * so we use exceptions to indicate this special case
  */

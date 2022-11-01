@@ -1,9 +1,7 @@
 package graphql.schema.validation
 
-import graphql.TypeResolutionEnvironment
 import graphql.schema.GraphQLInterfaceType
 import graphql.schema.GraphQLObjectType
-import graphql.schema.TypeResolver
 import spock.lang.Specification
 
 import static SchemaValidationErrorType.ObjectDoesNotImplementItsInterfaces
@@ -19,13 +17,6 @@ import static graphql.schema.GraphQLObjectType.newObject
 import static graphql.schema.GraphQLUnionType.newUnionType
 
 class TypesImplementInterfacesTest extends Specification {
-
-    TypeResolver typeResolver = new TypeResolver() {
-        @Override
-        GraphQLObjectType getType(TypeResolutionEnvironment env) {
-            null
-        }
-    }
 
     GraphQLInterfaceType InterfaceType = newInterface()
             .name("Interface")
@@ -47,7 +38,6 @@ class TypesImplementInterfacesTest extends Specification {
             .argument(newArgument().name("arg2").type(GraphQLInt))
             .argument(newArgument().name("arg3").type(GraphQLBoolean))
     )
-            .typeResolver(typeResolver)
             .build()
 
     def "objects implement interfaces"() {
@@ -102,7 +92,6 @@ class TypesImplementInterfacesTest extends Specification {
         def person = newInterface()
                 .name("Person")
                 .field(newFieldDefinition().name("name").type(GraphQLString).build())
-                .typeResolver({})
                 .build()
 
         def actor = newObject()
@@ -119,7 +108,6 @@ class TypesImplementInterfacesTest extends Specification {
         GraphQLInterfaceType interfaceType = newInterface()
                 .name("TestInterface")
                 .field(newFieldDefinition().name("field").type(person).build())
-                .typeResolver({})
                 .build()
 
         GraphQLObjectType goodImpl = newObject()
@@ -151,7 +139,6 @@ class TypesImplementInterfacesTest extends Specification {
         def person = newInterface()
                 .name("Person")
                 .field(newFieldDefinition().name("name").type(GraphQLString).build())
-                .typeResolver({})
                 .build()
 
         def actor = newObject()
@@ -168,7 +155,6 @@ class TypesImplementInterfacesTest extends Specification {
         GraphQLInterfaceType interfaceType = newInterface()
                 .name("TestInterface")
                 .field(newFieldDefinition().name("field").type(list(person)).build())
-                .typeResolver({})
                 .build()
 
         GraphQLObjectType goodImpl = newObject()
@@ -200,7 +186,6 @@ class TypesImplementInterfacesTest extends Specification {
         def person = newInterface()
                 .name("Person")
                 .field(newFieldDefinition().name("name").type(GraphQLString).build())
-                .typeResolver({})
                 .build()
 
         def actor = newInterface()
@@ -217,7 +202,6 @@ class TypesImplementInterfacesTest extends Specification {
         GraphQLInterfaceType interfaceType = newInterface()
                 .name("TestInterface")
                 .field(newFieldDefinition().name("field").type(list(person)).build())
-                .typeResolver({})
                 .build()
 
         GraphQLObjectType goodImpl = newObject()
@@ -260,7 +244,6 @@ class TypesImplementInterfacesTest extends Specification {
                 .name("Person")
                 .possibleType(actor)
                 .possibleType(director)
-                .typeResolver({})
                 .build()
 
         def prop = newObject()
@@ -271,7 +254,6 @@ class TypesImplementInterfacesTest extends Specification {
         GraphQLInterfaceType interfaceType = newInterface()
                 .name("TestInterface")
                 .field(newFieldDefinition().name("field").type(person).build())
-                .typeResolver({})
                 .build()
 
         GraphQLObjectType goodImpl = newObject()
@@ -303,7 +285,6 @@ class TypesImplementInterfacesTest extends Specification {
         GraphQLInterfaceType interfaceType = newInterface()
                 .name("TestInterface")
                 .field(newFieldDefinition().name("field").type(GraphQLString).build())
-                .typeResolver({})
                 .build()
 
         GraphQLObjectType goodImpl = newObject()
@@ -336,7 +317,6 @@ class TypesImplementInterfacesTest extends Specification {
         GraphQLInterfaceType memberInterface = newInterface()
                 .name("TestMemberInterface")
                 .field(newFieldDefinition().name("field").type(GraphQLString).build())
-                .typeResolver({})
                 .build()
 
         GraphQLObjectType memberInterfaceImpl = newObject()
@@ -348,7 +328,6 @@ class TypesImplementInterfacesTest extends Specification {
         GraphQLInterfaceType testInterface = newInterface()
                 .name("TestInterface")
                 .field(newFieldDefinition().name("field").type(nonNull(memberInterface)).build())
-                .typeResolver({})
                 .build()
 
         GraphQLObjectType testInterfaceImpl = newObject()

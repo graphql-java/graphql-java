@@ -5,6 +5,7 @@ import graphql.PublicApi;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 import static graphql.Assert.assertNotNull;
 
@@ -38,6 +39,23 @@ public class DefaultConnection<T> implements Connection<T> {
     @Override
     public PageInfo getPageInfo() {
         return pageInfo;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        DefaultConnection that = (DefaultConnection) o;
+        return Objects.equals(edges, that.edges) && Objects.equals(pageInfo, that.pageInfo);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(edges, pageInfo);
     }
 
     @Override

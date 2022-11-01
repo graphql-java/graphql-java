@@ -3,7 +3,6 @@ package graphql.execution.directives
 import graphql.GraphQL
 import graphql.TestUtil
 import graphql.schema.DataFetcher
-import graphql.schema.GraphQLDirective
 import spock.lang.Specification
 
 /**
@@ -74,7 +73,7 @@ class QueryDirectivesIntegrationTest extends Specification {
         graphql.execute({ input -> input.query(query).root(root) })
     }
 
-    def joinArgs(List<GraphQLDirective> timeoutDirectives) {
+    static def joinArgs(List<QueryAppliedDirective> timeoutDirectives) {
         timeoutDirectives.collect({
             def s = it.getName() + "("
             it.arguments.forEach({
@@ -95,7 +94,7 @@ class QueryDirectivesIntegrationTest extends Specification {
         then:
         er.errors.isEmpty()
 
-        Map<String, List<GraphQLDirective>> immediateMap = capturedDirectives["review"].getImmediateDirectivesByName()
+        def immediateMap = capturedDirectives["review"].getImmediateAppliedDirectivesByName()
         def entries = immediateMap.entrySet().collectEntries({
             [(it.getKey()): joinArgs(it.getValue())]
         })
@@ -103,7 +102,7 @@ class QueryDirectivesIntegrationTest extends Specification {
                     timeout: "timeout(afterMillis:5),timeout(afterMillis:28),timeout(afterMillis:10)"
         ]
 
-        def immediate = capturedDirectives["review"].getImmediateDirective("cached")
+        def immediate = capturedDirectives["review"].getImmediateAppliedDirective("cached")
         joinArgs(immediate) == "cached(forMillis:5),cached(forMillis:10)"
     }
 
@@ -123,7 +122,7 @@ class QueryDirectivesIntegrationTest extends Specification {
         then:
         er.errors.isEmpty()
 
-        Map<String, List<GraphQLDirective>> immediateMap = capturedDirectives["title"].getImmediateDirectivesByName()
+        def immediateMap = capturedDirectives["title"].getImmediateAppliedDirectivesByName()
         def entries = immediateMap.entrySet().collectEntries({
             [(it.getKey()): joinArgs(it.getValue())]
         })
@@ -131,7 +130,7 @@ class QueryDirectivesIntegrationTest extends Specification {
                     timeout: "timeout(afterMillis:99)"
         ]
 
-        def immediate = capturedDirectives["review"].getImmediateDirective("cached")
+        def immediate = capturedDirectives["review"].getImmediateAppliedDirective("cached")
         joinArgs(immediate) == "cached(forMillis:10)"
     }
 

@@ -363,7 +363,13 @@ public class GraphQLInterfaceType implements GraphQLNamedType, GraphQLCompositeT
             return this;
         }
 
-
+        /**
+         * @param typeResolver the type resolver
+         *
+         * @return this builder
+         *
+         * @deprecated use {@link graphql.schema.GraphQLCodeRegistry.Builder#typeResolver(GraphQLInterfaceType, TypeResolver)} instead
+         */
         @Deprecated
         @DeprecatedAt("2018-12-03")
         public Builder typeResolver(TypeResolver typeResolver) {
