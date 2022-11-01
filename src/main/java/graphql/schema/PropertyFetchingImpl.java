@@ -2,6 +2,7 @@ package graphql.schema;
 
 import graphql.GraphQLException;
 import graphql.Internal;
+import graphql.schema.fetching.LambdaFetchingSupport;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -15,6 +16,7 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Function;
 import java.util.function.Predicate;
 
 import static graphql.Assert.assertShouldNeverHappen;
@@ -30,6 +32,7 @@ public class PropertyFetchingImpl {
 
     private final AtomicBoolean USE_SET_ACCESSIBLE = new AtomicBoolean(true);
     private final AtomicBoolean USE_NEGATIVE_CACHE = new AtomicBoolean(true);
+    private final ConcurrentMap<CacheKey, CachedLambdaFunction> LAMBDA_CACHE = new ConcurrentHashMap<>();
     private final ConcurrentMap<CacheKey, CachedMethod> METHOD_CACHE = new ConcurrentHashMap<>();
     private final ConcurrentMap<CacheKey, Field> FIELD_CACHE = new ConcurrentHashMap<>();
     private final ConcurrentMap<CacheKey, CacheKey> NEGATIVE_CACHE = new ConcurrentHashMap<>();
@@ -39,15 +42,22 @@ public class PropertyFetchingImpl {
         this.singleArgumentType = singleArgumentType;
     }
 
-    private class CachedMethod {
-        Method method;
-        boolean takesSingleArgumentTypeAsOnlyArgument;
+    private final class CachedMethod {
+        private final Method method;
+        private final boolean takesSingleArgumentTypeAsOnlyArgument;
 
         CachedMethod(Method method) {
             this.method = method;
             this.takesSingleArgumentTypeAsOnlyArgument = takesSingleArgumentTypeAsOnlyArgument(method);
         }
+    }
 
+    private static final class CachedLambdaFunction {
+        private final Function<Object, Object> getter;
+
+        CachedLambdaFunction(Function<Object, Object> getter) {
+            this.getter = getter;
+        }
     }
 
     public Object getPropertyValue(String propertyName, Object object, GraphQLType graphQLType, Object singleArgumentValue) {
@@ -56,8 +66,13 @@ public class PropertyFetchingImpl {
         }
 
         CacheKey cacheKey = mkCacheKey(object, propertyName);
+
         // let's try positive cache mechanisms first.  If we have seen the method or field before
         // then we invoke it directly without burning any cycles doing reflection.
+        CachedLambdaFunction cachedFunction = LAMBDA_CACHE.get(cacheKey);
+        if (cachedFunction != null) {
+            return cachedFunction.getter.apply(object);
+        }
         CachedMethod cachedMethod = METHOD_CACHE.get(cacheKey);
         if (cachedMethod != null) {
             try {
@@ -83,10 +98,20 @@ public class PropertyFetchingImpl {
         if (isNegativelyCached(cacheKey)) {
             return null;
         }
+
         //
         // ok we haven't cached it, and we haven't negatively cached it, so we have to find the POJO method which is the most
         // expensive operation here
         //
+
+        Optional<Function<Object, Object>> getterOpt = LambdaFetchingSupport.createGetter(object.getClass(), propertyName);
+        if (getterOpt.isPresent()) {
+            Function<Object, Object> getter = getterOpt.get();
+            cachedFunction = new CachedLambdaFunction(getter);
+            LAMBDA_CACHE.putIfAbsent(cacheKey, cachedFunction);
+            return getter.apply(object);
+        }
+
         boolean dfeInUse = singleArgumentValue != null;
         //
         // try by record name - object.propertyName()
@@ -312,6 +337,7 @@ public class PropertyFetchingImpl {
     }
 
     public void clearReflectionCache() {
+        LAMBDA_CACHE.clear();
         METHOD_CACHE.clear();
         FIELD_CACHE.clear();
         NEGATIVE_CACHE.clear();

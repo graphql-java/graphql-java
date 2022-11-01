@@ -152,9 +152,16 @@ class PropertyDataFetcherTest extends Specification {
     def "fetch via public method declared two classes up"() {
         def environment = env(new TwoClassesDown("aValue"))
         def fetcher = new PropertyDataFetcher("publicProperty")
+        when:
         def result = fetcher.get(environment)
-        expect:
+        then:
         result == "publicValue"
+
+        when:
+        result = fetcher.get(environment)
+        then:
+        result == "publicValue"
+
     }
 
     def "fetch via property only defined on package protected impl"() {

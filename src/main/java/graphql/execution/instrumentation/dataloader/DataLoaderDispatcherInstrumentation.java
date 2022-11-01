@@ -10,8 +10,7 @@ import graphql.execution.ExecutionStrategy;
 import graphql.execution.instrumentation.ExecutionStrategyInstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationState;
-import graphql.execution.instrumentation.SimpleInstrumentation;
-import graphql.execution.instrumentation.SimpleInstrumentationContext;
+import graphql.execution.instrumentation.SimplePerformantInstrumentation;
 import graphql.execution.instrumentation.parameters.InstrumentationCreateStateParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecuteOperationParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters;
@@ -22,12 +21,17 @@ import graphql.schema.DataFetcher;
 import org.dataloader.DataLoader;
 import org.dataloader.DataLoaderRegistry;
 import org.dataloader.stats.Statistics;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+
+import static graphql.execution.instrumentation.InstrumentationState.ofState;
+import static graphql.execution.instrumentation.SimpleInstrumentationContext.noOp;
 
 /**
  * This graphql {@link graphql.execution.instrumentation.Instrumentation} will dispatch
@@ -44,7 +48,7 @@ import java.util.concurrent.CompletableFuture;
  * @see org.dataloader.DataLoaderRegistry
  */
 @PublicApi
-public class DataLoaderDispatcherInstrumentation extends SimpleInstrumentation {
+public class DataLoaderDispatcherInstrumentation extends SimplePerformantInstrumentation {
 
     private static final Logger log = LoggerFactory.getLogger(DataLoaderDispatcherInstrumentation.class);
 
@@ -73,14 +77,14 @@ public class DataLoaderDispatcherInstrumentation extends SimpleInstrumentation {
     }
 
     @Override
-    public DataFetcher<?> instrumentDataFetcher(DataFetcher<?> dataFetcher, InstrumentationFieldFetchParameters parameters) {
-        DataLoaderDispatcherInstrumentationState state = parameters.getInstrumentationState();
+    public @NotNull DataFetcher<?> instrumentDataFetcher(DataFetcher<?> dataFetcher, InstrumentationFieldFetchParameters parameters, InstrumentationState rawState) {
+        DataLoaderDispatcherInstrumentationState state = ofState(rawState);
         if (state.isAggressivelyBatching()) {
             return dataFetcher;
         }
         //
         // currently only AsyncExecutionStrategy with DataLoader and hence this allows us to "dispatch"
-        // on every object if its not using aggressive batching for other execution strategies
+        // on every object if it's not using aggressive batching for other execution strategies
         // which allows them to work if used.
         return (DataFetcher<Object>) environment -> {
             Object obj = dataFetcher.get(environment);
@@ -94,8 +98,8 @@ public class DataLoaderDispatcherInstrumentation extends SimpleInstrumentation {
     }
 
     @Override
-    public InstrumentationContext<ExecutionResult> beginExecuteOperation(InstrumentationExecuteOperationParameters parameters) {
-        DataLoaderDispatcherInstrumentationState state = parameters.getInstrumentationState();
+    public @Nullable InstrumentationContext<ExecutionResult> beginExecuteOperation(InstrumentationExecuteOperationParameters parameters, InstrumentationState rawState) {
+        DataLoaderDispatcherInstrumentationState state = ofState(rawState);
         //
         // during #instrumentExecutionInput they could have enhanced the data loader registry
         // so we grab it now just before the query operation gets started
@@ -105,7 +109,7 @@ public class DataLoaderDispatcherInstrumentation extends SimpleInstrumentation {
         if (!isDataLoaderCompatibleExecution(parameters.getExecutionContext())) {
             state.setAggressivelyBatching(false);
         }
-        return new SimpleInstrumentationContext<>();
+        return noOp();
     }
 
     private boolean isDataLoaderCompatibleExecution(ExecutionContext executionContext) {
@@ -119,8 +123,8 @@ public class DataLoaderDispatcherInstrumentation extends SimpleInstrumentation {
     }
 
     @Override
-    public ExecutionStrategyInstrumentationContext beginExecutionStrategy(InstrumentationExecutionStrategyParameters parameters) {
-        DataLoaderDispatcherInstrumentationState state = parameters.getInstrumentationState();
+    public @Nullable ExecutionStrategyInstrumentationContext beginExecutionStrategy(InstrumentationExecutionStrategyParameters parameters, InstrumentationState rawState) {
+        DataLoaderDispatcherInstrumentationState state = ofState(rawState);
         //
         // if there are no data loaders, there is nothing to do
         //
@@ -136,28 +140,28 @@ public class DataLoaderDispatcherInstrumentation extends SimpleInstrumentation {
             };
 
         }
-        return state.getApproach().beginExecutionStrategy(parameters.withNewState(state.getState()));
+        return state.getApproach().beginExecutionStrategy(parameters, state.getState());
     }
 
 
     @Override
-    public InstrumentationContext<Object> beginFieldFetch(InstrumentationFieldFetchParameters parameters) {
-        DataLoaderDispatcherInstrumentationState state = parameters.getInstrumentationState();
+    public @Nullable InstrumentationContext<Object> beginFieldFetch(InstrumentationFieldFetchParameters parameters, InstrumentationState rawState) {
+        DataLoaderDispatcherInstrumentationState state = ofState(rawState);
         //
         // if there are no data loaders, there is nothing to do
         //
         if (state.hasNoDataLoaders()) {
-            return new SimpleInstrumentationContext<>();
+            return noOp();
         }
-        return state.getApproach().beginFieldFetch(parameters.withNewState(state.getState()));
+        return state.getApproach().beginFieldFetch(parameters, state.getState());
     }
 
     @Override
-    public CompletableFuture<ExecutionResult> instrumentExecutionResult(ExecutionResult executionResult, InstrumentationExecutionParameters parameters) {
+    public @NotNull CompletableFuture<ExecutionResult> instrumentExecutionResult(ExecutionResult executionResult, InstrumentationExecutionParameters parameters, InstrumentationState rawState) {
         if (!options.isIncludeStatistics()) {
             return CompletableFuture.completedFuture(executionResult);
         }
-        DataLoaderDispatcherInstrumentationState state = parameters.getInstrumentationState();
+        DataLoaderDispatcherInstrumentationState state = ofState(rawState);
         Map<Object, Object> currentExt = executionResult.getExtensions();
         Map<Object, Object> statsMap = new LinkedHashMap<>(currentExt == null ? ImmutableKit.emptyMap() : currentExt);
         Map<Object, Object> dataLoaderStats = buildStatsMap(state);

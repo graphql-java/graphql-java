@@ -189,7 +189,7 @@ public class ExecutionContext {
     public void addError(GraphQLError error, ResultPath fieldPath) {
         synchronized (this) {
             //
-            // see http://facebook.github.io/graphql/#sec-Errors-and-Non-Nullability about how per
+            // see https://spec.graphql.org/October2021/#sec-Handling-Field-Errors about how per
             // field errors should be handled - ie only once per field if it's already there for nullability
             // but unclear if it's not that error path
             //

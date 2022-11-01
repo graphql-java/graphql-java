@@ -1,6 +1,13 @@
-package graphql.language
+package graphql.execution
 
 import graphql.GraphQLContext
+import graphql.language.ArrayValue
+import graphql.language.EnumValue
+import graphql.language.FloatValue
+import graphql.language.IntValue
+import graphql.language.ObjectField
+import graphql.language.ObjectValue
+import graphql.language.StringValue
 import graphql.schema.GraphQLEnumType
 import graphql.schema.GraphQLInputObjectType
 import spock.lang.Ignore
@@ -137,7 +144,7 @@ class ValuesResolverTestLegacy extends Specification {
     def 'converts list to lists'() {
         expect:
         valueToLiteralLegacy(['hello', 'world'], list(GraphQLString), graphQLContext, locale).isEqualTo(
-                new ArrayValue(['hello', 'world'])
+                new ArrayValue([new StringValue('hello'), new StringValue('world')])
         )
     }
 
@@ -145,7 +152,7 @@ class ValuesResolverTestLegacy extends Specification {
         String[] sArr = ['hello', 'world'] as String[]
         expect:
         valueToLiteralLegacy(sArr, list(GraphQLString), graphQLContext, locale).isEqualTo(
-                new ArrayValue(['hello', 'world'])
+                new ArrayValue([new StringValue('hello'), new StringValue('world')])
         )
     }
 

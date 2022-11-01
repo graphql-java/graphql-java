@@ -17,7 +17,7 @@ import graphql.execution.SubscriptionExecutionStrategy
 import graphql.execution.ValueUnboxer
 import graphql.execution.instrumentation.ChainedInstrumentation
 import graphql.execution.instrumentation.Instrumentation
-import graphql.execution.instrumentation.SimpleInstrumentation
+import graphql.execution.instrumentation.SimplePerformantInstrumentation
 import graphql.execution.instrumentation.dataloader.DataLoaderDispatcherInstrumentation
 import graphql.execution.preparsed.NoOpPreparsedDocumentProvider
 import graphql.language.SourceLocation
@@ -883,7 +883,7 @@ class GraphQLTest extends Specification {
                 .build()
 
         def codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
-                .typeResolver(node, {type -> foo })
+                .typeResolver(node, { type -> foo })
                 .build()
 
         GraphQLSchema schema = newSchema()
@@ -926,7 +926,7 @@ class GraphQLTest extends Specification {
 
     def "graphql copying works as expected"() {
 
-        def instrumentation = new SimpleInstrumentation()
+        def instrumentation = new SimplePerformantInstrumentation()
         def hello = ExecutionId.from("hello")
         def executionIdProvider = new ExecutionIdProvider() {
             @Override
@@ -956,7 +956,7 @@ class GraphQLTest extends Specification {
         when:
 
         // now make some changes
-        def newInstrumentation = new SimpleInstrumentation()
+        def newInstrumentation = new SimplePerformantInstrumentation()
         def goodbye = ExecutionId.from("goodbye")
         def newExecutionIdProvider = new ExecutionIdProvider() {
             @Override
@@ -981,7 +981,7 @@ class GraphQLTest extends Specification {
     def "disabling data loader instrumentation leaves instrumentation as is"() {
         given:
         def queryStrategy = new CaptureStrategy()
-        def instrumentation = new SimpleInstrumentation()
+        def instrumentation = new SimplePerformantInstrumentation()
         def builder = GraphQL.newGraphQL(simpleSchema())
                 .queryExecutionStrategy(queryStrategy)
                 .instrumentation(instrumentation)
@@ -1251,10 +1251,10 @@ many lines''']
         GraphQLSchema schema = TestUtil.schema('type Query {foo: MyScalar} scalar MyScalar @specifiedBy(url:"myUrl")')
 
         when:
-        def result = GraphQL.newGraphQL(schema).build().execute('{__type(name: "MyScalar") {name specifiedByUrl}}').getData()
+        def result = GraphQL.newGraphQL(schema).build().execute('{__type(name: "MyScalar") {name specifiedByURL}}').getData()
 
         then:
-        result == [__type: [name: "MyScalar", specifiedByUrl: "myUrl"]]
+        result == [__type: [name: "MyScalar", specifiedByURL: "myUrl"]]
     }
 
     def "test DFR and CF"() {
@@ -1416,7 +1416,7 @@ many lines''']
     }
 
     def "getters work as expected"() {
-        Instrumentation instrumentation = new SimpleInstrumentation()
+        Instrumentation instrumentation = new SimplePerformantInstrumentation()
         when:
         def graphQL = GraphQL.newGraphQL(StarWarsSchema.starWarsSchema).instrumentation(instrumentation).build()
         then:
@@ -1438,6 +1438,6 @@ many lines''']
         when:
         def er = graphQL.execute(ei)
         then:
-        ! er.errors.isEmpty()
+        !er.errors.isEmpty()
     }
 }

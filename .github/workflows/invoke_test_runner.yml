@@ -31,6 +31,7 @@ env:
 
 jobs:
   execute_workflow:
+    if: github.repository == 'graphql-java/graphql-java'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3

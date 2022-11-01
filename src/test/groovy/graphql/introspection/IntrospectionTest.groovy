@@ -435,4 +435,191 @@ class IntrospectionTest extends Specification {
         graphql.execute(query).data ==
                 [__type: [fields: [[args: [[defaultValue: '{inputField : "foo"}']]]]]]
     }
+
+    def "test AST printed introspection query is equivalent to original string"() {
+        when:
+            def oldIntrospectionQuery = "\n" +
+                "  query IntrospectionQuery {\n" +
+                "    __schema {\n" +
+                "      queryType { name }\n" +
+                "      mutationType { name }\n" +
+                "      subscriptionType { name }\n" +
+                "      types {\n" +
+                "        ...FullType\n" +
+                "      }\n" +
+                "      directives {\n" +
+                "        name\n" +
+                "        description\n" +
+                "        locations\n" +
+                "        args(includeDeprecated: true) {\n" +
+                "          ...InputValue\n" +
+                "        }\n" +
+                "        isRepeatable\n" +
+                "      }\n" +
+                "    }\n" +
+                "  }\n" +
+                "\n" +
+                "  fragment FullType on __Type {\n" +
+                "    kind\n" +
+                "    name\n" +
+                "    description\n" +
+                "    fields(includeDeprecated: true) {\n" +
+                "      name\n" +
+                "      description\n" +
+                "      args(includeDeprecated: true) {\n" +
+                "        ...InputValue\n" +
+                "      }\n" +
+                "      type {\n" +
+                "        ...TypeRef\n" +
+                "      }\n" +
+                "      isDeprecated\n" +
+                "      deprecationReason\n" +
+                "    }\n" +
+                "    inputFields(includeDeprecated: true) {\n" +
+                "      ...InputValue\n" +
+                "    }\n" +
+                "    interfaces {\n" +
+                "      ...TypeRef\n" +
+                "    }\n" +
+                "    enumValues(includeDeprecated: true) {\n" +
+                "      name\n" +
+                "      description\n" +
+                "      isDeprecated\n" +
+                "      deprecationReason\n" +
+                "    }\n" +
+                "    possibleTypes {\n" +
+                "      ...TypeRef\n" +
+                "    }\n" +
+                "  }\n" +
+                "\n" +
+                "  fragment InputValue on __InputValue {\n" +
+                "    name\n" +
+                "    description\n" +
+                "    type { ...TypeRef }\n" +
+                "    defaultValue\n" +
+                "    isDeprecated\n" +
+                "    deprecationReason\n" +
+                "  }\n" +
+                "\n" +
+                //
+                // The depth of the types is actually an arbitrary decision.  It could be any depth in fact.  This depth
+                // was taken from GraphIQL https://github.com/graphql/graphiql/blob/master/src/utility/introspectionQueries.js
+                // which uses 7 levels and hence could represent a type like say [[[[[Float!]]]]]
+                //
+                "fragment TypeRef on __Type {\n" +
+                "    kind\n" +
+                "    name\n" +
+                "    ofType {\n" +
+                "      kind\n" +
+                "      name\n" +
+                "      ofType {\n" +
+                "        kind\n" +
+                "        name\n" +
+                "        ofType {\n" +
+                "          kind\n" +
+                "          name\n" +
+                "          ofType {\n" +
+                "            kind\n" +
+                "            name\n" +
+                "            ofType {\n" +
+                "              kind\n" +
+                "              name\n" +
+                "              ofType {\n" +
+                "                kind\n" +
+                "                name\n" +
+                "                ofType {\n" +
+                "                  kind\n" +
+                "                  name\n" +
+                "                }\n" +
+                "              }\n" +
+                "            }\n" +
+                "          }\n" +
+                "        }\n" +
+                "      }\n" +
+                "    }\n" +
+                "  }\n" +
+                "\n"
+
+            def newIntrospectionQuery = IntrospectionQuery.INTROSPECTION_QUERY;
+
+        then:
+            oldIntrospectionQuery.replaceAll("\\s+","").equals(
+                newIntrospectionQuery.replaceAll("\\s+","")
+            )
+    }
+
+    def "test parameterized introspection queries"() {
+        def spec = '''
+            scalar UUID @specifiedBy(url: "https://tools.ietf.org/html/rfc4122")
+
+            directive @repeatableDirective(arg: String) repeatable on FIELD
+
+            """schema description"""
+            schema {
+                query: Query
+            }
+
+            directive @someDirective(
+                deprecatedArg : String @deprecated
+                notDeprecatedArg : String
+            ) repeatable on FIELD 
+
+            type Query {
+                """notDeprecated root field description"""
+               notDeprecated(arg : InputType @deprecated,  notDeprecatedArg : InputType) : Enum
+               tenDimensionalList : [[[[[[[[[[String]]]]]]]]]]
+            }
+            enum Enum {
+                RED @deprecated
+                BLUE
+            }
+            input InputType {
+                inputField : String @deprecated
+            }
+        '''
+
+        def graphQL = TestUtil.graphQL(spec).build()
+
+        def parseExecutionResult = {
+            [
+                it.data["__schema"]["types"].find{it["name"] == "Query"}["fields"].find{it["name"] == "notDeprecated"}["description"] != null, // descriptions is true
+                it.data["__schema"]["types"].find{it["name"] == "UUID"}["specifiedByURL"] != null, // specifiedByUrl is true
+                it.data["__schema"]["directives"].find{it["name"] == "repeatableDirective"}["isRepeatable"] != null, // directiveIsRepeatable is true
+                it.data["__schema"]["description"] != null, // schemaDescription is true
+                it.data["__schema"]["types"].find { it['name'] == 'InputType' }["inputFields"].find({ it["name"] == "inputField" }) != null // inputValueDeprecation is true
+            ]
+        }
+
+        when:
+            def allFalseExecutionResult = graphQL.execute(
+                IntrospectionQueryBuilder.build(
+                    IntrospectionQueryBuilder.Options.defaultOptions()
+                        .descriptions(false)
+                        .specifiedByUrl(false)
+                        .directiveIsRepeatable(false)
+                        .schemaDescription(false)
+                        .inputValueDeprecation(false)
+                        .typeRefFragmentDepth(5)
+                )
+            )
+        then:
+            !parseExecutionResult(allFalseExecutionResult).any()
+            allFalseExecutionResult.data["__schema"]["types"].find{it["name"] == "Query"}["fields"].find{it["name"] == "tenDimensionalList"}["type"]["ofType"]["ofType"]["ofType"]["ofType"]["ofType"]["ofType"] == null // typeRefFragmentDepth is 5
+
+        when:
+            def allTrueExecutionResult = graphQL.execute(
+                IntrospectionQueryBuilder.build(
+                    IntrospectionQueryBuilder.Options.defaultOptions()
+                        .descriptions(true)
+                        .specifiedByUrl(true)
+                        .directiveIsRepeatable(true)
+                        .schemaDescription(true)
+                        .inputValueDeprecation(true)
+                        .typeRefFragmentDepth(7)
+                )
+            )
+        then:
+            parseExecutionResult(allTrueExecutionResult).every()
+            allTrueExecutionResult.data["__schema"]["types"].find{it["name"] == "Query"}["fields"].find{it["name"] == "tenDimensionalList"}["type"]["ofType"]["ofType"]["ofType"]["ofType"]["ofType"]["ofType"]["ofType"]["ofType"] == null // typeRefFragmentDepth is 7
+    }
 }

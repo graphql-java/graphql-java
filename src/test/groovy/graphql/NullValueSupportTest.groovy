@@ -10,7 +10,7 @@ import spock.lang.Unroll
 import static graphql.ExecutionInput.newExecutionInput
 
 /*
- * Taken from http://facebook.github.io/graphql/#sec-Input-Objects
+ * Taken from https://spec.graphql.org/October2021/#sec-Input-Objects
  *
  *
  

@@ -6,7 +6,7 @@ import graphql.PublicApi;
 import graphql.execution.AbortExecutionException;
 import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationState;
-import graphql.execution.instrumentation.SimpleInstrumentation;
+import graphql.execution.instrumentation.SimplePerformantInstrumentation;
 import graphql.execution.instrumentation.parameters.InstrumentationExecuteOperationParameters;
 import org.jetbrains.annotations.Nullable;
 
@@ -24,7 +24,7 @@ import static graphql.Assert.assertNotNull;
  * @see FieldValidation
  */
 @PublicApi
-public class FieldValidationInstrumentation extends SimpleInstrumentation {
+public class FieldValidationInstrumentation extends SimplePerformantInstrumentation {
 
     private final FieldValidation fieldValidation;
 
