@@ -32,6 +32,25 @@ class LambdaFetchingSupportTest extends Specification {
 
     }
 
+    def "get make getters based on record like names"() {
+        def pojo = new Pojo("Brad", 42)
+        when:
+        def getter = LambdaFetchingSupport.createGetter(Pojo.class, "recordLike")
+        then:
+        getter.isPresent()
+        getter.get().apply(pojo) == "recordLike"
+
+        //
+        // pojo getters will be found first - to prevent escalation from the old way to the new record like way
+        def confusedPojo = new ConfusedPojo()
+        when:
+        getter = LambdaFetchingSupport.createGetter(ConfusedPojo.class, "recordLike")
+        then:
+        getter.isPresent()
+        getter.get().apply(confusedPojo) == "getRecordLike"
+
+    }
+
     def "will handle bad methods and missing ones"() {
 
         when:

@@ -6,6 +6,7 @@ import graphql.schema.somepackage.ClassWithDFEMethods
 import graphql.schema.somepackage.ClassWithInterfaces
 import graphql.schema.somepackage.ClassWithInteritanceAndInterfaces
 import graphql.schema.somepackage.RecordLikeClass
+import graphql.schema.somepackage.RecordLikeTwoClassesDown
 import graphql.schema.somepackage.TestClass
 import graphql.schema.somepackage.TwoClassesDown
 import spock.lang.Specification
@@ -139,6 +140,15 @@ class PropertyDataFetcherTest extends Specification {
         result = fetcher.get(environment)
         then:
         result == "toString"
+    }
+
+    def "can fetch record like methods that are public and on super classes"() {
+        def environment = env(new RecordLikeTwoClassesDown())
+        when:
+        def fetcher = new PropertyDataFetcher("recordProperty")
+        def result = fetcher.get(environment)
+        then:
+        result == "recordProperty"
     }
 
     def "fetch via public method"() {

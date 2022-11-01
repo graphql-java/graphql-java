@@ -114,13 +114,6 @@ public class PropertyFetchingImpl {
 
         boolean dfeInUse = singleArgumentValue != null;
         //
-        // try by record name - object.propertyName()
-        try {
-            MethodFinder methodFinder = (rootClass, methodName) -> findRecordMethod(cacheKey, rootClass, methodName);
-            return getPropertyViaRecordMethod(object, propertyName, methodFinder, singleArgumentValue);
-        } catch (NoSuchMethodException ignored) {
-        }
-        //
         // try by public getters name -  object.getPropertyName()
         try {
             MethodFinder methodFinder = (rootClass, methodName) -> findPubliclyAccessibleMethod(cacheKey, rootClass, methodName, dfeInUse);
@@ -135,9 +128,18 @@ public class PropertyFetchingImpl {
         } catch (NoSuchMethodException ignored) {
         }
         //
-        // try by field name -  object.getPropertyName()
+        // try by field name -  object.propertyName;
         try {
             return getPropertyViaFieldAccess(cacheKey, object, propertyName);
+        } catch (NoSuchMethodException ignored) {
+        }
+        //
+        // try by record name - object.propertyName()
+        try {
+            // we do records last because if there was ever a previous situation where there was a `getProp()` and a `prop()` in place
+            // then previously it would use the `getProp()` method so we want that same behavior
+            MethodFinder methodFinder = (rootClass, methodName) -> findRecordMethod(cacheKey, rootClass, methodName);
+            return getPropertyViaRecordMethod(object, propertyName, methodFinder, singleArgumentValue);
         } catch (NoSuchMethodException ignored) {
         }
         // we have nothing to ask for, and we have exhausted our lookup strategies
@@ -228,20 +230,12 @@ public class PropertyFetchingImpl {
        A record class declares a sequence of fields, and then the appropriate accessors, constructors, equals, hashCode, and toString methods are created automatically.
 
        Records cannot extend any class - so we need only check the root class for a publicly declared method with the propertyName
+
+       However, we won't just restrict ourselves strictly to true records.  We will find methods that are record like
+       and fetch them - e.g. `object.propertyName()`
      */
     private Method findRecordMethod(CacheKey cacheKey, Class<?> rootClass, String methodName) throws NoSuchMethodException {
-        if (Modifier.isPublic(rootClass.getModifiers())) {
-            Method method = rootClass.getDeclaredMethod(methodName);
-            int modifiers = method.getModifiers();
-            if (Modifier.isPublic(modifiers) &&
-                    method.getParameterCount() == 0 &&
-                    !Modifier.isStatic(modifiers) &&
-                    !Modifier.isAbstract(modifiers)) {
-                METHOD_CACHE.putIfAbsent(cacheKey, new CachedMethod(method));
-                return method;
-            }
-        }
-        throw new FastNoSuchMethodException(methodName);
+        return findPubliclyAccessibleMethod(cacheKey,rootClass,methodName,false);
     }
 
     private Method findViaSetAccessible(CacheKey cacheKey, Class<?> aClass, String methodName, boolean dfeInUse) throws NoSuchMethodException {

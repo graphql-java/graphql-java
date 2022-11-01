@@ -15,6 +15,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
 import static java.util.stream.Collectors.toList;
 
@@ -42,7 +43,13 @@ public class LambdaFetchingSupport {
                 Function<Object, Object> getterFunction = mkCallFunction(sourceClass, candidateMethod.getName(), candidateMethod.getReturnType());
                 return Optional.of(getterFunction);
             } catch (Throwable ignore) {
+                //
                 // if we cant make a dynamic lambda here, then we give up and let the old property fetching code do its thing
+                // this can happen on runtimes such as GraalVM native where LambdaMetafactory is not supported
+                // and will throw something like :
+                //
+                //    com.oracle.svm.core.jdk.UnsupportedFeatureError: Defining hidden classes at runtime is not supported.
+                //        at org.graalvm.nativeimage.builder/com.oracle.svm.core.util.VMError.unsupportedFeature(VMError.java:89)
             }
         }
         return Optional.empty();
@@ -50,7 +57,7 @@ public class LambdaFetchingSupport {
 
 
     private static Method getCandidateMethod(Class<?> sourceClass, String propertyName) {
-        List<Method> allGetterMethods = findGetterMethodsForProperty(sourceClass, propertyName);
+        List<Method> allGetterMethods = findMethodsForProperty(sourceClass, propertyName, LambdaFetchingSupport::isGetterNamed);
         List<Method> pojoGetterMethods = allGetterMethods.stream()
                 .filter(LambdaFetchingSupport::isPossiblePojoMethod)
                 .collect(toList());
@@ -60,10 +67,12 @@ public class LambdaFetchingSupport {
                 method = findBestBooleanGetter(pojoGetterMethods);
             }
             return checkForSingleParameterPeer(method, allGetterMethods);
-        } else {
-            return null;
         }
-
+        List<Method> recordLikeMethods = findMethodsForProperty(sourceClass, propertyName, LambdaFetchingSupport::isRecordLike);
+        if (!recordLikeMethods.isEmpty()) {
+            return recordLikeMethods.get(0);
+        }
+        return null;
     }
 
     private static Method checkForSingleParameterPeer(Method candidateMethod, List<Method> allMethods) {
@@ -93,13 +102,13 @@ public class LambdaFetchingSupport {
      *
      * @return a list of getter methods for that property
      */
-    private static List<Method> findGetterMethodsForProperty(Class<?> sourceClass, String propertyName) {
+    private static List<Method> findMethodsForProperty(Class<?> sourceClass, String propertyName, Predicate<Method> predicate) {
         List<Method> methods = new ArrayList<>();
         Class<?> currentClass = sourceClass;
         while (currentClass != null) {
             Method[] declaredMethods = currentClass.getDeclaredMethods();
             for (Method declaredMethod : declaredMethods) {
-                if (isGetterNamed(declaredMethod)) {
+                if (predicate.test(declaredMethod)) {
                     if (nameMatches(propertyName, declaredMethod)) {
                         methods.add(declaredMethod);
                     }
@@ -123,6 +132,13 @@ public class LambdaFetchingSupport {
         return !isObjectMethod(method) &&
                 returnsSomething(method) &&
                 isGetterNamed(method) &&
+                hasNoParameters(method) &&
+                isPublic(method);
+    }
+
+    private static boolean isRecordLike(Method method) {
+        return !isObjectMethod(method) &&
+                returnsSomething(method) &&
                 hasNoParameters(method) &&
                 isPublic(method);
     }
