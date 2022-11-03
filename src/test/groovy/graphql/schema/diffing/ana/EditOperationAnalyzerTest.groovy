@@ -4,6 +4,7 @@ import graphql.TestUtil
 import graphql.schema.diffing.SchemaDiffing
 import spock.lang.Specification
 
+import static graphql.schema.diffing.ana.SchemaDifference.*
 import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveAddition
 import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveArgumentValueModification
 import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveObjectFieldLocation
@@ -1485,6 +1486,31 @@ class EditOperationAnalyzerTest extends Specification {
         argTypeModification[0].newType == '[String]!'
     }
 
+    def "object added applied directive"() {
+        given:
+        def oldSdl = '''
+        directive @d(arg:String) on OBJECT
+        
+        type Query {
+            foo: String 
+        }
+        '''
+        def newSdl = '''
+        directive @d(arg: String)  on OBJECT
+        
+        type Query @d(arg: "foo") {
+            foo: String 
+        }
+        '''
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+        then:
+        changes.objectDifferences["Query"] instanceof ObjectModification
+        def appliedDirective = (changes.objectDifferences["Query"] as ObjectModification).getDetails(AppliedDirectiveAddition)
+        (appliedDirective[0].locationDetail as AppliedDirectiveObjectLocation).name == "Query"
+        appliedDirective[0].name == "d"
+    }
+
     def "object field added applied directive"() {
         given:
         def oldSdl = '''
@@ -1559,13 +1585,14 @@ class EditOperationAnalyzerTest extends Specification {
         def changes = calcDiff(oldSdl, newSdl)
         then:
         changes.objectDifferences["Query"] instanceof ObjectModification
-        def argumentRenames = (changes.objectDifferences["Query"] as ObjectModification).getDetails(SchemaDifference.AppliedDirectiveArgumentRename)
+        def argumentRenames = (changes.objectDifferences["Query"] as ObjectModification).getDetails(AppliedDirectiveArgumentRename)
         def location = argumentRenames[0].locationDetail as AppliedDirectiveObjectFieldLocation
         location.objectName == "Query"
         location.fieldName == "foo"
         argumentRenames[0].oldName == "arg1"
         argumentRenames[0].newName == "arg2"
     }
+
 
 
     EditOperationAnalysisResult calcDiff(
