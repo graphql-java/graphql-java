@@ -1511,6 +1511,37 @@ class EditOperationAnalyzerTest extends Specification {
         appliedDirective[0].name == "d"
     }
 
+    def "interface added applied directive"() {
+        given:
+        def oldSdl = '''
+        directive @d(arg:String) on INTERFACE
+        
+        type Query implements I{
+            foo: String 
+        }
+        interface I {
+            foo: String
+        }
+        '''
+        def newSdl = '''
+        directive @d(arg: String) on INTERFACE
+        
+        type Query implements I {
+            foo: String 
+        }
+        interface I @d(arg: "foo") {
+            foo: String
+        }
+        '''
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+        then:
+        changes.interfaceDifferences["I"] instanceof InterfaceModification
+        def appliedDirective = (changes.interfaceDifferences["I"] as InterfaceModification).getDetails(AppliedDirectiveAddition)
+        (appliedDirective[0].locationDetail as AppliedDirectiveInterfaceLocation).name == "I"
+        appliedDirective[0].name == "d"
+    }
+
     def "object field added applied directive"() {
         given:
         def oldSdl = '''

@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Map;
 
 import static graphql.Assert.assertTrue;
+import static graphql.schema.diffing.ana.SchemaDifference.*;
 import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveAddition;
 import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveArgumentValueModification;
 import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveObjectFieldLocation;
@@ -218,11 +219,16 @@ public class EditOperationAnalyzer {
                 AppliedDirectiveAddition appliedDirectiveAddition = new AppliedDirectiveAddition(location, appliedDirective.getName());
                 getObjectModification(object.getName()).getDetails().add(appliedDirectiveAddition);
             }
-        }else if(container.isOfType(SchemaGraph.OBJECT)) {
+        } else if (container.isOfType(SchemaGraph.OBJECT)) {
             Vertex object = container;
             AppliedDirectiveObjectLocation location = new AppliedDirectiveObjectLocation(object.getName());
             AppliedDirectiveAddition appliedDirectiveAddition = new AppliedDirectiveAddition(location, appliedDirective.getName());
             getObjectModification(object.getName()).getDetails().add(appliedDirectiveAddition);
+        } else if (container.isOfType(SchemaGraph.INTERFACE)) {
+            Vertex interfaze = container;
+            AppliedDirectiveInterfaceLocation location = new AppliedDirectiveInterfaceLocation(interfaze.getName());
+            AppliedDirectiveAddition appliedDirectiveAddition = new AppliedDirectiveAddition(location, appliedDirective.getName());
+            getInterfaceModification(interfaze.getName()).getDetails().add(appliedDirectiveAddition);
         }
     }
 

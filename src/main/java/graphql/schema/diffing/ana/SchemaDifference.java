@@ -1165,7 +1165,7 @@ public interface SchemaDifference {
 
     }
 
-    class AppliedDirectiveAddition implements ObjectModificationDetail {
+    class AppliedDirectiveAddition implements ObjectModificationDetail, InterfaceModificationDetail {
         private final AppliedDirectiveLocationDetail locationDetail;
         private final String name;
 
