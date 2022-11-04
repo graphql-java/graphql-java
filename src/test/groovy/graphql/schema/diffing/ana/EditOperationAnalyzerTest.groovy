@@ -1542,6 +1542,31 @@ class EditOperationAnalyzerTest extends Specification {
         appliedDirective[0].name == "d"
     }
 
+    def "scalar added applied directive"() {
+        given:
+        def oldSdl = '''
+        directive @d(arg:String) on SCALAR
+        scalar DateTime  
+        type Query {
+            foo: DateTime 
+        }
+        '''
+        def newSdl = '''
+        directive @d(arg:String) on SCALAR
+        scalar DateTime  @d(arg: "foo")
+        type Query {
+            foo: DateTime 
+        }
+        '''
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+        then:
+        changes.scalarDifferences["DateTime"] instanceof ScalarModification
+        def appliedDirective = (changes.scalarDifferences["DateTime"] as ScalarModification).getDetails(AppliedDirectiveAddition)
+        (appliedDirective[0].locationDetail as AppliedDirectiveScalarLocation).name == "DateTime"
+        appliedDirective[0].name == "d"
+    }
+
     def "object field added applied directive"() {
         given:
         def oldSdl = '''

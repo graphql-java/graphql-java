@@ -215,20 +215,41 @@ public class EditOperationAnalyzer {
             Vertex interfaceOrObjective = newSchemaGraph.getFieldsContainerForField(field);
             if (interfaceOrObjective.isOfType(SchemaGraph.OBJECT)) {
                 Vertex object = interfaceOrObjective;
+
+                if (isObjectAdded(object.getName())) {
+                    return;
+                }
+                if (isFieldNewForExistingObject(object.getName(), field.getName())) {
+                    return;
+                }
                 AppliedDirectiveObjectFieldLocation location = new AppliedDirectiveObjectFieldLocation(object.getName(), field.getName());
                 AppliedDirectiveAddition appliedDirectiveAddition = new AppliedDirectiveAddition(location, appliedDirective.getName());
                 getObjectModification(object.getName()).getDetails().add(appliedDirectiveAddition);
             }
         } else if (container.isOfType(SchemaGraph.OBJECT)) {
             Vertex object = container;
+            if (isObjectAdded(object.getName())) {
+                return;
+            }
             AppliedDirectiveObjectLocation location = new AppliedDirectiveObjectLocation(object.getName());
             AppliedDirectiveAddition appliedDirectiveAddition = new AppliedDirectiveAddition(location, appliedDirective.getName());
             getObjectModification(object.getName()).getDetails().add(appliedDirectiveAddition);
         } else if (container.isOfType(SchemaGraph.INTERFACE)) {
             Vertex interfaze = container;
+            if (isInterfaceAdded(interfaze.getName())) {
+                return;
+            }
             AppliedDirectiveInterfaceLocation location = new AppliedDirectiveInterfaceLocation(interfaze.getName());
             AppliedDirectiveAddition appliedDirectiveAddition = new AppliedDirectiveAddition(location, appliedDirective.getName());
             getInterfaceModification(interfaze.getName()).getDetails().add(appliedDirectiveAddition);
+        } else if (container.isOfType(SchemaGraph.SCALAR)) {
+            Vertex scalar = container;
+            if (isScalarAdded(scalar.getName())) {
+                return;
+            }
+            AppliedDirectiveScalarLocation location = new AppliedDirectiveScalarLocation(scalar.getName());
+            AppliedDirectiveAddition appliedDirectiveAddition = new AppliedDirectiveAddition(location, appliedDirective.getName());
+            getScalarModification(scalar.getName()).getDetails().add(appliedDirectiveAddition);
         }
     }
 
@@ -966,6 +987,9 @@ public class EditOperationAnalyzer {
     private boolean isInterfaceAdded(String name) {
         return interfaceDifferences.containsKey(name) && interfaceDifferences.get(name) instanceof InterfaceAddition;
     }
+    private boolean isScalarAdded(String name) {
+        return scalarDifferences.containsKey(name) && scalarDifferences.get(name) instanceof ScalarAddition;
+    }
 
     private ObjectModification getObjectModification(String newName) {
         if (!objectDifferences.containsKey(newName)) {
@@ -1005,6 +1029,14 @@ public class EditOperationAnalyzer {
         }
         assertTrue(interfaceDifferences.get(newName) instanceof InterfaceModification);
         return (InterfaceModification) interfaceDifferences.get(newName);
+    }
+
+    private  ScalarModification getScalarModification(String newName) {
+        if (!scalarDifferences.containsKey(newName)) {
+            scalarDifferences.put(newName, new ScalarModification(newName));
+        }
+        assertTrue(scalarDifferences.get(newName) instanceof ScalarModification);
+        return (ScalarModification) scalarDifferences.get(newName);
     }
 
 

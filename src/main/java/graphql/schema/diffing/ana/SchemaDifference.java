@@ -868,10 +868,15 @@ public interface SchemaDifference {
         }
     }
 
+    interface ScalarModificationDetail {
+
+    }
+
     class ScalarModification implements SchemaModification, ScalarDifference {
         private final String oldName;
         private final String newName;
         private final boolean nameChanged;
+        private List<ScalarModificationDetail> details = new ArrayList<>();
 
 
         public ScalarModification(String oldName, String newName) {
@@ -879,6 +884,12 @@ public interface SchemaDifference {
             this.newName = newName;
             this.nameChanged = oldName.equals(newName);
         }
+        public ScalarModification( String newName) {
+            this.oldName = newName;
+            this.newName = newName;
+            this.nameChanged = false;
+        }
+
 
         public boolean isNameChanged() {
             return nameChanged;
@@ -891,6 +902,14 @@ public interface SchemaDifference {
         public String getOldName() {
             return oldName;
         }
+        public List<ScalarModificationDetail> getDetails() {
+            return details;
+        }
+
+        public <T extends ScalarModificationDetail> List<T> getDetails(Class<? extends T> clazz) {
+            return (List) FpKit.filterList(details, clazz::isInstance);
+        }
+
     }
 
     //------Directive
@@ -1110,7 +1129,15 @@ public interface SchemaDifference {
     }
 
     class AppliedDirectiveScalarLocation implements AppliedDirectiveLocationDetail {
+        private final String name;
 
+        public AppliedDirectiveScalarLocation(String name) {
+            this.name = name;
+        }
+
+        public String getName() {
+            return name;
+        }
     }
 
     class AppliedDirectiveSchemaLocation implements AppliedDirectiveLocationDetail {
@@ -1165,7 +1192,7 @@ public interface SchemaDifference {
 
     }
 
-    class AppliedDirectiveAddition implements ObjectModificationDetail, InterfaceModificationDetail {
+    class AppliedDirectiveAddition implements ObjectModificationDetail, InterfaceModificationDetail, ScalarModificationDetail {
         private final AppliedDirectiveLocationDetail locationDetail;
         private final String name;
 
