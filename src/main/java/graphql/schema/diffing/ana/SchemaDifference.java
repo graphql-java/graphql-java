@@ -1173,11 +1173,27 @@ public interface SchemaDifference {
     }
 
     class AppliedDirectiveUnionLocation implements AppliedDirectiveLocationDetail {
+        private final String name;
 
+        public AppliedDirectiveUnionLocation(String name) {
+            this.name = name;
+        }
+
+        public String getName() {
+            return name;
+        }
     }
 
     class AppliedDirectiveEnumLocation implements AppliedDirectiveLocationDetail {
+        private final String name;
 
+        public AppliedDirectiveEnumLocation(String name) {
+            this.name = name;
+        }
+
+        public String getName() {
+            return name;
+        }
     }
 
     class AppliedDirectiveEnumValueLocation implements AppliedDirectiveLocationDetail {
@@ -1185,14 +1201,23 @@ public interface SchemaDifference {
     }
 
     class AppliedDirectiveInputObjectLocation implements AppliedDirectiveLocationDetail {
+        private final String name;
 
+        public AppliedDirectiveInputObjectLocation(String name) {
+            this.name = name;
+        }
+
+        public String getName() {
+            return name;
+        }
     }
+
 
     class AppliedDirectiveInputObjectFieldLocation implements AppliedDirectiveLocationDetail {
 
     }
 
-    class AppliedDirectiveAddition implements ObjectModificationDetail, InterfaceModificationDetail, ScalarModificationDetail {
+    class AppliedDirectiveAddition implements ObjectModificationDetail, InterfaceModificationDetail, ScalarModificationDetail, EnumModificationDetail {
         private final AppliedDirectiveLocationDetail locationDetail;
         private final String name;
 

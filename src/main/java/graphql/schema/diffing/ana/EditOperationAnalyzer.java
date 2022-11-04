@@ -250,6 +250,14 @@ public class EditOperationAnalyzer {
             AppliedDirectiveScalarLocation location = new AppliedDirectiveScalarLocation(scalar.getName());
             AppliedDirectiveAddition appliedDirectiveAddition = new AppliedDirectiveAddition(location, appliedDirective.getName());
             getScalarModification(scalar.getName()).getDetails().add(appliedDirectiveAddition);
+        } else if (container.isOfType(SchemaGraph.ENUM)) {
+            Vertex enumVertex = container;
+            if (isEnumAdded(enumVertex.getName())) {
+                return;
+            }
+            AppliedDirectiveEnumLocation location = new AppliedDirectiveEnumLocation(enumVertex.getName());
+            AppliedDirectiveAddition appliedDirectiveAddition = new AppliedDirectiveAddition(location, appliedDirective.getName());
+            getEnumModification(enumVertex.getName()).getDetails().add(appliedDirectiveAddition);
         }
     }
 
@@ -987,6 +995,7 @@ public class EditOperationAnalyzer {
     private boolean isInterfaceAdded(String name) {
         return interfaceDifferences.containsKey(name) && interfaceDifferences.get(name) instanceof InterfaceAddition;
     }
+
     private boolean isScalarAdded(String name) {
         return scalarDifferences.containsKey(name) && scalarDifferences.get(name) instanceof ScalarAddition;
     }
@@ -1031,7 +1040,7 @@ public class EditOperationAnalyzer {
         return (InterfaceModification) interfaceDifferences.get(newName);
     }
 
-    private  ScalarModification getScalarModification(String newName) {
+    private ScalarModification getScalarModification(String newName) {
         if (!scalarDifferences.containsKey(newName)) {
             scalarDifferences.put(newName, new ScalarModification(newName));
         }
