@@ -1592,6 +1592,35 @@ class EditOperationAnalyzerTest extends Specification {
         appliedDirective[0].name == "d"
     }
 
+    def "input object added applied directive"() {
+        given:
+        def oldSdl = '''
+        directive @d(arg:String) on INPUT_OBJECT
+        input I {
+            a: String
+        }
+        type Query {
+            foo(arg: I): String 
+        }
+        '''
+        def newSdl = '''
+        directive @d(arg:String) on INPUT_OBJECT
+        input I @d(arg: "foo") {
+            a: String
+        }
+        type Query {
+            foo(arg: I): String 
+        }
+        '''
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+        then:
+        changes.inputObjectDifferences["I"] instanceof InputObjectModification
+        def appliedDirective = (changes.inputObjectDifferences["I"] as InputObjectModification).getDetails(AppliedDirectiveAddition)
+        (appliedDirective[0].locationDetail as AppliedDirectiveInputObjectLocation).name == "I"
+        appliedDirective[0].name == "d"
+    }
+
     def "object field added applied directive"() {
         given:
         def oldSdl = '''

@@ -258,6 +258,14 @@ public class EditOperationAnalyzer {
             AppliedDirectiveEnumLocation location = new AppliedDirectiveEnumLocation(enumVertex.getName());
             AppliedDirectiveAddition appliedDirectiveAddition = new AppliedDirectiveAddition(location, appliedDirective.getName());
             getEnumModification(enumVertex.getName()).getDetails().add(appliedDirectiveAddition);
+        } else if (container.isOfType(SchemaGraph.INPUT_OBJECT)) {
+            Vertex inputObject = container;
+            if (isInputObjectAdded(inputObject.getName())) {
+                return;
+            }
+            AppliedDirectiveInputObjectLocation location = new AppliedDirectiveInputObjectLocation(inputObject.getName());
+            AppliedDirectiveAddition appliedDirectiveAddition = new AppliedDirectiveAddition(location, appliedDirective.getName());
+            getInputObjectLocation(inputObject.getName()).getDetails().add(appliedDirectiveAddition);
         }
     }
 
@@ -910,6 +918,10 @@ public class EditOperationAnalyzer {
         return enumDifferences.containsKey(name) && enumDifferences.get(name) instanceof EnumAddition;
     }
 
+    private boolean isInputObjectAdded(String name) {
+        return inputObjectDifferences.containsKey(name) && inputObjectDifferences.get(name) instanceof InputObjectAddition;
+    }
+
     private boolean isArgumentNewForExistingDirective(String directiveName, String argumentName) {
         if (!directiveDifferences.containsKey(directiveName)) {
             return false;
@@ -1022,6 +1034,14 @@ public class EditOperationAnalyzer {
         }
         assertTrue(enumDifferences.get(newName) instanceof EnumModification);
         return (EnumModification) enumDifferences.get(newName);
+    }
+
+    private InputObjectModification getInputObjectLocation(String newName) {
+        if (!inputObjectDifferences.containsKey(newName)) {
+            inputObjectDifferences.put(newName, new InputObjectModification(newName));
+        }
+        assertTrue(inputObjectDifferences.get(newName) instanceof InputObjectModification);
+        return (InputObjectModification) inputObjectDifferences.get(newName);
     }
 
     private DirectiveModification getDirectiveModification(String newName) {

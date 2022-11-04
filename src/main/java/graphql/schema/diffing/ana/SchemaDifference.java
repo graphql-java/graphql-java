@@ -716,16 +716,28 @@ public interface SchemaDifference {
         }
     }
 
+    interface InputObjectModificationDetail {
+
+    }
+
     class InputObjectModification implements SchemaModification, InputObjectDifference {
         private final String oldName;
         private final String newName;
         private final boolean nameChanged;
+
+        private final List<InputObjectModificationDetail> details = new ArrayList<>();
 
 
         public InputObjectModification(String oldName, String newName) {
             this.oldName = oldName;
             this.newName = newName;
             this.nameChanged = oldName.equals(newName);
+        }
+
+        public InputObjectModification(String newName) {
+            this.oldName = newName;
+            this.newName = newName;
+            this.nameChanged = false;
         }
 
         public boolean isNameChanged() {
@@ -739,6 +751,15 @@ public interface SchemaDifference {
         public String getOldName() {
             return oldName;
         }
+
+        public List<InputObjectModificationDetail> getDetails() {
+            return details;
+        }
+
+        public <T extends InputObjectModificationDetail> List<T> getDetails(Class<? extends T> clazz) {
+            return (List) FpKit.filterList(details, clazz::isInstance);
+        }
+
     }
 
     //-------Enum
@@ -884,7 +905,8 @@ public interface SchemaDifference {
             this.newName = newName;
             this.nameChanged = oldName.equals(newName);
         }
-        public ScalarModification( String newName) {
+
+        public ScalarModification(String newName) {
             this.oldName = newName;
             this.newName = newName;
             this.nameChanged = false;
@@ -902,6 +924,7 @@ public interface SchemaDifference {
         public String getOldName() {
             return oldName;
         }
+
         public List<ScalarModificationDetail> getDetails() {
             return details;
         }
@@ -1217,7 +1240,11 @@ public interface SchemaDifference {
 
     }
 
-    class AppliedDirectiveAddition implements ObjectModificationDetail, InterfaceModificationDetail, ScalarModificationDetail, EnumModificationDetail {
+    class AppliedDirectiveAddition implements ObjectModificationDetail,
+            InterfaceModificationDetail,
+            ScalarModificationDetail,
+            EnumModificationDetail,
+            InputObjectModificationDetail {
         private final AppliedDirectiveLocationDetail locationDetail;
         private final String name;
 
