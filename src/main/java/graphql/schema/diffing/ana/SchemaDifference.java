@@ -1220,7 +1220,21 @@ public interface SchemaDifference {
     }
 
     class AppliedDirectiveEnumValueLocation implements AppliedDirectiveLocationDetail {
+        private final String enumName;
+        private final String valueName;
 
+        public AppliedDirectiveEnumValueLocation(String enumName, String valueName) {
+            this.enumName = enumName;
+            this.valueName = valueName;
+        }
+
+        public String getEnumName() {
+            return enumName;
+        }
+
+        public String getValueName() {
+            return valueName;
+        }
     }
 
     class AppliedDirectiveInputObjectLocation implements AppliedDirectiveLocationDetail {

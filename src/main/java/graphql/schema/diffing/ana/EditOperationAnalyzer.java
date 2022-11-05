@@ -258,6 +258,18 @@ public class EditOperationAnalyzer {
             AppliedDirectiveEnumLocation location = new AppliedDirectiveEnumLocation(enumVertex.getName());
             AppliedDirectiveAddition appliedDirectiveAddition = new AppliedDirectiveAddition(location, appliedDirective.getName());
             getEnumModification(enumVertex.getName()).getDetails().add(appliedDirectiveAddition);
+        } else if (container.isOfType(SchemaGraph.ENUM_VALUE)) {
+            Vertex enumValue = container;
+            Vertex enumVertex = newSchemaGraph.getEnumForEnumValue(enumValue);
+            if (isEnumAdded(enumVertex.getName())) {
+                return;
+            }
+            if (isNewEnumValueForExistingEnum(enumVertex.getName(), enumValue.getName())) {
+                return;
+            }
+            AppliedDirectiveEnumValueLocation location = new AppliedDirectiveEnumValueLocation(enumVertex.getName(), enumValue.getName());
+            AppliedDirectiveAddition appliedDirectiveAddition = new AppliedDirectiveAddition(location, appliedDirective.getName());
+            getEnumModification(enumVertex.getName()).getDetails().add(appliedDirectiveAddition);
         } else if (container.isOfType(SchemaGraph.INPUT_OBJECT)) {
             Vertex inputObject = container;
             if (isInputObjectAdded(inputObject.getName())) {
@@ -982,6 +994,18 @@ public class EditOperationAnalyzer {
         ObjectModification objectModification = (ObjectModification) objectDifferences.get(objectName);
         List<ObjectFieldAddition> newFields = objectModification.getDetails(ObjectFieldAddition.class);
         return newFields.stream().anyMatch(detail -> detail.getName().equals(fieldName));
+    }
+
+    private boolean isNewEnumValueForExistingEnum(String enumName, String valueName) {
+        if (!enumDifferences.containsKey(enumName)) {
+            return false;
+        }
+        if (!(enumDifferences.get(enumName) instanceof EnumModification)) {
+            return false;
+        }
+        EnumModification enumModification = (EnumModification) enumDifferences.get(enumName);
+        List<EnumValueAddition> newValues = enumModification.getDetails(EnumValueAddition.class);
+        return newValues.stream().anyMatch(detail -> detail.getName().equals(valueName));
     }
 
     private boolean isFieldNewForExistingInterface(String interfaceName, String fieldName) {

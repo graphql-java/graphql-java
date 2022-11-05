@@ -1592,6 +1592,32 @@ class EditOperationAnalyzerTest extends Specification {
         appliedDirective[0].name == "d"
     }
 
+    def "enum vlaue added applied directive"() {
+        given:
+        def oldSdl = '''
+        directive @d(arg:String) on ENUM_VALUE
+        enum E { A, B }
+        type Query {
+            foo: E 
+        }
+        '''
+        def newSdl = '''
+        directive @d(arg:String) on ENUM_VALUE
+        enum E  { A, B @d(arg: "foo") }
+        type Query {
+            foo: E 
+        }
+        '''
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+        then:
+        changes.enumDifferences["E"] instanceof EnumModification
+        def appliedDirective = (changes.enumDifferences["E"] as EnumModification).getDetails(AppliedDirectiveAddition)
+        (appliedDirective[0].locationDetail as AppliedDirectiveEnumValueLocation).enumName == "E"
+        (appliedDirective[0].locationDetail as AppliedDirectiveEnumValueLocation).valueName == "B"
+        appliedDirective[0].name == "d"
+    }
+
     def "input object added applied directive"() {
         given:
         def oldSdl = '''
