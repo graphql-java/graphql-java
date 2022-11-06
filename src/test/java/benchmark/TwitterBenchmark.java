@@ -6,6 +6,7 @@ import graphql.GraphQL;
 import graphql.execution.preparsed.persisted.InMemoryPersistedQueryCache;
 import graphql.execution.preparsed.persisted.PersistedQueryCache;
 import graphql.execution.preparsed.persisted.PersistedQuerySupport;
+import graphql.parser.ParserOptions;
 import graphql.schema.DataFetcher;
 import graphql.schema.GraphQLCodeRegistry;
 import graphql.schema.GraphQLFieldDefinition;
@@ -72,6 +73,8 @@ public class TwitterBenchmark {
   }
 
   private static GraphQL buildGraphQL() {
+    ParserOptions.setDefaultOperationParserOptions(ParserOptions.newParserOptions().maxTokens(100_000).build());
+
     List<GraphQLFieldDefinition> leafFields = new ArrayList<>(BREADTH);
     for (int i = 1; i <= BREADTH; i++) {
       leafFields.add(
