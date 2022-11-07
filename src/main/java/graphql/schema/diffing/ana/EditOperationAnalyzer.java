@@ -278,6 +278,14 @@ public class EditOperationAnalyzer {
             AppliedDirectiveInputObjectLocation location = new AppliedDirectiveInputObjectLocation(inputObject.getName());
             AppliedDirectiveAddition appliedDirectiveAddition = new AppliedDirectiveAddition(location, appliedDirective.getName());
             getInputObjectLocation(inputObject.getName()).getDetails().add(appliedDirectiveAddition);
+        } else if (container.isOfType(SchemaGraph.UNION)) {
+            Vertex union = container;
+            if (isUnionAdded(union.getName())) {
+                return;
+            }
+            AppliedDirectiveUnionLocation location = new AppliedDirectiveUnionLocation(union.getName());
+            AppliedDirectiveAddition appliedDirectiveAddition = new AppliedDirectiveAddition(location, appliedDirective.getName());
+            getUnionModification(union.getName()).getDetails().add(appliedDirectiveAddition);
         }
     }
 

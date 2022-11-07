@@ -1,5 +1,6 @@
 package graphql.schema.diffing.ana
 
+import com.sun.xml.internal.bind.v2.schemagen.xmlschema.Union
 import graphql.TestUtil
 import graphql.schema.diffing.SchemaDiffing
 import spock.lang.Specification
@@ -1542,6 +1543,35 @@ class EditOperationAnalyzerTest extends Specification {
         appliedDirective[0].name == "d"
     }
 
+    def "union added applied directive"() {
+        given:
+        def oldSdl = '''
+        directive @d(arg: String) on UNION
+        type Query {
+            foo: U 
+        }
+        union U = A | B
+        type A { a: String }
+        type B { b: String }
+        '''
+        def newSdl = '''
+        directive @d(arg: String) on UNION
+        type Query {
+            foo: U 
+        }
+        union U @d(arg: "foo") = A | B
+        type A { a: String }
+        type B { b: String }
+        '''
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+        then:
+        changes.unionDifferences["U"] instanceof UnionModification
+        def appliedDirective = (changes.unionDifferences["U"] as UnionModification).getDetails(AppliedDirectiveAddition)
+        (appliedDirective[0].locationDetail as AppliedDirectiveUnionLocation).name == "U"
+        appliedDirective[0].name == "d"
+    }
+
     def "scalar added applied directive"() {
         given:
         def oldSdl = '''
@@ -1592,7 +1622,7 @@ class EditOperationAnalyzerTest extends Specification {
         appliedDirective[0].name == "d"
     }
 
-    def "enum vlaue added applied directive"() {
+    def "enum value added applied directive"() {
         given:
         def oldSdl = '''
         directive @d(arg:String) on ENUM_VALUE

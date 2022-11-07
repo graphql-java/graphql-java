@@ -1254,11 +1254,13 @@ public interface SchemaDifference {
 
     }
 
-    class AppliedDirectiveAddition implements ObjectModificationDetail,
+    class AppliedDirectiveAddition implements
+            ObjectModificationDetail,
             InterfaceModificationDetail,
             ScalarModificationDetail,
             EnumModificationDetail,
-            InputObjectModificationDetail {
+            InputObjectModificationDetail,
+            UnionModificationDetail {
         private final AppliedDirectiveLocationDetail locationDetail;
         private final String name;
 
