@@ -159,9 +159,9 @@ public class SchemaGraphFactory {
         GraphQLUnmodifiedType graphQLUnmodifiedType = GraphQLTypeUtil.unwrapAll(type);
         Vertex typeVertex = assertNotNull(schemaGraph.getType(graphQLUnmodifiedType.getName()));
         Edge typeEdge = new Edge(inputFieldVertex, typeVertex);
-        String typeEdgeLabel = "type=" + GraphQLTypeUtil.simplePrint(type);
+        String typeEdgeLabel = "type=" + GraphQLTypeUtil.simplePrint(type) + ";defaultValue=";
         if (inputField.hasSetDefaultValue()) {
-            typeEdgeLabel += ";defaultValue=" + AstPrinter.printAst(ValuesResolver.valueToLiteral(inputField.getInputFieldDefaultValue(), inputField.getType(), GraphQLContext.getDefault(), Locale.getDefault()));
+            typeEdgeLabel += AstPrinter.printAst(ValuesResolver.valueToLiteral(inputField.getInputFieldDefaultValue(), inputField.getType(), GraphQLContext.getDefault(), Locale.getDefault()));
         }
 
         typeEdge.setLabel(typeEdgeLabel);

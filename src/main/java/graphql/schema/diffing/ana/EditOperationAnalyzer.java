@@ -368,6 +368,7 @@ public class EditOperationAnalyzer {
         Vertex inputField = editOperation.getTargetVertex();
         Vertex inputObject = newSchemaGraph.getInputObjectForInputField(inputField);
         String oldName = editOperation.getSourceVertex().getName();
+        String newName = inputObject.getName();
         getInputObjectModification(inputObject.getName()).getDetails().add(new InputObjectFieldRename(oldName, inputField.getName()));
     }
 
@@ -793,6 +794,25 @@ public class EditOperationAnalyzer {
             fieldTypeChanged(editOperation);
         } else if (from.isOfType(SchemaGraph.ARGUMENT)) {
             argumentTypeOrDefaultValueChanged(editOperation);
+        } else if (from.isOfType(SchemaGraph.INPUT_FIELD)) {
+            inputFieldTypeOrDefaultValueChanged(editOperation);
+        }
+    }
+
+    private void inputFieldTypeOrDefaultValueChanged(EditOperation editOperation) {
+        Edge targetEdge = editOperation.getTargetEdge();
+        Vertex inputField = targetEdge.getFrom();
+        Vertex inputObject = newSchemaGraph.getInputObjectForInputField(inputField);
+        String oldDefaultValue = getDefaultValueFromEdgeLabel(editOperation.getSourceEdge());
+        String newDefaultValue = getDefaultValueFromEdgeLabel(editOperation.getTargetEdge());
+        if (!oldDefaultValue.equals(newDefaultValue)) {
+
+        }
+        String oldType = getTypeFromEdgeLabel(editOperation.getSourceEdge());
+        String newType = getTypeFromEdgeLabel(editOperation.getTargetEdge());
+        if (!oldType.equals(newType)) {
+            InputObjectFieldTypeModification inputObjectFieldTypeModification = new InputObjectFieldTypeModification(inputField.getName(), oldType, newType);
+            getInputObjectModification(inputObject.getName()).getDetails().add(inputObjectFieldTypeModification);
         }
     }
 

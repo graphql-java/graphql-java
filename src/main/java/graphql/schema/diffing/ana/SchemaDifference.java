@@ -750,6 +750,30 @@ public interface SchemaDifference {
         }
     }
 
+    class InputObjectFieldTypeModification implements InputObjectModificationDetail {
+        private final String fieldName;
+        private final String oldType;
+        private final String newType;
+
+        public InputObjectFieldTypeModification(String fieldName, String oldType, String newType) {
+            this.fieldName = fieldName;
+            this.oldType = oldType;
+            this.newType = newType;
+        }
+
+        public String getFieldName() {
+            return fieldName;
+        }
+
+        public String getOldType() {
+            return oldType;
+        }
+
+        public String getNewType() {
+            return newType;
+        }
+    }
+
     class InputObjectFieldAddition implements InputObjectModificationDetail {
         private final String name;
 

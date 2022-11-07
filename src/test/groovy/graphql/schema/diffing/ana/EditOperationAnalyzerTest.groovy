@@ -1312,6 +1312,34 @@ class EditOperationAnalyzerTest extends Specification {
         fieldDeletion.newName == "barNew"
     }
 
+    def "input object wrapping type changed"() {
+        given:
+        def oldSdl = '''
+        type Query {
+            foo(arg: I): String
+        }
+        input I {
+            bar: String
+        }
+        '''
+        def newSdl = '''
+        type Query {
+            foo(arg: I): String
+        }
+        input I {
+            bar: [String]
+        }
+        '''
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+        then:
+        changes.inputObjectDifferences["I"] instanceof InputObjectModification
+        def modification = changes.inputObjectDifferences["I"] as InputObjectModification
+        def typeModification = modification.getDetails(InputObjectFieldTypeModification)[0]
+        typeModification.oldType == "String"
+        typeModification.newType == "[String]"
+    }
+
     def "input object deleted"() {
         given:
         def oldSdl = '''
