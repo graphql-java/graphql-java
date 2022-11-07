@@ -657,8 +657,26 @@ public class EditOperationAnalyzer {
             typeEdgeInsertedForField(editOperation, editOperations, mapping);
         } else if (from.isOfType(SchemaGraph.ARGUMENT)) {
             typeEdgeInsertedForArgument(editOperation, editOperations, mapping);
+        } else if (from.isOfType(SchemaGraph.INPUT_FIELD)) {
+            typeEdgeInsertedForInputField(editOperation, editOperations, mapping);
         }
 
+    }
+
+    private void typeEdgeInsertedForInputField(EditOperation editOperation, List<EditOperation> editOperations, Mapping mapping) {
+        Vertex inputField = editOperation.getTargetEdge().getFrom();
+        Vertex inputObject = newSchemaGraph.getInputObjectForInputField(inputField);
+        if (isInputObjectAdded(inputObject.getName())) {
+            return;
+        }
+        if (isNewInputFieldExistingInputObject(inputObject.getName(), inputField.getName())) {
+            return;
+        }
+        String newType = getTypeFromEdgeLabel(editOperation.getTargetEdge());
+        EditOperation deletedTypeEdgeOperation = findDeletedEdge(inputField, editOperations, mapping);
+        String oldType = getTypeFromEdgeLabel(deletedTypeEdgeOperation.getSourceEdge());
+        InputObjectFieldTypeModification inputObjectFieldTypeModification = new InputObjectFieldTypeModification(inputField.getName(), oldType, newType);
+        getInputObjectModification(inputObject.getName()).getDetails().add(inputObjectFieldTypeModification);
     }
 
     private void typeEdgeInsertedForArgument(EditOperation editOperation, List<EditOperation> editOperations, Mapping mapping) {
