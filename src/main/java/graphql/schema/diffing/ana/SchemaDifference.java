@@ -731,6 +731,25 @@ public interface SchemaDifference {
             return name;
         }
     }
+
+    class InputObjectFieldRename implements InputObjectModificationDetail {
+        private final String oldName;
+        private final String newName;
+
+        public InputObjectFieldRename(String oldName, String newName) {
+            this.oldName = oldName;
+            this.newName = newName;
+        }
+
+        public String getOldName() {
+            return oldName;
+        }
+
+        public String getNewName() {
+            return newName;
+        }
+    }
+
     class InputObjectFieldAddition implements InputObjectModificationDetail {
         private final String name;
 

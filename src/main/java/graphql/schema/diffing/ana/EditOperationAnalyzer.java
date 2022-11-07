@@ -120,8 +120,10 @@ public class EditOperationAnalyzer {
                 case CHANGE_VERTEX:
                     if (editOperation.getTargetVertex().isOfType(SchemaGraph.FIELD)) {
                         fieldChanged(editOperation);
-                    }else if (editOperation.getTargetVertex().isOfType(SchemaGraph.ARGUMENT)) {
+                    } else if (editOperation.getTargetVertex().isOfType(SchemaGraph.ARGUMENT)) {
                         handleArgumentChange(editOperation);
+                    } else if (editOperation.getTargetVertex().isOfType(SchemaGraph.INPUT_FIELD)) {
+                        handleInputFieldChange(editOperation);
                     }
                     break;
                 case INSERT_VERTEX:
@@ -360,6 +362,13 @@ public class EditOperationAnalyzer {
                     break;
             }
         }
+    }
+
+    private void handleInputFieldChange(EditOperation editOperation) {
+        Vertex inputField = editOperation.getTargetVertex();
+        Vertex inputObject = newSchemaGraph.getInputObjectForInputField(inputField);
+        String oldName = editOperation.getSourceVertex().getName();
+        getInputObjectModification(inputObject.getName()).getDetails().add(new InputObjectFieldRename(oldName, inputField.getName()));
     }
 
     private void handleArgumentChange(EditOperation editOperation) {

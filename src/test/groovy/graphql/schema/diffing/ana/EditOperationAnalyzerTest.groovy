@@ -1284,6 +1284,34 @@ class EditOperationAnalyzerTest extends Specification {
         fieldDeletion.name == "toDelete"
     }
 
+    def "input object field renamed"() {
+        given:
+        def oldSdl = '''
+        type Query {
+            foo(arg: I): String
+        }
+        input I {
+            bar: String
+        }
+        '''
+        def newSdl = '''
+        type Query {
+            foo(arg: I): String
+        }
+        input I {
+            barNew: String
+        }
+        '''
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+        then:
+        changes.inputObjectDifferences["I"] instanceof InputObjectModification
+        def modification = changes.inputObjectDifferences["I"] as InputObjectModification
+        def fieldDeletion = modification.getDetails(InputObjectFieldRename)[0]
+        fieldDeletion.oldName == "bar"
+        fieldDeletion.newName == "barNew"
+    }
+
     def "input object deleted"() {
         given:
         def oldSdl = '''
