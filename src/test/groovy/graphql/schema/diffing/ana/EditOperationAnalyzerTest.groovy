@@ -1228,6 +1228,34 @@ class EditOperationAnalyzerTest extends Specification {
         (changes.inputObjectDifferences["I"] as InputObjectAddition).getName() == "I"
     }
 
+    def "input object field added"() {
+        given:
+        def oldSdl = '''
+        type Query {
+            foo(arg: I): String
+        }
+        input I {
+            bar: String
+        }
+        '''
+        def newSdl = '''
+        type Query {
+            foo(arg: I): String
+        }
+        input I {
+            bar: String
+            newField: String
+        }
+        '''
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+        then:
+        changes.inputObjectDifferences["I"] instanceof InputObjectModification
+        def modification = changes.inputObjectDifferences["I"] as InputObjectModification
+        def fieldAddition = modification.getDetails(InputObjectFieldAddition)[0]
+        fieldAddition.name == "newField"
+    }
+
     def "input object deleted"() {
         given:
         def oldSdl = '''
@@ -1674,6 +1702,36 @@ class EditOperationAnalyzerTest extends Specification {
         changes.inputObjectDifferences["I"] instanceof InputObjectModification
         def appliedDirective = (changes.inputObjectDifferences["I"] as InputObjectModification).getDetails(AppliedDirectiveAddition)
         (appliedDirective[0].locationDetail as AppliedDirectiveInputObjectLocation).name == "I"
+        appliedDirective[0].name == "d"
+    }
+
+    def "input object field added applied directive"() {
+        given:
+        def oldSdl = '''
+        directive @d(arg:String) on INPUT_FIELD_DEFINITION
+        input I {
+            a: String
+        }
+        type Query {
+            foo(arg: I): String
+        }
+        '''
+        def newSdl = '''
+        directive @d(arg:String) on INPUT_FIELD_DEFINITION
+        input I {
+            a: String @d(arg: "foo")
+        }
+        type Query {
+            foo(arg: I): String
+        }
+        '''
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+        then:
+        changes.inputObjectDifferences["I"] instanceof InputObjectModification
+        def appliedDirective = (changes.inputObjectDifferences["I"] as InputObjectModification).getDetails(AppliedDirectiveAddition)
+        (appliedDirective[0].locationDetail as AppliedDirectiveInputObjectFieldLocation).inputObjectName == "I"
+        (appliedDirective[0].locationDetail as AppliedDirectiveInputObjectFieldLocation).fieldName == "a"
         appliedDirective[0].name == "d"
     }
 

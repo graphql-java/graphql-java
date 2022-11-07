@@ -127,6 +127,8 @@ public class EditOperationAnalyzer {
                         fieldAdded(editOperation);
                     } else if (editOperation.getTargetVertex().isOfType(SchemaGraph.ARGUMENT)) {
                         argumentAdded(editOperation);
+                    } else if (editOperation.getTargetVertex().isOfType(SchemaGraph.INPUT_FIELD)) {
+                        inputFieldAdded(editOperation);
                     }
                     break;
                 case DELETE_VERTEX:
@@ -277,7 +279,19 @@ public class EditOperationAnalyzer {
             }
             AppliedDirectiveInputObjectLocation location = new AppliedDirectiveInputObjectLocation(inputObject.getName());
             AppliedDirectiveAddition appliedDirectiveAddition = new AppliedDirectiveAddition(location, appliedDirective.getName());
-            getInputObjectLocation(inputObject.getName()).getDetails().add(appliedDirectiveAddition);
+            getInputObjectModification(inputObject.getName()).getDetails().add(appliedDirectiveAddition);
+        } else if (container.isOfType(SchemaGraph.INPUT_FIELD)) {
+            Vertex inputField = container;
+            Vertex inputObject = newSchemaGraph.getInputObjectForInputField(inputField);
+            if (isInputObjectAdded(inputObject.getName())) {
+                return;
+            }
+            if (isNewInputFieldExistingInputObject(inputObject.getName(), inputField.getName())) {
+                return;
+            }
+            AppliedDirectiveInputObjectFieldLocation location = new AppliedDirectiveInputObjectFieldLocation(inputObject.getName(), inputField.getName());
+            AppliedDirectiveAddition appliedDirectiveAddition = new AppliedDirectiveAddition(location, appliedDirective.getName());
+            getInputObjectModification(inputObject.getName()).getDetails().add(appliedDirectiveAddition);
         } else if (container.isOfType(SchemaGraph.UNION)) {
             Vertex union = container;
             if (isUnionAdded(union.getName())) {
@@ -469,6 +483,16 @@ public class EditOperationAnalyzer {
             String newName = field.getName();
             interfaceModification.getDetails().add(new InterfaceFieldRename(oldName, newName));
         }
+    }
+
+    private void inputFieldAdded(EditOperation editOperation) {
+        Vertex inputField = editOperation.getTargetVertex();
+        Vertex inputObject = newSchemaGraph.getInputObjectForInputField(inputField);
+        if (isInputObjectAdded(inputObject.getName())) {
+            return;
+        }
+        InputObjectModification modification = getInputObjectModification(inputObject.getName());
+        modification.getDetails().add(new InputObjectFieldAddition(inputField.getName()));
     }
 
     private void fieldAdded(EditOperation editOperation) {
@@ -942,6 +966,22 @@ public class EditOperationAnalyzer {
         return inputObjectDifferences.containsKey(name) && inputObjectDifferences.get(name) instanceof InputObjectAddition;
     }
 
+    private boolean isInputFieldAdded(String name) {
+        return inputObjectDifferences.containsKey(name) && inputObjectDifferences.get(name) instanceof InputObjectAddition;
+    }
+
+    private boolean isNewInputFieldExistingInputObject(String inputObjectName, String fieldName) {
+        if (!inputObjectDifferences.containsKey(inputObjectName)) {
+            return false;
+        }
+        if (!(inputObjectDifferences.get(inputObjectName) instanceof InputObjectModification)) {
+            return false;
+        }
+        InputObjectModification modification = (InputObjectModification) inputObjectDifferences.get(inputObjectName);
+        List<InputObjectFieldAddition> newFields = modification.getDetails(InputObjectFieldAddition.class);
+        return newFields.stream().anyMatch(detail -> detail.getName().equals(fieldName));
+    }
+
     private boolean isArgumentNewForExistingDirective(String directiveName, String argumentName) {
         if (!directiveDifferences.containsKey(directiveName)) {
             return false;
@@ -1068,7 +1108,7 @@ public class EditOperationAnalyzer {
         return (EnumModification) enumDifferences.get(newName);
     }
 
-    private InputObjectModification getInputObjectLocation(String newName) {
+    private InputObjectModification getInputObjectModification(String newName) {
         if (!inputObjectDifferences.containsKey(newName)) {
             inputObjectDifferences.put(newName, new InputObjectModification(newName));
         }

@@ -720,6 +720,18 @@ public interface SchemaDifference {
 
     }
 
+    class InputObjectFieldAddition implements InputObjectModificationDetail {
+        private final String name;
+
+        public InputObjectFieldAddition(String name) {
+            this.name = name;
+        }
+
+        public String getName() {
+            return name;
+        }
+    }
+
     class InputObjectModification implements SchemaModification, InputObjectDifference {
         private final String oldName;
         private final String newName;
@@ -1251,7 +1263,21 @@ public interface SchemaDifference {
 
 
     class AppliedDirectiveInputObjectFieldLocation implements AppliedDirectiveLocationDetail {
+        private final String inputObjectName;
+        private final String fieldName;
 
+        public AppliedDirectiveInputObjectFieldLocation(String inputObjectName, String fieldName) {
+            this.inputObjectName = inputObjectName;
+            this.fieldName = fieldName;
+        }
+
+        public String getInputObjectName() {
+            return inputObjectName;
+        }
+
+        public String getFieldName() {
+            return fieldName;
+        }
     }
 
     class AppliedDirectiveAddition implements
