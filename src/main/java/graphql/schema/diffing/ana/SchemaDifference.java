@@ -720,6 +720,17 @@ public interface SchemaDifference {
 
     }
 
+    class InputObjectFieldDeletion implements InputObjectModificationDetail {
+        private final String name;
+
+        public InputObjectFieldDeletion(String name) {
+            this.name = name;
+        }
+
+        public String getName() {
+            return name;
+        }
+    }
     class InputObjectFieldAddition implements InputObjectModificationDetail {
         private final String name;
 

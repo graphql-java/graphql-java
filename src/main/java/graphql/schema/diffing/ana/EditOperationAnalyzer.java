@@ -136,6 +136,8 @@ public class EditOperationAnalyzer {
                         argumentDeleted(editOperation);
                     } else if (editOperation.getSourceVertex().isOfType(SchemaGraph.FIELD)) {
                         fieldDeleted(editOperation);
+                    } else if (editOperation.getSourceVertex().isOfType(SchemaGraph.INPUT_FIELD)) {
+                        inputFieldDeleted(editOperation);
                     }
             }
         }
@@ -516,6 +518,15 @@ public class EditOperationAnalyzer {
             String name = field.getName();
             interfaceModification.getDetails().add(new InterfaceFieldAddition(name));
         }
+    }
+
+    private void inputFieldDeleted(EditOperation editOperation) {
+        Vertex inputField = editOperation.getSourceVertex();
+        Vertex inputObject = oldSchemaGraph.getInputObjectForInputField(inputField);
+        if (isInputObjectDeleted(inputObject.getName())) {
+            return;
+        }
+        getInputObjectModification(inputObject.getName()).getDetails().add(new InputObjectFieldDeletion(inputField.getName()));
     }
 
     private void fieldDeleted(EditOperation editOperation) {
@@ -964,6 +975,10 @@ public class EditOperationAnalyzer {
 
     private boolean isInputObjectAdded(String name) {
         return inputObjectDifferences.containsKey(name) && inputObjectDifferences.get(name) instanceof InputObjectAddition;
+    }
+
+    private boolean isInputObjectDeleted(String name) {
+        return inputObjectDifferences.containsKey(name) && inputObjectDifferences.get(name) instanceof InputObjectDeletion;
     }
 
     private boolean isInputFieldAdded(String name) {
