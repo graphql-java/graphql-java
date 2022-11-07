@@ -120,6 +120,8 @@ public class EditOperationAnalyzer {
                 case CHANGE_VERTEX:
                     if (editOperation.getTargetVertex().isOfType(SchemaGraph.FIELD)) {
                         fieldChanged(editOperation);
+                    }else if (editOperation.getTargetVertex().isOfType(SchemaGraph.ARGUMENT)) {
+                        handleArgumentChange(editOperation);
                     }
                     break;
                 case INSERT_VERTEX:
@@ -145,7 +147,6 @@ public class EditOperationAnalyzer {
         handleImplementsChanges(editOperations, mapping);
         handleUnionMemberChanges(editOperations, mapping);
         handleEnumValuesChanges(editOperations, mapping);
-        handleArgumentChanges(editOperations, mapping);
         handleAppliedDirectives(editOperations, mapping);
 
         return new EditOperationAnalysisResult(
@@ -357,17 +358,6 @@ public class EditOperationAnalyzer {
                         handleEnumValueDeleted(editOperation);
                     }
                     break;
-            }
-        }
-    }
-
-    private void handleArgumentChanges(List<EditOperation> editOperations, Mapping mapping) {
-        for (EditOperation editOperation : editOperations) {
-            switch (editOperation.getOperation()) {
-                case CHANGE_VERTEX:
-                    if (editOperation.getTargetVertex().isOfType(SchemaGraph.ARGUMENT)) {
-                        handleArgumentChange(editOperation);
-                    }
             }
         }
     }
