@@ -470,7 +470,7 @@ public class ReadmeExamples {
     }
 
     private void errorBuilderExample() {
-        GraphQLError err = GraphqlErrorBuilder.newError().message("direct").build();
+        GraphQLError err = GraphQLError.newError().message("direct").build();
 
         SpecialError specialErr = new SpecialErrorBuilder().message("special").build();
     }
