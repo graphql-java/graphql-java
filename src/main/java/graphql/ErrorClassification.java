@@ -28,15 +28,15 @@ public interface ErrorClassification {
      * This produces a simple ErrorClassification that represents the provided String.  You can
      * use this factory method to give out simple but custom error classifications.
      *
-     * @param errorType the string that represents the error classification
+     * @param errorClassification the string that represents the error classification
      *
      * @return a ErrorClassification that is that provided string
      */
-    static ErrorClassification of(String errorType) {
+    static ErrorClassification errorClassification(String errorClassification) {
         return new ErrorClassification() {
             @Override
             public String toString() {
-                return errorType;
+                return errorClassification;
             }
         };
     }

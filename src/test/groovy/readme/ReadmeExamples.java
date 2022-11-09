@@ -473,7 +473,7 @@ public class ReadmeExamples {
     private void errorBuilderExample() {
         GraphQLError err = GraphQLError.newError()
                 .message("direct")
-                .errorType(ErrorClassification.of("customClassification"))
+                .errorType(ErrorClassification.errorClassification("customClassification"))
                 .build();
 
         SpecialError specialErr = new SpecialErrorBuilder().message("special").build();
