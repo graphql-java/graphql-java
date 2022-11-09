@@ -23,4 +23,21 @@ public interface ErrorClassification {
     default Object toSpecification(GraphQLError error) {
         return String.valueOf(this);
     }
+
+    /**
+     * This produces a simple ErrorClassification that represents the provided String.  You can
+     * use this factory method to give out simple but custom error classifications.
+     *
+     * @param errorType the string that represents the error classification
+     *
+     * @return a ErrorClassification that is that provided string
+     */
+    static ErrorClassification of(String errorType) {
+        return new ErrorClassification() {
+            @Override
+            public String toString() {
+                return errorType;
+            }
+        };
+    }
 }
