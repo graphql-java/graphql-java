@@ -1239,6 +1239,14 @@ public interface SchemaDifference {
             this.interfaceName = interfaceName;
             this.fieldName = fieldName;
         }
+
+        public String getFieldName() {
+            return fieldName;
+        }
+
+        public String getInterfaceName() {
+            return interfaceName;
+        }
     }
 
     class AppliedDirectiveScalarLocation implements AppliedDirectiveLocationDetail {
@@ -1394,7 +1402,7 @@ public interface SchemaDifference {
 
     }
 
-    class AppliedDirectiveArgumentDeletion implements ObjectModificationDetail {
+    class AppliedDirectiveArgumentDeletion implements ObjectModificationDetail, InterfaceModificationDetail {
         private final AppliedDirectiveLocationDetail locationDetail;
         private final String argumentName;
 

@@ -199,6 +199,11 @@ public class EditOperationAnalyzer {
                 Vertex object = interfaceOrObjective;
                 AppliedDirectiveObjectFieldLocation location = new AppliedDirectiveObjectFieldLocation(object.getName(), field.getName());
                 getObjectModification(object.getName()).getDetails().add(new AppliedDirectiveArgumentDeletion(location, deletedArgument.getName()));
+            }else {
+                assertTrue(interfaceOrObjective.isOfType(SchemaGraph.INTERFACE));
+                Vertex interfaze = interfaceOrObjective;
+                AppliedDirectiveInterfaceFieldLocation location = new AppliedDirectiveInterfaceFieldLocation(interfaze.getName(), field.getName());
+                getInterfaceModification(interfaze.getName()).getDetails().add(new AppliedDirectiveArgumentDeletion(location, deletedArgument.getName()));
             }
         }
 

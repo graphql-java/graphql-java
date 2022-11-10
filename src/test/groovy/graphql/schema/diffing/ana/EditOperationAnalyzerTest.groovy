@@ -1984,6 +1984,39 @@ class EditOperationAnalyzerTest extends Specification {
         argumentDeletions[0].argumentName == "arg1"
     }
 
+    def "interface field applied directive argument deleted"() {
+        given:
+        def oldSdl = '''
+        directive @d(arg1:String) on FIELD_DEFINITION
+        
+        type Query implements I{
+            foo: String 
+        }
+        interface I {
+            foo: String @d(arg1: "foo")
+        }
+        '''
+        def newSdl = '''
+        directive @d(arg1:String) on FIELD_DEFINITION
+        
+        type Query implements I{
+            foo: String 
+        }
+        interface I {
+            foo: String @d
+        }
+        '''
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+        then:
+        changes.interfaceDifferences["I"] instanceof InterfaceModification
+        def argumentDeletions = (changes.interfaceDifferences["I"] as InterfaceModification).getDetails(AppliedDirectiveArgumentDeletion)
+        def location = argumentDeletions[0].locationDetail as AppliedDirectiveInterfaceFieldLocation
+        location.interfaceName == "I"
+        location.fieldName == "foo"
+        argumentDeletions[0].argumentName == "arg1"
+    }
+
 
     EditOperationAnalysisResult calcDiff(
             String oldSdl,
