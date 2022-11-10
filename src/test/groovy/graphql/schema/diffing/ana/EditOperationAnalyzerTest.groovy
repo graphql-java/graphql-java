@@ -1368,6 +1368,34 @@ class EditOperationAnalyzerTest extends Specification {
         typeModification.newType == "ID"
     }
 
+    def "input object field default value changed"() {
+        given:
+        def oldSdl = '''
+        type Query {
+            foo(arg: I): String
+        }
+        input I {
+            bar: String = "A"
+        }
+        '''
+        def newSdl = '''
+        type Query {
+            foo(arg: I): String
+        }
+        input I {
+            bar: String = "B"
+        }
+        '''
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+        then:
+        changes.inputObjectDifferences["I"] instanceof InputObjectModification
+        def modification = changes.inputObjectDifferences["I"] as InputObjectModification
+        def modificationDetail = modification.getDetails(InputObjectFieldDefaultValueModification)[0]
+        modificationDetail.oldDefaultValue == '"A"'
+        modificationDetail.newDefaultValue == '"B"'
+    }
+
     def "input object deleted"() {
         given:
         def oldSdl = '''

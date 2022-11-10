@@ -824,7 +824,8 @@ public class EditOperationAnalyzer {
         String oldDefaultValue = getDefaultValueFromEdgeLabel(editOperation.getSourceEdge());
         String newDefaultValue = getDefaultValueFromEdgeLabel(editOperation.getTargetEdge());
         if (!oldDefaultValue.equals(newDefaultValue)) {
-
+            InputObjectFieldDefaultValueModification modification = new InputObjectFieldDefaultValueModification(inputField.getName(), oldDefaultValue, newDefaultValue);
+            getInputObjectModification(inputObject.getName()).getDetails().add(modification);
         }
         String oldType = getTypeFromEdgeLabel(editOperation.getSourceEdge());
         String newType = getTypeFromEdgeLabel(editOperation.getTargetEdge());
