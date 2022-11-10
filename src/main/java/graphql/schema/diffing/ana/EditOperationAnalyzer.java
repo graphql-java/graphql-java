@@ -161,6 +161,7 @@ public class EditOperationAnalyzer {
                 directiveDifferences);
     }
 
+
     private void handleAppliedDirectives(List<EditOperation> editOperations, Mapping mapping) {
 
         for (EditOperation editOperation : editOperations) {
@@ -175,7 +176,29 @@ public class EditOperationAnalyzer {
                         appliedDirectiveArgumentChanged(editOperation);
                     }
                     break;
+                case DELETE_VERTEX:
+                    if (editOperation.getSourceVertex().isOfType(SchemaGraph.APPLIED_ARGUMENT)) {
+                        appliedDirectiveArgumentDeleted(editOperation);
+                    }
+                    break;
 
+            }
+        }
+
+    }
+
+    private void appliedDirectiveArgumentDeleted(EditOperation editOperation) {
+        Vertex deletedArgument = editOperation.getSourceVertex();
+        Vertex appliedDirective = oldSchemaGraph.getAppliedDirectiveForAppliedArgument(deletedArgument);
+        Vertex container = oldSchemaGraph.getAppliedDirectiveContainerForAppliedDirective(appliedDirective);
+
+        if (container.isOfType(SchemaGraph.FIELD)) {
+            Vertex field = container;
+            Vertex interfaceOrObjective = oldSchemaGraph.getFieldsContainerForField(field);
+            if (interfaceOrObjective.isOfType(SchemaGraph.OBJECT)) {
+                Vertex object = interfaceOrObjective;
+                AppliedDirectiveObjectFieldLocation location = new AppliedDirectiveObjectFieldLocation(object.getName(), field.getName());
+                getObjectModification(object.getName()).getDetails().add(new AppliedDirectiveArgumentDeletion(location, deletedArgument.getName()));
             }
         }
 
@@ -809,7 +832,7 @@ public class EditOperationAnalyzer {
         Vertex from = targetEdge.getFrom();
         Vertex to = targetEdge.getTo();
         if (from.isOfType(SchemaGraph.FIELD)) {
-            fieldTypeChanged(editOperation);
+            outputFieldTypeChanged(editOperation);
         } else if (from.isOfType(SchemaGraph.ARGUMENT)) {
             argumentTypeOrDefaultValueChanged(editOperation);
         } else if (from.isOfType(SchemaGraph.INPUT_FIELD)) {
@@ -898,7 +921,7 @@ public class EditOperationAnalyzer {
 
     }
 
-    private void fieldTypeChanged(EditOperation editOperation) {
+    private void outputFieldTypeChanged(EditOperation editOperation) {
         Edge targetEdge = editOperation.getTargetEdge();
         Vertex field = targetEdge.getFrom();
         Vertex container = newSchemaGraph.getFieldsContainerForField(field);

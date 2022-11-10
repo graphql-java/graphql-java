@@ -1957,6 +1957,33 @@ class EditOperationAnalyzerTest extends Specification {
         argumentRenames[0].newName == "arg2"
     }
 
+    def "object field applied directive argument deleted"() {
+        given:
+        def oldSdl = '''
+        directive @d(arg1:String) on FIELD_DEFINITION
+        
+        type Query {
+            foo: String @d(arg1: "foo")
+        }
+        '''
+        def newSdl = '''
+        directive @d(arg1: String)  on FIELD_DEFINITION
+        
+        type Query {
+            foo: String @d
+        }
+        '''
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+        then:
+        changes.objectDifferences["Query"] instanceof ObjectModification
+        def argumentDeletions = (changes.objectDifferences["Query"] as ObjectModification).getDetails(AppliedDirectiveArgumentDeletion)
+        def location = argumentDeletions[0].locationDetail as AppliedDirectiveObjectFieldLocation
+        location.objectName == "Query"
+        location.fieldName == "foo"
+        argumentDeletions[0].argumentName == "arg1"
+    }
+
 
     EditOperationAnalysisResult calcDiff(
             String oldSdl,

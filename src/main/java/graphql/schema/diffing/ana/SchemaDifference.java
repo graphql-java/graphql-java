@@ -773,6 +773,7 @@ public interface SchemaDifference {
             return newDefaultValue;
         }
     }
+
     class InputObjectFieldTypeModification implements InputObjectModificationDetail {
         private final String fieldName;
         private final String oldType;
@@ -1393,9 +1394,24 @@ public interface SchemaDifference {
 
     }
 
-    class AppliedDirectiveArgumentDeletion {
+    class AppliedDirectiveArgumentDeletion implements ObjectModificationDetail {
+        private final AppliedDirectiveLocationDetail locationDetail;
+        private final String argumentName;
 
+        public AppliedDirectiveArgumentDeletion(AppliedDirectiveLocationDetail locationDetail, String argumentName) {
+            this.locationDetail = locationDetail;
+            this.argumentName = argumentName;
+        }
+
+        public AppliedDirectiveLocationDetail getLocationDetail() {
+            return locationDetail;
+        }
+
+        public String getArgumentName() {
+            return argumentName;
+        }
     }
+
 
     class AppliedDirectiveArgumentValueModification implements ObjectModificationDetail {
         private final AppliedDirectiveLocationDetail locationDetail;
