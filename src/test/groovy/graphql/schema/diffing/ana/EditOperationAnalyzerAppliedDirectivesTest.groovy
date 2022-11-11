@@ -2,12 +2,32 @@ package graphql.schema.diffing.ana
 
 import graphql.TestUtil
 import graphql.schema.diffing.SchemaDiffing
-import spock.lang.Ignore
 import spock.lang.Specification
 
-import static graphql.schema.diffing.ana.SchemaDifference.*
+import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveAddition
+import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveArgumentDeletion
+import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveArgumentRename
+import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveArgumentValueModification
+import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveEnumLocation
+import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveEnumValueLocation
+import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveInputObjectFieldLocation
+import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveInputObjectLocation
+import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveInterfaceFieldArgumentLocation
+import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveInterfaceFieldLocation
+import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveInterfaceLocation
+import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveObjectFieldArgumentLocation
+import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveObjectFieldLocation
+import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveObjectLocation
+import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveScalarLocation
+import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveUnionLocation
+import static graphql.schema.diffing.ana.SchemaDifference.EnumModification
+import static graphql.schema.diffing.ana.SchemaDifference.InputObjectModification
+import static graphql.schema.diffing.ana.SchemaDifference.InterfaceModification
+import static graphql.schema.diffing.ana.SchemaDifference.ObjectModification
+import static graphql.schema.diffing.ana.SchemaDifference.ScalarModification
+import static graphql.schema.diffing.ana.SchemaDifference.UnionModification
 
-class EditOperationAnalyzerAppliedDirectivesTest extends Specification{
+class EditOperationAnalyzerAppliedDirectivesTest extends Specification {
 
     def "applied directive argument deleted interface field "() {
         given:
@@ -396,7 +416,6 @@ class EditOperationAnalyzerAppliedDirectivesTest extends Specification{
         appliedDirective[0].name == "d"
     }
 
-    @Ignore
     def "applied directive added interface field argument"() {
         given:
         def oldSdl = '''
