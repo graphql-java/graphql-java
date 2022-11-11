@@ -8,7 +8,7 @@ import graphql.execution.AsyncExecutionStrategy
 import graphql.execution.instrumentation.InstrumentationContext
 import graphql.execution.instrumentation.InstrumentationState
 import graphql.execution.instrumentation.LegacyTestingInstrumentation
-import graphql.execution.instrumentation.SimpleInstrumentation
+import graphql.execution.instrumentation.SimplePerformantInstrumentation
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters
 import graphql.language.Document
 import graphql.parser.Parser
@@ -163,7 +163,7 @@ class PreparsedDocumentProviderTest extends Specification {
         result1.errors[0].errorType == result2.errors[0].errorType
     }
 
-    class InputCapturingInstrumentation extends SimpleInstrumentation {
+    class InputCapturingInstrumentation extends SimplePerformantInstrumentation {
         ExecutionInput capturedInput
 
         @Override

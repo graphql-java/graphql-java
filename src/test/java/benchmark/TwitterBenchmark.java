@@ -1,17 +1,18 @@
 package benchmark;
 
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
-
-import com.github.javafaker.Code;
-
+import graphql.ExecutionInput;
+import graphql.ExecutionResult;
+import graphql.GraphQL;
+import graphql.execution.preparsed.persisted.InMemoryPersistedQueryCache;
+import graphql.execution.preparsed.persisted.PersistedQueryCache;
+import graphql.execution.preparsed.persisted.PersistedQuerySupport;
+import graphql.parser.ParserOptions;
+import graphql.schema.DataFetcher;
+import graphql.schema.GraphQLCodeRegistry;
+import graphql.schema.GraphQLFieldDefinition;
+import graphql.schema.GraphQLObjectType;
+import graphql.schema.GraphQLSchema;
+import graphql.schema.GraphQLTypeReference;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -22,34 +23,12 @@ import org.openjdk.jmh.annotations.Threads;
 import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
 
-import graphql.ExecutionInput;
-import graphql.ExecutionResult;
-import graphql.GraphQL;
-import graphql.execution.ExecutionStepInfo;
-import graphql.execution.instrumentation.tracing.TracingInstrumentation;
-import graphql.execution.preparsed.PreparsedDocumentEntry;
-import graphql.execution.preparsed.PreparsedDocumentProvider;
-import graphql.execution.preparsed.persisted.InMemoryPersistedQueryCache;
-import graphql.execution.preparsed.persisted.PersistedQueryCache;
-import graphql.execution.preparsed.persisted.PersistedQuerySupport;
-import graphql.schema.DataFetcher;
-import graphql.schema.DataFetcherFactory;
-import graphql.schema.DataFetcherFactoryEnvironment;
-import graphql.schema.DataFetchingEnvironment;
-import graphql.schema.FieldCoordinates;
-import graphql.schema.GraphQLCodeRegistry;
-import graphql.schema.GraphQLFieldDefinition;
-import graphql.schema.GraphQLObjectType;
-import graphql.schema.GraphQLSchema;
-import graphql.schema.GraphQLTypeReference;
-import graphql.schema.idl.RuntimeWiring;
-import graphql.schema.idl.SchemaGenerator;
-import graphql.schema.idl.SchemaGeneratorHelper;
-import graphql.schema.idl.SchemaParser;
-import graphql.schema.idl.TypeDefinitionRegistry;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 
 import static graphql.Scalars.GraphQLString;
-import static graphql.schema.idl.TypeRuntimeWiring.newTypeWiring;
 
 @Warmup(iterations = 8, time = 10)
 @Measurement(iterations = 25, time = 10)
@@ -94,6 +73,8 @@ public class TwitterBenchmark {
   }
 
   private static GraphQL buildGraphQL() {
+    ParserOptions.setDefaultOperationParserOptions(ParserOptions.newParserOptions().maxTokens(100_000).build());
+
     List<GraphQLFieldDefinition> leafFields = new ArrayList<>(BREADTH);
     for (int i = 1; i <= BREADTH; i++) {
       leafFields.add(
@@ -116,12 +97,7 @@ public class TwitterBenchmark {
     DataFetcher<Object> simpleFetcher = env -> env.getField().getName();
     GraphQLCodeRegistry codeReg = GraphQLCodeRegistry.newCodeRegistry()
         .defaultDataFetcher(
-          new DataFetcherFactory<Object>() {
-            @Override
-            public DataFetcher<Object> get(DataFetcherFactoryEnvironment environment) {
-              return simpleFetcher;
-            }
-          }
+            environment -> simpleFetcher
         )
         .build();
 
@@ -156,6 +132,6 @@ public class TwitterBenchmark {
 
   public static void main(String[] args) {
     ExecutionResult result = execute();
-    int i = 0;
+    System.out.println(result);
   }
 }

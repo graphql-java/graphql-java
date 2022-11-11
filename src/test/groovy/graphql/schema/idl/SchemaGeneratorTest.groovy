@@ -1831,14 +1831,14 @@ class SchemaGeneratorTest extends Specification {
 
         def extraDirective = (GraphQLDirective.newDirective()).name("extra")
                 .argument(GraphQLArgument.newArgument().name("value").type(GraphQLString)).build()
-        def transformer = new SchemaGeneratorPostProcessing() {
+        def transformer = new SchemaGeneratorPostProcessing() {  // Retained to show deprecated code is still run
             @Override
             GraphQLSchema process(GraphQLSchema originalSchema) {
                 originalSchema.transform({ builder -> builder.additionalDirective(extraDirective) })
             }
         }
         def wiring = RuntimeWiring.newRuntimeWiring()
-                .transformer(transformer)
+                .transformer(transformer) // Retained to show deprecated code is still run
                 .build()
         GraphQLSchema schema = new SchemaGenerator().makeExecutableSchema(types, wiring)
         expect:

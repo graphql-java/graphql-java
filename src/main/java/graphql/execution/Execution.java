@@ -155,12 +155,12 @@ public class Execution {
             }
             result = executionStrategy.execute(executionContext, parameters);
         } catch (NonNullableFieldWasNullException e) {
-            // this means it was non null types all the way from an offending non null type
-            // up to the root object type and there was a a null value some where.
+            // this means it was non-null types all the way from an offending non-null type
+            // up to the root object type and there was a null value somewhere.
             //
             // The spec says we should return null for the data in this case
             //
-            // http://facebook.github.io/graphql/#sec-Errors-and-Non-Nullability
+            // https://spec.graphql.org/October2021/#sec-Handling-Field-Errors
             //
             result = completedFuture(new ExecutionResultImpl(null, executionContext.getErrors()));
         }

@@ -1,5 +1,6 @@
 package graphql.schema.idl;
 
+import graphql.DeprecatedAt;
 import graphql.PublicApi;
 import graphql.schema.DataFetcher;
 import graphql.schema.GraphQLCodeRegistry;
@@ -352,7 +353,11 @@ public class RuntimeWiring {
          * @param schemaGeneratorPostProcessing the non null schema transformer to add
          *
          * @return the runtime wiring builder
+         * @deprecated This mechanism can be achieved in a better way via {@link graphql.schema.SchemaTransformer}
+         * after the schema is built
          */
+        @Deprecated
+        @DeprecatedAt(value = "2022-10-29")
         public Builder transformer(SchemaGeneratorPostProcessing schemaGeneratorPostProcessing) {
             this.schemaGeneratorPostProcessings.add(assertNotNull(schemaGeneratorPostProcessing));
             return this;

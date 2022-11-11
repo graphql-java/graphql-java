@@ -13,7 +13,7 @@ import static graphql.validation.ValidationErrorType.DuplicateOperationName;
 
 /**
  * A GraphQL document is only valid if all defined operations have unique names.
- * http://facebook.github.io/graphql/October2016/#sec-Operation-Name-Uniqueness
+ * https://spec.graphql.org/October2021/#sec-Operation-Name-Uniqueness
  */
 @Internal
 public class UniqueOperationNames extends AbstractRule {

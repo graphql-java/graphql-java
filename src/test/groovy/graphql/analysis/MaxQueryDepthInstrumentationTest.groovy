@@ -94,7 +94,7 @@ class MaxQueryDepthInstrumentationTest extends Specification {
         def executionContext = executionCtx(executionInput, query, schema)
         def executeOperationParameters = new InstrumentationExecuteOperationParameters(executionContext)
         when:
-        maximumQueryDepthInstrumentation.beginExecuteOperation(executeOperationParameters) // Retain for test coverage
+        maximumQueryDepthInstrumentation.beginExecuteOperation(executeOperationParameters, null) // Retain for test coverage
         then:
         notThrown(Exception)
     }
