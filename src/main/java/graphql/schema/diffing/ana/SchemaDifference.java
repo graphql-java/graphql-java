@@ -1313,6 +1313,30 @@ public interface SchemaDifference {
         }
     }
 
+    class AppliedDirectiveInterfaceFieldArgumentLocation implements AppliedDirectiveLocationDetail {
+        private final String interfaceName;
+        private final String fieldName;
+        private final String argumentName;
+
+        public AppliedDirectiveInterfaceFieldArgumentLocation(String interfaceName, String fieldName, String argumentName) {
+            this.interfaceName = interfaceName;
+            this.fieldName = fieldName;
+            this.argumentName = argumentName;
+        }
+
+        public String getInterfaceName() {
+            return interfaceName;
+        }
+
+        public String getFieldName() {
+            return fieldName;
+        }
+
+        public String getArgumentName() {
+            return argumentName;
+        }
+    }
+
     class AppliedDirectiveUnionLocation implements AppliedDirectiveLocationDetail {
         private final String name;
 
