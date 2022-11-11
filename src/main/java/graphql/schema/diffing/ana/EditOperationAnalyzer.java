@@ -261,6 +261,26 @@ public class EditOperationAnalyzer {
                 AppliedDirectiveAddition appliedDirectiveAddition = new AppliedDirectiveAddition(location, appliedDirective.getName());
                 getObjectModification(object.getName()).getDetails().add(appliedDirectiveAddition);
             }
+        }else if(container.isOfType(SchemaGraph.ARGUMENT)) {
+            Vertex argument = container;
+            Vertex field = newSchemaGraph.getFieldOrDirectiveForArgument(argument);
+            Vertex interfaceOrObjective = newSchemaGraph.getFieldsContainerForField(field);
+            if(interfaceOrObjective.isOfType(SchemaGraph.OBJECT)) {
+                Vertex object = interfaceOrObjective;
+                if (isObjectAdded(object.getName())) {
+                    return;
+                }
+                if (isFieldNewForExistingObject(object.getName(), field.getName())) {
+                    return;
+                }
+                if (isArgumentNewForExistingObjectField(object.getName(), field.getName(), argument.getName())) {
+                    return;
+                }
+                AppliedDirectiveObjectFieldArgumentLocation location = new AppliedDirectiveObjectFieldArgumentLocation(object.getName(), field.getName(),argument.getName());
+                AppliedDirectiveAddition appliedDirectiveAddition = new AppliedDirectiveAddition(location, appliedDirective.getName());
+                getObjectModification(object.getName()).getDetails().add(appliedDirectiveAddition);
+            }
+
         } else if (container.isOfType(SchemaGraph.OBJECT)) {
             Vertex object = container;
             if (isObjectAdded(object.getName())) {

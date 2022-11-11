@@ -1289,8 +1289,28 @@ public interface SchemaDifference {
         }
     }
 
-    class AppliedDirectiveArgumentLocation implements AppliedDirectiveLocationDetail {
+    class AppliedDirectiveObjectFieldArgumentLocation implements AppliedDirectiveLocationDetail {
+        private final String objectName;
+        private final String fieldName;
+        private final String argumentName;
 
+        public AppliedDirectiveObjectFieldArgumentLocation(String objectName, String fieldName, String argumentName) {
+            this.objectName = objectName;
+            this.fieldName = fieldName;
+            this.argumentName = argumentName;
+        }
+
+        public String getObjectName() {
+            return objectName;
+        }
+
+        public String getFieldName() {
+            return fieldName;
+        }
+
+        public String getArgumentName() {
+            return argumentName;
+        }
     }
 
     class AppliedDirectiveUnionLocation implements AppliedDirectiveLocationDetail {

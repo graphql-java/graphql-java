@@ -4,9 +4,11 @@ import graphql.TestUtil
 import graphql.schema.diffing.SchemaDiffing
 import spock.lang.Specification
 
+import static graphql.schema.diffing.ana.SchemaDifference.*
+
 class EditOperationAnalyzerAppliedDirectivesTest extends Specification{
 
-    def "interface field applied directive argument deleted"() {
+    def "applied directive argument deleted interface field "() {
         given:
         def oldSdl = '''
         directive @d(arg1:String) on FIELD_DEFINITION
@@ -31,15 +33,15 @@ class EditOperationAnalyzerAppliedDirectivesTest extends Specification{
         when:
         def changes = calcDiff(oldSdl, newSdl)
         then:
-        changes.interfaceDifferences["I"] instanceof SchemaDifference.InterfaceModification
-        def argumentDeletions = (changes.interfaceDifferences["I"] as SchemaDifference.InterfaceModification).getDetails(SchemaDifference.AppliedDirectiveArgumentDeletion)
-        def location = argumentDeletions[0].locationDetail as SchemaDifference.AppliedDirectiveInterfaceFieldLocation
+        changes.interfaceDifferences["I"] instanceof InterfaceModification
+        def argumentDeletions = (changes.interfaceDifferences["I"] as InterfaceModification).getDetails(AppliedDirectiveArgumentDeletion)
+        def location = argumentDeletions[0].locationDetail as AppliedDirectiveInterfaceFieldLocation
         location.interfaceName == "I"
         location.fieldName == "foo"
         argumentDeletions[0].argumentName == "arg1"
     }
 
-    def "input object field added applied directive"() {
+    def "applied directive added input object field "() {
         given:
         def oldSdl = '''
         directive @d(arg:String) on INPUT_FIELD_DEFINITION
@@ -62,14 +64,14 @@ class EditOperationAnalyzerAppliedDirectivesTest extends Specification{
         when:
         def changes = calcDiff(oldSdl, newSdl)
         then:
-        changes.inputObjectDifferences["I"] instanceof SchemaDifference.InputObjectModification
-        def appliedDirective = (changes.inputObjectDifferences["I"] as SchemaDifference.InputObjectModification).getDetails(SchemaDifference.AppliedDirectiveAddition)
-        (appliedDirective[0].locationDetail as SchemaDifference.AppliedDirectiveInputObjectFieldLocation).inputObjectName == "I"
-        (appliedDirective[0].locationDetail as SchemaDifference.AppliedDirectiveInputObjectFieldLocation).fieldName == "a"
+        changes.inputObjectDifferences["I"] instanceof InputObjectModification
+        def appliedDirective = (changes.inputObjectDifferences["I"] as InputObjectModification).getDetails(AppliedDirectiveAddition)
+        (appliedDirective[0].locationDetail as AppliedDirectiveInputObjectFieldLocation).inputObjectName == "I"
+        (appliedDirective[0].locationDetail as AppliedDirectiveInputObjectFieldLocation).fieldName == "a"
         appliedDirective[0].name == "d"
     }
 
-    def "object field added applied directive"() {
+    def "applied directive added object field"() {
         given:
         def oldSdl = '''
         directive @d(arg:String) on FIELD_DEFINITION
@@ -88,14 +90,14 @@ class EditOperationAnalyzerAppliedDirectivesTest extends Specification{
         when:
         def changes = calcDiff(oldSdl, newSdl)
         then:
-        changes.objectDifferences["Query"] instanceof SchemaDifference.ObjectModification
-        def appliedDirective = (changes.objectDifferences["Query"] as SchemaDifference.ObjectModification).getDetails(SchemaDifference.AppliedDirectiveAddition)
-        (appliedDirective[0].locationDetail as SchemaDifference.AppliedDirectiveObjectFieldLocation).objectName == "Query"
-        (appliedDirective[0].locationDetail as SchemaDifference.AppliedDirectiveObjectFieldLocation).fieldName == "foo"
+        changes.objectDifferences["Query"] instanceof ObjectModification
+        def appliedDirective = (changes.objectDifferences["Query"] as ObjectModification).getDetails(AppliedDirectiveAddition)
+        (appliedDirective[0].locationDetail as AppliedDirectiveObjectFieldLocation).objectName == "Query"
+        (appliedDirective[0].locationDetail as AppliedDirectiveObjectFieldLocation).fieldName == "foo"
         appliedDirective[0].name == "d"
     }
 
-    def "object field applied directive argument value changed"() {
+    def "applied directive argument value changed object field "() {
         given:
         def oldSdl = '''
         directive @d(arg:String) on FIELD_DEFINITION
@@ -114,16 +116,16 @@ class EditOperationAnalyzerAppliedDirectivesTest extends Specification{
         when:
         def changes = calcDiff(oldSdl, newSdl)
         then:
-        changes.objectDifferences["Query"] instanceof SchemaDifference.ObjectModification
-        def argumentValueModifications = (changes.objectDifferences["Query"] as SchemaDifference.ObjectModification).getDetails(SchemaDifference.AppliedDirectiveArgumentValueModification)
-        (argumentValueModifications[0].locationDetail as SchemaDifference.AppliedDirectiveObjectFieldLocation).objectName == "Query"
-        (argumentValueModifications[0].locationDetail as SchemaDifference.AppliedDirectiveObjectFieldLocation).fieldName == "foo"
+        changes.objectDifferences["Query"] instanceof ObjectModification
+        def argumentValueModifications = (changes.objectDifferences["Query"] as ObjectModification).getDetails(AppliedDirectiveArgumentValueModification)
+        (argumentValueModifications[0].locationDetail as AppliedDirectiveObjectFieldLocation).objectName == "Query"
+        (argumentValueModifications[0].locationDetail as AppliedDirectiveObjectFieldLocation).fieldName == "foo"
         argumentValueModifications[0].argumentName == "arg"
         argumentValueModifications[0].oldValue == '"foo1"'
         argumentValueModifications[0].newValue == '"foo2"'
     }
 
-    def "object field applied directive argument name changed"() {
+    def "applied directive argument name changed object field"() {
         given:
         def oldSdl = '''
         directive @d(arg1:String, arg2: String) on FIELD_DEFINITION
@@ -142,16 +144,16 @@ class EditOperationAnalyzerAppliedDirectivesTest extends Specification{
         when:
         def changes = calcDiff(oldSdl, newSdl)
         then:
-        changes.objectDifferences["Query"] instanceof SchemaDifference.ObjectModification
-        def argumentRenames = (changes.objectDifferences["Query"] as SchemaDifference.ObjectModification).getDetails(SchemaDifference.AppliedDirectiveArgumentRename)
-        def location = argumentRenames[0].locationDetail as SchemaDifference.AppliedDirectiveObjectFieldLocation
+        changes.objectDifferences["Query"] instanceof ObjectModification
+        def argumentRenames = (changes.objectDifferences["Query"] as ObjectModification).getDetails(AppliedDirectiveArgumentRename)
+        def location = argumentRenames[0].locationDetail as AppliedDirectiveObjectFieldLocation
         location.objectName == "Query"
         location.fieldName == "foo"
         argumentRenames[0].oldName == "arg1"
         argumentRenames[0].newName == "arg2"
     }
 
-    def "object field applied directive argument deleted"() {
+    def "applied directive argument deleted object field"() {
         given:
         def oldSdl = '''
         directive @d(arg1:String) on FIELD_DEFINITION
@@ -170,15 +172,15 @@ class EditOperationAnalyzerAppliedDirectivesTest extends Specification{
         when:
         def changes = calcDiff(oldSdl, newSdl)
         then:
-        changes.objectDifferences["Query"] instanceof SchemaDifference.ObjectModification
-        def argumentDeletions = (changes.objectDifferences["Query"] as SchemaDifference.ObjectModification).getDetails(SchemaDifference.AppliedDirectiveArgumentDeletion)
-        def location = argumentDeletions[0].locationDetail as SchemaDifference.AppliedDirectiveObjectFieldLocation
+        changes.objectDifferences["Query"] instanceof ObjectModification
+        def argumentDeletions = (changes.objectDifferences["Query"] as ObjectModification).getDetails(AppliedDirectiveArgumentDeletion)
+        def location = argumentDeletions[0].locationDetail as AppliedDirectiveObjectFieldLocation
         location.objectName == "Query"
         location.fieldName == "foo"
         argumentDeletions[0].argumentName == "arg1"
     }
 
-    def "input object added applied directive"() {
+    def "applied directive added input object"() {
         given:
         def oldSdl = '''
         directive @d(arg:String) on INPUT_OBJECT
@@ -201,13 +203,13 @@ class EditOperationAnalyzerAppliedDirectivesTest extends Specification{
         when:
         def changes = calcDiff(oldSdl, newSdl)
         then:
-        changes.inputObjectDifferences["I"] instanceof SchemaDifference.InputObjectModification
-        def appliedDirective = (changes.inputObjectDifferences["I"] as SchemaDifference.InputObjectModification).getDetails(SchemaDifference.AppliedDirectiveAddition)
-        (appliedDirective[0].locationDetail as SchemaDifference.AppliedDirectiveInputObjectLocation).name == "I"
+        changes.inputObjectDifferences["I"] instanceof InputObjectModification
+        def appliedDirective = (changes.inputObjectDifferences["I"] as InputObjectModification).getDetails(AppliedDirectiveAddition)
+        (appliedDirective[0].locationDetail as AppliedDirectiveInputObjectLocation).name == "I"
         appliedDirective[0].name == "d"
     }
 
-    def "object added applied directive"() {
+    def "applied directive added object"() {
         given:
         def oldSdl = '''
         directive @d(arg:String) on OBJECT
@@ -226,13 +228,13 @@ class EditOperationAnalyzerAppliedDirectivesTest extends Specification{
         when:
         def changes = calcDiff(oldSdl, newSdl)
         then:
-        changes.objectDifferences["Query"] instanceof SchemaDifference.ObjectModification
-        def appliedDirective = (changes.objectDifferences["Query"] as SchemaDifference.ObjectModification).getDetails(SchemaDifference.AppliedDirectiveAddition)
-        (appliedDirective[0].locationDetail as SchemaDifference.AppliedDirectiveObjectLocation).name == "Query"
+        changes.objectDifferences["Query"] instanceof ObjectModification
+        def appliedDirective = (changes.objectDifferences["Query"] as ObjectModification).getDetails(AppliedDirectiveAddition)
+        (appliedDirective[0].locationDetail as AppliedDirectiveObjectLocation).name == "Query"
         appliedDirective[0].name == "d"
     }
 
-    def "interface added applied directive"() {
+    def "applied directive added interface"() {
         given:
         def oldSdl = '''
         directive @d(arg:String) on INTERFACE
@@ -257,13 +259,13 @@ class EditOperationAnalyzerAppliedDirectivesTest extends Specification{
         when:
         def changes = calcDiff(oldSdl, newSdl)
         then:
-        changes.interfaceDifferences["I"] instanceof SchemaDifference.InterfaceModification
-        def appliedDirective = (changes.interfaceDifferences["I"] as SchemaDifference.InterfaceModification).getDetails(SchemaDifference.AppliedDirectiveAddition)
-        (appliedDirective[0].locationDetail as SchemaDifference.AppliedDirectiveInterfaceLocation).name == "I"
+        changes.interfaceDifferences["I"] instanceof InterfaceModification
+        def appliedDirective = (changes.interfaceDifferences["I"] as InterfaceModification).getDetails(AppliedDirectiveAddition)
+        (appliedDirective[0].locationDetail as AppliedDirectiveInterfaceLocation).name == "I"
         appliedDirective[0].name == "d"
     }
 
-    def "union added applied directive"() {
+    def "applied directive added union"() {
         given:
         def oldSdl = '''
         directive @d(arg: String) on UNION
@@ -286,13 +288,13 @@ class EditOperationAnalyzerAppliedDirectivesTest extends Specification{
         when:
         def changes = calcDiff(oldSdl, newSdl)
         then:
-        changes.unionDifferences["U"] instanceof SchemaDifference.UnionModification
-        def appliedDirective = (changes.unionDifferences["U"] as SchemaDifference.UnionModification).getDetails(SchemaDifference.AppliedDirectiveAddition)
-        (appliedDirective[0].locationDetail as SchemaDifference.AppliedDirectiveUnionLocation).name == "U"
+        changes.unionDifferences["U"] instanceof UnionModification
+        def appliedDirective = (changes.unionDifferences["U"] as UnionModification).getDetails(AppliedDirectiveAddition)
+        (appliedDirective[0].locationDetail as AppliedDirectiveUnionLocation).name == "U"
         appliedDirective[0].name == "d"
     }
 
-    def "scalar added applied directive"() {
+    def "applied directive added scalar"() {
         given:
         def oldSdl = '''
         directive @d(arg:String) on SCALAR
@@ -311,13 +313,13 @@ class EditOperationAnalyzerAppliedDirectivesTest extends Specification{
         when:
         def changes = calcDiff(oldSdl, newSdl)
         then:
-        changes.scalarDifferences["DateTime"] instanceof SchemaDifference.ScalarModification
-        def appliedDirective = (changes.scalarDifferences["DateTime"] as SchemaDifference.ScalarModification).getDetails(SchemaDifference.AppliedDirectiveAddition)
-        (appliedDirective[0].locationDetail as SchemaDifference.AppliedDirectiveScalarLocation).name == "DateTime"
+        changes.scalarDifferences["DateTime"] instanceof ScalarModification
+        def appliedDirective = (changes.scalarDifferences["DateTime"] as ScalarModification).getDetails(AppliedDirectiveAddition)
+        (appliedDirective[0].locationDetail as AppliedDirectiveScalarLocation).name == "DateTime"
         appliedDirective[0].name == "d"
     }
 
-    def "enum added applied directive"() {
+    def "applied directive added enum"() {
         given:
         def oldSdl = '''
         directive @d(arg:String) on ENUM
@@ -336,13 +338,13 @@ class EditOperationAnalyzerAppliedDirectivesTest extends Specification{
         when:
         def changes = calcDiff(oldSdl, newSdl)
         then:
-        changes.enumDifferences["E"] instanceof SchemaDifference.EnumModification
-        def appliedDirective = (changes.enumDifferences["E"] as SchemaDifference.EnumModification).getDetails(SchemaDifference.AppliedDirectiveAddition)
-        (appliedDirective[0].locationDetail as SchemaDifference.AppliedDirectiveEnumLocation).name == "E"
+        changes.enumDifferences["E"] instanceof EnumModification
+        def appliedDirective = (changes.enumDifferences["E"] as EnumModification).getDetails(AppliedDirectiveAddition)
+        (appliedDirective[0].locationDetail as AppliedDirectiveEnumLocation).name == "E"
         appliedDirective[0].name == "d"
     }
 
-    def "enum value added applied directive"() {
+    def "applied directive added enum value"() {
         given:
         def oldSdl = '''
         directive @d(arg:String) on ENUM_VALUE
@@ -361,13 +363,37 @@ class EditOperationAnalyzerAppliedDirectivesTest extends Specification{
         when:
         def changes = calcDiff(oldSdl, newSdl)
         then:
-        changes.enumDifferences["E"] instanceof SchemaDifference.EnumModification
-        def appliedDirective = (changes.enumDifferences["E"] as SchemaDifference.EnumModification).getDetails(SchemaDifference.AppliedDirectiveAddition)
-        (appliedDirective[0].locationDetail as SchemaDifference.AppliedDirectiveEnumValueLocation).enumName == "E"
-        (appliedDirective[0].locationDetail as SchemaDifference.AppliedDirectiveEnumValueLocation).valueName == "B"
+        changes.enumDifferences["E"] instanceof EnumModification
+        def appliedDirective = (changes.enumDifferences["E"] as EnumModification).getDetails(AppliedDirectiveAddition)
+        (appliedDirective[0].locationDetail as AppliedDirectiveEnumValueLocation).enumName == "E"
+        (appliedDirective[0].locationDetail as AppliedDirectiveEnumValueLocation).valueName == "B"
         appliedDirective[0].name == "d"
     }
 
+    def "applied directive added object field argument"() {
+        given:
+        def oldSdl = '''
+        directive @d(arg:String) on ARGUMENT_DEFINITION 
+        type Query {
+            foo(arg: String) : String 
+        }
+        '''
+        def newSdl = '''
+        directive @d(arg:String) on ARGUMENT_DEFINITION 
+        type Query {
+            foo(arg: String @d(arg: "foo")) : String 
+        }
+        '''
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+        then:
+        changes.objectDifferences["Query"] instanceof ObjectModification
+        def appliedDirective = (changes.objectDifferences["Query"] as ObjectModification).getDetails(AppliedDirectiveAddition)
+        (appliedDirective[0].locationDetail as AppliedDirectiveObjectFieldArgumentLocation).objectName == "Query"
+        (appliedDirective[0].locationDetail as AppliedDirectiveObjectFieldArgumentLocation).fieldName == "foo"
+        (appliedDirective[0].locationDetail as AppliedDirectiveObjectFieldArgumentLocation).argumentName == "arg"
+        appliedDirective[0].name == "d"
+    }
 
 
 
