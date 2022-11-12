@@ -20,6 +20,7 @@ import static graphql.Assert.assertTrue;
 import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveAddition;
 import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveArgumentDeletion;
 import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveArgumentValueModification;
+import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveDeletion;
 import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveDirectiveArgumentLocation;
 import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveEnumLocation;
 import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveEnumValueLocation;
@@ -193,7 +194,9 @@ public class EditOperationAnalyzer {
                     }
                     break;
                 case DELETE_VERTEX:
-                    if (editOperation.getSourceVertex().isOfType(SchemaGraph.APPLIED_ARGUMENT)) {
+                    if (editOperation.getSourceVertex().isOfType(SchemaGraph.APPLIED_DIRECTIVE)) {
+                        appliedDirectiveDeleted(editOperation);
+                    } else if (editOperation.getSourceVertex().isOfType(SchemaGraph.APPLIED_ARGUMENT)) {
                         appliedDirectiveArgumentDeleted(editOperation);
                     }
                     break;
@@ -201,6 +204,88 @@ public class EditOperationAnalyzer {
             }
         }
 
+    }
+
+    private void appliedDirectiveDeleted(EditOperation editOperation) {
+        Vertex appliedDirective = editOperation.getSourceVertex();
+        Vertex container = oldSchemaGraph.getAppliedDirectiveContainerForAppliedDirective(appliedDirective);
+        if (container.isOfType(SchemaGraph.FIELD)) {
+            appliedDirectiveDeletedFromField(appliedDirective, container);
+        } else if (container.isOfType(SchemaGraph.ARGUMENT)) {
+            appliedDirectiveDeletedFromArgument(appliedDirective, container);
+        } else if (container.isOfType(SchemaGraph.OBJECT)) {
+            Vertex object = container;
+            if (isObjectDeleted(object.getName())) {
+                return;
+            }
+            AppliedDirectiveObjectLocation location = new AppliedDirectiveObjectLocation(object.getName());
+            AppliedDirectiveDeletion appliedDirectiveDeletion = new AppliedDirectiveDeletion(location, appliedDirective.getName());
+            getObjectModification(object.getName()).getDetails().add(appliedDirectiveDeletion);
+        } else if (container.isOfType(SchemaGraph.INTERFACE)) {
+            Vertex interfaze = container;
+            if (isInterfaceDeleted(interfaze.getName())) {
+                return;
+            }
+            AppliedDirectiveInterfaceLocation location = new AppliedDirectiveInterfaceLocation(interfaze.getName());
+            AppliedDirectiveDeletion appliedDirectiveDeletion = new AppliedDirectiveDeletion(location, appliedDirective.getName());
+            getInterfaceModification(interfaze.getName()).getDetails().add(appliedDirectiveDeletion);
+        } else if (container.isOfType(SchemaGraph.SCALAR)) {
+            Vertex scalar = container;
+            if (isScalarDeleted(scalar.getName())) {
+                return;
+            }
+            AppliedDirectiveScalarLocation location = new AppliedDirectiveScalarLocation(scalar.getName());
+            AppliedDirectiveDeletion appliedDirectiveDeletion = new AppliedDirectiveDeletion(location, appliedDirective.getName());
+            getScalarModification(scalar.getName()).getDetails().add(appliedDirectiveDeletion);
+        } else if (container.isOfType(SchemaGraph.ENUM)) {
+            Vertex enumVertex = container;
+            if (isEnumDeleted(enumVertex.getName())) {
+                return;
+            }
+            AppliedDirectiveEnumLocation location = new AppliedDirectiveEnumLocation(enumVertex.getName());
+            AppliedDirectiveDeletion appliedDirectiveDeletion = new AppliedDirectiveDeletion(location, appliedDirective.getName());
+            getEnumModification(enumVertex.getName()).getDetails().add(appliedDirectiveDeletion);
+        } else if (container.isOfType(SchemaGraph.ENUM_VALUE)) {
+            Vertex enumValue = container;
+            Vertex enumVertex = oldSchemaGraph.getEnumForEnumValue(enumValue);
+            if (isEnumDeleted(enumVertex.getName())) {
+                return;
+            }
+            if (isEnumValueDeletedFromExistingEnum(enumVertex.getName(), enumValue.getName())) {
+                return;
+            }
+            AppliedDirectiveEnumValueLocation location = new AppliedDirectiveEnumValueLocation(enumVertex.getName(), enumValue.getName());
+            AppliedDirectiveDeletion appliedDirectiveDeletion = new AppliedDirectiveDeletion(location, appliedDirective.getName());
+            getEnumModification(enumVertex.getName()).getDetails().add(appliedDirectiveDeletion);
+        } else if (container.isOfType(SchemaGraph.INPUT_OBJECT)) {
+            Vertex inputObject = container;
+            if (isInputObjectDeleted(inputObject.getName())) {
+                return;
+            }
+            AppliedDirectiveInputObjectLocation location = new AppliedDirectiveInputObjectLocation(inputObject.getName());
+            AppliedDirectiveDeletion appliedDirectiveDeletion = new AppliedDirectiveDeletion(location, appliedDirective.getName());
+            getInputObjectModification(inputObject.getName()).getDetails().add(appliedDirectiveDeletion);
+        } else if (container.isOfType(SchemaGraph.INPUT_FIELD)) {
+            Vertex inputField = container;
+            Vertex inputObject = oldSchemaGraph.getInputObjectForInputField(inputField);
+            if (isInputObjectDeleted(inputObject.getName())) {
+                return;
+            }
+            if (isInputFieldDeletedFromExistingInputObject(inputObject.getName(), inputField.getName())) {
+                return;
+            }
+            AppliedDirectiveInputObjectFieldLocation location = new AppliedDirectiveInputObjectFieldLocation(inputObject.getName(), inputField.getName());
+            AppliedDirectiveDeletion appliedDirectiveDeletion = new AppliedDirectiveDeletion(location, appliedDirective.getName());
+            getInputObjectModification(inputObject.getName()).getDetails().add(appliedDirectiveDeletion);
+        } else if (container.isOfType(SchemaGraph.UNION)) {
+            Vertex union = container;
+            if (isUnionDeleted(union.getName())) {
+                return;
+            }
+            AppliedDirectiveUnionLocation location = new AppliedDirectiveUnionLocation(union.getName());
+            AppliedDirectiveDeletion appliedDirectiveDeletion = new AppliedDirectiveDeletion(location, appliedDirective.getName());
+            getUnionModification(union.getName()).getDetails().add(appliedDirectiveDeletion);
+        }
     }
 
     private void appliedDirectiveArgumentDeleted(EditOperation editOperation) {
@@ -341,6 +426,24 @@ public class EditOperationAnalyzer {
         }
     }
 
+    private void appliedDirectiveDeletedFromField(Vertex appliedDirective, Vertex container) {
+        Vertex field = container;
+        Vertex interfaceOrObjective = oldSchemaGraph.getFieldsContainerForField(field);
+        if (interfaceOrObjective.isOfType(SchemaGraph.OBJECT)) {
+            Vertex object = interfaceOrObjective;
+
+            if (isObjectDeleted(object.getName())) {
+                return;
+            }
+            if (isFieldDeletedFromExistingObject(object.getName(), field.getName())) {
+                return;
+            }
+            AppliedDirectiveObjectFieldLocation location = new AppliedDirectiveObjectFieldLocation(object.getName(), field.getName());
+            AppliedDirectiveDeletion appliedDirectiveDeletion = new AppliedDirectiveDeletion(location, appliedDirective.getName());
+            getObjectModification(object.getName()).getDetails().add(appliedDirectiveDeletion);
+        }
+    }
+
     private void appliedDirectiveAddedToField(Vertex appliedDirective, Vertex container) {
         Vertex field = container;
         Vertex interfaceOrObjective = newSchemaGraph.getFieldsContainerForField(field);
@@ -356,6 +459,57 @@ public class EditOperationAnalyzer {
             AppliedDirectiveObjectFieldLocation location = new AppliedDirectiveObjectFieldLocation(object.getName(), field.getName());
             AppliedDirectiveAddition appliedDirectiveAddition = new AppliedDirectiveAddition(location, appliedDirective.getName());
             getObjectModification(object.getName()).getDetails().add(appliedDirectiveAddition);
+        }
+    }
+
+    private void appliedDirectiveDeletedFromArgument(Vertex appliedDirective, Vertex container) {
+        Vertex argument = container;
+        Vertex fieldOrDirective = oldSchemaGraph.getFieldOrDirectiveForArgument(argument);
+        if (fieldOrDirective.isOfType(SchemaGraph.FIELD)) {
+            Vertex field = fieldOrDirective;
+            Vertex interfaceOrObjective = newSchemaGraph.getFieldsContainerForField(field);
+            if (interfaceOrObjective.isOfType(SchemaGraph.OBJECT)) {
+                Vertex object = interfaceOrObjective;
+                if (isObjectDeleted(object.getName())) {
+                    return;
+                }
+                if (isFieldDeletedFromExistingObject(object.getName(), field.getName())) {
+                    return;
+                }
+                if (isArgumentDeletedFromExistingObjectField(object.getName(), field.getName(), argument.getName())) {
+                    return;
+                }
+                AppliedDirectiveObjectFieldArgumentLocation location = new AppliedDirectiveObjectFieldArgumentLocation(object.getName(), field.getName(), argument.getName());
+                AppliedDirectiveAddition appliedDirectiveAddition = new AppliedDirectiveAddition(location, appliedDirective.getName());
+                getObjectModification(object.getName()).getDetails().add(appliedDirectiveAddition);
+            } else {
+                assertTrue(interfaceOrObjective.isOfType(SchemaGraph.INTERFACE));
+                Vertex interfaze = interfaceOrObjective;
+                if (isInterfaceDeleted(interfaze.getName())) {
+                    return;
+                }
+                if (isFieldDeletedFromExistingInterface(interfaze.getName(), field.getName())) {
+                    return;
+                }
+                if (isArgumentDeletedFromExistingInterfaceField(interfaze.getName(), field.getName(), argument.getName())) {
+                    return;
+                }
+                AppliedDirectiveInterfaceFieldArgumentLocation location = new AppliedDirectiveInterfaceFieldArgumentLocation(interfaze.getName(), field.getName(), argument.getName());
+                AppliedDirectiveDeletion appliedDirectiveDeletion = new AppliedDirectiveDeletion(location, appliedDirective.getName());
+                getInterfaceModification(interfaze.getName()).getDetails().add(appliedDirectiveDeletion);
+            }
+        } else {
+            assertTrue(fieldOrDirective.isOfType(SchemaGraph.DIRECTIVE));
+            Vertex directive = fieldOrDirective;
+            if (isDirectiveDeleted(directive.getName())) {
+                return;
+            }
+            if (isArgumentDeletedFromExistingDirective(directive.getName(), argument.getName())) {
+                return;
+            }
+            AppliedDirectiveDirectiveArgumentLocation location = new AppliedDirectiveDirectiveArgumentLocation(directive.getName(), argument.getName());
+            AppliedDirectiveDeletion appliedDirectiveDeletion = new AppliedDirectiveDeletion(location, appliedDirective.getName());
+            getDirectiveModification(directive.getName()).getDetails().add(appliedDirectiveDeletion);
         }
     }
 
@@ -1098,6 +1252,10 @@ public class EditOperationAnalyzer {
         return directiveDifferences.containsKey(name) && directiveDifferences.get(name) instanceof DirectiveAddition;
     }
 
+    private boolean isDirectiveDeleted(String name) {
+        return directiveDifferences.containsKey(name) && directiveDifferences.get(name) instanceof DirectiveDeletion;
+    }
+
     private boolean isObjectAdded(String name) {
         return objectDifferences.containsKey(name) && objectDifferences.get(name) instanceof ObjectAddition;
     }
@@ -1142,6 +1300,18 @@ public class EditOperationAnalyzer {
         return newFields.stream().anyMatch(detail -> detail.getName().equals(fieldName));
     }
 
+    private boolean isInputFieldDeletedFromExistingInputObject(String inputObjectName, String fieldName) {
+        if (!inputObjectDifferences.containsKey(inputObjectName)) {
+            return false;
+        }
+        if (!(inputObjectDifferences.get(inputObjectName) instanceof InputObjectModification)) {
+            return false;
+        }
+        InputObjectModification modification = (InputObjectModification) inputObjectDifferences.get(inputObjectName);
+        List<InputObjectFieldDeletion> deletedFields = modification.getDetails(InputObjectFieldDeletion.class);
+        return deletedFields.stream().anyMatch(detail -> detail.getName().equals(fieldName));
+    }
+
     private boolean isArgumentNewForExistingDirective(String directiveName, String argumentName) {
         if (!directiveDifferences.containsKey(directiveName)) {
             return false;
@@ -1152,6 +1322,18 @@ public class EditOperationAnalyzer {
         DirectiveModification directiveModification = (DirectiveModification) directiveDifferences.get(directiveName);
         List<DirectiveArgumentAddition> newArgs = directiveModification.getDetails(DirectiveArgumentAddition.class);
         return newArgs.stream().anyMatch(detail -> detail.getName().equals(argumentName));
+    }
+
+    private boolean isArgumentDeletedFromExistingDirective(String directiveName, String argumentName) {
+        if (!directiveDifferences.containsKey(directiveName)) {
+            return false;
+        }
+        if (!(directiveDifferences.get(directiveName) instanceof DirectiveModification)) {
+            return false;
+        }
+        DirectiveModification directiveModification = (DirectiveModification) directiveDifferences.get(directiveName);
+        List<DirectiveArgumentDeletion> deletedArgs = directiveModification.getDetails(DirectiveArgumentDeletion.class);
+        return deletedArgs.stream().anyMatch(detail -> detail.getName().equals(argumentName));
     }
 
     private boolean isArgumentNewForExistingObjectField(String objectName, String fieldName, String argumentName) {
@@ -1171,6 +1353,44 @@ public class EditOperationAnalyzer {
         // now finding out if the argument is new
         List<ObjectFieldArgumentAddition> newArgs = objectModification.getDetails(ObjectFieldArgumentAddition.class);
         return newArgs.stream().anyMatch(detail -> detail.getFieldName().equals(fieldName) && detail.getName().equals(argumentName));
+    }
+
+    private boolean isArgumentDeletedFromExistingObjectField(String objectName, String fieldName, String argumentName) {
+        if (!objectDifferences.containsKey(objectName)) {
+            return false;
+        }
+        if (!(objectDifferences.get(objectName) instanceof ObjectModification)) {
+            return false;
+        }
+        // finding out if the field was just added
+        ObjectModification objectModification = (ObjectModification) objectDifferences.get(objectName);
+        List<ObjectFieldDeletion> deletedFields = objectModification.getDetails(ObjectFieldDeletion.class);
+        boolean deletedField = deletedFields.stream().anyMatch(detail -> detail.getName().equals(fieldName));
+        if (deletedField) {
+            return false;
+        }
+        // now finding out if the argument is deleted
+        List<ObjectFieldArgumentDeletion> deletedArgs = objectModification.getDetails(ObjectFieldArgumentDeletion.class);
+        return deletedArgs.stream().anyMatch(detail -> detail.getFieldName().equals(fieldName) && detail.getName().equals(argumentName));
+    }
+
+    private boolean isArgumentDeletedFromExistingInterfaceField(String interfaceName, String fieldName, String argumentName) {
+        if (!interfaceDifferences.containsKey(interfaceName)) {
+            return false;
+        }
+        if (!(interfaceDifferences.get(interfaceName) instanceof InterfaceModification)) {
+            return false;
+        }
+        // finding out if the field was just added
+        InterfaceModification interfaceModification = (InterfaceModification) interfaceDifferences.get(interfaceName);
+        List<InterfaceFieldDeletion> deletedFields = interfaceModification.getDetails(InterfaceFieldDeletion.class);
+        boolean deletedField = deletedFields.stream().anyMatch(detail -> detail.getName().equals(fieldName));
+        if (deletedField) {
+            return false;
+        }
+        // now finding out if the argument is deleted
+        List<InterfaceFieldArgumentDeletion> deletedArgs = interfaceModification.getDetails(InterfaceFieldArgumentDeletion.class);
+        return deletedArgs.stream().anyMatch(detail -> detail.getFieldName().equals(fieldName) && detail.getName().equals(argumentName));
     }
 
     private boolean isArgumentNewForExistingInterfaceField(String objectName, String fieldName, String argumentName) {
@@ -1204,6 +1424,30 @@ public class EditOperationAnalyzer {
         return newFields.stream().anyMatch(detail -> detail.getName().equals(fieldName));
     }
 
+    private boolean isFieldDeletedFromExistingInterface(String interfaceName, String fieldName) {
+        if (!interfaceDifferences.containsKey(interfaceName)) {
+            return false;
+        }
+        if (!(interfaceDifferences.get(interfaceName) instanceof InterfaceModification)) {
+            return false;
+        }
+        InterfaceModification interfaceModification = (InterfaceModification) interfaceDifferences.get(interfaceName);
+        List<InterfaceFieldDeletion> deletedFields = interfaceModification.getDetails(InterfaceFieldDeletion.class);
+        return deletedFields.stream().anyMatch(detail -> detail.getName().equals(fieldName));
+    }
+
+    private boolean isFieldDeletedFromExistingObject(String objectName, String fieldName) {
+        if (!objectDifferences.containsKey(objectName)) {
+            return false;
+        }
+        if (!(objectDifferences.get(objectName) instanceof ObjectModification)) {
+            return false;
+        }
+        ObjectModification objectModification = (ObjectModification) objectDifferences.get(objectName);
+        List<ObjectFieldDeletion> deletedFields = objectModification.getDetails(ObjectFieldDeletion.class);
+        return deletedFields.stream().anyMatch(detail -> detail.getName().equals(fieldName));
+    }
+
     private boolean isNewEnumValueForExistingEnum(String enumName, String valueName) {
         if (!enumDifferences.containsKey(enumName)) {
             return false;
@@ -1214,6 +1458,18 @@ public class EditOperationAnalyzer {
         EnumModification enumModification = (EnumModification) enumDifferences.get(enumName);
         List<EnumValueAddition> newValues = enumModification.getDetails(EnumValueAddition.class);
         return newValues.stream().anyMatch(detail -> detail.getName().equals(valueName));
+    }
+
+    private boolean isEnumValueDeletedFromExistingEnum(String enumName, String valueName) {
+        if (!enumDifferences.containsKey(enumName)) {
+            return false;
+        }
+        if (!(enumDifferences.get(enumName) instanceof EnumModification)) {
+            return false;
+        }
+        EnumModification enumModification = (EnumModification) enumDifferences.get(enumName);
+        List<EnumValueDeletion> deletedValues = enumModification.getDetails(EnumValueDeletion.class);
+        return deletedValues.stream().anyMatch(detail -> detail.getName().equals(valueName));
     }
 
     private boolean isFieldNewForExistingInterface(String interfaceName, String fieldName) {
@@ -1242,6 +1498,10 @@ public class EditOperationAnalyzer {
 
     private boolean isScalarAdded(String name) {
         return scalarDifferences.containsKey(name) && scalarDifferences.get(name) instanceof ScalarAddition;
+    }
+
+    private boolean isScalarDeleted(String name) {
+        return scalarDifferences.containsKey(name) && scalarDifferences.get(name) instanceof ScalarDeletion;
     }
 
     private ObjectModification getObjectModification(String newName) {

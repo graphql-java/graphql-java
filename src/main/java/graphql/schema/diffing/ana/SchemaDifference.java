@@ -1453,7 +1453,31 @@ public interface SchemaDifference {
         }
     }
 
-    class AppliedDirectiveDeletion {
+    class AppliedDirectiveDeletion implements
+            ObjectModificationDetail,
+            InterfaceModificationDetail,
+            ScalarModificationDetail,
+            EnumModificationDetail,
+            InputObjectModificationDetail,
+            UnionModificationDetail,
+            DirectiveModificationDetail {
+
+        private final AppliedDirectiveLocationDetail locationDetail;
+        private final String name;
+
+        public AppliedDirectiveDeletion(AppliedDirectiveLocationDetail locationDetail, String name) {
+            this.locationDetail = locationDetail;
+            this.name = name;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public AppliedDirectiveLocationDetail getLocationDetail() {
+            return locationDetail;
+        }
+
 
     }
 
