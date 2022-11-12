@@ -137,4 +137,19 @@ class GraphqlErrorBuilderTest extends Specification {
         error.path == null
         error.extensions == null
     }
+
+    def "can use a builder direct from graphql error"() {
+        when:
+        def error = GraphQLError.newError().message("msg")
+                .locations(null)
+                .extensions([x : "y"])
+                .path(null)
+                .build()
+        then:
+        error.message == "msg"
+        error.locations == null
+        error.extensions == [x : "y"]
+        error.path == null
+
+    }
 }
