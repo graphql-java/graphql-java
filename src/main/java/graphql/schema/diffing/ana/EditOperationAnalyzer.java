@@ -480,8 +480,8 @@ public class EditOperationAnalyzer {
                     return;
                 }
                 AppliedDirectiveObjectFieldArgumentLocation location = new AppliedDirectiveObjectFieldArgumentLocation(object.getName(), field.getName(), argument.getName());
-                AppliedDirectiveAddition appliedDirectiveAddition = new AppliedDirectiveAddition(location, appliedDirective.getName());
-                getObjectModification(object.getName()).getDetails().add(appliedDirectiveAddition);
+                AppliedDirectiveDeletion appliedDirectiveDeletion = new AppliedDirectiveDeletion(location, appliedDirective.getName());
+                getObjectModification(object.getName()).getDetails().add(appliedDirectiveDeletion);
             } else {
                 assertTrue(interfaceOrObjective.isOfType(SchemaGraph.INTERFACE));
                 Vertex interfaze = interfaceOrObjective;

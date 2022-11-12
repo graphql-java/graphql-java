@@ -701,6 +701,113 @@ class EditOperationAnalyzerAppliedDirectivesTest extends Specification {
         appliedDirective[0].name == "d"
     }
 
+    def "applied directive deleted object field"() {
+        given:
+        def oldSdl = '''
+        directive @d(arg: String)  on FIELD_DEFINITION
+        
+        type Query {
+            foo: String @d(arg: "foo")
+        }
+        '''
+        def newSdl = '''
+        directive @d(arg:String) on FIELD_DEFINITION
+        
+        type Query {
+            foo: String 
+        }
+        '''
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+        then:
+        changes.objectDifferences["Query"] instanceof ObjectModification
+        def appliedDirective = (changes.objectDifferences["Query"] as ObjectModification).getDetails(AppliedDirectiveDeletion)
+        (appliedDirective[0].locationDetail as AppliedDirectiveObjectFieldLocation).objectName == "Query"
+        (appliedDirective[0].locationDetail as AppliedDirectiveObjectFieldLocation).fieldName == "foo"
+        appliedDirective[0].name == "d"
+    }
+
+    def "applied directive deleted object field argument"() {
+        given:
+        def oldSdl = '''
+        directive @d(arg:String) on ARGUMENT_DEFINITION 
+        type Query {
+            foo(arg: String @d(arg: "foo")) : String 
+        }
+        '''
+        def newSdl = '''
+        directive @d(arg:String) on ARGUMENT_DEFINITION 
+        type Query {
+            foo(arg: String) : String 
+        }
+        '''
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+        then:
+        changes.objectDifferences["Query"] instanceof ObjectModification
+        def appliedDirective = (changes.objectDifferences["Query"] as ObjectModification).getDetails(AppliedDirectiveDeletion)
+        (appliedDirective[0].locationDetail as AppliedDirectiveObjectFieldArgumentLocation).objectName == "Query"
+        (appliedDirective[0].locationDetail as AppliedDirectiveObjectFieldArgumentLocation).fieldName == "foo"
+        (appliedDirective[0].locationDetail as AppliedDirectiveObjectFieldArgumentLocation).argumentName == "arg"
+        appliedDirective[0].name == "d"
+    }
+
+
+    def "applied directive deleted scalar"() {
+        given:
+        def oldSdl = '''
+        directive @d(arg:String) on SCALAR
+        scalar DateTime  @d(arg: "foo")
+        type Query {
+            foo: DateTime 
+        }
+        '''
+        def newSdl = '''
+        directive @d(arg:String) on SCALAR
+        scalar DateTime  
+        type Query {
+            foo: DateTime 
+        }
+        '''
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+        then:
+        changes.scalarDifferences["DateTime"] instanceof ScalarModification
+        def appliedDirective = (changes.scalarDifferences["DateTime"] as ScalarModification).getDetails(AppliedDirectiveDeletion)
+        (appliedDirective[0].locationDetail as AppliedDirectiveScalarLocation).name == "DateTime"
+        appliedDirective[0].name == "d"
+    }
+
+
+    def "applied directive deleted union"() {
+        given:
+        def oldSdl = '''
+        directive @d(arg: String) on UNION
+        type Query {
+            foo: U 
+        }
+        union U @d(arg: "foo") = A | B
+        type A { a: String }
+        type B { b: String }
+        '''
+        def newSdl = '''
+        directive @d(arg: String) on UNION
+        type Query {
+            foo: U 
+        }
+        union U = A | B
+        type A { a: String }
+        type B { b: String }
+        '''
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+        then:
+        changes.unionDifferences["U"] instanceof UnionModification
+        def appliedDirective = (changes.unionDifferences["U"] as UnionModification).getDetails(AppliedDirectiveDeletion)
+        (appliedDirective[0].locationDetail as AppliedDirectiveUnionLocation).name == "U"
+        appliedDirective[0].name == "d"
+    }
+
 
     EditOperationAnalysisResult calcDiff(
             String oldSdl,
