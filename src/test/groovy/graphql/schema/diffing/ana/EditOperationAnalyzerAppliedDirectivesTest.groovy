@@ -527,6 +527,180 @@ class EditOperationAnalyzerAppliedDirectivesTest extends Specification {
         appliedDirective[0].name == "d"
     }
 
+    def "applied directive deleted enum"() {
+        given:
+        def oldSdl = '''
+        directive @d(arg:String) on ENUM
+        enum E @d(arg: "foo") { A, B }
+        type Query {
+            foo: E 
+        }
+        '''
+        def newSdl = '''
+        directive @d(arg:String) on ENUM
+        enum E { A, B }
+        type Query {
+            foo: E 
+        }
+        '''
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+        then:
+        changes.enumDifferences["E"] instanceof EnumModification
+        def appliedDirective = (changes.enumDifferences["E"] as EnumModification).getDetails(AppliedDirectiveDeletion)
+        (appliedDirective[0].locationDetail as AppliedDirectiveEnumLocation).name == "E"
+        appliedDirective[0].name == "d"
+    }
+
+    def "applied directive deleted enum value"() {
+        given:
+        def oldSdl = '''
+        directive @d(arg:String) on ENUM_VALUE
+        enum E  { A, B @d(arg: "foo") }
+        type Query {
+            foo: E 
+        }
+        '''
+        def newSdl = '''
+        directive @d(arg:String) on ENUM_VALUE
+        enum E { A, B }
+        type Query {
+            foo: E 
+        }
+        '''
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+        then:
+        changes.enumDifferences["E"] instanceof EnumModification
+        def appliedDirective = (changes.enumDifferences["E"] as EnumModification).getDetails(AppliedDirectiveDeletion)
+        (appliedDirective[0].locationDetail as AppliedDirectiveEnumValueLocation).enumName == "E"
+        (appliedDirective[0].locationDetail as AppliedDirectiveEnumValueLocation).valueName == "B"
+        appliedDirective[0].name == "d"
+    }
+
+
+    def "applied directive deleted input object"() {
+        given:
+        def oldSdl = '''
+        directive @d(arg:String) on INPUT_OBJECT
+        input I @d(arg: "foo") {
+            a: String
+        }
+        type Query {
+            foo(arg: I): String 
+        }
+        '''
+        def newSdl = '''
+        directive @d(arg:String) on INPUT_OBJECT
+        input I {
+            a: String
+        }
+        type Query {
+            foo(arg: I): String 
+        }
+        '''
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+        then:
+        changes.inputObjectDifferences["I"] instanceof InputObjectModification
+        def appliedDirective = (changes.inputObjectDifferences["I"] as InputObjectModification).getDetails(AppliedDirectiveDeletion)
+        (appliedDirective[0].locationDetail as AppliedDirectiveInputObjectLocation).name == "I"
+        appliedDirective[0].name == "d"
+    }
+
+    def "applied directive deleted input object field "() {
+        given:
+        def oldSdl = '''
+        directive @d(arg:String) on INPUT_FIELD_DEFINITION
+        input I {
+            a: String @d(arg: "foo")
+        }
+        type Query {
+            foo(arg: I): String
+        }
+        '''
+        def newSdl = '''
+        directive @d(arg:String) on INPUT_FIELD_DEFINITION
+        input I {
+            a: String
+        }
+        type Query {
+            foo(arg: I): String
+        }
+        '''
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+        then:
+        changes.inputObjectDifferences["I"] instanceof InputObjectModification
+        def appliedDirective = (changes.inputObjectDifferences["I"] as InputObjectModification).getDetails(AppliedDirectiveDeletion)
+        (appliedDirective[0].locationDetail as AppliedDirectiveInputObjectFieldLocation).inputObjectName == "I"
+        (appliedDirective[0].locationDetail as AppliedDirectiveInputObjectFieldLocation).fieldName == "a"
+        appliedDirective[0].name == "d"
+    }
+
+    def "applied directive deleted interface"() {
+        given:
+        def oldSdl = '''
+        directive @d(arg: String) on INTERFACE
+        
+        type Query implements I {
+            foo: String 
+        }
+        interface I @d(arg: "foo") {
+            foo: String
+        }
+        '''
+        def newSdl = '''
+        directive @d(arg:String) on INTERFACE
+        
+        type Query implements I{
+            foo: String 
+        }
+        interface I {
+            foo: String
+        }
+        '''
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+        then:
+        changes.interfaceDifferences["I"] instanceof InterfaceModification
+        def appliedDirective = (changes.interfaceDifferences["I"] as InterfaceModification).getDetails(AppliedDirectiveDeletion)
+        (appliedDirective[0].locationDetail as AppliedDirectiveInterfaceLocation).name == "I"
+        appliedDirective[0].name == "d"
+    }
+
+
+    def "applied directive deleted interface field argument"() {
+        given:
+        def oldSdl = '''
+        directive @d(arg:String) on ARGUMENT_DEFINITION 
+        type Query implements I {
+            foo(arg: String) : String 
+        }
+        interface I {
+            foo(arg: String @d): String
+        }
+        '''
+        def newSdl = '''
+        directive @d(arg:String) on ARGUMENT_DEFINITION 
+        type Query implements I {
+            foo(arg: String) : String 
+        }
+        interface I {
+            foo(arg: String): String
+        }
+        '''
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+        then:
+        changes.interfaceDifferences["I"] instanceof InterfaceModification
+        def appliedDirective = (changes.interfaceDifferences["I"] as InterfaceModification).getDetails(AppliedDirectiveDeletion)
+        (appliedDirective[0].locationDetail as AppliedDirectiveInterfaceFieldArgumentLocation).interfaceName == "I"
+        (appliedDirective[0].locationDetail as AppliedDirectiveInterfaceFieldArgumentLocation).fieldName == "foo"
+        (appliedDirective[0].locationDetail as AppliedDirectiveInterfaceFieldArgumentLocation).argumentName == "arg"
+        appliedDirective[0].name == "d"
+    }
+
 
     EditOperationAnalysisResult calcDiff(
             String oldSdl,

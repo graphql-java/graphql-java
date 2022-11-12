@@ -467,7 +467,7 @@ public class EditOperationAnalyzer {
         Vertex fieldOrDirective = oldSchemaGraph.getFieldOrDirectiveForArgument(argument);
         if (fieldOrDirective.isOfType(SchemaGraph.FIELD)) {
             Vertex field = fieldOrDirective;
-            Vertex interfaceOrObjective = newSchemaGraph.getFieldsContainerForField(field);
+            Vertex interfaceOrObjective = oldSchemaGraph.getFieldsContainerForField(field);
             if (interfaceOrObjective.isOfType(SchemaGraph.OBJECT)) {
                 Vertex object = interfaceOrObjective;
                 if (isObjectDeleted(object.getName())) {
