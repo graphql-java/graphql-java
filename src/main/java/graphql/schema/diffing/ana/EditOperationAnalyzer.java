@@ -17,10 +17,21 @@ import java.util.List;
 import java.util.Map;
 
 import static graphql.Assert.assertTrue;
-import static graphql.schema.diffing.ana.SchemaDifference.*;
 import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveAddition;
+import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveArgumentDeletion;
 import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveArgumentValueModification;
+import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveDirectiveArgumentLocation;
+import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveEnumLocation;
+import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveEnumValueLocation;
+import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveInputObjectFieldLocation;
+import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveInputObjectLocation;
+import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveInterfaceFieldArgumentLocation;
+import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveInterfaceFieldLocation;
+import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveInterfaceLocation;
+import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveObjectFieldArgumentLocation;
 import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveObjectFieldLocation;
+import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveScalarLocation;
+import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveUnionLocation;
 import static graphql.schema.diffing.ana.SchemaDifference.DirectiveAddition;
 import static graphql.schema.diffing.ana.SchemaDifference.DirectiveArgumentAddition;
 import static graphql.schema.diffing.ana.SchemaDifference.DirectiveArgumentDefaultValueModification;
@@ -39,6 +50,11 @@ import static graphql.schema.diffing.ana.SchemaDifference.EnumValueDeletion;
 import static graphql.schema.diffing.ana.SchemaDifference.InputObjectAddition;
 import static graphql.schema.diffing.ana.SchemaDifference.InputObjectDeletion;
 import static graphql.schema.diffing.ana.SchemaDifference.InputObjectDifference;
+import static graphql.schema.diffing.ana.SchemaDifference.InputObjectFieldAddition;
+import static graphql.schema.diffing.ana.SchemaDifference.InputObjectFieldDefaultValueModification;
+import static graphql.schema.diffing.ana.SchemaDifference.InputObjectFieldDeletion;
+import static graphql.schema.diffing.ana.SchemaDifference.InputObjectFieldRename;
+import static graphql.schema.diffing.ana.SchemaDifference.InputObjectFieldTypeModification;
 import static graphql.schema.diffing.ana.SchemaDifference.InputObjectModification;
 import static graphql.schema.diffing.ana.SchemaDifference.InterfaceAddition;
 import static graphql.schema.diffing.ana.SchemaDifference.InterfaceDeletion;
@@ -345,37 +361,52 @@ public class EditOperationAnalyzer {
 
     private void appliedDirectiveAddedToArgument(Vertex appliedDirective, Vertex container) {
         Vertex argument = container;
-        Vertex field = newSchemaGraph.getFieldOrDirectiveForArgument(argument);
-        Vertex interfaceOrObjective = newSchemaGraph.getFieldsContainerForField(field);
-        if (interfaceOrObjective.isOfType(SchemaGraph.OBJECT)) {
-            Vertex object = interfaceOrObjective;
-            if (isObjectAdded(object.getName())) {
-                return;
+        Vertex fieldOrDirective = newSchemaGraph.getFieldOrDirectiveForArgument(argument);
+        if (fieldOrDirective.isOfType(SchemaGraph.FIELD)) {
+            Vertex field = fieldOrDirective;
+            Vertex interfaceOrObjective = newSchemaGraph.getFieldsContainerForField(field);
+            if (interfaceOrObjective.isOfType(SchemaGraph.OBJECT)) {
+                Vertex object = interfaceOrObjective;
+                if (isObjectAdded(object.getName())) {
+                    return;
+                }
+                if (isFieldNewForExistingObject(object.getName(), field.getName())) {
+                    return;
+                }
+                if (isArgumentNewForExistingObjectField(object.getName(), field.getName(), argument.getName())) {
+                    return;
+                }
+                AppliedDirectiveObjectFieldArgumentLocation location = new AppliedDirectiveObjectFieldArgumentLocation(object.getName(), field.getName(), argument.getName());
+                AppliedDirectiveAddition appliedDirectiveAddition = new AppliedDirectiveAddition(location, appliedDirective.getName());
+                getObjectModification(object.getName()).getDetails().add(appliedDirectiveAddition);
+            } else {
+                assertTrue(interfaceOrObjective.isOfType(SchemaGraph.INTERFACE));
+                Vertex interfaze = interfaceOrObjective;
+                if (isInterfaceAdded(interfaze.getName())) {
+                    return;
+                }
+                if (isFieldNewForExistingInterface(interfaze.getName(), field.getName())) {
+                    return;
+                }
+                if (isArgumentNewForExistingInterfaceField(interfaze.getName(), field.getName(), argument.getName())) {
+                    return;
+                }
+                AppliedDirectiveInterfaceFieldArgumentLocation location = new AppliedDirectiveInterfaceFieldArgumentLocation(interfaze.getName(), field.getName(), argument.getName());
+                AppliedDirectiveAddition appliedDirectiveAddition = new AppliedDirectiveAddition(location, appliedDirective.getName());
+                getInterfaceModification(interfaze.getName()).getDetails().add(appliedDirectiveAddition);
             }
-            if (isFieldNewForExistingObject(object.getName(), field.getName())) {
-                return;
-            }
-            if (isArgumentNewForExistingObjectField(object.getName(), field.getName(), argument.getName())) {
-                return;
-            }
-            AppliedDirectiveObjectFieldArgumentLocation location = new AppliedDirectiveObjectFieldArgumentLocation(object.getName(), field.getName(), argument.getName());
-            AppliedDirectiveAddition appliedDirectiveAddition = new AppliedDirectiveAddition(location, appliedDirective.getName());
-            getObjectModification(object.getName()).getDetails().add(appliedDirectiveAddition);
         } else {
-            assertTrue(interfaceOrObjective.isOfType(SchemaGraph.INTERFACE));
-            Vertex interfaze = interfaceOrObjective;
-            if (isInterfaceAdded(interfaze.getName())) {
+            assertTrue(fieldOrDirective.isOfType(SchemaGraph.DIRECTIVE));
+            Vertex directive = fieldOrDirective;
+            if (isDirectiveAdded(directive.getName())) {
                 return;
             }
-            if (isFieldNewForExistingInterface(interfaze.getName(), field.getName())) {
+            if (isArgumentNewForExistingDirective(directive.getName(), argument.getName())) {
                 return;
             }
-            if (isArgumentNewForExistingInterfaceField(interfaze.getName(), field.getName(), argument.getName())) {
-                return;
-            }
-            AppliedDirectiveInterfaceFieldArgumentLocation location = new AppliedDirectiveInterfaceFieldArgumentLocation(interfaze.getName(), field.getName(), argument.getName());
+            AppliedDirectiveDirectiveArgumentLocation location = new AppliedDirectiveDirectiveArgumentLocation(directive.getName(), argument.getName());
             AppliedDirectiveAddition appliedDirectiveAddition = new AppliedDirectiveAddition(location, appliedDirective.getName());
-            getInterfaceModification(interfaze.getName()).getDetails().add(appliedDirectiveAddition);
+            getDirectiveModification(directive.getName()).getDetails().add(appliedDirectiveAddition);
         }
     }
 
@@ -721,7 +752,8 @@ public class EditOperationAnalyzer {
     }
 
 
-    private void typeEdgeInserted(EditOperation editOperation, List<EditOperation> editOperations, Mapping mapping) {
+    private void typeEdgeInserted(EditOperation editOperation, List<EditOperation> editOperations, Mapping
+            mapping) {
         Edge newEdge = editOperation.getTargetEdge();
         Vertex from = newEdge.getFrom();
         if (from.isOfType(SchemaGraph.FIELD)) {
@@ -734,7 +766,8 @@ public class EditOperationAnalyzer {
 
     }
 
-    private void typeEdgeInsertedForInputField(EditOperation editOperation, List<EditOperation> editOperations, Mapping mapping) {
+    private void typeEdgeInsertedForInputField(EditOperation
+                                                       editOperation, List<EditOperation> editOperations, Mapping mapping) {
         Vertex inputField = editOperation.getTargetEdge().getFrom();
         Vertex inputObject = newSchemaGraph.getInputObjectForInputField(inputField);
         if (isInputObjectAdded(inputObject.getName())) {
@@ -750,7 +783,8 @@ public class EditOperationAnalyzer {
         getInputObjectModification(inputObject.getName()).getDetails().add(inputObjectFieldTypeModification);
     }
 
-    private void typeEdgeInsertedForArgument(EditOperation editOperation, List<EditOperation> editOperations, Mapping mapping) {
+    private void typeEdgeInsertedForArgument(EditOperation
+                                                     editOperation, List<EditOperation> editOperations, Mapping mapping) {
         Vertex argument = editOperation.getTargetEdge().getFrom();
         Vertex fieldOrDirective = newSchemaGraph.getFieldOrDirectiveForArgument(argument);
         if (fieldOrDirective.isOfType(SchemaGraph.FIELD)) {
@@ -819,7 +853,8 @@ public class EditOperationAnalyzer {
 
     }
 
-    private void typeEdgeInsertedForField(EditOperation editOperation, List<EditOperation> editOperations, Mapping mapping) {
+    private void typeEdgeInsertedForField(EditOperation
+                                                  editOperation, List<EditOperation> editOperations, Mapping mapping) {
         Vertex field = editOperation.getTargetEdge().getFrom();
         Vertex objectOrInterface = newSchemaGraph.getFieldsContainerForField(field);
         if (objectOrInterface.isOfType(SchemaGraph.OBJECT)) {
@@ -861,7 +896,8 @@ public class EditOperationAnalyzer {
     }
 
 
-    private EditOperation findDeletedEdge(Vertex targetVertexFrom, List<EditOperation> editOperations, Mapping mapping) {
+    private EditOperation findDeletedEdge(Vertex targetVertexFrom, List<EditOperation> editOperations, Mapping
+            mapping) {
         Vertex sourceVertexFrom = mapping.getSource(targetVertexFrom);
         for (EditOperation editOperation : editOperations) {
             if (editOperation.getOperation() == EditOperation.Operation.DELETE_EDGE) {

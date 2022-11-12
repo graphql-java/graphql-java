@@ -1313,6 +1313,24 @@ public interface SchemaDifference {
         }
     }
 
+    class AppliedDirectiveDirectiveArgumentLocation implements AppliedDirectiveLocationDetail {
+        private final String directiveName;
+        private final String argumentName;
+
+        public AppliedDirectiveDirectiveArgumentLocation(String directiveName, String argumentName) {
+            this.directiveName = directiveName;
+            this.argumentName = argumentName;
+        }
+
+        public String getDirectiveName() {
+            return directiveName;
+        }
+
+        public String getArgumentName() {
+            return argumentName;
+        }
+    }
+
     class AppliedDirectiveInterfaceFieldArgumentLocation implements AppliedDirectiveLocationDetail {
         private final String interfaceName;
         private final String fieldName;
@@ -1416,7 +1434,8 @@ public interface SchemaDifference {
             ScalarModificationDetail,
             EnumModificationDetail,
             InputObjectModificationDetail,
-            UnionModificationDetail {
+            UnionModificationDetail,
+            DirectiveModificationDetail {
         private final AppliedDirectiveLocationDetail locationDetail;
         private final String name;
 

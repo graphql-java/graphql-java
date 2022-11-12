@@ -8,6 +8,7 @@ import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveAdditi
 import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveArgumentDeletion
 import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveArgumentRename
 import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveArgumentValueModification
+import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveDirectiveArgumentLocation
 import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveEnumLocation
 import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveEnumValueLocation
 import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveInputObjectFieldLocation
@@ -20,6 +21,7 @@ import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveObject
 import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveObjectLocation
 import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveScalarLocation
 import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveUnionLocation
+import static graphql.schema.diffing.ana.SchemaDifference.DirectiveModification
 import static graphql.schema.diffing.ana.SchemaDifference.EnumModification
 import static graphql.schema.diffing.ana.SchemaDifference.InputObjectModification
 import static graphql.schema.diffing.ana.SchemaDifference.InterfaceModification
@@ -447,8 +449,31 @@ class EditOperationAnalyzerAppliedDirectivesTest extends Specification {
         appliedDirective[0].name == "d"
     }
 
-
-
+    def "applied directive added directive argument "() {
+        given:
+        def oldSdl = '''
+        directive @d(arg:String) on ARGUMENT_DEFINITION 
+        directive @d2(arg:String) on ARGUMENT_DEFINITION 
+        type Query {
+            foo: String
+        }
+        '''
+        def newSdl = '''
+        directive @d(arg:String) on ARGUMENT_DEFINITION 
+        directive @d2(arg:String @d) on ARGUMENT_DEFINITION 
+        type Query {
+            foo: String
+        }
+        '''
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+        then:
+        changes.directiveDifferences["d2"] instanceof DirectiveModification
+        def appliedDirective = (changes.directiveDifferences["d2"] as DirectiveModification).getDetails(AppliedDirectiveAddition)
+        (appliedDirective[0].locationDetail as AppliedDirectiveDirectiveArgumentLocation).directiveName == "d2"
+        (appliedDirective[0].locationDetail as AppliedDirectiveDirectiveArgumentLocation).argumentName == "arg"
+        appliedDirective[0].name == "d"
+    }
 
 
     EditOperationAnalysisResult calcDiff(
