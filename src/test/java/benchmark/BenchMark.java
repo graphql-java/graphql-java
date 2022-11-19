@@ -17,8 +17,6 @@ import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
 import org.openjdk.jmh.annotations.Warmup;
 
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -44,7 +42,7 @@ public class BenchMark {
     @Benchmark
     @BenchmarkMode(Mode.Throughput)
     @OutputTimeUnit(TimeUnit.SECONDS)
-    public void benchMarkSimpleQueriesThroughput() {
+    public void   benchMarkSimpleQueriesThroughput() {
         executeQuery();
     }
 
@@ -61,8 +59,7 @@ public class BenchMark {
     }
 
     private static GraphQL buildGraphQL() {
-        InputStream sdl = BenchMark.class.getClassLoader().getResourceAsStream("starWarsSchema.graphqls");
-        TypeDefinitionRegistry definitionRegistry = new SchemaParser().parse(new InputStreamReader(sdl));
+        TypeDefinitionRegistry definitionRegistry = new SchemaParser().parse(BenchmarkUtils.loadResource("starWarsSchema.graphqls"));
 
         DataFetcher heroDataFetcher = environment -> CharacterDTO.mkCharacter(environment, "r2d2", NUMBER_OF_FRIENDS);
 
