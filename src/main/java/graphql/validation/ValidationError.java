@@ -12,6 +12,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 @PublicApi
 public class ValidationError implements GraphQLError {
@@ -113,12 +115,23 @@ public class ValidationError implements GraphQLError {
 
     @Override
     public String toString() {
+        String extensionsString = "";
+
+        if (Optional.ofNullable(extensions).isPresent() && extensions.size() > 0) {
+            extensionsString = extensions
+                    .keySet()
+                    .stream()
+                    .map(key -> key + "=" + extensions.get(key))
+                    .collect(Collectors.joining(", "));
+        }
+
         return "ValidationError{" +
                 "validationErrorType=" + validationErrorType +
                 ", queryPath=" + queryPath +
                 ", message=" + message +
                 ", locations=" + locations +
                 ", description='" + description + '\'' +
+                ", extensions=[" + extensionsString + ']' +
                 '}';
     }
 
