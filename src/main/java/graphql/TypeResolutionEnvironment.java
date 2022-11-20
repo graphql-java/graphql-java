@@ -4,7 +4,6 @@ import graphql.collect.ImmutableMapWithNullValues;
 import graphql.execution.DataFetcherResult;
 import graphql.execution.MergedField;
 import graphql.execution.TypeResolutionParameters;
-import graphql.schema.DataFetchingEnvironment;
 import graphql.schema.DataFetchingFieldSelectionSet;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLType;
@@ -89,7 +88,7 @@ public class TypeResolutionEnvironment {
     /**
      * Returns the context object set in via {@link ExecutionInput#getContext()}
      *
-     * @param <T> to two
+     * @param <T> the type to cast the result to
      *
      * @return the context object
      *
@@ -112,11 +111,11 @@ public class TypeResolutionEnvironment {
     /**
      * Returns the local context object set in via {@link DataFetcherResult#getLocalContext()}
      *
-     * @param <T> to two
+     * @param <T> the type to cast the result to
      *
      * @return the local context object
      */
-    <T> T getLocalContext() {
+    public <T> T getLocalContext() {
         //noinspection unchecked
         return (T) localContext;
     }
