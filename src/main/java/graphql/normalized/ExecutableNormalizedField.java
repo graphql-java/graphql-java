@@ -28,12 +28,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertTrue;
 import static graphql.schema.GraphQLTypeUtil.simplePrint;
 import static graphql.schema.GraphQLTypeUtil.unwrapAll;
+import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toSet;
 
 /**
  * Intentionally Mutable
@@ -193,7 +195,7 @@ public class ExecutableNormalizedField {
 
     public GraphQLOutputType getType(GraphQLSchema schema) {
         List<GraphQLFieldDefinition> fieldDefinitions = getFieldDefinitions(schema);
-        Set<String> fieldTypes = fieldDefinitions.stream().map(fd -> simplePrint(fd.getType())).collect(Collectors.toSet());
+        Set<String> fieldTypes = fieldDefinitions.stream().map(fd -> simplePrint(fd.getType())).collect(toSet());
         Assert.assertTrue(fieldTypes.size() == 1, () -> "More than one type ... use getTypes");
         return fieldDefinitions.get(0).getType();
     }
@@ -355,6 +357,29 @@ public class ExecutableNormalizedField {
         return FpKit.filterList(children, child -> child.getResultKey().equals(resultKey));
     }
 
+    public List<ExecutableNormalizedField> getChildren(int includingRelativeLevel) {
+        List<ExecutableNormalizedField> result = new ArrayList<>();
+        assertTrue(includingRelativeLevel >= 1, () -> "relative level must be >= 1");
+
+        this.getChildren().forEach(child -> {
+            traverseImpl(child, result::add, 1, includingRelativeLevel);
+        });
+        return result;
+    }
+
+    /**
+     * This returns the child fields that can be used if the object is of the specified object type
+     *
+     * @param objectTypeName the object type
+     *
+     * @return a list of child fields that would apply to that object type
+     */
+    public List<ExecutableNormalizedField> getChildren(String objectTypeName) {
+        return children.stream()
+                .filter(cld -> cld.objectTypeNames.contains(objectTypeName))
+                .collect(toList());
+    }
+
     public int getLevel() {
         return level;
     }
@@ -374,19 +399,10 @@ public class ExecutableNormalizedField {
                 objectTypeNamesToString() + "." + fieldName +
                 ", alias=" + alias +
                 ", level=" + level +
-                ", children=" + children.stream().map(ExecutableNormalizedField::toString).collect(Collectors.joining("\n")) +
+                ", children=" + children.stream().map(ExecutableNormalizedField::toString).collect(joining("\n")) +
                 '}';
     }
 
-    public List<ExecutableNormalizedField> getChildren(int includingRelativeLevel) {
-        List<ExecutableNormalizedField> result = new ArrayList<>();
-        assertTrue(includingRelativeLevel >= 1, () -> "relative level must be >= 1");
-
-        this.getChildren().forEach(child -> {
-            traverseImpl(child, result::add, 1, includingRelativeLevel);
-        });
-        return result;
-    }
 
     public void traverseSubTree(Consumer<ExecutableNormalizedField> consumer) {
         this.getChildren().forEach(child -> {
