@@ -100,19 +100,14 @@ public class SchemaTransformerBenchmark {
         @Setup
         public void setup() {
             try {
-                String schemaString = readFromClasspath("large-schema-3.graphqls");
+                String schemaString = BenchmarkUtils.loadResource("large-schema-3.graphqls");
                 schema = SchemaGenerator.createdMockedSchema(schemaString);
                 txSchema = SchemaTransformer.transformSchema(schema, directiveAdder);
             } catch (Exception e) {
-                System.out.println(e);
                 throw new RuntimeException(e);
             }
         }
 
-        private String readFromClasspath(String file) throws IOException {
-            URL url = getResource(file);
-            return Resources.toString(url, Charsets.UTF_8);
-        }
     }
 
     @Benchmark
