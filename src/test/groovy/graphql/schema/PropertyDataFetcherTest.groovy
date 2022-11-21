@@ -2,6 +2,7 @@ package graphql.schema
 
 import graphql.ExecutionInput
 import graphql.TestUtil
+import graphql.schema.fetching.ConfusedPojo
 import graphql.schema.somepackage.ClassWithDFEMethods
 import graphql.schema.somepackage.ClassWithInterfaces
 import graphql.schema.somepackage.ClassWithInteritanceAndInterfaces
@@ -169,6 +170,18 @@ class PropertyDataFetcherTest extends Specification {
         result = fetcher.get(environment)
         then:
         result == "recordProperty"
+    }
+
+    def "fetch via record method without lambda support in preference to getter methods"() {
+        PropertyDataFetcherHelper.setUseLambdaFactory(false)
+        PropertyDataFetcherHelper.clearReflectionCache()
+
+        when:
+        def environment = env(new ConfusedPojo())
+        def fetcher = new PropertyDataFetcher("recordLike")
+        def result = fetcher.get(environment)
+        then:
+        result == "recordLike"
     }
 
     def "fetch via public method"() {

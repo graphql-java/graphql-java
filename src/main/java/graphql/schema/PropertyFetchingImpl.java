@@ -115,6 +115,13 @@ public class PropertyFetchingImpl {
 
         boolean dfeInUse = singleArgumentValue != null;
         //
+        // try by record like name - object.propertyName()
+        try {
+            MethodFinder methodFinder = (rootClass, methodName) -> findRecordMethod(cacheKey, rootClass, methodName);
+            return getPropertyViaRecordMethod(object, propertyName, methodFinder, singleArgumentValue);
+        } catch (NoSuchMethodException ignored) {
+        }
+        //
         // try by public getters name -  object.getPropertyName()
         try {
             MethodFinder methodFinder = (rootClass, methodName) -> findPubliclyAccessibleMethod(cacheKey, rootClass, methodName, dfeInUse);
@@ -132,15 +139,6 @@ public class PropertyFetchingImpl {
         // try by field name -  object.propertyName;
         try {
             return getPropertyViaFieldAccess(cacheKey, object, propertyName);
-        } catch (NoSuchMethodException ignored) {
-        }
-        //
-        // try by record name - object.propertyName()
-        try {
-            // we do records last because if there was ever a previous situation where there was a `getProp()` and a `prop()` in place
-            // then previously it would use the `getProp()` method so we want that same behavior
-            MethodFinder methodFinder = (rootClass, methodName) -> findRecordMethod(cacheKey, rootClass, methodName);
-            return getPropertyViaRecordMethod(object, propertyName, methodFinder, singleArgumentValue);
         } catch (NoSuchMethodException ignored) {
         }
         // we have nothing to ask for, and we have exhausted our lookup strategies

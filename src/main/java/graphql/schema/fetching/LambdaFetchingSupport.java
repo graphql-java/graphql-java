@@ -57,7 +57,18 @@ public class LambdaFetchingSupport {
 
 
     private static Method getCandidateMethod(Class<?> sourceClass, String propertyName) {
-        List<Method> allGetterMethods = findMethodsForProperty(sourceClass, propertyName, LambdaFetchingSupport::isGetterNamed);
+        // property() methods first
+        Predicate<Method> recordLikePredicate = method -> isRecordLike(method) && propertyName.equals(decapitalize(method.getName()));
+        List<Method> recordLikeMethods = findMethodsForProperty(sourceClass,
+                recordLikePredicate);
+        if (!recordLikeMethods.isEmpty()) {
+            return recordLikeMethods.get(0);
+        }
+
+        // getProperty() POJO methods next
+        Predicate<Method> getterPredicate = method -> isGetterNamed(method) && propertyName.equals(mkPropertyNameGetter(method));
+        List<Method> allGetterMethods = findMethodsForProperty(sourceClass,
+                getterPredicate);
         List<Method> pojoGetterMethods = allGetterMethods.stream()
                 .filter(LambdaFetchingSupport::isPossiblePojoMethod)
                 .collect(toList());
@@ -67,10 +78,6 @@ public class LambdaFetchingSupport {
                 method = findBestBooleanGetter(pojoGetterMethods);
             }
             return checkForSingleParameterPeer(method, allGetterMethods);
-        }
-        List<Method> recordLikeMethods = findMethodsForProperty(sourceClass, propertyName, LambdaFetchingSupport::isRecordLike);
-        if (!recordLikeMethods.isEmpty()) {
-            return recordLikeMethods.get(0);
         }
         return null;
     }
@@ -97,21 +104,18 @@ public class LambdaFetchingSupport {
     /**
      * Finds all methods in a class hierarchy that match the property name - they might not be suitable but they
      *
-     * @param sourceClass  the class we are looking to work on
-     * @param propertyName the name of the property
+     * @param sourceClass the class we are looking to work on
      *
      * @return a list of getter methods for that property
      */
-    private static List<Method> findMethodsForProperty(Class<?> sourceClass, String propertyName, Predicate<Method> predicate) {
+    private static List<Method> findMethodsForProperty(Class<?> sourceClass, Predicate<Method> predicate) {
         List<Method> methods = new ArrayList<>();
         Class<?> currentClass = sourceClass;
         while (currentClass != null) {
             Method[] declaredMethods = currentClass.getDeclaredMethods();
             for (Method declaredMethod : declaredMethods) {
                 if (predicate.test(declaredMethod)) {
-                    if (nameMatches(propertyName, declaredMethod)) {
-                        methods.add(declaredMethod);
-                    }
+                    methods.add(declaredMethod);
                 }
             }
             currentClass = currentClass.getSuperclass();
@@ -120,12 +124,6 @@ public class LambdaFetchingSupport {
         return methods.stream()
                 .sorted(Comparator.comparing(Method::getName))
                 .collect(toList());
-    }
-
-
-    private static boolean nameMatches(String propertyName, Method declaredMethod) {
-        String methodPropName = mkPropertyName(declaredMethod);
-        return propertyName.equals(methodPropName);
     }
 
     private static boolean isPossiblePojoMethod(Method method) {
@@ -169,7 +167,7 @@ public class LambdaFetchingSupport {
         return method.getDeclaringClass().equals(Object.class);
     }
 
-    private static String mkPropertyName(Method method) {
+    private static String mkPropertyNameGetter(Method method) {
         //
         // getFooName becomes fooName
         // isFoo becomes foo
