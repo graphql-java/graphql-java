@@ -10,20 +10,19 @@ import graphql.language.SourceLocation;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 @PublicApi
 public class ValidationError implements GraphQLError {
 
-    private final String message;
     private final List<SourceLocation> locations = new ArrayList<>();
     private final String description;
     private final ValidationErrorClassification validationErrorType;
-    private final List<String> queryPath;
-    private final Map<String, Object> extensions;
+    private final List<String> queryPath = new ArrayList<>();
+    private final Map<String, Object> extensions = new HashMap<>();
 
     @Deprecated
     @DeprecatedAt("2022-07-10")
@@ -72,13 +71,18 @@ public class ValidationError implements GraphQLError {
 
     private ValidationError(Builder builder) {
         this.validationErrorType = builder.validationErrorType;
+        this.description = builder.description;
         if (builder.sourceLocations != null) {
             this.locations.addAll(builder.sourceLocations);
         }
-        this.description = builder.description;
-        this.message = builder.description;
-        this.queryPath = builder.queryPath;
-        this.extensions = builder.extensions;
+
+        if (builder.queryPath != null) {
+            this.queryPath.addAll(builder.queryPath);
+        }
+
+        if (builder.extensions != null) {
+            this.extensions.putAll(builder.extensions);
+        }
     }
 
     public ValidationErrorClassification getValidationErrorType() {
@@ -87,7 +91,7 @@ public class ValidationError implements GraphQLError {
 
     @Override
     public String getMessage() {
-        return message;
+        return description;
     }
 
     public String getDescription() {
@@ -117,7 +121,7 @@ public class ValidationError implements GraphQLError {
     public String toString() {
         String extensionsString = "";
 
-        if (Optional.ofNullable(extensions).isPresent() && extensions.size() > 0) {
+        if (extensions.size() > 0) {
             extensionsString = extensions
                     .keySet()
                     .stream()
@@ -128,7 +132,7 @@ public class ValidationError implements GraphQLError {
         return "ValidationError{" +
                 "validationErrorType=" + validationErrorType +
                 ", queryPath=" + queryPath +
-                ", message=" + message +
+                ", message=" + description +
                 ", locations=" + locations +
                 ", description='" + description + '\'' +
                 ", extensions=[" + extensionsString + ']' +
