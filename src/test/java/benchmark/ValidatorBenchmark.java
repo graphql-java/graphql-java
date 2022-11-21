@@ -1,12 +1,7 @@
 package benchmark;
 
-import java.io.IOException;
-import java.net.URL;
 import java.util.Locale;
 import java.util.concurrent.TimeUnit;
-
-import com.google.common.base.Charsets;
-import com.google.common.io.Resources;
 
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
@@ -27,8 +22,6 @@ import graphql.parser.Parser;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.idl.SchemaGenerator;
 import graphql.validation.Validator;
-
-import static com.google.common.io.Resources.getResource;
 
 import static graphql.Assert.assertTrue;
 
@@ -67,8 +60,8 @@ public class ValidatorBenchmark {
 
         private Scenario load(String schemaPath, String queryPath) {
             try {
-                String schemaString = readFromClasspath(schemaPath);
-                String query = readFromClasspath(queryPath);
+                String schemaString = BenchmarkUtils.loadResource(schemaPath);
+                String query = BenchmarkUtils.loadResource(queryPath);
                 GraphQLSchema schema = SchemaGenerator.createdMockedSchema(schemaString);
                 Document document = Parser.parse(query);
 
@@ -78,15 +71,10 @@ public class ValidatorBenchmark {
                 assertTrue(executionResult.getErrors().size() == 0);
                 return new Scenario(schema, document);
             } catch (Exception e) {
-                System.out.println(e);
                 throw new RuntimeException(e);
             }
         }
 
-        private String readFromClasspath(String file) throws IOException {
-            URL url = getResource(file);
-            return Resources.toString(url, Charsets.UTF_8);
-        }
     }
 
     private void run(Scenario scenario) {

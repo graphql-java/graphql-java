@@ -1,7 +1,5 @@
 package benchmark;
 
-import com.google.common.base.Charsets;
-import com.google.common.io.Resources;
 import graphql.ExecutionResult;
 import graphql.GraphQL;
 import graphql.execution.DataFetcherResult;
@@ -23,14 +21,10 @@ import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 
-import java.io.IOException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-
-import static com.google.common.io.Resources.getResource;
 
 @State(Scope.Benchmark)
 public class IntrospectionBenchmark {
@@ -79,21 +73,11 @@ public class IntrospectionBenchmark {
     }
 
     public IntrospectionBenchmark() {
-        String largeSchema = readFromClasspath("large-schema-4.graphqls");
+        String largeSchema = BenchmarkUtils.loadResource("large-schema-4.graphqls");
         GraphQLSchema graphQLSchema = SchemaGenerator.createdMockedSchema(largeSchema);
         graphQL = GraphQL.newGraphQL(graphQLSchema)
                 //.instrumentation(countingInstrumentation)
                 .build();
-    }
-
-
-    private static String readFromClasspath(String file) {
-        URL url = getResource(file);
-        try {
-            return Resources.toString(url, Charsets.UTF_8);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
     }
 
     public static void main(String[] args) {
