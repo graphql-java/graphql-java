@@ -1,6 +1,7 @@
 package graphql.validation;
 
 
+import com.google.common.collect.ImmutableMap;
 import graphql.DeprecatedAt;
 import graphql.ErrorType;
 import graphql.GraphQLError;
@@ -10,7 +11,6 @@ import graphql.language.SourceLocation;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -22,7 +22,7 @@ public class ValidationError implements GraphQLError {
     private final String description;
     private final ValidationErrorClassification validationErrorType;
     private final List<String> queryPath = new ArrayList<>();
-    private final Map<String, Object> extensions = new HashMap<>();
+    private final ImmutableMap<String, Object> extensions;
 
     @Deprecated
     @DeprecatedAt("2022-07-10")
@@ -80,9 +80,7 @@ public class ValidationError implements GraphQLError {
             this.queryPath.addAll(builder.queryPath);
         }
 
-        if (builder.extensions != null) {
-            this.extensions.putAll(builder.extensions);
-        }
+        this.extensions = (builder.extensions != null) ? ImmutableMap.copyOf(builder.extensions) : ImmutableMap.of();
     }
 
     public ValidationErrorClassification getValidationErrorType() {
