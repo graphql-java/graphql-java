@@ -160,6 +160,11 @@ public class GraphQLUnionType implements GraphQLNamedOutputType, GraphQLComposit
         return directives.getAppliedDirective(directiveName);
     }
 
+    @Override
+    public GraphQLAppliedDirective getUniqueAppliedDirective(String directiveName) {
+        return directives.getAppliedDirective(directiveName);
+    }
+
     /**
      * This helps you transform the current GraphQLUnionType into another one by starting a builder with all
      * the current values and allows you to transform it how you want.

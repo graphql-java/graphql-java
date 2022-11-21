@@ -112,6 +112,11 @@ public class GraphQLEnumValueDefinition implements GraphQLNamedSchemaElement, Gr
         return directivesHolder.getAppliedDirective(directiveName);
     }
 
+    @Override
+    public GraphQLAppliedDirective getUniqueAppliedDirective(String directiveName) {
+        return directivesHolder.getAppliedDirective(directiveName);
+    }
+
     /**
      * This helps you transform the current GraphQLEnumValueDefinition into another one by starting a builder with all
      * the current values and allows you to transform it how you want.

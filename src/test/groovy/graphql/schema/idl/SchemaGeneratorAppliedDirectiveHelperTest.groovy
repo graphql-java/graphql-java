@@ -68,15 +68,15 @@ class SchemaGeneratorAppliedDirectiveHelperTest extends Specification {
         barType.directives.collect { it.name }.sort() == ["foo"]
         barType.appliedDirectives.collect { it.name }.sort() == ["foo"]
 
-        def fooAppliedDirective = field.getAppliedDirective("foo")
+        def fooAppliedDirective = field.getUniqueAppliedDirective("foo")
         fooAppliedDirective.arguments.collect { it.name }.sort() == ["arg1", "arg2"]
         fooAppliedDirective.arguments.collect { it.getValue() }.sort() == ["arg2Value", "fooArg1Value"]
 
-        def fooAppliedDirectiveOnType = barType.getAppliedDirective("foo")
+        def fooAppliedDirectiveOnType = barType.getUniqueAppliedDirective("foo")
         fooAppliedDirectiveOnType.arguments.collect { it.name }.sort() == ["arg1", "arg2"]
         fooAppliedDirectiveOnType.arguments.collect { it.getValue() }.sort() == ["BarTypeValue", "arg2Value",]
 
-        def complexAppliedDirective = complexField.getAppliedDirective("complex")
+        def complexAppliedDirective = complexField.getUniqueAppliedDirective("complex")
         GraphQLInputType complexInputType = schema.getTypeAs("ComplexInput")
         complexAppliedDirective.arguments.collect { it.name }.sort() == ["complexArg1"]
         complexAppliedDirective.arguments.collect { it.getValue() }.sort() == [
@@ -118,7 +118,7 @@ class SchemaGeneratorAppliedDirectiveHelperTest extends Specification {
         barType.appliedDirectives.collect { it.name }.sort() == ["foo"]
 
 
-        def fooAppliedDirective = field.getAppliedDirective("foo")
+        def fooAppliedDirective = field.getUniqueAppliedDirective("foo")
         fooAppliedDirective.arguments.collect { it.name }.sort() == ["arg1", "arg2"]
         fooAppliedDirective.arguments.collect { it.value }.sort() == ["arg2Value", "fooArg1Value"]
     }

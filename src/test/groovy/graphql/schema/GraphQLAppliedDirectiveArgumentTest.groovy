@@ -21,7 +21,7 @@ class GraphQLAppliedDirectiveArgumentTest extends Specification {
             '''
 
         def closure = {
-            def argument = it.fieldDefinition.getAppliedDirective("test").getArgument("value") as GraphQLAppliedDirectiveArgument
+            def argument = it.fieldDefinition.getUniqueAppliedDirective("test").getArgument("value") as GraphQLAppliedDirectiveArgument
             return ValuesResolver.valueToInternalValue(argument.getArgumentValue(), argument.getType(), GraphQLContext.getDefault(), Locale.getDefault())[0]
         }
         def graphql = TestUtil.graphQL(spec, RuntimeWiring.newRuntimeWiring()

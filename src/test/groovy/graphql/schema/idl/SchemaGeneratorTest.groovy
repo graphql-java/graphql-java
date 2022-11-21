@@ -1365,7 +1365,7 @@ class SchemaGeneratorTest extends Specification {
 
         expect:
 
-        container.getAppliedDirective(directiveName) != null
+        container.getUniqueAppliedDirective(directiveName) != null
 
         if (container instanceof GraphQLEnumType) {
             def evd = ((GraphQLEnumType) container).getValue("X").getDirective("EnumValueDirective")
@@ -1633,7 +1633,7 @@ class SchemaGeneratorTest extends Specification {
         argInt.getDirective("thirdDirective") != null
 
         def intDirective = argInt.getDirective("intDirective")
-        def intAppliedDirective = argInt.getAppliedDirective("intDirective")
+        def intAppliedDirective = argInt.getUniqueAppliedDirective("intDirective")
         intAppliedDirective.name == "intDirective"
         intAppliedDirective.arguments.size() == 1
         def directiveArg = intAppliedDirective.getArgument("inception")
@@ -1703,13 +1703,13 @@ class SchemaGeneratorTest extends Specification {
         def directiveTest1 = schema.getDirective("test1")
         GraphQLNonNull.nonNull(GraphQLBoolean).isEqualTo(directiveTest1.getArgument("include").type)
         directiveTest1.getArgument("include").argumentDefaultValue.value == null
-        def appliedDirective1 = schema.getObjectType("Query").getFieldDefinition("f1").getAppliedDirective("test1")
+        def appliedDirective1 = schema.getObjectType("Query").getFieldDefinition("f1").getUniqueAppliedDirective("test1")
         printAst(appliedDirective1.getArgument("include").argumentValue.value as Node) == "false"
 
         def directiveTest2 = schema.getDirective("test2")
         GraphQLNonNull.nonNull(GraphQLBoolean).isEqualTo(directiveTest2.getArgument("include").type)
         printAst(directiveTest2.getArgument("include").argumentDefaultValue.value as Node) == "true"
-        def appliedDirective2 = schema.getObjectType("Query").getFieldDefinition("f2").getAppliedDirective("test2")
+        def appliedDirective2 = schema.getObjectType("Query").getFieldDefinition("f2").getUniqueAppliedDirective("test2")
         printAst(appliedDirective2.getArgument("include").argumentValue.value as Node) == "true"
     }
 
@@ -1736,7 +1736,7 @@ class SchemaGeneratorTest extends Specification {
         def directive = schema.getObjectType("Query").getFieldDefinition("f").getDirective("testDirective")
         directive.getArgument("knownArg1").type == GraphQLString
         printAst(directive.getArgument("knownArg1").argumentDefaultValue.value as Node) == '"defaultValue1"'
-        def appliedDirective = schema.getObjectType("Query").getFieldDefinition("f").getAppliedDirective("testDirective")
+        def appliedDirective = schema.getObjectType("Query").getFieldDefinition("f").getUniqueAppliedDirective("testDirective")
         printAst(appliedDirective.getArgument("knownArg1").argumentValue.value as Node) == '"overrideVal1"'
 
         directive.getArgument("knownArg2").type == GraphQLInt
@@ -1771,7 +1771,7 @@ class SchemaGeneratorTest extends Specification {
         printAst(directive.getArgument("reason").argumentDefaultValue.value as Node) == '"No longer supported"'
         directive.validLocations().collect { it.name() } == [Introspection.DirectiveLocation.FIELD_DEFINITION.name()]
 
-        def appliedDirective = f1.getAppliedDirective("deprecated")
+        def appliedDirective = f1.getUniqueAppliedDirective("deprecated")
         appliedDirective.name == "deprecated"
         appliedDirective.getArgument("reason").type == GraphQLString
         printAst(appliedDirective.getArgument("reason").argumentValue.value as Node) == '"No longer supported"'
@@ -1782,7 +1782,7 @@ class SchemaGeneratorTest extends Specification {
         then:
         f2.getDeprecationReason() == "Just because"
 
-        def appliedDirective2 = f2.getAppliedDirective("deprecated")
+        def appliedDirective2 = f2.getUniqueAppliedDirective("deprecated")
         appliedDirective2.name == "deprecated"
         appliedDirective2.getArgument("reason").type == GraphQLString
         printAst(appliedDirective2.getArgument("reason").argumentValue.value as Node) == '"Just because"'

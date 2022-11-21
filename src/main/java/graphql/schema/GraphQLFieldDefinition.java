@@ -143,6 +143,11 @@ public class GraphQLFieldDefinition implements GraphQLNamedSchemaElement, GraphQ
         return directivesHolder.getAppliedDirective(directiveName);
     }
 
+    @Override
+    public GraphQLAppliedDirective getUniqueAppliedDirective(String directiveName) {
+        return directivesHolder.getAppliedDirective(directiveName);
+    }
+
     public List<GraphQLArgument> getArguments() {
         return arguments;
     }

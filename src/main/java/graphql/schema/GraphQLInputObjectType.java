@@ -120,6 +120,11 @@ public class GraphQLInputObjectType implements GraphQLNamedInputType, GraphQLUnm
     }
 
     @Override
+    public GraphQLAppliedDirective getUniqueAppliedDirective(String directiveName) {
+        return directives.getAppliedDirective(directiveName);
+    }
+
+    @Override
     public GraphQLInputObjectField getFieldDefinition(String name) {
         return fieldMap.get(name);
     }

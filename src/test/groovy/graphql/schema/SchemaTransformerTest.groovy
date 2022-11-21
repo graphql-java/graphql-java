@@ -913,7 +913,7 @@ type Query {
         then:
 
         def fieldDef = newSchema.getObjectType("Query").getFieldDefinition("foo")
-        def appliedDirective = fieldDef.getAppliedDirective("myDirective")
+        def appliedDirective = fieldDef.getUniqueAppliedDirective("myDirective")
         def oldSkoolDirective = fieldDef.getDirective("myDirective")
         def argument = fieldDef.getArgument("fooArgOnField")
         def directiveDecl = newSchema.getDirective("myDirective")

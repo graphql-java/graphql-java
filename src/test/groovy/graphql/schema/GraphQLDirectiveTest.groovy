@@ -178,7 +178,7 @@ class GraphQLDirectiveTest extends Specification {
         assert !container.hasAppliedDirective("non existent")
         assert container.getDirectives().collect({ it.name }) == ["d1", "dr", "dr"] // Retain for test coverage
         assert container.getAppliedDirectives().collect({ it.name }) == ["d1", "dr", "dr"]
-        assert container.getAppliedDirective("d1").name == "d1"
+        assert container.getUniqueAppliedDirective("d1").name == "d1"
         assert container.getDirectivesByName().keySet() == ["d1"] as Set // Retain for test coverage, there is no equivalent non-repeatable directive method
 
         assert container.getAllDirectivesByName().keySet() == ["d1", "dr"] as Set // Retain for test coverage

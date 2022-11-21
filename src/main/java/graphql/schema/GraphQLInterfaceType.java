@@ -164,6 +164,11 @@ public class GraphQLInterfaceType implements GraphQLNamedType, GraphQLCompositeT
     }
 
     @Override
+    public GraphQLAppliedDirective getUniqueAppliedDirective(String directiveName) {
+        return directivesHolder.getAppliedDirective(directiveName);
+    }
+
+    @Override
     public String toString() {
         return "GraphQLInterfaceType{" +
                 "name='" + name + '\'' +

@@ -131,6 +131,11 @@ GraphQLScalarType implements GraphQLNamedInputType, GraphQLNamedOutputType, Grap
     }
 
     @Override
+    public GraphQLAppliedDirective getUniqueAppliedDirective(String directiveName) {
+        return directivesHolder.getAppliedDirective(directiveName);
+    }
+
+    @Override
     public String toString() {
         return "GraphQLScalarType{" +
                 "name='" + name + '\'' +

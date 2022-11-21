@@ -123,6 +123,11 @@ public class GraphQLObjectType implements GraphQLNamedOutputType, GraphQLComposi
     }
 
     @Override
+    public GraphQLAppliedDirective getUniqueAppliedDirective(String directiveName) {
+        return directivesHolder.getAppliedDirective(directiveName);
+    }
+
+    @Override
     public GraphQLFieldDefinition getFieldDefinition(String name) {
         return fieldDefinitionsByName.get(name);
     }

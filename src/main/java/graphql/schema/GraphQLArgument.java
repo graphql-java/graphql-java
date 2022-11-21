@@ -227,6 +227,11 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
     }
 
     @Override
+    public GraphQLAppliedDirective getUniqueAppliedDirective(String directiveName) {
+        return directivesHolder.getAppliedDirective(directiveName);
+    }
+
+    @Override
     public List<GraphQLSchemaElement> getChildren() {
         List<GraphQLSchemaElement> children = new ArrayList<>();
         children.add(getType());

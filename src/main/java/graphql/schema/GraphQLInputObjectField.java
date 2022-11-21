@@ -168,6 +168,11 @@ public class GraphQLInputObjectField implements GraphQLNamedSchemaElement, Graph
         return directivesHolder.getAppliedDirective(directiveName);
     }
 
+    @Override
+    public GraphQLAppliedDirective getUniqueAppliedDirective(String directiveName) {
+        return directivesHolder.getAppliedDirective(directiveName);
+    }
+
     /**
      * This helps you transform the current GraphQLInputObjectField into another one by starting a builder with all
      * the current values and allows you to transform it how you want.

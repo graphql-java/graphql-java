@@ -52,12 +52,25 @@ public interface GraphQLDirectiveContainer extends GraphQLNamedSchemaElement {
      * @param directiveName the name of the directive to retrieve
      *
      * @return the directive or null if there is not one with that name
+     *
+     * @deprecated use {@link #getUniqueAppliedDirective(String)} instead
      */
+    @Deprecated
+    @DeprecatedAt("2022-11-21")
     GraphQLAppliedDirective getAppliedDirective(String directiveName);
+
+    /**
+     * Returns a non-repeatable directive with the provided name.
+     *
+     * @param directiveName is a {@link String} representing the name of the directive to retrieve
+     *
+     * @return the {@link GraphQLAppliedDirective} or null if there is not one with that name
+     */
+    GraphQLAppliedDirective getUniqueAppliedDirective(String directiveName);
 
 
     /**
-     * Returns all of the directives with the provided name, including repeatable and non repeatable directives.
+     * Returns all the directives with the provided name, including repeatable and non-repeatable directives.
      *
      * @param directiveName the name of the directives to retrieve
      *
@@ -68,7 +81,7 @@ public interface GraphQLDirectiveContainer extends GraphQLNamedSchemaElement {
     }
 
     /**
-     * This will return true if the element has a directive (repeatable or non repeatable) with the specified name
+     * This will return true if the element has a directive (repeatable or non-repeatable) with the specified name
      *
      * @param directiveName the name of the directive
      *
@@ -83,7 +96,7 @@ public interface GraphQLDirectiveContainer extends GraphQLNamedSchemaElement {
     }
 
     /**
-     * This will return true if the element has a directive (repeatable or non repeatable) with the specified name
+     * This will return true if the element has a directive (repeatable or non-repeatable) with the specified name
      *
      * @param directiveName the name of the directive
      *
@@ -106,10 +119,10 @@ public interface GraphQLDirectiveContainer extends GraphQLNamedSchemaElement {
     List<GraphQLDirective> getDirectives();
 
     /**
-     * This will return a Map of the non repeatable directives that are associated with a {@link graphql.schema.GraphQLNamedSchemaElement}.  Any repeatable directives
+     * This will return a Map of the non-repeatable directives that are associated with a {@link graphql.schema.GraphQLNamedSchemaElement}.  Any repeatable directives
      * will be filtered out of this map.
      *
-     * @return a map of non repeatable directives by directive name.
+     * @return a map of non-repeatable directives by directive name.
      *
      * @deprecated - use the {@link GraphQLAppliedDirective} methods instead
      */
@@ -119,7 +132,7 @@ public interface GraphQLDirectiveContainer extends GraphQLNamedSchemaElement {
 
     /**
      * This will return a Map of the all directives that are associated with a {@link graphql.schema.GraphQLNamedSchemaElement}, including both
-     * repeatable and non repeatable directives.
+     * repeatable and non-repeatable directives.
      *
      * @return a map of all directives by directive name
      *
@@ -131,7 +144,7 @@ public interface GraphQLDirectiveContainer extends GraphQLNamedSchemaElement {
 
     /**
      * Returns a non-repeatable directive with the provided name.  This will throw a {@link graphql.AssertException} if
-     * the directive is a repeatable directive that has more then one instance.
+     * the directive is a repeatable directive that has more than one instance.
      *
      * @param directiveName the name of the directive to retrieve
      *
@@ -144,7 +157,7 @@ public interface GraphQLDirectiveContainer extends GraphQLNamedSchemaElement {
     GraphQLDirective getDirective(String directiveName);
 
     /**
-     * Returns all of the directives with the provided name, including repeatable and non repeatable directives.
+     * Returns all the directives with the provided name, including repeatable and non-repeatable directives.
      *
      * @param directiveName the name of the directives to retrieve
      *
