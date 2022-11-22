@@ -1,6 +1,7 @@
 package graphql.schema;
 
 import graphql.Internal;
+import graphql.VisibleForTesting;
 
 /**
  * This class is the guts of a property data fetcher and also used in AST code to turn
@@ -25,6 +26,11 @@ public class PropertyDataFetcherHelper {
 
     public static boolean setUseSetAccessible(boolean flag) {
         return impl.setUseSetAccessible(flag);
+    }
+
+    @VisibleForTesting
+    public static boolean setUseLambdaFactory(boolean flag) {
+        return impl.setUseLambdaFactory(flag);
     }
 
     public static boolean setUseNegativeCache(boolean flag) {

@@ -31,6 +31,7 @@ import static graphql.schema.GraphQLTypeUtil.unwrapOne;
 public class PropertyFetchingImpl {
 
     private final AtomicBoolean USE_SET_ACCESSIBLE = new AtomicBoolean(true);
+    private final AtomicBoolean USE_LAMBDA_FACTORY = new AtomicBoolean(true);
     private final AtomicBoolean USE_NEGATIVE_CACHE = new AtomicBoolean(true);
     private final ConcurrentMap<CacheKey, CachedLambdaFunction> LAMBDA_CACHE = new ConcurrentHashMap<>();
     private final ConcurrentMap<CacheKey, CachedMethod> METHOD_CACHE = new ConcurrentHashMap<>();
@@ -104,7 +105,7 @@ public class PropertyFetchingImpl {
         // expensive operation here
         //
 
-        Optional<Function<Object, Object>> getterOpt = LambdaFetchingSupport.createGetter(object.getClass(), propertyName);
+        Optional<Function<Object, Object>> getterOpt = lambdaGetter(propertyName, object);
         if (getterOpt.isPresent()) {
             Function<Object, Object> getter = getterOpt.get();
             cachedFunction = new CachedLambdaFunction(getter);
@@ -113,23 +114,43 @@ public class PropertyFetchingImpl {
         }
 
         boolean dfeInUse = singleArgumentValue != null;
+        //
+        // try by record like name - object.propertyName()
         try {
-            MethodFinder methodFinder = (root, methodName) -> findPubliclyAccessibleMethod(cacheKey, root, methodName, dfeInUse);
+            MethodFinder methodFinder = (rootClass, methodName) -> findRecordMethod(cacheKey, rootClass, methodName);
+            return getPropertyViaRecordMethod(object, propertyName, methodFinder, singleArgumentValue);
+        } catch (NoSuchMethodException ignored) {
+        }
+        //
+        // try by public getters name -  object.getPropertyName()
+        try {
+            MethodFinder methodFinder = (rootClass, methodName) -> findPubliclyAccessibleMethod(cacheKey, rootClass, methodName, dfeInUse);
             return getPropertyViaGetterMethod(object, propertyName, graphQLType, methodFinder, singleArgumentValue);
         } catch (NoSuchMethodException ignored) {
-            try {
-                MethodFinder methodFinder = (aClass, methodName) -> findViaSetAccessible(cacheKey, aClass, methodName, dfeInUse);
-                return getPropertyViaGetterMethod(object, propertyName, graphQLType, methodFinder, singleArgumentValue);
-            } catch (NoSuchMethodException ignored2) {
-                try {
-                    return getPropertyViaFieldAccess(cacheKey, object, propertyName);
-                } catch (FastNoSuchMethodException e) {
-                    // we have nothing to ask for, and we have exhausted our lookup strategies
-                    putInNegativeCache(cacheKey);
-                    return null;
-                }
-            }
         }
+        //
+        // try by accessible getters name -  object.getPropertyName()
+        try {
+            MethodFinder methodFinder = (aClass, methodName) -> findViaSetAccessible(cacheKey, aClass, methodName, dfeInUse);
+            return getPropertyViaGetterMethod(object, propertyName, graphQLType, methodFinder, singleArgumentValue);
+        } catch (NoSuchMethodException ignored) {
+        }
+        //
+        // try by field name -  object.propertyName;
+        try {
+            return getPropertyViaFieldAccess(cacheKey, object, propertyName);
+        } catch (NoSuchMethodException ignored) {
+        }
+        // we have nothing to ask for, and we have exhausted our lookup strategies
+        putInNegativeCache(cacheKey);
+        return null;
+    }
+
+    private Optional<Function<Object, Object>> lambdaGetter(String propertyName, Object object) {
+        if (USE_LAMBDA_FACTORY.get()) {
+            return LambdaFetchingSupport.createGetter(object.getClass(), propertyName);
+        }
+        return Optional.empty();
     }
 
     private boolean isNegativelyCached(CacheKey key) {
@@ -147,6 +168,11 @@ public class PropertyFetchingImpl {
 
     private interface MethodFinder {
         Method apply(Class<?> aClass, String s) throws NoSuchMethodException;
+    }
+
+    private Object getPropertyViaRecordMethod(Object object, String propertyName, MethodFinder methodFinder, Object singleArgumentValue) throws NoSuchMethodException {
+        Method method = methodFinder.apply(object.getClass(), propertyName);
+        return invokeMethod(object, singleArgumentValue, method, takesSingleArgumentTypeAsOnlyArgument(method));
     }
 
     private Object getPropertyViaGetterMethod(Object object, String propertyName, GraphQLType graphQLType, MethodFinder methodFinder, Object singleArgumentValue) throws NoSuchMethodException {
@@ -202,6 +228,20 @@ public class PropertyFetchingImpl {
         }
         assert rootClass != null;
         return rootClass.getMethod(methodName);
+    }
+
+    /*
+       https://docs.oracle.com/en/java/javase/15/language/records.html
+
+       A record class declares a sequence of fields, and then the appropriate accessors, constructors, equals, hashCode, and toString methods are created automatically.
+
+       Records cannot extend any class - so we need only check the root class for a publicly declared method with the propertyName
+
+       However, we won't just restrict ourselves strictly to true records.  We will find methods that are record like
+       and fetch them - e.g. `object.propertyName()`
+     */
+    private Method findRecordMethod(CacheKey cacheKey, Class<?> rootClass, String methodName) throws NoSuchMethodException {
+        return findPubliclyAccessibleMethod(cacheKey,rootClass,methodName,false);
     }
 
     private Method findViaSetAccessible(CacheKey cacheKey, Class<?> aClass, String methodName, boolean dfeInUse) throws NoSuchMethodException {
@@ -305,6 +345,9 @@ public class PropertyFetchingImpl {
 
     public boolean setUseSetAccessible(boolean flag) {
         return USE_SET_ACCESSIBLE.getAndSet(flag);
+    }
+    public boolean setUseLambdaFactory(boolean flag) {
+        return USE_LAMBDA_FACTORY.getAndSet(flag);
     }
 
     public boolean setUseNegativeCache(boolean flag) {
