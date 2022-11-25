@@ -18,6 +18,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 
 import static graphql.Assert.assertShouldNeverHappen;
 import static graphql.Scalars.GraphQLBoolean;
@@ -61,7 +62,7 @@ public class PropertyFetchingImpl {
         }
     }
 
-    public Object getPropertyValue(String propertyName, Object object, GraphQLType graphQLType, Object singleArgumentValue) {
+    public Object getPropertyValue(String propertyName, Object object, GraphQLType graphQLType, boolean dfeInUse, Supplier<Object> singleArgumentValue) {
         if (object instanceof Map) {
             return ((Map<?, ?>) object).get(propertyName);
         }
@@ -113,7 +114,6 @@ public class PropertyFetchingImpl {
             return getter.apply(object);
         }
 
-        boolean dfeInUse = singleArgumentValue != null;
         //
         // try by record like name - object.propertyName()
         try {
@@ -170,12 +170,12 @@ public class PropertyFetchingImpl {
         Method apply(Class<?> aClass, String s) throws NoSuchMethodException;
     }
 
-    private Object getPropertyViaRecordMethod(Object object, String propertyName, MethodFinder methodFinder, Object singleArgumentValue) throws NoSuchMethodException {
+    private Object getPropertyViaRecordMethod(Object object, String propertyName, MethodFinder methodFinder, Supplier<Object> singleArgumentValue) throws NoSuchMethodException {
         Method method = methodFinder.apply(object.getClass(), propertyName);
         return invokeMethod(object, singleArgumentValue, method, takesSingleArgumentTypeAsOnlyArgument(method));
     }
 
-    private Object getPropertyViaGetterMethod(Object object, String propertyName, GraphQLType graphQLType, MethodFinder methodFinder, Object singleArgumentValue) throws NoSuchMethodException {
+    private Object getPropertyViaGetterMethod(Object object, String propertyName, GraphQLType graphQLType, MethodFinder methodFinder, Supplier<Object> singleArgumentValue) throws NoSuchMethodException {
         if (isBooleanProperty(graphQLType)) {
             try {
                 return getPropertyViaGetterUsingPrefix(object, propertyName, "is", methodFinder, singleArgumentValue);
@@ -187,7 +187,7 @@ public class PropertyFetchingImpl {
         }
     }
 
-    private Object getPropertyViaGetterUsingPrefix(Object object, String propertyName, String prefix, MethodFinder methodFinder, Object singleArgumentValue) throws NoSuchMethodException {
+    private Object getPropertyViaGetterUsingPrefix(Object object, String propertyName, String prefix, MethodFinder methodFinder, Supplier<Object> singleArgumentValue) throws NoSuchMethodException {
         String getterName = prefix + propertyName.substring(0, 1).toUpperCase() + propertyName.substring(1);
         Method method = methodFinder.apply(object.getClass(), getterName);
         return invokeMethod(object, singleArgumentValue, method, takesSingleArgumentTypeAsOnlyArgument(method));
@@ -302,13 +302,14 @@ public class PropertyFetchingImpl {
         }
     }
 
-    private Object invokeMethod(Object object, Object singleArgumentValue, Method method, boolean takesSingleArgument) throws FastNoSuchMethodException {
+    private Object invokeMethod(Object object, Supplier<Object> singleArgumentValue, Method method, boolean takesSingleArgument) throws FastNoSuchMethodException {
         try {
             if (takesSingleArgument) {
-                if (singleArgumentValue == null) {
+                Object argValue = singleArgumentValue.get();
+                if (argValue == null) {
                     throw new FastNoSuchMethodException(method.getName());
                 }
-                return method.invoke(object, singleArgumentValue);
+                return method.invoke(object, argValue);
             } else {
                 return method.invoke(object);
             }
