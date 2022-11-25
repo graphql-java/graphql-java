@@ -5,7 +5,6 @@ import com.google.common.collect.ImmutableMap;
 import graphql.Assert;
 import graphql.PublicApi;
 
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -53,7 +52,7 @@ public class MergedSelectionSet {
     }
 
     public static class Builder {
-        private Map<String, MergedField> subFields = new LinkedHashMap<>();
+        private Map<String, MergedField> subFields = ImmutableMap.of();
 
         private Builder() {
 
