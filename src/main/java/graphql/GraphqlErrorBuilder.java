@@ -4,8 +4,8 @@ import graphql.execution.DataFetcherResult;
 import graphql.execution.ResultPath;
 import graphql.language.SourceLocation;
 import graphql.schema.DataFetchingEnvironment;
-
 import org.jetbrains.annotations.Nullable;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -20,7 +20,7 @@ import static graphql.Assert.assertNotNull;
  */
 @SuppressWarnings("unchecked")
 @PublicApi
-public class GraphqlErrorBuilder<B extends GraphqlErrorBuilder<B>> {
+public class GraphqlErrorBuilder<B extends GraphqlErrorBuilder<B>> implements GraphQLError.Builder<B> {
 
     private String message;
     private List<Object> path;

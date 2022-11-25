@@ -708,6 +708,35 @@ class SchemaTypeCheckerTest extends Specification {
 
     }
 
+    def "directives on arguments are not relevant"() {
+        def spec = """    
+            directive @d on ARGUMENT_DEFINITION
+            interface InterfaceType {
+                fieldB(arg1 : String = "defaultVal", arg2 : String @d, arg3 : Int @d) : String 
+            }
+
+            type BaseType {
+                fieldX : Int
+            }
+
+            extend type BaseType implements InterfaceType {
+                fieldB(arg1 : String = "defaultVal" @d, arg2 : String, arg3 : Int)  : String 
+            }
+
+            schema {
+              query : BaseType
+            }
+        """
+
+        def result = check(spec)
+
+        expect:
+        result.isEmpty()
+
+    }
+
+
+
     def "test field arguments on object can contain additional optional arguments"() {
         def spec = """
             interface InterfaceType {

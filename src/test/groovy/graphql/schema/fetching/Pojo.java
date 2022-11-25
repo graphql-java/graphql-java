@@ -65,4 +65,8 @@ public class Pojo {
         return "is";
     }
 
+    public String recordLike() {
+        return "recordLike";
+    }
+
 }

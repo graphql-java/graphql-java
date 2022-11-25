@@ -135,29 +135,16 @@ public class Async {
         CompletableFuture<U> apply(T input, int index, List<U> previousResults);
     }
 
-    public static <U> CompletableFuture<List<U>> each(List<CompletableFuture<U>> futures) {
-        CompletableFuture<List<U>> overallResult = new CompletableFuture<>();
-
-        @SuppressWarnings("unchecked")
-        CompletableFuture<U>[] arrayOfFutures = futures.toArray(new CompletableFuture[0]);
-        CompletableFuture
-                .allOf(arrayOfFutures)
-                .whenComplete((ignored, exception) -> {
-                    if (exception != null) {
-                        overallResult.completeExceptionally(exception);
-                        return;
-                    }
-                    List<U> results = new ArrayList<>(arrayOfFutures.length);
-                    for (CompletableFuture<U> future : arrayOfFutures) {
-                        results.add(future.join());
-                    }
-                    overallResult.complete(results);
-                });
-        return overallResult;
+    public static <U> CompletableFuture<List<U>> each(List<CompletableFuture<U>> futures) { // TODO: used only in tests now
+        CombinedBuilder<U> overall = ofExpectedSize(futures.size());
+        for (CompletableFuture<U> cf : futures) {
+            overall.add(cf);
+        }
+        return overall.await();
     }
 
     public static <T, U> CompletableFuture<List<U>> each(Collection<T> list, BiFunction<T, Integer, CompletableFuture<U>> cfFactory) {
-        List<CompletableFuture<U>> futures = new ArrayList<>(list.size());
+        CombinedBuilder<U> futures = ofExpectedSize(list.size());
         int index = 0;
         for (T t : list) {
             CompletableFuture<U> cf;
@@ -171,8 +158,7 @@ public class Async {
             }
             futures.add(cf);
         }
-        return each(futures);
-
+        return futures.await();
     }
 
     public static <T, U> CompletableFuture<List<U>> eachSequentially(Iterable<T> list, CFFactory<T, U> cfFactory) {

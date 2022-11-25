@@ -1,5 +1,6 @@
 package readme;
 
+import graphql.ErrorClassification;
 import graphql.GraphQLError;
 import graphql.GraphqlErrorBuilder;
 import graphql.InvalidSyntaxError;
@@ -470,7 +471,10 @@ public class ReadmeExamples {
     }
 
     private void errorBuilderExample() {
-        GraphQLError err = GraphqlErrorBuilder.newError().message("direct").build();
+        GraphQLError err = GraphQLError.newError()
+                .message("direct")
+                .errorType(ErrorClassification.errorClassification("customClassification"))
+                .build();
 
         SpecialError specialErr = new SpecialErrorBuilder().message("special").build();
     }

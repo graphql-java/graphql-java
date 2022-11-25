@@ -1,7 +1,5 @@
 package benchmark;
 
-import com.google.common.base.Charsets;
-import com.google.common.io.Resources;
 import graphql.execution.CoercedVariables;
 import graphql.language.Document;
 import graphql.normalized.ExecutableNormalizedOperation;
@@ -22,11 +20,7 @@ import org.openjdk.jmh.annotations.Threads;
 import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
 
-import java.io.IOException;
-import java.net.URL;
 import java.util.concurrent.TimeUnit;
-
-import static com.google.common.io.Resources.getResource;
 
 @State(Scope.Benchmark)
 @BenchmarkMode(Mode.Throughput)
@@ -43,20 +37,14 @@ public class NQExtraLargeBenchmark {
         @Setup
         public void setup() {
             try {
-                String schemaString = readFromClasspath("extra-large-schema-1.graphqls");
+                String schemaString = BenchmarkUtils.loadResource("extra-large-schema-1.graphqls");
                 schema = SchemaGenerator.createdMockedSchema(schemaString);
 
-                String query = readFromClasspath("extra-large-schema-1-query.graphql");
+                String query = BenchmarkUtils.loadResource("extra-large-schema-1-query.graphql");
                 document = Parser.parse(query);
             } catch (Exception e) {
-                System.out.println(e);
                 throw new RuntimeException(e);
             }
-        }
-
-        private String readFromClasspath(String file) throws IOException {
-            URL url = getResource(file);
-            return Resources.toString(url, Charsets.UTF_8);
         }
     }
 

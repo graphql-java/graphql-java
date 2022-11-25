@@ -3,12 +3,12 @@ package graphql.schema.idl
 import graphql.Scalars
 import graphql.schema.GraphQLScalarType
 import graphql.schema.idl.errors.DirectiveIllegalLocationError
+import graphql.schema.idl.errors.DirectiveIllegalReferenceError
 import graphql.schema.idl.errors.DirectiveMissingNonNullArgumentError
 import graphql.schema.idl.errors.DirectiveUndeclaredError
 import graphql.schema.idl.errors.DirectiveUnknownArgumentError
 import graphql.schema.idl.errors.IllegalNameError
 import graphql.schema.idl.errors.NotAnInputTypeError
-import graphql.schema.idl.errors.DirectiveIllegalReferenceError
 import spock.lang.Specification
 
 class SchemaTypeDirectivesCheckerTest extends Specification {
@@ -26,6 +26,8 @@ class SchemaTypeDirectivesCheckerTest extends Specification {
                                         ARGUMENT_DEFINITION | INTERFACE | UNION | 
                                         ENUM | ENUM_VALUE | 
                                         INPUT_OBJECT | INPUT_FIELD_DEFINITION
+                                        
+            directive @d(arg: String @testDirective) on FIELD
                                         
 
             type ObjectType @testDirective(knownArg : "x") {

@@ -1,6 +1,7 @@
 package graphql.schema;
 
 import graphql.Internal;
+import graphql.VisibleForTesting;
 
 import java.util.function.Supplier;
 
@@ -27,6 +28,11 @@ public class PropertyDataFetcherHelper {
 
     public static boolean setUseSetAccessible(boolean flag) {
         return impl.setUseSetAccessible(flag);
+    }
+
+    @VisibleForTesting
+    public static boolean setUseLambdaFactory(boolean flag) {
+        return impl.setUseLambdaFactory(flag);
     }
 
     public static boolean setUseNegativeCache(boolean flag) {
