@@ -4,6 +4,7 @@ import graphql.execution.CoercedVariables
 import graphql.language.BooleanValue
 import graphql.language.StringValue
 import graphql.schema.CoercingParseLiteralException
+import graphql.schema.CoercingParseValueException
 import spock.lang.Shared
 import spock.lang.Specification
 import spock.lang.Unroll
@@ -54,7 +55,6 @@ class ScalarsStringTest extends Specification {
     def "String serialize #value into #result (#result.class)"() {
         expect:
         Scalars.GraphQLString.getCoercing().serialize(value, GraphQLContext.default, Locale.default) == result
-        Scalars.GraphQLString.getCoercing().parseValue(value, GraphQLContext.default, Locale.default) == result
 
         where:
         value        | result
@@ -64,10 +64,9 @@ class ScalarsStringTest extends Specification {
     }
 
     @Unroll
-    def "String serialize #value into #result (#result.class) with deprecated methods"() {
+    def "String serialize #value into #result (#result.class) with deprecated method"() {
         expect:
         Scalars.GraphQLString.getCoercing().serialize(value) == result // Retain deprecated method for test coverage
-        Scalars.GraphQLString.getCoercing().parseValue(value) == result // Retain deprecated method for test coverage
 
         where:
         value        | result
@@ -76,4 +75,37 @@ class ScalarsStringTest extends Specification {
         customObject | "foo"
     }
 
+    @Unroll
+    def "String parseValue #value into #result"() {
+        expect:
+        Scalars.GraphQLString.getCoercing().parseValue("123ab", GraphQLContext.default, Locale.default) == "123ab"
+    }
+
+    @Unroll
+    def "String parseValue #value into #result with deprecated method"() {
+        expect:
+        Scalars.GraphQLString.getCoercing().parseValue("123ab") == "123ab" // Retain deprecated method for test coverage
+    }
+
+    @Unroll
+    def "String parseValue throws exception for non-String values"() {
+        when:
+        Scalars.GraphQLString.getCoercing().parseValue(literal, GraphQLContext.default, Locale.default)
+        then:
+        def ex = thrown(CoercingParseValueException)
+
+        where:
+        literal      | _
+        123          | _
+        true         | _
+        customObject | _
+    }
+
+    def "String parseValue English exception message"() {
+        when:
+        Scalars.GraphQLString.getCoercing().parseValue(9001, GraphQLContext.default, Locale.ENGLISH)
+        then:
+        def ex = thrown(CoercingParseValueException)
+        ex.message == "Expected a String input, but it was a 'Integer'"
+    }
 }
