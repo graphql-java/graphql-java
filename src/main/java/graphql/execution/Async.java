@@ -2,7 +2,6 @@ package graphql.execution;
 
 import graphql.Assert;
 import graphql.Internal;
-import graphql.collect.ImmutableKit;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -13,7 +12,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
 import java.util.function.BiFunction;
-import java.util.function.Function;
 import java.util.function.Supplier;
 
 @Internal
@@ -28,7 +26,7 @@ public class Async {
     }
 
     /**
-     * Combines 1 or more CF. It is a wrapper around CompletableFuture.allOf.
+     * Combines 0 or more CF into one. It is a wrapper around <code>CompletableFuture.allOf</code>.
      *
      * @param expectedSize how many we expect
      * @param <T>          for two
@@ -135,29 +133,8 @@ public class Async {
         CompletableFuture<U> apply(T input, int index, List<U> previousResults);
     }
 
-    public static <U> CompletableFuture<List<U>> each(List<CompletableFuture<U>> futures) {
-        CompletableFuture<List<U>> overallResult = new CompletableFuture<>();
-
-        @SuppressWarnings("unchecked")
-        CompletableFuture<U>[] arrayOfFutures = futures.toArray(new CompletableFuture[0]);
-        CompletableFuture
-                .allOf(arrayOfFutures)
-                .whenComplete((ignored, exception) -> {
-                    if (exception != null) {
-                        overallResult.completeExceptionally(exception);
-                        return;
-                    }
-                    List<U> results = new ArrayList<>(arrayOfFutures.length);
-                    for (CompletableFuture<U> future : arrayOfFutures) {
-                        results.add(future.join());
-                    }
-                    overallResult.complete(results);
-                });
-        return overallResult;
-    }
-
     public static <T, U> CompletableFuture<List<U>> each(Collection<T> list, BiFunction<T, Integer, CompletableFuture<U>> cfFactory) {
-        List<CompletableFuture<U>> futures = new ArrayList<>(list.size());
+        CombinedBuilder<U> futures = ofExpectedSize(list.size());
         int index = 0;
         for (T t : list) {
             CompletableFuture<U> cf;
@@ -171,8 +148,7 @@ public class Async {
             }
             futures.add(cf);
         }
-        return each(futures);
-
+        return futures.await();
     }
 
     public static <T, U> CompletableFuture<List<U>> eachSequentially(Iterable<T> list, CFFactory<T, U> cfFactory) {
@@ -236,23 +212,6 @@ public class Async {
         CompletableFuture<T> result = new CompletableFuture<>();
         result.completeExceptionally(exception);
         return result;
-    }
-
-    public static <U, T> CompletableFuture<List<U>> flatMap(List<T> inputs, Function<T, CompletableFuture<U>> mapper) {
-        List<CompletableFuture<U>> collect = ImmutableKit.map(inputs, mapper);
-        return Async.each(collect);
-    }
-
-    public static <U, T> CompletableFuture<List<U>> map(CompletableFuture<List<T>> values, Function<T, U> mapper) {
-        return values.thenApply(list -> ImmutableKit.map(list, mapper));
-    }
-
-    public static <U, T> List<CompletableFuture<U>> map(List<CompletableFuture<T>> values, Function<T, U> mapper) {
-        return ImmutableKit.map(values, cf -> cf.thenApply(mapper));
-    }
-
-    public static <U, T> List<CompletableFuture<U>> mapCompose(List<CompletableFuture<T>> values, Function<T, CompletableFuture<U>> mapper) {
-        return ImmutableKit.map(values, cf -> cf.thenCompose(mapper));
     }
 
 }

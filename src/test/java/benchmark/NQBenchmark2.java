@@ -1,8 +1,6 @@
 package benchmark;
 
-import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableListMultimap;
-import com.google.common.io.Resources;
 import graphql.execution.CoercedVariables;
 import graphql.language.Document;
 import graphql.language.Field;
@@ -28,15 +26,9 @@ import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Threads;
 import org.openjdk.jmh.annotations.Warmup;
 
-import java.io.IOException;
-import java.net.URL;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
-
-import static com.google.common.io.Resources.getResource;
 
 @State(Scope.Benchmark)
 @BenchmarkMode(Mode.Throughput)
@@ -53,21 +45,16 @@ public class NQBenchmark2 {
         @Setup
         public void setup() {
             try {
-                String schemaString = readFromClasspath("large-schema-2.graphqls");
+                String schemaString = BenchmarkUtils.loadResource("large-schema-2.graphqls");
                 schema = SchemaGenerator.createdMockedSchema(schemaString);
 
-                String query = readFromClasspath("large-schema-2-query.graphql");
+                String query = BenchmarkUtils.loadResource("large-schema-2-query.graphql");
                 document = Parser.parse(query);
             } catch (Exception e) {
-                System.out.println(e);
                 throw new RuntimeException(e);
             }
         }
 
-        private String readFromClasspath(String file) throws IOException {
-            URL url = getResource(file);
-            return Resources.toString(url, Charsets.UTF_8);
-        }
     }
 
     @Benchmark
@@ -77,7 +64,7 @@ public class NQBenchmark2 {
     @Fork(3)
     @BenchmarkMode(Mode.AverageTime)
     @OutputTimeUnit(TimeUnit.MILLISECONDS)
-    public ExecutableNormalizedOperation benchMarkAvgTime(MyState myState) throws ExecutionException, InterruptedException {
+    public ExecutableNormalizedOperation benchMarkAvgTime(MyState myState) {
         ExecutableNormalizedOperation executableNormalizedOperation = ExecutableNormalizedOperationFactory.createExecutableNormalizedOperation(myState.schema, myState.document, null, CoercedVariables.emptyVariables());
 //        System.out.println("fields size:" + normalizedQuery.getFieldToNormalizedField().size());
         return executableNormalizedOperation;

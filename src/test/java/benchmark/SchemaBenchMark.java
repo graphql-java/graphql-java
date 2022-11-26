@@ -33,7 +33,7 @@ import java.util.concurrent.TimeUnit;
 @Measurement(iterations = 3, time = 10, batchSize = 4)
 public class SchemaBenchMark {
 
-    static String largeSDL = createResourceSDL("large-schema-3.graphqls");
+    static String largeSDL = BenchmarkUtils.loadResource("large-schema-3.graphqls");
 
     @Benchmark
     @BenchmarkMode(Mode.Throughput)
@@ -52,17 +52,6 @@ public class SchemaBenchMark {
     private static GraphQLSchema createSchema(String sdl) {
         TypeDefinitionRegistry registry = new SchemaParser().parse(sdl);
         return new SchemaGenerator().makeExecutableSchema(registry, RuntimeWiring.MOCKED_WIRING);
-    }
-
-    private static String createResourceSDL(String name) {
-        try {
-            URL resource = SchemaBenchMark.class.getClassLoader().getResource(name);
-            File file = new File(resource.toURI());
-            return String.join("\n", Files.readLines(file, Charset.defaultCharset()));
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-
     }
 
     @SuppressWarnings("InfiniteLoopStatement")
