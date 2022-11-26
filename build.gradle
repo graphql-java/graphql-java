@@ -73,13 +73,6 @@ repositories {
     mavenLocal()
 }
 
-pluginManagement {
-    repositories {
-        mavenCentral()
-        gradlePluginPortal()
-    }
-}
-
 jar {
     from "LICENSE.md"
     from "src/main/antlr/Graphql.g4"

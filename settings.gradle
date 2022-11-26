@@ -1,2 +1,8 @@
 rootProject.name = 'graphql-java'
 
+pluginManagement {
+    repositories {
+        gradlePluginPortal()
+        mavenCentral()
+    }
+}
