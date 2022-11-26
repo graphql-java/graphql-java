@@ -28,7 +28,7 @@ public class GraphqlStringCoercing implements Coercing<String, String> {
         return String.valueOf(input);
     }
 
-    private String parseValueImpl(@NotNull Object input, Locale locale) {
+    private String parseValueImpl(@NotNull Object input, @NotNull Locale locale) {
         if (!(input instanceof String)) {
             throw new CoercingParseValueException(
                     i18nMsg(locale, "String.unexpectedRawValueType", typeName(input))

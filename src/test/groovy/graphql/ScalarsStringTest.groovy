@@ -75,14 +75,12 @@ class ScalarsStringTest extends Specification {
         customObject | "foo"
     }
 
-    @Unroll
-    def "String parseValue #value into #result"() {
+    def "String parseValue value into result"() {
         expect:
         Scalars.GraphQLString.getCoercing().parseValue("123ab", GraphQLContext.default, Locale.default) == "123ab"
     }
 
-    @Unroll
-    def "String parseValue #value into #result with deprecated method"() {
+    def "String parseValue value into result with deprecated method"() {
         expect:
         Scalars.GraphQLString.getCoercing().parseValue("123ab") == "123ab" // Retain deprecated method for test coverage
     }
