@@ -70,8 +70,14 @@ gradle.buildFinished { buildResult ->
 
 repositories {
     mavenCentral()
-    gradlePluginPortal()
     mavenLocal()
+}
+
+pluginManagement {
+    repositories {
+        mavenCentral()
+        gradlePluginPortal()
+    }
 }
 
 jar {
