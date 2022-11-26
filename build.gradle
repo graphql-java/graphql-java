@@ -70,6 +70,7 @@ gradle.buildFinished { buildResult ->
 
 repositories {
     mavenCentral()
+    gradlePluginPortal()
     mavenLocal()
 }
 
