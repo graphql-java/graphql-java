@@ -4,6 +4,7 @@ pluginManagement {
         maven {
             url 'https://plugins.gradle.org/m2'
             metadataSources {
+                // Avoid redirection to defunct JCenter when Gradle module metadata is not published by a plugin (e.g. JMH plugin)
                 ignoreGradleMetadataRedirection()
                 mavenPom()
                 artifact()
