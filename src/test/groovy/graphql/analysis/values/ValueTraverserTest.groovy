@@ -1,14 +1,25 @@
 package graphql.analysis.values
 
+import graphql.ExecutionInput
+import graphql.GraphQL
 import graphql.TestUtil
+import graphql.schema.DataFetcher
+import graphql.schema.DataFetchingEnvironment
 import graphql.schema.DataFetchingEnvironmentImpl
 import graphql.schema.GraphQLDirectiveContainer
 import graphql.schema.GraphQLEnumType
+import graphql.schema.GraphQLFieldDefinition
+import graphql.schema.GraphQLFieldsContainer
 import graphql.schema.GraphQLInputObjectField
 import graphql.schema.GraphQLInputObjectType
 import graphql.schema.GraphQLList
 import graphql.schema.GraphQLScalarType
+import graphql.schema.idl.SchemaDirectiveWiring
+import graphql.schema.idl.SchemaDirectiveWiringEnvironment
 import spock.lang.Specification
+
+import static graphql.schema.idl.RuntimeWiring.newRuntimeWiring
+import static graphql.schema.idl.TypeRuntimeWiring.newTypeWiring
 
 class ValueTraverserTest extends Specification {
 
@@ -299,9 +310,9 @@ class ValueTraverserTest extends Specification {
         def fieldDef = schema.getObjectType("Query").getFieldDefinition("field")
         def argValues = [arg:
                                  [
-                                         listField  : ["a", "b", "c"],
-                                         objectField: [listField: ["a", "b", "c"]],
-                                         stringField: "s",
+                                         listField      : ["a", "b", "c"],
+                                         objectField    : [listField: ["a", "b", "c"]],
+                                         stringField    : "s",
                                          leaveAloneField: "ok"
                                  ]
         ]
@@ -321,9 +332,9 @@ class ValueTraverserTest extends Specification {
 
         def expected = [arg:
                                 [
-                                        listField  : null,
-                                        objectField: null,
-                                        stringField: null,
+                                        listField      : null,
+                                        objectField    : null,
+                                        stringField    : null,
                                         leaveAloneField: "ok",
                                 ]
         ]
@@ -442,5 +453,117 @@ class ValueTraverserTest extends Specification {
                                               [name: "Ted", age: 42]]
                               ]
         ]
+    }
+
+    def "an integration test showing how to change values"() {
+        def sdl = """
+directive @stripHtml on ARGUMENT_DEFINITION | INPUT_FIELD_DEFINITION
+
+type Query {
+  searchProfile(contains: String! @stripHtml, limit: Int): Profile!
+}
+
+type Mutation {
+  signUp(input: SignUpInput!): Profile!
+}
+
+input SignUpInput {
+  username: String! @stripHtml
+  password: String!
+  firstName: String!
+  lastName: String!
+}
+
+type Profile {
+  username: String!
+  fullName: String!
+}
+"""
+        def schemaDirectiveWiring = new SchemaDirectiveWiring() {
+            @Override
+            GraphQLFieldDefinition onField(SchemaDirectiveWiringEnvironment<GraphQLFieldDefinition> env) {
+                GraphQLFieldsContainer fieldsContainer = env.getFieldsContainer()
+                GraphQLFieldDefinition fieldDefinition = env.getFieldDefinition()
+
+                final DataFetcher<?> originalDF = env.getCodeRegistry().getDataFetcher(fieldsContainer, fieldDefinition)
+                final DataFetcher<?> newDF = { DataFetchingEnvironment originalEnv ->
+                    ValueVisitor visitor = new ValueVisitor() {
+                        @Override
+                        Object visitScalarValue(Object coercedValue, GraphQLScalarType inputType, int index, List<GraphQLDirectiveContainer> containingElements) {
+                            def container = containingElements.last()
+                            if (container.hasAppliedDirective("stripHtml")) {
+                                return stripHtml(coercedValue)
+                            }
+                            return coercedValue
+                        }
+
+
+                        private String stripHtml(coercedValue) {
+                            return String.valueOf(coercedValue)
+                                    .replaceAll(/<!--.*?-->/, '')
+                                    .replaceAll(/<.*?>/, '')
+                        }
+                    }
+                    DataFetchingEnvironment newEnv = ValueTraverser.visitPreOrder(originalEnv, visitor)
+                    return originalDF.get(newEnv);
+                }
+
+                env.getCodeRegistry().dataFetcher(fieldsContainer, fieldDefinition, newDF)
+
+                return fieldDefinition
+            }
+        }
+
+        DataFetcher searchProfileDF = { env ->
+            def containsArg = env.getArgument("contains") as String
+            return [username: containsArg]
+
+        }
+        DataFetcher signUpDF = { DataFetchingEnvironment env ->
+            def inputArg = env.getArgument("input") as Map<String, Object>
+            def inputUserName = inputArg["username"]
+            return [username: inputUserName]
+        }
+        def runtimeWiring = newRuntimeWiring().directiveWiring(schemaDirectiveWiring)
+                .type(newTypeWiring("Query").dataFetcher("searchProfile", searchProfileDF))
+                .type(newTypeWiring("Mutation").dataFetcher("signUp", signUpDF))
+                .build()
+        def schema = TestUtil.schema(sdl, runtimeWiring)
+        def graphQL = GraphQL.newGraphQL(schema).build()
+
+        def query = """
+                query q {
+                    searchProfile(contains : "<b>someHtml</b>") {
+                        username
+                    }
+                }
+                
+                mutation m {
+                    signUp(input : { 
+                                username: "<b>bbakerman</b>"
+                                password: "hunter2"
+                                firstName: "Brad"
+                                lastName: "Baker"
+                            }
+                    ) {
+                        username
+                    }
+                }
+"""
+
+        when:
+        def executionInput = ExecutionInput.newExecutionInput(query).operationName("q").build()
+        def er = graphQL.execute(executionInput)
+        then:
+        er.errors.isEmpty()
+        er.data == [searchProfile: [username: "someHtml"]]
+
+        // mutation
+        when:
+        executionInput = ExecutionInput.newExecutionInput(query).operationName("m").build()
+        er = graphQL.execute(executionInput)
+        then:
+        er.errors.isEmpty()
+        er.data == [signUp: [username: "bbakerman"]]
     }
 }
