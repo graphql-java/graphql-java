@@ -1,6 +1,6 @@
 package graphql.schema.diffing;
 
-import graphql.ExperimentalApi;
+import graphql.Internal;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.diffing.ana.EditOperationAnalysisResult;
 import graphql.schema.diffing.ana.EditOperationAnalyzer;
@@ -13,7 +13,7 @@ import static graphql.Assert.assertTrue;
 import static graphql.schema.diffing.EditorialCostForMapping.editorialCostForMapping;
 import static java.util.Collections.singletonList;
 
-@ExperimentalApi
+@Internal
 public class SchemaDiffing {
 
 

@@ -8,6 +8,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Table;
 import graphql.Assert;
+import graphql.Internal;
 import graphql.util.FpKit;
 
 import java.util.ArrayList;
@@ -38,6 +39,7 @@ import static graphql.util.FpKit.concat;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 
+@Internal
 public class FillupIsolatedVertices {
 
     SchemaGraph sourceGraph;
@@ -103,7 +105,6 @@ public class FillupIsolatedVertices {
         List<VertexContextSegment> contexts = Arrays.asList(inputFieldType, inputObjectContext, inputFieldName);
         return contexts;
     }
-
 
 
     private static List<VertexContextSegment> scalarContext() {
@@ -380,7 +381,7 @@ public class FillupIsolatedVertices {
                 Vertex container = schemaGraph.getAppliedDirectiveContainerForAppliedDirective(appliedDirective);
                 switch (container.getType()) {
                     case SCHEMA:
-                            return SCHEMA;
+                        return SCHEMA;
                     case FIELD:
                         Vertex fieldsContainer = schemaGraph.getFieldsContainerForField(container);
                         return fieldsContainer.getType() + "." + fieldsContainer.getName();
@@ -607,6 +608,7 @@ public class FillupIsolatedVertices {
         };
         return singletonList(schema);
     }
+
     private static List<VertexContextSegment> fieldContext() {
         VertexContextSegment field = new VertexContextSegment() {
             @Override
@@ -784,7 +786,7 @@ public class FillupIsolatedVertices {
             allIsolatedTarget.addAll(isolatedTarget);
         }
 
-//
+        //
         public boolean mappingPossible(Vertex sourceVertex, Vertex targetVertex) {
             return possibleMappings.containsEntry(sourceVertex, targetVertex);
         }

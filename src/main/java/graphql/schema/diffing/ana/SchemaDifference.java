@@ -1,6 +1,6 @@
 package graphql.schema.diffing.ana;
 
-import graphql.ExperimentalApi;
+import graphql.Internal;
 import graphql.util.FpKit;
 
 import java.util.ArrayList;
@@ -14,7 +14,7 @@ import java.util.List;
  * - Deletion
  * - Modification
  */
-@ExperimentalApi
+@Internal
 public interface SchemaDifference {
 
     interface SchemaAddition extends SchemaDifference {

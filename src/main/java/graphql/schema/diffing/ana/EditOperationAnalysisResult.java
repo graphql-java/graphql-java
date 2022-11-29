@@ -1,10 +1,10 @@
 package graphql.schema.diffing.ana;
 
-import graphql.ExperimentalApi;
+import graphql.Internal;
 
 import java.util.Map;
 
-@ExperimentalApi
+@Internal
 public class EditOperationAnalysisResult {
     private final Map<String, SchemaDifference.ObjectDifference> objectDifferences;
     private final Map<String, SchemaDifference.InterfaceDifference> interfaceDifferences;
