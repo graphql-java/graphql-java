@@ -34,15 +34,14 @@ class SchemaDiffingTest extends Specification {
         schemaGraph.getVerticesByType(SchemaGraph.INTERFACE).size() == 0
         schemaGraph.getVerticesByType(SchemaGraph.UNION).size() == 0
         schemaGraph.getVerticesByType(SchemaGraph.SCALAR).size() == 2
-        println schemaGraph.getVerticesByType(SchemaGraph.FIELD)
-        schemaGraph.getVerticesByType(SchemaGraph.FIELD).size() == 42
+        schemaGraph.getVerticesByType(SchemaGraph.FIELD).size() == 39
         schemaGraph.getVerticesByType(SchemaGraph.ARGUMENT).size() == 9
         schemaGraph.getVerticesByType(SchemaGraph.INPUT_FIELD).size() == 0
         schemaGraph.getVerticesByType(SchemaGraph.INPUT_OBJECT).size() == 0
         schemaGraph.getVerticesByType(SchemaGraph.DIRECTIVE).size() == 4
         schemaGraph.getVerticesByType(SchemaGraph.APPLIED_ARGUMENT).size() == 0
         schemaGraph.getVerticesByType(SchemaGraph.APPLIED_DIRECTIVE).size() == 0
-        schemaGraph.size() == 94
+        schemaGraph.size() == 91
 
     }
 
