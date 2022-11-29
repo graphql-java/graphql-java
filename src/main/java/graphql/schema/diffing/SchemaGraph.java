@@ -5,12 +5,10 @@ import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.LinkedHashMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Table;
-import graphql.Assert;
 import graphql.ExperimentalApi;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -18,7 +16,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Predicate;
 
-import static graphql.Assert.assertShouldNeverHappen;
 import static graphql.Assert.assertTrue;
 import static java.lang.String.format;
 
@@ -75,6 +72,10 @@ public class SchemaGraph {
 
     public Collection<Vertex> getVerticesByType(String type) {
         return typeToVertices.get(type);
+    }
+
+    public Multimap<String, Vertex> getVerticesByType() {
+        return typeToVertices;
     }
 
     public void addEdge(Edge edge) {
