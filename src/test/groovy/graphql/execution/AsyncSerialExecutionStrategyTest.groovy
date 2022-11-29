@@ -10,6 +10,7 @@ import graphql.schema.FieldCoordinates
 import graphql.schema.GraphQLCodeRegistry
 import graphql.schema.GraphQLFieldDefinition
 import graphql.schema.GraphQLSchema
+import graphql.schema.LightDataFetcher
 import spock.lang.Specification
 
 import java.util.concurrent.CompletableFuture
@@ -125,13 +126,13 @@ class AsyncSerialExecutionStrategyTest extends Specification {
     @SuppressWarnings("GroovyAssignabilityCheck")
     def "async serial execution test"() {
         given:
-        def df1 = Mock(DataFetcher)
+        def df1 = Mock(LightDataFetcher)
         def cf1 = new CompletableFuture()
 
-        def df2 = Mock(DataFetcher)
+        def df2 = Mock(LightDataFetcher)
         def cf2 = new CompletableFuture()
 
-        def df3 = Mock(DataFetcher)
+        def df3 = Mock(LightDataFetcher)
         def cf3 = new CompletableFuture()
 
         GraphQLSchema schema = schema(df1, df2, df3)
@@ -165,35 +166,35 @@ class AsyncSerialExecutionStrategyTest extends Specification {
 
         then:
         !result.isDone()
-        1 * df1.get(_) >> cf1
-        0 * df2.get(_) >> cf2
-        0 * df3.get(_) >> cf3
+        1 * df1.get(_,_,_) >> cf1
+        0 * df2.get(_,_,_) >> cf2
+        0 * df3.get(_,_,_) >> cf3
 
         when:
         cf1.complete("world1")
 
         then:
         !result.isDone()
-        0 * df1.get(_) >> cf1
-        1 * df2.get(_) >> cf2
-        0 * df3.get(_) >> cf3
+        0 * df1.get(_,_,_) >> cf1
+        1 * df2.get(_,_,_) >> cf2
+        0 * df3.get(_,_,_) >> cf3
 
         when:
         cf2.complete("world2")
 
         then:
         !result.isDone()
-        0 * df1.get(_) >> cf1
-        0 * df2.get(_) >> cf2
-        1 * df3.get(_) >> cf3
+        0 * df1.get(_,_,_) >> cf1
+        0 * df2.get(_,_,_) >> cf2
+        1 * df3.get(_,_,_) >> cf3
 
         when:
         cf3.complete("world3")
 
         then:
-        0 * df1.get(_) >> cf1
-        0 * df2.get(_) >> cf2
-        0 * df3.get(_) >> cf3
+        0 * df1.get(_,_,_) >> cf1
+        0 * df2.get(_,_,_) >> cf2
+        0 * df3.get(_,_,_) >> cf3
         result.isDone()
         result.get().data == ['hello': 'world1', 'hello2': 'world2', 'hello3': 'world3']
     }

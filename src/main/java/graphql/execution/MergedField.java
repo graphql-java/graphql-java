@@ -5,7 +5,6 @@ import graphql.PublicApi;
 import graphql.language.Argument;
 import graphql.language.Field;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Consumer;
@@ -13,7 +12,7 @@ import java.util.function.Consumer;
 import static graphql.Assert.assertNotEmpty;
 
 /**
- * This represent all Fields in a query which overlap and are merged into one.
+ * This represents all Fields in a query which overlap and are merged into one.
  * This means they all represent the same field actually when the query is executed.
  *
  * Example query with more than one Field merged together:
@@ -42,7 +41,7 @@ import static graphql.Assert.assertNotEmpty;
  * }
  * </pre>
  *
- * Here the me field is merged together including the sub selections.
+ * Here the field is merged together including the sub selections.
  *
  * A third example with different directives:
  * <pre>
@@ -55,7 +54,7 @@ import static graphql.Assert.assertNotEmpty;
  * </pre>
  * These examples make clear that you need to consider all merged fields together to have the full picture.
  *
- * The actual logic when fields can successfully merged together is implemented in {#graphql.validation.rules.OverlappingFieldsCanBeMerged}
+ * The actual logic when fields can be successfully merged together is implemented in {#graphql.validation.rules.OverlappingFieldsCanBeMerged}
  */
 @PublicApi
 public class MergedField {

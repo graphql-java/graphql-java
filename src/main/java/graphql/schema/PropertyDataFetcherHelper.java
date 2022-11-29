@@ -1,6 +1,9 @@
 package graphql.schema;
 
 import graphql.Internal;
+import graphql.VisibleForTesting;
+
+import java.util.function.Supplier;
 
 /**
  * This class is the guts of a property data fetcher and also used in AST code to turn
@@ -12,11 +15,11 @@ public class PropertyDataFetcherHelper {
     private static final PropertyFetchingImpl impl = new PropertyFetchingImpl(DataFetchingEnvironment.class);
 
     public static Object getPropertyValue(String propertyName, Object object, GraphQLType graphQLType) {
-        return impl.getPropertyValue(propertyName, object, graphQLType, null);
+        return impl.getPropertyValue(propertyName, object, graphQLType, false, () -> null);
     }
 
-    public static Object getPropertyValue(String propertyName, Object object, GraphQLType graphQLType, DataFetchingEnvironment environment) {
-        return impl.getPropertyValue(propertyName, object, graphQLType, environment);
+    public static Object getPropertyValue(String propertyName, Object object, GraphQLType graphQLType, Supplier<DataFetchingEnvironment> environment) {
+        return impl.getPropertyValue(propertyName, object, graphQLType, true, environment::get);
     }
 
     public static void clearReflectionCache() {
@@ -25,6 +28,11 @@ public class PropertyDataFetcherHelper {
 
     public static boolean setUseSetAccessible(boolean flag) {
         return impl.setUseSetAccessible(flag);
+    }
+
+    @VisibleForTesting
+    public static boolean setUseLambdaFactory(boolean flag) {
+        return impl.setUseLambdaFactory(flag);
     }
 
     public static boolean setUseNegativeCache(boolean flag) {

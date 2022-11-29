@@ -2,7 +2,6 @@ package graphql.execution.instrumentation.dataloader
 
 import com.github.javafaker.Faker
 import graphql.ExecutionInput
-import graphql.ExecutionResult
 import graphql.GraphQL
 import graphql.TestUtil
 import graphql.execution.Async
@@ -130,7 +129,7 @@ class DataLoaderHangingTest extends Specification {
                 .build()
 
         then: "execution shouldn't hang"
-        List<CompletableFuture<ExecutionResult>> futures = []
+        def futures = Async.ofExpectedSize(NUM_OF_REPS)
         for (int i = 0; i < NUM_OF_REPS; i++) {
             DataLoaderRegistry dataLoaderRegistry = mkNewDataLoaderRegistry(executor)
 
@@ -168,7 +167,7 @@ class DataLoaderHangingTest extends Specification {
             futures.add(result)
         }
         // wait for each future to complete and grab the results
-        Async.each(futures)
+        futures.await()
                 .whenComplete({ results, error ->
                     if (error) {
                         throw error

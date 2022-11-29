@@ -18,7 +18,7 @@ import java.util.Collections;
 @State(Scope.Benchmark)
 public class AddError {
 
-    private ExecutionContext context = new ExecutionContextBuilder()
+    private final ExecutionContext context = new ExecutionContextBuilder()
             .executionId(ExecutionId.generate())
             .build();
 

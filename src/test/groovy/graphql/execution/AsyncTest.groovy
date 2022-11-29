@@ -130,15 +130,4 @@ class AsyncTest extends Specification {
         exception.getCause().getMessage() == "some error"
     }
 
-    def "each works for list of futures "() {
-        given:
-        completedFuture('x')
-
-        when:
-        def result = Async.each([completedFuture('x'), completedFuture('y'), completedFuture('z')])
-
-        then:
-        result.isDone()
-        result.get() == ['x', 'y', 'z']
-    }
 }

@@ -28,11 +28,13 @@ import graphql.schema.GraphQLEnumType
 import graphql.schema.GraphQLFieldDefinition
 import graphql.schema.GraphQLScalarType
 import graphql.schema.GraphQLSchema
+import graphql.schema.LightDataFetcher
 import org.dataloader.DataLoaderRegistry
 import spock.lang.Specification
 
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionException
+import java.util.function.Supplier
 import java.util.stream.Stream
 
 import static ExecutionStrategyParameters.newParameters
@@ -497,7 +499,7 @@ class ExecutionStrategyTest extends Specification {
 
     @SuppressWarnings("GroovyVariableNotAssigned")
     def "resolveField creates correct DataFetchingEnvironment"() {
-        def dataFetcher = Mock(DataFetcher)
+        def dataFetcher = Mock(LightDataFetcher)
         def someFieldName = "someField"
         def testTypeName = "Type"
         def fieldDefinition = newFieldDefinition()
@@ -542,7 +544,7 @@ class ExecutionStrategyTest extends Specification {
         executionStrategy.resolveField(executionContext, parameters)
 
         then:
-        1 * dataFetcher.get(_) >> { args -> environment = args[0] }
+        1 * dataFetcher.get(_,_,_) >> { environment = (it[2] as Supplier<DataFetchingEnvironment>).get() }
         environment.fieldDefinition == fieldDefinition
         environment.graphQLSchema == schema
         environment.graphQlContext.get("key") == "context"

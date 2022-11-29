@@ -2,9 +2,12 @@ package graphql.schema
 
 import graphql.ExecutionInput
 import graphql.TestUtil
+import graphql.schema.fetching.ConfusedPojo
 import graphql.schema.somepackage.ClassWithDFEMethods
 import graphql.schema.somepackage.ClassWithInterfaces
 import graphql.schema.somepackage.ClassWithInteritanceAndInterfaces
+import graphql.schema.somepackage.RecordLikeClass
+import graphql.schema.somepackage.RecordLikeTwoClassesDown
 import graphql.schema.somepackage.TestClass
 import graphql.schema.somepackage.TwoClassesDown
 import spock.lang.Specification
@@ -20,6 +23,7 @@ class PropertyDataFetcherTest extends Specification {
         PropertyDataFetcher.setUseSetAccessible(true)
         PropertyDataFetcher.setUseNegativeCache(true)
         PropertyDataFetcher.clearReflectionCache()
+        PropertyDataFetcherHelper.setUseLambdaFactory(true)
     }
 
     def env(obj) {
@@ -93,6 +97,91 @@ class PropertyDataFetcherTest extends Specification {
         def result = fetcher.get(environment)
         expect:
         result == null
+    }
+
+    def "fetch via record method"() {
+        def environment = env(new RecordLikeClass())
+        when:
+        def fetcher = new PropertyDataFetcher("recordProperty")
+        def result = fetcher.get(environment)
+        then:
+        result == "recordProperty"
+
+        // caching works
+        when:
+        fetcher = new PropertyDataFetcher("recordProperty")
+        result = fetcher.get(environment)
+        then:
+        result == "recordProperty"
+
+        // recordArgumentMethod will not work because it takes a parameter
+        when:
+        fetcher = new PropertyDataFetcher("recordArgumentMethod")
+        result = fetcher.get(environment)
+        then:
+        result == null
+
+        // equals will not work because it takes a parameter
+        when:
+        fetcher = new PropertyDataFetcher("equals")
+        result = fetcher.get(environment)
+        then:
+        result == null
+
+        // we allow hashCode() and toString() because why not - they are valid property names
+        // they might not be that useful but they can be accessed
+
+        when:
+        fetcher = new PropertyDataFetcher("hashCode")
+        result = fetcher.get(environment)
+        then:
+        result == 666
+
+        when:
+        fetcher = new PropertyDataFetcher("toString")
+        result = fetcher.get(environment)
+        then:
+        result == "toString"
+    }
+
+    def "can fetch record like methods that are public and on super classes"() {
+        def environment = env(new RecordLikeTwoClassesDown())
+        when:
+        def fetcher = new PropertyDataFetcher("recordProperty")
+        def result = fetcher.get(environment)
+        then:
+        result == "recordProperty"
+    }
+
+    def "fetch via record method without lambda support"() {
+        PropertyDataFetcherHelper.setUseLambdaFactory(false)
+        PropertyDataFetcherHelper.clearReflectionCache()
+
+        when:
+        def environment = env(new RecordLikeClass())
+        def fetcher = new PropertyDataFetcher("recordProperty")
+        def result = fetcher.get(environment)
+        then:
+        result == "recordProperty"
+
+        when:
+        environment = env(new RecordLikeTwoClassesDown())
+        fetcher = new PropertyDataFetcher("recordProperty")
+        result = fetcher.get(environment)
+        then:
+        result == "recordProperty"
+    }
+
+    def "fetch via record method without lambda support in preference to getter methods"() {
+        PropertyDataFetcherHelper.setUseLambdaFactory(false)
+        PropertyDataFetcherHelper.clearReflectionCache()
+
+        when:
+        def environment = env(new ConfusedPojo())
+        def fetcher = new PropertyDataFetcher("recordLike")
+        def result = fetcher.get(environment)
+        then:
+        result == "recordLike"
     }
 
     def "fetch via public method"() {

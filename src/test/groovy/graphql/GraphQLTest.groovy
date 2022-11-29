@@ -31,6 +31,7 @@ import graphql.schema.GraphQLInterfaceType
 import graphql.schema.GraphQLNonNull
 import graphql.schema.GraphQLObjectType
 import graphql.schema.GraphQLSchema
+import graphql.schema.LightDataFetcher
 import graphql.schema.StaticDataFetcher
 import graphql.schema.idl.SchemaGenerator
 import graphql.schema.idl.errors.SchemaProblem
@@ -41,6 +42,7 @@ import spock.lang.Specification
 import spock.lang.Unroll
 
 import java.util.concurrent.CompletableFuture
+import java.util.function.Supplier
 import java.util.function.UnaryOperator
 
 import static graphql.ExecutionInput.Builder
@@ -427,7 +429,7 @@ class GraphQLTest extends Specification {
         def queryType = "QueryType"
         def fooName = "foo"
         def fooCoordinates = FieldCoordinates.coordinates(queryType, fooName)
-        def dataFetcher = Mock(DataFetcher)
+        def dataFetcher = Mock(LightDataFetcher)
         GraphQLCodeRegistry codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
                 .dataFetcher(fooCoordinates, dataFetcher)
                 .build()
@@ -446,9 +448,9 @@ class GraphQLTest extends Specification {
         GraphQL.newGraphQL(schema).build().execute(query)
 
         then:
-        1 * dataFetcher.get(_) >> {
-            DataFetchingEnvironment env ->
-                assert !env.arguments.containsKey('bar')
+        1 * dataFetcher.get(_, _, _) >> {
+            def env = (it[2] as Supplier<DataFetchingEnvironment>).get()
+            assert !env.arguments.containsKey('bar')
         }
     }
 
@@ -458,7 +460,7 @@ class GraphQLTest extends Specification {
         def queryType = "QueryType"
         def fooName = "foo"
         def fooCoordinates = FieldCoordinates.coordinates(queryType, fooName)
-        def dataFetcher = Mock(DataFetcher)
+        def dataFetcher = Mock(LightDataFetcher)
         GraphQLCodeRegistry codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
                 .dataFetcher(fooCoordinates, dataFetcher)
                 .build()
@@ -472,17 +474,15 @@ class GraphQLTest extends Specification {
                                 .argument(newArgument().name("bar").type(GraphQLInt).build()))
                 ).build()
         def query = "{foo(bar: null)}"
-        DataFetchingEnvironment dataFetchingEnvironment
 
         when:
         GraphQL.newGraphQL(schema).build().execute(query)
 
         then:
-        1 * dataFetcher.get(_) >> {
-            DataFetchingEnvironment env ->
-                dataFetchingEnvironment = env
-                assert env.arguments.containsKey('bar')
-                assert env.arguments['bar'] == null
+        1 * dataFetcher.get(_, _, _) >> {
+            def env = (it[2] as Supplier<DataFetchingEnvironment>).get()
+            assert env.arguments.containsKey('bar')
+            assert env.arguments['bar'] == null
         }
     }
 
@@ -496,7 +496,7 @@ class GraphQLTest extends Specification {
         def queryType = "QueryType"
         def fooName = "foo"
         def fooCoordinates = FieldCoordinates.coordinates(queryType, fooName)
-        def dataFetcher = Mock(DataFetcher)
+        def dataFetcher = Mock(LightDataFetcher)
         GraphQLCodeRegistry codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
                 .dataFetcher(fooCoordinates, dataFetcher)
                 .build()
@@ -516,12 +516,12 @@ class GraphQLTest extends Specification {
 
         then:
         result.errors.size() == 0
-        1 * dataFetcher.get(_) >> {
-            DataFetchingEnvironment env ->
-                assert env.arguments.size() == 1
-                assert env.arguments["bar"] instanceof Map
-                assert env.arguments['bar']['someKey'] == 'value'
-                assert !(env.arguments['bar'] as Map).containsKey('otherKey')
+        1 * dataFetcher.get(_, _, _) >> {
+            def env = (it[2] as Supplier<DataFetchingEnvironment>).get()
+            assert env.arguments.size() == 1
+            assert env.arguments["bar"] instanceof Map
+            assert env.arguments['bar']['someKey'] == 'value'
+            assert !(env.arguments['bar'] as Map).containsKey('otherKey')
         }
     }
 
@@ -535,7 +535,7 @@ class GraphQLTest extends Specification {
         def queryType = "QueryType"
         def fooName = "foo"
         def fooCoordinates = FieldCoordinates.coordinates(queryType, fooName)
-        def dataFetcher = Mock(DataFetcher)
+        def dataFetcher = Mock(LightDataFetcher)
         GraphQLCodeRegistry codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
                 .dataFetcher(fooCoordinates, dataFetcher)
                 .build()
@@ -555,13 +555,13 @@ class GraphQLTest extends Specification {
 
         then:
         result.errors.size() == 0
-        1 * dataFetcher.get(_) >> {
-            DataFetchingEnvironment env ->
-                assert env.arguments.size() == 1
-                assert env.arguments["bar"] instanceof Map
-                assert env.arguments['bar']['someKey'] == 'value'
-                assert (env.arguments['bar'] as Map).containsKey('otherKey')
-                assert env.arguments['bar']['otherKey'] == null
+        1 * dataFetcher.get(_, _, _) >> {
+            def env = (it[2] as Supplier<DataFetchingEnvironment>).get()
+            assert env.arguments.size() == 1
+            assert env.arguments["bar"] instanceof Map
+            assert env.arguments['bar']['someKey'] == 'value'
+            assert (env.arguments['bar'] as Map).containsKey('otherKey')
+            assert env.arguments['bar']['otherKey'] == null
         }
     }
 
@@ -574,7 +574,7 @@ class GraphQLTest extends Specification {
         def queryType = "QueryType"
         def fooName = "foo"
         def fooCoordinates = FieldCoordinates.coordinates(queryType, fooName)
-        def dataFetcher = Mock(DataFetcher)
+        def dataFetcher = Mock(LightDataFetcher)
         GraphQLCodeRegistry codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
                 .dataFetcher(fooCoordinates, dataFetcher)
                 .build()
@@ -594,11 +594,11 @@ class GraphQLTest extends Specification {
 
         then:
         result.errors.size() == 0
-        1 * dataFetcher.get(_) >> {
-            DataFetchingEnvironment env ->
-                assert env.arguments.size() == 1
-                assert env.arguments["bar"] instanceof Map
-                assert !(env.arguments['bar'] as Map).containsKey('list')
+        1 * dataFetcher.get(_, _, _) >> {
+            def env = (it[2] as Supplier<DataFetchingEnvironment>).get()
+            assert env.arguments.size() == 1
+            assert env.arguments["bar"] instanceof Map
+            assert !(env.arguments['bar'] as Map).containsKey('list')
         }
     }
 
@@ -611,7 +611,7 @@ class GraphQLTest extends Specification {
         def queryType = "QueryType"
         def fooName = "foo"
         def fooCoordinates = FieldCoordinates.coordinates(queryType, fooName)
-        def dataFetcher = Mock(DataFetcher)
+        def dataFetcher = Mock(LightDataFetcher)
         GraphQLCodeRegistry codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
                 .dataFetcher(fooCoordinates, dataFetcher)
                 .build()
@@ -631,12 +631,12 @@ class GraphQLTest extends Specification {
 
         then:
         result.errors.size() == 0
-        1 * dataFetcher.get(_) >> {
-            DataFetchingEnvironment env ->
-                assert env.arguments.size() == 1
-                assert env.arguments["bar"] instanceof Map
-                assert (env.arguments['bar'] as Map).containsKey('list')
-                assert env.arguments['bar']['list'] == null
+        1 * dataFetcher.get(_, _, _) >> {
+            def env = (it[2] as Supplier<DataFetchingEnvironment>).get()
+            assert env.arguments.size() == 1
+            assert env.arguments["bar"] instanceof Map
+            assert (env.arguments['bar'] as Map).containsKey('list')
+            assert env.arguments['bar']['list'] == null
         }
     }
 
@@ -649,7 +649,7 @@ class GraphQLTest extends Specification {
         def queryType = "QueryType"
         def fooName = "foo"
         def fooCoordinates = FieldCoordinates.coordinates(queryType, fooName)
-        def dataFetcher = Mock(DataFetcher)
+        def dataFetcher = Mock(LightDataFetcher)
         GraphQLCodeRegistry codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
                 .dataFetcher(fooCoordinates, dataFetcher)
                 .build()
@@ -669,12 +669,12 @@ class GraphQLTest extends Specification {
 
         then:
         result.errors.size() == 0
-        1 * dataFetcher.get(_) >> {
-            DataFetchingEnvironment env ->
-                assert env.arguments.size() == 1
-                assert env.arguments["bar"] instanceof Map
-                assert (env.arguments['bar'] as Map).containsKey('list')
-                assert env.arguments['bar']['list'] == [null]
+        1 * dataFetcher.get(_, _, _) >> {
+            def env = (it[2] as Supplier<DataFetchingEnvironment>).get()
+            assert env.arguments.size() == 1
+            assert env.arguments["bar"] instanceof Map
+            assert (env.arguments['bar'] as Map).containsKey('list')
+            assert env.arguments['bar']['list'] == [null]
         }
     }
 
