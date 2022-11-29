@@ -4,7 +4,6 @@ package graphql.util;
 import graphql.PublicApi;
 import graphql.collect.ImmutableKit;
 
-import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;

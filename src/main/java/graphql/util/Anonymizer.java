@@ -43,7 +43,6 @@ import graphql.language.Value;
 import graphql.language.VariableDefinition;
 import graphql.language.VariableReference;
 import graphql.parser.Parser;
-import graphql.parser.ParserEnvironment;
 import graphql.schema.GraphQLAppliedDirective;
 import graphql.schema.GraphQLAppliedDirectiveArgument;
 import graphql.schema.GraphQLArgument;
@@ -798,8 +797,6 @@ public class Anonymizer {
             }
         });
 
-        AtomicInteger stringValueCounter = new AtomicInteger(1);
-        AtomicInteger intValueCounter = new AtomicInteger(1);
         AstTransformer astTransformer = new AstTransformer();
         AtomicInteger aliasCounter = new AtomicInteger(1);
         AtomicInteger defaultStringValueCounter = new AtomicInteger(1);

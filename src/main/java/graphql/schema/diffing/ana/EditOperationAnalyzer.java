@@ -625,7 +625,7 @@ public class EditOperationAnalyzer {
         Vertex inputObject = newSchemaGraph.getInputObjectForInputField(inputField);
         String oldName = editOperation.getSourceVertex().getName();
         String newName = inputObject.getName();
-        getInputObjectModification(inputObject.getName()).getDetails().add(new InputObjectFieldRename(oldName, inputField.getName()));
+        getInputObjectModification(newName).getDetails().add(new InputObjectFieldRename(oldName, inputField.getName()));
     }
 
     private void handleArgumentChange(EditOperation editOperation) {
@@ -1068,7 +1068,6 @@ public class EditOperationAnalyzer {
     private void typeEdgeChanged(EditOperation editOperation) {
         Edge targetEdge = editOperation.getTargetEdge();
         Vertex from = targetEdge.getFrom();
-        Vertex to = targetEdge.getTo();
         if (from.isOfType(SchemaGraph.FIELD)) {
             outputFieldTypeChanged(editOperation);
         } else if (from.isOfType(SchemaGraph.ARGUMENT)) {

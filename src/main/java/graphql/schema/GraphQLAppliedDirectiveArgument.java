@@ -4,7 +4,6 @@ package graphql.schema;
 import graphql.Assert;
 import graphql.GraphQLContext;
 import graphql.PublicApi;
-import graphql.collect.ImmutableKit;
 import graphql.language.Argument;
 import graphql.language.Value;
 import graphql.util.TraversalControl;

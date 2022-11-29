@@ -3,7 +3,6 @@ package graphql.cachecontrol;
 import graphql.DeprecatedAt;
 import graphql.ExecutionInput;
 import graphql.ExecutionResult;
-import graphql.ExecutionResultImpl;
 import graphql.PublicApi;
 import graphql.execution.ResultPath;
 import graphql.schema.DataFetchingEnvironment;
