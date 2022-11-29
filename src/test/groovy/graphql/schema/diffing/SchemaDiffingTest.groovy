@@ -34,6 +34,7 @@ class SchemaDiffingTest extends Specification {
         schemaGraph.getVerticesByType(SchemaGraph.INTERFACE).size() == 0
         schemaGraph.getVerticesByType(SchemaGraph.UNION).size() == 0
         schemaGraph.getVerticesByType(SchemaGraph.SCALAR).size() == 2
+        println schemaGraph.getVerticesByType(SchemaGraph.FIELD)
         schemaGraph.getVerticesByType(SchemaGraph.FIELD).size() == 42
         schemaGraph.getVerticesByType(SchemaGraph.ARGUMENT).size() == 9
         schemaGraph.getVerticesByType(SchemaGraph.INPUT_FIELD).size() == 0
