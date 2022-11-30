@@ -1,6 +1,8 @@
 package graphql.i18n
 
 import graphql.AssertException
+import graphql.ExecutionInput
+import graphql.TestUtil
 import graphql.i18n.I18n.BundleType
 import spock.lang.Specification
 
@@ -69,6 +71,49 @@ class I18nTest extends Specification {
         def message = i18n.msg("ExecutableDefinitions.notExecutableType")
         then:
         message == "Validierungsfehler ({0}) : Type definition '{1}' ist nicht ausführbar"
+    }
+
+    def "integration test of valid messages"() {
+        def sdl = """
+            type Query {
+                field(arg : Int) : Subselection
+            }
+            
+            type Subselection {
+                name : String
+            }
+        """
+        def graphQL = TestUtil.graphQL(sdl).build()
+
+
+        when:
+        def locale = new Locale("en", "IN")
+        def ei = ExecutionInput.newExecutionInput().query("query missingSubselectionQ { field(arg : 1) }")
+                .locale(locale)
+                .build()
+        def er = graphQL.execute(ei)
+        then:
+        !er.errors.isEmpty()
+        er.errors[0].message == "Validation error (SubselectionRequired@[field]) : Subselection required for type 'Subselection' of field 'field'"
+
+        when:
+        locale = Locale.getDefault()
+        ei = ExecutionInput.newExecutionInput().query("query missingSubselectionQ { field(arg : 1) }")
+                .locale(locale)
+                .build()
+        er = graphQL.execute(ei)
+        then:
+        !er.errors.isEmpty()
+        er.errors[0].message == "Validation error (SubselectionRequired@[field]) : Subselection required for type 'Subselection' of field 'field'"
+
+        when:
+        // no locale - it should default
+        ei = ExecutionInput.newExecutionInput().query("query missingSubselectionQ { field(arg : 1) }")
+                .build()
+        er = graphQL.execute(ei)
+        then:
+        !er.errors.isEmpty()
+        er.errors[0].message == "Validation error (SubselectionRequired@[field]) : Subselection required for type 'Subselection' of field 'field'"
     }
 
     static def assertBundleStaticShape(ResourceBundle bundle) {
