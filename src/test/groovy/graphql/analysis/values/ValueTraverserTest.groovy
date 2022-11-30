@@ -384,7 +384,7 @@ class ValueTraverserTest extends Specification {
         def visitor = new ValueVisitor() {
             @Override
             Object visitScalarValue(Object coercedValue, GraphQLScalarType inputType, ValueVisitor.InputElements inputElements) {
-                def fieldName = inputElements.lastInputValueDefinition().name
+                def fieldName = inputElements.getLastInputValueDefinition().name
                 if (fieldName == "age") {
                     return ABSENCE_SENTINEL
                 }
@@ -399,7 +399,7 @@ class ValueTraverserTest extends Specification {
 
             @Override
             Object visitInputObjectFieldValue(Object coercedValue, GraphQLInputObjectType inputObjectType, GraphQLInputObjectField inputObjectField, ValueVisitor.InputElements inputElements) {
-                def fieldName = inputElements.lastInputValueDefinition().name
+                def fieldName = inputElements.getLastInputValueDefinition().name
                 if (fieldName == "otherInput") {
                     return ABSENCE_SENTINEL
                 }
@@ -454,10 +454,10 @@ class ValueTraverserTest extends Specification {
 
 
             private void checkDirectives(ValueVisitor.InputElements inputElements) {
-                def lastElement = inputElements.lastInputValueDefinition()
+                def lastElement = inputElements.getLastInputValueDefinition()
                 def directive = lastElement.getAppliedDirective("d")
                 if (directive != null) {
-                    def elementNames = inputElements.inputElements().collect(
+                    def elementNames = inputElements.getInputElements().collect(
                             { it ->
                                 if (it instanceof GraphQLNamedSchemaElement) {
                                     return it.name
@@ -514,7 +514,7 @@ class ValueTraverserTest extends Specification {
         def visitor = new ValueVisitor() {
             @Override
             Object visitScalarValue(Object coercedValue, GraphQLScalarType inputType, ValueVisitor.InputElements inputElements) {
-                def lastElement = inputElements.lastInputValueDefinition()
+                def lastElement = inputElements.getLastInputValueDefinition()
                 def directive = lastElement.getAppliedDirective("stripHtml")
                 if (directive != null) {
                     def v = String.valueOf(coercedValue)
@@ -570,7 +570,7 @@ type Profile {
                     ValueVisitor visitor = new ValueVisitor() {
                         @Override
                         Object visitScalarValue(Object coercedValue, GraphQLScalarType inputType, ValueVisitor.InputElements inputElements) {
-                            def container = inputElements.lastInputValueDefinition()
+                            def container = inputElements.getLastInputValueDefinition()
                             if (container.hasAppliedDirective("stripHtml")) {
                                 return stripHtml(coercedValue)
                             }

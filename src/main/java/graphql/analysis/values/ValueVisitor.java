@@ -37,12 +37,12 @@ public interface ValueVisitor {
         /**
          * @return then list of input schema elements that lead to an input value.
          */
-        List<GraphQLInputSchemaElement> inputElements();
+        List<GraphQLInputSchemaElement> getInputElements();
 
         /**
          * @return then list of {@link GraphQLInputValueDefinition} elements that lead to an input value.
          */
-        List<GraphQLInputValueDefinition> inputValueDefinitions();
+        List<GraphQLInputValueDefinition> getInputValueDefinitions();
 
         /**
          * This is the last {@link GraphQLInputValueDefinition} that pointed to the value during a callback.  This will
@@ -50,7 +50,7 @@ public interface ValueVisitor {
          *
          * @return the last {@link GraphQLInputValueDefinition} that contains this value
          */
-        GraphQLInputValueDefinition lastInputValueDefinition();
+        GraphQLInputValueDefinition getLastInputValueDefinition();
     }
 
     /**

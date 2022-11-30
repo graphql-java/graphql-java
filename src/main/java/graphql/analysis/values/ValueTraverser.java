@@ -71,16 +71,16 @@ public class ValueTraverser {
         }
 
         @Override
-        public List<GraphQLInputSchemaElement> inputElements() {
+        public List<GraphQLInputSchemaElement> getInputElements() {
             return inputElements;
         }
 
-        public List<GraphQLInputValueDefinition> inputValueDefinitions() {
+        public List<GraphQLInputValueDefinition> getInputValueDefinitions() {
             return inputValueDefinitions;
         }
 
         @Override
-        public GraphQLInputValueDefinition lastInputValueDefinition() {
+        public GraphQLInputValueDefinition getLastInputValueDefinition() {
             return inputValueDefinitions.get(inputValueDefinitions.size() - 1);
         }
     }
