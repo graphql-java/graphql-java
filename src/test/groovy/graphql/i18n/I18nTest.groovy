@@ -14,6 +14,43 @@ class I18nTest extends Specification {
         thrown(AssertException)
     }
 
+    def "missing resource bundles default to a base version"() {
+        // see https://saimana.com/list-of-country-locale-code/
+
+        def expected = "Validation error ({0}) : Type '{1}' definition is not executable"
+
+        when:
+        def i18n = I18n.i18n(BundleType.Validation, Locale.ENGLISH)
+        def msg = i18n.msg("ExecutableDefinitions.notExecutableType")
+
+        then:
+        msg == expected
+
+        when:
+        i18n = I18n.i18n(BundleType.Validation, Locale.CHINESE)
+        msg = i18n.msg("ExecutableDefinitions.notExecutableType")
+        then:
+        msg == expected
+
+        when:
+        i18n = I18n.i18n(BundleType.Validation, new Locale("en", "IN")) // India
+        msg = i18n.msg("ExecutableDefinitions.notExecutableType")
+        then:
+        msg == expected
+
+        when:
+        i18n = I18n.i18n(BundleType.Validation, new Locale("en", "FJ")) // Fiji
+        msg = i18n.msg("ExecutableDefinitions.notExecutableType")
+        then:
+        msg == expected
+
+        when:
+        i18n = I18n.i18n(BundleType.Validation, new Locale("")) // Nothing
+        msg = i18n.msg("ExecutableDefinitions.notExecutableType")
+        then:
+        msg == expected
+    }
+
     def "all enums have resources and decent shapes"() {
         when:
         def bundleTypes = BundleType.values()
