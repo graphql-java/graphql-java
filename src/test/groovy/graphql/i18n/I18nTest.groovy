@@ -97,6 +97,16 @@ class I18nTest extends Specification {
         er.errors[0].message == "Validation error (SubselectionRequired@[field]) : Subselection required for type 'Subselection' of field 'field'"
 
         when:
+        locale = Locale.GERMANY
+        ei = ExecutionInput.newExecutionInput().query("query missingSubselectionQ { field(arg : 1) }")
+                .locale(locale)
+                .build()
+        er = graphQL.execute(ei)
+        then:
+        !er.errors.isEmpty()
+        er.errors[0].message == "Validierungsfehler (SubselectionRequired@[field]) : Unterauswahl erforderlich für Typ 'Subselection' des Feldes 'field'"
+
+        when:
         locale = Locale.getDefault()
         ei = ExecutionInput.newExecutionInput().query("query missingSubselectionQ { field(arg : 1) }")
                 .locale(locale)
