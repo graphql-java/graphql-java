@@ -2,16 +2,6 @@ package graphql.schema;
 
 import graphql.Internal;
 import graphql.introspection.Introspection;
-import graphql.schema.DataFetcher;
-import graphql.schema.FieldCoordinates;
-import graphql.schema.GraphQLCodeRegistry;
-import graphql.schema.GraphQLFieldDefinition;
-import graphql.schema.GraphQLFieldsContainer;
-import graphql.schema.GraphQLInterfaceType;
-import graphql.schema.GraphQLSchemaElement;
-import graphql.schema.GraphQLTypeVisitorStub;
-import graphql.schema.GraphQLUnionType;
-import graphql.schema.TypeResolver;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 

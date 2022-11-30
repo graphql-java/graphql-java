@@ -8,7 +8,6 @@ import graphql.Internal;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -19,7 +18,6 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 import static graphql.Assert.assertTrue;
 import static graphql.schema.diffing.EditorialCostForMapping.editorialCostForMapping;
-import static java.util.Collections.singletonList;
 
 @Internal
 public class DiffImpl {
@@ -97,7 +95,7 @@ public class DiffImpl {
         queue.add(firstMappingEntry);
         firstMappingEntry.siblingsFinished = true;
 //        queue.add(new MappingEntry());
-        int counter = 0;
+//        int counter = 0;
         while (!queue.isEmpty()) {
             MappingEntry mappingEntry = queue.poll();
 //            System.out.println((++counter) + " check entry at level " + mappingEntry.level + " queue size: " + queue.size() + " lower bound " + mappingEntry.lowerBoundCost + " map " + getDebugMap(mappingEntry.partialMapping));
@@ -136,7 +134,7 @@ public class DiffImpl {
                                  List<Vertex> sourceList,
                                  List<Vertex> targetList
 
-    ) throws Exception {
+    ) {
         Mapping partialMapping = parentEntry.partialMapping;
         int level = parentEntry.level;
 

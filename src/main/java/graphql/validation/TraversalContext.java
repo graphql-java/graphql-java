@@ -2,7 +2,6 @@ package graphql.validation;
 
 
 import graphql.Assert;
-import graphql.DirectivesUtil;
 import graphql.Internal;
 import graphql.execution.TypeFromAST;
 import graphql.language.Argument;

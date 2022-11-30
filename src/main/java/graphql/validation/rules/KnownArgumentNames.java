@@ -8,7 +8,6 @@ import graphql.schema.GraphQLFieldDefinition;
 import graphql.validation.AbstractRule;
 import graphql.validation.ValidationContext;
 import graphql.validation.ValidationErrorCollector;
-import graphql.validation.ValidationErrorType;
 
 import static graphql.validation.ValidationErrorType.UnknownArgument;
 import static graphql.validation.ValidationErrorType.UnknownDirective;
