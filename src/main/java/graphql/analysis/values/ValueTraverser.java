@@ -6,19 +6,24 @@ import graphql.PublicApi;
 import graphql.schema.DataFetchingEnvironment;
 import graphql.schema.DataFetchingEnvironmentImpl;
 import graphql.schema.GraphQLArgument;
-import graphql.schema.GraphQLDirectiveContainer;
 import graphql.schema.GraphQLEnumType;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLInputObjectField;
 import graphql.schema.GraphQLInputObjectType;
+import graphql.schema.GraphQLInputSchemaElement;
 import graphql.schema.GraphQLInputType;
+import graphql.schema.GraphQLInputValueDefinition;
 import graphql.schema.GraphQLList;
+import graphql.schema.GraphQLNonNull;
 import graphql.schema.GraphQLScalarType;
 import graphql.schema.GraphQLTypeUtil;
 
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+
+import static graphql.analysis.values.ValueVisitor.ABSENCE_SENTINEL;
 
 /**
  * This class allows you to traverse a set of input values according to the type system and optional
@@ -40,6 +45,45 @@ import java.util.Map;
 @PublicApi
 public class ValueTraverser {
 
+    private static class InputElements implements ValueVisitor.InputElements {
+
+        private final ImmutableList<GraphQLInputSchemaElement> inputElements;
+        private final List<GraphQLInputValueDefinition> inputValueDefinitions;
+
+        private InputElements() {
+            this.inputElements = ImmutableList.of();
+            inputValueDefinitions = ImmutableList.of();
+        }
+
+        private InputElements(ImmutableList<GraphQLInputSchemaElement> inputElements) {
+            this.inputElements = inputElements;
+            this.inputValueDefinitions = inputElements.stream()
+                    .filter(it -> it instanceof GraphQLInputValueDefinition)
+                    .map(GraphQLInputValueDefinition.class::cast)
+                    .collect(ImmutableList.toImmutableList());
+        }
+
+
+        private InputElements push(GraphQLInputSchemaElement inputElement) {
+            ImmutableList<GraphQLInputSchemaElement> newSchemaElements = ImmutableList.<GraphQLInputSchemaElement>builder()
+                    .addAll(inputElements).add(inputElement).build();
+            return new InputElements(newSchemaElements);
+        }
+
+        @Override
+        public List<GraphQLInputSchemaElement> inputElements() {
+            return inputElements;
+        }
+
+        public List<GraphQLInputValueDefinition> inputValueDefinitions() {
+            return inputValueDefinitions;
+        }
+
+        @Override
+        public GraphQLInputValueDefinition lastInputValueDefinition() {
+            return inputValueDefinitions.get(inputValueDefinitions.size() - 1);
+        }
+    }
 
     /**
      * This will visit the arguments of a {@link DataFetchingEnvironment} and if the values are changed by the visitor a new environment will be built
@@ -75,13 +119,14 @@ public class ValueTraverser {
             String key = fieldArgument.getName();
             Object argValue = coercedArgumentValues.get(key);
             if (argValue != null) {
-                Object newValue = visitPreOrderImpl(argValue, fieldArgument.getType(), ImmutableList.of(fieldDefinition, fieldArgument), -1, visitor);
-                if (newValue != argValue) {
+                InputElements inputElements = new InputElements().push(fieldArgument);
+                Object newValue = visitPreOrderImpl(argValue, fieldArgument.getType(), inputElements, visitor);
+                if (hasChanged(newValue,argValue)) {
                     if (!copied) {
                         coercedArgumentValues = new LinkedHashMap<>(coercedArgumentValues);
                         copied = true;
                     }
-                    coercedArgumentValues.put(key, newValue);
+                    setNewValue(coercedArgumentValues,key,newValue);
                 }
             }
         }
@@ -98,55 +143,65 @@ public class ValueTraverser {
      * @return the same value if nothing changes or a new value if the visitor changes anything
      */
     public static Object visitPreOrder(Object coercedArgumentValue, GraphQLArgument argument, ValueVisitor visitor) {
-        return visitPreOrderImpl(coercedArgumentValue, argument.getType(), ImmutableList.of(argument), -1, visitor);
+        return visitPreOrderImpl(coercedArgumentValue, argument.getType(), new InputElements().push(argument), visitor);
     }
 
-    private static Object visitPreOrderImpl(Object coercedValue, GraphQLInputType startingInputType, List<GraphQLDirectiveContainer> containingElements, int index, ValueVisitor visitor) {
+    private static Object visitPreOrderImpl(Object coercedValue, GraphQLInputType startingInputType, InputElements containingElements, ValueVisitor visitor) {
+        if (startingInputType instanceof GraphQLNonNull) {
+            containingElements = containingElements.push(startingInputType);
+        }
         GraphQLInputType inputType = GraphQLTypeUtil.unwrapNonNullAs(startingInputType);
+        containingElements = containingElements.push(inputType);
         if (inputType instanceof GraphQLList) {
-            return visitListValue(coercedValue, (GraphQLList) inputType, index, containingElements, visitor);
+            return visitListValue(coercedValue, (GraphQLList) inputType, containingElements, visitor);
         } else if (inputType instanceof GraphQLInputObjectType) {
             GraphQLInputObjectType inputObjectType = (GraphQLInputObjectType) inputType;
-            return visitObjectValue(coercedValue, inputObjectType, index, containingElements, visitor);
+            return visitObjectValue(coercedValue, inputObjectType, containingElements, visitor);
         } else if (inputType instanceof GraphQLScalarType) {
-            return visitor.visitScalarValue(coercedValue, (GraphQLScalarType) inputType, index, containingElements);
+            return visitor.visitScalarValue(coercedValue, (GraphQLScalarType) inputType, containingElements);
         } else if (inputType instanceof GraphQLEnumType) {
-            return visitor.visitEnumValue(coercedValue, (GraphQLEnumType) inputType, index, containingElements);
+            return visitor.visitEnumValue(coercedValue, (GraphQLEnumType) inputType, containingElements);
         } else {
             return Assert.assertShouldNeverHappen("ValueTraverser can only be called on full materialised schemas");
         }
     }
 
-    private static Object visitObjectValue(Object coercedValue, GraphQLInputObjectType inputObjectType, int index, List<GraphQLDirectiveContainer> containingElements, ValueVisitor visitor) {
+    private static Object visitObjectValue(Object coercedValue, GraphQLInputObjectType inputObjectType, InputElements containingElements, ValueVisitor visitor) {
         if (coercedValue != null) {
             Assert.assertTrue(coercedValue instanceof Map, () -> "A input object type MUST have an Map<String,Object> value");
         }
         @SuppressWarnings("unchecked")
         Map<String, Object> map = (Map<String, Object>) coercedValue;
-        Map<String, Object> newMap = visitor.visitInputObjectValue(map, inputObjectType, index, containingElements);
+        Map<String, Object> newMap = visitor.visitInputObjectValue(map, inputObjectType, containingElements);
+        if (newMap == ABSENCE_SENTINEL) {
+            return ABSENCE_SENTINEL;
+        }
         if (newMap != null) {
-            List<GraphQLDirectiveContainer> containersWithObject = pushElement(containingElements, inputObjectType);
             boolean copied = false;
             for (Map.Entry<String, Object> entry : newMap.entrySet()) {
-                GraphQLInputObjectField inputField = inputObjectType.getField(entry.getKey());
+                String key = entry.getKey();
+                GraphQLInputObjectField inputField = inputObjectType.getField(key);
                 /// should we assert if the map contain a key that's not a field ?
                 if (inputField != null) {
-                    Object newSubValue = visitor.visitInputObjectFieldValue(entry.getValue(), inputObjectType, inputField, index, containersWithObject);
-                    if (newSubValue != entry.getValue()) {
+                    InputElements inputElementsWithField = containingElements.push(inputField);
+                    Object newValue = visitor.visitInputObjectFieldValue(entry.getValue(), inputObjectType, inputField, inputElementsWithField);
+                    if (hasChanged(newValue, entry.getValue())) {
                         if (!copied) {
                             newMap = new LinkedHashMap<>(newMap);
                             copied = true;
                         }
-                        newMap.put(entry.getKey(), newSubValue);
+                        setNewValue(newMap, key, newValue);
                     }
-                    List<GraphQLDirectiveContainer> containersWithField = pushElement(containingElements, inputField);
-                    newSubValue = visitPreOrderImpl(newSubValue, inputField.getType(), containersWithField, -1, visitor);
-                    if (newSubValue != entry.getValue()) {
-                        if (!copied) {
-                            newMap = new LinkedHashMap<>(newMap);
-                            copied = true;
+                    // if the value has gone - then we cant descend into it
+                    if (newValue != ABSENCE_SENTINEL) {
+                        newValue = visitPreOrderImpl(newValue, inputField.getType(), inputElementsWithField, visitor);
+                        if (hasChanged(newValue, entry.getValue())) {
+                            if (!copied) {
+                                newMap = new LinkedHashMap<>(newMap);
+                                copied = true;
+                            }
+                            setNewValue(newMap, key, newValue);
                         }
-                        newMap.put(entry.getKey(), newSubValue);
                     }
                 }
             }
@@ -156,29 +211,36 @@ public class ValueTraverser {
         }
     }
 
-    private static Object visitListValue(Object coercedValue, GraphQLList listInputType, int index, List<GraphQLDirectiveContainer> containingElements, ValueVisitor visitor) {
+    private static Object visitListValue(Object coercedValue, GraphQLList listInputType, InputElements containingElements, ValueVisitor visitor) {
         if (coercedValue != null) {
             Assert.assertTrue(coercedValue instanceof List, () -> "A list type MUST have an List value");
         }
         @SuppressWarnings("unchecked")
         List<Object> list = (List<Object>) coercedValue;
-        List<Object> newList = visitor.visitListValue(list, listInputType, index, containingElements);
+        List<Object> newList = visitor.visitListValue(list, listInputType, containingElements);
+        if (newList == ABSENCE_SENTINEL) {
+            return ABSENCE_SENTINEL;
+        }
         if (newList != null) {
             GraphQLInputType inputType = GraphQLTypeUtil.unwrapOneAs(listInputType);
             ImmutableList.Builder<Object> copiedList = null;
             int i = 0;
             for (Object subValue : newList) {
-                Object newSubValue = visitPreOrderImpl(subValue, inputType, containingElements, i, visitor);
+                Object newValue = visitPreOrderImpl(subValue, inputType, containingElements, visitor);
                 if (copiedList != null) {
-                    copiedList.add(newSubValue);
-                } else if (newSubValue != subValue) {
+                    if (newValue != ABSENCE_SENTINEL) {
+                        copiedList.add(newValue);
+                    }
+                } else if (hasChanged(newValue, subValue)) {
                     // go into copy mode because something has changed
                     // copy previous values up to this point
                     copiedList = ImmutableList.builder();
                     for (int j = 0; j < i; j++) {
                         copiedList.add(newList.get(j));
                     }
-                    copiedList.add(newSubValue);
+                    if (newValue != ABSENCE_SENTINEL) {
+                        copiedList.add(newValue);
+                    }
                 }
                 i++;
             }
@@ -192,7 +254,16 @@ public class ValueTraverser {
         }
     }
 
-    private static List<GraphQLDirectiveContainer> pushElement(List<GraphQLDirectiveContainer> containingElements, GraphQLDirectiveContainer element) {
-        return ImmutableList.<GraphQLDirectiveContainer>builder().addAll(containingElements).add(element).build();
+    private static boolean hasChanged(Object newValue, Object oldValue) {
+        return newValue != oldValue || newValue == ABSENCE_SENTINEL;
     }
+
+    private static void setNewValue(Map<String, Object> newMap, String key, Object newValue) {
+        if (newValue == ABSENCE_SENTINEL) {
+            newMap.remove(key);
+        } else {
+            newMap.put(key, newValue);
+        }
+    }
+
 }

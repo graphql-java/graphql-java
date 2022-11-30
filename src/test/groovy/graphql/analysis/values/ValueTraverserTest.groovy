@@ -6,13 +6,13 @@ import graphql.TestUtil
 import graphql.schema.DataFetcher
 import graphql.schema.DataFetchingEnvironment
 import graphql.schema.DataFetchingEnvironmentImpl
-import graphql.schema.GraphQLDirectiveContainer
 import graphql.schema.GraphQLEnumType
 import graphql.schema.GraphQLFieldDefinition
 import graphql.schema.GraphQLFieldsContainer
 import graphql.schema.GraphQLInputObjectField
 import graphql.schema.GraphQLInputObjectType
 import graphql.schema.GraphQLList
+import graphql.schema.GraphQLNamedSchemaElement
 import graphql.schema.GraphQLScalarType
 import graphql.schema.idl.SchemaDirectiveWiring
 import graphql.schema.idl.SchemaDirectiveWiringEnvironment
@@ -59,31 +59,31 @@ class ValueTraverserTest extends Specification {
         }
 
         @Override
-        Object visitScalarValue(Object coercedValue, GraphQLScalarType inputType, int index, List<GraphQLDirectiveContainer> containingElements) {
+        Object visitScalarValue(Object coercedValue, GraphQLScalarType inputType, InputElements inputElements) {
             bumpCount("scalar")
             return coercedValue
         }
 
         @Override
-        Object visitEnumValue(Object coercedValue, GraphQLEnumType inputType, int index, List<GraphQLDirectiveContainer> containingElements) {
+        Object visitEnumValue(Object coercedValue, GraphQLEnumType inputType, InputElements inputElements) {
             bumpCount("enum")
             return coercedValue
         }
 
         @Override
-        Object visitInputObjectFieldValue(Object coercedValue, GraphQLInputObjectType inputObjectType, GraphQLInputObjectField inputObjectField, int index, List<GraphQLDirectiveContainer> containingElements) {
+        Object visitInputObjectFieldValue(Object coercedValue, GraphQLInputObjectType inputObjectType, GraphQLInputObjectField inputObjectField, InputElements inputElements) {
             bumpCount("objectField")
             return coercedValue
         }
 
         @Override
-        Map<String, Object> visitInputObjectValue(Map<String, Object> coercedValue, GraphQLInputObjectType inputObjectType, int index, List<GraphQLDirectiveContainer> containingElements) {
+        Map<String, Object> visitInputObjectValue(Map<String, Object> coercedValue, GraphQLInputObjectType inputObjectType, InputElements inputElements) {
             bumpCount("object")
             return coercedValue
         }
 
         @Override
-        List<Object> visitListValue(List<Object> coercedValue, GraphQLList listInputType, int index, List<GraphQLDirectiveContainer> containingElements) {
+        List<Object> visitListValue(List<Object> coercedValue, GraphQLList listInputType, InputElements inputElements) {
             bumpCount("list")
             return coercedValue
         }
@@ -160,7 +160,7 @@ class ValueTraverserTest extends Specification {
         ]
         def visitor = new ValueVisitor() {
             @Override
-            Object visitScalarValue(Object coercedValue, GraphQLScalarType inputType, int index, List<GraphQLDirectiveContainer> containingElements) {
+            Object visitScalarValue(Object coercedValue, GraphQLScalarType inputType, ValueVisitor.InputElements inputElements) {
                 if (coercedValue instanceof String) {
                     def val = coercedValue as String
                     return val.toUpperCase().reverse()
@@ -172,7 +172,7 @@ class ValueTraverserTest extends Specification {
             }
 
             @Override
-            Object visitEnumValue(Object coercedValue, GraphQLEnumType inputType, int index, List<GraphQLDirectiveContainer> containingElements) {
+            Object visitEnumValue(Object coercedValue, GraphQLEnumType inputType, ValueVisitor.InputElements inputElements) {
                 def val = coercedValue as String
                 return val.toLowerCase().reverse()
             }
@@ -214,7 +214,7 @@ class ValueTraverserTest extends Specification {
         def argValues = [arg: [1, 2, 3, 4]]
         def visitor = new ValueVisitor() {
             @Override
-            Object visitScalarValue(Object coercedValue, GraphQLScalarType inputType, int index, List<GraphQLDirectiveContainer> containingElements) {
+            Object visitScalarValue(Object coercedValue, GraphQLScalarType inputType, ValueVisitor.InputElements inputElements) {
                 if (coercedValue == 3) {
                     return 33
                 }
@@ -250,7 +250,7 @@ class ValueTraverserTest extends Specification {
         ]
         def visitor = new ValueVisitor() {
             @Override
-            Object visitScalarValue(Object coercedValue, GraphQLScalarType inputType, int index, List<GraphQLDirectiveContainer> containingElements) {
+            Object visitScalarValue(Object coercedValue, GraphQLScalarType inputType, ValueVisitor.InputElements inputElements) {
                 if (coercedValue == 42) {
                     return 24
                 }
@@ -319,7 +319,7 @@ class ValueTraverserTest extends Specification {
         def visitor = new ValueVisitor() {
 
             @Override
-            Object visitInputObjectFieldValue(Object coercedValue, GraphQLInputObjectType inputObjectType, GraphQLInputObjectField inputObjectField, int index, List<GraphQLDirectiveContainer> containingElements) {
+            Object visitInputObjectFieldValue(Object coercedValue, GraphQLInputObjectType inputObjectType, GraphQLInputObjectField inputObjectField, ValueVisitor.InputElements inputElements) {
                 if (inputObjectField.name == "leaveAloneField") {
                     return coercedValue
                 }
@@ -340,6 +340,85 @@ class ValueTraverserTest extends Specification {
         ]
         then:
         actual == expected
+    }
+
+    def "can use the sentinel to remove elements"() {
+        def sdl = """
+
+            type Query {
+                field(arg : Input!, arg2 : String) : String
+            }
+            
+            input Input {
+                name : String 
+                age : Int
+                extraInput : ExtraInput
+                listInput : [Int]
+            }
+
+            input ExtraInput {
+                name : String 
+                gone : Boolean 
+                age : Int
+                otherInput : ExtraInput
+            }
+        """
+        def schema = TestUtil.schema(sdl)
+
+        def fieldDef = schema.getObjectType("Query").getFieldDefinition("field")
+        def argValues = [arg:
+                                 [name      : "Tess",
+                                  age       : 42,
+                                  extraInput:
+                                          [name      : "Tom",
+                                           age       : 33,
+                                           gone      : true,
+                                           otherInput: [
+                                                   name: "Ted",
+                                                   age : 42]
+                                          ],
+                                  listInput : [1, 2, 3, 4, 5, 6, 7, 8]
+                                 ],
+                arg2: "Gone-ski"
+        ]
+        def visitor = new ValueVisitor() {
+            @Override
+            Object visitScalarValue(Object coercedValue, GraphQLScalarType inputType, ValueVisitor.InputElements inputElements) {
+                def fieldName = inputElements.lastInputValueDefinition().name
+                if (fieldName == "age") {
+                    return ABSENCE_SENTINEL
+                }
+                if (coercedValue == "Gone-ski") {
+                    return ABSENCE_SENTINEL
+                }
+                if (coercedValue == 4 || coercedValue == 7) {
+                    return ABSENCE_SENTINEL
+                }
+                return coercedValue
+            }
+
+            @Override
+            Object visitInputObjectFieldValue(Object coercedValue, GraphQLInputObjectType inputObjectType, GraphQLInputObjectField inputObjectField, ValueVisitor.InputElements inputElements) {
+                def fieldName = inputElements.lastInputValueDefinition().name
+                if (fieldName == "otherInput") {
+                    return ABSENCE_SENTINEL
+                }
+                if (fieldName == "gone") {
+                    return ABSENCE_SENTINEL
+                }
+                return coercedValue
+            }
+        }
+        when:
+        def newValues = ValueTraverser.visitPreOrder(argValues, fieldDef, visitor)
+        then:
+        newValues == [arg:
+                              [name      : "Tess",
+                               extraInput:
+                                       [name: "Tom"],
+                               listInput : [1, 2, 3, 5, 6, 8]
+                              ]
+        ]
     }
 
     def "can get access to directives"() {
@@ -368,22 +447,25 @@ class ValueTraverserTest extends Specification {
         def capture = []
         def visitor = new ValueVisitor() {
             @Override
-            Object visitScalarValue(Object coercedValue, GraphQLScalarType inputType, int index, List<GraphQLDirectiveContainer> containingElements) {
-                checkDirectives(containingElements)
+            Object visitScalarValue(Object coercedValue, GraphQLScalarType inputType, ValueVisitor.InputElements inputElements) {
+                checkDirectives(inputElements)
                 return coercedValue
             }
 
-            @Override
-            Object visitInputObjectFieldValue(Object coercedValue, GraphQLInputObjectType inputObjectType, GraphQLInputObjectField inputObjectField, int index, List<GraphQLDirectiveContainer> containingElements) {
-                checkDirectives(containingElements)
-                return coercedValue
-            }
 
-            private void checkDirectives(List<GraphQLDirectiveContainer> containingElements) {
-                def lastElement = containingElements.last()
+            private void checkDirectives(ValueVisitor.InputElements inputElements) {
+                def lastElement = inputElements.lastInputValueDefinition()
                 def directive = lastElement.getAppliedDirective("d")
                 if (directive != null) {
-                    def elementNames = containingElements.collect({ it -> it.name }).join(":")
+                    def elementNames = inputElements.inputElements().collect(
+                            { it ->
+                                if (it instanceof GraphQLNamedSchemaElement) {
+                                    return it.name
+                                } else {
+                                    it.toString()
+                                }
+                            })
+                            .join(":")
                     def value = directive.getArgument("name").value
                     capture.add(elementNames + "@" + value)
                 }
@@ -393,13 +475,16 @@ class ValueTraverserTest extends Specification {
         def newValues = ValueTraverser.visitPreOrder(argValues, fieldDef, visitor)
         then:
         newValues == argValues
-        capture == ["field:arg:name@nameDirective",
-                    "field:arg:age@ageDirective",
-                    "field:arg:input:name@nameDirective",
+        capture == [
+                "arg:Input!:Input:name:String@nameDirective",
+                "arg:Input!:Input:age:Int@ageDirective",
 
-                    "field:arg:input:age@ageDirective",
-                    "field:arg:input:input:name@nameDirective",
-                    "field:arg:input:input:age@ageDirective"]
+                "arg:Input!:Input:input:Input:name:String@nameDirective",
+                "arg:Input!:Input:input:Input:age:Int@ageDirective",
+
+                "arg:Input!:Input:input:Input:input:Input:name:String@nameDirective",
+                "arg:Input!:Input:input:Input:input:Input:age:Int@ageDirective"
+        ]
     }
 
     def "can follow directives and change input"() {
@@ -428,18 +513,13 @@ class ValueTraverserTest extends Specification {
 
         def visitor = new ValueVisitor() {
             @Override
-            Object visitScalarValue(Object coercedValue, GraphQLScalarType inputType, int index, List<GraphQLDirectiveContainer> containingElements) {
-                def lastElement = containingElements.last()
+            Object visitScalarValue(Object coercedValue, GraphQLScalarType inputType, ValueVisitor.InputElements inputElements) {
+                def lastElement = inputElements.lastInputValueDefinition()
                 def directive = lastElement.getAppliedDirective("stripHtml")
                 if (directive != null) {
                     def v = String.valueOf(coercedValue)
                     return v.replaceAll(/<!--.*?-->/, '').replaceAll(/<.*?>/, '')
                 }
-                return coercedValue
-            }
-
-            @Override
-            Object visitInputObjectFieldValue(Object coercedValue, GraphQLInputObjectType inputObjectType, GraphQLInputObjectField inputObjectField, int index, List<GraphQLDirectiveContainer> containingElements) {
                 return coercedValue
             }
 
@@ -489,14 +569,13 @@ type Profile {
                 final DataFetcher<?> newDF = { DataFetchingEnvironment originalEnv ->
                     ValueVisitor visitor = new ValueVisitor() {
                         @Override
-                        Object visitScalarValue(Object coercedValue, GraphQLScalarType inputType, int index, List<GraphQLDirectiveContainer> containingElements) {
-                            def container = containingElements.last()
+                        Object visitScalarValue(Object coercedValue, GraphQLScalarType inputType, ValueVisitor.InputElements inputElements) {
+                            def container = inputElements.lastInputValueDefinition()
                             if (container.hasAppliedDirective("stripHtml")) {
                                 return stripHtml(coercedValue)
                             }
                             return coercedValue
                         }
-
 
                         private String stripHtml(coercedValue) {
                             return String.valueOf(coercedValue)
