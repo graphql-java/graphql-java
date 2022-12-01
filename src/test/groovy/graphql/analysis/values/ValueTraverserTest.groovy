@@ -11,6 +11,7 @@ import graphql.schema.GraphQLFieldDefinition
 import graphql.schema.GraphQLFieldsContainer
 import graphql.schema.GraphQLInputObjectField
 import graphql.schema.GraphQLInputObjectType
+import graphql.schema.GraphQLInputSchemaElement
 import graphql.schema.GraphQLList
 import graphql.schema.GraphQLNamedSchemaElement
 import graphql.schema.GraphQLScalarType
@@ -366,7 +367,7 @@ class ValueTraverserTest extends Specification {
         def schema = TestUtil.schema(sdl)
 
         def fieldDef = schema.getObjectType("Query").getFieldDefinition("field")
-        def argValues = [arg:
+        def argValues = [arg :
                                  [name      : "Tess",
                                   age       : 42,
                                   extraInput:
@@ -379,7 +380,7 @@ class ValueTraverserTest extends Specification {
                                           ],
                                   listInput : [1, 2, 3, 4, 5, 6, 7, 8]
                                  ],
-                arg2: "Gone-ski"
+                         arg2: "Gone-ski"
         ]
         def visitor = new ValueVisitor() {
             @Override
@@ -418,6 +419,96 @@ class ValueTraverserTest extends Specification {
                                        [name: "Tom"],
                                listInput : [1, 2, 3, 5, 6, 8]
                               ]
+        ]
+    }
+
+    def "can get give access to all elements and unwrapped elements"() {
+        def sdl = """
+
+            type Query {
+                field(arg : Input! ) : String
+            }
+            
+            input Input {
+                name : String 
+                age : Int 
+                objectField : [[Input!]]!
+            }
+        """
+        def schema = TestUtil.schema(sdl)
+
+        def fieldDef = schema.getObjectType("Query").getFieldDefinition("field")
+        def argValues = [arg:
+                                 [name : "Tess",
+                                  age  : 42,
+                                  objectField: [[
+                                                  [
+                                                          name : "Tom",
+                                                          age  : 33,
+                                                          objectField: [[
+                                                                          [
+                                                                                  name: "Ted",
+                                                                                  age : 42
+                                                                          ]
+                                                                  ]]
+                                                  ]
+                                          ]]
+                                 ]
+        ]
+        def captureAll = []
+        def captureUnwrapped = []
+        def last = ""
+        def visitor = new ValueVisitor() {
+            @Override
+            Object visitScalarValue(Object coercedValue, GraphQLScalarType inputType, ValueVisitor.InputElements inputElements) {
+                if (coercedValue == "Ted") {
+                    captureAll = inputElements.inputElements.collect { testStr(it) }
+                    captureUnwrapped = inputElements.unwrappedInputElements.collect { testStr(it) }
+                    last = inputElements.lastInputValueDefinition.name
+                }
+                return coercedValue
+            }
+
+            String testStr(GraphQLInputSchemaElement inputSchemaElement) {
+                if (inputSchemaElement instanceof GraphQLNamedSchemaElement) {
+                    return inputSchemaElement.name
+                }
+                return inputSchemaElement.toString()
+            }
+        }
+        when:
+        def newValues = ValueTraverser.visitPreOrder(argValues, fieldDef, visitor)
+        then:
+        newValues == argValues
+        last == "name"
+        captureAll == [
+                "arg",
+                "Input!",
+                "Input",
+                "objectField",
+                "[[Input!]]!",
+                "[[Input!]]",
+                "[Input!]",
+                "Input!",
+                "Input",
+                "objectField",
+                "[[Input!]]!",
+                "[[Input!]]",
+                "[Input!]",
+                "Input!",
+                "Input",
+                "name",
+                "String",
+        ]
+        captureUnwrapped == [
+                "arg",
+                "Input",
+                "objectField",
+                "Input",
+                "objectField",
+                "Input",
+                "name",
+                "String",
         ]
     }
 

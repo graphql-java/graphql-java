@@ -21,7 +21,7 @@ import graphql.schema.GraphQLTypeUtil;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
+import java.util.stream.Collectors;
 
 import static graphql.analysis.values.ValueVisitor.ABSENCE_SENTINEL;
 
@@ -48,19 +48,25 @@ public class ValueTraverser {
     private static class InputElements implements ValueVisitor.InputElements {
 
         private final ImmutableList<GraphQLInputSchemaElement> inputElements;
-        private final List<GraphQLInputValueDefinition> inputValueDefinitions;
+        private final List<GraphQLInputSchemaElement> unwrappedInputElements;
+        private final GraphQLInputValueDefinition lastElement;
 
-        private InputElements() {
-            this.inputElements = ImmutableList.of();
-            inputValueDefinitions = ImmutableList.of();
+        private InputElements(GraphQLInputValueDefinition startElement) {
+            this.inputElements = ImmutableList.of(startElement);
+            this.unwrappedInputElements = ImmutableList.of(startElement);
+            this.lastElement = startElement;
         }
 
         private InputElements(ImmutableList<GraphQLInputSchemaElement> inputElements) {
             this.inputElements = inputElements;
-            this.inputValueDefinitions = inputElements.stream()
-                    .filter(it -> it instanceof GraphQLInputValueDefinition)
-                    .map(GraphQLInputValueDefinition.class::cast)
+            this.unwrappedInputElements = inputElements.stream()
+                    .filter(it -> !(it instanceof GraphQLNonNull || it instanceof GraphQLList))
                     .collect(ImmutableList.toImmutableList());
+
+            List<GraphQLInputValueDefinition> inputValDefs = unwrappedInputElements.stream()
+                    .filter(it -> it instanceof GraphQLInputValueDefinition)
+                    .map(GraphQLInputValueDefinition.class::cast).collect(Collectors.toList());
+            this.lastElement = inputValDefs.get(inputValDefs.size() - 1);
         }
 
 
@@ -75,13 +81,13 @@ public class ValueTraverser {
             return inputElements;
         }
 
-        public List<GraphQLInputValueDefinition> getInputValueDefinitions() {
-            return inputValueDefinitions;
+        public List<GraphQLInputSchemaElement> getUnwrappedInputElements() {
+            return unwrappedInputElements;
         }
 
         @Override
         public GraphQLInputValueDefinition getLastInputValueDefinition() {
-            return inputValueDefinitions.get(inputValueDefinitions.size() - 1);
+            return lastElement;
         }
     }
 
@@ -119,14 +125,14 @@ public class ValueTraverser {
             String key = fieldArgument.getName();
             Object argValue = coercedArgumentValues.get(key);
             if (argValue != null) {
-                InputElements inputElements = new InputElements().push(fieldArgument);
+                InputElements inputElements = new InputElements(fieldArgument);
                 Object newValue = visitPreOrderImpl(argValue, fieldArgument.getType(), inputElements, visitor);
-                if (hasChanged(newValue,argValue)) {
+                if (hasChanged(newValue, argValue)) {
                     if (!copied) {
                         coercedArgumentValues = new LinkedHashMap<>(coercedArgumentValues);
                         copied = true;
                     }
-                    setNewValue(coercedArgumentValues,key,newValue);
+                    setNewValue(coercedArgumentValues, key, newValue);
                 }
             }
         }
@@ -143,7 +149,7 @@ public class ValueTraverser {
      * @return the same value if nothing changes or a new value if the visitor changes anything
      */
     public static Object visitPreOrder(Object coercedArgumentValue, GraphQLArgument argument, ValueVisitor visitor) {
-        return visitPreOrderImpl(coercedArgumentValue, argument.getType(), new InputElements().push(argument), visitor);
+        return visitPreOrderImpl(coercedArgumentValue, argument.getType(), new InputElements(argument), visitor);
     }
 
     private static Object visitPreOrderImpl(Object coercedValue, GraphQLInputType startingInputType, InputElements containingElements, ValueVisitor visitor) {

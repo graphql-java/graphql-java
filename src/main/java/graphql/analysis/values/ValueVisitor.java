@@ -40,9 +40,12 @@ public interface ValueVisitor {
         List<GraphQLInputSchemaElement> getInputElements();
 
         /**
+         * This is the list of input schema elements that are unwrapped, e.g.
+         * {@link GraphQLList} and {@link graphql.schema.GraphQLNonNull} types have been removed
+         *
          * @return then list of {@link GraphQLInputValueDefinition} elements that lead to an input value.
          */
-        List<GraphQLInputValueDefinition> getInputValueDefinitions();
+        List<GraphQLInputSchemaElement> getUnwrappedInputElements();
 
         /**
          * This is the last {@link GraphQLInputValueDefinition} that pointed to the value during a callback.  This will
