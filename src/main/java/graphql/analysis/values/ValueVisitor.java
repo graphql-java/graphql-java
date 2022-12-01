@@ -8,6 +8,7 @@ import graphql.schema.GraphQLInputSchemaElement;
 import graphql.schema.GraphQLInputValueDefinition;
 import graphql.schema.GraphQLList;
 import graphql.schema.GraphQLScalarType;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.Map;
@@ -65,7 +66,7 @@ public interface ValueVisitor {
      *
      * @return the same value or a new value
      */
-    default Object visitScalarValue(Object coercedValue, GraphQLScalarType inputType, InputElements inputElements) {
+    default @Nullable Object visitScalarValue(@Nullable Object coercedValue, GraphQLScalarType inputType, InputElements inputElements) {
         return coercedValue;
     }
 
@@ -78,7 +79,7 @@ public interface ValueVisitor {
      *
      * @return the same value or a new value
      */
-    default Object visitEnumValue(Object coercedValue, GraphQLEnumType inputType, InputElements inputElements) {
+    default @Nullable Object visitEnumValue(@Nullable Object coercedValue, GraphQLEnumType inputType, InputElements inputElements) {
         return coercedValue;
     }
 
@@ -92,7 +93,7 @@ public interface ValueVisitor {
      *
      * @return the same value or a new value
      */
-    default Object visitInputObjectFieldValue(Object coercedValue, GraphQLInputObjectType inputObjectType, GraphQLInputObjectField inputObjectField, InputElements inputElements) {
+    default @Nullable Object visitInputObjectFieldValue(@Nullable Object coercedValue, GraphQLInputObjectType inputObjectType, GraphQLInputObjectField inputObjectField, InputElements inputElements) {
         return coercedValue;
     }
 
@@ -105,7 +106,7 @@ public interface ValueVisitor {
      *
      * @return the same value or a new value
      */
-    default Map<String, Object> visitInputObjectValue(Map<String, Object> coercedValue, GraphQLInputObjectType inputObjectType, InputElements inputElements) {
+    default @Nullable Map<String, Object> visitInputObjectValue(@Nullable Map<String, Object> coercedValue, GraphQLInputObjectType inputObjectType, InputElements inputElements) {
         return coercedValue;
     }
 
@@ -118,7 +119,7 @@ public interface ValueVisitor {
      *
      * @return the same value or a new value
      */
-    default List<Object> visitListValue(List<Object> coercedValue, GraphQLList listInputType, InputElements inputElements) {
+    default @Nullable List<Object> visitListValue(@Nullable List<Object> coercedValue, GraphQLList listInputType, InputElements inputElements) {
         return coercedValue;
     }
 }
