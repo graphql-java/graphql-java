@@ -135,6 +135,7 @@ public class SchemaUsageSupport {
                 List<GraphQLNamedOutputType> members = unionType.getTypes();
                 for (GraphQLNamedOutputType member : members) {
                     builder.unionReferenceCount.compute(member.getName(), incCount());
+                    builder.unionReferences.computeIfAbsent(member.getName(), k -> new HashSet<>()).add(unionType.getName());
 
                     recordBackReference(unionType, member);
                 }
