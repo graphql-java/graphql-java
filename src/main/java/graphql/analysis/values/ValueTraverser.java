@@ -124,16 +124,14 @@ public class ValueTraverser {
         for (GraphQLArgument fieldArgument : fieldArguments) {
             String key = fieldArgument.getName();
             Object argValue = coercedArgumentValues.get(key);
-            if (argValue != null) {
-                InputElements inputElements = new InputElements(fieldArgument);
-                Object newValue = visitPreOrderImpl(argValue, fieldArgument.getType(), inputElements, visitor);
-                if (hasChanged(newValue, argValue)) {
-                    if (!copied) {
-                        coercedArgumentValues = new LinkedHashMap<>(coercedArgumentValues);
-                        copied = true;
-                    }
-                    setNewValue(coercedArgumentValues, key, newValue);
+            InputElements inputElements = new InputElements(fieldArgument);
+            Object newValue = visitPreOrderImpl(argValue, fieldArgument.getType(), inputElements, visitor);
+            if (hasChanged(newValue, argValue)) {
+                if (!copied) {
+                    coercedArgumentValues = new LinkedHashMap<>(coercedArgumentValues);
+                    copied = true;
                 }
+                setNewValue(coercedArgumentValues, key, newValue);
             }
         }
         return coercedArgumentValues;

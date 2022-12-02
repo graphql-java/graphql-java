@@ -119,7 +119,7 @@ class ValueTraverserTest extends Specification {
         then:
         // nothing changed - its the same object
         newValues === originalValues
-        visitor.visits == ["scalar": 12, "enum": 4, "list": 5, "object": 3, "objectField": 13]
+        visitor.visits == ["scalar": 12, "enum": 4, "list": 5, "object": 4, "objectField": 13]
 
 
         when:
@@ -343,6 +343,60 @@ class ValueTraverserTest extends Specification {
         actual == expected
     }
 
+    def "can turn nulls into actual values"() {
+        def sdl = """
+            type Query {
+                field(arg : Input) : String
+            }
+            
+            input Input {
+                listField : [String]
+                objectField : Input
+                stringField : String
+            }
+        """
+        def schema = TestUtil.schema(sdl)
+
+        def fieldDef = schema.getObjectType("Query").getFieldDefinition("field")
+        def argValues = [arg:
+                                 [
+                                         listField  : null,
+                                         objectField: null,
+                                         stringField: null,
+                                 ]
+        ]
+        def visitor = new ValueVisitor() {
+
+            @Override
+            Object visitInputObjectFieldValue(Object coercedValue, GraphQLInputObjectType inputObjectType, GraphQLInputObjectField inputObjectField, ValueVisitor.InputElements inputElements) {
+                if (inputObjectField.name == "listField") {
+                    return ["a", "b", "c"]
+                }
+                if (inputObjectField.name == "objectField") {
+                    return [listField: ["x", "y", "z"], stringField: ["will be overwritten"]]
+                }
+                if (inputObjectField.name == "stringField") {
+                    return "stringValue"
+                }
+                return coercedValue
+            }
+
+        }
+        when:
+        def actual = ValueTraverser.visitPreOrder(argValues, fieldDef, visitor)
+
+        def expected = [arg:
+                                [
+                                        listField  : ["a", "b", "c"],
+                                        objectField: [listField: ["a", "b", "c"], stringField: "stringValue"],
+                                        stringField: "stringValue",
+                                ]
+        ]
+        then:
+        actual == expected
+    }
+
+
     def "can use the sentinel to remove elements"() {
         def sdl = """
 
@@ -439,20 +493,20 @@ class ValueTraverserTest extends Specification {
 
         def fieldDef = schema.getObjectType("Query").getFieldDefinition("field")
         def argValues = [arg:
-                                 [name : "Tess",
-                                  age  : 42,
+                                 [name       : "Tess",
+                                  age        : 42,
                                   objectField: [[
-                                                  [
-                                                          name : "Tom",
-                                                          age  : 33,
-                                                          objectField: [[
-                                                                          [
-                                                                                  name: "Ted",
-                                                                                  age : 42
-                                                                          ]
-                                                                  ]]
-                                                  ]
-                                          ]]
+                                                        [
+                                                                name       : "Tom",
+                                                                age        : 33,
+                                                                objectField: [[
+                                                                                      [
+                                                                                              name: "Ted",
+                                                                                              age : 42
+                                                                                      ]
+                                                                              ]]
+                                                        ]
+                                                ]]
                                  ]
         ]
         def captureAll = []
