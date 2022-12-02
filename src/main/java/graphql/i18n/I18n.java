@@ -35,7 +35,9 @@ public class I18n {
     protected I18n(BundleType bundleType, Locale locale) {
         assertNotNull(bundleType);
         assertNotNull(locale);
-        this.resourceBundle = ResourceBundle.getBundle(bundleType.baseName, locale);
+        // load the resource bundle with this classes class loader - to help avoid confusion in complicated worlds
+        // like OSGI
+        this.resourceBundle = ResourceBundle.getBundle(bundleType.baseName, locale, I18n.class.getClassLoader());
     }
 
     public ResourceBundle getResourceBundle() {

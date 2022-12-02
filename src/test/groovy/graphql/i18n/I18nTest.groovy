@@ -1,6 +1,8 @@
 package graphql.i18n
 
 import graphql.AssertException
+import graphql.ExecutionInput
+import graphql.TestUtil
 import graphql.i18n.I18n.BundleType
 import spock.lang.Specification
 
@@ -24,6 +26,88 @@ class I18nTest extends Specification {
             assert i18n.resourceBundle != null
             assertBundleStaticShape(i18n.resourceBundle)
         }
+    }
+
+
+    def "missing resource bundles default to a base version"() {
+        // see https://saimana.com/list-of-country-locale-code/
+
+        def expected = "Validation error ({0}) : Type '{1}' definition is not executable"
+
+        when:
+        def i18n = I18n.i18n(BundleType.Validation, Locale.ENGLISH)
+        def msg = i18n.msg("ExecutableDefinitions.notExecutableType")
+
+        then:
+        msg == expected
+
+        when:
+        i18n = I18n.i18n(BundleType.Validation, Locale.CHINESE)
+        msg = i18n.msg("ExecutableDefinitions.notExecutableType")
+        then:
+        msg == expected
+
+        when:
+        i18n = I18n.i18n(BundleType.Validation, new Locale("en", "IN")) // India
+        msg = i18n.msg("ExecutableDefinitions.notExecutableType")
+        then:
+        msg == expected
+
+        when:
+        i18n = I18n.i18n(BundleType.Validation, new Locale("en", "FJ")) // Fiji
+        msg = i18n.msg("ExecutableDefinitions.notExecutableType")
+        then:
+        msg == expected
+
+        when:
+        i18n = I18n.i18n(BundleType.Validation, new Locale("")) // Nothing
+        msg = i18n.msg("ExecutableDefinitions.notExecutableType")
+        then:
+        msg == expected
+    }
+
+    def "integration test of valid messages"() {
+        def sdl = """
+            type Query {
+                field(arg : Int) : Subselection
+            }
+            
+            type Subselection {
+                name : String
+            }
+        """
+        def graphQL = TestUtil.graphQL(sdl).build()
+
+
+        when:
+        def locale = new Locale("en", "IN")
+        def ei = ExecutionInput.newExecutionInput().query("query missingSubselectionQ { field(arg : 1) }")
+                .locale(locale)
+                .build()
+        def er = graphQL.execute(ei)
+        then:
+        !er.errors.isEmpty()
+        er.errors[0].message == "Validation error (SubselectionRequired@[field]) : Subselection required for type 'Subselection' of field 'field'"
+
+
+        when:
+        locale = Locale.getDefault()
+        ei = ExecutionInput.newExecutionInput().query("query missingSubselectionQ { field(arg : 1) }")
+                .locale(locale)
+                .build()
+        er = graphQL.execute(ei)
+        then:
+        !er.errors.isEmpty()
+        er.errors[0].message == "Validation error (SubselectionRequired@[field]) : Subselection required for type 'Subselection' of field 'field'"
+
+        when:
+        // no locale - it should default
+        ei = ExecutionInput.newExecutionInput().query("query missingSubselectionQ { field(arg : 1) }")
+                .build()
+        er = graphQL.execute(ei)
+        then:
+        !er.errors.isEmpty()
+        er.errors[0].message == "Validation error (SubselectionRequired@[field]) : Subselection required for type 'Subselection' of field 'field'"
     }
 
     static def assertBundleStaticShape(ResourceBundle bundle) {
