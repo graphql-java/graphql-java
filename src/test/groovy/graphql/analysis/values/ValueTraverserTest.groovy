@@ -1,11 +1,13 @@
 package graphql.analysis.values
 
+import graphql.AssertException
 import graphql.ExecutionInput
 import graphql.GraphQL
 import graphql.TestUtil
 import graphql.schema.DataFetcher
 import graphql.schema.DataFetchingEnvironment
 import graphql.schema.DataFetchingEnvironmentImpl
+import graphql.schema.GraphQLArgument
 import graphql.schema.GraphQLEnumType
 import graphql.schema.GraphQLFieldDefinition
 import graphql.schema.GraphQLFieldsContainer
@@ -17,6 +19,7 @@ import graphql.schema.GraphQLNamedSchemaElement
 import graphql.schema.GraphQLScalarType
 import graphql.schema.idl.SchemaDirectiveWiring
 import graphql.schema.idl.SchemaDirectiveWiringEnvironment
+import org.jetbrains.annotations.Nullable
 import spock.lang.Specification
 
 import static graphql.schema.idl.RuntimeWiring.newRuntimeWiring
@@ -291,6 +294,78 @@ class ValueTraverserTest extends Specification {
                         [name: "Ted", age: 24]
                 ]
         ]
+    }
+
+    def "can visit arguments and change things"() {
+        def sdl = """
+            type Query {
+                field(arg1 : Input!, arg2 : Input, removeArg : Input) : String
+            }
+            
+            input Input {
+                name : String
+                age : Int
+                input : Input
+            }
+        """
+        def schema = TestUtil.schema(sdl)
+
+        def fieldDef = schema.getObjectType("Query").getFieldDefinition("field")
+        def argValues = [
+                arg1:
+                        [name: "Tess", age: 42],
+                arg2:
+                        [name: "Tom", age: 24],
+                removeArg:
+                        [name: "Gone-ski", age: 99],
+        ]
+        def visitor = new ValueVisitor() {
+            @Override
+            Object visitArgumentValue(@Nullable Object coercedValue, GraphQLArgument graphQLArgument, ValueVisitor.InputElements inputElements) {
+                if (graphQLArgument.name == "arg2") {
+                    return [name: "Harry Potter", age: 54]
+                }
+                if (graphQLArgument.name == "removeArg") {
+                    return ABSENCE_SENTINEL
+                }
+                return coercedValue
+            }
+        }
+        when:
+        def actual = ValueTraverser.visitPreOrder(argValues, fieldDef, visitor)
+
+        def expected = [
+                arg1:
+                        [name: "Tess", age: 42],
+                arg2:
+                        [name: "Harry Potter", age: 54]
+        ]
+        then:
+        actual == expected
+
+
+        // can change a DFE arguments
+        when:
+        def startingDFE = DataFetchingEnvironmentImpl.newDataFetchingEnvironment().fieldDefinition(fieldDef).arguments(argValues).build()
+        def newDFE = ValueTraverser.visitPreOrder(startingDFE, visitor)
+
+        then:
+        newDFE.getArguments() == expected
+        newDFE.getFieldDefinition() == fieldDef
+
+        // can change a single arguments
+        when:
+        def newValues = ValueTraverser.visitPreOrder(argValues['arg2'], fieldDef.getArgument("arg2"), visitor)
+
+        then:
+        newValues == [name: "Harry Potter", age: 54]
+
+        // catches non sense states
+        when:
+        ValueTraverser.visitPreOrder([:], fieldDef.getArgument("removeArg"), visitor)
+
+        then:
+        thrown(AssertException.class)
     }
 
     def "can handle a null changes"() {

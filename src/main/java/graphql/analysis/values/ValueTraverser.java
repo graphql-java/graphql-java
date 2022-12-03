@@ -1,7 +1,6 @@
 package graphql.analysis.values;
 
 import com.google.common.collect.ImmutableList;
-import graphql.Assert;
 import graphql.PublicApi;
 import graphql.schema.DataFetchingEnvironment;
 import graphql.schema.DataFetchingEnvironmentImpl;
@@ -23,6 +22,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static graphql.Assert.assertShouldNeverHappen;
+import static graphql.Assert.assertTrue;
 import static graphql.analysis.values.ValueVisitor.ABSENCE_SENTINEL;
 
 /**
@@ -125,7 +126,7 @@ public class ValueTraverser {
             String key = fieldArgument.getName();
             Object argValue = coercedArgumentValues.get(key);
             InputElements inputElements = new InputElements(fieldArgument);
-            Object newValue = visitPreOrderImpl(argValue, fieldArgument.getType(), inputElements, visitor);
+            Object newValue = visitor.visitArgumentValue(argValue, fieldArgument, inputElements);
             if (hasChanged(newValue, argValue)) {
                 if (!copied) {
                     coercedArgumentValues = new LinkedHashMap<>(coercedArgumentValues);
@@ -133,12 +134,25 @@ public class ValueTraverser {
                 }
                 setNewValue(coercedArgumentValues, key, newValue);
             }
+            if (newValue != ABSENCE_SENTINEL) {
+                newValue = visitPreOrderImpl(argValue, fieldArgument.getType(), inputElements, visitor);
+                if (hasChanged(newValue, argValue)) {
+                    if (!copied) {
+                        coercedArgumentValues = new LinkedHashMap<>(coercedArgumentValues);
+                        copied = true;
+                    }
+                    setNewValue(coercedArgumentValues, key, newValue);
+                }
+            }
         }
         return coercedArgumentValues;
     }
 
     /**
-     * This will visit a single argument of a {@link GraphQLArgument} and if the visitor changes the value, it will return a new argument
+     * This will visit a single argument of a {@link GraphQLArgument} and if the visitor changes the value, it will return a new argument value
+     * <p>
+     * Note you cannot return the ABSENCE_SENTINEL from this method as its makes no sense to be somehow make the argument disappear.  Use
+     * {@link #visitPreOrder(Map, GraphQLFieldDefinition, ValueVisitor)} say to remove arguments in the fields map of arguments.
      *
      * @param coercedArgumentValue the starting coerced argument value
      * @param argument             the argument definition
@@ -147,7 +161,16 @@ public class ValueTraverser {
      * @return the same value if nothing changes or a new value if the visitor changes anything
      */
     public static Object visitPreOrder(Object coercedArgumentValue, GraphQLArgument argument, ValueVisitor visitor) {
-        return visitPreOrderImpl(coercedArgumentValue, argument.getType(), new InputElements(argument), visitor);
+        InputElements inputElements = new InputElements(argument);
+        Object newValue = visitor.visitArgumentValue(coercedArgumentValue, argument, inputElements);
+        if (newValue == ABSENCE_SENTINEL) {
+            assertShouldNeverHappen("It makes no sense to return the ABSENCE_SENTINEL during the visitPreOrder GraphQLArgument method");
+        }
+        newValue = visitPreOrderImpl(newValue, argument.getType(), inputElements, visitor);
+        if (newValue == ABSENCE_SENTINEL) {
+            assertShouldNeverHappen("It makes no sense to return the ABSENCE_SENTINEL during the visitPreOrder GraphQLArgument method");
+        }
+        return newValue;
     }
 
     private static Object visitPreOrderImpl(Object coercedValue, GraphQLInputType startingInputType, InputElements containingElements, ValueVisitor visitor) {
@@ -166,13 +189,13 @@ public class ValueTraverser {
         } else if (inputType instanceof GraphQLEnumType) {
             return visitor.visitEnumValue(coercedValue, (GraphQLEnumType) inputType, containingElements);
         } else {
-            return Assert.assertShouldNeverHappen("ValueTraverser can only be called on full materialised schemas");
+            return assertShouldNeverHappen("ValueTraverser can only be called on full materialised schemas");
         }
     }
 
     private static Object visitObjectValue(Object coercedValue, GraphQLInputObjectType inputObjectType, InputElements containingElements, ValueVisitor visitor) {
         if (coercedValue != null) {
-            Assert.assertTrue(coercedValue instanceof Map, () -> "A input object type MUST have an Map<String,Object> value");
+            assertTrue(coercedValue instanceof Map, () -> "A input object type MUST have an Map<String,Object> value");
         }
         @SuppressWarnings("unchecked")
         Map<String, Object> map = (Map<String, Object>) coercedValue;
@@ -217,7 +240,7 @@ public class ValueTraverser {
 
     private static Object visitListValue(Object coercedValue, GraphQLList listInputType, InputElements containingElements, ValueVisitor visitor) {
         if (coercedValue != null) {
-            Assert.assertTrue(coercedValue instanceof List, () -> "A list type MUST have an List value");
+            assertTrue(coercedValue instanceof List, () -> "A list type MUST have an List value");
         }
         @SuppressWarnings("unchecked")
         List<Object> list = (List<Object>) coercedValue;
