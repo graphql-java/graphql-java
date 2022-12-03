@@ -4,6 +4,8 @@ import com.google.common.collect.ImmutableList;
 import graphql.PublicApi;
 import graphql.schema.DataFetchingEnvironment;
 import graphql.schema.DataFetchingEnvironmentImpl;
+import graphql.schema.GraphQLAppliedDirective;
+import graphql.schema.GraphQLAppliedDirectiveArgument;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLEnumType;
 import graphql.schema.GraphQLFieldDefinition;
@@ -52,10 +54,10 @@ public class ValueTraverser {
         private final List<GraphQLInputSchemaElement> unwrappedInputElements;
         private final GraphQLInputValueDefinition lastElement;
 
-        private InputElements(GraphQLInputValueDefinition startElement) {
+        private InputElements(GraphQLInputSchemaElement startElement) {
             this.inputElements = ImmutableList.of(startElement);
             this.unwrappedInputElements = ImmutableList.of(startElement);
-            this.lastElement = startElement;
+            this.lastElement = startElement instanceof GraphQLInputValueDefinition ? (GraphQLInputValueDefinition) startElement : null;
         }
 
         private InputElements(ImmutableList<GraphQLInputSchemaElement> inputElements) {
@@ -67,7 +69,7 @@ public class ValueTraverser {
             List<GraphQLInputValueDefinition> inputValDefs = unwrappedInputElements.stream()
                     .filter(it -> it instanceof GraphQLInputValueDefinition)
                     .map(GraphQLInputValueDefinition.class::cast).collect(Collectors.toList());
-            this.lastElement = inputValDefs.get(inputValDefs.size() - 1);
+            this.lastElement = inputValDefs.isEmpty() ? null : inputValDefs.get(inputValDefs.size() - 1);
         }
 
 
@@ -169,6 +171,30 @@ public class ValueTraverser {
         newValue = visitPreOrderImpl(newValue, argument.getType(), inputElements, visitor);
         if (newValue == ABSENCE_SENTINEL) {
             assertShouldNeverHappen("It makes no sense to return the ABSENCE_SENTINEL during the visitPreOrder GraphQLArgument method");
+        }
+        return newValue;
+    }
+
+    /**
+     * This will visit a single argument of a {@link GraphQLAppliedDirective} and if the visitor changes the value, it will return a new argument value
+     * <p>
+     * Note you cannot return the ABSENCE_SENTINEL from this method as its makes no sense to be somehow make the argument disappear.
+     *
+     * @param coercedArgumentValue the starting coerced argument value
+     * @param argument             the applied argument
+     * @param visitor              the visitor to use
+     *
+     * @return the same value if nothing changes or a new value if the visitor changes anything
+     */
+    public static Object visitPreOrder(Object coercedArgumentValue, GraphQLAppliedDirectiveArgument argument, ValueVisitor visitor) {
+        InputElements inputElements = new InputElements(argument);
+        Object newValue = visitor.visitAppliedDirectiveArgumentValue(coercedArgumentValue, argument, inputElements);
+        if (newValue == ABSENCE_SENTINEL) {
+            assertShouldNeverHappen("It makes no sense to return the ABSENCE_SENTINEL during the visitPreOrder GraphQLAppliedDirectiveArgument method");
+        }
+        newValue = visitPreOrderImpl(newValue, argument.getType(), inputElements, visitor);
+        if (newValue == ABSENCE_SENTINEL) {
+            assertShouldNeverHappen("It makes no sense to return the ABSENCE_SENTINEL during the visitPreOrder GraphQLAppliedDirectiveArgument method");
         }
         return newValue;
     }

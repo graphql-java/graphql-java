@@ -1,6 +1,7 @@
 package graphql.analysis.values;
 
 import graphql.PublicSpi;
+import graphql.schema.GraphQLAppliedDirectiveArgument;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLEnumType;
 import graphql.schema.GraphQLInputObjectField;
@@ -128,13 +129,27 @@ public interface ValueVisitor {
     /**
      * This is called when a {@link GraphQLArgument} is encountered
      *
-     * @param coercedValue     the value that is in coerced form
-     * @param graphQLArgument  the {@link GraphQLArgument} in play
-     * @param inputElements    the elements that lead to this value and type
+     * @param coercedValue    the value that is in coerced form
+     * @param graphQLArgument the {@link GraphQLArgument} in play
+     * @param inputElements   the elements that lead to this value and type
      *
      * @return the same value or a new value
      */
     default @Nullable Object visitArgumentValue(@Nullable Object coercedValue, GraphQLArgument graphQLArgument, InputElements inputElements) {
+        return coercedValue;
+    }
+
+
+    /**
+     * This is called when a {@link GraphQLAppliedDirectiveArgument} is encountered
+     *
+     * @param coercedValue                    the value that is in coerced form
+     * @param graphQLAppliedDirectiveArgument the {@link GraphQLAppliedDirectiveArgument} in play
+     * @param inputElements                   the elements that lead to this value and type
+     *
+     * @return the same value or a new value
+     */
+    default @Nullable Object visitAppliedDirectiveArgumentValue(@Nullable Object coercedValue, GraphQLAppliedDirectiveArgument graphQLAppliedDirectiveArgument, InputElements inputElements) {
         return coercedValue;
     }
 

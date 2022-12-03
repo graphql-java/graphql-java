@@ -7,6 +7,7 @@ import graphql.TestUtil
 import graphql.schema.DataFetcher
 import graphql.schema.DataFetchingEnvironment
 import graphql.schema.DataFetchingEnvironmentImpl
+import graphql.schema.GraphQLAppliedDirectiveArgument
 import graphql.schema.GraphQLArgument
 import graphql.schema.GraphQLEnumType
 import graphql.schema.GraphQLFieldDefinition
@@ -312,9 +313,9 @@ class ValueTraverserTest extends Specification {
 
         def fieldDef = schema.getObjectType("Query").getFieldDefinition("field")
         def argValues = [
-                arg1:
+                arg1     :
                         [name: "Tess", age: 42],
-                arg2:
+                arg2     :
                         [name: "Tom", age: 24],
                 removeArg:
                         [name: "Gone-ski", age: 99],
@@ -363,6 +364,82 @@ class ValueTraverserTest extends Specification {
         // catches non sense states
         when:
         ValueTraverser.visitPreOrder([:], fieldDef.getArgument("removeArg"), visitor)
+
+        then:
+        thrown(AssertException.class)
+    }
+
+    def "can handle applied directive arguments"() {
+        def sdl = """
+            directive @d(
+                arg1 :  Input
+                arg2 :  Input
+                removeArg :  Input
+            ) on FIELD_DEFINITION
+            
+            type Query {
+                field : String @d(
+                arg1:
+                        {name: "Tom Riddle", age: 42}
+                arg2:
+                        {name: "Ron Weasley", age: 42}
+                removeArg:
+                        {name: "Ron Weasley", age: 42}
+                )
+            }
+            
+            input Input {
+                name : String
+                age : Int
+                input : Input
+            }
+        """
+        def schema = TestUtil.schema(sdl)
+
+        def fieldDef = schema.getObjectType("Query").getFieldDefinition("field")
+        def appliedDirective = fieldDef.getAppliedDirective("d")
+        def visitor = new ValueVisitor() {
+
+            @Override
+            Object visitScalarValue(@Nullable Object coercedValue, GraphQLScalarType inputType, ValueVisitor.InputElements inputElements) {
+                if (coercedValue == "Tom Riddle") {
+                    return "Happy Potter"
+                }
+                return coercedValue
+            }
+
+            @Override
+            Object visitAppliedDirectiveArgumentValue(@Nullable Object coercedValue, GraphQLAppliedDirectiveArgument graphQLAppliedDirectiveArgument, ValueVisitor.InputElements inputElements) {
+                if (graphQLAppliedDirectiveArgument.name == "arg2") {
+                    return [name: "Harry Potter", age: 54]
+                }
+                if (graphQLAppliedDirectiveArgument.name == "removeArg") {
+                    return ABSENCE_SENTINEL
+                }
+                return coercedValue
+            }
+        }
+
+
+        def appliedDirectiveArgument = appliedDirective.getArgument("arg1")
+        when:
+        def actual = ValueTraverser.visitPreOrder(appliedDirectiveArgument.getValue(), appliedDirectiveArgument, visitor)
+
+        then:
+        actual == [name: "Happy Potter", age: 42]
+
+        when:
+        appliedDirectiveArgument = appliedDirective.getArgument("arg2")
+        actual = ValueTraverser.visitPreOrder(appliedDirectiveArgument.getValue(), appliedDirectiveArgument, visitor)
+
+        then:
+        actual == [name: "Harry Potter", age: 54]
+
+
+        // catches non sense states
+        when:
+        appliedDirectiveArgument = appliedDirective.getArgument("removeArg")
+        ValueTraverser.visitPreOrder(appliedDirectiveArgument.getValue(), appliedDirectiveArgument, visitor)
 
         then:
         thrown(AssertException.class)

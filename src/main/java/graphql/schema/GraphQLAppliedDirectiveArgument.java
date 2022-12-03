@@ -26,7 +26,7 @@ import static graphql.execution.ValuesResolver.getInputValueImpl;
  * You can think of them as 'instances' of {@link GraphQLArgument}, when applied to a directive on a schema element
  */
 @PublicApi
-public class GraphQLAppliedDirectiveArgument implements GraphQLNamedSchemaElement {
+public class GraphQLAppliedDirectiveArgument implements GraphQLNamedSchemaElement, GraphQLInputSchemaElement {
 
     private final String name;
     private final InputValueWithState value;
