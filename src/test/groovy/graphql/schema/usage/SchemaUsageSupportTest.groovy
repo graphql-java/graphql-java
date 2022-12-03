@@ -16,6 +16,7 @@ class SchemaUsageSupportTest extends Specification {
                 f3 : RefUnion1
                 f4 : RefEnum1
                 f5 : String
+                f6 : RefUnion2
                 
                 f_arg1( arg : RefInput1) : String
                 f_arg2( arg : [RefInput2]) : String
@@ -52,6 +53,12 @@ class SchemaUsageSupportTest extends Specification {
             }
                          
             union RefUnion1 = Ref1 | Ref2
+            
+            
+            type RefByUnionOnly1 { f : ID}
+            type RefByUnionOnly2 { f : ID}
+            
+            union RefUnion2 = RefByUnionOnly1 | RefByUnionOnly2
             
             enum RefEnum1 { A, B }
             
@@ -153,6 +160,10 @@ class SchemaUsageSupportTest extends Specification {
         schemaUsage.isStronglyReferenced(schema, "Floating3")
 
         schemaUsage.isStronglyReferenced(schema, "RefUnion1")
+
+        schemaUsage.isStronglyReferenced(schema, "RefUnion2")
+        schemaUsage.isStronglyReferenced(schema, "RefByUnionOnly1")
+        schemaUsage.isStronglyReferenced(schema, "RefByUnionOnly2")
 
         schemaUsage.isStronglyReferenced(schema, "RefInput1")
         schemaUsage.isStronglyReferenced(schema, "RefInput2")

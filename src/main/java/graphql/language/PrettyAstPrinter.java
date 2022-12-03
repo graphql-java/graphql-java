@@ -1,7 +1,6 @@
 package graphql.language;
 
 import graphql.ExperimentalApi;
-import graphql.PublicApi;
 import graphql.collect.ImmutableKit;
 import graphql.parser.CommentParser;
 import graphql.parser.NodeToRuleCapturingParser;

@@ -1094,7 +1094,7 @@ public class SchemaGeneratorHelper {
     private <T extends GraphQLDirectiveContainer> T directivesObserve(BuildContext buildCtx, T directiveContainer) {
         if (!buildCtx.directiveWiringRequired) {
             boolean requiresWiring = SchemaGeneratorDirectiveHelper.schemaDirectiveWiringIsRequired(directiveContainer, buildCtx.getTypeRegistry(), buildCtx.getWiring());
-            buildCtx.directiveWiringRequired = buildCtx.directiveWiringRequired | requiresWiring;
+            buildCtx.directiveWiringRequired = buildCtx.directiveWiringRequired || requiresWiring;
         }
         return directiveContainer;
     }

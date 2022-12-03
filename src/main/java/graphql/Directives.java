@@ -1,13 +1,10 @@
 package graphql;
 
 
-import com.google.common.collect.ImmutableSet;
 import graphql.language.Description;
 import graphql.language.DirectiveDefinition;
 import graphql.language.StringValue;
 import graphql.schema.GraphQLDirective;
-
-import java.util.Set;
 
 import static graphql.Scalars.GraphQLBoolean;
 import static graphql.Scalars.GraphQLString;

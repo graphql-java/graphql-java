@@ -1,6 +1,5 @@
 package graphql.i18n;
 
-import graphql.GraphQLContext;
 import graphql.Internal;
 import graphql.VisibleForTesting;
 
