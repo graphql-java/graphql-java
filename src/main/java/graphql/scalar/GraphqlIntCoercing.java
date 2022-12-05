@@ -63,7 +63,13 @@ public class GraphqlIntCoercing implements Coercing<Integer, Integer> {
     }
 
     @NotNull
-    private Integer parseValueImpl(Object input, @NotNull Locale locale) {
+    private Integer parseValueImpl(@NotNull Object input, @NotNull Locale locale) {
+        if (!(input instanceof Number)) {
+            throw new CoercingParseValueException(
+                    i18nMsg(locale, "Int.notInt", typeName(input))
+            );
+        }
+
         Integer result = convertImpl(input);
         if (result == null) {
             throw new CoercingParseValueException(

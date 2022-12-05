@@ -60,7 +60,6 @@ class ScalarsIntTest extends Specification {
     def "Int serialize #value into #result (#result.class)"() {
         expect:
         Scalars.GraphQLInt.getCoercing().serialize(value, GraphQLContext.default, Locale.default) == result
-        Scalars.GraphQLInt.getCoercing().parseValue(value, GraphQLContext.default, Locale.default) == result
 
         where:
         value                 | result
@@ -85,7 +84,6 @@ class ScalarsIntTest extends Specification {
     def "Int serialize #value into #result (#result.class) with deprecated methods"() {
         expect:
         Scalars.GraphQLInt.getCoercing().serialize(value) == result // Retain deprecated for test coverage
-        Scalars.GraphQLInt.getCoercing().parseValue(value) == result // Retain deprecated for test coverage
 
         where:
         value                 | result
@@ -127,6 +125,48 @@ class ScalarsIntTest extends Specification {
     }
 
     @Unroll
+    def "Int parseValue #value into #result (#result.class)"() {
+        expect:
+        Scalars.GraphQLInt.getCoercing().parseValue(value, GraphQLContext.default, Locale.default) == result
+
+        where:
+        value                 | result
+        new Integer(42)       | 42
+        new BigInteger("42")  | 42
+        new Byte("42")        | 42
+        new Short("42")       | 42
+        1234567l              | 1234567
+        new AtomicInteger(42) | 42
+        Integer.MAX_VALUE     | Integer.MAX_VALUE
+        Integer.MIN_VALUE     | Integer.MIN_VALUE
+        42.0000d              | 42
+        new BigDecimal("42")  | 42
+        42.0f                 | 42
+        42.0d                 | 42
+    }
+
+    @Unroll
+    def "Int parseValue #value into #result (#result.class) with deprecated methods"() {
+        expect:
+        Scalars.GraphQLInt.getCoercing().parseValue(value) == result // Retain deprecated for test coverage
+
+        where:
+        value                 | result
+        42.0000d              | 42
+        new Integer(42)       | 42
+        new BigInteger("42")  | 42
+        new BigDecimal("42")  | 42
+        42.0f                 | 42
+        42.0d                 | 42
+        new Byte("42")        | 42
+        new Short("42")       | 42
+        1234567l              | 1234567
+        new AtomicInteger(42) | 42
+        Integer.MAX_VALUE     | Integer.MAX_VALUE
+        Integer.MIN_VALUE     | Integer.MIN_VALUE
+    }
+
+    @Unroll
     def "parseValue throws exception for invalid input #value"() {
         when:
         Scalars.GraphQLInt.getCoercing().parseValue(value, GraphQLContext.default, Locale.default)
@@ -144,6 +184,9 @@ class ScalarsIntTest extends Specification {
         Integer.MAX_VALUE + 1l       | _
         Integer.MIN_VALUE - 1l       | _
         new Object()                 | _
+        "42"                         | _
+        "42.0000"                    | _
+        "-1"                         | _
     }
 
 }
