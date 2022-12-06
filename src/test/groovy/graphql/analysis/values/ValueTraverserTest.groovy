@@ -1,11 +1,14 @@
 package graphql.analysis.values
 
+import graphql.AssertException
 import graphql.ExecutionInput
 import graphql.GraphQL
 import graphql.TestUtil
 import graphql.schema.DataFetcher
 import graphql.schema.DataFetchingEnvironment
 import graphql.schema.DataFetchingEnvironmentImpl
+import graphql.schema.GraphQLAppliedDirectiveArgument
+import graphql.schema.GraphQLArgument
 import graphql.schema.GraphQLEnumType
 import graphql.schema.GraphQLFieldDefinition
 import graphql.schema.GraphQLFieldsContainer
@@ -17,6 +20,7 @@ import graphql.schema.GraphQLNamedSchemaElement
 import graphql.schema.GraphQLScalarType
 import graphql.schema.idl.SchemaDirectiveWiring
 import graphql.schema.idl.SchemaDirectiveWiringEnvironment
+import org.jetbrains.annotations.Nullable
 import spock.lang.Specification
 
 import static graphql.schema.idl.RuntimeWiring.newRuntimeWiring
@@ -291,6 +295,154 @@ class ValueTraverserTest extends Specification {
                         [name: "Ted", age: 24]
                 ]
         ]
+    }
+
+    def "can visit arguments and change things"() {
+        def sdl = """
+            type Query {
+                field(arg1 : Input!, arg2 : Input, removeArg : Input) : String
+            }
+            
+            input Input {
+                name : String
+                age : Int
+                input : Input
+            }
+        """
+        def schema = TestUtil.schema(sdl)
+
+        def fieldDef = schema.getObjectType("Query").getFieldDefinition("field")
+        def argValues = [
+                arg1     :
+                        [name: "Tess", age: 42],
+                arg2     :
+                        [name: "Tom", age: 24],
+                removeArg:
+                        [name: "Gone-ski", age: 99],
+        ]
+        def visitor = new ValueVisitor() {
+            @Override
+            Object visitArgumentValue(@Nullable Object coercedValue, GraphQLArgument graphQLArgument, ValueVisitor.InputElements inputElements) {
+                if (graphQLArgument.name == "arg2") {
+                    return [name: "Harry Potter", age: 54]
+                }
+                if (graphQLArgument.name == "removeArg") {
+                    return ABSENCE_SENTINEL
+                }
+                return coercedValue
+            }
+        }
+        when:
+        def actual = ValueTraverser.visitPreOrder(argValues, fieldDef, visitor)
+
+        def expected = [
+                arg1:
+                        [name: "Tess", age: 42],
+                arg2:
+                        [name: "Harry Potter", age: 54]
+        ]
+        then:
+        actual == expected
+
+
+        // can change a DFE arguments
+        when:
+        def startingDFE = DataFetchingEnvironmentImpl.newDataFetchingEnvironment().fieldDefinition(fieldDef).arguments(argValues).build()
+        def newDFE = ValueTraverser.visitPreOrder(startingDFE, visitor)
+
+        then:
+        newDFE.getArguments() == expected
+        newDFE.getFieldDefinition() == fieldDef
+
+        // can change a single arguments
+        when:
+        def newValues = ValueTraverser.visitPreOrder(argValues['arg2'], fieldDef.getArgument("arg2"), visitor)
+
+        then:
+        newValues == [name: "Harry Potter", age: 54]
+
+        // catches non sense states
+        when:
+        ValueTraverser.visitPreOrder([:], fieldDef.getArgument("removeArg"), visitor)
+
+        then:
+        thrown(AssertException.class)
+    }
+
+    def "can handle applied directive arguments"() {
+        def sdl = """
+            directive @d(
+                arg1 :  Input
+                arg2 :  Input
+                removeArg :  Input
+            ) on FIELD_DEFINITION
+            
+            type Query {
+                field : String @d(
+                arg1:
+                        {name: "Tom Riddle", age: 42}
+                arg2:
+                        {name: "Ron Weasley", age: 42}
+                removeArg:
+                        {name: "Ron Weasley", age: 42}
+                )
+            }
+            
+            input Input {
+                name : String
+                age : Int
+                input : Input
+            }
+        """
+        def schema = TestUtil.schema(sdl)
+
+        def fieldDef = schema.getObjectType("Query").getFieldDefinition("field")
+        def appliedDirective = fieldDef.getAppliedDirective("d")
+        def visitor = new ValueVisitor() {
+
+            @Override
+            Object visitScalarValue(@Nullable Object coercedValue, GraphQLScalarType inputType, ValueVisitor.InputElements inputElements) {
+                if (coercedValue == "Tom Riddle") {
+                    return "Happy Potter"
+                }
+                return coercedValue
+            }
+
+            @Override
+            Object visitAppliedDirectiveArgumentValue(@Nullable Object coercedValue, GraphQLAppliedDirectiveArgument graphQLAppliedDirectiveArgument, ValueVisitor.InputElements inputElements) {
+                if (graphQLAppliedDirectiveArgument.name == "arg2") {
+                    return [name: "Harry Potter", age: 54]
+                }
+                if (graphQLAppliedDirectiveArgument.name == "removeArg") {
+                    return ABSENCE_SENTINEL
+                }
+                return coercedValue
+            }
+        }
+
+
+        def appliedDirectiveArgument = appliedDirective.getArgument("arg1")
+        when:
+        def actual = ValueTraverser.visitPreOrder(appliedDirectiveArgument.getValue(), appliedDirectiveArgument, visitor)
+
+        then:
+        actual == [name: "Happy Potter", age: 42]
+
+        when:
+        appliedDirectiveArgument = appliedDirective.getArgument("arg2")
+        actual = ValueTraverser.visitPreOrder(appliedDirectiveArgument.getValue(), appliedDirectiveArgument, visitor)
+
+        then:
+        actual == [name: "Harry Potter", age: 54]
+
+
+        // catches non sense states
+        when:
+        appliedDirectiveArgument = appliedDirective.getArgument("removeArg")
+        ValueTraverser.visitPreOrder(appliedDirectiveArgument.getValue(), appliedDirectiveArgument, visitor)
+
+        then:
+        thrown(AssertException.class)
     }
 
     def "can handle a null changes"() {
