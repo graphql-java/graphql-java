@@ -53,7 +53,6 @@ class ScalarsBooleanTest extends Specification {
     def "Boolean serialize #value into #result (#result.class)"() {
         expect:
         Scalars.GraphQLBoolean.getCoercing().serialize(value, GraphQLContext.default, Locale.default) == result
-        Scalars.GraphQLBoolean.getCoercing().parseValue(value, GraphQLContext.default, Locale.default) == result
 
         where:
         value                        | result
@@ -75,7 +74,6 @@ class ScalarsBooleanTest extends Specification {
     def "Boolean serialize #value into #result (#result.class) with deprecated methods"() {
         expect:
         Scalars.GraphQLBoolean.getCoercing().serialize(value) == result // Retain deprecated method for test coverage
-        Scalars.GraphQLBoolean.getCoercing().parseValue(value) == result // Retain deprecated method for test coverage
 
         where:
         value                        | result
@@ -112,6 +110,28 @@ class ScalarsBooleanTest extends Specification {
     }
 
     @Unroll
+    def "Boolean parseValue #value into #result (#result.class)"() {
+        expect:
+        Scalars.GraphQLBoolean.getCoercing().parseValue(value, GraphQLContext.default, Locale.default) == result
+
+        where:
+        value | result
+        true  | true
+        false | false
+    }
+
+    @Unroll
+    def "Boolean parseValue #value into #result (#result.class) with deprecated methods"() {
+        expect:
+        Scalars.GraphQLBoolean.getCoercing().parseValue(value) == result // Retain deprecated method for test coverage
+
+        where:
+        value | result
+        true  | true
+        false | false
+    }
+
+    @Unroll
     def "parseValue throws exception for invalid input #value"() {
         when:
         Scalars.GraphQLBoolean.getCoercing().parseValue(value, GraphQLContext.default, Locale.default)
@@ -119,8 +139,19 @@ class ScalarsBooleanTest extends Specification {
         thrown(CoercingParseValueException)
 
         where:
-        value        | _
-        new Object() | _
+        value                        | _
+        new Object()                 | _
+        "false"                      | _
+        "true"                       | _
+        "True"                       | _
+        0                            | _
+        1                            | _
+        -1                           | _
+        new Long(42345784398534785l) | _
+        new Double(42.3)             | _
+        new Float(42.3)              | _
+        Integer.MAX_VALUE + 1l       | _
+        Integer.MIN_VALUE - 1l       | _
     }
 
 }
