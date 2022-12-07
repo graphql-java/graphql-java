@@ -115,7 +115,8 @@ public class ExecutableNormalizedOperationFactory {
                                                                     OperationDefinition operationDefinition,
                                                                     Map<String, FragmentDefinition> fragments,
                                                                     CoercedVariables coercedVariableValues,
-                                                                    @Nullable Map<String, NormalizedInputValue> normalizedVariableValues) {
+                                                                    @Nullable Map<String, NormalizedInputValue> normalizedVariableValues,
+                                                                    GraphQLContext graphQLContext, Locale locale) {
         FieldCollectorNormalizedQueryParams parameters = FieldCollectorNormalizedQueryParams
                 .newParameters()
                 .fragments(fragments)
@@ -135,7 +136,7 @@ public class ExecutableNormalizedOperationFactory {
 
         BiConsumer<ExecutableNormalizedField, MergedField> captureMergedField = (enf, mergedFld) -> {
             //QueryDirectivesImpl is a lazy object and only computes itself when asked for
-            QueryDirectives queryDirectives = new QueryDirectivesImpl(mergedFld, graphQLSchema, coercedVariableValues.toMap(), graphqlContext, locale);
+            QueryDirectives queryDirectives = new QueryDirectivesImpl(mergedFld, graphQLSchema, coercedVariableValues.toMap(), graphQLContext, locale);
             normalizedFieldToQueryDirectives.put(enf, queryDirectives);
             normalizedFieldToMergedField.put(enf, mergedFld);
         };

@@ -909,8 +909,9 @@ type Dog implements Animal{
                 def fieldDetails = queryExecutionField.printDetails()
                 if (queryDirectives != null) {
                     def appliedDirectivesByName = queryDirectives.getImmediateAppliedDirectivesByName()
-
-                    fieldDetails += " " + printDirectives(appliedDirectivesByName)
+                    if (!appliedDirectivesByName.isEmpty()) {
+                        fieldDetails += " " + printDirectives(appliedDirectivesByName)
+                    }
                 }
                 result << fieldDetails
                 return TraversalControl.CONTINUE
@@ -920,7 +921,7 @@ type Dog implements Animal{
                 String s = stringListMap.collect { entry ->
                     entry.value.collect {
                         " @" + it.name + "(" + it.getArguments().collect {
-                            it.name + it.value
+                            it.name + " : " + '"' + it.value + '"'
                         }.join(",") + ")"
                     }.join(' ')
                 }.join(" ")
@@ -2423,6 +2424,7 @@ schema {
         given:
         String schema = """
         directive @fieldDirective(target : String!) on FIELD
+        directive @fieldXDirective(target : String!) on FIELD
         
         type Query {
           pets: Pet
@@ -2446,7 +2448,7 @@ schema {
                     cName : name @fieldDirective(target : "Cat.name")
               }
                 ... on Dog {
-                    dName : name @fieldDirective(target : "Dog.name")
+                    dName : name @fieldDirective(target : "Dog.name") @fieldXDirective(target : "Dog.name")
               }
               ... on Pet {
                     pName : name @fieldDirective(target : "Pet.name")
@@ -2464,10 +2466,9 @@ schema {
 
         then:
         printedTree == ['Query.pets',
-                        'cName: Cat.name  @fieldDirective(targetCat.name)',
-                        'dName: Dog.name  @fieldDirective(targetDog.name)',
-                        'pName: [Cat, Dog].name  @fieldDirective(targetPet.name)',
-
+                        'cName: Cat.name  @fieldDirective(target : "Cat.name")',
+                        'dName: Dog.name  @fieldDirective(target : "Dog.name")  @fieldXDirective(target : "Dog.name")',
+                        'pName: [Cat, Dog].name  @fieldDirective(target : "Pet.name")',
         ]
     }
 
