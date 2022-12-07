@@ -12,6 +12,8 @@ import graphql.execution.ConditionalNodes;
 import graphql.execution.MergedField;
 import graphql.execution.RawVariables;
 import graphql.execution.ValuesResolver;
+import graphql.execution.directives.QueryDirectives;
+import graphql.execution.directives.QueryDirectivesImpl;
 import graphql.introspection.Introspection;
 import graphql.language.Document;
 import graphql.language.Field;
@@ -43,6 +45,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.BiConsumer;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertShouldNeverHappen;
@@ -65,14 +68,14 @@ public class ExecutableNormalizedOperationFactory {
                                                                                     String operationName,
                                                                                     CoercedVariables coercedVariableValues) {
         NodeUtil.GetOperationResult getOperationResult = NodeUtil.getOperation(document, operationName);
-        return new ExecutableNormalizedOperationFactory().createNormalizedQueryImpl(graphQLSchema, getOperationResult.operationDefinition, getOperationResult.fragmentsByName, coercedVariableValues, null);
+        return new ExecutableNormalizedOperationFactory().createNormalizedQueryImpl(graphQLSchema, getOperationResult.operationDefinition, getOperationResult.fragmentsByName, coercedVariableValues, null, GraphQLContext.getDefault(), Locale.getDefault());
     }
 
     public static ExecutableNormalizedOperation createExecutableNormalizedOperation(GraphQLSchema graphQLSchema,
                                                                                     OperationDefinition operationDefinition,
                                                                                     Map<String, FragmentDefinition> fragments,
                                                                                     CoercedVariables coercedVariableValues) {
-        return new ExecutableNormalizedOperationFactory().createNormalizedQueryImpl(graphQLSchema, operationDefinition, fragments, coercedVariableValues, null);
+        return new ExecutableNormalizedOperationFactory().createNormalizedQueryImpl(graphQLSchema, operationDefinition, fragments, coercedVariableValues, null, GraphQLContext.getDefault(), Locale.getDefault());
     }
 
     public static ExecutableNormalizedOperation createExecutableNormalizedOperationWithRawVariables(GraphQLSchema graphQLSchema,
@@ -102,7 +105,7 @@ public class ExecutableNormalizedOperationFactory {
         List<VariableDefinition> variableDefinitions = operationDefinition.getVariableDefinitions();
         CoercedVariables coercedVariableValues = ValuesResolver.coerceVariableValues(graphQLSchema, variableDefinitions, rawVariables, graphQLContext, locale);
         Map<String, NormalizedInputValue> normalizedVariableValues = ValuesResolver.getNormalizedVariableValues(graphQLSchema, variableDefinitions, rawVariables, graphQLContext, locale);
-        return createNormalizedQueryImpl(graphQLSchema, operationDefinition, fragments, coercedVariableValues, normalizedVariableValues);
+        return createNormalizedQueryImpl(graphQLSchema, operationDefinition, fragments, coercedVariableValues, normalizedVariableValues, graphQLContext, locale);
     }
 
     /**
@@ -127,19 +130,30 @@ public class ExecutableNormalizedOperationFactory {
 
         ImmutableListMultimap.Builder<Field, ExecutableNormalizedField> fieldToNormalizedField = ImmutableListMultimap.builder();
         ImmutableMap.Builder<ExecutableNormalizedField, MergedField> normalizedFieldToMergedField = ImmutableMap.builder();
+        ImmutableMap.Builder<ExecutableNormalizedField, QueryDirectives> normalizedFieldToQueryDirectives = ImmutableMap.builder();
         ImmutableListMultimap.Builder<FieldCoordinates, ExecutableNormalizedField> coordinatesToNormalizedFields = ImmutableListMultimap.builder();
 
+        BiConsumer<ExecutableNormalizedField, MergedField> captureMergedField = (enf, mergedFld) -> {
+            //QueryDirectivesImpl is a lazy object and only computes itself when asked for
+            QueryDirectives queryDirectives = new QueryDirectivesImpl(mergedFld, graphQLSchema, coercedVariableValues.toMap(), graphqlContext, locale);
+            normalizedFieldToQueryDirectives.put(enf, queryDirectives);
+            normalizedFieldToMergedField.put(enf, mergedFld);
+        };
+
         for (ExecutableNormalizedField topLevel : collectFromOperationResult.children) {
-            ImmutableList<FieldAndAstParent> mergedField = collectFromOperationResult.normalizedFieldToAstFields.get(topLevel);
-            normalizedFieldToMergedField.put(topLevel, newMergedField(map(mergedField, fieldAndAstParent -> fieldAndAstParent.field)).build());
-            updateFieldToNFMap(topLevel, mergedField, fieldToNormalizedField);
+            ImmutableList<FieldAndAstParent> fieldAndAstParents = collectFromOperationResult.normalizedFieldToAstFields.get(topLevel);
+            MergedField mergedField = newMergedField(map(fieldAndAstParents, fieldAndAstParent -> fieldAndAstParent.field)).build();
+
+            captureMergedField.accept(topLevel, mergedField);
+
+            updateFieldToNFMap(topLevel, fieldAndAstParents, fieldToNormalizedField);
             updateCoordinatedToNFMap(coordinatesToNormalizedFields, topLevel);
 
             buildFieldWithChildren(topLevel,
-                    mergedField,
+                    fieldAndAstParents,
                     parameters,
                     fieldToNormalizedField,
-                    normalizedFieldToMergedField,
+                    captureMergedField,
                     coordinatesToNormalizedFields,
                     1);
 
@@ -154,32 +168,36 @@ public class ExecutableNormalizedOperationFactory {
                 new ArrayList<>(collectFromOperationResult.children),
                 fieldToNormalizedField.build(),
                 normalizedFieldToMergedField.build(),
+                normalizedFieldToQueryDirectives.build(),
                 coordinatesToNormalizedFields.build()
         );
     }
 
 
     private void buildFieldWithChildren(ExecutableNormalizedField field,
-                                        ImmutableList<FieldAndAstParent> mergedField,
+                                        ImmutableList<FieldAndAstParent> fieldAndAstParents,
                                         FieldCollectorNormalizedQueryParams fieldCollectorNormalizedQueryParams,
                                         ImmutableListMultimap.Builder<Field, ExecutableNormalizedField> fieldNormalizedField,
-                                        ImmutableMap.Builder<ExecutableNormalizedField, MergedField> normalizedFieldToMergedField,
+                                        BiConsumer<ExecutableNormalizedField, MergedField> captureMergedField,
                                         ImmutableListMultimap.Builder<FieldCoordinates, ExecutableNormalizedField> coordinatesToNormalizedFields,
                                         int curLevel) {
-        CollectNFResult nextLevel = collectFromMergedField(fieldCollectorNormalizedQueryParams, field, mergedField, curLevel + 1);
+        CollectNFResult nextLevel = collectFromMergedField(fieldCollectorNormalizedQueryParams, field, fieldAndAstParents, curLevel + 1);
 
         for (ExecutableNormalizedField child : nextLevel.children) {
             field.addChild(child);
-            ImmutableList<FieldAndAstParent> mergedFieldForChild = nextLevel.normalizedFieldToAstFields.get(child);
-            normalizedFieldToMergedField.put(child, newMergedField(map(mergedFieldForChild, fieldAndAstParent -> fieldAndAstParent.field)).build());
-            updateFieldToNFMap(child, mergedFieldForChild, fieldNormalizedField);
+            ImmutableList<FieldAndAstParent> childFieldAndAstParents = nextLevel.normalizedFieldToAstFields.get(child);
+
+            MergedField mergedField = newMergedField(map(childFieldAndAstParents, fieldAndAstParent -> fieldAndAstParent.field)).build();
+            captureMergedField.accept(child, mergedField);
+
+            updateFieldToNFMap(child, childFieldAndAstParents, fieldNormalizedField);
             updateCoordinatedToNFMap(coordinatesToNormalizedFields, child);
 
             buildFieldWithChildren(child,
-                    mergedFieldForChild,
+                    childFieldAndAstParents,
                     fieldCollectorNormalizedQueryParams,
                     fieldNormalizedField,
-                    normalizedFieldToMergedField,
+                    captureMergedField,
                     coordinatesToNormalizedFields,
                     curLevel + 1);
         }
