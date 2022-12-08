@@ -508,7 +508,7 @@ public class ExecutableNormalizedOperationFactory {
         if (!conditionalNodes.shouldInclude(parameters.getCoercedVariableValues(), field.getDirectives())) {
             return;
         }
-        // this means there is actually no possible type for this field and we are done
+        // this means there is actually no possible type for this field, and we are done
         if (possibleObjectTypes.isEmpty()) {
             return;
         }

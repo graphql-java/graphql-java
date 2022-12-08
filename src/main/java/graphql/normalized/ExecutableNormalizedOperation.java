@@ -42,52 +42,100 @@ public class ExecutableNormalizedOperation {
         this.coordinatesToNormalizedFields = coordinatesToNormalizedFields;
     }
 
+    /**
+     * @return the type of operation
+     */
     public OperationDefinition.Operation getOperation() {
         return operation;
     }
 
+    /**
+     * @return the name of the operation
+     */
     public String getOperationName() {
         return operationName;
     }
 
+    /**
+     * @return a multimap {@link FieldCoordinates} to the list of {@link ExecutableNormalizedField} for that co-ordinate
+     */
     public ImmutableListMultimap<FieldCoordinates, ExecutableNormalizedField> getCoordinatesToNormalizedFields() {
         return coordinatesToNormalizedFields;
     }
 
+    /**
+     * @return the top level {@link ExecutableNormalizedField}s that are involved this operation
+     */
     public List<ExecutableNormalizedField> getTopLevelFields() {
         return topLevelFields;
     }
 
     /**
-     * This is a multimap: the size of it reflects the all the normalized fields
+     * This is a multimap: the size of it reflects all the normalized fields in the normalized operation.
      *
-     * @return an immutable list multi map of field to normalised field
+     * @return an immutable multimap of {@link Field} to normalised field
      */
     public ImmutableListMultimap<Field, ExecutableNormalizedField> getFieldToNormalizedField() {
         return fieldToNormalizedField;
     }
 
+    /**
+     * This returns the list of executable normalised fields that are associated with the AST {@link Field}
+     *
+     * @param field the field in question
+     *
+     * @return a non-null list of associated {@link ExecutableNormalizedField}s
+     */
     public List<ExecutableNormalizedField> getNormalizedFields(Field field) {
         return fieldToNormalizedField.get(field);
     }
 
+    /**
+     * @return a map of {@link ExecutableNormalizedField} to its {@link MergedField}
+     */
     public Map<ExecutableNormalizedField, MergedField> getNormalizedFieldToMergedField() {
         return normalizedFieldToMergedField;
     }
 
+    /**
+     * This looks up the {@link MergedField} associated with the given {@link ExecutableNormalizedField}
+     *
+     * @param executableNormalizedField the executable normalised field in question
+     *
+     * @return the merged field or null
+     */
+    public MergedField getMergedField(ExecutableNormalizedField executableNormalizedField) {
+        return normalizedFieldToMergedField.get(executableNormalizedField);
+    }
+
+    /**
+     * @return a map of {@link ExecutableNormalizedField} to its {@link QueryDirectives}
+     */
     public Map<ExecutableNormalizedField, QueryDirectives> getNormalizedFieldToQueryDirectives() {
         return normalizedFieldToQueryDirectives;
 
     }
 
+    /**
+     * This looks up the {@link QueryDirectives} associated with the given {@link ExecutableNormalizedField}
+     *
+     * @param executableNormalizedField the executable normalised field in question
+     *
+     * @return the fields query directives or null
+     */
     public QueryDirectives getQueryDirectives(ExecutableNormalizedField executableNormalizedField) {
         return normalizedFieldToQueryDirectives.get(executableNormalizedField);
     }
 
-    public MergedField getMergedField(ExecutableNormalizedField executableNormalizedField) {
-        return normalizedFieldToMergedField.get(executableNormalizedField);
-    }
-
+    /**
+     * This will find a {@link ExecutableNormalizedField} given a merged field and a result path.  If this does not find a field it will assert with an exception
+     *
+     * @param mergedField     the merged field
+     * @param fieldsContainer the containing type of that field
+     * @param resultPath      the result path in play
+     *
+     * @return the ExecutableNormalizedField
+     */
     public ExecutableNormalizedField getNormalizedField(MergedField mergedField, GraphQLFieldsContainer fieldsContainer, ResultPath resultPath) {
         List<ExecutableNormalizedField> executableNormalizedFields = fieldToNormalizedField.get(mergedField.getSingleField());
         List<String> keysOnlyPath = resultPath.getKeysOnly();
