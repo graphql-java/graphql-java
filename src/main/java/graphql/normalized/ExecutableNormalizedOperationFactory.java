@@ -29,6 +29,7 @@ import graphql.schema.FieldCoordinates;
 import graphql.schema.GraphQLCompositeType;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLInterfaceType;
+import graphql.schema.GraphQLNamedOutputType;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLType;
@@ -50,7 +51,6 @@ import java.util.function.BiConsumer;
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertShouldNeverHappen;
 import static graphql.collect.ImmutableKit.map;
-import static graphql.execution.MergedField.newMergedField;
 import static graphql.schema.GraphQLTypeUtil.unwrapAll;
 import static graphql.util.FpKit.filterSet;
 import static graphql.util.FpKit.groupingBy;
@@ -68,21 +68,38 @@ public class ExecutableNormalizedOperationFactory {
                                                                                     String operationName,
                                                                                     CoercedVariables coercedVariableValues) {
         NodeUtil.GetOperationResult getOperationResult = NodeUtil.getOperation(document, operationName);
-        return new ExecutableNormalizedOperationFactory().createNormalizedQueryImpl(graphQLSchema, getOperationResult.operationDefinition, getOperationResult.fragmentsByName, coercedVariableValues, null, GraphQLContext.getDefault(), Locale.getDefault());
+        return new ExecutableNormalizedOperationFactory().createNormalizedQueryImpl(graphQLSchema,
+                getOperationResult.operationDefinition,
+                getOperationResult.fragmentsByName,
+                coercedVariableValues,
+                null,
+                GraphQLContext.getDefault(),
+                Locale.getDefault());
     }
 
     public static ExecutableNormalizedOperation createExecutableNormalizedOperation(GraphQLSchema graphQLSchema,
                                                                                     OperationDefinition operationDefinition,
                                                                                     Map<String, FragmentDefinition> fragments,
                                                                                     CoercedVariables coercedVariableValues) {
-        return new ExecutableNormalizedOperationFactory().createNormalizedQueryImpl(graphQLSchema, operationDefinition, fragments, coercedVariableValues, null, GraphQLContext.getDefault(), Locale.getDefault());
+        return new ExecutableNormalizedOperationFactory().createNormalizedQueryImpl(graphQLSchema,
+                operationDefinition,
+                fragments,
+                coercedVariableValues,
+                null,
+                GraphQLContext.getDefault(),
+                Locale.getDefault());
     }
 
     public static ExecutableNormalizedOperation createExecutableNormalizedOperationWithRawVariables(GraphQLSchema graphQLSchema,
                                                                                                     Document document,
                                                                                                     String operationName,
                                                                                                     RawVariables rawVariables) {
-        return createExecutableNormalizedOperationWithRawVariables(graphQLSchema, document, operationName, rawVariables, GraphQLContext.getDefault(), Locale.getDefault());
+        return createExecutableNormalizedOperationWithRawVariables(graphQLSchema,
+                document,
+                operationName,
+                rawVariables,
+                GraphQLContext.getDefault(),
+                Locale.getDefault());
     }
 
     public static ExecutableNormalizedOperation createExecutableNormalizedOperationWithRawVariables(GraphQLSchema graphQLSchema,
@@ -92,7 +109,12 @@ public class ExecutableNormalizedOperationFactory {
                                                                                                     GraphQLContext graphQLContext,
                                                                                                     Locale locale) {
         NodeUtil.GetOperationResult getOperationResult = NodeUtil.getOperation(document, operationName);
-        return new ExecutableNormalizedOperationFactory().createExecutableNormalizedOperationImplWithRawVariables(graphQLSchema, getOperationResult.operationDefinition, getOperationResult.fragmentsByName, rawVariables, graphQLContext, locale);
+        return new ExecutableNormalizedOperationFactory().createExecutableNormalizedOperationImplWithRawVariables(graphQLSchema,
+                getOperationResult.operationDefinition,
+                getOperationResult.fragmentsByName,
+                rawVariables,
+                graphQLContext,
+                locale);
     }
 
     private ExecutableNormalizedOperation createExecutableNormalizedOperationImplWithRawVariables(GraphQLSchema graphQLSchema,
@@ -103,9 +125,23 @@ public class ExecutableNormalizedOperationFactory {
                                                                                                   Locale locale) {
 
         List<VariableDefinition> variableDefinitions = operationDefinition.getVariableDefinitions();
-        CoercedVariables coercedVariableValues = ValuesResolver.coerceVariableValues(graphQLSchema, variableDefinitions, rawVariables, graphQLContext, locale);
-        Map<String, NormalizedInputValue> normalizedVariableValues = ValuesResolver.getNormalizedVariableValues(graphQLSchema, variableDefinitions, rawVariables, graphQLContext, locale);
-        return createNormalizedQueryImpl(graphQLSchema, operationDefinition, fragments, coercedVariableValues, normalizedVariableValues, graphQLContext, locale);
+        CoercedVariables coercedVariableValues = ValuesResolver.coerceVariableValues(graphQLSchema,
+                variableDefinitions,
+                rawVariables,
+                graphQLContext,
+                locale);
+        Map<String, NormalizedInputValue> normalizedVariableValues = ValuesResolver.getNormalizedVariableValues(graphQLSchema,
+                variableDefinitions,
+                rawVariables,
+                graphQLContext,
+                locale);
+        return createNormalizedQueryImpl(graphQLSchema,
+                operationDefinition,
+                fragments,
+                coercedVariableValues,
+                normalizedVariableValues,
+                graphQLContext,
+                locale);
     }
 
     /**
@@ -143,7 +179,7 @@ public class ExecutableNormalizedOperationFactory {
 
         for (ExecutableNormalizedField topLevel : collectFromOperationResult.children) {
             ImmutableList<FieldAndAstParent> fieldAndAstParents = collectFromOperationResult.normalizedFieldToAstFields.get(topLevel);
-            MergedField mergedField = newMergedField(map(fieldAndAstParents, fieldAndAstParent -> fieldAndAstParent.field)).build();
+            MergedField mergedField = newMergedField(fieldAndAstParents);
 
             captureMergedField.accept(topLevel, mergedField);
 
@@ -175,26 +211,26 @@ public class ExecutableNormalizedOperationFactory {
     }
 
 
-    private void buildFieldWithChildren(ExecutableNormalizedField field,
+    private void buildFieldWithChildren(ExecutableNormalizedField executableNormalizedField,
                                         ImmutableList<FieldAndAstParent> fieldAndAstParents,
                                         FieldCollectorNormalizedQueryParams fieldCollectorNormalizedQueryParams,
                                         ImmutableListMultimap.Builder<Field, ExecutableNormalizedField> fieldNormalizedField,
                                         BiConsumer<ExecutableNormalizedField, MergedField> captureMergedField,
                                         ImmutableListMultimap.Builder<FieldCoordinates, ExecutableNormalizedField> coordinatesToNormalizedFields,
                                         int curLevel) {
-        CollectNFResult nextLevel = collectFromMergedField(fieldCollectorNormalizedQueryParams, field, fieldAndAstParents, curLevel + 1);
+        CollectNFResult nextLevel = collectFromMergedField(fieldCollectorNormalizedQueryParams, executableNormalizedField, fieldAndAstParents, curLevel + 1);
 
-        for (ExecutableNormalizedField child : nextLevel.children) {
-            field.addChild(child);
-            ImmutableList<FieldAndAstParent> childFieldAndAstParents = nextLevel.normalizedFieldToAstFields.get(child);
+        for (ExecutableNormalizedField childENF : nextLevel.children) {
+            executableNormalizedField.addChild(childENF);
+            ImmutableList<FieldAndAstParent> childFieldAndAstParents = nextLevel.normalizedFieldToAstFields.get(childENF);
 
-            MergedField mergedField = newMergedField(map(childFieldAndAstParents, fieldAndAstParent -> fieldAndAstParent.field)).build();
-            captureMergedField.accept(child, mergedField);
+            MergedField mergedField = newMergedField(childFieldAndAstParents);
+            captureMergedField.accept(childENF, mergedField);
 
-            updateFieldToNFMap(child, childFieldAndAstParents, fieldNormalizedField);
-            updateCoordinatedToNFMap(coordinatesToNormalizedFields, child);
+            updateFieldToNFMap(childENF, childFieldAndAstParents, fieldNormalizedField);
+            updateCoordinatedToNFMap(coordinatesToNormalizedFields, childENF);
 
-            buildFieldWithChildren(child,
+            buildFieldWithChildren(childENF,
                     childFieldAndAstParents,
                     fieldCollectorNormalizedQueryParams,
                     fieldNormalizedField,
@@ -202,6 +238,10 @@ public class ExecutableNormalizedOperationFactory {
                     coordinatesToNormalizedFields,
                     curLevel + 1);
         }
+    }
+
+    private static MergedField newMergedField(ImmutableList<FieldAndAstParent> fieldAndAstParents) {
+        return MergedField.newMergedField(map(fieldAndAstParents, fieldAndAstParent -> fieldAndAstParent.field)).build();
     }
 
     private void updateFieldToNFMap(ExecutableNormalizedField executableNormalizedField,
@@ -395,7 +435,7 @@ public class ExecutableNormalizedOperationFactory {
             } else if (selection instanceof InlineFragment) {
                 collectInlineFragment(parameters, result, (InlineFragment) selection, possibleObjects, astTypeCondition);
             } else if (selection instanceof FragmentSpread) {
-                collectFragmentSpread(parameters, result, (FragmentSpread) selection, possibleObjects, astTypeCondition);
+                collectFragmentSpread(parameters, result, (FragmentSpread) selection, possibleObjects);
             }
         }
     }
@@ -423,8 +463,7 @@ public class ExecutableNormalizedOperationFactory {
     private void collectFragmentSpread(FieldCollectorNormalizedQueryParams parameters,
                                        List<CollectedField> result,
                                        FragmentSpread fragmentSpread,
-                                       Set<GraphQLObjectType> possibleObjects,
-                                       GraphQLCompositeType astTypeCondition
+                                       Set<GraphQLObjectType> possibleObjects
     ) {
         if (!conditionalNodes.shouldInclude(parameters.getCoercedVariableValues(), fragmentSpread.getDirectives())) {
             return;
@@ -508,8 +547,8 @@ public class ExecutableNormalizedOperationFactory {
         } else if (type instanceof GraphQLInterfaceType) {
             return ImmutableSet.copyOf(graphQLSchema.getImplementations((GraphQLInterfaceType) type));
         } else if (type instanceof GraphQLUnionType) {
-            List types = ((GraphQLUnionType) type).getTypes();
-            return ImmutableSet.copyOf(types);
+            List<GraphQLNamedOutputType> unionTypes = ((GraphQLUnionType) type).getTypes();
+            return ImmutableSet.copyOf(ImmutableKit.map(unionTypes, GraphQLObjectType.class::cast));
         } else {
             return assertShouldNeverHappen();
         }
