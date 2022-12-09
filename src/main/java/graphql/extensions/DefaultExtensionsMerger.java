@@ -1,6 +1,7 @@
 package graphql.extensions;
 
 import com.google.common.collect.Sets;
+import graphql.Internal;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -11,6 +12,7 @@ import java.util.Map;
 import java.util.Set;
 
 
+@Internal
 public class DefaultExtensionsMerger implements ExtensionsMerger {
     @Override
     @NotNull

@@ -19,7 +19,14 @@ import java.util.Map;
 public interface ExtensionsMerger {
 
     /**
-     * A default implementation
+     * A default implementation will do the following
+     * <ul>
+     *     <li>It will deep merge the maps</li>
+     *     <li>It concatenate lists when they occur under the same key</li>
+     *     <li>It will add any keys from the right hand side map that are not present in the left</li>
+     *     <li>If a key is in both the left and right side, it will prefer the right hand side</li>
+     *     <li>It will try to maintain key order if the maps are ordered</li>
+     * </ul>
      */
     ExtensionsMerger DEFAULT = new DefaultExtensionsMerger();
 
