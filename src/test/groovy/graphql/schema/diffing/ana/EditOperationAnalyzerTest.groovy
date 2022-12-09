@@ -1,6 +1,5 @@
 package graphql.schema.diffing.ana
 
-import com.sun.xml.internal.bind.v2.schemagen.xmlschema.Union
 import graphql.TestUtil
 import graphql.schema.diffing.SchemaDiffing
 import spock.lang.Specification
