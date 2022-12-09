@@ -3,6 +3,7 @@ package graphql.extensions
 import graphql.ExecutionInput
 import graphql.ExecutionResult
 import graphql.TestUtil
+import graphql.execution.instrumentation.Instrumentation
 import graphql.execution.instrumentation.InstrumentationState
 import graphql.execution.instrumentation.SimplePerformantInstrumentation
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters
@@ -96,7 +97,7 @@ class ExtensionsBuilderTest extends Specification {
         }
         """
 
-        def contextInstrumentation = new SimplePerformantInstrumentation() {
+        Instrumentation contextInstrumentation = new SimplePerformantInstrumentation() {
             @Override
             CompletableFuture<ExecutionResult> instrumentExecutionResult(ExecutionResult executionResult, InstrumentationExecutionParameters parameters, InstrumentationState state) {
                 ExtensionsBuilder extensionsBuilder = parameters.getGraphQLContext().get(ExtensionsBuilder.class)
@@ -105,17 +106,20 @@ class ExtensionsBuilderTest extends Specification {
             }
         }
 
-        DataFetcher df = { DataFetchingEnvironment env ->
-            ExtensionsBuilder extensionsBuilder = env.getGraphQlContext().get(ExtensionsBuilder.class)
-            def fieldMap = [:]
-            fieldMap.put(env.getFieldDefinition().name,GraphQLTypeUtil.simplePrint(env.getFieldDefinition().type))
-            extensionsBuilder.addValues([common: fieldMap])
-            extensionsBuilder.addValues(fieldMap)
-            return "ignored"
+        DataFetcher df = new DataFetcher() {
+            @Override
+            Object get(DataFetchingEnvironment env) throws Exception {
+                ExtensionsBuilder extensionsBuilder = env.getGraphQlContext().get(ExtensionsBuilder.class)
+                def fieldMap = [:]
+                fieldMap.put(env.getFieldDefinition().name, GraphQLTypeUtil.simplePrint(env.getFieldDefinition().type))
+                extensionsBuilder.addValues([common: fieldMap])
+                extensionsBuilder.addValues(fieldMap)
+                return "ignored"
+            }
         }
 
         def ei = ExecutionInput.newExecutionInput("query q { name street id }")
-                .graphQLContext( { ctx -> ctx.put(ExtensionsBuilder.class, newExtensionsBuilder()) })
+                .graphQLContext({ ctx -> ctx.put(ExtensionsBuilder.class, newExtensionsBuilder()) })
                 .build()
 
 
