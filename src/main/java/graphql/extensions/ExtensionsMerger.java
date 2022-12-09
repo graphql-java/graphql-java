@@ -1,8 +1,8 @@
 package graphql.extensions;
 
 import graphql.PublicSpi;
+import org.jetbrains.annotations.NotNull;
 
-import javax.annotation.Nonnull;
 import java.util.Map;
 
 /**
@@ -10,8 +10,10 @@ import java.util.Map;
  * the graphql `extensions` value.
  * <p>
  * How best to merge two maps is hard to know up front.  Should it be a shallow clone or a deep one,
- * should keys be replaced or not and should lists of value be combined?  The ExtensionsMapMerger is the
+ * should keys be replaced or not and should lists of value be combined?  The {@link ExtensionsMerger} is the
  * interface asked to do this.
+ * <p>
+ * This interface will be called repeatedly for each change that has been added to the {@link ExtensionsBuilder} and it is expected to merge the two maps as it sees fit
  */
 @PublicSpi
 public interface ExtensionsMerger {
@@ -29,8 +31,8 @@ public interface ExtensionsMerger {
      * @param leftMap  the map on the left
      * @param rightMap the map on the right
      *
-     * @return a merged map
+     * @return a non null merged map
      */
-    @Nonnull
-    Map<Object, Object> merge(@Nonnull Map<?, Object> leftMap, @Nonnull Map<?, Object> rightMap);
+    @NotNull
+    Map<Object, Object> merge(@NotNull Map<?, Object> leftMap, @NotNull Map<?, Object> rightMap);
 }

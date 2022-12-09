@@ -3,7 +3,6 @@ package graphql.extensions;
 import com.google.common.collect.Sets;
 import org.jetbrains.annotations.NotNull;
 
-import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
@@ -14,8 +13,8 @@ import java.util.Set;
 
 public class DefaultExtensionsMerger implements ExtensionsMerger {
     @Override
-    @Nonnull
-    public Map<Object, Object> merge(@Nonnull Map<?, Object> leftMap, @Nonnull Map<?, Object> rightMap) {
+    @NotNull
+    public Map<Object, Object> merge(@NotNull Map<?, Object> leftMap, @NotNull Map<?, Object> rightMap) {
         if (leftMap.isEmpty()) {
             return mapCast(rightMap);
         }
