@@ -41,5 +41,5 @@ public interface ExtensionsMerger {
      * @return a non null merged map
      */
     @NotNull
-    Map<Object, Object> merge(@NotNull Map<?, Object> leftMap, @NotNull Map<?, Object> rightMap);
+    Map<Object, Object> merge(@NotNull Map<Object, Object> leftMap, @NotNull Map<Object, Object> rightMap);
 }

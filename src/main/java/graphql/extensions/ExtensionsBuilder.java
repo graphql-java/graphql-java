@@ -23,7 +23,7 @@ import static graphql.Assert.assertNotNull;
 public class ExtensionsBuilder {
 
     // thread safe since there can be many changes say in DFs across threads
-    private final List<Map<?, Object>> changes = new CopyOnWriteArrayList<>();
+    private final List<Map<Object, Object>> changes = new CopyOnWriteArrayList<>();
     private final ExtensionsMerger extensionsMerger;
 
 
@@ -85,7 +85,11 @@ public class ExtensionsBuilder {
         if (changes.isEmpty()) {
             return ImmutableMap.of();
         }
-        Map<Object, Object> outMap = new LinkedHashMap<>(changes.get(0));
+        Map<Object, Object> firstChange = changes.get(0);
+        if (changes.size() == 1) {
+            return firstChange;
+        }
+        Map<Object, Object> outMap = new LinkedHashMap<>(firstChange);
         for (int i = 1; i < changes.size(); i++) {
             Map<Object, Object> newMap = extensionsMerger.merge(outMap, changes.get(i));
             assertNotNull(outMap, () -> "You MUST provide a non null Map from ExtensionsMerger.merge()");

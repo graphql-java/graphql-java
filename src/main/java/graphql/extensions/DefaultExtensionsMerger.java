@@ -16,7 +16,7 @@ import java.util.Set;
 public class DefaultExtensionsMerger implements ExtensionsMerger {
     @Override
     @NotNull
-    public Map<Object, Object> merge(@NotNull Map<?, Object> leftMap, @NotNull Map<?, Object> rightMap) {
+    public Map<Object, Object> merge(@NotNull Map<Object, Object> leftMap, @NotNull Map<Object, Object> rightMap) {
         if (leftMap.isEmpty()) {
             return mapCast(rightMap);
         }
@@ -24,7 +24,7 @@ public class DefaultExtensionsMerger implements ExtensionsMerger {
             return mapCast(leftMap);
         }
         Map<Object, Object> targetMap = new LinkedHashMap<>();
-        Set<?> leftKeys = leftMap.keySet();
+        Set<Object> leftKeys = leftMap.keySet();
         for (Object key : leftKeys) {
             Object leftVal = leftMap.get(key);
             if (rightMap.containsKey(key)) {
@@ -34,7 +34,7 @@ public class DefaultExtensionsMerger implements ExtensionsMerger {
                 targetMap.put(key, leftVal);
             }
         }
-        Sets.SetView<?> rightOnlyKeys = Sets.difference(rightMap.keySet(), leftKeys);
+        Sets.SetView<Object> rightOnlyKeys = Sets.difference(rightMap.keySet(), leftKeys);
         for (Object key : rightOnlyKeys) {
             Object rightVal = rightMap.get(key);
             targetMap.put(key, rightVal);

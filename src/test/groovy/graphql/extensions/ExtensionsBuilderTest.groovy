@@ -45,6 +45,23 @@ class ExtensionsBuilderTest extends Specification {
         extensions == [x: "overwrite3", y: "25", z: "overwriteZ", a: "1"]
     }
 
+    def "can handle no changes"() {
+        when:
+        def extensions = newExtensionsBuilder()
+                .buildExtensions()
+        then:
+        extensions == [:]
+    }
+
+    def "can handle one changes"() {
+        when:
+        def extensions = newExtensionsBuilder()
+                .addValues([x: "24", y: "25"])
+                .buildExtensions()
+        then:
+        extensions == [x: "24", y: "25"]
+    }
+
     def "can set extensions into an ER"() {
 
 
@@ -74,8 +91,8 @@ class ExtensionsBuilderTest extends Specification {
         ExtensionsMerger merger = new ExtensionsMerger() {
             @Override
             @NotNull
-            Map<Object, Object> merge(@NotNull Map<?, Object> leftMap, @NotNull Map<?, Object> rightMap) {
-                return rightMap as Map<Object, Object>
+            Map<Object, Object> merge(@NotNull Map<Object, Object> leftMap, @NotNull Map<Object, Object> rightMap) {
+                return rightMap
             }
         }
         when:
