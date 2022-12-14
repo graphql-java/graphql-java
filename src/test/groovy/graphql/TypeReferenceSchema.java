@@ -1,6 +1,8 @@
 package graphql;
 
 import graphql.schema.Coercing;
+import graphql.schema.GraphQLAppliedDirective;
+import graphql.schema.GraphQLAppliedDirectiveArgument;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLCodeRegistry;
 import graphql.schema.GraphQLDirective;
@@ -315,6 +317,14 @@ public class TypeReferenceSchema {
                     .type(QueryDirectiveInput))
             .build();
 
+    public static GraphQLAppliedDirective cacheApplied = GraphQLAppliedDirective.newDirective()
+            .name("cache")
+            .argument(GraphQLAppliedDirectiveArgument.newArgument()
+                    .name("enabled")
+                    .type(GraphQLTypeReference.typeRef(OnOff.getName()))
+                    .valueProgrammatic("On"))
+            .build();
+
     public static GraphQLCodeRegistry codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
             .typeResolver("Pet", new TypeResolverProxy())
             .typeResolver("Addressable", new TypeResolverProxy())
@@ -336,5 +346,6 @@ public class TypeReferenceSchema {
             .additionalDirective(enumValueDirective)
             .additionalDirective(interfaceDirective)
             .codeRegistry(codeRegistry)
+            .withSchemaAppliedDirectives(cacheApplied)
             .build();
 }
