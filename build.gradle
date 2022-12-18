@@ -51,7 +51,7 @@ targetCompatibility = JavaVersion.VERSION_11.toString()
 def reactiveStreamsVersion = '1.0.3'
 def slf4jVersion = '1.7.35'
 def releaseVersion = System.env.RELEASE_VERSION
-def antlrVersion = '4.9.3' // https://mvnrepository.com/artifact/org.antlr/antlr4-runtime
+def antlrVersion = '4.11.1' // https://mvnrepository.com/artifact/org.antlr/antlr4-runtime
 version = releaseVersion ? releaseVersion : getDevelopmentVersion()
 group = 'com.graphql-java'
 
