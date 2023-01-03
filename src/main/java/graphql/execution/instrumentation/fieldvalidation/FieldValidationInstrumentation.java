@@ -43,6 +43,6 @@ public class FieldValidationInstrumentation extends SimplePerformantInstrumentat
         if (errors != null && !errors.isEmpty()) {
             throw new AbortExecutionException(errors);
         }
-        return super.beginExecuteOperation(parameters);
+        return super.beginExecuteOperation(parameters, state);
     }
 }
