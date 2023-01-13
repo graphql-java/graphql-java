@@ -2,20 +2,16 @@
 
 ## Supported Versions
 
-Use this section to tell people about which versions of your project are
-currently being supported with security updates.
+We support the latest release with security updates.
+
+We retain the discretion to backport security updates, this is decided on a case-by-case basis.
 
 | Version | Supported          |
 | ------- | ------------------ |
-| 5.1.x   | :white_check_mark: |
-| 5.0.x   | :x:                |
-| 4.0.x   | :white_check_mark: |
-| < 4.0   | :x:                |
+| v20.x   | :white_check_mark: |
 
 ## Reporting a Vulnerability
 
-Use this section to tell people how to report a vulnerability.
+:rotating_light: To report a vulnerability, **DO NOT open a pull request or issue or GitHub discussion. DO NOT post publicly.**
 
-Tell them where to go, how often they can expect to get an update on a
-reported vulnerability, what to expect if the vulnerability is accepted or
-declined, etc.
+Instead, **report the vulnerability privately** via the Security tab on [graphql-java GitHub repository](https://github.com/graphql-java/graphql-java). See instructions at https://docs.github.com/en/code-security/security-advisories/guidance-on-reporting-and-writing/privately-reporting-a-security-vulnerability
