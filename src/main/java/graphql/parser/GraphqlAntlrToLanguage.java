@@ -407,10 +407,10 @@ public class GraphqlAntlrToLanguage {
         addCommonData(def, ctx);
 
         List<Directive> directives = new ArrayList<>();
-        List<GraphqlParser.DirectivesContext> directivesCtx = ctx.directives();
-        for (GraphqlParser.DirectivesContext directiveCtx : directivesCtx) {
-            directives.addAll(createDirectives(directiveCtx));
-        }
+
+        GraphqlParser.DirectivesContext directivesCtx = ctx.directives();
+        directives.addAll(createDirectives(directivesCtx));
+
         def.directives(directives);
 
         List<OperationTypeDefinition> operationTypeDefs = map(ctx.operationTypeDefinition(), this::createOperationTypeDefinition);
