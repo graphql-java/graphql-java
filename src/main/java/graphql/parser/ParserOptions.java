@@ -36,6 +36,7 @@ public class ParserOptions {
             .captureIgnoredChars(false)
             .captureSourceLocation(true)
             .captureLineComments(true)
+            .readerTrackData(true)
             .maxTokens(MAX_QUERY_TOKENS) // to prevent a billion laughs style attacks, we set a default for graphql-java
             .maxWhitespaceTokens(MAX_WHITESPACE_TOKENS)
             .build();
@@ -44,6 +45,7 @@ public class ParserOptions {
             .captureIgnoredChars(false)
             .captureSourceLocation(true)
             .captureLineComments(false) // #comments are not useful in query parsing
+            .readerTrackData(true)
             .maxTokens(MAX_QUERY_TOKENS) // to prevent a billion laughs style attacks, we set a default for graphql-java
             .maxWhitespaceTokens(MAX_WHITESPACE_TOKENS)
             .build();
@@ -52,6 +54,7 @@ public class ParserOptions {
             .captureIgnoredChars(false)
             .captureSourceLocation(true)
             .captureLineComments(true) // #comments are useful in SDL parsing
+            .readerTrackData(true)
             .maxTokens(Integer.MAX_VALUE) // we are less worried about a billion laughs with SDL parsing since the call path is not facing attackers
             .maxWhitespaceTokens(Integer.MAX_VALUE)
             .build();
@@ -154,6 +157,7 @@ public class ParserOptions {
     private final boolean captureIgnoredChars;
     private final boolean captureSourceLocation;
     private final boolean captureLineComments;
+    private final boolean readerTrackData;
     private final int maxTokens;
     private final int maxWhitespaceTokens;
     private final ParsingListener parsingListener;
@@ -162,6 +166,7 @@ public class ParserOptions {
         this.captureIgnoredChars = builder.captureIgnoredChars;
         this.captureSourceLocation = builder.captureSourceLocation;
         this.captureLineComments = builder.captureLineComments;
+        this.readerTrackData = builder.readerTrackData;
         this.maxTokens = builder.maxTokens;
         this.maxWhitespaceTokens = builder.maxWhitespaceTokens;
         this.parsingListener = builder.parsingListener;
@@ -205,6 +210,15 @@ public class ParserOptions {
     }
 
     /**
+     * Controls whether the underlying {@link MultiSourceReader} should track previously read data or not.
+     *
+     * @return true if {@link MultiSourceReader} should track data in memory.
+     */
+    public boolean isReaderTrackData() {
+        return readerTrackData;
+    }
+
+    /**
      * A graphql hacking vector is to send nonsensical queries that burn lots of parsing CPU time and burns
      * memory representing a document that won't ever execute.  To prevent this you can set a maximum number of parse
      * tokens that will be accepted before an exception is thrown and the parsing is stopped.
@@ -245,6 +259,7 @@ public class ParserOptions {
         private boolean captureIgnoredChars = false;
         private boolean captureSourceLocation = true;
         private boolean captureLineComments = true;
+        private boolean readerTrackData = true;
         private int maxTokens = MAX_QUERY_TOKENS;
         private ParsingListener parsingListener = ParsingListener.NOOP;
         private int maxWhitespaceTokens = MAX_WHITESPACE_TOKENS;
@@ -273,6 +288,11 @@ public class ParserOptions {
 
         public Builder captureLineComments(boolean captureLineComments) {
             this.captureLineComments = captureLineComments;
+            return this;
+        }
+
+        public Builder readerTrackData(boolean readerTrackData) {
+            this.readerTrackData = readerTrackData;
             return this;
         }
 

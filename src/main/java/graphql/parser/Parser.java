@@ -254,13 +254,19 @@ public class Parser {
     }
 
     private Node<?> parseImpl(ParserEnvironment environment, BiFunction<GraphqlParser, GraphqlAntlrToLanguage, Object[]> nodeFunction) throws InvalidSyntaxException {
+        // default in the parser options if they are not set
+        ParserOptions parserOptions = environment.getParserOptions();
+        parserOptions = Optional.ofNullable(parserOptions).orElse(ParserOptions.getDefaultParserOptions());
+
         MultiSourceReader multiSourceReader;
         Reader reader = environment.getDocument();
         if (reader instanceof MultiSourceReader) {
             multiSourceReader = (MultiSourceReader) reader;
         } else {
             multiSourceReader = MultiSourceReader.newMultiSourceReader()
-                    .reader(reader, null).build();
+                    .reader(reader, null)
+                    .trackData(parserOptions.isReaderTrackData())
+                    .build();
         }
         CodePointCharStream charStream;
         try {
@@ -289,10 +295,6 @@ public class Parser {
                 throw new InvalidSyntaxException(msg, sourceLocation, null, preview, null);
             }
         });
-
-        // default in the parser options if they are not set
-        ParserOptions parserOptions = environment.getParserOptions();
-        parserOptions = Optional.ofNullable(parserOptions).orElse(ParserOptions.getDefaultParserOptions());
 
         // this lexer wrapper allows us to stop lexing when too many tokens are in place.  This prevents DOS attacks.
         int maxTokens = parserOptions.getMaxTokens();
