@@ -97,7 +97,7 @@ public interface SchemaDifference {
             return newName;
         }
 
-        public boolean isRenamed() {
+        public boolean isNameChanged() {
             return renamed;
         }
     }
@@ -334,6 +334,10 @@ public interface SchemaDifference {
         public InterfaceDeletion(String name) {
             this.name = name;
         }
+
+        public String getName() {
+            return name;
+        }
     }
 
     class InterfaceModification implements SchemaModification, InterfaceDifference {
@@ -366,7 +370,7 @@ public interface SchemaDifference {
             return oldName;
         }
 
-        public boolean isRenamed() {
+        public boolean isNameChanged() {
             return renamed;
         }
 
