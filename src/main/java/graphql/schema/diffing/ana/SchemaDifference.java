@@ -66,19 +66,19 @@ public interface SchemaDifference {
     class ObjectModification implements SchemaModification, ObjectDifference {
         private final String oldName;
         private final String newName;
-        private final boolean renamed;
+        private final boolean isNameChanged;
         private final List<ObjectModificationDetail> details = new ArrayList<>();
 
         public ObjectModification(String oldName, String newName) {
             this.oldName = oldName;
             this.newName = newName;
-            this.renamed = oldName.equals(newName);
+            this.isNameChanged = oldName.equals(newName);
         }
 
         public ObjectModification(String newName) {
             this.oldName = newName;
             this.newName = newName;
-            this.renamed = false;
+            this.isNameChanged = false;
         }
 
         public List<ObjectModificationDetail> getDetails() {
@@ -98,7 +98,7 @@ public interface SchemaDifference {
         }
 
         public boolean isNameChanged() {
-            return renamed;
+            return isNameChanged;
         }
     }
 
@@ -343,19 +343,19 @@ public interface SchemaDifference {
     class InterfaceModification implements SchemaModification, InterfaceDifference {
         private final String oldName;
         private final String newName;
-        private final boolean renamed;
+        private final boolean isNameChanged;
         private final List<InterfaceModificationDetail> details = new ArrayList<>();
 
         public InterfaceModification(String oldName, String newName) {
             this.oldName = oldName;
             this.newName = newName;
-            this.renamed = oldName.equals(newName);
+            this.isNameChanged = oldName.equals(newName);
         }
 
         public InterfaceModification(String newName) {
             this.oldName = newName;
             this.newName = newName;
-            this.renamed = false;
+            this.isNameChanged = false;
         }
 
         public List<InterfaceModificationDetail> getDetails() {
@@ -371,7 +371,7 @@ public interface SchemaDifference {
         }
 
         public boolean isNameChanged() {
-            return renamed;
+            return isNameChanged;
         }
 
         public <T extends InterfaceModificationDetail> List<T> getDetails(Class<? extends T> clazz) {
@@ -625,20 +625,20 @@ public interface SchemaDifference {
     class UnionModification implements SchemaModification, UnionDifference {
         private final String oldName;
         private final String newName;
-        private final boolean nameChanged;
+        private final boolean isNameChanged;
 
         private final List<UnionModificationDetail> details = new ArrayList<>();
 
         public UnionModification(String oldName, String newName) {
             this.oldName = oldName;
             this.newName = newName;
-            this.nameChanged = oldName.equals(newName);
+            this.isNameChanged = oldName.equals(newName);
         }
 
         public UnionModification(String newName) {
             this.oldName = newName;
             this.newName = newName;
-            this.nameChanged = false;
+            this.isNameChanged = false;
         }
 
         public String getNewName() {
@@ -658,7 +658,7 @@ public interface SchemaDifference {
         }
 
         public boolean isNameChanged() {
-            return nameChanged;
+            return isNameChanged;
         }
     }
 
@@ -817,7 +817,7 @@ public interface SchemaDifference {
     class InputObjectModification implements SchemaModification, InputObjectDifference {
         private final String oldName;
         private final String newName;
-        private final boolean nameChanged;
+        private final boolean isNameChanged;
 
         private final List<InputObjectModificationDetail> details = new ArrayList<>();
 
@@ -825,17 +825,17 @@ public interface SchemaDifference {
         public InputObjectModification(String oldName, String newName) {
             this.oldName = oldName;
             this.newName = newName;
-            this.nameChanged = oldName.equals(newName);
+            this.isNameChanged = oldName.equals(newName);
         }
 
         public InputObjectModification(String newName) {
             this.oldName = newName;
             this.newName = newName;
-            this.nameChanged = false;
+            this.isNameChanged = false;
         }
 
         public boolean isNameChanged() {
-            return nameChanged;
+            return isNameChanged;
         }
 
         public String getNewName() {
@@ -889,23 +889,23 @@ public interface SchemaDifference {
         private final String oldName;
         private final String newName;
 
-        private final boolean nameChanged;
+        private final boolean isNameChanged;
         private final List<EnumModificationDetail> details = new ArrayList<>();
 
         public EnumModification(String oldName, String newName) {
             this.oldName = oldName;
             this.newName = newName;
-            this.nameChanged = oldName.equals(newName);
+            this.isNameChanged = oldName.equals(newName);
         }
 
         public EnumModification(String newName) {
             this.oldName = newName;
             this.newName = newName;
-            this.nameChanged = false;
+            this.isNameChanged = false;
         }
 
         public boolean isNameChanged() {
-            return nameChanged;
+            return isNameChanged;
         }
 
         public String getNewName() {
@@ -990,25 +990,25 @@ public interface SchemaDifference {
     class ScalarModification implements SchemaModification, ScalarDifference {
         private final String oldName;
         private final String newName;
-        private final boolean nameChanged;
+        private final boolean isNameChanged;
         private List<ScalarModificationDetail> details = new ArrayList<>();
 
 
         public ScalarModification(String oldName, String newName) {
             this.oldName = oldName;
             this.newName = newName;
-            this.nameChanged = oldName.equals(newName);
+            this.isNameChanged = oldName.equals(newName);
         }
 
         public ScalarModification(String newName) {
             this.oldName = newName;
             this.newName = newName;
-            this.nameChanged = false;
+            this.isNameChanged = false;
         }
 
 
         public boolean isNameChanged() {
-            return nameChanged;
+            return isNameChanged;
         }
 
         public String getNewName() {
@@ -1061,24 +1061,24 @@ public interface SchemaDifference {
     class DirectiveModification implements SchemaModification, DirectiveDifference {
         private final String oldName;
         private final String newName;
-        private final boolean nameChanged;
+        private final boolean isNameChanged;
 
         private final List<DirectiveModificationDetail> details = new ArrayList<>();
 
         public DirectiveModification(String oldName, String newName) {
             this.oldName = oldName;
             this.newName = newName;
-            this.nameChanged = oldName.equals(newName);
+            this.isNameChanged = oldName.equals(newName);
         }
 
         public DirectiveModification(String newName) {
             this.oldName = newName;
             this.newName = newName;
-            this.nameChanged = false;
+            this.isNameChanged = false;
         }
 
         public boolean isNameChanged() {
-            return nameChanged;
+            return isNameChanged;
         }
 
         public String getNewName() {
