@@ -1,5 +1,6 @@
 import java.text.SimpleDateFormat
 
+
 plugins {
     id 'java'
     id 'java-library'
@@ -11,6 +12,14 @@ plugins {
     id "io.github.gradle-nexus.publish-plugin" version "1.1.0"
     id "groovy"
     id "me.champeau.jmh" version "0.6.6"
+}
+
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(11)
+
+    }
 }
 
 def getDevelopmentVersion() {
@@ -39,15 +48,6 @@ def getDevelopmentVersion() {
     version
 }
 
-if (JavaVersion.current() != JavaVersion.VERSION_11) {
-    def msg = String.format("This build must be run with Java 11 - you are running %s - gradle finds the JDK via JAVA_HOME=%s",
-            JavaVersion.current(), System.getenv("JAVA_HOME"))
-    throw new GradleException(msg)
-}
-
-
-sourceCompatibility = JavaVersion.VERSION_11.toString()
-targetCompatibility = JavaVersion.VERSION_11.toString()
 def reactiveStreamsVersion = '1.0.3'
 def slf4jVersion = '1.7.35'
 def releaseVersion = System.env.RELEASE_VERSION
