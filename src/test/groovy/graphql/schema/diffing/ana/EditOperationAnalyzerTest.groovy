@@ -4,10 +4,6 @@ import graphql.TestUtil
 import graphql.schema.diffing.SchemaDiffing
 import spock.lang.Specification
 
-import static graphql.schema.diffing.ana.SchemaDifference.*
-import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveAddition
-import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveArgumentValueModification
-import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveObjectFieldLocation
 import static graphql.schema.diffing.ana.SchemaDifference.DirectiveAddition
 import static graphql.schema.diffing.ana.SchemaDifference.DirectiveArgumentAddition
 import static graphql.schema.diffing.ana.SchemaDifference.DirectiveArgumentDefaultValueModification
@@ -23,6 +19,11 @@ import static graphql.schema.diffing.ana.SchemaDifference.EnumValueAddition
 import static graphql.schema.diffing.ana.SchemaDifference.EnumValueDeletion
 import static graphql.schema.diffing.ana.SchemaDifference.InputObjectAddition
 import static graphql.schema.diffing.ana.SchemaDifference.InputObjectDeletion
+import static graphql.schema.diffing.ana.SchemaDifference.InputObjectFieldAddition
+import static graphql.schema.diffing.ana.SchemaDifference.InputObjectFieldDefaultValueModification
+import static graphql.schema.diffing.ana.SchemaDifference.InputObjectFieldDeletion
+import static graphql.schema.diffing.ana.SchemaDifference.InputObjectFieldRename
+import static graphql.schema.diffing.ana.SchemaDifference.InputObjectFieldTypeModification
 import static graphql.schema.diffing.ana.SchemaDifference.InputObjectModification
 import static graphql.schema.diffing.ana.SchemaDifference.InterfaceAddition
 import static graphql.schema.diffing.ana.SchemaDifference.InterfaceFieldAddition
@@ -84,6 +85,7 @@ class EditOperationAnalyzerTest extends Specification {
         changes.objectDifferences["Query"] instanceof ObjectModification
         (changes.objectDifferences["Query"] as ObjectModification).oldName == "Query"
         (changes.objectDifferences["Query"] as ObjectModification).newName == "MyQuery"
+        (changes.objectDifferences["Query"] as ObjectModification).isNameChanged()
     }
 
     def "interface renamed"() {
@@ -112,6 +114,7 @@ class EditOperationAnalyzerTest extends Specification {
         changes.interfaceDifferences["I"] instanceof InterfaceModification
         (changes.interfaceDifferences["I"] as InterfaceModification).oldName == "I"
         (changes.interfaceDifferences["I"] as InterfaceModification).newName == "IRenamed"
+        (changes.interfaceDifferences["I"] as InterfaceModification).isNameChanged()
     }
 
     def "interface removed from object"() {
@@ -204,7 +207,6 @@ class EditOperationAnalyzerTest extends Specification {
         def iFieldRenames = interfaceModification.getDetails(InterfaceFieldRename.class)
         iFieldRenames[0].oldName == "hello"
         iFieldRenames[0].newName == "hello2"
-
     }
 
     def "object and interface field deleted"() {
@@ -330,6 +332,7 @@ class EditOperationAnalyzerTest extends Specification {
         changes.unionDifferences["U"] instanceof UnionModification
         (changes.unionDifferences["U"] as UnionModification).oldName == "U"
         (changes.unionDifferences["U"] as UnionModification).newName == "X"
+        (changes.unionDifferences["U"] as UnionModification).isNameChanged()
     }
 
     def "union renamed and member removed"() {
@@ -363,6 +366,7 @@ class EditOperationAnalyzerTest extends Specification {
         unionDiff.oldName == "U"
         unionDiff.newName == "X"
         unionDiff.getDetails(UnionMemberDeletion)[0].name == "B"
+        unionDiff.isNameChanged()
     }
 
     def "union renamed and member added"() {
@@ -396,6 +400,7 @@ class EditOperationAnalyzerTest extends Specification {
         def unionDiff = changes.unionDifferences["U"] as UnionModification
         unionDiff.oldName == "U"
         unionDiff.newName == "X"
+        unionDiff.isNameChanged()
         unionDiff.getDetails(UnionMemberAddition)[0].name == "B"
     }
 
@@ -559,7 +564,6 @@ class EditOperationAnalyzerTest extends Specification {
         def interfaceArgumentRenamed = interfaceModification.getDetails(InterfaceFieldArgumentRename.class);
         interfaceArgumentRenamed[0].oldName == "arg"
         interfaceArgumentRenamed[0].newName == "argRename"
-
     }
 
 
@@ -971,6 +975,7 @@ class EditOperationAnalyzerTest extends Specification {
         changes.interfaceDifferences.size() == 2
         changes.interfaceDifferences["Node"] === changes.interfaceDifferences["Node2"]
         changes.interfaceDifferences["Node2"] instanceof InterfaceModification
+        (changes.interfaceDifferences["Node2"] as InterfaceModification).isNameChanged()
     }
 
     def "interfaced renamed and another interface added to it"() {
@@ -1007,6 +1012,7 @@ class EditOperationAnalyzerTest extends Specification {
         changes.interfaceDifferences.size() == 3
         changes.interfaceDifferences["Node"] == changes.interfaceDifferences["Node2"]
         changes.interfaceDifferences["Node2"] instanceof InterfaceModification
+        (changes.interfaceDifferences["Node2"] as InterfaceModification).isNameChanged()
         changes.interfaceDifferences["NewI"] instanceof InterfaceAddition
         changes.objectDifferences.size() == 1
         changes.objectDifferences["Foo"] instanceof ObjectModification
@@ -1014,7 +1020,6 @@ class EditOperationAnalyzerTest extends Specification {
         def addedInterfaceDetails = objectModification.getDetails(ObjectInterfaceImplementationAddition)
         addedInterfaceDetails.size() == 1
         addedInterfaceDetails[0].name == "NewI"
-
     }
 
     def "enum renamed"() {
@@ -1042,7 +1047,7 @@ class EditOperationAnalyzerTest extends Specification {
         def modification = changes.enumDifferences["E"] as EnumModification
         modification.oldName == "E"
         modification.newName == "ERenamed"
-
+        modification.isNameChanged()
     }
 
     def "enum added"() {
@@ -1203,6 +1208,7 @@ class EditOperationAnalyzerTest extends Specification {
         def modification = changes.scalarDifferences["Foo"] as ScalarModification
         modification.oldName == "Foo"
         modification.newName == "Bar"
+        modification.isNameChanged()
     }
 
     def "input object added"() {
@@ -1442,6 +1448,7 @@ class EditOperationAnalyzerTest extends Specification {
         def modification = changes.inputObjectDifferences["I"] as InputObjectModification
         modification.oldName == "I"
         modification.newName == "IRenamed"
+        modification.isNameChanged()
     }
 
 
@@ -1506,6 +1513,7 @@ class EditOperationAnalyzerTest extends Specification {
         def modification = changes.directiveDifferences["d"] as DirectiveModification
         modification.oldName == "d"
         modification.newName == "dRenamed"
+        modification.isNameChanged()
     }
 
     def "directive argument renamed"() {
@@ -1529,7 +1537,6 @@ class EditOperationAnalyzerTest extends Specification {
         def renames = (changes.directiveDifferences["d"] as DirectiveModification).getDetails(DirectiveArgumentRename)
         renames[0].oldName == "foo"
         renames[0].newName == "bar"
-
     }
 
     def "directive argument added"() {
