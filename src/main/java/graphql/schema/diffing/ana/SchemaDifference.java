@@ -72,7 +72,7 @@ public interface SchemaDifference {
         public ObjectModification(String oldName, String newName) {
             this.oldName = oldName;
             this.newName = newName;
-            this.isNameChanged = oldName.equals(newName);
+            this.isNameChanged = !oldName.equals(newName);
         }
 
         public ObjectModification(String newName) {
@@ -349,7 +349,7 @@ public interface SchemaDifference {
         public InterfaceModification(String oldName, String newName) {
             this.oldName = oldName;
             this.newName = newName;
-            this.isNameChanged = oldName.equals(newName);
+            this.isNameChanged = !oldName.equals(newName);
         }
 
         public InterfaceModification(String newName) {
@@ -632,7 +632,7 @@ public interface SchemaDifference {
         public UnionModification(String oldName, String newName) {
             this.oldName = oldName;
             this.newName = newName;
-            this.isNameChanged = oldName.equals(newName);
+            this.isNameChanged = !oldName.equals(newName);
         }
 
         public UnionModification(String newName) {
@@ -825,7 +825,7 @@ public interface SchemaDifference {
         public InputObjectModification(String oldName, String newName) {
             this.oldName = oldName;
             this.newName = newName;
-            this.isNameChanged = oldName.equals(newName);
+            this.isNameChanged = !oldName.equals(newName);
         }
 
         public InputObjectModification(String newName) {
@@ -895,7 +895,7 @@ public interface SchemaDifference {
         public EnumModification(String oldName, String newName) {
             this.oldName = oldName;
             this.newName = newName;
-            this.isNameChanged = oldName.equals(newName);
+            this.isNameChanged = !oldName.equals(newName);
         }
 
         public EnumModification(String newName) {
@@ -997,7 +997,7 @@ public interface SchemaDifference {
         public ScalarModification(String oldName, String newName) {
             this.oldName = oldName;
             this.newName = newName;
-            this.isNameChanged = oldName.equals(newName);
+            this.isNameChanged = !oldName.equals(newName);
         }
 
         public ScalarModification(String newName) {
@@ -1068,7 +1068,7 @@ public interface SchemaDifference {
         public DirectiveModification(String oldName, String newName) {
             this.oldName = oldName;
             this.newName = newName;
-            this.isNameChanged = oldName.equals(newName);
+            this.isNameChanged = !oldName.equals(newName);
         }
 
         public DirectiveModification(String newName) {
