@@ -78,8 +78,7 @@ public class InstrumentationExamples {
             return new SimpleInstrumentationContext<ExecutionResult>() {
                 @Override
                 public void onCompleted(ExecutionResult result, Throwable t) {
-                    CustomInstrumentationState state = parameters.getInstrumentationState();
-                    state.recordTiming(parameters.getQuery(), System.nanoTime() - startNanos);
+                    ((CustomInstrumentationState) state).recordTiming(parameters.getQuery(), System.nanoTime() - startNanos);
                 }
             };
         }
@@ -96,7 +95,7 @@ public class InstrumentationExamples {
         @Override
         public @NotNull CompletableFuture<ExecutionResult> instrumentExecutionResult(ExecutionResult executionResult, InstrumentationExecutionParameters parameters) {
             //
-            // this allows you to instrument the execution result some how.  For example the Tracing support uses this to put
+            // this allows you to instrument the execution result somehow.  For example the Tracing support uses this to put
             // the `extensions` map of data in place
             //
             return CompletableFuture.completedFuture(executionResult);
