@@ -315,7 +315,7 @@ public class SchemaPrinter {
                     this.includeDirectiveDefinitions,
                     this.useAstDefinitions,
                     this.descriptionsAsHashComments,
-                    includeDirective,
+                    this.includeDirective,
                     includeSchemaElement,
                     this.comparatorRegistry);
         }
