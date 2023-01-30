@@ -641,20 +641,21 @@ public class EditOperationAnalyzer {
         } else {
             assertTrue(fieldOrDirective.isOfType(SchemaGraph.FIELD));
             Vertex field = fieldOrDirective;
+            String fieldName = field.getName();
             Vertex fieldsContainerForField = newSchemaGraph.getFieldsContainerForField(field);
             if (fieldsContainerForField.isOfType(SchemaGraph.OBJECT)) {
                 Vertex object = fieldsContainerForField;
                 ObjectModification objectModification = getObjectModification(object.getName());
                 String oldName = editOperation.getSourceVertex().getName();
                 String newName = argument.getName();
-                objectModification.getDetails().add(new ObjectFieldArgumentRename(oldName, newName));
+                objectModification.getDetails().add(new ObjectFieldArgumentRename(fieldName, oldName, newName));
             } else {
                 assertTrue(fieldsContainerForField.isOfType(SchemaGraph.INTERFACE));
                 Vertex interfaze = fieldsContainerForField;
                 InterfaceModification interfaceModification = getInterfaceModification(interfaze.getName());
                 String oldName = editOperation.getSourceVertex().getName();
                 String newName = argument.getName();
-                interfaceModification.getDetails().add(new InterfaceFieldArgumentRename(oldName, newName));
+                interfaceModification.getDetails().add(new InterfaceFieldArgumentRename(fieldName, oldName, newName));
 
             }
         }

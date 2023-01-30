@@ -8,7 +8,7 @@ import java.util.List;
 
 /**
  * Any kind of difference between two schemas is a SchemaDifference.
- *
+ * <p>
  * Below that we have three different possible kind of differences:
  * - Addition
  * - Deletion
@@ -173,12 +173,18 @@ public interface SchemaDifference {
     }
 
     class ObjectFieldArgumentRename implements ObjectModificationDetail {
+        private final String fieldName;
         private final String oldName;
         private final String newName;
 
-        public ObjectFieldArgumentRename(String oldName, String newName) {
+        public ObjectFieldArgumentRename(String fieldName, String oldName, String newName) {
+            this.fieldName = fieldName;
             this.oldName = oldName;
             this.newName = newName;
+        }
+
+        public String getFieldName() {
+            return fieldName;
         }
 
         public String getNewName() {
@@ -513,7 +519,7 @@ public interface SchemaDifference {
 
     class InterfaceFieldArgumentTypeModification implements InterfaceModificationDetail {
 
-        private String fieldName;
+        private final String fieldName;
         private final String argumentName;
         private final String oldType;
         private final String newType;
@@ -575,12 +581,18 @@ public interface SchemaDifference {
     }
 
     class InterfaceFieldArgumentRename implements InterfaceModificationDetail {
+        private final String fieldName;
         private final String oldName;
         private final String newName;
 
-        public InterfaceFieldArgumentRename(String oldName, String newName) {
+        public InterfaceFieldArgumentRename(String fieldName, String oldName, String newName) {
+            this.fieldName = fieldName;
             this.oldName = oldName;
             this.newName = newName;
+        }
+
+        public String getFieldName() {
+            return fieldName;
         }
 
         public String getNewName() {
