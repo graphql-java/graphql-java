@@ -556,12 +556,14 @@ class EditOperationAnalyzerTest extends Specification {
         changes.objectDifferences["Query"] instanceof ObjectModification
         def objectModification = changes.objectDifferences["Query"] as ObjectModification
         def objectArgumentRenamed = objectModification.getDetails(ObjectFieldArgumentRename.class);
+        objectArgumentRenamed[0].fieldName == "hello"
         objectArgumentRenamed[0].oldName == "arg"
         objectArgumentRenamed[0].newName == "argRename"
         and:
         changes.interfaceDifferences["I"] instanceof InterfaceModification
         def interfaceModification = changes.interfaceDifferences["I"] as InterfaceModification
         def interfaceArgumentRenamed = interfaceModification.getDetails(InterfaceFieldArgumentRename.class);
+        interfaceArgumentRenamed[0].fieldName == "hello"
         interfaceArgumentRenamed[0].oldName == "arg"
         interfaceArgumentRenamed[0].newName == "argRename"
     }
@@ -1660,9 +1662,6 @@ class EditOperationAnalyzerTest extends Specification {
         argTypeModification[0].oldType == 'String'
         argTypeModification[0].newType == '[String]!'
     }
-
-
-
 
 
     EditOperationAnalysisResult calcDiff(
