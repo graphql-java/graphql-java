@@ -38,6 +38,8 @@ import static graphql.Assert.assertNotNull;
 public interface Coercing<I, O> {
 
     /**
+     * This is deprecated and you should implement {@link #serialize(Object, GraphQLContext, Locale)} instead
+     * <p>
      * Called to convert a Java object result of a DataFetcher to a valid runtime value for the scalar type.
      * <p>
      * Note : Throw {@link graphql.schema.CoercingSerializeException} if there is fundamental
@@ -54,7 +56,9 @@ public interface Coercing<I, O> {
      */
     @Deprecated
     @DeprecatedAt("2022-08-22")
-    @Nullable O serialize(@NotNull Object dataFetcherResult) throws CoercingSerializeException;
+    default @Nullable O serialize(@NotNull Object dataFetcherResult) throws CoercingSerializeException {
+        throw new UnsupportedOperationException("The non deprecated version of serialize has not been implemented by this scalar : " + this.getClass());
+    }
 
     /**
      * Called to convert a Java object result of a DataFetcher to a valid runtime value for the scalar type.
@@ -80,11 +84,13 @@ public interface Coercing<I, O> {
     }
 
     /**
+     * This is deprecated and you should implement {@link #parseValue(Object, GraphQLContext, Locale)} instead
+     * <p>
      * Called to resolve an input from a query variable into a Java object acceptable for the scalar type.
      * <p>
      * Note : You should not allow {@link java.lang.RuntimeException}s to come out of your parseValue method, but rather
      * catch them and fire them as {@link graphql.schema.CoercingParseValueException} instead as per the method contract.
-     *
+     * <p>
      * Note : if input is explicit/raw value null, input coercion will return null before this method is called
      *
      * @param input is never null
@@ -95,7 +101,9 @@ public interface Coercing<I, O> {
      */
     @Deprecated
     @DeprecatedAt("2022-08-22")
-    @Nullable I parseValue(@NotNull Object input) throws CoercingParseValueException;
+    default @Nullable I parseValue(@NotNull Object input) throws CoercingParseValueException {
+        throw new UnsupportedOperationException("The non deprecated version of parseValue has not been implemented by this scalar : " + this.getClass());
+    }
 
     /**
      * Called to resolve an input from a query variable into a Java object acceptable for the scalar type.
@@ -113,7 +121,8 @@ public interface Coercing<I, O> {
      *
      * @throws graphql.schema.CoercingParseValueException if value input can't be parsed
      */
-    @Nullable default I parseValue(@NotNull Object input, @NotNull GraphQLContext graphQLContext, @NotNull Locale locale) throws CoercingParseValueException {
+    @Nullable
+    default I parseValue(@NotNull Object input, @NotNull GraphQLContext graphQLContext, @NotNull Locale locale) throws CoercingParseValueException {
         assertNotNull(input);
         assertNotNull(graphQLContext);
         assertNotNull(locale);
@@ -121,12 +130,14 @@ public interface Coercing<I, O> {
     }
 
     /**
+     * This is deprecated and you should implement {@link #parseLiteral(Value, CoercedVariables, GraphQLContext, Locale)} instead
+     * <p>
      * Called during query validation to convert a query input AST node into a Java object acceptable for the scalar type.  The input
      * object will be an instance of {@link graphql.language.Value}.
      * <p>
      * Note : You should not allow {@link java.lang.RuntimeException}s to come out of your parseLiteral method, but rather
      * catch them and fire them as {@link graphql.schema.CoercingParseLiteralException} instead as per the method contract.
-     *
+     * <p>
      * Note : if input is literal {@link graphql.language.NullValue}, input coercion will return null before this method is called
      *
      * @param input is never null
@@ -137,9 +148,13 @@ public interface Coercing<I, O> {
      */
     @Deprecated
     @DeprecatedAt("2022-08-22")
-    @Nullable I parseLiteral(@NotNull Object input) throws CoercingParseLiteralException;
+    default @Nullable I parseLiteral(@NotNull Object input) throws CoercingParseLiteralException {
+        throw new UnsupportedOperationException("The non deprecated version of parseLiteral has not been implemented by this scalar : " + this.getClass());
+    }
 
     /**
+     * This is deprecated and you should implement {@link #parseLiteral(Value, CoercedVariables, GraphQLContext, Locale)} instead
+     * <p>
      * Called during query execution to convert a query input AST node into a Java object acceptable for the scalar type.  The input
      * object will be an instance of {@link graphql.language.Value}.
      * <p>
@@ -197,6 +212,8 @@ public interface Coercing<I, O> {
 
 
     /**
+     * This is deprecated and you should implement {@link #valueToLiteral(Object, GraphQLContext, Locale)} instead
+     * <p>
      * Converts an external input value to a literal (Ast Value).
      * <p>
      * IMPORTANT: the argument is validated before by calling {@link #parseValue(Object)}.
@@ -208,7 +225,7 @@ public interface Coercing<I, O> {
     @Deprecated
     @DeprecatedAt("2022-08-22")
     default @NotNull Value valueToLiteral(@NotNull Object input) {
-        throw new UnsupportedOperationException("This is not implemented by this Scalar " + this.getClass());
+        throw new UnsupportedOperationException("The non deprecated version of valueToLiteral has not been implemented by this scalar : " + this.getClass());
     }
 
     /**
