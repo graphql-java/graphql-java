@@ -129,16 +129,7 @@ public class DataLoaderDispatcherInstrumentation extends SimplePerformantInstrum
         // if there are no data loaders, there is nothing to do
         //
         if (state.hasNoDataLoaders()) {
-            return new ExecutionStrategyInstrumentationContext() {
-                @Override
-                public void onDispatched(CompletableFuture<ExecutionResult> result) {
-                }
-
-                @Override
-                public void onCompleted(ExecutionResult result, Throwable t) {
-                }
-            };
-
+            return ExecutionStrategyInstrumentationContext.NOOP;
         }
         return state.getApproach().beginExecutionStrategy(parameters, state.getState());
     }
