@@ -24,13 +24,13 @@ import static graphql.util.FpKit.getByName;
 
 /**
  * Fields are the ways you get data values in graphql and a field definition represents a field, its type, the arguments it takes
- * and the {@link graphql.schema.DataFetcher} used to get data values for that field.
+ * and the {@link DataFetcher} used to get data values for that field.
  * <p>
  * Fields can be thought of as functions in graphql, they have a name, take defined arguments and return a value.
  * <p>
  * Fields can also be deprecated, which indicates the consumers that a field wont be supported in the future.
  * <p>
- * See http://graphql.org/learn/queries/#fields for more details on the concept.
+ * See <a href="https://graphql.org/learn/queries/#fields">https://graphql.org/learn/queries/#fields</a> for more details on the concept.
  */
 @PublicApi
 public class GraphQLFieldDefinition implements GraphQLNamedSchemaElement, GraphQLDirectiveContainer {

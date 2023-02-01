@@ -1,11 +1,11 @@
 /**
  * The purpose of this code is to show an example of serving a graphql query over HTTP
- *
- * More info can be found here : http://graphql.org/learn/serving-over-http/
- *
+ * <p>
+ * More info can be found here : <a href="https://graphql.org/learn/serving-over-http/">https://graphql.org/learn/serving-over-http/</a>
+ * <p>
  * There are more concerns in a fully fledged application such as your approach to permissions
  * and authentication and so on that are not shown here.
- *
+ * <p>
  * The backing data is the "star wars" example schema.  And fairly complex example query is as follows :
  *
  * <pre>

@@ -9,7 +9,7 @@ The overall goal of graphql-java is to have a correct implementation of the [Gra
 
 In order to achieve that we have a strong focus on maintainability and high test coverage:
 
-- We expect new or modified unit test for every change (written in [Spock](http://spockframework.org/)).
+- We expect new or modified unit test for every change (written in [Spock](https://spockframework.org/)).
 
 - Your code should be formatted with our IntelliJ [graphql-java-code-style](graphql-java-code-style.xml).
 

@@ -22,12 +22,12 @@ import static graphql.Assert.assertValidName;
 import static graphql.execution.ValuesResolver.getInputValueImpl;
 
 /**
- * Input objects defined via {@link graphql.schema.GraphQLInputObjectType} contains these input fields.
+ * Input objects defined via {@link GraphQLInputObjectType} contains these input fields.
  *
- * There are similar to {@link graphql.schema.GraphQLFieldDefinition} however they can ONLY be used on input objects, that
+ * There are similar to {@link GraphQLFieldDefinition} however they can ONLY be used on input objects, that
  * is to describe values that are fed into a graphql mutation.
  *
- * See http://graphql.org/learn/schema/#input-types for more details on the concept.
+ * See <a href="https://graphql.org/learn/schema/#input-types">https://graphql.org/learn/schema/#input-types</a> for more details on the concept.
  */
 @PublicApi
 public class GraphQLInputObjectField implements GraphQLNamedSchemaElement, GraphQLInputValueDefinition {

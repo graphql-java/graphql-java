@@ -9,7 +9,7 @@ public final class EscapeUtil {
     }
 
     /**
-     * Encodes the value as a JSON string according to http://json.org/ rules
+     * Encodes the value as a JSON string according to <a href="https://json.org/">https://json.org/</a> rules
      *
      * @param stringValue the value to encode as a JSON string
      *

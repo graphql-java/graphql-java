@@ -32,10 +32,10 @@ import static java.lang.String.format;
  * In graphql, an interface is an abstract type that defines the set of fields that a type must include to
  * implement that interface.
  * <p>
- * At runtime a {@link graphql.schema.TypeResolver} is used to take an interface object value and decide what {@link graphql.schema.GraphQLObjectType}
+ * At runtime a {@link TypeResolver} is used to take an interface object value and decide what {@link GraphQLObjectType}
  * represents this interface type.
  * <p>
- * See http://graphql.org/learn/schema/#interfaces for more details on the concept.
+ * See <a href="https://graphql.org/learn/schema/#interfaces">https://graphql.org/learn/schema/#interfaces</a> for more details on the concept.
  */
 @PublicApi
 public class GraphQLInterfaceType implements GraphQLNamedType, GraphQLCompositeType, GraphQLUnmodifiedType, GraphQLNullableType, GraphQLDirectiveContainer, GraphQLImplementingType {

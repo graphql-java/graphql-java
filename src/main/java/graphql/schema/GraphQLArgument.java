@@ -23,15 +23,15 @@ import static graphql.Assert.assertValidName;
 import static graphql.execution.ValuesResolver.getInputValueImpl;
 
 /**
- * This defines an argument that can be supplied to a graphql field (via {@link graphql.schema.GraphQLFieldDefinition}.
+ * This defines an argument that can be supplied to a graphql field (via {@link GraphQLFieldDefinition}.
  * <p>
  * Fields can be thought of as "functions" that take arguments and return a value.
  * <p>
- * See http://graphql.org/learn/queries/#arguments for more details on the concept.
+ * See <a href="https://graphql.org/learn/queries/#arguments">https://graphql.org/learn/queries/#arguments</a> for more details on the concept.
  * <p>
- * {@link graphql.schema.GraphQLArgument} is used in two contexts, one context is graphql queries where it represents the arguments that can be
+ * {@link GraphQLArgument} is used in two contexts, one context is graphql queries where it represents the arguments that can be
  * set on a field and the other is in Schema Definition Language (SDL) where it can be used to represent the argument value instances
- * that have been supplied on a {@link graphql.schema.GraphQLDirective}.
+ * that have been supplied on a {@link GraphQLDirective}.
  * <p>
  * The difference is the 'value' and 'defaultValue' properties.  In a query argument, the 'value' is never in the GraphQLArgument
  * object but rather in the AST direct or in the query variables map and the 'defaultValue' represents a value to use if both of these are

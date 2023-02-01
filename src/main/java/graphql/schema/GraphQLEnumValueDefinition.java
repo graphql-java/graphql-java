@@ -19,7 +19,7 @@ import static graphql.Assert.assertValidName;
 /**
  * A graphql enumeration type has a limited set of values and this defines one of those unique values
  * <p>
- * See http://graphql.org/learn/schema/#enumeration-types for more details
+ * See <a href="https://graphql.org/learn/schema/#enumeration-types">https://graphql.org/learn/schema/#enumeration-types</a> for more details
  *
  * @see graphql.schema.GraphQLEnumType
  */

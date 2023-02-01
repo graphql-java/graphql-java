@@ -30,8 +30,9 @@ import static java.util.Collections.singletonMap;
  * Afterwards each object delivered on that stream will be mapped via running the original selection set over that object and hence producing an ExecutionResult
  * just like a normal graphql query.
  * <p>
- * See https://github.com/facebook/graphql/blob/master/spec/Section%206%20--%20Execution.md
- * See http://www.reactive-streams.org/
+ * See <a href="https://spec.graphql.org/June2018/#sec-Subscription">https://spec.graphql.org/June2018/#sec-Subscription</a>
+ * <p>
+ * See <a href="https://www.reactive-streams.org/">https://www.reactive-streams.org/</a>
  */
 @PublicApi
 public class SubscriptionExecutionStrategy extends ExecutionStrategy {

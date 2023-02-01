@@ -33,9 +33,9 @@ import static graphql.util.FpKit.valuesToList;
  * by the graphql system.
  * <p>
  * Those fields can themselves by object types and so on until you reach the leaf nodes of the type tree represented
- * by {@link graphql.schema.GraphQLScalarType}s.
+ * by {@link GraphQLScalarType}s.
  * <p>
- * See http://graphql.org/learn/schema/#object-types-and-fields for more details on the concept.
+ * See <a href="https://graphql.org/learn/schema/#object-types-and-fields">https://graphql.org/learn/schema/#object-types-and-fields</a> for more details on the concept.
  */
 @PublicApi
 public class GraphQLObjectType implements GraphQLNamedOutputType, GraphQLCompositeType, GraphQLUnmodifiedType, GraphQLNullableType, GraphQLDirectiveContainer, GraphQLImplementingType {

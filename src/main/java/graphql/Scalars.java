@@ -13,7 +13,8 @@ import graphql.schema.GraphQLScalarType;
  * by the graphql specification (Int, Float, String, Boolean and ID) while others are offer because they are common on
  * Java platforms.
  * <p>
- * For more info see http://graphql.org/learn/schema/#scalar-types and more specifically https://spec.graphql.org/October2021/#sec-Scalars
+ * For more info see <a href="https://graphql.org/learn/schema/#scalar-types">https://graphql.org/learn/schema/#scalar-types</a> and
+ * more specifically <a href="https://spec.graphql.org/October2021/#sec-Scalars">https://spec.graphql.org/October2021/#sec-Scalars</a>
  */
 @PublicApi
 public class Scalars {

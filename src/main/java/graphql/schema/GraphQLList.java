@@ -13,8 +13,8 @@ import static graphql.Assert.assertNotNull;
 
 /**
  * A modified type that indicates there is a list of the underlying wrapped type, eg a list of strings or a list of booleans.
- *
- * See http://graphql.org/learn/schema/#lists-and-non-null for more details on the concept
+ * <p>
+ * See <a href="https://graphql.org/learn/schema/#lists-and-non-null">https://graphql.org/learn/schema/#lists-and-non-null</a> for more details on the concept
  */
 @PublicApi
 public class GraphQLList implements GraphQLType, GraphQLInputType, GraphQLOutputType, GraphQLModifiedType, GraphQLNullableType {
