@@ -45,7 +45,7 @@ import static java.util.Arrays.asList;
  * The schema represents the combined type system of the graphql engine.  This is how the engine knows
  * what graphql queries represent what data.
  * <p>
- * See http://graphql.org/learn/schema/#type-language for more details
+ * See <a href="https://graphql.org/learn/schema/#type-language">https://graphql.org/learn/schema/#type-language</a> for more details
  */
 @PublicApi
 public class GraphQLSchema {

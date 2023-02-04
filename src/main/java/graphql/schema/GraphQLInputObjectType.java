@@ -28,7 +28,7 @@ import static graphql.util.FpKit.getByName;
  * graphql clearly delineates between the types of objects that represent the output of a query and input objects that
  * can be fed into a graphql mutation.  You can define objects as input to graphql via this class
  * <p>
- * See http://graphql.org/learn/schema/#input-types for more details on the concept
+ * See <a href="https://graphql.org/learn/schema/#input-types">https://graphql.org/learn/schema/#input-types</a> for more details on the concept
  */
 @PublicApi
 public class GraphQLInputObjectType implements GraphQLNamedInputType, GraphQLUnmodifiedType, GraphQLNullableType, GraphQLInputFieldsContainer, GraphQLDirectiveContainer {

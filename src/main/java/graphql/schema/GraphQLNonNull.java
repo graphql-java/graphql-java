@@ -15,7 +15,7 @@ import static graphql.Assert.assertTrue;
 /**
  * A modified type that indicates there the underlying wrapped type will not be null.
  * <p>
- * See http://graphql.org/learn/schema/#lists-and-non-null for more details on the concept
+ * See <a href="https://graphql.org/learn/schema/#lists-and-non-null">https://graphql.org/learn/schema/#lists-and-non-null</a> for more details on the concept
  */
 @PublicApi
 public class GraphQLNonNull implements GraphQLType, GraphQLInputType, GraphQLOutputType, GraphQLModifiedType {

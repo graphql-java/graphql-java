@@ -30,7 +30,7 @@ import static graphql.util.FpKit.getByName;
  * classes have been introduced to better model when a directive is applied to a query element,
  * as opposed to its schema definition itself.
  * <p>
- * See http://graphql.org/learn/queries/#directives for more details on the concept.
+ * See <a href="https://graphql.org/learn/queries/#directives">https://graphql.org/learn/queries/#directives</a> for more details on the concept.
  */
 @PublicApi
 public class QueryAppliedDirective {

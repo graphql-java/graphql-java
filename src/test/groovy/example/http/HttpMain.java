@@ -49,7 +49,7 @@ import static java.util.Arrays.asList;
 /**
  * A very simple example of serving a graphql schema over http.
  * <p>
- * More info can be found here : http://graphql.org/learn/serving-over-http/
+ * More info can be found here : <a href="https://graphql.org/learn/serving-over-http/">https://graphql.org/learn/serving-over-http/</a>
  */
 @SuppressWarnings("unchecked")
 public class HttpMain extends AbstractHandler {

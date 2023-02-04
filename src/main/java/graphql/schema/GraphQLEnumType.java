@@ -38,7 +38,7 @@ import static graphql.util.FpKit.getByName;
  * This allows you to validate that any arguments of this type are one of the allowed values
  * and communicate through the type system that a field will always be one of a finite set of values.
  * <p>
- * See http://graphql.org/learn/schema/#enumeration-types for more details
+ * See <a href="https://graphql.org/learn/schema/#enumeration-types">https://graphql.org/learn/schema/#enumeration-types</a> for more details
  */
 @PublicApi
 public class GraphQLEnumType implements GraphQLNamedInputType, GraphQLNamedOutputType, GraphQLUnmodifiedType, GraphQLNullableType, GraphQLDirectiveContainer {
