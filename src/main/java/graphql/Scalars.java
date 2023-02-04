@@ -14,7 +14,7 @@ import graphql.schema.GraphQLScalarType;
  * Java platforms.
  * <p>
  * For more info see <a href="https://graphql.org/learn/schema/#scalar-types">https://graphql.org/learn/schema/#scalar-types</a> and
- * more specifically <a href="https://spec.graphql.org/October2021/#sec-Scalars">https://spec.graphql.org/October2021/#sec-Scalars</a>
+ * more specifically <a href="https://spec.graphql.org/draft/#sec-Scalars">https://spec.graphql.org/draft/#sec-Scalars</a>
  */
 @PublicApi
 public class Scalars {
