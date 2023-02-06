@@ -1,5 +1,6 @@
 package graphql.schema.idl
 
+import graphql.TestUtil
 import graphql.language.EnumTypeDefinition
 import graphql.language.InterfaceTypeDefinition
 import graphql.language.ObjectTypeDefinition
@@ -360,5 +361,32 @@ class SchemaParserTest extends Specification {
         def e = thrown(SchemaProblem)
         e.errors[0].message.contains("parsing has been cancelled")
 
+    }
+
+    def "correctly parses schema keyword block"() {
+        // From RFC to clarify spec https://github.com/graphql/graphql-spec/pull/987
+        when:
+        def graphQL = TestUtil.graphQL("""
+            schema {
+              query: Query
+            }
+            type Query {
+              viruses: [Virus!]
+            }
+            type Virus {
+              name: String!
+              knownMutations: [Mutation!]!
+            }
+            type Mutation {
+              name: String!
+              geneSequence: String!
+            }
+        """).build()
+
+        then:
+        graphQL.graphQLSchema.definition.operationTypeDefinitions.size() == 1
+        graphQL.graphQLSchema.definition.operationTypeDefinitions.first().name == "query"
+        graphQL.graphQLSchema.queryType != null
+        graphQL.graphQLSchema.mutationType == null
     }
 }
