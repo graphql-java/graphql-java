@@ -113,6 +113,13 @@ public class ExtensionsBuilder {
      */
     public ExecutionResult setExtensions(ExecutionResult executionResult) {
         assertNotNull(executionResult);
-        return executionResult.transform(builder -> builder.extensions(buildExtensions()));
+        Map<Object, Object> currentExtensions = executionResult.getExtensions();
+        Map<Object, Object> builderExtensions = buildExtensions();
+        // if there was no extensions map before, and we are not adding anything new
+        // then leave it null
+        if (currentExtensions == null && builderExtensions.isEmpty()) {
+            return executionResult;
+        }
+        return executionResult.transform(builder -> builder.extensions(builderExtensions));
     }
 }

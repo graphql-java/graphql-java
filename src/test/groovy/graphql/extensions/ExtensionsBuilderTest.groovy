@@ -193,4 +193,27 @@ class ExtensionsBuilderTest extends Specification {
                 id    : "ID!",
         ]
     }
+
+    def "integration test showing it leaves extensions null if they are empty"() {
+        def sdl = """
+        type Query {
+            name : String!
+            street : String
+            id : ID!
+        }
+        """
+
+        def ei = ExecutionInput.newExecutionInput("query q { name street id }")
+                .root(["name" : "Brad", "id" :1234])
+                .build()
+
+
+        def graphQL = TestUtil.graphQL(sdl, newRuntimeWiring().build()).build()
+
+        when:
+        def er = graphQL.execute(ei)
+        then:
+        er.errors.isEmpty()
+        er.extensions == null
+    }
 }
