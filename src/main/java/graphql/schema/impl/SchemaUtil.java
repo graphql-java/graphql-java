@@ -100,6 +100,7 @@ public class SchemaUtil {
         final Map<String, GraphQLNamedType> typeMap = schema.getTypeMap();
         List<GraphQLSchemaElement> roots = new ArrayList<>(typeMap.values());
         roots.addAll(schema.getDirectives());
+        roots.addAll(schema.getSchemaAppliedDirectives());
         SchemaTraverser schemaTraverser = new SchemaTraverser(schemaElement -> schemaElement.getChildrenWithTypeReferences().getChildrenAsList());
         schemaTraverser.depthFirst(new GraphQLTypeResolvingVisitor(typeMap), roots);
     }
