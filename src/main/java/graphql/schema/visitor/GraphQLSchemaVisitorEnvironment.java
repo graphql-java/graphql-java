@@ -2,7 +2,7 @@ package graphql.schema.visitor;
 
 import graphql.schema.GraphQLCodeRegistry;
 
-public interface SmartTypeVisitorEnvironment {
+public interface GraphQLSchemaVisitorEnvironment {
 
     GraphQLCodeRegistry.Builder getCodeRegistry();
 }

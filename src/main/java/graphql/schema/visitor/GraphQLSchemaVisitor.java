@@ -8,21 +8,25 @@ import graphql.schema.GraphQLTypeVisitor;
 import graphql.util.TraversalControl;
 
 /**
- * I called it smart because I want to offer more "smarts" above GraphQLTypeVisitor and its "context" uber object
+ * This visitor interface offers more "smarts" above {@link GraphQLTypeVisitor} and aims to be easier to use
+ * with more type safe helpers.
  * <p>
- * You would use it by doing `new GraphQLSmartTypeVisitor() { ...}.toTypeVisitor()`
+ * You would use it places that need a {@link GraphQLTypeVisitor} by doing `new GraphQLSchemaVisitor() { ...}.toTypeVisitor()`
  */
 @PublicSpi
-public interface GraphQLSmartTypeVisitor {
+public interface GraphQLSchemaVisitor {
 
-    default TraversalControl visitGraphQLObjectType(GraphQLObjectType objectType, SmartTypeVisitorEnvironment environment) {
+    interface ObjectVisitorEnvironment extends GraphQLSchemaVisitorEnvironment {
+    }
+
+    default TraversalControl visitGraphQLObjectType(GraphQLObjectType objectType, ObjectVisitorEnvironment environment) {
         return TraversalControl.CONTINUE;
     }
 
     /**
      * This is a class specific for visiting {@link GraphQLFieldDefinition}s
      */
-    interface GraphQLFieldDefinitionVisitorEnvironment extends SmartTypeVisitorEnvironment {
+    interface FieldVisitorEnvironment extends GraphQLSchemaVisitorEnvironment {
 
         GraphQLFieldsContainer getFieldsContainer();
 
@@ -36,7 +40,7 @@ public interface GraphQLSmartTypeVisitor {
      *
      * @return control
      */
-    default TraversalControl visitGraphQLFieldDefinition(GraphQLFieldDefinition fieldDefinition, GraphQLFieldDefinitionVisitorEnvironment environment) {
+    default TraversalControl visitGraphQLFieldDefinition(GraphQLFieldDefinition fieldDefinition, FieldVisitorEnvironment environment) {
         return TraversalControl.CONTINUE;
     }
 
@@ -47,6 +51,6 @@ public interface GraphQLSmartTypeVisitor {
      * @return a type visitor
      */
     default GraphQLTypeVisitor toTypeVisitor() {
-        return new GraphQLSmartTypeVisitorAdapter(this);
+        return new GraphQLSchemaVisitorAdapter(this);
     }
 }

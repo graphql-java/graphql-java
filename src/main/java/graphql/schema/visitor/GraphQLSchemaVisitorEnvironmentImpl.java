@@ -6,11 +6,11 @@ import graphql.schema.GraphQLSchemaElement;
 import graphql.util.TraverserContext;
 
 @Internal
-class SmartTypeVisitorEnvironmentImpl implements SmartTypeVisitorEnvironment {
+class GraphQLSchemaVisitorEnvironmentImpl implements GraphQLSchemaVisitorEnvironment {
 
     protected final TraverserContext<GraphQLSchemaElement> context;
 
-    SmartTypeVisitorEnvironmentImpl(TraverserContext<GraphQLSchemaElement> context) {
+    GraphQLSchemaVisitorEnvironmentImpl(TraverserContext<GraphQLSchemaElement> context) {
         this.context = context;
     }
 
