@@ -1,6 +1,5 @@
 package graphql.schema.diff;
 
-import graphql.DeprecatedAt;
 import graphql.PublicApi;
 import graphql.language.TypeKind;
 
