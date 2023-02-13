@@ -4,8 +4,8 @@ import graphql.ExecutionResult;
 import graphql.Internal;
 import graphql.PublicSpi;
 import graphql.execution.FieldValueInfo;
+import org.jetbrains.annotations.NotNull;
 
-import javax.annotation.Nonnull;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
@@ -27,7 +27,7 @@ public interface ExecutionStrategyInstrumentationContext extends Instrumentation
      *
      * @return a non null {@link InstrumentationContext} that maybe a no-op
      */
-    @Nonnull
+    @NotNull
     @Internal
     static ExecutionStrategyInstrumentationContext nonNullCtx(ExecutionStrategyInstrumentationContext nullableContext) {
         return nullableContext == null ? NOOP : nullableContext;
