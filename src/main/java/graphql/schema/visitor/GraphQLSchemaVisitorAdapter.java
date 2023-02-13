@@ -21,24 +21,29 @@ class GraphQLSchemaVisitorAdapter extends GraphQLTypeVisitorStub {
         this.smartTypeVisitor = smartTypeVisitor;
     }
 
-    /* ------------------------------
-     * GraphQLObjectType
-     * ------------------------------  */
-    static class ObjectEnv extends GraphQLSchemaVisitorEnvironmentImpl implements ObjectVisitorEnvironment {
-        public ObjectEnv(TraverserContext<GraphQLSchemaElement> context) {
-            super(context);
-        }
-    }
-
     @Override
     public TraversalControl visitGraphQLObjectType(GraphQLObjectType node, TraverserContext<GraphQLSchemaElement> context) {
         return smartTypeVisitor.visitGraphQLObjectType(node, new ObjectEnv(context));
     }
 
+    @Override
+    public TraversalControl visitGraphQLFieldDefinition(GraphQLFieldDefinition node, TraverserContext<GraphQLSchemaElement> context) {
+        return smartTypeVisitor.visitGraphQLFieldDefinition(node, new FieldEnv(context));
+    }
+
+    /* ------------------------------
+     * GraphQLObjectType
+     * ------------------------------  */
+    static class ObjectEnv extends GraphQLSchemaVisitorEnvironmentImpl<GraphQLObjectType> implements ObjectVisitorEnvironment {
+        public ObjectEnv(TraverserContext<GraphQLSchemaElement> context) {
+            super(context);
+        }
+    }
+
     /* ------------------------------
      * GraphQLFieldDefinition
      * ------------------------------  */
-    static class FieldEnv extends GraphQLSchemaVisitorEnvironmentImpl implements FieldVisitorEnvironment {
+    static class FieldEnv extends GraphQLSchemaVisitorEnvironmentImpl<GraphQLFieldDefinition> implements FieldVisitorEnvironment {
 
         public FieldEnv(TraverserContext<GraphQLSchemaElement> context) {
             super(context);
@@ -48,10 +53,5 @@ class GraphQLSchemaVisitorAdapter extends GraphQLTypeVisitorStub {
         public GraphQLFieldsContainer getFieldsContainer() {
             return (GraphQLFieldsContainer) context.getParentNode();
         }
-    }
-
-    @Override
-    public TraversalControl visitGraphQLFieldDefinition(GraphQLFieldDefinition node, TraverserContext<GraphQLSchemaElement> context) {
-        return smartTypeVisitor.visitGraphQLFieldDefinition(node, new FieldEnv(context));
     }
 }

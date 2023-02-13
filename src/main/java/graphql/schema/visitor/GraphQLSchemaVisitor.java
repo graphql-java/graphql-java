@@ -16,20 +16,8 @@ import graphql.util.TraversalControl;
 @PublicSpi
 public interface GraphQLSchemaVisitor {
 
-    interface ObjectVisitorEnvironment extends GraphQLSchemaVisitorEnvironment {
-    }
-
     default TraversalControl visitGraphQLObjectType(GraphQLObjectType objectType, ObjectVisitorEnvironment environment) {
         return TraversalControl.CONTINUE;
-    }
-
-    /**
-     * This is a class specific for visiting {@link GraphQLFieldDefinition}s
-     */
-    interface FieldVisitorEnvironment extends GraphQLSchemaVisitorEnvironment {
-
-        GraphQLFieldsContainer getFieldsContainer();
-
     }
 
     /**
@@ -44,7 +32,6 @@ public interface GraphQLSchemaVisitor {
         return TraversalControl.CONTINUE;
     }
 
-
     /**
      * This allows you to turn this smarter visitr into the base {@link graphql.schema.GraphQLTypeVisitor}
      *
@@ -53,4 +40,17 @@ public interface GraphQLSchemaVisitor {
     default GraphQLTypeVisitor toTypeVisitor() {
         return new GraphQLSchemaVisitorAdapter(this);
     }
+
+    interface ObjectVisitorEnvironment extends GraphQLSchemaVisitorEnvironment<GraphQLObjectType> {
+    }
+
+    /**
+     * This is a class specific for visiting {@link GraphQLFieldDefinition}s
+     */
+    interface FieldVisitorEnvironment extends GraphQLSchemaVisitorEnvironment<GraphQLFieldDefinition> {
+
+        GraphQLFieldsContainer getFieldsContainer();
+
+    }
+
 }
