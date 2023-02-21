@@ -160,20 +160,27 @@ Import-Package: !com.google.*,!org.checkerframework.*,!javax.annotation.*,!graph
 }
 
 
-task removeNotNeededGuava(type: Zip) {
+task extractWithoutGuava(type: Copy) {
     from({ zipTree({ "build/libs/graphql-java-${project.version}.jar" }) }) {
         exclude('/com/**')
     }
+    into layout.buildDirectory.dir("extract")
+}
+
+task buildNewJar(type: Jar) {
+    from layout.buildDirectory.dir("extract")
     archiveFileName = "graphql-java-tmp.jar"
     destinationDirectory = file("${project.buildDir}/libs")
+    manifest {
+        from file("build/extract/META-INF/MANIFEST.MF")
+    }
     doLast {
         delete("build/libs/graphql-java-${project.version}.jar")
         file("build/libs/graphql-java-tmp.jar").renameTo(file("build/libs/graphql-java-${project.version}.jar"))
     }
 }
 
-
-shadowJar.finalizedBy removeNotNeededGuava
+shadowJar.finalizedBy extractWithoutGuava, buildNewJar
 
 
 task testng(type: Test) {
