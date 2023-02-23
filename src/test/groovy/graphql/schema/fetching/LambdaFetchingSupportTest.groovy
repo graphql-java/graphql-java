@@ -1,5 +1,9 @@
 package graphql.schema.fetching
 
+import graphql.Scalars
+import graphql.schema.GraphQLFieldDefinition
+import graphql.schema.PropertyDataFetcher
+import graphql.schema.fetching.downone.DownOneCustomClassLoader
 import spock.lang.Specification
 
 class LambdaFetchingSupportTest extends Specification {
@@ -140,5 +144,48 @@ class LambdaFetchingSupportTest extends Specification {
         getter = LambdaFetchingSupport.createGetter(Pojo.class, "packageLevelMethod")
         then:
         !getter.isPresent()
+    }
+
+    GraphQLFieldDefinition fld(String fldName) {
+        return GraphQLFieldDefinition.newFieldDefinition().name(fldName).type(Scalars.GraphQLString).build()
+    }
+
+    def "different class loaders induce certain behaviours"() {
+        def downOneCustomClassLoader = new DownOneCustomClassLoader()
+        def customClass = downOneCustomClassLoader.loadClass("graphql.schema.fetching.CustomClassLoadedPojo")
+        def targetObject = customClass.getDeclaredConstructor().newInstance()
+
+        // show that the graphql-java classes cant access this custom loaded class
+        when:
+        LambdaFetchingSupport.class.getClassLoader().loadClass("graphql.schema.fetching.CustomClassLoadedPojo")
+        then:
+        thrown(ClassNotFoundException)
+
+        // show that reflection works
+        when:
+        def ageMethod = targetObject.getClass().getMethod("getAge")
+        def reflectedValue = ageMethod.invoke(targetObject)
+        then:
+        reflectedValue == 42
+
+        // without MethodHandles.privateLookupIn this will fail crossing class loaders in Java 8
+        // if we change to privateLookupIn - then this will start working and this test will need to be changed
+        when:
+        def getter = LambdaFetchingSupport.createGetter(customClass, "age")
+        then:
+        getter.isPresent()
+        try {
+            getter.get().apply(targetObject)
+            assert "We expect this to fail on Java 8 without access to MethodHandles.privateLookupIn"
+        } catch (Throwable ignored) {
+        }
+
+        // show that a DF can still be used access this because of the reflection fallback
+        // in the future it will work via MethodHandles.privateLookupIn
+        when:
+        def ageDF = PropertyDataFetcher.fetching("age")
+        def value = ageDF.get(fld("age"), targetObject, { -> null })
+        then:
+        value == 42
     }
 }

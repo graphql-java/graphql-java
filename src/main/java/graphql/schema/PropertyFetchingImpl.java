@@ -110,11 +110,11 @@ public class PropertyFetchingImpl {
         if (getterOpt.isPresent()) {
             try {
                 Function<Object, Object> getter = getterOpt.get();
-                cachedFunction = new CachedLambdaFunction(getter);
                 Object value = getter.apply(object);
+                cachedFunction = new CachedLambdaFunction(getter);
                 LAMBDA_CACHE.putIfAbsent(cacheKey, cachedFunction);
                 return value;
-            } catch (LinkageError linkageError) {
+            } catch (LinkageError | ClassCastException ignored) {
                 //
                 // if we get a linkage error then it maybe that class loader challenges
                 // are preventing the Meta Lambda from working.  So let's continue with
