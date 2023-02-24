@@ -39,19 +39,17 @@ public class LambdaFetchingSupport {
     public static Optional<Function<Object, Object>> createGetter(Class<?> sourceClass, String propertyName) {
         Method candidateMethod = getCandidateMethod(sourceClass, propertyName);
         if (candidateMethod != null) {
-            if (canAccessTargetClassFromHere(sourceClass)) {
-                try {
-                    Function<Object, Object> getterFunction = mkCallFunction(sourceClass, candidateMethod.getName(), candidateMethod.getReturnType());
-                    return Optional.of(getterFunction);
-                } catch (Throwable ignore) {
-                    //
-                    // if we cant make a dynamic lambda here, then we give up and let the old property fetching code do its thing
-                    // this can happen on runtimes such as GraalVM native where LambdaMetafactory is not supported
-                    // and will throw something like :
-                    //
-                    //    com.oracle.svm.core.jdk.UnsupportedFeatureError: Defining hidden classes at runtime is not supported.
-                    //        at org.graalvm.nativeimage.builder/com.oracle.svm.core.util.VMError.unsupportedFeature(VMError.java:89)
-                }
+            try {
+                Function<Object, Object> getterFunction = mkCallFunction(sourceClass, candidateMethod.getName(), candidateMethod.getReturnType());
+                return Optional.of(getterFunction);
+            } catch (Throwable ignore) {
+                //
+                // if we cant make a dynamic lambda here, then we give up and let the old property fetching code do its thing
+                // this can happen on runtimes such as GraalVM native where LambdaMetafactory is not supported
+                // and will throw something like :
+                //
+                //    com.oracle.svm.core.jdk.UnsupportedFeatureError: Defining hidden classes at runtime is not supported.
+                //        at org.graalvm.nativeimage.builder/com.oracle.svm.core.util.VMError.unsupportedFeature(VMError.java:89)
             }
         }
         return Optional.empty();
@@ -212,17 +210,8 @@ public class LambdaFetchingSupport {
         // This is a Java 9 approach to method look up allowing private access
         // which we don't want to use yet until we get to Java 11
         //
-        // lookupMe = MethodHandles.privateLookupIn(targetClass, lookupMe);
+        //lookupMe = MethodHandles.privateLookupIn(targetClass, lookupMe);
         return lookupMe;
-    }
-
-    private static boolean canAccessTargetClassFromHere(Class<?> targetClass) {
-        try {
-            LambdaFetchingSupport.class.getClassLoader().loadClass(targetClass.getName());
-            return true;
-        } catch (ClassNotFoundException e) {
-            return false;
-        }
     }
 
 }
