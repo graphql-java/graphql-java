@@ -12,9 +12,12 @@ import graphql.schema.GraphQLInputObjectField
 import graphql.schema.GraphQLInputObjectType
 import graphql.schema.GraphQLInterfaceType
 import graphql.schema.GraphQLObjectType
+import graphql.schema.GraphQLOutputType
 import graphql.schema.GraphQLScalarType
+import graphql.schema.GraphQLSchema
 import graphql.schema.GraphQLSchemaElement
 import graphql.schema.GraphQLUnionType
+import graphql.schema.SchemaTransformer
 import graphql.schema.SchemaTraverser
 import graphql.util.TraversalControl
 import spock.lang.Specification
@@ -30,7 +33,7 @@ class GraphQLSchemaVisitorTest extends Specification {
 
         @Override
         TraversalControl visitSchemaElement(GraphQLSchemaElement schemaElement, SchemaElementVisitorEnvironment environment) {
-            schema = environment.getSchema()
+            this.schema = environment.getSchema()
             return environment.ok()
         }
 
@@ -161,11 +164,11 @@ class GraphQLSchemaVisitorTest extends Specification {
         def visitor = new CapturingSchemaVisitor()
 
         when:
-        new SchemaTraverser().depthFirstFullSchema(visitor.toTypeVisitor(), schema)
+        new SchemaTraverser().depthFirstFullSchema(visitor.toTypeVisitor(), this.schema)
 
         then:
 
-        visitor.schema == schema
+        visitor.schema == this.schema
         visitor.types["Query"] instanceof GraphQLObjectType
 
         visitor.leafs["directive"] instanceof GraphQLDirective
@@ -193,5 +196,43 @@ class GraphQLSchemaVisitorTest extends Specification {
 
         visitor.types["UnionTypeA"] instanceof GraphQLUnionType
 
+    }
+
+    def "can transform schemas via this pattern"() {
+        def sdl = """
+               type Query {
+                    f : xfoo
+               }
+               
+               type xfoo {
+                    bar : xbar
+               }
+                
+               type xbar {
+                 baz : String
+               } 
+                    
+        """
+
+        def schema = TestUtil.schema(sdl)
+
+        def schemaVisitor = new GraphQLSchemaVisitor() {
+
+            @Override
+            TraversalControl visitObjectType(GraphQLObjectType objectType, GraphQLSchemaVisitor.ObjectVisitorEnvironment environment) {
+                if (objectType.name.startsWith("x")) {
+                    def newName = objectType.name.replaceFirst("x", "").capitalize()
+                    def newType = objectType.transform { it.name(newName) }
+                    return environment.changeNode(newType)
+                }
+                return environment.ok();
+            }
+        }
+
+        when:
+        def newSchema = new SchemaTransformer().transform(schema, schemaVisitor.toTypeVisitor())
+        then:
+        newSchema.getType("Foo") instanceof GraphQLObjectType
+        newSchema.getType("Bar") instanceof GraphQLObjectType
     }
 }
