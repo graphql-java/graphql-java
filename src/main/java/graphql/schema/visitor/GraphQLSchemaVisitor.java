@@ -1,10 +1,28 @@
 package graphql.schema.visitor;
 
 import graphql.PublicSpi;
+import graphql.schema.GraphQLAppliedDirective;
+import graphql.schema.GraphQLAppliedDirectiveArgument;
+import graphql.schema.GraphQLArgument;
+import graphql.schema.GraphQLDirective;
+import graphql.schema.GraphQLDirectiveContainer;
+import graphql.schema.GraphQLEnumType;
+import graphql.schema.GraphQLEnumValueDefinition;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLFieldsContainer;
+import graphql.schema.GraphQLInputObjectField;
+import graphql.schema.GraphQLInputObjectType;
+import graphql.schema.GraphQLInputType;
+import graphql.schema.GraphQLInterfaceType;
+import graphql.schema.GraphQLNamedInputType;
+import graphql.schema.GraphQLNamedOutputType;
+import graphql.schema.GraphQLNamedSchemaElement;
 import graphql.schema.GraphQLObjectType;
+import graphql.schema.GraphQLOutputType;
+import graphql.schema.GraphQLScalarType;
+import graphql.schema.GraphQLSchemaElement;
 import graphql.schema.GraphQLTypeVisitor;
+import graphql.schema.GraphQLUnionType;
 import graphql.util.TraversalControl;
 
 /**
@@ -16,24 +34,290 @@ import graphql.util.TraversalControl;
 @PublicSpi
 public interface GraphQLSchemaVisitor {
 
-    default TraversalControl visitGraphQLObjectType(GraphQLObjectType objectType, ObjectVisitorEnvironment environment) {
-        return TraversalControl.CONTINUE;
-    }
-
     /**
-     * Each method has a specific env say or some do - TBD
-     *
-     * @param fieldDefinition the field
-     * @param environment     the specific env
-     *
-     * @return control
+     * A {@link GraphQLSchemaVisitorEnvironment} environment specific to {@link GraphQLAppliedDirective}
      */
-    default TraversalControl visitGraphQLFieldDefinition(GraphQLFieldDefinition fieldDefinition, FieldVisitorEnvironment environment) {
+    interface AppliedDirectiveVisitorEnvironment extends GraphQLSchemaVisitorEnvironment<GraphQLAppliedDirective> {
+        GraphQLDirectiveContainer getContainer();
+    }
+
+    /**
+     * Called when visiting a GraphQLAppliedDirective in the schema
+     *
+     * @param appliedDirective the schema element being visited
+     * @param environment      the visiting environment
+     *
+     * @return a control value which is typically {@link TraversalControl#CONTINUE}
+     */
+    default TraversalControl visitAppliedDirective(GraphQLAppliedDirective appliedDirective, AppliedDirectiveVisitorEnvironment environment) {
         return TraversalControl.CONTINUE;
     }
 
     /**
-     * This allows you to turn this smarter visitr into the base {@link graphql.schema.GraphQLTypeVisitor}
+     * A {@link GraphQLSchemaVisitorEnvironment} environment specific to {@link GraphQLAppliedDirectiveArgument}
+     */
+    interface AppliedDirectiveArgumentVisitorEnvironment extends GraphQLSchemaVisitorEnvironment<GraphQLAppliedDirectiveArgument> {
+
+        GraphQLAppliedDirective getContainer();
+
+        /**
+         * @return this elements type that has been unwrapped of {@link graphql.schema.GraphQLNonNull} and {@link graphql.schema.GraphQLList}
+         */
+        GraphQLNamedInputType getUnwrappedType();
+    }
+
+    /**
+     * Called when visiting a {@link GraphQLAppliedDirectiveArgument} in the schema
+     *
+     * @param appliedDirectiveArgument the schema element being visited
+     * @param environment              the visiting environment
+     *
+     * @return a control value which is typically {@link TraversalControl#CONTINUE}
+     */
+    default TraversalControl visitAppliedDirectiveArgument(GraphQLAppliedDirectiveArgument appliedDirectiveArgument, AppliedDirectiveArgumentVisitorEnvironment environment) {
+        return TraversalControl.CONTINUE;
+    }
+
+    /**
+     * A {@link GraphQLSchemaVisitorEnvironment} environment specific to {@link GraphQLArgument}
+     */
+    interface ArgumentVisitorEnvironment extends GraphQLSchemaVisitorEnvironment<GraphQLArgument> {
+        /**
+         * @return either a {@link GraphQLFieldDefinition} or a {@link graphql.schema.GraphQLDirective}
+         */
+        GraphQLNamedSchemaElement getContainer();
+
+        /**
+         * @return this elements type that has been unwrapped of {@link graphql.schema.GraphQLNonNull} and {@link graphql.schema.GraphQLList}
+         */
+        GraphQLNamedInputType getUnwrappedType();
+    }
+
+    /**
+     * Called when visiting a {@link GraphQLArgument} in the schema
+     *
+     * @param argument    the schema element being visited
+     * @param environment the visiting environment
+     *
+     * @return a control value which is typically {@link TraversalControl#CONTINUE}
+     */
+    default TraversalControl visitArgument(GraphQLArgument argument, ArgumentVisitorEnvironment environment) {
+        return TraversalControl.CONTINUE;
+    }
+
+    interface DirectiveVisitorEnvironment extends GraphQLSchemaVisitorEnvironment<GraphQLDirective> {
+    }
+
+    /**
+     * Called when visiting a {@link GraphQLArgument} in the schema
+     *
+     * @param directive    the schema element being visited
+     * @param environment the visiting environment
+     *
+     * @return a control value which is typically {@link TraversalControl#CONTINUE}
+     */
+    default TraversalControl visitDirective(GraphQLDirective directive, DirectiveVisitorEnvironment environment) {
+        return TraversalControl.CONTINUE;
+    }
+    /**
+     * A {@link GraphQLSchemaVisitorEnvironment} environment specific to {@link GraphQLEnumType}
+     */
+    interface EnumTypeVisitorEnvironment extends GraphQLSchemaVisitorEnvironment<GraphQLEnumType> {
+    }
+
+    /**
+     * Called when visiting a {@link GraphQLEnumType} in the schema
+     *
+     * @param enumType    the schema element being visited
+     * @param environment the visiting environment
+     *
+     * @return a control value which is typically {@link TraversalControl#CONTINUE}
+     */
+    default TraversalControl visitEnumType(GraphQLEnumType enumType, EnumTypeVisitorEnvironment environment) {
+        return TraversalControl.CONTINUE;
+    }
+
+    /**
+     * A {@link GraphQLSchemaVisitorEnvironment} environment specific to {@link GraphQLEnumValueDefinition}
+     */
+    interface EnumValueDefinitionVisitorEnvironment extends GraphQLSchemaVisitorEnvironment<GraphQLEnumValueDefinition> {
+        GraphQLEnumType getContainer();
+    }
+
+    /**
+     * Called when visiting a {@link GraphQLEnumValueDefinition} in the schema
+     *
+     * @param enumValueDefinition the schema element being visited
+     * @param environment         the visiting environment
+     *
+     * @return a control value which is typically {@link TraversalControl#CONTINUE}
+     */
+    default TraversalControl visitEnumValueDefinition(GraphQLEnumValueDefinition enumValueDefinition, EnumValueDefinitionVisitorEnvironment environment) {
+        return TraversalControl.CONTINUE;
+    }
+
+
+    /**
+     * A {@link GraphQLSchemaVisitorEnvironment} environment specific to {@link GraphQLFieldDefinition}
+     */
+    interface FieldDefinitionVisitorEnvironment extends GraphQLSchemaVisitorEnvironment<GraphQLFieldDefinition> {
+        GraphQLFieldsContainer getContainer();
+
+        /**
+         * @return this elements type that has been unwrapped of {@link graphql.schema.GraphQLNonNull} and {@link graphql.schema.GraphQLList}
+         */
+        GraphQLNamedOutputType getUnwrappedType();
+    }
+
+    /**
+     * Called when visiting a {@link GraphQLFieldDefinition} in the schema
+     *
+     * @param fieldDefinition the schema element being visited
+     * @param environment     the visiting environment
+     *
+     * @return a control value which is typically {@link TraversalControl#CONTINUE}
+     */
+    default TraversalControl visitFieldDefinition(GraphQLFieldDefinition fieldDefinition, FieldDefinitionVisitorEnvironment environment) {
+        return TraversalControl.CONTINUE;
+    }
+
+    /**
+     * A {@link GraphQLSchemaVisitorEnvironment} environment specific to {@link GraphQLInputObjectField}
+     */
+    interface InputObjectFieldVisitorEnvironment extends GraphQLSchemaVisitorEnvironment<GraphQLInputObjectField> {
+        GraphQLInputObjectType getContainer();
+
+        /**
+         * @return this elements type that has been unwrapped of {@link graphql.schema.GraphQLNonNull} and {@link graphql.schema.GraphQLList}
+         */
+        GraphQLNamedInputType getUnwrappedType();
+    }
+
+    /**
+     * Called when visiting a {@link GraphQLInputObjectField} in the schema
+     *
+     * @param inputObjectField the schema element being visited
+     * @param environment      the visiting environment
+     *
+     * @return a control value which is typically {@link TraversalControl#CONTINUE}
+     */
+    default TraversalControl visitInputObjectField(GraphQLInputObjectField inputObjectField, InputObjectFieldVisitorEnvironment environment) {
+        return TraversalControl.CONTINUE;
+    }
+
+    /**
+     * A {@link GraphQLSchemaVisitorEnvironment} environment specific to {@link GraphQLInputObjectType}
+     */
+    interface InputObjectTypeVisitorEnvironment extends GraphQLSchemaVisitorEnvironment<GraphQLInputObjectType> {
+    }
+
+    /**
+     * Called when visiting a {@link GraphQLInputObjectType} in the schema
+     *
+     * @param inputObjectType the schema element being visited
+     * @param environment     the visiting environment
+     *
+     * @return a control value which is typically {@link TraversalControl#CONTINUE}
+     */
+    default TraversalControl visitInputObjectType(GraphQLInputObjectType inputObjectType, InputObjectTypeVisitorEnvironment environment) {
+        return TraversalControl.CONTINUE;
+    }
+
+    /**
+     * A {@link GraphQLSchemaVisitorEnvironment} environment specific to {@link GraphQLInterfaceType}
+     */
+    interface InterfaceTypeVisitorEnvironment extends GraphQLSchemaVisitorEnvironment<GraphQLInterfaceType> {
+    }
+
+    /**
+     * Called when visiting a {@link GraphQLInterfaceType} in the schema
+     *
+     * @param interfaceType the schema element being visited
+     * @param environment   the visiting environment
+     *
+     * @return a control value which is typically {@link TraversalControl#CONTINUE}
+     */
+    default TraversalControl visitInterfaceType(GraphQLInterfaceType interfaceType, InterfaceTypeVisitorEnvironment environment) {
+        return TraversalControl.CONTINUE;
+    }
+
+
+    /**
+     * A {@link GraphQLSchemaVisitorEnvironment} environment specific to {@link GraphQLObjectType}
+     */
+    interface ObjectVisitorEnvironment extends GraphQLSchemaVisitorEnvironment<GraphQLObjectType> {
+    }
+
+    /**
+     * Called when visiting a {@link GraphQLObjectType} in the schema
+     *
+     * @param objectType  the schema element being visited
+     * @param environment the visiting environment
+     *
+     * @return a control value which is typically {@link TraversalControl#CONTINUE}
+     */
+    default TraversalControl visitObjectType(GraphQLObjectType objectType, ObjectVisitorEnvironment environment) {
+        return TraversalControl.CONTINUE;
+    }
+
+    /**
+     * A {@link GraphQLSchemaVisitorEnvironment} environment specific to {@link GraphQLScalarType}
+     */
+    interface ScalarTypeVisitorEnvironment extends GraphQLSchemaVisitorEnvironment<GraphQLScalarType> {
+    }
+
+    /**
+     * Called when visiting a {@link GraphQLScalarType} in the schema
+     *
+     * @param scalarType  the schema element being visited
+     * @param environment the visiting environment
+     *
+     * @return a control value which is typically {@link TraversalControl#CONTINUE}
+     */
+    default TraversalControl visitScalarType(GraphQLScalarType scalarType, ScalarTypeVisitorEnvironment environment) {
+        return TraversalControl.CONTINUE;
+    }
+
+    /**
+     * A {@link GraphQLSchemaVisitorEnvironment} environment specific to {@link GraphQLUnionType}
+     */
+    interface UnionTypeVisitorEnvironment extends GraphQLSchemaVisitorEnvironment<GraphQLUnionType> {
+    }
+
+    /**
+     * Called when visiting a {@link GraphQLUnionType} in the schema
+     *
+     * @param unionType   the schema element being visited
+     * @param environment the visiting environment
+     *
+     * @return a control value which is typically {@link TraversalControl#CONTINUE}
+     */
+    default TraversalControl visitUnionType(GraphQLUnionType unionType, UnionTypeVisitorEnvironment environment) {
+        return TraversalControl.CONTINUE;
+    }
+
+
+    /**
+     * A {@link GraphQLSchemaVisitorEnvironment} environment specific to {@link GraphQLSchemaElement}
+     */
+    interface SchemaElementVisitorEnvironment extends GraphQLSchemaVisitorEnvironment<GraphQLSchemaElement> {
+    }
+
+    /**
+     * Called when visiting any {@link GraphQLSchemaElement} in the schema.  Since every element in the schema
+     * is a schema element, this visitor method will be called back for every element in the schema
+     *
+     * @param schemaElement the schema element being visited
+     * @param environment   the visiting environment
+     *
+     * @return a control value which is typically {@link TraversalControl#CONTINUE}
+     */
+    default TraversalControl visitSchemaElement(GraphQLSchemaElement schemaElement, SchemaElementVisitorEnvironment environment) {
+        return TraversalControl.CONTINUE;
+    }
+
+    /**
+     * This allows you to turn this smarter visitor into the base {@link graphql.schema.GraphQLTypeVisitor} interface
      *
      * @return a type visitor
      */
@@ -41,16 +325,5 @@ public interface GraphQLSchemaVisitor {
         return new GraphQLSchemaVisitorAdapter(this);
     }
 
-    interface ObjectVisitorEnvironment extends GraphQLSchemaVisitorEnvironment<GraphQLObjectType> {
-    }
-
-    /**
-     * This is a class specific for visiting {@link GraphQLFieldDefinition}s
-     */
-    interface FieldVisitorEnvironment extends GraphQLSchemaVisitorEnvironment<GraphQLFieldDefinition> {
-
-        GraphQLFieldsContainer getFieldsContainer();
-
-    }
 
 }

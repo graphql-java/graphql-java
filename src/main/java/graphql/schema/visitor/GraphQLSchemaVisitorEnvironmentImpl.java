@@ -21,6 +21,11 @@ class GraphQLSchemaVisitorEnvironmentImpl<T extends GraphQLSchemaElement> implem
         return context.getVarFromParents(GraphQLCodeRegistry.Builder.class);
     }
 
+    protected T node() {
+        //noinspection unchecked
+        return (T) context.thisNode();
+    }
+
     @Override
     public TraversalControl ok() {
         return TraversalControl.CONTINUE;

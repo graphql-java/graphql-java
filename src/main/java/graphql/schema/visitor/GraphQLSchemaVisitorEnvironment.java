@@ -6,6 +6,11 @@ import graphql.util.TraversalControl;
 
 public interface GraphQLSchemaVisitorEnvironment<T extends GraphQLSchemaElement> {
 
+    /**
+     * This will return a value if the visitation call was via {@link graphql.schema.SchemaTransformer}
+     *
+     * @return a code registry builder
+     */
     GraphQLCodeRegistry.Builder getCodeRegistry();
 
 
