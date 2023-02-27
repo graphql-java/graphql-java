@@ -1,10 +1,21 @@
 package graphql.schema.visitor;
 
 import graphql.schema.GraphQLCodeRegistry;
+import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLSchemaElement;
 import graphql.util.TraversalControl;
 
 public interface GraphQLSchemaVisitorEnvironment<T extends GraphQLSchemaElement> {
+
+    /**
+     * @return the element that is being visited
+     */
+    T getElement();
+
+    /**
+     * @return the schema that is being visited upon
+     */
+    GraphQLSchema getSchema();
 
     /**
      * This will return a value if the visitation call was via {@link graphql.schema.SchemaTransformer}

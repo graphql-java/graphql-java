@@ -13,6 +13,7 @@ import graphql.schema.GraphQLInputObjectType
 import graphql.schema.GraphQLInterfaceType
 import graphql.schema.GraphQLObjectType
 import graphql.schema.GraphQLScalarType
+import graphql.schema.GraphQLSchemaElement
 import graphql.schema.GraphQLUnionType
 import graphql.schema.SchemaTraverser
 import graphql.util.TraversalControl
@@ -25,6 +26,13 @@ class GraphQLSchemaVisitorTest extends Specification {
 
         def types = [:]
         def leafs = [:]
+        def schema
+
+        @Override
+        TraversalControl visitSchemaElement(GraphQLSchemaElement schemaElement, SchemaElementVisitorEnvironment environment) {
+            schema = environment.getSchema()
+            return environment.ok()
+        }
 
         @Override
         TraversalControl visitFieldDefinition(GraphQLFieldDefinition fieldDefinition, FieldDefinitionVisitorEnvironment environment) {
@@ -156,6 +164,8 @@ class GraphQLSchemaVisitorTest extends Specification {
         new SchemaTraverser().depthFirstFullSchema(visitor.toTypeVisitor(), schema)
 
         then:
+
+        visitor.schema == schema
         visitor.types["Query"] instanceof GraphQLObjectType
 
         visitor.leafs["directive"] instanceof GraphQLDirective

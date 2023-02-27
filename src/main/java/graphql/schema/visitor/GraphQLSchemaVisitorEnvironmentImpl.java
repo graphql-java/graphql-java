@@ -2,6 +2,7 @@ package graphql.schema.visitor;
 
 import graphql.Internal;
 import graphql.schema.GraphQLCodeRegistry;
+import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLSchemaElement;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
@@ -17,11 +18,17 @@ class GraphQLSchemaVisitorEnvironmentImpl<T extends GraphQLSchemaElement> implem
     }
 
     @Override
+    public GraphQLSchema getSchema() {
+        return context.getVarFromParents(GraphQLSchema.class);
+    }
+
+    @Override
     public GraphQLCodeRegistry.Builder getCodeRegistry() {
         return context.getVarFromParents(GraphQLCodeRegistry.Builder.class);
     }
 
-    protected T node() {
+    @Override
+    public T getElement() {
         //noinspection unchecked
         return (T) context.thisNode();
     }

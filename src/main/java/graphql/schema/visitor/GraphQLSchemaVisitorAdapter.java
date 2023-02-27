@@ -130,7 +130,7 @@ class GraphQLSchemaVisitorAdapter extends GraphQLTypeVisitorStub {
 
         @Override
         public GraphQLNamedInputType getUnwrappedType() {
-            return GraphQLTypeUtil.unwrapAllAs(node().getType());
+            return GraphQLTypeUtil.unwrapAllAs(getElement().getType());
         }
     }
 
@@ -157,7 +157,7 @@ class GraphQLSchemaVisitorAdapter extends GraphQLTypeVisitorStub {
 
         @Override
         public GraphQLNamedInputType getUnwrappedType() {
-            return GraphQLTypeUtil.unwrapAllAs(node().getType());
+            return GraphQLTypeUtil.unwrapAllAs(getElement().getType());
         }
     }
 
@@ -202,7 +202,7 @@ class GraphQLSchemaVisitorAdapter extends GraphQLTypeVisitorStub {
 
         @Override
         public GraphQLNamedInputType getUnwrappedType() {
-            return GraphQLTypeUtil.unwrapAllAs(node().getType());
+            return GraphQLTypeUtil.unwrapAllAs(getElement().getType());
         }
     }
 
@@ -245,7 +245,7 @@ class GraphQLSchemaVisitorAdapter extends GraphQLTypeVisitorStub {
 
         @Override
         public GraphQLNamedOutputType getUnwrappedType() {
-            return GraphQLTypeUtil.unwrapAllAs(node().getType());
+            return GraphQLTypeUtil.unwrapAllAs(getElement().getType());
         }
     }
 

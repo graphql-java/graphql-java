@@ -931,4 +931,32 @@ type Query {
         (appliedDirective.getArgument("fooArgOnDirective").getType() as GraphQLScalarType).getName() == "Bar"
         newSchema.getType("Foo") == null
     }
+
+    def "has access to common variables"() {
+        def schema = TestUtil.schema("""
+            type Query {
+              foo : String
+            }
+        """)
+
+        def visitedSchema = null
+        def visitedCodeRegistry = null
+        def visitor = new GraphQLTypeVisitorStub() {
+
+            @Override
+            TraversalControl visitGraphQLFieldDefinition(GraphQLFieldDefinition node, TraverserContext<GraphQLSchemaElement> context) {
+                visitedSchema = context.getVarFromParents(GraphQLSchema.class)
+                visitedCodeRegistry = context.getVarFromParents(GraphQLCodeRegistry.Builder.class)
+                return super.visitGraphQLFieldDefinition(node, context)
+            }
+
+        }
+
+        when:
+        SchemaTransformer.transformSchema(schema, visitor)
+
+        then:
+        visitedSchema == schema
+        visitedCodeRegistry instanceof GraphQLCodeRegistry.Builder
+    }
 }
