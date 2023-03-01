@@ -15,6 +15,7 @@ import graphql.schema.idl.ScalarInfo;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Predicate;
 
 import static graphql.Assert.assertTrue;
 import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveAddition;
@@ -593,7 +594,7 @@ public class EditOperationAnalyzer {
                     break;
                 case DELETE_EDGE:
                     Edge oldEdge = editOperation.getSourceEdge();
-                    if (oldEdge.getFrom().isOfType(SchemaGraph.UNION)) {
+                    if (oldEdge.getFrom().isOfType(SchemaGraph.UNION) && !oldEdge.getTo().isOfType(SchemaGraph.APPLIED_DIRECTIVE)) {
                         handleUnionMemberDeleted(editOperation);
                     }
                     break;
@@ -606,13 +607,13 @@ public class EditOperationAnalyzer {
             switch (editOperation.getOperation()) {
                 case INSERT_EDGE:
                     Edge newEdge = editOperation.getTargetEdge();
-                    if (newEdge.getFrom().isOfType(SchemaGraph.ENUM)) {
+                    if (newEdge.getFrom().isOfType(SchemaGraph.ENUM) && newEdge.getTo().isOfType(SchemaGraph.ENUM_VALUE)) {
                         handleEnumValueAdded(editOperation);
                     }
                     break;
                 case DELETE_EDGE:
                     Edge oldEdge = editOperation.getSourceEdge();
-                    if (oldEdge.getFrom().isOfType(SchemaGraph.ENUM)) {
+                    if (oldEdge.getFrom().isOfType(SchemaGraph.ENUM) && oldEdge.getTo().isOfType(SchemaGraph.ENUM_VALUE)) {
                         handleEnumValueDeleted(editOperation);
                     }
                     break;
@@ -709,6 +710,9 @@ public class EditOperationAnalyzer {
             return;
         }
         Vertex newValue = newEdge.getTo();
+        if (!newValue.isOfType(SchemaGraph.ENUM_VALUE)) {
+            return;
+        }
         EnumModification enumModification = getEnumModification(enumVertex.getName());
         enumModification.getDetails().add(new EnumValueAddition(newValue.getName()));
     }
@@ -720,6 +724,9 @@ public class EditOperationAnalyzer {
             return;
         }
         Vertex value = deletedEdge.getTo();
+        if (!value.isOfType(SchemaGraph.ENUM_VALUE)) {
+            return;
+        }
         EnumModification enumModification = getEnumModification(enumVertex.getName());
         enumModification.getDetails().add(new EnumValueDeletion(value.getName()));
     }
@@ -932,7 +939,7 @@ public class EditOperationAnalyzer {
             return;
         }
         String newType = getTypeFromEdgeLabel(editOperation.getTargetEdge());
-        EditOperation deletedTypeEdgeOperation = findDeletedEdge(inputField, editOperations, mapping);
+        EditOperation deletedTypeEdgeOperation = findDeletedEdge(inputField, editOperations, mapping, edge -> edge.getLabel().contains("type="));
         String oldType = getTypeFromEdgeLabel(deletedTypeEdgeOperation.getSourceEdge());
         InputObjectFieldTypeModification inputObjectFieldTypeModification = new InputObjectFieldTypeModification(inputField.getName(), oldType, newType);
         getInputObjectModification(inputObject.getName()).getDetails().add(inputObjectFieldTypeModification);
@@ -963,7 +970,7 @@ public class EditOperationAnalyzer {
                 String newType = getTypeFromEdgeLabel(editOperation.getTargetEdge());
                 // this means we have an existing object changed its type
                 // and there must be a deleted edge with the old type information
-                EditOperation deletedTypeEdgeOperation = findDeletedEdge(argument, editOperations, mapping);
+                EditOperation deletedTypeEdgeOperation = findDeletedEdge(argument, editOperations, mapping, edge -> edge.getLabel().contains("type="));
                 String oldType = getTypeFromEdgeLabel(deletedTypeEdgeOperation.getSourceEdge());
                 ObjectFieldArgumentTypeModification objectFieldArgumentTypeModification = new ObjectFieldArgumentTypeModification(field.getName(), argument.getName(), oldType, newType);
                 getObjectModification(object.getName()).getDetails().add(objectFieldArgumentTypeModification);
@@ -985,7 +992,7 @@ public class EditOperationAnalyzer {
                 String newType = getTypeFromEdgeLabel(editOperation.getTargetEdge());
                 // this means we have an existing object changed its type
                 // and there must be a deleted edge with the old type information
-                EditOperation deletedTypeEdgeOperation = findDeletedEdge(argument, editOperations, mapping);
+                EditOperation deletedTypeEdgeOperation = findDeletedEdge(argument, editOperations, mapping, edge -> edge.getLabel().contains("type="));
                 String oldType = getTypeFromEdgeLabel(deletedTypeEdgeOperation.getSourceEdge());
                 InterfaceFieldArgumentTypeModification interfaceFieldArgumentTypeModification = new InterfaceFieldArgumentTypeModification(field.getName(), argument.getName(), oldType, newType);
                 getInterfaceModification(interfaze.getName()).getDetails().add(interfaceFieldArgumentTypeModification);
@@ -1000,7 +1007,7 @@ public class EditOperationAnalyzer {
                 return;
             }
             String newType = getTypeFromEdgeLabel(editOperation.getTargetEdge());
-            EditOperation deletedTypeEdgeOperation = findDeletedEdge(argument, editOperations, mapping);
+            EditOperation deletedTypeEdgeOperation = findDeletedEdge(argument, editOperations, mapping, edge -> edge.getLabel().contains("type="));
             String oldType = getTypeFromEdgeLabel(deletedTypeEdgeOperation.getSourceEdge());
             DirectiveArgumentTypeModification directiveArgumentTypeModification = new DirectiveArgumentTypeModification(argument.getName(), oldType, newType);
             getDirectiveModification(directive.getName()).getDetails().add(directiveArgumentTypeModification);
@@ -1025,11 +1032,10 @@ public class EditOperationAnalyzer {
             String newType = getTypeFromEdgeLabel(editOperation.getTargetEdge());
             // this means we have an existing object changed its type
             // and there must be a deleted edge with the old type information
-            EditOperation deletedTypeEdgeOperation = findDeletedEdge(field, editOperations, mapping);
+            EditOperation deletedTypeEdgeOperation = findDeletedEdge(field, editOperations, mapping, (edge) -> edge.getLabel().contains("type="));
             String oldType = getTypeFromEdgeLabel(deletedTypeEdgeOperation.getSourceEdge());
             ObjectFieldTypeModification objectFieldTypeModification = new ObjectFieldTypeModification(field.getName(), oldType, newType);
             getObjectModification(object.getName()).getDetails().add(objectFieldTypeModification);
-
         } else {
             assertTrue(objectOrInterface.isOfType(SchemaGraph.INTERFACE));
             Vertex interfaze = objectOrInterface;
@@ -1042,22 +1048,23 @@ public class EditOperationAnalyzer {
             String newType = getTypeFromEdgeLabel(editOperation.getTargetEdge());
             // this means we have an existing object changed its type
             // and there must be a deleted edge with the old type information
-            EditOperation deletedTypeEdgeOperation = findDeletedEdge(field, editOperations, mapping);
+            EditOperation deletedTypeEdgeOperation = findDeletedEdge(field, editOperations, mapping, (edge) -> edge.getLabel().contains("type="));
             String oldType = getTypeFromEdgeLabel(deletedTypeEdgeOperation.getSourceEdge());
             InterfaceFieldTypeModification interfaceFieldTypeModification = new InterfaceFieldTypeModification(field.getName(), oldType, newType);
             getInterfaceModification(interfaze.getName()).getDetails().add(interfaceFieldTypeModification);
-
         }
     }
 
 
-    private EditOperation findDeletedEdge(Vertex targetVertexFrom, List<EditOperation> editOperations, Mapping
-            mapping) {
+    private EditOperation findDeletedEdge(Vertex targetVertexFrom,
+                                          List<EditOperation> editOperations,
+                                          Mapping mapping,
+                                          Predicate<Edge> edgePredicate) {
         Vertex sourceVertexFrom = mapping.getSource(targetVertexFrom);
         for (EditOperation editOperation : editOperations) {
             if (editOperation.getOperation() == EditOperation.Operation.DELETE_EDGE) {
                 Edge deletedEdge = editOperation.getSourceEdge();
-                if (deletedEdge.getFrom() == sourceVertexFrom) {
+                if (deletedEdge.getFrom() == sourceVertexFrom && edgePredicate.test(deletedEdge)) {
                     return editOperation;
                 }
             }
