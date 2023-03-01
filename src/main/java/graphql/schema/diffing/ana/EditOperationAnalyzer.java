@@ -710,9 +710,6 @@ public class EditOperationAnalyzer {
             return;
         }
         Vertex newValue = newEdge.getTo();
-        if (!newValue.isOfType(SchemaGraph.ENUM_VALUE)) {
-            return;
-        }
         EnumModification enumModification = getEnumModification(enumVertex.getName());
         enumModification.getDetails().add(new EnumValueAddition(newValue.getName()));
     }
@@ -724,9 +721,6 @@ public class EditOperationAnalyzer {
             return;
         }
         Vertex value = deletedEdge.getTo();
-        if (!value.isOfType(SchemaGraph.ENUM_VALUE)) {
-            return;
-        }
         EnumModification enumModification = getEnumModification(enumVertex.getName());
         enumModification.getDetails().add(new EnumValueDeletion(value.getName()));
     }
