@@ -17,6 +17,7 @@ import static graphql.schema.diffing.ana.SchemaDifference.EnumDeletion
 import static graphql.schema.diffing.ana.SchemaDifference.EnumModification
 import static graphql.schema.diffing.ana.SchemaDifference.EnumValueAddition
 import static graphql.schema.diffing.ana.SchemaDifference.EnumValueDeletion
+import static graphql.schema.diffing.ana.SchemaDifference.EnumValueRenamed
 import static graphql.schema.diffing.ana.SchemaDifference.InputObjectAddition
 import static graphql.schema.diffing.ana.SchemaDifference.InputObjectDeletion
 import static graphql.schema.diffing.ana.SchemaDifference.InputObjectFieldAddition
@@ -1147,6 +1148,39 @@ class EditOperationAnalyzerTest extends Specification {
         changes.enumDifferences["E"] instanceof EnumModification
         def enumModification = changes.enumDifferences["E"] as EnumModification
         enumModification.getDetails(EnumValueDeletion)[0].name == "B"
+    }
+
+    def "enum value added and removed"() {
+        given:
+        def oldSdl = '''
+        type Query {
+            e: MyEnum
+        }
+        enum MyEnum {
+            A
+            B
+        }
+        '''
+        def newSdl = '''
+        type Query {
+            e: MyEnum
+        }
+        enum MyEnum {
+            A
+            C
+        }
+        '''
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+        then:
+        changes.enumDifferences["MyEnum"] instanceof EnumModification
+
+        def enumModification = changes.enumDifferences["MyEnum"] as EnumModification
+        enumModification.getDetails().size() == 1
+
+        def rename = enumModification.getDetails(EnumValueRenamed)[0]
+        rename.oldName == "B"
+        rename.newName == "C"
     }
 
     def "scalar added"() {

@@ -8,8 +8,6 @@ import graphql.schema.diffing.EditOperation;
 import graphql.schema.diffing.Mapping;
 import graphql.schema.diffing.SchemaGraph;
 import graphql.schema.diffing.Vertex;
-import graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveArgumentRename;
-import graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveObjectLocation;
 import graphql.schema.idl.ScalarInfo;
 
 import java.util.LinkedHashMap;
@@ -19,6 +17,7 @@ import java.util.Map;
 import static graphql.Assert.assertTrue;
 import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveAddition;
 import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveArgumentDeletion;
+import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveArgumentRename;
 import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveArgumentValueModification;
 import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveDeletion;
 import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveDirectiveArgumentLocation;
@@ -31,6 +30,7 @@ import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveInterf
 import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveInterfaceLocation;
 import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveObjectFieldArgumentLocation;
 import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveObjectFieldLocation;
+import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveObjectLocation;
 import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveScalarLocation;
 import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveUnionLocation;
 import static graphql.schema.diffing.ana.SchemaDifference.DirectiveAddition;
@@ -48,6 +48,7 @@ import static graphql.schema.diffing.ana.SchemaDifference.EnumDifference;
 import static graphql.schema.diffing.ana.SchemaDifference.EnumModification;
 import static graphql.schema.diffing.ana.SchemaDifference.EnumValueAddition;
 import static graphql.schema.diffing.ana.SchemaDifference.EnumValueDeletion;
+import static graphql.schema.diffing.ana.SchemaDifference.EnumValueRenamed;
 import static graphql.schema.diffing.ana.SchemaDifference.InputObjectAddition;
 import static graphql.schema.diffing.ana.SchemaDifference.InputObjectDeletion;
 import static graphql.schema.diffing.ana.SchemaDifference.InputObjectDifference;
@@ -336,11 +337,9 @@ public class EditOperationAnalyzer {
                 if (nameChanged) {
                     AppliedDirectiveArgumentRename argumentRename = new AppliedDirectiveArgumentRename(location, oldArgumentName, newArgumentName);
                     getObjectModification(object.getName()).getDetails().add(argumentRename);
-
                 }
             }
         }
-
     }
 
     private void appliedDirectiveAdded(EditOperation editOperation) {
@@ -616,6 +615,11 @@ public class EditOperationAnalyzer {
                         handleEnumValueDeleted(editOperation);
                     }
                     break;
+                case CHANGE_VERTEX:
+                    if (editOperation.getSourceVertex().isOfType(SchemaGraph.ENUM_VALUE) && editOperation.getTargetVertex().isOfType(SchemaGraph.ENUM_VALUE)) {
+                        handleEnumValueChanged(editOperation);
+                    }
+                    break;
             }
         }
     }
@@ -724,6 +728,13 @@ public class EditOperationAnalyzer {
         enumModification.getDetails().add(new EnumValueDeletion(value.getName()));
     }
 
+    private void handleEnumValueChanged(EditOperation editOperation) {
+        Vertex enumVertex = newSchemaGraph.getEnumForEnumValue(editOperation.getTargetVertex());
+        EnumModification enumModification = getEnumModification(enumVertex.getName());
+        String oldName = editOperation.getSourceVertex().getName();
+        String newName = editOperation.getTargetVertex().getName();
+        enumModification.getDetails().add(new EnumValueRenamed(oldName, newName));
+    }
 
     private void fieldChanged(EditOperation editOperation) {
         Vertex field = editOperation.getTargetVertex();
