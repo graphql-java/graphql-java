@@ -547,7 +547,11 @@ class EditOperationAnalyzerAppliedDirectivesTest extends Specification {
         def changes = calcDiff(oldSdl, newSdl)
         then:
         changes.enumDifferences["E"] instanceof EnumModification
-        def appliedDirective = (changes.enumDifferences["E"] as EnumModification).getDetails(AppliedDirectiveDeletion)
+        def diff = changes.enumDifferences["E"] as EnumModification
+
+        diff.getDetails().size() == 1
+
+        def appliedDirective = diff.getDetails(AppliedDirectiveDeletion)
         (appliedDirective[0].locationDetail as AppliedDirectiveEnumLocation).name == "E"
         appliedDirective[0].name == "d"
     }
@@ -778,7 +782,6 @@ class EditOperationAnalyzerAppliedDirectivesTest extends Specification {
         appliedDirective[0].name == "d"
     }
 
-
     def "applied directive deleted union"() {
         given:
         def oldSdl = '''
@@ -802,8 +805,12 @@ class EditOperationAnalyzerAppliedDirectivesTest extends Specification {
         when:
         def changes = calcDiff(oldSdl, newSdl)
         then:
+        changes.unionDifferences.keySet() == ["U"] as Set
         changes.unionDifferences["U"] instanceof UnionModification
-        def appliedDirective = (changes.unionDifferences["U"] as UnionModification).getDetails(AppliedDirectiveDeletion)
+        def diff = changes.unionDifferences["U"] as UnionModification
+        diff.details.size() == 1
+
+        def appliedDirective = diff.getDetails(AppliedDirectiveDeletion)
         (appliedDirective[0].locationDetail as AppliedDirectiveUnionLocation).name == "U"
         appliedDirective[0].name == "d"
     }
