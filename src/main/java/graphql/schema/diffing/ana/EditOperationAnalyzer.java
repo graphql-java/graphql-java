@@ -933,7 +933,7 @@ public class EditOperationAnalyzer {
             return;
         }
         String newType = getTypeFromEdgeLabel(editOperation.getTargetEdge());
-        EditOperation deletedTypeEdgeOperation = findDeletedEdge(inputField, editOperations, mapping, edge -> edge.getLabel().contains("type="));
+        EditOperation deletedTypeEdgeOperation = findDeletedEdge(inputField, editOperations, mapping, this::isTypeEdge);
         String oldType = getTypeFromEdgeLabel(deletedTypeEdgeOperation.getSourceEdge());
         InputObjectFieldTypeModification inputObjectFieldTypeModification = new InputObjectFieldTypeModification(inputField.getName(), oldType, newType);
         getInputObjectModification(inputObject.getName()).getDetails().add(inputObjectFieldTypeModification);
@@ -964,7 +964,7 @@ public class EditOperationAnalyzer {
                 String newType = getTypeFromEdgeLabel(editOperation.getTargetEdge());
                 // this means we have an existing object changed its type
                 // and there must be a deleted edge with the old type information
-                EditOperation deletedTypeEdgeOperation = findDeletedEdge(argument, editOperations, mapping, edge -> edge.getLabel().contains("type="));
+                EditOperation deletedTypeEdgeOperation = findDeletedEdge(argument, editOperations, mapping, this::isTypeEdge);
                 String oldType = getTypeFromEdgeLabel(deletedTypeEdgeOperation.getSourceEdge());
                 ObjectFieldArgumentTypeModification objectFieldArgumentTypeModification = new ObjectFieldArgumentTypeModification(field.getName(), argument.getName(), oldType, newType);
                 getObjectModification(object.getName()).getDetails().add(objectFieldArgumentTypeModification);
@@ -986,7 +986,7 @@ public class EditOperationAnalyzer {
                 String newType = getTypeFromEdgeLabel(editOperation.getTargetEdge());
                 // this means we have an existing object changed its type
                 // and there must be a deleted edge with the old type information
-                EditOperation deletedTypeEdgeOperation = findDeletedEdge(argument, editOperations, mapping, edge -> edge.getLabel().contains("type="));
+                EditOperation deletedTypeEdgeOperation = findDeletedEdge(argument, editOperations, mapping, this::isTypeEdge);
                 String oldType = getTypeFromEdgeLabel(deletedTypeEdgeOperation.getSourceEdge());
                 InterfaceFieldArgumentTypeModification interfaceFieldArgumentTypeModification = new InterfaceFieldArgumentTypeModification(field.getName(), argument.getName(), oldType, newType);
                 getInterfaceModification(interfaze.getName()).getDetails().add(interfaceFieldArgumentTypeModification);
@@ -1001,7 +1001,7 @@ public class EditOperationAnalyzer {
                 return;
             }
             String newType = getTypeFromEdgeLabel(editOperation.getTargetEdge());
-            EditOperation deletedTypeEdgeOperation = findDeletedEdge(argument, editOperations, mapping, edge -> edge.getLabel().contains("type="));
+            EditOperation deletedTypeEdgeOperation = findDeletedEdge(argument, editOperations, mapping, this::isTypeEdge);
             String oldType = getTypeFromEdgeLabel(deletedTypeEdgeOperation.getSourceEdge());
             DirectiveArgumentTypeModification directiveArgumentTypeModification = new DirectiveArgumentTypeModification(argument.getName(), oldType, newType);
             getDirectiveModification(directive.getName()).getDetails().add(directiveArgumentTypeModification);
@@ -1026,7 +1026,7 @@ public class EditOperationAnalyzer {
             String newType = getTypeFromEdgeLabel(editOperation.getTargetEdge());
             // this means we have an existing object changed its type
             // and there must be a deleted edge with the old type information
-            EditOperation deletedTypeEdgeOperation = findDeletedEdge(field, editOperations, mapping, (edge) -> edge.getLabel().contains("type="));
+            EditOperation deletedTypeEdgeOperation = findDeletedEdge(field, editOperations, mapping, this::isTypeEdge);
             String oldType = getTypeFromEdgeLabel(deletedTypeEdgeOperation.getSourceEdge());
             ObjectFieldTypeModification objectFieldTypeModification = new ObjectFieldTypeModification(field.getName(), oldType, newType);
             getObjectModification(object.getName()).getDetails().add(objectFieldTypeModification);
@@ -1042,7 +1042,7 @@ public class EditOperationAnalyzer {
             String newType = getTypeFromEdgeLabel(editOperation.getTargetEdge());
             // this means we have an existing object changed its type
             // and there must be a deleted edge with the old type information
-            EditOperation deletedTypeEdgeOperation = findDeletedEdge(field, editOperations, mapping, (edge) -> edge.getLabel().contains("type="));
+            EditOperation deletedTypeEdgeOperation = findDeletedEdge(field, editOperations, mapping, this::isTypeEdge);
             String oldType = getTypeFromEdgeLabel(deletedTypeEdgeOperation.getSourceEdge());
             InterfaceFieldTypeModification interfaceFieldTypeModification = new InterfaceFieldTypeModification(field.getName(), oldType, newType);
             getInterfaceModification(interfaze.getName()).getDetails().add(interfaceFieldTypeModification);
@@ -1200,6 +1200,10 @@ public class EditOperationAnalyzer {
         return defaultValue;
     }
 
+    private boolean isTypeEdge(Edge edge) {
+        String label = edge.getLabel();
+        return label.startsWith("type=");
+    }
 
     private void interfaceImplementationDeleted(Edge deletedEdge) {
         Vertex from = deletedEdge.getFrom();
