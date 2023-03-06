@@ -3,7 +3,8 @@ package graphql.schema.visitor;
 import graphql.schema.GraphQLCodeRegistry;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLSchemaElement;
-import graphql.util.TraversalControl;
+
+import java.util.List;
 
 public interface GraphQLSchemaVisitorEnvironment<T extends GraphQLSchemaElement> {
 
@@ -11,6 +12,22 @@ public interface GraphQLSchemaVisitorEnvironment<T extends GraphQLSchemaElement>
      * @return the element that is being visited
      */
     T getElement();
+
+    /**
+     * This returns the schema element that led to this element, eg a field is contained
+     * in a type which is pointed to be another field say.
+     *
+     * @return a list of schema elements leading to this current element
+     */
+    List<GraphQLSchemaElement> getLeadingElements();
+
+    /**
+     * This returns the schema element that led to this element but with {@link graphql.schema.GraphQLModifiedType} wrappers
+     * removed.
+     *
+     * @return a list of schema elements leading to this current element
+     */
+    List<GraphQLSchemaElement> getUnwrappedLeadingElements();
 
     /**
      * @return the schema that is being visited upon
@@ -27,54 +44,51 @@ public interface GraphQLSchemaVisitorEnvironment<T extends GraphQLSchemaElement>
 
     /**
      * @return When returned the traversal will continue as planned.
-     * A synonym method for {@link TraversalControl#CONTINUE}
      */
-    TraversalControl ok();
+    GraphQLSchemaTraversalControl ok();
 
     /**
      * @return When returned from a {@link GraphQLSchemaVisitor}'s method, indicates exiting the traversal.
-     * A synonym method for {@link TraversalControl#QUIT}
      */
-    TraversalControl quit();
+    GraphQLSchemaTraversalControl quit();
 
     /**
      * @return When returned from a {@link GraphQLSchemaVisitor}'s method, indicates skipping traversal of a subtree.
-     * A synonym method for {@link TraversalControl#ABORT}
      */
-    TraversalControl abort();
+    GraphQLSchemaTraversalControl abort();
 
     /**
      * Called to change the current node to the specific node
      *
      * @param schemaElement the schema element to change
      *
-     * @return This will always be {@link TraversalControl#CONTINUE}
+     * @return a control that changes the current node to a the given node
      */
-    TraversalControl changeNode(T schemaElement);
+    GraphQLSchemaTraversalControl changeNode(T schemaElement);
 
     /**
      * Called to delete the current node
      *
-     * @return This will always be {@link TraversalControl#CONTINUE}
+     * @return a control that deletes the current node
      */
-    TraversalControl deleteNode();
+    GraphQLSchemaTraversalControl deleteNode();
 
     /**
      * Called to insert the current schema element after the specified schema element
      *
-     * @param schemaElement the schema element to after before
+     * @param toInsertAfter the schema element to after before
      *
-     * @return This will always be {@link TraversalControl#CONTINUE}
+     * @return a control that inserts the given node after the current node
      */
-    TraversalControl insertAfter(T schemaElement);
+    GraphQLSchemaTraversalControl insertAfter(T toInsertAfter);
 
     /**
      * Called to insert the current schema element before the specified schema element
      *
-     * @param schemaElement the schema element to insert before
+     * @param toInsertBefore the schema element to insert before
      *
-     * @return This will always be {@link TraversalControl#CONTINUE}
+     * @return a control that inserts the given node before the current node
      */
-    TraversalControl insertBefore(T schemaElement);
+    GraphQLSchemaTraversalControl insertBefore(T toInsertBefore);
 
 }

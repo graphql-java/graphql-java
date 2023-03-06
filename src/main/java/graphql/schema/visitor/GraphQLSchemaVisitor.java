@@ -47,10 +47,10 @@ public interface GraphQLSchemaVisitor {
      * @param appliedDirective the schema element being visited
      * @param environment      the visiting environment
      *
-     * @return a control value which is typically {@link TraversalControl#CONTINUE}
+     * @return a control value which is typically {@link GraphQLSchemaVisitorEnvironment#ok()}}
      */
-    default TraversalControl visitAppliedDirective(GraphQLAppliedDirective appliedDirective, AppliedDirectiveVisitorEnvironment environment) {
-        return TraversalControl.CONTINUE;
+    default GraphQLSchemaTraversalControl visitAppliedDirective(GraphQLAppliedDirective appliedDirective, AppliedDirectiveVisitorEnvironment environment) {
+        return environment.ok();
     }
 
     /**
@@ -72,10 +72,10 @@ public interface GraphQLSchemaVisitor {
      * @param appliedDirectiveArgument the schema element being visited
      * @param environment              the visiting environment
      *
-     * @return a control value which is typically {@link TraversalControl#CONTINUE}
+     * @return a control value which is typically {@link GraphQLSchemaVisitorEnvironment#ok()}}
      */
-    default TraversalControl visitAppliedDirectiveArgument(GraphQLAppliedDirectiveArgument appliedDirectiveArgument, AppliedDirectiveArgumentVisitorEnvironment environment) {
-        return TraversalControl.CONTINUE;
+    default GraphQLSchemaTraversalControl visitAppliedDirectiveArgument(GraphQLAppliedDirectiveArgument appliedDirectiveArgument, AppliedDirectiveArgumentVisitorEnvironment environment) {
+        return environment.ok();
     }
 
     /**
@@ -99,10 +99,10 @@ public interface GraphQLSchemaVisitor {
      * @param argument    the schema element being visited
      * @param environment the visiting environment
      *
-     * @return a control value which is typically {@link TraversalControl#CONTINUE}
+     * @return a control value which is typically {@link GraphQLSchemaVisitorEnvironment#ok()}}
      */
-    default TraversalControl visitArgument(GraphQLArgument argument, ArgumentVisitorEnvironment environment) {
-        return TraversalControl.CONTINUE;
+    default GraphQLSchemaTraversalControl visitArgument(GraphQLArgument argument, ArgumentVisitorEnvironment environment) {
+        return environment.ok();
     }
 
     interface DirectiveVisitorEnvironment extends GraphQLSchemaVisitorEnvironment<GraphQLDirective> {
@@ -114,10 +114,10 @@ public interface GraphQLSchemaVisitor {
      * @param directive    the schema element being visited
      * @param environment the visiting environment
      *
-     * @return a control value which is typically {@link TraversalControl#CONTINUE}
+     * @return a control value which is typically {@link GraphQLSchemaVisitorEnvironment#ok()}}
      */
-    default TraversalControl visitDirective(GraphQLDirective directive, DirectiveVisitorEnvironment environment) {
-        return TraversalControl.CONTINUE;
+    default GraphQLSchemaTraversalControl visitDirective(GraphQLDirective directive, DirectiveVisitorEnvironment environment) {
+        return environment.ok();
     }
     /**
      * A {@link GraphQLSchemaVisitorEnvironment} environment specific to {@link GraphQLEnumType}
@@ -131,10 +131,10 @@ public interface GraphQLSchemaVisitor {
      * @param enumType    the schema element being visited
      * @param environment the visiting environment
      *
-     * @return a control value which is typically {@link TraversalControl#CONTINUE}
+     * @return a control value which is typically {@link GraphQLSchemaVisitorEnvironment#ok()}}
      */
-    default TraversalControl visitEnumType(GraphQLEnumType enumType, EnumTypeVisitorEnvironment environment) {
-        return TraversalControl.CONTINUE;
+    default GraphQLSchemaTraversalControl visitEnumType(GraphQLEnumType enumType, EnumTypeVisitorEnvironment environment) {
+        return environment.ok();
     }
 
     /**
@@ -150,10 +150,10 @@ public interface GraphQLSchemaVisitor {
      * @param enumValueDefinition the schema element being visited
      * @param environment         the visiting environment
      *
-     * @return a control value which is typically {@link TraversalControl#CONTINUE}
+     * @return a control value which is typically {@link GraphQLSchemaVisitorEnvironment#ok()}}
      */
-    default TraversalControl visitEnumValueDefinition(GraphQLEnumValueDefinition enumValueDefinition, EnumValueDefinitionVisitorEnvironment environment) {
-        return TraversalControl.CONTINUE;
+    default GraphQLSchemaTraversalControl visitEnumValueDefinition(GraphQLEnumValueDefinition enumValueDefinition, EnumValueDefinitionVisitorEnvironment environment) {
+        return environment.ok();
     }
 
 
@@ -175,10 +175,10 @@ public interface GraphQLSchemaVisitor {
      * @param fieldDefinition the schema element being visited
      * @param environment     the visiting environment
      *
-     * @return a control value which is typically {@link TraversalControl#CONTINUE}
+     * @return a control value which is typically {@link GraphQLSchemaVisitorEnvironment#ok()}}
      */
-    default TraversalControl visitFieldDefinition(GraphQLFieldDefinition fieldDefinition, FieldDefinitionVisitorEnvironment environment) {
-        return TraversalControl.CONTINUE;
+    default GraphQLSchemaTraversalControl visitFieldDefinition(GraphQLFieldDefinition fieldDefinition, FieldDefinitionVisitorEnvironment environment) {
+        return environment.ok();
     }
 
     /**
@@ -199,10 +199,10 @@ public interface GraphQLSchemaVisitor {
      * @param inputObjectField the schema element being visited
      * @param environment      the visiting environment
      *
-     * @return a control value which is typically {@link TraversalControl#CONTINUE}
+     * @return a control value which is typically {@link GraphQLSchemaVisitorEnvironment#ok()}}
      */
-    default TraversalControl visitInputObjectField(GraphQLInputObjectField inputObjectField, InputObjectFieldVisitorEnvironment environment) {
-        return TraversalControl.CONTINUE;
+    default GraphQLSchemaTraversalControl visitInputObjectField(GraphQLInputObjectField inputObjectField, InputObjectFieldVisitorEnvironment environment) {
+        return environment.ok();
     }
 
     /**
@@ -217,10 +217,10 @@ public interface GraphQLSchemaVisitor {
      * @param inputObjectType the schema element being visited
      * @param environment     the visiting environment
      *
-     * @return a control value which is typically {@link TraversalControl#CONTINUE}
+     * @return a control value which is typically {@link GraphQLSchemaVisitorEnvironment#ok()}}
      */
-    default TraversalControl visitInputObjectType(GraphQLInputObjectType inputObjectType, InputObjectTypeVisitorEnvironment environment) {
-        return TraversalControl.CONTINUE;
+    default GraphQLSchemaTraversalControl visitInputObjectType(GraphQLInputObjectType inputObjectType, InputObjectTypeVisitorEnvironment environment) {
+        return environment.ok();
     }
 
     /**
@@ -235,10 +235,10 @@ public interface GraphQLSchemaVisitor {
      * @param interfaceType the schema element being visited
      * @param environment   the visiting environment
      *
-     * @return a control value which is typically {@link TraversalControl#CONTINUE}
+     * @return a control value which is typically {@link GraphQLSchemaVisitorEnvironment#ok()}}
      */
-    default TraversalControl visitInterfaceType(GraphQLInterfaceType interfaceType, InterfaceTypeVisitorEnvironment environment) {
-        return TraversalControl.CONTINUE;
+    default GraphQLSchemaTraversalControl visitInterfaceType(GraphQLInterfaceType interfaceType, InterfaceTypeVisitorEnvironment environment) {
+        return environment.ok();
     }
 
 
@@ -254,10 +254,10 @@ public interface GraphQLSchemaVisitor {
      * @param objectType  the schema element being visited
      * @param environment the visiting environment
      *
-     * @return a control value which is typically {@link TraversalControl#CONTINUE}
+     * @return a control value which is typically {@link GraphQLSchemaVisitorEnvironment#ok()}}
      */
-    default TraversalControl visitObjectType(GraphQLObjectType objectType, ObjectVisitorEnvironment environment) {
-        return TraversalControl.CONTINUE;
+    default GraphQLSchemaTraversalControl visitObjectType(GraphQLObjectType objectType, ObjectVisitorEnvironment environment) {
+        return environment.ok();
     }
 
     /**
@@ -272,10 +272,10 @@ public interface GraphQLSchemaVisitor {
      * @param scalarType  the schema element being visited
      * @param environment the visiting environment
      *
-     * @return a control value which is typically {@link TraversalControl#CONTINUE}
+     * @return a control value which is typically {@link GraphQLSchemaVisitorEnvironment#ok()}}
      */
-    default TraversalControl visitScalarType(GraphQLScalarType scalarType, ScalarTypeVisitorEnvironment environment) {
-        return TraversalControl.CONTINUE;
+    default GraphQLSchemaTraversalControl visitScalarType(GraphQLScalarType scalarType, ScalarTypeVisitorEnvironment environment) {
+        return environment.ok();
     }
 
     /**
@@ -290,10 +290,10 @@ public interface GraphQLSchemaVisitor {
      * @param unionType   the schema element being visited
      * @param environment the visiting environment
      *
-     * @return a control value which is typically {@link TraversalControl#CONTINUE}
+     * @return a control value which is typically {@link GraphQLSchemaVisitorEnvironment#ok()}}
      */
-    default TraversalControl visitUnionType(GraphQLUnionType unionType, UnionTypeVisitorEnvironment environment) {
-        return TraversalControl.CONTINUE;
+    default GraphQLSchemaTraversalControl visitUnionType(GraphQLUnionType unionType, UnionTypeVisitorEnvironment environment) {
+        return environment.ok();
     }
 
 
@@ -310,10 +310,10 @@ public interface GraphQLSchemaVisitor {
      * @param schemaElement the schema element being visited
      * @param environment   the visiting environment
      *
-     * @return a control value which is typically {@link TraversalControl#CONTINUE}
+     * @return a control value which is typically {@link GraphQLSchemaVisitorEnvironment#ok()}}
      */
-    default TraversalControl visitSchemaElement(GraphQLSchemaElement schemaElement, SchemaElementVisitorEnvironment environment) {
-        return TraversalControl.CONTINUE;
+    default GraphQLSchemaTraversalControl visitSchemaElement(GraphQLSchemaElement schemaElement, SchemaElementVisitorEnvironment environment) {
+        return environment.ok();
     }
 
     /**

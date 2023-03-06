@@ -2,11 +2,17 @@ package graphql.schema.visitor;
 
 import graphql.Internal;
 import graphql.schema.GraphQLCodeRegistry;
+import graphql.schema.GraphQLModifiedType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLSchemaElement;
-import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
-import graphql.util.TreeTransformerUtil;
+import org.jetbrains.annotations.NotNull;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Predicate;
+
+import static graphql.schema.visitor.GraphQLSchemaTraversalControl.*;
 
 @Internal
 class GraphQLSchemaVisitorEnvironmentImpl<T extends GraphQLSchemaElement> implements GraphQLSchemaVisitorEnvironment<T> {
@@ -33,42 +39,65 @@ class GraphQLSchemaVisitorEnvironmentImpl<T extends GraphQLSchemaElement> implem
         return (T) context.thisNode();
     }
 
+
     @Override
-    public TraversalControl ok() {
-        return TraversalControl.CONTINUE;
+    public List<GraphQLSchemaElement> getLeadingElements() {
+        return buildParentsImpl(schemaElement -> true);
     }
 
     @Override
-    public TraversalControl quit() {
-        return TraversalControl.QUIT;
+    public List<GraphQLSchemaElement> getUnwrappedLeadingElements() {
+        return buildParentsImpl(schemaElement -> !(schemaElement instanceof GraphQLModifiedType));
+    }
+
+    @NotNull
+    private List<GraphQLSchemaElement> buildParentsImpl(Predicate<GraphQLSchemaElement> predicate) {
+        List<GraphQLSchemaElement> list = new ArrayList<>();
+        TraverserContext<GraphQLSchemaElement> parentContext = context.getParentContext();
+        while (parentContext != null) {
+            GraphQLSchemaElement parentNode = parentContext.thisNode();
+            if (parentNode != null) {
+                if (predicate.test(parentNode)) {
+                    list.add(parentNode);
+                }
+            }
+            parentContext = parentContext.getParentContext();
+        }
+        return list;
     }
 
     @Override
-    public TraversalControl abort() {
-        return TraversalControl.ABORT;
+    public GraphQLSchemaTraversalControl ok() {
+        return CONTINUE;
     }
 
     @Override
-    public TraversalControl changeNode(T schemaElement) {
-        TreeTransformerUtil.changeNode(context, schemaElement);
-        return TraversalControl.CONTINUE;
+    public GraphQLSchemaTraversalControl quit() {
+        return QUIT;
     }
 
     @Override
-    public TraversalControl deleteNode() {
-        TreeTransformerUtil.deleteNode(context);
-        return TraversalControl.CONTINUE;
+    public GraphQLSchemaTraversalControl abort() {
+        return ABORT;
     }
 
     @Override
-    public TraversalControl insertAfter(T schemaElement) {
-        TreeTransformerUtil.insertAfter(context, schemaElement);
-        return TraversalControl.CONTINUE;
+    public GraphQLSchemaTraversalControl changeNode(T schemaElement) {
+        return new GraphQLSchemaTraversalControl(Control.CHANGE, schemaElement);
     }
 
     @Override
-    public TraversalControl insertBefore(T schemaElement) {
-        TreeTransformerUtil.insertBefore(context, schemaElement);
-        return TraversalControl.CONTINUE;
+    public GraphQLSchemaTraversalControl deleteNode() {
+        return DELETE;
+    }
+
+    @Override
+    public GraphQLSchemaTraversalControl insertAfter(T toInsertAfter) {
+        return new GraphQLSchemaTraversalControl(Control.INSERT_AFTER, toInsertAfter);
+    }
+
+    @Override
+    public GraphQLSchemaTraversalControl insertBefore(T toInsertBefore) {
+        return new GraphQLSchemaTraversalControl(Control.INSERT_BEFORE, toInsertBefore);
     }
 }
