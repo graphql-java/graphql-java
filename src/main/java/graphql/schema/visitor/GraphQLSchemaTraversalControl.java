@@ -12,7 +12,7 @@ import graphql.util.TreeTransformerUtil;
  * or {@link GraphQLSchemaVisitorEnvironment#changeNode(GraphQLSchemaElement)} say
  */
 @PublicApi
-class GraphQLSchemaTraversalControl {
+public class GraphQLSchemaTraversalControl {
     private final GraphQLSchemaElement element;
     private final Control control;
 
