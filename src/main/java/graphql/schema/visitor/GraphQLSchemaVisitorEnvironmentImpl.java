@@ -76,10 +76,6 @@ class GraphQLSchemaVisitorEnvironmentImpl<T extends GraphQLSchemaElement> implem
         return QUIT;
     }
 
-    @Override
-    public GraphQLSchemaTraversalControl abort() {
-        return ABORT;
-    }
 
     @Override
     public GraphQLSchemaTraversalControl changeNode(T schemaElement) {

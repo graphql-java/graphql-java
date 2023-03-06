@@ -1,6 +1,7 @@
 package graphql.schema
 
 import graphql.Scalars
+import graphql.TestUtil
 import graphql.util.TraversalControl
 import graphql.util.TraverserContext
 import spock.lang.Specification
@@ -379,7 +380,50 @@ class SchemaTraverserTest extends Specification {
         visitor.getStack() == ["argument: Test1", "fallback: Test1", "reference: String", "fallback: String",
                                "argument: Test2", "fallback: Test2", "backRef: String"
         ]
+    }
 
+    def "can quit the schema traverser"() {
+        def sdl = """
+            type Query {
+                f : ObjType
+                f2NeverVisited : String
+            }
+            
+            type ObjType {
+                fQuit : ObjType2
+            }
+            
+            type ObjType2 {
+                neverVisited : String
+            }
+        """
+
+        def schema = TestUtil.schema(sdl)
+
+        def visitor = new GraphQLTestingVisitor() {
+            @Override
+            TraversalControl visitGraphQLFieldDefinition(GraphQLFieldDefinition node, TraverserContext<GraphQLSchemaElement> context) {
+                super.visitGraphQLFieldDefinition(node, context)
+                if (node.name.contains("Quit")) {
+                    return TraversalControl.QUIT
+                }
+                return TraversalControl.CONTINUE
+            }
+        }
+
+        when:
+        new SchemaTraverser().depthFirstFullSchema(visitor, schema)
+
+        then:
+        visitor.getStack() == ["object: Query",
+                               "fallback: Query",
+                               "field: f",
+                               "fallback: f",
+                               "object: ObjType",
+                               "fallback: ObjType",
+                               "field: fQuit",
+                               "fallback: fQuit",
+        ]
     }
 
     class GraphQLTestingVisitor extends GraphQLTypeVisitorStub {

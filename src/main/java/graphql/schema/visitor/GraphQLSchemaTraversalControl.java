@@ -19,7 +19,6 @@ class GraphQLSchemaTraversalControl {
     enum Control {
         CONTINUE(TraversalControl.CONTINUE),
         QUIT(TraversalControl.QUIT),
-        ABORT(TraversalControl.ABORT),
         CHANGE(TraversalControl.CONTINUE),
         DELETE(TraversalControl.CONTINUE),
         INSERT_BEFORE(TraversalControl.CONTINUE),
@@ -38,7 +37,6 @@ class GraphQLSchemaTraversalControl {
 
     static final GraphQLSchemaTraversalControl CONTINUE = new GraphQLSchemaTraversalControl(Control.CONTINUE, null);
     static final GraphQLSchemaTraversalControl QUIT = new GraphQLSchemaTraversalControl(Control.QUIT, null);
-    static final GraphQLSchemaTraversalControl ABORT = new GraphQLSchemaTraversalControl(Control.ABORT, null);
     static final GraphQLSchemaTraversalControl DELETE = new GraphQLSchemaTraversalControl(Control.DELETE, null);
 
     GraphQLSchemaTraversalControl(Control control, GraphQLSchemaElement element) {
@@ -55,7 +53,7 @@ class GraphQLSchemaTraversalControl {
     }
 
     boolean isAbortive() {
-        return control == Control.ABORT || control == Control.QUIT;
+        return control == Control.QUIT;
     }
 
     boolean isMutative() {
@@ -63,7 +61,7 @@ class GraphQLSchemaTraversalControl {
     }
 
     TraversalControl toTraversalControl(TraverserContext<GraphQLSchemaElement> context) {
-        if (control == Control.CONTINUE || control == Control.QUIT || control == Control.ABORT) {
+        if (control == Control.CONTINUE || control == Control.QUIT) {
             return control.toTraversalControl();
         }
         if (control == Control.DELETE) {

@@ -17,6 +17,7 @@ import graphql.schema.GraphQLNamedSchemaElement
 import graphql.schema.GraphQLObjectType
 import graphql.schema.GraphQLScalarType
 import graphql.schema.GraphQLSchemaElement
+import graphql.schema.GraphQLTypeUtil
 import graphql.schema.GraphQLUnionType
 import graphql.schema.SchemaTransformer
 import graphql.schema.SchemaTraverser
@@ -29,20 +30,10 @@ class GraphQLSchemaVisitorTest extends Specification {
 
     def toNames(GraphQLSchemaElement start, List<GraphQLSchemaElement> elements) {
         def l = elements.collect({
-            return toName(it)
+            return GraphQLTypeUtil.simplePrint(it)
         })
-        l.add(0, toName(start))
+        l.add(0, GraphQLTypeUtil.simplePrint((start)))
         return l
-    }
-
-    private String toName(GraphQLSchemaElement it) {
-        if (it instanceof GraphQLNamedSchemaElement) {
-            return ((GraphQLNamedSchemaElement) it).name
-        }
-        if (it instanceof GraphQLModifiedType) {
-            return it.toString()
-        }
-        Assert.assertShouldNeverHappen()
     }
 
     class CapturingSchemaVisitor implements GraphQLSchemaVisitor {
@@ -332,5 +323,50 @@ class GraphQLSchemaVisitorTest extends Specification {
         then:
         newSchema.getType("Yfoo") instanceof GraphQLObjectType
         newSchema.getType("Ybar") instanceof GraphQLObjectType
+    }
+
+    def "can quit visitation"() {
+
+        def visited = []
+        def schemaVisitor = new GraphQLSchemaVisitor() {
+
+            @Override
+            GraphQLSchemaTraversalControl visitSchemaElement(GraphQLSchemaElement schemaElement, GraphQLSchemaVisitor.SchemaElementVisitorEnvironment environment) {
+                def name = GraphQLTypeUtil.simplePrint(schemaElement)
+                if (name.toLowerCase().startsWith("x")) {
+                    visited.add(name)
+                    if (name.contains("Quit")) {
+                        return environment.quit()
+                    }
+                }
+                return environment.ok()
+            }
+        }
+        when: // test quit
+
+        def sdl = """
+            type Query {
+                xField(xQuit : XInputType) : XObjectType
+            }
+            
+            type XObjectType {
+                xObj(xArg : String) : XObjectType2
+            }
+
+            type XObjectType2 {
+                xObj2 : XObjectType2
+            }
+            
+            input XInputType  {
+                xinA : String
+            } 
+        
+        """
+
+        def schema = TestUtil.schema(sdl)
+        new SchemaTransformer().transform(schema,schemaVisitor.toTypeVisitor())
+
+        then:
+        visited == ["xField", "xQuit",]
     }
 }

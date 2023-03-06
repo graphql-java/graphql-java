@@ -133,7 +133,10 @@ public class SchemaTraverser {
         @Override
         public TraversalControl enter(TraverserContext<GraphQLSchemaElement> context) {
             for (GraphQLTypeVisitor graphQLTypeVisitor : typeVisitors) {
-                context.thisNode().accept(context, graphQLTypeVisitor);
+                TraversalControl control = context.thisNode().accept(context, graphQLTypeVisitor);
+                if (control != CONTINUE) {
+                    return control;
+                }
             }
             return CONTINUE;
         }

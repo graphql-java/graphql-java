@@ -53,11 +53,6 @@ public interface GraphQLSchemaVisitorEnvironment<T extends GraphQLSchemaElement>
     GraphQLSchemaTraversalControl quit();
 
     /**
-     * @return When returned from a {@link GraphQLSchemaVisitor}'s method, indicates skipping traversal of a subtree.
-     */
-    GraphQLSchemaTraversalControl abort();
-
-    /**
      * Called to change the current node to the specific node
      *
      * @param schemaElement the schema element to change
