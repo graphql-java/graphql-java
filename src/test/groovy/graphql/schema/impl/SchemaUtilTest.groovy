@@ -4,6 +4,7 @@ import graphql.AssertException
 import graphql.DirectivesUtil
 import graphql.NestedInputSchema
 import graphql.introspection.Introspection
+import graphql.schema.GraphQLAppliedDirectiveArgument
 import graphql.schema.GraphQLArgument
 import graphql.schema.GraphQLFieldDefinition
 import graphql.schema.GraphQLInputObjectType
@@ -164,12 +165,15 @@ class SchemaUtilTest extends Specification {
         GraphQLObjectType person = ((GraphQLObjectType) SchemaWithReferences.getType("Person"))
         GraphQLArgument cacheEnabled = SchemaWithReferences.getDirectivesByName()
                 .get(Cache.getName()).getArgument("enabled")
+        GraphQLAppliedDirectiveArgument appliedCacheEnabled = SchemaWithReferences.getSchemaAppliedDirective(Cache.getName())
+                .getArgument("enabled")
 
         then:
         SchemaWithReferences.allTypesAsList.findIndexOf { it instanceof GraphQLTypeReference } == -1
         pet.types.findIndexOf { it instanceof GraphQLTypeReference } == -1
         person.interfaces.findIndexOf { it instanceof GraphQLTypeReference } == -1
         !(cacheEnabled.getType() instanceof GraphQLTypeReference)
+        !(appliedCacheEnabled.getType() instanceof GraphQLTypeReference)
     }
 
     def "all references are replaced with deprecated directiveWithArg"() {

@@ -8,17 +8,17 @@ import graphql.schema.diffing.EditOperation;
 import graphql.schema.diffing.Mapping;
 import graphql.schema.diffing.SchemaGraph;
 import graphql.schema.diffing.Vertex;
-import graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveArgumentRename;
-import graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveObjectLocation;
 import graphql.schema.idl.ScalarInfo;
 
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Predicate;
 
 import static graphql.Assert.assertTrue;
 import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveAddition;
 import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveArgumentDeletion;
+import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveArgumentRename;
 import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveArgumentValueModification;
 import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveDeletion;
 import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveDirectiveArgumentLocation;
@@ -31,6 +31,7 @@ import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveInterf
 import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveInterfaceLocation;
 import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveObjectFieldArgumentLocation;
 import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveObjectFieldLocation;
+import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveObjectLocation;
 import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveScalarLocation;
 import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveUnionLocation;
 import static graphql.schema.diffing.ana.SchemaDifference.DirectiveAddition;
@@ -48,6 +49,7 @@ import static graphql.schema.diffing.ana.SchemaDifference.EnumDifference;
 import static graphql.schema.diffing.ana.SchemaDifference.EnumModification;
 import static graphql.schema.diffing.ana.SchemaDifference.EnumValueAddition;
 import static graphql.schema.diffing.ana.SchemaDifference.EnumValueDeletion;
+import static graphql.schema.diffing.ana.SchemaDifference.EnumValueRenamed;
 import static graphql.schema.diffing.ana.SchemaDifference.InputObjectAddition;
 import static graphql.schema.diffing.ana.SchemaDifference.InputObjectDeletion;
 import static graphql.schema.diffing.ana.SchemaDifference.InputObjectDifference;
@@ -336,11 +338,9 @@ public class EditOperationAnalyzer {
                 if (nameChanged) {
                     AppliedDirectiveArgumentRename argumentRename = new AppliedDirectiveArgumentRename(location, oldArgumentName, newArgumentName);
                     getObjectModification(object.getName()).getDetails().add(argumentRename);
-
                 }
             }
         }
-
     }
 
     private void appliedDirectiveAdded(EditOperation editOperation) {
@@ -593,7 +593,7 @@ public class EditOperationAnalyzer {
                     break;
                 case DELETE_EDGE:
                     Edge oldEdge = editOperation.getSourceEdge();
-                    if (oldEdge.getFrom().isOfType(SchemaGraph.UNION)) {
+                    if (oldEdge.getFrom().isOfType(SchemaGraph.UNION) && !oldEdge.getTo().isOfType(SchemaGraph.APPLIED_DIRECTIVE)) {
                         handleUnionMemberDeleted(editOperation);
                     }
                     break;
@@ -606,14 +606,19 @@ public class EditOperationAnalyzer {
             switch (editOperation.getOperation()) {
                 case INSERT_EDGE:
                     Edge newEdge = editOperation.getTargetEdge();
-                    if (newEdge.getFrom().isOfType(SchemaGraph.ENUM)) {
+                    if (newEdge.getFrom().isOfType(SchemaGraph.ENUM) && newEdge.getTo().isOfType(SchemaGraph.ENUM_VALUE)) {
                         handleEnumValueAdded(editOperation);
                     }
                     break;
                 case DELETE_EDGE:
                     Edge oldEdge = editOperation.getSourceEdge();
-                    if (oldEdge.getFrom().isOfType(SchemaGraph.ENUM)) {
+                    if (oldEdge.getFrom().isOfType(SchemaGraph.ENUM) && oldEdge.getTo().isOfType(SchemaGraph.ENUM_VALUE)) {
                         handleEnumValueDeleted(editOperation);
+                    }
+                    break;
+                case CHANGE_VERTEX:
+                    if (editOperation.getSourceVertex().isOfType(SchemaGraph.ENUM_VALUE) && editOperation.getTargetVertex().isOfType(SchemaGraph.ENUM_VALUE)) {
+                        handleEnumValueChanged(editOperation);
                     }
                     break;
             }
@@ -724,6 +729,13 @@ public class EditOperationAnalyzer {
         enumModification.getDetails().add(new EnumValueDeletion(value.getName()));
     }
 
+    private void handleEnumValueChanged(EditOperation editOperation) {
+        Vertex enumVertex = newSchemaGraph.getEnumForEnumValue(editOperation.getTargetVertex());
+        EnumModification enumModification = getEnumModification(enumVertex.getName());
+        String oldName = editOperation.getSourceVertex().getName();
+        String newName = editOperation.getTargetVertex().getName();
+        enumModification.getDetails().add(new EnumValueRenamed(oldName, newName));
+    }
 
     private void fieldChanged(EditOperation editOperation) {
         Vertex field = editOperation.getTargetVertex();
@@ -932,7 +944,7 @@ public class EditOperationAnalyzer {
             return;
         }
         String newType = getTypeFromEdgeLabel(editOperation.getTargetEdge());
-        EditOperation deletedTypeEdgeOperation = findDeletedEdge(inputField, editOperations, mapping);
+        EditOperation deletedTypeEdgeOperation = findDeletedEdge(inputField, editOperations, mapping, this::isTypeEdge);
         String oldType = getTypeFromEdgeLabel(deletedTypeEdgeOperation.getSourceEdge());
         InputObjectFieldTypeModification inputObjectFieldTypeModification = new InputObjectFieldTypeModification(inputField.getName(), oldType, newType);
         getInputObjectModification(inputObject.getName()).getDetails().add(inputObjectFieldTypeModification);
@@ -963,7 +975,7 @@ public class EditOperationAnalyzer {
                 String newType = getTypeFromEdgeLabel(editOperation.getTargetEdge());
                 // this means we have an existing object changed its type
                 // and there must be a deleted edge with the old type information
-                EditOperation deletedTypeEdgeOperation = findDeletedEdge(argument, editOperations, mapping);
+                EditOperation deletedTypeEdgeOperation = findDeletedEdge(argument, editOperations, mapping, this::isTypeEdge);
                 String oldType = getTypeFromEdgeLabel(deletedTypeEdgeOperation.getSourceEdge());
                 ObjectFieldArgumentTypeModification objectFieldArgumentTypeModification = new ObjectFieldArgumentTypeModification(field.getName(), argument.getName(), oldType, newType);
                 getObjectModification(object.getName()).getDetails().add(objectFieldArgumentTypeModification);
@@ -985,7 +997,7 @@ public class EditOperationAnalyzer {
                 String newType = getTypeFromEdgeLabel(editOperation.getTargetEdge());
                 // this means we have an existing object changed its type
                 // and there must be a deleted edge with the old type information
-                EditOperation deletedTypeEdgeOperation = findDeletedEdge(argument, editOperations, mapping);
+                EditOperation deletedTypeEdgeOperation = findDeletedEdge(argument, editOperations, mapping, this::isTypeEdge);
                 String oldType = getTypeFromEdgeLabel(deletedTypeEdgeOperation.getSourceEdge());
                 InterfaceFieldArgumentTypeModification interfaceFieldArgumentTypeModification = new InterfaceFieldArgumentTypeModification(field.getName(), argument.getName(), oldType, newType);
                 getInterfaceModification(interfaze.getName()).getDetails().add(interfaceFieldArgumentTypeModification);
@@ -1000,7 +1012,7 @@ public class EditOperationAnalyzer {
                 return;
             }
             String newType = getTypeFromEdgeLabel(editOperation.getTargetEdge());
-            EditOperation deletedTypeEdgeOperation = findDeletedEdge(argument, editOperations, mapping);
+            EditOperation deletedTypeEdgeOperation = findDeletedEdge(argument, editOperations, mapping, this::isTypeEdge);
             String oldType = getTypeFromEdgeLabel(deletedTypeEdgeOperation.getSourceEdge());
             DirectiveArgumentTypeModification directiveArgumentTypeModification = new DirectiveArgumentTypeModification(argument.getName(), oldType, newType);
             getDirectiveModification(directive.getName()).getDetails().add(directiveArgumentTypeModification);
@@ -1025,11 +1037,10 @@ public class EditOperationAnalyzer {
             String newType = getTypeFromEdgeLabel(editOperation.getTargetEdge());
             // this means we have an existing object changed its type
             // and there must be a deleted edge with the old type information
-            EditOperation deletedTypeEdgeOperation = findDeletedEdge(field, editOperations, mapping);
+            EditOperation deletedTypeEdgeOperation = findDeletedEdge(field, editOperations, mapping, this::isTypeEdge);
             String oldType = getTypeFromEdgeLabel(deletedTypeEdgeOperation.getSourceEdge());
             ObjectFieldTypeModification objectFieldTypeModification = new ObjectFieldTypeModification(field.getName(), oldType, newType);
             getObjectModification(object.getName()).getDetails().add(objectFieldTypeModification);
-
         } else {
             assertTrue(objectOrInterface.isOfType(SchemaGraph.INTERFACE));
             Vertex interfaze = objectOrInterface;
@@ -1042,22 +1053,23 @@ public class EditOperationAnalyzer {
             String newType = getTypeFromEdgeLabel(editOperation.getTargetEdge());
             // this means we have an existing object changed its type
             // and there must be a deleted edge with the old type information
-            EditOperation deletedTypeEdgeOperation = findDeletedEdge(field, editOperations, mapping);
+            EditOperation deletedTypeEdgeOperation = findDeletedEdge(field, editOperations, mapping, this::isTypeEdge);
             String oldType = getTypeFromEdgeLabel(deletedTypeEdgeOperation.getSourceEdge());
             InterfaceFieldTypeModification interfaceFieldTypeModification = new InterfaceFieldTypeModification(field.getName(), oldType, newType);
             getInterfaceModification(interfaze.getName()).getDetails().add(interfaceFieldTypeModification);
-
         }
     }
 
 
-    private EditOperation findDeletedEdge(Vertex targetVertexFrom, List<EditOperation> editOperations, Mapping
-            mapping) {
+    private EditOperation findDeletedEdge(Vertex targetVertexFrom,
+                                          List<EditOperation> editOperations,
+                                          Mapping mapping,
+                                          Predicate<Edge> edgePredicate) {
         Vertex sourceVertexFrom = mapping.getSource(targetVertexFrom);
         for (EditOperation editOperation : editOperations) {
             if (editOperation.getOperation() == EditOperation.Operation.DELETE_EDGE) {
                 Edge deletedEdge = editOperation.getSourceEdge();
-                if (deletedEdge.getFrom() == sourceVertexFrom) {
+                if (deletedEdge.getFrom() == sourceVertexFrom && edgePredicate.test(deletedEdge)) {
                     return editOperation;
                 }
             }
@@ -1199,6 +1211,10 @@ public class EditOperationAnalyzer {
         return defaultValue;
     }
 
+    private boolean isTypeEdge(Edge edge) {
+        String label = edge.getLabel();
+        return label.startsWith("type=");
+    }
 
     private void interfaceImplementationDeleted(Edge deletedEdge) {
         Vertex from = deletedEdge.getFrom();

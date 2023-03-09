@@ -321,8 +321,8 @@ class FieldValidationTest extends Specification {
                 return new ArrayList<GraphQLError>();
             }
         }
-        def instrumentations = List.of(new FieldValidationInstrumentation
-                (fieldValidation));
+        def instrumentations = [new FieldValidationInstrumentation
+                (fieldValidation)]
         def chainedInstrumentation = new ChainedInstrumentation(instrumentations);
         def graphql = GraphQL
                 .newGraphQL(schema)

@@ -14,11 +14,9 @@ plugins {
     id "me.champeau.jmh" version "0.6.6"
 }
 
-
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of(11)
-
+        languageVersion = JavaLanguageVersion.of(8)
     }
 }
 
@@ -51,7 +49,7 @@ def getDevelopmentVersion() {
 def reactiveStreamsVersion = '1.0.3'
 def slf4jVersion = '1.7.35'
 def releaseVersion = System.env.RELEASE_VERSION
-def antlrVersion = '4.11.1' // https://mvnrepository.com/artifact/org.antlr/antlr4-runtime
+def antlrVersion = '4.9.3' // https://mvnrepository.com/artifact/org.antlr/antlr4-runtime
 version = releaseVersion ? releaseVersion : getDevelopmentVersion()
 group = 'com.graphql-java'
 
@@ -150,30 +148,39 @@ shadowJar {
     // -removeheaders:  Private-Package Removes the MANIFEST.MF header Private-Package, which contains all the internal packages and 
     //                                  also the repackaged packages like guava, which would be wrong after repackaging.
     // Import-Package:  Changes the imported packages header, to exclude guava and dependencies from the import list (! excludes packages)
-    //                  Guava was repackaged and included inside the jar, so we need remove it.
+    //                  Guava was repackaged and included inside the jar, so we need to remove it.
+    //                  ANTLR was shaded, so we need to remove it.
+    //                  sun.misc is a JRE internal-only class that is not directly used by graphql-java. It was causing problems in libraries using graphql-java.
     //                  The last ,* copies all the existing imports from the other dependencies, which is required.
     bnd('''
 -exportcontents: graphql.*
 -removeheaders: Private-Package
-Import-Package: !com.google.*,!org.checkerframework.*,!javax.annotation.*,!graphql.com.google.*,!org.antlr.*,!graphql.org.antlr.*,*
+Import-Package: !com.google.*,!org.checkerframework.*,!javax.annotation.*,!graphql.com.google.*,!org.antlr.*,!graphql.org.antlr.*,!sun.misc.*,*
 ''')
 }
 
 
-task removeNotNeededGuava(type: Zip) {
+task extractWithoutGuava(type: Copy) {
     from({ zipTree({ "build/libs/graphql-java-${project.version}.jar" }) }) {
         exclude('/com/**')
     }
+    into layout.buildDirectory.dir("extract")
+}
+
+task buildNewJar(type: Jar) {
+    from layout.buildDirectory.dir("extract")
     archiveFileName = "graphql-java-tmp.jar"
     destinationDirectory = file("${project.buildDir}/libs")
+    manifest {
+        from file("build/extract/META-INF/MANIFEST.MF")
+    }
     doLast {
         delete("build/libs/graphql-java-${project.version}.jar")
         file("build/libs/graphql-java-tmp.jar").renameTo(file("build/libs/graphql-java-${project.version}.jar"))
     }
 }
 
-
-shadowJar.finalizedBy removeNotNeededGuava
+shadowJar.finalizedBy extractWithoutGuava, buildNewJar
 
 
 task testng(type: Test) {

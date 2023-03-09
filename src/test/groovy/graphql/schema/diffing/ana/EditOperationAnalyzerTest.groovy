@@ -4,6 +4,11 @@ import graphql.TestUtil
 import graphql.schema.diffing.SchemaDiffing
 import spock.lang.Specification
 
+import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveDeletion
+import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveObjectFieldArgumentLocation
+import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveDirectiveArgumentLocation
+import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveObjectFieldLocation
+import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveInterfaceFieldArgumentLocation
 import static graphql.schema.diffing.ana.SchemaDifference.DirectiveAddition
 import static graphql.schema.diffing.ana.SchemaDifference.DirectiveArgumentAddition
 import static graphql.schema.diffing.ana.SchemaDifference.DirectiveArgumentDefaultValueModification
@@ -17,6 +22,7 @@ import static graphql.schema.diffing.ana.SchemaDifference.EnumDeletion
 import static graphql.schema.diffing.ana.SchemaDifference.EnumModification
 import static graphql.schema.diffing.ana.SchemaDifference.EnumValueAddition
 import static graphql.schema.diffing.ana.SchemaDifference.EnumValueDeletion
+import static graphql.schema.diffing.ana.SchemaDifference.EnumValueRenamed
 import static graphql.schema.diffing.ana.SchemaDifference.InputObjectAddition
 import static graphql.schema.diffing.ana.SchemaDifference.InputObjectDeletion
 import static graphql.schema.diffing.ana.SchemaDifference.InputObjectFieldAddition
@@ -1149,6 +1155,39 @@ class EditOperationAnalyzerTest extends Specification {
         enumModification.getDetails(EnumValueDeletion)[0].name == "B"
     }
 
+    def "enum value added and removed"() {
+        given:
+        def oldSdl = '''
+        type Query {
+            e: MyEnum
+        }
+        enum MyEnum {
+            A
+            B
+        }
+        '''
+        def newSdl = '''
+        type Query {
+            e: MyEnum
+        }
+        enum MyEnum {
+            A
+            C
+        }
+        '''
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+        then:
+        changes.enumDifferences["MyEnum"] instanceof EnumModification
+
+        def enumModification = changes.enumDifferences["MyEnum"] as EnumModification
+        enumModification.getDetails().size() == 1
+
+        def rename = enumModification.getDetails(EnumValueRenamed)[0]
+        rename.oldName == "B"
+        rename.newName == "C"
+    }
+
     def "scalar added"() {
         given:
         def oldSdl = '''
@@ -1663,6 +1702,240 @@ class EditOperationAnalyzerTest extends Specification {
         argTypeModification[0].newType == '[String]!'
     }
 
+    def "field renamed and output type changed and argument deleted"() {
+        given:
+        def oldSdl = '''
+        type Query {
+            ping(pong: String): ID
+        }
+        '''
+        def newSdl = '''
+        type Query {
+            echo: String
+        }
+        '''
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+        then:
+        true
+        changes.objectDifferences["Query"] instanceof ObjectModification
+        def objectDiff = changes.objectDifferences["Query"] as ObjectModification
+
+        def rename = objectDiff.getDetails(ObjectFieldRename)
+        rename.size() == 1
+        rename[0].oldName == "ping"
+        rename[0].newName == "echo"
+
+        def argumentDeletion = objectDiff.getDetails(ObjectFieldArgumentDeletion)
+        argumentDeletion.size() == 1
+        argumentDeletion[0].fieldName == "ping"
+        argumentDeletion[0].name == "pong"
+
+        def typeModification = objectDiff.getDetails(ObjectFieldTypeModification)
+        typeModification.size() == 1
+        typeModification[0].fieldName == "echo"
+        typeModification[0].oldType == "ID"
+        typeModification[0].newType == "String"
+    }
+
+    def "object field argument changed and applied directive deleted"() {
+        given:
+        def oldSdl = '''
+        type Query {
+            ping(pong: String @d): ID
+        }
+        directive @d on ARGUMENT_DEFINITION
+        '''
+        def newSdl = '''
+        type Query {
+            ping(pong: Int): ID
+        }
+        '''
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+        then:
+        true
+        changes.objectDifferences["Query"] instanceof ObjectModification
+        def objectDiff = changes.objectDifferences["Query"] as ObjectModification
+
+        def typeModification = objectDiff.getDetails(ObjectFieldArgumentTypeModification)
+        typeModification.size() == 1
+        typeModification[0].oldType == "String"
+        typeModification[0].newType == "Int"
+        typeModification[0].fieldName == "ping"
+        typeModification[0].argumentName == "pong"
+
+        def directiveDeletion = objectDiff.getDetails(AppliedDirectiveDeletion)
+        directiveDeletion.size() == 1
+        directiveDeletion[0].name == "d"
+        directiveDeletion[0].locationDetail instanceof AppliedDirectiveObjectFieldArgumentLocation
+
+        def location = directiveDeletion[0].locationDetail as AppliedDirectiveObjectFieldArgumentLocation
+        location.objectName == "Query"
+        location.fieldName == "ping"
+        location.argumentName == "pong"
+    }
+
+    def "interface field argument changed and applied directive deleted"() {
+        given:
+        def oldSdl = '''
+        type Query {
+            echo: String
+        }
+        interface TableTennis {
+            ping(pong: String @d): ID
+        }
+        directive @d on ARGUMENT_DEFINITION
+        '''
+        def newSdl = '''
+        type Query {
+            echo: String
+        }
+        interface TableTennis {
+            ping(pong: Int): ID
+        }
+        '''
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+        then:
+        true
+        changes.interfaceDifferences["TableTennis"] instanceof InterfaceModification
+        def diff = changes.interfaceDifferences["TableTennis"] as InterfaceModification
+
+        def typeModification = diff.getDetails(InterfaceFieldArgumentTypeModification)
+        typeModification.size() == 1
+        typeModification[0].oldType == "String"
+        typeModification[0].newType == "Int"
+        typeModification[0].fieldName == "ping"
+        typeModification[0].argumentName == "pong"
+
+        def directiveDeletion = diff.getDetails(AppliedDirectiveDeletion)
+        directiveDeletion.size() == 1
+        directiveDeletion[0].name == "d"
+        directiveDeletion[0].locationDetail instanceof AppliedDirectiveInterfaceFieldArgumentLocation
+
+        def location = directiveDeletion[0].locationDetail as AppliedDirectiveInterfaceFieldArgumentLocation
+        location.interfaceName == "TableTennis"
+        location.fieldName == "ping"
+        location.argumentName == "pong"
+    }
+
+    def "directive argument changed and applied directive deleted"() {
+        given:
+        def oldSdl = '''
+        type Query {
+            ping(pong: String): ID @d
+        }
+        directive @a on ARGUMENT_DEFINITION
+        directive @d(message: ID @a) on FIELD_DEFINITION
+        '''
+        def newSdl = '''
+        type Query {
+            ping(pong: String): ID @d
+        }
+        directive @a on ARGUMENT_DEFINITION
+        directive @d(message: String) on FIELD_DEFINITION
+        '''
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+        then:
+        true
+        changes.directiveDifferences["d"] instanceof DirectiveModification
+        def diff = changes.directiveDifferences["d"] as DirectiveModification
+
+        def typeModification = diff.getDetails(DirectiveArgumentTypeModification)
+        typeModification.size() == 1
+        typeModification[0].oldType == "ID"
+        typeModification[0].newType == "String"
+        typeModification[0].argumentName == "message"
+
+        def directiveDeletion = diff.getDetails(AppliedDirectiveDeletion)
+        directiveDeletion.size() == 1
+        directiveDeletion[0].name == "a"
+        directiveDeletion[0].locationDetail instanceof AppliedDirectiveDirectiveArgumentLocation
+
+        def location = directiveDeletion[0].locationDetail as AppliedDirectiveDirectiveArgumentLocation
+        location.directiveName == "d"
+        location.argumentName == "message"
+    }
+
+    def "field output type changed and applied directive removed"() {
+        given:
+        def oldSdl = '''
+        type Query {
+            echo: ID @d
+        }
+        directive @d on FIELD_DEFINITION
+        '''
+        def newSdl = '''
+        type Query {
+            echo: String
+        }
+        '''
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+        then:
+        true
+        changes.objectDifferences["Query"] instanceof ObjectModification
+        def objectDiff = changes.objectDifferences["Query"] as ObjectModification
+
+        def typeModification = objectDiff.getDetails(ObjectFieldTypeModification)
+        typeModification.size() == 1
+        typeModification[0].fieldName == "echo"
+        typeModification[0].oldType == "ID"
+        typeModification[0].newType == "String"
+
+        def directiveDeletion = objectDiff.getDetails(AppliedDirectiveDeletion)
+        directiveDeletion.size() == 1
+        directiveDeletion[0].name == "d"
+        directiveDeletion[0].locationDetail instanceof AppliedDirectiveObjectFieldLocation
+
+        def location = directiveDeletion[0].locationDetail as AppliedDirectiveObjectFieldLocation
+        location.objectName == "Query"
+        location.fieldName == "echo"
+    }
+
+    def "input field renamed and type changed and applied directive removed"() {
+        given:
+        def oldSdl = '''
+        type Query {
+            echo(input: Echo): String
+        }
+        input Echo {
+            message: String @d
+        }
+        directive @d on INPUT_FIELD_DEFINITION
+        '''
+        def newSdl = '''
+        type Query {
+            echo(input: Echo): String
+        }
+        input Echo {
+            age: Int
+        }
+        '''
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+        then:
+        true
+        changes.inputObjectDifferences["Echo"] instanceof InputObjectModification
+        def diff = changes.inputObjectDifferences["Echo"] as InputObjectModification
+
+        def rename = diff.getDetails(InputObjectFieldRename)
+        rename.size() == 1
+        rename[0].oldName == "message"
+        rename[0].newName == "age"
+
+        def typeModification = diff.getDetails(InputObjectFieldTypeModification)
+        typeModification.size() == 1
+        typeModification[0].fieldName == "age"
+        typeModification[0].oldType == "String"
+        typeModification[0].newType == "Int"
+
+        def directiveDeletion = diff.getDetails(AppliedDirectiveDeletion)
+        directiveDeletion.size() == 1
+        directiveDeletion[0].name == "d"
+    }
 
     EditOperationAnalysisResult calcDiff(
             String oldSdl,
