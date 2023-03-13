@@ -13,6 +13,7 @@ import graphql.parser.antlr.GraphqlBaseListener;
 import graphql.parser.antlr.GraphqlLexer;
 import graphql.parser.antlr.GraphqlParser;
 import graphql.parser.exceptions.ParseCancelledException;
+import graphql.parser.exceptions.ParseCancelledTooDeepException;
 import org.antlr.v4.runtime.BaseErrorListener;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CodePointCharStream;
@@ -299,7 +300,12 @@ public class Parser {
         // this lexer wrapper allows us to stop lexing when too many tokens are in place.  This prevents DOS attacks.
         int maxTokens = parserOptions.getMaxTokens();
         int maxWhitespaceTokens = parserOptions.getMaxWhitespaceTokens();
-        BiConsumer<Integer, Token> onTooManyTokens = (maxTokenCount, token) -> throwCancelParseIfTooManyTokens(environment, token, maxTokenCount, multiSourceReader);
+        BiConsumer<Integer, Token> onTooManyTokens = (maxTokenCount, token) -> throwIfTokenProblems(
+                environment,
+                token,
+                maxTokenCount,
+                multiSourceReader,
+                ParseCancelledException.class);
         SafeTokenSource safeTokenSource = new SafeTokenSource(lexer, maxTokens, maxWhitespaceTokens, onTooManyTokens);
 
         CommonTokenStream tokens = new CommonTokenStream(safeTokenSource);
@@ -345,9 +351,31 @@ public class Parser {
         ParserOptions parserOptions = toLanguage.getParserOptions();
         ParsingListener parsingListener = parserOptions.getParsingListener();
         int maxTokens = parserOptions.getMaxTokens();
+        int maxRuleDepth = parserOptions.getMaxRuleDepth();
         // prevent a billion laugh attacks by restricting how many tokens we allow
         ParseTreeListener listener = new GraphqlBaseListener() {
             int count = 0;
+            int depth = 0;
+
+
+            @Override
+            public void enterEveryRule(ParserRuleContext ctx) {
+                depth++;
+                if (depth > maxRuleDepth) {
+                    throwIfTokenProblems(
+                            environment,
+                            ctx.getStart(),
+                            maxRuleDepth,
+                            multiSourceReader,
+                            ParseCancelledTooDeepException.class
+                    );
+                }
+            }
+
+            @Override
+            public void exitEveryRule(ParserRuleContext ctx) {
+                depth--;
+            }
 
             @Override
             public void visitTerminal(TerminalNode node) {
@@ -372,14 +400,20 @@ public class Parser {
 
                 count++;
                 if (count > maxTokens) {
-                    throwCancelParseIfTooManyTokens(environment, token, maxTokens, multiSourceReader);
+                    throwIfTokenProblems(
+                            environment,
+                            token,
+                            maxTokens,
+                            multiSourceReader,
+                            ParseCancelledException.class
+                    );
                 }
             }
         };
         parser.addParseListener(listener);
     }
 
-    private void throwCancelParseIfTooManyTokens(ParserEnvironment environment, Token token, int maxTokens, MultiSourceReader multiSourceReader) throws ParseCancelledException {
+    private void throwIfTokenProblems(ParserEnvironment environment, Token token, int maxLimit, MultiSourceReader multiSourceReader, Class<? extends InvalidSyntaxException> targetException) throws ParseCancelledException {
         String tokenType = "grammar";
         SourceLocation sourceLocation = null;
         String offendingToken = null;
@@ -390,7 +424,10 @@ public class Parser {
             offendingToken = token.getText();
             sourceLocation = AntlrHelper.createSourceLocation(multiSourceReader, token.getLine(), token.getCharPositionInLine());
         }
-        throw new ParseCancelledException(environment.getI18N(), sourceLocation, offendingToken, maxTokens, tokenType);
+        if (targetException.equals(ParseCancelledTooDeepException.class)) {
+            throw new ParseCancelledTooDeepException(environment.getI18N(), sourceLocation, offendingToken, maxLimit, tokenType);
+        }
+        throw new ParseCancelledException(environment.getI18N(), sourceLocation, offendingToken, maxLimit, tokenType);
     }
 
     /**
