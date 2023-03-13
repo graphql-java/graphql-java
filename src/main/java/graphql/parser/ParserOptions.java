@@ -35,12 +35,12 @@ public class ParserOptions {
     /**
      * A graphql hacking vector is to send nonsensical queries that have lots of grammar rule depth to them which
      * can cause stack overflow exceptions during the query parsing.  To prevent this for most users, graphql-java
-     * sets this value to 1000.
+     * sets this value to 500 grammar rules deep.
      * <p>
      * If you want to allow more, then {@link #setDefaultParserOptions(ParserOptions)} allows you to change this
      * JVM wide.
      */
-    public static final int MAX_RULE_DEPTH = 1_000;
+    public static final int MAX_RULE_DEPTH = 500;
 
     private static ParserOptions defaultJvmParserOptions = newParserOptions()
             .captureIgnoredChars(false)
