@@ -363,7 +363,7 @@ class SchemaParserTest extends Specification {
 
     }
 
-    def "correctly parses schema keyword block"() {
+    def "correctly parses schema keyword block, include Query, does not include Mutation type"() {
         // From RFC to clarify spec https://github.com/graphql/graphql-spec/pull/987
         when:
         def graphQL = TestUtil.graphQL("""
@@ -388,5 +388,52 @@ class SchemaParserTest extends Specification {
         graphQL.graphQLSchema.definition.operationTypeDefinitions.first().name == "query"
         graphQL.graphQLSchema.queryType != null
         graphQL.graphQLSchema.mutationType == null
+    }
+
+    def "correctly parses schema keyword block, include Query, does not include Subscription type"() {
+        // From RFC to clarify spec https://github.com/graphql/graphql-spec/pull/987
+        when:
+        def graphQL = TestUtil.graphQL("""
+            schema {
+              query: Query
+            }
+            type Query {
+              viruses: [Virus!]
+            }
+            type Virus {
+              name: String!
+            }
+            type Subscription {
+              newspaper: String!
+            }
+        """).build()
+
+        then:
+        graphQL.graphQLSchema.definition.operationTypeDefinitions.size() == 1
+        graphQL.graphQLSchema.definition.operationTypeDefinitions.first().name == "query"
+        graphQL.graphQLSchema.queryType != null
+        graphQL.graphQLSchema.subscriptionType == null
+    }
+
+    def "correctly parses schema that does not contain the schema keyword, includes Query and Mutation types"() {
+        when:
+        def schema = """
+            type Mutation {
+              name: String!
+              geneSequence: String!
+            }
+            type Query {
+              viruses: [Virus!]
+            }
+            type Virus {
+              name: String!
+            }
+        """
+        def graphQL = TestUtil.graphQL(schema).build()
+
+        then:
+        graphQL.graphQLSchema.definition == null // No SchemaDefinition
+        graphQL.graphQLSchema.queryType != null
+        graphQL.graphQLSchema.mutationType != null
     }
 }
