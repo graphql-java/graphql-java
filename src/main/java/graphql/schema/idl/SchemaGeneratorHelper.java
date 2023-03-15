@@ -909,10 +909,13 @@ public class SchemaGeneratorHelper {
 
         Optional<OperationTypeDefinition> mutationOperation = getOperationNamed("mutation", operationTypeDefs);
         if (!mutationOperation.isPresent()) {
-            Optional<TypeDefinition> mutationTypeDef = typeRegistry.getType("Mutation");
-            if (mutationTypeDef.isPresent()) {
-                mutation = buildOutputType(buildCtx, TypeName.newTypeName().name(mutationTypeDef.get().getName()).build());
-                schemaBuilder.mutation(mutation);
+            if (!typeRegistry.schemaDefinition().isPresent()) {
+                // If no schema definition, then there is no schema keyword. Default to using type called Mutation
+                Optional<TypeDefinition> mutationTypeDef = typeRegistry.getType("Mutation");
+                if (mutationTypeDef.isPresent()) {
+                    mutation = buildOutputType(buildCtx, TypeName.newTypeName().name(mutationTypeDef.get().getName()).build());
+                    schemaBuilder.mutation(mutation);
+                }
             }
         } else {
             mutation = buildOperation(buildCtx, mutationOperation.get());
@@ -921,10 +924,13 @@ public class SchemaGeneratorHelper {
 
         Optional<OperationTypeDefinition> subscriptionOperation = getOperationNamed("subscription", operationTypeDefs);
         if (!subscriptionOperation.isPresent()) {
-            Optional<TypeDefinition> subscriptionTypeDef = typeRegistry.getType("Subscription");
-            if (subscriptionTypeDef.isPresent()) {
-                subscription = buildOutputType(buildCtx, TypeName.newTypeName().name(subscriptionTypeDef.get().getName()).build());
-                schemaBuilder.subscription(subscription);
+            if (!typeRegistry.schemaDefinition().isPresent()) {
+                // If no schema definition, then there is no schema keyword. Default to using type called Subscription
+                Optional<TypeDefinition> subscriptionTypeDef = typeRegistry.getType("Subscription");
+                if (subscriptionTypeDef.isPresent()) {
+                    subscription = buildOutputType(buildCtx, TypeName.newTypeName().name(subscriptionTypeDef.get().getName()).build());
+                    schemaBuilder.subscription(subscription);
+                }
             }
         } else {
             subscription = buildOperation(buildCtx, subscriptionOperation.get());

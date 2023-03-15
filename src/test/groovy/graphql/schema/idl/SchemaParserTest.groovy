@@ -1,5 +1,6 @@
 package graphql.schema.idl
 
+import graphql.TestUtil
 import graphql.language.EnumTypeDefinition
 import graphql.language.InterfaceTypeDefinition
 import graphql.language.ObjectTypeDefinition
@@ -8,6 +9,8 @@ import graphql.parser.ParserOptions
 import graphql.schema.idl.errors.SchemaProblem
 import spock.lang.Specification
 import spock.lang.Unroll
+
+import static graphql.schema.idl.SchemaPrinter.Options.defaultOptions
 
 /**
  * We don't want to retest the base GraphQL parser since it has its own testing
@@ -360,5 +363,121 @@ class SchemaParserTest extends Specification {
         def e = thrown(SchemaProblem)
         e.errors[0].message.contains("parsing has been cancelled")
 
+    }
+
+    def "correctly parses schema keyword block, include Query, does not include Mutation type"() {
+        // From RFC to clarify spec https://github.com/graphql/graphql-spec/pull/987
+        when:
+        def schema = """schema {
+  query: Query
+}
+
+type Mutation {
+  geneSequence: String!
+  name: String!
+}
+
+type Query {
+  viruses: [Virus!]
+}
+
+type Virus {
+  knownMutations: [Mutation!]!
+  name: String!
+}
+"""
+        def graphQL = TestUtil.graphQL(schema).build()
+
+        then:
+        graphQL.graphQLSchema.definition.operationTypeDefinitions.size() == 1
+        graphQL.graphQLSchema.definition.operationTypeDefinitions.first().name == "query"
+        graphQL.graphQLSchema.queryType != null
+        graphQL.graphQLSchema.mutationType == null
+
+        when:
+        // Verify that the printed schema is the same as the original
+        def options = defaultOptions()
+                .includeIntrospectionTypes(false)
+                .includeScalarTypes(false)
+                .includeDirectiveDefinitions(false)
+                .includeSchemaDefinition(true)
+
+        then:
+        def printedSchema = new SchemaPrinter(options).print(graphQL.graphQLSchema)
+        printedSchema == schema
+    }
+
+    def "correctly parses schema keyword block, include Query, does not include Subscription type"() {
+        // From RFC to clarify spec https://github.com/graphql/graphql-spec/pull/987
+        when:
+        def schema = """schema {
+  query: Query
+}
+
+type Query {
+  viruses: [Virus!]
+}
+
+type Subscription {
+  newspaper: String!
+}
+
+type Virus {
+  name: String!
+}
+"""
+        def graphQL = TestUtil.graphQL(schema).build()
+
+        then:
+        graphQL.graphQLSchema.definition.operationTypeDefinitions.size() == 1
+        graphQL.graphQLSchema.definition.operationTypeDefinitions.first().name == "query"
+        graphQL.graphQLSchema.queryType != null
+        graphQL.graphQLSchema.subscriptionType == null
+
+        when:
+        // Verify that the printed schema is the same as the original
+        def options = defaultOptions()
+                .includeIntrospectionTypes(false)
+                .includeScalarTypes(false)
+                .includeDirectiveDefinitions(false)
+                .includeSchemaDefinition(true)
+
+        then:
+        def printedSchema = new SchemaPrinter(options).print(graphQL.graphQLSchema)
+        printedSchema == schema
+    }
+
+    def "correctly parses schema that does not contain a schema definition block, includes Query and Mutation types"() {
+        when:
+        def schema = """type Mutation {
+  geneSequence: String!
+  name: String!
+}
+
+type Query {
+  viruses: [Virus!]
+}
+
+type Virus {
+  name: String!
+}
+"""
+        def graphQL = TestUtil.graphQL(schema).build()
+
+        then:
+        graphQL.graphQLSchema.definition == null // No SchemaDefinition
+        graphQL.graphQLSchema.queryType != null
+        graphQL.graphQLSchema.mutationType != null
+
+        when:
+        // Verify that the printed schema is the same as the original
+        def options = defaultOptions()
+                .includeIntrospectionTypes(false)
+                .includeScalarTypes(false)
+                .includeDirectiveDefinitions(false)
+
+        then:
+        def printedSchema = new SchemaPrinter(options).print(graphQL.graphQLSchema)
+        printedSchema == schema
     }
 }
