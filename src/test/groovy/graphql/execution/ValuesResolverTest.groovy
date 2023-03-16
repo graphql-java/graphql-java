@@ -25,6 +25,8 @@ import graphql.schema.CoercingParseValueException
 import spock.lang.Specification
 import spock.lang.Unroll
 
+import java.util.function.Function
+
 import static graphql.Scalars.GraphQLBoolean
 import static graphql.Scalars.GraphQLFloat
 import static graphql.Scalars.GraphQLInt
@@ -121,6 +123,36 @@ class ValuesResolverTest extends Specification {
         then:
         thrown(CoercingParseValueException)
     }
+
+    def "getVariableValues: object as variable input with custom pre-coercion function"() {
+        given:
+        def nameField = newInputObjectField()
+            .name("name")
+            .type(GraphQLString)
+        def idField = newInputObjectField()
+            .name("id")
+            .type(GraphQLInt)
+        def inputType = newInputObject()
+            .name("Person")
+            .field(nameField)
+            .field(idField)
+            .build()
+        def schema = TestUtil.schemaWithInputType(inputType)
+        VariableDefinition variableDefinition = new VariableDefinition("variable", new TypeName("Person"))
+
+        when:
+        def obj = new Person('a', 123)
+        Function<Object, Object> func = input -> { return (input instanceof Person) ? preProcessedInputValue : input}
+        def resolvedValues = ValuesResolver.coerceVariableValues(schema, [variableDefinition], RawVariables.of([variable: obj]), graphQLContext, locale, func)
+
+        then:
+        resolvedValues.get('variable') == outputValue
+
+        where:
+        preProcessedInputValue        || outputValue
+        [name: "nick", 'id': 123]     || [name: "nick", 'id': 123]
+    }
+
 
     def "getVariableValues: simple value gets resolved to a list when the type is a List"() {
         given:

@@ -25,6 +25,7 @@ import graphql.schema.InputValueWithState;
 import graphql.schema.visibility.DefaultGraphqlFieldVisibility;
 import graphql.schema.visibility.GraphqlFieldVisibility;
 import graphql.util.FpKit;
+import java.util.function.Function;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -239,7 +240,9 @@ class ValuesResolverConversion {
     static CoercedVariables externalValueToInternalValueForVariables(GraphQLSchema schema,
                                                                      List<VariableDefinition> variableDefinitions,
                                                                      RawVariables rawVariables,
-                                                                     GraphQLContext graphqlContext, Locale locale) {
+                                                                     GraphQLContext graphqlContext,
+                                                                     Locale locale,
+                                                                     Function<Object, Object> preCoercionFunction) {
         GraphqlFieldVisibility fieldVisibility = schema.getCodeRegistry().getFieldVisibility();
         Map<String, Object> coercedValues = new LinkedHashMap<>();
         for (VariableDefinition variableDefinition : variableDefinitions) {
@@ -257,10 +260,11 @@ class ValuesResolverConversion {
                 } else if (isNonNull(variableType) && (!hasValue || value == null)) {
                     throw new NonNullableValueCoercedAsNullException(variableDefinition, variableType);
                 } else if (hasValue) {
-                    if (value == null) {
+                    Object preProcessedValue = (preCoercionFunction == null) ? value : preCoercionFunction.apply(value);
+                    if (preProcessedValue == null) {
                         coercedValues.put(variableName, null);
                     } else {
-                        Object coercedValue = externalValueToInternalValueImpl(fieldVisibility, variableType, value, graphqlContext, locale);
+                        Object coercedValue = externalValueToInternalValueImpl(fieldVisibility, variableType, preProcessedValue, graphqlContext, locale);
                         coercedValues.put(variableName, coercedValue);
                     }
                 }

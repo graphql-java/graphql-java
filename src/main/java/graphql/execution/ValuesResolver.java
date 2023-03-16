@@ -26,6 +26,7 @@ import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLType;
 import graphql.schema.InputValueWithState;
 import graphql.schema.visibility.GraphqlFieldVisibility;
+import java.util.function.Function;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -78,9 +79,33 @@ public class ValuesResolver {
                                                         GraphQLContext graphqlContext,
                                                         Locale locale) throws CoercingParseValueException, NonNullableValueCoercedAsNullException {
 
-        return ValuesResolverConversion.externalValueToInternalValueForVariables(schema, variableDefinitions, rawVariables, graphqlContext, locale);
+        return ValuesResolverConversion.externalValueToInternalValueForVariables(schema, variableDefinitions, rawVariables, graphqlContext, locale, null);
     }
 
+    /**
+     * This method coerces the "raw" variables values provided to the engine. The coerced values will be used to
+     * provide arguments to {@link graphql.schema.DataFetchingEnvironment}. This function takes a callable pre-coercion
+     * function that allows users to inject custom coercion instead of needing to build new types.
+     *
+     * This method is called once per execution and also performs validation.
+     *
+     * @param schema              the schema
+     * @param variableDefinitions the variable definitions
+     * @param rawVariables        the supplied variables
+     * @param graphqlContext      the GraphqlContext to use
+     * @param locale              the Locale to use
+     * @param preCoercionFunction the function to pre-coerce values if non-null
+     *
+     * @return coerced variable values as a map
+     */
+    public static CoercedVariables coerceVariableValues(GraphQLSchema schema,
+        List<VariableDefinition> variableDefinitions,
+        RawVariables rawVariables,
+        GraphQLContext graphqlContext,
+        Locale locale,
+        Function<Object, Object> preCoercionFunction) throws CoercingParseValueException, NonNullableValueCoercedAsNullException {
+        return ValuesResolverConversion.externalValueToInternalValueForVariables(schema, variableDefinitions, rawVariables, graphqlContext, locale, preCoercionFunction);
+    }
 
     /**
      * Normalized variables values are Literals with type information. No validation here!
