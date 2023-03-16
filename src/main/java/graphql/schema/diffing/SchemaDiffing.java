@@ -23,7 +23,7 @@ public class SchemaDiffing {
 
     /**
      * Tries to stop the algorithm from execution ASAP by throwing a
-     * {@link SchemaDiffingJobCancelledException}.
+     * {@link SchemaDiffingCancelledException}.
      */
     public void stop() {
         runningCheck.stop();
