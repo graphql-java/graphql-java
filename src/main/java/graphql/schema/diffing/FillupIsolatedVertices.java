@@ -41,14 +41,15 @@ import static java.util.Collections.singletonList;
 
 @Internal
 public class FillupIsolatedVertices {
+    private final SchemaDiffingRunningCheck runningCheck;
 
-    SchemaGraph sourceGraph;
-    SchemaGraph targetGraph;
-    IsolatedVertices isolatedVertices;
+    private final SchemaGraph sourceGraph;
+    private final SchemaGraph targetGraph;
+    private final IsolatedVertices isolatedVertices;
 
-    private BiMap<Vertex, Vertex> toRemove = HashBiMap.create();
+    private final BiMap<Vertex, Vertex> toRemove = HashBiMap.create();
 
-    static Map<String, List<VertexContextSegment>> typeContexts = new LinkedHashMap<>();
+    final static Map<String, List<VertexContextSegment>> typeContexts = new LinkedHashMap<>();
 
     static {
         typeContexts.put(SCHEMA, schemaContext());
@@ -710,7 +711,8 @@ public class FillupIsolatedVertices {
     }
 
 
-    public FillupIsolatedVertices(SchemaGraph sourceGraph, SchemaGraph targetGraph) {
+    public FillupIsolatedVertices(SchemaGraph sourceGraph, SchemaGraph targetGraph, SchemaDiffingRunningCheck runningCheck) {
+        this.runningCheck = runningCheck;
         this.sourceGraph = sourceGraph;
         this.targetGraph = targetGraph;
         this.isolatedVertices = new IsolatedVertices();
@@ -830,6 +832,7 @@ public class FillupIsolatedVertices {
             Set<Vertex> usedSourceVertices,
             Set<Vertex> usedTargetVertices,
             String typeNameForDebug) {
+        runningCheck.check();
 
         VertexContextSegment finalCurrentContext = contexts.get(contextIx);
         Map<String, ImmutableList<Vertex>> sourceGroups = FpKit.filterAndGroupingBy(currentSourceVertices,
@@ -922,5 +925,7 @@ public class FillupIsolatedVertices {
         isolatedVertices.putPossibleMappings(possibleSourceVertices, possibleTargetVertices);
     }
 
-
+    public IsolatedVertices getIsolatedVertices() {
+        return isolatedVertices;
+    }
 }
