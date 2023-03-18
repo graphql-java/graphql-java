@@ -451,8 +451,7 @@ public abstract class ExecutionStrategy {
         CompletableFuture<ExecutionResult> fieldValue;
 
         if (result == null) {
-            fieldValue = completeValueForNull(executionContext, parameters);
-            return FieldValueInfo.newFieldValueInfo(NULL).fieldValue(fieldValue).build();
+            return getFieldValueInfoForNull(executionContext, parameters);
         } else if (isList(fieldType)) {
             return completeValueForList(executionContext, parameters, result);
         } else if (isScalar(fieldType)) {
@@ -473,10 +472,8 @@ public abstract class ExecutionStrategy {
         } catch (UnresolvedTypeException ex) {
             // consider the result to be null and add the error on the context
             handleUnresolvedTypeProblem(executionContext, parameters, ex);
-            // and validate the field is nullable, if non-nullable throw exception
-            parameters.getNonNullFieldValidator().validate(parameters.getPath(), null);
-            // complete the field as null
-            fieldValue = completedFuture(new ExecutionResultImpl(null, executionContext.getErrors()));
+            // complete field as null, validating it is nullable
+            return getFieldValueInfoForNull(executionContext, parameters);
         }
         return FieldValueInfo.newFieldValueInfo(OBJECT).fieldValue(fieldValue).build();
     }
@@ -486,6 +483,21 @@ public abstract class ExecutionStrategy {
         logNotSafe.warn(error.getMessage(), e);
         context.addError(error);
 
+    }
+
+    /**
+     * Called to complete a null value.
+     *
+     * @param executionContext contains the top level execution parameters
+     * @param parameters       contains the parameters holding the fields to be executed and source object
+     *
+     * @return a {@link FieldValueInfo}
+     *
+     * @throws NonNullableFieldWasNullException if a non null field resolves to a null value
+     */
+    private FieldValueInfo getFieldValueInfoForNull(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
+        CompletableFuture<ExecutionResult> fieldValue = completeValueForNull(executionContext, parameters);
+        return FieldValueInfo.newFieldValueInfo(NULL).fieldValue(fieldValue).build();
     }
 
     protected CompletableFuture<ExecutionResult> completeValueForNull(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
