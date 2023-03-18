@@ -191,7 +191,7 @@ public class LambdaFetchingSupport {
 
     @VisibleForTesting
     static Function<Object, Object> mkCallFunction(Class<?> targetClass, String targetMethod, Class<?> targetMethodReturnType) throws Throwable {
-        MethodHandles.Lookup lookup = MethodHandles.lookup();
+        MethodHandles.Lookup lookup = getLookup(targetClass);
         MethodHandle virtualMethodHandle = lookup.findVirtual(targetClass, targetMethod, MethodType.methodType(targetMethodReturnType));
         CallSite site = LambdaMetafactory.metafactory(lookup,
                 "apply",
@@ -202,6 +202,16 @@ public class LambdaFetchingSupport {
         @SuppressWarnings("unchecked")
         Function<Object, Object> getterFunction = (Function<Object, Object>) site.getTarget().invokeExact();
         return getterFunction;
+    }
+
+    private static MethodHandles.Lookup getLookup(Class<?> targetClass) throws IllegalAccessException {
+        MethodHandles.Lookup lookupMe = MethodHandles.lookup();
+        //
+        // This is a Java 9 approach to method look up allowing private access
+        // which we don't want to use yet until we get to Java 11
+        //
+        //lookupMe = MethodHandles.privateLookupIn(targetClass, lookupMe);
+        return lookupMe;
     }
 
 }

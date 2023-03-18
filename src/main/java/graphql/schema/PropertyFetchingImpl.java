@@ -3,6 +3,8 @@ package graphql.schema;
 import graphql.GraphQLException;
 import graphql.Internal;
 import graphql.schema.fetching.LambdaFetchingSupport;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -30,6 +32,7 @@ import static graphql.schema.GraphQLTypeUtil.unwrapOne;
  */
 @Internal
 public class PropertyFetchingImpl {
+    private static final Logger log = LoggerFactory.getLogger(PropertyFetchingImpl.class);
 
     private final AtomicBoolean USE_SET_ACCESSIBLE = new AtomicBoolean(true);
     private final AtomicBoolean USE_LAMBDA_FACTORY = new AtomicBoolean(true);
@@ -108,10 +111,21 @@ public class PropertyFetchingImpl {
 
         Optional<Function<Object, Object>> getterOpt = lambdaGetter(propertyName, object);
         if (getterOpt.isPresent()) {
-            Function<Object, Object> getter = getterOpt.get();
-            cachedFunction = new CachedLambdaFunction(getter);
-            LAMBDA_CACHE.putIfAbsent(cacheKey, cachedFunction);
-            return getter.apply(object);
+            try {
+                Function<Object, Object> getter = getterOpt.get();
+                Object value = getter.apply(object);
+                cachedFunction = new CachedLambdaFunction(getter);
+                LAMBDA_CACHE.putIfAbsent(cacheKey, cachedFunction);
+                return value;
+            } catch (LinkageError | ClassCastException ignored) {
+                //
+                // if we get a linkage error then it maybe that class loader challenges
+                // are preventing the Meta Lambda from working.  So let's continue with
+                // old skool reflection and if it's all broken there then it will eventually
+                // end up negatively cached
+                log.debug("Unable to invoke fast Meta Lambda for `{}` - Falling back to reflection", object.getClass().getName(), ignored);
+
+            }
         }
 
         //
@@ -241,7 +255,7 @@ public class PropertyFetchingImpl {
        and fetch them - e.g. `object.propertyName()`
      */
     private Method findRecordMethod(CacheKey cacheKey, Class<?> rootClass, String methodName) throws NoSuchMethodException {
-        return findPubliclyAccessibleMethod(cacheKey,rootClass,methodName,false);
+        return findPubliclyAccessibleMethod(cacheKey, rootClass, methodName, false);
     }
 
     private Method findViaSetAccessible(CacheKey cacheKey, Class<?> aClass, String methodName, boolean dfeInUse) throws NoSuchMethodException {
@@ -347,6 +361,7 @@ public class PropertyFetchingImpl {
     public boolean setUseSetAccessible(boolean flag) {
         return USE_SET_ACCESSIBLE.getAndSet(flag);
     }
+
     public boolean setUseLambdaFactory(boolean flag) {
         return USE_LAMBDA_FACTORY.getAndSet(flag);
     }
