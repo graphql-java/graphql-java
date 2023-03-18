@@ -18,6 +18,7 @@ import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldCompleteParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldParameters;
+import graphql.extensions.ExtensionsBuilder;
 import graphql.introspection.Introspection;
 import graphql.language.Argument;
 import graphql.language.Field;
@@ -330,6 +331,7 @@ public abstract class ExecutionStrategy {
         if (result instanceof DataFetcherResult) {
             DataFetcherResult<?> dataFetcherResult = (DataFetcherResult<?>) result;
             executionContext.addErrors(dataFetcherResult.getErrors());
+            addExtensionsIfPresent(executionContext,dataFetcherResult);
 
             Object localContext = dataFetcherResult.getLocalContext();
             if (localContext == null) {
@@ -348,6 +350,16 @@ public abstract class ExecutionStrategy {
                     .rawFetchedValue(result)
                     .localContext(parameters.getLocalContext())
                     .build();
+        }
+    }
+
+    private void addExtensionsIfPresent(ExecutionContext executionContext, DataFetcherResult<?> dataFetcherResult) {
+        Map<Object, Object> extensions = dataFetcherResult.getExtensions();
+        if (extensions != null) {
+            ExtensionsBuilder extensionsBuilder = executionContext.getGraphQLContext().get(ExtensionsBuilder.class);
+            if (extensionsBuilder != null) {
+                extensionsBuilder.addValues(extensions);
+            }
         }
     }
 
