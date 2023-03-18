@@ -18,6 +18,12 @@ import static graphql.Assert.assertNotNull;
  * This class can be used to help build the graphql `extensions` map.  A series of changes to the extensions can
  * be added and these will be merged together via a {@link ExtensionsMerger} implementation and that resultant
  * map can be used as the `extensions`
+ * <p>
+ * The engine will place a {@link ExtensionsBuilder} into the {@link graphql.GraphQLContext} (if one is not manually placed there)
+ * and hence {@link graphql.schema.DataFetcher}s can use it to build up extensions progressively.
+ * <p>
+ * At the end of the execution, the {@link ExtensionsBuilder} will be used to build a graphql `extensions` map that
+ * is placed in the {@link ExecutionResult}
  */
 @PublicApi
 public class ExtensionsBuilder {
@@ -101,10 +107,19 @@ public class ExtensionsBuilder {
     /**
      * This sets new  extensions into the provided {@link ExecutionResult}, overwriting any previous values
      *
+     * @param executionResult the result to set these extensions into
+     *
      * @return a new ExecutionResult with the extensions values in this builder
      */
     public ExecutionResult setExtensions(ExecutionResult executionResult) {
         assertNotNull(executionResult);
-        return executionResult.transform(builder -> builder.extensions(buildExtensions()));
+        Map<Object, Object> currentExtensions = executionResult.getExtensions();
+        Map<Object, Object> builderExtensions = buildExtensions();
+        // if there was no extensions map before, and we are not adding anything new
+        // then leave it null
+        if (currentExtensions == null && builderExtensions.isEmpty()) {
+            return executionResult;
+        }
+        return executionResult.transform(builder -> builder.extensions(builderExtensions));
     }
 }
