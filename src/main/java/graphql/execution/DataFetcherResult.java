@@ -2,6 +2,7 @@ package graphql.execution;
 
 import com.google.common.collect.ImmutableList;
 import graphql.DeprecatedAt;
+import graphql.ExecutionResult;
 import graphql.GraphQLError;
 import graphql.Internal;
 import graphql.PublicApi;
@@ -16,13 +17,17 @@ import static graphql.Assert.assertNotNull;
 
 
 /**
- * An object that can be returned from a {@link DataFetcher} that contains both data, local context and errors to be relativized and
- * added to the final result. This is a useful when your ``DataFetcher`` retrieves data from multiple sources
- * or from another GraphQL resource or you want to pass extra context to lower levels.
+ * An object that can be returned from a {@link DataFetcher} that contains both data, local context and errors to be added to the final result.
+ * This is a useful when your ``DataFetcher`` retrieves data from multiple sources
+ * or from another GraphQL resource, or you want to pass extra context to lower levels.
  * <p>
  * This also allows you to pass down new local context objects between parent and child fields.  If you return a
  * {@link #getLocalContext()} value then it will be passed down into any child fields via
  * {@link graphql.schema.DataFetchingEnvironment#getLocalContext()}
+ *
+ * You can also have {@link DataFetcher}s contribute to the {@link ExecutionResult#getExtensions()} by returning
+ * extensions maps that will be merged together via the {@link graphql.extensions.ExtensionsBuilder} and its {@link graphql.extensions.ExtensionsMerger}
+ * in place.
  *
  * @param <T> The type of the data fetched
  */

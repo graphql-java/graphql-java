@@ -40,6 +40,27 @@ class ExtensionsBuilderTest extends Specification {
         extensions == [x: "overwrite3", y: "25", z: "overwriteZ", a: "1"]
     }
 
+    def "wont add empty changes"() {
+        def builder = newExtensionsBuilder()
+        when:
+        builder.addValues([:])
+
+        then:
+        builder.getChangeCount() == 0
+
+        when:
+        builder.addValues([:])
+
+        then:
+        builder.getChangeCount() == 0
+
+        when:
+        def extensions = builder.buildExtensions()
+        then:
+        extensions.isEmpty()
+
+    }
+
     def "can handle no changes"() {
         when:
         def extensions = newExtensionsBuilder()
