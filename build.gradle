@@ -93,8 +93,6 @@ dependencies {
     testImplementation group: 'junit', name: 'junit', version: '4.13.2'
     testImplementation 'org.spockframework:spock-core:2.0-groovy-3.0'
     testImplementation 'org.codehaus.groovy:groovy:3.0.9'
-    testImplementation 'cglib:cglib-nodep:3.3.0'
-    testImplementation 'org.objenesis:objenesis:3.2'
     testImplementation 'com.google.code.gson:gson:2.8.9'
     testImplementation 'org.eclipse.jetty:jetty-server:9.4.26.v20200117'
     testImplementation 'com.fasterxml.jackson.core:jackson-databind:2.13.1'
