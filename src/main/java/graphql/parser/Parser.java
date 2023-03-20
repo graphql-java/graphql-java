@@ -236,7 +236,11 @@ public class Parser {
         // this lexer wrapper allows us to stop lexing when too many tokens are in place.  This prevents DOS attacks.
         int maxTokens = parserOptions.getMaxTokens();
         int maxWhitespaceTokens = parserOptions.getMaxWhitespaceTokens();
-        BiConsumer<Integer, Token> onTooManyTokens = (maxTokenCount, token) -> throwCancelParseIfTooManyTokens(token, maxTokenCount, multiSourceReader);
+        BiConsumer<Integer, Token> onTooManyTokens = (maxTokenCount, token) -> throwIfTokenProblems(
+                token,
+                maxTokenCount,
+                multiSourceReader,
+                ParseCancelledException.class);
         SafeTokenSource safeTokenSource = new SafeTokenSource(lexer, maxTokens, maxWhitespaceTokens, onTooManyTokens);
 
         CommonTokenStream tokens = new CommonTokenStream(safeTokenSource);
@@ -285,9 +289,30 @@ public class Parser {
         ParserOptions parserOptions = toLanguage.getParserOptions();
         ParsingListener parsingListener = parserOptions.getParsingListener();
         int maxTokens = parserOptions.getMaxTokens();
+        int maxRuleDepth = parserOptions.getMaxRuleDepth();
         // prevent a billion laugh attacks by restricting how many tokens we allow
         ParseTreeListener listener = new GraphqlBaseListener() {
             int count = 0;
+            int depth = 0;
+
+
+            @Override
+            public void enterEveryRule(ParserRuleContext ctx) {
+                depth++;
+                if (depth > maxRuleDepth) {
+                    throwIfTokenProblems(
+                            ctx.getStart(),
+                            maxRuleDepth,
+                            multiSourceReader,
+                            ParseCancelledTooDeepException.class
+                    );
+                }
+            }
+
+            @Override
+            public void exitEveryRule(ParserRuleContext ctx) {
+                depth--;
+            }
 
             @Override
             public void visitTerminal(TerminalNode node) {
@@ -312,15 +337,20 @@ public class Parser {
 
                 count++;
                 if (count > maxTokens) {
-                    throwCancelParseIfTooManyTokens(token, maxTokens, multiSourceReader);
+                    throwIfTokenProblems(
+                            token,
+                            maxTokens,
+                            multiSourceReader,
+                            ParseCancelledException.class
+                    );
                 }
             }
         };
         parser.addParseListener(listener);
     }
 
-    private void throwCancelParseIfTooManyTokens(Token token, int maxTokens, MultiSourceReader multiSourceReader) throws ParseCancelledException {
-        String tokenType  = "grammar";
+    private void throwIfTokenProblems(Token token, int maxLimit, MultiSourceReader multiSourceReader, Class<? extends InvalidSyntaxException> targetException) throws ParseCancelledException {
+        String tokenType = "grammar";
         SourceLocation sourceLocation = null;
         String offendingToken = null;
         if (token != null) {
@@ -330,9 +360,12 @@ public class Parser {
             offendingToken = token.getText();
             sourceLocation = AntlrHelper.createSourceLocation(multiSourceReader, token.getLine(), token.getCharPositionInLine());
         }
-        String msg = String.format("More than %d %s tokens have been presented. To prevent Denial Of Service attacks, parsing has been cancelled.", maxTokens, tokenType);
-        throw new ParseCancelledException(msg, sourceLocation, offendingToken);
-    }
+        if (targetException.equals(ParseCancelledTooDeepException.class)) {
+            String msg = String.format("More than %d deep %s rules have been entered. To prevent Denial Of Service attacks, parsing has been cancelled.", maxLimit, tokenType);
+            throw new ParseCancelledTooDeepException(msg, sourceLocation, offendingToken, maxLimit, tokenType);
+        }
+        String msg = String.format("More than %d %s tokens have been presented. To prevent Denial Of Service attacks, parsing has been cancelled.", maxLimit, tokenType);
+        throw new ParseCancelledException(msg, sourceLocation, offendingToken);    }
 
     /**
      * Allows you to override the ANTLR to AST code.
