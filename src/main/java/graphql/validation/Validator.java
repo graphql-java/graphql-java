@@ -6,6 +6,7 @@ import graphql.i18n.I18n;
 import graphql.language.Document;
 import graphql.schema.GraphQLSchema;
 import graphql.validation.rules.ArgumentsOfCorrectType;
+import graphql.validation.rules.UniqueObjectFieldName;
 import graphql.validation.rules.ExecutableDefinitions;
 import graphql.validation.rules.FieldsOnCorrectType;
 import graphql.validation.rules.FragmentsOnCompositeType;
@@ -152,6 +153,9 @@ public class Validator {
 
         SubscriptionUniqueRootField uniqueSubscriptionRootField = new SubscriptionUniqueRootField(validationContext, validationErrorCollector);
         rules.add(uniqueSubscriptionRootField);
+
+        UniqueObjectFieldName uniqueObjectFieldName = new UniqueObjectFieldName(validationContext, validationErrorCollector);
+        rules.add(uniqueObjectFieldName);
 
         return rules;
     }
