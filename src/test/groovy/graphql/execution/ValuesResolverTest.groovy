@@ -45,7 +45,7 @@ class ValuesResolverTest extends Specification {
         def schema = TestUtil.schemaWithInputType(inputType)
         VariableDefinition variableDefinition = new VariableDefinition("variable", variableType, null)
         when:
-        def resolvedValues = resolver.coerceVariableValues(schema, [variableDefinition], new RawVariables([variable: inputValue]))
+        def resolvedValues = resolver.coerceVariableValues(schema, [variableDefinition], RawVariables.of([variable: inputValue]))
         then:
         resolvedValues.get('variable') == outputValue
 
@@ -74,7 +74,7 @@ class ValuesResolverTest extends Specification {
         VariableDefinition variableDefinition = new VariableDefinition("variable", new TypeName("Person"))
 
         when:
-        def resolvedValues = resolver.coerceVariableValues(schema, [variableDefinition], new RawVariables([variable: inputValue]))
+        def resolvedValues = resolver.coerceVariableValues(schema, [variableDefinition], RawVariables.of([variable: inputValue]))
         then:
         resolvedValues.get('variable') == outputValue
         where:
@@ -114,7 +114,7 @@ class ValuesResolverTest extends Specification {
 
         when:
         def obj = new Person('a', 123)
-        resolver.coerceVariableValues(schema, [variableDefinition], new RawVariables([variable: obj]))
+        resolver.coerceVariableValues(schema, [variableDefinition], RawVariables.of([variable: obj]))
         then:
         thrown(CoercingParseValueException)
     }
@@ -125,7 +125,7 @@ class ValuesResolverTest extends Specification {
         VariableDefinition variableDefinition = new VariableDefinition("variable", new ListType(new TypeName("String")))
         String value = "world"
         when:
-        def resolvedValues = resolver.coerceVariableValues(schema, [variableDefinition], new RawVariables([variable: value]))
+        def resolvedValues = resolver.coerceVariableValues(schema, [variableDefinition], RawVariables.of([variable: value]))
         then:
         resolvedValues.get('variable') == ['world']
     }
@@ -136,7 +136,7 @@ class ValuesResolverTest extends Specification {
         VariableDefinition variableDefinition = new VariableDefinition("variable", new ListType(new TypeName("String")))
         List<String> value = ["hello","world"]
         when:
-        def resolvedValues = resolver.coerceVariableValues(schema, [variableDefinition], new RawVariables([variable: value]))
+        def resolvedValues = resolver.coerceVariableValues(schema, [variableDefinition], RawVariables.of([variable: value]))
         then:
         resolvedValues.get('variable') == ['hello','world']
     }
@@ -147,14 +147,14 @@ class ValuesResolverTest extends Specification {
         VariableDefinition variableDefinition = new VariableDefinition("variable", new ListType(new TypeName("String")))
         String[] value = ["hello","world"] as String[]
         when:
-        def resolvedValues = resolver.coerceVariableValues(schema, [variableDefinition], new RawVariables([variable: value]))
+        def resolvedValues = resolver.coerceVariableValues(schema, [variableDefinition], RawVariables.of([variable: value]))
         then:
         resolvedValues.get('variable') == ['hello','world']
     }
 
     def "getArgumentValues: resolves argument with variable reference"() {
         given:
-        def variables = new CoercedVariables([var: 'hello'])
+        def variables = CoercedVariables.of([var: 'hello'])
         def fieldArgument = newArgument().name("arg").type(GraphQLString).build()
         def argument = new Argument("arg", new VariableReference("var"))
 
@@ -351,7 +351,7 @@ class ValuesResolverTest extends Specification {
         VariableDefinition variableDefinition = new VariableDefinition("variable", new TypeName("Test"))
 
         when:
-        def resolvedValues = resolver.coerceVariableValues(schema, [variableDefinition], new RawVariables([variable: inputValue]))
+        def resolvedValues = resolver.coerceVariableValues(schema, [variableDefinition], RawVariables.of([variable: inputValue]))
         then:
         resolvedValues.get('variable') == outputValue
         where:
@@ -379,7 +379,7 @@ class ValuesResolverTest extends Specification {
         VariableDefinition variableDefinition = new VariableDefinition("variable", new TypeName("InputObject"))
 
         when:
-        def resolvedValues = resolver.coerceVariableValues(schema, [variableDefinition], new RawVariables([variable: inputValue]))
+        def resolvedValues = resolver.coerceVariableValues(schema, [variableDefinition], RawVariables.of([variable: inputValue]))
 
         then:
         resolvedValues.get('variable') == outputValue
@@ -406,7 +406,7 @@ class ValuesResolverTest extends Specification {
         VariableDefinition variableDefinition = new VariableDefinition("variable", new TypeName("InputObject"))
 
         when:
-        resolver.coerceVariableValues(schema, [variableDefinition], new RawVariables([variable: inputValue]))
+        resolver.coerceVariableValues(schema, [variableDefinition], RawVariables.of([variable: inputValue]))
 
         then:
         thrown(GraphQLException)
@@ -425,7 +425,7 @@ class ValuesResolverTest extends Specification {
         VariableDefinition barVarDef = new VariableDefinition("bar", new TypeName("String"))
 
         when:
-        def resolvedValues = resolver.coerceVariableValues(schema, [fooVarDef, barVarDef], new RawVariables(InputValue))
+        def resolvedValues = resolver.coerceVariableValues(schema, [fooVarDef, barVarDef], RawVariables.of(InputValue))
 
         then:
         resolvedValues.toMap() == outputValue
@@ -459,7 +459,7 @@ class ValuesResolverTest extends Specification {
         def defaultValueForBar = new StringValue("defaultValueForBar")
         VariableDefinition barVarDef = new VariableDefinition("bar", new TypeName("String"), defaultValueForBar)
 
-        def variableValuesMap = new RawVariables(["foo": null, "bar": "barValue"])
+        def variableValuesMap = RawVariables.of(["foo": null, "bar": "barValue"])
 
         when:
         def resolvedVars = resolver.coerceVariableValues(schema, [fooVarDef, barVarDef], variableValuesMap)
@@ -476,7 +476,7 @@ class ValuesResolverTest extends Specification {
         def defaultValueForFoo = new StringValue("defaultValueForFoo")
         VariableDefinition fooVarDef = new VariableDefinition("foo", new NonNullType(new TypeName("String")), defaultValueForFoo)
 
-        def variableValuesMap = new RawVariables(["foo": null])
+        def variableValuesMap = RawVariables.of(["foo": null])
 
         when:
         resolver.coerceVariableValues(schema, [fooVarDef], variableValuesMap)
@@ -494,7 +494,7 @@ class ValuesResolverTest extends Specification {
         def type = new ListType(new NonNullType(new TypeName("String")))
         VariableDefinition fooVarDef = new VariableDefinition("foo", type, defaultValueForFoo)
 
-        def variableValuesMap = new RawVariables(["foo": [null]])
+        def variableValuesMap = RawVariables.of(["foo": [null]])
 
         when:
         resolver.coerceVariableValues(schema, [fooVarDef], variableValuesMap)
@@ -533,7 +533,7 @@ class ValuesResolverTest extends Specification {
         def argument = new Argument("arg", new VariableReference("var"))
 
         when:
-        def variables = new CoercedVariables(["var": null])
+        def variables = CoercedVariables.of(["var": null])
         def values = resolver.getArgumentValues([fieldArgument], [argument], variables)
 
         then:
@@ -550,7 +550,7 @@ class ValuesResolverTest extends Specification {
         def argument = new Argument("arg", new VariableReference("var"))
 
         when:
-        def variables = new CoercedVariables(["var": null])
+        def variables = CoercedVariables.of(["var": null])
         resolver.getArgumentValues([fieldArgument], [argument], variables)
 
         then:

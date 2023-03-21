@@ -91,4 +91,5 @@ public class SafeTokenSource implements TokenSource {
     public TokenFactory<?> getTokenFactory() {
         return lexer.getTokenFactory();
     }
+
 }

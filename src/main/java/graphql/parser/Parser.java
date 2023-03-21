@@ -209,11 +209,13 @@ public class Parser {
         // this lexer wrapper allows us to stop lexing when too many tokens are in place.  This prevents DOS attacks.
         int maxTokens = parserOptions.getMaxTokens();
         int maxWhitespaceTokens = parserOptions.getMaxWhitespaceTokens();
+
         BiConsumer<Integer, Token> onTooManyTokens = (maxTokenCount, token) -> throwIfTokenProblems(
                 token,
                 maxTokenCount,
                 multiSourceReader,
                 ParseCancelledException.class);
+
         SafeTokenSource safeTokenSource = new SafeTokenSource(lexer, maxTokens, maxWhitespaceTokens, onTooManyTokens);
 
         CommonTokenStream tokens = new CommonTokenStream(safeTokenSource);
@@ -338,7 +340,8 @@ public class Parser {
             throw new ParseCancelledTooDeepException(msg, sourceLocation, offendingToken, maxLimit, tokenType);
         }
         String msg = String.format("More than %d %s tokens have been presented. To prevent Denial Of Service attacks, parsing has been cancelled.", maxLimit, tokenType);
-        throw new ParseCancelledException(msg, sourceLocation, offendingToken);    }
+        throw new ParseCancelledException(msg, sourceLocation, offendingToken);    
+    }
 
     /**
      * Allows you to override the ANTLR to AST code.
