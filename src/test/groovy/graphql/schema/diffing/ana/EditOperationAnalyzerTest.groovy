@@ -1937,6 +1937,58 @@ class EditOperationAnalyzerTest extends Specification {
         directiveDeletion[0].name == "d"
     }
 
+    def "object field description changed"() {
+        given:
+        def oldSdl = '''
+        type Query {
+            " Hello"
+            echo: String
+        }
+        '''
+        def newSdl = '''
+        type Query {
+            "Test "
+            echo: String
+        }
+        '''
+
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+
+        then:
+        // no changes
+        changes.objectDifferences["Query"] == null
+    }
+
+    def "interface field description changed"() {
+        given:
+        def oldSdl = '''
+        type Query {
+            node: Node
+        }
+        interface Node {
+            " Hello"
+            echo: String
+        }
+        '''
+        def newSdl = '''
+        type Query {
+            node: Node
+        }
+        interface Node {
+            "World"
+            echo: String
+        }
+        '''
+
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+
+        then:
+        // no changes
+        changes.interfaceDifferences["Node"] == null
+    }
+
     def "interface deleted with field argument"() {
         given:
         def oldSdl = '''
