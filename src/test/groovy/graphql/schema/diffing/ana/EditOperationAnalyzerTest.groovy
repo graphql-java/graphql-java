@@ -5,10 +5,10 @@ import graphql.schema.diffing.SchemaDiffing
 import spock.lang.Specification
 
 import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveDeletion
-import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveObjectFieldArgumentLocation
 import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveDirectiveArgumentLocation
-import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveObjectFieldLocation
 import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveInterfaceFieldArgumentLocation
+import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveObjectFieldArgumentLocation
+import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveObjectFieldLocation
 import static graphql.schema.diffing.ana.SchemaDifference.DirectiveAddition
 import static graphql.schema.diffing.ana.SchemaDifference.DirectiveArgumentAddition
 import static graphql.schema.diffing.ana.SchemaDifference.DirectiveArgumentDefaultValueModification
@@ -32,6 +32,7 @@ import static graphql.schema.diffing.ana.SchemaDifference.InputObjectFieldRename
 import static graphql.schema.diffing.ana.SchemaDifference.InputObjectFieldTypeModification
 import static graphql.schema.diffing.ana.SchemaDifference.InputObjectModification
 import static graphql.schema.diffing.ana.SchemaDifference.InterfaceAddition
+import static graphql.schema.diffing.ana.SchemaDifference.InterfaceDeletion
 import static graphql.schema.diffing.ana.SchemaDifference.InterfaceFieldAddition
 import static graphql.schema.diffing.ana.SchemaDifference.InterfaceFieldArgumentAddition
 import static graphql.schema.diffing.ana.SchemaDifference.InterfaceFieldArgumentDefaultValueModification
@@ -1917,7 +1918,6 @@ class EditOperationAnalyzerTest extends Specification {
         when:
         def changes = calcDiff(oldSdl, newSdl)
         then:
-        true
         changes.inputObjectDifferences["Echo"] instanceof InputObjectModification
         def diff = changes.inputObjectDifferences["Echo"] as InputObjectModification
 
@@ -1935,6 +1935,52 @@ class EditOperationAnalyzerTest extends Specification {
         def directiveDeletion = diff.getDetails(AppliedDirectiveDeletion)
         directiveDeletion.size() == 1
         directiveDeletion[0].name == "d"
+    }
+
+    def "interface deleted with field argument"() {
+        given:
+        def oldSdl = '''
+        type Query {
+            node: Node
+        }
+        interface Node {
+            echo(test: String): String
+        }
+        '''
+        def newSdl = '''
+        type Query {
+            node: ID
+        }
+        '''
+
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+
+        then:
+        changes.interfaceDifferences["Node"] instanceof InterfaceDeletion
+    }
+
+    def "object deleted with field argument"() {
+        given:
+        def oldSdl = '''
+        type Query {
+            node: Node
+        }
+        type Node {
+            echo(test: String): String
+        }
+        '''
+        def newSdl = '''
+        type Query {
+            node: ID
+        }
+        '''
+
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+
+        then:
+        changes.objectDifferences["Node"] instanceof ObjectDeletion
     }
 
     EditOperationAnalysisResult calcDiff(
