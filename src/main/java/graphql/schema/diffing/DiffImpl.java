@@ -172,6 +172,8 @@ public class DiffImpl {
                 costMatrix[i - level].set(j, cost);
                 j++;
             }
+
+            runningCheck.check();
         }
         HungarianAlgorithm hungarianAlgorithm = new HungarianAlgorithm(costMatrixForHungarianAlgo);
 
@@ -278,6 +280,8 @@ public class DiffImpl {
             sibling.availableTargetVertices = availableTargetVertices;
 
             siblings.add(sibling);
+
+            runningCheck.check();
         }
         siblings.add(LAST_ELEMENT);
 
@@ -390,6 +394,7 @@ public class DiffImpl {
                 anchoredVerticesCost++;
             }
 
+            runningCheck.check();
         }
 
         Multiset<String> intersection = Multisets.intersection(multisetLabelsV, multisetLabelsU);
