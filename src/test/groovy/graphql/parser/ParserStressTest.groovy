@@ -4,6 +4,7 @@ import graphql.ExecutionInput
 import graphql.TestUtil
 import graphql.parser.exceptions.ParseCancelledException
 import graphql.parser.exceptions.ParseCancelledTooDeepException
+import graphql.parser.exceptions.ParseCancelledTooManyCharsException
 import spock.lang.Specification
 
 import static graphql.parser.ParserEnvironment.newParserEnvironment
@@ -156,6 +157,17 @@ class ParserStressTest extends Specification {
 
         then:
         thrown(ParseCancelledException) // too many tokens will catch this wide queries
+    }
+
+    def "single character attack parse test"() {
+        String text = "q".repeat(10_000_000)
+
+        when:
+        def parserEnvironment = newParserEnvironment().document(text).parserOptions(defaultOperationOptions).build()
+        Parser.parse(parserEnvironment)
+
+        then:
+        thrown(ParseCancelledTooManyCharsException)
     }
 
     String mkDeepQuery(int howMany) {
