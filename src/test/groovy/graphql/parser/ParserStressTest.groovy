@@ -160,7 +160,7 @@ class ParserStressTest extends Specification {
     }
 
     def "single character attack parse test"() {
-        String text = "q".repeat(10_000_000)
+        String text = "q" * 10_000_000
 
         when:
         def parserEnvironment = newParserEnvironment().document(text).parserOptions(defaultOperationOptions).build()
