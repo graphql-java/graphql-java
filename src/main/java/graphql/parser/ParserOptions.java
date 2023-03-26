@@ -12,9 +12,10 @@ import static graphql.Assert.assertNotNull;
 @PublicApi
 public class ParserOptions {
     /**
-     * A graphql hacking vector is to send nonsensical queries that contain a repeated characters that burn lots of parsing CPU time and burn
-     * memory representing a document that won't ever execute.  To prevent this for most users, graphql-java
-     * sets this value to 512KB.  ANTLR parsing time is linear to the number of characters presented.  The more you
+     * A graphql hacking vector is to send nonsensical queries with large tokens that contain a repeated characters
+     * that burn lots of parsing CPU time and burn memory representing a document that won't ever execute.
+     * To prevent this for most users, graphql-java sets this value to 1MB.
+     * ANTLR parsing time is linear to the number of characters presented.  The more you
      * allow the longer it takes.
      * <p>
      * If you want to allow more, then {@link #setDefaultParserOptions(ParserOptions)} allows you to change this
@@ -23,7 +24,7 @@ public class ParserOptions {
     public static final int MAX_QUERY_CHARACTERS = 1024 * 1024; // 1 MB
 
     /**
-     * A graphql hacking vector is to send nonsensical queries that burn lots of parsing CPU time and burn
+     * A graphql hacking vector is to send nonsensical queries with lots of tokens that burn lots of parsing CPU time and burn
      * memory representing a document that won't ever execute.  To prevent this for most users, graphql-java
      * sets this value to 15000.  ANTLR parsing time is linear to the number of tokens presented.  The more you
      * allow the longer it takes.
