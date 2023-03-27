@@ -2035,6 +2035,94 @@ class EditOperationAnalyzerTest extends Specification {
         changes.objectDifferences["Node"] instanceof ObjectDeletion
     }
 
+    def "directive deleted with argument"() {
+        given:
+        def oldSdl = '''
+        type Query {
+            node: String
+        }
+        directive @test(message: String) on FIELD
+        '''
+        def newSdl = '''
+        type Query {
+            node: String
+        }
+        '''
+
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+
+        then:
+        changes.directiveDifferences["test"] instanceof DirectiveDeletion
+    }
+
+    def "interface added with field argument"() {
+        given:
+        def oldSdl = '''
+        type Query {
+            node: ID
+        }
+        '''
+        def newSdl = '''
+        type Query {
+            node: Node
+        }
+        interface Node {
+            echo(test: String): String
+        }
+        '''
+
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+
+        then:
+        changes.interfaceDifferences["Node"] instanceof InterfaceAddition
+    }
+
+    def "object added with field argument"() {
+        given:
+        def oldSdl = '''
+        type Query {
+            node: ID
+        }
+        '''
+        def newSdl = '''
+        type Query {
+            node: Node
+        }
+        type Node {
+            echo(test: String): String
+        }
+        '''
+
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+
+        then:
+        changes.objectDifferences["Node"] instanceof ObjectAddition
+    }
+
+    def "directive added with argument"() {
+        given:
+        def oldSdl = '''
+        type Query {
+            node: String
+        }
+        '''
+        def newSdl = '''
+        type Query {
+            node: String
+        }
+        directive @test(message: String) on FIELD
+        '''
+
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+
+        then:
+        changes.directiveDifferences["test"] instanceof DirectiveAddition
+    }
+
     EditOperationAnalysisResult calcDiff(
             String oldSdl,
             String newSdl
