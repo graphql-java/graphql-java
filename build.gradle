@@ -220,12 +220,40 @@ artifacts {
     archives javadocJar
 }
 
+List<TestDescriptor> failedTests = []
+
 test {
     testLogging {
         events "FAILED", "SKIPPED"
         exceptionFormat = "FULL"
     }
+
+    afterTest { TestDescriptor descriptor, TestResult result ->
+        if (result.getFailedTestCount() > 0) {
+            failedTests.add(descriptor)
+        }
+    }
 }
+
+/*
+ * The gradle.buildFinished callback is deprecated BUT there does not seem to be a decent alternative in gradle 7
+ * So progress over perfection here
+ *
+ * See https://github.com/gradle/gradle/issues/20151
+ */
+gradle. buildFinished {
+    if (!failedTests.isEmpty()) {
+        println "\n\n"
+        println "============================"
+        println "These are the test failures"
+        println "============================"
+        for (td in failedTests) {
+            println "${td.getClassName()}.${td.getDisplayName()}"
+        }
+        println "============================"
+    }
+}
+
 
 allprojects {
     tasks.withType(Javadoc) {
