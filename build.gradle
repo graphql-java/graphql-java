@@ -228,7 +228,7 @@ test {
         exceptionFormat = "FULL"
     }
 
-    afterTest { TestDescriptor descriptor, result ->
+    afterTest { TestDescriptor descriptor, TestResult result ->
         if (result.getFailedTestCount() > 0) {
             failedTests.add(descriptor)
         }
