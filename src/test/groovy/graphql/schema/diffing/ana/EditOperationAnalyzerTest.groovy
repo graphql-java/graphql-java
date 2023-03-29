@@ -2123,6 +2123,56 @@ class EditOperationAnalyzerTest extends Specification {
         changes.directiveDifferences["test"] instanceof DirectiveAddition
     }
 
+    def "delete object with applied directive on field"() {
+        given:
+        def oldSdl = '''
+        type Query {
+            user(id: ID!): User
+        }
+        directive @id(type: String, owner: String) on FIELD_DEFINITION
+        type User {
+            id: ID! @id(type: "user", owner: "profiles")
+        }
+        '''
+        def newSdl = '''
+        type Query {
+            echo: String
+        }
+        directive @id(type: String, owner: String) on FIELD_DEFINITION
+        '''
+
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+
+        then:
+        changes.objectDifferences["User"] instanceof ObjectDeletion
+    }
+
+    def "delete interface with applied directive on field"() {
+        given:
+        def oldSdl = '''
+        type Query {
+            user(id: ID!): User
+        }
+        directive @id(type: String, owner: String) on FIELD_DEFINITION
+        interface User {
+            id: ID! @id(type: "user", owner: "profiles")
+        }
+        '''
+        def newSdl = '''
+        type Query {
+            echo: String
+        }
+        directive @id(type: String, owner: String) on FIELD_DEFINITION
+        '''
+
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+
+        then:
+        changes.interfaceDifferences["User"] instanceof InterfaceDeletion
+    }
+
     EditOperationAnalysisResult calcDiff(
             String oldSdl,
             String newSdl
