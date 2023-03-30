@@ -960,8 +960,9 @@ public class EditOperationAnalyzer {
 
     }
 
-    private void typeEdgeInsertedForInputField(EditOperation
-                                                       editOperation, List<EditOperation> editOperations, Mapping mapping) {
+    private void typeEdgeInsertedForInputField(EditOperation editOperation,
+                                               List<EditOperation> editOperations,
+                                               Mapping mapping) {
         Vertex inputField = editOperation.getTargetEdge().getFrom();
         Vertex inputObject = newSchemaGraph.getInputObjectForInputField(inputField);
         if (isInputObjectAdded(inputObject.getName())) {
@@ -977,8 +978,9 @@ public class EditOperationAnalyzer {
         getInputObjectModification(inputObject.getName()).getDetails().add(inputObjectFieldTypeModification);
     }
 
-    private void typeEdgeInsertedForArgument(EditOperation
-                                                     editOperation, List<EditOperation> editOperations, Mapping mapping) {
+    private void typeEdgeInsertedForArgument(EditOperation editOperation,
+                                             List<EditOperation> editOperations,
+                                             Mapping mapping) {
         Vertex argument = editOperation.getTargetEdge().getFrom();
         Vertex fieldOrDirective = newSchemaGraph.getFieldOrDirectiveForArgument(argument);
         if (fieldOrDirective.isOfType(SchemaGraph.FIELD)) {
@@ -987,6 +989,7 @@ public class EditOperationAnalyzer {
 
             if (objectOrInterface.isOfType(SchemaGraph.OBJECT)) {
                 Vertex object = objectOrInterface;
+
                 // if the whole object is new we are done
                 if (isObjectAdded(object.getName())) {
                     return;
@@ -999,6 +1002,7 @@ public class EditOperationAnalyzer {
                 if (isArgumentNewForExistingObjectField(object.getName(), field.getName(), argument.getName())) {
                     return;
                 }
+
                 String newType = getTypeFromEdgeLabel(editOperation.getTargetEdge());
                 // this means we have an existing object changed its type
                 // and there must be a deleted edge with the old type information
@@ -1006,9 +1010,16 @@ public class EditOperationAnalyzer {
                 String oldType = getTypeFromEdgeLabel(deletedTypeEdgeOperation.getSourceEdge());
                 ObjectFieldArgumentTypeModification objectFieldArgumentTypeModification = new ObjectFieldArgumentTypeModification(field.getName(), argument.getName(), oldType, newType);
                 getObjectModification(object.getName()).getDetails().add(objectFieldArgumentTypeModification);
+
+                String oldDefaultValue = getDefaultValueFromEdgeLabel(deletedTypeEdgeOperation.getSourceEdge());
+                String newDefaultValue = getDefaultValueFromEdgeLabel(editOperation.getTargetEdge());
+                if (!oldDefaultValue.equals(newDefaultValue)) {
+                    getObjectModification(object.getName()).getDetails().add(new ObjectFieldArgumentDefaultValueModification(field.getName(), argument.getName(), oldDefaultValue, newDefaultValue));
+                }
             } else {
                 assertTrue(objectOrInterface.isOfType(SchemaGraph.INTERFACE));
                 Vertex interfaze = objectOrInterface;
+
                 // if the whole object is new we are done
                 if (isInterfaceAdded(interfaze.getName())) {
                     return;
@@ -1021,6 +1032,7 @@ public class EditOperationAnalyzer {
                 if (isArgumentNewForExistingInterfaceField(interfaze.getName(), field.getName(), argument.getName())) {
                     return;
                 }
+
                 String newType = getTypeFromEdgeLabel(editOperation.getTargetEdge());
                 // this means we have an existing object changed its type
                 // and there must be a deleted edge with the old type information
@@ -1028,27 +1040,41 @@ public class EditOperationAnalyzer {
                 String oldType = getTypeFromEdgeLabel(deletedTypeEdgeOperation.getSourceEdge());
                 InterfaceFieldArgumentTypeModification interfaceFieldArgumentTypeModification = new InterfaceFieldArgumentTypeModification(field.getName(), argument.getName(), oldType, newType);
                 getInterfaceModification(interfaze.getName()).getDetails().add(interfaceFieldArgumentTypeModification);
+
+                String oldDefaultValue = getDefaultValueFromEdgeLabel(deletedTypeEdgeOperation.getSourceEdge());
+                String newDefaultValue = getDefaultValueFromEdgeLabel(editOperation.getTargetEdge());
+                if (!oldDefaultValue.equals(newDefaultValue)) {
+                    getInterfaceModification(interfaze.getName()).getDetails().add(new InterfaceFieldArgumentDefaultValueModification(field.getName(), argument.getName(), oldDefaultValue, newDefaultValue));
+                }
             }
         } else {
             assertTrue(fieldOrDirective.isOfType(SchemaGraph.DIRECTIVE));
             Vertex directive = fieldOrDirective;
+
             if (isDirectiveAdded(directive.getName())) {
                 return;
             }
             if (isArgumentNewForExistingDirective(directive.getName(), argument.getName())) {
                 return;
             }
+
             String newType = getTypeFromEdgeLabel(editOperation.getTargetEdge());
             EditOperation deletedTypeEdgeOperation = findDeletedEdge(argument, editOperations, mapping, this::isTypeEdge);
             String oldType = getTypeFromEdgeLabel(deletedTypeEdgeOperation.getSourceEdge());
             DirectiveArgumentTypeModification directiveArgumentTypeModification = new DirectiveArgumentTypeModification(argument.getName(), oldType, newType);
             getDirectiveModification(directive.getName()).getDetails().add(directiveArgumentTypeModification);
-        }
 
+            String oldDefaultValue = getDefaultValueFromEdgeLabel(deletedTypeEdgeOperation.getSourceEdge());
+            String newDefaultValue = getDefaultValueFromEdgeLabel(editOperation.getTargetEdge());
+            if (!oldDefaultValue.equals(newDefaultValue)) {
+                getDirectiveModification(directive.getName()).getDetails().add(new DirectiveArgumentDefaultValueModification(argument.getName(), oldDefaultValue, newDefaultValue));
+            }
+        }
     }
 
-    private void typeEdgeInsertedForField(EditOperation
-                                                  editOperation, List<EditOperation> editOperations, Mapping mapping) {
+    private void typeEdgeInsertedForField(EditOperation editOperation,
+                                          List<EditOperation> editOperations,
+                                          Mapping mapping) {
         Vertex field = editOperation.getTargetEdge().getFrom();
         Vertex objectOrInterface = newSchemaGraph.getFieldsContainerForField(field);
         if (objectOrInterface.isOfType(SchemaGraph.OBJECT)) {

@@ -2442,6 +2442,121 @@ class EditOperationAnalyzerTest extends Specification {
         argumentTypeModification[0].newType == "[String]"
     }
 
+
+    def "object field argument type and default value changed"() {
+        given:
+        def oldSdl = '''
+        type Query {
+            echo(message: String! = "Hello World"): String
+        }
+        '''
+        def newSdl = '''
+        type Query {
+            echo(message: ID! = "1"): String
+        }
+        '''
+
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+
+        then:
+        changes.objectDifferences["Query"] instanceof ObjectModification
+        def queryChanges = changes.objectDifferences["Query"] as ObjectModification
+        queryChanges.details.size() == 2
+
+        def argumentTypeModification = queryChanges.getDetails(ObjectFieldArgumentTypeModification)
+        argumentTypeModification.size() == 1
+        argumentTypeModification[0].fieldName == "echo"
+        argumentTypeModification[0].argumentName == "message"
+        argumentTypeModification[0].oldType == "String!"
+        argumentTypeModification[0].newType == "ID!"
+
+        def defaultValueModification = queryChanges.getDetails(ObjectFieldArgumentDefaultValueModification)
+        defaultValueModification.size() == 1
+        defaultValueModification[0].fieldName == "echo"
+        defaultValueModification[0].argumentName == "message"
+        defaultValueModification[0].oldValue == '"Hello World"'
+        defaultValueModification[0].newValue == '"1"'
+    }
+
+    def "interface field argument type and default value changed"() {
+        given:
+        def oldSdl = '''
+        type Query {
+            echo: EchoProvider
+        }
+        interface EchoProvider {
+            send(message: String! = "Hello World"): String
+        }
+        '''
+        def newSdl = '''
+        type Query {
+            echo: EchoProvider
+        }
+        interface EchoProvider {
+            send(message: ID! = "1"): String
+        }
+        '''
+
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+
+        then:
+        changes.interfaceDifferences["EchoProvider"] instanceof InterfaceModification
+        def echoProviderChanges = changes.interfaceDifferences["EchoProvider"] as InterfaceModification
+        echoProviderChanges.details.size() == 2
+
+        def argumentTypeModification = echoProviderChanges.getDetails(InterfaceFieldArgumentTypeModification)
+        argumentTypeModification.size() == 1
+        argumentTypeModification[0].fieldName == "send"
+        argumentTypeModification[0].argumentName == "message"
+        argumentTypeModification[0].oldType == "String!"
+        argumentTypeModification[0].newType == "ID!"
+
+        def defaultValueModification = echoProviderChanges.getDetails(InterfaceFieldArgumentDefaultValueModification)
+        defaultValueModification.size() == 1
+        defaultValueModification[0].fieldName == "send"
+        defaultValueModification[0].argumentName == "message"
+        defaultValueModification[0].oldValue == '"Hello World"'
+        defaultValueModification[0].newValue == '"1"'
+    }
+
+    def "directive argument type and default value changed"() {
+        given:
+        def oldSdl = '''
+        directive @deleteBy(date: String = "+1 week") on FIELD_DEFINITION
+        type Query {
+            echo: String @deleteBy
+        }
+        '''
+        def newSdl = '''
+        directive @deleteBy(date: Int = 1000) on FIELD_DEFINITION
+        type Query {
+            echo: String @deleteBy
+        }
+        '''
+
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+
+        then:
+        changes.directiveDifferences["deleteBy"] instanceof DirectiveModification
+        def deleteByChanges = changes.directiveDifferences["deleteBy"] as DirectiveModification
+        deleteByChanges.details.size() == 2
+
+        def argumentTypeModification = deleteByChanges.getDetails(DirectiveArgumentTypeModification)
+        argumentTypeModification.size() == 1
+        argumentTypeModification[0].argumentName == "date"
+        argumentTypeModification[0].oldType == "String"
+        argumentTypeModification[0].newType == "Int"
+
+        def defaultValueModification = deleteByChanges.getDetails(DirectiveArgumentDefaultValueModification)
+        defaultValueModification.size() == 1
+        defaultValueModification[0].argumentName == "date"
+        defaultValueModification[0].oldValue == '"+1 week"'
+        defaultValueModification[0].newValue == '1000'
+    }
+
     EditOperationAnalysisResult calcDiff(
             String oldSdl,
             String newSdl
