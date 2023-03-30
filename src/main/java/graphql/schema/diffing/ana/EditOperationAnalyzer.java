@@ -1722,6 +1722,8 @@ public class EditOperationAnalyzer {
     }
 
     private void argumentDeleted(EditOperation editOperation) {
+        // Note: sometimes the edit operation is the argument vertex itself being deleted
+        // Other times, it is the edge to the argument type being deleted
         Vertex deletedArgument = editOperation.getSourceVertex();
         if (deletedArgument == null) {
             deletedArgument = editOperation.getSourceEdge().getTo();
@@ -1736,11 +1738,23 @@ public class EditOperationAnalyzer {
                 if (isObjectDeleted(object.getName())) {
                     return;
                 }
+                if (isFieldDeletedFromExistingObject(object.getName(), field.getName())) {
+                    return;
+                }
+                if (isArgumentDeletedFromExistingObjectField(object.getName(), field.getName(), deletedArgument.getName())) {
+                    return;
+                }
                 getObjectModification(object.getName()).getDetails().add(new ObjectFieldArgumentDeletion(field.getName(), deletedArgument.getName()));
             } else {
                 assertTrue(fieldsContainerForField.isOfType(SchemaGraph.INTERFACE));
                 Vertex interfaze = fieldsContainerForField;
                 if (isInterfaceDeleted(interfaze.getName())) {
+                    return;
+                }
+                if (isFieldDeletedFromExistingInterface(interfaze.getName(), field.getName())) {
+                    return;
+                }
+                if (isArgumentDeletedFromExistingInterfaceField(interfaze.getName(), field.getName(), deletedArgument.getName())) {
                     return;
                 }
                 getInterfaceModification(interfaze.getName()).getDetails().add(new InterfaceFieldArgumentDeletion(field.getName(), deletedArgument.getName()));
@@ -1751,9 +1765,11 @@ public class EditOperationAnalyzer {
             if (isDirectiveDeleted(directive.getName())) {
                 return;
             }
+            if (isArgumentDeletedFromExistingDirective(directive.getName(), deletedArgument.getName())) {
+                return;
+            }
             getDirectiveModification(directive.getName()).getDetails().add(new DirectiveArgumentDeletion(deletedArgument.getName()));
         }
-
     }
 
     private void argumentAdded(EditOperation editOperation) {
@@ -1772,11 +1788,23 @@ public class EditOperationAnalyzer {
                 if (isObjectAdded(object.getName())) {
                     return;
                 }
+                if (isFieldNewForExistingObject(object.getName(), field.getName())) {
+                    return;
+                }
+                if (isArgumentNewForExistingObjectField(object.getName(), field.getName(), addedArgument.getName())) {
+                    return;
+                }
                 getObjectModification(object.getName()).getDetails().add(new ObjectFieldArgumentAddition(field.getName(), addedArgument.getName()));
             } else {
                 assertTrue(fieldsContainerForField.isOfType(SchemaGraph.INTERFACE));
                 Vertex interfaze = fieldsContainerForField;
                 if (isInterfaceAdded(interfaze.getName())) {
+                    return;
+                }
+                if (isFieldNewForExistingInterface(interfaze.getName(), field.getName())) {
+                    return;
+                }
+                if (isArgumentNewForExistingInterfaceField(interfaze.getName(), field.getName(), addedArgument.getName())) {
                     return;
                 }
                 getInterfaceModification(interfaze.getName()).getDetails().add(new InterfaceFieldArgumentAddition(field.getName(), addedArgument.getName()));
@@ -1785,6 +1813,9 @@ public class EditOperationAnalyzer {
             assertTrue(fieldOrDirective.isOfType(SchemaGraph.DIRECTIVE));
             Vertex directive = fieldOrDirective;
             if (isDirectiveAdded(directive.getName())) {
+                return;
+            }
+            if (isArgumentNewForExistingDirective(directive.getName(), addedArgument.getName())) {
                 return;
             }
             getDirectiveModification(directive.getName()).getDetails().add(new DirectiveArgumentAddition(addedArgument.getName()));

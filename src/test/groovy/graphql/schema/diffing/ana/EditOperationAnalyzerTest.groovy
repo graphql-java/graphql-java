@@ -1727,11 +1727,9 @@ class EditOperationAnalyzerTest extends Specification {
         rename[0].newName == "echo"
 
         def argumentDeletion = objectDiff.getDetails(ObjectFieldArgumentDeletion)
-        argumentDeletion.size() == 2
+        argumentDeletion.size() == 1
         argumentDeletion[0].fieldName == "ping"
         argumentDeletion[0].name == "pong"
-        argumentDeletion[1].fieldName == "ping"
-        argumentDeletion[1].name == "pong"
 
         def typeModification = objectDiff.getDetails(ObjectFieldTypeModification)
         typeModification.size() == 1
