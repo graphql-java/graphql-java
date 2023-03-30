@@ -25,7 +25,6 @@ import graphql.schema.InputValueWithState;
 import graphql.schema.visibility.DefaultGraphqlFieldVisibility;
 import graphql.schema.visibility.GraphqlFieldVisibility;
 import graphql.util.FpKit;
-import java.util.function.Function;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -126,6 +125,7 @@ class ValuesResolverConversion {
         if (value == null) {
             return newNullValue().build();
         }
+
         if (GraphQLTypeUtil.isNonNull(type)) {
             return externalValueToLiteral(fieldVisibility, value, (GraphQLInputType) unwrapNonNull(type), valueMode, graphqlContext, locale);
         }
@@ -240,9 +240,7 @@ class ValuesResolverConversion {
     static CoercedVariables externalValueToInternalValueForVariables(GraphQLSchema schema,
                                                                      List<VariableDefinition> variableDefinitions,
                                                                      RawVariables rawVariables,
-                                                                     GraphQLContext graphqlContext,
-                                                                     Locale locale,
-                                                                     Function<Object, Object> preCoercionFunction) {
+                                                                     GraphQLContext graphqlContext, Locale locale) {
         GraphqlFieldVisibility fieldVisibility = schema.getCodeRegistry().getFieldVisibility();
         Map<String, Object> coercedValues = new LinkedHashMap<>();
         for (VariableDefinition variableDefinition : variableDefinitions) {
@@ -253,18 +251,19 @@ class ValuesResolverConversion {
                 // can be NullValue
                 Value defaultValue = variableDefinition.getDefaultValue();
                 boolean hasValue = rawVariables.containsKey(variableName);
-                Object value = rawVariables.get(variableName);
+                Object originalValue = rawVariables.get(variableName);
                 if (!hasValue && defaultValue != null) {
                     Object coercedDefaultValue = literalToInternalValue(fieldVisibility, variableType, defaultValue, CoercedVariables.emptyVariables(), graphqlContext, locale);
                     coercedValues.put(variableName, coercedDefaultValue);
-                } else if (isNonNull(variableType) && (!hasValue || value == null)) {
+                } else if (isNonNull(variableType) && (!hasValue || originalValue == null)) {
                     throw new NonNullableValueCoercedAsNullException(variableDefinition, variableType);
                 } else if (hasValue) {
-                    Object preProcessedValue = (preCoercionFunction == null) ? value : preCoercionFunction.apply(value);
-                    if (preProcessedValue == null) {
+                    ValueTransformer transformer = graphqlContext.get(ValueTransformer.class);
+                    Object value = (transformer != null) ? transformer.transformValue(originalValue) : originalValue;
+                    if (value == null) {
                         coercedValues.put(variableName, null);
                     } else {
-                        Object coercedValue = externalValueToInternalValueImpl(fieldVisibility, variableType, preProcessedValue, graphqlContext, locale);
+                        Object coercedValue = externalValueToInternalValueImpl(fieldVisibility, variableType, value, graphqlContext, locale);
                         coercedValues.put(variableName, coercedValue);
                     }
                 }
@@ -289,21 +288,24 @@ class ValuesResolverConversion {
     @SuppressWarnings("unchecked")
     static Object externalValueToInternalValueImpl(GraphqlFieldVisibility fieldVisibility,
                                                    GraphQLType graphQLType,
-                                                   Object value,
+                                                   Object originalValue,
                                                    GraphQLContext graphqlContext,
                                                    Locale locale) throws NonNullableValueCoercedAsNullException, CoercingParseValueException {
         if (isNonNull(graphQLType)) {
             Object returnValue =
-                    externalValueToInternalValueImpl(fieldVisibility, unwrapOne(graphQLType), value, graphqlContext, locale);
+                    externalValueToInternalValueImpl(fieldVisibility, unwrapOne(graphQLType), originalValue, graphqlContext, locale);
             if (returnValue == null) {
                 throw new NonNullableValueCoercedAsNullException(graphQLType);
             }
             return returnValue;
         }
 
-        if (value == null) {
+        if (originalValue == null) {
             return null;
         }
+
+        ValueTransformer transformer = graphqlContext.get(ValueTransformer.class);
+        Object value = (transformer != null) ? transformer.transformValue(originalValue) : originalValue;
 
         if (graphQLType instanceof GraphQLScalarType) {
             return externalValueToInternalValueForScalar((GraphQLScalarType) graphQLType, value, graphqlContext, locale);
@@ -348,15 +350,17 @@ class ValuesResolverConversion {
             String fieldName = inputFieldDefinition.getName();
             InputValueWithState defaultValue = inputFieldDefinition.getInputFieldDefaultValue();
             boolean hasValue = inputMap.containsKey(fieldName);
-            Object value = inputMap.getOrDefault(fieldName, null);
+            Object originalValue = inputMap.getOrDefault(fieldName, null);
             if (!hasValue && inputFieldDefinition.hasSetDefaultValue()) {
                 Object coercedDefaultValue = defaultValueToInternalValue(fieldVisibility,
                         defaultValue,
                         fieldType, graphqlContext, locale);
                 coercedValues.put(fieldName, coercedDefaultValue);
-            } else if (isNonNull(fieldType) && (!hasValue || value == null)) {
+            } else if (isNonNull(fieldType) && (!hasValue || originalValue == null)) {
                 throw new NonNullableValueCoercedAsNullException(fieldName, emptyList(), fieldType);
             } else if (hasValue) {
+                ValueTransformer transformer = graphqlContext.get(ValueTransformer.class);
+                Object value = (transformer != null) ? transformer.transformValue(originalValue) : originalValue;
                 if (value == null) {
                     coercedValues.put(fieldName, null);
                 } else {

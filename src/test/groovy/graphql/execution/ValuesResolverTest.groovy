@@ -124,7 +124,8 @@ class ValuesResolverTest extends Specification {
         thrown(CoercingParseValueException)
     }
 
-    def "getVariableValues: object as variable input with custom pre-coercion function"() {
+    def "getVariableValues: object as variable input with custom value transform"() {
+
         given:
         def nameField = newInputObjectField()
             .name("name")
@@ -141,16 +142,18 @@ class ValuesResolverTest extends Specification {
         VariableDefinition variableDefinition = new VariableDefinition("variable", new TypeName("Person"))
 
         when:
+        graphQLContext.put(ValueTransformer.class, new CustomValueTransformer())
         def obj = new Person('a', 123)
-        Function<Object, Object> func = input -> { return (input instanceof Person) ? preProcessedInputValue : input}
-        def resolvedValues = ValuesResolver.coerceVariableValues(schema, [variableDefinition], RawVariables.of([variable: obj]), graphQLContext, locale, func)
+        def resolvedValues = ValuesResolver.coerceVariableValues(schema, [variableDefinition], RawVariables.of([variable: inputValue]), graphQLContext, locale)
 
         then:
         resolvedValues.get('variable') == outputValue
 
         where:
-        preProcessedInputValue        || outputValue
-        [name: "nick", 'id': 123]     || [name: "nick", 'id': 123]
+        inputValue              || outputValue
+        [name: "null", id: 123] || [name: null, id: 123]
+        [id: 123]               || [id: 123]
+        [name: "null"]          || [name: null]
     }
 
 
@@ -713,5 +716,11 @@ class ValuesResolverTest extends Specification {
         executionResult.errors[0].errorType == ErrorType.ValidationError
         executionResult.errors[0].message == "Variable 'input' has an invalid value: Expected a Number input, but it was a 'String'"
         executionResult.errors[0].locations == [new SourceLocation(2, 35)]
+    }
+
+    class CustomValueTransformer extends ValueTransformer {
+        public Object transformValue(Object value) {
+            return value.equals("null") ? null : value;
+        }
     }
 }
