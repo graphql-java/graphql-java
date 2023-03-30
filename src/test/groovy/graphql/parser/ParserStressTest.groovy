@@ -149,6 +149,28 @@ class ParserStressTest extends Specification {
         thrown(ParseCancelledException) // too many tokens will catch this wide queries
     }
 
+    def "large single token attack parse can be prevented"() {
+        String text = "q" * 10_000_000
+        text = "query " + text + " {f}"
+
+        when:
+        new Parser().parseDocument(text, defaultOperationOptions)
+
+        then:
+        thrown(ParseCancelledTooManyCharsException)
+    }
+
+    def "inside limits single token attack parse will be accepted"() {
+        String text = "q" * 900_000
+        text = "query " + text + " {f}"
+
+        when:
+        def document = new Parser().parseDocument(text, defaultOperationOptions)
+
+        then:
+        document != null // its parsed - its invalid of course but parsed
+    }
+
     String mkDeepQuery(int howMany) {
         def field = 'f(a:"")'
         StringBuilder sb = new StringBuilder("query q{")
