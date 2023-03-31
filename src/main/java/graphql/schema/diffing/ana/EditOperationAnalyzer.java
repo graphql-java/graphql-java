@@ -106,19 +106,19 @@ import static graphql.schema.diffing.ana.SchemaDifference.UnionModification;
 @Internal
 public class EditOperationAnalyzer {
 
-    private GraphQLSchema oldSchema;
-    private GraphQLSchema newSchema;
-    private SchemaGraph oldSchemaGraph;
-    private SchemaGraph newSchemaGraph;
+    private final GraphQLSchema oldSchema;
+    private final GraphQLSchema newSchema;
+    private final SchemaGraph oldSchemaGraph;
+    private final SchemaGraph newSchemaGraph;
 
-    private Map<String, ObjectDifference> objectDifferences = new LinkedHashMap<>();
-    private Map<String, InterfaceDifference> interfaceDifferences = new LinkedHashMap<>();
-    private Map<String, UnionDifference> unionDifferences = new LinkedHashMap<>();
-    private Map<String, EnumDifference> enumDifferences = new LinkedHashMap<>();
-    private Map<String, InputObjectDifference> inputObjectDifferences = new LinkedHashMap<>();
-    private Map<String, ScalarDifference> scalarDifferences = new LinkedHashMap<>();
+    private final Map<String, ObjectDifference> objectDifferences = new LinkedHashMap<>();
+    private final Map<String, InterfaceDifference> interfaceDifferences = new LinkedHashMap<>();
+    private final Map<String, UnionDifference> unionDifferences = new LinkedHashMap<>();
+    private final Map<String, EnumDifference> enumDifferences = new LinkedHashMap<>();
+    private final Map<String, InputObjectDifference> inputObjectDifferences = new LinkedHashMap<>();
+    private final Map<String, ScalarDifference> scalarDifferences = new LinkedHashMap<>();
 
-    private Map<String, DirectiveDifference> directiveDifferences = new LinkedHashMap<>();
+    private final Map<String, DirectiveDifference> directiveDifferences = new LinkedHashMap<>();
 
     public EditOperationAnalyzer(GraphQLSchema oldSchema,
                                  GraphQLSchema newSchema,
@@ -598,7 +598,7 @@ public class EditOperationAnalyzer {
                     break;
                 case CHANGE_EDGE:
                     if (newEdge.getLabel().startsWith("type=")) {
-                        typeEdgeChanged(editOperation);
+                        typeEdgeChanged(editOperation, mapping);
                     }
                     break;
             }
@@ -1105,13 +1105,13 @@ public class EditOperationAnalyzer {
     }
 
 
-    private void typeEdgeChanged(EditOperation editOperation) {
+    private void typeEdgeChanged(EditOperation editOperation, Mapping mapping) {
         Edge targetEdge = editOperation.getTargetEdge();
         Vertex from = targetEdge.getFrom();
         if (from.isOfType(SchemaGraph.FIELD)) {
             outputFieldTypeChanged(editOperation);
         } else if (from.isOfType(SchemaGraph.ARGUMENT)) {
-            argumentTypeOrDefaultValueChanged(editOperation);
+            argumentTypeOrDefaultValueChanged(editOperation, mapping);
         } else if (from.isOfType(SchemaGraph.INPUT_FIELD)) {
             inputFieldTypeOrDefaultValueChanged(editOperation);
         }
@@ -1135,8 +1135,8 @@ public class EditOperationAnalyzer {
         }
     }
 
-    private void argumentTypeOrDefaultValueChanged(EditOperation editOperation) {
-        if (!doesArgumentChangeMakeSense(editOperation)) {
+    private void argumentTypeOrDefaultValueChanged(EditOperation editOperation, Mapping mapping) {
+        if (!doesArgumentChangeMakeSense(editOperation, mapping)) {
             return;
         }
 
@@ -1189,7 +1189,6 @@ public class EditOperationAnalyzer {
             if (!oldDefaultValue.equals(newDefaultValue)) {
                 getDirectiveModification(directive.getName()).getDetails().add(new DirectiveArgumentDefaultValueModification(argument.getName(), oldDefaultValue, newDefaultValue));
             }
-
             String oldType = getTypeFromEdgeLabel(editOperation.getSourceEdge());
             String newType = getTypeFromEdgeLabel(editOperation.getTargetEdge());
 
@@ -1206,13 +1205,13 @@ public class EditOperationAnalyzer {
      * <p>
      * We only want to report argument type changes if it makes sense i.e. if the argument container was the same.
      */
-    private boolean doesArgumentChangeMakeSense(EditOperation editOperation) {
+    private boolean doesArgumentChangeMakeSense(EditOperation editOperation, Mapping mapping) {
         // Container for an argument in this case should be a field or directive
         Vertex oldContainer = oldSchemaGraph.getFieldOrDirectiveForArgument(editOperation.getSourceEdge().getFrom());
         Vertex newContainer = newSchemaGraph.getFieldOrDirectiveForArgument(editOperation.getTargetEdge().getFrom());
 
-        return oldContainer.getName().equals(newContainer.getName())
-                && oldContainer.getType().equals(newContainer.getType());
+        // Make sure the container is the same
+        return mapping.getTarget(oldContainer) == newContainer;
     }
 
     private void outputFieldTypeChanged(EditOperation editOperation) {
