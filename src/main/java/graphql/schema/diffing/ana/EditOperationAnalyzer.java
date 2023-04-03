@@ -140,7 +140,7 @@ public class EditOperationAnalyzer {
                     if (editOperation.getTargetVertex().isOfType(SchemaGraph.FIELD)) {
                         fieldChanged(editOperation);
                     } else if (editOperation.getTargetVertex().isOfType(SchemaGraph.ARGUMENT)) {
-                        handleArgumentChange(editOperation);
+                        handleArgumentChange(editOperation, mapping);
                     } else if (editOperation.getTargetVertex().isOfType(SchemaGraph.INPUT_FIELD)) {
                         handleInputFieldChange(editOperation);
                     }
@@ -656,16 +656,21 @@ public class EditOperationAnalyzer {
         getInputObjectModification(newName).getDetails().add(new InputObjectFieldRename(oldName, inputField.getName()));
     }
 
-    private void handleArgumentChange(EditOperation editOperation) {
+    private void handleArgumentChange(EditOperation editOperation, Mapping mapping) {
+        Vertex oldArgument = editOperation.getSourceVertex();
         Vertex argument = editOperation.getTargetVertex();
+
+        if (!doesArgumentChangeMakeSense(oldArgument, argument, mapping)) {
+            return;
+        }
+
         Vertex fieldOrDirective = newSchemaGraph.getFieldOrDirectiveForArgument(argument);
         if (fieldOrDirective.isOfType(SchemaGraph.DIRECTIVE)) {
             Vertex directive = fieldOrDirective;
             DirectiveModification directiveModification = getDirectiveModification(directive.getName());
-            String oldName = editOperation.getSourceVertex().getName();
+            String oldName = oldArgument.getName();
             String newName = argument.getName();
             directiveModification.getDetails().add(new DirectiveArgumentRename(oldName, newName));
-
         } else {
             assertTrue(fieldOrDirective.isOfType(SchemaGraph.FIELD));
             Vertex field = fieldOrDirective;
@@ -674,17 +679,16 @@ public class EditOperationAnalyzer {
             if (fieldsContainerForField.isOfType(SchemaGraph.OBJECT)) {
                 Vertex object = fieldsContainerForField;
                 ObjectModification objectModification = getObjectModification(object.getName());
-                String oldName = editOperation.getSourceVertex().getName();
+                String oldName = oldArgument.getName();
                 String newName = argument.getName();
                 objectModification.getDetails().add(new ObjectFieldArgumentRename(fieldName, oldName, newName));
             } else {
                 assertTrue(fieldsContainerForField.isOfType(SchemaGraph.INTERFACE));
                 Vertex interfaze = fieldsContainerForField;
                 InterfaceModification interfaceModification = getInterfaceModification(interfaze.getName());
-                String oldName = editOperation.getSourceVertex().getName();
+                String oldName = oldArgument.getName();
                 String newName = argument.getName();
                 interfaceModification.getDetails().add(new InterfaceFieldArgumentRename(fieldName, oldName, newName));
-
             }
         }
     }
@@ -1162,12 +1166,13 @@ public class EditOperationAnalyzer {
     }
 
     private void argumentTypeOrDefaultValueChanged(EditOperation editOperation, Mapping mapping) {
-        if (!doesArgumentChangeMakeSense(editOperation, mapping)) {
+        Vertex oldArgument = editOperation.getSourceEdge().getFrom();
+        Vertex argument = editOperation.getTargetEdge().getFrom();
+
+        if (!doesArgumentChangeMakeSense(oldArgument, argument, mapping)) {
             return;
         }
 
-        Edge targetEdge = editOperation.getTargetEdge();
-        Vertex argument = targetEdge.getFrom();
         Vertex fieldOrDirective = newSchemaGraph.getFieldOrDirectiveForArgument(argument);
         if (fieldOrDirective.isOfType(SchemaGraph.FIELD)) {
             Vertex field = fieldOrDirective;
@@ -1231,10 +1236,10 @@ public class EditOperationAnalyzer {
      * <p>
      * We only want to report argument type changes if it makes sense i.e. if the argument container was the same.
      */
-    private boolean doesArgumentChangeMakeSense(EditOperation editOperation, Mapping mapping) {
+    private boolean doesArgumentChangeMakeSense(Vertex oldArgument, Vertex newArgument, Mapping mapping) {
         // Container for an argument in this case should be a field or directive
-        Vertex oldContainer = oldSchemaGraph.getFieldOrDirectiveForArgument(editOperation.getSourceEdge().getFrom());
-        Vertex newContainer = newSchemaGraph.getFieldOrDirectiveForArgument(editOperation.getTargetEdge().getFrom());
+        Vertex oldContainer = oldSchemaGraph.getFieldOrDirectiveForArgument(oldArgument);
+        Vertex newContainer = newSchemaGraph.getFieldOrDirectiveForArgument(newArgument);
 
         // Make sure the container is the same
         return mapping.getTarget(oldContainer) == newContainer;
