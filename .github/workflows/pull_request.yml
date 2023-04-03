@@ -20,5 +20,6 @@ jobs:
         uses: actions/setup-java@v3
         with:
           java-version: '8.0.282'
+          distribution: 'corretto'
       - name: build and test
         run: ./gradlew assemble && ./gradlew check --info --stacktrace
