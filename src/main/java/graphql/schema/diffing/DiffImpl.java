@@ -22,10 +22,11 @@ import static graphql.schema.diffing.EditorialCostForMapping.editorialCostForMap
 @Internal
 public class DiffImpl {
 
-    private static MappingEntry LAST_ELEMENT = new MappingEntry();
-    private SchemaGraph completeSourceGraph;
-    private SchemaGraph completeTargetGraph;
-    private FillupIsolatedVertices.IsolatedVertices isolatedVertices;
+    private static final MappingEntry LAST_ELEMENT = new MappingEntry();
+    private final SchemaGraph completeSourceGraph;
+    private final SchemaGraph completeTargetGraph;
+    private final FillupIsolatedVertices.IsolatedVertices isolatedVertices;
+    private final SchemaDiffingRunningCheck runningCheck;
 
     private static class MappingEntry {
         public boolean siblingsFinished;
@@ -67,14 +68,14 @@ public class DiffImpl {
         }
     }
 
-    public DiffImpl(SchemaGraph completeSourceGraph, SchemaGraph completeTargetGraph, FillupIsolatedVertices.IsolatedVertices isolatedVertices) {
+    public DiffImpl(SchemaGraph completeSourceGraph, SchemaGraph completeTargetGraph, FillupIsolatedVertices.IsolatedVertices isolatedVertices, SchemaDiffingRunningCheck runningCheck) {
         this.completeSourceGraph = completeSourceGraph;
         this.completeTargetGraph = completeTargetGraph;
         this.isolatedVertices = isolatedVertices;
+        this.runningCheck = runningCheck;
     }
 
     OptimalEdit diffImpl(Mapping startMapping, List<Vertex> relevantSourceList, List<Vertex> relevantTargetList) throws Exception {
-
         int graphSize = relevantSourceList.size();
 
         ArrayList<EditOperation> initialEditOperations = new ArrayList<>();
@@ -122,7 +123,10 @@ public class DiffImpl {
                         relevantTargetList
                 );
             }
+
+            runningCheck.check();
         }
+
         return optimalEdit;
     }
 
@@ -168,6 +172,8 @@ public class DiffImpl {
                 costMatrix[i - level].set(j, cost);
                 j++;
             }
+
+            runningCheck.check();
         }
         HungarianAlgorithm hungarianAlgorithm = new HungarianAlgorithm(costMatrixForHungarianAlgo);
 
@@ -274,6 +280,8 @@ public class DiffImpl {
             sibling.availableTargetVertices = availableTargetVertices;
 
             siblings.add(sibling);
+
+            runningCheck.check();
         }
         siblings.add(LAST_ELEMENT);
 
@@ -386,6 +394,7 @@ public class DiffImpl {
                 anchoredVerticesCost++;
             }
 
+            runningCheck.check();
         }
 
         Multiset<String> intersection = Multisets.intersection(multisetLabelsV, multisetLabelsU);

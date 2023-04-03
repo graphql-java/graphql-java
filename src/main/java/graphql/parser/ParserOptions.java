@@ -11,13 +11,24 @@ import static graphql.Assert.assertNotNull;
  */
 @PublicApi
 public class ParserOptions {
+    /**
+     * A graphql hacking vector is to send nonsensical queries with large tokens that contain a repeated characters
+     * that burn lots of parsing CPU time and burn memory representing a document that won't ever execute.
+     * To prevent this for most users, graphql-java sets this value to 1MB.
+     * ANTLR parsing time is linear to the number of characters presented.  The more you
+     * allow the longer it takes.
+     * <p>
+     * If you want to allow more, then {@link #setDefaultParserOptions(ParserOptions)} allows you to change this
+     * JVM wide.
+     */
+    public static final int MAX_QUERY_CHARACTERS = 1024 * 1024; // 1 MB
 
     /**
-     * A graphql hacking vector is to send nonsensical queries that burn lots of parsing CPU time and burn
+     * A graphql hacking vector is to send nonsensical queries with lots of tokens that burn lots of parsing CPU time and burn
      * memory representing a document that won't ever execute.  To prevent this for most users, graphql-java
-     * set this value to 15000.  ANTLR parsing time is linear to the number of tokens presented.  The more you
+     * sets this value to 15000.  ANTLR parsing time is linear to the number of tokens presented.  The more you
      * allow the longer it takes.
-     *
+     * <p>
      * If you want to allow more, then {@link #setDefaultParserOptions(ParserOptions)} allows you to change this
      * JVM wide.
      */
@@ -26,19 +37,31 @@ public class ParserOptions {
      * Another graphql hacking vector is to send large amounts of whitespace in operations that burn lots of parsing CPU time and burn
      * memory representing a document.  Whitespace token processing in ANTLR is 2 orders of magnitude faster than grammar token processing
      * however it still takes some time to happen.
-     *
+     * <p>
      * If you want to allow more, then {@link #setDefaultParserOptions(ParserOptions)} allows you to change this
      * JVM wide.
      */
     public static final int MAX_WHITESPACE_TOKENS = 200_000;
+
+    /**
+     * A graphql hacking vector is to send nonsensical queries that have lots of grammar rule depth to them which
+     * can cause stack overflow exceptions during the query parsing.  To prevent this for most users, graphql-java
+     * sets this value to 500 grammar rules deep.
+     * <p>
+     * If you want to allow more, then {@link #setDefaultParserOptions(ParserOptions)} allows you to change this
+     * JVM wide.
+     */
+    public static final int MAX_RULE_DEPTH = 500;
 
     private static ParserOptions defaultJvmParserOptions = newParserOptions()
             .captureIgnoredChars(false)
             .captureSourceLocation(true)
             .captureLineComments(true)
             .readerTrackData(true)
+            .maxCharacters(MAX_QUERY_CHARACTERS)
             .maxTokens(MAX_QUERY_TOKENS) // to prevent a billion laughs style attacks, we set a default for graphql-java
             .maxWhitespaceTokens(MAX_WHITESPACE_TOKENS)
+            .maxRuleDepth(MAX_RULE_DEPTH)
             .build();
 
     private static ParserOptions defaultJvmOperationParserOptions = newParserOptions()
@@ -46,8 +69,10 @@ public class ParserOptions {
             .captureSourceLocation(true)
             .captureLineComments(false) // #comments are not useful in query parsing
             .readerTrackData(true)
+            .maxCharacters(MAX_QUERY_CHARACTERS)
             .maxTokens(MAX_QUERY_TOKENS) // to prevent a billion laughs style attacks, we set a default for graphql-java
             .maxWhitespaceTokens(MAX_WHITESPACE_TOKENS)
+            .maxRuleDepth(MAX_RULE_DEPTH)
             .build();
 
     private static ParserOptions defaultJvmSdlParserOptions = newParserOptions()
@@ -55,8 +80,10 @@ public class ParserOptions {
             .captureSourceLocation(true)
             .captureLineComments(true) // #comments are useful in SDL parsing
             .readerTrackData(true)
+            .maxCharacters(Integer.MAX_VALUE)
             .maxTokens(Integer.MAX_VALUE) // we are less worried about a billion laughs with SDL parsing since the call path is not facing attackers
             .maxWhitespaceTokens(Integer.MAX_VALUE)
+            .maxRuleDepth(Integer.MAX_VALUE)
             .build();
 
     /**
@@ -158,8 +185,10 @@ public class ParserOptions {
     private final boolean captureSourceLocation;
     private final boolean captureLineComments;
     private final boolean readerTrackData;
+    private final int maxCharacters;
     private final int maxTokens;
     private final int maxWhitespaceTokens;
+    private final int maxRuleDepth;
     private final ParsingListener parsingListener;
 
     private ParserOptions(Builder builder) {
@@ -167,8 +196,10 @@ public class ParserOptions {
         this.captureSourceLocation = builder.captureSourceLocation;
         this.captureLineComments = builder.captureLineComments;
         this.readerTrackData = builder.readerTrackData;
+        this.maxCharacters = builder.maxCharacters;
         this.maxTokens = builder.maxTokens;
         this.maxWhitespaceTokens = builder.maxWhitespaceTokens;
+        this.maxRuleDepth = builder.maxRuleDepth;
         this.parsingListener = builder.parsingListener;
     }
 
@@ -219,6 +250,18 @@ public class ParserOptions {
     }
 
     /**
+     * A graphql hacking vector is to send nonsensical queries that contain a repeated characters that burn lots of parsing CPU time and burn
+     * memory representing a document that won't ever execute.  To prevent this for most users, graphql-java
+     * sets this value to 1MB.
+     *
+     * @return the maximum number of characters the parser will accept, after which an exception will be thrown.
+     */
+    public int getMaxCharacters() {
+        return maxCharacters;
+    }
+
+
+    /**
      * A graphql hacking vector is to send nonsensical queries that burn lots of parsing CPU time and burns
      * memory representing a document that won't ever execute.  To prevent this you can set a maximum number of parse
      * tokens that will be accepted before an exception is thrown and the parsing is stopped.
@@ -238,6 +281,17 @@ public class ParserOptions {
      */
     public int getMaxWhitespaceTokens() {
         return maxWhitespaceTokens;
+    }
+
+    /**
+     * A graphql hacking vector is to send nonsensical queries that have lots of rule depth to them which
+     * can cause stack overflow exceptions during the query parsing.  To prevent this you can set a value
+     * that is the maximum depth allowed before an exception is thrown and the parsing is stopped.
+     *
+     * @return the maximum token depth the parser will accept, after which an exception will be thrown.
+     */
+    public int getMaxRuleDepth() {
+        return maxRuleDepth;
     }
 
     public ParsingListener getParsingListener() {
@@ -260,9 +314,11 @@ public class ParserOptions {
         private boolean captureSourceLocation = true;
         private boolean captureLineComments = true;
         private boolean readerTrackData = true;
-        private int maxTokens = MAX_QUERY_TOKENS;
         private ParsingListener parsingListener = ParsingListener.NOOP;
+        private int maxCharacters = MAX_QUERY_CHARACTERS;
+        private int maxTokens = MAX_QUERY_TOKENS;
         private int maxWhitespaceTokens = MAX_WHITESPACE_TOKENS;
+        private int maxRuleDepth = MAX_RULE_DEPTH;
 
         Builder() {
         }
@@ -271,8 +327,10 @@ public class ParserOptions {
             this.captureIgnoredChars = parserOptions.captureIgnoredChars;
             this.captureSourceLocation = parserOptions.captureSourceLocation;
             this.captureLineComments = parserOptions.captureLineComments;
+            this.maxCharacters = parserOptions.maxCharacters;
             this.maxTokens = parserOptions.maxTokens;
             this.maxWhitespaceTokens = parserOptions.maxWhitespaceTokens;
+            this.maxRuleDepth = parserOptions.maxRuleDepth;
             this.parsingListener = parserOptions.parsingListener;
         }
 
@@ -296,6 +354,11 @@ public class ParserOptions {
             return this;
         }
 
+        public Builder maxCharacters(int maxCharacters) {
+            this.maxCharacters = maxCharacters;
+            return this;
+        }
+
         public Builder maxTokens(int maxTokens) {
             this.maxTokens = maxTokens;
             return this;
@@ -303,6 +366,11 @@ public class ParserOptions {
 
         public Builder maxWhitespaceTokens(int maxWhitespaceTokens) {
             this.maxWhitespaceTokens = maxWhitespaceTokens;
+            return this;
+        }
+
+        public Builder maxRuleDepth(int maxRuleDepth) {
+            this.maxRuleDepth = maxRuleDepth;
             return this;
         }
 

@@ -106,19 +106,19 @@ import static graphql.schema.diffing.ana.SchemaDifference.UnionModification;
 @Internal
 public class EditOperationAnalyzer {
 
-    private GraphQLSchema oldSchema;
-    private GraphQLSchema newSchema;
-    private SchemaGraph oldSchemaGraph;
-    private SchemaGraph newSchemaGraph;
+    private final GraphQLSchema oldSchema;
+    private final GraphQLSchema newSchema;
+    private final SchemaGraph oldSchemaGraph;
+    private final SchemaGraph newSchemaGraph;
 
-    private Map<String, ObjectDifference> objectDifferences = new LinkedHashMap<>();
-    private Map<String, InterfaceDifference> interfaceDifferences = new LinkedHashMap<>();
-    private Map<String, UnionDifference> unionDifferences = new LinkedHashMap<>();
-    private Map<String, EnumDifference> enumDifferences = new LinkedHashMap<>();
-    private Map<String, InputObjectDifference> inputObjectDifferences = new LinkedHashMap<>();
-    private Map<String, ScalarDifference> scalarDifferences = new LinkedHashMap<>();
+    private final Map<String, ObjectDifference> objectDifferences = new LinkedHashMap<>();
+    private final Map<String, InterfaceDifference> interfaceDifferences = new LinkedHashMap<>();
+    private final Map<String, UnionDifference> unionDifferences = new LinkedHashMap<>();
+    private final Map<String, EnumDifference> enumDifferences = new LinkedHashMap<>();
+    private final Map<String, InputObjectDifference> inputObjectDifferences = new LinkedHashMap<>();
+    private final Map<String, ScalarDifference> scalarDifferences = new LinkedHashMap<>();
 
-    private Map<String, DirectiveDifference> directiveDifferences = new LinkedHashMap<>();
+    private final Map<String, DirectiveDifference> directiveDifferences = new LinkedHashMap<>();
 
     public EditOperationAnalyzer(GraphQLSchema oldSchema,
                                  GraphQLSchema newSchema,
@@ -140,7 +140,7 @@ public class EditOperationAnalyzer {
                     if (editOperation.getTargetVertex().isOfType(SchemaGraph.FIELD)) {
                         fieldChanged(editOperation);
                     } else if (editOperation.getTargetVertex().isOfType(SchemaGraph.ARGUMENT)) {
-                        handleArgumentChange(editOperation);
+                        handleArgumentChange(editOperation, mapping);
                     } else if (editOperation.getTargetVertex().isOfType(SchemaGraph.INPUT_FIELD)) {
                         handleInputFieldChange(editOperation);
                     }
@@ -169,6 +169,7 @@ public class EditOperationAnalyzer {
         handleUnionMemberChanges(editOperations, mapping);
         handleEnumValuesChanges(editOperations, mapping);
         handleAppliedDirectives(editOperations, mapping);
+        handleArgumentChanges(editOperations, mapping);
 
         return new EditOperationAnalysisResult(
                 objectDifferences,
@@ -178,6 +179,23 @@ public class EditOperationAnalyzer {
                 inputObjectDifferences,
                 scalarDifferences,
                 directiveDifferences);
+    }
+
+    private void handleArgumentChanges(List<EditOperation> editOperations, Mapping mapping) {
+        for (EditOperation editOperation : editOperations) {
+            switch (editOperation.getOperation()) {
+                case INSERT_EDGE:
+                    if (editOperation.getTargetEdge().getTo().isOfType(SchemaGraph.ARGUMENT)) {
+                        argumentAdded(editOperation);
+                    }
+                    break;
+                case DELETE_EDGE:
+                    if (editOperation.getSourceEdge().getTo().isOfType(SchemaGraph.ARGUMENT)) {
+                        argumentDeleted(editOperation);
+                    }
+                    break;
+            }
+        }
     }
 
 
@@ -300,16 +318,21 @@ public class EditOperationAnalyzer {
             Vertex interfaceOrObjective = oldSchemaGraph.getFieldsContainerForField(field);
             if (interfaceOrObjective.isOfType(SchemaGraph.OBJECT)) {
                 Vertex object = interfaceOrObjective;
+                if (isObjectDeleted(object.getName())) {
+                    return;
+                }
                 AppliedDirectiveObjectFieldLocation location = new AppliedDirectiveObjectFieldLocation(object.getName(), field.getName());
                 getObjectModification(object.getName()).getDetails().add(new AppliedDirectiveArgumentDeletion(location, deletedArgument.getName()));
             } else {
                 assertTrue(interfaceOrObjective.isOfType(SchemaGraph.INTERFACE));
                 Vertex interfaze = interfaceOrObjective;
+                if (isInterfaceDeleted(interfaze.getName())) {
+                    return;
+                }
                 AppliedDirectiveInterfaceFieldLocation location = new AppliedDirectiveInterfaceFieldLocation(interfaze.getName(), field.getName());
                 getInterfaceModification(interfaze.getName()).getDetails().add(new AppliedDirectiveArgumentDeletion(location, deletedArgument.getName()));
             }
         }
-
     }
 
     private void appliedDirectiveArgumentChanged(EditOperation editOperation) {
@@ -575,7 +598,7 @@ public class EditOperationAnalyzer {
                     break;
                 case CHANGE_EDGE:
                     if (newEdge.getLabel().startsWith("type=")) {
-                        typeEdgeChanged(editOperation);
+                        typeEdgeChanged(editOperation, mapping);
                     }
                     break;
             }
@@ -633,16 +656,21 @@ public class EditOperationAnalyzer {
         getInputObjectModification(newName).getDetails().add(new InputObjectFieldRename(oldName, inputField.getName()));
     }
 
-    private void handleArgumentChange(EditOperation editOperation) {
+    private void handleArgumentChange(EditOperation editOperation, Mapping mapping) {
+        Vertex oldArgument = editOperation.getSourceVertex();
         Vertex argument = editOperation.getTargetVertex();
+
+        if (!doesArgumentChangeMakeSense(oldArgument, argument, mapping)) {
+            return;
+        }
+
         Vertex fieldOrDirective = newSchemaGraph.getFieldOrDirectiveForArgument(argument);
         if (fieldOrDirective.isOfType(SchemaGraph.DIRECTIVE)) {
             Vertex directive = fieldOrDirective;
             DirectiveModification directiveModification = getDirectiveModification(directive.getName());
-            String oldName = editOperation.getSourceVertex().getName();
+            String oldName = oldArgument.getName();
             String newName = argument.getName();
             directiveModification.getDetails().add(new DirectiveArgumentRename(oldName, newName));
-
         } else {
             assertTrue(fieldOrDirective.isOfType(SchemaGraph.FIELD));
             Vertex field = fieldOrDirective;
@@ -651,17 +679,16 @@ public class EditOperationAnalyzer {
             if (fieldsContainerForField.isOfType(SchemaGraph.OBJECT)) {
                 Vertex object = fieldsContainerForField;
                 ObjectModification objectModification = getObjectModification(object.getName());
-                String oldName = editOperation.getSourceVertex().getName();
+                String oldName = oldArgument.getName();
                 String newName = argument.getName();
                 objectModification.getDetails().add(new ObjectFieldArgumentRename(fieldName, oldName, newName));
             } else {
                 assertTrue(fieldsContainerForField.isOfType(SchemaGraph.INTERFACE));
                 Vertex interfaze = fieldsContainerForField;
                 InterfaceModification interfaceModification = getInterfaceModification(interfaze.getName());
-                String oldName = editOperation.getSourceVertex().getName();
+                String oldName = oldArgument.getName();
                 String newName = argument.getName();
                 interfaceModification.getDetails().add(new InterfaceFieldArgumentRename(fieldName, oldName, newName));
-
             }
         }
     }
@@ -740,18 +767,22 @@ public class EditOperationAnalyzer {
     private void fieldChanged(EditOperation editOperation) {
         Vertex field = editOperation.getTargetVertex();
         Vertex fieldsContainerForField = newSchemaGraph.getFieldsContainerForField(field);
+
+        String oldName = editOperation.getSourceVertex().getName();
+        String newName = field.getName();
+        if (oldName.equals(newName)) {
+            // Something else like description could have changed
+            return;
+        }
+
         if (fieldsContainerForField.isOfType(SchemaGraph.OBJECT)) {
             Vertex object = fieldsContainerForField;
             ObjectModification objectModification = getObjectModification(object.getName());
-            String oldName = editOperation.getSourceVertex().getName();
-            String newName = field.getName();
             objectModification.getDetails().add(new ObjectFieldRename(oldName, newName));
         } else {
             assertTrue(fieldsContainerForField.isOfType(SchemaGraph.INTERFACE));
             Vertex interfaze = fieldsContainerForField;
             InterfaceModification interfaceModification = getInterfaceModification(interfaze.getName());
-            String oldName = editOperation.getSourceVertex().getName();
-            String newName = field.getName();
             interfaceModification.getDetails().add(new InterfaceFieldRename(oldName, newName));
         }
     }
@@ -933,8 +964,9 @@ public class EditOperationAnalyzer {
 
     }
 
-    private void typeEdgeInsertedForInputField(EditOperation
-                                                       editOperation, List<EditOperation> editOperations, Mapping mapping) {
+    private void typeEdgeInsertedForInputField(EditOperation editOperation,
+                                               List<EditOperation> editOperations,
+                                               Mapping mapping) {
         Vertex inputField = editOperation.getTargetEdge().getFrom();
         Vertex inputObject = newSchemaGraph.getInputObjectForInputField(inputField);
         if (isInputObjectAdded(inputObject.getName())) {
@@ -950,8 +982,9 @@ public class EditOperationAnalyzer {
         getInputObjectModification(inputObject.getName()).getDetails().add(inputObjectFieldTypeModification);
     }
 
-    private void typeEdgeInsertedForArgument(EditOperation
-                                                     editOperation, List<EditOperation> editOperations, Mapping mapping) {
+    private void typeEdgeInsertedForArgument(EditOperation editOperation,
+                                             List<EditOperation> editOperations,
+                                             Mapping mapping) {
         Vertex argument = editOperation.getTargetEdge().getFrom();
         Vertex fieldOrDirective = newSchemaGraph.getFieldOrDirectiveForArgument(argument);
         if (fieldOrDirective.isOfType(SchemaGraph.FIELD)) {
@@ -960,6 +993,7 @@ public class EditOperationAnalyzer {
 
             if (objectOrInterface.isOfType(SchemaGraph.OBJECT)) {
                 Vertex object = objectOrInterface;
+
                 // if the whole object is new we are done
                 if (isObjectAdded(object.getName())) {
                     return;
@@ -972,6 +1006,7 @@ public class EditOperationAnalyzer {
                 if (isArgumentNewForExistingObjectField(object.getName(), field.getName(), argument.getName())) {
                     return;
                 }
+
                 String newType = getTypeFromEdgeLabel(editOperation.getTargetEdge());
                 // this means we have an existing object changed its type
                 // and there must be a deleted edge with the old type information
@@ -979,9 +1014,16 @@ public class EditOperationAnalyzer {
                 String oldType = getTypeFromEdgeLabel(deletedTypeEdgeOperation.getSourceEdge());
                 ObjectFieldArgumentTypeModification objectFieldArgumentTypeModification = new ObjectFieldArgumentTypeModification(field.getName(), argument.getName(), oldType, newType);
                 getObjectModification(object.getName()).getDetails().add(objectFieldArgumentTypeModification);
+
+                String oldDefaultValue = getDefaultValueFromEdgeLabel(deletedTypeEdgeOperation.getSourceEdge());
+                String newDefaultValue = getDefaultValueFromEdgeLabel(editOperation.getTargetEdge());
+                if (!oldDefaultValue.equals(newDefaultValue)) {
+                    getObjectModification(object.getName()).getDetails().add(new ObjectFieldArgumentDefaultValueModification(field.getName(), argument.getName(), oldDefaultValue, newDefaultValue));
+                }
             } else {
                 assertTrue(objectOrInterface.isOfType(SchemaGraph.INTERFACE));
                 Vertex interfaze = objectOrInterface;
+
                 // if the whole object is new we are done
                 if (isInterfaceAdded(interfaze.getName())) {
                     return;
@@ -994,6 +1036,7 @@ public class EditOperationAnalyzer {
                 if (isArgumentNewForExistingInterfaceField(interfaze.getName(), field.getName(), argument.getName())) {
                     return;
                 }
+
                 String newType = getTypeFromEdgeLabel(editOperation.getTargetEdge());
                 // this means we have an existing object changed its type
                 // and there must be a deleted edge with the old type information
@@ -1001,27 +1044,41 @@ public class EditOperationAnalyzer {
                 String oldType = getTypeFromEdgeLabel(deletedTypeEdgeOperation.getSourceEdge());
                 InterfaceFieldArgumentTypeModification interfaceFieldArgumentTypeModification = new InterfaceFieldArgumentTypeModification(field.getName(), argument.getName(), oldType, newType);
                 getInterfaceModification(interfaze.getName()).getDetails().add(interfaceFieldArgumentTypeModification);
+
+                String oldDefaultValue = getDefaultValueFromEdgeLabel(deletedTypeEdgeOperation.getSourceEdge());
+                String newDefaultValue = getDefaultValueFromEdgeLabel(editOperation.getTargetEdge());
+                if (!oldDefaultValue.equals(newDefaultValue)) {
+                    getInterfaceModification(interfaze.getName()).getDetails().add(new InterfaceFieldArgumentDefaultValueModification(field.getName(), argument.getName(), oldDefaultValue, newDefaultValue));
+                }
             }
         } else {
             assertTrue(fieldOrDirective.isOfType(SchemaGraph.DIRECTIVE));
             Vertex directive = fieldOrDirective;
+
             if (isDirectiveAdded(directive.getName())) {
                 return;
             }
             if (isArgumentNewForExistingDirective(directive.getName(), argument.getName())) {
                 return;
             }
+
             String newType = getTypeFromEdgeLabel(editOperation.getTargetEdge());
             EditOperation deletedTypeEdgeOperation = findDeletedEdge(argument, editOperations, mapping, this::isTypeEdge);
             String oldType = getTypeFromEdgeLabel(deletedTypeEdgeOperation.getSourceEdge());
             DirectiveArgumentTypeModification directiveArgumentTypeModification = new DirectiveArgumentTypeModification(argument.getName(), oldType, newType);
             getDirectiveModification(directive.getName()).getDetails().add(directiveArgumentTypeModification);
-        }
 
+            String oldDefaultValue = getDefaultValueFromEdgeLabel(deletedTypeEdgeOperation.getSourceEdge());
+            String newDefaultValue = getDefaultValueFromEdgeLabel(editOperation.getTargetEdge());
+            if (!oldDefaultValue.equals(newDefaultValue)) {
+                getDirectiveModification(directive.getName()).getDetails().add(new DirectiveArgumentDefaultValueModification(argument.getName(), oldDefaultValue, newDefaultValue));
+            }
+        }
     }
 
-    private void typeEdgeInsertedForField(EditOperation
-                                                  editOperation, List<EditOperation> editOperations, Mapping mapping) {
+    private void typeEdgeInsertedForField(EditOperation editOperation,
+                                          List<EditOperation> editOperations,
+                                          Mapping mapping) {
         Vertex field = editOperation.getTargetEdge().getFrom();
         Vertex objectOrInterface = newSchemaGraph.getFieldsContainerForField(field);
         if (objectOrInterface.isOfType(SchemaGraph.OBJECT)) {
@@ -1078,13 +1135,13 @@ public class EditOperationAnalyzer {
     }
 
 
-    private void typeEdgeChanged(EditOperation editOperation) {
+    private void typeEdgeChanged(EditOperation editOperation, Mapping mapping) {
         Edge targetEdge = editOperation.getTargetEdge();
         Vertex from = targetEdge.getFrom();
         if (from.isOfType(SchemaGraph.FIELD)) {
             outputFieldTypeChanged(editOperation);
         } else if (from.isOfType(SchemaGraph.ARGUMENT)) {
-            argumentTypeOrDefaultValueChanged(editOperation);
+            argumentTypeOrDefaultValueChanged(editOperation, mapping);
         } else if (from.isOfType(SchemaGraph.INPUT_FIELD)) {
             inputFieldTypeOrDefaultValueChanged(editOperation);
         }
@@ -1108,9 +1165,14 @@ public class EditOperationAnalyzer {
         }
     }
 
-    private void argumentTypeOrDefaultValueChanged(EditOperation editOperation) {
-        Edge targetEdge = editOperation.getTargetEdge();
-        Vertex argument = targetEdge.getFrom();
+    private void argumentTypeOrDefaultValueChanged(EditOperation editOperation, Mapping mapping) {
+        Vertex oldArgument = editOperation.getSourceEdge().getFrom();
+        Vertex argument = editOperation.getTargetEdge().getFrom();
+
+        if (!doesArgumentChangeMakeSense(oldArgument, argument, mapping)) {
+            return;
+        }
+
         Vertex fieldOrDirective = newSchemaGraph.getFieldOrDirectiveForArgument(argument);
         if (fieldOrDirective.isOfType(SchemaGraph.FIELD)) {
             Vertex field = fieldOrDirective;
@@ -1149,7 +1211,6 @@ public class EditOperationAnalyzer {
                     getInterfaceModification(objectOrInterface.getName()).getDetails().add(interfaceFieldArgumentTypeModification);
                 }
             }
-
         } else {
             assertTrue(fieldOrDirective.isOfType(SchemaGraph.DIRECTIVE));
             Vertex directive = fieldOrDirective;
@@ -1159,16 +1220,29 @@ public class EditOperationAnalyzer {
             if (!oldDefaultValue.equals(newDefaultValue)) {
                 getDirectiveModification(directive.getName()).getDetails().add(new DirectiveArgumentDefaultValueModification(argument.getName(), oldDefaultValue, newDefaultValue));
             }
-
             String oldType = getTypeFromEdgeLabel(editOperation.getSourceEdge());
             String newType = getTypeFromEdgeLabel(editOperation.getTargetEdge());
 
             if (!oldType.equals(newType)) {
                 getDirectiveModification(directive.getName()).getDetails().add(new DirectiveArgumentTypeModification(argument.getName(), oldType, newType));
-
             }
         }
+    }
 
+    /**
+     * Sometimes the diffing algorithm will give us an argument change when the argument container
+     * changed i.e. the argument was "moved" around because the deleted and newly added arguments
+     * look similar.
+     * <p>
+     * We only want to report argument type changes if it makes sense i.e. if the argument container was the same.
+     */
+    private boolean doesArgumentChangeMakeSense(Vertex oldArgument, Vertex newArgument, Mapping mapping) {
+        // Container for an argument in this case should be a field or directive
+        Vertex oldContainer = oldSchemaGraph.getFieldOrDirectiveForArgument(oldArgument);
+        Vertex newContainer = newSchemaGraph.getFieldOrDirectiveForArgument(newArgument);
+
+        // Make sure the container is the same
+        return mapping.getTarget(oldContainer) == newContainer;
     }
 
     private void outputFieldTypeChanged(EditOperation editOperation) {
@@ -1190,10 +1264,7 @@ public class EditOperationAnalyzer {
             String oldType = getTypeFromEdgeLabel(editOperation.getSourceEdge());
             String newType = getTypeFromEdgeLabel(editOperation.getTargetEdge());
             interfaceModification.getDetails().add(new InterfaceFieldTypeModification(fieldName, oldType, newType));
-
         }
-
-
     }
 
     // TODO: this is not great, we should avoid parsing the label like that
@@ -1681,48 +1752,104 @@ public class EditOperationAnalyzer {
     }
 
     private void argumentDeleted(EditOperation editOperation) {
+        // Note: sometimes the edit operation is the argument vertex itself being deleted
+        // Other times, it is the edge to the argument type being deleted
         Vertex deletedArgument = editOperation.getSourceVertex();
+        if (deletedArgument == null) {
+            deletedArgument = editOperation.getSourceEdge().getTo();
+        }
+
         Vertex fieldOrDirective = oldSchemaGraph.getFieldOrDirectiveForArgument(deletedArgument);
         if (fieldOrDirective.isOfType(SchemaGraph.FIELD)) {
             Vertex field = fieldOrDirective;
             Vertex fieldsContainerForField = oldSchemaGraph.getFieldsContainerForField(field);
             if (fieldsContainerForField.isOfType(SchemaGraph.OBJECT)) {
                 Vertex object = fieldsContainerForField;
+                if (isObjectDeleted(object.getName())) {
+                    return;
+                }
+                if (isFieldDeletedFromExistingObject(object.getName(), field.getName())) {
+                    return;
+                }
+                if (isArgumentDeletedFromExistingObjectField(object.getName(), field.getName(), deletedArgument.getName())) {
+                    return;
+                }
                 getObjectModification(object.getName()).getDetails().add(new ObjectFieldArgumentDeletion(field.getName(), deletedArgument.getName()));
             } else {
                 assertTrue(fieldsContainerForField.isOfType(SchemaGraph.INTERFACE));
                 Vertex interfaze = fieldsContainerForField;
+                if (isInterfaceDeleted(interfaze.getName())) {
+                    return;
+                }
+                if (isFieldDeletedFromExistingInterface(interfaze.getName(), field.getName())) {
+                    return;
+                }
+                if (isArgumentDeletedFromExistingInterfaceField(interfaze.getName(), field.getName(), deletedArgument.getName())) {
+                    return;
+                }
                 getInterfaceModification(interfaze.getName()).getDetails().add(new InterfaceFieldArgumentDeletion(field.getName(), deletedArgument.getName()));
             }
         } else {
             assertTrue(fieldOrDirective.isOfType(SchemaGraph.DIRECTIVE));
             Vertex directive = fieldOrDirective;
+            if (isDirectiveDeleted(directive.getName())) {
+                return;
+            }
+            if (isArgumentDeletedFromExistingDirective(directive.getName(), deletedArgument.getName())) {
+                return;
+            }
             getDirectiveModification(directive.getName()).getDetails().add(new DirectiveArgumentDeletion(deletedArgument.getName()));
         }
-
     }
 
     private void argumentAdded(EditOperation editOperation) {
         Vertex addedArgument = editOperation.getTargetVertex();
+        if (addedArgument == null) {
+            addedArgument = editOperation.getTargetEdge().getTo();
+        }
+
         Vertex fieldOrDirective = newSchemaGraph.getFieldOrDirectiveForArgument(addedArgument);
+
         if (fieldOrDirective.isOfType(SchemaGraph.FIELD)) {
             Vertex field = fieldOrDirective;
             Vertex fieldsContainerForField = newSchemaGraph.getFieldsContainerForField(field);
             if (fieldsContainerForField.isOfType(SchemaGraph.OBJECT)) {
                 Vertex object = fieldsContainerForField;
+                if (isObjectAdded(object.getName())) {
+                    return;
+                }
+                if (isFieldNewForExistingObject(object.getName(), field.getName())) {
+                    return;
+                }
+                if (isArgumentNewForExistingObjectField(object.getName(), field.getName(), addedArgument.getName())) {
+                    return;
+                }
                 getObjectModification(object.getName()).getDetails().add(new ObjectFieldArgumentAddition(field.getName(), addedArgument.getName()));
             } else {
                 assertTrue(fieldsContainerForField.isOfType(SchemaGraph.INTERFACE));
                 Vertex interfaze = fieldsContainerForField;
+                if (isInterfaceAdded(interfaze.getName())) {
+                    return;
+                }
+                if (isFieldNewForExistingInterface(interfaze.getName(), field.getName())) {
+                    return;
+                }
+                if (isArgumentNewForExistingInterfaceField(interfaze.getName(), field.getName(), addedArgument.getName())) {
+                    return;
+                }
                 getInterfaceModification(interfaze.getName()).getDetails().add(new InterfaceFieldArgumentAddition(field.getName(), addedArgument.getName()));
             }
         } else {
             assertTrue(fieldOrDirective.isOfType(SchemaGraph.DIRECTIVE));
             Vertex directive = fieldOrDirective;
+            if (isDirectiveAdded(directive.getName())) {
+                return;
+            }
+            if (isArgumentNewForExistingDirective(directive.getName(), addedArgument.getName())) {
+                return;
+            }
             getDirectiveModification(directive.getName()).getDetails().add(new DirectiveArgumentAddition(addedArgument.getName()));
-
         }
-
     }
 
     private void changedEnum(EditOperation editOperation) {
