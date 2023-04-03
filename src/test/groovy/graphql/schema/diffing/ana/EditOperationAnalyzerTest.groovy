@@ -2557,6 +2557,130 @@ class EditOperationAnalyzerTest extends Specification {
         defaultValueModification[0].newValue == '1000'
     }
 
+    def "object field with argument removed and similarly named argument added"() {
+        given:
+        def oldSdl = """
+        type Query {
+            issues: IssueQuery
+        }
+        type IssueQuery {
+            issues(id: [ID!]): [Issue]
+            issuesById: [Issue]
+        }
+        type Issue {
+            id: ID!
+        }
+        """
+        def newSdl = '''
+        type Query {
+            issues: IssueQuery
+        }
+        type IssueQuery {
+            issuesById(ids: [ID!]!): [Issue]
+        }
+        type Issue {
+            id: ID!
+        }
+        '''
+
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+
+        then:
+        changes.objectDifferences["IssueQuery"] instanceof ObjectModification
+        def issueQueryChanges = changes.objectDifferences["IssueQuery"] as ObjectModification
+        issueQueryChanges.details.size() == 2
+
+        def fieldDeletion = issueQueryChanges.getDetails(ObjectFieldDeletion)
+        fieldDeletion.size() == 1
+        fieldDeletion[0].name == "issues"
+
+        def fieldArgumentAddition = issueQueryChanges.getDetails(ObjectFieldArgumentAddition)
+        fieldArgumentAddition.size() == 1
+        fieldArgumentAddition[0].fieldName == "issuesById"
+        fieldArgumentAddition[0].name == "ids"
+    }
+
+    def "interface field with argument removed and similarly named argument added"() {
+        given:
+        def oldSdl = """
+        type Query {
+            issues: IssueQuery
+        }
+        interface IssueQuery {
+            issues(id: [ID!]): [Issue]
+            issuesById: [Issue]
+        }
+        type Issue {
+            id: ID!
+        }
+        """
+        def newSdl = '''
+        type Query {
+            issues: IssueQuery
+        }
+        interface IssueQuery {
+            issuesById(ids: [ID!]!): [Issue]
+        }
+        type Issue {
+            id: ID!
+        }
+        '''
+
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+
+        then:
+        changes.interfaceDifferences["IssueQuery"] instanceof InterfaceModification
+        def issueQueryChanges = changes.interfaceDifferences["IssueQuery"] as InterfaceModification
+        issueQueryChanges.details.size() == 2
+
+        def fieldDeletion = issueQueryChanges.getDetails(InterfaceFieldDeletion)
+        fieldDeletion.size() == 1
+        fieldDeletion[0].name == "issues"
+
+        def fieldArgumentAddition = issueQueryChanges.getDetails(InterfaceFieldArgumentAddition)
+        fieldArgumentAddition.size() == 1
+        fieldArgumentAddition[0].fieldName == "issuesById"
+        fieldArgumentAddition[0].name == "ids"
+    }
+
+    def "directive removed and similarly named argument added"() {
+        given:
+        def oldSdl = '''
+        directive @dog(name: String) on FIELD_DEFINITION
+        directive @cat on FIELD_DEFINITION
+        type Query {
+            pet: String
+        }
+        '''
+        def newSdl = '''
+        directive @cat(names: String) on FIELD_DEFINITION
+        type Query {
+            pet: String
+        }
+        '''
+
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+
+        then:
+        changes.directiveDifferences["dog"] instanceof DirectiveDeletion
+        def dogChanges = changes.directiveDifferences["dog"] as DirectiveDeletion
+        dogChanges.name == "dog"
+
+        changes.directiveDifferences["cat"] instanceof DirectiveModification
+        def catChanges = changes.directiveDifferences["cat"] as DirectiveModification
+        !catChanges.isNameChanged()
+        catChanges.oldName == catChanges.newName
+        catChanges.newName == "cat"
+        catChanges.details.size() == 1
+
+        def argumentAddition = catChanges.getDetails(DirectiveArgumentAddition)
+        argumentAddition.size() == 1
+        argumentAddition[0].name == "names"
+    }
+
     EditOperationAnalysisResult calcDiff(
             String oldSdl,
             String newSdl
