@@ -20,6 +20,6 @@ jobs:
         uses: actions/setup-java@v3
         with:
           java-version: '8'
-          distribution: 'corretto'
+          distribution: 'temurin'
       - name: build and test
         run: ./gradlew assemble && ./gradlew check --info --stacktrace
