@@ -13,6 +13,8 @@ import graphql.parser.antlr.GraphqlBaseListener;
 import graphql.parser.antlr.GraphqlLexer;
 import graphql.parser.antlr.GraphqlParser;
 import graphql.parser.exceptions.ParseCancelledException;
+import graphql.parser.exceptions.ParseCancelledTooDeepException;
+import graphql.parser.exceptions.ParseCancelledTooManyCharsException;
 import org.antlr.v4.runtime.BaseErrorListener;
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CodePointCharStream;
@@ -24,6 +26,7 @@ import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.atn.PredictionMode;
 import org.antlr.v4.runtime.tree.ParseTreeListener;
 import org.antlr.v4.runtime.tree.TerminalNode;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -32,6 +35,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
+import java.util.function.Consumer;
 
 /**
  * This can parse graphql syntax, both Query syntax and Schema Definition Language (SDL) syntax, into an
@@ -258,49 +262,16 @@ public class Parser {
         ParserOptions parserOptions = environment.getParserOptions();
         parserOptions = Optional.ofNullable(parserOptions).orElse(ParserOptions.getDefaultParserOptions());
 
-        MultiSourceReader multiSourceReader;
-        Reader reader = environment.getDocument();
-        if (reader instanceof MultiSourceReader) {
-            multiSourceReader = (MultiSourceReader) reader;
-        } else {
-            multiSourceReader = MultiSourceReader.newMultiSourceReader()
-                    .reader(reader, null)
-                    .trackData(parserOptions.isReaderTrackData())
-                    .build();
-        }
-        CodePointCharStream charStream;
-        try {
-            charStream = CharStreams.fromReader(multiSourceReader);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
+        MultiSourceReader multiSourceReader = setupMultiSourceReader(environment, parserOptions);
 
-        GraphqlLexer lexer = new GraphqlLexer(charStream);
-        lexer.removeErrorListeners();
-        lexer.addErrorListener(new BaseErrorListener() {
-            @Override
-            public void syntaxError(Recognizer<?, ?> recognizer, Object offendingSymbol, int line, int charPositionInLine, String antlerMsg, RecognitionException e) {
-                SourceLocation sourceLocation = AntlrHelper.createSourceLocation(multiSourceReader, line, charPositionInLine);
-                String preview = AntlrHelper.createPreview(multiSourceReader, line);
-                String msgKey;
-                List<Object> args;
-                if (antlerMsg == null) {
-                    msgKey = "InvalidSyntax.noMessage";
-                    args = ImmutableList.of(sourceLocation.getLine(), sourceLocation.getColumn());
-                } else {
-                    msgKey = "InvalidSyntax.full";
-                    args = ImmutableList.of(antlerMsg, sourceLocation.getLine(), sourceLocation.getColumn());
-                }
-                String msg = environment.getI18N().msg(msgKey, args);
-                throw new InvalidSyntaxException(msg, sourceLocation, null, preview, null);
-            }
-        });
+        SafeTokenReader safeTokenReader = setupSafeTokenReader(environment, parserOptions, multiSourceReader);
+
+        CodePointCharStream charStream = setupCharStream(safeTokenReader);
+
+        GraphqlLexer lexer = setupGraphqlLexer(environment, multiSourceReader, charStream);
 
         // this lexer wrapper allows us to stop lexing when too many tokens are in place.  This prevents DOS attacks.
-        int maxTokens = parserOptions.getMaxTokens();
-        int maxWhitespaceTokens = parserOptions.getMaxWhitespaceTokens();
-        BiConsumer<Integer, Token> onTooManyTokens = (maxTokenCount, token) -> throwCancelParseIfTooManyTokens(environment, token, maxTokenCount, multiSourceReader);
-        SafeTokenSource safeTokenSource = new SafeTokenSource(lexer, maxTokens, maxWhitespaceTokens, onTooManyTokens);
+        SafeTokenSource safeTokenSource = getSafeTokenSource(environment, parserOptions, multiSourceReader, lexer);
 
         CommonTokenStream tokens = new CommonTokenStream(safeTokenSource);
 
@@ -341,13 +312,107 @@ public class Parser {
         return node;
     }
 
+    private static MultiSourceReader setupMultiSourceReader(ParserEnvironment environment, ParserOptions parserOptions) {
+        MultiSourceReader multiSourceReader;
+        Reader reader = environment.getDocument();
+        if (reader instanceof MultiSourceReader) {
+            multiSourceReader = (MultiSourceReader) reader;
+        } else {
+            multiSourceReader = MultiSourceReader.newMultiSourceReader()
+                    .reader(reader, null)
+                    .trackData(parserOptions.isReaderTrackData())
+                    .build();
+        }
+        return multiSourceReader;
+    }
+
+    @NotNull
+    private static SafeTokenReader setupSafeTokenReader(ParserEnvironment environment, ParserOptions parserOptions, MultiSourceReader multiSourceReader) {
+        int maxCharacters = parserOptions.getMaxCharacters();
+        Consumer<Integer> onTooManyCharacters = it -> {
+            throw new ParseCancelledTooManyCharsException(environment.getI18N(), maxCharacters);
+        };
+        return new SafeTokenReader(multiSourceReader, maxCharacters, onTooManyCharacters);
+    }
+
+    @NotNull
+    private static CodePointCharStream setupCharStream(SafeTokenReader safeTokenReader) {
+        CodePointCharStream charStream;
+        try {
+            charStream = CharStreams.fromReader(safeTokenReader);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+        return charStream;
+    }
+
+    @NotNull
+    private static GraphqlLexer setupGraphqlLexer(ParserEnvironment environment, MultiSourceReader multiSourceReader, CodePointCharStream charStream) {
+        GraphqlLexer lexer = new GraphqlLexer(charStream);
+        lexer.removeErrorListeners();
+        lexer.addErrorListener(new BaseErrorListener() {
+            @Override
+            public void syntaxError(Recognizer<?, ?> recognizer, Object offendingSymbol, int line, int charPositionInLine, String antlerMsg, RecognitionException e) {
+                SourceLocation sourceLocation = AntlrHelper.createSourceLocation(multiSourceReader, line, charPositionInLine);
+                String preview = AntlrHelper.createPreview(multiSourceReader, line);
+                String msgKey;
+                List<Object> args;
+                if (antlerMsg == null) {
+                    msgKey = "InvalidSyntax.noMessage";
+                    args = ImmutableList.of(sourceLocation.getLine(), sourceLocation.getColumn());
+                } else {
+                    msgKey = "InvalidSyntax.full";
+                    args = ImmutableList.of(antlerMsg, sourceLocation.getLine(), sourceLocation.getColumn());
+                }
+                String msg = environment.getI18N().msg(msgKey, args);
+                throw new InvalidSyntaxException(msg, sourceLocation, null, preview, null);
+            }
+        });
+        return lexer;
+    }
+
+    @NotNull
+    private SafeTokenSource getSafeTokenSource(ParserEnvironment environment, ParserOptions parserOptions, MultiSourceReader multiSourceReader, GraphqlLexer lexer) {
+        int maxTokens = parserOptions.getMaxTokens();
+        int maxWhitespaceTokens = parserOptions.getMaxWhitespaceTokens();
+        BiConsumer<Integer, Token> onTooManyTokens = (maxTokenCount, token) -> throwIfTokenProblems(
+                environment,
+                token,
+                maxTokenCount,
+                multiSourceReader,
+                ParseCancelledException.class);
+        return new SafeTokenSource(lexer, maxTokens, maxWhitespaceTokens, onTooManyTokens);
+    }
+
     private void setupParserListener(ParserEnvironment environment, MultiSourceReader multiSourceReader, GraphqlParser parser, GraphqlAntlrToLanguage toLanguage) {
         ParserOptions parserOptions = toLanguage.getParserOptions();
         ParsingListener parsingListener = parserOptions.getParsingListener();
         int maxTokens = parserOptions.getMaxTokens();
+        int maxRuleDepth = parserOptions.getMaxRuleDepth();
         // prevent a billion laugh attacks by restricting how many tokens we allow
         ParseTreeListener listener = new GraphqlBaseListener() {
             int count = 0;
+            int depth = 0;
+
+
+            @Override
+            public void enterEveryRule(ParserRuleContext ctx) {
+                depth++;
+                if (depth > maxRuleDepth) {
+                    throwIfTokenProblems(
+                            environment,
+                            ctx.getStart(),
+                            maxRuleDepth,
+                            multiSourceReader,
+                            ParseCancelledTooDeepException.class
+                    );
+                }
+            }
+
+            @Override
+            public void exitEveryRule(ParserRuleContext ctx) {
+                depth--;
+            }
 
             @Override
             public void visitTerminal(TerminalNode node) {
@@ -372,14 +437,20 @@ public class Parser {
 
                 count++;
                 if (count > maxTokens) {
-                    throwCancelParseIfTooManyTokens(environment, token, maxTokens, multiSourceReader);
+                    throwIfTokenProblems(
+                            environment,
+                            token,
+                            maxTokens,
+                            multiSourceReader,
+                            ParseCancelledException.class
+                    );
                 }
             }
         };
         parser.addParseListener(listener);
     }
 
-    private void throwCancelParseIfTooManyTokens(ParserEnvironment environment, Token token, int maxTokens, MultiSourceReader multiSourceReader) throws ParseCancelledException {
+    private void throwIfTokenProblems(ParserEnvironment environment, Token token, int maxLimit, MultiSourceReader multiSourceReader, Class<? extends InvalidSyntaxException> targetException) throws ParseCancelledException {
         String tokenType = "grammar";
         SourceLocation sourceLocation = null;
         String offendingToken = null;
@@ -390,7 +461,10 @@ public class Parser {
             offendingToken = token.getText();
             sourceLocation = AntlrHelper.createSourceLocation(multiSourceReader, token.getLine(), token.getCharPositionInLine());
         }
-        throw new ParseCancelledException(environment.getI18N(), sourceLocation, offendingToken, maxTokens, tokenType);
+        if (targetException.equals(ParseCancelledTooDeepException.class)) {
+            throw new ParseCancelledTooDeepException(environment.getI18N(), sourceLocation, offendingToken, maxLimit, tokenType);
+        }
+        throw new ParseCancelledException(environment.getI18N(), sourceLocation, offendingToken, maxLimit, tokenType);
     }
 
     /**
