@@ -98,7 +98,7 @@ dependencies {
     testImplementation 'com.fasterxml.jackson.core:jackson-databind:2.13.1'
     testImplementation 'org.slf4j:slf4j-simple:' + slf4jVersion
     testImplementation 'org.awaitility:awaitility-groovy:3.1.6'
-    testImplementation 'com.github.javafaker:javafaker:0.13'
+    testImplementation 'com.github.javafaker:javafaker:1.0.2'
 
     testImplementation 'org.reactivestreams:reactive-streams-tck:' + reactiveStreamsVersion
     testImplementation "io.reactivex.rxjava2:rxjava:2.2.21"
