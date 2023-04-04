@@ -97,7 +97,7 @@ dependencies {
     testImplementation 'org.eclipse.jetty:jetty-server:9.4.26.v20200117'
     testImplementation 'com.fasterxml.jackson.core:jackson-databind:2.13.1'
     testImplementation 'org.slf4j:slf4j-simple:' + slf4jVersion
-    testImplementation 'org.awaitility:awaitility-groovy:3.1.6'
+    testImplementation 'org.awaitility:awaitility-groovy:4.2.0'
     testImplementation 'com.github.javafaker:javafaker:1.0.2'
 
     testImplementation 'org.reactivestreams:reactive-streams-tck:' + reactiveStreamsVersion
