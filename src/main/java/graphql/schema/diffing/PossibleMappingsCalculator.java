@@ -37,6 +37,21 @@ import static graphql.util.FpKit.concat;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 
+/**
+ * We don't want to allow arbitrary schema changes. For example changing an Object type into a Scalar
+ * is not something we want to consider.
+ * <p>
+ * We do this to make SchemaDiffings better understandable, but also to improve the overall runtime of
+ * the algorithm. By restricting the possible mappings the Schema diffing algo is actually able to
+ * finish in a reasonable time for real life inputs.
+ * <p>
+ *
+ * We restrict the algo by calculating which mappings are possible for given vertex. This is later used in
+ * {@link DiffImpl#calcLowerBoundMappingCost}.
+ * While doing this we need to also ensure that there are the same amount of vertices in the same "context":
+ * for example if the source graph has 3 Objects, the target graph needs to have 3 Objects. We achieve this by
+ * adding "isolated vertices" as needed.
+ */
 @Internal
 public class PossibleMappingsCalculator {
     private final SchemaDiffingRunningCheck runningCheck;
@@ -760,7 +775,7 @@ public class PossibleMappingsCalculator {
         public abstract boolean filter(Vertex vertex, SchemaGraph schemaGraph);
     }
 
-    public class PossibleMappings {
+    public static class PossibleMappings {
 
         public Set<Vertex> allIsolatedSource = new LinkedHashSet<>();
         public Set<Vertex> allIsolatedTarget = new LinkedHashSet<>();
