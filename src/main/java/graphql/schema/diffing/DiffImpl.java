@@ -19,13 +19,25 @@ import java.util.concurrent.LinkedBlockingQueue;
 import static graphql.Assert.assertTrue;
 import static graphql.schema.diffing.EditorialCostForMapping.editorialCostForMapping;
 
+/**
+ * This is an algorithm calculating the optimal edit to change the source graph into the target graph.
+ * <p>
+ * It is based on the following two papers (both papers are from the same authors. The first one is newer, but the older one is more detailed in some aspects)
+ * <p>
+ * Accelerating Graph Similarity Search via Efficient GED Computation (https://lijunchang.github.io/pdf/2022-ged-tkde.pdf)
+ * <p>
+ * Efficient Graph Edit Distance Computation and Verification via Anchor-aware Lower Bound Estimation (https://arxiv.org/abs/1709.06810)
+ * <p>
+ * The algorithm is a modified version of "AStar-BMao".
+ * It is adapted to directed graphs as a GraphQL schema is most naturally represented as directed graph (vs the undirected graphs used in the papers).
+ */
 @Internal
 public class DiffImpl {
 
     private static final MappingEntry LAST_ELEMENT = new MappingEntry();
     private final SchemaGraph completeSourceGraph;
     private final SchemaGraph completeTargetGraph;
-    private final FillupIsolatedVertices.IsolatedVertices isolatedVertices;
+    private final PossibleMappingsCalculator.PossibleMappings possibleMappings;
     private final SchemaDiffingRunningCheck runningCheck;
 
     private static class MappingEntry {
@@ -49,29 +61,32 @@ public class DiffImpl {
         }
     }
 
+    /**
+     * An optimal edit from one graph to another.
+     * The mapping maps all vertices from source to target, but
+     * not all mappings represent an actual change. This is why there is a separate list
+     * of the actual changes.
+     */
     public static class OptimalEdit {
-        public List<Mapping> mappings = new ArrayList<>();
-        public List<List<EditOperation>> listOfEditOperations = new ArrayList<>();
-
-        public List<Set<EditOperation>> listOfSets = new ArrayList<>();
-
+        public Mapping mapping;
+        public List<EditOperation> listOfEditOperations = new ArrayList<>();
         public int ged = Integer.MAX_VALUE;
 
         public OptimalEdit() {
 
         }
 
-        public OptimalEdit(List<Mapping> mappings, List<List<EditOperation>> listOfEditOperations, int ged) {
-            this.mappings = mappings;
+        public OptimalEdit(Mapping mapping, List<EditOperation> listOfEditOperations, int ged) {
+            this.mapping = mapping;
             this.listOfEditOperations = listOfEditOperations;
             this.ged = ged;
         }
     }
 
-    public DiffImpl(SchemaGraph completeSourceGraph, SchemaGraph completeTargetGraph, FillupIsolatedVertices.IsolatedVertices isolatedVertices, SchemaDiffingRunningCheck runningCheck) {
+    public DiffImpl(SchemaGraph completeSourceGraph, SchemaGraph completeTargetGraph, PossibleMappingsCalculator.PossibleMappings possibleMappings, SchemaDiffingRunningCheck runningCheck) {
         this.completeSourceGraph = completeSourceGraph;
         this.completeTargetGraph = completeTargetGraph;
-        this.isolatedVertices = isolatedVertices;
+        this.possibleMappings = possibleMappings;
         this.runningCheck = runningCheck;
     }
 
@@ -82,7 +97,6 @@ public class DiffImpl {
         int mappingCost = editorialCostForMapping(startMapping, completeSourceGraph, completeTargetGraph, initialEditOperations);
         int level = startMapping.size();
         MappingEntry firstMappingEntry = new MappingEntry(startMapping, level, mappingCost);
-        System.out.println("first entry: lower bound: " + mappingCost + " at level " + level);
 
         OptimalEdit optimalEdit = new OptimalEdit();
         PriorityQueue<MappingEntry> queue = new PriorityQueue<>((mappingEntry1, mappingEntry2) -> {
@@ -95,14 +109,8 @@ public class DiffImpl {
         });
         queue.add(firstMappingEntry);
         firstMappingEntry.siblingsFinished = true;
-//        queue.add(new MappingEntry());
-//        int counter = 0;
         while (!queue.isEmpty()) {
             MappingEntry mappingEntry = queue.poll();
-//            System.out.println((++counter) + " check entry at level " + mappingEntry.level + " queue size: " + queue.size() + " lower bound " + mappingEntry.lowerBoundCost + " map " + getDebugMap(mappingEntry.partialMapping));
-//            if ((++counter) % 100 == 0) {
-//                System.out.println((counter) + " entry at level");
-//            }
             if (mappingEntry.lowerBoundCost >= optimalEdit.ged) {
                 continue;
             }
@@ -221,28 +229,11 @@ public class DiffImpl {
     }
 
     private void updateOptimalEdit(OptimalEdit optimalEdit, int newGed, Mapping mapping, List<EditOperation> editOperations) {
+        assertTrue(newGed < optimalEdit.ged);
         if (newGed < optimalEdit.ged) {
             optimalEdit.ged = newGed;
-
-            optimalEdit.listOfEditOperations.clear();
-            optimalEdit.listOfEditOperations.add(editOperations);
-
-            optimalEdit.listOfSets.clear();
-            optimalEdit.listOfSets.add(new LinkedHashSet<>(editOperations));
-
-            optimalEdit.mappings.clear();
-            optimalEdit.mappings.add(mapping);
-            System.out.println("setting new best edit at level " + (mapping.size()) + " with size " + editOperations.size());
-        } else if (newGed == optimalEdit.ged) {
-            Set<EditOperation> newSet = new LinkedHashSet<>(editOperations);
-            for (Set<EditOperation> set : optimalEdit.listOfSets) {
-                if (set.equals(newSet)) {
-                    return;
-                }
-            }
-            optimalEdit.listOfSets.add(newSet);
-            optimalEdit.listOfEditOperations.add(editOperations);
-            optimalEdit.mappings.add(mapping);
+            optimalEdit.listOfEditOperations = editOperations;
+            optimalEdit.mapping = mapping;
         }
     }
 
@@ -302,7 +293,6 @@ public class DiffImpl {
             return;
         }
         if (sibling.lowerBoundCost < optimalEdit.ged) {
-//            System.out.println("adding new sibling entry " + getDebugMap(sibling.partialMapping) + "  at level " + level + " with candidates left: " + sibling.availableTargetVertices.size() + " at lower bound: " + sibling.lowerBoundCost);
 
             queue.add(sibling);
 
@@ -311,12 +301,10 @@ public class DiffImpl {
             for (int i = 0; i < sibling.assignments.length; i++) {
                 fullMapping.add(sourceList.get(level - 1 + i), sibling.availableTargetVertices.get(sibling.assignments[i]));
             }
-//            assertTrue(fullMapping.size() == this.sourceGraph.size());
+            assertTrue(fullMapping.size() == this.completeSourceGraph.size());
             List<EditOperation> editOperations = new ArrayList<>();
             int costForFullMapping = editorialCostForMapping(fullMapping, completeSourceGraph, completeTargetGraph, editOperations);
             updateOptimalEdit(optimalEdit, costForFullMapping, fullMapping, editOperations);
-        } else {
-//            System.out.println("sibling not good enough");
         }
     }
 
@@ -343,7 +331,7 @@ public class DiffImpl {
                                              Set<Vertex> partialMappingTargetSet
 
     ) {
-        if (!isolatedVertices.mappingPossible(v, u)) {
+        if (!possibleMappings.mappingPossible(v, u)) {
             return Integer.MAX_VALUE;
         }
         boolean equalNodes = v.getType().equals(u.getType()) && v.getProperties().equals(u.getProperties());

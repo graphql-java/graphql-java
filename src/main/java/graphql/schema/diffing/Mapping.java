@@ -8,6 +8,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+/**
+ * A mapping (in the math sense) from a list of vertices to another list of
+ * vertices.
+ * A mapping can semantically mean a change, but doesn't have to: a vertex
+ * can be mapped to the same vertex (semantically the same, Java object wise they are different).
+ */
 @Internal
 public class Mapping {
     private BiMap<Vertex, Vertex> map = HashBiMap.create();

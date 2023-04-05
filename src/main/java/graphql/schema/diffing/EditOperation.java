@@ -4,6 +4,15 @@ import graphql.Internal;
 
 import java.util.Objects;
 
+/**
+ * An edit operation between two graphs can be one of six types:
+ * insert vertex,
+ * delete vertex,
+ * change vertex,
+ * insert edge,
+ * delete edge,
+ * change edge
+ */
 @Internal
 public class EditOperation {
 
@@ -21,11 +30,11 @@ public class EditOperation {
         this.targetEdge = targetEdge;
     }
 
-    public static EditOperation deleteVertex(String description, Vertex sourceVertex,Vertex targetVertex) {
+    public static EditOperation deleteVertex(String description, Vertex sourceVertex, Vertex targetVertex) {
         return new EditOperation(Operation.DELETE_VERTEX, description, sourceVertex, targetVertex, null, null);
     }
 
-    public static EditOperation insertVertex(String description,Vertex sourceVertex, Vertex targetVertex) {
+    public static EditOperation insertVertex(String description, Vertex sourceVertex, Vertex targetVertex) {
         return new EditOperation(Operation.INSERT_VERTEX, description, sourceVertex, targetVertex, null, null);
     }
 
@@ -85,7 +94,6 @@ public class EditOperation {
                 ", description='" + description + '\'' +
                 '}';
     }
-
 
 
     @Override
