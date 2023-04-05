@@ -1914,55 +1914,5 @@ public class EditOperationAnalyzer {
         unionDifferences.put(oldUnionName, objectModification);
         unionDifferences.put(newUnionName, objectModification);
     }
-//
-//    private void changedUnion(EditOperation editOperation) {
-//        // object changes include: adding/removing Interface, adding/removing applied directives, changing name
-//        String objectName = editOperation.getTargetVertex().getName();
-//
-//        ObjectAdded objectAdded = new ObjectAdded(objectName);
-//        changes.add(objectAdded);
-//    }
-//
-//    private void changedEnum(EditOperation editOperation) {
-//        // object changes include: adding/removing Interface, adding/removing applied directives, changing name
-//        String objectName = editOperation.getTargetVertex().getName();
-//
-//        ObjectAdded objectAdded = new ObjectAdded(objectName);
-//        changes.add(objectAdded);
-//    }
-//
-//    private void changedInputObject(EditOperation editOperation) {
-//        // object changes include: adding/removing Interface, adding/removing applied directives, changing name
-//        String objectName = editOperation.getTargetVertex().getName();
-//
-//        ObjectAdded objectAdded = new ObjectAdded(objectName);
-//        changes.add(objectAdded);
-//    }
-//
-//    private void changedScalar(EditOperation editOperation) {
-//        // object changes include: adding/removing Interface, adding/removing applied directives, changing name
-//        String objectName = editOperation.getTargetVertex().getName();
-//
-//        ObjectAdded objectAdded = new ObjectAdded(objectName);
-//        changes.add(objectAdded);
-//    }
-//
-//    private void changedField(EditOperation editOperation) {
-//        // object changes include: adding/removing Interface, adding/removing applied directives, changing name
-//        Vertex field = editOperation.getTargetVertex();
-//        Vertex fieldsContainerForField = newSchemaGraph.getFieldsContainerForField(field);
-//
-//        FieldModification objectAdded = new FieldModification(field.getName(), fieldsContainerForField.getName());
-//        changes.add(objectAdded);
-//    }
-//
-//    private void changedInputField(EditOperation editOperation) {
-//        // object changes include: adding/removing Interface, adding/removing applied directives, changing name
-//        String objectName = editOperation.getTargetVertex().getName();
-//
-//        ObjectAdded objectAdded = new ObjectAdded(objectName);
-//        changes.add(objectAdded);
-//    }
-
 
 }
