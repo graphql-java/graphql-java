@@ -50,22 +50,21 @@ public class SchemaDiffing {
 
     private DiffImpl.OptimalEdit diffImpl(SchemaGraph sourceGraph, SchemaGraph targetGraph) throws Exception {
         int sizeDiff = targetGraph.size() - sourceGraph.size();
-        FillupIsolatedVertices fillupIsolatedVertices = new FillupIsolatedVertices(sourceGraph, targetGraph, runningCheck);
-        fillupIsolatedVertices.ensureGraphAreSameSize();
-        FillupIsolatedVertices.IsolatedVertices isolatedVertices = fillupIsolatedVertices.getIsolatedVertices();
+        PossibleMappingsCalculator possibleMappingsCalculator = new PossibleMappingsCalculator(sourceGraph, targetGraph, runningCheck);
+        PossibleMappingsCalculator.PossibleMappings possibleMappings = possibleMappingsCalculator.calculate();
 
         assertTrue(sourceGraph.size() == targetGraph.size());
 //        if (sizeDiff != 0) {
 //            SortSourceGraph.sortSourceGraph(sourceGraph, targetGraph, isolatedVertices);
 //        }
-        Mapping fixedMappings = isolatedVertices.mapping;
+        Mapping fixedMappings = possibleMappings.mapping;
         if (fixedMappings.size() == sourceGraph.size()) {
             List<EditOperation> result = new ArrayList<>();
             editorialCostForMapping(fixedMappings, sourceGraph, targetGraph, result);
             return new DiffImpl.OptimalEdit(fixedMappings, result, result.size());
         }
 
-        DiffImpl diffImpl = new DiffImpl(sourceGraph, targetGraph, isolatedVertices, runningCheck);
+        DiffImpl diffImpl = new DiffImpl(sourceGraph, targetGraph, possibleMappings, runningCheck);
         List<Vertex> nonMappedSource = new ArrayList<>(sourceGraph.getVertices());
         nonMappedSource.removeAll(fixedMappings.getSources());
 
@@ -73,7 +72,7 @@ public class SchemaDiffing {
         nonMappedTarget.removeAll(fixedMappings.getTargets());
 
         runningCheck.check();
-        sortListBasedOnPossibleMapping(nonMappedSource, isolatedVertices);
+        sortListBasedOnPossibleMapping(nonMappedSource, possibleMappings);
 
         // the non mapped vertices go to the end
         List<Vertex> sourceVertices = new ArrayList<>();
@@ -89,11 +88,11 @@ public class SchemaDiffing {
         return optimalEdit;
     }
 
-    private void sortListBasedOnPossibleMapping(List<Vertex> sourceVertices, FillupIsolatedVertices.IsolatedVertices isolatedVertices) {
+    private void sortListBasedOnPossibleMapping(List<Vertex> sourceVertices, PossibleMappingsCalculator.PossibleMappings possibleMappings) {
         Collections.sort(sourceVertices, (v1, v2) ->
         {
-            int v2Count = isolatedVertices.possibleMappings.get(v2).size();
-            int v1Count = isolatedVertices.possibleMappings.get(v1).size();
+            int v2Count = possibleMappings.possibleMappings.get(v2).size();
+            int v1Count = possibleMappings.possibleMappings.get(v1).size();
             return Integer.compare(v2Count, v1Count);
         });
     }

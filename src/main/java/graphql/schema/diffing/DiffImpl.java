@@ -37,7 +37,7 @@ public class DiffImpl {
     private static final MappingEntry LAST_ELEMENT = new MappingEntry();
     private final SchemaGraph completeSourceGraph;
     private final SchemaGraph completeTargetGraph;
-    private final FillupIsolatedVertices.IsolatedVertices isolatedVertices;
+    private final PossibleMappingsCalculator.PossibleMappings possibleMappings;
     private final SchemaDiffingRunningCheck runningCheck;
 
     private static class MappingEntry {
@@ -83,10 +83,10 @@ public class DiffImpl {
         }
     }
 
-    public DiffImpl(SchemaGraph completeSourceGraph, SchemaGraph completeTargetGraph, FillupIsolatedVertices.IsolatedVertices isolatedVertices, SchemaDiffingRunningCheck runningCheck) {
+    public DiffImpl(SchemaGraph completeSourceGraph, SchemaGraph completeTargetGraph, PossibleMappingsCalculator.PossibleMappings possibleMappings, SchemaDiffingRunningCheck runningCheck) {
         this.completeSourceGraph = completeSourceGraph;
         this.completeTargetGraph = completeTargetGraph;
-        this.isolatedVertices = isolatedVertices;
+        this.possibleMappings = possibleMappings;
         this.runningCheck = runningCheck;
     }
 
@@ -331,7 +331,7 @@ public class DiffImpl {
                                              Set<Vertex> partialMappingTargetSet
 
     ) {
-        if (!isolatedVertices.mappingPossible(v, u)) {
+        if (!possibleMappings.mappingPossible(v, u)) {
             return Integer.MAX_VALUE;
         }
         boolean equalNodes = v.getType().equals(u.getType()) && v.getProperties().equals(u.getProperties());
