@@ -11,7 +11,7 @@ plugins {
     id "biz.aQute.bnd.builder" version "6.4.0"
     id "io.github.gradle-nexus.publish-plugin" version "1.1.0"
     id "groovy"
-    id "me.champeau.jmh" version "0.6.6"
+    id "me.champeau.jmh" version "0.7.0"
 }
 
 java {
@@ -202,12 +202,12 @@ generateGrammarSource.inputs.dir('src/main/antlr')
 
 task sourcesJar(type: Jar) {
     dependsOn classes
-    classifier 'sources'
+    archiveClassifier = 'sources'
     from sourceSets.main.allSource
 }
 
 task javadocJar(type: Jar, dependsOn: javadoc) {
-    classifier = 'javadoc'
+    archiveClassifier = 'javadoc'
     from javadoc.destinationDir
 }
 
@@ -241,7 +241,7 @@ test {
  *
  * See https://github.com/gradle/gradle/issues/20151
  */
-gradle. buildFinished {
+gradle.buildFinished {
     if (!failedTests.isEmpty()) {
         println "\n\n"
         println "============================"
@@ -270,10 +270,10 @@ publishing {
             from components.java
 
             artifact sourcesJar {
-                classifier "sources"
+                archiveClassifier = "sources"
             }
             artifact javadocJar {
-                classifier "javadoc"
+                archiveClassifier = "javadoc"
             }
             pom.withXml {
                 // Removing antlr4 below (introduced in `1ac98bf`) addresses an issue with
