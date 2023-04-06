@@ -165,6 +165,8 @@ task extractWithoutGuava(type: Copy) {
     into layout.buildDirectory.dir("extract")
 }
 
+extractWithoutGuava.dependsOn jar
+
 task buildNewJar(type: Jar) {
     from layout.buildDirectory.dir("extract")
     archiveFileName = "graphql-java-tmp.jar"
