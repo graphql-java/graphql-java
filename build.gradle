@@ -180,6 +180,8 @@ task buildNewJar(type: Jar) {
     }
 }
 
+buildNewJar.dependsOn extractWithoutGuava
+
 shadowJar.finalizedBy extractWithoutGuava, buildNewJar
 
 
