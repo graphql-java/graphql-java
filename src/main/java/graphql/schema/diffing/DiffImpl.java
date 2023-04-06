@@ -8,6 +8,7 @@ import graphql.Internal;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -111,6 +112,7 @@ public class DiffImpl {
         firstMappingEntry.siblingsFinished = true;
         while (!queue.isEmpty()) {
             MappingEntry mappingEntry = queue.poll();
+//            System.out.println("mapping entry at:" + mappingEntry.level);
             if (mappingEntry.lowerBoundCost >= optimalEdit.ged) {
                 continue;
             }
@@ -321,6 +323,9 @@ public class DiffImpl {
      * a partial mapping introduces a sub graph. The editorial cost is only calculated with respect to this sub graph.
      */
 
+
+    private final Map<Vertex, Double> deletionCostsCache = new LinkedHashMap<>();
+
     // lower bound mapping cost between for v -> u in respect to a partial mapping
     // this is BMa
     private double calcLowerBoundMappingCost(Vertex v,
@@ -333,6 +338,11 @@ public class DiffImpl {
     ) {
         if (!possibleMappings.mappingPossible(v, u)) {
             return Integer.MAX_VALUE;
+        }
+        if (u.isOfType(SchemaGraph.ISOLATED)) {
+            if (deletionCostsCache.containsKey(v)) {
+                return deletionCostsCache.get(v);
+            }
         }
         boolean equalNodes = v.getType().equals(u.getType()) && v.getProperties().equals(u.getProperties());
 
@@ -389,6 +399,10 @@ public class DiffImpl {
         int multiSetEditDistance = Math.max(multisetLabelsV.size(), multisetLabelsU.size()) - intersection.size();
 
         double result = (equalNodes ? 0 : 1) + multiSetEditDistance + anchoredVerticesCost;
+        if (u.isOfType(SchemaGraph.ISOLATED)) {
+            deletionCostsCache.put(v, result);
+        }
+
         return result;
     }
 
