@@ -1083,6 +1083,34 @@ class SchemaDiffingTest extends Specification {
         operations.size() == 2
     }
 
+    def "rename enum value"() {
+        given:
+        def schema1 = schema("""
+           type Query {
+            foo: Foo
+           } 
+           enum Foo {
+                V1
+                V2
+           }
+        """)
+        def schema2 = schema("""
+           type Query {
+            foo: Foo
+           } 
+           enum Foo {
+                V1
+                V3
+           }
+        """)
+
+        when:
+        def operations = new SchemaDiffing().diffGraphQLSchema(schema1, schema2)
+
+        then:
+        operations.size() == 1
+    }
+
     def "arguments in directives changed"() {
         given:
         def schema1 = schema('''

@@ -11,6 +11,7 @@ import graphql.language.FragmentDefinition;
 import graphql.language.FragmentSpread;
 import graphql.language.InlineFragment;
 import graphql.language.Node;
+import graphql.language.ObjectValue;
 import graphql.language.OperationDefinition;
 import graphql.language.SelectionSet;
 import graphql.language.SourceLocation;
@@ -185,6 +186,10 @@ public class AbstractRule {
     }
 
     public void documentFinished(Document document) {
+
+    }
+
+    public void checkObjectValue(ObjectValue objectValue) {
 
     }
 

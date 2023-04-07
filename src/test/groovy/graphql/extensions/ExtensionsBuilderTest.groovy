@@ -3,17 +3,11 @@ package graphql.extensions
 import graphql.ExecutionInput
 import graphql.ExecutionResult
 import graphql.TestUtil
-import graphql.execution.instrumentation.Instrumentation
-import graphql.execution.instrumentation.InstrumentationState
-import graphql.execution.instrumentation.SimplePerformantInstrumentation
-import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters
 import graphql.schema.DataFetcher
 import graphql.schema.DataFetchingEnvironment
 import graphql.schema.GraphQLTypeUtil
 import org.jetbrains.annotations.NotNull
 import spock.lang.Specification
-
-import java.util.concurrent.CompletableFuture
 
 import static graphql.extensions.ExtensionsBuilder.newExtensionsBuilder
 import static graphql.schema.idl.RuntimeWiring.newRuntimeWiring
@@ -105,7 +99,20 @@ class ExtensionsBuilderTest extends Specification {
         extensions == [the: "end"]
     }
 
-    def "integration test that shows it working"() {
+    DataFetcher extensionDF = new DataFetcher() {
+        @Override
+        Object get(DataFetchingEnvironment env) throws Exception {
+            ExtensionsBuilder extensionsBuilder = env.getGraphQlContext().get(ExtensionsBuilder.class)
+            def fieldMap = [:]
+            fieldMap.put(env.getFieldDefinition().name, GraphQLTypeUtil.simplePrint(env.getFieldDefinition().type))
+            extensionsBuilder.addValues([common: fieldMap])
+            extensionsBuilder.addValues(fieldMap)
+            return "ignored"
+        }
+    }
+
+
+    def "integration test that shows it working when they put in a builder"() {
         def sdl = """
         type Query {
             name : String!
@@ -114,39 +121,60 @@ class ExtensionsBuilderTest extends Specification {
         }
         """
 
-        Instrumentation contextInstrumentation = new SimplePerformantInstrumentation() {
-            @Override
-            CompletableFuture<ExecutionResult> instrumentExecutionResult(ExecutionResult executionResult, InstrumentationExecutionParameters parameters, InstrumentationState state) {
-                ExtensionsBuilder extensionsBuilder = parameters.getGraphQLContext().get(ExtensionsBuilder.class)
-                def newEr = extensionsBuilder.setExtensions(executionResult)
-                return CompletableFuture.completedFuture(newEr)
-            }
-        }
-
-        DataFetcher df = new DataFetcher() {
-            @Override
-            Object get(DataFetchingEnvironment env) throws Exception {
-                ExtensionsBuilder extensionsBuilder = env.getGraphQlContext().get(ExtensionsBuilder.class)
-                def fieldMap = [:]
-                fieldMap.put(env.getFieldDefinition().name, GraphQLTypeUtil.simplePrint(env.getFieldDefinition().type))
-                extensionsBuilder.addValues([common: fieldMap])
-                extensionsBuilder.addValues(fieldMap)
-                return "ignored"
-            }
-        }
+        def extensionsBuilder = newExtensionsBuilder()
+        extensionsBuilder.addValue("added","explicitly")
 
         def ei = ExecutionInput.newExecutionInput("query q { name street id }")
-                .graphQLContext({ ctx -> ctx.put(ExtensionsBuilder.class, newExtensionsBuilder()) })
+                .graphQLContext({ ctx ->
+                    ctx.put(ExtensionsBuilder.class, extensionsBuilder) })
                 .build()
 
 
         def graphQL = TestUtil.graphQL(sdl, newRuntimeWiring()
                 .type(newTypeWiring("Query").dataFetchers([
-                        name  : df,
-                        street: df,
-                        id    : df,
+                        name  : extensionDF,
+                        street: extensionDF,
+                        id    : extensionDF,
                 ])))
-                .instrumentation(contextInstrumentation)
+                .build()
+
+        when:
+        def er = graphQL.execute(ei)
+        then:
+        er.errors.isEmpty()
+        er.extensions == [
+                "added": "explicitly",
+                common: [
+                        name  : "String!",
+                        street: "String",
+                        id    : "ID!",
+                ],
+                // we break them out so we have common and not common entries
+                name  : "String!",
+                street: "String",
+                id    : "ID!",
+        ]
+    }
+
+    def "integration test that shows it working when they DONT put in a builder"() {
+        def sdl = """
+        type Query {
+            name : String!
+            street : String
+            id : ID!
+        }
+        """
+
+        def ei = ExecutionInput.newExecutionInput("query q { name street id }")
+                .build()
+
+
+        def graphQL = TestUtil.graphQL(sdl, newRuntimeWiring()
+                .type(newTypeWiring("Query").dataFetchers([
+                        name  : extensionDF,
+                        street: extensionDF,
+                        id    : extensionDF,
+                ])))
                 .build()
 
         when:
@@ -164,5 +192,28 @@ class ExtensionsBuilderTest extends Specification {
                 street: "String",
                 id    : "ID!",
         ]
+    }
+
+    def "integration test showing it leaves extensions null if they are empty"() {
+        def sdl = """
+        type Query {
+            name : String!
+            street : String
+            id : ID!
+        }
+        """
+
+        def ei = ExecutionInput.newExecutionInput("query q { name street id }")
+                .root(["name" : "Brad", "id" :1234])
+                .build()
+
+
+        def graphQL = TestUtil.graphQL(sdl, newRuntimeWiring().build()).build()
+
+        when:
+        def er = graphQL.execute(ei)
+        then:
+        er.errors.isEmpty()
+        er.extensions == null
     }
 }

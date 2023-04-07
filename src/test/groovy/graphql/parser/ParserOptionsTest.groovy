@@ -7,6 +7,8 @@ class ParserOptionsTest extends Specification {
     static defaultOperationOptions = ParserOptions.getDefaultOperationParserOptions()
     static defaultSdlOptions = ParserOptions.getDefaultSdlParserOptions()
 
+    static final int ONE_MB = 1024 * 1024
+
     void setup() {
         ParserOptions.setDefaultParserOptions(defaultOptions)
         ParserOptions.setDefaultOperationParserOptions(defaultOperationOptions)
@@ -21,6 +23,7 @@ class ParserOptionsTest extends Specification {
 
     def "lock in default settings"() {
         expect:
+        defaultOptions.getMaxCharacters() == ONE_MB
         defaultOptions.getMaxTokens() == 15_000
         defaultOptions.getMaxWhitespaceTokens() == 200_000
         defaultOptions.isCaptureSourceLocation()
@@ -35,6 +38,7 @@ class ParserOptionsTest extends Specification {
         !defaultOperationOptions.isCaptureIgnoredChars()
         defaultOptions.isReaderTrackData()
 
+        defaultSdlOptions.getMaxCharacters() == Integer.MAX_VALUE
         defaultSdlOptions.getMaxTokens() == Integer.MAX_VALUE
         defaultSdlOptions.getMaxWhitespaceTokens() == Integer.MAX_VALUE
         defaultSdlOptions.isCaptureSourceLocation()
@@ -44,11 +48,23 @@ class ParserOptionsTest extends Specification {
     }
 
     def "can set in new option JVM wide"() {
-        def newDefaultOptions = defaultOptions.transform({ it.captureIgnoredChars(true).readerTrackData(false) })
+        def newDefaultOptions = defaultOptions.transform({
+            it.captureIgnoredChars(true)
+                    .readerTrackData(false)
+        }        )
         def newDefaultOperationOptions = defaultOperationOptions.transform(
-                { it.captureIgnoredChars(true).captureLineComments(true).maxWhitespaceTokens(300_000) })
+                {
+                    it.captureIgnoredChars(true)
+                            .captureLineComments(true)
+                            .maxCharacters(1_000_000)
+                            .maxWhitespaceTokens(300_000)
+                })
         def newDefaultSDlOptions = defaultSdlOptions.transform(
-                { it.captureIgnoredChars(true).captureLineComments(true).maxWhitespaceTokens(300_000) })
+                {
+                    it.captureIgnoredChars(true)
+                            .captureLineComments(true)
+                            .maxWhitespaceTokens(300_000)
+                })
 
         when:
         ParserOptions.setDefaultParserOptions(newDefaultOptions)
@@ -61,6 +77,7 @@ class ParserOptionsTest extends Specification {
 
         then:
 
+        currentDefaultOptions.getMaxCharacters() == ONE_MB
         currentDefaultOptions.getMaxTokens() == 15_000
         currentDefaultOptions.getMaxWhitespaceTokens() == 200_000
         currentDefaultOptions.isCaptureSourceLocation()
@@ -68,6 +85,7 @@ class ParserOptionsTest extends Specification {
         currentDefaultOptions.isCaptureIgnoredChars()
         !currentDefaultOptions.isReaderTrackData()
 
+        currentDefaultOperationOptions.getMaxCharacters() == 1_000_000
         currentDefaultOperationOptions.getMaxTokens() == 15_000
         currentDefaultOperationOptions.getMaxWhitespaceTokens() == 300_000
         currentDefaultOperationOptions.isCaptureSourceLocation()
@@ -75,6 +93,7 @@ class ParserOptionsTest extends Specification {
         currentDefaultOperationOptions.isCaptureIgnoredChars()
         currentDefaultOperationOptions.isReaderTrackData()
 
+        currentDefaultSdlOptions.getMaxCharacters() == Integer.MAX_VALUE
         currentDefaultSdlOptions.getMaxTokens() == Integer.MAX_VALUE
         currentDefaultSdlOptions.getMaxWhitespaceTokens() == 300_000
         currentDefaultSdlOptions.isCaptureSourceLocation()

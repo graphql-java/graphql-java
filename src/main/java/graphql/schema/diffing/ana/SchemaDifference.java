@@ -954,6 +954,24 @@ public interface SchemaDifference {
         }
     }
 
+    class EnumValueRenamed implements EnumModificationDetail {
+        private final String oldName;
+        private final String newName;
+
+        public EnumValueRenamed(String oldName, String newName) {
+            this.oldName = oldName;
+            this.newName = newName;
+        }
+
+        public String getOldName() {
+            return oldName;
+        }
+
+        public String getNewName() {
+            return newName;
+        }
+    }
+
     class EnumValueAddition implements EnumModificationDetail {
         private final String name;
 

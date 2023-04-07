@@ -16,6 +16,7 @@ import graphql.language.FragmentDefinition;
 import graphql.language.FragmentSpread;
 import graphql.language.InlineFragment;
 import graphql.language.Node;
+import graphql.language.ObjectValue;
 import graphql.language.OperationDefinition;
 import graphql.language.SelectionSet;
 import graphql.language.TypeName;
@@ -78,6 +79,8 @@ public class RulesVisitor implements DocumentVisitor {
             checkVariable((VariableReference) node);
         } else if (node instanceof SelectionSet) {
             checkSelectionSet((SelectionSet) node);
+        } else if (node instanceof ObjectValue) {
+            checkObjectValue((ObjectValue) node);
         }
     }
 
@@ -149,6 +152,10 @@ public class RulesVisitor implements DocumentVisitor {
 
     private void checkVariable(VariableReference node) {
         currentRules.forEach(r -> r.checkVariable(node));
+    }
+
+    private void checkObjectValue(ObjectValue node) {
+        currentRules.forEach(r -> r.checkObjectValue(node));
     }
 
     @Override

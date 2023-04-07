@@ -4,6 +4,7 @@ package graphql.execution;
 import graphql.ExecutionInput;
 import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
+import graphql.GraphQLContext;
 import graphql.GraphQLError;
 import graphql.Internal;
 import graphql.execution.instrumentation.Instrumentation;
@@ -11,6 +12,7 @@ import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationState;
 import graphql.execution.instrumentation.parameters.InstrumentationExecuteOperationParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters;
+import graphql.extensions.ExtensionsBuilder;
 import graphql.language.Document;
 import graphql.language.FragmentDefinition;
 import graphql.language.NodeUtil;
@@ -42,7 +44,7 @@ public class Execution {
     private final ExecutionStrategy mutationStrategy;
     private final ExecutionStrategy subscriptionStrategy;
     private final Instrumentation instrumentation;
-    private ValueUnboxer valueUnboxer;
+    private final ValueUnboxer valueUnboxer;
 
     public Execution(ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy, ExecutionStrategy subscriptionStrategy, Instrumentation instrumentation, ValueUnboxer valueUnboxer) {
         this.queryStrategy = queryStrategy != null ? queryStrategy : new AsyncExecutionStrategy();
@@ -104,6 +106,9 @@ public class Execution {
 
 
     private CompletableFuture<ExecutionResult> executeOperation(ExecutionContext executionContext, Object root, OperationDefinition operationDefinition) {
+
+        GraphQLContext graphQLContext = executionContext.getGraphQLContext();
+        addExtensionsBuilderNotPresent(graphQLContext);
 
         InstrumentationExecuteOperationParameters instrumentationParams = new InstrumentationExecuteOperationParameters(executionContext);
         InstrumentationContext<ExecutionResult> executeOperationCtx = nonNullCtx(instrumentation.beginExecuteOperation(instrumentationParams, executionContext.getInstrumentationState()));
@@ -168,8 +173,30 @@ public class Execution {
         // note this happens NOW - not when the result completes
         executeOperationCtx.onDispatched(result);
 
-        result = result.whenComplete(executeOperationCtx::onCompleted);
+        // fill out extensions if we have them
+        result = result.thenApply(er -> mergeExtensionsBuilderIfPresent(er, graphQLContext));
 
+        result = result.whenComplete(executeOperationCtx::onCompleted);
         return result;
+    }
+
+    private void addExtensionsBuilderNotPresent(GraphQLContext graphQLContext) {
+        Object builder = graphQLContext.get(ExtensionsBuilder.class);
+        if (builder == null) {
+            graphQLContext.put(ExtensionsBuilder.class, ExtensionsBuilder.newExtensionsBuilder());
+        }
+    }
+
+    private ExecutionResult mergeExtensionsBuilderIfPresent(ExecutionResult executionResult, GraphQLContext graphQLContext) {
+        Object builder = graphQLContext.get(ExtensionsBuilder.class);
+        if (builder instanceof ExtensionsBuilder) {
+            ExtensionsBuilder extensionsBuilder = (ExtensionsBuilder) builder;
+            Map<Object, Object> currentExtensions = executionResult.getExtensions();
+            if (currentExtensions != null) {
+                extensionsBuilder.addValues(currentExtensions);
+            }
+            executionResult = extensionsBuilder.setExtensions(executionResult);
+        }
+        return executionResult;
     }
 }

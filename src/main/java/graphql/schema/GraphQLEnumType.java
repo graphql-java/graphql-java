@@ -1,6 +1,5 @@
 package graphql.schema;
 
-
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import graphql.DirectivesUtil;
@@ -14,8 +13,8 @@ import graphql.language.Value;
 import graphql.util.FpKit;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
+import org.jetbrains.annotations.NotNull;
 
-import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -149,7 +148,7 @@ public class GraphQLEnumType implements GraphQLNamedInputType, GraphQLNamedOutpu
                 (fld1, fld2) -> assertShouldNeverHappen("Duplicated definition for field '%s' in type '%s'", fld1.getName(), this.name)));
     }
 
-    private Object getValueByName(@Nonnull Object value, GraphQLContext graphQLContext, Locale locale) {
+    private Object getValueByName(@NotNull Object value, GraphQLContext graphQLContext, Locale locale) {
         GraphQLEnumValueDefinition enumValueDefinition = valueDefinitionMap.get(value.toString());
         if (enumValueDefinition != null) {
             return enumValueDefinition.getValue();

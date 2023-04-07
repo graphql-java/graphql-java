@@ -7,18 +7,16 @@ plugins {
     id 'maven-publish'
     id 'antlr'
     id 'signing'
-    id "com.github.johnrengelman.shadow" version "7.1.2"
-    id "biz.aQute.bnd.builder" version "6.3.1"
-    id "io.github.gradle-nexus.publish-plugin" version "1.1.0"
+    id "com.github.johnrengelman.shadow" version "8.1.1"
+    id "biz.aQute.bnd.builder" version "6.4.0"
+    id "io.github.gradle-nexus.publish-plugin" version "1.3.0"
     id "groovy"
-    id "me.champeau.jmh" version "0.6.6"
+    id "me.champeau.jmh" version "0.7.0"
 }
-
 
 java {
     toolchain {
         languageVersion = JavaLanguageVersion.of(11)
-
     }
 }
 
@@ -85,29 +83,27 @@ jar {
 }
 
 dependencies {
-    compileOnly 'org.jetbrains:annotations:23.0.0'
+    compileOnly 'org.jetbrains:annotations:24.0.1'
     implementation 'org.antlr:antlr4-runtime:' + antlrVersion
     implementation 'org.slf4j:slf4j-api:' + slf4jVersion
     api 'com.graphql-java:java-dataloader:3.2.0'
     api 'org.reactivestreams:reactive-streams:' + reactiveStreamsVersion
     antlr 'org.antlr:antlr4:' + antlrVersion
-    implementation 'com.google.guava:guava:31.0.1-jre'
+    implementation 'com.google.guava:guava:31.1-jre'
     testImplementation group: 'junit', name: 'junit', version: '4.13.2'
     testImplementation 'org.spockframework:spock-core:2.0-groovy-3.0'
-    testImplementation 'org.codehaus.groovy:groovy:3.0.9'
-    testImplementation 'cglib:cglib-nodep:3.3.0'
-    testImplementation 'org.objenesis:objenesis:3.2'
+    testImplementation 'org.codehaus.groovy:groovy:3.0.16'
     testImplementation 'com.google.code.gson:gson:2.8.9'
     testImplementation 'org.eclipse.jetty:jetty-server:9.4.26.v20200117'
     testImplementation 'com.fasterxml.jackson.core:jackson-databind:2.13.1'
     testImplementation 'org.slf4j:slf4j-simple:' + slf4jVersion
     testImplementation 'org.awaitility:awaitility-groovy:3.1.6'
-    testImplementation 'com.github.javafaker:javafaker:0.13'
+    testImplementation 'com.github.javafaker:javafaker:1.0.2'
 
     testImplementation 'org.reactivestreams:reactive-streams-tck:' + reactiveStreamsVersion
     testImplementation "io.reactivex.rxjava2:rxjava:2.2.21"
 
-    testImplementation 'org.testng:testng:6.1.1' // use for reactive streams test inheritance
+    testImplementation 'org.testng:testng:7.7.1' // use for reactive streams test inheritance
 
     testImplementation 'org.openjdk.jmh:jmh-core:1.35'
     testAnnotationProcessor 'org.openjdk.jmh:jmh-generator-annprocess:1.35'
@@ -127,7 +123,7 @@ shadowJar {
     }
     relocate('org.antlr.v4.runtime', 'graphql.org.antlr.v4.runtime')
     dependencies {
-        include(dependency('com.google.guava:guava:31.0.1-jre'))
+        include(dependency('com.google.guava:guava:31.1-jre'))
         include(dependency('org.antlr:antlr4-runtime:' + antlrVersion))
     }
     from "LICENSE.md"
@@ -150,30 +146,43 @@ shadowJar {
     // -removeheaders:  Private-Package Removes the MANIFEST.MF header Private-Package, which contains all the internal packages and 
     //                                  also the repackaged packages like guava, which would be wrong after repackaging.
     // Import-Package:  Changes the imported packages header, to exclude guava and dependencies from the import list (! excludes packages)
-    //                  Guava was repackaged and included inside the jar, so we need remove it.
+    //                  Guava was repackaged and included inside the jar, so we need to remove it.
+    //                  ANTLR was shaded, so we need to remove it.
+    //                  sun.misc is a JRE internal-only class that is not directly used by graphql-java. It was causing problems in libraries using graphql-java.
     //                  The last ,* copies all the existing imports from the other dependencies, which is required.
     bnd('''
 -exportcontents: graphql.*
 -removeheaders: Private-Package
-Import-Package: !com.google.*,!org.checkerframework.*,!javax.annotation.*,!graphql.com.google.*,!org.antlr.*,!graphql.org.antlr.*,*
+Import-Package: !com.google.*,!org.checkerframework.*,!javax.annotation.*,!graphql.com.google.*,!org.antlr.*,!graphql.org.antlr.*,!sun.misc.*,*
 ''')
 }
 
 
-task removeNotNeededGuava(type: Zip) {
+task extractWithoutGuava(type: Copy) {
     from({ zipTree({ "build/libs/graphql-java-${project.version}.jar" }) }) {
         exclude('/com/**')
     }
+    into layout.buildDirectory.dir("extract")
+}
+
+extractWithoutGuava.dependsOn jar
+
+task buildNewJar(type: Jar) {
+    from layout.buildDirectory.dir("extract")
     archiveFileName = "graphql-java-tmp.jar"
     destinationDirectory = file("${project.buildDir}/libs")
+    manifest {
+        from file("build/extract/META-INF/MANIFEST.MF")
+    }
     doLast {
         delete("build/libs/graphql-java-${project.version}.jar")
         file("build/libs/graphql-java-tmp.jar").renameTo(file("build/libs/graphql-java-${project.version}.jar"))
     }
 }
 
+buildNewJar.dependsOn extractWithoutGuava
 
-shadowJar.finalizedBy removeNotNeededGuava
+shadowJar.finalizedBy extractWithoutGuava, buildNewJar
 
 
 task testng(type: Test) {
@@ -197,12 +206,12 @@ generateGrammarSource.inputs.dir('src/main/antlr')
 
 task sourcesJar(type: Jar) {
     dependsOn classes
-    classifier 'sources'
+    archiveClassifier = 'sources'
     from sourceSets.main.allSource
 }
 
 task javadocJar(type: Jar, dependsOn: javadoc) {
-    classifier = 'javadoc'
+    archiveClassifier = 'javadoc'
     from javadoc.destinationDir
 }
 
@@ -215,12 +224,40 @@ artifacts {
     archives javadocJar
 }
 
+List<TestDescriptor> failedTests = []
+
 test {
     testLogging {
         events "FAILED", "SKIPPED"
         exceptionFormat = "FULL"
     }
+
+    afterTest { TestDescriptor descriptor, TestResult result ->
+        if (result.getFailedTestCount() > 0) {
+            failedTests.add(descriptor)
+        }
+    }
 }
+
+/*
+ * The gradle.buildFinished callback is deprecated BUT there does not seem to be a decent alternative in gradle 7
+ * So progress over perfection here
+ *
+ * See https://github.com/gradle/gradle/issues/20151
+ */
+gradle.buildFinished {
+    if (!failedTests.isEmpty()) {
+        println "\n\n"
+        println "============================"
+        println "These are the test failures"
+        println "============================"
+        for (td in failedTests) {
+            println "${td.getClassName()}.${td.getDisplayName()}"
+        }
+        println "============================"
+    }
+}
+
 
 allprojects {
     tasks.withType(Javadoc) {
@@ -237,10 +274,10 @@ publishing {
             from components.java
 
             artifact sourcesJar {
-                classifier "sources"
+                archiveClassifier = "sources"
             }
             artifact javadocJar {
-                classifier "javadoc"
+                archiveClassifier = "javadoc"
             }
             pom.withXml {
                 // Removing antlr4 below (introduced in `1ac98bf`) addresses an issue with

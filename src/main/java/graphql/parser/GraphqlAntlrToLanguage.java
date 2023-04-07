@@ -1,6 +1,5 @@
 package graphql.parser;
 
-
 import com.google.common.collect.ImmutableList;
 import graphql.Assert;
 import graphql.Internal;
@@ -68,8 +67,8 @@ import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.TerminalNode;
+import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nullable;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
