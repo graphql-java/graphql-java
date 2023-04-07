@@ -77,10 +77,10 @@ public interface DataFetchingEnvironment extends IntrospectionDataFetchingEnviro
     <T> T getArgumentOrDefault(String name, T defaultValue);
 
     /**
-     * Returns a legacy context argument that is set up when the {@link graphql.GraphQL#execute(graphql.ExecutionInput)} )} method
+     * Returns a legacy context argument that is set up when the {@link graphql.GraphQL#execute(graphql.ExecutionInput)} method
      * is invoked.
      * <p>
-     * This is a info object which is provided to all DataFetchers, but never used by graphql-java itself.
+     * This is an info object which is provided to all DataFetchers, but never used by graphql-java itself.
      *
      * @param <T> you decide what type it is
      *
@@ -96,19 +96,19 @@ public interface DataFetchingEnvironment extends IntrospectionDataFetchingEnviro
      * Returns a shared context argument that is set up when the {@link graphql.GraphQL#execute(graphql.ExecutionInput)} )} method
      * is invoked.
      * <p>
-     * This is a info object which is provided to all DataFetchers.
+     * This is an info object which is provided to all DataFetchers.
      *
      * @return can NOT be null
      */
     GraphQLContext getGraphQlContext();
 
     /**
-     * This returns a context object that parent fields may have returned returned
+     * This returns a context object that parent fields may have returned
      * via {@link graphql.execution.DataFetcherResult#getLocalContext()} which can be used to pass down extra information to
      * fields beyond the normal {@link #getSource()}
      * <p>
-     * This differs from {@link #getContext()} in that it's field specific and passed from parent field to child field,
-     * whilst {@link #getContext()} is global for the whole query.
+     * This differs from {@link #getGraphQlContext()} in that it's field specific and passed from parent field to child field,
+     * whilst {@link #getGraphQlContext()} is global for the whole query.
      * <p>
      * If the field is a top level field then 'localContext' equals null since it's never be set until those
      * fields execute.
@@ -144,7 +144,7 @@ public interface DataFetchingEnvironment extends IntrospectionDataFetchingEnviro
     List<Field> getFields();
 
     /**
-     * It can happen that a query has overlapping fields which are
+     * It can happen that a query has overlapping fields which
      * are querying the same data. If this is the case they get merged
      * together and fetched only once, but this method returns all of the Fields
      * from the query.
