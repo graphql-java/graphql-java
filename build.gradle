@@ -92,7 +92,7 @@ dependencies {
     implementation 'com.google.guava:guava:31.1-jre'
     testImplementation group: 'junit', name: 'junit', version: '4.13.2'
     testImplementation 'org.spockframework:spock-core:2.0-groovy-3.0'
-    testImplementation 'org.apache.groovy:groovy:4.0.11'
+    testImplementation 'org.codehaus.groovy:groovy:3.0.17'
     testImplementation 'org.apache.groovy:groovy-json:4.0.11'
     testImplementation 'com.google.code.gson:gson:2.8.9'
     testImplementation 'org.eclipse.jetty:jetty-server:9.4.26.v20200117'
