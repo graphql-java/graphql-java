@@ -14,9 +14,9 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 
 /**
- * The standard ImmutableMap does not allow null values.  The implementation does.
- * We have cases in graphql, around arguments where a mep entry can be explicitly set to null
- * and we want immutable smart maps for these case.
+ * The standard ImmutableMap does not allow null values. The implementation does.
+ * We have cases in graphql, around arguments where a map entry can be explicitly set to null
+ * and we want immutable smart maps for these cases.
  *
  * @param <K> for key
  * @param <V> for victory
