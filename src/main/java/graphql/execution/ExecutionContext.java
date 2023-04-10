@@ -17,9 +17,12 @@ import graphql.language.FragmentDefinition;
 import graphql.language.OperationDefinition;
 import graphql.normalized.ExecutableNormalizedOperation;
 import graphql.normalized.ExecutableNormalizedOperationFactory;
+import graphql.schema.DataFetchingFieldSelectionSet;
+import graphql.schema.DataFetchingFieldSelectionSetImpl;
 import graphql.schema.GraphQLSchema;
 import graphql.util.FpKit;
 import org.dataloader.DataLoaderRegistry;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.HashSet;
 import java.util.List;
@@ -57,6 +60,7 @@ public class ExecutionContext {
     private final ValueUnboxer valueUnboxer;
     private final ExecutionInput executionInput;
     private final Supplier<ExecutableNormalizedOperation> queryTree;
+    private final Supplier<List<DataFetchingFieldSelectionSet>> rootDataFetchingFieldSelectionSet;
 
     ExecutionContext(ExecutionContextBuilder builder) {
         this.graphQLSchema = builder.graphQLSchema;
@@ -80,7 +84,17 @@ public class ExecutionContext {
         this.errors.set(builder.errors);
         this.localContext = builder.localContext;
         this.executionInput = builder.executionInput;
-        queryTree = FpKit.interThreadMemoize(() -> ExecutableNormalizedOperationFactory.createExecutableNormalizedOperation(graphQLSchema, operationDefinition, fragmentsByName, coercedVariables));
+        this.queryTree = FpKit.interThreadMemoize(() -> ExecutableNormalizedOperationFactory.createExecutableNormalizedOperation(graphQLSchema, operationDefinition, fragmentsByName, coercedVariables));
+        this.rootDataFetchingFieldSelectionSet = FpKit.intraThreadMemoize(() -> collectRootDataFetchingFieldSelectionSets(queryTree, builder.graphQLSchema));
+    }
+
+    @NotNull
+    private List<DataFetchingFieldSelectionSet> collectRootDataFetchingFieldSelectionSets(
+            Supplier<ExecutableNormalizedOperation> queryTree, GraphQLSchema schema) {
+        return ImmutableKit.map(queryTree.get().getTopLevelFields(), root -> DataFetchingFieldSelectionSetImpl.newCollector(
+                schema,
+                root.getFieldDefinitions(schema).get(0).getType(), //root fields always have a single parent
+                () -> root));
     }
 
 
@@ -276,6 +290,10 @@ public class ExecutionContext {
 
     public Supplier<ExecutableNormalizedOperation> getNormalizedQueryTree() {
         return queryTree;
+    }
+
+    public Supplier<List<DataFetchingFieldSelectionSet>> getRootDataFetchingFieldSelectionSet() {
+        return rootDataFetchingFieldSelectionSet;
     }
 
     /**
