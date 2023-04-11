@@ -430,10 +430,16 @@ public class DiffImpl {
                                          Set<Vertex> partialMappingSourceSet,
                                          Set<Vertex> partialMappingTargetSet) {
         int anchoredVerticesCost = 0;
+
         List<Edge> adjacentEdgesV = completeSourceGraph.getAdjacentEdges(v);
         List<Edge> adjacentEdgesU = completeTargetGraph.getAdjacentEdges(u);
 
-        Set<Edge> alreadyMatchedTargetEdges = new LinkedHashSet<>();
+        List<Edge> adjacentEdgesInverseV = completeSourceGraph.getAdjacentEdgesInverse(v);
+        List<Edge> adjacentEdgesInverseU = completeTargetGraph.getAdjacentEdgesInverse(u);
+
+        Set<Edge> matchedTargetEdges = new LinkedHashSet<>();
+        Set<Edge> matchedTargetEdgesInverse = new LinkedHashSet<>();
+
         outer:
         for (Edge edgeV : adjacentEdgesV) {
             // we are only interested in edges from anchored vertices
@@ -443,7 +449,7 @@ public class DiffImpl {
             for (Edge edgeU : adjacentEdgesU) {
                 // looking for an adjacent edge from u matching it
                 if (partialMapping.getTarget(edgeV.getTo()) == edgeU.getTo()) {
-                    alreadyMatchedTargetEdges.add(edgeU);
+                    matchedTargetEdges.add(edgeU);
                     // found two adjacent edges, comparing the labels
                     if (!Objects.equals(edgeV.getLabel(), edgeU.getLabel())) {
                         anchoredVerticesCost++;
@@ -458,10 +464,6 @@ public class DiffImpl {
 
         }
 
-        List<Edge> adjacentEdgesInverseV = completeSourceGraph.getAdjacentEdgesInverse(v);
-        List<Edge> adjacentEdgesInverseU = completeTargetGraph.getAdjacentEdgesInverse(u);
-
-
         outer:
         for (Edge edgeV : adjacentEdgesInverseV) {
             // we are only interested in edges from anchored vertices
@@ -470,7 +472,7 @@ public class DiffImpl {
             }
             for (Edge edgeU : adjacentEdgesInverseU) {
                 if (partialMapping.getTarget(edgeV.getFrom()) == edgeU.getFrom()) {
-                    alreadyMatchedTargetEdges.add(edgeU);
+                    matchedTargetEdgesInverse.add(edgeU);
                     if (!Objects.equals(edgeV.getLabel(), edgeU.getLabel())) {
                         anchoredVerticesCost++;
                     }
@@ -481,40 +483,22 @@ public class DiffImpl {
 
         }
 
-        outer:
+        /**
+         * what is missing now is all edges from u (and inverse), which have not been matched yet
+         */
+
         for (Edge edgeU : adjacentEdgesU) {
             // we are only interested in edges from anchored vertices
-            if (!partialMappingTargetSet.contains(edgeU.getTo()) || alreadyMatchedTargetEdges.contains(edgeU)) {
+            if (!partialMappingTargetSet.contains(edgeU.getTo()) || matchedTargetEdges.contains(edgeU)) {
                 continue;
             }
-            for (Edge edgeV : adjacentEdgesV) {
-                if (partialMapping.getTarget(edgeV.getTo()) == edgeU.getTo()) {
-                    if (!Objects.equals(edgeV.getLabel(), edgeU.getLabel())) {
-                        anchoredVerticesCost++;
-                    }
-                    continue outer;
-                }
-            }
-            // no matching adjacent edge from u found means there is no
-            // edge from edgeV.getTo() to mapped(edgeV.getTo())
-            // and we need to increase the costs
             anchoredVerticesCost++;
 
         }
-
-        outer:
         for (Edge edgeU : adjacentEdgesInverseU) {
             // we are only interested in edges from anchored vertices
-            if (!partialMappingTargetSet.contains(edgeU.getFrom()) || alreadyMatchedTargetEdges.contains(edgeU)) {
+            if (!partialMappingTargetSet.contains(edgeU.getFrom()) || matchedTargetEdgesInverse.contains(edgeU)) {
                 continue;
-            }
-            for (Edge edgeV : adjacentEdgesInverseV) {
-                if (partialMapping.getTarget(edgeV.getFrom()) == edgeU.getFrom()) {
-                    if (!Objects.equals(edgeV.getLabel(), edgeU.getLabel())) {
-                        anchoredVerticesCost++;
-                    }
-                    continue outer;
-                }
             }
             anchoredVerticesCost++;
         }
