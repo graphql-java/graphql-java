@@ -343,6 +343,11 @@ public class DiffImpl {
                 return deletionCostsCache.get(v);
             }
         }
+        if (v.isOfType(SchemaGraph.ISOLATED)) {
+            if (deletionCostsCache.containsKey(u)) {
+                return deletionCostsCache.get(u);
+            }
+        }
         boolean equalNodes = v.getType().equals(u.getType()) && v.getProperties().equals(u.getProperties());
 
         // inner edge labels of u (resp. v) in regards to the partial mapping: all labels of edges
@@ -401,6 +406,10 @@ public class DiffImpl {
         if (u.isOfType(SchemaGraph.ISOLATED)) {
             deletionCostsCache.put(v, result);
         }
+        if (v.isOfType(SchemaGraph.ISOLATED)) {
+            deletionCostsCache.put(u, result);
+        }
+
 
         return result;
     }
