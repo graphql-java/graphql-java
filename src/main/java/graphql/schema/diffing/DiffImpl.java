@@ -179,7 +179,7 @@ public class DiffImpl {
             Vertex v = sourceList.get(i);
             int j = 0;
             for (Vertex u : availableTargetVertices) {
-                double cost = calcLowerBoundMappingCost(v, u, partialMapping.getSources(), partialMappingSourceSet, partialMapping.getTargets(), partialMappingTargetSet, deletionCostsCache);
+                double cost = calcLowerBoundMappingCost(v, u, partialMapping.getSources(), partialMappingSourceSet, partialMapping.getTargets(), partialMappingTargetSet, deletionCostsCache, partialMapping);
                 costMatrixForHungarianAlgo[i - level].set(j, cost);
                 costMatrix[i - level].set(j, cost);
                 j++;
@@ -334,7 +334,8 @@ public class DiffImpl {
                                              Set<Vertex> partialMappingSourceSet,
                                              List<Vertex> partialMappingTargetList,
                                              Set<Vertex> partialMappingTargetSet,
-                                             Map<Vertex, Double> deletionCostsCache) {
+                                             Map<Vertex, Double> deletionCostsCache,
+                                             Mapping partialMapping) {
         if (!possibleMappings.mappingPossible(v, u)) {
             return Integer.MAX_VALUE;
         }
@@ -380,38 +381,145 @@ public class DiffImpl {
             }
         }
 
-        /**
-         * looking at all edges from x,vPrime and y,mappedVPrime where vPrime is all anchored vertices
-         */
-        int anchoredVerticesCost = 0;
-        for (int i = 0; i < partialMappingSourceList.size(); i++) {
-            Vertex vPrime = partialMappingSourceList.get(i);
-            Vertex mappedVPrime = partialMappingTargetList.get(i);
-
-            Edge sourceEdge = completeSourceGraph.getEdge(v, vPrime);
-            String labelSourceEdge = sourceEdge != null ? sourceEdge.getLabel() : null;
-            Edge targetEdge = completeTargetGraph.getEdge(u, mappedVPrime);
-            String labelTargetEdge = targetEdge != null ? targetEdge.getLabel() : null;
-            if (!Objects.equals(labelSourceEdge, labelTargetEdge)) {
-                anchoredVerticesCost++;
-            }
-
-            Edge sourceEdgeInverse = completeSourceGraph.getEdge(vPrime, v);
-            String labelSourceEdgeInverse = sourceEdgeInverse != null ? sourceEdgeInverse.getLabel() : null;
-            Edge targetEdgeInverse = completeTargetGraph.getEdge(mappedVPrime, u);
-            String labelTargetEdgeInverse = targetEdgeInverse != null ? targetEdgeInverse.getLabel() : null;
-            if (!Objects.equals(labelSourceEdgeInverse, labelTargetEdgeInverse)) {
-                anchoredVerticesCost++;
-            }
-
-            runningCheck.check();
-        }
+        int anchoredVerticesCostNew = calcAnchoredVerticesCost(v, u, partialMapping, partialMappingSourceSet, partialMappingTargetSet);
 
         Multiset<String> intersection = Multisets.intersection(multisetLabelsV, multisetLabelsU);
         int multiSetEditDistance = Math.max(multisetLabelsV.size(), multisetLabelsU.size()) - intersection.size();
 
-        double result = (equalNodes ? 0 : 1) + multiSetEditDistance + anchoredVerticesCost;
+        double result = (equalNodes ? 0 : 1) + multiSetEditDistance + anchoredVerticesCostNew;
         return result;
+    }
+
+//    private int calcAnchoredOld(Vertex v, Vertex u, List<Vertex> partialMappingSourceList, List<Vertex> partialMappingTargetList) {
+//        int anchoredVerticesCost = 0;
+//        for (int i = 0; i < partialMappingSourceList.size(); i++) {
+//            Vertex vPrime = partialMappingSourceList.get(i);
+//            Vertex mappedVPrime = partialMappingTargetList.get(i);
+//
+//            Edge sourceEdge = completeSourceGraph.getEdge(v, vPrime);
+//            Object labelSourceEdge = getEdgeLabel(sourceEdge);
+//            Edge targetEdge = completeTargetGraph.getEdge(u, mappedVPrime);
+//            Object labelTargetEdge = getEdgeLabel(targetEdge);
+//            if (!Objects.equals(labelSourceEdge, labelTargetEdge)) {
+//                anchoredVerticesCost++;
+//            }
+//
+//            Edge sourceEdgeInverse = completeSourceGraph.getEdge(vPrime, v);
+//            Object labelSourceEdgeInverse = getEdgeLabel(sourceEdgeInverse);
+//            Edge targetEdgeInverse = completeTargetGraph.getEdge(mappedVPrime, u);
+//            Object labelTargetEdgeInverse = getEdgeLabel(targetEdgeInverse);
+//            if (!Objects.equals(labelSourceEdgeInverse, labelTargetEdgeInverse)) {
+//                anchoredVerticesCost++;
+//            }
+//
+//            runningCheck.check();
+//        }
+//        return anchoredVerticesCost;
+//    }
+
+//    private static final Object NO_EDGE_LABEL = new Object();
+//
+//    private Object getEdgeLabel(Edge edge) {
+//        if (edge == null) {
+//            return NO_EDGE_LABEL;
+//        }
+//        return edge.getLabel();
+//    }
+
+    private int calcAnchoredVerticesCost(Vertex v, Vertex u, Mapping partialMapping,
+                                         Set<Vertex> partialMappingSourceSet,
+                                         Set<Vertex> partialMappingTargetSet) {
+        int anchoredVerticesCost = 0;
+        List<Edge> adjacentEdgesV = completeSourceGraph.getAdjacentEdges(v);
+        List<Edge> adjacentEdgesU = completeTargetGraph.getAdjacentEdges(u);
+
+        Set<Edge> alreadyMatchedTargetEdges = new LinkedHashSet<>();
+        outer:
+        for (Edge edgeV : adjacentEdgesV) {
+            // we are only interested in edges from anchored vertices
+            if (!partialMappingSourceSet.contains(edgeV.getTo())) {
+                continue;
+            }
+            for (Edge edgeU : adjacentEdgesU) {
+                // looking for an adjacent edge from u matching it
+                if (partialMapping.getTarget(edgeV.getTo()) == edgeU.getTo()) {
+                    alreadyMatchedTargetEdges.add(edgeU);
+                    // found two adjacent edges, comparing the labels
+                    if (!Objects.equals(edgeV.getLabel(), edgeU.getLabel())) {
+                        anchoredVerticesCost++;
+                    }
+                    continue outer;
+                }
+            }
+            // no matching adjacent edge from u found means there is no
+            // edge from edgeV.getTo() to mapped(edgeV.getTo())
+            // and we need to increase the costs
+            anchoredVerticesCost++;
+
+        }
+
+        List<Edge> adjacentEdgesInverseV = completeSourceGraph.getAdjacentEdgesInverse(v);
+        List<Edge> adjacentEdgesInverseU = completeTargetGraph.getAdjacentEdgesInverse(u);
+
+
+        outer:
+        for (Edge edgeV : adjacentEdgesInverseV) {
+            // we are only interested in edges from anchored vertices
+            if (!partialMappingSourceSet.contains(edgeV.getFrom())) {
+                continue;
+            }
+            for (Edge edgeU : adjacentEdgesInverseU) {
+                if (partialMapping.getTarget(edgeV.getFrom()) == edgeU.getFrom()) {
+                    alreadyMatchedTargetEdges.add(edgeU);
+                    if (!Objects.equals(edgeV.getLabel(), edgeU.getLabel())) {
+                        anchoredVerticesCost++;
+                    }
+                    continue outer;
+                }
+            }
+            anchoredVerticesCost++;
+
+        }
+
+        outer:
+        for (Edge edgeU : adjacentEdgesU) {
+            // we are only interested in edges from anchored vertices
+            if (!partialMappingTargetSet.contains(edgeU.getTo()) || alreadyMatchedTargetEdges.contains(edgeU)) {
+                continue;
+            }
+            for (Edge edgeV : adjacentEdgesV) {
+                if (partialMapping.getTarget(edgeV.getTo()) == edgeU.getTo()) {
+                    if (!Objects.equals(edgeV.getLabel(), edgeU.getLabel())) {
+                        anchoredVerticesCost++;
+                    }
+                    continue outer;
+                }
+            }
+            // no matching adjacent edge from u found means there is no
+            // edge from edgeV.getTo() to mapped(edgeV.getTo())
+            // and we need to increase the costs
+            anchoredVerticesCost++;
+
+        }
+
+        outer:
+        for (Edge edgeU : adjacentEdgesInverseU) {
+            // we are only interested in edges from anchored vertices
+            if (!partialMappingTargetSet.contains(edgeU.getFrom()) || alreadyMatchedTargetEdges.contains(edgeU)) {
+                continue;
+            }
+            for (Edge edgeV : adjacentEdgesInverseV) {
+                if (partialMapping.getTarget(edgeV.getFrom()) == edgeU.getFrom()) {
+                    if (!Objects.equals(edgeV.getLabel(), edgeU.getLabel())) {
+                        anchoredVerticesCost++;
+                    }
+                    continue outer;
+                }
+            }
+            anchoredVerticesCost++;
+        }
+
+        return anchoredVerticesCost;
     }
 
 
