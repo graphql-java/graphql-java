@@ -136,7 +136,7 @@ public class SchemaGraph {
     }
 
     public List<Edge> getAdjacentEdgesInverse(Vertex to) {
-        return getAdjacentEdgesInverse(to, x -> true);
+        return new ArrayList<>(edgesByInverseDirection.row(to).values());
     }
 
     public List<Edge> getAdjacentEdgesInverse(Vertex to, Predicate<Vertex> predicate) {

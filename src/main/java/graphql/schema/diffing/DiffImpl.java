@@ -342,23 +342,30 @@ public class DiffImpl {
             if (deletionCostsCache.containsKey(v)) {
                 return deletionCostsCache.get(v);
             }
+            double result = calcLowerBoundMappingCostForDeleted(v, partialMappingSourceSet, completeSourceGraph);
+            deletionCostsCache.put(v, result);
+            return result;
         }
         if (v.isOfType(SchemaGraph.ISOLATED)) {
             if (deletionCostsCache.containsKey(u)) {
                 return deletionCostsCache.get(u);
             }
+            double result = calcLowerBoundMappingCostForDeleted(u, partialMappingTargetSet, completeTargetGraph);
+            deletionCostsCache.put(u, result);
+            return result;
         }
+
         boolean equalNodes = v.getType().equals(u.getType()) && v.getProperties().equals(u.getProperties());
 
-        // inner edge labels of u (resp. v) in regards to the partial mapping: all labels of edges
-        // which are adjacent of u (resp. v) which are inner edges
+        // inner edge labels of v (resp. u) in regards to the partial mapping: all labels of edges
+        // which are adjacent of v (resp. u) which are inner edges
         List<Edge> adjacentEdgesV = completeSourceGraph.getAdjacentEdges(v);
         Multiset<String> multisetLabelsV = HashMultiset.create();
 
         for (Edge edge : adjacentEdgesV) {
-            // test if this an inner edge: meaning both edges vertices are part of the non mapped vertices
-            // or: at least one edge is part of the partial mapping
-            if (!partialMappingSourceSet.contains(edge.getFrom()) && !partialMappingSourceSet.contains(edge.getTo())) {
+            // test if this is an inner edge (meaning it not part of the subgraph induced by the partial mapping)
+            // we know that v is not part of the mapped vertices, therefore we only need to test the "to" vertex
+            if (!partialMappingSourceSet.contains(edge.getTo())) {
                 multisetLabelsV.add(edge.getLabel());
             }
         }
@@ -367,13 +374,14 @@ public class DiffImpl {
         Multiset<String> multisetLabelsU = HashMultiset.create();
         for (Edge edge : adjacentEdgesU) {
             // test if this is an inner edge (meaning it not part of the subgraph induced by the partial mapping)
-            if (!partialMappingTargetSet.contains(edge.getFrom()) && !partialMappingTargetSet.contains(edge.getTo())) {
+            // we know that u is not part of the mapped vertices, therefore we only need to test the "to" vertex
+            if (!partialMappingTargetSet.contains(edge.getTo())) {
                 multisetLabelsU.add(edge.getLabel());
             }
         }
 
         /**
-         * looking at all edges from x,vPrime and y,mappedVPrime
+         * looking at all edges from x,vPrime and y,mappedVPrime where vPrime is all anchored vertices
          */
         int anchoredVerticesCost = 0;
         for (int i = 0; i < partialMappingSourceList.size(); i++) {
@@ -403,16 +411,42 @@ public class DiffImpl {
         int multiSetEditDistance = Math.max(multisetLabelsV.size(), multisetLabelsU.size()) - intersection.size();
 
         double result = (equalNodes ? 0 : 1) + multiSetEditDistance + anchoredVerticesCost;
-        if (u.isOfType(SchemaGraph.ISOLATED)) {
-            deletionCostsCache.put(v, result);
-        }
-        if (v.isOfType(SchemaGraph.ISOLATED)) {
-            deletionCostsCache.put(u, result);
-        }
-
-
         return result;
     }
+
+
+    /**
+     * Simplified lower bound calc if the source/target vertex is isolated
+     */
+    private double calcLowerBoundMappingCostForDeleted(Vertex vertex,
+                                                       Set<Vertex> mappedVertices,
+                                                       SchemaGraph completeSourceOrTargetGraph
+    ) {
+
+        List<Edge> adjacentEdges = completeSourceOrTargetGraph.getAdjacentEdges(vertex);
+        int innerEdgesCount = 0;
+        int labeledEdgesFromAnchoredVertex = 0;
+
+        for (Edge edge : adjacentEdges) {
+            if (!mappedVertices.contains(edge.getTo())) {
+                innerEdgesCount++;
+            } else {
+                if (edge.getLabel() != null) {
+                    labeledEdgesFromAnchoredVertex++;
+                }
+            }
+        }
+        List<Edge> adjacentEdgesInverse = completeSourceOrTargetGraph.getAdjacentEdgesInverse(vertex);
+        for (Edge edge : adjacentEdgesInverse) {
+            if (mappedVertices.contains(edge.getFrom())) {
+                if (edge.getLabel() != null) {
+                    labeledEdgesFromAnchoredVertex++;
+                }
+            }
+        }
+        return 1 + innerEdgesCount + labeledEdgesFromAnchoredVertex;
+    }
+
 
     private List<String> getDebugMap(Mapping mapping) {
         List<String> result = new ArrayList<>();
