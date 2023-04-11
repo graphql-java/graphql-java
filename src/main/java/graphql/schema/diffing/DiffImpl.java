@@ -326,8 +326,30 @@ public class DiffImpl {
      */
 
 
-    // lower bound mapping cost between for v -> u in respect to a partial mapping
-    // this is BMa
+    /**
+     * lower bound mapping cost between for v -> u in respect to a partial mapping.
+     * It basically tells the minimal costs we can expect for all mappings that come from extending
+     * the partial mapping with v -> u.
+     * <p>
+     * This is basically the formula (5) from page 6 of https://lijunchang.github.io/pdf/2022-ged-tkde.pdf.
+     * <p>
+     *
+     * The main difference is that the formula works with undirected graphs, but we have a directed graph,
+     * hence there is no 1/2 factor and for comparing the labels of anchored vertices to v/u we need to
+     * take both directions into account.
+     * <p>
+     *
+     * The other optimization is that a schema graph will have never a lot of adjacent edges compared to
+     * the overall vertices count, therefore the algorithm for the anchored vertices costs iterates
+     * over the adjacent edges of v/u instead of all the mapped vertices.
+     * <p>
+     *
+     * Additionally, there is a shortcut for isolated vertices, representing deletion/insertion which is also cached.
+     * <p>
+     * Some naming: an anchored vertex is a vertex that is mapped via the partial mapping.
+     * An inner edge is an edge between two vertices that are both not anchored (mapped).
+     * The vertices v and u are by definition not mapped.
+     */
     private double calcLowerBoundMappingCost(Vertex v,
                                              Vertex u,
                                              List<Vertex> partialMappingSourceList,
@@ -343,7 +365,7 @@ public class DiffImpl {
             if (deletionCostsCache.containsKey(v)) {
                 return deletionCostsCache.get(v);
             }
-            double result = calcLowerBoundMappingCostForDeleted(v, partialMappingSourceSet, completeSourceGraph);
+            double result = calcLowerBoundMappingCostForIsolated(v, partialMappingSourceSet, completeSourceGraph);
             deletionCostsCache.put(v, result);
             return result;
         }
@@ -351,15 +373,13 @@ public class DiffImpl {
             if (deletionCostsCache.containsKey(u)) {
                 return deletionCostsCache.get(u);
             }
-            double result = calcLowerBoundMappingCostForDeleted(u, partialMappingTargetSet, completeTargetGraph);
+            double result = calcLowerBoundMappingCostForIsolated(u, partialMappingTargetSet, completeTargetGraph);
             deletionCostsCache.put(u, result);
             return result;
         }
 
         boolean equalNodes = v.getType().equals(u.getType()) && v.getProperties().equals(u.getProperties());
 
-        // inner edge labels of v (resp. u) in regards to the partial mapping: all labels of edges
-        // which are adjacent of v (resp. u) which are inner edges
         List<Edge> adjacentEdgesV = completeSourceGraph.getAdjacentEdges(v);
         Multiset<String> multisetLabelsV = HashMultiset.create();
 
@@ -381,50 +401,15 @@ public class DiffImpl {
             }
         }
 
-        int anchoredVerticesCostNew = calcAnchoredVerticesCost(v, u, partialMapping, partialMappingSourceSet, partialMappingTargetSet);
+        int anchoredVerticesCost = calcAnchoredVerticesCost(v, u, partialMapping, partialMappingSourceSet, partialMappingTargetSet);
 
         Multiset<String> intersection = Multisets.intersection(multisetLabelsV, multisetLabelsU);
         int multiSetEditDistance = Math.max(multisetLabelsV.size(), multisetLabelsU.size()) - intersection.size();
 
-        double result = (equalNodes ? 0 : 1) + multiSetEditDistance + anchoredVerticesCostNew;
+        double result = (equalNodes ? 0 : 1) + multiSetEditDistance + anchoredVerticesCost;
         return result;
     }
 
-//    private int calcAnchoredOld(Vertex v, Vertex u, List<Vertex> partialMappingSourceList, List<Vertex> partialMappingTargetList) {
-//        int anchoredVerticesCost = 0;
-//        for (int i = 0; i < partialMappingSourceList.size(); i++) {
-//            Vertex vPrime = partialMappingSourceList.get(i);
-//            Vertex mappedVPrime = partialMappingTargetList.get(i);
-//
-//            Edge sourceEdge = completeSourceGraph.getEdge(v, vPrime);
-//            Object labelSourceEdge = getEdgeLabel(sourceEdge);
-//            Edge targetEdge = completeTargetGraph.getEdge(u, mappedVPrime);
-//            Object labelTargetEdge = getEdgeLabel(targetEdge);
-//            if (!Objects.equals(labelSourceEdge, labelTargetEdge)) {
-//                anchoredVerticesCost++;
-//            }
-//
-//            Edge sourceEdgeInverse = completeSourceGraph.getEdge(vPrime, v);
-//            Object labelSourceEdgeInverse = getEdgeLabel(sourceEdgeInverse);
-//            Edge targetEdgeInverse = completeTargetGraph.getEdge(mappedVPrime, u);
-//            Object labelTargetEdgeInverse = getEdgeLabel(targetEdgeInverse);
-//            if (!Objects.equals(labelSourceEdgeInverse, labelTargetEdgeInverse)) {
-//                anchoredVerticesCost++;
-//            }
-//
-//            runningCheck.check();
-//        }
-//        return anchoredVerticesCost;
-//    }
-
-//    private static final Object NO_EDGE_LABEL = new Object();
-//
-//    private Object getEdgeLabel(Edge edge) {
-//        if (edge == null) {
-//            return NO_EDGE_LABEL;
-//        }
-//        return edge.getLabel();
-//    }
 
     private int calcAnchoredVerticesCost(Vertex v, Vertex u, Mapping partialMapping,
                                          Set<Vertex> partialMappingSourceSet,
@@ -484,9 +469,8 @@ public class DiffImpl {
         }
 
         /**
-         * what is missing now is all edges from u (and inverse), which have not been matched yet
+         * what is missing now is all edges from u (and inverse), which have not been matched.
          */
-
         for (Edge edgeU : adjacentEdgesU) {
             // we are only interested in edges from anchored vertices
             if (!partialMappingTargetSet.contains(edgeU.getTo()) || matchedTargetEdges.contains(edgeU)) {
@@ -510,9 +494,9 @@ public class DiffImpl {
     /**
      * Simplified lower bound calc if the source/target vertex is isolated
      */
-    private double calcLowerBoundMappingCostForDeleted(Vertex vertex,
-                                                       Set<Vertex> mappedVertices,
-                                                       SchemaGraph completeSourceOrTargetGraph
+    private double calcLowerBoundMappingCostForIsolated(Vertex vertex,
+                                                        Set<Vertex> mappedVertices,
+                                                        SchemaGraph completeSourceOrTargetGraph
     ) {
 
         List<Edge> adjacentEdges = completeSourceOrTargetGraph.getAdjacentEdges(vertex);
