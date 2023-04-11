@@ -173,11 +173,13 @@ public class DiffImpl {
         Set<Vertex> partialMappingTargetSet = new LinkedHashSet<>(partialMapping.getTargets());
 
 
+        Map<Vertex, Double> deletionCostsCache = new LinkedHashMap<>();
+
         for (int i = level; i < sourceList.size(); i++) {
             Vertex v = sourceList.get(i);
             int j = 0;
             for (Vertex u : availableTargetVertices) {
-                double cost = calcLowerBoundMappingCost(v, u, partialMapping.getSources(), partialMappingSourceSet, partialMapping.getTargets(), partialMappingTargetSet);
+                double cost = calcLowerBoundMappingCost(v, u, partialMapping.getSources(), partialMappingSourceSet, partialMapping.getTargets(), partialMappingTargetSet, deletionCostsCache);
                 costMatrixForHungarianAlgo[i - level].set(j, cost);
                 costMatrix[i - level].set(j, cost);
                 j++;
@@ -324,8 +326,6 @@ public class DiffImpl {
      */
 
 
-    private final Map<Vertex, Double> deletionCostsCache = new LinkedHashMap<>();
-
     // lower bound mapping cost between for v -> u in respect to a partial mapping
     // this is BMa
     private double calcLowerBoundMappingCost(Vertex v,
@@ -333,9 +333,8 @@ public class DiffImpl {
                                              List<Vertex> partialMappingSourceList,
                                              Set<Vertex> partialMappingSourceSet,
                                              List<Vertex> partialMappingTargetList,
-                                             Set<Vertex> partialMappingTargetSet
-
-    ) {
+                                             Set<Vertex> partialMappingTargetSet,
+                                             Map<Vertex, Double> deletionCostsCache) {
         if (!possibleMappings.mappingPossible(v, u)) {
             return Integer.MAX_VALUE;
         }
