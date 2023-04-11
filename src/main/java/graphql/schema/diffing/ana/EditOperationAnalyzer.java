@@ -651,14 +651,29 @@ public class EditOperationAnalyzer {
     private void handleInputFieldChange(EditOperation editOperation) {
         Vertex inputField = editOperation.getTargetVertex();
         Vertex inputObject = newSchemaGraph.getInputObjectForInputField(inputField);
+
         String oldName = editOperation.getSourceVertex().getName();
-        String newName = inputObject.getName();
-        getInputObjectModification(newName).getDetails().add(new InputObjectFieldRename(oldName, inputField.getName()));
+        String newName = inputField.getName();
+
+        if (oldName.equals(newName)) {
+            // Something else like description could have changed
+            return;
+        }
+
+        getInputObjectModification(inputObject.getName()).getDetails().add(new InputObjectFieldRename(oldName, newName));
     }
 
     private void handleArgumentChange(EditOperation editOperation, Mapping mapping) {
         Vertex oldArgument = editOperation.getSourceVertex();
         Vertex argument = editOperation.getTargetVertex();
+
+        String oldName = oldArgument.getName();
+        String newName = argument.getName();
+
+        if (oldName.equals(newName)) {
+            // Something else like description could have changed
+            return;
+        }
 
         if (!doesArgumentChangeMakeSense(oldArgument, argument, mapping)) {
             return;
@@ -668,8 +683,6 @@ public class EditOperationAnalyzer {
         if (fieldOrDirective.isOfType(SchemaGraph.DIRECTIVE)) {
             Vertex directive = fieldOrDirective;
             DirectiveModification directiveModification = getDirectiveModification(directive.getName());
-            String oldName = oldArgument.getName();
-            String newName = argument.getName();
             directiveModification.getDetails().add(new DirectiveArgumentRename(oldName, newName));
         } else {
             assertTrue(fieldOrDirective.isOfType(SchemaGraph.FIELD));
@@ -679,15 +692,11 @@ public class EditOperationAnalyzer {
             if (fieldsContainerForField.isOfType(SchemaGraph.OBJECT)) {
                 Vertex object = fieldsContainerForField;
                 ObjectModification objectModification = getObjectModification(object.getName());
-                String oldName = oldArgument.getName();
-                String newName = argument.getName();
                 objectModification.getDetails().add(new ObjectFieldArgumentRename(fieldName, oldName, newName));
             } else {
                 assertTrue(fieldsContainerForField.isOfType(SchemaGraph.INTERFACE));
                 Vertex interfaze = fieldsContainerForField;
                 InterfaceModification interfaceModification = getInterfaceModification(interfaze.getName());
-                String oldName = oldArgument.getName();
-                String newName = argument.getName();
                 interfaceModification.getDetails().add(new InterfaceFieldArgumentRename(fieldName, oldName, newName));
             }
         }
@@ -946,7 +955,6 @@ public class EditOperationAnalyzer {
                 changedDirective(editOperation);
                 break;
         }
-
     }
 
 
@@ -1856,6 +1864,11 @@ public class EditOperationAnalyzer {
         String oldName = editOperation.getSourceVertex().getName();
         String newName = editOperation.getTargetVertex().getName();
 
+        if (oldName.equals(newName)) {
+            // Something else like description could have changed
+            return;
+        }
+
         EnumModification modification = new EnumModification(oldName, newName);
         enumDifferences.put(oldName, modification);
         enumDifferences.put(newName, modification);
@@ -1864,6 +1877,11 @@ public class EditOperationAnalyzer {
     private void changedScalar(EditOperation editOperation) {
         String oldName = editOperation.getSourceVertex().getName();
         String newName = editOperation.getTargetVertex().getName();
+
+        if (oldName.equals(newName)) {
+            // Something else like description could have changed
+            return;
+        }
 
         ScalarModification modification = new ScalarModification(oldName, newName);
         scalarDifferences.put(oldName, modification);
@@ -1874,6 +1892,11 @@ public class EditOperationAnalyzer {
         String oldName = editOperation.getSourceVertex().getName();
         String newName = editOperation.getTargetVertex().getName();
 
+        if (oldName.equals(newName)) {
+            // Something else like description could have changed
+            return;
+        }
+
         InputObjectModification modification = new InputObjectModification(oldName, newName);
         inputObjectDifferences.put(oldName, modification);
         inputObjectDifferences.put(newName, modification);
@@ -1882,6 +1905,11 @@ public class EditOperationAnalyzer {
     private void changedDirective(EditOperation editOperation) {
         String oldName = editOperation.getSourceVertex().getName();
         String newName = editOperation.getTargetVertex().getName();
+
+        if (oldName.equals(newName)) {
+            // Something else like description could have changed
+            return;
+        }
 
         DirectiveModification modification = new DirectiveModification(oldName, newName);
         directiveDifferences.put(oldName, modification);
@@ -1892,6 +1920,11 @@ public class EditOperationAnalyzer {
         String oldName = editOperation.getSourceVertex().getName();
         String newName = editOperation.getTargetVertex().getName();
 
+        if (oldName.equals(newName)) {
+            // Something else like description could have changed
+            return;
+        }
+
         ObjectModification objectModification = new ObjectModification(oldName, newName);
         objectDifferences.put(oldName, objectModification);
         objectDifferences.put(newName, objectModification);
@@ -1901,18 +1934,27 @@ public class EditOperationAnalyzer {
         String oldName = editOperation.getSourceVertex().getName();
         String newName = editOperation.getTargetVertex().getName();
 
+        if (oldName.equals(newName)) {
+            // Something else like description could have changed
+            return;
+        }
+
         InterfaceModification interfaceModification = new InterfaceModification(oldName, newName);
         interfaceDifferences.put(oldName, interfaceModification);
         interfaceDifferences.put(newName, interfaceModification);
     }
 
     private void changedUnion(EditOperation editOperation) {
-        String newUnionName = editOperation.getTargetVertex().getName();
-        String oldUnionName = editOperation.getSourceVertex().getName();
+        String newName = editOperation.getTargetVertex().getName();
+        String oldName = editOperation.getSourceVertex().getName();
 
-        UnionModification objectModification = new UnionModification(oldUnionName, newUnionName);
-        unionDifferences.put(oldUnionName, objectModification);
-        unionDifferences.put(newUnionName, objectModification);
+        if (oldName.equals(newName)) {
+            // Something else like description could have changed
+            return;
+        }
+
+        UnionModification objectModification = new UnionModification(oldName, newName);
+        unionDifferences.put(oldName, objectModification);
+        unionDifferences.put(newName, objectModification);
     }
-
 }

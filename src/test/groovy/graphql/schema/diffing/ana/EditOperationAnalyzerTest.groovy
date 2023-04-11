@@ -2681,6 +2681,219 @@ class EditOperationAnalyzerTest extends Specification {
         argumentAddition[0].name == "names"
     }
 
+    def "change object description"() {
+        given:
+        def oldSdl = '''
+        "HELLO"
+        type Query {
+            pet: String
+        }
+        '''
+        def newSdl = '''
+        type Query {
+            pet: String
+        }
+        '''
+
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+
+        then:
+        changes.objectDifferences.isEmpty()
+    }
+
+    def "change object field argument description"() {
+        given:
+        def oldSdl = '''
+        type Query {
+            pet(
+                age: Int
+            ): String
+        }
+        '''
+        def newSdl = '''
+        type Query {
+            pet(
+                "The age of the pet"
+                age: Int
+            ): String
+        }
+        '''
+
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+
+        then:
+        changes.objectDifferences.isEmpty()
+    }
+
+    def "change interface description"() {
+        given:
+        def oldSdl = '''
+        type Query {
+            pet: Pet
+        }
+        interface Pet {
+            name: String
+        }
+        '''
+        def newSdl = '''
+        type Query {
+            pet: Pet
+        }
+        "Hello World"
+        interface Pet {
+            name: String
+        }
+        '''
+
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+
+        then:
+        changes.interfaceDifferences.isEmpty()
+    }
+
+    def "change union description"() {
+        given:
+        def oldSdl = '''
+        type Query {
+            pet: Pet
+        }
+        union Pet = Dog | Cat
+        type Dog {
+            name: String
+        }
+        type Cat {
+            name: String
+        }
+        '''
+        def newSdl = '''
+        type Query {
+            pet: Pet
+        }
+        "----------------"
+        union Pet = Dog | Cat
+        type Dog {
+            name: String
+        }
+        type Cat {
+            name: String
+        }
+        '''
+
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+
+        then:
+        changes.unionDifferences.isEmpty()
+    }
+
+    def "change input object and field description"() {
+        given:
+        def oldSdl = '''
+        type Query {
+            pets(filter: PetFilter): [ID]
+        }
+        "Pet"
+        input PetFilter {
+            age: Int
+        }
+        '''
+        def newSdl = '''
+        type Query {
+            pets(filter: PetFilter): [ID]
+        }
+        "Only pets matching the filter will be returned"
+        input PetFilter {
+            "The age in years"
+            age: Int
+        }
+        '''
+
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+
+        then:
+        changes.inputObjectDifferences.isEmpty()
+    }
+
+    def "change enum type and value description"() {
+        given:
+        def oldSdl = '''
+        type Query {
+            pet(kind: PetKind): ID
+        }
+        enum PetKind {
+            "doggo"
+            DOG,
+            CAT,
+        }
+        '''
+        def newSdl = '''
+        type Query {
+            pet(kind: PetKind): ID
+        }
+        "The kind of pet"
+        enum PetKind {
+            DOG,
+            CAT,
+        }
+        '''
+
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+
+        then:
+        changes.enumDifferences.isEmpty()
+    }
+
+    def "change scalar description"() {
+        given:
+        def oldSdl = '''
+        scalar Age
+        type Query {
+            pet(age: Age): ID
+        }
+        '''
+        def newSdl = '''
+        "Represents age in years"
+        scalar Age
+        type Query {
+            pet(age: Age): ID
+        }
+        '''
+
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+
+        then:
+        changes.scalarDifferences.isEmpty()
+    }
+
+    def "change directive description"() {
+        given:
+        def oldSdl = '''
+        directive @cat on FIELD_DEFINITION
+        type Query {
+            pet: String @cat
+        }
+        '''
+        def newSdl = '''
+        "A cat or something"
+        directive @cat on FIELD_DEFINITION
+        type Query {
+            pet: String @cat
+        }
+        '''
+
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+
+        then:
+        changes.directiveDifferences.isEmpty()
+    }
+
     EditOperationAnalysisResult calcDiff(
             String oldSdl,
             String newSdl
