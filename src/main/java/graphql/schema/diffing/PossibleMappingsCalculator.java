@@ -1,6 +1,8 @@
 package graphql.schema.diffing;
 
+import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBasedTable;
+import com.google.common.collect.HashBiMap;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Multimap;
@@ -750,6 +752,12 @@ public class PossibleMappingsCalculator {
         targetGraph.addVertices(possibleMappings.allIsolatedTarget);
 
         Assert.assertTrue(sourceGraph.size() == targetGraph.size());
+        Set<Vertex> vertices = possibleMappings.possibleMappings.keySet();
+        for (Vertex vertex : vertices) {
+            if (possibleMappings.possibleMappings.get(vertex).size() > 1) {
+                System.out.println("vertex with possible mappings: " + possibleMappings.possibleMappings.get(vertex).size());
+            }
+        }
         return possibleMappings;
     }
 
@@ -783,7 +791,10 @@ public class PossibleMappingsCalculator {
         public Table<List<String>, Set<Vertex>, Set<Vertex>> contexts = HashBasedTable.create();
 
         public Multimap<Vertex, Vertex> possibleMappings = HashMultimap.create();
-        public Mapping mapping = new Mapping();
+
+        public BiMap<Vertex, Vertex> fixedOneToOneMappings = HashBiMap.create();
+        public List<Vertex> fixedOneToOneSources = new ArrayList<>();
+        public List<Vertex> fixedOneToOneTargets = new ArrayList<>();
 
         public void putPossibleMappings(Collection<Vertex> sourceVertices, Collection<Vertex> targetVertex) {
             for (Vertex sourceVertex : sourceVertices) {
@@ -810,7 +821,12 @@ public class PossibleMappingsCalculator {
             }
             Assert.assertTrue(source.size() == target.size());
             if (source.size() == 1) {
-                mapping.add(source.iterator().next(), target.iterator().next());
+                Vertex sourceVertex = source.iterator().next();
+                Vertex targetVertex = target.iterator().next();
+                fixedOneToOneMappings.put(sourceVertex, targetVertex);
+                fixedOneToOneSources.add(sourceVertex);
+                fixedOneToOneTargets.add(targetVertex);
+
             }
             contexts.put(contextId, source, target);
         }

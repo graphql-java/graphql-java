@@ -53,34 +53,39 @@ public class SchemaDiffing {
         PossibleMappingsCalculator possibleMappingsCalculator = new PossibleMappingsCalculator(sourceGraph, targetGraph, runningCheck);
         PossibleMappingsCalculator.PossibleMappings possibleMappings = possibleMappingsCalculator.calculate();
 
+        Mapping fixedMappings = Mapping.newMapping(
+                possibleMappings.fixedOneToOneMappings,
+                possibleMappings.fixedOneToOneSources,
+                possibleMappings.fixedOneToOneTargets);
+
         assertTrue(sourceGraph.size() == targetGraph.size());
 //        if (sizeDiff != 0) {
 //            SortSourceGraph.sortSourceGraph(sourceGraph, targetGraph, isolatedVertices);
 //        }
-        Mapping fixedMappings = possibleMappings.mapping;
-        if (fixedMappings.size() == sourceGraph.size()) {
+        if (possibleMappings.fixedOneToOneMappings.size() == sourceGraph.size()) {
             List<EditOperation> result = new ArrayList<>();
-            editorialCostForMapping(fixedMappings, sourceGraph, targetGraph, result);
+            editorialCostForMapping(fixedMappings
+                    , sourceGraph, targetGraph, result);
             return new DiffImpl.OptimalEdit(fixedMappings, result, result.size());
         }
 
         DiffImpl diffImpl = new DiffImpl(sourceGraph, targetGraph, possibleMappings, runningCheck);
         List<Vertex> nonMappedSource = new ArrayList<>(sourceGraph.getVertices());
-        nonMappedSource.removeAll(fixedMappings.getSources());
+        nonMappedSource.removeAll(possibleMappings.fixedOneToOneSources);
 
         List<Vertex> nonMappedTarget = new ArrayList<>(targetGraph.getVertices());
-        nonMappedTarget.removeAll(fixedMappings.getTargets());
+        nonMappedTarget.removeAll(possibleMappings.fixedOneToOneTargets);
 
         runningCheck.check();
         sortListBasedOnPossibleMapping(nonMappedSource, possibleMappings);
 
         // the non mapped vertices go to the end
         List<Vertex> sourceVertices = new ArrayList<>();
-        sourceVertices.addAll(fixedMappings.getSources());
+        sourceVertices.addAll(possibleMappings.fixedOneToOneSources);
         sourceVertices.addAll(nonMappedSource);
 
         List<Vertex> targetGraphVertices = new ArrayList<>();
-        targetGraphVertices.addAll(fixedMappings.getTargets());
+        targetGraphVertices.addAll(possibleMappings.fixedOneToOneTargets);
         targetGraphVertices.addAll(nonMappedTarget);
 
 

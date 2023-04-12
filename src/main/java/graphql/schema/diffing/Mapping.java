@@ -5,8 +5,9 @@ import com.google.common.collect.HashBiMap;
 import graphql.Internal;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
+import java.util.function.Consumer;
 
 /**
  * A mapping (in the math sense) from a list of vertices to another list of
@@ -16,54 +17,85 @@ import java.util.Objects;
  */
 @Internal
 public class Mapping {
-    private BiMap<Vertex, Vertex> map = HashBiMap.create();
-    private List<Vertex> sourceList = new ArrayList<>();
-    private List<Vertex> targetList = new ArrayList<>();
 
-    private Mapping(BiMap<Vertex, Vertex> map, List<Vertex> sourceList, List<Vertex> targetList) {
+
+    private final BiMap<Vertex, Vertex> fixedMappings;
+    private final List<Vertex> fixedSourceList;
+    private final List<Vertex> fixedTargetList;
+
+    private final BiMap<Vertex, Vertex> map;
+    private final List<Vertex> sourceList;
+    private final List<Vertex> targetList;
+
+    private Mapping(BiMap<Vertex, Vertex> fixedMappings,
+                    List<Vertex> fixedSourceList,
+                    List<Vertex> fixedTargetList,
+                    BiMap<Vertex, Vertex> map,
+                    List<Vertex> sourceList,
+                    List<Vertex> targetList) {
+        this.fixedMappings = fixedMappings;
+        this.fixedSourceList = fixedSourceList;
+        this.fixedTargetList = fixedTargetList;
         this.map = map;
         this.sourceList = sourceList;
         this.targetList = targetList;
     }
 
-    public Mapping() {
+    public static Mapping newMapping(BiMap<Vertex, Vertex> fixedMappings, List<Vertex> fixedSourceList, List<Vertex> fixedTargetList) {
+        return new Mapping(fixedMappings, fixedSourceList, fixedTargetList, HashBiMap.create(), Collections.emptyList(), Collections.emptyList());
 
     }
 
     public Vertex getSource(Vertex target) {
+        if (fixedMappings.containsValue(target)) {
+            return fixedMappings.inverse().get(target);
+        }
         return map.inverse().get(target);
     }
 
     public Vertex getTarget(Vertex source) {
+        if (fixedMappings.containsKey(source)) {
+            return fixedMappings.get(source);
+        }
         return map.get(source);
     }
 
     public Vertex getSource(int i) {
-        return sourceList.get(i);
+        if (i < fixedSourceList.size()) {
+            return fixedSourceList.get(i);
+        }
+        return sourceList.get(i - fixedSourceList.size());
     }
 
     public Vertex getTarget(int i) {
-        return targetList.get(i);
-    }
-
-    public List<Vertex> getTargets() {
-        return targetList;
-    }
-
-    public List<Vertex> getSources() {
-        return sourceList;
+        if (i < fixedTargetList.size()) {
+            return fixedTargetList.get(i);
+        }
+        return targetList.get(i - fixedTargetList.size());
     }
 
     public boolean containsSource(Vertex sourceVertex) {
+        if (fixedMappings.containsKey(sourceVertex)) {
+            return true;
+        }
         return map.containsKey(sourceVertex);
     }
 
     public boolean containsTarget(Vertex targetVertex) {
+        if (fixedMappings.containsValue(targetVertex)) {
+            return true;
+        }
         return map.containsValue(targetVertex);
     }
 
+
+    public boolean contains(Vertex vertex, boolean sourceOrTarget) {
+        return sourceOrTarget ? containsSource(vertex) : containsTarget(vertex);
+    }
+
+
     public int size() {
-        return map.size();
+        return fixedMappings.size() + map.size();
     }
 
     public void add(Vertex source, Vertex target) {
@@ -77,14 +109,14 @@ public class Mapping {
         newMap.remove(this.sourceList.get(this.sourceList.size() - 1));
         List<Vertex> newSourceList = new ArrayList<>(this.sourceList.subList(0, this.sourceList.size() - 1));
         List<Vertex> newTargetList = new ArrayList<>(this.targetList.subList(0, this.targetList.size() - 1));
-        return new Mapping(newMap, newSourceList, newTargetList);
+        return new Mapping(fixedMappings, fixedSourceList, fixedTargetList, newMap, newSourceList, newTargetList);
     }
 
     public Mapping copy() {
         HashBiMap<Vertex, Vertex> newMap = HashBiMap.create(map);
         List<Vertex> newSourceList = new ArrayList<>(this.sourceList);
         List<Vertex> newTargetList = new ArrayList<>(this.targetList);
-        return new Mapping(newMap, newSourceList, newTargetList);
+        return new Mapping(fixedMappings, fixedSourceList, fixedTargetList, newMap, newSourceList, newTargetList);
     }
 
     public Mapping extendMapping(Vertex source, Vertex target) {
@@ -94,27 +126,15 @@ public class Mapping {
         newSourceList.add(source);
         List<Vertex> newTargetList = new ArrayList<>(this.targetList);
         newTargetList.add(target);
-        return new Mapping(newMap, newSourceList, newTargetList);
+        return new Mapping(fixedMappings, fixedSourceList, fixedTargetList, newMap, newSourceList, newTargetList);
     }
 
-    public BiMap<Vertex, Vertex> getMap() {
-        return map;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
+    public void forEachTarget(Consumer<? super Vertex> action) {
+        for (Vertex t : fixedTargetList) {
+            action.accept(t);
         }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
+        for (Vertex t : targetList) {
+            action.accept(t);
         }
-        Mapping mapping = (Mapping) o;
-        return Objects.equals(map, mapping.map);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(map);
     }
 }
