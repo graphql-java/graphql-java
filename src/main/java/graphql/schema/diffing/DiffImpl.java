@@ -217,7 +217,9 @@ public class DiffImpl {
 
         List<EditOperation> editOperations = new ArrayList<>();
         int costForFullMapping = editorialCostForMapping(fullMapping, completeSourceGraph, completeTargetGraph, editOperations);
-        updateOptimalEdit(optimalEdit, costForFullMapping, fullMapping, editOperations);
+        if (costForFullMapping < optimalEdit.ged) {
+            updateOptimalEdit(optimalEdit, costForFullMapping, fullMapping, editOperations);
+        }
 
         calculateRestOfChildren(
                 availableTargetVertices,
@@ -308,7 +310,9 @@ public class DiffImpl {
             assertTrue(fullMapping.size() == this.completeSourceGraph.size());
             List<EditOperation> editOperations = new ArrayList<>();
             int costForFullMapping = editorialCostForMapping(fullMapping, completeSourceGraph, completeTargetGraph, editOperations);
-            updateOptimalEdit(optimalEdit, costForFullMapping, fullMapping, editOperations);
+            if (costForFullMapping < optimalEdit.ged) {
+                updateOptimalEdit(optimalEdit, costForFullMapping, fullMapping, editOperations);
+            }
         }
     }
 
