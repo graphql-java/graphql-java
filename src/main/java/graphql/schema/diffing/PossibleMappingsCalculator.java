@@ -15,6 +15,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -755,7 +756,9 @@ public class PossibleMappingsCalculator {
         Set<Vertex> vertices = possibleMappings.possibleMappings.keySet();
         for (Vertex vertex : vertices) {
             if (possibleMappings.possibleMappings.get(vertex).size() > 1) {
-                System.out.println("vertex with possible mappings: " + possibleMappings.possibleMappings.get(vertex).size());
+//                System.out.println("vertex with possible mappings: " + possibleMappings.possibleMappings.get(vertex).size());
+//                System.out.println("vertex " + vertex);
+//                System.out.println("-------------");
             }
         }
         return possibleMappings;
@@ -827,6 +830,20 @@ public class PossibleMappingsCalculator {
                 fixedOneToOneSources.add(sourceVertex);
                 fixedOneToOneTargets.add(targetVertex);
 
+            } else {
+                if (target.stream().allMatch(Vertex::isIsolated) || source.stream().allMatch(Vertex::isIsolated)) {
+                    Iterator<Vertex> iterator = target.iterator();
+                    for (Vertex sourceVertex : source) {
+                        Vertex targetVertex = iterator.next();
+                        fixedOneToOneMappings.put(sourceVertex, targetVertex);
+                        fixedOneToOneSources.add(sourceVertex);
+                        fixedOneToOneTargets.add(targetVertex);
+                    }
+                } else {
+//                    System.out.println("multiple elements in context" + contextId + " with count: " + source.size());
+//                    System.out.println("sources: " + source);
+//                    System.out.println("target: " + target);
+                }
             }
             contexts.put(contextId, source, target);
         }
