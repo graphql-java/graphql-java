@@ -109,6 +109,11 @@ public class DiffImpl {
         queue.add(firstMappingEntry);
         firstMappingEntry.siblingsFinished = true;
         System.out.println("first entry with mapping size of: " + queue.iterator().next());
+
+        List<Vertex> allNonFixedTargets = new ArrayList<>(allTargets);
+        startMapping.forEachTarget(allNonFixedTargets::remove);
+
+
         while (!queue.isEmpty()) {
             MappingEntry mappingEntry = queue.poll();
             System.out.println("mapping entry at:" + mappingEntry.level + " mapping size: " + queue.size());
@@ -129,7 +134,8 @@ public class DiffImpl {
                         queue,
                         optimalEdit,
                         allSources,
-                        allTargets
+                        allTargets,
+                        allNonFixedTargets
                 );
             }
 
@@ -145,17 +151,16 @@ public class DiffImpl {
                                  PriorityQueue<MappingEntry> queue,
                                  OptimalEdit optimalEdit,
                                  List<Vertex> allSources,
-                                 List<Vertex> allTargets
-
-    ) {
+                                 List<Vertex> allTargets,
+                                 List<Vertex> allNonFixedTargets) {
         Mapping partialMapping = parentEntry.partialMapping;
         int level = parentEntry.level;
 
         assertTrue(level == partialMapping.size());
 
         // not great: we iterate over all targets, which can be huge
-        ArrayList<Vertex> availableTargetVertices = new ArrayList<>(allTargets);
-        partialMapping.forEachTarget(availableTargetVertices::remove);
+        ArrayList<Vertex> availableTargetVertices = new ArrayList<>(allNonFixedTargets);
+        partialMapping.forEachNonFixedTarget(availableTargetVertices::remove);
         assertTrue(availableTargetVertices.size() + partialMapping.size() == allTargets.size());
         Vertex v_i = allSources.get(level);
 

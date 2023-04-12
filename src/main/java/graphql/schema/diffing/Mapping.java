@@ -137,4 +137,10 @@ public class Mapping {
             action.accept(t);
         }
     }
+
+    public void forEachNonFixedTarget(Consumer<? super Vertex> action) {
+        for (Vertex t : targetList) {
+            action.accept(t);
+        }
+    }
 }
