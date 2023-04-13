@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableMap;
 import graphql.Assert;
 import graphql.Internal;
 import graphql.Mutable;
+import graphql.PublicApi;
 import graphql.collect.ImmutableKit;
 import graphql.introspection.Introspection;
 import graphql.language.Argument;
@@ -38,9 +39,13 @@ import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 
 /**
- * Intentionally Mutable
+ * An {@link ExecutableNormalizedField} represents a field in an executable graphql operation.  Its models what
+ * could be executed during a given operation.
+ * <p>
+ * This class is intentionally mutable for performance reasons since building immutable parent child
+ * objects is too expensive.
  */
-@Internal
+@PublicApi
 @Mutable
 public class ExecutableNormalizedField {
     private final String alias;
@@ -164,7 +169,7 @@ public class ExecutableNormalizedField {
             }
         }
 
-        /**
+        /*
          *__typename is the only field in a union type that CAN be NOT conditional
          */
         List<GraphQLFieldDefinition> fieldDefinitions = parent.getFieldDefinitions(schema);
@@ -175,7 +180,7 @@ public class ExecutableNormalizedField {
             }
         }
 
-        /**
+        /*
          * This means there is no Union or Interface which could serve as unconditional parent
          */
         if (objectTypeNames.size() > 1) {
@@ -232,39 +237,58 @@ public class ExecutableNormalizedField {
         return null;
     }
 
+    @Internal
     public void addObjectTypeNames(Collection<String> objectTypeNames) {
         this.objectTypeNames.addAll(objectTypeNames);
     }
 
+    @Internal
     public void setObjectTypeNames(Collection<String> objectTypeNames) {
         this.objectTypeNames.clear();
         this.objectTypeNames.addAll(objectTypeNames);
     }
 
+    @Internal
     public void addChild(ExecutableNormalizedField executableNormalizedField) {
         this.children.add(executableNormalizedField);
     }
 
+    @Internal
     public void clearChildren() {
         this.children.clear();
     }
 
     /**
-     * All merged fields have the same name.
+     * All merged fields have the same name so this is the name of the {@link ExecutableNormalizedField}.
      * <p>
-     * WARNING: This is not always the key in the execution result, because of possible aliases. See {@link #getResultKey()}
+     * WARNING: This is not always the key in the execution result, because of possible field aliases.
      *
-     * @return the name of of the merged fields.
+     * @return the name of this {@link ExecutableNormalizedField}
+     *
+     * @see #getResultKey()
+     * @see #getAlias()
      */
     public String getName() {
         return getFieldName();
     }
 
     /**
-     * Returns the key of this MergedFieldWithType for the overall result.
-     * This is either an alias or the FieldWTC name.
+     * @return the same value as {@link #getName()}
      *
-     * @return the key for this MergedFieldWithType.
+     * @see #getResultKey()
+     * @see #getAlias()
+     */
+    public String getFieldName() {
+        return fieldName;
+    }
+
+    /**
+     * Returns the result key of this {@link ExecutableNormalizedField} within the overall result.
+     * This is either a field alias or the value of {@link #getName()}
+     *
+     * @return the result key for this {@link ExecutableNormalizedField}.
+     *
+     * @see #getName()
      */
     public String getResultKey() {
         if (alias != null) {
@@ -273,56 +297,80 @@ public class ExecutableNormalizedField {
         return getName();
     }
 
+    /**
+     * @return the field alias used or null if there is none
+     *
+     * @see #getResultKey()
+     * @see #getName()
+     */
     public String getAlias() {
         return alias;
     }
 
+    /**
+     * @return a list of the {@link Argument}s on the field
+     */
     public ImmutableList<Argument> getAstArguments() {
         return astArguments;
     }
 
+    /**
+     * Returns an argument value as a {@link NormalizedInputValue} which contains its type name and its current value
+     *
+     * @param name the name of the argument
+     *
+     * @return an argument value
+     */
     public NormalizedInputValue getNormalizedArgument(String name) {
         return normalizedArguments.get(name);
     }
 
+    /**
+     * @return a map of all the arguments in {@link NormalizedInputValue} form
+     */
     public ImmutableMap<String, NormalizedInputValue> getNormalizedArguments() {
         return normalizedArguments;
     }
 
+    /**
+     * @return a map of the resolved argument values
+     */
     public LinkedHashMap<String, Object> getResolvedArguments() {
         return resolvedArguments;
     }
 
 
-    public static Builder newNormalizedField() {
-        return new Builder();
-    }
-
-
-    public String getFieldName() {
-        return fieldName;
-    }
-
-
-    public ExecutableNormalizedField transform(Consumer<Builder> builderConsumer) {
-        Builder builder = new Builder(this);
-        builderConsumer.accept(builder);
-        return builder.build();
-    }
-
-
     /**
-     * @return Warning: returns a Mutable Set. No defensive copy is made for performance reasons.
+     * A {@link ExecutableNormalizedField} can sometimes (for non-concrete types like interfaces and unions)
+     * have more than one object type it could be when executed.  There is no way to know what it will be until
+     * the field is executed over data and the type is resolved via a {@link graphql.schema.TypeResolver}.
+     * <p>
+     * This method returns all the possible types a field can be which is one or more {@link GraphQLObjectType}
+     * names.
+     * <p>
+     * Warning: This returns a Mutable Set. No defensive copy is made for performance reasons.
+     *
+     * @return a set of the possible type names this field could be.
      */
     public Set<String> getObjectTypeNames() {
         return objectTypeNames;
     }
 
+
+    /**
+     * This returns the first entry in {@link #getObjectTypeNames()}.  Sometimes you know a field cant be more than one
+     * type and this method is a shortcut one to help you.
+     *
+     * @return the first entry from
+     */
     public String getSingleObjectTypeName() {
         return objectTypeNames.iterator().next();
     }
 
 
+    /**
+     * @return a helper method show field details
+     */
     public String printDetails() {
         StringBuilder result = new StringBuilder();
         if (getAlias() != null) {
@@ -331,6 +379,9 @@ public class ExecutableNormalizedField {
         return result + objectTypeNamesToString() + "." + fieldName;
     }
 
+    /**
+     * @return a helper method to show the object types names as a string
+     */
     public String objectTypeNamesToString() {
         if (objectTypeNames.size() == 1) {
             return objectTypeNames.iterator().next();
@@ -339,6 +390,12 @@ public class ExecutableNormalizedField {
         }
     }
 
+    /**
+     * This returns the list of the result keys (see {@link #getResultKey()} that lead from this field upwards to
+     * its parent field
+     *
+     * @return a list of the result keys from this {@link ExecutableNormalizedField} to the top of the operation via parent fields
+     */
     public List<String> getListOfResultKeys() {
         LinkedList<String> list = new LinkedList<>();
         ExecutableNormalizedField current = this;
@@ -349,10 +406,20 @@ public class ExecutableNormalizedField {
         return list;
     }
 
+    /**
+     * @return the children of the {@link ExecutableNormalizedField}
+     */
     public List<ExecutableNormalizedField> getChildren() {
         return children;
     }
 
+    /**
+     * Returns the list of child fields that would have the same result key
+     *
+     * @param resultKey the result key to check
+     *
+     * @return a list of all direct {@link ExecutableNormalizedField} children with the specified result key
+     */
     public List<ExecutableNormalizedField> getChildrenWithSameResultKey(String resultKey) {
         return FpKit.filterList(children, child -> child.getResultKey().equals(resultKey));
     }
@@ -380,14 +447,24 @@ public class ExecutableNormalizedField {
                 .collect(toList());
     }
 
+    /**
+     * the level of the {@link ExecutableNormalizedField} in the operation hierarchy with top level fields
+     * starting at 1
+     *
+     * @return the level of the {@link ExecutableNormalizedField} in the operation hierarchy
+     */
     public int getLevel() {
         return level;
     }
 
+    /**
+     * @return the parent of this {@link ExecutableNormalizedField} or null if it's a top level field
+     */
     public ExecutableNormalizedField getParent() {
         return parent;
     }
 
+    @Internal
     public void replaceParent(ExecutableNormalizedField newParent) {
         this.parent = newParent;
     }
@@ -404,6 +481,11 @@ public class ExecutableNormalizedField {
     }
 
 
+    /**
+     * Traverse from this {@link ExecutableNormalizedField} down into itself and all of its children
+     *
+     * @param consumer the callback for each {@link ExecutableNormalizedField} in the hierarchy.
+     */
     public void traverseSubTree(Consumer<ExecutableNormalizedField> consumer) {
         this.getChildren().forEach(child -> {
             traverseImpl(child, consumer, 1, Integer.MAX_VALUE);
@@ -421,6 +503,27 @@ public class ExecutableNormalizedField {
         root.getChildren().forEach(child -> {
             traverseImpl(child, consumer, curRelativeLevel + 1, abortAfter);
         });
+    }
+
+    /**
+     * @return a {@link Builder} of {@link ExecutableNormalizedField}s
+     */
+    public static Builder newNormalizedField() {
+        return new Builder();
+    }
+
+
+    /**
+     * Allows this {@link ExecutableNormalizedField} to be transformed via a {@link Builder} consumer callback
+     *
+     * @param builderConsumer the consumer given a builder
+     *
+     * @return a new transformed {@link ExecutableNormalizedField}
+     */
+    public ExecutableNormalizedField transform(Consumer<Builder> builderConsumer) {
+        Builder builder = new Builder(this);
+        builderConsumer.accept(builder);
+        return builder.build();
     }
 
     public static class Builder {
