@@ -6,6 +6,7 @@ import graphql.TestUtil
 import graphql.execution.CoercedVariables
 import graphql.execution.MergedField
 import graphql.execution.RawVariables
+import graphql.execution.directives.QueryAppliedDirective
 import graphql.language.Document
 import graphql.language.Field
 import graphql.language.FragmentDefinition
@@ -891,6 +892,40 @@ type Dog implements Animal{
                 ExecutableNormalizedField queryExecutionField = context.thisNode()
                 result << queryExecutionField.printDetails()
                 return TraversalControl.CONTINUE
+            }
+        })
+        result
+    }
+
+    List<String> printTreeAndDirectives(ExecutableNormalizedOperation queryExecutionTree) {
+        def result = []
+        Traverser<ExecutableNormalizedField> traverser = Traverser.depthFirst({ it.getChildren() })
+        traverser.traverse(queryExecutionTree.getTopLevelFields(), new TraverserVisitorStub<ExecutableNormalizedField>() {
+            @Override
+            TraversalControl enter(TraverserContext<ExecutableNormalizedField> context) {
+                ExecutableNormalizedField queryExecutionField = context.thisNode()
+                def queryDirectives = queryExecutionTree.getQueryDirectives(queryExecutionField)
+
+                def fieldDetails = queryExecutionField.printDetails()
+                if (queryDirectives != null) {
+                    def appliedDirectivesByName = queryDirectives.getImmediateAppliedDirectivesByName()
+                    if (!appliedDirectivesByName.isEmpty()) {
+                        fieldDetails += " " + printDirectives(appliedDirectivesByName)
+                    }
+                }
+                result << fieldDetails
+                return TraversalControl.CONTINUE
+            }
+
+            String printDirectives(Map<String, List<QueryAppliedDirective>> stringListMap) {
+                String s = stringListMap.collect { entry ->
+                    entry.value.collect {
+                        " @" + it.name + "(" + it.getArguments().collect {
+                            it.name + " : " + '"' + it.value + '"'
+                        }.join(",") + ")"
+                    }.join(' ')
+                }.join(" ")
+                return s
             }
         })
         result
@@ -2381,6 +2416,59 @@ schema {
                         'dog_yes_1: Dog.name',
                         'dog_yes_2: Dog.name',
                         'pet_name: [Cat, Dog].name',
+        ]
+    }
+
+
+    def "query directives are captured is respected"() {
+        given:
+        String schema = """
+        directive @fieldDirective(target : String!) on FIELD
+        directive @fieldXDirective(target : String!) on FIELD
+        
+        type Query {
+          pets: Pet
+        }
+        interface Pet {
+          name: String
+        }
+        type Cat implements Pet {
+          name: String
+        }
+        type Dog implements Pet {
+            name: String
+        }
+        """
+        GraphQLSchema graphQLSchema = TestUtil.schema(schema)
+
+        String query = '''
+          query q {
+              pets {
+                ... on Cat {
+                    cName : name @fieldDirective(target : "Cat.name")
+              }
+                ... on Dog {
+                    dName : name @fieldDirective(target : "Dog.name") @fieldXDirective(target : "Dog.name")
+              }
+              ... on Pet {
+                    pName : name @fieldDirective(target : "Pet.name")
+              }
+          }}
+        '''
+
+        def variables = [:]
+        assertValidQuery(graphQLSchema, query, variables)
+        Document document = TestUtil.parseQuery(query)
+        ExecutableNormalizedOperationFactory dependencyGraph = new ExecutableNormalizedOperationFactory()
+        when:
+        def tree = dependencyGraph.createExecutableNormalizedOperationWithRawVariables(graphQLSchema, document, null, RawVariables.of(variables))
+        def printedTree = printTreeAndDirectives(tree)
+
+        then:
+        printedTree == ['Query.pets',
+                        'cName: Cat.name  @fieldDirective(target : "Cat.name")',
+                        'dName: Dog.name  @fieldDirective(target : "Dog.name")  @fieldXDirective(target : "Dog.name")',
+                        'pName: [Cat, Dog].name  @fieldDirective(target : "Pet.name")',
         ]
     }
 
