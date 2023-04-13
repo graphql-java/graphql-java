@@ -7,16 +7,16 @@ plugins {
     id 'maven-publish'
     id 'antlr'
     id 'signing'
-    id "com.github.johnrengelman.shadow" version "7.1.2"
-    id "biz.aQute.bnd.builder" version "6.3.1"
-    id "io.github.gradle-nexus.publish-plugin" version "1.1.0"
+    id "com.github.johnrengelman.shadow" version "8.1.1"
+    id "biz.aQute.bnd.builder" version "6.4.0"
+    id "io.github.gradle-nexus.publish-plugin" version "1.3.0"
     id "groovy"
-    id "me.champeau.jmh" version "0.6.6"
+    id "me.champeau.jmh" version "0.7.0"
 }
 
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of(8)
+        languageVersion = JavaLanguageVersion.of(11)
     }
 }
 
@@ -49,7 +49,7 @@ def getDevelopmentVersion() {
 def reactiveStreamsVersion = '1.0.3'
 def slf4jVersion = '1.7.35'
 def releaseVersion = System.env.RELEASE_VERSION
-def antlrVersion = '4.9.3' // https://mvnrepository.com/artifact/org.antlr/antlr4-runtime
+def antlrVersion = '4.11.1' // https://mvnrepository.com/artifact/org.antlr/antlr4-runtime
 version = releaseVersion ? releaseVersion : getDevelopmentVersion()
 group = 'com.graphql-java'
 
@@ -89,26 +89,27 @@ dependencies {
     api 'com.graphql-java:java-dataloader:3.2.0'
     api 'org.reactivestreams:reactive-streams:' + reactiveStreamsVersion
     antlr 'org.antlr:antlr4:' + antlrVersion
-    implementation 'com.google.guava:guava:31.0.1-jre'
+    implementation 'com.google.guava:guava:31.1-jre'
     testImplementation group: 'junit', name: 'junit', version: '4.13.2'
     testImplementation 'org.spockframework:spock-core:2.0-groovy-3.0'
-    testImplementation 'org.codehaus.groovy:groovy:3.0.16'
-    testImplementation 'com.google.code.gson:gson:2.8.9'
+    testImplementation 'org.codehaus.groovy:groovy:3.0.17'
+    testImplementation 'org.codehaus.groovy:groovy-json:3.0.17'
+    testImplementation 'com.google.code.gson:gson:2.10.1'
     testImplementation 'org.eclipse.jetty:jetty-server:9.4.26.v20200117'
-    testImplementation 'com.fasterxml.jackson.core:jackson-databind:2.13.1'
+    testImplementation 'com.fasterxml.jackson.core:jackson-databind:2.14.2'
     testImplementation 'org.slf4j:slf4j-simple:' + slf4jVersion
-    testImplementation 'org.awaitility:awaitility-groovy:3.1.6'
-    testImplementation 'com.github.javafaker:javafaker:0.13'
+    testImplementation 'org.awaitility:awaitility-groovy:4.2.0'
+    testImplementation 'com.github.javafaker:javafaker:1.0.2'
 
     testImplementation 'org.reactivestreams:reactive-streams-tck:' + reactiveStreamsVersion
     testImplementation "io.reactivex.rxjava2:rxjava:2.2.21"
 
-    testImplementation 'org.testng:testng:6.1.1' // use for reactive streams test inheritance
+    testImplementation 'org.testng:testng:7.7.1' // use for reactive streams test inheritance
 
-    testImplementation 'org.openjdk.jmh:jmh-core:1.35'
-    testAnnotationProcessor 'org.openjdk.jmh:jmh-generator-annprocess:1.35'
-    jmh 'org.openjdk.jmh:jmh-core:1.35'
-    jmh 'org.openjdk.jmh:jmh-generator-annprocess:1.35'
+    testImplementation 'org.openjdk.jmh:jmh-core:1.36'
+    testAnnotationProcessor 'org.openjdk.jmh:jmh-generator-annprocess:1.36'
+    jmh 'org.openjdk.jmh:jmh-core:1.36'
+    jmh 'org.openjdk.jmh:jmh-generator-annprocess:1.36'
 }
 
 shadowJar {
@@ -123,7 +124,7 @@ shadowJar {
     }
     relocate('org.antlr.v4.runtime', 'graphql.org.antlr.v4.runtime')
     dependencies {
-        include(dependency('com.google.guava:guava:31.0.1-jre'))
+        include(dependency('com.google.guava:guava:31.1-jre'))
         include(dependency('org.antlr:antlr4-runtime:' + antlrVersion))
     }
     from "LICENSE.md"
@@ -165,6 +166,8 @@ task extractWithoutGuava(type: Copy) {
     into layout.buildDirectory.dir("extract")
 }
 
+extractWithoutGuava.dependsOn jar
+
 task buildNewJar(type: Jar) {
     from layout.buildDirectory.dir("extract")
     archiveFileName = "graphql-java-tmp.jar"
@@ -177,6 +180,8 @@ task buildNewJar(type: Jar) {
         file("build/libs/graphql-java-tmp.jar").renameTo(file("build/libs/graphql-java-${project.version}.jar"))
     }
 }
+
+buildNewJar.dependsOn extractWithoutGuava
 
 shadowJar.finalizedBy extractWithoutGuava, buildNewJar
 
@@ -202,12 +207,12 @@ generateGrammarSource.inputs.dir('src/main/antlr')
 
 task sourcesJar(type: Jar) {
     dependsOn classes
-    classifier 'sources'
+    archiveClassifier = 'sources'
     from sourceSets.main.allSource
 }
 
 task javadocJar(type: Jar, dependsOn: javadoc) {
-    classifier = 'javadoc'
+    archiveClassifier = 'javadoc'
     from javadoc.destinationDir
 }
 
@@ -220,12 +225,40 @@ artifacts {
     archives javadocJar
 }
 
+List<TestDescriptor> failedTests = []
+
 test {
     testLogging {
         events "FAILED", "SKIPPED"
         exceptionFormat = "FULL"
     }
+
+    afterTest { TestDescriptor descriptor, TestResult result ->
+        if (result.getFailedTestCount() > 0) {
+            failedTests.add(descriptor)
+        }
+    }
 }
+
+/*
+ * The gradle.buildFinished callback is deprecated BUT there does not seem to be a decent alternative in gradle 7
+ * So progress over perfection here
+ *
+ * See https://github.com/gradle/gradle/issues/20151
+ */
+gradle.buildFinished {
+    if (!failedTests.isEmpty()) {
+        println "\n\n"
+        println "============================"
+        println "These are the test failures"
+        println "============================"
+        for (td in failedTests) {
+            println "${td.getClassName()}.${td.getDisplayName()}"
+        }
+        println "============================"
+    }
+}
+
 
 allprojects {
     tasks.withType(Javadoc) {
@@ -242,10 +275,10 @@ publishing {
             from components.java
 
             artifact sourcesJar {
-                classifier "sources"
+                archiveClassifier = "sources"
             }
             artifact javadocJar {
-                classifier "javadoc"
+                archiveClassifier = "javadoc"
             }
             pom.withXml {
                 // Removing antlr4 below (introduced in `1ac98bf`) addresses an issue with

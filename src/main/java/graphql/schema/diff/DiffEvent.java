@@ -1,6 +1,5 @@
 package graphql.schema.diff;
 
-import graphql.DeprecatedAt;
 import graphql.PublicApi;
 import graphql.language.TypeKind;
 
@@ -72,16 +71,6 @@ public class DiffEvent {
                 ", typeKind=" + typeOfType +
                 ", fieldName=" + fieldName +
                 '}';
-    }
-
-    /**
-     * @return  a Builder of Info level diff events
-     * @deprecated use {@link DiffEvent#apiInfo()} instead
-     */
-    @Deprecated
-    @DeprecatedAt("2017-12-27")
-    public static Builder newInfo() {
-        return new Builder().level(DiffLevel.INFO);
     }
 
     public static Builder apiInfo() {

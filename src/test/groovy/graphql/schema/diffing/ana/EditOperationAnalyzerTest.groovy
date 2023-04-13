@@ -5,10 +5,10 @@ import graphql.schema.diffing.SchemaDiffing
 import spock.lang.Specification
 
 import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveDeletion
-import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveObjectFieldArgumentLocation
 import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveDirectiveArgumentLocation
-import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveObjectFieldLocation
 import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveInterfaceFieldArgumentLocation
+import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveObjectFieldArgumentLocation
+import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveObjectFieldLocation
 import static graphql.schema.diffing.ana.SchemaDifference.DirectiveAddition
 import static graphql.schema.diffing.ana.SchemaDifference.DirectiveArgumentAddition
 import static graphql.schema.diffing.ana.SchemaDifference.DirectiveArgumentDefaultValueModification
@@ -32,6 +32,7 @@ import static graphql.schema.diffing.ana.SchemaDifference.InputObjectFieldRename
 import static graphql.schema.diffing.ana.SchemaDifference.InputObjectFieldTypeModification
 import static graphql.schema.diffing.ana.SchemaDifference.InputObjectModification
 import static graphql.schema.diffing.ana.SchemaDifference.InterfaceAddition
+import static graphql.schema.diffing.ana.SchemaDifference.InterfaceDeletion
 import static graphql.schema.diffing.ana.SchemaDifference.InterfaceFieldAddition
 import static graphql.schema.diffing.ana.SchemaDifference.InterfaceFieldArgumentAddition
 import static graphql.schema.diffing.ana.SchemaDifference.InterfaceFieldArgumentDefaultValueModification
@@ -67,7 +68,6 @@ import static graphql.schema.diffing.ana.SchemaDifference.UnionMemberDeletion
 import static graphql.schema.diffing.ana.SchemaDifference.UnionModification
 
 class EditOperationAnalyzerTest extends Specification {
-
     def "object renamed"() {
         given:
         def oldSdl = '''
@@ -1917,7 +1917,6 @@ class EditOperationAnalyzerTest extends Specification {
         when:
         def changes = calcDiff(oldSdl, newSdl)
         then:
-        true
         changes.inputObjectDifferences["Echo"] instanceof InputObjectModification
         def diff = changes.inputObjectDifferences["Echo"] as InputObjectModification
 
@@ -1935,6 +1934,964 @@ class EditOperationAnalyzerTest extends Specification {
         def directiveDeletion = diff.getDetails(AppliedDirectiveDeletion)
         directiveDeletion.size() == 1
         directiveDeletion[0].name == "d"
+    }
+
+    def "object field description changed"() {
+        given:
+        def oldSdl = '''
+        type Query {
+            " Hello"
+            echo: String
+        }
+        '''
+        def newSdl = '''
+        type Query {
+            "Test "
+            echo: String
+        }
+        '''
+
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+
+        then:
+        // no changes
+        changes.objectDifferences["Query"] == null
+    }
+
+    def "interface field description changed"() {
+        given:
+        def oldSdl = '''
+        type Query {
+            node: Node
+        }
+        interface Node {
+            " Hello"
+            echo: String
+        }
+        '''
+        def newSdl = '''
+        type Query {
+            node: Node
+        }
+        interface Node {
+            "World"
+            echo: String
+        }
+        '''
+
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+
+        then:
+        // no changes
+        changes.interfaceDifferences["Node"] == null
+    }
+
+    def "interface deleted with field argument"() {
+        given:
+        def oldSdl = '''
+        type Query {
+            node: Node
+        }
+        interface Node {
+            echo(test: String): String
+        }
+        '''
+        def newSdl = '''
+        type Query {
+            node: ID
+        }
+        '''
+
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+
+        then:
+        changes.interfaceDifferences["Node"] instanceof InterfaceDeletion
+    }
+
+    def "object deleted with field argument"() {
+        given:
+        def oldSdl = '''
+        type Query {
+            node: Node
+        }
+        type Node {
+            echo(test: String): String
+        }
+        '''
+        def newSdl = '''
+        type Query {
+            node: ID
+        }
+        '''
+
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+
+        then:
+        changes.objectDifferences["Node"] instanceof ObjectDeletion
+    }
+
+    def "directive deleted with argument"() {
+        given:
+        def oldSdl = '''
+        type Query {
+            node: String
+        }
+        directive @test(message: String) on FIELD
+        '''
+        def newSdl = '''
+        type Query {
+            node: String
+        }
+        '''
+
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+
+        then:
+        changes.directiveDifferences["test"] instanceof DirectiveDeletion
+    }
+
+    def "interface added with field argument"() {
+        given:
+        def oldSdl = '''
+        type Query {
+            node: ID
+        }
+        '''
+        def newSdl = '''
+        type Query {
+            node: Node
+        }
+        interface Node {
+            echo(test: String): String
+        }
+        '''
+
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+
+        then:
+        changes.interfaceDifferences["Node"] instanceof InterfaceAddition
+    }
+
+    def "object added with field argument"() {
+        given:
+        def oldSdl = '''
+        type Query {
+            node: ID
+        }
+        '''
+        def newSdl = '''
+        type Query {
+            node: Node
+        }
+        type Node {
+            echo(test: String): String
+        }
+        '''
+
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+
+        then:
+        changes.objectDifferences["Node"] instanceof ObjectAddition
+    }
+
+    def "directive added with argument"() {
+        given:
+        def oldSdl = '''
+        type Query {
+            node: String
+        }
+        '''
+        def newSdl = '''
+        type Query {
+            node: String
+        }
+        directive @test(message: String) on FIELD
+        '''
+
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+
+        then:
+        changes.directiveDifferences["test"] instanceof DirectiveAddition
+    }
+
+    def "delete object with applied directive on field"() {
+        given:
+        def oldSdl = '''
+        type Query {
+            user(id: ID!): User
+        }
+        directive @id(type: String, owner: String) on FIELD_DEFINITION
+        type User {
+            id: ID! @id(type: "user", owner: "profiles")
+        }
+        '''
+        def newSdl = '''
+        type Query {
+            echo: String
+        }
+        directive @id(type: String, owner: String) on FIELD_DEFINITION
+        '''
+
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+
+        then:
+        changes.objectDifferences["User"] instanceof ObjectDeletion
+    }
+
+    def "delete interface with applied directive on field"() {
+        given:
+        def oldSdl = '''
+        type Query {
+            user(id: ID!): User
+        }
+        directive @id(type: String, owner: String) on FIELD_DEFINITION
+        interface User {
+            id: ID! @id(type: "user", owner: "profiles")
+        }
+        '''
+        def newSdl = '''
+        type Query {
+            echo: String
+        }
+        directive @id(type: String, owner: String) on FIELD_DEFINITION
+        '''
+
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+
+        then:
+        changes.interfaceDifferences["User"] instanceof InterfaceDeletion
+    }
+
+    def "argument removed and similar argument added on separate object fields"() {
+        given:
+        def oldSdl = '''
+        type Query {
+            issues: IssueQuery
+        }
+        type IssueQuery {
+            issue: Issue
+            issues(id: [ID!]!): [Issue]
+        }
+        type Issue {
+            id: ID!
+        }
+        '''
+        def newSdl = '''
+        type Query {
+            issues: IssueQuery
+        }
+        type IssueQuery {
+            issue(id: ID): Issue
+            issues: [Issue]
+        }
+        type Issue {
+            id: ID!
+        }
+        '''
+
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+
+        then:
+        changes.objectDifferences["IssueQuery"] instanceof ObjectModification
+        def issueQueryChanges = changes.objectDifferences["IssueQuery"] as ObjectModification
+        issueQueryChanges.details.size() == 2
+
+        def argumentAddition = issueQueryChanges.getDetails(ObjectFieldArgumentAddition)
+        argumentAddition.size() == 1
+        argumentAddition[0].fieldName == "issue"
+        argumentAddition[0].name == "id"
+
+        def argumentDeletion = issueQueryChanges.getDetails(ObjectFieldArgumentDeletion)
+        argumentDeletion.size() == 1
+        argumentDeletion[0].fieldName == "issues"
+        argumentDeletion[0].name == "id"
+    }
+
+    def "argument removed and similar argument added on separate interface fields"() {
+        given:
+        def oldSdl = '''
+        type Query {
+            issues: IssueQuery
+        }
+        interface IssueQuery {
+            issue: Issue
+            issues(id: [ID!]!): [Issue]
+        }
+        type Issue {
+            id: ID!
+        }
+        '''
+        def newSdl = '''
+        type Query {
+            issues: IssueQuery
+        }
+        interface IssueQuery {
+            issue(id: ID): Issue
+            issues: [Issue]
+        }
+        type Issue {
+            id: ID!
+        }
+        '''
+
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+
+        then:
+        changes.interfaceDifferences["IssueQuery"] instanceof InterfaceModification
+        def issueQueryChanges = changes.interfaceDifferences["IssueQuery"] as InterfaceModification
+        issueQueryChanges.details.size() == 2
+
+        def argumentAddition = issueQueryChanges.getDetails(InterfaceFieldArgumentAddition)
+        argumentAddition.size() == 1
+        argumentAddition[0].fieldName == "issue"
+        argumentAddition[0].name == "id"
+
+        def argumentDeletion = issueQueryChanges.getDetails(InterfaceFieldArgumentDeletion)
+        argumentDeletion.size() == 1
+        argumentDeletion[0].fieldName == "issues"
+        argumentDeletion[0].name == "id"
+    }
+
+    def "argument removed and similar argument added on separate directives"() {
+        given:
+        def oldSdl = '''
+        directive @dog(name: String) on FIELD_DEFINITION
+        directive @cat on FIELD_DEFINITION
+        type Query {
+            pet: String @dog
+        }
+        '''
+        def newSdl = '''
+        directive @dog on FIELD_DEFINITION
+        directive @cat(name: [String]) on FIELD_DEFINITION
+        type Query {
+            pet: String @dog
+        }
+        '''
+
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+
+        then:
+        changes.directiveDifferences["cat"] instanceof DirectiveModification
+        def catChanges = changes.directiveDifferences["cat"] as DirectiveModification
+        catChanges.details.size() == 1
+        def argumentAdditions = catChanges.getDetails(DirectiveArgumentAddition)
+        argumentAdditions.size() == 1
+        argumentAdditions[0].name == "name"
+
+        changes.directiveDifferences["dog"] instanceof DirectiveModification
+        def dogChanges = changes.directiveDifferences["dog"] as DirectiveModification
+        dogChanges.details.size() == 1
+        def argumentDeletions = dogChanges.getDetails(DirectiveArgumentDeletion)
+        argumentDeletions.size() == 1
+        argumentDeletions[0].name == "name"
+    }
+
+    def "argument removed and added on renamed object field"() {
+        given:
+        def oldSdl = '''
+        type Query {
+            issues: IssueQuery
+        }
+        type IssueQuery {
+            issues(id: [ID!]): [Issue]
+        }
+        type Issue {
+            id: ID!
+        }
+        '''
+        def newSdl = '''
+        type Query {
+            issues: IssueQuery
+        }
+        type IssueQuery {
+            issuesById(ids: [ID!]!): [Issue]
+        }
+        type Issue {
+            id: ID!
+        }
+        '''
+
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+
+        then:
+        changes.objectDifferences["IssueQuery"] instanceof ObjectModification
+        def issueQueryChanges = changes.objectDifferences["IssueQuery"] as ObjectModification
+        issueQueryChanges.details.size() == 3
+
+        def rename = issueQueryChanges.getDetails(ObjectFieldRename)
+        rename.size() == 1
+        rename[0].oldName == "issues"
+        rename[0].newName == "issuesById"
+
+        def argumentRename = issueQueryChanges.getDetails(ObjectFieldArgumentRename)
+        argumentRename.size() == 1
+        argumentRename[0].fieldName == "issuesById"
+        argumentRename[0].oldName == "id"
+        argumentRename[0].newName == "ids"
+
+        def argumentTypeModification = issueQueryChanges.getDetails(ObjectFieldArgumentTypeModification)
+        argumentTypeModification.size() == 1
+        argumentTypeModification[0].fieldName == "issuesById"
+        argumentTypeModification[0].argumentName == "ids"
+        argumentTypeModification[0].oldType == "[ID!]"
+        argumentTypeModification[0].newType == "[ID!]!"
+    }
+
+    def "argument removed and added on renamed interface field"() {
+        given:
+        def oldSdl = '''
+        type Query {
+            issues: IssueQuery
+        }
+        interface IssueQuery {
+            issues(id: [ID!]): [Issue]
+        }
+        type Issue {
+            id: ID!
+        }
+        '''
+        def newSdl = '''
+        type Query {
+            issues: IssueQuery
+        }
+        interface IssueQuery {
+            issuesById(ids: [ID!]!): [Issue]
+        }
+        type Issue {
+            id: ID!
+        }
+        '''
+
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+
+        then:
+        changes.interfaceDifferences["IssueQuery"] instanceof InterfaceModification
+        def issueQueryChanges = changes.interfaceDifferences["IssueQuery"] as InterfaceModification
+        issueQueryChanges.details.size() == 3
+
+        def rename = issueQueryChanges.getDetails(InterfaceFieldRename)
+        rename.size() == 1
+        rename[0].oldName == "issues"
+        rename[0].newName == "issuesById"
+
+        def argumentRename = issueQueryChanges.getDetails(InterfaceFieldArgumentRename)
+        argumentRename.size() == 1
+        argumentRename[0].fieldName == "issuesById"
+        argumentRename[0].oldName == "id"
+        argumentRename[0].newName == "ids"
+
+        def argumentTypeModification = issueQueryChanges.getDetails(InterfaceFieldArgumentTypeModification)
+        argumentTypeModification.size() == 1
+        argumentTypeModification[0].fieldName == "issuesById"
+        argumentTypeModification[0].argumentName == "ids"
+        argumentTypeModification[0].oldType == "[ID!]"
+        argumentTypeModification[0].newType == "[ID!]!"
+    }
+
+    def "argument removed and added on renamed directive"() {
+        given:
+        def oldSdl = '''
+        directive @dog(name: String) on FIELD_DEFINITION
+        type Query {
+            pet: String @dog
+        }
+        '''
+        def newSdl = '''
+        directive @cat(names: [String]) on FIELD_DEFINITION
+        type Query {
+            pet: String @cat
+        }
+        '''
+
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+
+        then:
+        changes.directiveDifferences["cat"] instanceof DirectiveModification
+        def catChanges = changes.directiveDifferences["cat"] as DirectiveModification
+        catChanges.oldName == "dog"
+        catChanges.newName == "cat"
+        catChanges.isNameChanged()
+        catChanges.details.size() == 2
+
+        def argumentRename = catChanges.getDetails(DirectiveArgumentRename)
+        argumentRename.size() == 1
+        argumentRename[0].oldName == "name"
+        argumentRename[0].newName == "names"
+
+        def argumentTypeModification = catChanges.getDetails(DirectiveArgumentTypeModification)
+        argumentTypeModification.size() == 1
+        argumentTypeModification[0].argumentName == "names"
+        argumentTypeModification[0].oldType == "String"
+        argumentTypeModification[0].newType == "[String]"
+    }
+
+
+    def "object field argument type and default value changed"() {
+        given:
+        def oldSdl = '''
+        type Query {
+            echo(message: String! = "Hello World"): String
+        }
+        '''
+        def newSdl = '''
+        type Query {
+            echo(message: ID! = "1"): String
+        }
+        '''
+
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+
+        then:
+        changes.objectDifferences["Query"] instanceof ObjectModification
+        def queryChanges = changes.objectDifferences["Query"] as ObjectModification
+        queryChanges.details.size() == 2
+
+        def argumentTypeModification = queryChanges.getDetails(ObjectFieldArgumentTypeModification)
+        argumentTypeModification.size() == 1
+        argumentTypeModification[0].fieldName == "echo"
+        argumentTypeModification[0].argumentName == "message"
+        argumentTypeModification[0].oldType == "String!"
+        argumentTypeModification[0].newType == "ID!"
+
+        def defaultValueModification = queryChanges.getDetails(ObjectFieldArgumentDefaultValueModification)
+        defaultValueModification.size() == 1
+        defaultValueModification[0].fieldName == "echo"
+        defaultValueModification[0].argumentName == "message"
+        defaultValueModification[0].oldValue == '"Hello World"'
+        defaultValueModification[0].newValue == '"1"'
+    }
+
+    def "interface field argument type and default value changed"() {
+        given:
+        def oldSdl = '''
+        type Query {
+            echo: EchoProvider
+        }
+        interface EchoProvider {
+            send(message: String! = "Hello World"): String
+        }
+        '''
+        def newSdl = '''
+        type Query {
+            echo: EchoProvider
+        }
+        interface EchoProvider {
+            send(message: ID! = "1"): String
+        }
+        '''
+
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+
+        then:
+        changes.interfaceDifferences["EchoProvider"] instanceof InterfaceModification
+        def echoProviderChanges = changes.interfaceDifferences["EchoProvider"] as InterfaceModification
+        echoProviderChanges.details.size() == 2
+
+        def argumentTypeModification = echoProviderChanges.getDetails(InterfaceFieldArgumentTypeModification)
+        argumentTypeModification.size() == 1
+        argumentTypeModification[0].fieldName == "send"
+        argumentTypeModification[0].argumentName == "message"
+        argumentTypeModification[0].oldType == "String!"
+        argumentTypeModification[0].newType == "ID!"
+
+        def defaultValueModification = echoProviderChanges.getDetails(InterfaceFieldArgumentDefaultValueModification)
+        defaultValueModification.size() == 1
+        defaultValueModification[0].fieldName == "send"
+        defaultValueModification[0].argumentName == "message"
+        defaultValueModification[0].oldValue == '"Hello World"'
+        defaultValueModification[0].newValue == '"1"'
+    }
+
+    def "directive argument type and default value changed"() {
+        given:
+        def oldSdl = '''
+        directive @deleteBy(date: String = "+1 week") on FIELD_DEFINITION
+        type Query {
+            echo: String @deleteBy
+        }
+        '''
+        def newSdl = '''
+        directive @deleteBy(date: Int = 1000) on FIELD_DEFINITION
+        type Query {
+            echo: String @deleteBy
+        }
+        '''
+
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+
+        then:
+        changes.directiveDifferences["deleteBy"] instanceof DirectiveModification
+        def deleteByChanges = changes.directiveDifferences["deleteBy"] as DirectiveModification
+        deleteByChanges.details.size() == 2
+
+        def argumentTypeModification = deleteByChanges.getDetails(DirectiveArgumentTypeModification)
+        argumentTypeModification.size() == 1
+        argumentTypeModification[0].argumentName == "date"
+        argumentTypeModification[0].oldType == "String"
+        argumentTypeModification[0].newType == "Int"
+
+        def defaultValueModification = deleteByChanges.getDetails(DirectiveArgumentDefaultValueModification)
+        defaultValueModification.size() == 1
+        defaultValueModification[0].argumentName == "date"
+        defaultValueModification[0].oldValue == '"+1 week"'
+        defaultValueModification[0].newValue == '1000'
+    }
+
+    def "object field with argument removed and similarly named argument added"() {
+        given:
+        def oldSdl = """
+        type Query {
+            issues: IssueQuery
+        }
+        type IssueQuery {
+            issues(id: [ID!]): [Issue]
+            issuesById: [Issue]
+        }
+        type Issue {
+            id: ID!
+        }
+        """
+        def newSdl = '''
+        type Query {
+            issues: IssueQuery
+        }
+        type IssueQuery {
+            issuesById(ids: [ID!]!): [Issue]
+        }
+        type Issue {
+            id: ID!
+        }
+        '''
+
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+
+        then:
+        changes.objectDifferences["IssueQuery"] instanceof ObjectModification
+        def issueQueryChanges = changes.objectDifferences["IssueQuery"] as ObjectModification
+        issueQueryChanges.details.size() == 2
+
+        def fieldDeletion = issueQueryChanges.getDetails(ObjectFieldDeletion)
+        fieldDeletion.size() == 1
+        fieldDeletion[0].name == "issues"
+
+        def fieldArgumentAddition = issueQueryChanges.getDetails(ObjectFieldArgumentAddition)
+        fieldArgumentAddition.size() == 1
+        fieldArgumentAddition[0].fieldName == "issuesById"
+        fieldArgumentAddition[0].name == "ids"
+    }
+
+    def "interface field with argument removed and similarly named argument added"() {
+        given:
+        def oldSdl = """
+        type Query {
+            issues: IssueQuery
+        }
+        interface IssueQuery {
+            issues(id: [ID!]): [Issue]
+            issuesById: [Issue]
+        }
+        type Issue {
+            id: ID!
+        }
+        """
+        def newSdl = '''
+        type Query {
+            issues: IssueQuery
+        }
+        interface IssueQuery {
+            issuesById(ids: [ID!]!): [Issue]
+        }
+        type Issue {
+            id: ID!
+        }
+        '''
+
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+
+        then:
+        changes.interfaceDifferences["IssueQuery"] instanceof InterfaceModification
+        def issueQueryChanges = changes.interfaceDifferences["IssueQuery"] as InterfaceModification
+        issueQueryChanges.details.size() == 2
+
+        def fieldDeletion = issueQueryChanges.getDetails(InterfaceFieldDeletion)
+        fieldDeletion.size() == 1
+        fieldDeletion[0].name == "issues"
+
+        def fieldArgumentAddition = issueQueryChanges.getDetails(InterfaceFieldArgumentAddition)
+        fieldArgumentAddition.size() == 1
+        fieldArgumentAddition[0].fieldName == "issuesById"
+        fieldArgumentAddition[0].name == "ids"
+    }
+
+    def "directive removed and similarly named argument added"() {
+        given:
+        def oldSdl = '''
+        directive @dog(name: String) on FIELD_DEFINITION
+        directive @cat on FIELD_DEFINITION
+        type Query {
+            pet: String
+        }
+        '''
+        def newSdl = '''
+        directive @cat(names: String) on FIELD_DEFINITION
+        type Query {
+            pet: String
+        }
+        '''
+
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+
+        then:
+        changes.directiveDifferences["dog"] instanceof DirectiveDeletion
+        def dogChanges = changes.directiveDifferences["dog"] as DirectiveDeletion
+        dogChanges.name == "dog"
+
+        changes.directiveDifferences["cat"] instanceof DirectiveModification
+        def catChanges = changes.directiveDifferences["cat"] as DirectiveModification
+        !catChanges.isNameChanged()
+        catChanges.oldName == catChanges.newName
+        catChanges.newName == "cat"
+        catChanges.details.size() == 1
+
+        def argumentAddition = catChanges.getDetails(DirectiveArgumentAddition)
+        argumentAddition.size() == 1
+        argumentAddition[0].name == "names"
+    }
+
+    def "change object description"() {
+        given:
+        def oldSdl = '''
+        "HELLO"
+        type Query {
+            pet: String
+        }
+        '''
+        def newSdl = '''
+        type Query {
+            pet: String
+        }
+        '''
+
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+
+        then:
+        changes.objectDifferences.isEmpty()
+    }
+
+    def "change object field argument description"() {
+        given:
+        def oldSdl = '''
+        type Query {
+            pet(
+                age: Int
+            ): String
+        }
+        '''
+        def newSdl = '''
+        type Query {
+            pet(
+                "The age of the pet"
+                age: Int
+            ): String
+        }
+        '''
+
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+
+        then:
+        changes.objectDifferences.isEmpty()
+    }
+
+    def "change interface description"() {
+        given:
+        def oldSdl = '''
+        type Query {
+            pet: Pet
+        }
+        interface Pet {
+            name: String
+        }
+        '''
+        def newSdl = '''
+        type Query {
+            pet: Pet
+        }
+        "Hello World"
+        interface Pet {
+            name: String
+        }
+        '''
+
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+
+        then:
+        changes.interfaceDifferences.isEmpty()
+    }
+
+    def "change union description"() {
+        given:
+        def oldSdl = '''
+        type Query {
+            pet: Pet
+        }
+        union Pet = Dog | Cat
+        type Dog {
+            name: String
+        }
+        type Cat {
+            name: String
+        }
+        '''
+        def newSdl = '''
+        type Query {
+            pet: Pet
+        }
+        "----------------"
+        union Pet = Dog | Cat
+        type Dog {
+            name: String
+        }
+        type Cat {
+            name: String
+        }
+        '''
+
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+
+        then:
+        changes.unionDifferences.isEmpty()
+    }
+
+    def "change input object and field description"() {
+        given:
+        def oldSdl = '''
+        type Query {
+            pets(filter: PetFilter): [ID]
+        }
+        "Pet"
+        input PetFilter {
+            age: Int
+        }
+        '''
+        def newSdl = '''
+        type Query {
+            pets(filter: PetFilter): [ID]
+        }
+        "Only pets matching the filter will be returned"
+        input PetFilter {
+            "The age in years"
+            age: Int
+        }
+        '''
+
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+
+        then:
+        changes.inputObjectDifferences.isEmpty()
+    }
+
+    def "change enum type and value description"() {
+        given:
+        def oldSdl = '''
+        type Query {
+            pet(kind: PetKind): ID
+        }
+        enum PetKind {
+            "doggo"
+            DOG,
+            CAT,
+        }
+        '''
+        def newSdl = '''
+        type Query {
+            pet(kind: PetKind): ID
+        }
+        "The kind of pet"
+        enum PetKind {
+            DOG,
+            CAT,
+        }
+        '''
+
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+
+        then:
+        changes.enumDifferences.isEmpty()
+    }
+
+    def "change scalar description"() {
+        given:
+        def oldSdl = '''
+        scalar Age
+        type Query {
+            pet(age: Age): ID
+        }
+        '''
+        def newSdl = '''
+        "Represents age in years"
+        scalar Age
+        type Query {
+            pet(age: Age): ID
+        }
+        '''
+
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+
+        then:
+        changes.scalarDifferences.isEmpty()
+    }
+
+    def "change directive description"() {
+        given:
+        def oldSdl = '''
+        directive @cat on FIELD_DEFINITION
+        type Query {
+            pet: String @cat
+        }
+        '''
+        def newSdl = '''
+        "A cat or something"
+        directive @cat on FIELD_DEFINITION
+        type Query {
+            pet: String @cat
+        }
+        '''
+
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+
+        then:
+        changes.directiveDifferences.isEmpty()
     }
 
     EditOperationAnalysisResult calcDiff(

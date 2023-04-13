@@ -1,14 +1,15 @@
 package graphql.extensions
 
-import graphql.ExecutionInput
 import graphql.ExecutionResult
 import graphql.TestUtil
+import graphql.execution.DataFetcherResult
 import graphql.schema.DataFetcher
 import graphql.schema.DataFetchingEnvironment
 import graphql.schema.GraphQLTypeUtil
 import org.jetbrains.annotations.NotNull
 import spock.lang.Specification
 
+import static graphql.ExecutionInput.newExecutionInput
 import static graphql.extensions.ExtensionsBuilder.newExtensionsBuilder
 import static graphql.schema.idl.RuntimeWiring.newRuntimeWiring
 import static graphql.schema.idl.TypeRuntimeWiring.newTypeWiring
@@ -37,6 +38,27 @@ class ExtensionsBuilderTest extends Specification {
                 .buildExtensions()
         then:
         extensions == [x: "overwrite3", y: "25", z: "overwriteZ", a: "1"]
+    }
+
+    def "wont add empty changes"() {
+        def builder = newExtensionsBuilder()
+        when:
+        builder.addValues([:])
+
+        then:
+        builder.getChangeCount() == 0
+
+        when:
+        builder.addValues([:])
+
+        then:
+        builder.getChangeCount() == 0
+
+        when:
+        def extensions = builder.buildExtensions()
+        then:
+        extensions.isEmpty()
+
     }
 
     def "can handle no changes"() {
@@ -122,11 +144,12 @@ class ExtensionsBuilderTest extends Specification {
         """
 
         def extensionsBuilder = newExtensionsBuilder()
-        extensionsBuilder.addValue("added","explicitly")
+        extensionsBuilder.addValue("added", "explicitly")
 
-        def ei = ExecutionInput.newExecutionInput("query q { name street id }")
+        def ei = newExecutionInput("query q { name street id }")
                 .graphQLContext({ ctx ->
-                    ctx.put(ExtensionsBuilder.class, extensionsBuilder) })
+                    ctx.put(ExtensionsBuilder.class, extensionsBuilder)
+                })
                 .build()
 
 
@@ -144,12 +167,53 @@ class ExtensionsBuilderTest extends Specification {
         er.errors.isEmpty()
         er.extensions == [
                 "added": "explicitly",
-                common: [
+                common : [
                         name  : "String!",
                         street: "String",
                         id    : "ID!",
                 ],
                 // we break them out so we have common and not common entries
+                name   : "String!",
+                street : "String",
+                id     : "ID!",
+        ]
+    }
+
+
+    def "integration test that shows it working when they use DataFetcherResult and defaulted values"() {
+        def sdl = """
+        type Query {
+            name : String!
+            street : String
+            id : ID!
+        }
+        """
+
+        DataFetcher dfrDF = new DataFetcher() {
+            @Override
+            Object get(DataFetchingEnvironment env) throws Exception {
+                def fieldMap = [:]
+                fieldMap.put(env.getFieldDefinition().name, GraphQLTypeUtil.simplePrint(env.getFieldDefinition().type))
+                return DataFetcherResult.newResult().data("ignored").extensions(fieldMap).build()
+            }
+        }
+
+        def graphQL = TestUtil.graphQL(sdl, newRuntimeWiring()
+                .type(newTypeWiring("Query").dataFetchers([
+                        name  : dfrDF,
+                        street: dfrDF,
+                        id    : dfrDF,
+                ])))
+                .build()
+
+        when:
+        def ei = newExecutionInput("query q { name street id }")
+                .build()
+
+        def er = graphQL.execute(ei)
+        then:
+        er.errors.isEmpty()
+        er.extensions == [
                 name  : "String!",
                 street: "String",
                 id    : "ID!",
@@ -165,7 +229,7 @@ class ExtensionsBuilderTest extends Specification {
         }
         """
 
-        def ei = ExecutionInput.newExecutionInput("query q { name street id }")
+        def ei = newExecutionInput("query q { name street id }")
                 .build()
 
 
@@ -203,8 +267,8 @@ class ExtensionsBuilderTest extends Specification {
         }
         """
 
-        def ei = ExecutionInput.newExecutionInput("query q { name street id }")
-                .root(["name" : "Brad", "id" :1234])
+        def ei = newExecutionInput("query q { name street id }")
+                .root(["name": "Brad", "id": 1234])
                 .build()
 
 

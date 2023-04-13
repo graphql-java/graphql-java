@@ -12,7 +12,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Internal
 public class SortSourceGraph {
 
-    public static void sortSourceGraph(SchemaGraph sourceGraph, SchemaGraph targetGraph, FillupIsolatedVertices.IsolatedVertices isolatedVertices) {
+    public static void sortSourceGraph(SchemaGraph sourceGraph, SchemaGraph targetGraph, PossibleMappingsCalculator.PossibleMappings possibleMappings) {
 //        // we sort descending by number of possible target vertices
 //        Collections.sort(sourceGraph.getVertices(), (v1, v2) ->
 //

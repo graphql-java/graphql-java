@@ -1,8 +1,6 @@
 package graphql.schema.diffing;
 
-import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBasedTable;
-import com.google.common.collect.HashBiMap;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Multimap;
@@ -39,15 +37,28 @@ import static graphql.util.FpKit.concat;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 
+/**
+ * We don't want to allow arbitrary schema changes. For example changing an Object type into a Scalar
+ * is not something we want to consider.
+ * <p>
+ * We do this to make SchemaDiffings better understandable, but also to improve the overall runtime of
+ * the algorithm. By restricting the possible mappings the Schema diffing algo is actually able to
+ * finish in a reasonable time for real life inputs.
+ * <p>
+ *
+ * We restrict the algo by calculating which mappings are possible for given vertex. This is later used in
+ * {@link DiffImpl#calcLowerBoundMappingCost}.
+ * While doing this we need to also ensure that there are the same amount of vertices in the same "context":
+ * for example if the source graph has 3 Objects, the target graph needs to have 3 Objects. We achieve this by
+ * adding "isolated vertices" as needed.
+ */
 @Internal
-public class FillupIsolatedVertices {
+public class PossibleMappingsCalculator {
     private final SchemaDiffingRunningCheck runningCheck;
 
     private final SchemaGraph sourceGraph;
     private final SchemaGraph targetGraph;
-    private final IsolatedVertices isolatedVertices;
-
-    private final BiMap<Vertex, Vertex> toRemove = HashBiMap.create();
+    private final PossibleMappings possibleMappings;
 
     final static Map<String, List<VertexContextSegment>> typeContexts = new LinkedHashMap<>();
 
@@ -711,19 +722,18 @@ public class FillupIsolatedVertices {
     }
 
 
-    public FillupIsolatedVertices(SchemaGraph sourceGraph, SchemaGraph targetGraph, SchemaDiffingRunningCheck runningCheck) {
+    public PossibleMappingsCalculator(SchemaGraph sourceGraph, SchemaGraph targetGraph, SchemaDiffingRunningCheck runningCheck) {
         this.runningCheck = runningCheck;
         this.sourceGraph = sourceGraph;
         this.targetGraph = targetGraph;
-        this.isolatedVertices = new IsolatedVertices();
+        this.possibleMappings = new PossibleMappings();
     }
 
-    public void ensureGraphAreSameSize() {
+    public PossibleMappings calculate() {
         calcPossibleMappings(typeContexts.get(SCHEMA), SCHEMA);
         calcPossibleMappings(typeContexts.get(FIELD), FIELD);
         calcPossibleMappings(typeContexts.get(ARGUMENT), ARGUMENT);
         calcPossibleMappings(typeContexts.get(INPUT_FIELD), INPUT_FIELD);
-//        calcPossibleMappings(typeContexts.get(DUMMY_TYPE_VERTEX), DUMMY_TYPE_VERTEX);
         calcPossibleMappings(typeContexts.get(OBJECT), OBJECT);
         calcPossibleMappings(typeContexts.get(INTERFACE), INTERFACE);
         calcPossibleMappings(typeContexts.get(UNION), UNION);
@@ -736,10 +746,11 @@ public class FillupIsolatedVertices {
         calcPossibleMappings(typeContexts.get(DIRECTIVE), DIRECTIVE);
 
 
-        sourceGraph.addVertices(isolatedVertices.allIsolatedSource);
-        targetGraph.addVertices(isolatedVertices.allIsolatedTarget);
+        sourceGraph.addVertices(possibleMappings.allIsolatedSource);
+        targetGraph.addVertices(possibleMappings.allIsolatedTarget);
 
         Assert.assertTrue(sourceGraph.size() == targetGraph.size());
+        return possibleMappings;
     }
 
 
@@ -764,7 +775,7 @@ public class FillupIsolatedVertices {
         public abstract boolean filter(Vertex vertex, SchemaGraph schemaGraph);
     }
 
-    public class IsolatedVertices {
+    public static class PossibleMappings {
 
         public Set<Vertex> allIsolatedSource = new LinkedHashSet<>();
         public Set<Vertex> allIsolatedTarget = new LinkedHashSet<>();
@@ -869,18 +880,18 @@ public class FillupIsolatedVertices {
             // make sure the current context is the same size
             if (notUsedSource.size() > notUsedTarget.size()) {
                 Set<Vertex> newTargetVertices = Vertex.newIsolatedNodes(notUsedSource.size() - notUsedTarget.size(), "target-isolated-" + typeNameForDebug + "-");
-                isolatedVertices.addIsolatedTarget(newTargetVertices);
+                possibleMappings.addIsolatedTarget(newTargetVertices);
                 notUsedTarget.addAll(newTargetVertices);
             } else if (notUsedTarget.size() > notUsedSource.size()) {
                 Set<Vertex> newSourceVertices = Vertex.newIsolatedNodes(notUsedTarget.size() - notUsedSource.size(), "source-isolated-" + typeNameForDebug + "-");
-                isolatedVertices.addIsolatedSource(newSourceVertices);
+                possibleMappings.addIsolatedSource(newSourceVertices);
                 notUsedSource.addAll(newSourceVertices);
             }
-            isolatedVertices.putPossibleMappings(notUsedSource, notUsedTarget);
+            possibleMappings.putPossibleMappings(notUsedSource, notUsedTarget);
             usedSourceVertices.addAll(notUsedSource);
             usedTargetVertices.addAll(notUsedTarget);
             if (notUsedSource.size() > 0) {
-                isolatedVertices.putContext(currentContextId, notUsedSource, notUsedTarget);
+                possibleMappings.putContext(currentContextId, notUsedSource, notUsedTarget);
             }
         }
 
@@ -908,11 +919,11 @@ public class FillupIsolatedVertices {
 
         if (possibleSourceVertices.size() > possibleTargetVertices.size()) {
             Set<Vertex> newTargetVertices = Vertex.newIsolatedNodes(possibleSourceVertices.size() - possibleTargetVertices.size(), "target-isolated-" + typeNameForDebug + "-");
-            isolatedVertices.addIsolatedTarget(newTargetVertices);
+            possibleMappings.addIsolatedTarget(newTargetVertices);
             possibleTargetVertices.addAll(newTargetVertices);
         } else if (possibleTargetVertices.size() > possibleSourceVertices.size()) {
             Set<Vertex> newSourceVertices = Vertex.newIsolatedNodes(possibleTargetVertices.size() - possibleSourceVertices.size(), "source-isolated-" + typeNameForDebug + "-");
-            isolatedVertices.addIsolatedSource(newSourceVertices);
+            possibleMappings.addIsolatedSource(newSourceVertices);
             possibleSourceVertices.addAll(newSourceVertices);
         }
         // if there are only added or removed vertices in the current context, contextId might be empty
@@ -920,12 +931,12 @@ public class FillupIsolatedVertices {
             if (contextId.size() == 0) {
                 contextId = singletonList(typeNameForDebug);
             }
-            isolatedVertices.putContext(contextId, possibleSourceVertices, possibleTargetVertices);
+            possibleMappings.putContext(contextId, possibleSourceVertices, possibleTargetVertices);
         }
-        isolatedVertices.putPossibleMappings(possibleSourceVertices, possibleTargetVertices);
+        possibleMappings.putPossibleMappings(possibleSourceVertices, possibleTargetVertices);
     }
 
-    public IsolatedVertices getIsolatedVertices() {
-        return isolatedVertices;
+    public PossibleMappings getIsolatedVertices() {
+        return possibleMappings;
     }
 }

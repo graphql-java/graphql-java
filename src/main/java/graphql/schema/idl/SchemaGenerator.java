@@ -18,6 +18,33 @@ import static graphql.schema.idl.SchemaGeneratorHelper.buildDescription;
 
 /**
  * This can generate a working runtime schema from a type registry and runtime wiring
+ * <p>
+ * The generator uses the {@link RuntimeWiring} to insert code that runs behind the schema
+ * elements such as {@link graphql.schema.DataFetcher}s, {@link graphql.schema.TypeResolver}s
+ * and scalar {@link graphql.schema.Coercing}.
+ * <p>
+ * The order of {@link graphql.schema.DataFetcher} resolution is as follows:
+ * <ol>
+ *     <li>If the {@link WiringFactory} provides the {@link graphql.schema.DataFetcherFactory} for a field in its parent type then that is used</li>
+ *     <li>If the {@link WiringFactory} provides the {@link graphql.schema.DataFetcher} for a field in its parent type then that is used</li>
+ *     <li>If the {@link RuntimeWiring} provides the {@link graphql.schema.DataFetcher} for a field in its parent type, then that is used</li>
+ *     <li>If the {@link RuntimeWiring} provides a default {@link graphql.schema.DataFetcher} for a fields parent type, then that is used</li>
+ *     <li>If the {@link WiringFactory} provides a default {@link graphql.schema.DataFetcherFactory} for any element then that is used</li>
+ *     <li>If the {@link GraphQLCodeRegistry.Builder#getDefaultDataFetcherFactory()} provides a {@link graphql.schema.DataFetcherFactory} for a value then that is used</li>
+ *     <li>Finally a {@link graphql.schema.PropertyDataFetcher} is used as a last resort for the field</li>
+ * </ol>
+ * <p>
+ * The order of {@link graphql.schema.TypeResolver} resolution is as follows:
+ * <ol>
+ *     <li>If the {@link WiringFactory} provides a {@link graphql.schema.TypeResolver} then that is used</li>
+ *     <li>If the {@link TypeRuntimeWiring} provides a {@link graphql.schema.TypeResolver} then that is used</li>
+ * </ol>
+ * <p>
+ * The order of {@link graphql.schema.GraphQLScalarType} resolution is as follows:
+ * <ol>
+ *     <li>If the {@link WiringFactory} provides a {@link graphql.schema.GraphQLScalarType} then that is used</li>
+ *     <li>Otherwise {@link RuntimeWiring#getScalars()} is used</li>
+ * </ol>
  */
 @PublicApi
 public class SchemaGenerator {
