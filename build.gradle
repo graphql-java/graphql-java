@@ -107,9 +107,9 @@ dependencies {
     testImplementation 'org.testng:testng:7.7.1' // use for reactive streams test inheritance
 
     testImplementation 'org.openjdk.jmh:jmh-core:1.36'
-    testAnnotationProcessor 'org.openjdk.jmh:jmh-generator-annprocess:1.35'
+    testAnnotationProcessor 'org.openjdk.jmh:jmh-generator-annprocess:1.36'
     jmh 'org.openjdk.jmh:jmh-core:1.36'
-    jmh 'org.openjdk.jmh:jmh-generator-annprocess:1.35'
+    jmh 'org.openjdk.jmh:jmh-generator-annprocess:1.36'
 }
 
 shadowJar {
