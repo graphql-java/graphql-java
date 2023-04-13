@@ -75,7 +75,7 @@ public class ExecutableNormalizedField {
     }
 
     /**
-     * Determines whether this NF needs a fragment to select the field. However, it considers the parent
+     * Determines whether this {@link ExecutableNormalizedField} needs a fragment to select the field. However, it considers the parent
      * output type when determining whether it needs a fragment.
      * <p>
      * Consider the following schema
@@ -111,7 +111,7 @@ public class ExecutableNormalizedField {
      * }
      * </pre>
      * <p>
-     * Then we would get the following normalized operation tree
+     * Then we would get the following {@link ExecutableNormalizedOperation}
      *
      * <pre>
      * -Query.animal: Animal
@@ -124,18 +124,19 @@ public class ExecutableNormalizedField {
      * our question whether this is conditional?
      * <p>
      * We MUST consider that the output type of the {@code parent} field is {@code Animal} and
-     * NOT {@code Cat} or {@code Dog} as their respective impls would say.
+     * NOT {@code Cat} or {@code Dog} as their respective implementations would say.
      *
      * @param schema - the graphql schema in play
      *
      * @return true if the field is conditional
      */
+    @SuppressWarnings({"unchecked", "rawtypes"})
     public boolean isConditional(@NotNull GraphQLSchema schema) {
         if (parent == null) {
             return false;
         }
 
-        /**
+        /*
          * checking if we have an interface which can be used as an unconditional parent type
          */
         ImmutableList<GraphQLType> parentTypes = ImmutableKit.map(parent.getFieldDefinitions(schema), fd -> unwrapAll(fd.getType()));
@@ -206,8 +207,7 @@ public class ExecutableNormalizedField {
     }
 
     public List<GraphQLOutputType> getTypes(GraphQLSchema schema) {
-        List<GraphQLOutputType> fieldTypes = ImmutableKit.map(getFieldDefinitions(schema), fd -> fd.getType());
-        return fieldTypes;
+        return ImmutableKit.map(getFieldDefinitions(schema), fd -> fd.getType());
     }
 
 
