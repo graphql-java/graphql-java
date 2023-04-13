@@ -55,6 +55,12 @@ public class ExtensionsBuilder {
         return new ExtensionsBuilder(extensionsMerger);
     }
 
+    /**
+     * @return how many extension changes have been made so far
+     */
+    public int getChangeCount() {
+        return changes.size();
+    }
 
     /**
      * Adds new values into the extension builder
@@ -65,7 +71,9 @@ public class ExtensionsBuilder {
      */
     public ExtensionsBuilder addValues(@NotNull Map<Object, Object> newValues) {
         assertNotNull(newValues);
-        changes.add(newValues);
+        if (!newValues.isEmpty()) {
+            changes.add(newValues);
+        }
         return this;
     }
 

@@ -55,14 +55,43 @@ class DataFetcherResultTest extends Specification {
         !result.hasErrors()
     }
 
-    def "transforming"() {
+    def "can set extensions"() {
+
+        when:
+        def dfr = DataFetcherResult.newResult()
+                .extensions([x: "y"]).build()
+
+        then:
+        dfr.getExtensions() == [x : "y"]
+
+        when:
+        dfr = DataFetcherResult.newResult()
+                .data("x")
+                .build()
+
+        then:
+        dfr.getExtensions() == null
+
+    }
+
+    def "transforming works"() {
         when:
         def original = DataFetcherResult.newResult().data("hello")
-                .errors([error1]).localContext("world").build()
+                .errors([error1]).localContext("world")
+                .extensions([x: "y"]).build()
         def result = original.transform({ builder -> builder.error(error2) })
         then:
         result.getData() == "hello"
         result.getLocalContext() == "world"
+        result.getExtensions() == [x : "y"]
+        result.getErrors() == [error1, error2]
+
+        when:
+        result = result.transform({ builder -> builder.extensions(a : "b") })
+        then:
+        result.getData() == "hello"
+        result.getLocalContext() == "world"
+        result.getExtensions() == [a : "b"]
         result.getErrors() == [error1, error2]
     }
 }
