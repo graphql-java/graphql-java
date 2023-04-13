@@ -94,6 +94,17 @@ public class ExecutableNormalizedOperationFactory {
                 Locale.getDefault());
     }
 
+    /**
+     * This will create a runtime representation of the graphql operation that would be executed
+     * in a runtime sense.
+     *
+     * @param graphQLSchema         the schema to be used
+     * @param operationDefinition   the operation to be executed
+     * @param fragments             a set of fragments associated with the operation
+     * @param coercedVariableValues the coerced variables to use
+     *
+     * @return a runtime representation of the graphql operation.
+     */
     public static ExecutableNormalizedOperation createExecutableNormalizedOperation(GraphQLSchema graphQLSchema,
                                                                                     OperationDefinition operationDefinition,
                                                                                     Map<String, FragmentDefinition> fragments,
@@ -107,6 +118,17 @@ public class ExecutableNormalizedOperationFactory {
                 Locale.getDefault());
     }
 
+    /**
+     * This will create a runtime representation of the graphql operation that would be executed
+     * in a runtime sense.
+     *
+     * @param graphQLSchema the schema to be used
+     * @param document      the {@link Document} holding the operation text
+     * @param operationName the operation name to use
+     * @param rawVariables  the raw variables to be coerced
+     *
+     * @return a runtime representation of the graphql operation.
+     */
     public static ExecutableNormalizedOperation createExecutableNormalizedOperationWithRawVariables(GraphQLSchema graphQLSchema,
                                                                                                     Document document,
                                                                                                     String operationName,
@@ -118,6 +140,7 @@ public class ExecutableNormalizedOperationFactory {
                 GraphQLContext.getDefault(),
                 Locale.getDefault());
     }
+
 
     /**
      * This will create a runtime representation of the graphql operation that would be executed
@@ -177,7 +200,7 @@ public class ExecutableNormalizedOperationFactory {
     }
 
     /**
-     * Creates a new Normalized query tree for the provided query
+     * Creates a new ExecutableNormalizedOperation for the provided query
      */
     private ExecutableNormalizedOperation createNormalizedQueryImpl(GraphQLSchema graphQLSchema,
                                                                     OperationDefinition operationDefinition,
