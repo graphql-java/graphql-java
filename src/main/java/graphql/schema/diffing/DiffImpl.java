@@ -88,7 +88,6 @@ public class DiffImpl {
                 int ged) {
             this.completeSourceGraph = completeSourceGraph;
             this.completeTargetGraph = completeTargetGraph;
-
             this.mapping = mapping;
             this.ged = ged;
         }
@@ -125,13 +124,20 @@ public class DiffImpl {
         });
         queue.add(firstMappingEntry);
         firstMappingEntry.siblingsFinished = true;
-        System.out.println("first entry with mapping size of: " + queue.iterator().next());
+
+//        System.out.println("graph size: " + this.completeSourceGraph.size() + " non mapped vertices " + (completeSourceGraph.size() - startMapping.size()));
+//        System.out.println("start mapping at level: " + firstMappingEntry.level);
 
         List<Vertex> allNonFixedTargets = new ArrayList<>(allTargets);
         startMapping.forEachTarget(allNonFixedTargets::remove);
 
+        int count = 0;
         while (!queue.isEmpty()) {
             MappingEntry mappingEntry = queue.poll();
+            count++;
+//            if (count % 100 == 0) {
+//                System.out.println("non fixed mappings " + mappingEntry.partialMapping.nonFixedSize());
+//            }
             if (mappingEntry.lowerBoundCost >= optimalEdit.ged) {
                 continue;
             }
@@ -195,7 +201,6 @@ public class DiffImpl {
 
         Map<Vertex, Double> deletionCostsCache = new LinkedHashMap<>();
 
-//        System.out.println("start calc cost matrix");
         for (int i = level; i < allSources.size(); i++) {
             Vertex v = allSources.get(i);
             int j = 0;
@@ -208,12 +213,10 @@ public class DiffImpl {
 
             runningCheck.check();
         }
-//        System.out.println("finish calc cost matrix ... start hungarian");
         HungarianAlgorithm hungarianAlgorithm = new HungarianAlgorithm(costMatrixForHungarianAlgo);
         int[] assignments = hungarianAlgorithm.execute();
         int editorialCostForMapping = editorialCostForMapping(fixedEditorialCost, partialMapping, completeSourceGraph, completeTargetGraph);
         double costMatrixSum = getCostMatrixSum(costMatrix, assignments);
-//        System.out.println("finish hungarian");
         double lowerBoundForPartialMapping = editorialCostForMapping + costMatrixSum;
         int v_i_target_IndexSibling = assignments[0];
         Vertex bestExtensionTargetVertexSibling = availableTargetVertices.get(v_i_target_IndexSibling);
@@ -541,7 +544,6 @@ public class DiffImpl {
         }
         return 1 + innerEdgesCount + labeledEdgesFromAnchoredVertex;
     }
-
 
 
 }

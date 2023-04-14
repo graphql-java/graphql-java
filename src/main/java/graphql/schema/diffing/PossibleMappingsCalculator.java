@@ -880,6 +880,23 @@ public class PossibleMappingsCalculator {
                 return;
             }
 
+//            System.out.println("multiple mappings for context" + contextId);
+//            List<VertexContextSegment> vertexContextSegments = typeContexts.get(typeName);
+//            System.out.println("source ids:");
+//            for (Vertex sourceVertex : sourceVertices) {
+//                List<String> id = vertexContextSegments.stream().map(vertexContextSegment -> vertexContextSegment.idForVertex(sourceVertex, sourceGraph))
+//                        .collect(Collectors.toList());
+//                System.out.println("id: " + id);
+//            }
+//            System.out.println("target ids ==================");
+//            for(Vertex targetVertex: targetVertices) {
+//                List<String> id = vertexContextSegments.stream().map(vertexContextSegment -> vertexContextSegment.idForVertex(targetVertex, targetGraph))
+//                        .collect(Collectors.toList());
+//                System.out.println("id: " + id);
+//            }
+//            System.out.println("-------------------");
+//            System.out.println("-------------------");
+
 
             for (Vertex sourceVertex : sourceVertices) {
                 possibleMappings.putAll(sourceVertex, targetVertices);

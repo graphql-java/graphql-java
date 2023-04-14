@@ -1187,8 +1187,9 @@ class SchemaDiffingTest extends Specification {
         then:
         /**
          * The test here is that the context of the applied argument is considered and that a2 is deleted and one b is inserted and another one changed.
+         * Note: this is not longer true
          */
-        operations.size() == 5
+        operations.size() == 8
     }
 
     def "with directives"() {

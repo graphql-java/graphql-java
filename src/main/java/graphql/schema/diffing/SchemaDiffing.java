@@ -49,7 +49,6 @@ public class SchemaDiffing {
 
 
     private DiffImpl.OptimalEdit diffImpl(SchemaGraph sourceGraph, SchemaGraph targetGraph) throws Exception {
-        int sizeDiff = targetGraph.size() - sourceGraph.size();
         PossibleMappingsCalculator possibleMappingsCalculator = new PossibleMappingsCalculator(sourceGraph, targetGraph, runningCheck);
         PossibleMappingsCalculator.PossibleMappings possibleMappings = possibleMappingsCalculator.calculate();
 
@@ -59,9 +58,6 @@ public class SchemaDiffing {
                 possibleMappings.fixedOneToOneTargets);
 
         assertTrue(sourceGraph.size() == targetGraph.size());
-//        if (sizeDiff != 0) {
-//            SortSourceGraph.sortSourceGraph(sourceGraph, targetGraph, isolatedVertices);
-//        }
         if (possibleMappings.fixedOneToOneMappings.size() == sourceGraph.size()) {
             return new DiffImpl.OptimalEdit(sourceGraph, targetGraph, fixedMappings, baseEditorialCostForMapping(fixedMappings, sourceGraph, targetGraph));
         }
@@ -72,6 +68,7 @@ public class SchemaDiffing {
 
         List<Vertex> nonMappedTarget = new ArrayList<>(targetGraph.getVertices());
         nonMappedTarget.removeAll(possibleMappings.fixedOneToOneTargets);
+
 
         runningCheck.check();
         sortListBasedOnPossibleMapping(nonMappedSource, possibleMappings);
@@ -95,7 +92,7 @@ public class SchemaDiffing {
         {
             int v2Count = possibleMappings.possibleMappings.get(v2).size();
             int v1Count = possibleMappings.possibleMappings.get(v1).size();
-            return Integer.compare(v2Count, v1Count);
+            return Integer.compare(v1Count, v2Count);
         });
     }
 

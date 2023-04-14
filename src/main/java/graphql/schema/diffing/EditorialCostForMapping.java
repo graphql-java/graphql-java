@@ -70,7 +70,6 @@ public class EditorialCostForMapping {
             }
         }
 
-        // TODO: iterates over all edges in the target Graph
         for (Edge targetEdge : targetGraph.getEdges()) {
             // only subgraph edges
             if (!mapping.containsTarget(targetEdge.getFrom()) || !mapping.containsTarget(targetEdge.getTo())) {

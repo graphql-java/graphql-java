@@ -99,6 +99,10 @@ public class Mapping {
         return fixedMappings.size() + map.size();
     }
 
+    public int nonFixedSize() {
+        return map.size();
+    }
+
     public void add(Vertex source, Vertex target) {
         this.map.put(source, target);
         this.sourceList.add(source);
