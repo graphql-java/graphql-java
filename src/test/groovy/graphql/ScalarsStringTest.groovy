@@ -86,24 +86,15 @@ class ScalarsStringTest extends Specification {
     }
 
     @Unroll
-    def "String parseValue throws exception for non-String values"() {
-        when:
-        Scalars.GraphQLString.getCoercing().parseValue(literal, GraphQLContext.default, Locale.default)
-        then:
-        def ex = thrown(CoercingParseValueException)
+    def "String parseValue can parse non-String values"() {
+        expect:
+        Scalars.GraphQLString.getCoercing().parseValue(value, GraphQLContext.default, Locale.default) == result
 
         where:
-        literal      | _
-        123          | _
-        true         | _
-        customObject | _
+        value        | result
+        123          | "123"
+        true         | "true"
+        customObject | "foo"
     }
 
-    def "String parseValue English exception message"() {
-        when:
-        Scalars.GraphQLString.getCoercing().parseValue(9001, GraphQLContext.default, Locale.ENGLISH)
-        then:
-        def ex = thrown(CoercingParseValueException)
-        ex.message == "Expected a String input, but it was a 'Integer'"
-    }
 }
