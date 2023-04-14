@@ -64,45 +64,15 @@ public class GraphqlIntCoercing implements Coercing<Integer, Integer> {
 
     @NotNull
     private Integer parseValueImpl(@NotNull Object input, @NotNull Locale locale) {
-        if (!(input instanceof Number)) {
-            throw new CoercingParseValueException(
-                    i18nMsg(locale, "Int.notInt", typeName(input))
-            );
-        }
+        Integer result = convertImpl(input);
 
-        if (input instanceof Integer) {
-            return (Integer) input;
-        }
-
-        BigInteger result = convertParseValueImpl(input);
         if (result == null) {
             throw new CoercingParseValueException(
                     i18nMsg(locale, "Int.notInt", typeName(input))
             );
         }
 
-        if (result.compareTo(INT_MIN) < 0 || result.compareTo(INT_MAX) > 0) {
-            throw new CoercingParseValueException(
-                    i18nMsg(locale, "Int.outsideRange", result.toString())
-            );
-        }
-        return result.intValueExact();
-    }
-
-    private BigInteger convertParseValueImpl(Object input) {
-        BigDecimal value;
-        try {
-            value = new BigDecimal(input.toString());
-        } catch (NumberFormatException e) {
-            return null;
-        }
-
-        try {
-            return value.toBigIntegerExact();
-        } catch (ArithmeticException e) {
-            // Exception if number has non-zero fractional part
-            return null;
-        }
+        return result;
     }
 
     private static int parseLiteralImpl(Object input, @NotNull Locale locale) {
