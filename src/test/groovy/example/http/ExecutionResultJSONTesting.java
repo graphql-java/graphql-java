@@ -20,7 +20,7 @@ import graphql.schema.CoercingSerializeException;
 import graphql.validation.ValidationError;
 import graphql.validation.ValidationErrorType;
 
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
