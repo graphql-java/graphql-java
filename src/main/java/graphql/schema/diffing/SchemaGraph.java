@@ -89,8 +89,11 @@ public class SchemaGraph {
     }
 
     public List<Edge> getAdjacentEdgesAndInverse(Vertex fromAndTo) {
-        List<Edge> result = new ArrayList<>(edgesByDirection.row(fromAndTo).values());
-        result.addAll(edgesByInverseDirection.row(fromAndTo).values());
+        Collection<Edge> edges = edgesByInverseDirection.row(fromAndTo).values();
+        Collection<Edge> edgesInverse = edgesByDirection.row(fromAndTo).values();
+        List<Edge> result = new ArrayList<>(edges.size() + edgesInverse.size());
+        result.addAll(edges);
+        result.addAll(edgesInverse);
         return result;
     }
 

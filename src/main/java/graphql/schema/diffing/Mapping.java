@@ -7,6 +7,7 @@ import graphql.Internal;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 /**
@@ -142,5 +143,9 @@ public class Mapping {
         for (Vertex t : targetList) {
             action.accept(t);
         }
+    }
+
+    public void forEachNonFixedSourceAndTarget(BiConsumer<? super Vertex, ? super Vertex> consumer) {
+        map.forEach(consumer);
     }
 }

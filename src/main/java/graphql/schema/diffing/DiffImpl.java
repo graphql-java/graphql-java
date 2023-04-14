@@ -18,6 +18,7 @@ import java.util.Set;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import static graphql.Assert.assertTrue;
+import static graphql.schema.diffing.EditorialCostForMapping.baseEditorialCostForMapping;
 import static graphql.schema.diffing.EditorialCostForMapping.editorialCostForMapping;
 
 /**
@@ -67,18 +68,35 @@ public class DiffImpl {
      * of the actual changes.
      */
     public static class OptimalEdit {
+        private final SchemaGraph completeSourceGraph;
+        private final SchemaGraph completeTargetGraph;
+
         public Mapping mapping;
-        public List<EditOperation> listOfEditOperations = new ArrayList<>();
         public int ged = Integer.MAX_VALUE;
 
-        public OptimalEdit() {
-
+        public OptimalEdit(
+                SchemaGraph completeSourceGraph,
+                SchemaGraph completeTargetGraph) {
+            this.completeSourceGraph = completeSourceGraph;
+            this.completeTargetGraph = completeTargetGraph;
         }
 
-        public OptimalEdit(Mapping mapping, List<EditOperation> listOfEditOperations, int ged) {
+        public OptimalEdit(
+                SchemaGraph completeSourceGraph,
+                SchemaGraph completeTargetGraph,
+                Mapping mapping,
+                int ged) {
+            this.completeSourceGraph = completeSourceGraph;
+            this.completeTargetGraph = completeTargetGraph;
+
             this.mapping = mapping;
-            this.listOfEditOperations = listOfEditOperations;
             this.ged = ged;
+        }
+
+        public List<EditOperation> getListOfEditOperations() {
+            ArrayList<EditOperation> listOfEditOperations = new ArrayList<>();
+            assertTrue(baseEditorialCostForMapping(mapping, completeSourceGraph, completeTargetGraph, listOfEditOperations) == ged);
+            return listOfEditOperations;
         }
     }
 
@@ -92,12 +110,11 @@ public class DiffImpl {
     OptimalEdit diffImpl(Mapping startMapping, List<Vertex> allSources, List<Vertex> allTargets) throws Exception {
         int graphSize = allSources.size();
 
-        ArrayList<EditOperation> initialEditOperations = new ArrayList<>();
-        int mappingCost = editorialCostForMapping(startMapping, completeSourceGraph, completeTargetGraph, initialEditOperations);
+        int fixedEditorialCost = baseEditorialCostForMapping(startMapping, completeSourceGraph, completeTargetGraph);
         int level = startMapping.size();
-        MappingEntry firstMappingEntry = new MappingEntry(startMapping, level, mappingCost);
+        MappingEntry firstMappingEntry = new MappingEntry(startMapping, level, fixedEditorialCost);
 
-        OptimalEdit optimalEdit = new OptimalEdit();
+        OptimalEdit optimalEdit = new OptimalEdit(completeSourceGraph, completeTargetGraph);
         PriorityQueue<MappingEntry> queue = new PriorityQueue<>((mappingEntry1, mappingEntry2) -> {
             int compareResult = Double.compare(mappingEntry1.lowerBoundCost, mappingEntry2.lowerBoundCost);
             if (compareResult == 0) {
@@ -113,15 +130,14 @@ public class DiffImpl {
         List<Vertex> allNonFixedTargets = new ArrayList<>(allTargets);
         startMapping.forEachTarget(allNonFixedTargets::remove);
 
-
         while (!queue.isEmpty()) {
             MappingEntry mappingEntry = queue.poll();
-            System.out.println("mapping entry at:" + mappingEntry.level + " mapping size: " + queue.size());
             if (mappingEntry.lowerBoundCost >= optimalEdit.ged) {
                 continue;
             }
             if (mappingEntry.level > 0 && !mappingEntry.siblingsFinished) {
                 addSiblingToQueue(
+                        fixedEditorialCost,
                         mappingEntry.level,
                         queue,
                         optimalEdit,
@@ -130,7 +146,9 @@ public class DiffImpl {
                         mappingEntry);
             }
             if (mappingEntry.level < graphSize) {
-                addChildToQueue(mappingEntry,
+                addChildToQueue(
+                        fixedEditorialCost,
+                        mappingEntry,
                         queue,
                         optimalEdit,
                         allSources,
@@ -147,7 +165,8 @@ public class DiffImpl {
 
 
     // this calculates all children for the provided parentEntry, but only the first is directly added to the queue
-    private void addChildToQueue(MappingEntry parentEntry,
+    private void addChildToQueue(int fixedEditorialCost,
+                                 MappingEntry parentEntry,
                                  PriorityQueue<MappingEntry> queue,
                                  OptimalEdit optimalEdit,
                                  List<Vertex> allSources,
@@ -192,7 +211,7 @@ public class DiffImpl {
 //        System.out.println("finish calc cost matrix ... start hungarian");
         HungarianAlgorithm hungarianAlgorithm = new HungarianAlgorithm(costMatrixForHungarianAlgo);
         int[] assignments = hungarianAlgorithm.execute();
-        int editorialCostForMapping = editorialCostForMapping(partialMapping, completeSourceGraph, completeTargetGraph, new ArrayList<>());
+        int editorialCostForMapping = editorialCostForMapping(fixedEditorialCost, partialMapping, completeSourceGraph, completeTargetGraph);
         double costMatrixSum = getCostMatrixSum(costMatrix, assignments);
 //        System.out.println("finish hungarian");
         double lowerBoundForPartialMapping = editorialCostForMapping + costMatrixSum;
@@ -216,10 +235,9 @@ public class DiffImpl {
             fullMapping.add(allSources.get(level + i), availableTargetVertices.get(assignments[i]));
         }
 
-        List<EditOperation> editOperations = new ArrayList<>();
-        int costForFullMapping = editorialCostForMapping(fullMapping, completeSourceGraph, completeTargetGraph, editOperations);
+        int costForFullMapping = editorialCostForMapping(fixedEditorialCost, fullMapping, completeSourceGraph, completeTargetGraph);
         if (costForFullMapping < optimalEdit.ged) {
-            updateOptimalEdit(optimalEdit, costForFullMapping, fullMapping, editOperations);
+            updateOptimalEdit(optimalEdit, costForFullMapping, fullMapping);
         }
 
         calculateRestOfChildren(
@@ -235,12 +253,11 @@ public class DiffImpl {
         );
     }
 
-    private void updateOptimalEdit(OptimalEdit optimalEdit, int newGed, Mapping mapping, List<EditOperation> editOperations) {
+    private void updateOptimalEdit(OptimalEdit optimalEdit, int newGed, Mapping mapping) {
         assertTrue(newGed < optimalEdit.ged);
         System.out.println("setting new ged of " + newGed);
         if (newGed < optimalEdit.ged) {
             optimalEdit.ged = newGed;
-            optimalEdit.listOfEditOperations = editOperations;
             optimalEdit.mapping = mapping;
         }
     }
@@ -288,6 +305,7 @@ public class DiffImpl {
 
     // this retrieves the next sibling  from MappingEntry.sibling and adds it to the queue if the lowerBound is less than the current upperBound
     private void addSiblingToQueue(
+            int fixedEditorialCost,
             int level,
             PriorityQueue<MappingEntry> queue,
             OptimalEdit optimalEdit,
@@ -301,7 +319,6 @@ public class DiffImpl {
             return;
         }
         if (sibling.lowerBoundCost < optimalEdit.ged) {
-
             queue.add(sibling);
 
             // we need to start here from the parent mapping, this is why we remove the last element
@@ -310,10 +327,9 @@ public class DiffImpl {
                 fullMapping.add(allSources.get(level - 1 + i), sibling.availableTargetVertices.get(sibling.assignments[i]));
             }
             assertTrue(fullMapping.size() == this.completeSourceGraph.size());
-            List<EditOperation> editOperations = new ArrayList<>();
-            int costForFullMapping = editorialCostForMapping(fullMapping, completeSourceGraph, completeTargetGraph, editOperations);
+            int costForFullMapping = editorialCostForMapping(fixedEditorialCost, fullMapping, completeSourceGraph, completeTargetGraph);
             if (costForFullMapping < optimalEdit.ged) {
-                updateOptimalEdit(optimalEdit, costForFullMapping, fullMapping, editOperations);
+                updateOptimalEdit(optimalEdit, costForFullMapping, fullMapping);
             }
         }
     }

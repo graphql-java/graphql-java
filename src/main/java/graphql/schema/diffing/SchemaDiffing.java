@@ -10,7 +10,7 @@ import java.util.Collections;
 import java.util.List;
 
 import static graphql.Assert.assertTrue;
-import static graphql.schema.diffing.EditorialCostForMapping.editorialCostForMapping;
+import static graphql.schema.diffing.EditorialCostForMapping.baseEditorialCostForMapping;
 
 @Internal
 public class SchemaDiffing {
@@ -30,7 +30,7 @@ public class SchemaDiffing {
     public List<EditOperation> diffGraphQLSchema(GraphQLSchema graphQLSchema1, GraphQLSchema graphQLSchema2) throws Exception {
         sourceGraph = new SchemaGraphFactory("source-").createGraph(graphQLSchema1);
         targetGraph = new SchemaGraphFactory("target-").createGraph(graphQLSchema2);
-        return diffImpl(sourceGraph, targetGraph).listOfEditOperations;
+        return diffImpl(sourceGraph, targetGraph).getListOfEditOperations();
     }
 
     public EditOperationAnalysisResult diffAndAnalyze(GraphQLSchema graphQLSchema1, GraphQLSchema graphQLSchema2) throws Exception {
@@ -38,7 +38,7 @@ public class SchemaDiffing {
         targetGraph = new SchemaGraphFactory("target-").createGraph(graphQLSchema2);
         DiffImpl.OptimalEdit optimalEdit = diffImpl(sourceGraph, targetGraph);
         EditOperationAnalyzer editOperationAnalyzer = new EditOperationAnalyzer(graphQLSchema1, graphQLSchema1, sourceGraph, targetGraph);
-        return editOperationAnalyzer.analyzeEdits(optimalEdit.listOfEditOperations, optimalEdit.mapping);
+        return editOperationAnalyzer.analyzeEdits(optimalEdit.getListOfEditOperations(), optimalEdit.mapping);
     }
 
     public DiffImpl.OptimalEdit diffGraphQLSchemaAllEdits(GraphQLSchema graphQLSchema1, GraphQLSchema graphQLSchema2) throws Exception {
@@ -63,10 +63,7 @@ public class SchemaDiffing {
 //            SortSourceGraph.sortSourceGraph(sourceGraph, targetGraph, isolatedVertices);
 //        }
         if (possibleMappings.fixedOneToOneMappings.size() == sourceGraph.size()) {
-            List<EditOperation> result = new ArrayList<>();
-            editorialCostForMapping(fixedMappings
-                    , sourceGraph, targetGraph, result);
-            return new DiffImpl.OptimalEdit(fixedMappings, result, result.size());
+            return new DiffImpl.OptimalEdit(sourceGraph, targetGraph, fixedMappings, baseEditorialCostForMapping(fixedMappings, sourceGraph, targetGraph));
         }
 
         DiffImpl diffImpl = new DiffImpl(sourceGraph, targetGraph, possibleMappings, runningCheck);
