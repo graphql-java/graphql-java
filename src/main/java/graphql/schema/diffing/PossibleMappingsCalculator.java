@@ -35,7 +35,6 @@ import static graphql.schema.diffing.SchemaGraph.SCALAR;
 import static graphql.schema.diffing.SchemaGraph.SCHEMA;
 import static graphql.schema.diffing.SchemaGraph.UNION;
 import static graphql.util.FpKit.concat;
-import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 
 /**
@@ -61,7 +60,7 @@ public class PossibleMappingsCalculator {
     private final SchemaGraph targetGraph;
     private final PossibleMappings possibleMappings;
 
-    final static Map<String, List<VertexContextSegment>> typeContexts = new LinkedHashMap<>();
+    public final static Map<String, List<VertexContextSegment>> typeContexts = new LinkedHashMap<>();
 
     static {
         typeContexts.put(SCHEMA, schemaContext());
@@ -363,11 +362,19 @@ public class PossibleMappingsCalculator {
                 return APPLIED_DIRECTIVE.equals(vertex.getType());
             }
         };
-        VertexContextSegment appliedDirectiveName = new VertexContextSegment() {
+        VertexContextSegment appliedDirectiveIndex = new VertexContextSegment() {
             @Override
             public String idForVertex(Vertex appliedDirective, SchemaGraph schemaGraph) {
                 int appliedDirectiveIndex = schemaGraph.getAppliedDirectiveIndex(appliedDirective);
-                return appliedDirectiveIndex + ":" + appliedDirective.getName();
+                return Integer.toString(appliedDirectiveIndex);
+            }
+
+        };
+
+        VertexContextSegment appliedDirectiveName = new VertexContextSegment() {
+            @Override
+            public String idForVertex(Vertex appliedDirective, SchemaGraph schemaGraph) {
+                return appliedDirective.getName();
             }
 
             @Override
@@ -467,7 +474,16 @@ public class PossibleMappingsCalculator {
                 return true;
             }
         };
-        List<VertexContextSegment> contexts = Arrays.asList(appliedDirectiveType, parentOfParentOfContainer, parentOfContainer, appliedDirectiveContainer, appliedDirectiveName);
+        VertexContextSegment vertexContextSegment = new VertexContextSegment() {
+            @Override
+            public String idForVertex(Vertex vertex, SchemaGraph schemaGraph) {
+                return parentOfParentOfContainer.idForVertex(vertex, schemaGraph) + "." +
+                        parentOfContainer.idForVertex(vertex, schemaGraph) + "." +
+                        appliedDirectiveContainer.idForVertex(vertex, schemaGraph) + "." +
+                        appliedDirectiveName.idForVertex(vertex, schemaGraph);
+            }
+        };
+        List<VertexContextSegment> contexts = Arrays.asList(appliedDirectiveType, vertexContextSegment, appliedDirectiveIndex);
         return contexts;
     }
 
@@ -603,7 +619,17 @@ public class PossibleMappingsCalculator {
                 return true;
             }
         };
-        List<VertexContextSegment> contexts = Arrays.asList(appliedArgumentType, parentOfParentOfContainer, parentOfContainer, appliedDirectiveContainer, appliedDirective, appliedArgumentName);
+        VertexContextSegment combined = new VertexContextSegment() {
+            @Override
+            public String idForVertex(Vertex vertex, SchemaGraph schemaGraph) {
+                return parentOfContainer.idForVertex(vertex, schemaGraph) + "." +
+                        parentOfContainer.idForVertex(vertex, schemaGraph) + "." +
+                        appliedDirectiveContainer.idForVertex(vertex, schemaGraph) + "." +
+                        appliedDirective.idForVertex(vertex, schemaGraph) + "." +
+                        appliedArgumentName.idForVertex(vertex, schemaGraph);
+            }
+        };
+        List<VertexContextSegment> contexts = Arrays.asList(appliedArgumentType, combined);
         return contexts;
     }
 
@@ -765,26 +791,18 @@ public class PossibleMappingsCalculator {
 
     public abstract static class VertexContextSegment {
 
-        private List<VertexContextSegment> children;
-
-        public VertexContextSegment(List<VertexContextSegment> children) {
-            this.children = children;
-        }
 
         public VertexContextSegment() {
-            this.children = emptyList();
-        }
-
-        public VertexContextSegment(VertexContextSegment child) {
-            this.children = singletonList(child);
         }
 
         public abstract String idForVertex(Vertex vertex, SchemaGraph schemaGraph);
 
-        public abstract boolean filter(Vertex vertex, SchemaGraph schemaGraph);
+        public boolean filter(Vertex vertex, SchemaGraph schemaGraph) {
+            return true;
+        }
     }
 
-    public static class PossibleMappings {
+    public class PossibleMappings {
 
         public Set<Vertex> allIsolatedSource = new LinkedHashSet<>();
         public Set<Vertex> allIsolatedTarget = new LinkedHashSet<>();
@@ -813,10 +831,24 @@ public class PossibleMappingsCalculator {
                 return;
             }
 
-//            System.out.println("non trivial context " + contextId);
+            if (APPLIED_DIRECTIVE.equals(typeName) || APPLIED_ARGUMENT.equals(typeName)) {
+                for (Vertex sourceVertex : sourceVertices) {
+                    Vertex isolatedTarget = Vertex.newIsolatedNode("target-isolated-" + typeName);
+                    allIsolatedTarget.add(isolatedTarget);
+                    fixedOneToOneMappings.put(sourceVertex, isolatedTarget);
+                    fixedOneToOneSources.add(sourceVertex);
+                    fixedOneToOneTargets.add(isolatedTarget);
+                }
+                for (Vertex targetVertex : targetVertices) {
+                    Vertex isolatedSource = Vertex.newIsolatedNode("source-isolated-" + typeName);
+                    allIsolatedSource.add(isolatedSource);
+                    fixedOneToOneMappings.put(isolatedSource, targetVertex);
+                    fixedOneToOneSources.add(isolatedSource);
+                    fixedOneToOneTargets.add(targetVertex);
+                }
+                return;
+            }
 
-            // TODO: add islated source and target to allIsolatedSource and
-            // allIsolatedTarget and also update the mapping
             Set<Vertex> newIsolatedSource = Collections.emptySet();
             Set<Vertex> newIsolatedTarget = Collections.emptySet();
             if (sourceVertices.size() > targetVertices.size()) {
@@ -847,27 +879,7 @@ public class PossibleMappingsCalculator {
                 }
                 return;
             }
-//            if ((APPLIED_DIRECTIVE.equals(typeName) || APPLIED_ARGUMENT.equals(typeName)) && sourceVertices.size() > 1) {
-//                for (Vertex sourceVertex : sourceVertices) {
-//                    if (sourceVertex.isIsolated()) {
-//                        continue;
-//                    }
-//                    Vertex targetVertex = Vertex.newIsolatedNode("target-isolated-" + typeName);
-//                    fixedOneToOneMappings.put(sourceVertex, targetVertex);
-//                    fixedOneToOneSources.add(sourceVertex);
-//                    fixedOneToOneTargets.add(targetVertex);
-//                }
-//                for (Vertex targetVertex : targetVertices) {
-//                    if (targetVertex.isIsolated()) {
-//                        continue;
-//                    }
-//                    Vertex sourceVertex = Vertex.newIsolatedNode("source-isolated-" + typeName);
-//                    fixedOneToOneMappings.put(sourceVertex, targetVertex);
-//                    fixedOneToOneSources.add(sourceVertex);
-//                    fixedOneToOneTargets.add(targetVertex);
-//                }
-//                return;
-//            }
+
 
             for (Vertex sourceVertex : sourceVertices) {
                 possibleMappings.putAll(sourceVertex, targetVertices);
@@ -884,24 +896,6 @@ public class PossibleMappingsCalculator {
         public boolean mappingPossible(Vertex sourceVertex, Vertex targetVertex) {
             return possibleMappings.containsEntry(sourceVertex, targetVertex);
         }
-//
-//        public void putContext(List<String> contextId, Set<Vertex> source, Set<Vertex> target) {
-////            if (contexts.containsRow(contextId)) {
-////                throw new IllegalArgumentException("Already context " + contextId);
-////            }
-//            Assert.assertTrue(source.size() == target.size());
-////            if (source.size() == 1) {
-////                Vertex sourceVertex = source.iterator().next();
-////                Vertex targetVertex = target.iterator().next();
-////                fixedOneToOneMappings.put(sourceVertex, targetVertex);
-////                fixedOneToOneSources.add(sourceVertex);
-////                fixedOneToOneTargets.add(targetVertex);
-////
-//            System.out.println("multiple elements in context" + contextId + " with count: " + source.size());
-//////                    System.out.println("sources: " + source);
-//////                    System.out.println("target: " + target);
-////            }
-//        }
     }
 
 
