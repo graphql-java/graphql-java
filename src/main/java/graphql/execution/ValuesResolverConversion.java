@@ -130,10 +130,23 @@ class ValuesResolverConversion {
             return inputValueWithState.getValue();
         }
         if (inputValueWithState.isLiteral()) {
-            return literalToInternalValue(inputInterceptor, fieldVisibility, inputType, (Value<?>) inputValueWithState.getValue(), CoercedVariables.emptyVariables(), graphqlContext, locale);
+            return literalToInternalValue(
+                    inputInterceptor,
+                    fieldVisibility,
+                    inputType,
+                    (Value<?>) inputValueWithState.getValue(),
+                    CoercedVariables.emptyVariables(),
+                    graphqlContext,
+                    locale);
         }
         if (inputValueWithState.isExternal()) {
-            return externalValueToInternalValueImpl(inputInterceptor, fieldVisibility, inputType, inputValueWithState.getValue(), graphqlContext, locale);
+            return externalValueToInternalValueImpl(
+                    inputInterceptor,
+                    fieldVisibility,
+                    inputType,
+                    inputValueWithState.getValue(),
+                    graphqlContext,
+                    locale);
         }
         return assertShouldNeverHappen("unexpected value state " + inputValueWithState);
     }
