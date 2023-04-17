@@ -68,12 +68,13 @@ public class GraphqlBooleanCoercing implements Coercing<Boolean, Boolean> {
 
     @NotNull
     private Boolean parseValueImpl(@NotNull Object input, @NotNull Locale locale) {
-        if (!(input instanceof Boolean)) {
+        Boolean result = convertImpl(input);
+        if (result == null) {
             throw new CoercingParseValueException(
-                    i18nMsg(locale, "Boolean.unexpectedRawValueType", typeName(input))
+                    i18nMsg(locale, "Boolean.notBoolean", typeName(input))
             );
         }
-        return (Boolean) input;
+        return result;
     }
 
     private static boolean parseLiteralImpl(@NotNull Object input, @NotNull Locale locale) {

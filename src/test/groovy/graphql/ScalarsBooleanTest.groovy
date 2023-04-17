@@ -132,6 +132,27 @@ class ScalarsBooleanTest extends Specification {
     }
 
     @Unroll
+    def "parseValue parses non-Boolean input #value"() {
+        expect:
+        Scalars.GraphQLBoolean.getCoercing().parseValue(value, GraphQLContext.default, Locale.default) == result
+
+        where:
+        value                        | result
+        true                         | true
+        "false"                      | false
+        "true"                       | true
+        "True"                       | true
+        0                            | false
+        1                            | true
+        -1                           | true
+        new Long(42345784398534785l) | true
+        new Double(42.3)             | true
+        new Float(42.3)              | true
+        Integer.MAX_VALUE + 1l       | true
+        Integer.MIN_VALUE - 1l       | true
+    }
+
+    @Unroll
     def "parseValue throws exception for invalid input #value"() {
         when:
         Scalars.GraphQLBoolean.getCoercing().parseValue(value, GraphQLContext.default, Locale.default)
@@ -141,17 +162,6 @@ class ScalarsBooleanTest extends Specification {
         where:
         value                        | _
         new Object()                 | _
-        "false"                      | _
-        "true"                       | _
-        "True"                       | _
-        0                            | _
-        1                            | _
-        -1                           | _
-        new Long(42345784398534785l) | _
-        new Double(42.3)             | _
-        new Float(42.3)              | _
-        Integer.MAX_VALUE + 1l       | _
-        Integer.MIN_VALUE - 1l       | _
     }
 
 }
