@@ -122,7 +122,7 @@ public class EditorialCostForMapping {
                 cost.getAndIncrement();
             }
 
-            for (Edge sourceEdge : sourceGraph.getAdjacentEdgesAndInverse(sourceVertex)) {
+            for (Edge sourceEdge : sourceGraph.getAdjacentEdgesAndInverseNonCopy(sourceVertex)) {
                 if (!visitEdge.test(sourceEdge)) {
                     continue;
                 }
@@ -143,7 +143,7 @@ public class EditorialCostForMapping {
                 }
             }
 
-            for (Edge targetEdge : targetGraph.getAdjacentEdgesAndInverse(targetVertex)) {
+            for (Edge targetEdge : targetGraph.getAdjacentEdgesAndInverseNonCopy(targetVertex)) {
                 if (!visitEdge.test(targetEdge)) {
                     continue;
                 }

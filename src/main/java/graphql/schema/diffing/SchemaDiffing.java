@@ -90,8 +90,8 @@ public class SchemaDiffing {
     private void sortListBasedOnPossibleMapping(List<Vertex> sourceVertices, PossibleMappingsCalculator.PossibleMappings possibleMappings) {
         Collections.sort(sourceVertices, (v1, v2) ->
         {
-            int v2Count = possibleMappings.possibleMappings.get(v2).size();
             int v1Count = possibleMappings.possibleMappings.get(v1).size();
+            int v2Count = possibleMappings.possibleMappings.get(v2).size();
             return Integer.compare(v1Count, v2Count);
         });
     }

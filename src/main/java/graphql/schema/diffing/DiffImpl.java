@@ -8,6 +8,7 @@ import graphql.Internal;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -125,7 +126,7 @@ public class DiffImpl {
         queue.add(firstMappingEntry);
         firstMappingEntry.siblingsFinished = true;
 
-//        System.out.println("graph size: " + this.completeSourceGraph.size() + " non mapped vertices " + (completeSourceGraph.size() - startMapping.size()));
+        System.out.println("graph size: " + this.completeSourceGraph.size() + " non mapped vertices " + (completeSourceGraph.size() - startMapping.size()));
 //        System.out.println("start mapping at level: " + firstMappingEntry.level);
 
         List<Vertex> allNonFixedTargets = new ArrayList<>(allTargets);
@@ -135,12 +136,14 @@ public class DiffImpl {
         while (!queue.isEmpty()) {
             MappingEntry mappingEntry = queue.poll();
             count++;
-//            if (count % 100 == 0) {
-//                System.out.println("non fixed mappings " + mappingEntry.partialMapping.nonFixedSize());
-//            }
             if (mappingEntry.lowerBoundCost >= optimalEdit.ged) {
                 continue;
+
             }
+//            if (count % 100 == 0) {
+//                System.out.println(" level:  " + mappingEntry.level + " with cost: " + mappingEntry.lowerBoundCost + " queue size: " + queue.size());
+//            }
+
             if (mappingEntry.level > 0 && !mappingEntry.siblingsFinished) {
                 addSiblingToQueue(
                         fixedEditorialCost,
@@ -216,6 +219,8 @@ public class DiffImpl {
         HungarianAlgorithm hungarianAlgorithm = new HungarianAlgorithm(costMatrixForHungarianAlgo);
         int[] assignments = hungarianAlgorithm.execute();
         int editorialCostForMapping = editorialCostForMapping(fixedEditorialCost, partialMapping, completeSourceGraph, completeTargetGraph);
+//        System.out.println("editorial cost for partial mapping: " + editorialCostForMapping + " for level " + (level - (allSources.size() - allNonFixedTargets.size())));
+//        System.out.println("last source vertex " + partialMapping.getSource(partialMapping.size() - 1) + " -> " + partialMapping.getTarget(partialMapping.size() - 1));
         double costMatrixSum = getCostMatrixSum(costMatrix, assignments);
         double lowerBoundForPartialMapping = editorialCostForMapping + costMatrixSum;
         int v_i_target_IndexSibling = assignments[0];
@@ -276,7 +281,9 @@ public class DiffImpl {
                                          int level,
                                          LinkedBlockingQueue<MappingEntry> siblings
     ) {
+//        System.out.println("level : " + level + " max  children count calculate: " + (availableTargetVertices.size() - 1));
         // starting from 1 as we already generated the first one
+        int oldSiblingsSize = siblings.size();
         for (int child = 1; child < availableTargetVertices.size(); child++) {
             int[] assignments = hungarianAlgorithm.nextChild();
             if (hungarianAlgorithm.costMatrix[0].get(assignments[0]) == Integer.MAX_VALUE) {
@@ -302,6 +309,7 @@ public class DiffImpl {
 
             runningCheck.check();
         }
+//        System.out.println("calculated  " + (siblings.size() - oldSiblingsSize) + " children / " + (availableTargetVertices.size()));
         siblings.add(MappingEntry.DUMMY);
 
     }
@@ -401,7 +409,7 @@ public class DiffImpl {
 
         boolean equalNodes = v.getType().equals(u.getType()) && v.getProperties().equals(u.getProperties());
 
-        List<Edge> adjacentEdgesV = completeSourceGraph.getAdjacentEdges(v);
+        Collection<Edge> adjacentEdgesV = completeSourceGraph.getAdjacentEdgesNonCopy(v);
         Multiset<String> multisetLabelsV = HashMultiset.create();
 
         for (Edge edge : adjacentEdgesV) {
@@ -412,7 +420,7 @@ public class DiffImpl {
             }
         }
 
-        List<Edge> adjacentEdgesU = completeTargetGraph.getAdjacentEdges(u);
+        Collection<Edge> adjacentEdgesU = completeTargetGraph.getAdjacentEdgesNonCopy(u);
         Multiset<String> multisetLabelsU = HashMultiset.create();
         for (Edge edge : adjacentEdgesU) {
             // test if this is an inner edge (meaning it not part of the subgraph induced by the partial mapping)
@@ -437,11 +445,11 @@ public class DiffImpl {
                                          Mapping partialMapping) {
         int anchoredVerticesCost = 0;
 
-        List<Edge> adjacentEdgesV = completeSourceGraph.getAdjacentEdges(v);
-        List<Edge> adjacentEdgesU = completeTargetGraph.getAdjacentEdges(u);
+        Collection<Edge> adjacentEdgesV = completeSourceGraph.getAdjacentEdgesNonCopy(v);
+        Collection<Edge> adjacentEdgesU = completeTargetGraph.getAdjacentEdgesNonCopy(u);
 
-        List<Edge> adjacentEdgesInverseV = completeSourceGraph.getAdjacentEdgesInverse(v);
-        List<Edge> adjacentEdgesInverseU = completeTargetGraph.getAdjacentEdgesInverse(u);
+        Collection<Edge> adjacentEdgesInverseV = completeSourceGraph.getAdjacentEdgesInverseNonCopy(v);
+        Collection<Edge> adjacentEdgesInverseU = completeTargetGraph.getAdjacentEdgesInverseNonCopy(u);
 
         Set<Edge> matchedTargetEdges = new LinkedHashSet<>();
         Set<Edge> matchedTargetEdgesInverse = new LinkedHashSet<>();
@@ -521,7 +529,7 @@ public class DiffImpl {
     ) {
         SchemaGraph schemaGraph = sourceOrTarget ? completeSourceGraph : completeTargetGraph;
 
-        List<Edge> adjacentEdges = schemaGraph.getAdjacentEdges(vertex);
+        Collection<Edge> adjacentEdges = schemaGraph.getAdjacentEdgesNonCopy(vertex);
         int innerEdgesCount = 0;
         int labeledEdgesFromAnchoredVertex = 0;
 
@@ -534,7 +542,7 @@ public class DiffImpl {
                 }
             }
         }
-        List<Edge> adjacentEdgesInverse = schemaGraph.getAdjacentEdgesInverse(vertex);
+        Collection<Edge> adjacentEdgesInverse = schemaGraph.getAdjacentEdgesInverseNonCopy(vertex);
         for (Edge edge : adjacentEdgesInverse) {
             if (partialMapping.contains(edge.getFrom(), sourceOrTarget)) {
                 if (edge.getLabel() != null) {

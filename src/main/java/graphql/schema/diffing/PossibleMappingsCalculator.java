@@ -19,6 +19,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static graphql.schema.diffing.SchemaGraph.APPLIED_ARGUMENT;
 import static graphql.schema.diffing.SchemaGraph.APPLIED_DIRECTIVE;
@@ -880,22 +881,22 @@ public class PossibleMappingsCalculator {
                 return;
             }
 
-//            System.out.println("multiple mappings for context" + contextId);
-//            List<VertexContextSegment> vertexContextSegments = typeContexts.get(typeName);
-//            System.out.println("source ids:");
-//            for (Vertex sourceVertex : sourceVertices) {
-//                List<String> id = vertexContextSegments.stream().map(vertexContextSegment -> vertexContextSegment.idForVertex(sourceVertex, sourceGraph))
-//                        .collect(Collectors.toList());
-//                System.out.println("id: " + id);
-//            }
-//            System.out.println("target ids ==================");
-//            for(Vertex targetVertex: targetVertices) {
-//                List<String> id = vertexContextSegments.stream().map(vertexContextSegment -> vertexContextSegment.idForVertex(targetVertex, targetGraph))
-//                        .collect(Collectors.toList());
-//                System.out.println("id: " + id);
-//            }
-//            System.out.println("-------------------");
-//            System.out.println("-------------------");
+            System.out.println("multiple mappings for context" + contextId);
+            List<VertexContextSegment> vertexContextSegments = typeContexts.get(typeName);
+            System.out.println("source ids:");
+            for (Vertex sourceVertex : sourceVertices) {
+                List<String> id = vertexContextSegments.stream().map(vertexContextSegment -> vertexContextSegment.idForVertex(sourceVertex, sourceGraph))
+                        .collect(Collectors.toList());
+                System.out.println("id: " + id);
+            }
+            System.out.println("target ids ==================");
+            for (Vertex targetVertex : targetVertices) {
+                List<String> id = vertexContextSegments.stream().map(vertexContextSegment -> vertexContextSegment.idForVertex(targetVertex, targetGraph))
+                        .collect(Collectors.toList());
+                System.out.println("id: " + id);
+            }
+            System.out.println("-------------------");
+            System.out.println("-------------------");
 
 
             for (Vertex sourceVertex : sourceVertices) {
