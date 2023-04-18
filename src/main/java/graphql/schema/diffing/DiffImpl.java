@@ -250,6 +250,7 @@ public class DiffImpl {
         }
 
         int costForFullMapping = editorialCostForMapping(fixedEditorialCost, fullMapping, completeSourceGraph, completeTargetGraph);
+        assertTrue(lowerBoundForPartialMapping <= costForFullMapping);
         if (costForFullMapping < optimalEdit.ged) {
             updateOptimalEdit(optimalEdit, costForFullMapping, fullMapping);
         }
@@ -343,6 +344,7 @@ public class DiffImpl {
             }
             assertTrue(fullMapping.size() == this.completeSourceGraph.size());
             int costForFullMapping = editorialCostForMapping(fixedEditorialCost, fullMapping, completeSourceGraph, completeTargetGraph);
+            assertTrue(sibling.lowerBoundCost <= costForFullMapping);
             if (costForFullMapping < optimalEdit.ged) {
                 updateOptimalEdit(optimalEdit, costForFullMapping, fullMapping);
             }
@@ -534,27 +536,15 @@ public class DiffImpl {
         SchemaGraph schemaGraph = sourceOrTarget ? completeSourceGraph : completeTargetGraph;
 
         Collection<Edge> adjacentEdges = schemaGraph.getAdjacentEdgesNonCopy(vertex);
-        int innerEdgesCount = 0;
-        int labeledEdgesFromAnchoredVertex = 0;
 
-        for (Edge edge : adjacentEdges) {
-            if (!partialMapping.contains(edge.getTo(), sourceOrTarget)) {
-                innerEdgesCount++;
-            } else {
-                if (edge.getLabel() != null) {
-                    labeledEdgesFromAnchoredVertex++;
-                }
-            }
-        }
+        int labeledEdgesFromAnchoredVertexInverse = 0;
         Collection<Edge> adjacentEdgesInverse = schemaGraph.getAdjacentEdgesInverseNonCopy(vertex);
         for (Edge edge : adjacentEdgesInverse) {
             if (partialMapping.contains(edge.getFrom(), sourceOrTarget)) {
-                if (edge.getLabel() != null) {
-                    labeledEdgesFromAnchoredVertex++;
-                }
+                labeledEdgesFromAnchoredVertexInverse++;
             }
         }
-        return 1 + innerEdgesCount + labeledEdgesFromAnchoredVertex;
+        return 1 + adjacentEdges.size() + labeledEdgesFromAnchoredVertexInverse;
     }
 
 
