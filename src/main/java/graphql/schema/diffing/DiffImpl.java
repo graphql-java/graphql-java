@@ -46,6 +46,11 @@ public class DiffImpl {
         public boolean siblingsFinished;
         public LinkedBlockingQueue<MappingEntry> mappingEntriesSiblings;
         public int[] assignments;
+
+        /**
+         * These are the available vertices, relative to the parent mapping.
+         * Meaning the last mapped element is NOT contained in it.
+         */
         public List<Vertex> availableTargetVertices;
 
         Mapping partialMapping;
@@ -112,7 +117,12 @@ public class DiffImpl {
 
         int fixedEditorialCost = baseEditorialCostForMapping(startMapping, completeSourceGraph, completeTargetGraph);
         int level = startMapping.size();
+
+        List<Vertex> allNonFixedTargets = new ArrayList<>(allTargets);
+        startMapping.forEachTarget(allNonFixedTargets::remove);
+
         MappingEntry firstMappingEntry = new MappingEntry(startMapping, level, fixedEditorialCost);
+        firstMappingEntry.availableTargetVertices = allNonFixedTargets;
 
         OptimalEdit optimalEdit = new OptimalEdit(completeSourceGraph, completeTargetGraph);
         PriorityQueue<MappingEntry> queue = new PriorityQueue<>((mappingEntry1, mappingEntry2) -> {
@@ -129,8 +139,6 @@ public class DiffImpl {
 //        System.out.println("graph size: " + this.completeSourceGraph.size() + " non mapped vertices " + (completeSourceGraph.size() - startMapping.size()));
 //        System.out.println("start mapping at level: " + firstMappingEntry.level);
 
-        List<Vertex> allNonFixedTargets = new ArrayList<>(allTargets);
-        startMapping.forEachTarget(allNonFixedTargets::remove);
 
         int count = 0;
         while (!queue.isEmpty()) {
@@ -140,9 +148,7 @@ public class DiffImpl {
                 continue;
 
             }
-//            if (count % 100 == 0) {
-//                System.out.println(" level:  " + mappingEntry.level + " with cost: " + mappingEntry.lowerBoundCost + " queue size: " + queue.size());
-//            }
+//            System.out.println(" level:  " + mappingEntry.level + " with cost: " + mappingEntry.lowerBoundCost + " queue size: " + queue.size());
 
             if (mappingEntry.level > 0 && !mappingEntry.siblingsFinished) {
                 addSiblingToQueue(
@@ -161,8 +167,7 @@ public class DiffImpl {
                         queue,
                         optimalEdit,
                         allSources,
-                        allTargets,
-                        allNonFixedTargets
+                        allTargets
                 );
             }
 
@@ -179,18 +184,20 @@ public class DiffImpl {
                                  PriorityQueue<MappingEntry> queue,
                                  OptimalEdit optimalEdit,
                                  List<Vertex> allSources,
-                                 List<Vertex> allTargets,
-                                 List<Vertex> allNonFixedTargets) {
-        Mapping partialMapping = parentEntry.partialMapping;
+                                 List<Vertex> allTargets
+    ) {
+        Mapping parentPartialMapping = parentEntry.partialMapping;
         int level = parentEntry.level;
 
-        assertTrue(level == partialMapping.size());
+        assertTrue(level == parentPartialMapping.size());
 
-        // not great: we iterate over all targets, which can be huge
-        ArrayList<Vertex> availableTargetVertices = new ArrayList<>(allNonFixedTargets);
-        partialMapping.forEachNonFixedTarget(availableTargetVertices::remove);
-        assertTrue(availableTargetVertices.size() + partialMapping.size() == allTargets.size());
+        // the available target vertices are the parent queue entry ones plus
+        // minus the additional mapped element in parentPartialMapping
+        ArrayList<Vertex> availableTargetVertices = new ArrayList<>(parentEntry.availableTargetVertices);
+        availableTargetVertices.remove(parentPartialMapping.getTarget(level - 1));
+        assertTrue(availableTargetVertices.size() + parentPartialMapping.size() == allTargets.size());
         Vertex v_i = allSources.get(level);
+
 
         // the cost matrix is for the non mapped vertices
         int costMatrixSize = allSources.size() - level;
@@ -208,7 +215,7 @@ public class DiffImpl {
             Vertex v = allSources.get(i);
             int j = 0;
             for (Vertex u : availableTargetVertices) {
-                double cost = calcLowerBoundMappingCost(v, u, partialMapping, deletionCostsCache);
+                double cost = calcLowerBoundMappingCost(v, u, parentPartialMapping, deletionCostsCache);
                 costMatrixForHungarianAlgo[i - level].set(j, cost);
                 costMatrix[i - level].set(j, cost);
                 j++;
@@ -219,14 +226,14 @@ public class DiffImpl {
 //        System.out.println("size2: " + allCount + " vs sqrt of realSize:" + Math.sqrt(realSize));
         HungarianAlgorithm hungarianAlgorithm = new HungarianAlgorithm(costMatrixForHungarianAlgo);
         int[] assignments = hungarianAlgorithm.execute();
-        int editorialCostForMapping = editorialCostForMapping(fixedEditorialCost, partialMapping, completeSourceGraph, completeTargetGraph);
+        int editorialCostForMapping = editorialCostForMapping(fixedEditorialCost, parentPartialMapping, completeSourceGraph, completeTargetGraph);
 //        System.out.println("editorial cost for partial mapping: " + editorialCostForMapping + " for level " + (level - (allSources.size() - allNonFixedTargets.size())));
-//        System.out.println("last source vertex " + partialMapping.getSource(partialMapping.size() - 1) + " -> " + partialMapping.getTarget(partialMapping.size() - 1));
+//        System.out.println("last source vertex " + parentPartialMapping.getSource(parentPartialMapping.size() - 1) + " -> " + parentPartialMapping.getTarget(parentPartialMapping.size() - 1));
         double costMatrixSum = getCostMatrixSum(costMatrix, assignments);
         double lowerBoundForPartialMapping = editorialCostForMapping + costMatrixSum;
         int v_i_target_IndexSibling = assignments[0];
         Vertex bestExtensionTargetVertexSibling = availableTargetVertices.get(v_i_target_IndexSibling);
-        Mapping newMappingSibling = partialMapping.extendMapping(v_i, bestExtensionTargetVertexSibling);
+        Mapping newMappingSibling = parentPartialMapping.extendMapping(v_i, bestExtensionTargetVertexSibling);
 
 
         if (lowerBoundForPartialMapping >= optimalEdit.ged) {
@@ -239,7 +246,7 @@ public class DiffImpl {
         newMappingEntry.availableTargetVertices = availableTargetVertices;
 
         queue.add(newMappingEntry);
-        Mapping fullMapping = partialMapping.copy();
+        Mapping fullMapping = parentPartialMapping.copy();
         for (int i = 0; i < assignments.length; i++) {
             fullMapping.add(allSources.get(level + i), availableTargetVertices.get(assignments[i]));
         }
@@ -254,7 +261,7 @@ public class DiffImpl {
                 hungarianAlgorithm,
                 costMatrix,
                 editorialCostForMapping,
-                partialMapping,
+                parentPartialMapping,
                 v_i,
                 optimalEdit.ged,
                 level + 1,
@@ -282,9 +289,7 @@ public class DiffImpl {
                                          int level,
                                          LinkedBlockingQueue<MappingEntry> siblings
     ) {
-//        System.out.println("level : " + level + " max  children count calculate: " + (availableTargetVertices.size() - 1));
         // starting from 1 as we already generated the first one
-        int oldSiblingsSize = siblings.size();
         for (int child = 1; child < availableTargetVertices.size(); child++) {
             int[] assignments = hungarianAlgorithm.nextChild();
             if (hungarianAlgorithm.costMatrix[0].get(assignments[0]) == Integer.MAX_VALUE) {
@@ -310,7 +315,6 @@ public class DiffImpl {
 
             runningCheck.check();
         }
-//        System.out.println("calculated  " + (siblings.size() - oldSiblingsSize) + " children / " + (availableTargetVertices.size()));
         siblings.add(MappingEntry.DUMMY);
 
     }
