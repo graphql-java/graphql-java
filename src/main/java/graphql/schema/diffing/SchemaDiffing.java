@@ -1,5 +1,7 @@
 package graphql.schema.diffing;
 
+import com.google.common.collect.BiMap;
+import com.google.common.collect.HashBiMap;
 import graphql.Internal;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.diffing.ana.EditOperationAnalysisResult;
@@ -7,6 +9,7 @@ import graphql.schema.diffing.ana.EditOperationAnalyzer;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 
 import static graphql.Assert.assertTrue;
@@ -69,6 +72,10 @@ public class SchemaDiffing {
         List<Vertex> nonMappedTarget = new ArrayList<>(targetGraph.getVertices());
         nonMappedTarget.removeAll(possibleMappings.fixedOneToOneTargets);
 
+        // Shortcut the execution if we know it won't finish
+        if (nonMappedSource.size() > 70 && nonMappedTarget.size() > 70) {
+            return shortcutAlgorithm(possibleMappings.fixedOneToOneMappings, nonMappedSource, nonMappedTarget);
+        }
 
         runningCheck.check();
         sortListBasedOnPossibleMapping(nonMappedSource, possibleMappings);
@@ -82,9 +89,39 @@ public class SchemaDiffing {
         targetGraphVertices.addAll(possibleMappings.fixedOneToOneTargets);
         targetGraphVertices.addAll(nonMappedTarget);
 
-
         DiffImpl.OptimalEdit optimalEdit = diffImpl.diffImpl(fixedMappings, sourceVertices, targetGraphVertices);
         return optimalEdit;
+    }
+
+    private DiffImpl.OptimalEdit shortcutAlgorithm(BiMap<Vertex, Vertex> fixedOneToOneMappings,
+                                                   List<Vertex> nonMappedSource,
+                                                   List<Vertex> nonMappedTarget) {
+        BiMap<Vertex, Vertex> shortcutVertexMap = HashBiMap.create(fixedOneToOneMappings);
+
+        for (Vertex vertex : nonMappedSource) {
+            String type = vertex.getType();
+            shortcutVertexMap.put(vertex, Vertex.newIsolatedNode("target-isolated-" + type));
+        }
+        for (Vertex vertex : nonMappedTarget) {
+            String type = vertex.getType();
+            shortcutVertexMap.put(Vertex.newIsolatedNode("source-isolated-" + type), vertex);
+        }
+
+        List<Vertex> sourceList = new ArrayList<>(shortcutVertexMap.size());
+        List<Vertex> targetList = new ArrayList<>(shortcutVertexMap.size());
+
+        shortcutVertexMap.forEach((source, target) -> {
+            sourceList.add(source);
+            targetList.add(target);
+        });
+
+        Mapping shortcutMapping = Mapping.newMapping(
+                shortcutVertexMap,
+                sourceList,
+                targetList);
+
+        return new DiffImpl.OptimalEdit(sourceGraph, targetGraph, shortcutMapping,
+                baseEditorialCostForMapping(shortcutMapping, sourceGraph, targetGraph));
     }
 
     private void sortListBasedOnPossibleMapping(List<Vertex> sourceVertices, PossibleMappingsCalculator.PossibleMappings possibleMappings) {
