@@ -207,13 +207,13 @@ public class DiffImpl {
         double[][] costMatrix = new double[costMatrixSize][costMatrixSize];
 
 
-        Map<Vertex, Double> deletionCostsCache = new LinkedHashMap<>();
+        Map<Vertex, Double> isolatedVerticesCache = new LinkedHashMap<>();
 
         for (int i = level; i < allSources.size(); i++) {
             Vertex v = allSources.get(i);
             int j = 0;
             for (Vertex u : availableTargetVertices) {
-                double cost = calcLowerBoundMappingCost(v, u, parentPartialMapping, deletionCostsCache);
+                double cost = calcLowerBoundMappingCost(v, u, parentPartialMapping, isolatedVerticesCache);
                 costMatrixForHungarianAlgo[i - level][j] = cost;
                 costMatrix[i - level][j] = cost;
                 j++;
@@ -392,24 +392,24 @@ public class DiffImpl {
     private double calcLowerBoundMappingCost(Vertex v,
                                              Vertex u,
                                              Mapping partialMapping,
-                                             Map<Vertex, Double> deletionCostsCache) {
+                                             Map<Vertex, Double> isolatedVerticesCache) {
         if (!possibleMappings.mappingPossible(v, u)) {
             return Integer.MAX_VALUE;
         }
         if (u.isOfType(SchemaGraph.ISOLATED)) {
-            if (deletionCostsCache.containsKey(v)) {
-                return deletionCostsCache.get(v);
+            if (isolatedVerticesCache.containsKey(v)) {
+                return isolatedVerticesCache.get(v);
             }
             double result = calcLowerBoundMappingCostForIsolated(v, partialMapping, true);
-            deletionCostsCache.put(v, result);
+            isolatedVerticesCache.put(v, result);
             return result;
         }
         if (v.isOfType(SchemaGraph.ISOLATED)) {
-            if (deletionCostsCache.containsKey(u)) {
-                return deletionCostsCache.get(u);
+            if (isolatedVerticesCache.containsKey(u)) {
+                return isolatedVerticesCache.get(u);
             }
             double result = calcLowerBoundMappingCostForIsolated(u, partialMapping, false);
-            deletionCostsCache.put(u, result);
+            isolatedVerticesCache.put(u, result);
             return result;
         }
 
@@ -535,16 +535,18 @@ public class DiffImpl {
     ) {
         SchemaGraph schemaGraph = sourceOrTarget ? completeSourceGraph : completeTargetGraph;
 
+        // every adjacent edge is inserted/deleted for an isolated vertex
         Collection<Edge> adjacentEdges = schemaGraph.getAdjacentEdgesNonCopy(vertex);
 
-        int labeledEdgesFromAnchoredVertexInverse = 0;
+        // for the inverse adjacent edges we only count the anchored ones
+        int anchoredInverseEdges = 0;
         Collection<Edge> adjacentEdgesInverse = schemaGraph.getAdjacentEdgesInverseNonCopy(vertex);
         for (Edge edge : adjacentEdgesInverse) {
             if (partialMapping.contains(edge.getFrom(), sourceOrTarget)) {
-                labeledEdgesFromAnchoredVertexInverse++;
+                anchoredInverseEdges++;
             }
         }
-        return 1 + adjacentEdges.size() + labeledEdgesFromAnchoredVertexInverse;
+        return 1 + adjacentEdges.size() + anchoredInverseEdges;
     }
 
 
