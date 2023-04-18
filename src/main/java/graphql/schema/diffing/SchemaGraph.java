@@ -2,6 +2,7 @@ package graphql.schema.diffing;
 
 
 import com.google.common.collect.HashBasedTable;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.LinkedHashMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Table;
@@ -84,14 +85,18 @@ public class SchemaGraph {
         edgesByInverseDirection.put(edge.getTo(), edge.getFrom(), edge);
     }
 
-    public List<Edge> getAdjacentEdges(Vertex from) {
-        return new ArrayList<>(edgesByDirection.row(from).values());
+    //
+//    public List<Edge> getAdjacentEdges(Vertex from) {
+//        return new ArrayList<>(edgesByDirection.row(from).values());
+//    }
+    public Collection<Edge> getAdjacentEdgesNonCopy(Vertex from) {
+        return edgesByDirection.row(from).values();
     }
 
-    public List<Edge> getAdjacentEdgesAndInverse(Vertex fromAndTo) {
-        List<Edge> result = new ArrayList<>(edgesByDirection.row(fromAndTo).values());
-        result.addAll(edgesByInverseDirection.row(fromAndTo).values());
-        return result;
+    public Iterable<Edge> getAdjacentEdgesAndInverseNonCopy(Vertex fromAndTo) {
+        Collection<Edge> edges = edgesByInverseDirection.row(fromAndTo).values();
+        Collection<Edge> edgesInverse = edgesByDirection.row(fromAndTo).values();
+        return Iterables.concat(edges, edgesInverse);
     }
 
     public List<Vertex> getAdjacentVertices(Vertex from) {
@@ -135,8 +140,12 @@ public class SchemaGraph {
         return result;
     }
 
-    public List<Edge> getAdjacentEdgesInverse(Vertex to) {
-        return getAdjacentEdgesInverse(to, x -> true);
+    public List<Edge> getAdjacentEdgesInverseCopied(Vertex to) {
+        return new ArrayList<>(edgesByInverseDirection.row(to).values());
+    }
+
+    public Collection<Edge> getAdjacentEdgesInverseNonCopy(Vertex to) {
+        return edgesByInverseDirection.row(to).values();
     }
 
     public List<Edge> getAdjacentEdgesInverse(Vertex to, Predicate<Vertex> predicate) {
@@ -246,7 +255,7 @@ public class SchemaGraph {
     }
 
     public int getAppliedDirectiveIndex(Vertex appliedDirective) {
-        List<Edge> adjacentEdges = this.getAdjacentEdgesInverse(appliedDirective);
+        List<Edge> adjacentEdges = this.getAdjacentEdgesInverseCopied(appliedDirective);
         assertTrue(adjacentEdges.size() == 1, () -> format("No applied directive container found for %s", appliedDirective));
         return Integer.parseInt(adjacentEdges.get(0).getLabel());
     }

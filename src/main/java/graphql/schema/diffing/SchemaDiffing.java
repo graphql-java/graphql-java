@@ -10,7 +10,7 @@ import java.util.Collections;
 import java.util.List;
 
 import static graphql.Assert.assertTrue;
-import static graphql.schema.diffing.EditorialCostForMapping.editorialCostForMapping;
+import static graphql.schema.diffing.EditorialCostForMapping.baseEditorialCostForMapping;
 
 @Internal
 public class SchemaDiffing {
@@ -30,7 +30,7 @@ public class SchemaDiffing {
     public List<EditOperation> diffGraphQLSchema(GraphQLSchema graphQLSchema1, GraphQLSchema graphQLSchema2) throws Exception {
         sourceGraph = new SchemaGraphFactory("source-").createGraph(graphQLSchema1);
         targetGraph = new SchemaGraphFactory("target-").createGraph(graphQLSchema2);
-        return diffImpl(sourceGraph, targetGraph).listOfEditOperations;
+        return diffImpl(sourceGraph, targetGraph).getListOfEditOperations();
     }
 
     public EditOperationAnalysisResult diffAndAnalyze(GraphQLSchema graphQLSchema1, GraphQLSchema graphQLSchema2) throws Exception {
@@ -38,7 +38,7 @@ public class SchemaDiffing {
         targetGraph = new SchemaGraphFactory("target-").createGraph(graphQLSchema2);
         DiffImpl.OptimalEdit optimalEdit = diffImpl(sourceGraph, targetGraph);
         EditOperationAnalyzer editOperationAnalyzer = new EditOperationAnalyzer(graphQLSchema1, graphQLSchema1, sourceGraph, targetGraph);
-        return editOperationAnalyzer.analyzeEdits(optimalEdit.listOfEditOperations, optimalEdit.mapping);
+        return editOperationAnalyzer.analyzeEdits(optimalEdit.getListOfEditOperations(), optimalEdit.mapping);
     }
 
     public DiffImpl.OptimalEdit diffGraphQLSchemaAllEdits(GraphQLSchema graphQLSchema1, GraphQLSchema graphQLSchema2) throws Exception {
@@ -49,38 +49,37 @@ public class SchemaDiffing {
 
 
     private DiffImpl.OptimalEdit diffImpl(SchemaGraph sourceGraph, SchemaGraph targetGraph) throws Exception {
-        int sizeDiff = targetGraph.size() - sourceGraph.size();
         PossibleMappingsCalculator possibleMappingsCalculator = new PossibleMappingsCalculator(sourceGraph, targetGraph, runningCheck);
         PossibleMappingsCalculator.PossibleMappings possibleMappings = possibleMappingsCalculator.calculate();
 
+        Mapping fixedMappings = Mapping.newMapping(
+                possibleMappings.fixedOneToOneMappings,
+                possibleMappings.fixedOneToOneSources,
+                possibleMappings.fixedOneToOneTargets);
+
         assertTrue(sourceGraph.size() == targetGraph.size());
-//        if (sizeDiff != 0) {
-//            SortSourceGraph.sortSourceGraph(sourceGraph, targetGraph, isolatedVertices);
-//        }
-        Mapping fixedMappings = possibleMappings.mapping;
-        if (fixedMappings.size() == sourceGraph.size()) {
-            List<EditOperation> result = new ArrayList<>();
-            editorialCostForMapping(fixedMappings, sourceGraph, targetGraph, result);
-            return new DiffImpl.OptimalEdit(fixedMappings, result, result.size());
+        if (possibleMappings.fixedOneToOneMappings.size() == sourceGraph.size()) {
+            return new DiffImpl.OptimalEdit(sourceGraph, targetGraph, fixedMappings, baseEditorialCostForMapping(fixedMappings, sourceGraph, targetGraph));
         }
 
         DiffImpl diffImpl = new DiffImpl(sourceGraph, targetGraph, possibleMappings, runningCheck);
         List<Vertex> nonMappedSource = new ArrayList<>(sourceGraph.getVertices());
-        nonMappedSource.removeAll(fixedMappings.getSources());
+        nonMappedSource.removeAll(possibleMappings.fixedOneToOneSources);
 
         List<Vertex> nonMappedTarget = new ArrayList<>(targetGraph.getVertices());
-        nonMappedTarget.removeAll(fixedMappings.getTargets());
+        nonMappedTarget.removeAll(possibleMappings.fixedOneToOneTargets);
+
 
         runningCheck.check();
         sortListBasedOnPossibleMapping(nonMappedSource, possibleMappings);
 
         // the non mapped vertices go to the end
         List<Vertex> sourceVertices = new ArrayList<>();
-        sourceVertices.addAll(fixedMappings.getSources());
+        sourceVertices.addAll(possibleMappings.fixedOneToOneSources);
         sourceVertices.addAll(nonMappedSource);
 
         List<Vertex> targetGraphVertices = new ArrayList<>();
-        targetGraphVertices.addAll(fixedMappings.getTargets());
+        targetGraphVertices.addAll(possibleMappings.fixedOneToOneTargets);
         targetGraphVertices.addAll(nonMappedTarget);
 
 
@@ -91,9 +90,9 @@ public class SchemaDiffing {
     private void sortListBasedOnPossibleMapping(List<Vertex> sourceVertices, PossibleMappingsCalculator.PossibleMappings possibleMappings) {
         Collections.sort(sourceVertices, (v1, v2) ->
         {
-            int v2Count = possibleMappings.possibleMappings.get(v2).size();
             int v1Count = possibleMappings.possibleMappings.get(v1).size();
-            return Integer.compare(v2Count, v1Count);
+            int v2Count = possibleMappings.possibleMappings.get(v2).size();
+            return Integer.compare(v1Count, v2Count);
         });
     }
 
