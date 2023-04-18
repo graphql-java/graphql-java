@@ -126,7 +126,7 @@ public class DiffImpl {
         queue.add(firstMappingEntry);
         firstMappingEntry.siblingsFinished = true;
 
-        System.out.println("graph size: " + this.completeSourceGraph.size() + " non mapped vertices " + (completeSourceGraph.size() - startMapping.size()));
+//        System.out.println("graph size: " + this.completeSourceGraph.size() + " non mapped vertices " + (completeSourceGraph.size() - startMapping.size()));
 //        System.out.println("start mapping at level: " + firstMappingEntry.level);
 
         List<Vertex> allNonFixedTargets = new ArrayList<>(allTargets);
@@ -213,9 +213,10 @@ public class DiffImpl {
                 costMatrix[i - level].set(j, cost);
                 j++;
             }
-
             runningCheck.check();
         }
+//        System.out.println("size1: " + (allSources.size() - level) + " vs " + availableTargetVertices.size() + " square: " + (availableTargetVertices.size()*availableTargetVertices.size()));
+//        System.out.println("size2: " + allCount + " vs sqrt of realSize:" + Math.sqrt(realSize));
         HungarianAlgorithm hungarianAlgorithm = new HungarianAlgorithm(costMatrixForHungarianAlgo);
         int[] assignments = hungarianAlgorithm.execute();
         int editorialCostForMapping = editorialCostForMapping(fixedEditorialCost, partialMapping, completeSourceGraph, completeTargetGraph);
@@ -263,7 +264,7 @@ public class DiffImpl {
 
     private void updateOptimalEdit(OptimalEdit optimalEdit, int newGed, Mapping mapping) {
         assertTrue(newGed < optimalEdit.ged);
-        System.out.println("setting new ged of " + newGed);
+//        System.out.println("setting new ged of " + newGed);
         if (newGed < optimalEdit.ged) {
             optimalEdit.ged = newGed;
             optimalEdit.mapping = mapping;
