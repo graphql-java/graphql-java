@@ -3,11 +3,9 @@ package graphql.schema.diffing;
 import com.google.common.collect.HashMultiset;
 import com.google.common.collect.Multiset;
 import com.google.common.collect.Multisets;
-import com.google.common.util.concurrent.AtomicDoubleArray;
 import graphql.Internal;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -148,7 +146,9 @@ public class DiffImpl {
                 continue;
 
             }
-//            System.out.println(" level:  " + mappingEntry.level + " with cost: " + mappingEntry.lowerBoundCost + " queue size: " + queue.size());
+//            if (count % 1000 == 0) {
+//                System.out.println(mappingEntry.lowerBoundCost + " vs ged " + optimalEdit.ged + " count " + count);
+//            }
 
             if (mappingEntry.level > 0 && !mappingEntry.siblingsFinished) {
                 addSiblingToQueue(
@@ -203,10 +203,8 @@ public class DiffImpl {
         int costMatrixSize = allSources.size() - level;
 
         // costMatrix gets modified by the hungarian algorithm ... therefore we create two of them
-        AtomicDoubleArray[] costMatrixForHungarianAlgo = new AtomicDoubleArray[costMatrixSize];
-        Arrays.setAll(costMatrixForHungarianAlgo, (index) -> new AtomicDoubleArray(costMatrixSize));
-        AtomicDoubleArray[] costMatrix = new AtomicDoubleArray[costMatrixSize];
-        Arrays.setAll(costMatrix, (index) -> new AtomicDoubleArray(costMatrixSize));
+        double[][] costMatrixForHungarianAlgo = new double[costMatrixSize][costMatrixSize];
+        double[][] costMatrix = new double[costMatrixSize][costMatrixSize];
 
 
         Map<Vertex, Double> deletionCostsCache = new LinkedHashMap<>();
@@ -216,8 +214,8 @@ public class DiffImpl {
             int j = 0;
             for (Vertex u : availableTargetVertices) {
                 double cost = calcLowerBoundMappingCost(v, u, parentPartialMapping, deletionCostsCache);
-                costMatrixForHungarianAlgo[i - level].set(j, cost);
-                costMatrix[i - level].set(j, cost);
+                costMatrixForHungarianAlgo[i - level][j] = cost;
+                costMatrix[i - level][j] = cost;
                 j++;
             }
             runningCheck.check();
@@ -281,7 +279,7 @@ public class DiffImpl {
     // generate all children mappings and save in MappingEntry.sibling
     private void calculateRestOfChildren(List<Vertex> availableTargetVertices,
                                          HungarianAlgorithm hungarianAlgorithm,
-                                         AtomicDoubleArray[] costMatrixCopy,
+                                         double[][] costMatrixCopy,
                                          double editorialCostForMapping,
                                          Mapping partialMapping,
                                          Vertex v_i,
@@ -292,7 +290,7 @@ public class DiffImpl {
         // starting from 1 as we already generated the first one
         for (int child = 1; child < availableTargetVertices.size(); child++) {
             int[] assignments = hungarianAlgorithm.nextChild();
-            if (hungarianAlgorithm.costMatrix[0].get(assignments[0]) == Integer.MAX_VALUE) {
+            if (hungarianAlgorithm.costMatrix[0][assignments[0]] == Integer.MAX_VALUE) {
                 break;
             }
 
@@ -315,6 +313,7 @@ public class DiffImpl {
 
             runningCheck.check();
         }
+//        System.out.println("overall  children count  " + (siblings.size()+1) + " vs possible mappings " + possibleMappings.possibleMappings.get(v_i).size()  );
         siblings.add(MappingEntry.DUMMY);
 
     }
@@ -351,10 +350,10 @@ public class DiffImpl {
     }
 
 
-    private double getCostMatrixSum(AtomicDoubleArray[] costMatrix, int[] assignments) {
+    private double getCostMatrixSum(double[][] costMatrix, int[] assignments) {
         double costMatrixSum = 0;
         for (int i = 0; i < assignments.length; i++) {
-            costMatrixSum += costMatrix[i].get(assignments[i]);
+            costMatrixSum += costMatrix[i][assignments[i]];
         }
         return costMatrixSum;
     }

@@ -1,6 +1,5 @@
 package graphql.schema.diffing;
 
-import com.google.common.util.concurrent.AtomicDoubleArray;
 import graphql.Internal;
 
 import java.util.Arrays;
@@ -53,7 +52,7 @@ import java.util.Arrays;
 @Internal
 public class HungarianAlgorithm {
     // changed by reduce
-    public final AtomicDoubleArray[] costMatrix;
+    public final double[][] costMatrix;
 
     // constant always
     private final int rows;
@@ -85,10 +84,10 @@ public class HungarianAlgorithm {
      *                   irregular in the sense that all rows must be the same length; in
      *                   addition, all entries must be non-infinite numbers.
      */
-    public HungarianAlgorithm(AtomicDoubleArray[] costMatrix) {
-        this.dim = Math.max(costMatrix.length, costMatrix[0].length());
+    public HungarianAlgorithm(double[][] costMatrix) {
+        this.dim = Math.max(costMatrix.length, costMatrix[0].length);
         this.rows = costMatrix.length;
-        this.cols = costMatrix[0].length();
+        this.cols = costMatrix[0].length;
         this.costMatrix = costMatrix;
 //        for (int w = 0; w < this.dim; w++) {
 //            if (w < costMatrix.length) {
@@ -131,8 +130,8 @@ public class HungarianAlgorithm {
         }
         for (int w = 0; w < dim; w++) {
             for (int j = 0; j < dim; j++) {
-                if (costMatrix[w].get(j) < labelByJob[j]) {
-                    labelByJob[j] = costMatrix[w].get(j);
+                if (costMatrix[w][j] < labelByJob[j]) {
+                    labelByJob[j] = costMatrix[w][j];
                 }
             }
         }
@@ -241,7 +240,7 @@ public class HungarianAlgorithm {
                 committedWorkers[worker] = true;
                 for (int j = 0; j < dim; j++) {
                     if (parentWorkerByCommittedJob[j] == -1) {
-                        double slack = costMatrix[worker].get(j) - labelByWorker[worker]
+                        double slack = costMatrix[worker][j] - labelByWorker[worker]
                                 - labelByJob[j];
                         if (minSlackValueByJob[j] > slack) {
                             minSlackValueByJob[j] = slack;
@@ -274,7 +273,7 @@ public class HungarianAlgorithm {
         for (int w = 0; w < dim; w++) {
             for (int j = 0; j < dim; j++) {
                 if (matchJobByWorker[w] == -1 && matchWorkerByJob[j] == -1
-                        && costMatrix[w].get(j) - labelByWorker[w] - labelByJob[j] == 0) {
+                        && costMatrix[w][j] - labelByWorker[w] - labelByJob[j] == 0) {
                     match(w, j);
                 }
             }
@@ -293,7 +292,7 @@ public class HungarianAlgorithm {
         Arrays.fill(parentWorkerByCommittedJob, -1);
         committedWorkers[w] = true;
         for (int j = 0; j < dim; j++) {
-            minSlackValueByJob[j] = costMatrix[w].get(j) - labelByWorker[w] - labelByJob[j];
+            minSlackValueByJob[j] = costMatrix[w][j] - labelByWorker[w] - labelByJob[j];
             minSlackWorkerByJob[j] = w;
         }
     }
@@ -316,12 +315,12 @@ public class HungarianAlgorithm {
         for (int w = 0; w < dim; w++) {
             double min = Double.POSITIVE_INFINITY;
             for (int j = 0; j < dim; j++) {
-                if (costMatrix[w].get(j) < min) {
-                    min = costMatrix[w].get(j);
+                if (costMatrix[w][j] < min) {
+                    min = costMatrix[w][j];
                 }
             }
             for (int j = 0; j < dim; j++) {
-                costMatrix[w].set(j, costMatrix[w].get(j) - min);
+                costMatrix[w][j] = costMatrix[w][j] - min;
             }
         }
         double[] min = new double[dim];
@@ -330,14 +329,14 @@ public class HungarianAlgorithm {
         }
         for (int w = 0; w < dim; w++) {
             for (int j = 0; j < dim; j++) {
-                if (costMatrix[w].get(j) < min[j]) {
-                    min[j] = costMatrix[w].get(j);
+                if (costMatrix[w][j] < min[j]) {
+                    min[j] = costMatrix[w][j];
                 }
             }
         }
         for (int w = 0; w < dim; w++) {
             for (int j = 0; j < dim; j++) {
-                costMatrix[w].set(j, costMatrix[w].get(j) - min[j]);
+                costMatrix[w][j] = costMatrix[w][j] - min[j];
             }
         }
     }
@@ -365,7 +364,7 @@ public class HungarianAlgorithm {
     public int[] nextChild() {
         int currentJobAssigned = matchJobByWorker[0];
         // we want to make currentJobAssigned not allowed,meaning we set the size to Infinity
-        costMatrix[0].set(currentJobAssigned, Integer.MAX_VALUE);
+        costMatrix[0][currentJobAssigned] = Integer.MAX_VALUE;
         matchWorkerByJob[currentJobAssigned] = -1;
         matchJobByWorker[0] = -1;
         minSlackValueByJob[currentJobAssigned] = Integer.MAX_VALUE;
