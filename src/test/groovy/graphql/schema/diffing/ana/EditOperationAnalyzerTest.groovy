@@ -2894,6 +2894,51 @@ class EditOperationAnalyzerTest extends Specification {
         changes.directiveDifferences.isEmpty()
     }
 
+    def "shortcuts execution on big changes"() {
+        given:
+        def source = new ArrayList<String>()
+        for (int i = 0; i < 100; i++) {
+            source.add("type Object" + i + " { id: ID name: String }")
+        }
+        def target = new ArrayList<String>()
+        for (int i = 0; i < 110; i++) {
+            target.add("type Thing" + i + " { id: ID }")
+        }
+
+        def getTypeName = { String input ->
+            input.takeAfter("type ").trim().takeBefore(" ")
+        }
+
+        def oldSdl = '''
+        type Query {
+            echo: String
+        }
+        ''' + source.join("\n")
+        def newSdl = '''
+        type Query {
+            echo: String
+        }
+        ''' + target.join("\n")
+
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+
+        then:
+        changes.objectDifferences.size() == (source.size() + target.size())
+
+        source
+                .collect(getTypeName)
+                .forEach {
+                    assert changes.objectDifferences[it] instanceof ObjectDeletion
+                }
+
+        target
+                .collect(getTypeName)
+                .forEach {
+                    assert changes.objectDifferences[it] instanceof ObjectAddition
+                }
+    }
+
     EditOperationAnalysisResult calcDiff(
             String oldSdl,
             String newSdl
