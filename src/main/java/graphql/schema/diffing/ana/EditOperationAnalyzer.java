@@ -786,11 +786,17 @@ public class EditOperationAnalyzer {
 
         if (fieldsContainerForField.isOfType(SchemaGraph.OBJECT)) {
             Vertex object = fieldsContainerForField;
+            if (isObjectAdded(object.getName())) {
+                return;
+            }
             ObjectModification objectModification = getObjectModification(object.getName());
             objectModification.getDetails().add(new ObjectFieldRename(oldName, newName));
         } else {
             assertTrue(fieldsContainerForField.isOfType(SchemaGraph.INTERFACE));
             Vertex interfaze = fieldsContainerForField;
+            if (isInterfaceAdded(interfaze.getName())) {
+                return;
+            }
             InterfaceModification interfaceModification = getInterfaceModification(interfaze.getName());
             interfaceModification.getDetails().add(new InterfaceFieldRename(oldName, newName));
         }
