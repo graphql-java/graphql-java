@@ -146,9 +146,7 @@ public class DiffImpl {
                 continue;
 
             }
-//            if (count % 1000 == 0) {
-//                System.out.println(mappingEntry.lowerBoundCost + " vs ged " + optimalEdit.ged + " count " + count);
-//            }
+//            System.out.println(mappingEntry.lowerBoundCost + " vs ged " + optimalEdit.ged + " count " + count);
 
             if (mappingEntry.level > 0 && !mappingEntry.siblingsFinished) {
                 addSiblingToQueue(
