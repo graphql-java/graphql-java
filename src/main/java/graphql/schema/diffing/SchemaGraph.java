@@ -99,6 +99,10 @@ public class SchemaGraph {
         return Iterables.concat(edges, edgesInverse);
     }
 
+    public int adjacentEdgesAndInverseCount(Vertex fromAndTo) {
+        return edgesByInverseDirection.row(fromAndTo).size() + edgesByDirection.row(fromAndTo).size();
+    }
+
     public List<Vertex> getAdjacentVertices(Vertex from) {
         return getAdjacentVertices(from, x -> true);
     }

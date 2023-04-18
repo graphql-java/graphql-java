@@ -660,6 +660,10 @@ public class EditOperationAnalyzer {
             return;
         }
 
+        if (isInputObjectAdded(inputObject.getName())) {
+            return;
+        }
+
         getInputObjectModification(inputObject.getName()).getDetails().add(new InputObjectFieldRename(oldName, newName));
     }
 
@@ -786,11 +790,21 @@ public class EditOperationAnalyzer {
 
         if (fieldsContainerForField.isOfType(SchemaGraph.OBJECT)) {
             Vertex object = fieldsContainerForField;
+
+            if (isObjectAdded(object.getName())) {
+                return;
+            }
+
             ObjectModification objectModification = getObjectModification(object.getName());
             objectModification.getDetails().add(new ObjectFieldRename(oldName, newName));
         } else {
             assertTrue(fieldsContainerForField.isOfType(SchemaGraph.INTERFACE));
             Vertex interfaze = fieldsContainerForField;
+
+            if (isInterfaceAdded(interfaze.getName())) {
+                return;
+            }
+
             InterfaceModification interfaceModification = getInterfaceModification(interfaze.getName());
             interfaceModification.getDetails().add(new InterfaceFieldRename(oldName, newName));
         }
@@ -1159,6 +1173,11 @@ public class EditOperationAnalyzer {
         Edge targetEdge = editOperation.getTargetEdge();
         Vertex inputField = targetEdge.getFrom();
         Vertex inputObject = newSchemaGraph.getInputObjectForInputField(inputField);
+
+        if (isInputObjectAdded(inputObject.getName())) {
+            return;
+        }
+
         String oldDefaultValue = getDefaultValueFromEdgeLabel(editOperation.getSourceEdge());
         String newDefaultValue = getDefaultValueFromEdgeLabel(editOperation.getTargetEdge());
         if (!oldDefaultValue.equals(newDefaultValue)) {

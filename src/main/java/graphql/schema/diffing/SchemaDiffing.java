@@ -71,7 +71,7 @@ public class SchemaDiffing {
 
 
         runningCheck.check();
-        sortListBasedOnPossibleMapping(nonMappedSource, possibleMappings);
+        sortSourceVertices(nonMappedSource, possibleMappings);
 
         // the non mapped vertices go to the end
         List<Vertex> sourceVertices = new ArrayList<>();
@@ -87,12 +87,16 @@ public class SchemaDiffing {
         return optimalEdit;
     }
 
-    private void sortListBasedOnPossibleMapping(List<Vertex> sourceVertices, PossibleMappingsCalculator.PossibleMappings possibleMappings) {
+    private void sortSourceVertices(List<Vertex> sourceVertices, PossibleMappingsCalculator.PossibleMappings possibleMappings) {
         Collections.sort(sourceVertices, (v1, v2) ->
         {
-            int v1Count = possibleMappings.possibleMappings.get(v1).size();
-            int v2Count = possibleMappings.possibleMappings.get(v2).size();
-            return Integer.compare(v1Count, v2Count);
+//            int v1Count = possibleMappings.possibleMappings.get(v1).size();
+//            int v2Count = possibleMappings.possibleMappings.get(v2).size();
+//            int result =  Integer.compare(v1Count, v2Count);
+//            if(result == 0) {
+            return Integer.compare(sourceGraph.adjacentEdgesAndInverseCount(v2), sourceGraph.adjacentEdgesAndInverseCount(v1));
+//            }
+//            return result;
         });
     }
 
