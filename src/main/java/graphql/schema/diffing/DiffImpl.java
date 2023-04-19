@@ -113,7 +113,6 @@ public class DiffImpl {
     OptimalEdit diffImpl(Mapping startMapping, List<Vertex> allSources, List<Vertex> allTargets) throws Exception {
         int graphSize = allSources.size();
 
-        long t1 = System.currentTimeMillis();
         int fixedEditorialCost = baseEditorialCostForMapping(startMapping, completeSourceGraph, completeTargetGraph);
         int level = startMapping.size();
 
@@ -146,7 +145,7 @@ public class DiffImpl {
             MappingEntry mappingEntry = queue.poll();
             count++;
             if (count % 1000 == 0) {
-                System.out.println(mappingEntry.lowerBoundCost + " vs ged " + optimalEdit.ged + " count " + count + " time: " + (System.currentTimeMillis() - t) + " queue size " + queue.size() + " drop count " + dropCount);
+//                System.out.println(mappingEntry.lowerBoundCost + " vs ged " + optimalEdit.ged + " count " + count + " time: " + (System.currentTimeMillis() - t) + " queue size " + queue.size() + " drop count " + dropCount);
             }
             if (mappingEntry.lowerBoundCost >= optimalEdit.ged) {
                 dropCount++;
