@@ -113,6 +113,7 @@ public class DiffImpl {
     OptimalEdit diffImpl(Mapping startMapping, List<Vertex> allSources, List<Vertex> allTargets) throws Exception {
         int graphSize = allSources.size();
 
+        long t1 = System.currentTimeMillis();
         int fixedEditorialCost = baseEditorialCostForMapping(startMapping, completeSourceGraph, completeTargetGraph);
         int level = startMapping.size();
 
@@ -125,11 +126,11 @@ public class DiffImpl {
         OptimalEdit optimalEdit = new OptimalEdit(completeSourceGraph, completeTargetGraph);
         PriorityQueue<MappingEntry> queue = new PriorityQueue<>((mappingEntry1, mappingEntry2) -> {
             int compareResult = Double.compare(mappingEntry1.lowerBoundCost, mappingEntry2.lowerBoundCost);
-            if (compareResult == 0) {
-                return Integer.compare(mappingEntry2.level, mappingEntry1.level);
-            } else {
-                return compareResult;
-            }
+//            if (compareResult == 0) {
+//                return Integer.compare(mappingEntry2.level, mappingEntry1.level);
+//            } else {
+            return compareResult;
+//            }
         });
         queue.add(firstMappingEntry);
         firstMappingEntry.siblingsFinished = true;
@@ -139,14 +140,19 @@ public class DiffImpl {
 
 
         int count = 0;
+        int dropCount = 0;
+        long t = System.currentTimeMillis();
         while (!queue.isEmpty()) {
             MappingEntry mappingEntry = queue.poll();
             count++;
+            if (count % 1000 == 0) {
+                System.out.println(mappingEntry.lowerBoundCost + " vs ged " + optimalEdit.ged + " count " + count + " time: " + (System.currentTimeMillis() - t) + " queue size " + queue.size() + " drop count " + dropCount);
+            }
             if (mappingEntry.lowerBoundCost >= optimalEdit.ged) {
+                dropCount++;
                 continue;
 
             }
-//            System.out.println(mappingEntry.lowerBoundCost + " vs ged " + optimalEdit.ged + " count " + count);
 
             if (mappingEntry.level > 0 && !mappingEntry.siblingsFinished) {
                 addSiblingToQueue(
@@ -268,11 +274,18 @@ public class DiffImpl {
 
     private void updateOptimalEdit(OptimalEdit optimalEdit, int newGed, Mapping mapping) {
         assertTrue(newGed < optimalEdit.ged);
-//        System.out.println("setting new ged of " + newGed);
-        if (newGed < optimalEdit.ged) {
-            optimalEdit.ged = newGed;
-            optimalEdit.mapping = mapping;
-        }
+        optimalEdit.ged = newGed;
+        optimalEdit.mapping = mapping;
+//        System.out.println("new ged of " + newGed + " with non fixed vertices " + mapping.nonFixedSize());
+//        mapping.forEachNonFixedSourceAndTarget((s, t) -> {
+//            if (s.isIsolated()) {
+//                System.out.println("Insert " + t);
+//            } else if (t.isIsolated()) {
+//                System.out.println("Deleted " + s);
+//            } else {
+//                System.out.println("changed " + s + " to" + t);
+//            }
+//        });
     }
 
     // generate all children mappings and save in MappingEntry.sibling
