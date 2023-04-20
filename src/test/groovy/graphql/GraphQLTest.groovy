@@ -1,5 +1,6 @@
 package graphql
 
+import graphql.analysis.MaxBatchOperationsInstrumentation
 import graphql.analysis.MaxQueryComplexityInstrumentation
 import graphql.analysis.MaxQueryDepthInstrumentation
 import graphql.execution.AsyncExecutionStrategy
@@ -806,6 +807,50 @@ class GraphQLTest extends Specification {
     }
 
     @Unroll
+    def "abort execution if operation width is too high (#query)"() {
+        given:
+        def foo = newObject()
+                .name("Foo")
+                .field(newFieldDefinition()
+                        .name("field")
+                        .type(typeRef('Foo'))
+                        .build())
+                .field(newFieldDefinition()
+                        .name("scalar")
+                        .type(GraphQLString)
+                        .build())
+                .build()
+        GraphQLSchema schema = newSchema().query(
+                newObject()
+                        .name("RootQueryType")
+                        .field(newFieldDefinition()
+                                .name("field")
+                                .type(foo)
+                                .build()).build())
+                .build()
+
+        MaxBatchOperationsInstrumentation maxBatchOperationsInstrumentation = new MaxBatchOperationsInstrumentation(2)
+
+
+        def graphql = GraphQL.newGraphQL(schema).instrumentation(maxBatchOperationsInstrumentation).build()
+
+        when:
+        def result = graphql.execute(query)
+
+        then:
+        result.errors.size() == 1
+        result.errors[0].message.contains("maximum request width exceeded")
+
+        where:
+        query                                                                       | _
+        "{ f2: field {field {field {scalar}}} f1: field{scalar} f3: field {scalar}}" | _
+        "{ f2: field {field {field {field{scalar}}}} f1: field{ field{scalar}} f3: field {scalar} f4: field {scalar}}" | _
+        "{ f1: field {scalar} f2: field{scalar} f3: field {scalar}}" | _
+        "{ f2: field {field {field {field {scalar}}}} f1: field{scalar} f3: field {field {field {field {scalar}}}} f4: field{scalar} f5: field {scalar} f7: field {scalar}}" | _
+        "{ f1: field {field {field {scalar}}} f2: field{scalar} f3: field {field {field {field {scalar}}}} }" | _
+    }
+
+    @Unroll
     def "abort execution if complexity is too high (#query)"() {
         given:
         def foo = newObject()
@@ -909,6 +954,7 @@ class GraphQLTest extends Specification {
         where:
         instrumentationName    | instrumentation
         'max query depth'      | new MaxQueryDepthInstrumentation(10)
+        'max batch operation width'      | new MaxBatchOperationsInstrumentation(10)
         'max query complexity' | new MaxQueryComplexityInstrumentation(10)
     }
 
