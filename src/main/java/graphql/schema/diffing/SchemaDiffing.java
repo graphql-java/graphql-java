@@ -1,5 +1,9 @@
 package graphql.schema.diffing;
 
+import com.google.common.collect.BiMap;
+import com.google.common.collect.HashBiMap;
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Multimaps;
 import graphql.Internal;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.diffing.ana.EditOperationAnalysisResult;
@@ -52,51 +56,135 @@ public class SchemaDiffing {
         PossibleMappingsCalculator possibleMappingsCalculator = new PossibleMappingsCalculator(sourceGraph, targetGraph, runningCheck);
         PossibleMappingsCalculator.PossibleMappings possibleMappings = possibleMappingsCalculator.calculate();
 
-        Mapping fixedMappings = Mapping.newMapping(
+        Mapping startMapping = Mapping.newMapping(
                 possibleMappings.fixedOneToOneMappings,
                 possibleMappings.fixedOneToOneSources,
                 possibleMappings.fixedOneToOneTargets);
 
         assertTrue(sourceGraph.size() == targetGraph.size());
         if (possibleMappings.fixedOneToOneMappings.size() == sourceGraph.size()) {
-            return new DiffImpl.OptimalEdit(sourceGraph, targetGraph, fixedMappings, baseEditorialCostForMapping(fixedMappings, sourceGraph, targetGraph));
+            return new DiffImpl.OptimalEdit(sourceGraph, targetGraph, startMapping, baseEditorialCostForMapping(startMapping, sourceGraph, targetGraph));
         }
 
-        DiffImpl diffImpl = new DiffImpl(sourceGraph, targetGraph, possibleMappings, runningCheck);
         List<Vertex> nonMappedSource = new ArrayList<>(sourceGraph.getVertices());
         nonMappedSource.removeAll(possibleMappings.fixedOneToOneSources);
 
         List<Vertex> nonMappedTarget = new ArrayList<>(targetGraph.getVertices());
         nonMappedTarget.removeAll(possibleMappings.fixedOneToOneTargets);
 
-
         runningCheck.check();
-        sortSourceVertices(nonMappedSource, possibleMappings);
 
+
+//        System.out.println("sort by mapping count: ");
+//        for (Vertex v : nonMappedSource) {
+//            System.out.println(possibleMappings.possibleMappings.get(v).size() + " for " + v);
+//        }
+//        System.out.println("=------------");
+//        ArrayList<Vertex> copy = new ArrayList<>(nonMappedSource);
+//        sortSourceVerticesEdgeCountDescending(copy, possibleMappings);
+//        System.out.println("sort by edge count ");
+//        for (Vertex v : copy) {
+//            System.out.println(sourceGraph.adjacentEdgesAndInverseCount(v) + " for " + v);
+//        }
+//        System.out.println("------------");
+//
         // the non mapped vertices go to the end
-        List<Vertex> sourceVertices = new ArrayList<>();
-        sourceVertices.addAll(possibleMappings.fixedOneToOneSources);
-        sourceVertices.addAll(nonMappedSource);
 
-        List<Vertex> targetGraphVertices = new ArrayList<>();
-        targetGraphVertices.addAll(possibleMappings.fixedOneToOneTargets);
-        targetGraphVertices.addAll(nonMappedTarget);
+        int isolatedSourceCount = (int) nonMappedSource.stream().filter(Vertex::isIsolated).count();
+        int isolatedTargetCount = (int) nonMappedTarget.stream().filter(Vertex::isIsolated).count();
+        if (isolatedTargetCount > isolatedSourceCount) {
+            System.out.println("delete heavy ... invert source and target graph");
+            // we flip source and target
+            BiMap<Vertex, Vertex> fixedOneToOneInverted = HashBiMap.create();
+            for (Vertex s : possibleMappings.fixedOneToOneMappings.keySet()) {
+                Vertex t = possibleMappings.fixedOneToOneMappings.get(s);
+                fixedOneToOneInverted.put(t, s);
+            }
+            Mapping startMappingInverted = Mapping.newMapping(
+                    fixedOneToOneInverted,
+                    possibleMappings.fixedOneToOneTargets,
+                    possibleMappings.fixedOneToOneSources
+            );
+            HashMultimap<Vertex, Vertex> invertedPossibleOnes = HashMultimap.create();
+            Multimaps.invertFrom(possibleMappings.possibleMappings, invertedPossibleOnes);
+            possibleMappings.possibleMappings = invertedPossibleOnes;
 
+            List<Vertex> sourceVertices = new ArrayList<>();
+            sourceVertices.addAll(possibleMappings.fixedOneToOneSources);
+            sourceVertices.addAll(nonMappedSource);
 
-        DiffImpl.OptimalEdit optimalEdit = diffImpl.diffImpl(fixedMappings, sourceVertices, targetGraphVertices);
-        return optimalEdit;
+            List<Vertex> targetVertices = new ArrayList<>();
+            targetVertices.addAll(possibleMappings.fixedOneToOneTargets);
+            targetVertices.addAll(nonMappedTarget);
+
+            sortVerticesEdgeCountDescending(nonMappedTarget, targetGraph);
+            DiffImpl diffImpl = new DiffImpl(targetGraph, sourceGraph, possibleMappings, runningCheck);
+            DiffImpl.OptimalEdit optimalEdit = diffImpl.diffImpl(startMappingInverted, targetVertices, sourceVertices);
+            DiffImpl.OptimalEdit invertedBackOptimalEdit = new DiffImpl.OptimalEdit(sourceGraph, targetGraph, optimalEdit.mapping.invert(), optimalEdit.ged);
+            return invertedBackOptimalEdit;
+
+        } else {
+            System.out.println("Insert heavy ... normal way");
+            sortVerticesEdgeCountDescending(nonMappedSource, sourceGraph);
+
+            List<Vertex> sourceVertices = new ArrayList<>();
+            sourceVertices.addAll(possibleMappings.fixedOneToOneSources);
+            sourceVertices.addAll(nonMappedSource);
+
+            List<Vertex> targetVertices = new ArrayList<>();
+            targetVertices.addAll(possibleMappings.fixedOneToOneTargets);
+            targetVertices.addAll(nonMappedTarget);
+
+            DiffImpl diffImpl = new DiffImpl(sourceGraph, targetGraph, possibleMappings, runningCheck);
+            DiffImpl.OptimalEdit optimalEdit = diffImpl.diffImpl(startMapping, sourceVertices, targetVertices);
+            return optimalEdit;
+        }
     }
 
     private void sortSourceVertices(List<Vertex> sourceVertices, PossibleMappingsCalculator.PossibleMappings possibleMappings) {
         Collections.sort(sourceVertices, (v1, v2) ->
         {
-//            int v1Count = possibleMappings.possibleMappings.get(v1).size();
-//            int v2Count = possibleMappings.possibleMappings.get(v2).size();
-//            int result =  Integer.compare(v1Count, v2Count);
-//            if(result == 0) {
-            return Integer.compare(sourceGraph.adjacentEdgesAndInverseCount(v2), sourceGraph.adjacentEdgesAndInverseCount(v1));
+            int v1Count = possibleMappings.possibleMappings.get(v1).size();
+            int v2Count = possibleMappings.possibleMappings.get(v2).size();
+//            if (v1Count == v2Count) {
+//                return Integer.compare(sourceGraph.adjacentEdgesAndInverseCount(v1), sourceGraph.adjacentEdgesAndInverseCount(v2));
 //            }
-//            return result;
+            int result = Integer.compare(v1Count, v2Count);
+            return result;
+        });
+    }
+
+    private void sortSourceVerticesPossibleMappingDescending(List<Vertex> sourceVertices, PossibleMappingsCalculator.PossibleMappings possibleMappings) {
+        Collections.sort(sourceVertices, (v1, v2) ->
+        {
+            int v1Count = possibleMappings.possibleMappings.get(v1).size();
+            int v2Count = possibleMappings.possibleMappings.get(v2).size();
+            int result = Integer.compare(v2Count, v1Count);
+            return result;
+        });
+    }
+
+    private void sortVerticesEdgeCountDescending(List<Vertex> vertices, SchemaGraph schemaGraph) {
+        Collections.sort(vertices, (v1, v2) ->
+        {
+            return Integer.compare(schemaGraph.adjacentEdgesAndInverseCount(v2), schemaGraph.adjacentEdgesAndInverseCount(v1));
+        });
+    }
+
+//    private void sortSourceVerticesDeleteHeavy(List<Vertex> sourceVertices, PossibleMappingsCalculator.PossibleMappings possibleMappings) {
+//        Collections.sort(sourceVertices, (v1, v2) ->
+//        {
+//            int targetIsolated1 = (int) possibleMappings.possibleMappings.get(v1).stream().filter(Vertex::isIsolated).count();
+//            int targetIsolated2 = (int) possibleMappings.possibleMappings.get(v2).stream().filter(Vertex::isIsolated).count();
+//            return Integer.compare(targetIsolated1, targetIsolated2);
+//        });
+//    }
+
+
+    private void sortSourceVerticesEdgeCountAscending(List<Vertex> sourceVertices, PossibleMappingsCalculator.PossibleMappings possibleMappings) {
+        Collections.sort(sourceVertices, (v1, v2) ->
+        {
+            return Integer.compare(sourceGraph.adjacentEdgesAndInverseCount(v1), sourceGraph.adjacentEdgesAndInverseCount(v2));
         });
     }
 

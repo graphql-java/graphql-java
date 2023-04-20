@@ -152,4 +152,18 @@ public class Mapping {
     public void forEachNonFixedSourceAndTarget(BiConsumer<? super Vertex, ? super Vertex> consumer) {
         map.forEach(consumer);
     }
+
+    public Mapping invert() {
+        BiMap<Vertex, Vertex> invertedFixedMappings = HashBiMap.create();
+        for (Vertex s : fixedMappings.keySet()) {
+            Vertex t = fixedMappings.get(s);
+            invertedFixedMappings.put(t, s);
+        }
+        BiMap<Vertex, Vertex> invertedMap = HashBiMap.create();
+        for (Vertex s : map.keySet()) {
+            Vertex t = map.get(s);
+            invertedMap.put(t, s);
+        }
+        return new Mapping(invertedFixedMappings, fixedTargetList, fixedSourceList, invertedMap, targetList, sourceList);
+    }
 }

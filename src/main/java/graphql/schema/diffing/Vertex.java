@@ -95,7 +95,7 @@ public class Vertex {
     public String toString() {
         return "Vertex{" +
                 "type='" + type + '\'' +
-                ", properties=" + properties +
+                ", properties=" + properties.toString().replace("\n", "<NL>") +
                 ", debugName='" + debugName + '\'' +
                 ", builtInType='" + builtInType + '\'' +
                 '}';
