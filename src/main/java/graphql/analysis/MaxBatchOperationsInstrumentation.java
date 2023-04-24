@@ -60,9 +60,6 @@ public class MaxBatchOperationsInstrumentation extends SimplePerformantInstrumen
                 }
             }
         }
-        if (log.isDebugEnabled()) {
-            log.debug("Request width info: {}", supplied_width);
-        }
         if (supplied_width > maxOperations) {
             RequestWidthInfo requestWidthInfo = RequestWidthInfo.newRequestWidthInfo()
                     .width(supplied_width)
