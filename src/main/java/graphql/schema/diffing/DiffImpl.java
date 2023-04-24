@@ -125,11 +125,12 @@ public class DiffImpl {
         OptimalEdit optimalEdit = new OptimalEdit(completeSourceGraph, completeTargetGraph);
         PriorityQueue<MappingEntry> queue = new PriorityQueue<>((mappingEntry1, mappingEntry2) -> {
             int compareResult = Double.compare(mappingEntry1.lowerBoundCost, mappingEntry2.lowerBoundCost);
-//            if (compareResult == 0) {
-//                return Integer.compare(mappingEntry2.level, mappingEntry1.level);
-//            } else {
-            return compareResult;
-//            }
+            // we prefer higher levels for equal lower bound bosts
+            if (compareResult == 0) {
+                return Integer.compare(mappingEntry2.level, mappingEntry1.level);
+            } else {
+                return compareResult;
+            }
         });
         queue.add(firstMappingEntry);
         firstMappingEntry.siblingsFinished = true;
@@ -139,7 +140,6 @@ public class DiffImpl {
 
 
         int count = 0;
-        int dropCount = 0;
         long t = System.currentTimeMillis();
         while (!queue.isEmpty()) {
             MappingEntry mappingEntry = queue.poll();
@@ -147,10 +147,10 @@ public class DiffImpl {
             if (count % 1000 == 0) {
 //                System.out.println(mappingEntry.lowerBoundCost + " vs ged " + optimalEdit.ged + " count " + count + " time: " + (System.currentTimeMillis() - t) + " queue size " + queue.size() + " drop count " + dropCount);
             }
-            if (mappingEntry.lowerBoundCost >= optimalEdit.ged) {
-                dropCount++;
-                continue;
 
+            if (mappingEntry.lowerBoundCost >= optimalEdit.ged) {
+                // once the lowest lowerBoundCost is not lower than the optimal edit, we are done
+                break;
             }
 
             if (mappingEntry.level > 0 && !mappingEntry.siblingsFinished) {
