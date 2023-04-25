@@ -99,6 +99,10 @@ public class Mapping {
         return fixedMappings.size() + map.size();
     }
 
+    public int fixedSize() {
+        return fixedMappings.size();
+    }
+
     public int nonFixedSize() {
         return map.size();
     }

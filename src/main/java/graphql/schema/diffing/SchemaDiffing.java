@@ -11,7 +11,9 @@ import graphql.schema.diffing.ana.EditOperationAnalyzer;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static graphql.Assert.assertTrue;
 import static graphql.schema.diffing.EditorialCostForMapping.baseEditorialCostForMapping;
@@ -34,25 +36,25 @@ public class SchemaDiffing {
     public List<EditOperation> diffGraphQLSchema(GraphQLSchema graphQLSchema1, GraphQLSchema graphQLSchema2) throws Exception {
         sourceGraph = new SchemaGraphFactory("source-").createGraph(graphQLSchema1);
         targetGraph = new SchemaGraphFactory("target-").createGraph(graphQLSchema2);
-        return diffImpl(sourceGraph, targetGraph).getListOfEditOperations();
+        return diffImpl(sourceGraph, targetGraph, new AtomicInteger()).getListOfEditOperations();
     }
 
     public EditOperationAnalysisResult diffAndAnalyze(GraphQLSchema graphQLSchema1, GraphQLSchema graphQLSchema2) throws Exception {
         sourceGraph = new SchemaGraphFactory("source-").createGraph(graphQLSchema1);
         targetGraph = new SchemaGraphFactory("target-").createGraph(graphQLSchema2);
-        DiffImpl.OptimalEdit optimalEdit = diffImpl(sourceGraph, targetGraph);
+        DiffImpl.OptimalEdit optimalEdit = diffImpl(sourceGraph, targetGraph, new AtomicInteger());
         EditOperationAnalyzer editOperationAnalyzer = new EditOperationAnalyzer(graphQLSchema1, graphQLSchema1, sourceGraph, targetGraph);
         return editOperationAnalyzer.analyzeEdits(optimalEdit.getListOfEditOperations(), optimalEdit.mapping);
     }
 
-    public DiffImpl.OptimalEdit diffGraphQLSchemaAllEdits(GraphQLSchema graphQLSchema1, GraphQLSchema graphQLSchema2) throws Exception {
+    public DiffImpl.OptimalEdit diffGraphQLSchemaAllEdits(GraphQLSchema graphQLSchema1, GraphQLSchema graphQLSchema2, AtomicInteger algoIterationCount) throws Exception {
         sourceGraph = new SchemaGraphFactory("source-").createGraph(graphQLSchema1);
         targetGraph = new SchemaGraphFactory("target-").createGraph(graphQLSchema2);
-        return diffImpl(sourceGraph, targetGraph);
+        return diffImpl(sourceGraph, targetGraph, algoIterationCount);
     }
 
 
-    private DiffImpl.OptimalEdit diffImpl(SchemaGraph sourceGraph, SchemaGraph targetGraph) throws Exception {
+    private DiffImpl.OptimalEdit diffImpl(SchemaGraph sourceGraph, SchemaGraph targetGraph, AtomicInteger algoIterationCount) throws Exception {
         PossibleMappingsCalculator possibleMappingsCalculator = new PossibleMappingsCalculator(sourceGraph, targetGraph, runningCheck);
         PossibleMappingsCalculator.PossibleMappings possibleMappings = possibleMappingsCalculator.calculate();
 
@@ -74,21 +76,6 @@ public class SchemaDiffing {
 
         runningCheck.check();
 
-
-//        System.out.println("sort by mapping count: ");
-//        for (Vertex v : nonMappedSource) {
-//            System.out.println(possibleMappings.possibleMappings.get(v).size() + " for " + v);
-//        }
-//        System.out.println("=------------");
-//        ArrayList<Vertex> copy = new ArrayList<>(nonMappedSource);
-//        sortSourceVerticesEdgeCountDescending(copy, possibleMappings);
-//        System.out.println("sort by edge count ");
-//        for (Vertex v : copy) {
-//            System.out.println(sourceGraph.adjacentEdgesAndInverseCount(v) + " for " + v);
-//        }
-//        System.out.println("------------");
-//
-        // the non mapped vertices go to the end
 
         int isolatedSourceCount = (int) nonMappedSource.stream().filter(Vertex::isIsolated).count();
         int isolatedTargetCount = (int) nonMappedTarget.stream().filter(Vertex::isIsolated).count();
@@ -118,8 +105,9 @@ public class SchemaDiffing {
             targetVertices.addAll(nonMappedTarget);
 
             sortVerticesEdgeCountDescending(nonMappedTarget, targetGraph);
+
             DiffImpl diffImpl = new DiffImpl(targetGraph, sourceGraph, possibleMappings, runningCheck);
-            DiffImpl.OptimalEdit optimalEdit = diffImpl.diffImpl(startMappingInverted, targetVertices, sourceVertices);
+            DiffImpl.OptimalEdit optimalEdit = diffImpl.diffImpl(startMappingInverted, targetVertices, sourceVertices, algoIterationCount);
             DiffImpl.OptimalEdit invertedBackOptimalEdit = new DiffImpl.OptimalEdit(sourceGraph, targetGraph, optimalEdit.mapping.invert(), optimalEdit.ged);
             return invertedBackOptimalEdit;
 
@@ -136,7 +124,7 @@ public class SchemaDiffing {
             targetVertices.addAll(nonMappedTarget);
 
             DiffImpl diffImpl = new DiffImpl(sourceGraph, targetGraph, possibleMappings, runningCheck);
-            DiffImpl.OptimalEdit optimalEdit = diffImpl.diffImpl(startMapping, sourceVertices, targetVertices);
+            DiffImpl.OptimalEdit optimalEdit = diffImpl.diffImpl(startMapping, sourceVertices, targetVertices, algoIterationCount);
             return optimalEdit;
         }
     }
@@ -165,10 +153,8 @@ public class SchemaDiffing {
     }
 
     private void sortVerticesEdgeCountDescending(List<Vertex> vertices, SchemaGraph schemaGraph) {
-        Collections.sort(vertices, (v1, v2) ->
-        {
-            return Integer.compare(schemaGraph.adjacentEdgesAndInverseCount(v2), schemaGraph.adjacentEdgesAndInverseCount(v1));
-        });
+        Comparator<Vertex> vertexComparator = Comparator.comparing(schemaGraph::adjacentEdgesAndInverseCount).reversed();
+        vertices.sort(vertexComparator);
     }
 
 //    private void sortSourceVerticesDeleteHeavy(List<Vertex> sourceVertices, PossibleMappingsCalculator.PossibleMappings possibleMappings) {
