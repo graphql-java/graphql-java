@@ -134,6 +134,6 @@ class InputInterceptorTest extends Specification {
 
         then:
         !er.errors.isEmpty()
-        er.errors[0].message == "Variable 'booleanArg' has an invalid value: Expected a Boolean input, but it was a 'LinkedHashMap'"
+        er.errors[0].message == "Variable 'booleanArg' has an invalid value: Expected a value that can be converted to type 'Boolean' but it was a 'LinkedHashMap'"
     }
 }
