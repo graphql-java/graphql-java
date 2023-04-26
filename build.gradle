@@ -96,7 +96,7 @@ dependencies {
     testImplementation 'org.codehaus.groovy:groovy-json:3.0.17'
     testImplementation 'com.google.code.gson:gson:2.10.1'
     testImplementation 'org.eclipse.jetty:jetty-server:11.0.15'
-    testImplementation 'com.fasterxml.jackson.core:jackson-databind:2.14.2'
+    testImplementation 'com.fasterxml.jackson.core:jackson-databind:2.15.0'
     testImplementation 'org.slf4j:slf4j-simple:' + slf4jVersion
     testImplementation 'org.awaitility:awaitility-groovy:4.2.0'
     testImplementation 'com.github.javafaker:javafaker:1.0.2'
