@@ -185,20 +185,21 @@ public class DiffImpl {
                                  List<Vertex> allTargets
     ) {
         Mapping parentPartialMapping = parentEntry.partialMapping;
-        int level = parentEntry.level;
+        int parentLevel = parentEntry.level;
+        int level = parentLevel + 1;
 
-        assertTrue(level == parentPartialMapping.size());
+        assertTrue(parentLevel == parentPartialMapping.size());
 
         // the available target vertices are the parent queue entry ones plus
         // minus the additional mapped element in parentPartialMapping
         ArrayList<Vertex> availableTargetVertices = new ArrayList<>(parentEntry.availableTargetVertices);
-        availableTargetVertices.remove(parentPartialMapping.getTarget(level - 1));
+        availableTargetVertices.remove(parentPartialMapping.getTarget(parentLevel - 1));
         assertTrue(availableTargetVertices.size() + parentPartialMapping.size() == allTargets.size());
-        Vertex v_i = allSources.get(level);
+        Vertex v_i = allSources.get(parentLevel);
 
 
         // the cost matrix is for the non mapped vertices
-        int costMatrixSize = allSources.size() - level;
+        int costMatrixSize = allSources.size() - parentLevel;
 
         // costMatrix gets modified by the hungarian algorithm ... therefore we create two of them
         double[][] costMatrixForHungarianAlgo = new double[costMatrixSize][costMatrixSize];
@@ -207,13 +208,13 @@ public class DiffImpl {
 
         Map<Vertex, Double> isolatedVerticesCache = new LinkedHashMap<>();
 
-        for (int i = level; i < allSources.size(); i++) {
+        for (int i = parentLevel; i < allSources.size(); i++) {
             Vertex v = allSources.get(i);
             int j = 0;
             for (Vertex u : availableTargetVertices) {
                 double cost = calcLowerBoundMappingCost(v, u, parentPartialMapping, isolatedVerticesCache);
-                costMatrixForHungarianAlgo[i - level][j] = cost;
-                costMatrix[i - level][j] = cost;
+                costMatrixForHungarianAlgo[i - parentLevel][j] = cost;
+                costMatrix[i - parentLevel][j] = cost;
                 j++;
             }
             runningCheck.check();
@@ -223,24 +224,29 @@ public class DiffImpl {
         int editorialCostForMapping = editorialCostForMapping(fixedEditorialCost, parentPartialMapping, completeSourceGraph, completeTargetGraph);
         double costMatrixSum = getCostMatrixSum(costMatrix, assignments);
         double lowerBoundForPartialMapping = editorialCostForMapping + costMatrixSum;
-        int v_i_target_IndexSibling = assignments[0];
-        Vertex bestExtensionTargetVertexSibling = availableTargetVertices.get(v_i_target_IndexSibling);
-        Mapping newMappingSibling = parentPartialMapping.extendMapping(v_i, bestExtensionTargetVertexSibling);
+
+        Mapping newMapping = parentPartialMapping.extendMapping(v_i, availableTargetVertices.get(assignments[0]));
 
 
         if (lowerBoundForPartialMapping >= optimalEdit.ged) {
             return;
         }
-        MappingEntry newMappingEntry = new MappingEntry(newMappingSibling, level + 1, lowerBoundForPartialMapping);
+        MappingEntry newMappingEntry = new MappingEntry(newMapping, level, lowerBoundForPartialMapping);
         LinkedBlockingQueue<MappingEntry> siblings = new LinkedBlockingQueue<>();
         newMappingEntry.mappingEntriesSiblings = siblings;
         newMappingEntry.assignments = assignments;
         newMappingEntry.availableTargetVertices = availableTargetVertices;
 
         queue.add(newMappingEntry);
+
+        /**
+         * Extend the partial mapping to a full mapping according to the optimal
+         * matching (hungarian algo result) and update the optimal edit if we
+         * found a better one.
+         */
         Mapping fullMapping = parentPartialMapping.copy();
         for (int i = 0; i < assignments.length; i++) {
-            fullMapping.add(allSources.get(level + i), availableTargetVertices.get(assignments[i]));
+            fullMapping.add(allSources.get(parentLevel + i), availableTargetVertices.get(assignments[i]));
         }
 
         int costForFullMapping = editorialCostForMapping(fixedEditorialCost, fullMapping, completeSourceGraph, completeTargetGraph);
@@ -257,7 +263,7 @@ public class DiffImpl {
                 parentPartialMapping,
                 v_i,
                 optimalEdit.ged,
-                level + 1,
+                level,
                 siblings
         );
     }
@@ -288,9 +294,7 @@ public class DiffImpl {
 
             double costMatrixSumSibling = getCostMatrixSum(costMatrixCopy, assignments);
             double lowerBoundForPartialMappingSibling = editorialCostForMapping + costMatrixSumSibling;
-            int v_i_target_IndexSibling = assignments[0];
-            Vertex bestExtensionTargetVertexSibling = availableTargetVertices.get(v_i_target_IndexSibling);
-            Mapping newMappingSibling = partialMapping.extendMapping(v_i, bestExtensionTargetVertexSibling);
+            Mapping newMappingSibling = partialMapping.extendMapping(v_i, availableTargetVertices.get(assignments[0]));
 
 
             if (lowerBoundForPartialMappingSibling >= upperBound) {
