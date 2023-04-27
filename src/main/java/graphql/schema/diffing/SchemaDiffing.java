@@ -129,15 +129,8 @@ public class SchemaDiffing {
 
 
     private void sortVertices(List<Vertex> vertices, SchemaGraph schemaGraph, PossibleMappingsCalculator.PossibleMappings possibleMappings) {
-        Comparator<Vertex> comparator = (v1, v2) -> {
-            int c1 = schemaGraph.adjacentEdgesAndInverseCount(v1);
-            int c2 = schemaGraph.adjacentEdgesAndInverseCount(v2);
-            if (c1 == c2) {
-                return Integer.compare(possibleMappings.possibleMappings.get(v2).size(), possibleMappings.possibleMappings.get(v1).size());
-            }
-            return Integer.compare(c2, c1);
-        };
-        vertices.sort(comparator);
+        Comparator<Vertex> vertexComparator = Comparator.comparing(schemaGraph::adjacentEdgesAndInverseCount).reversed();
+        vertices.sort(vertexComparator);
     }
 
 }
