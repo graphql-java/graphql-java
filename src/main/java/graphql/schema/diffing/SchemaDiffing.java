@@ -10,7 +10,6 @@ import graphql.schema.diffing.ana.EditOperationAnalysisResult;
 import graphql.schema.diffing.ana.EditOperationAnalyzer;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -80,8 +79,8 @@ public class SchemaDiffing {
         int isolatedSourceCount = (int) nonMappedSource.stream().filter(Vertex::isIsolated).count();
         int isolatedTargetCount = (int) nonMappedTarget.stream().filter(Vertex::isIsolated).count();
         if (isolatedTargetCount > isolatedSourceCount) {
-            System.out.println("delete heavy ... invert source and target graph");
-            // we flip source and target
+            // we flip source and target because the algo works much faster with
+            // this way for delete heavy graphs
             BiMap<Vertex, Vertex> fixedOneToOneInverted = HashBiMap.create();
             for (Vertex s : possibleMappings.fixedOneToOneMappings.keySet()) {
                 Vertex t = possibleMappings.fixedOneToOneMappings.get(s);
@@ -104,7 +103,7 @@ public class SchemaDiffing {
             targetVertices.addAll(possibleMappings.fixedOneToOneTargets);
             targetVertices.addAll(nonMappedTarget);
 
-            sortVerticesEdgeCountDescending(nonMappedTarget, targetGraph);
+            sortVertices(nonMappedTarget, targetGraph, possibleMappings);
 
             DiffImpl diffImpl = new DiffImpl(targetGraph, sourceGraph, possibleMappings, runningCheck);
             DiffImpl.OptimalEdit optimalEdit = diffImpl.diffImpl(startMappingInverted, targetVertices, sourceVertices, algoIterationCount);
@@ -112,8 +111,7 @@ public class SchemaDiffing {
             return invertedBackOptimalEdit;
 
         } else {
-            System.out.println("Insert heavy ... normal way");
-            sortVerticesEdgeCountDescending(nonMappedSource, sourceGraph);
+            sortVertices(nonMappedSource, sourceGraph, possibleMappings);
 
             List<Vertex> sourceVertices = new ArrayList<>();
             sourceVertices.addAll(possibleMappings.fixedOneToOneSources);
@@ -129,76 +127,17 @@ public class SchemaDiffing {
         }
     }
 
-    private void sortSourceVertices(List<Vertex> sourceVertices, PossibleMappingsCalculator.PossibleMappings possibleMappings) {
-        Collections.sort(sourceVertices, (v1, v2) ->
-        {
-            int v1Count = possibleMappings.possibleMappings.get(v1).size();
-            int v2Count = possibleMappings.possibleMappings.get(v2).size();
-//            if (v1Count == v2Count) {
-//                return Integer.compare(sourceGraph.adjacentEdgesAndInverseCount(v1), sourceGraph.adjacentEdgesAndInverseCount(v2));
-//            }
-            int result = Integer.compare(v1Count, v2Count);
-            return result;
-        });
-    }
 
-    private void sortSourceVerticesPossibleMappingDescending(List<Vertex> sourceVertices, PossibleMappingsCalculator.PossibleMappings possibleMappings) {
-        Collections.sort(sourceVertices, (v1, v2) ->
-        {
-            int v1Count = possibleMappings.possibleMappings.get(v1).size();
-            int v2Count = possibleMappings.possibleMappings.get(v2).size();
-            int result = Integer.compare(v2Count, v1Count);
-            return result;
-        });
-    }
-
-    private void sortVerticesEdgeCountDescending(List<Vertex> vertices, SchemaGraph schemaGraph) {
-        Comparator<Vertex> vertexComparator = Comparator.comparing(schemaGraph::adjacentEdgesAndInverseCount).reversed();
-        vertices.sort(vertexComparator);
-    }
-
-//    private void sortSourceVerticesDeleteHeavy(List<Vertex> sourceVertices, PossibleMappingsCalculator.PossibleMappings possibleMappings) {
-//        Collections.sort(sourceVertices, (v1, v2) ->
-//        {
-//            int targetIsolated1 = (int) possibleMappings.possibleMappings.get(v1).stream().filter(Vertex::isIsolated).count();
-//            int targetIsolated2 = (int) possibleMappings.possibleMappings.get(v2).stream().filter(Vertex::isIsolated).count();
-//            return Integer.compare(targetIsolated1, targetIsolated2);
-//        });
-//    }
-
-
-    private void sortSourceVerticesEdgeCountAscending(List<Vertex> sourceVertices, PossibleMappingsCalculator.PossibleMappings possibleMappings) {
-        Collections.sort(sourceVertices, (v1, v2) ->
-        {
-            return Integer.compare(sourceGraph.adjacentEdgesAndInverseCount(v1), sourceGraph.adjacentEdgesAndInverseCount(v2));
-        });
-    }
-
-
-    private List<EditOperation> calcEdgeOperations(Mapping mapping) {
-        List<Edge> edges = sourceGraph.getEdges();
-        List<EditOperation> result = new ArrayList<>();
-        // edge deletion or relabeling
-        for (Edge sourceEdge : edges) {
-            Vertex target1 = mapping.getTarget(sourceEdge.getFrom());
-            Vertex target2 = mapping.getTarget(sourceEdge.getTo());
-            Edge targetEdge = targetGraph.getEdge(target1, target2);
-            if (targetEdge == null) {
-                result.add(EditOperation.deleteEdge("Delete edge " + sourceEdge, sourceEdge));
-            } else if (!sourceEdge.getLabel().equals(targetEdge.getLabel())) {
-                result.add(EditOperation.changeEdge("Change " + sourceEdge + " to " + targetEdge, sourceEdge, targetEdge));
+    private void sortVertices(List<Vertex> vertices, SchemaGraph schemaGraph, PossibleMappingsCalculator.PossibleMappings possibleMappings) {
+        Comparator<Vertex> comparator = (v1, v2) -> {
+            int c1 = schemaGraph.adjacentEdgesAndInverseCount(v1);
+            int c2 = schemaGraph.adjacentEdgesAndInverseCount(v2);
+            if (c1 == c2) {
+                return Integer.compare(possibleMappings.possibleMappings.get(v2).size(), possibleMappings.possibleMappings.get(v1).size());
             }
-        }
-
-        //TODO: iterates over all edges in the target Graph
-        for (Edge targetEdge : targetGraph.getEdges()) {
-            // only subgraph edges
-            Vertex sourceFrom = mapping.getSource(targetEdge.getFrom());
-            Vertex sourceTo = mapping.getSource(targetEdge.getTo());
-            if (sourceGraph.getEdge(sourceFrom, sourceTo) == null) {
-                result.add(EditOperation.insertEdge("Insert edge " + targetEdge, targetEdge));
-            }
-        }
-        return result;
+            return Integer.compare(c2, c1);
+        };
+        vertices.sort(comparator);
     }
+
 }
