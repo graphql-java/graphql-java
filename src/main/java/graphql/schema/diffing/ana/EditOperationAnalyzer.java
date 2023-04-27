@@ -10,6 +10,8 @@ import graphql.schema.diffing.SchemaGraph;
 import graphql.schema.diffing.Vertex;
 import graphql.schema.idl.ScalarInfo;
 
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -132,6 +134,8 @@ public class EditOperationAnalyzer {
     }
 
     public EditOperationAnalysisResult analyzeEdits(List<EditOperation> editOperations, Mapping mapping) {
+        editOperations = getTraversalOrder(editOperations);
+
         handleTypeVertexChanges(editOperations);
 
         for (EditOperation editOperation : editOperations) {
@@ -164,6 +168,7 @@ public class EditOperationAnalyzer {
                     }
             }
         }
+
         handleTypeChanges(editOperations, mapping);
         handleImplementsChanges(editOperations, mapping);
         handleUnionMemberChanges(editOperations, mapping);
@@ -1975,5 +1980,70 @@ public class EditOperationAnalyzer {
         UnionModification objectModification = new UnionModification(oldName, newName);
         unionDifferences.put(oldName, objectModification);
         unionDifferences.put(newName, objectModification);
+    }
+
+    /**
+     * The input list of {@link EditOperation}s does not conform to any order.
+     * <p>
+     * We need to sort it as we sometimes rely on the parents being processed first.
+     * <p>
+     * e.g. we ignore a new argument if the parent of the argument is new.
+     * However, if the argument addition is processed before the
+     */
+    private List<EditOperation> getTraversalOrder(List<EditOperation> editOperations) {
+        List<List<String>> orderSpec = List.of(
+                // These are all top level declarations
+                List.of(
+                        SchemaGraph.SCHEMA,
+                        SchemaGraph.OBJECT,
+                        SchemaGraph.INTERFACE,
+                        SchemaGraph.UNION,
+                        SchemaGraph.SCALAR,
+                        SchemaGraph.ENUM,
+                        SchemaGraph.INPUT_OBJECT,
+                        SchemaGraph.DIRECTIVE
+                ),
+                // These are all direct descendants of top level declarations
+                List.of(
+                        SchemaGraph.FIELD,
+                        SchemaGraph.INPUT_FIELD,
+                        SchemaGraph.ENUM_VALUE
+                ),
+                List.of(SchemaGraph.ARGUMENT),
+                List.of(SchemaGraph.APPLIED_DIRECTIVE),
+                List.of(SchemaGraph.APPLIED_ARGUMENT),
+                List.of(SchemaGraph.ISOLATED)
+        );
+
+        ArrayList<EditOperation> sorted = new ArrayList<>(editOperations);
+
+        sorted.sort(Comparator.comparing((editOperation) -> {
+            // Converts this editOperation into an index from the order
+            // The lower the index, the earlier it appears in the sorted list
+            for (int i = 0; i < orderSpec.size(); i++) {
+                List<String> typesForThisOrder = orderSpec.get(i);
+
+                for (String type : typesForThisOrder) {
+                    if (isAnyVertexOfType(editOperation, type)) {
+                        return i;
+                    }
+                }
+            }
+
+            return Assert.assertShouldNeverHappen();
+        }));
+
+        return sorted;
+    }
+
+    private static boolean isAnyVertexOfType(EditOperation edit, String type) {
+        return (edit.getSourceVertex() != null && edit.getSourceVertex().isOfType(type))
+                || (edit.getTargetVertex() != null && edit.getTargetVertex().isOfType(type))
+                || (edit.getSourceEdge() != null && isAnyVertexOfType(edit.getSourceEdge(), type))
+                || (edit.getTargetEdge() != null && isAnyVertexOfType(edit.getTargetEdge(), type));
+    }
+
+    private static boolean isAnyVertexOfType(Edge edge, String type) {
+        return edge.getFrom().isOfType(type) || edge.getTo().isOfType(type);
     }
 }
