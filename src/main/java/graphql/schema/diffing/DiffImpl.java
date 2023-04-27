@@ -137,10 +137,9 @@ public class DiffImpl {
         firstMappingEntry.siblingsFinished = true;
 
 
-        int count = 0;
         while (!queue.isEmpty()) {
             MappingEntry mappingEntry = queue.poll();
-            count++;
+            algoIterationCount.incrementAndGet();
 
             if (mappingEntry.lowerBoundCost >= optimalEdit.ged) {
                 // once the lowest lowerBoundCost is not lower than the optimal edit, we are done
@@ -170,7 +169,6 @@ public class DiffImpl {
 
             runningCheck.check();
         }
-        algoIterationCount.set(count);
 
         return optimalEdit;
     }
