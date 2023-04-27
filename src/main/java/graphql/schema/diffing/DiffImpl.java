@@ -17,6 +17,7 @@ import java.util.Set;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static graphql.Assert.assertFalse;
 import static graphql.Assert.assertTrue;
 import static graphql.schema.diffing.EditorialCostForMapping.baseEditorialCostForMapping;
 import static graphql.schema.diffing.EditorialCostForMapping.editorialCostForMapping;
@@ -42,8 +43,7 @@ public class DiffImpl {
     private final SchemaDiffingRunningCheck runningCheck;
 
     private static class MappingEntry {
-        public boolean siblingsFinished;
-        public LinkedBlockingQueue<MappingEntry> mappingEntriesSiblings;
+        public LinkedBlockingQueue<MappingEntry> mappingEntriesSiblings = new LinkedBlockingQueue<>();
         public int[] assignments;
 
         /**
@@ -56,7 +56,6 @@ public class DiffImpl {
         int level; // = partialMapping.size
         double lowerBoundCost;
 
-        static final MappingEntry DUMMY = new MappingEntry(null, 0, 0);
 
         public MappingEntry(Mapping partialMapping, int level, double lowerBoundCost) {
             this.partialMapping = partialMapping;
@@ -134,7 +133,6 @@ public class DiffImpl {
             }
         });
         queue.add(firstMappingEntry);
-        firstMappingEntry.siblingsFinished = true;
 
 
         while (!queue.isEmpty()) {
@@ -146,7 +144,7 @@ public class DiffImpl {
                 break;
             }
 
-            if (mappingEntry.level > 0 && !mappingEntry.siblingsFinished) {
+            if (mappingEntry.level > 0 && !mappingEntry.mappingEntriesSiblings.isEmpty()) {
                 addSiblingToQueue(
                         fixedEditorialCost,
                         mappingEntry.level,
@@ -300,7 +298,6 @@ public class DiffImpl {
 
             runningCheck.check();
         }
-        siblings.add(MappingEntry.DUMMY);
 
     }
 
@@ -314,11 +311,9 @@ public class DiffImpl {
             List<Vertex> allTargets,
             MappingEntry mappingEntry) throws InterruptedException {
 
+        assertFalse(mappingEntry.mappingEntriesSiblings.isEmpty());
+
         MappingEntry sibling = mappingEntry.mappingEntriesSiblings.take();
-        if (sibling == MappingEntry.DUMMY) {
-            mappingEntry.siblingsFinished = true;
-            return;
-        }
         if (sibling.lowerBoundCost < optimalEdit.ged) {
             queue.add(sibling);
 
