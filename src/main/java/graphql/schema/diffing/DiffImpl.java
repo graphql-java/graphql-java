@@ -237,21 +237,14 @@ public class DiffImpl {
 
         queue.add(newMappingEntry);
 
-        /**
-         * Extend the partial mapping to a full mapping according to the optimal
-         * matching (hungarian algo result) and update the optimal edit if we
-         * found a better one.
-         */
-        Mapping fullMapping = parentPartialMapping.copy();
-        for (int i = 0; i < assignments.length; i++) {
-            fullMapping.add(allSources.get(parentLevel + i), availableTargetVertices.get(assignments[i]));
-        }
-
-        int costForFullMapping = editorialCostForMapping(fixedEditorialCost, fullMapping, completeSourceGraph, completeTargetGraph);
-        assertTrue(lowerBoundForPartialMapping <= costForFullMapping);
-        if (costForFullMapping < optimalEdit.ged) {
-            updateOptimalEdit(optimalEdit, costForFullMapping, fullMapping);
-        }
+        expandMappingAndUpdateOptimalMapping(fixedEditorialCost,
+                level,
+                optimalEdit,
+                allSources,
+                parentPartialMapping.copy(),
+                assignments,
+                availableTargetVertices,
+                lowerBoundForPartialMapping);
 
         calculateRestOfChildren(
                 availableTargetVertices,
@@ -330,16 +323,40 @@ public class DiffImpl {
             queue.add(sibling);
 
             // we need to start here from the parent mapping, this is why we remove the last element
-            Mapping fullMapping = sibling.partialMapping.removeLastElement();
-            for (int i = 0; i < sibling.assignments.length; i++) {
-                fullMapping.add(allSources.get(level - 1 + i), sibling.availableTargetVertices.get(sibling.assignments[i]));
-            }
-            assertTrue(fullMapping.size() == this.completeSourceGraph.size());
-            int costForFullMapping = editorialCostForMapping(fixedEditorialCost, fullMapping, completeSourceGraph, completeTargetGraph);
-            assertTrue(sibling.lowerBoundCost <= costForFullMapping);
-            if (costForFullMapping < optimalEdit.ged) {
-                updateOptimalEdit(optimalEdit, costForFullMapping, fullMapping);
-            }
+            Mapping toExpand = sibling.partialMapping.copyMappingWithLastElementRemoved();
+
+            expandMappingAndUpdateOptimalMapping(fixedEditorialCost,
+                    level,
+                    optimalEdit,
+                    allSources,
+                    toExpand,
+                    sibling.assignments,
+                    sibling.availableTargetVertices,
+                    sibling.lowerBoundCost);
+        }
+    }
+
+    /**
+     * Extend the partial mapping to a full mapping according to the optimal
+     * matching (hungarian algo result) and update the optimal edit if we
+     * found a better one.
+     */
+    private void expandMappingAndUpdateOptimalMapping(int fixedEditorialCost,
+                                                      int level,
+                                                      OptimalEdit optimalEdit,
+                                                      List<Vertex> allSources,
+                                                      Mapping toExpand,
+                                                      int[] assignments,
+                                                      List<Vertex> availableTargetVertices,
+                                                      double lowerBoundCost) {
+        for (int i = 0; i < assignments.length; i++) {
+            toExpand.add(allSources.get(level - 1 + i), availableTargetVertices.get(assignments[i]));
+        }
+        assertTrue(toExpand.size() == this.completeSourceGraph.size());
+        int costForFullMapping = editorialCostForMapping(fixedEditorialCost, toExpand, completeSourceGraph, completeTargetGraph);
+        assertTrue(lowerBoundCost <= costForFullMapping);
+        if (costForFullMapping < optimalEdit.ged) {
+            updateOptimalEdit(optimalEdit, costForFullMapping, toExpand);
         }
     }
 

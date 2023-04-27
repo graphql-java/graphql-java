@@ -113,7 +113,7 @@ public class Mapping {
         this.targetList.add(target);
     }
 
-    public Mapping removeLastElement() {
+    public Mapping copyMappingWithLastElementRemoved() {
         HashBiMap<Vertex, Vertex> newMap = HashBiMap.create(map);
         newMap.remove(this.sourceList.get(this.sourceList.size() - 1));
         List<Vertex> newSourceList = new ArrayList<>(this.sourceList.subList(0, this.sourceList.size() - 1));
