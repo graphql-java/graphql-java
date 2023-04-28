@@ -1,10 +1,12 @@
 package graphql.schema.diffing;
 
 import com.google.common.collect.BiMap;
+import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.HashBiMap;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Multimap;
+import com.google.common.collect.Table;
 import graphql.Assert;
 import graphql.Internal;
 import graphql.util.FpKit;
@@ -807,7 +809,7 @@ public class PossibleMappingsCalculator {
         public Set<Vertex> allIsolatedSource = new LinkedHashSet<>();
         public Set<Vertex> allIsolatedTarget = new LinkedHashSet<>();
 
-//        public Table<List<String>, Set<Vertex>, Set<Vertex>> contexts = HashBasedTable.create();
+        public Table<List<String>, Set<Vertex>, Set<Vertex>> contexts = HashBasedTable.create();
 
         public Multimap<Vertex, Vertex> possibleMappings = HashMultimap.create();
 
@@ -822,6 +824,7 @@ public class PossibleMappingsCalculator {
             if (sourceVertices.isEmpty() && targetVertices.isEmpty()) {
                 return;
             }
+
             if (sourceVertices.size() == 1 && targetVertices.size() == 1) {
                 Vertex sourceVertex = sourceVertices.iterator().next();
                 Vertex targetVertex = targetVertices.iterator().next();
@@ -897,7 +900,15 @@ public class PossibleMappingsCalculator {
 //            System.out.println("-------------------");
 //            System.out.println("-------------------");
 
+            Assert.assertFalse(contexts.containsRow(contextId));
 
+            Set<Vertex> allSource = new LinkedHashSet<>();
+            allSource.addAll(sourceVertices);
+            allSource.addAll(newIsolatedSource);
+            Set<Vertex> allTarget = new LinkedHashSet<>();
+            allTarget.addAll(targetVertices);
+            allTarget.addAll(newIsolatedTarget);
+            contexts.put(contextId, allSource, allTarget);
             for (Vertex sourceVertex : sourceVertices) {
                 possibleMappings.putAll(sourceVertex, targetVertices);
                 possibleMappings.putAll(sourceVertex, newIsolatedTarget);
@@ -906,6 +917,7 @@ public class PossibleMappingsCalculator {
                 possibleMappings.putAll(sourceIsolatedVertex, targetVertices);
                 possibleMappings.putAll(sourceIsolatedVertex, newIsolatedTarget);
             }
+
 
         }
 

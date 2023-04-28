@@ -15,7 +15,9 @@ import java.util.Objects;
 import java.util.PriorityQueue;
 import java.util.Set;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.atomic.AtomicInteger;
 
+import static graphql.Assert.assertFalse;
 import static graphql.Assert.assertTrue;
 import static graphql.schema.diffing.EditorialCostForMapping.baseEditorialCostForMapping;
 import static graphql.schema.diffing.EditorialCostForMapping.editorialCostForMapping;
@@ -41,8 +43,7 @@ public class DiffImpl {
     private final SchemaDiffingRunningCheck runningCheck;
 
     private static class MappingEntry {
-        public boolean siblingsFinished;
-        public LinkedBlockingQueue<MappingEntry> mappingEntriesSiblings;
+        public LinkedBlockingQueue<MappingEntry> mappingEntriesSiblings = new LinkedBlockingQueue<>();
         public int[] assignments;
 
         /**
@@ -55,7 +56,6 @@ public class DiffImpl {
         int level; // = partialMapping.size
         double lowerBoundCost;
 
-        static final MappingEntry DUMMY = new MappingEntry(null, 0, 0);
 
         public MappingEntry(Mapping partialMapping, int level, double lowerBoundCost) {
             this.partialMapping = partialMapping;
@@ -110,7 +110,7 @@ public class DiffImpl {
         this.runningCheck = runningCheck;
     }
 
-    OptimalEdit diffImpl(Mapping startMapping, List<Vertex> allSources, List<Vertex> allTargets) throws Exception {
+    OptimalEdit diffImpl(Mapping startMapping, List<Vertex> allSources, List<Vertex> allTargets, AtomicInteger algoIterationCount) throws Exception {
         int graphSize = allSources.size();
 
         int fixedEditorialCost = baseEditorialCostForMapping(startMapping, completeSourceGraph, completeTargetGraph);
@@ -125,35 +125,26 @@ public class DiffImpl {
         OptimalEdit optimalEdit = new OptimalEdit(completeSourceGraph, completeTargetGraph);
         PriorityQueue<MappingEntry> queue = new PriorityQueue<>((mappingEntry1, mappingEntry2) -> {
             int compareResult = Double.compare(mappingEntry1.lowerBoundCost, mappingEntry2.lowerBoundCost);
-//            if (compareResult == 0) {
-//                return Integer.compare(mappingEntry2.level, mappingEntry1.level);
-//            } else {
-            return compareResult;
-//            }
+            // we prefer higher levels for equal lower bound costs
+            if (compareResult == 0) {
+                return Integer.compare(mappingEntry2.level, mappingEntry1.level);
+            } else {
+                return compareResult;
+            }
         });
         queue.add(firstMappingEntry);
-        firstMappingEntry.siblingsFinished = true;
-
-//        System.out.println("graph size: " + this.completeSourceGraph.size() + " non mapped vertices " + (completeSourceGraph.size() - startMapping.size()));
-//        System.out.println("start mapping at level: " + firstMappingEntry.level);
 
 
-        int count = 0;
-        int dropCount = 0;
-        long t = System.currentTimeMillis();
         while (!queue.isEmpty()) {
             MappingEntry mappingEntry = queue.poll();
-            count++;
-            if (count % 1000 == 0) {
-//                System.out.println(mappingEntry.lowerBoundCost + " vs ged " + optimalEdit.ged + " count " + count + " time: " + (System.currentTimeMillis() - t) + " queue size " + queue.size() + " drop count " + dropCount);
-            }
+            algoIterationCount.incrementAndGet();
+
             if (mappingEntry.lowerBoundCost >= optimalEdit.ged) {
-                dropCount++;
-                continue;
-
+                // once the lowest lowerBoundCost is not lower than the optimal edit, we are done
+                break;
             }
 
-            if (mappingEntry.level > 0 && !mappingEntry.siblingsFinished) {
+            if (mappingEntry.level > 0 && !mappingEntry.mappingEntriesSiblings.isEmpty()) {
                 addSiblingToQueue(
                         fixedEditorialCost,
                         mappingEntry.level,
@@ -190,20 +181,21 @@ public class DiffImpl {
                                  List<Vertex> allTargets
     ) {
         Mapping parentPartialMapping = parentEntry.partialMapping;
-        int level = parentEntry.level;
+        int parentLevel = parentEntry.level;
+        int level = parentLevel + 1;
 
-        assertTrue(level == parentPartialMapping.size());
+        assertTrue(parentLevel == parentPartialMapping.size());
 
         // the available target vertices are the parent queue entry ones plus
         // minus the additional mapped element in parentPartialMapping
         ArrayList<Vertex> availableTargetVertices = new ArrayList<>(parentEntry.availableTargetVertices);
-        availableTargetVertices.remove(parentPartialMapping.getTarget(level - 1));
+        availableTargetVertices.remove(parentPartialMapping.getTarget(parentLevel - 1));
         assertTrue(availableTargetVertices.size() + parentPartialMapping.size() == allTargets.size());
-        Vertex v_i = allSources.get(level);
+        Vertex v_i = allSources.get(parentLevel);
 
 
         // the cost matrix is for the non mapped vertices
-        int costMatrixSize = allSources.size() - level;
+        int costMatrixSize = allSources.size() - parentLevel;
 
         // costMatrix gets modified by the hungarian algorithm ... therefore we create two of them
         double[][] costMatrixForHungarianAlgo = new double[costMatrixSize][costMatrixSize];
@@ -212,51 +204,45 @@ public class DiffImpl {
 
         Map<Vertex, Double> isolatedVerticesCache = new LinkedHashMap<>();
 
-        for (int i = level; i < allSources.size(); i++) {
+        for (int i = parentLevel; i < allSources.size(); i++) {
             Vertex v = allSources.get(i);
             int j = 0;
             for (Vertex u : availableTargetVertices) {
                 double cost = calcLowerBoundMappingCost(v, u, parentPartialMapping, isolatedVerticesCache);
-                costMatrixForHungarianAlgo[i - level][j] = cost;
-                costMatrix[i - level][j] = cost;
+                costMatrixForHungarianAlgo[i - parentLevel][j] = cost;
+                costMatrix[i - parentLevel][j] = cost;
                 j++;
             }
             runningCheck.check();
         }
-//        System.out.println("size1: " + (allSources.size() - level) + " vs " + availableTargetVertices.size() + " square: " + (availableTargetVertices.size()*availableTargetVertices.size()));
-//        System.out.println("size2: " + allCount + " vs sqrt of realSize:" + Math.sqrt(realSize));
         HungarianAlgorithm hungarianAlgorithm = new HungarianAlgorithm(costMatrixForHungarianAlgo);
         int[] assignments = hungarianAlgorithm.execute();
         int editorialCostForMapping = editorialCostForMapping(fixedEditorialCost, parentPartialMapping, completeSourceGraph, completeTargetGraph);
-//        System.out.println("editorial cost for partial mapping: " + editorialCostForMapping + " for level " + (level - (allSources.size() - allNonFixedTargets.size())));
-//        System.out.println("last source vertex " + parentPartialMapping.getSource(parentPartialMapping.size() - 1) + " -> " + parentPartialMapping.getTarget(parentPartialMapping.size() - 1));
         double costMatrixSum = getCostMatrixSum(costMatrix, assignments);
         double lowerBoundForPartialMapping = editorialCostForMapping + costMatrixSum;
-        int v_i_target_IndexSibling = assignments[0];
-        Vertex bestExtensionTargetVertexSibling = availableTargetVertices.get(v_i_target_IndexSibling);
-        Mapping newMappingSibling = parentPartialMapping.extendMapping(v_i, bestExtensionTargetVertexSibling);
+
+        Mapping newMapping = parentPartialMapping.extendMapping(v_i, availableTargetVertices.get(assignments[0]));
 
 
         if (lowerBoundForPartialMapping >= optimalEdit.ged) {
             return;
         }
-        MappingEntry newMappingEntry = new MappingEntry(newMappingSibling, level + 1, lowerBoundForPartialMapping);
+        MappingEntry newMappingEntry = new MappingEntry(newMapping, level, lowerBoundForPartialMapping);
         LinkedBlockingQueue<MappingEntry> siblings = new LinkedBlockingQueue<>();
         newMappingEntry.mappingEntriesSiblings = siblings;
         newMappingEntry.assignments = assignments;
         newMappingEntry.availableTargetVertices = availableTargetVertices;
 
         queue.add(newMappingEntry);
-        Mapping fullMapping = parentPartialMapping.copy();
-        for (int i = 0; i < assignments.length; i++) {
-            fullMapping.add(allSources.get(level + i), availableTargetVertices.get(assignments[i]));
-        }
 
-        int costForFullMapping = editorialCostForMapping(fixedEditorialCost, fullMapping, completeSourceGraph, completeTargetGraph);
-        assertTrue(lowerBoundForPartialMapping <= costForFullMapping);
-        if (costForFullMapping < optimalEdit.ged) {
-            updateOptimalEdit(optimalEdit, costForFullMapping, fullMapping);
-        }
+        expandMappingAndUpdateOptimalMapping(fixedEditorialCost,
+                level,
+                optimalEdit,
+                allSources,
+                parentPartialMapping.copy(),
+                assignments,
+                availableTargetVertices,
+                lowerBoundForPartialMapping);
 
         calculateRestOfChildren(
                 availableTargetVertices,
@@ -266,7 +252,7 @@ public class DiffImpl {
                 parentPartialMapping,
                 v_i,
                 optimalEdit.ged,
-                level + 1,
+                level,
                 siblings
         );
     }
@@ -275,16 +261,6 @@ public class DiffImpl {
         assertTrue(newGed < optimalEdit.ged);
         optimalEdit.ged = newGed;
         optimalEdit.mapping = mapping;
-//        System.out.println("new ged of " + newGed + " with non fixed vertices " + mapping.nonFixedSize());
-//        mapping.forEachNonFixedSourceAndTarget((s, t) -> {
-//            if (s.isIsolated()) {
-//                System.out.println("Insert " + t);
-//            } else if (t.isIsolated()) {
-//                System.out.println("Deleted " + s);
-//            } else {
-//                System.out.println("changed " + s + " to" + t);
-//            }
-//        });
     }
 
     // generate all children mappings and save in MappingEntry.sibling
@@ -307,9 +283,7 @@ public class DiffImpl {
 
             double costMatrixSumSibling = getCostMatrixSum(costMatrixCopy, assignments);
             double lowerBoundForPartialMappingSibling = editorialCostForMapping + costMatrixSumSibling;
-            int v_i_target_IndexSibling = assignments[0];
-            Vertex bestExtensionTargetVertexSibling = availableTargetVertices.get(v_i_target_IndexSibling);
-            Mapping newMappingSibling = partialMapping.extendMapping(v_i, bestExtensionTargetVertexSibling);
+            Mapping newMappingSibling = partialMapping.extendMapping(v_i, availableTargetVertices.get(assignments[0]));
 
 
             if (lowerBoundForPartialMappingSibling >= upperBound) {
@@ -324,8 +298,6 @@ public class DiffImpl {
 
             runningCheck.check();
         }
-//        System.out.println("overall  children count  " + (siblings.size()+1) + " vs possible mappings " + possibleMappings.possibleMappings.get(v_i).size()  );
-        siblings.add(MappingEntry.DUMMY);
 
     }
 
@@ -339,25 +311,47 @@ public class DiffImpl {
             List<Vertex> allTargets,
             MappingEntry mappingEntry) throws InterruptedException {
 
+        assertFalse(mappingEntry.mappingEntriesSiblings.isEmpty());
+
         MappingEntry sibling = mappingEntry.mappingEntriesSiblings.take();
-        if (sibling == MappingEntry.DUMMY) {
-            mappingEntry.siblingsFinished = true;
-            return;
-        }
         if (sibling.lowerBoundCost < optimalEdit.ged) {
             queue.add(sibling);
 
             // we need to start here from the parent mapping, this is why we remove the last element
-            Mapping fullMapping = sibling.partialMapping.removeLastElement();
-            for (int i = 0; i < sibling.assignments.length; i++) {
-                fullMapping.add(allSources.get(level - 1 + i), sibling.availableTargetVertices.get(sibling.assignments[i]));
-            }
-            assertTrue(fullMapping.size() == this.completeSourceGraph.size());
-            int costForFullMapping = editorialCostForMapping(fixedEditorialCost, fullMapping, completeSourceGraph, completeTargetGraph);
-            assertTrue(sibling.lowerBoundCost <= costForFullMapping);
-            if (costForFullMapping < optimalEdit.ged) {
-                updateOptimalEdit(optimalEdit, costForFullMapping, fullMapping);
-            }
+            Mapping toExpand = sibling.partialMapping.copyMappingWithLastElementRemoved();
+
+            expandMappingAndUpdateOptimalMapping(fixedEditorialCost,
+                    level,
+                    optimalEdit,
+                    allSources,
+                    toExpand,
+                    sibling.assignments,
+                    sibling.availableTargetVertices,
+                    sibling.lowerBoundCost);
+        }
+    }
+
+    /**
+     * Extend the partial mapping to a full mapping according to the optimal
+     * matching (hungarian algo result) and update the optimal edit if we
+     * found a better one.
+     */
+    private void expandMappingAndUpdateOptimalMapping(int fixedEditorialCost,
+                                                      int level,
+                                                      OptimalEdit optimalEdit,
+                                                      List<Vertex> allSources,
+                                                      Mapping toExpand,
+                                                      int[] assignments,
+                                                      List<Vertex> availableTargetVertices,
+                                                      double lowerBoundCost) {
+        for (int i = 0; i < assignments.length; i++) {
+            toExpand.add(allSources.get(level - 1 + i), availableTargetVertices.get(assignments[i]));
+        }
+        assertTrue(toExpand.size() == this.completeSourceGraph.size());
+        int costForFullMapping = editorialCostForMapping(fixedEditorialCost, toExpand, completeSourceGraph, completeTargetGraph);
+        assertTrue(lowerBoundCost <= costForFullMapping);
+        if (costForFullMapping < optimalEdit.ged) {
+            updateOptimalEdit(optimalEdit, costForFullMapping, toExpand);
         }
     }
 
