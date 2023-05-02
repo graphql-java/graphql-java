@@ -31,7 +31,7 @@ public class SchemaParentRestrictions {
 
         for (Vertex vertex : needsFixing) {
             if (isApplicableChildVertex(vertex)) {
-                Vertex sourceParent = sourceGraph.getSingleParent(vertex);
+                Vertex sourceParent = sourceGraph.getSingleAdjacentInverseVertex(vertex);
                 Vertex fixedTargetParent = sourceToTargetMapping.get(sourceParent);
 
                 if (fixedTargetParent != null) {
@@ -64,8 +64,8 @@ public class SchemaParentRestrictions {
                     }
                 }
             } else if (isApplicableChildVertex(source) && isApplicableChildVertex(target)) {
-                Vertex sourceParent = completeSourceGraph.getSingleParent(source);
-                Vertex targetParent = completeTargetGraph.getSingleParent(target);
+                Vertex sourceParent = completeSourceGraph.getSingleAdjacentInverseVertex(source);
+                Vertex targetParent = completeTargetGraph.getSingleAdjacentInverseVertex(target);
 
                 for (Edge edge : completeSourceGraph.getAdjacentEdgesNonCopy(sourceParent)) {
                     Vertex sibling = edge.getTo();

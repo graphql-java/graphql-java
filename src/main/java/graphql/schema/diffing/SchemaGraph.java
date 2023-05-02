@@ -259,11 +259,11 @@ public class SchemaGraph {
     }
 
     /**
-     * Assuming the child has one parent, this gets it.
+     * Gets the one inverse adjacent edge to the input and gets the other vertex.
      */
-    public Vertex getSingleParent(Vertex child) {
-        Collection<Edge> adjacentVertices = this.getAdjacentEdgesInverseNonCopy(child);
-        assertTrue(adjacentVertices.size() == 1, () -> format("No parent found for %s", child));
+    public Vertex getSingleAdjacentInverseVertex(Vertex input) {
+        Collection<Edge> adjacentVertices = this.getAdjacentEdgesInverseNonCopy(input);
+        assertTrue(adjacentVertices.size() == 1, () -> format("No parent found for %s", input));
         return adjacentVertices.iterator().next().getFrom();
     }
 

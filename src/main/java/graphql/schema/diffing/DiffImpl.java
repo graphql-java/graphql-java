@@ -204,14 +204,13 @@ public class DiffImpl {
         double[][] costMatrix = new double[costMatrixSize][costMatrixSize];
 
         Map<Vertex, Double> isolatedVerticesCache = new LinkedHashMap<>();
-
-        Map<Vertex, Vertex> parentRestrictions = getNonFixedRestrictions(parentPartialMapping, completeSourceGraph, completeTargetGraph);
+        Map<Vertex, Vertex> nonFixedParentRestrictions = getNonFixedRestrictions(parentPartialMapping, completeSourceGraph, completeTargetGraph);
 
         for (int i = parentLevel; i < allSources.size(); i++) {
             Vertex v = allSources.get(i);
             int j = 0;
             for (Vertex u : availableTargetVertices) {
-                double cost = calcLowerBoundMappingCost(v, u, parentPartialMapping, isolatedVerticesCache, parentRestrictions);
+                double cost = calcLowerBoundMappingCost(v, u, parentPartialMapping, isolatedVerticesCache, nonFixedParentRestrictions);
                 costMatrixForHungarianAlgo[i - parentLevel][j] = cost;
                 costMatrix[i - parentLevel][j] = cost;
                 j++;
@@ -399,9 +398,9 @@ public class DiffImpl {
                                              Vertex u,
                                              Mapping partialMapping,
                                              Map<Vertex, Double> isolatedVerticesCache,
-                                             Map<Vertex, Vertex> parentRestrictions) {
-        if (parentRestrictions.containsKey(v) || partialMapping.hasParentRestriction(v)) {
-            Vertex uParentRestriction = parentRestrictions.get(v);
+                                             Map<Vertex, Vertex> nonFixedParentRestrictions) {
+        if (nonFixedParentRestrictions.containsKey(v) || partialMapping.hasParentRestriction(v)) {
+            Vertex uParentRestriction = nonFixedParentRestrictions.get(v);
             if (uParentRestriction == null) {
                 uParentRestriction = partialMapping.getParentRestriction(v);
             }
