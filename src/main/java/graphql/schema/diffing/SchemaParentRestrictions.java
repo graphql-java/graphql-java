@@ -7,8 +7,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import static graphql.Assert.assertTrue;
-
 @Internal
 public class SchemaParentRestrictions {
     public static boolean isApplicableChildVertex(Vertex vertex) {
@@ -24,6 +22,21 @@ public class SchemaParentRestrictions {
                 || vertex.isOfType(SchemaGraph.ENUM);
     }
 
+    /**
+     * This computes the initial set of parent restrictions based on the fixed portion of the mapping.
+     * <p>
+     * See {@link Mapping} for definition of fixed vs non-fixed.
+     * <p>
+     * If a {@link Vertex} is present in the output {@link Map} then the value is the parent the
+     * vertex MUST map to.
+     * <p>
+     * e.g. for an output {collar -> Dog} then the collar vertex must be a child of Dog in the mapping.
+     *
+     * @param sourceGraph           source graph
+     * @param sourceToTargetMapping the fixed mappings
+     * @param needsFixing           the non fixed mappings that need restrictions
+     * @return Map where key is any vertex, and the value is the parent that vertex must map to
+     */
     public static Map<Vertex, Vertex> getFixedRestrictions(SchemaGraph sourceGraph,
                                                            BiMap<Vertex, Vertex> sourceToTargetMapping,
                                                            List<Vertex> needsFixing) {
@@ -49,12 +62,28 @@ public class SchemaParentRestrictions {
         return restrictions;
     }
 
-    public static Map<Vertex, Vertex> getNonFixedRestrictions(Mapping parentMapping,
+
+    /**
+     * This computes the initial set of parent restrictions based on the given non-fixed mapping.
+     * <p>
+     * See {@link Mapping} for definition of fixed vs non-fixed.
+     * <p>
+     * If a {@link Vertex} is present in the output {@link Map} then the value is the parent the
+     * vertex MUST map to.
+     * <p>
+     * e.g. for an output {collar -> Dog} then the collar vertex must be a child of Dog in the mapping.
+     *
+     * @param mapping             the mapping to get non-fixed parent restrictions for
+     * @param completeSourceGraph source graph
+     * @param completeTargetGraph target graph
+     * @return Map where key is any vertex, and the value is the parent that vertex must map to
+     */
+    public static Map<Vertex, Vertex> getNonFixedRestrictions(Mapping mapping,
                                                               SchemaGraph completeSourceGraph,
                                                               SchemaGraph completeTargetGraph) {
         Map<Vertex, Vertex> restrictions = new LinkedHashMap<>();
 
-        parentMapping.forEachNonFixedSourceAndTarget((source, target) -> {
+        mapping.forEachNonFixedSourceAndTarget((source, target) -> {
             if (isApplicableParentVertex(source) && isApplicableParentVertex(target)) {
                 for (Edge edge : completeSourceGraph.getAdjacentEdgesNonCopy(source)) {
                     Vertex child = edge.getTo();
