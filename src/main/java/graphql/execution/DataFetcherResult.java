@@ -127,14 +127,15 @@ public class DataFetcherResult<T> {
      * All other values are left unmodified.
      *
      * @param transformation the transformation that should be applied to the data
+     *
      * @return a new instance with where the data value has been transformed
      */
-    public <R> DataFetcherResult<R> map(Function<T,R> transformation) {
+    public <R> DataFetcherResult<R> map(Function<T, R> transformation) {
         return new Builder<>(transformation.apply(this.data))
-            .errors(this.errors)
-            .extensions(this.extensions)
-            .localContext(this.localContext)
-            .build();
+                .errors(this.errors)
+                .extensions(this.extensions)
+                .localContext(this.localContext)
+                .build();
     }
 
     /**
