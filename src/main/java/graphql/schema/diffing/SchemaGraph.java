@@ -258,12 +258,20 @@ public class SchemaGraph {
         return adjacentVertices.get(0);
     }
 
+    /**
+     * Assuming the child has one parent, this gets it.
+     */
+    public Vertex getSingleParent(Vertex child) {
+        Collection<Edge> adjacentVertices = this.getAdjacentEdgesInverseNonCopy(child);
+        assertTrue(adjacentVertices.size() == 1, () -> format("No parent found for %s", child));
+        return adjacentVertices.iterator().next().getFrom();
+    }
+
     public int getAppliedDirectiveIndex(Vertex appliedDirective) {
         List<Edge> adjacentEdges = this.getAdjacentEdgesInverseCopied(appliedDirective);
         assertTrue(adjacentEdges.size() == 1, () -> format("No applied directive container found for %s", appliedDirective));
         return Integer.parseInt(adjacentEdges.get(0).getLabel());
     }
-
 
     public Vertex getEnumForEnumValue(Vertex enumValue) {
         List<Vertex> adjacentVertices = this.getAdjacentVerticesInverse(enumValue);

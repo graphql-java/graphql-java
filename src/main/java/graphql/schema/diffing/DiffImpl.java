@@ -4,6 +4,7 @@ import com.google.common.collect.HashMultiset;
 import com.google.common.collect.Multiset;
 import com.google.common.collect.Multisets;
 import graphql.Internal;
+import graphql.schema.diffing.DiffImpl.OptimalEdit;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -21,6 +22,7 @@ import static graphql.Assert.assertFalse;
 import static graphql.Assert.assertTrue;
 import static graphql.schema.diffing.EditorialCostForMapping.baseEditorialCostForMapping;
 import static graphql.schema.diffing.EditorialCostForMapping.editorialCostForMapping;
+import static graphql.schema.diffing.SchemaParentRestrictions.getNonFixedRestrictions;
 
 /**
  * This is an algorithm calculating the optimal edit to change the source graph into the target graph.
@@ -201,20 +203,22 @@ public class DiffImpl {
         double[][] costMatrixForHungarianAlgo = new double[costMatrixSize][costMatrixSize];
         double[][] costMatrix = new double[costMatrixSize][costMatrixSize];
 
-
         Map<Vertex, Double> isolatedVerticesCache = new LinkedHashMap<>();
+
+        Map<Vertex, Vertex> parentRestrictions = getNonFixedRestrictions(parentPartialMapping, completeSourceGraph, completeTargetGraph);
 
         for (int i = parentLevel; i < allSources.size(); i++) {
             Vertex v = allSources.get(i);
             int j = 0;
             for (Vertex u : availableTargetVertices) {
-                double cost = calcLowerBoundMappingCost(v, u, parentPartialMapping, isolatedVerticesCache);
+                double cost = calcLowerBoundMappingCost(v, u, parentPartialMapping, isolatedVerticesCache, parentRestrictions);
                 costMatrixForHungarianAlgo[i - parentLevel][j] = cost;
                 costMatrix[i - parentLevel][j] = cost;
                 j++;
             }
             runningCheck.check();
         }
+
         HungarianAlgorithm hungarianAlgorithm = new HungarianAlgorithm(costMatrixForHungarianAlgo);
         int[] assignments = hungarianAlgorithm.execute();
         int editorialCostForMapping = editorialCostForMapping(fixedEditorialCost, parentPartialMapping, completeSourceGraph, completeTargetGraph);
@@ -222,7 +226,6 @@ public class DiffImpl {
         double lowerBoundForPartialMapping = editorialCostForMapping + costMatrixSum;
 
         Mapping newMapping = parentPartialMapping.extendMapping(v_i, availableTargetVertices.get(assignments[0]));
-
 
         if (lowerBoundForPartialMapping >= optimalEdit.ged) {
             return;
@@ -298,7 +301,6 @@ public class DiffImpl {
 
             runningCheck.check();
         }
-
     }
 
     // this retrieves the next sibling  from MappingEntry.sibling and adds it to the queue if the lowerBound is less than the current upperBound
@@ -396,7 +398,25 @@ public class DiffImpl {
     private double calcLowerBoundMappingCost(Vertex v,
                                              Vertex u,
                                              Mapping partialMapping,
-                                             Map<Vertex, Double> isolatedVerticesCache) {
+                                             Map<Vertex, Double> isolatedVerticesCache,
+                                             Map<Vertex, Vertex> parentRestrictions) {
+        if (parentRestrictions.containsKey(v) || partialMapping.hasParentRestriction(v)) {
+            Vertex uParentRestriction = parentRestrictions.get(v);
+            if (uParentRestriction == null) {
+                uParentRestriction = partialMapping.getParentRestriction(v);
+            }
+
+            Collection<Edge> parentEdges = completeTargetGraph.getAdjacentEdgesInverseNonCopy(u);
+            if (parentEdges.size() != 1) {
+                return Integer.MAX_VALUE;
+            }
+
+            Vertex uParent = parentEdges.iterator().next().getFrom();
+            if (uParent != uParentRestriction) {
+                return Integer.MAX_VALUE;
+            }
+        }
+
         if (!possibleMappings.mappingPossible(v, u)) {
             return Integer.MAX_VALUE;
         }
