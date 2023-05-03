@@ -204,7 +204,7 @@ public class DiffImpl {
         double[][] costMatrix = new double[costMatrixSize][costMatrixSize];
 
         Map<Vertex, Double> isolatedVerticesCache = new LinkedHashMap<>();
-        Map<Vertex, Vertex> nonFixedParentRestrictions = possibleMappingsCalculator.getNonFixedParentRestrictions(parentPartialMapping);
+        Map<Vertex, Vertex> nonFixedParentRestrictions = possibleMappingsCalculator.getNonFixedParentRestrictions(completeSourceGraph, completeTargetGraph, parentPartialMapping);
 
         for (int i = parentLevel; i < allSources.size(); i++) {
             Vertex v = allSources.get(i);

@@ -1094,7 +1094,9 @@ public class PossibleMappingsCalculator {
      * @param mapping the mapping to get non-fixed parent restrictions for
      * @return Map where key is any vertex, and the value is the parent that vertex must map to
      */
-    public Map<Vertex, Vertex> getNonFixedParentRestrictions(Mapping mapping) {
+    public Map<Vertex, Vertex> getNonFixedParentRestrictions(SchemaGraph sourceGraph,
+                                                             SchemaGraph targetGraph,
+                                                             Mapping mapping) {
         Map<Vertex, Vertex> restrictions = new LinkedHashMap<>();
 
         mapping.forEachNonFixedSourceAndTarget((source, target) -> {
