@@ -1,7 +1,11 @@
 package graphql.schema.diffing.ana
 
 import graphql.TestUtil
+import graphql.schema.diffing.Edge
+import graphql.schema.diffing.EditOperation
 import graphql.schema.diffing.SchemaDiffing
+import graphql.schema.diffing.SchemaGraph
+import graphql.schema.diffing.Vertex
 import spock.lang.Specification
 
 import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveDeletion
@@ -2892,6 +2896,90 @@ class EditOperationAnalyzerTest extends Specification {
 
         then:
         changes.directiveDifferences.isEmpty()
+    }
+
+    def "big diff"() {
+        def oldSdl = new File("/Users/fwang/Library/Application Support/JetBrains/IntelliJIdea2023.1/scratches/$commit/$commit^.graphqls")
+                .readLines()
+                .join("\n")
+        def newSdl = new File("/Users/fwang/Library/Application Support/JetBrains/IntelliJIdea2023.1/scratches/$commit/${commit}.graphqls")
+                .readLines()
+                .join("\n")
+
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+
+        then:
+        println changes
+
+        where:
+        _ | commit
+        // _ | "3672fa0f"
+        // _ | "2d9c9cca"
+        // _ | "e9d8cbec"
+        // _ | "e3e80cc9"
+        // _ | "79fe3d15"
+        // _ | "399846d8"
+        // _ | "879c939c"
+        // _ | "c3656195"
+        // _ | "7b0d3b14"
+        _ | "8d50bc9b"
+    }
+
+    def "traversal order puts field changes before arguments"() {
+        def objectOld = new Vertex(SchemaGraph.OBJECT, "target-1")
+        objectOld.add("name", "Obey")
+        def objectNew = new Vertex(SchemaGraph.OBJECT, "target-1")
+        objectNew.add("name", "Ob")
+        def changeObjectVertex = EditOperation.changeVertex(
+                "Change object",
+                objectOld,
+                objectNew,
+        )
+
+        def newField = new Vertex(SchemaGraph.FIELD, "target-1")
+        newField.add("name", "fried")
+        def insertNewFieldVertex = EditOperation.insertVertex(
+                "Insert new field",
+                Vertex.newIsolatedNode("source-isolated-Field-1"),
+                newField,
+        )
+
+        def newArgument = new Vertex(SchemaGraph.ARGUMENT, "target-1")
+        newArgument.add("name", "alone")
+        def insertNewArgumentVertex = EditOperation.insertVertex(
+                "Insert argument",
+                Vertex.newIsolatedNode("source-isolated-Argument-1"),
+                newArgument,
+        )
+
+        def insertNewFieldEdge = EditOperation.insertEdge(
+                "Insert Object -> Field Edge",
+                new Edge(objectNew, newField),
+        )
+
+        def insertNewArgumentEdge = EditOperation.insertEdge(
+                "Insert Field -> Argument Edge",
+                new Edge(newField, newArgument),
+        )
+
+        when:
+        def result = EditOperationAnalyzer.getTraversalOrder([
+                insertNewArgumentVertex,
+                insertNewFieldEdge,
+                insertNewArgumentEdge,
+                changeObjectVertex,
+                insertNewFieldVertex,
+        ])
+
+        then:
+        result == [
+                changeObjectVertex,
+                insertNewFieldVertex,
+                insertNewArgumentVertex,
+                insertNewFieldEdge,
+                insertNewArgumentEdge,
+        ]
     }
 
     EditOperationAnalysisResult calcDiff(
