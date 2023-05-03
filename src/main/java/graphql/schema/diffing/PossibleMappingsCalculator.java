@@ -62,7 +62,7 @@ public class PossibleMappingsCalculator {
     private final SchemaGraph targetGraph;
     private final PossibleMappings possibleMappings;
 
-    public final static Map<String, List<VertexContextSegment>> typeContexts = new LinkedHashMap<>();
+    private static final Map<String, List<VertexContextSegment>> typeContexts = new LinkedHashMap<>();
 
     static {
         typeContexts.put(SCHEMA, schemaContext());
@@ -787,13 +787,11 @@ public class PossibleMappingsCalculator {
 //                System.out.println("-------------");
             }
         }
+
         return possibleMappings;
     }
 
-
     public abstract static class VertexContextSegment {
-
-
         public VertexContextSegment() {
         }
 
@@ -1022,7 +1020,119 @@ public class PossibleMappingsCalculator {
         possibleMappings.putPossibleMappings(contextId, possibleSourceVertices, possibleTargetVertices, typeNameForDebug);
     }
 
-    public PossibleMappings getIsolatedVertices() {
-        return possibleMappings;
+    public Map<Vertex, Vertex> getFixedParentRestrictions() {
+        return getFixedParentRestrictions(
+                sourceGraph,
+                possibleMappings.fixedOneToOneSources,
+                possibleMappings.fixedOneToOneMappings
+        );
+    }
+
+    public Map<Vertex, Vertex> getFixedParentRestrictionsInverse(Map<Vertex, Vertex> fixedOneToOneMappingsInverted) {
+        return getFixedParentRestrictions(
+                targetGraph,
+                possibleMappings.fixedOneToOneTargets,
+                fixedOneToOneMappingsInverted
+        );
+    }
+
+    /**
+     * This computes the initial set of parent restrictions based on the fixed portion of the mapping.
+     * <p>
+     * See {@link Mapping} for definition of fixed vs non-fixed.
+     * <p>
+     * If a {@link Vertex} is present in the output {@link Map} then the value is the parent the
+     * vertex MUST map to.
+     * <p>
+     * e.g. for an output {collar: Dog} then the collar vertex must be a child of Dog in the mapping.
+     *
+     * @return Map where key is any vertex, and the value is the parent that vertex must map to
+     */
+    private Map<Vertex, Vertex> getFixedParentRestrictions(SchemaGraph sourceGraph,
+                                                           List<Vertex> fixedSourceVertices,
+                                                           Map<Vertex, Vertex> fixedOneToOneMappings) {
+        Assert.assertFalse(fixedOneToOneMappings.isEmpty());
+
+        List<Vertex> needsFixing = new ArrayList<>(sourceGraph.getVertices());
+        needsFixing.removeAll(fixedSourceVertices);
+
+        Map<Vertex, Vertex> restrictions = new LinkedHashMap<>();
+
+        for (Vertex vertex : needsFixing) {
+            if (hasParentRestrictions(vertex)) {
+                Vertex sourceParent = sourceGraph.getSingleAdjacentInverseVertex(vertex);
+                Vertex fixedTargetParent = fixedOneToOneMappings.get(sourceParent);
+
+                if (fixedTargetParent != null) {
+                    for (Edge edge : sourceGraph.getAdjacentEdgesNonCopy(sourceParent)) {
+                        Vertex sibling = edge.getTo();
+
+                        if (hasParentRestrictions(sibling)) {
+                            restrictions.put(sibling, fixedTargetParent);
+                        }
+                    }
+                }
+            }
+        }
+
+        return restrictions;
+    }
+
+    /**
+     * This computes the initial set of parent restrictions based on the given non-fixed mapping.
+     * <p>
+     * i.e. this introduces restrictions as the {@link Mapping} is being built, as decisions
+     * can have knock on effects on other vertices' possible mappings.
+     * <p>
+     * See {@link Mapping} for definition of fixed vs non-fixed.
+     * <p>
+     * If a {@link Vertex} is present in the output {@link Map} then the value is the parent the
+     * vertex MUST map to.
+     * <p>
+     * e.g. for an output {collar: Dog} then the collar vertex must be a child of Dog in the mapping.
+     *
+     * @param mapping the mapping to get non-fixed parent restrictions for
+     * @return Map where key is any vertex, and the value is the parent that vertex must map to
+     */
+    public Map<Vertex, Vertex> getNonFixedParentRestrictions(Mapping mapping) {
+        Map<Vertex, Vertex> restrictions = new LinkedHashMap<>();
+
+        mapping.forEachNonFixedSourceAndTarget((source, target) -> {
+            if (hasChildrenRestrictions(source) && hasChildrenRestrictions(target)) {
+                for (Edge edge : sourceGraph.getAdjacentEdgesNonCopy(source)) {
+                    Vertex child = edge.getTo();
+
+                    if (hasParentRestrictions(child)) {
+                        restrictions.put(child, target);
+                    }
+                }
+            } else if (hasParentRestrictions(source) && hasParentRestrictions(target)) {
+                Vertex sourceParent = sourceGraph.getSingleAdjacentInverseVertex(source);
+                Vertex targetParent = targetGraph.getSingleAdjacentInverseVertex(target);
+
+                for (Edge edge : sourceGraph.getAdjacentEdgesNonCopy(sourceParent)) {
+                    Vertex sibling = edge.getTo();
+
+                    if (hasParentRestrictions(sibling)) {
+                        restrictions.put(sibling, targetParent);
+                    }
+                }
+            }
+        });
+
+        return restrictions;
+    }
+
+    public static boolean hasParentRestrictions(Vertex vertex) {
+        return vertex.isOfType(SchemaGraph.FIELD)
+                || vertex.isOfType(SchemaGraph.INPUT_FIELD)
+                || vertex.isOfType(SchemaGraph.ENUM_VALUE)
+                || vertex.isOfType(SchemaGraph.ARGUMENT);
+    }
+
+    public static boolean hasChildrenRestrictions(Vertex vertex) {
+        return vertex.isOfType(SchemaGraph.INPUT_OBJECT)
+                || vertex.isOfType(SchemaGraph.OBJECT)
+                || vertex.isOfType(SchemaGraph.ENUM);
     }
 }

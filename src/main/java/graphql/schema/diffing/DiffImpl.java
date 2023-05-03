@@ -4,7 +4,6 @@ import com.google.common.collect.HashMultiset;
 import com.google.common.collect.Multiset;
 import com.google.common.collect.Multisets;
 import graphql.Internal;
-import graphql.schema.diffing.DiffImpl.OptimalEdit;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -22,7 +21,6 @@ import static graphql.Assert.assertFalse;
 import static graphql.Assert.assertTrue;
 import static graphql.schema.diffing.EditorialCostForMapping.baseEditorialCostForMapping;
 import static graphql.schema.diffing.EditorialCostForMapping.editorialCostForMapping;
-import static graphql.schema.diffing.SchemaParentRestrictions.getNonFixedRestrictions;
 
 /**
  * This is an algorithm calculating the optimal edit to change the source graph into the target graph.
@@ -39,6 +37,7 @@ import static graphql.schema.diffing.SchemaParentRestrictions.getNonFixedRestric
 @Internal
 public class DiffImpl {
 
+    private final PossibleMappingsCalculator possibleMappingsCalculator;
     private final SchemaGraph completeSourceGraph;
     private final SchemaGraph completeTargetGraph;
     private final PossibleMappingsCalculator.PossibleMappings possibleMappings;
@@ -105,7 +104,8 @@ public class DiffImpl {
         }
     }
 
-    public DiffImpl(SchemaGraph completeSourceGraph, SchemaGraph completeTargetGraph, PossibleMappingsCalculator.PossibleMappings possibleMappings, SchemaDiffingRunningCheck runningCheck) {
+    public DiffImpl(PossibleMappingsCalculator possibleMappingsCalculator, SchemaGraph completeSourceGraph, SchemaGraph completeTargetGraph, PossibleMappingsCalculator.PossibleMappings possibleMappings, SchemaDiffingRunningCheck runningCheck) {
+        this.possibleMappingsCalculator = possibleMappingsCalculator;
         this.completeSourceGraph = completeSourceGraph;
         this.completeTargetGraph = completeTargetGraph;
         this.possibleMappings = possibleMappings;
@@ -204,7 +204,7 @@ public class DiffImpl {
         double[][] costMatrix = new double[costMatrixSize][costMatrixSize];
 
         Map<Vertex, Double> isolatedVerticesCache = new LinkedHashMap<>();
-        Map<Vertex, Vertex> nonFixedParentRestrictions = getNonFixedRestrictions(parentPartialMapping, completeSourceGraph, completeTargetGraph);
+        Map<Vertex, Vertex> nonFixedParentRestrictions = possibleMappingsCalculator.getNonFixedParentRestrictions(parentPartialMapping);
 
         for (int i = parentLevel; i < allSources.size(); i++) {
             Vertex v = allSources.get(i);
