@@ -2898,34 +2898,6 @@ class EditOperationAnalyzerTest extends Specification {
         changes.directiveDifferences.isEmpty()
     }
 
-    def "big diff"() {
-        def oldSdl = new File("/Users/fwang/Library/Application Support/JetBrains/IntelliJIdea2023.1/scratches/$commit/$commit^.graphqls")
-                .readLines()
-                .join("\n")
-        def newSdl = new File("/Users/fwang/Library/Application Support/JetBrains/IntelliJIdea2023.1/scratches/$commit/${commit}.graphqls")
-                .readLines()
-                .join("\n")
-
-        when:
-        def changes = calcDiff(oldSdl, newSdl)
-
-        then:
-        println changes
-
-        where:
-        _ | commit
-        // _ | "3672fa0f"
-        // _ | "2d9c9cca"
-        // _ | "e9d8cbec"
-        // _ | "e3e80cc9"
-        // _ | "79fe3d15"
-        // _ | "399846d8"
-        // _ | "879c939c"
-        // _ | "c3656195"
-        // _ | "7b0d3b14"
-        _ | "8d50bc9b"
-    }
-
     def "traversal order puts field changes before arguments"() {
         def objectOld = new Vertex(SchemaGraph.OBJECT, "target-1")
         objectOld.add("name", "Obey")
