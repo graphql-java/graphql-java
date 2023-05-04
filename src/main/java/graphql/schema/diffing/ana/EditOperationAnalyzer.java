@@ -2,6 +2,7 @@ package graphql.schema.diffing.ana;
 
 import graphql.Assert;
 import graphql.Internal;
+import graphql.VisibleForTesting;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.diffing.Edge;
 import graphql.schema.diffing.EditOperation;
@@ -10,6 +11,8 @@ import graphql.schema.diffing.SchemaGraph;
 import graphql.schema.diffing.Vertex;
 import graphql.schema.idl.ScalarInfo;
 
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -132,6 +135,8 @@ public class EditOperationAnalyzer {
     }
 
     public EditOperationAnalysisResult analyzeEdits(List<EditOperation> editOperations, Mapping mapping) {
+        editOperations = getTraversalOrder(editOperations);
+
         handleTypeVertexChanges(editOperations);
 
         for (EditOperation editOperation : editOperations) {
@@ -164,6 +169,7 @@ public class EditOperationAnalyzer {
                     }
             }
         }
+
         handleTypeChanges(editOperations, mapping);
         handleImplementsChanges(editOperations, mapping);
         handleUnionMemberChanges(editOperations, mapping);
@@ -1975,5 +1981,95 @@ public class EditOperationAnalyzer {
         UnionModification objectModification = new UnionModification(oldName, newName);
         unionDifferences.put(oldName, objectModification);
         unionDifferences.put(newName, objectModification);
+    }
+
+    /**
+     * The order to traverse edit operations according to the operation.
+     *
+     * @see #getTraversalOrder(List)
+     */
+    private static final List<EditOperation.Operation> OPERATION_TRAVERSAL_ORDER = List.of(
+            EditOperation.Operation.CHANGE_VERTEX,
+            EditOperation.Operation.INSERT_VERTEX,
+            EditOperation.Operation.DELETE_VERTEX,
+            EditOperation.Operation.CHANGE_EDGE,
+            EditOperation.Operation.INSERT_EDGE,
+            EditOperation.Operation.DELETE_EDGE
+    );
+
+    /**
+     * The order to traverse edit operations according to the vertex types involved.
+     *
+     * @see #getTraversalOrder(List)
+     */
+    private static final List<String> TYPE_TRAVERSAL_ORDER = List.of(
+            // These are all top level declarations
+            SchemaGraph.SCHEMA,
+            SchemaGraph.OBJECT,
+            SchemaGraph.INTERFACE,
+            SchemaGraph.UNION,
+            SchemaGraph.SCALAR,
+            SchemaGraph.ENUM,
+            SchemaGraph.INPUT_OBJECT,
+            SchemaGraph.DIRECTIVE,
+            // These are all direct descendants of top level declarations
+            SchemaGraph.FIELD,
+            SchemaGraph.INPUT_FIELD,
+            SchemaGraph.ENUM_VALUE,
+            // Everything else
+            SchemaGraph.ARGUMENT,
+            SchemaGraph.APPLIED_DIRECTIVE,
+            SchemaGraph.APPLIED_ARGUMENT,
+            SchemaGraph.ISOLATED
+    );
+
+    /**
+     * The input list of {@link EditOperation}s does not conform to any order.
+     * <p>
+     * We need to sort it as we sometimes rely on the parents being processed first.
+     * <p>
+     * e.g. we ignore a new argument if the parent of the argument is new.
+     * However, if the argument addition is processed before the
+     */
+    @VisibleForTesting
+    static List<EditOperation> getTraversalOrder(List<EditOperation> editOperations) {
+        ArrayList<EditOperation> sorted = new ArrayList<>(editOperations);
+
+        sorted.sort(
+                Comparator
+                        .<EditOperation>comparingInt((editOperation) -> {
+                            int i = OPERATION_TRAVERSAL_ORDER.indexOf(editOperation.getOperation());
+                            if (i < 0) {
+                                return Assert.assertShouldNeverHappen("Unknown operation: " + editOperation.getOperation());
+                            }
+                            return i;
+                        })
+                        .thenComparing((editOperation) -> {
+                            // Converts this editOperation into an index from the order
+                            // The lower the index, the earlier it appears in the sorted list
+                            for (int i = 0; i < TYPE_TRAVERSAL_ORDER.size(); i++) {
+                                String type = TYPE_TRAVERSAL_ORDER.get(i);
+
+                                if (isAnyVertexOfType(editOperation, type)) {
+                                    return i;
+                                }
+                            }
+
+                            return Assert.assertShouldNeverHappen("Unable to determine edit operation subject for: " + editOperation);
+                        })
+        );
+
+        return sorted;
+    }
+
+    private static boolean isAnyVertexOfType(EditOperation edit, String type) {
+        return (edit.getSourceVertex() != null && edit.getSourceVertex().isOfType(type))
+                || (edit.getTargetVertex() != null && edit.getTargetVertex().isOfType(type))
+                || (edit.getSourceEdge() != null && isAnyVertexOfType(edit.getSourceEdge(), type))
+                || (edit.getTargetEdge() != null && isAnyVertexOfType(edit.getTargetEdge(), type));
+    }
+
+    private static boolean isAnyVertexOfType(Edge edge, String type) {
+        return edge.getFrom().isOfType(type) || edge.getTo().isOfType(type);
     }
 }

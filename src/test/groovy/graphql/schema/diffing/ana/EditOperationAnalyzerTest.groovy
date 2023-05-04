@@ -1,7 +1,11 @@
 package graphql.schema.diffing.ana
 
 import graphql.TestUtil
+import graphql.schema.diffing.Edge
+import graphql.schema.diffing.EditOperation
 import graphql.schema.diffing.SchemaDiffing
+import graphql.schema.diffing.SchemaGraph
+import graphql.schema.diffing.Vertex
 import spock.lang.Specification
 
 import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveDeletion
@@ -2892,6 +2896,62 @@ class EditOperationAnalyzerTest extends Specification {
 
         then:
         changes.directiveDifferences.isEmpty()
+    }
+
+    def "traversal order puts field changes before arguments"() {
+        def objectOld = new Vertex(SchemaGraph.OBJECT, "target-1")
+        objectOld.add("name", "Obey")
+        def objectNew = new Vertex(SchemaGraph.OBJECT, "target-1")
+        objectNew.add("name", "Ob")
+        def changeObjectVertex = EditOperation.changeVertex(
+                "Change object",
+                objectOld,
+                objectNew,
+        )
+
+        def newField = new Vertex(SchemaGraph.FIELD, "target-1")
+        newField.add("name", "fried")
+        def insertNewFieldVertex = EditOperation.insertVertex(
+                "Insert new field",
+                Vertex.newIsolatedNode("source-isolated-Field-1"),
+                newField,
+        )
+
+        def newArgument = new Vertex(SchemaGraph.ARGUMENT, "target-1")
+        newArgument.add("name", "alone")
+        def insertNewArgumentVertex = EditOperation.insertVertex(
+                "Insert argument",
+                Vertex.newIsolatedNode("source-isolated-Argument-1"),
+                newArgument,
+        )
+
+        def insertNewFieldEdge = EditOperation.insertEdge(
+                "Insert Object -> Field Edge",
+                new Edge(objectNew, newField),
+        )
+
+        def insertNewArgumentEdge = EditOperation.insertEdge(
+                "Insert Field -> Argument Edge",
+                new Edge(newField, newArgument),
+        )
+
+        when:
+        def result = EditOperationAnalyzer.getTraversalOrder([
+                insertNewArgumentVertex,
+                insertNewFieldEdge,
+                insertNewArgumentEdge,
+                changeObjectVertex,
+                insertNewFieldVertex,
+        ])
+
+        then:
+        result == [
+                changeObjectVertex,
+                insertNewFieldVertex,
+                insertNewArgumentVertex,
+                insertNewFieldEdge,
+                insertNewArgumentEdge,
+        ]
     }
 
     EditOperationAnalysisResult calcDiff(
