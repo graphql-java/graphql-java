@@ -34,7 +34,6 @@ public class EditorialCostForMapping {
                                                   List<EditOperation> editOperationsResult) {
         int cost = 0;
 
-
         for (int i = 0; i < mapping.size(); i++) {
             Vertex sourceVertex = mapping.getSource(i);
             Vertex targetVertex = mapping.getTarget(i);

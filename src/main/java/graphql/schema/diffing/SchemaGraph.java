@@ -258,12 +258,20 @@ public class SchemaGraph {
         return adjacentVertices.get(0);
     }
 
+    /**
+     * Gets the one inverse adjacent edge to the input and gets the other vertex.
+     */
+    public Vertex getSingleAdjacentInverseVertex(Vertex input) {
+        Collection<Edge> adjacentVertices = this.getAdjacentEdgesInverseNonCopy(input);
+        assertTrue(adjacentVertices.size() == 1, () -> format("No parent found for %s", input));
+        return adjacentVertices.iterator().next().getFrom();
+    }
+
     public int getAppliedDirectiveIndex(Vertex appliedDirective) {
         List<Edge> adjacentEdges = this.getAdjacentEdgesInverseCopied(appliedDirective);
         assertTrue(adjacentEdges.size() == 1, () -> format("No applied directive container found for %s", appliedDirective));
         return Integer.parseInt(adjacentEdges.get(0).getLabel());
     }
-
 
     public Vertex getEnumForEnumValue(Vertex enumValue) {
         List<Vertex> adjacentVertices = this.getAdjacentVerticesInverse(enumValue);

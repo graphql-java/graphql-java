@@ -58,6 +58,7 @@ public class SchemaDiffing {
         PossibleMappingsCalculator.PossibleMappings possibleMappings = possibleMappingsCalculator.calculate();
 
         Mapping startMapping = Mapping.newMapping(
+                possibleMappingsCalculator.getFixedParentRestrictions(),
                 possibleMappings.fixedOneToOneMappings,
                 possibleMappings.fixedOneToOneSources,
                 possibleMappings.fixedOneToOneTargets);
@@ -75,7 +76,6 @@ public class SchemaDiffing {
 
         runningCheck.check();
 
-
         int isolatedSourceCount = (int) nonMappedSource.stream().filter(Vertex::isIsolated).count();
         int isolatedTargetCount = (int) nonMappedTarget.stream().filter(Vertex::isIsolated).count();
         if (isolatedTargetCount > isolatedSourceCount) {
@@ -87,6 +87,7 @@ public class SchemaDiffing {
                 fixedOneToOneInverted.put(t, s);
             }
             Mapping startMappingInverted = Mapping.newMapping(
+                    possibleMappingsCalculator.getFixedParentRestrictionsInverse(fixedOneToOneInverted),
                     fixedOneToOneInverted,
                     possibleMappings.fixedOneToOneTargets,
                     possibleMappings.fixedOneToOneSources
@@ -105,11 +106,10 @@ public class SchemaDiffing {
 
             sortVertices(nonMappedTarget, targetGraph, possibleMappings);
 
-            DiffImpl diffImpl = new DiffImpl(targetGraph, sourceGraph, possibleMappings, runningCheck);
+            DiffImpl diffImpl = new DiffImpl(possibleMappingsCalculator, targetGraph, sourceGraph, possibleMappings, runningCheck);
             DiffImpl.OptimalEdit optimalEdit = diffImpl.diffImpl(startMappingInverted, targetVertices, sourceVertices, algoIterationCount);
             DiffImpl.OptimalEdit invertedBackOptimalEdit = new DiffImpl.OptimalEdit(sourceGraph, targetGraph, optimalEdit.mapping.invert(), optimalEdit.ged);
             return invertedBackOptimalEdit;
-
         } else {
             sortVertices(nonMappedSource, sourceGraph, possibleMappings);
 
@@ -121,7 +121,7 @@ public class SchemaDiffing {
             targetVertices.addAll(possibleMappings.fixedOneToOneTargets);
             targetVertices.addAll(nonMappedTarget);
 
-            DiffImpl diffImpl = new DiffImpl(sourceGraph, targetGraph, possibleMappings, runningCheck);
+            DiffImpl diffImpl = new DiffImpl(possibleMappingsCalculator, sourceGraph, targetGraph, possibleMappings, runningCheck);
             DiffImpl.OptimalEdit optimalEdit = diffImpl.diffImpl(startMapping, sourceVertices, targetVertices, algoIterationCount);
             return optimalEdit;
         }
@@ -132,5 +132,4 @@ public class SchemaDiffing {
         Comparator<Vertex> vertexComparator = Comparator.comparing(schemaGraph::adjacentEdgesAndInverseCount).reversed();
         vertices.sort(vertexComparator);
     }
-
 }

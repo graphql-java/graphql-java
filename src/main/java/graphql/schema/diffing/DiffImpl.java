@@ -37,6 +37,7 @@ import static graphql.schema.diffing.EditorialCostForMapping.editorialCostForMap
 @Internal
 public class DiffImpl {
 
+    private final PossibleMappingsCalculator possibleMappingsCalculator;
     private final SchemaGraph completeSourceGraph;
     private final SchemaGraph completeTargetGraph;
     private final PossibleMappingsCalculator.PossibleMappings possibleMappings;
@@ -103,7 +104,8 @@ public class DiffImpl {
         }
     }
 
-    public DiffImpl(SchemaGraph completeSourceGraph, SchemaGraph completeTargetGraph, PossibleMappingsCalculator.PossibleMappings possibleMappings, SchemaDiffingRunningCheck runningCheck) {
+    public DiffImpl(PossibleMappingsCalculator possibleMappingsCalculator, SchemaGraph completeSourceGraph, SchemaGraph completeTargetGraph, PossibleMappingsCalculator.PossibleMappings possibleMappings, SchemaDiffingRunningCheck runningCheck) {
+        this.possibleMappingsCalculator = possibleMappingsCalculator;
         this.completeSourceGraph = completeSourceGraph;
         this.completeTargetGraph = completeTargetGraph;
         this.possibleMappings = possibleMappings;
@@ -201,20 +203,21 @@ public class DiffImpl {
         double[][] costMatrixForHungarianAlgo = new double[costMatrixSize][costMatrixSize];
         double[][] costMatrix = new double[costMatrixSize][costMatrixSize];
 
-
         Map<Vertex, Double> isolatedVerticesCache = new LinkedHashMap<>();
+        Map<Vertex, Vertex> nonFixedParentRestrictions = possibleMappingsCalculator.getNonFixedParentRestrictions(completeSourceGraph, completeTargetGraph, parentPartialMapping);
 
         for (int i = parentLevel; i < allSources.size(); i++) {
             Vertex v = allSources.get(i);
             int j = 0;
             for (Vertex u : availableTargetVertices) {
-                double cost = calcLowerBoundMappingCost(v, u, parentPartialMapping, isolatedVerticesCache);
+                double cost = calcLowerBoundMappingCost(v, u, parentPartialMapping, isolatedVerticesCache, nonFixedParentRestrictions);
                 costMatrixForHungarianAlgo[i - parentLevel][j] = cost;
                 costMatrix[i - parentLevel][j] = cost;
                 j++;
             }
             runningCheck.check();
         }
+
         HungarianAlgorithm hungarianAlgorithm = new HungarianAlgorithm(costMatrixForHungarianAlgo);
         int[] assignments = hungarianAlgorithm.execute();
         int editorialCostForMapping = editorialCostForMapping(fixedEditorialCost, parentPartialMapping, completeSourceGraph, completeTargetGraph);
@@ -222,7 +225,6 @@ public class DiffImpl {
         double lowerBoundForPartialMapping = editorialCostForMapping + costMatrixSum;
 
         Mapping newMapping = parentPartialMapping.extendMapping(v_i, availableTargetVertices.get(assignments[0]));
-
 
         if (lowerBoundForPartialMapping >= optimalEdit.ged) {
             return;
@@ -298,7 +300,6 @@ public class DiffImpl {
 
             runningCheck.check();
         }
-
     }
 
     // this retrieves the next sibling  from MappingEntry.sibling and adds it to the queue if the lowerBound is less than the current upperBound
@@ -396,7 +397,25 @@ public class DiffImpl {
     private double calcLowerBoundMappingCost(Vertex v,
                                              Vertex u,
                                              Mapping partialMapping,
-                                             Map<Vertex, Double> isolatedVerticesCache) {
+                                             Map<Vertex, Double> isolatedVerticesCache,
+                                             Map<Vertex, Vertex> nonFixedParentRestrictions) {
+        if (nonFixedParentRestrictions.containsKey(v) || partialMapping.hasParentRestriction(v)) {
+            Vertex uParentRestriction = nonFixedParentRestrictions.get(v);
+            if (uParentRestriction == null) {
+                uParentRestriction = partialMapping.getParentRestriction(v);
+            }
+
+            Collection<Edge> parentEdges = completeTargetGraph.getAdjacentEdgesInverseNonCopy(u);
+            if (parentEdges.size() != 1) {
+                return Integer.MAX_VALUE;
+            }
+
+            Vertex uParent = parentEdges.iterator().next().getFrom();
+            if (uParent != uParentRestriction) {
+                return Integer.MAX_VALUE;
+            }
+        }
+
         if (!possibleMappings.mappingPossible(v, u)) {
             return Integer.MAX_VALUE;
         }

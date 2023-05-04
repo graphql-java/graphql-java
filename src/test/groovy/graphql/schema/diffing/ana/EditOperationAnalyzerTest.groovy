@@ -1013,7 +1013,7 @@ class EditOperationAnalyzerTest extends Specification {
         interface Node2 {
             id: ID!
         }
-        type Foo implements Node2 & NewI{
+        type Foo implements Node2 & NewI {
             id: ID!
             hello: String
         }
@@ -2952,6 +2952,96 @@ class EditOperationAnalyzerTest extends Specification {
                 insertNewFieldEdge,
                 insertNewArgumentEdge,
         ]
+    }
+
+    def "less fields in the renamed object"() {
+        given:
+        def oldSdl = '''
+        type Query {
+            user(id: ID!): User
+        }
+        type User {
+            id: String
+            name: String
+            account: String
+            email: Boolean
+            age: Int
+        }
+        '''
+        def newSdl = '''
+        type Query {
+            account(id: ID!): Account
+        }
+        type Account {
+            id: String
+            name: String
+            yearsOld: Int
+        }
+        '''
+
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+
+        then:
+        changes.objectDifferences["User"] instanceof ObjectModification
+        def userModification = changes.objectDifferences["User"] as ObjectModification
+        userModification.isNameChanged()
+        userModification.oldName == "User"
+        userModification.newName == "Account"
+
+        def deletions = userModification.getDetails(ObjectFieldDeletion)
+        deletions.size() == 2
+        deletions.collect { it.name }.toSet() == ["account", "email"] as Set
+
+        def rename = userModification.getDetails(ObjectFieldRename)
+        rename.size() == 1
+        rename[0].oldName == "age"
+        rename[0].newName == "yearsOld"
+    }
+
+    def "two possible mappings for object rename where one has less fields"() {
+        given:
+        def oldSdl = '''
+        type Query {
+            user(id: ID!): User
+        }
+        type User {
+            id: String
+            name: String
+            account: String
+            email: String
+            age: Int
+        }
+        '''
+        def newSdl = '''
+        type Query {
+            account(id: ID!): Account
+        }
+        type Account {
+            yearsOld: Int
+        }
+        type Profile {
+            id: String
+            name: String
+            account: String
+            email: String
+            age: Int
+        }
+        '''
+
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+
+        then:
+        changes.objectDifferences["Account"] instanceof ObjectAddition
+
+        changes.objectDifferences["User"] instanceof ObjectModification
+        def userModification = changes.objectDifferences["User"] as ObjectModification
+        userModification.isNameChanged()
+        userModification.oldName == "User"
+        userModification.newName == "Profile"
+
+        userModification.details.isEmpty()
     }
 
     EditOperationAnalysisResult calcDiff(
