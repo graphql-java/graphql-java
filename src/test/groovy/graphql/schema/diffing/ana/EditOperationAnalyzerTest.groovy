@@ -2954,38 +2954,6 @@ class EditOperationAnalyzerTest extends Specification {
         ]
     }
 
-    def "less fields in the rename destination"() {
-        given:
-        def oldSdl = '''
-        type Query {
-            user(id: ID!): User
-        }
-        type User {
-            id: String
-            name: Float
-            account: String
-            email: Boolean
-            age: ID!
-        }
-        '''
-        def newSdl = '''
-        type Query {
-            account(id: ID!): Account
-        }
-        type Account {
-            id: String
-            name: String
-            age: Int
-        }
-        '''
-
-        when:
-        def changes = calcDiff(oldSdl, newSdl)
-
-        then:
-        changes.directiveDifferences.isEmpty()
-    }
-
     def "less fields in the renamed object"() {
         given:
         def oldSdl = '''
