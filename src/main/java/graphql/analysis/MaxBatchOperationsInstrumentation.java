@@ -52,12 +52,10 @@ public class MaxBatchOperationsInstrumentation extends SimplePerformantInstrumen
         }
         int supplied_width = 0;
         if (!definitions.isEmpty()) {
-            for (Definition definition : definitions) {
-                OperationDefinition operationDefinition = (OperationDefinition) definition;
-                SelectionSet selectionSet = operationDefinition.getSelectionSet();
-                if (selectionSet != null && selectionSet.getSelections() != null) {
-                    supplied_width += selectionSet.getSelections().size();
-                }
+            OperationDefinition operationDefinition = (OperationDefinition) definitions.get(0);
+            SelectionSet selectionSet = operationDefinition.getSelectionSet();
+            if (selectionSet != null && selectionSet.getSelections() != null) {
+                supplied_width += selectionSet.getSelections().size();
             }
         }
         if (supplied_width > maxOperations) {
