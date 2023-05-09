@@ -74,6 +74,19 @@ class DataFetcherResultTest extends Specification {
 
     }
 
+    def "mapping works"() {
+        when:
+        def original = DataFetcherResult.newResult().data("hello")
+                .errors([error1]).localContext("world")
+                .extensions([x: "y"]).build()
+        def result = original.map({ data -> data.length() })
+        then:
+        result.getData() == 5
+        result.getLocalContext() == "world"
+        result.getExtensions() == [x: "y"]
+        result.getErrors() == [error1]
+    }
+
     def "transforming works"() {
         when:
         def original = DataFetcherResult.newResult().data("hello")

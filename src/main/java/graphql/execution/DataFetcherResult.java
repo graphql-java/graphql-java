@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 import static graphql.Assert.assertNotNull;
 
@@ -119,6 +120,22 @@ public class DataFetcherResult<T> {
         Builder<T> builder = new Builder<>(this);
         builderConsumer.accept(builder);
         return builder.build();
+    }
+
+    /**
+     * Transforms the data of the current DataFetcherResult using the provided function.
+     * All other values are left unmodified.
+     *
+     * @param transformation the transformation that should be applied to the data
+     *
+     * @return a new instance with where the data value has been transformed
+     */
+    public <R> DataFetcherResult<R> map(Function<T, R> transformation) {
+        return new Builder<>(transformation.apply(this.data))
+                .errors(this.errors)
+                .extensions(this.extensions)
+                .localContext(this.localContext)
+                .build();
     }
 
     /**
