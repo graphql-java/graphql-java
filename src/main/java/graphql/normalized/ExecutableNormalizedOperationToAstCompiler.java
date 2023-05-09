@@ -3,7 +3,7 @@ package graphql.normalized;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import graphql.Assert;
-import graphql.Internal;
+import graphql.PublicApi;
 import graphql.introspection.Introspection;
 import graphql.language.Argument;
 import graphql.language.ArrayValue;
@@ -40,9 +40,25 @@ import static graphql.language.SelectionSet.newSelectionSet;
 import static graphql.language.TypeName.newTypeName;
 import static graphql.schema.GraphQLTypeUtil.unwrapAll;
 
-@Internal
+/**
+ * This class can take a list of {@link ExecutableNormalizedField}s and compiling out a
+ * normalised operation {@link Document} that would represent how those fields
+ * maybe executed.
+ * <p>
+ * This is essentially the reverse of {@link ExecutableNormalizedOperationFactory} which takes
+ * operation text and makes {@link ExecutableNormalizedField}s from it, this takes {@link ExecutableNormalizedField}s
+ * and makes operation text from it.
+ * <p>
+ * You could for example send that operation text onto to some other graphql server if it
+ * has the same schema as the one provided.
+ */
+@PublicApi
 public class ExecutableNormalizedOperationToAstCompiler {
 
+    /**
+     * The result is a {@link Document} and a map of variables
+     * that would go with that document.
+     */
     public static class CompilerResult {
         private final Document document;
         private final Map<String, Object> variables;
@@ -61,6 +77,20 @@ public class ExecutableNormalizedOperationToAstCompiler {
         }
     }
 
+    /**
+     * This will compile a operation text {@link Document} with possibly variables from the given {@link ExecutableNormalizedField}s
+     *
+     * The {@link VariablePredicate} is used called to decide if the given argument values should be made into a variable
+     * OR inlined into the operation text as a graphql literal.
+     *
+     * @param schema            the graphql schema to use
+     * @param operationKind     the kind of operation
+     * @param operationName     the name of the operation to use
+     * @param topLevelFields    the top level {@link ExecutableNormalizedField}s to start from
+     * @param variablePredicate the variable predicate that decides if arguments turn into variables or not during compilation
+     *
+     * @return a {@link CompilerResult} object
+     */
     public static CompilerResult compileToDocument(@NotNull GraphQLSchema schema,
                                                    @NotNull OperationDefinition.Operation operationKind,
                                                    @Nullable String operationName,

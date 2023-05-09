@@ -5,7 +5,7 @@ import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import graphql.GraphQLContext;
-import graphql.Internal;
+import graphql.PublicApi;
 import graphql.collect.ImmutableKit;
 import graphql.execution.CoercedVariables;
 import graphql.execution.ConditionalNodes;
@@ -58,15 +58,32 @@ import static graphql.util.FpKit.intersection;
 import static java.util.Collections.singleton;
 import static java.util.Collections.singletonList;
 
-@Internal
+/**
+ * This factory can create a {@link ExecutableNormalizedOperation} which represents what would be executed
+ * during a given graphql operation.
+ */
+@PublicApi
 public class ExecutableNormalizedOperationFactory {
 
     private final ConditionalNodes conditionalNodes = new ConditionalNodes();
 
-    public static ExecutableNormalizedOperation createExecutableNormalizedOperation(GraphQLSchema graphQLSchema,
-                                                                                    Document document,
-                                                                                    String operationName,
-                                                                                    CoercedVariables coercedVariableValues) {
+    /**
+     * This will create a runtime representation of the graphql operation that would be executed
+     * in a runtime sense.
+     *
+     * @param graphQLSchema         the schema to be used
+     * @param document              the {@link Document} holding the operation text
+     * @param operationName         the operation name to use
+     * @param coercedVariableValues the coerced variables to use
+     *
+     * @return a runtime representation of the graphql operation.
+     */
+    public static ExecutableNormalizedOperation createExecutableNormalizedOperation(
+            GraphQLSchema graphQLSchema,
+            Document document,
+            String operationName,
+            CoercedVariables coercedVariableValues
+    ) {
         NodeUtil.GetOperationResult getOperationResult = NodeUtil.getOperation(document, operationName);
         return new ExecutableNormalizedOperationFactory().createNormalizedQueryImpl(graphQLSchema,
                 getOperationResult.operationDefinition,
@@ -77,6 +94,17 @@ public class ExecutableNormalizedOperationFactory {
                 Locale.getDefault());
     }
 
+    /**
+     * This will create a runtime representation of the graphql operation that would be executed
+     * in a runtime sense.
+     *
+     * @param graphQLSchema         the schema to be used
+     * @param operationDefinition   the operation to be executed
+     * @param fragments             a set of fragments associated with the operation
+     * @param coercedVariableValues the coerced variables to use
+     *
+     * @return a runtime representation of the graphql operation.
+     */
     public static ExecutableNormalizedOperation createExecutableNormalizedOperation(GraphQLSchema graphQLSchema,
                                                                                     OperationDefinition operationDefinition,
                                                                                     Map<String, FragmentDefinition> fragments,
@@ -90,6 +118,17 @@ public class ExecutableNormalizedOperationFactory {
                 Locale.getDefault());
     }
 
+    /**
+     * This will create a runtime representation of the graphql operation that would be executed
+     * in a runtime sense.
+     *
+     * @param graphQLSchema the schema to be used
+     * @param document      the {@link Document} holding the operation text
+     * @param operationName the operation name to use
+     * @param rawVariables  the raw variables to be coerced
+     *
+     * @return a runtime representation of the graphql operation.
+     */
     public static ExecutableNormalizedOperation createExecutableNormalizedOperationWithRawVariables(GraphQLSchema graphQLSchema,
                                                                                                     Document document,
                                                                                                     String operationName,
@@ -102,12 +141,28 @@ public class ExecutableNormalizedOperationFactory {
                 Locale.getDefault());
     }
 
-    public static ExecutableNormalizedOperation createExecutableNormalizedOperationWithRawVariables(GraphQLSchema graphQLSchema,
-                                                                                                    Document document,
-                                                                                                    String operationName,
-                                                                                                    RawVariables rawVariables,
-                                                                                                    GraphQLContext graphQLContext,
-                                                                                                    Locale locale) {
+
+    /**
+     * This will create a runtime representation of the graphql operation that would be executed
+     * in a runtime sense.
+     *
+     * @param graphQLSchema  the schema to be used
+     * @param document       the {@link Document} holding the operation text
+     * @param operationName  the operation name to use
+     * @param rawVariables   the raw variables that have not yet been coerced
+     * @param locale         the {@link Locale} to use during coercion
+     * @param graphQLContext the {@link GraphQLContext} to use during coercion
+     *
+     * @return a runtime representation of the graphql operation.
+     */
+    public static ExecutableNormalizedOperation createExecutableNormalizedOperationWithRawVariables(
+            GraphQLSchema graphQLSchema,
+            Document document,
+            String operationName,
+            RawVariables rawVariables,
+            GraphQLContext graphQLContext,
+            Locale locale
+    ) {
         NodeUtil.GetOperationResult getOperationResult = NodeUtil.getOperation(document, operationName);
         return new ExecutableNormalizedOperationFactory().createExecutableNormalizedOperationImplWithRawVariables(graphQLSchema,
                 getOperationResult.operationDefinition,
@@ -145,7 +200,7 @@ public class ExecutableNormalizedOperationFactory {
     }
 
     /**
-     * Creates a new Normalized query tree for the provided query
+     * Creates a new ExecutableNormalizedOperation for the provided query
      */
     private ExecutableNormalizedOperation createNormalizedQueryImpl(GraphQLSchema graphQLSchema,
                                                                     OperationDefinition operationDefinition,
