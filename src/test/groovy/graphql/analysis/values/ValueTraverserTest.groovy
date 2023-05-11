@@ -17,6 +17,7 @@ import graphql.schema.GraphQLInputObjectType
 import graphql.schema.GraphQLInputSchemaElement
 import graphql.schema.GraphQLList
 import graphql.schema.GraphQLNamedSchemaElement
+import graphql.schema.GraphQLObjectType
 import graphql.schema.GraphQLScalarType
 import graphql.schema.idl.SchemaDirectiveWiring
 import graphql.schema.idl.SchemaDirectiveWiringEnvironment
@@ -861,8 +862,12 @@ type Profile {
             GraphQLFieldDefinition onField(SchemaDirectiveWiringEnvironment<GraphQLFieldDefinition> env) {
                 GraphQLFieldsContainer fieldsContainer = env.getFieldsContainer()
                 GraphQLFieldDefinition fieldDefinition = env.getFieldDefinition()
+                if (! fieldsContainer instanceof GraphQLObjectType) {
+                    return fieldDefinition
+                }
+                GraphQLObjectType containingObjectType = env.getFieldsContainer() as GraphQLObjectType
 
-                final DataFetcher<?> originalDF = env.getCodeRegistry().getDataFetcher(fieldsContainer, fieldDefinition)
+                final DataFetcher<?> originalDF = env.getCodeRegistry().getDataFetcher(containingObjectType, fieldDefinition)
                 final DataFetcher<?> newDF = { DataFetchingEnvironment originalEnv ->
                     ValueVisitor visitor = new ValueVisitor() {
                         @Override
@@ -884,7 +889,7 @@ type Profile {
                     return originalDF.get(newEnv);
                 }
 
-                env.getCodeRegistry().dataFetcher(fieldsContainer, fieldDefinition, newDF)
+                env.getCodeRegistry().dataFetcher(containingObjectType, fieldDefinition, newDF)
 
                 return fieldDefinition
             }
