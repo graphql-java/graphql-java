@@ -710,6 +710,57 @@ type Dog implements Animal{
         ]
     }
 
+    def "query with fragment and type condition merged together 2"() {
+        def graphQLSchema = TestUtil.schema("""
+            type Query {
+                pet : Pet
+            }
+            interface Pet {
+                name : String
+            }
+            
+            type Dog implements Pet {
+                name : String
+            }
+
+            type Bird implements Pet {
+                name : String
+            }
+            
+            type Cat implements Pet {
+                name : String
+            }
+        """)
+        def query = """
+        {
+            pet {
+                name
+                ... on Dog {
+                    name
+                }
+                ... CatFrag
+            }
+         }
+         
+        fragment CatFrag on Cat {
+            name
+        }
+            """
+        assertValidQuery(graphQLSchema, query)
+
+        Document document = TestUtil.parseQuery(query)
+
+        ExecutableNormalizedOperationFactory dependencyGraph = new ExecutableNormalizedOperationFactory()
+        def tree = dependencyGraph.createExecutableNormalizedOperation(graphQLSchema, document, null, CoercedVariables.emptyVariables())
+        def printedTree = printTreeWithLevelInfo(tree, graphQLSchema)
+
+        expect:
+        printedTree == ['-Query.pet: Pet',
+                        '--[Bird, Cat, Dog].name: String'
+        ]
+    }
+
+
     def "query with interface in between"() {
         def graphQLSchema = schema("""
         type Query {
@@ -1689,14 +1740,16 @@ schema {
         ExecutableNormalizedOperationFactory dependencyGraph = new ExecutableNormalizedOperationFactory()
         when:
         def tree = dependencyGraph.createExecutableNormalizedOperationWithRawVariables(graphQLSchema, document, null, RawVariables.emptyVariables())
-        println String.join("\n", printTree(tree))
+        def printedTree = printTreeWithLevelInfo(tree, graphQLSchema)
 
-        /**
-         * This is a test for two fields with the same key (friend),
-         * but backed by two different fields (Cat.dogFriend,Dog.dogFriend)
-         * which end up being two different NormalizedField
-         */
         then:
+        // the two friend fields are not in on ENF
+        printedTree == ['-Query.pets: Pet',
+                        '--friend: Cat.catFriend: CatFriend',
+                        '---CatFriend.catFriendName: String',
+                        '--friend: Dog.dogFriend: DogFriend',
+                        '---DogFriend.dogFriendName: String']
+
         tree.normalizedFieldToMergedField.size() == 5
         tree.fieldToNormalizedField.size() == 7
     }
@@ -1738,11 +1791,16 @@ schema {
         def printedTree = printTreeWithLevelInfo(tree, graphQLSchema)
 
         then:
+        /**
+         * the two name fields are not merged, because they are backed by different fields with different arguments
+         * If the arguments are the same, it would be one ENF.
+         */
         printedTree == ['-Query.pets: Pet',
                         '--Cat.name: String',
                         '--Dog.name: String'
         ]
     }
+
 
     def "diverging fields with the same parent type on deeper level"() {
         given:
@@ -2494,4 +2552,49 @@ schema {
         printedTree == ['Query.hello']
         tree.getTopLevelFields().get(0).getNormalizedArguments().isEmpty()
     }
+
+    def "reused field via fragments"() {
+        String schema = """
+        type Query {
+          pet: Pet
+        }
+        type Pet {
+          owner: Person
+          emergencyContact: Person
+        }
+        type Person {
+          name: String
+        }
+        """
+        GraphQLSchema graphQLSchema = TestUtil.schema(schema)
+
+        String query = """
+{ pet {
+  owner { ...personName }
+  emergencyContact { ...personName }
+}}
+fragment personName on Person {
+  name
+}
+        """
+
+        assertValidQuery(graphQLSchema, query)
+
+        Document document = TestUtil.parseQuery(query)
+
+        ExecutableNormalizedOperationFactory dependencyGraph = new ExecutableNormalizedOperationFactory()
+        def tree = dependencyGraph.createExecutableNormalizedOperation(graphQLSchema, document, null, CoercedVariables.emptyVariables())
+        def printedTree = printTreeWithLevelInfo(tree, graphQLSchema)
+
+        expect:
+        printedTree == ['-Query.pet: Pet',
+                        '--Pet.owner: Person',
+                        '---Person.name: String',
+                        '--Pet.emergencyContact: Person',
+                        '---Person.name: String'
+        ]
+
+    }
+
+
 }
