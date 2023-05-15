@@ -2597,4 +2597,102 @@ fragment personName on Person {
     }
 
 
+    def "test interface fields with three different output types (covariance) on the implementations"() {
+        def graphQLSchema = schema("""
+        interface Animal {
+            parent: Animal
+            name: String
+        }
+        type Cat implements Animal {
+            name: String
+            parent: Cat
+        }
+        type Dog implements Animal {
+            name: String
+            parent: Dog
+            isGoodBoy: Boolean
+        }
+        type Bird implements Animal {
+            name: String
+            parent: Bird
+        }
+        type Query {
+            animal: Animal
+        }
+        """)
+
+        def query = """
+        {
+            animal {
+                parent {
+                    name
+                }
+            }
+        }
+        """
+
+        assertValidQuery(graphQLSchema, query)
+
+        Document document = TestUtil.parseQuery(query)
+
+        def dependencyGraph = new ExecutableNormalizedOperationFactory()
+        def tree = dependencyGraph.createExecutableNormalizedOperation(graphQLSchema, document, null, CoercedVariables.emptyVariables())
+        def printedTree = printTreeWithLevelInfo(tree, graphQLSchema)
+
+        expect:
+        printedTree == [
+                "-Query.animal: Animal",
+                "--[Bird, Cat, Dog].parent: Bird, Cat, Dog",
+                "---[Bird, Cat, Dog].name: String",
+        ]
+    }
+
+    def "covariants with union fields"() {
+        def graphQLSchema = schema("""
+        type Query {
+            animal: Animal
+        }
+        interface Animal {
+            parent: DogOrCat
+            name: String
+        }
+        type Cat implements Animal {
+            name: String
+            parent: Cat
+        }
+        type Dog implements Animal {
+            name: String
+            parent: Dog
+            isGoodBoy: Boolean
+        }
+        union DogOrCat = Dog | Cat
+        """)
+
+        def query = """
+        {
+            animal {
+                parent {
+                  __typename
+                }
+            }
+        }
+        """
+
+        assertValidQuery(graphQLSchema, query)
+
+        Document document = TestUtil.parseQuery(query)
+
+        def dependencyGraph = new ExecutableNormalizedOperationFactory()
+        def tree = dependencyGraph.createExecutableNormalizedOperation(graphQLSchema, document, null, CoercedVariables.emptyVariables())
+        def printedTree = printTreeWithLevelInfo(tree, graphQLSchema)
+
+        expect:
+        printedTree == [
+                "-Query.animal: Animal",
+                "--[Cat, Dog].parent: Cat, Dog",
+                "---[Cat, Dog].__typename: String!",
+        ]
+    }
+
+
 }
