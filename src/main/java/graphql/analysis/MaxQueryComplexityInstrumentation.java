@@ -101,21 +101,10 @@ public class MaxQueryComplexityInstrumentation extends SimplePerformantInstrumen
     @Override
     public @Nullable InstrumentationContext<ExecutionResult> beginExecuteOperation(InstrumentationExecuteOperationParameters instrumentationExecuteOperationParameters, InstrumentationState rawState) {
         State state = ofState(rawState);
-        QueryTraverser queryTraverser = newQueryTraverser(instrumentationExecuteOperationParameters.getExecutionContext());
 
-        Map<QueryVisitorFieldEnvironment, Integer> valuesByParent = new LinkedHashMap<>();
-        queryTraverser.visitPostOrder(new QueryVisitorStub() {
-            @Override
-            public void visitField(QueryVisitorFieldEnvironment env) {
-                int childComplexity = valuesByParent.getOrDefault(env, 0);
-                int value = calculateComplexity(env, childComplexity);
+        QueryComplexityCalculator queryComplexityCalculator = newQueryComplexityCalculator(instrumentationExecuteOperationParameters.getExecutionContext());
+        int totalComplexity = queryComplexityCalculator.calculate();
 
-                valuesByParent.compute(env.getParentEnvironment(), (key, oldValue) ->
-                        ofNullable(oldValue).orElse(0) + value
-                );
-            }
-        });
-        int totalComplexity = valuesByParent.getOrDefault(null, 0);
         if (log.isDebugEnabled()) {
             log.debug("Query complexity: {}", totalComplexity);
         }
@@ -145,34 +134,13 @@ public class MaxQueryComplexityInstrumentation extends SimplePerformantInstrumen
         return new AbortExecutionException("maximum query complexity exceeded " + totalComplexity + " > " + maxComplexity);
     }
 
-    QueryTraverser newQueryTraverser(ExecutionContext executionContext) {
-        return QueryTraverser.newQueryTraverser()
-                .schema(executionContext.getGraphQLSchema())
-                .document(executionContext.getDocument())
-                .operationName(executionContext.getExecutionInput().getOperationName())
-                .coercedVariables(executionContext.getCoercedVariables())
-                .build();
-    }
-
-    private int calculateComplexity(QueryVisitorFieldEnvironment queryVisitorFieldEnvironment, int childComplexity) {
-        if (queryVisitorFieldEnvironment.isTypeNameIntrospectionField()) {
-            return 0;
-        }
-        FieldComplexityEnvironment fieldComplexityEnvironment = convertEnv(queryVisitorFieldEnvironment);
-        return fieldComplexityCalculator.calculate(fieldComplexityEnvironment, childComplexity);
-    }
-
-    private FieldComplexityEnvironment convertEnv(QueryVisitorFieldEnvironment queryVisitorFieldEnvironment) {
-        FieldComplexityEnvironment parentEnv = null;
-        if (queryVisitorFieldEnvironment.getParentEnvironment() != null) {
-            parentEnv = convertEnv(queryVisitorFieldEnvironment.getParentEnvironment());
-        }
-        return new FieldComplexityEnvironment(
-                queryVisitorFieldEnvironment.getField(),
-                queryVisitorFieldEnvironment.getFieldDefinition(),
-                queryVisitorFieldEnvironment.getFieldsContainer(),
-                queryVisitorFieldEnvironment.getArguments(),
-                parentEnv
+    QueryComplexityCalculator newQueryComplexityCalculator(ExecutionContext executionContext) {
+        return new QueryComplexityCalculator(
+                fieldComplexityCalculator,
+                executionContext.getGraphQLSchema(),
+                executionContext.getDocument(),
+                executionContext.getExecutionInput().getOperationName(),
+                executionContext.getCoercedVariables()
         );
     }
 
