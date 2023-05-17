@@ -26,7 +26,7 @@ public class LegacyCoercingInputInterceptor implements InputInterceptor {
      *
      * @return an InputInterceptor that only observes values
      */
-    public static LegacyCoercingInputInterceptor observeValues(BiConsumer<Object, GraphQLInputType> observerCallback) {
+    public static LegacyCoercingInputInterceptor observesValues(BiConsumer<Object, GraphQLInputType> observerCallback) {
         return new LegacyCoercingInputInterceptor(((input, graphQLInputType) -> {
             observerCallback.accept(input, graphQLInputType);
             return input;
@@ -34,25 +34,24 @@ public class LegacyCoercingInputInterceptor implements InputInterceptor {
     }
 
     /**
-     * This will ONLY observe legacy values and invoke the callback when it gets one.  you can use this to enumerate how many
-     * legacy values are hitting you graphql implementation
+     * This will change legacy values as it encounters them to something acceptable to the more strict coercion rules.
      *
      * @return an InputInterceptor that migrates values to a more strict value
      */
-    public static LegacyCoercingInputInterceptor migrateValues() {
-        return migrateValues((input, type) -> {
+    public static LegacyCoercingInputInterceptor migratesValues() {
+        return migratesValues((input, type) -> {
         });
     }
 
     /**
-     * This will ONLY observe legacy values and invoke the callback when it gets one.  you can use this to enumerate how many
-     * legacy values are hitting you graphql implementation
+     * This will change legacy values as it encounters them to something acceptable to the more strict coercion rules.
+     * The observer callback will be invoked if it detects a legacy value that it will change.
      *
      * @param observerCallback a callback allowing you to observe a legacy scalar value before it is migrated
      *
      * @return an InputInterceptor that both observes values and migrates them to a more strict value
      */
-    public static LegacyCoercingInputInterceptor migrateValues(BiConsumer<Object, GraphQLInputType> observerCallback) {
+    public static LegacyCoercingInputInterceptor migratesValues(BiConsumer<Object, GraphQLInputType> observerCallback) {
         return new LegacyCoercingInputInterceptor(((input, graphQLInputType) -> {
             observerCallback.accept(input, graphQLInputType);
             if (Scalars.GraphQLBoolean.equals(graphQLInputType)) {
@@ -97,7 +96,7 @@ public class LegacyCoercingInputInterceptor implements InputInterceptor {
         } else if (Scalars.GraphQLInt.equals(graphQLType)) {
             return isLegacyIntValue(input);
         } else if (Scalars.GraphQLString.equals(graphQLType)) {
-            return true;
+            return isLegacyStringValue(input);
         } else {
             return false;
         }
@@ -113,6 +112,10 @@ public class LegacyCoercingInputInterceptor implements InputInterceptor {
 
     static boolean isLegacyIntValue(Object input) {
         return input instanceof String;
+    }
+
+    static boolean isLegacyStringValue(Object input) {
+        return !(input instanceof String);
     }
 
     static Object coerceLegacyBooleanValue(Object input) {
