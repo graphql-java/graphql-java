@@ -14,7 +14,6 @@ import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 
 import static graphql.Assert.assertNotNull;
-import static graphql.Assert.assertShouldNeverHappen;
 import static graphql.scalar.CoercingUtil.isNumberIsh;
 
 public class LegacyCoercingInputInterceptor implements InputInterceptor {
@@ -32,6 +31,17 @@ public class LegacyCoercingInputInterceptor implements InputInterceptor {
             observerCallback.accept(input, graphQLInputType);
             return input;
         }));
+    }
+
+    /**
+     * This will ONLY observe legacy values and invoke the callback when it gets one.  you can use this to enumerate how many
+     * legacy values are hitting you graphql implementation
+     *
+     * @return an InputInterceptor that migrates values to a more strict value
+     */
+    public static LegacyCoercingInputInterceptor migrateValues() {
+        return migrateValues((input, type) -> {
+        });
     }
 
     /**
@@ -114,14 +124,14 @@ public class LegacyCoercingInputInterceptor implements InputInterceptor {
             if (lStr.equals("false")) {
                 return false;
             }
-            return null;
+            return input;
         } else if (isNumberIsh(input)) {
             BigDecimal value;
             try {
                 value = new BigDecimal(input.toString());
             } catch (NumberFormatException e) {
                 // this should never happen because String is handled above
-                return assertShouldNeverHappen();
+                return input;
             }
             return value.compareTo(BigDecimal.ZERO) != 0;
         }
@@ -135,7 +145,7 @@ public class LegacyCoercingInputInterceptor implements InputInterceptor {
             try {
                 value = new BigDecimal(input.toString());
             } catch (NumberFormatException e) {
-                return null;
+                return input;
             }
             return value.doubleValue();
         }
@@ -148,12 +158,12 @@ public class LegacyCoercingInputInterceptor implements InputInterceptor {
             try {
                 value = new BigDecimal(input.toString());
             } catch (NumberFormatException e) {
-                return null;
+                return input;
             }
             try {
                 return value.intValueExact();
             } catch (ArithmeticException e) {
-                return null;
+                return input;
             }
         }
         return input;
