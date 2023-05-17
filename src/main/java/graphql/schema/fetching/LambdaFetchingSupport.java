@@ -204,14 +204,16 @@ public class LambdaFetchingSupport {
         return getterFunction;
     }
 
-    private static MethodHandles.Lookup getLookup(Class<?> targetClass) throws IllegalAccessException {
+    private static MethodHandles.Lookup getLookup(Class<?> targetClass) {
         MethodHandles.Lookup lookupMe = MethodHandles.lookup();
         //
-        // This is a Java 9 approach to method look up allowing private access
-        // which we don't want to use yet until we get to Java 11
+        // This is a Java 9+ approach to method look up allowing private access
         //
-        //lookupMe = MethodHandles.privateLookupIn(targetClass, lookupMe);
-        return lookupMe;
+        try {
+            return MethodHandles.privateLookupIn(targetClass, lookupMe);
+        } catch (IllegalAccessException e) {
+            return lookupMe;
+        }
     }
 
 }

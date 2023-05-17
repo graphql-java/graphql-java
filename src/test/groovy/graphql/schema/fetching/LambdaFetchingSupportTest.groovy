@@ -182,18 +182,15 @@ class LambdaFetchingSupportTest extends Specification {
         def getter = LambdaFetchingSupport.createGetter(customClass, "hello")
         then:
 
+        // with Java 9+ we can get access to methods across class loaders
         getter.isPresent()
-        try {
-            getter.get().apply(targetObject)
-            assert false, "We expect this to fail on Java 8 without access to MethodHandles.privateLookupIn"
-        } catch (LinkageError | ClassCastException ignored) {
-        }
+        def value = getter.get().apply(targetObject)
+        value == "world"
 
-        // show that a DF can still be used access this because of the reflection fallback
-        // in the future it will work via MethodHandles.privateLookupIn
+        // show that a DF can be used
         when:
         def ageDF = PropertyDataFetcher.fetching("hello")
-        def value = ageDF.get(fld("hello"), targetObject, { -> null })
+        value = ageDF.get(fld("hello"), targetObject, { -> null })
         then:
         value == "world"
     }
