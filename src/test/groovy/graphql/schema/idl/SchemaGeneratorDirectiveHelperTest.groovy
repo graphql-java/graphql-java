@@ -325,9 +325,14 @@ class SchemaGeneratorDirectiveHelperTest extends Specification {
             @Override
             GraphQLFieldDefinition onField(SchemaDirectiveWiringEnvironment<GraphQLFieldDefinition> directiveEnv) {
                 GraphQLFieldDefinition field = directiveEnv.getElement()
+                def container = directiveEnv.fieldsContainer
+                if (!container instanceof GraphQLObjectType) {
+                    return field
+                }
                 //
                 // we use the non shortcut path to the data fetcher here so prove it still works
-                def fetcher = directiveEnv.getCodeRegistry().getDataFetcher(directiveEnv.fieldsContainer, field)
+
+                def fetcher = directiveEnv.getCodeRegistry().getDataFetcher(container as GraphQLObjectType, field)
                 def newFetcher = wrapDataFetcher(fetcher, { dfEnv, value ->
                     def directiveName = directiveEnv.appliedDirective.name
                     if (directiveName == "uppercase") {
@@ -484,10 +489,15 @@ class SchemaGeneratorDirectiveHelperTest extends Specification {
             @Override
             GraphQLFieldDefinition onField(SchemaDirectiveWiringEnvironment<GraphQLFieldDefinition> environment) {
                 GraphQLFieldDefinition element = environment.getElement()
-                return wrapField(environment.fieldsContainer, element, environment.getBuildContext(), environment.getCodeRegistry())
+
+                def container = environment.fieldsContainer
+                if (! container instanceof GraphQLObjectType) {
+                    return element
+                }
+                return wrapField(container as GraphQLObjectType, element, environment.getBuildContext(), environment.getCodeRegistry())
             }
 
-            private GraphQLFieldDefinition wrapField(GraphQLFieldsContainer parentType, GraphQLFieldDefinition field, Map<String, Object> contextMap, GraphQLCodeRegistry.Builder codeRegistry) {
+            private GraphQLFieldDefinition wrapField(GraphQLObjectType parentType, GraphQLFieldDefinition field, Map<String, Object> contextMap, GraphQLCodeRegistry.Builder codeRegistry) {
                 def originalFetcher = codeRegistry.getDataFetcher(parentType, field)
 
                 String key = mkFieldKey(parentType.getName(), field.getName())
