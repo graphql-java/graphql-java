@@ -25,7 +25,7 @@ class ConditionalNodesTest extends Specification {
         def directives = directive("skip", ifArg(true))
 
         expect:
-        !conditionalNodes.shouldInclude(variables, mkField(directives), GraphQLContext.getDefault())
+        !conditionalNodes.shouldInclude(mkField(directives), variables, null, GraphQLContext.getDefault())
     }
 
     def "should include true for skip = false"() {
@@ -36,7 +36,7 @@ class ConditionalNodesTest extends Specification {
         def directives = directive("skip", ifArg(false))
 
         expect:
-        conditionalNodes.shouldInclude(variables, mkField(directives), GraphQLContext.getDefault())
+        conditionalNodes.shouldInclude(mkField(directives), variables, null, GraphQLContext.getDefault())
     }
 
     def "should include false for include = false"() {
@@ -47,7 +47,7 @@ class ConditionalNodesTest extends Specification {
         def directives = directive("include", ifArg(false))
 
         expect:
-        !conditionalNodes.shouldInclude(variables, mkField(directives), GraphQLContext.getDefault())
+        !conditionalNodes.shouldInclude(mkField(directives), variables, null, GraphQLContext.getDefault())
     }
 
     def "should include true for include = true"() {
@@ -58,7 +58,7 @@ class ConditionalNodesTest extends Specification {
         def directives = directive("include", ifArg(true))
 
         expect:
-        conditionalNodes.shouldInclude(variables, mkField(directives), GraphQLContext.getDefault())
+        conditionalNodes.shouldInclude(mkField(directives), variables, null, GraphQLContext.getDefault())
     }
 
     def "no directives means include"() {
@@ -67,13 +67,14 @@ class ConditionalNodesTest extends Specification {
         ConditionalNodes conditionalNodes = new ConditionalNodes()
 
         expect:
-        conditionalNodes.shouldInclude(variables, mkField([]), GraphQLContext.getDefault())
+        conditionalNodes.shouldInclude(mkField([]), variables, null, GraphQLContext.getDefault())
     }
 
 
     def "allows a custom implementation to check conditional nodes"() {
         given:
         def variables = ["x": "y"]
+        def graphQLSchema = TestUtil.schema("type Query { f : String} ")
         ConditionalNodes conditionalNodes = new ConditionalNodes()
 
         def graphQLContext = GraphQLContext.getDefault()
@@ -84,11 +85,12 @@ class ConditionalNodesTest extends Specification {
         def called = false
         ConditionalNodeDecision conditionalDecision = new ConditionalNodeDecision() {
             @Override
-            boolean shouldInclude(ConditionalNodeDecisionEnvironment decisionEnvironment) {
+            boolean shouldInclude(ConditionalNodeDecisionEnvironment env) {
                 called = true
-                assert decisionEnvironment.variables.toMap() == variables
-                assert decisionEnvironment.directivesContainer == field
-                assert decisionEnvironment.graphQLContext.get("assert") != null
+                assert env.variables.toMap() == variables
+                assert env.directivesContainer == field
+                assert env.graphQlSchema == graphQLSchema
+                assert env.graphQLContext.get("assert") != null
                 return false
             }
         }
@@ -96,9 +98,8 @@ class ConditionalNodesTest extends Specification {
         graphQLContext.put("assert", true)
         expect:
 
-        !conditionalNodes.shouldInclude(variables, field, graphQLContext)
+        !conditionalNodes.shouldInclude(field, variables, graphQLSchema, graphQLContext)
         called == true
-
     }
 
     def "integration test showing conditional nodes can be custom included"() {
@@ -114,8 +115,6 @@ class ConditionalNodesTest extends Specification {
         """
         DataFetcher df = { DataFetchingEnvironment env -> env.getFieldDefinition().name }
         def graphQL = TestUtil.graphQL(sdl, [Query: ["in": df, "out": df]]).build()
-        def schema = graphQL.getGraphQLSchema()
-
         ConditionalNodeDecision customDecision = new ConditionalNodeDecision() {
             @Override
             boolean shouldInclude(ConditionalNodeDecisionEnvironment env) {
@@ -123,7 +122,7 @@ class ConditionalNodesTest extends Specification {
                 Directive foundDirective = NodeUtil.findNodeByName(env.getDirectives(), "featureFlag")
                 if (foundDirective != null) {
 
-                    def arguments = schema.getDirective("featureFlag")
+                    def arguments = env.getGraphQlSchema().getDirective("featureFlag")
                             .getArguments()
                     Map<String, Object> argumentValues = ValuesResolver.getArgumentValues(
                             arguments, foundDirective.getArguments(),

@@ -8,6 +8,7 @@ import graphql.execution.ValuesResolver;
 import graphql.language.Directive;
 import graphql.language.DirectivesContainer;
 import graphql.language.NodeUtil;
+import graphql.schema.GraphQLSchema;
 
 import java.util.List;
 import java.util.Locale;
@@ -20,7 +21,11 @@ import static graphql.Directives.SkipDirective;
 public class ConditionalNodes {
 
 
-    public boolean shouldInclude(Map<String, Object> variables, DirectivesContainer<?> element, GraphQLContext graphQLContext) {
+    public boolean shouldInclude(DirectivesContainer<?> element,
+                                 Map<String, Object> variables,
+                                 GraphQLSchema graphQLSchema,
+                                 GraphQLContext graphQLContext
+    ) {
         //
         // call the base @include / @skip first
         if (!shouldInclude(variables, element.getDirectives())) {
@@ -32,7 +37,7 @@ public class ConditionalNodes {
         if (graphQLContext != null) {
             ConditionalNodeDecision conditionalDecision = graphQLContext.get(ConditionalNodeDecision.class);
             if (conditionalDecision != null) {
-                return customShouldInclude(variables, element, graphQLContext, conditionalDecision);
+                return customShouldInclude(variables, element, graphQLSchema, graphQLContext, conditionalDecision);
             }
         }
         // if no one says otherwise, the node is considered included
@@ -41,6 +46,7 @@ public class ConditionalNodes {
 
     private boolean customShouldInclude(Map<String, Object> variables,
                                         DirectivesContainer<?> element,
+                                        GraphQLSchema graphQLSchema,
                                         GraphQLContext graphQLContext,
                                         ConditionalNodeDecision conditionalDecision
     ) {
@@ -54,6 +60,11 @@ public class ConditionalNodes {
             @Override
             public CoercedVariables getVariables() {
                 return coercedVariables;
+            }
+
+            @Override
+            public GraphQLSchema getGraphQlSchema() {
+                return graphQLSchema;
             }
 
             @Override

@@ -520,12 +520,18 @@ public class ExecutableNormalizedOperationFactory {
                                        FragmentSpread fragmentSpread,
                                        Set<GraphQLObjectType> possibleObjects
     ) {
-        if (!conditionalNodes.shouldInclude(parameters.getCoercedVariableValues(), fragmentSpread, parameters.getGraphQLContext())) {
+        if (!conditionalNodes.shouldInclude(fragmentSpread,
+                parameters.getCoercedVariableValues(),
+                parameters.getGraphQLSchema(),
+                parameters.getGraphQLContext())) {
             return;
         }
         FragmentDefinition fragmentDefinition = assertNotNull(parameters.getFragmentsByName().get(fragmentSpread.getName()));
 
-        if (!conditionalNodes.shouldInclude(parameters.getCoercedVariableValues(), fragmentDefinition, parameters.getGraphQLContext())) {
+        if (!conditionalNodes.shouldInclude(fragmentDefinition,
+                parameters.getCoercedVariableValues(),
+                parameters.getGraphQLSchema(),
+                parameters.getGraphQLContext())) {
             return;
         }
         GraphQLCompositeType newAstTypeCondition = (GraphQLCompositeType) assertNotNull(parameters.getGraphQLSchema().getType(fragmentDefinition.getTypeCondition().getName()));
@@ -540,7 +546,7 @@ public class ExecutableNormalizedOperationFactory {
                                        Set<GraphQLObjectType> possibleObjects,
                                        GraphQLCompositeType astTypeCondition
     ) {
-        if (!conditionalNodes.shouldInclude(parameters.getCoercedVariableValues(), inlineFragment, parameters.getGraphQLContext())) {
+        if (!conditionalNodes.shouldInclude(inlineFragment, parameters.getCoercedVariableValues(), parameters.getGraphQLSchema(), parameters.getGraphQLContext())) {
             return;
         }
         Set<GraphQLObjectType> newPossibleObjects = possibleObjects;
@@ -560,7 +566,10 @@ public class ExecutableNormalizedOperationFactory {
                               Set<GraphQLObjectType> possibleObjectTypes,
                               GraphQLCompositeType astTypeCondition
     ) {
-        if (!conditionalNodes.shouldInclude(parameters.getCoercedVariableValues(), field, parameters.getGraphQLContext())) {
+        if (!conditionalNodes.shouldInclude(field,
+                parameters.getCoercedVariableValues(),
+                parameters.getGraphQLSchema(),
+                parameters.getGraphQLContext())) {
             return;
         }
         // this means there is actually no possible type for this field, and we are done

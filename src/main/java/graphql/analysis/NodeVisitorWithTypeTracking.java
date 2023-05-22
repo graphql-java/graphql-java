@@ -70,7 +70,7 @@ public class NodeVisitorWithTypeTracking extends NodeVisitorStub {
     public TraversalControl visitInlineFragment(InlineFragment inlineFragment, TraverserContext<Node> context) {
         QueryTraversalContext parentEnv = context.getVarFromParents(QueryTraversalContext.class);
         GraphQLContext graphQLContext = parentEnv.getGraphQLContext();
-        if (!conditionalNodes.shouldInclude(variables, inlineFragment, graphQLContext)) {
+        if (!conditionalNodes.shouldInclude(inlineFragment, variables, null, graphQLContext)) {
             return TraversalControl.ABORT;
         }
 
@@ -101,7 +101,7 @@ public class NodeVisitorWithTypeTracking extends NodeVisitorStub {
     public TraversalControl visitFragmentDefinition(FragmentDefinition fragmentDefinition, TraverserContext<Node> context) {
         QueryTraversalContext parentEnv = context.getVarFromParents(QueryTraversalContext.class);
         GraphQLContext graphQLContext = parentEnv.getGraphQLContext();
-        if (!conditionalNodes.shouldInclude(variables, fragmentDefinition, graphQLContext)) {
+        if (!conditionalNodes.shouldInclude(fragmentDefinition, variables, null, graphQLContext)) {
             return TraversalControl.ABORT;
         }
 
@@ -122,12 +122,12 @@ public class NodeVisitorWithTypeTracking extends NodeVisitorStub {
     public TraversalControl visitFragmentSpread(FragmentSpread fragmentSpread, TraverserContext<Node> context) {
         QueryTraversalContext parentEnv = context.getVarFromParents(QueryTraversalContext.class);
         GraphQLContext graphQLContext = parentEnv.getGraphQLContext();
-        if (!conditionalNodes.shouldInclude(variables, fragmentSpread, graphQLContext)) {
+        if (!conditionalNodes.shouldInclude(fragmentSpread, variables, null, graphQLContext)) {
             return TraversalControl.ABORT;
         }
 
         FragmentDefinition fragmentDefinition = fragmentsByName.get(fragmentSpread.getName());
-        if (!conditionalNodes.shouldInclude(variables, fragmentDefinition, graphQLContext)) {
+        if (!conditionalNodes.shouldInclude(fragmentDefinition, variables, null, graphQLContext)) {
             return TraversalControl.ABORT;
         }
 
@@ -178,7 +178,7 @@ public class NodeVisitorWithTypeTracking extends NodeVisitorStub {
             return TraversalControl.CONTINUE;
         }
 
-        if (!conditionalNodes.shouldInclude(variables, field, graphQLContext)) {
+        if (!conditionalNodes.shouldInclude(field, variables, null, graphQLContext)) {
             return TraversalControl.ABORT;
         }
 
