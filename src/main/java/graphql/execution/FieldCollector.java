@@ -2,6 +2,7 @@ package graphql.execution;
 
 
 import graphql.Internal;
+import graphql.execution.conditional.ConditionalNodes;
 import graphql.language.Field;
 import graphql.language.FragmentDefinition;
 import graphql.language.FragmentSpread;
@@ -76,13 +77,13 @@ public class FieldCollector {
         if (visitedFragments.contains(fragmentSpread.getName())) {
             return;
         }
-        if (!conditionalNodes.shouldInclude(parameters.getVariables(), fragmentSpread.getDirectives())) {
+        if (!conditionalNodes.shouldInclude(parameters.getVariables(), fragmentSpread, parameters.getGraphQLContext())) {
             return;
         }
         visitedFragments.add(fragmentSpread.getName());
         FragmentDefinition fragmentDefinition = parameters.getFragmentsByName().get(fragmentSpread.getName());
 
-        if (!conditionalNodes.shouldInclude(parameters.getVariables(), fragmentDefinition.getDirectives())) {
+        if (!conditionalNodes.shouldInclude(parameters.getVariables(), fragmentDefinition, parameters.getGraphQLContext())) {
             return;
         }
         if (!doesFragmentConditionMatch(parameters, fragmentDefinition)) {
@@ -92,7 +93,7 @@ public class FieldCollector {
     }
 
     private void collectInlineFragment(FieldCollectorParameters parameters, Set<String> visitedFragments, Map<String, MergedField> fields, InlineFragment inlineFragment) {
-        if (!conditionalNodes.shouldInclude(parameters.getVariables(), inlineFragment.getDirectives()) ||
+        if (!conditionalNodes.shouldInclude(parameters.getVariables(), inlineFragment, parameters.getGraphQLContext()) ||
                 !doesFragmentConditionMatch(parameters, inlineFragment)) {
             return;
         }
@@ -100,7 +101,7 @@ public class FieldCollector {
     }
 
     private void collectField(FieldCollectorParameters parameters, Map<String, MergedField> fields, Field field) {
-        if (!conditionalNodes.shouldInclude(parameters.getVariables(), field.getDirectives())) {
+        if (!conditionalNodes.shouldInclude(parameters.getVariables(), field, parameters.getGraphQLContext())) {
             return;
         }
         String name = field.getResultKey();
