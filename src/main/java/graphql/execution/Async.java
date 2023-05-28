@@ -56,7 +56,16 @@ public class Async {
         @Override
         public CompletableFuture<List<T>> await() {
             Assert.assertTrue(ix == 0, () -> "expected size was " + 0 + " got " + ix);
-            return CompletableFuture.completedFuture(Collections.emptyList());
+            return typedEmpty();
+        }
+
+
+        // implementation details: infer the type of Completable<List<T>> from a singleton empty
+        private static final CompletableFuture<List<?>> EMPTY = CompletableFuture.completedFuture(Collections.emptyList());
+
+        @SuppressWarnings("unchecked")
+        private static <T> CompletableFuture<T> typedEmpty() {
+            return (CompletableFuture<T>) EMPTY;
         }
     }
 
@@ -75,18 +84,7 @@ public class Async {
         @Override
         public CompletableFuture<List<T>> await() {
             Assert.assertTrue(ix == 1, () -> "expected size was " + 1 + " got " + ix);
-
-            CompletableFuture<List<T>> overallResult = new CompletableFuture<>();
-            completableFuture
-                    .whenComplete((ignored, exception) -> {
-                        if (exception != null) {
-                            overallResult.completeExceptionally(exception);
-                            return;
-                        }
-                        List<T> results = Collections.singletonList(completableFuture.join());
-                        overallResult.complete(results);
-                    });
-            return overallResult;
+            return completableFuture.thenApply(Collections::singletonList);
         }
     }
 
