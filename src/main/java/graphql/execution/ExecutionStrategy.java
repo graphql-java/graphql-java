@@ -589,7 +589,7 @@ public abstract class ExecutionStrategy {
             index++;
         }
 
-        CompletableFuture<List<ExecutionResult>> resultsFuture = Async.each(fieldValueInfos, (item, i) -> item.getFieldValue());
+        CompletableFuture<List<ExecutionResult>> resultsFuture = Async.each(fieldValueInfos, FieldValueInfo::getFieldValue);
 
         CompletableFuture<ExecutionResult> overallResult = new CompletableFuture<>();
         completeListCtx.onDispatched(overallResult);
