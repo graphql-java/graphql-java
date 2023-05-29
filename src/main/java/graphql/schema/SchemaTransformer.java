@@ -144,14 +144,14 @@ public class SchemaTransformer {
         final Map<String, GraphQLTypeReference> typeReferences = new LinkedHashMap<>();
 
         // first pass - general transformation
-        boolean schemaChanged = traverseAndTransform(dummyRoot, changedTypes, typeReferences, visitor, codeRegistry);
+        boolean schemaChanged = traverseAndTransform(dummyRoot, changedTypes, typeReferences, visitor, codeRegistry, schema);
 
         // if we have changed any named elements AND we have type references referring to them then
         // we need to make a second pass to replace these type references to the new names
         if (!changedTypes.isEmpty()) {
             boolean hasTypeRefsForChangedTypes = changedTypes.keySet().stream().anyMatch(typeReferences::containsKey);
             if (hasTypeRefsForChangedTypes) {
-                replaceTypeReferences(dummyRoot, codeRegistry, changedTypes);
+                replaceTypeReferences(dummyRoot, schema, codeRegistry, changedTypes);
             }
         }
 
@@ -170,7 +170,7 @@ public class SchemaTransformer {
         }
     }
 
-    private void replaceTypeReferences(DummyRoot dummyRoot, GraphQLCodeRegistry.Builder codeRegistry, Map<String, GraphQLNamedType> changedTypes) {
+    private void replaceTypeReferences(DummyRoot dummyRoot, GraphQLSchema schema, GraphQLCodeRegistry.Builder codeRegistry, Map<String, GraphQLNamedType> changedTypes) {
         GraphQLTypeVisitor typeRefVisitor = new GraphQLTypeVisitorStub() {
             @Override
             public TraversalControl visitGraphQLTypeReference(GraphQLTypeReference typeRef, TraverserContext<GraphQLSchemaElement> context) {
@@ -182,10 +182,10 @@ public class SchemaTransformer {
                 return CONTINUE;
             }
         };
-        traverseAndTransform(dummyRoot, new HashMap<>(), new HashMap<>(), typeRefVisitor, codeRegistry);
+        traverseAndTransform(dummyRoot, new HashMap<>(), new HashMap<>(), typeRefVisitor, codeRegistry, schema);
     }
 
-    private boolean traverseAndTransform(DummyRoot dummyRoot, Map<String, GraphQLNamedType> changedTypes, Map<String, GraphQLTypeReference> typeReferences, GraphQLTypeVisitor visitor, GraphQLCodeRegistry.Builder codeRegistry) {
+    private boolean traverseAndTransform(DummyRoot dummyRoot, Map<String, GraphQLNamedType> changedTypes, Map<String, GraphQLTypeReference> typeReferences, GraphQLTypeVisitor visitor, GraphQLCodeRegistry.Builder codeRegistry, GraphQLSchema schema) {
         List<NodeZipper<GraphQLSchemaElement>> zippers = new LinkedList<>();
         Map<GraphQLSchemaElement, NodeZipper<GraphQLSchemaElement>> zipperByNodeAfterTraversing = new LinkedHashMap<>();
         Map<GraphQLSchemaElement, NodeZipper<GraphQLSchemaElement>> zipperByOriginalNode = new LinkedHashMap<>();
@@ -195,7 +195,7 @@ public class SchemaTransformer {
         Map<GraphQLSchemaElement, List<GraphQLSchemaElement>> reverseDependencies = new LinkedHashMap<>();
         Map<String, List<GraphQLSchemaElement>> typeRefReverseDependencies = new LinkedHashMap<>();
 
-        TraverserVisitor<GraphQLSchemaElement> nodeTraverserVisitor = new TraverserVisitor<GraphQLSchemaElement>() {
+        TraverserVisitor<GraphQLSchemaElement> nodeTraverserVisitor = new TraverserVisitor<>() {
             @Override
             public TraversalControl enter(TraverserContext<GraphQLSchemaElement> context) {
                 GraphQLSchemaElement currentSchemaElement = context.thisNode();
@@ -270,6 +270,9 @@ public class SchemaTransformer {
         Traverser<GraphQLSchemaElement> traverser = Traverser.depthFirstWithNamedChildren(SCHEMA_ELEMENT_ADAPTER::getNamedChildren, zippers, null);
         if (codeRegistry != null) {
             traverser.rootVar(GraphQLCodeRegistry.Builder.class, codeRegistry);
+        }
+        if (schema != null) {
+            traverser.rootVar(GraphQLSchema.class, schema);
         }
 
         traverser.traverse(dummyRoot, nodeTraverserVisitor);
