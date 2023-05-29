@@ -23,7 +23,5 @@ public interface DataFetcherExceptionHandler {
      *
      * @return a result that can contain custom formatted {@link graphql.GraphQLError}s
      */
-    default CompletableFuture<DataFetcherExceptionHandlerResult> handleException(DataFetcherExceptionHandlerParameters handlerParameters) {
-        return SimpleDataFetcherExceptionHandler.defaultImpl.handleException(handlerParameters);
-    }
+    CompletableFuture<DataFetcherExceptionHandlerResult> handleException(DataFetcherExceptionHandlerParameters handlerParameters);
 }
