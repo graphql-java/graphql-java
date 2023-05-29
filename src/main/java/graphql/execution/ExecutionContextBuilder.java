@@ -8,7 +8,6 @@ import graphql.GraphQLContext;
 import graphql.GraphQLError;
 import graphql.Internal;
 import graphql.PublicApi;
-import graphql.cachecontrol.CacheControl;
 import graphql.collect.ImmutableKit;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationState;
@@ -42,7 +41,6 @@ public class ExecutionContextBuilder {
     CoercedVariables coercedVariables = CoercedVariables.emptyVariables();
     ImmutableMap<String, FragmentDefinition> fragmentsByName = ImmutableKit.emptyMap();
     DataLoaderRegistry dataLoaderRegistry;
-    CacheControl cacheControl;
     Locale locale;
     ImmutableList<GraphQLError> errors = emptyList();
     ValueUnboxer valueUnboxer;
@@ -89,7 +87,6 @@ public class ExecutionContextBuilder {
         coercedVariables = other.getCoercedVariables();
         fragmentsByName = ImmutableMap.copyOf(other.getFragmentsByName());
         dataLoaderRegistry = other.getDataLoaderRegistry();
-        cacheControl = other.getCacheControl();
         locale = other.getLocale();
         errors = ImmutableList.copyOf(other.getErrors());
         valueUnboxer = other.getValueUnboxer();
@@ -191,13 +188,6 @@ public class ExecutionContextBuilder {
 
     public ExecutionContextBuilder dataLoaderRegistry(DataLoaderRegistry dataLoaderRegistry) {
         this.dataLoaderRegistry = assertNotNull(dataLoaderRegistry);
-        return this;
-    }
-
-    @Deprecated
-    @DeprecatedAt("2022-07-26")
-    public ExecutionContextBuilder cacheControl(CacheControl cacheControl) {
-        this.cacheControl = cacheControl;
         return this;
     }
 

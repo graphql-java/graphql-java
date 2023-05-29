@@ -3,7 +3,6 @@ package graphql.schema;
 import graphql.DeprecatedAt;
 import graphql.GraphQLContext;
 import graphql.PublicApi;
-import graphql.cachecontrol.CacheControl;
 import graphql.execution.ExecutionId;
 import graphql.execution.ExecutionStepInfo;
 import graphql.execution.MergedField;
@@ -162,13 +161,6 @@ public class DelegatingDataFetchingEnvironment implements DataFetchingEnvironmen
     @Override
     public Locale getLocale() {
         return delegateEnvironment.getLocale();
-    }
-
-    @Override
-    @Deprecated
-    @DeprecatedAt("2022-07-26")
-    public CacheControl getCacheControl() {
-        return delegateEnvironment.getCacheControl();
     }
 
     @Override

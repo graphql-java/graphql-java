@@ -3,7 +3,6 @@ package graphql.schema;
 import graphql.DeprecatedAt;
 import graphql.GraphQLContext;
 import graphql.PublicApi;
-import graphql.cachecontrol.CacheControl;
 import graphql.execution.ExecutionId;
 import graphql.execution.ExecutionStepInfo;
 import graphql.execution.MergedField;
@@ -238,15 +237,6 @@ public interface DataFetchingEnvironment extends IntrospectionDataFetchingEnviro
      * @return the {@link org.dataloader.DataLoaderRegistry} in play
      */
     DataLoaderRegistry getDataLoaderRegistry();
-
-    /**
-     * @return the current {@link CacheControl} instance used to add cache hints to the response
-     *
-     * @deprecated - Apollo has deprecated the Cache Control specification
-     */
-    @Deprecated
-    @DeprecatedAt("2022-07-26")
-    CacheControl getCacheControl();
 
     /**
      * @return the current {@link java.util.Locale} instance used for this request
