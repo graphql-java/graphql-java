@@ -64,6 +64,7 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
                 handleResultsConsumer.accept(null, throwable.getCause());
                 return;
             }
+
             Async.CombinedBuilder<ExecutionResult> executionResultFutures = Async.ofExpectedSize(completeValueInfos.size());
             for (FieldValueInfo completeValueInfo : completeValueInfos) {
                 executionResultFutures.add(completeValueInfo.getFieldValue());

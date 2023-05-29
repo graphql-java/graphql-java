@@ -1,5 +1,6 @@
 package graphql.execution;
 
+import com.google.common.collect.Maps;
 import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
 import graphql.PublicSpi;
@@ -28,10 +29,9 @@ public abstract class AbstractAsyncExecutionStrategy extends ExecutionStrategy {
                 handleNonNullException(executionContext, overallResult, exception);
                 return;
             }
-            Map<String, Object> resolvedValuesByField = new LinkedHashMap<>(fieldNames.size());
+            Map<String, Object> resolvedValuesByField = Maps.newLinkedHashMapWithExpectedSize(fieldNames.size());
             int ix = 0;
             for (ExecutionResult executionResult : results) {
-
                 String fieldName = fieldNames.get(ix++);
                 resolvedValuesByField.put(fieldName, executionResult.getData());
             }
