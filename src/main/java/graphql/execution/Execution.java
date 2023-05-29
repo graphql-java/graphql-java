@@ -134,7 +134,8 @@ public class Execution {
                 .schema(executionContext.getGraphQLSchema())
                 .objectType(operationRootType)
                 .fragments(executionContext.getFragmentsByName())
-                .variables(executionContext.getVariables())
+                .variables(executionContext.getCoercedVariables().toMap())
+                .graphQLContext(graphQLContext)
                 .build();
 
         MergedSelectionSet fields = fieldCollector.collectFields(collectorParameters, operationDefinition.getSelectionSet());

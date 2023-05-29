@@ -1,5 +1,6 @@
 package graphql.analysis;
 
+import graphql.GraphQLContext;
 import graphql.PublicApi;
 import graphql.language.FragmentDefinition;
 import graphql.language.Node;
@@ -67,7 +68,7 @@ public class QueryTransformer {
         NodeVisitorWithTypeTracking nodeVisitor = new NodeVisitorWithTypeTracking(queryVisitor, noOp, variables, schema, fragmentsByName);
 
         Map<Class<?>, Object> rootVars = new LinkedHashMap<>();
-        rootVars.put(QueryTraversalContext.class, new QueryTraversalContext(rootParentType, null, null));
+        rootVars.put(QueryTraversalContext.class, new QueryTraversalContext(rootParentType, null, null, GraphQLContext.getDefault()));
 
         TraverserVisitor<Node> nodeTraverserVisitor = new TraverserVisitor<Node>() {
 
