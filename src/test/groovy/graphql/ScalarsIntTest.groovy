@@ -137,12 +137,15 @@ class ScalarsIntTest extends Specification {
         new Short("42")       | 42
         1234567l              | 1234567
         new AtomicInteger(42) | 42
-        Integer.MAX_VALUE     | Integer.MAX_VALUE
-        Integer.MIN_VALUE     | Integer.MIN_VALUE
         42.0000d              | 42
         new BigDecimal("42")  | 42
         42.0f                 | 42
         42.0d                 | 42
+        Integer.MAX_VALUE     | Integer.MAX_VALUE
+        Integer.MIN_VALUE     | Integer.MIN_VALUE
+        "42"                  | 42
+        "42.0000"             | 42
+        "-1"                  | -1
     }
 
     @Unroll
@@ -152,18 +155,21 @@ class ScalarsIntTest extends Specification {
 
         where:
         value                 | result
-        42.0000d              | 42
         new Integer(42)       | 42
         new BigInteger("42")  | 42
-        new BigDecimal("42")  | 42
-        42.0f                 | 42
-        42.0d                 | 42
         new Byte("42")        | 42
         new Short("42")       | 42
         1234567l              | 1234567
         new AtomicInteger(42) | 42
+        42.0000d              | 42
+        new BigDecimal("42")  | 42
+        42.0f                 | 42
+        42.0d                 | 42
         Integer.MAX_VALUE     | Integer.MAX_VALUE
         Integer.MIN_VALUE     | Integer.MIN_VALUE
+        "42"                  | 42
+        "42.0000"             | 42
+        "-1"                  | -1
     }
 
     @Unroll
@@ -184,9 +190,6 @@ class ScalarsIntTest extends Specification {
         Integer.MAX_VALUE + 1l       | _
         Integer.MIN_VALUE - 1l       | _
         new Object()                 | _
-        "42"                         | _
-        "42.0000"                    | _
-        "-1"                         | _
     }
 
 }
