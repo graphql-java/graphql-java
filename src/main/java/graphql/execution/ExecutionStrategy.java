@@ -569,7 +569,7 @@ public abstract class ExecutionStrategy {
         for (Object item : iterableValues) {
             ResultPath indexedPath = parameters.getPath().segment(index);
 
-            ExecutionStepInfo stepInfoForListElement = executionStepInfoFactory.newExecutionStepInfoForListElement(executionStepInfo, index);
+            ExecutionStepInfo stepInfoForListElement = executionStepInfoFactory.newExecutionStepInfoForListElement(executionStepInfo, indexedPath);
 
             NonNullableFieldValidator nonNullableFieldValidator = new NonNullableFieldValidator(executionContext, stepInfoForListElement);
 
