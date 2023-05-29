@@ -20,8 +20,7 @@ public class SimpleDataFetcherExceptionHandler implements DataFetcherExceptionHa
 
     static final SimpleDataFetcherExceptionHandler defaultImpl = new SimpleDataFetcherExceptionHandler();
 
-    @Override
-    public DataFetcherExceptionHandlerResult onException(DataFetcherExceptionHandlerParameters handlerParameters) {
+    private DataFetcherExceptionHandlerResult handleExceptionImpl(DataFetcherExceptionHandlerParameters handlerParameters) {
         Throwable exception = unwrap(handlerParameters.getException());
         SourceLocation sourceLocation = handlerParameters.getSourceLocation();
         ResultPath path = handlerParameters.getPath();
@@ -34,7 +33,7 @@ public class SimpleDataFetcherExceptionHandler implements DataFetcherExceptionHa
 
     @Override
     public CompletableFuture<DataFetcherExceptionHandlerResult> handleException(DataFetcherExceptionHandlerParameters handlerParameters) {
-        return CompletableFuture.completedFuture(onException(handlerParameters));
+        return CompletableFuture.completedFuture(handleExceptionImpl(handlerParameters));
     }
 
     /**
