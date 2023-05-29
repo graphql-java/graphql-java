@@ -149,6 +149,9 @@ class ScalarsFloatTest extends Specification {
         new AtomicInteger(42) | 42
         Double.MAX_VALUE      | Double.MAX_VALUE
         Double.MIN_VALUE      | Double.MIN_VALUE
+        "42"                  | 42d
+        "42.123"              | 42.123d
+        "-1"                  | -1
     }
 
     @Unroll
@@ -171,6 +174,9 @@ class ScalarsFloatTest extends Specification {
         new AtomicInteger(42) | 42
         Double.MAX_VALUE      | Double.MAX_VALUE
         Double.MIN_VALUE      | Double.MIN_VALUE
+        "42"                  | 42d
+        "42.123"              | 42.123d
+        "-1"                  | -1
     }
 
 
@@ -197,9 +203,6 @@ class ScalarsFloatTest extends Specification {
         Float.POSITIVE_INFINITY.toString()  | _
         Float.NEGATIVE_INFINITY             | _
         Float.NEGATIVE_INFINITY.toString()  | _
-        "42"                                | _
-        "42.123"                            | _
-        "-1"                                | _
     }
 
 }
