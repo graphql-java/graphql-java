@@ -291,9 +291,10 @@ public abstract class ExecutionStrategy {
                 .handle((result, exception) -> {
                     fetchCtx.onCompleted(result, exception);
                     if (exception != null) {
-                        return handleFetchingException(executionContext, dataFetchingEnvironment.get(), exception);
+                        return handleFetchingException(dataFetchingEnvironment.get(), exception);
                     } else {
-                        return CompletableFuture.completedFuture(result);
+                        // we can simply return the fetched value CF and avoid a allocation
+                        return fetchedValue;
                     }
                 })
                 .thenCompose(Function.identity())
@@ -331,7 +332,7 @@ public abstract class ExecutionStrategy {
         if (result instanceof DataFetcherResult) {
             DataFetcherResult<?> dataFetcherResult = (DataFetcherResult<?>) result;
             executionContext.addErrors(dataFetcherResult.getErrors());
-            addExtensionsIfPresent(executionContext,dataFetcherResult);
+            addExtensionsIfPresent(executionContext, dataFetcherResult);
 
             Object localContext = dataFetcherResult.getLocalContext();
             if (localContext == null) {
@@ -363,9 +364,9 @@ public abstract class ExecutionStrategy {
         }
     }
 
-    protected <T> CompletableFuture<T> handleFetchingException(ExecutionContext executionContext,
-                                                               DataFetchingEnvironment environment,
-                                                               Throwable e) {
+    protected <T> CompletableFuture<T> handleFetchingException(
+            DataFetchingEnvironment environment,
+            Throwable e) {
         DataFetcherExceptionHandlerParameters handlerParameters = DataFetcherExceptionHandlerParameters.newExceptionParameters()
                 .dataFetchingEnvironment(environment)
                 .exception(e)
@@ -712,19 +713,6 @@ public abstract class ExecutionStrategy {
 
 
         return null;
-    }
-
-    /**
-     * Converts an object that is known to should be an Iterable into one
-     *
-     * @param result the result object
-     *
-     * @return an Iterable from that object
-     *
-     * @throws java.lang.ClassCastException if it's not an Iterable
-     */
-    protected Iterable<Object> toIterable(Object result) {
-        return FpKit.toIterable(result);
     }
 
     protected GraphQLObjectType resolveType(ExecutionContext executionContext, ExecutionStrategyParameters parameters, GraphQLType fieldType) {
