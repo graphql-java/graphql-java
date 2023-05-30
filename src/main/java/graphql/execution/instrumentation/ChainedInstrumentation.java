@@ -340,7 +340,7 @@ public class ChainedInstrumentation implements Instrumentation {
     @NotNull
     @Override
     public CompletableFuture<ExecutionResult> instrumentExecutionResult(ExecutionResult executionResult, InstrumentationExecutionParameters parameters, InstrumentationState state) {
-        CompletableFuture<List<ExecutionResult>> resultsFuture = Async.eachSequentially(instrumentations, (instrumentation, index, prevResults) -> {
+        CompletableFuture<List<ExecutionResult>> resultsFuture = Async.eachSequentially(instrumentations, (instrumentation, prevResults) -> {
             InstrumentationState specificState = getSpecificState(instrumentation, state);
             ExecutionResult lastResult = prevResults.size() > 0 ? prevResults.get(prevResults.size() - 1) : executionResult;
             return instrumentation.instrumentExecutionResult(lastResult, parameters, specificState);

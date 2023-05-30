@@ -12,6 +12,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
 import java.util.function.BiFunction;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 @Internal
@@ -56,7 +57,16 @@ public class Async {
         @Override
         public CompletableFuture<List<T>> await() {
             Assert.assertTrue(ix == 0, () -> "expected size was " + 0 + " got " + ix);
-            return CompletableFuture.completedFuture(Collections.emptyList());
+            return typedEmpty();
+        }
+
+
+        // implementation details: infer the type of Completable<List<T>> from a singleton empty
+        private static final CompletableFuture<List<?>> EMPTY = CompletableFuture.completedFuture(Collections.emptyList());
+
+        @SuppressWarnings("unchecked")
+        private static <T> CompletableFuture<T> typedEmpty() {
+            return (CompletableFuture<T>) EMPTY;
         }
     }
 
@@ -75,18 +85,7 @@ public class Async {
         @Override
         public CompletableFuture<List<T>> await() {
             Assert.assertTrue(ix == 1, () -> "expected size was " + 1 + " got " + ix);
-
-            CompletableFuture<List<T>> overallResult = new CompletableFuture<>();
-            completableFuture
-                    .whenComplete((ignored, exception) -> {
-                        if (exception != null) {
-                            overallResult.completeExceptionally(exception);
-                            return;
-                        }
-                        List<T> results = Collections.singletonList(completableFuture.join());
-                        overallResult.complete(results);
-                    });
-            return overallResult;
+            return completableFuture.thenApply(Collections::singletonList);
         }
     }
 
@@ -128,18 +127,12 @@ public class Async {
 
     }
 
-    @FunctionalInterface
-    public interface CFFactory<T, U> {
-        CompletableFuture<U> apply(T input, int index, List<U> previousResults);
-    }
-
-    public static <T, U> CompletableFuture<List<U>> each(Collection<T> list, BiFunction<T, Integer, CompletableFuture<U>> cfFactory) {
+    public static <T, U> CompletableFuture<List<U>> each(Collection<T> list, Function<T, CompletableFuture<U>> cfFactory) {
         CombinedBuilder<U> futures = ofExpectedSize(list.size());
-        int index = 0;
         for (T t : list) {
             CompletableFuture<U> cf;
             try {
-                cf = cfFactory.apply(t, index++);
+                cf = cfFactory.apply(t);
                 Assert.assertNotNull(cf, () -> "cfFactory must return a non null value");
             } catch (Exception e) {
                 cf = new CompletableFuture<>();
@@ -151,20 +144,20 @@ public class Async {
         return futures.await();
     }
 
-    public static <T, U> CompletableFuture<List<U>> eachSequentially(Iterable<T> list, CFFactory<T, U> cfFactory) {
+    public static <T, U> CompletableFuture<List<U>> eachSequentially(Iterable<T> list, BiFunction<T, List<U>, CompletableFuture<U>> cfFactory) {
         CompletableFuture<List<U>> result = new CompletableFuture<>();
-        eachSequentiallyImpl(list.iterator(), cfFactory, 0, new ArrayList<>(), result);
+        eachSequentiallyImpl(list.iterator(), cfFactory, new ArrayList<>(), result);
         return result;
     }
 
-    private static <T, U> void eachSequentiallyImpl(Iterator<T> iterator, CFFactory<T, U> cfFactory, int index, List<U> tmpResult, CompletableFuture<List<U>> overallResult) {
+    private static <T, U> void eachSequentiallyImpl(Iterator<T> iterator, BiFunction<T, List<U>, CompletableFuture<U>> cfFactory, List<U> tmpResult, CompletableFuture<List<U>> overallResult) {
         if (!iterator.hasNext()) {
             overallResult.complete(tmpResult);
             return;
         }
         CompletableFuture<U> cf;
         try {
-            cf = cfFactory.apply(iterator.next(), index, tmpResult);
+            cf = cfFactory.apply(iterator.next(), tmpResult);
             Assert.assertNotNull(cf, () -> "cfFactory must return a non null value");
         } catch (Exception e) {
             cf = new CompletableFuture<>();
@@ -176,7 +169,7 @@ public class Async {
                 return;
             }
             tmpResult.add(cfResult);
-            eachSequentiallyImpl(iterator, cfFactory, index + 1, tmpResult, overallResult);
+            eachSequentiallyImpl(iterator, cfFactory, tmpResult, overallResult);
         });
     }
 
