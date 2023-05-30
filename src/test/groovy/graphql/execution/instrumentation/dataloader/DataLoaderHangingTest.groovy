@@ -241,8 +241,13 @@ class DataLoaderHangingTest extends Specification {
         """
 
     DataFetcherExceptionHandler customExceptionHandlerThatThrows = new DataFetcherExceptionHandler() {
+
         @Override
-        DataFetcherExceptionHandlerResult onException(DataFetcherExceptionHandlerParameters handlerParameters) { // Retain for test coverage, intentionally using sync version.
+        CompletableFuture<DataFetcherExceptionHandlerResult> handleException(DataFetcherExceptionHandlerParameters handlerParameters) {
+            //
+            // this is a weird test case - its not actually handling the exception - its a test
+            // case where the handler code itself throws an exception during the handling
+            // and that will not stop the DataLoader from being dispatched
             throw handlerParameters.exception
         }
     }

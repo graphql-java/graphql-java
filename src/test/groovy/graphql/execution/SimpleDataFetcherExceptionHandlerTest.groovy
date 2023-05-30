@@ -21,49 +21,29 @@ class SimpleDataFetcherExceptionHandlerTest extends Specification {
     def "will wrap general exceptions"() {
         when:
         def handlerParameters = mkParams(new RuntimeException("RTE"))
-        def result = handler.onException(handlerParameters)
+        def result = handler.handleException(handlerParameters)
 
         then:
-        result.errors[0] instanceof ExceptionWhileDataFetching
-        result.errors[0].getMessage().contains("RTE")
+        result.join().errors[0] instanceof ExceptionWhileDataFetching
+        result.join().errors[0].getMessage().contains("RTE")
     }
 
     def "can unwrap certain exceptions"() {
         when:
-        def result = handler.onException(mkParams(new CompletionException(new RuntimeException("RTE"))))
+        def result = handler.handleException(mkParams(new CompletionException(new RuntimeException("RTE"))))
 
         then:
-        result.errors[0] instanceof ExceptionWhileDataFetching
-        result.errors[0].getMessage().contains("RTE")
+        result.join().errors[0] instanceof ExceptionWhileDataFetching
+        result.join().errors[0].getMessage().contains("RTE")
     }
 
     def "wont unwrap other exceptions"() {
         when:
-        def result = handler.onException(mkParams(new RuntimeException("RTE",new RuntimeException("BANG"))))
+        def result = handler.handleException(mkParams(new RuntimeException("RTE",new RuntimeException("BANG"))))
 
         then:
-        result.errors[0] instanceof ExceptionWhileDataFetching
-        ! result.errors[0].getMessage().contains("BANG")
-    }
-
-    static class MyHandler implements DataFetcherExceptionHandler {}
-
-    def "a class can work without implementing anything"() {
-        when:
-        DataFetcherExceptionHandler handler = new MyHandler()
-        def handlerParameters = mkParams(new RuntimeException("RTE"))
-        def result = handler.onException(handlerParameters) // Retain deprecated method for test coverage
-
-        then:
-        result.errors[0] instanceof ExceptionWhileDataFetching
-        result.errors[0].getMessage().contains("RTE")
-
-        when:
-        def resultCF = handler.handleException(handlerParameters)
-
-        then:
-        resultCF.join().errors[0] instanceof ExceptionWhileDataFetching
-        resultCF.join().errors[0].getMessage().contains("RTE")
+        result.join().errors[0] instanceof ExceptionWhileDataFetching
+        ! result.join().errors[0].getMessage().contains("BANG")
     }
 
     private static DataFetcherExceptionHandlerParameters mkParams(Exception exception) {

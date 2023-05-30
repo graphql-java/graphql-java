@@ -141,13 +141,16 @@ public class ExecutionExamples {
         DataFetcherExceptionHandler handler = new DataFetcherExceptionHandler() {
 
             @Override
-            public DataFetcherExceptionHandlerResult onException(DataFetcherExceptionHandlerParameters handlerParameters) {
+            public CompletableFuture<DataFetcherExceptionHandlerResult> handleException(DataFetcherExceptionHandlerParameters handlerParameters) {
                 //
                 // do your custom handling here.  The parameters have all you need
                 GraphQLError buildCustomError = buildCustomError(handlerParameters);
 
-                return DataFetcherExceptionHandlerResult.newResult()
-                        .error(buildCustomError).build();
+                DataFetcherExceptionHandlerResult exceptionResult = DataFetcherExceptionHandlerResult
+                        .newResult()
+                        .error(buildCustomError)
+                        .build();
+                return CompletableFuture.completedFuture(exceptionResult);
             }
         };
         ExecutionStrategy executionStrategy = new AsyncExecutionStrategy(handler);
