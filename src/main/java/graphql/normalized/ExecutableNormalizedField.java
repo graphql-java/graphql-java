@@ -22,6 +22,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
@@ -217,9 +218,8 @@ public class ExecutableNormalizedField {
             return ImmutableList.of(fieldDefinition);
         }
         ImmutableList.Builder<GraphQLFieldDefinition> builder = ImmutableList.builder();
-        for (String objectTypeName : objectTypeNames) {
-            GraphQLObjectType type = (GraphQLObjectType) assertNotNull(schema.getType(objectTypeName));
-            builder.add(assertNotNull(type.getField(fieldName), () -> String.format("no field %s found for type %s", fieldName, objectTypeNames.iterator().next())));
+        for (GraphQLObjectType objectType : getObjectTypes(schema)) {
+            builder.add(assertNotNull(objectType.getField(fieldName), () -> String.format("no field %s found for type %s", fieldName, objectType.getName())));
         }
         return builder.build();
     }
@@ -355,6 +355,17 @@ public class ExecutableNormalizedField {
     public Set<String> getObjectTypeNames() {
         return objectTypeNames;
     }
+
+    public Set<GraphQLObjectType> getObjectTypes(GraphQLSchema schema) {
+        Set<GraphQLObjectType> objectTypes = new HashSet<>();
+        for (String objectTypeName : objectTypeNames) {
+            GraphQLObjectType type = (GraphQLObjectType) assertNotNull(schema.getType(objectTypeName));
+            Assert.assertNotNull(type, () -> String.format("The object type %s does not exist in the schema", objectTypeName));
+            objectTypes.add(type);
+        }
+        return objectTypes;
+    }
+
 
 
     /**

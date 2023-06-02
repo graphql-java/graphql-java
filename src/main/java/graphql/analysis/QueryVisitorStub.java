@@ -7,17 +7,17 @@ public class QueryVisitorStub implements QueryVisitor {
 
 
     @Override
-    public void visitField(QueryVisitorFieldEnvironment queryVisitorFieldEnvironment) {
+    public void visitField(QueryVisitorFieldEnvironment environment) {
 
     }
 
     @Override
-    public void visitInlineFragment(QueryVisitorInlineFragmentEnvironment queryVisitorInlineFragmentEnvironment) {
+    public void visitInlineFragment(QueryVisitorInlineFragmentEnvironment environment) {
 
     }
 
     @Override
-    public void visitFragmentSpread(QueryVisitorFragmentSpreadEnvironment queryVisitorFragmentSpreadEnvironment) {
+    public void visitFragmentSpread(QueryVisitorFragmentSpreadEnvironment environment) {
 
     }
 }
