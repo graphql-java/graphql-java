@@ -569,19 +569,16 @@ public abstract class ExecutionStrategy {
         for (Object item : iterableValues) {
             ResultPath indexedPath = parameters.getPath().segment(index);
 
-            ExecutionStepInfo stepInfoForListElement = executionStepInfoFactory.newExecutionStepInfoForListElement(executionStepInfo, index);
+            ExecutionStepInfo stepInfoForListElement = executionStepInfoFactory.newExecutionStepInfoForListElement(executionStepInfo, indexedPath);
 
             NonNullableFieldValidator nonNullableFieldValidator = new NonNullableFieldValidator(executionContext, stepInfoForListElement);
 
-            int finalIndex = index;
             FetchedValue value = unboxPossibleDataFetcherResult(executionContext, parameters, item);
 
             ExecutionStrategyParameters newParameters = parameters.transform(builder ->
                     builder.executionStepInfo(stepInfoForListElement)
                             .nonNullFieldValidator(nonNullableFieldValidator)
-                            .listSize(size.orElse(-1)) // -1 signals that we don't know the size
                             .localContext(value.getLocalContext())
-                            .currentListIndex(finalIndex)
                             .path(indexedPath)
                             .source(value.getFetchedValue())
             );
