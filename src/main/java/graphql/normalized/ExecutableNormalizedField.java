@@ -505,7 +505,7 @@ public class ExecutableNormalizedField {
     /**
      * This tries to find interfaces common to all the field output types.
      * <p>
-     * i.e. goes through {@link #getFieldDefinitions(GraphQLSchema)} and finds an interface that
+     * i.e. goes through {@link #getFieldDefinitions(GraphQLSchema)} and finds interfaces that
      * all the field's unwrapped output types are assignable to.
      */
     @SuppressWarnings({"unchecked", "rawtypes"})
