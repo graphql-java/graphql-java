@@ -131,7 +131,6 @@ public class ExecutableNormalizedField {
      * @param schema - the graphql schema in play
      * @return true if the field is conditional
      */
-    @SuppressWarnings({"unchecked", "rawtypes"})
     public boolean isConditional(@NotNull GraphQLSchema schema) {
         if (parent == null) {
             return false;
