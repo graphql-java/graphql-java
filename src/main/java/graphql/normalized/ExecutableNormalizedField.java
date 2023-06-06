@@ -11,17 +11,19 @@ import graphql.introspection.Introspection;
 import graphql.language.Argument;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLInterfaceType;
+import graphql.schema.GraphQLNamedOutputType;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLOutputType;
 import graphql.schema.GraphQLSchema;
-import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLUnionType;
 import graphql.util.FpKit;
+import graphql.util.Ref;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
@@ -127,42 +129,20 @@ public class ExecutableNormalizedField {
      * NOT {@code Cat} or {@code Dog} as their respective implementations would say.
      *
      * @param schema - the graphql schema in play
-     *
      * @return true if the field is conditional
      */
-    @SuppressWarnings({"unchecked", "rawtypes"})
     public boolean isConditional(@NotNull GraphQLSchema schema) {
         if (parent == null) {
             return false;
         }
 
-        /*
-         * checking if we have an interface which can be used as an unconditional parent type
-         */
-        ImmutableList<GraphQLType> parentTypes = ImmutableKit.map(parent.getFieldDefinitions(schema), fd -> unwrapAll(fd.getType()));
-
-        Set<GraphQLInterfaceType> interfacesImplementedByAllParents = null;
-        for (GraphQLType parentType : parentTypes) {
-            List<GraphQLInterfaceType> toAdd = new ArrayList<>();
-            if (parentType instanceof GraphQLObjectType) {
-                toAdd.addAll((List) ((GraphQLObjectType) parentType).getInterfaces());
-            } else if (parentType instanceof GraphQLInterfaceType) {
-                toAdd.add((GraphQLInterfaceType) parentType);
-                toAdd.addAll((List) ((GraphQLInterfaceType) parentType).getInterfaces());
-            }
-            if (interfacesImplementedByAllParents == null) {
-                interfacesImplementedByAllParents = new LinkedHashSet<>(toAdd);
-            } else {
-                interfacesImplementedByAllParents.retainAll(toAdd);
-            }
-        }
-        for (GraphQLInterfaceType parentInterfaceType : interfacesImplementedByAllParents) {
-            List<GraphQLObjectType> implementations = schema.getImplementations(parentInterfaceType);
+        for (GraphQLInterfaceType commonParentOutputInterface : parent.getInterfacesCommonToAllOutputTypes(schema)) {
+            List<GraphQLObjectType> implementations = schema.getImplementations(commonParentOutputInterface);
             // __typename
-            if (this.fieldName.equals(Introspection.TypeNameMetaFieldDef.getName()) && implementations.size() == objectTypeNames.size()) {
+            if (fieldName.equals(Introspection.TypeNameMetaFieldDef.getName()) && implementations.size() == objectTypeNames.size()) {
                 return false;
             }
-            if (parentInterfaceType.getField(fieldName) == null) {
+            if (commonParentOutputInterface.getField(fieldName) == null) {
                 continue;
             }
             if (implementations.size() == objectTypeNames.size()) {
@@ -170,20 +150,16 @@ public class ExecutableNormalizedField {
             }
         }
 
-        /*
-         *__typename is the only field in a union type that CAN be NOT conditional
-         */
-        List<GraphQLFieldDefinition> fieldDefinitions = parent.getFieldDefinitions(schema);
-        if (unwrapAll(fieldDefinitions.get(0).getType()) instanceof GraphQLUnionType) {
-            GraphQLUnionType parentOutputTypeAsUnion = (GraphQLUnionType) unwrapAll(fieldDefinitions.get(0).getType());
-            if (this.fieldName.equals(Introspection.TypeNameMetaFieldDef.getName()) && objectTypeNames.size() == parentOutputTypeAsUnion.getTypes().size()) {
+        // __typename is the only field in a union type that CAN be NOT conditional
+        GraphQLFieldDefinition parentFieldDef = parent.getOneFieldDefinition(schema);
+        if (unwrapAll(parentFieldDef.getType()) instanceof GraphQLUnionType) {
+            GraphQLUnionType parentOutputTypeAsUnion = (GraphQLUnionType) unwrapAll(parentFieldDef.getType());
+            if (fieldName.equals(Introspection.TypeNameMetaFieldDef.getName()) && objectTypeNames.size() == parentOutputTypeAsUnion.getTypes().size()) {
                 return false; // Not conditional
             }
         }
 
-        /*
-         * This means there is no Union or Interface which could serve as unconditional parent
-         */
+        // This means there is no Union or Interface which could serve as unconditional parent
         if (objectTypeNames.size() > 1) {
             return true; // Conditional
         }
@@ -192,7 +168,7 @@ public class ExecutableNormalizedField {
         }
 
         GraphQLObjectType oneObjectType = (GraphQLObjectType) schema.getType(objectTypeNames.iterator().next());
-        return unwrapAll(parent.getFieldDefinitions(schema).get(0).getType()) != oneObjectType;
+        return unwrapAll(parentFieldDef.getType()) != oneObjectType;
     }
 
     public boolean hasChildren() {
@@ -210,18 +186,39 @@ public class ExecutableNormalizedField {
         return ImmutableKit.map(getFieldDefinitions(schema), fd -> fd.getType());
     }
 
-
-    public List<GraphQLFieldDefinition> getFieldDefinitions(GraphQLSchema schema) {
-        GraphQLFieldDefinition fieldDefinition = resolveIntrospectionField(schema, objectTypeNames, fieldName);
+    public void forEachFieldDefinition(GraphQLSchema schema, Consumer<GraphQLFieldDefinition> consumer) {
+        var fieldDefinition = resolveIntrospectionField(schema, objectTypeNames, fieldName);
         if (fieldDefinition != null) {
-            return ImmutableList.of(fieldDefinition);
+            consumer.accept(fieldDefinition);
+            return;
         }
-        ImmutableList.Builder<GraphQLFieldDefinition> builder = ImmutableList.builder();
+
         for (String objectTypeName : objectTypeNames) {
             GraphQLObjectType type = (GraphQLObjectType) assertNotNull(schema.getType(objectTypeName));
-            builder.add(assertNotNull(type.getField(fieldName), () -> String.format("no field %s found for type %s", fieldName, objectTypeNames.iterator().next())));
+            consumer.accept(assertNotNull(type.getField(fieldName), () -> String.format("No field %s found for type %s", fieldName, objectTypeName)));
         }
+    }
+
+    public List<GraphQLFieldDefinition> getFieldDefinitions(GraphQLSchema schema) {
+        ImmutableList.Builder<GraphQLFieldDefinition> builder = ImmutableList.builder();
+        forEachFieldDefinition(schema, builder::add);
         return builder.build();
+    }
+
+    /**
+     * This is NOT public as it is not recommended usage.
+     * <p>
+     * Internally there are cases where we know it is safe to use this, so this exists.
+     */
+    private GraphQLFieldDefinition getOneFieldDefinition(GraphQLSchema schema) {
+        var fieldDefinition = resolveIntrospectionField(schema, objectTypeNames, fieldName);
+        if (fieldDefinition != null) {
+            return fieldDefinition;
+        }
+
+        String objectTypeName = objectTypeNames.iterator().next();
+        GraphQLObjectType type = (GraphQLObjectType) assertNotNull(schema.getType(objectTypeName));
+        return assertNotNull(type.getField(fieldName), () -> String.format("No field %s found for type %s", fieldName, objectTypeName));
     }
 
     private static GraphQLFieldDefinition resolveIntrospectionField(GraphQLSchema schema, Set<String> objectTypeNames, String fieldName) {
@@ -506,12 +503,66 @@ public class ExecutableNormalizedField {
     }
 
     /**
+     * This tries to find interfaces common to all the field output types.
+     * <p>
+     * i.e. goes through {@link #getFieldDefinitions(GraphQLSchema)} and finds interfaces that
+     * all the field's unwrapped output types are assignable to.
+     */
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private Set<GraphQLInterfaceType> getInterfacesCommonToAllOutputTypes(GraphQLSchema schema) {
+        // Shortcut for performance
+        if (objectTypeNames.size() == 1) {
+            var fieldDef = getOneFieldDefinition(schema);
+            var outputType = unwrapAll(fieldDef.getType());
+
+            if (outputType instanceof GraphQLObjectType) {
+                return new LinkedHashSet<>((List) ((GraphQLObjectType) outputType).getInterfaces());
+            } else if (outputType instanceof GraphQLInterfaceType) {
+                var result = new LinkedHashSet<>((List) ((GraphQLInterfaceType) outputType).getInterfaces());
+                result.add(outputType);
+                return result;
+            } else {
+                return Collections.emptySet();
+            }
+        }
+
+        Ref<Set<GraphQLInterfaceType>> commonInterfaces = new Ref<>();
+        forEachFieldDefinition(schema, (fieldDef) -> {
+            var outputType = unwrapAll(fieldDef.getType());
+
+            List<GraphQLInterfaceType> outputTypeInterfaces;
+            if (outputType instanceof GraphQLObjectType) {
+                outputTypeInterfaces = (List) ((GraphQLObjectType) outputType).getInterfaces();
+            } else if (outputType instanceof GraphQLInterfaceType) {
+                // This interface and superinterfaces
+                List<GraphQLNamedOutputType> superInterfaces = ((GraphQLInterfaceType) outputType).getInterfaces();
+
+                outputTypeInterfaces = new ArrayList<>(superInterfaces.size() + 1);
+                outputTypeInterfaces.add((GraphQLInterfaceType) outputType);
+
+                if (!superInterfaces.isEmpty()) {
+                    outputTypeInterfaces.addAll((List) superInterfaces);
+                }
+            } else {
+                outputTypeInterfaces = Collections.emptyList();
+            }
+
+            if (commonInterfaces.value == null) {
+                commonInterfaces.value = new LinkedHashSet<>(outputTypeInterfaces);
+            } else {
+                commonInterfaces.value.retainAll(outputTypeInterfaces);
+            }
+        });
+
+        return commonInterfaces.value;
+    }
+
+    /**
      * @return a {@link Builder} of {@link ExecutableNormalizedField}s
      */
     public static Builder newNormalizedField() {
         return new Builder();
     }
-
 
     /**
      * Allows this {@link ExecutableNormalizedField} to be transformed via a {@link Builder} consumer callback
