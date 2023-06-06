@@ -129,7 +129,6 @@ public class ExecutableNormalizedField {
      * NOT {@code Cat} or {@code Dog} as their respective implementations would say.
      *
      * @param schema - the graphql schema in play
-     *
      * @return true if the field is conditional
      */
     @SuppressWarnings({"unchecked", "rawtypes"})
@@ -138,13 +137,13 @@ public class ExecutableNormalizedField {
             return false;
         }
 
-        for (GraphQLInterfaceType commonParentInterfaceType : getCommonParentInterfacesDefiningThisField(schema)) {
-            List<GraphQLObjectType> implementations = schema.getImplementations(commonParentInterfaceType);
+        for (GraphQLInterfaceType commonParentOutputInterface : parent.getCommonOutputInterfaces(schema)) {
+            List<GraphQLObjectType> implementations = schema.getImplementations(commonParentOutputInterface);
             // __typename
             if (fieldName.equals(Introspection.TypeNameMetaFieldDef.getName()) && implementations.size() == objectTypeNames.size()) {
                 return false;
             }
-            if (commonParentInterfaceType.getField(fieldName) == null) {
+            if (commonParentOutputInterface.getField(fieldName) == null) {
                 continue;
             }
             if (implementations.size() == objectTypeNames.size()) {
@@ -505,51 +504,51 @@ public class ExecutableNormalizedField {
     }
 
     /**
-     * This tries to find interfaces common to all the PARENT field output types that
-     * define THIS field.
+     * This tries to find interfaces common to all the PARENT field output types.
      */
     @SuppressWarnings({"unchecked", "rawtypes"})
-    private Set<GraphQLInterfaceType> getCommonParentInterfacesDefiningThisField(GraphQLSchema schema) {
+    private Set<GraphQLInterfaceType> getCommonOutputInterfaces(GraphQLSchema schema) {
         Ref<Set<GraphQLInterfaceType>> ref = new Ref<>();
 
-        if (parent.objectTypeNames.size() == 1) {
-            var parentFieldDef = parent.getOneFieldDefinition(schema);
-            var parentOutputType = unwrapAll(parentFieldDef.getType());
+        if (objectTypeNames.size() == 1) {
+            var fieldDef = getOneFieldDefinition(schema);
+            var outputType = unwrapAll(fieldDef.getType());
 
-            if (parentOutputType instanceof GraphQLObjectType) {
-                return new LinkedHashSet<>((List) ((GraphQLObjectType) parentOutputType).getInterfaces());
-            } else if (parentOutputType instanceof GraphQLInterfaceType) {
-                var result = new LinkedHashSet<>((List) ((GraphQLInterfaceType) parentOutputType).getInterfaces());
-                result.add(parentOutputType);
+            if (outputType instanceof GraphQLObjectType) {
+                return new LinkedHashSet<>((List) ((GraphQLObjectType) outputType).getInterfaces());
+            } else if (outputType instanceof GraphQLInterfaceType) {
+                var result = new LinkedHashSet<>((List) ((GraphQLInterfaceType) outputType).getInterfaces());
+                result.add(outputType);
                 return result;
             } else {
                 return Collections.emptySet();
             }
         }
 
-        parent.forEachFieldDefinition(schema, (parentFieldDef) -> {
-            var parentOutputType = unwrapAll(parentFieldDef.getType());
+        forEachFieldDefinition(schema, (fieldDef) -> {
+            var outputType = unwrapAll(fieldDef.getType());
 
-            List<GraphQLInterfaceType> parentInterfaces;
-            if (parentOutputType instanceof GraphQLObjectType) {
-                parentInterfaces = (List) ((GraphQLObjectType) parentOutputType).getInterfaces();
-            } else if (parentOutputType instanceof GraphQLInterfaceType) {
-                List<GraphQLNamedOutputType> interfaces = ((GraphQLInterfaceType) parentOutputType).getInterfaces();
+            List<GraphQLInterfaceType> outputTypeInterfaces;
+            if (outputType instanceof GraphQLObjectType) {
+                outputTypeInterfaces = (List) ((GraphQLObjectType) outputType).getInterfaces();
+            } else if (outputType instanceof GraphQLInterfaceType) {
+                // This interface and superinterfaces
+                List<GraphQLNamedOutputType> superInterfaces = ((GraphQLInterfaceType) outputType).getInterfaces();
 
-                parentInterfaces = new ArrayList<>(interfaces.size() + 1);
+                outputTypeInterfaces = new ArrayList<>(superInterfaces.size() + 1);
+                outputTypeInterfaces.add((GraphQLInterfaceType) outputType);
 
-                parentInterfaces.add((GraphQLInterfaceType) parentOutputType);
-                if (!interfaces.isEmpty()) {
-                    parentInterfaces.addAll((List) interfaces);
+                if (!superInterfaces.isEmpty()) {
+                    outputTypeInterfaces.addAll((List) superInterfaces);
                 }
             } else {
-                parentInterfaces = Collections.emptyList();
+                outputTypeInterfaces = Collections.emptyList();
             }
 
             if (ref.value == null) {
-                ref.value = new LinkedHashSet<>(parentInterfaces);
+                ref.value = new LinkedHashSet<>(outputTypeInterfaces);
             } else {
-                ref.value.retainAll(parentInterfaces);
+                ref.value.retainAll(outputTypeInterfaces);
             }
         });
 
