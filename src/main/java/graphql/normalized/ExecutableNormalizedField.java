@@ -510,8 +510,6 @@ public class ExecutableNormalizedField {
      */
     @SuppressWarnings({"unchecked", "rawtypes"})
     private Set<GraphQLInterfaceType> getInterfacesCommonToAllOutputTypes(GraphQLSchema schema) {
-        Ref<Set<GraphQLInterfaceType>> ref = new Ref<>();
-
         // Shortcut for performance
         if (objectTypeNames.size() == 1) {
             var fieldDef = getOneFieldDefinition(schema);
@@ -528,6 +526,7 @@ public class ExecutableNormalizedField {
             }
         }
 
+        Ref<Set<GraphQLInterfaceType>> commonInterfaces = new Ref<>();
         forEachFieldDefinition(schema, (fieldDef) -> {
             var outputType = unwrapAll(fieldDef.getType());
 
@@ -548,14 +547,14 @@ public class ExecutableNormalizedField {
                 outputTypeInterfaces = Collections.emptyList();
             }
 
-            if (ref.value == null) {
-                ref.value = new LinkedHashSet<>(outputTypeInterfaces);
+            if (commonInterfaces.value == null) {
+                commonInterfaces.value = new LinkedHashSet<>(outputTypeInterfaces);
             } else {
-                ref.value.retainAll(outputTypeInterfaces);
+                commonInterfaces.value.retainAll(outputTypeInterfaces);
             }
         });
 
-        return ref.value;
+        return commonInterfaces.value;
     }
 
     /**
