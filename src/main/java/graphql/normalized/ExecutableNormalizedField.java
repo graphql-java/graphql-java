@@ -137,7 +137,7 @@ public class ExecutableNormalizedField {
             return false;
         }
 
-        for (GraphQLInterfaceType commonParentOutputInterface : parent.getCommonOutputInterfaces(schema)) {
+        for (GraphQLInterfaceType commonParentOutputInterface : parent.getInterfacesCommonToAllOutputTypes(schema)) {
             List<GraphQLObjectType> implementations = schema.getImplementations(commonParentOutputInterface);
             // __typename
             if (fieldName.equals(Introspection.TypeNameMetaFieldDef.getName()) && implementations.size() == objectTypeNames.size()) {
@@ -504,12 +504,16 @@ public class ExecutableNormalizedField {
     }
 
     /**
-     * This tries to find interfaces common to all the PARENT field output types.
+     * This tries to find interfaces common to all the field output types.
+     * <p>
+     * i.e. goes through {@link #getFieldDefinitions(GraphQLSchema)} and finds an interface that
+     * all the field's unwrapped output types are assignable to.
      */
     @SuppressWarnings({"unchecked", "rawtypes"})
-    private Set<GraphQLInterfaceType> getCommonOutputInterfaces(GraphQLSchema schema) {
+    private Set<GraphQLInterfaceType> getInterfacesCommonToAllOutputTypes(GraphQLSchema schema) {
         Ref<Set<GraphQLInterfaceType>> ref = new Ref<>();
 
+        // Shortcut for performance
         if (objectTypeNames.size() == 1) {
             var fieldDef = getOneFieldDefinition(schema);
             var outputType = unwrapAll(fieldDef.getType());
