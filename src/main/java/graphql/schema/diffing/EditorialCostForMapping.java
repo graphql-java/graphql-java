@@ -12,6 +12,12 @@ import java.util.function.Predicate;
 @Internal
 public class EditorialCostForMapping {
     /**
+     * @param mapping     the mapping
+     * @param sourceGraph the source graph
+     * @param targetGraph the target graph
+     *
+     * @return the editorial cost
+     *
      * @see #baseEditorialCostForMapping(Mapping, SchemaGraph, SchemaGraph, List)
      */
     public static int baseEditorialCostForMapping(Mapping mapping, // can be a partial mapping
@@ -27,6 +33,13 @@ public class EditorialCostForMapping {
      * Use this is as base cost when invoking
      * {@link #editorialCostForMapping(int, Mapping, SchemaGraph, SchemaGraph)}
      * as it heavily speeds up performance.
+     *
+     * @param mapping              the mapping
+     * @param sourceGraph          the source graph
+     * @param targetGraph          the target graph
+     * @param editOperationsResult the list of edit operations
+     *
+     * @return the editorial cost
      */
     public static int baseEditorialCostForMapping(Mapping mapping, // can be a partial mapping
                                                   SchemaGraph sourceGraph, // the whole graph
@@ -92,6 +105,13 @@ public class EditorialCostForMapping {
      * {@link #baseEditorialCostForMapping(Mapping, SchemaGraph, SchemaGraph)}.
      * <p>
      * The sum of the non-fixed costs and the fixed costs is total editorial cost for mapping.
+     *
+     * @param baseCost    the starting base cost
+     * @param mapping     the mapping
+     * @param sourceGraph the source graph
+     * @param targetGraph the target graph
+     *
+     * @return the editorial cost
      */
     public static int editorialCostForMapping(int baseCost,
                                               Mapping mapping, // can be a partial mapping
