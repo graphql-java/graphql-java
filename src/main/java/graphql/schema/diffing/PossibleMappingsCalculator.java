@@ -1092,6 +1092,8 @@ public class PossibleMappingsCalculator {
      * e.g. for an output {collar: Dog} then the collar vertex must be a child of Dog in the mapping.
      *
      * @param mapping the mapping to get non-fixed parent restrictions for
+     * @param sourceGraph the source graph
+     * @param targetGraph the target graph
      * @return Map where key is any vertex, and the value is the parent that vertex must map to
      */
     public Map<Vertex, Vertex> getNonFixedParentRestrictions(SchemaGraph sourceGraph,

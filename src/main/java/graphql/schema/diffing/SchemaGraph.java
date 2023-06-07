@@ -260,6 +260,9 @@ public class SchemaGraph {
 
     /**
      * Gets the one inverse adjacent edge to the input and gets the other vertex.
+     *
+     * @param input  the vertex input
+     * @return a vertex
      */
     public Vertex getSingleAdjacentInverseVertex(Vertex input) {
         Collection<Edge> adjacentVertices = this.getAdjacentEdgesInverseNonCopy(input);

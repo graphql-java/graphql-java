@@ -17,7 +17,7 @@ import graphql.schema.GraphQLOutputType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLUnionType;
 import graphql.util.FpKit;
-import graphql.util.Ref;
+import graphql.util.MutableRef;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -526,7 +526,7 @@ public class ExecutableNormalizedField {
             }
         }
 
-        Ref<Set<GraphQLInterfaceType>> commonInterfaces = new Ref<>();
+        MutableRef<Set<GraphQLInterfaceType>> commonInterfaces = new MutableRef<>();
         forEachFieldDefinition(schema, (fieldDef) -> {
             var outputType = unwrapAll(fieldDef.getType());
 

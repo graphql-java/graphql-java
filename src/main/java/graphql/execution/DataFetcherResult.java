@@ -127,6 +127,7 @@ public class DataFetcherResult<T> {
      * All other values are left unmodified.
      *
      * @param transformation the transformation that should be applied to the data
+     * @param <R>            the result type
      *
      * @return a new instance with where the data value has been transformed
      */

@@ -34,7 +34,6 @@ import java.util.Arrays;
  * one worker and so that no worker is assigned to more than one job in such a
  * manner so as to minimize the total cost of completing the jobs.
  * <p>
- * <p>
  * An assignment for a cost matrix that has more workers than jobs will
  * necessarily include unassigned workers, indicated by an assignment value of
  * -1; in no other circumstance will there be unassigned workers. Similarly, an
@@ -42,7 +41,6 @@ import java.util.Arrays;
  * include unassigned jobs; in no other circumstance will there be unassigned
  * jobs. For completeness, an assignment for a square cost matrix will give
  * exactly one unique worker to each job.
- * <p>
  * <p>
  * This version of the Hungarian algorithm runs in time O(n^3), where n is the
  * maximum among the number of workers and the number of jobs.
@@ -180,7 +178,6 @@ public class HungarianAlgorithm {
      * more zero-slack edges (the labels of committed jobs are simultaneously
      * decreased by the same amount in order to maintain a feasible labeling).
      * <p>
-     * <p>
      * The runtime of a single phase of the algorithm is O(n^2), where n is the
      * dimension of the internal square cost matrix, since each edge is visited at
      * most once and since increasing the labeling is accomplished in time O(n) by
@@ -299,6 +296,9 @@ public class HungarianAlgorithm {
 
     /**
      * Helper method to record a matching between worker w and job j.
+     *
+     * @param w the worker
+     * @param j the job
      */
     protected void match(int w, int j) {
         matchJobByWorker[w] = j;
@@ -345,6 +345,8 @@ public class HungarianAlgorithm {
      * Update labels with the specified slack by adding the slack value for
      * committed workers and by subtracting the slack value for committed jobs. In
      * addition, update the minimum slack values appropriately.
+     *
+     * @param slack the specified slack
      */
     protected void updateLabeling(double slack) {
         for (int w = 0; w < dim; w++) {
