@@ -90,7 +90,6 @@ public class Execution {
                 .document(document)
                 .operationDefinition(operationDefinition)
                 .dataLoaderRegistry(executionInput.getDataLoaderRegistry())
-                .cacheControl(executionInput.getCacheControl())
                 .locale(executionInput.getLocale())
                 .valueUnboxer(valueUnboxer)
                 .executionInput(executionInput)

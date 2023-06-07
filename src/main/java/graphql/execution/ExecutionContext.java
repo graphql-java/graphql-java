@@ -8,7 +8,6 @@ import graphql.ExecutionInput;
 import graphql.GraphQLContext;
 import graphql.GraphQLError;
 import graphql.PublicApi;
-import graphql.cachecontrol.CacheControl;
 import graphql.collect.ImmutableKit;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationState;
@@ -52,7 +51,6 @@ public class ExecutionContext {
     private final AtomicReference<ImmutableList<GraphQLError>> errors = new AtomicReference<>(ImmutableKit.emptyList());
     private final Set<ResultPath> errorPaths = new HashSet<>();
     private final DataLoaderRegistry dataLoaderRegistry;
-    private final CacheControl cacheControl;
     private final Locale locale;
     private final ValueUnboxer valueUnboxer;
     private final ExecutionInput executionInput;
@@ -74,7 +72,6 @@ public class ExecutionContext {
         this.root = builder.root;
         this.instrumentation = builder.instrumentation;
         this.dataLoaderRegistry = builder.dataLoaderRegistry;
-        this.cacheControl = builder.cacheControl;
         this.locale = builder.locale;
         this.valueUnboxer = builder.valueUnboxer;
         this.errors.set(builder.errors);
@@ -164,12 +161,6 @@ public class ExecutionContext {
 
     public DataLoaderRegistry getDataLoaderRegistry() {
         return dataLoaderRegistry;
-    }
-
-    @Deprecated
-    @DeprecatedAt("2022-07-26")
-    public CacheControl getCacheControl() {
-        return cacheControl;
     }
 
     public Locale getLocale() {
