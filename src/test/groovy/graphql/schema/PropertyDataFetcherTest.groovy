@@ -33,7 +33,7 @@ class PropertyDataFetcherTest extends Specification {
                 .build()
     }
 
-    class SomeObject {
+    static class SomeObject {
         String value
     }
 
@@ -483,7 +483,7 @@ class PropertyDataFetcherTest extends Specification {
 
     }
 
-    class ProductDTO {
+    static class ProductDTO {
         String name
         String model
     }
@@ -537,7 +537,7 @@ class PropertyDataFetcherTest extends Specification {
     private static class Bar implements Foo {
         @Override
         String getSomething() {
-            return "bar";
+            return "bar"
         }
     }
 
@@ -561,5 +561,70 @@ class PropertyDataFetcherTest extends Specification {
 
         then:
         result == "bar"
+    }
+
+    def "issue 3247 - statics should not be used"() {
+        given:
+        def payload = new UpdateOrganizerSubscriptionPayload(true, new OrganizerSubscriptionError())
+        PropertyDataFetcher propertyDataFetcher = new PropertyDataFetcher("success")
+        def dfe = Mock(DataFetchingEnvironment)
+        dfe.getSource() >> payload
+        when:
+        def result = propertyDataFetcher.get(dfe)
+
+        then:
+        result == true
+
+        // repeat - should be cached
+        when:
+        result = propertyDataFetcher.get(dfe)
+
+        then:
+        result == true
+    }
+
+    /**
+     * Classes from issue to ensure we reproduce as reported by customers
+     */
+    static class OrganizerSubscriptionError {
+        static String message() { return "error " }
+    }
+
+    static class UpdateOrganizerSubscriptionPayload {
+        private final Boolean success
+        private final OrganizerSubscriptionError error
+
+        UpdateOrganizerSubscriptionPayload(Boolean success, OrganizerSubscriptionError error) {
+            this.success = success
+            this.error = error
+        }
+
+        static UpdateOrganizerSubscriptionPayload success() {
+            // 👈 note the static factory method for creating a success payload
+            return new UpdateOrganizerSubscriptionPayload(Boolean.TRUE, null)
+        }
+
+        static UpdateOrganizerSubscriptionPayload error(OrganizerSubscriptionError error) {
+            // 👈 note the static factory method for creating a success payload
+            return new UpdateOrganizerSubscriptionPayload(null, error)
+        }
+
+        Boolean getSuccess() {
+            return success
+        }
+
+        OrganizerSubscriptionError getError() {
+            return error
+        }
+
+
+        @Override
+        String toString() {
+            return new StringJoiner(
+                    ", ", UpdateOrganizerSubscriptionPayload.class.getSimpleName() + "[", "]")
+                    .add("success=" + success)
+                    .add("error=" + error)
+                    .toString()
+        }
     }
 }
