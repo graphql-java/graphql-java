@@ -563,7 +563,7 @@ class PropertyDataFetcherTest extends Specification {
         result == "bar"
     }
 
-    def "issue 3247 - statics should not be used"() {
+    def "issue 3247 - record like statics should not be used"() {
         given:
         def payload = new UpdateOrganizerSubscriptionPayload(true, new OrganizerSubscriptionError())
         PropertyDataFetcher propertyDataFetcher = new PropertyDataFetcher("success")
@@ -583,8 +583,30 @@ class PropertyDataFetcherTest extends Specification {
         result == true
     }
 
+    def "issue 3247 - record like statics should not be found"() {
+        given:
+        def errorShape = new OrganizerSubscriptionError()
+        PropertyDataFetcher propertyDataFetcher = new PropertyDataFetcher("message")
+        def dfe = Mock(DataFetchingEnvironment)
+        dfe.getSource() >> errorShape
+        when:
+        def result = propertyDataFetcher.get(dfe)
+
+        then:
+        result == null // not found as its a static recordLike() method
+
+        // repeat - should be cached
+        when:
+        result = propertyDataFetcher.get(dfe)
+
+        then:
+        result == null
+    }
+
     /**
      * Classes from issue to ensure we reproduce as reported by customers
+     *
+     * In the UpdateOrganizerSubscriptionPayload class we will find the getSuccess() because static recordLike() methods are no longer allowed
      */
     static class OrganizerSubscriptionError {
         static String message() { return "error " }
