@@ -603,6 +603,40 @@ class PropertyDataFetcherTest extends Specification {
         result == null
     }
 
+    def "issue 3247 - getter statics should be found"() {
+        given:
+        def objectInQuestion = new BarClassWithStaticProperties()
+        PropertyDataFetcher propertyDataFetcher = new PropertyDataFetcher("foo")
+        def dfe = Mock(DataFetchingEnvironment)
+        dfe.getSource() >> objectInQuestion
+        when:
+        def result = propertyDataFetcher.get(dfe)
+
+        then:
+        result == "foo"
+
+        // repeat - should be cached
+        when:
+        result = propertyDataFetcher.get(dfe)
+
+        then:
+        result == "foo"
+
+        when:
+        propertyDataFetcher = new PropertyDataFetcher("bar")
+        result = propertyDataFetcher.get(dfe)
+
+        then:
+        result == "bar"
+
+        // repeat - should be cached
+        when:
+        result = propertyDataFetcher.get(dfe)
+
+        then:
+        result == "bar"
+    }
+
     /**
      * Classes from issue to ensure we reproduce as reported by customers
      *
@@ -648,5 +682,13 @@ class PropertyDataFetcherTest extends Specification {
                     .add("error=" + error)
                     .toString()
         }
+    }
+
+    static class FooClassWithStaticProperties {
+        static String getFoo() { return "foo" }
+    }
+
+    static class BarClassWithStaticProperties extends FooClassWithStaticProperties {
+        static String getBar() { return "bar" }
     }
 }
