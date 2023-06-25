@@ -138,7 +138,7 @@ public class PropertyFetchingImpl {
         //
         // try by public getters name -  object.getPropertyName()
         try {
-            MethodFinder methodFinder = (rootClass, methodName) -> findPubliclyAccessibleMethod(cacheKey, rootClass, methodName, dfeInUse,false);
+            MethodFinder methodFinder = (rootClass, methodName) -> findPubliclyAccessibleMethod(cacheKey, rootClass, methodName, dfeInUse, false);
             return getPropertyViaGetterMethod(object, propertyName, graphQLType, methodFinder, singleArgumentValue);
         } catch (NoSuchMethodException ignored) {
         }
@@ -149,7 +149,7 @@ public class PropertyFetchingImpl {
             // in order to not break things we allow statics to be used.  In theory this double code check is not needed
             // because you CANT have a `static getFoo()` and a `getFoo()` in the same class hierarchy but to make the code read clearer
             // I have repeated the lookup.  Since we cache methods, this happens only once and does not slow us down
-            MethodFinder methodFinder = (rootClass, methodName) -> findPubliclyAccessibleMethod(cacheKey, rootClass, methodName, dfeInUse,true);
+            MethodFinder methodFinder = (rootClass, methodName) -> findPubliclyAccessibleMethod(cacheKey, rootClass, methodName, dfeInUse, true);
             return getPropertyViaGetterMethod(object, propertyName, graphQLType, methodFinder, singleArgumentValue);
         } catch (NoSuchMethodException ignored) {
         }
