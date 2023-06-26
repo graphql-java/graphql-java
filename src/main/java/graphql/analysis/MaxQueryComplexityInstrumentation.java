@@ -15,16 +15,13 @@ import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.execution.instrumentation.InstrumentationState.ofState;
 import static graphql.execution.instrumentation.SimpleInstrumentationContext.noOp;
-import static java.util.Optional.ofNullable;
 
 /**
  * Prevents execution if the query complexity is greater than the specified maxComplexity.
@@ -101,21 +98,8 @@ public class MaxQueryComplexityInstrumentation extends SimplePerformantInstrumen
     @Override
     public @Nullable InstrumentationContext<ExecutionResult> beginExecuteOperation(InstrumentationExecuteOperationParameters instrumentationExecuteOperationParameters, InstrumentationState rawState) {
         State state = ofState(rawState);
-        QueryTraverser queryTraverser = newQueryTraverser(instrumentationExecuteOperationParameters.getExecutionContext());
-
-        Map<QueryVisitorFieldEnvironment, Integer> valuesByParent = new LinkedHashMap<>();
-        queryTraverser.visitPostOrder(new QueryVisitorStub() {
-            @Override
-            public void visitField(QueryVisitorFieldEnvironment env) {
-                int childComplexity = valuesByParent.getOrDefault(env, 0);
-                int value = calculateComplexity(env, childComplexity);
-
-                valuesByParent.compute(env.getParentEnvironment(), (key, oldValue) ->
-                        ofNullable(oldValue).orElse(0) + value
-                );
-            }
-        });
-        int totalComplexity = valuesByParent.getOrDefault(null, 0);
+        QueryComplexityCalculator queryComplexityCalculator = newQueryComplexityCalculator(instrumentationExecuteOperationParameters.getExecutionContext());
+        int totalComplexity = queryComplexityCalculator.calculate();
         if (log.isDebugEnabled()) {
             log.debug("Query complexity: {}", totalComplexity);
         }
@@ -133,6 +117,16 @@ public class MaxQueryComplexityInstrumentation extends SimplePerformantInstrumen
         return noOp();
     }
 
+    private QueryComplexityCalculator newQueryComplexityCalculator(ExecutionContext executionContext) {
+        return QueryComplexityCalculator.newCalculator()
+                .fieldComplexityCalculator(fieldComplexityCalculator)
+                .schema(executionContext.getGraphQLSchema())
+                .document(executionContext.getDocument())
+                .operationName(executionContext.getExecutionInput().getOperationName())
+                .variables(executionContext.getCoercedVariables())
+                .build();
+    }
+
     /**
      * Called to generate your own error message or custom exception class
      *
@@ -143,37 +137,6 @@ public class MaxQueryComplexityInstrumentation extends SimplePerformantInstrumen
      */
     protected AbortExecutionException mkAbortException(int totalComplexity, int maxComplexity) {
         return new AbortExecutionException("maximum query complexity exceeded " + totalComplexity + " > " + maxComplexity);
-    }
-
-    QueryTraverser newQueryTraverser(ExecutionContext executionContext) {
-        return QueryTraverser.newQueryTraverser()
-                .schema(executionContext.getGraphQLSchema())
-                .document(executionContext.getDocument())
-                .operationName(executionContext.getExecutionInput().getOperationName())
-                .coercedVariables(executionContext.getCoercedVariables())
-                .build();
-    }
-
-    private int calculateComplexity(QueryVisitorFieldEnvironment queryVisitorFieldEnvironment, int childComplexity) {
-        if (queryVisitorFieldEnvironment.isTypeNameIntrospectionField()) {
-            return 0;
-        }
-        FieldComplexityEnvironment fieldComplexityEnvironment = convertEnv(queryVisitorFieldEnvironment);
-        return fieldComplexityCalculator.calculate(fieldComplexityEnvironment, childComplexity);
-    }
-
-    private FieldComplexityEnvironment convertEnv(QueryVisitorFieldEnvironment queryVisitorFieldEnvironment) {
-        FieldComplexityEnvironment parentEnv = null;
-        if (queryVisitorFieldEnvironment.getParentEnvironment() != null) {
-            parentEnv = convertEnv(queryVisitorFieldEnvironment.getParentEnvironment());
-        }
-        return new FieldComplexityEnvironment(
-                queryVisitorFieldEnvironment.getField(),
-                queryVisitorFieldEnvironment.getFieldDefinition(),
-                queryVisitorFieldEnvironment.getFieldsContainer(),
-                queryVisitorFieldEnvironment.getArguments(),
-                parentEnv
-        );
     }
 
     private static class State implements InstrumentationState {
