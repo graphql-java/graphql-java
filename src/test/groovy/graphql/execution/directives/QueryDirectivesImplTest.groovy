@@ -2,6 +2,7 @@ package graphql.execution.directives
 
 import graphql.GraphQLContext
 import graphql.TestUtil
+import graphql.execution.CoercedVariables
 import graphql.execution.MergedField
 import spock.lang.Specification
 
@@ -66,4 +67,26 @@ class QueryDirectivesImplTest extends Specification {
         appliedResult[1].getArgument("forMillis").getValue() == 10
     }
 
+    def "builder works as expected"() {
+
+        def f1 = TestUtil.parseField("f1 @cached @upper")
+        def f2 = TestUtil.parseField("f2 @cached(forMillis : \$var) @timeout")
+
+        def mergedField = MergedField.newMergedField([f1, f2]).build()
+
+        def queryDirectives = QueryDirectives.newQueryDirectives()
+                .mergedField(mergedField)
+                .schema(schema)
+                .coercedVariables(CoercedVariables.of([var: 10]))
+                .graphQLContext(GraphQLContext.getDefault())
+                .locale(Locale.getDefault())
+                .build()
+
+        when:
+        def appliedDirectivesByName = queryDirectives.getImmediateAppliedDirectivesByName()
+
+        then:
+        appliedDirectivesByName.keySet().sort() == ["cached", "timeout", "upper"]
+
+    }
 }
