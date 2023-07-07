@@ -64,7 +64,7 @@ public class InstrumentationExamples {
 
     class CustomInstrumentation extends SimplePerformantInstrumentation {
         @Override
-        public InstrumentationState createState() {
+        public @Nullable InstrumentationState createState(InstrumentationCreateStateParameters parameters) {
             //
             // instrumentation state is passed during each invocation of an Instrumentation method
             // and allows you to put stateful data away and reference it during the query execution
