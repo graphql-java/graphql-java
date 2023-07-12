@@ -2795,6 +2795,7 @@ fragment personName on Person {
 
         then:
         def exception = thrown(AbortExecutionException)
+        exception.message.contains("depth exceeded")
         exception.message.contains("> 5")
     }
 }
