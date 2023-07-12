@@ -3,7 +3,6 @@ package graphql.normalized
 import graphql.ExecutionInput
 import graphql.GraphQL
 import graphql.TestUtil
-import graphql.execution.AbortExecutionException
 import graphql.execution.CoercedVariables
 import graphql.execution.MergedField
 import graphql.execution.RawVariables
@@ -19,6 +18,9 @@ import graphql.util.Traverser
 import graphql.util.TraverserContext
 import graphql.util.TraverserVisitorStub
 import spock.lang.Specification
+
+import java.util.stream.Collectors
+import java.util.stream.IntStream
 
 import static graphql.TestUtil.schema
 import static graphql.language.AstPrinter.printAst
@@ -2694,7 +2696,89 @@ fragment personName on Person {
         ]
     }
 
-    def "max depth"() {
+    def "query cannot exceed max depth"() {
+        String schema = """
+        type Query {
+            animal: Animal
+        }
+        interface Animal {
+            name: String
+            friends: [Animal]
+        }
+        type Bird implements Animal {
+            name: String 
+            friends: [Animal]
+        }
+        type Cat implements Animal {
+            name: String 
+            friends: [Animal]
+            breed: String 
+        }
+        type Dog implements Animal {
+            name: String 
+            breed: String
+            friends: [Animal]
+        }
+        """
+        GraphQLSchema graphQLSchema = TestUtil.schema(schema)
+
+        // We generate two less fields than the given depth
+        // One is due to the top level field
+        // One is due to the leaf selection
+        def animalSubselection = IntStream.rangeClosed(1, queryDepth - 2)
+                .mapToObj {
+                    ""
+                }
+                .reduce("CHILD") { acc, value ->
+                    acc.replace("CHILD", "friends { CHILD }")
+                }
+                .replace("CHILD", "name")
+
+        // Note: there is a total of 51 fields here
+        String query = """
+        {
+            animal {
+                $animalSubselection
+            }
+        }        
+        """
+
+        def limit = 50
+
+        assertValidQuery(graphQLSchema, query)
+
+        Document document = TestUtil.parseQuery(query)
+
+        when:
+        Exception exception
+        try {
+            ExecutableNormalizedOperationFactory.createExecutableNormalizedOperationWithRawVariables(
+                    graphQLSchema,
+                    document,
+                    null,
+                    RawVariables.emptyVariables(),
+                    ExecutableNormalizedOperationFactory.Options.defaultOptions().maxChildrenDepth(limit))
+        } catch (Exception e) {
+            exception = e
+        }
+
+        then:
+        if (queryDepth > limit) {
+            assert exception != null
+            assert exception.message.contains("depth exceeded")
+            assert exception.message.contains("> 50")
+        } else {
+            assert exception == null
+        }
+
+        where:
+        _ | queryDepth
+        _ | 49
+        _ | 50
+        _ | 51
+    }
+
+    def "big query is fine as long as depth is under limit"() {
         String schema = """
         type Query {
             animal: Animal
@@ -2725,6 +2809,13 @@ fragment personName on Person {
             friends: [Friend]
         }
         """
+
+        def garbageFields = IntStream.range(0, 1000)
+                .mapToObj {
+                    """test_$it: friends { name }"""
+                }
+                .collect(Collectors.joining("\n"))
+
         GraphQLSchema graphQLSchema = TestUtil.schema(schema)
 
         String query = """
@@ -2759,24 +2850,12 @@ fragment personName on Person {
                                 breed
                             }
                         }
-                        pets {
-                            ... on Dog {
-                                friends {
-                                    pets {
-                                        ... on Cat {
-                                            friends {
-                                                name
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
                     }
                 }
                 ... on Dog {
                     name
                 }
+                $garbageFields
             }
         }        
         """
@@ -2786,7 +2865,7 @@ fragment personName on Person {
         Document document = TestUtil.parseQuery(query)
 
         when:
-        ExecutableNormalizedOperationFactory.createExecutableNormalizedOperationWithRawVariables(
+        def result = ExecutableNormalizedOperationFactory.createExecutableNormalizedOperationWithRawVariables(
                 graphQLSchema,
                 document,
                 null,
@@ -2794,8 +2873,6 @@ fragment personName on Person {
                 ExecutableNormalizedOperationFactory.Options.defaultOptions().maxChildrenDepth(5))
 
         then:
-        def exception = thrown(AbortExecutionException)
-        exception.message.contains("depth exceeded")
-        exception.message.contains("> 5")
+        notThrown(Throwable)
     }
 }
