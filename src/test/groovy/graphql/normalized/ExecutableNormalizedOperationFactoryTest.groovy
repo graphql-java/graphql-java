@@ -3,6 +3,7 @@ package graphql.normalized
 import graphql.ExecutionInput
 import graphql.GraphQL
 import graphql.TestUtil
+import graphql.execution.AbortExecutionException
 import graphql.execution.CoercedVariables
 import graphql.execution.MergedField
 import graphql.execution.RawVariables
@@ -25,7 +26,6 @@ import static graphql.parser.Parser.parseValue
 import static graphql.schema.FieldCoordinates.coordinates
 
 class ExecutableNormalizedOperationFactoryTest extends Specification {
-
     def "test"() {
         String schema = """
 type Query{ 
@@ -2694,5 +2694,107 @@ fragment personName on Person {
         ]
     }
 
+    def "max depth"() {
+        String schema = """
+        type Query {
+            animal: Animal
+        }
+        interface Animal {
+            name: String
+            friends: [Friend]
+        }
+        union Pet = Dog | Cat
+        type Friend {
+            name: String
+            isBirdOwner: Boolean
+            isCatOwner: Boolean
+            pets: [Pet] 
+        }
+        type Bird implements Animal {
+            name: String 
+            friends: [Friend]
+        }
+        type Cat implements Animal {
+            name: String 
+            friends: [Friend]
+            breed: String 
+        }
+        type Dog implements Animal {
+            name: String 
+            breed: String
+            friends: [Friend]
+        }
+        """
+        GraphQLSchema graphQLSchema = TestUtil.schema(schema)
 
+        String query = """
+        {
+            animal {
+                name
+                otherName: name
+                ... on Animal {
+                    name
+                }
+                ... on Cat {
+                    name
+                    friends {
+                        ... on Friend {
+                            isCatOwner
+                            pets {
+                                ... on Dog {
+                                    name
+                                }
+                            }
+                        }
+                    }
+                }
+                ... on Bird {
+                    friends {
+                        isBirdOwner
+                    }
+                    friends {
+                        name
+                        pets {
+                            ... on Cat {
+                                breed
+                            }
+                        }
+                        pets {
+                            ... on Dog {
+                                friends {
+                                    pets {
+                                        ... on Cat {
+                                            friends {
+                                                name
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                ... on Dog {
+                    name
+                }
+            }
+        }        
+        """
+
+        assertValidQuery(graphQLSchema, query)
+
+        Document document = TestUtil.parseQuery(query)
+
+        when:
+        ExecutableNormalizedOperationFactory.createExecutableNormalizedOperationWithRawVariables(
+                graphQLSchema,
+                document,
+                null,
+                RawVariables.emptyVariables(),
+                ExecutableNormalizedOperationFactory.Options.defaultOptions().maxChildrenDepth(5))
+
+        then:
+        def exception = thrown(AbortExecutionException)
+        exception.message.contains("> 5")
+    }
 }

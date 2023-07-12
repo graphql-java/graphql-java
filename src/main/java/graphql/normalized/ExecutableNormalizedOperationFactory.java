@@ -7,6 +7,7 @@ import com.google.common.collect.ImmutableSet;
 import graphql.GraphQLContext;
 import graphql.PublicApi;
 import graphql.collect.ImmutableKit;
+import graphql.execution.AbortExecutionException;
 import graphql.execution.CoercedVariables;
 import graphql.execution.MergedField;
 import graphql.execution.RawVariables;
@@ -64,6 +65,50 @@ import static java.util.Collections.singletonList;
  */
 @PublicApi
 public class ExecutableNormalizedOperationFactory {
+    public static class Options {
+        private final GraphQLContext graphQLContext;
+        private final Locale locale;
+        private final int maxChildrenDepth;
+
+        private Options(GraphQLContext graphQLContext,
+                        Locale locale,
+                        int maxChildrenDepth) {
+            this.graphQLContext = graphQLContext;
+            this.locale = locale;
+            this.maxChildrenDepth = maxChildrenDepth;
+        }
+
+        public static Options defaultOptions() {
+            return new Options(
+                    GraphQLContext.getDefault(),
+                    Locale.getDefault(),
+                    Integer.MAX_VALUE);
+        }
+
+        public Options locale(Locale locale) {
+            return new Options(this.graphQLContext, locale, this.maxChildrenDepth);
+        }
+
+        public Options graphQLContext(GraphQLContext graphQLContext) {
+            return new Options(graphQLContext, this.locale, this.maxChildrenDepth);
+        }
+
+        public Options maxChildrenDepth(int maxChildrenDepth) {
+            return new Options(this.graphQLContext, this.locale, maxChildrenDepth);
+        }
+
+        public GraphQLContext getGraphQLContext() {
+            return graphQLContext;
+        }
+
+        public Locale getLocale() {
+            return locale;
+        }
+
+        public int getMaxChildrenDepth() {
+            return maxChildrenDepth;
+        }
+    }
 
     private final ConditionalNodes conditionalNodes = new ConditionalNodes();
 
@@ -90,8 +135,7 @@ public class ExecutableNormalizedOperationFactory {
                 getOperationResult.fragmentsByName,
                 coercedVariableValues,
                 null,
-                GraphQLContext.getDefault(),
-                Locale.getDefault());
+                Options.defaultOptions());
     }
 
     /**
@@ -114,8 +158,7 @@ public class ExecutableNormalizedOperationFactory {
                 fragments,
                 coercedVariableValues,
                 null,
-                GraphQLContext.getDefault(),
-                Locale.getDefault());
+                Options.defaultOptions());
     }
 
     /**
@@ -137,8 +180,7 @@ public class ExecutableNormalizedOperationFactory {
                 document,
                 operationName,
                 rawVariables,
-                GraphQLContext.getDefault(),
-                Locale.getDefault());
+                Options.defaultOptions());
     }
 
 
@@ -163,40 +205,64 @@ public class ExecutableNormalizedOperationFactory {
             GraphQLContext graphQLContext,
             Locale locale
     ) {
+        return createExecutableNormalizedOperationWithRawVariables(
+                graphQLSchema,
+                document,
+                operationName,
+                rawVariables,
+                Options.defaultOptions().graphQLContext(graphQLContext).locale(locale));
+    }
+
+
+    /**
+     * This will create a runtime representation of the graphql operation that would be executed
+     * in a runtime sense.
+     *
+     * @param graphQLSchema the schema to be used
+     * @param document      the {@link Document} holding the operation text
+     * @param operationName the operation name to use
+     * @param rawVariables  the raw variables that have not yet been coerced
+     * @param options       the {@link Options} to use for parsing
+     *
+     * @return a runtime representation of the graphql operation.
+     */
+    public static ExecutableNormalizedOperation createExecutableNormalizedOperationWithRawVariables(GraphQLSchema graphQLSchema,
+                                                                                                    Document document,
+                                                                                                    String operationName,
+                                                                                                    RawVariables rawVariables,
+                                                                                                    Options options) {
         NodeUtil.GetOperationResult getOperationResult = NodeUtil.getOperation(document, operationName);
+
         return new ExecutableNormalizedOperationFactory().createExecutableNormalizedOperationImplWithRawVariables(graphQLSchema,
                 getOperationResult.operationDefinition,
                 getOperationResult.fragmentsByName,
                 rawVariables,
-                graphQLContext,
-                locale);
+                options
+        );
     }
 
     private ExecutableNormalizedOperation createExecutableNormalizedOperationImplWithRawVariables(GraphQLSchema graphQLSchema,
                                                                                                   OperationDefinition operationDefinition,
                                                                                                   Map<String, FragmentDefinition> fragments,
                                                                                                   RawVariables rawVariables,
-                                                                                                  GraphQLContext graphQLContext,
-                                                                                                  Locale locale) {
-
+                                                                                                  Options options) {
         List<VariableDefinition> variableDefinitions = operationDefinition.getVariableDefinitions();
         CoercedVariables coercedVariableValues = ValuesResolver.coerceVariableValues(graphQLSchema,
                 variableDefinitions,
                 rawVariables,
-                graphQLContext,
-                locale);
+                options.getGraphQLContext(),
+                options.getLocale());
         Map<String, NormalizedInputValue> normalizedVariableValues = ValuesResolver.getNormalizedVariableValues(graphQLSchema,
                 variableDefinitions,
                 rawVariables,
-                graphQLContext,
-                locale);
+                options.getGraphQLContext(),
+                options.getLocale());
         return createNormalizedQueryImpl(graphQLSchema,
                 operationDefinition,
                 fragments,
                 coercedVariableValues,
                 normalizedVariableValues,
-                graphQLContext,
-                locale);
+                options);
     }
 
     /**
@@ -207,7 +273,7 @@ public class ExecutableNormalizedOperationFactory {
                                                                     Map<String, FragmentDefinition> fragments,
                                                                     CoercedVariables coercedVariableValues,
                                                                     @Nullable Map<String, NormalizedInputValue> normalizedVariableValues,
-                                                                    GraphQLContext graphQLContext, Locale locale) {
+                                                                    Options options) {
         FieldCollectorNormalizedQueryParams parameters = FieldCollectorNormalizedQueryParams
                 .newParameters()
                 .fragments(fragments)
@@ -226,8 +292,8 @@ public class ExecutableNormalizedOperationFactory {
         ImmutableListMultimap.Builder<FieldCoordinates, ExecutableNormalizedField> coordinatesToNormalizedFields = ImmutableListMultimap.builder();
 
         BiConsumer<ExecutableNormalizedField, MergedField> captureMergedField = (enf, mergedFld) -> {
-            //QueryDirectivesImpl is a lazy object and only computes itself when asked for
-            QueryDirectives queryDirectives = new QueryDirectivesImpl(mergedFld, graphQLSchema, coercedVariableValues.toMap(), graphQLContext, locale);
+            // QueryDirectivesImpl is a lazy object and only computes itself when asked for
+            QueryDirectives queryDirectives = new QueryDirectivesImpl(mergedFld, graphQLSchema, coercedVariableValues.toMap(), options.getGraphQLContext(), options.getLocale());
             normalizedFieldToQueryDirectives.put(enf, queryDirectives);
             normalizedFieldToMergedField.put(enf, mergedFld);
         };
@@ -241,16 +307,17 @@ public class ExecutableNormalizedOperationFactory {
             updateFieldToNFMap(topLevel, fieldAndAstParents, fieldToNormalizedField);
             updateCoordinatedToNFMap(coordinatesToNormalizedFields, topLevel);
 
-            buildFieldWithChildren(topLevel,
+            buildFieldWithChildren(
+                    topLevel,
                     fieldAndAstParents,
                     parameters,
                     fieldToNormalizedField,
                     captureMergedField,
                     coordinatesToNormalizedFields,
-                    1);
-
+                    1,
+                    options.getMaxChildrenDepth());
         }
-        for (FieldCollectorNormalizedQueryParams.PossibleMerger possibleMerger : parameters.possibleMergerList) {
+        for (FieldCollectorNormalizedQueryParams.PossibleMerger possibleMerger : parameters.getPossibleMergerList()) {
             List<ExecutableNormalizedField> childrenWithSameResultKey = possibleMerger.parent.getChildrenWithSameResultKey(possibleMerger.resultKey);
             ENFMerger.merge(possibleMerger.parent, childrenWithSameResultKey, graphQLSchema);
         }
@@ -272,7 +339,12 @@ public class ExecutableNormalizedOperationFactory {
                                         ImmutableListMultimap.Builder<Field, ExecutableNormalizedField> fieldNormalizedField,
                                         BiConsumer<ExecutableNormalizedField, MergedField> captureMergedField,
                                         ImmutableListMultimap.Builder<FieldCoordinates, ExecutableNormalizedField> coordinatesToNormalizedFields,
-                                        int curLevel) {
+                                        int curLevel,
+                                        int maxLevel) {
+        if (curLevel > maxLevel) {
+            throw new AbortExecutionException("Maximum query depth exceeded " + curLevel + " > " + maxLevel);
+        }
+
         CollectNFResult nextLevel = collectFromMergedField(fieldCollectorNormalizedQueryParams, executableNormalizedField, fieldAndAstParents, curLevel + 1);
 
         for (ExecutableNormalizedField childENF : nextLevel.children) {
@@ -291,7 +363,8 @@ public class ExecutableNormalizedOperationFactory {
                     fieldNormalizedField,
                     captureMergedField,
                     coordinatesToNormalizedFields,
-                    curLevel + 1);
+                    curLevel + 1,
+                    maxLevel);
         }
     }
 
