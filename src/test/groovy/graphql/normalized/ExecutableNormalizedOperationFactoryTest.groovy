@@ -2873,6 +2873,6 @@ fragment personName on Person {
                 ExecutableNormalizedOperationFactory.Options.defaultOptions().maxChildrenDepth(5))
 
         then:
-        notThrown(Throwable)
+        noExceptionThrown()
     }
 }

@@ -85,26 +85,61 @@ public class ExecutableNormalizedOperationFactory {
                     Integer.MAX_VALUE);
         }
 
+        /**
+         * Locale to use when parsing the query.
+         * <p>
+         * e.g. can be passed to {@link graphql.schema.Coercing} for parsing.
+         *
+         * @param locale the locale to use
+         * @return new options object to use
+         */
         public Options locale(Locale locale) {
             return new Options(this.graphQLContext, locale, this.maxChildrenDepth);
         }
 
+        /**
+         * Context object to use when parsing the operation.
+         * <p>
+         * Can be used to intercept input values e.g. using {@link graphql.execution.values.InputInterceptor}.
+         *
+         * @param graphQLContext the context to use
+         * @return new options object to use
+         */
         public Options graphQLContext(GraphQLContext graphQLContext) {
             return new Options(graphQLContext, this.locale, this.maxChildrenDepth);
         }
 
+        /**
+         * Controls the maximum depth of the operation. Can be used to prevent
+         * against malicious operations.
+         *
+         * @param maxChildrenDepth the max depth
+         * @return new options object to use
+         */
         public Options maxChildrenDepth(int maxChildrenDepth) {
             return new Options(this.graphQLContext, this.locale, maxChildrenDepth);
         }
 
+        /**
+         * @return context to use during operation parsing
+         * @see #graphQLContext(GraphQLContext)
+         */
         public GraphQLContext getGraphQLContext() {
             return graphQLContext;
         }
 
+        /**
+         * @return locale to use during operation parsing
+         * @see #locale(Locale)
+         */
         public Locale getLocale() {
             return locale;
         }
 
+        /**
+         * @return maximum children depth before aborting parsing
+         * @see #maxChildrenDepth(int)
+         */
         public int getMaxChildrenDepth() {
             return maxChildrenDepth;
         }
