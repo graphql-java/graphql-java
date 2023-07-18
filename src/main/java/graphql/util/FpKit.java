@@ -265,7 +265,7 @@ public class FpKit {
         return cf.thenApply(FpKit::flatList);
     }
 
-    public static <T> List<T> flatList(List<List<T>> listLists) {
+    public static <T> List<T> flatList(Collection<List<T>> listLists) {
         return listLists.stream()
                 .flatMap(List::stream)
                 .collect(ImmutableList.toImmutableList());

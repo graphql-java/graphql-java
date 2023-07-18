@@ -11,6 +11,7 @@ import graphql.language.Field;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLDirective;
 import graphql.schema.GraphQLSchema;
+import graphql.util.FpKit;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -22,7 +23,7 @@ import static graphql.collect.ImmutableKit.emptyList;
 
 /**
  * These objects are ALWAYS in the context of a single MergedField
- *
+ * <p>
  * Also note we compute these values lazily
  */
 @Internal
@@ -57,11 +58,11 @@ public class QueryDirectivesImpl implements QueryDirectives {
             final Map<Field, List<QueryAppliedDirective>> byFieldApplied = new LinkedHashMap<>();
             mergedField.getFields().forEach(field -> {
                 List<Directive> directives = field.getDirectives();
-                ImmutableList<GraphQLDirective> resolvedDirectives = ImmutableList.copyOf(
+                ImmutableList<GraphQLDirective> resolvedDirectives = ImmutableList.copyOf(FpKit.flatList(
                         directivesResolver
                                 .resolveDirectives(directives, schema, variables, graphQLContext, locale)
                                 .values()
-                );
+                ));
                 byField.put(field, resolvedDirectives);
                 // at some point we will only use applied
                 byFieldApplied.put(field, ImmutableKit.map(resolvedDirectives, this::toAppliedDirective));
