@@ -5,15 +5,9 @@ import graphql.ExecutionResult;
 import graphql.ExperimentalApi;
 import graphql.PublicSpi;
 import graphql.execution.ExecutionContext;
-import graphql.execution.instrumentation.parameters.InstrumentationCreateStateParameters;
-import graphql.execution.instrumentation.parameters.InstrumentationExecuteOperationParameters;
-import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters;
-import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters;
-import graphql.execution.instrumentation.parameters.InstrumentationFieldCompleteParameters;
-import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters;
-import graphql.execution.instrumentation.parameters.InstrumentationFieldParameters;
-import graphql.execution.instrumentation.parameters.InstrumentationValidationParameters;
+import graphql.execution.instrumentation.parameters.*;
 import graphql.language.Document;
+import graphql.normalized.ExecutableNormalizedOperation;
 import graphql.schema.DataFetcher;
 import graphql.schema.GraphQLSchema;
 import graphql.validation.ValidationError;
@@ -117,6 +111,18 @@ public interface Instrumentation {
      */
     @Nullable
     default InstrumentationContext<ExecutionResult> beginExecuteOperation(InstrumentationExecuteOperationParameters parameters, InstrumentationState state) {
+        return noOp();
+    }
+
+    /**
+     * This is called just before the parsing of the executable normalized operation is started.
+     *
+     * @param parameters the parameters to this step
+     * @param state the state created during the call to {@link #createState(InstrumentationCreateStateParameters)}
+     * @return a nullable {@link InstrumentationContext} object that will be called back when the step ends (assuming it's not null)
+     */
+    @Nullable
+    default InstrumentationContext<ExecutableNormalizedOperation> beginParseExecutableNormalizedOperation(InstrumentationParseExecutableNormalizedOperation parameters, InstrumentationState state) {
         return noOp();
     }
 

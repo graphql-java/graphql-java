@@ -14,6 +14,7 @@ import graphql.collect.ImmutableKit;
 import graphql.execution.incremental.IncrementalCallState;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationState;
+import graphql.execution.instrumentation.parameters.InstrumentationParseExecutableNormalizedOperation;
 import graphql.language.Document;
 import graphql.language.FragmentDefinition;
 import graphql.language.OperationDefinition;
@@ -100,7 +101,7 @@ public class ExecutionContext {
         this.localContext = builder.localContext;
         this.executionInput = builder.executionInput;
         this.dataLoaderDispatcherStrategy = builder.dataLoaderDispatcherStrategy;
-        this.queryTree = FpKit.interThreadMemoize(() -> ExecutableNormalizedOperationFactory.createExecutableNormalizedOperation(graphQLSchema, operationDefinition, fragmentsByName, coercedVariables));
+        this.queryTree = FpKit.interThreadMemoize(this::createExecutableNormalizedOperation);
         this.propagateErrorsOnNonNullContractFailure = builder.propagateErrorsOnNonNullContractFailure;
         this.engineRunningState = builder.engineRunningState;
     }
@@ -366,6 +367,15 @@ public class ExecutionContext {
 
     public ResultNodesInfo getResultNodesInfo() {
         return resultNodesInfo;
+    }
+
+    private ExecutableNormalizedOperation createExecutableNormalizedOperation() {
+        var instrument = instrumentation.beginParseExecutableNormalizedOperation(new InstrumentationParseExecutableNormalizedOperation(executionInput, graphQLSchema), instrumentationState);
+        var result = ExecutableNormalizedOperationFactory.createExecutableNormalizedOperation(graphQLSchema, operationDefinition, fragmentsByName, coercedVariables);
+        if (instrument != null) {
+            instrument.onCompleted(result, null);
+        }
+        return result;
     }
 
     @Internal
