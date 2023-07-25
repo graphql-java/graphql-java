@@ -1,6 +1,15 @@
 package graphql.schema.usage
 
 import graphql.TestUtil
+import graphql.schema.GraphQLFieldDefinition
+import graphql.schema.GraphQLSchema
+import graphql.schema.GraphQLSchemaElement
+import graphql.schema.GraphQLTypeVisitorStub
+import graphql.schema.SchemaTransformer
+import graphql.schema.visitor.GraphQLSchemaTraversalControl
+import graphql.schema.visitor.GraphQLSchemaVisitor
+import graphql.util.TraversalControl
+import graphql.util.TraverserContext
 import spock.lang.Specification
 
 class SchemaUsageSupportTest extends Specification {
@@ -245,5 +254,27 @@ class SchemaUsageSupportTest extends Specification {
         schemaUsage.getArgumentReferenceCounts()["UnRefHangingInputType"] == 1
         schemaUsage.getFieldReferenceCounts()["UnRefHangingType2"] == 2
         schemaUsage.getArgumentReferenceCounts()["UnRefHangingInputType3"] == 2
+    }
+
+    def "can handle cleared directives"() {
+        // https://github.com/graphql-java/graphql-java/issues/3267
+
+
+        def schema = TestUtil.schema(sdl)
+        schema = new SchemaTransformer().transform(schema, new GraphQLSchemaVisitor() {
+
+            @Override
+            GraphQLSchemaTraversalControl visitFieldDefinition(GraphQLFieldDefinition fieldDefinition, GraphQLSchemaVisitor.FieldDefinitionVisitorEnvironment env) {
+                if (fieldDefinition.getAppliedDirective("RefFieldDirective") != null) {
+                    fieldDefinition = fieldDefinition.transform { it.clearDirectives()}
+                }
+                return env.changeNode(fieldDefinition)
+            }
+        }.toTypeVisitor())
+
+        when:
+        def schemaUsage = SchemaUsageSupport.getSchemaUsage(schema)
+        then:
+        schemaUsage.isStronglyReferenced(schema, "RefFieldDirective")
     }
 }
