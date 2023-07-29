@@ -1,5 +1,6 @@
 package graphql.schema
 
+import graphql.Directives
 import graphql.GraphQLContext
 import graphql.StarWarsSchema
 import graphql.language.ObjectValue
@@ -78,5 +79,30 @@ class GraphQLInputObjectTypeTest extends Specification {
 
         expect:
         validationUtil.isValidLiteralValue(objectValue.build(), inputObjectType, schema, graphQLContext, Locale.ENGLISH)
+    }
+
+    def "can detect one of support"() {
+        when:
+        def inputObjectType = newInputObject().name("TestInputObjectType")
+                .field(newInputObjectField().name("NAME").type(GraphQLInt))
+                .build()
+        then:
+        !inputObjectType.isOneOf()
+
+        when:
+        inputObjectType = newInputObject().name("TestInputObjectType")
+                .field(newInputObjectField().name("NAME").type(GraphQLInt))
+                .withDirective(Directives.OneOfDirective)
+                .build()
+        then:
+        inputObjectType.isOneOf()
+
+        when:
+        inputObjectType = newInputObject().name("TestInputObjectType")
+                .field(newInputObjectField().name("NAME").type(GraphQLInt))
+                .withAppliedDirective(Directives.OneOfDirective.toAppliedDirective())
+                .build()
+        then:
+        inputObjectType.isOneOf()
     }
 }

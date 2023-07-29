@@ -15,6 +15,7 @@ import static graphql.introspection.Introspection.DirectiveLocation.FIELD_DEFINI
 import static graphql.introspection.Introspection.DirectiveLocation.FRAGMENT_SPREAD;
 import static graphql.introspection.Introspection.DirectiveLocation.INLINE_FRAGMENT;
 import static graphql.introspection.Introspection.DirectiveLocation.INPUT_FIELD_DEFINITION;
+import static graphql.introspection.Introspection.DirectiveLocation.INPUT_OBJECT;
 import static graphql.introspection.Introspection.DirectiveLocation.SCALAR;
 import static graphql.language.DirectiveLocation.newDirectiveLocation;
 import static graphql.language.InputValueDefinition.newInputValueDefinition;
@@ -31,10 +32,12 @@ public class Directives {
 
     private static final String SPECIFIED_BY = "specifiedBy";
     private static final String DEPRECATED = "deprecated";
+    private static final String ONE_OF = "oneOf";
 
     public static final String NO_LONGER_SUPPORTED = "No longer supported";
     public static final DirectiveDefinition DEPRECATED_DIRECTIVE_DEFINITION;
     public static final DirectiveDefinition SPECIFIED_BY_DIRECTIVE_DEFINITION;
+    public static final DirectiveDefinition ONE_OF_DIRECTIVE_DEFINITION;
 
 
     static {
@@ -64,6 +67,12 @@ public class Directives {
                                 .description(createDescription("The URL that specifies the behaviour of this scalar."))
                                 .type(newNonNullType(newTypeName().name("String").build()).build())
                                 .build())
+                .build();
+
+        ONE_OF_DIRECTIVE_DEFINITION = DirectiveDefinition.newDirectiveDefinition()
+                .name(ONE_OF)
+                .directiveLocation(newDirectiveLocation().name(INPUT_OBJECT.name()).build())
+                .description(createDescription("This directive is used to indicate an Input Object is a OneOf Input Object."))
                 .build();
     }
 
@@ -117,6 +126,13 @@ public class Directives {
                     .description("The URL that specifies the behaviour of this scalar."))
             .validLocations(SCALAR)
             .definition(SPECIFIED_BY_DIRECTIVE_DEFINITION)
+            .build();
+
+    public static final GraphQLDirective OneOfDirective = GraphQLDirective.newDirective()
+            .name(ONE_OF)
+            .description("This directive is used to indicate an Input Object is a OneOf Input Object.")
+            .validLocations(INPUT_OBJECT)
+            .definition(ONE_OF_DIRECTIVE_DEFINITION)
             .build();
 
     private static Description createDescription(String s) {

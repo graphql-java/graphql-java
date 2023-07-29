@@ -622,4 +622,45 @@ class IntrospectionTest extends Specification {
             parseExecutionResult(allTrueExecutionResult).every()
             allTrueExecutionResult.data["__schema"]["types"].find{it["name"] == "Query"}["fields"].find{it["name"] == "tenDimensionalList"}["type"]["ofType"]["ofType"]["ofType"]["ofType"]["ofType"]["ofType"]["ofType"]["ofType"] == null // typeRefFragmentDepth is 7
     }
+
+
+    def "introspection for oneOf support"() {
+        def spec = '''
+
+            type Query {
+               oneOfNamedField(arg : OneOfInputType) : Enum
+               namedField(arg : InputType) : Enum
+            }
+            enum Enum {
+                RED
+                BLUE
+            }
+            input InputType {
+                inputField : String
+            }
+            input OneOfInputType @oneOf {
+                inputFieldA : String
+                inputFieldB : String
+            }
+        '''
+
+        when:
+        def graphQL = TestUtil.graphQL(spec).build()
+        def executionResult = graphQL.execute(IntrospectionQuery.INTROSPECTION_QUERY)
+
+        then:
+        executionResult.errors.isEmpty()
+
+        def types = executionResult.data['__schema']['types'] as List
+
+        def inputType = types.find { it['name'] == 'InputType' }
+        inputType["isOneOf"] == false
+
+        def oneOfInputType = types.find { it['name'] == 'OneOfInputType' }
+        oneOfInputType["isOneOf"] == true
+
+        def queryType = types.find { it['name'] == 'Query' }
+        oneOfInputType["isOneOf"] == null
+    }
+
 }
