@@ -2536,4 +2536,26 @@ class SchemaGeneratorTest extends Specification {
         newSchema.getDirectives().findAll { it.name == "skip" }.size() == 1
         newSchema.getDirectives().findAll { it.name == "include" }.size() == 1
     }
+
+    def "oneOf directive is available implicitly"() {
+        def sdl = '''
+            type Query {
+                f(arg : OneOfInputType) : String
+            }
+            
+            input OneOfInputType @oneOf {
+                a : String
+                b : String
+            }
+        '''
+
+        when:
+        def schema = TestUtil.schema(sdl)
+        then:
+        schema.getDirectives().findAll { it.name == "oneOf" }.size() == 1
+
+        GraphQLInputObjectType inputObjectType = schema.getTypeAs("OneOfInputType")
+        inputObjectType.isOneOf()
+        inputObjectType.hasAppliedDirective("oneOf")
+    }
 }
