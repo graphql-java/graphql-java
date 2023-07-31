@@ -72,7 +72,7 @@ public class Directives {
         ONE_OF_DIRECTIVE_DEFINITION = DirectiveDefinition.newDirectiveDefinition()
                 .name(ONE_OF)
                 .directiveLocation(newDirectiveLocation().name(INPUT_OBJECT.name()).build())
-                .description(createDescription("This directive is used to indicate an Input Object is a OneOf Input Object."))
+                .description(createDescription("Indicates an Input Object is a OneOf Input Object."))
                 .build();
     }
 
@@ -130,7 +130,7 @@ public class Directives {
 
     public static final GraphQLDirective OneOfDirective = GraphQLDirective.newDirective()
             .name(ONE_OF)
-            .description("This directive is used to indicate an Input Object is a OneOf Input Object.")
+            .description("Indicates an Input Object is a OneOf Input Object.")
             .validLocations(INPUT_OBJECT)
             .definition(ONE_OF_DIRECTIVE_DEFINITION)
             .build();

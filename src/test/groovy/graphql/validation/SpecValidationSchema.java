@@ -1,5 +1,6 @@
 package graphql.validation;
 
+import graphql.Directives;
 import graphql.Scalars;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLCodeRegistry;
@@ -184,6 +185,18 @@ public class SpecValidationSchema {
             .validLocations(FIELD, FRAGMENT_SPREAD, FRAGMENT_DEFINITION, INLINE_FRAGMENT, QUERY)
             .build();
 
+    public static final GraphQLInputObjectType oneOfInputType = GraphQLInputObjectType.newInputObject()
+            .name("oneOfInputType")
+            .withAppliedDirective(Directives.OneOfDirective.toAppliedDirective())
+            .field(GraphQLInputObjectField.newInputObjectField()
+                    .name("a")
+                    .type(GraphQLString))
+            .field(GraphQLInputObjectField.newInputObjectField()
+                    .name("b")
+                    .type(GraphQLString))
+            .build();
+
+
     public static final GraphQLObjectType queryRoot = GraphQLObjectType.newObject()
             .name("QueryRoot")
             .field(newFieldDefinition().name("dog").type(dog)
@@ -191,6 +204,9 @@ public class SpecValidationSchema {
                     .withDirective(dogDirective)
             )
             .field(newFieldDefinition().name("pet").type(pet))
+            .field(newFieldDefinition().name("oneOfField").type(GraphQLString)
+                    .argument(newArgument().name("oneOfArg").type(oneOfInputType).build())
+            )
             .build();
 
     public static final GraphQLObjectType subscriptionRoot = GraphQLObjectType.newObject()
