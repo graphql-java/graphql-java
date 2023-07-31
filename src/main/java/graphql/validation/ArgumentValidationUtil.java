@@ -91,18 +91,6 @@ public class ArgumentValidationUtil extends ValidationUtil {
         argumentNames.add(0, String.format("[%s]", index));
     }
 
-    @Override
-    protected void handleOneOfNotOneFieldError(GraphQLInputObjectType type) {
-        errMsgKey = "ArgumentValidationUtil.handleOneOfNotOneFieldError";
-        arguments.add(type.getName());
-    }
-
-    @Override
-    protected void handleOneOfValueIsNullError(GraphQLInputObjectType type, ObjectField objectField) {
-        errMsgKey = "ArgumentValidationUtil.handleOneOfValueIsNullError";
-        arguments.add(type.getName() + "." + objectField.getName());
-    }
-
     public I18nMsg getMsgAndArgs() {
         StringBuilder argument = new StringBuilder(argumentName);
         for (String name : argumentNames) {

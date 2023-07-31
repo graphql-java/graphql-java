@@ -335,51 +335,6 @@ class ArgumentsOfCorrectTypeTest extends Specification {
         validationErrors.get(0).message == "Validation error (WrongType@[dog/doesKnowCommand]) : argument 'dogCommand' with value 'EnumValue{name='PRETTY'}' is not a valid 'DogCommand' - Literal value not in allowable values for enum 'DogCommand' - 'EnumValue{name='PRETTY'}'"
     }
 
-    def "invalid oneOf input because of two keys"() {
-        def query = """
-            query oneOF {
-                oneOfField(oneOfArg : { a : "x", b : "y" })
-            }
-        """
-        when:
-        def validationErrors = validate(query)
-
-        then:
-        !validationErrors.empty
-        validationErrors.size() == 1
-        validationErrors.get(0).getValidationErrorType() == ValidationErrorType.WrongType
-        validationErrors.get(0).message == "Validation error (WrongType@[oneOfField]) : Exactly one key must be specified for OneOf type 'oneOfInputType'."
-    }
-
-    def "invalid oneOf input because of null key"() {
-        def query = """
-            query oneOF {
-                oneOfField(oneOfArg : { a : null })
-            }
-        """
-        when:
-        def validationErrors = validate(query)
-
-        then:
-        !validationErrors.empty
-        validationErrors.size() == 1
-        validationErrors.get(0).getValidationErrorType() == ValidationErrorType.WrongType
-        validationErrors.get(0).message == "Validation error (WrongType@[oneOfField]) : OneOf type field 'oneOfInputType.a' must be non-null."
-    }
-
-    def "valid oneOf input"() {
-        def query = """
-            query oneOF {
-                oneOfField(oneOfArg : { a : "x" })
-            }
-        """
-        when:
-        def validationErrors = validate(query)
-
-        then:
-        validationErrors.empty
-    }
-
     static List<ValidationError> validate(String query) {
         def document = new Parser().parseDocument(query)
         return new Validator().validateDocument(SpecValidationSchema.specValidationSchema, document, Locale.ENGLISH)

@@ -1,10 +1,12 @@
 package graphql.execution;
 
 
+import graphql.Assert;
 import graphql.GraphQLContext;
 import graphql.Internal;
 import graphql.collect.ImmutableKit;
 import graphql.execution.values.InputInterceptor;
+import graphql.i18n.I18n;
 import graphql.language.Argument;
 import graphql.language.ArrayValue;
 import graphql.language.NullValue;
@@ -373,10 +375,34 @@ public class ValuesResolver {
                             locale);
                     coercedValues.put(argumentName, value);
                 }
+                // @oneOf input must be checked now that all variables and literals have been converted
+                if (argumentType instanceof GraphQLInputObjectType) {
+                    GraphQLInputObjectType inputObjectType = (GraphQLInputObjectType) argumentType;
+                    if (inputObjectType.isOneOf() && ! ValuesResolverConversion.isNullValue(value)) {
+                        validateOneOfInputTypes(inputObjectType, argumentName, value, locale);
+                    }
+                }
             }
 
         }
         return coercedValues;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static void validateOneOfInputTypes(GraphQLInputObjectType oneOfInputType, String argumentName, Object mapValue, Locale locale) {
+        Assert.assertTrue(mapValue instanceof Map, () -> String.format("The coerced argument %s GraphQLInputObjectType is unexpectedly not a map", argumentName));
+        Map<String, Object> objectMap = (Map<String, Object>) mapValue;
+        if (objectMap.size() != 1) {
+            String msg = I18n.i18n(I18n.BundleType.Execution, locale)
+                    .msg("handleOneOfNotOneFieldError", oneOfInputType.getName());
+            throw new OneOfTooManyKeysException(msg);
+        }
+        String fieldName = objectMap.keySet().iterator().next();
+        if (objectMap.get(fieldName) == null) {
+            String msg = I18n.i18n(I18n.BundleType.Execution, locale)
+                    .msg("handleOneOfValueIsNullError", oneOfInputType.getName() + "." + fieldName);
+            throw new OneOfNullValueException(msg);
+        }
     }
 
     private static Map<String, Argument> argumentMap(List<Argument> arguments) {

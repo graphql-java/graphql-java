@@ -77,12 +77,6 @@ public class ValidationUtil {
     protected void handleFieldNotValidError(Value<?> value, GraphQLType type, int index) {
     }
 
-    protected void handleOneOfNotOneFieldError(GraphQLInputObjectType type) {
-    }
-
-    protected void handleOneOfValueIsNullError(GraphQLInputObjectType type, ObjectField objectField) {
-    }
-
     public boolean isValidLiteralValue(Value<?> value, GraphQLType type, GraphQLSchema schema, GraphQLContext graphQLContext, Locale locale) {
         if (value == null || value instanceof NullValue) {
             boolean valid = !(isNonNull(type));
@@ -160,21 +154,10 @@ public class ValidationUtil {
                 handleFieldNotValidError(objectField, type);
                 return false;
             }
-        }
-        if (type.isOneOf()) {
-            if (objectValue.getObjectFields().size() != 1) {
-                handleOneOfNotOneFieldError(type);
-                return false;
-            }
-            ObjectField objectField = objectValue.getObjectFields().get(0);
-            if (objectField.getValue() instanceof NullValue) {
-                handleOneOfValueIsNullError(type, objectField);
-                return false;
-            }
+
         }
         return true;
     }
-
 
     private Set<String> getMissingFields(GraphQLInputObjectType type, Map<String, ObjectField> objectFieldMap, GraphqlFieldVisibility fieldVisibility) {
         return fieldVisibility.getFieldDefinitions(type).stream()
