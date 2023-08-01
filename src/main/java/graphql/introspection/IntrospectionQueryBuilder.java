@@ -90,8 +90,8 @@ public class IntrospectionQueryBuilder {
         public static Options defaultOptions() {
             return new Options(
                     true,
-                    true,
                     false,
+                    true,
                     true,
                     false,
                     true,

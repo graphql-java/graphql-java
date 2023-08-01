@@ -463,6 +463,7 @@ class IntrospectionTest extends Specification {
                 "    kind\n" +
                 "    name\n" +
                 "    description\n" +
+                "    isOneOf\n" +
                 "    fields(includeDeprecated: true) {\n" +
                 "      name\n" +
                 "      description\n" +
@@ -542,10 +543,11 @@ class IntrospectionTest extends Specification {
 
             def newIntrospectionQuery = IntrospectionQuery.INTROSPECTION_QUERY;
 
+
         then:
-            oldIntrospectionQuery.replaceAll("\\s+","").equals(
-                newIntrospectionQuery.replaceAll("\\s+","")
-            )
+        def oldQuery = oldIntrospectionQuery.replaceAll("\\s+", "")
+        def newQuery = newIntrospectionQuery.replaceAll("\\s+","")
+        oldQuery == newQuery
     }
 
     def "test parameterized introspection queries"() {
@@ -660,7 +662,7 @@ class IntrospectionTest extends Specification {
         oneOfInputType["isOneOf"] == true
 
         def queryType = types.find { it['name'] == 'Query' }
-        oneOfInputType["isOneOf"] == null
+        queryType["isOneOf"] == null
     }
 
 }

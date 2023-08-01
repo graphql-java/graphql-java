@@ -379,7 +379,7 @@ public class ValuesResolver {
                 if (argumentType instanceof GraphQLInputObjectType) {
                     GraphQLInputObjectType inputObjectType = (GraphQLInputObjectType) argumentType;
                     if (inputObjectType.isOneOf() && ! ValuesResolverConversion.isNullValue(value)) {
-                        validateOneOfInputTypes(inputObjectType, argumentName, value, locale);
+                        validateOneOfInputTypes(inputObjectType, argumentValue, argumentName, value, locale);
                     }
                 }
             }
@@ -389,18 +389,24 @@ public class ValuesResolver {
     }
 
     @SuppressWarnings("unchecked")
-    private static void validateOneOfInputTypes(GraphQLInputObjectType oneOfInputType, String argumentName, Object mapValue, Locale locale) {
-        Assert.assertTrue(mapValue instanceof Map, () -> String.format("The coerced argument %s GraphQLInputObjectType is unexpectedly not a map", argumentName));
-        Map<String, Object> objectMap = (Map<String, Object>) mapValue;
-        if (objectMap.size() != 1) {
+    private static void validateOneOfInputTypes(GraphQLInputObjectType oneOfInputType, Value argumentValue, String argumentName, Object inputValue, Locale locale) {
+        Assert.assertTrue(inputValue instanceof Map, () -> String.format("The coerced argument %s GraphQLInputObjectType is unexpectedly not a map", argumentName));
+        Map<String, Object> objectMap = (Map<String, Object>) inputValue;
+        int mapSize;
+        if (argumentValue instanceof ObjectValue) {
+            mapSize = ((ObjectValue) argumentValue).getObjectFields().size();
+        } else {
+            mapSize = objectMap.size();
+        }
+        if (mapSize != 1) {
             String msg = I18n.i18n(I18n.BundleType.Execution, locale)
-                    .msg("handleOneOfNotOneFieldError", oneOfInputType.getName());
+                    .msg("Execution.handleOneOfNotOneFieldError", oneOfInputType.getName());
             throw new OneOfTooManyKeysException(msg);
         }
         String fieldName = objectMap.keySet().iterator().next();
         if (objectMap.get(fieldName) == null) {
             String msg = I18n.i18n(I18n.BundleType.Execution, locale)
-                    .msg("handleOneOfValueIsNullError", oneOfInputType.getName() + "." + fieldName);
+                    .msg("Execution.handleOneOfValueIsNullError", oneOfInputType.getName() + "." + fieldName);
             throw new OneOfNullValueException(msg);
         }
     }
