@@ -35,7 +35,6 @@ import static graphql.util.FpKit.getByName;
 public class GraphQLInputObjectType implements GraphQLNamedInputType, GraphQLUnmodifiedType, GraphQLNullableType, GraphQLInputFieldsContainer, GraphQLDirectiveContainer {
 
     private final String name;
-
     private final boolean isOneOf;
     private final String description;
     private final ImmutableMap<String, GraphQLInputObjectField> fieldMap;
