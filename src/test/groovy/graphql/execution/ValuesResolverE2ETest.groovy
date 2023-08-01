@@ -49,7 +49,11 @@ class ValuesResolverE2ETest extends Specification {
     }
 
     def "3276 - reported bug on validation problems as reported code"() {
-        DataFetcher<?> dataFetcher = { env -> Collections.singletonList("test") }
+        DataFetcher<?> dataFetcher = { env ->
+            def pagination = env.getArgument("pagination") as Map<String, Integer>
+            def strings = pagination.entrySet().collect { entry -> entry.key + "=" + entry.value }
+            return strings
+        }
         GraphQLSchema schema = GraphQLSchema.newSchema()
                 .query(GraphQLObjectType.newObject()
                         .name("Query")
@@ -75,9 +79,9 @@ class ValuesResolverE2ETest extends Specification {
                         .build())
                 .build()
 
-        GraphQL gql = GraphQL.newGraphQL(schema).build();
+        GraphQL gql = GraphQL.newGraphQL(schema).build()
 
-        Map<String, Object> vars = new HashMap<>();
+        Map<String, Object> vars = new HashMap<>()
         vars.put("limit", 5)
         vars.put("offset", 0)
 
@@ -94,6 +98,6 @@ class ValuesResolverE2ETest extends Specification {
         ExecutionResult result = gql.execute( ei)
         then:
         result.errors.isEmpty()
-        result.data == [items : ["test"]]
+        result.data == [items : ["limit=5", "offset=0"]]
     }
 }
