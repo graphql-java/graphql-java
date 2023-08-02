@@ -100,4 +100,36 @@ class ValuesResolverE2ETest extends Specification {
         result.errors.isEmpty()
         result.data == [items : ["limit=5", "offset=0"]]
     }
+
+    def "3276 - reported bug on validation problems as non null inputs"() {
+        def sdl = '''
+            type Query {
+                items(pagination: Pagination = {limit: 1, offset: 1}): [String]
+            }
+            input Pagination {
+                limit: Int! #non-null this time, no default value
+                offset: Int! #non-null this time, no default value
+            }
+        '''
+        DataFetcher df = { DataFetchingEnvironment env ->
+            def pagination = env.getArgument("pagination") as Map<String, Integer>
+            def strings = pagination.entrySet().collect { entry -> entry.key + "=" + entry.value }
+            return strings
+        }
+        def schema = TestUtil.schema(sdl, [Query: [items: df]])
+        def graphQL = GraphQL.newGraphQL(schema).build()
+
+        when:
+        def ei = ExecutionInput.newExecutionInput('''
+            query Items( $limit: Int, $offset: Int) {
+                 items(
+                    pagination: {limit: $limit, offset: $offset} 
+                )
+            }
+            ''').variables([limit: 5, offset: null]).build()
+        def er = graphQL.execute(ei)
+        then:
+        er.errors.isEmpty()
+        er.data == [items : ["limit=5", "offset=null"]]
+    }
 }
