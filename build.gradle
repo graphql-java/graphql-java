@@ -123,7 +123,7 @@ shadowJar {
         include 'com.google.common.primitives.*'
     }
     dependencies {
-        include(dependency('com.google.guava:guava:32.0.0-jre'))
+        include(dependency('com.google.guava:guava:32.1.1-jre'))
     }
     from "LICENSE.md"
     from "src/main/antlr/Graphql.g4"
