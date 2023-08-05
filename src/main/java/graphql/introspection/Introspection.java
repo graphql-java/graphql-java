@@ -450,6 +450,7 @@ public class Introspection {
                     .type(typeRef("__Type")))
             .field(newFieldDefinition()
                     .name("isOneOf")
+                    .description("This field is considered experimental because it has not yet been ratified in the graphql specification")
                     .type(GraphQLBoolean))
             .field(newFieldDefinition()
                     .name("specifiedByURL")

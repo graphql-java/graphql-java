@@ -37,6 +37,7 @@ public class Directives {
     public static final String NO_LONGER_SUPPORTED = "No longer supported";
     public static final DirectiveDefinition DEPRECATED_DIRECTIVE_DEFINITION;
     public static final DirectiveDefinition SPECIFIED_BY_DIRECTIVE_DEFINITION;
+    @ExperimentalApi
     public static final DirectiveDefinition ONE_OF_DIRECTIVE_DEFINITION;
 
 
@@ -128,6 +129,7 @@ public class Directives {
             .definition(SPECIFIED_BY_DIRECTIVE_DEFINITION)
             .build();
 
+    @ExperimentalApi
     public static final GraphQLDirective OneOfDirective = GraphQLDirective.newDirective()
             .name(ONE_OF)
             .description("Indicates an Input Object is a OneOf Input Object.")

@@ -1,5 +1,6 @@
 package graphql.schema.validation;
 
+import graphql.ExperimentalApi;
 import graphql.schema.GraphQLInputObjectField;
 import graphql.schema.GraphQLInputObjectType;
 import graphql.schema.GraphQLSchemaElement;
@@ -15,6 +16,7 @@ import static java.lang.String.format;
  * The type of the input field must be nullable.
  * The input field must not have a default value.
  */
+@ExperimentalApi
 public class OneOfInputObjectRules extends GraphQLTypeVisitorStub {
 
     @Override

@@ -4,6 +4,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import graphql.Directives;
 import graphql.DirectivesUtil;
+import graphql.ExperimentalApi;
 import graphql.Internal;
 import graphql.PublicApi;
 import graphql.language.InputObjectTypeDefinition;
@@ -86,9 +87,13 @@ public class GraphQLInputObjectType implements GraphQLNamedInputType, GraphQLUnm
 
     /**
      * An Input Object is considered a OneOf Input Object if it has the `@oneOf` directive applied to it.
+     * <p>
+     * This API is currently considered experimental since the graphql specification has not yet ratified
+     * this approach.
      *
      * @return true if it's a OneOf Input Object
      */
+    @ExperimentalApi
     public boolean isOneOf() {
         return isOneOf;
     }
