@@ -17,7 +17,7 @@ import spock.lang.Specification
 
 class ValuesResolverE2ETest extends Specification {
 
-    def "3276 - reported bug on validation problems as SDL"() {
+    def "issue 3276 - reported bug on validation problems as SDL"() {
         def sdl = '''
             type Query {
               items(pagination: Pagination = {limit: 10, offset: 0}): [String]
@@ -48,7 +48,7 @@ class ValuesResolverE2ETest extends Specification {
         er.data == [items : ["limit=5", "offset=0"]]
     }
 
-    def "3276 - reported bug on validation problems as reported code"() {
+    def "issue 3276 - reported bug on validation problems as reported code"() {
         DataFetcher<?> dataFetcher = { env ->
             def pagination = env.getArgument("pagination") as Map<String, Integer>
             def strings = pagination.entrySet().collect { entry -> entry.key + "=" + entry.value }
@@ -101,7 +101,7 @@ class ValuesResolverE2ETest extends Specification {
         result.data == [items : ["limit=5", "offset=0"]]
     }
 
-    def "3276 - reported bug on validation problems as non null inputs"() {
+    def "issue 3276 - should end up in validation errors because location defaults are not present"() {
         def sdl = '''
             type Query {
                 items(pagination: Pagination = {limit: 1, offset: 1}): [String]
@@ -129,7 +129,8 @@ class ValuesResolverE2ETest extends Specification {
             ''').variables([limit: 5, offset: null]).build()
         def er = graphQL.execute(ei)
         then:
-        er.errors.isEmpty()
-        er.data == [items : ["limit=5", "offset=null"]]
+        er.errors.size() == 2
+        er.errors[0].message == "Validation error (VariableTypeMismatch@[items]) : Variable type 'Int' does not match expected type 'Int!'"
+        er.errors[1].message == "Validation error (VariableTypeMismatch@[items]) : Variable type 'Int' does not match expected type 'Int!'"
     }
 }

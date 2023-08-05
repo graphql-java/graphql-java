@@ -8,7 +8,6 @@ import graphql.language.OperationDefinition;
 import graphql.language.Value;
 import graphql.language.VariableDefinition;
 import graphql.language.VariableReference;
-import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLInputType;
 import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLTypeUtil;
@@ -60,25 +59,24 @@ public class VariableTypesMatch extends AbstractRule {
         if (variableType == null) {
             return;
         }
-        GraphQLInputType expectedType = getValidationContext().getInputType();
-        if (expectedType == null) {
+        GraphQLInputType locationType = getValidationContext().getInputType();
+        Optional<InputValueWithState> locationDefault = Optional.ofNullable(getValidationContext().getDefaultValue());
+        if (locationType == null) {
             // we must have an unknown variable say to not have a known type
             return;
         }
-        GraphQLArgument argument = getValidationContext().getArgument();
-        Optional<InputValueWithState> schemaDefault = Optional.ofNullable(argument).map(v -> v.getArgumentDefaultValue());
-        Value<?> schemaDefaultValue = null;
-        if (schemaDefault.isPresent() && schemaDefault.get().isLiteral()) {
-            schemaDefaultValue = (Value<?>) schemaDefault.get().getValue();
-        } else if (schemaDefault.isPresent() && schemaDefault.get().isSet()) {
-            schemaDefaultValue = ValuesResolver.valueToLiteral(schemaDefault.get(), argument.getType(), getValidationContext().getGraphQLContext(), getValidationContext().getI18n().getLocale());
+        Value<?> locationDefaultValue = null;
+        if (locationDefault.isPresent() && locationDefault.get().isLiteral()) {
+            locationDefaultValue = (Value<?>) locationDefault.get().getValue();
+        } else if (locationDefault.isPresent() && locationDefault.get().isSet()) {
+            locationDefaultValue = ValuesResolver.valueToLiteral(locationDefault.get(), locationType, getValidationContext().getGraphQLContext(), getValidationContext().getI18n().getLocale());
         }
-        if (!variablesTypesMatcher.doesVariableTypesMatch(variableType, variableDefinition.getDefaultValue(), expectedType) &&
-                !variablesTypesMatcher.doesVariableTypesMatch(variableType, schemaDefaultValue, expectedType)) {
+        boolean variableDefMatches = variablesTypesMatcher.doesVariableTypesMatch(variableType, variableDefinition.getDefaultValue(), locationType, locationDefaultValue);
+        if (!variableDefMatches) {
             GraphQLType effectiveType = variablesTypesMatcher.effectiveType(variableType, variableDefinition.getDefaultValue());
             String message = i18n(VariableTypeMismatch, "VariableTypesMatchRule.unexpectedType",
                     GraphQLTypeUtil.simplePrint(effectiveType),
-                    GraphQLTypeUtil.simplePrint(expectedType));
+                    GraphQLTypeUtil.simplePrint(locationType));
             addError(VariableTypeMismatch, variableReference.getSourceLocation(), message);
         }
     }

@@ -2,8 +2,10 @@ package graphql.validation.rules
 
 
 import graphql.StarWarsSchema
+import graphql.TestUtil
 import graphql.i18n.I18n
 import graphql.parser.Parser
+import graphql.schema.GraphQLSchema
 import graphql.validation.LanguageTraversal
 import graphql.validation.RulesVisitor
 import graphql.validation.ValidationContext
@@ -14,10 +16,10 @@ import spock.lang.Specification
 class VariableTypesMatchTest extends Specification {
     ValidationErrorCollector errorCollector = new ValidationErrorCollector()
 
-    def traverse(String query) {
+    def traverse(String query, GraphQLSchema schema = StarWarsSchema.starWarsSchema) {
         def document = Parser.parse(query)
         I18n i18n = I18n.i18n(I18n.BundleType.Validation, Locale.ENGLISH)
-        def validationContext = new ValidationContext(StarWarsSchema.starWarsSchema, document, i18n)
+        def validationContext = new ValidationContext(schema, document, i18n)
         def variableTypesMatchRule = new VariableTypesMatch(validationContext, errorCollector)
         def languageTraversal = new LanguageTraversal()
         languageTraversal.traverse(document, new RulesVisitor(validationContext, [variableTypesMatchRule]))
@@ -164,5 +166,91 @@ class VariableTypesMatchTest extends Specification {
             it.validationErrorType == ValidationErrorType.VariableTypeMismatch &&
                 it.message == "Validation error (VariableTypeMismatch@[QueryType/human]) : Variable type 'Boolean' does not match expected type 'String!'"
         }
+    }
+
+
+    def "issue 3276 - invalid variables in object field values with no defaults in location"() {
+
+        def sdl = '''
+            type Query {
+                items(pagination: Pagination = {limit: 1, offset: 1}): [String]
+            }
+            input Pagination {
+                limit: Int!
+                offset: Int!
+            }
+        '''
+        def schema = TestUtil.schema(sdl)
+        given:
+        def query = '''
+            query Items( $limit: Int, $offset: Int) {
+                 items(
+                    pagination: {limit: $limit, offset: $offset} 
+                )
+            }
+        '''
+
+        when:
+        traverse(query, schema)
+
+        then:
+        errorCollector.containsValidationError(ValidationErrorType.VariableTypeMismatch)
+        errorCollector.errors[0].message == "Validation error (VariableTypeMismatch@[items]) : Variable type 'Int' does not match expected type 'Int!'"
+    }
+
+    def "issue 3276 - valid variables because of schema defaults with nullable variable"() {
+
+        def sdl = '''
+            type Query {
+                items(pagination: Pagination! = {limit: 1, offset: 1}): [String]
+            }
+            input Pagination {
+                limit: Int!
+                offset: Int!
+            }
+        '''
+        def schema = TestUtil.schema(sdl)
+        given:
+        def query = '''
+            query Items( $var : Pagination) {
+                 items(
+                    pagination: $var 
+                )
+            }
+        '''
+
+        when:
+        traverse(query, schema)
+
+        then:
+        errorCollector.errors.isEmpty()
+    }
+
+    def "issue 3276 - valid variables because of variable defaults"() {
+
+        def sdl = '''
+            type Query {
+                items(pagination: Pagination!): [String]
+            }
+            input Pagination {
+                limit: Int!
+                offset: Int!
+            }
+        '''
+        def schema = TestUtil.schema(sdl)
+        given:
+        def query = '''
+            query Items( $var : Pagination = {limit: 1, offset: 1}) {
+                 items(
+                    pagination: $var 
+                )
+            }
+        '''
+
+        when:
+        traverse(query, schema)
+
+        then:
+        errorCollector.errors.isEmpty()
     }
 }
