@@ -130,7 +130,7 @@ class ValuesResolverE2ETest extends Specification {
         def er = graphQL.execute(ei)
         then:
         er.errors.size() == 2
-        er.errors[0].message == "Validation error (VariableTypeMismatch@[items]) : Variable type 'Int' does not match expected type 'Int!'"
-        er.errors[1].message == "Validation error (VariableTypeMismatch@[items]) : Variable type 'Int' does not match expected type 'Int!'"
+        er.errors[0].message == "Validation error (VariableTypeMismatch@[items]) : Variable 'limit' of type 'Int' used in position expecting type 'Int!'"
+        er.errors[1].message == "Validation error (VariableTypeMismatch@[items]) : Variable 'offset' of type 'Int' used in position expecting type 'Int!'"
     }
 }

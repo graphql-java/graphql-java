@@ -58,7 +58,7 @@ class VariableTypesMatchTest extends Specification {
         then:
         errorCollector.containsValidationError(ValidationErrorType.VariableTypeMismatch)
         // #991: describe which types were mismatched in error message
-        errorCollector.errors[0].message == "Validation error (VariableTypeMismatch@[human]) : Variable type 'String' does not match expected type 'String!'"
+        errorCollector.errors[0].message == "Validation error (VariableTypeMismatch@[human]) : Variable 'id' of type 'String' used in position expecting type 'String!'"
     }
 
     def "invalid variables in fragment spread"() {
@@ -80,7 +80,7 @@ class VariableTypesMatchTest extends Specification {
 
         then:
         errorCollector.containsValidationError(ValidationErrorType.VariableTypeMismatch)
-        errorCollector.errors[0].message == "Validation error (VariableTypeMismatch@[QueryType/human]) : Variable type 'String' does not match expected type 'String!'"
+        errorCollector.errors[0].message == "Validation error (VariableTypeMismatch@[QueryType/human]) : Variable 'xid' of type 'String' used in position expecting type 'String!'"
     }
 
     def "mixed validity operations, valid first"() {
@@ -106,7 +106,7 @@ class VariableTypesMatchTest extends Specification {
 
         then:
         errorCollector.containsValidationError(ValidationErrorType.VariableTypeMismatch)
-        errorCollector.errors[0].message == "Validation error (VariableTypeMismatch@[QueryType/human]) : Variable type 'String' does not match expected type 'String!'"
+        errorCollector.errors[0].message == "Validation error (VariableTypeMismatch@[QueryType/human]) : Variable 'id' of type 'String' used in position expecting type 'String!'"
     }
 
     def "mixed validity operations, invalid first"() {
@@ -132,7 +132,7 @@ class VariableTypesMatchTest extends Specification {
 
         then:
         errorCollector.containsValidationError(ValidationErrorType.VariableTypeMismatch)
-        errorCollector.errors[0].message == "Validation error (VariableTypeMismatch@[QueryType/human]) : Variable type 'String' does not match expected type 'String!'"
+        errorCollector.errors[0].message == "Validation error (VariableTypeMismatch@[QueryType/human]) : Variable 'id' of type 'String' used in position expecting type 'String!'"
     }
 
     def "multiple invalid operations"() {
@@ -160,11 +160,11 @@ class VariableTypesMatchTest extends Specification {
         errorCollector.getErrors().size() == 2
         errorCollector.errors.any {
             it.validationErrorType == ValidationErrorType.VariableTypeMismatch &&
-                it.message == "Validation error (VariableTypeMismatch@[QueryType/human]) : Variable type 'String' does not match expected type 'String!'"
+                it.message == "Validation error (VariableTypeMismatch@[QueryType/human]) : Variable 'id' of type 'String' used in position expecting type 'String!'"
         }
         errorCollector.errors.any {
             it.validationErrorType == ValidationErrorType.VariableTypeMismatch &&
-                it.message == "Validation error (VariableTypeMismatch@[QueryType/human]) : Variable type 'Boolean' does not match expected type 'String!'"
+                it.message == "Validation error (VariableTypeMismatch@[QueryType/human]) : Variable 'id' of type 'Boolean' used in position expecting type 'String!'"
         }
     }
 
@@ -195,7 +195,7 @@ class VariableTypesMatchTest extends Specification {
 
         then:
         errorCollector.containsValidationError(ValidationErrorType.VariableTypeMismatch)
-        errorCollector.errors[0].message == "Validation error (VariableTypeMismatch@[items]) : Variable type 'Int' does not match expected type 'Int!'"
+        errorCollector.errors[0].message == "Validation error (VariableTypeMismatch@[items]) : Variable 'limit' of type 'Int' used in position expecting type 'Int!'"
     }
 
     def "issue 3276 - valid variables because of schema defaults with nullable variable"() {

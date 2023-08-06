@@ -75,6 +75,7 @@ public class VariableTypesMatch extends AbstractRule {
         if (!variableDefMatches) {
             GraphQLType effectiveType = variablesTypesMatcher.effectiveType(variableType, variableDefinition.getDefaultValue());
             String message = i18n(VariableTypeMismatch, "VariableTypesMatchRule.unexpectedType",
+                    variableDefinition.getName(),
                     GraphQLTypeUtil.simplePrint(effectiveType),
                     GraphQLTypeUtil.simplePrint(locationType));
             addError(VariableTypeMismatch, variableReference.getSourceLocation(), message);
