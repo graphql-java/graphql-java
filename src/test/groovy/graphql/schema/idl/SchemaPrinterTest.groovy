@@ -2250,7 +2250,7 @@ type TestObjectB {
 '''
     }
 
-    def "deprecated defaultValue on programmatic args prints as expected"() {
+    def "issue 3285 - deprecated defaultValue on programmatic args prints as expected"() {
         def queryObjType = newObject().name("Query")
                 .field(newFieldDefinition().name("f").type(GraphQLString)
                         .argument(newArgument().name("arg").type(GraphQLString).defaultValue(null)))
@@ -2262,8 +2262,7 @@ type TestObjectB {
         def options = defaultOptions().includeDirectiveDefinitions(false)
         def sdl = new SchemaPrinter(options).print(schema)
         then:
-        sdl == '''
-type Query {
+        sdl == '''type Query {
   f(arg: String = null): String
 }
 '''
