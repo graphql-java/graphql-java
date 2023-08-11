@@ -3,16 +3,21 @@ package graphql.schema.idl
 import graphql.GraphQL
 import graphql.TestUtil
 import graphql.TypeResolutionEnvironment
+import graphql.introspection.Introspection
 import graphql.introspection.IntrospectionQuery
 import graphql.introspection.IntrospectionResultToSchema
 import graphql.language.Comment
+import graphql.language.DirectiveDefinition
+import graphql.language.EnumValueDefinition
 import graphql.language.FieldDefinition
 import graphql.language.IntValue
+import graphql.language.ScalarTypeDefinition
 import graphql.language.SchemaDefinition
 import graphql.language.StringValue
 import graphql.schema.Coercing
 import graphql.schema.GraphQLAppliedDirective
 import graphql.schema.GraphQLCodeRegistry
+import graphql.schema.GraphQLDirective
 import graphql.schema.GraphQLEnumType
 import graphql.schema.GraphQLEnumValueDefinition
 import graphql.schema.GraphQLFieldDefinition
@@ -2270,20 +2275,41 @@ type TestObjectB {
 
     def "prints AST comments"() {
         given:
+        def exampleDirective = GraphQLDirective.newDirective().name("example").validLocation(Introspection.DirectiveLocation.ENUM_VALUE)
+                .description(" custom directive 'example' description 1")
+                .definition(DirectiveDefinition.newDirectiveDefinition().comments(makeComments(" custom directive 'example' comment 1")).build()).build()
+        def asteroidType = newScalar().name("Asteroid").description("desc")
+                .definition(ScalarTypeDefinition.newScalarTypeDefinition().comments(makeComments(" scalar Asteroid comment 1")).build())
+                .coercing(new Coercing() {
+                        @Override
+                        Object serialize(Object input) {
+                            throw new UnsupportedOperationException("Not implemented")
+                        }
+                        @Override
+                        Object parseValue(Object input) {
+                            throw new UnsupportedOperationException("Not implemented")
+                        }
+                        @Override
+                        Object parseLiteral(Object input) {
+                            throw new UnsupportedOperationException("Not implemented")
+                        }
+                    })
+                .build()
         def nodeType = newInterface().name("Node")
                 .field(newFieldDefinition().name("id").type(nonNull(GraphQLID)).build())
                 .build()
         def planetType = newObject().name("Planet")
-                .field(newFieldDefinition().name("hitBy").type(this.ASTEROID).build())
+                .field(newFieldDefinition().name("hitBy").type(asteroidType).build())
                 .field(newFieldDefinition().name("name").type(GraphQLString).build())
                 .build()
         def episodeType = newEnum().name("Episode")
                 .definition(newEnumTypeDefinition().comments(
                         makeComments(" enum Episode comment 1", " enum Episode comment 2")).build())
                 .values(List.of(
-                        GraphQLEnumValueDefinition.newEnumValueDefinition().name("NEWHOPE").build(),
-                        GraphQLEnumValueDefinition.newEnumValueDefinition().name("EMPIRE").build(),
-                        GraphQLEnumValueDefinition.newEnumValueDefinition().name("JEDI").build()))
+                        GraphQLEnumValueDefinition.newEnumValueDefinition().name("EMPIRE")
+                                .definition(EnumValueDefinition.newEnumValueDefinition().comments(makeComments(" enum value EMPIRE comment 1")).build()).build(),
+                        GraphQLEnumValueDefinition.newEnumValueDefinition().name("JEDI").build(),
+                        GraphQLEnumValueDefinition.newEnumValueDefinition().name("NEWHOPE").withDirective(exampleDirective).build()))
                 .build()
         def characterType = newInterface().name("Character").withInterface(nodeType)
                 .definition(newInterfaceTypeDefinition().comments(
@@ -2331,6 +2357,7 @@ type TestObjectB {
                         .definition(newInputValueDefinition().comments(makeComments(" gun 'caliber' input value comment")).build()).build())
                 .build()
         def schema = GraphQLSchema.newSchema()
+                .additionalDirective(exampleDirective)
                 .codeRegistry(GraphQLCodeRegistry.newCodeRegistry()
                         .typeResolver(characterType, { env -> Assert.assertShouldNeverHappen() })
                         .typeResolver(humanoidType, { env -> Assert.assertShouldNeverHappen() })
@@ -2349,7 +2376,7 @@ type TestObjectB {
                 .query(queryType)
                 .build()
         when:
-        def result = new SchemaPrinter(noDirectivesOption.includeSchemaDefinition(true).includeAstDefinitionComments(true)).print(schema)
+        def result = new SchemaPrinter(defaultOptions().includeSchemaDefinition(true).includeAstDefinitionComments(true)).print(schema)
         println(result)
 
         then:
@@ -2360,6 +2387,34 @@ schema {
   query: Query
   mutation: Mutation
 }
+
+"Marks the field, argument, input field or enum value as deprecated"
+directive @deprecated(
+    "The reason for the deprecation"
+    reason: String = "No longer supported"
+  ) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION
+
+" custom directive 'example' description 1"
+# custom directive 'example' comment 1
+directive @example on ENUM_VALUE
+
+"Directs the executor to include this field or fragment only when the `if` argument is true"
+directive @include(
+    "Included when true."
+    if: Boolean!
+  ) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
+
+"Directs the executor to skip this field or fragment when the `if` argument is true."
+directive @skip(
+    "Skipped when true."
+    if: Boolean!
+  ) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
+
+"Exposes a URL that specifies the behaviour of this scalar."
+directive @specifiedBy(
+    "The URL that specifies the behaviour of this scalar."
+    url: String!
+  ) on SCALAR
 
 # interface Character comment 1
 # interface Character comment 2
@@ -2420,12 +2475,14 @@ type Query {
 # enum Episode comment 1
 # enum Episode comment 2
 enum Episode {
+  # enum value EMPIRE comment 1
   EMPIRE
   JEDI
-  NEWHOPE
+  NEWHOPE @example
 }
 
 "desc"
+# scalar Asteroid comment 1
 scalar Asteroid
 
 # input type Gun comment 1
