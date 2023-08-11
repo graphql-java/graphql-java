@@ -7,6 +7,7 @@ import graphql.PublicApi;
 import graphql.execution.ValuesResolver;
 import graphql.language.AstPrinter;
 import graphql.language.Description;
+import graphql.language.DirectiveDefinition;
 import graphql.language.Document;
 import graphql.language.EnumTypeDefinition;
 import graphql.language.EnumValueDefinition;
@@ -109,6 +110,8 @@ public class SchemaPrinter {
 
         private final GraphqlTypeComparatorRegistry comparatorRegistry;
 
+        private final boolean includeAstDefinitionComments;
+
         private Options(boolean includeIntrospectionTypes,
                         boolean includeScalars,
                         boolean includeSchemaDefinition,
@@ -117,7 +120,8 @@ public class SchemaPrinter {
                         boolean descriptionsAsHashComments,
                         Predicate<String> includeDirective,
                         Predicate<GraphQLSchemaElement> includeSchemaElement,
-                        GraphqlTypeComparatorRegistry comparatorRegistry) {
+                        GraphqlTypeComparatorRegistry comparatorRegistry,
+                        boolean includeAstDefinitionComments) {
             this.includeIntrospectionTypes = includeIntrospectionTypes;
             this.includeScalars = includeScalars;
             this.includeSchemaDefinition = includeSchemaDefinition;
@@ -127,6 +131,7 @@ public class SchemaPrinter {
             this.descriptionsAsHashComments = descriptionsAsHashComments;
             this.comparatorRegistry = comparatorRegistry;
             this.includeSchemaElement = includeSchemaElement;
+            this.includeAstDefinitionComments = includeAstDefinitionComments;
         }
 
         public boolean isIncludeIntrospectionTypes() {
@@ -165,6 +170,8 @@ public class SchemaPrinter {
             return useAstDefinitions;
         }
 
+        public boolean isIncludeAstDefinitionComments() { return includeAstDefinitionComments; }
+
         public static Options defaultOptions() {
             return new Options(false,
                     true,
@@ -174,7 +181,8 @@ public class SchemaPrinter {
                     false,
                     directive -> true,
                     element -> true,
-                    DefaultGraphqlTypeComparatorRegistry.defaultComparators());
+                    DefaultGraphqlTypeComparatorRegistry.defaultComparators(),
+                    false);
         }
 
         /**
@@ -193,7 +201,8 @@ public class SchemaPrinter {
                     this.descriptionsAsHashComments,
                     this.includeDirective,
                     this.includeSchemaElement,
-                    this.comparatorRegistry);
+                    this.comparatorRegistry,
+                    this.includeAstDefinitionComments);
         }
 
         /**
@@ -212,7 +221,8 @@ public class SchemaPrinter {
                     this.descriptionsAsHashComments,
                     this.includeDirective,
                     this.includeSchemaElement,
-                    this.comparatorRegistry);
+                    this.comparatorRegistry,
+                    this.includeAstDefinitionComments);
         }
 
         /**
@@ -234,7 +244,8 @@ public class SchemaPrinter {
                     this.descriptionsAsHashComments,
                     this.includeDirective,
                     this.includeSchemaElement,
-                    this.comparatorRegistry);
+                    this.comparatorRegistry,
+                    this.includeAstDefinitionComments);
         }
 
         /**
@@ -258,7 +269,8 @@ public class SchemaPrinter {
                     this.descriptionsAsHashComments,
                     this.includeDirective,
                     this.includeSchemaElement,
-                    this.comparatorRegistry);
+                    this.comparatorRegistry,
+                    this.includeAstDefinitionComments);
         }
 
         /**
@@ -278,7 +290,8 @@ public class SchemaPrinter {
                     this.descriptionsAsHashComments,
                     directive -> flag,
                     this.includeSchemaElement,
-                    this.comparatorRegistry);
+                    this.comparatorRegistry,
+                    this.includeAstDefinitionComments);
         }
 
         /**
@@ -297,7 +310,8 @@ public class SchemaPrinter {
                     this.descriptionsAsHashComments,
                     includeDirective,
                     this.includeSchemaElement,
-                    this.comparatorRegistry);
+                    this.comparatorRegistry,
+                    this.includeAstDefinitionComments);
         }
 
         /**
@@ -317,7 +331,8 @@ public class SchemaPrinter {
                     this.descriptionsAsHashComments,
                     this.includeDirective,
                     includeSchemaElement,
-                    this.comparatorRegistry);
+                    this.comparatorRegistry,
+                    this.includeAstDefinitionComments);
         }
 
         /**
@@ -337,7 +352,8 @@ public class SchemaPrinter {
                     this.descriptionsAsHashComments,
                     this.includeDirective,
                     this.includeSchemaElement,
-                    this.comparatorRegistry);
+                    this.comparatorRegistry,
+                    this.includeAstDefinitionComments);
         }
 
         /**
@@ -359,7 +375,8 @@ public class SchemaPrinter {
                     flag,
                     this.includeDirective,
                     this.includeSchemaElement,
-                    this.comparatorRegistry);
+                    this.comparatorRegistry,
+                    this.includeAstDefinitionComments);
         }
 
         /**
@@ -380,7 +397,30 @@ public class SchemaPrinter {
                     this.descriptionsAsHashComments,
                     this.includeDirective,
                     this.includeSchemaElement,
-                    comparatorRegistry);
+                    comparatorRegistry,
+                    this.includeAstDefinitionComments);
+        }
+
+        /**
+         * Sometimes it is useful to allow printing schema comments. This can be achieved by providing comments in the AST definitions.
+         * <p>
+         * The default is to ignore these for backward compatibility and due to this being relatively uncommon need.
+         *
+         * @param flag whether to include AST definition comments.
+         *
+         * @return new instance of Options
+         */
+        public Options includeAstDefinitionComments(boolean flag) {
+            return new Options(this.includeIntrospectionTypes,
+                    this.includeScalars,
+                    this.includeSchemaDefinition,
+                    this.includeDirectiveDefinitions,
+                    this.useAstDefinitions,
+                    this.descriptionsAsHashComments,
+                    this.includeDirective,
+                    this.includeSchemaElement,
+                    comparatorRegistry,
+                    flag);
         }
     }
 
@@ -741,7 +781,7 @@ public class SchemaPrinter {
             }
 
             if (needsSchemaPrinted) {
-                if (hasDescription(schema)) {
+                if (hasAstDefinitionComments(schema) || hasDescription(schema)) {
                     out.print(printComments(schema, ""));
                 }
                 List<GraphQLAppliedDirective> directives = DirectivesUtil.toAppliedDirectives(schema.getSchemaAppliedDirectives(), schema.getSchemaDirectives());
@@ -777,9 +817,10 @@ public class SchemaPrinter {
     }
 
     String argsString(Class<? extends GraphQLSchemaElement> parent, List<GraphQLArgument> arguments) {
+        boolean hasAstDefinitionComments = arguments.stream().anyMatch(this::hasAstDefinitionComments);
         boolean hasDescriptions = arguments.stream().anyMatch(this::hasDescription);
-        String halfPrefix = hasDescriptions ? "  " : "";
-        String prefix = hasDescriptions ? "    " : "";
+        String halfPrefix = hasAstDefinitionComments || hasDescriptions ? "  " : "";
+        String prefix = hasAstDefinitionComments || hasDescriptions ? "    " : "";
         int count = 0;
         StringBuilder sb = new StringBuilder();
 
@@ -795,11 +836,11 @@ public class SchemaPrinter {
                 sb.append("(");
             } else {
                 sb.append(",");
-                if (!hasDescriptions) {
+                if (!hasAstDefinitionComments && !hasDescriptions) {
                     sb.append(" ");
                 }
             }
-            if (hasDescriptions) {
+            if (hasAstDefinitionComments || hasDescriptions) {
                 sb.append("\n");
             }
             sb.append(printComments(argument, prefix));
@@ -820,7 +861,7 @@ public class SchemaPrinter {
             count++;
         }
         if (count > 0) {
-            if (hasDescriptions) {
+            if (hasAstDefinitionComments || hasDescriptions) {
                 sb.append("\n");
             }
             sb.append(halfPrefix).append(")");
@@ -1027,18 +1068,26 @@ public class SchemaPrinter {
 
     private void printComments(PrintWriter out, Object graphQLType, String prefix) {
         String descriptionText = getDescription(graphQLType);
-        if (isNullOrEmpty(descriptionText)) {
-            return;
+        if (!isNullOrEmpty(descriptionText)) {
+            List<String> lines = Arrays.asList(descriptionText.split("\n"));
+            if (options.isDescriptionsAsHashComments()) {
+                printMultiLineHashDescription(out, prefix, lines);
+            } else if (!lines.isEmpty()) {
+                if (lines.size() > 1) {
+                    printMultiLineDescription(out, prefix, lines);
+                } else {
+                    printSingleLineDescription(out, prefix, lines.get(0));
+                }
+            }
         }
 
-        List<String> lines = Arrays.asList(descriptionText.split("\n"));
-        if (options.isDescriptionsAsHashComments()) {
-            printMultiLineHashDescription(out, prefix, lines);
-        } else if (!lines.isEmpty()) {
-            if (lines.size() > 1) {
-                printMultiLineDescription(out, prefix, lines);
-            } else {
-                printSingleLineDescription(out, prefix, lines.get(0));
+        if (options.isIncludeAstDefinitionComments()) {
+            String commentsText = getAstDefinitionComments(graphQLType);
+            if (!isNullOrEmpty(commentsText)) {
+                List<String> lines = Arrays.asList(commentsText.split("\n") );
+                if (!lines.isEmpty()) {
+                    printMultiLineHashDescription(out, prefix, lines);
+                }
             }
         }
     }
@@ -1060,6 +1109,61 @@ public class SchemaPrinter {
         // See: https://github.com/graphql/graphql-spec/issues/148
         String desc = escapeJsonString(s);
         out.printf("%s\"%s\"\n", prefix, desc);
+    }
+
+    private boolean hasAstDefinitionComments(Object commentHolder) {
+        String comments = getAstDefinitionComments(commentHolder);
+        return !isNullOrEmpty(comments);
+    }
+
+    private String getAstDefinitionComments(Object commentHolder) {
+        if (commentHolder instanceof GraphQLObjectType) {
+            GraphQLObjectType type = (GraphQLObjectType) commentHolder;
+            return comments(ofNullable(type.getDefinition()).map(ObjectTypeDefinition::getComments).orElse(null));
+        } else if (commentHolder instanceof GraphQLEnumType) {
+            GraphQLEnumType type = (GraphQLEnumType) commentHolder;
+            return comments(ofNullable(type.getDefinition()).map(EnumTypeDefinition::getComments).orElse(null));
+        } else if (commentHolder instanceof GraphQLFieldDefinition) {
+            GraphQLFieldDefinition type = (GraphQLFieldDefinition) commentHolder;
+            return comments(ofNullable(type.getDefinition()).map(FieldDefinition::getComments).orElse(null));
+        } else if (commentHolder instanceof GraphQLEnumValueDefinition) {
+            GraphQLEnumValueDefinition type = (GraphQLEnumValueDefinition) commentHolder;
+            return comments(ofNullable(type.getDefinition()).map(EnumValueDefinition::getComments).orElse(null));
+        } else if (commentHolder instanceof GraphQLUnionType) {
+            GraphQLUnionType type = (GraphQLUnionType) commentHolder;
+            return comments(ofNullable(type.getDefinition()).map(UnionTypeDefinition::getComments).orElse(null));
+        } else if (commentHolder instanceof GraphQLInputObjectType) {
+            GraphQLInputObjectType type = (GraphQLInputObjectType) commentHolder;
+            return comments(ofNullable(type.getDefinition()).map(InputObjectTypeDefinition::getComments).orElse(null));
+        } else if (commentHolder instanceof GraphQLInputObjectField) {
+            GraphQLInputObjectField type = (GraphQLInputObjectField) commentHolder;
+            return comments(ofNullable(type.getDefinition()).map(InputValueDefinition::getComments).orElse(null));
+        } else if (commentHolder instanceof GraphQLInterfaceType) {
+            GraphQLInterfaceType type = (GraphQLInterfaceType) commentHolder;
+            return comments(ofNullable(type.getDefinition()).map(InterfaceTypeDefinition::getComments).orElse(null));
+        } else if (commentHolder instanceof GraphQLScalarType) {
+            GraphQLScalarType type = (GraphQLScalarType) commentHolder;
+            return comments(ofNullable(type.getDefinition()).map(ScalarTypeDefinition::getComments).orElse(null));
+        } else if (commentHolder instanceof GraphQLArgument) {
+            GraphQLArgument type = (GraphQLArgument) commentHolder;
+            return comments(ofNullable(type.getDefinition()).map(InputValueDefinition::getComments).orElse(null));
+        } else if (commentHolder instanceof GraphQLDirective) {
+            GraphQLDirective type = (GraphQLDirective) commentHolder;
+            return comments(ofNullable(type.getDefinition()).map(DirectiveDefinition::getComments).orElse(null));
+        } else if (commentHolder instanceof GraphQLSchema) {
+            GraphQLSchema type = (GraphQLSchema) commentHolder;
+            return comments(ofNullable(type.getDefinition()).map(SchemaDefinition::getComments).orElse(null));
+        } else {
+            return Assert.assertShouldNeverHappen();
+        }
+    }
+
+    String comments(java.util.List<graphql.language.Comment> comments) {
+        if ( comments == null || comments.isEmpty() ) {
+            return null;
+        }
+        String s = comments.stream().map(c -> c.getContent()).collect(joining("\n", "", "\n"));
+        return s;
     }
 
     private boolean hasDescription(Object descriptionHolder) {

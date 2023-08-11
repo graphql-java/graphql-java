@@ -5,7 +5,10 @@ import graphql.TestUtil
 import graphql.TypeResolutionEnvironment
 import graphql.introspection.IntrospectionQuery
 import graphql.introspection.IntrospectionResultToSchema
+import graphql.language.Comment
+import graphql.language.FieldDefinition
 import graphql.language.IntValue
+import graphql.language.SchemaDefinition
 import graphql.language.StringValue
 import graphql.schema.Coercing
 import graphql.schema.GraphQLAppliedDirective
@@ -30,11 +33,19 @@ import spock.lang.Specification
 
 import java.util.function.Predicate
 import java.util.function.UnaryOperator
+import java.util.stream.Collectors
 
+import static graphql.Scalars.GraphQLID
 import static graphql.Scalars.GraphQLInt
 import static graphql.Scalars.GraphQLString
 import static graphql.TestUtil.mockScalar
 import static graphql.TestUtil.mockTypeRuntimeWiring
+import static graphql.language.EnumTypeDefinition.newEnumTypeDefinition
+import static graphql.language.InputObjectTypeDefinition.newInputObjectDefinition
+import static graphql.language.InputValueDefinition.newInputValueDefinition
+import static graphql.language.InterfaceTypeDefinition.newInterfaceTypeDefinition
+import static graphql.language.ObjectTypeDefinition.newObjectTypeDefinition
+import static graphql.language.UnionTypeDefinition.newUnionTypeDefinition
 import static graphql.schema.GraphQLArgument.newArgument
 import static graphql.schema.GraphQLEnumType.newEnum
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition
@@ -44,6 +55,7 @@ import static graphql.schema.GraphQLList.list
 import static graphql.schema.GraphQLNonNull.nonNull
 import static graphql.schema.GraphQLObjectType.newObject
 import static graphql.schema.GraphQLScalarType.newScalar
+import static graphql.schema.GraphQLTypeReference.typeRef
 import static graphql.schema.GraphQLUnionType.newUnionType
 import static graphql.schema.idl.RuntimeWiring.newRuntimeWiring
 import static graphql.schema.idl.SchemaPrinter.ExcludeGraphQLSpecifiedDirectivesPredicate
@@ -2246,6 +2258,182 @@ type Query {
 
 type TestObjectB {
   field: String
+}
+'''
+    }
+
+    static List<Comment> makeComments(String... strings) {
+        return strings.stream()
+                .map( s -> new Comment(s,null))
+                .collect(Collectors.toList())
+    }
+
+    def "prints AST comments"() {
+        given:
+        def nodeType = newInterface().name("Node")
+                .field(newFieldDefinition().name("id").type(nonNull(GraphQLID)).build())
+                .build()
+        def planetType = newObject().name("Planet")
+                .field(newFieldDefinition().name("hitBy").type(this.ASTEROID).build())
+                .field(newFieldDefinition().name("name").type(GraphQLString).build())
+                .build()
+        def episodeType = newEnum().name("Episode")
+                .definition(newEnumTypeDefinition().comments(
+                        makeComments(" enum Episode comment 1", " enum Episode comment 2")).build())
+                .values(List.of(
+                        GraphQLEnumValueDefinition.newEnumValueDefinition().name("NEWHOPE").build(),
+                        GraphQLEnumValueDefinition.newEnumValueDefinition().name("EMPIRE").build(),
+                        GraphQLEnumValueDefinition.newEnumValueDefinition().name("JEDI").build()))
+                .build()
+        def characterType = newInterface().name("Character").withInterface(nodeType)
+                .definition(newInterfaceTypeDefinition().comments(
+                        makeComments(" interface Character comment 1", " interface Character comment 2")).build())
+                .field(newFieldDefinition().name("appearsIn").type(list(episodeType)).build())
+                .field(newFieldDefinition().name("friends").type(list(typeRef("Character"))).build())
+                .field(newFieldDefinition().name("id").type(nonNull(GraphQLID)).build())
+                .field(newFieldDefinition().name("name").type(GraphQLString).build())
+                .build()
+        def droidType = newObject().name("Droid").withInterfaces(characterType,nodeType)
+                .field(newFieldDefinition().name("appearsIn").type(nonNull(list(episodeType))).build())
+                .field(newFieldDefinition().name("friends").type(list(typeRef("Character"))).build())
+                .field(newFieldDefinition().name("id").type(nonNull(GraphQLID)).build())
+                .field(newFieldDefinition().name("madeOn").type(planetType).build())
+                .field(newFieldDefinition().name("name").type(nonNull(GraphQLString)).build())
+                .field(newFieldDefinition().name("primaryFunction").type(GraphQLString).build())
+                .build()
+        def humanType = newObject().name("Human").withInterfaces(characterType,nodeType)
+                .field(newFieldDefinition().name("appearsIn").type(nonNull(list(episodeType))).build())
+                .field(newFieldDefinition().name("friends").type(list(typeRef("Character"))).build())
+                .field(newFieldDefinition().name("homePlanet").type(GraphQLString).build())
+                .field(newFieldDefinition().name("id").type(nonNull(GraphQLID)).build())
+                .field(newFieldDefinition().name("name").type(nonNull(GraphQLString)).build())
+                .build()
+        def humanoidType = newUnionType().name("Humanoid")
+                .definition(newUnionTypeDefinition().comments(makeComments(" union type Humanoid comment 1")).build())
+                .possibleTypes(humanType, droidType)
+                .build()
+        def queryType = newObject().name("Query")
+                .definition(newObjectTypeDefinition().comments(makeComments(" type query comment 1", " type query comment 2")).build())
+                .field(newFieldDefinition().name("hero").type(characterType)
+                        .definition(FieldDefinition.newFieldDefinition().comments(makeComments(" query field 'hero' comment")).build())
+                        .argument(newArgument().name("episode").type(episodeType).build())
+                        .build())
+                .field(newFieldDefinition().name("humanoid").type(humanoidType)
+                        .definition(FieldDefinition.newFieldDefinition().comments(makeComments(" query field 'humanoid' comment")).build())
+                        .argument(newArgument().name("id").type(nonNull(GraphQLID)).build())
+                        .build())
+                .build()
+        def gunType = GraphQLInputObjectType.newInputObject().name("Gun")
+                .definition(newInputObjectDefinition().comments(makeComments(" input type Gun comment 1")).build())
+                .field(newInputObjectField().name("name").type(GraphQLString)
+                        .definition(newInputValueDefinition().comments(makeComments(" gun 'name' input value comment")).build()).build())
+                .field(newInputObjectField().name("caliber").type(GraphQLInt)
+                        .definition(newInputValueDefinition().comments(makeComments(" gun 'caliber' input value comment")).build()).build())
+                .build()
+        def schema = GraphQLSchema.newSchema()
+                .codeRegistry(GraphQLCodeRegistry.newCodeRegistry()
+                        .typeResolver(characterType, { env -> Assert.assertShouldNeverHappen() })
+                        .typeResolver(humanoidType, { env -> Assert.assertShouldNeverHappen() })
+                        .typeResolver(nodeType, { env -> Assert.assertShouldNeverHappen() })
+                        .build())
+                .definition(SchemaDefinition.newSchemaDefinition().comments(
+                        makeComments("schema comment 1", "       schema comment 2 with leading spaces")).build())
+                .mutation(newObject().name("Mutation")
+                        .field(newFieldDefinition().name("shoot").type(queryType).arguments(List.of(
+                                newArgument().name("id").type(nonNull(GraphQLString))
+                                        .definition(newInputValueDefinition().comments(makeComments(" arg 'id'")).build()).build(),
+                                newArgument().name("with").type(gunType)
+                                        .definition(newInputValueDefinition().comments(makeComments(" arg 'with'")).build()).build()))
+                                .build())
+                        .build())
+                .query(queryType)
+                .build()
+        when:
+        def result = new SchemaPrinter(noDirectivesOption.includeSchemaDefinition(true).includeAstDefinitionComments(true)).print(schema)
+        println(result)
+
+        then:
+        result == 
+'''#schema comment 1
+#       schema comment 2 with leading spaces
+schema {
+  query: Query
+  mutation: Mutation
+}
+
+# interface Character comment 1
+# interface Character comment 2
+interface Character implements Node {
+  appearsIn: [Episode]
+  friends: [Character]
+  id: ID!
+  name: String
+}
+
+interface Node {
+  id: ID!
+}
+
+# union type Humanoid comment 1
+union Humanoid = Droid | Human
+
+type Droid implements Character & Node {
+  appearsIn: [Episode]!
+  friends: [Character]
+  id: ID!
+  madeOn: Planet
+  name: String!
+  primaryFunction: String
+}
+
+type Human implements Character & Node {
+  appearsIn: [Episode]!
+  friends: [Character]
+  homePlanet: String
+  id: ID!
+  name: String!
+}
+
+type Mutation {
+  shoot(
+    # arg 'id\'
+    id: String!,
+    # arg 'with\'
+    with: Gun
+  ): Query
+}
+
+type Planet {
+  hitBy: Asteroid
+  name: String
+}
+
+# type query comment 1
+# type query comment 2
+type Query {
+  # query field 'hero' comment
+  hero(episode: Episode): Character
+  # query field 'humanoid' comment
+  humanoid(id: ID!): Humanoid
+}
+
+# enum Episode comment 1
+# enum Episode comment 2
+enum Episode {
+  EMPIRE
+  JEDI
+  NEWHOPE
+}
+
+"desc"
+scalar Asteroid
+
+# input type Gun comment 1
+input Gun {
+  # gun 'caliber' input value comment
+  caliber: Int
+  # gun 'name' input value comment
+  name: String
 }
 '''
     }
