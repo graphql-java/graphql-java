@@ -6,6 +6,7 @@ import graphql.GraphQLContext;
 import graphql.PublicApi;
 import graphql.execution.ValuesResolver;
 import graphql.language.AstPrinter;
+import graphql.language.Comment;
 import graphql.language.Description;
 import graphql.language.DirectiveDefinition;
 import graphql.language.Document;
@@ -1158,7 +1159,7 @@ public class SchemaPrinter {
         }
     }
 
-    String comments(java.util.List<graphql.language.Comment> comments) {
+    private String comments(List<Comment> comments) {
         if ( comments == null || comments.isEmpty() ) {
             return null;
         }
