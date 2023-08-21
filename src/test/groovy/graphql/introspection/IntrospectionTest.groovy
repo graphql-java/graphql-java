@@ -1,5 +1,6 @@
 package graphql.introspection
 
+
 import graphql.TestUtil
 import graphql.schema.DataFetcher
 import graphql.schema.FieldCoordinates
@@ -352,5 +353,27 @@ class IntrospectionTest extends Specification {
 
         then:
         queryTypeFields == [[name: "inA"], [name: "inB"], [name: "inC"]]
+    }
+
+    def "issue 3285 - deprecated defaultValue on programmatic args prints AST literal as expected"() {
+        def queryObjType = GraphQLObjectType.newObject().name("Query")
+                .field(newFieldDefinition().name("f").type(GraphQLString)
+                        .argument(newArgument().name("arg").type(GraphQLString).defaultValue(null)))
+                .build()
+        def schema = newSchema().query(queryObjType).build()
+        def graphQL = newGraphQL(schema).build()
+
+
+        when:
+        def executionResult = graphQL.execute(IntrospectionQuery.INTROSPECTION_QUERY)
+        then:
+        executionResult.errors.isEmpty()
+
+        def types = executionResult.data['__schema']['types'] as List
+        def queryType = types.find { it['name'] == 'Query' }
+        def fField = (queryType['fields'] as List)[0]
+        def arg = (fField['args'] as List)[0]
+        arg['name'] == "arg"
+        arg['defaultValue'] == "null" // printed AST
     }
 }
