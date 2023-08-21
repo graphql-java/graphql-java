@@ -335,6 +335,7 @@ public class FpKit {
      *
      * @param set1 first set
      * @param set2 second set
+     * @param <T>      for two
      * @return intersection set
      */
     public static <T> Set<T> intersection(Set<T> set1, Set<T> set2) {
