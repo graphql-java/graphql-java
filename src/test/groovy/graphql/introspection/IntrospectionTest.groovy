@@ -7,12 +7,15 @@ import graphql.schema.FieldCoordinates
 import graphql.schema.GraphQLCodeRegistry
 import graphql.schema.GraphQLFieldsContainer
 import graphql.schema.GraphQLNamedType
-import graphql.schema.GraphQLObjectType
 import spock.lang.Issue
 import spock.lang.See
 import spock.lang.Specification
 
 import static graphql.GraphQL.newGraphQL
+import static graphql.Scalars.GraphQLString
+import static graphql.schema.GraphQLArgument.newArgument
+import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition
+import static graphql.schema.GraphQLObjectType.newObject
 
 class IntrospectionTest extends Specification {
 
@@ -357,7 +360,7 @@ class IntrospectionTest extends Specification {
     }
 
     def "issue 3285 - deprecated defaultValue on programmatic args prints AST literal as expected"() {
-        def queryObjType = GraphQLObjectType.newObject().name("Query")
+        def queryObjType = newObject().name("Query")
                 .field(newFieldDefinition().name("f").type(GraphQLString)
                         .argument(newArgument().name("arg").type(GraphQLString).defaultValue(null)))
                 .build()
