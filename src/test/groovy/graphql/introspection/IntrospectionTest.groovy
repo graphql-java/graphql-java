@@ -16,6 +16,7 @@ import static graphql.Scalars.GraphQLString
 import static graphql.schema.GraphQLArgument.newArgument
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition
 import static graphql.schema.GraphQLObjectType.newObject
+import static graphql.schema.GraphQLSchema.newSchema
 
 class IntrospectionTest extends Specification {
 
