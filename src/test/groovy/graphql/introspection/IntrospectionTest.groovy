@@ -7,6 +7,7 @@ import graphql.schema.FieldCoordinates
 import graphql.schema.GraphQLCodeRegistry
 import graphql.schema.GraphQLFieldsContainer
 import graphql.schema.GraphQLNamedType
+import graphql.schema.GraphQLObjectType
 import spock.lang.Issue
 import spock.lang.See
 import spock.lang.Specification
