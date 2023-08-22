@@ -215,7 +215,7 @@ public class TraversalContext implements DocumentVisitor {
             leaveName(((FragmentDefinition) node).getName());
             pop(outputTypeStack);
         } else if (node instanceof VariableDefinition) {
-            inputTypeStack.remove(inputTypeStack.size() - 1);
+            pop(inputTypeStack);
         } else if (node instanceof Argument) {
             argument = null;
             pop(inputTypeStack);
@@ -237,7 +237,7 @@ public class TraversalContext implements DocumentVisitor {
 
     private void leaveName(String name) {
         if (!isEmpty(name)) {
-            nameStack.remove(nameStack.size() - 1);
+            pop(nameStack);
         }
     }
 
