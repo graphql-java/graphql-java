@@ -22,7 +22,9 @@ public class DirectiveInfo {
             Directives.IncludeDirective,
             Directives.SkipDirective,
             Directives.DeprecatedDirective,
-            Directives.SpecifiedByDirective);
+            Directives.SpecifiedByDirective,
+            Directives.OneOfDirective
+    );
 
     /**
      * A map from directive name to directive which provided by specification
@@ -31,7 +33,9 @@ public class DirectiveInfo {
             Directives.IncludeDirective.getName(), Directives.IncludeDirective,
             Directives.SkipDirective.getName(), Directives.SkipDirective,
             Directives.DeprecatedDirective.getName(), Directives.DeprecatedDirective,
-            Directives.SpecifiedByDirective.getName(), Directives.SpecifiedByDirective);
+            Directives.SpecifiedByDirective.getName(), Directives.SpecifiedByDirective,
+            Directives.OneOfDirective.getName(), Directives.OneOfDirective
+            );
 
     /**
      * Returns true if a directive with provided directiveName has been defined in graphql specification

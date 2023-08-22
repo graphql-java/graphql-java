@@ -399,6 +399,14 @@ public class Introspection {
         return null;
     };
 
+    private static final IntrospectionDataFetcher<?> isOneOfFetcher = environment -> {
+        Object type = environment.getSource();
+        if (type instanceof GraphQLInputObjectType) {
+            return ((GraphQLInputObjectType) type).isOneOf();
+        }
+        return null;
+    };
+
     public static final GraphQLObjectType __Type = newObject()
             .name("__Type")
             .field(newFieldDefinition()
@@ -441,6 +449,10 @@ public class Introspection {
                     .name("ofType")
                     .type(typeRef("__Type")))
             .field(newFieldDefinition()
+                    .name("isOneOf")
+                    .description("This field is considered experimental because it has not yet been ratified in the graphql specification")
+                    .type(GraphQLBoolean))
+            .field(newFieldDefinition()
                     .name("specifiedByURL")
                     .type(GraphQLString))
             .field(newFieldDefinition()
@@ -460,6 +472,7 @@ public class Introspection {
         register(__Type, "enumValues", enumValuesTypesFetcher);
         register(__Type, "inputFields", inputFieldsFetcher);
         register(__Type, "ofType", OfTypeFetcher);
+        register(__Type, "isOneOf", isOneOfFetcher);
         register(__Type, "specifiedByURL", specifiedByUrlDataFetcher);
         register(__Type, "specifiedByUrl", specifiedByUrlDataFetcher); // note that this field is deprecated
     }
