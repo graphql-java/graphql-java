@@ -81,7 +81,7 @@ public class ExecutableNormalizedOperationToAstCompiler {
     }
 
     /**
-     * This will compile a operation text {@link Document} with possibly variables from the given {@link ExecutableNormalizedField}s
+     * This will compile an operation text {@link Document} with possibly variables from the given {@link ExecutableNormalizedField}s
      *
      * The {@link VariablePredicate} is used called to decide if the given argument values should be made into a variable
      * OR inlined into the operation text as a graphql literal.
@@ -102,7 +102,21 @@ public class ExecutableNormalizedOperationToAstCompiler {
         return compileToDocument(schema,operationKind,operationName,topLevelFields,Map.of(),variablePredicate);
     }
 
-
+    /**
+     * This will compile an operation text {@link Document} with possibly variables from the given {@link ExecutableNormalizedField}s
+     *
+     * The {@link VariablePredicate} is used called to decide if the given argument values should be made into a variable
+     * OR inlined into the operation text as a graphql literal.
+     *
+     * @param schema                            the graphql schema to use
+     * @param operationKind                     the kind of operation
+     * @param operationName                     the name of the operation to use
+     * @param topLevelFields                    the top level {@link ExecutableNormalizedField}s to start from
+     * @param normalizedFieldToQueryDirectives  the map of normalized field to query directives
+     * @param variablePredicate                 the variable predicate that decides if arguments turn into variables or not during compilation
+     *
+     * @return a {@link CompilerResult} object
+     */
     public static CompilerResult compileToDocument(@NotNull GraphQLSchema schema,
                                                    @NotNull OperationDefinition.Operation operationKind,
                                                    @Nullable String operationName,
