@@ -68,7 +68,18 @@ class ValuesResolverConversion {
             if (valueMode == NORMALIZED) {
                 return assertShouldNeverHappen("can't infer normalized structure");
             }
-            return ValuesResolverLegacy.valueToLiteralLegacy(inputValueWithState.getValue(), type, graphqlContext, locale);
+
+            Value<?> value = ValuesResolverLegacy.valueToLiteralLegacy(
+                    inputValueWithState.getValue(),
+                    type,
+                    graphqlContext,
+                    locale);
+            //
+            // the valueToLiteralLegacy() nominally cant know if null means never set or is set to a null value
+            // but this code can know - its is SET to a value so, it MUST be a Null Literal
+            // this method would assert at the end of it if inputValueWithState.isNotSet() were true
+            //
+            return value == null ? NullValue.of() : value;
         }
         if (inputValueWithState.isLiteral()) {
             return inputValueWithState.getValue();
