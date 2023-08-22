@@ -107,12 +107,12 @@ public class ExecutableNormalizedOperationToAstCompiler {
                                                    @NotNull OperationDefinition.Operation operationKind,
                                                    @Nullable String operationName,
                                                    @NotNull List<ExecutableNormalizedField> topLevelFields,
-                                                   @NotNull Map<ExecutableNormalizedField, QueryDirectives> fieldToQueryDirectives,
+                                                   @NotNull Map<ExecutableNormalizedField, QueryDirectives> normalizedFieldToQueryDirectives,
                                                    @Nullable VariablePredicate variablePredicate) {
         GraphQLObjectType operationType = getOperationType(schema, operationKind);
 
         VariableAccumulator variableAccumulator = new VariableAccumulator(variablePredicate);
-        List<Selection<?>> selections = subselectionsForNormalizedField(schema, operationType.getName(), topLevelFields, fieldToQueryDirectives, variableAccumulator);
+        List<Selection<?>> selections = subselectionsForNormalizedField(schema, operationType.getName(), topLevelFields, normalizedFieldToQueryDirectives, variableAccumulator);
         SelectionSet selectionSet = new SelectionSet(selections);
 
         OperationDefinition.Builder definitionBuilder = OperationDefinition.newOperationDefinition()
