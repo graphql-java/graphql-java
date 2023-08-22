@@ -13,6 +13,7 @@ import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLInputType;
 import graphql.schema.GraphQLOutputType;
 import graphql.schema.GraphQLSchema;
+import graphql.schema.InputValueWithState;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -37,8 +38,10 @@ public class ValidationContext {
     }
 
     private void buildFragmentMap() {
-        for (Definition definition : document.getDefinitions()) {
-            if (!(definition instanceof FragmentDefinition)) continue;
+        for (Definition<?> definition : document.getDefinitions()) {
+            if (!(definition instanceof FragmentDefinition)) {
+                continue;
+            }
             FragmentDefinition fragmentDefinition = (FragmentDefinition) definition;
             fragmentDefinitionMap.put(fragmentDefinition.getName(), fragmentDefinition);
         }
@@ -66,6 +69,10 @@ public class ValidationContext {
 
     public GraphQLInputType getInputType() {
         return traversalContext.getInputType();
+    }
+
+    public InputValueWithState getDefaultValue() {
+        return traversalContext.getDefaultValue();
     }
 
     public GraphQLFieldDefinition getFieldDef() {
