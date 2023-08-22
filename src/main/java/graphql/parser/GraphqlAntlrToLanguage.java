@@ -669,7 +669,12 @@ public class GraphqlAntlrToLanguage {
             addCommonData(intValue, ctx);
             return captureRuleContext(intValue.build(), ctx);
         } else if (ctx.FloatValue() != null) {
-            FloatValue.Builder floatValue = FloatValue.newFloatValue().value(new BigDecimal(ctx.FloatValue().getText()));
+            FloatValue.Builder floatValue;
+            try {
+                floatValue = FloatValue.newFloatValue().value(new BigDecimal(ctx.FloatValue().getText()));
+            } catch (NumberFormatException e) {
+                throw new InvalidSyntaxException("Invalid floating point value", null, ctx.FloatValue().getText(), null, e);
+            }
             addCommonData(floatValue, ctx);
             return captureRuleContext(floatValue.build(), ctx);
         } else if (ctx.BooleanValue() != null) {
