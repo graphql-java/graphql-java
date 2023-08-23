@@ -2657,4 +2657,47 @@ input Gun {
 }
 '''
     }
+
+    def "deprecated directive with custom reason"() {
+        given:
+        def enumType = newEnum().name("Enum")
+                .values(List.of(
+                        GraphQLEnumValueDefinition.newEnumValueDefinition().name("DEPRECATED_WITH_REASON").deprecationReason("Custom enum value reason").build()))
+                .build()
+        def fieldType = newObject().name("Field")
+                .field(newFieldDefinition().name("deprecatedWithReason").type(enumType).deprecate("Custom field reason").build())
+                .build()
+        def inputType = GraphQLInputObjectType.newInputObject().name("Input")
+                .field(newInputObjectField().name("deprecatedWithReason").type(enumType).deprecate("Custom input reason").build())
+                .build()
+        def queryType = newObject().name("Query")
+                .field(newFieldDefinition().name("field").type(fieldType)
+                        .argument(newArgument().name("deprecatedWithReason").type(inputType).deprecate("Custom argument reason").build()).build())
+                .build()
+        def schema = GraphQLSchema.newSchema()
+                .query(queryType)
+                .build()
+        when:
+        def result = "\n" + new SchemaPrinter(noDirectivesOption).print(schema)
+        println(result)
+
+        then:
+        result == """
+type Field {
+  deprecatedWithReason: Enum @deprecated(reason : "Custom field reason")
+}
+
+type Query {
+  field(deprecatedWithReason: Input @deprecated(reason : "Custom argument reason")): Field
+}
+
+enum Enum {
+  DEPRECATED_WITH_REASON @deprecated(reason : "Custom enum value reason")
+}
+
+input Input {
+  deprecatedWithReason: Enum @deprecated(reason : "Custom input reason")
+}
+"""
+    }
 }

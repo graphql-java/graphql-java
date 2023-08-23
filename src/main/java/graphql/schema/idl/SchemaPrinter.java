@@ -63,6 +63,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static graphql.Directives.DeprecatedDirective;
+import static graphql.Scalars.GraphQLString;
 import static graphql.schema.visibility.DefaultGraphqlFieldVisibility.DEFAULT_FIELD_VISIBILITY;
 import static graphql.util.EscapeUtil.escapeJsonString;
 import static java.util.Optional.ofNullable;
@@ -74,14 +75,6 @@ import static java.util.stream.Collectors.toList;
  */
 @PublicApi
 public class SchemaPrinter {
-    //
-    // we use this so that we get the simple "@deprecated" as text and not a full exploded
-    // text with arguments (but only when we auto add this)
-    //
-    private static final GraphQLAppliedDirective DeprecatedAppliedDirective4Printing = GraphQLAppliedDirective.newDirective()
-            .name("deprecated")
-            .build();
-
     /**
      * This predicate excludes all directives which are specified by the GraphQL Specification.
      * Printing these directives is optional.
@@ -786,7 +779,7 @@ public class SchemaPrinter {
                     out.print(printComments(schema, ""));
                 }
                 List<GraphQLAppliedDirective> directives = DirectivesUtil.toAppliedDirectives(schema.getSchemaAppliedDirectives(), schema.getSchemaDirectives());
-                out.format("schema %s{\n", directivesString(GraphQLSchemaElement.class, false, directives));
+                out.format("schema %s{\n", directivesString(GraphQLSchemaElement.class, directives));
                 if (queryType != null) {
                     out.format("  query: %s\n", queryType.getName());
                 }
@@ -853,11 +846,7 @@ public class SchemaPrinter {
                 sb.append(printAst(defaultValue, argument.getType()));
             }
 
-            DirectivesUtil.toAppliedDirectives(argument).stream()
-                    .filter(options.getIncludeSchemaElement())
-                    .map(this::directiveString)
-                    .filter(it -> !it.isEmpty())
-                    .forEach(directiveString -> sb.append(" ").append(directiveString));
+            sb.append(directivesString(GraphQLArgument.class, argument.isDeprecated(), argument));
 
             count++;
         }
@@ -875,15 +864,16 @@ public class SchemaPrinter {
     }
 
     String directivesString(Class<? extends GraphQLSchemaElement> parentType, boolean isDeprecated, GraphQLDirectiveContainer directiveContainer) {
-        List<GraphQLAppliedDirective> directives = DirectivesUtil.toAppliedDirectives(directiveContainer);
-        return directivesString(parentType, isDeprecated, directives);
+        List<GraphQLAppliedDirective> directives;
+        if (isDeprecated) {
+            directives = addDeprecatedDirectiveIfNeeded(directiveContainer);
+        } else {
+            directives = DirectivesUtil.toAppliedDirectives(directiveContainer);
+        }
+        return directivesString(parentType, directives);
     }
 
-    private String directivesString(Class<? extends GraphQLSchemaElement> parentType, boolean isDeprecated, List<GraphQLAppliedDirective> directives) {
-        if (isDeprecated) {
-            directives = addDeprecatedDirectiveIfNeeded(directives);
-        }
-
+    private String directivesString(Class<? extends GraphQLSchemaElement> parentType, List<GraphQLAppliedDirective> directives) {
         directives = directives.stream()
                 // @deprecated is special - we always print it if something is deprecated
                 .filter(directive -> options.getIncludeDirective().test(directive.getName()) || isDeprecatedDirective(directive))
@@ -968,12 +958,41 @@ public class SchemaPrinter {
                 .count() == 1;
     }
 
-    private List<GraphQLAppliedDirective> addDeprecatedDirectiveIfNeeded(List<GraphQLAppliedDirective> directives) {
+    private List<GraphQLAppliedDirective> addDeprecatedDirectiveIfNeeded(GraphQLDirectiveContainer directiveContainer) {
+        List<GraphQLAppliedDirective> directives = DirectivesUtil.toAppliedDirectives(directiveContainer);
         if (!hasDeprecatedDirective(directives)) {
             directives = new ArrayList<>(directives);
-            directives.add(DeprecatedAppliedDirective4Printing);
+                    String reason = getDeprecationReason(directiveContainer);
+                    GraphQLAppliedDirectiveArgument arg = GraphQLAppliedDirectiveArgument.newArgument()
+                            .name("reason")
+                            .valueProgrammatic(reason)
+                            .type(GraphQLString)
+                            .build();
+            GraphQLAppliedDirective directive = GraphQLAppliedDirective.newDirective()
+                    .name("deprecated")
+                    .argument(arg)
+                    .build();
+            directives.add(directive);
         }
         return directives;
+    }
+
+    private String getDeprecationReason(GraphQLDirectiveContainer directiveContainer) {
+        if (directiveContainer instanceof GraphQLFieldDefinition) {
+            GraphQLFieldDefinition type = (GraphQLFieldDefinition) directiveContainer;
+            return type.getDeprecationReason();
+        } else if (directiveContainer instanceof GraphQLEnumValueDefinition) {
+            GraphQLEnumValueDefinition type = (GraphQLEnumValueDefinition) directiveContainer;
+            return type.getDeprecationReason();
+        } else if (directiveContainer instanceof GraphQLInputObjectField) {
+            GraphQLInputObjectField type = (GraphQLInputObjectField) directiveContainer;
+            return type.getDeprecationReason();
+        } else if (directiveContainer instanceof GraphQLArgument) {
+            GraphQLArgument type = (GraphQLArgument) directiveContainer;
+            return type.getDeprecationReason();
+        } else {
+            return Assert.assertShouldNeverHappen();
+        }
     }
 
     private String directiveDefinition(GraphQLDirective directive) {
