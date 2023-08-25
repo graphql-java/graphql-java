@@ -57,6 +57,12 @@ public class SimplePerformantInstrumentation implements Instrumentation {
     }
 
     @Override
+    public @Nullable CompletableFuture<InstrumentationState> createStateAsync(InstrumentationCreateStateParameters parameters) {
+        InstrumentationState state = createState(parameters);
+        return state == null ? null : CompletableFuture.completedFuture(state);
+    }
+
+    @Override
     public @NotNull InstrumentationContext<ExecutionResult> beginExecution(InstrumentationExecutionParameters parameters) {
         return assertShouldNeverHappen("The deprecated " + "beginExecution" + " was called");
     }
