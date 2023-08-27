@@ -63,9 +63,24 @@ public interface Instrumentation {
      *
      * @return a state object that is passed to each method
      */
+    @Deprecated
+    @DeprecatedAt("2023-08-25")
     @Nullable
     default InstrumentationState createState(InstrumentationCreateStateParameters parameters) {
         return createState();
+    }
+
+    /**
+     * This will be called just before execution to create an object, in an asynchronous manner, that is given back to all instrumentation methods
+     * to allow them to have per execution request state
+     *
+     * @param parameters the parameters to this step
+     *
+     * @return a state object that is passed to each method
+     */
+    @Nullable
+    default CompletableFuture<InstrumentationState> createStateAsync(InstrumentationCreateStateParameters parameters) {
+        return CompletableFuture.completedFuture(createState(parameters));
     }
 
     /**

@@ -22,6 +22,7 @@ import graphql.schema.DataFetcher;
 import graphql.schema.GraphQLSchema;
 import graphql.validation.ValidationError;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;
 import java.util.List;
@@ -80,10 +81,19 @@ public class ChainedInstrumentation implements Instrumentation {
         return new ChainedInstrumentationContext<>(mapAndDropNulls(instrumentations, mapper));
     }
 
+    @Override
+    public InstrumentationState createState() {
+        return Assert.assertShouldNeverHappen("createStateAsync should only ever be used");
+    }
 
     @Override
-    public InstrumentationState createState(InstrumentationCreateStateParameters parameters) {
-        return new ChainedInstrumentationState(instrumentations, parameters);
+    public @Nullable InstrumentationState createState(InstrumentationCreateStateParameters parameters) {
+        return Assert.assertShouldNeverHappen("createStateAsync should only ever be used");
+    }
+
+    @Override
+    public @NotNull CompletableFuture<InstrumentationState> createStateAsync(InstrumentationCreateStateParameters parameters) {
+        return ChainedInstrumentationState.combineAll(instrumentations, parameters);
     }
 
     @Override
@@ -349,18 +359,31 @@ public class ChainedInstrumentation implements Instrumentation {
     }
 
     static class ChainedInstrumentationState implements InstrumentationState {
-        private final Map<Instrumentation, InstrumentationState> instrumentationStates;
+        private final Map<Instrumentation, InstrumentationState> instrumentationToStates;
 
 
-        private ChainedInstrumentationState(List<Instrumentation> instrumentations, InstrumentationCreateStateParameters parameters) {
-            instrumentationStates = Maps.newLinkedHashMapWithExpectedSize(instrumentations.size());
-            instrumentations.forEach(i -> instrumentationStates.put(i, i.createState(parameters)));
+        private ChainedInstrumentationState(List<Instrumentation> instrumentations, List<InstrumentationState> instrumentationStates) {
+            instrumentationToStates = Maps.newLinkedHashMapWithExpectedSize(instrumentations.size());
+            for (int i = 0; i < instrumentations.size(); i++) {
+                Instrumentation instrumentation = instrumentations.get(i);
+                InstrumentationState instrumentationState = instrumentationStates.get(i);
+                instrumentationToStates.put(instrumentation, instrumentationState);
+            }
         }
 
         private InstrumentationState getState(Instrumentation instrumentation) {
-            return instrumentationStates.get(instrumentation);
+            return instrumentationToStates.get(instrumentation);
         }
 
+        private static CompletableFuture<InstrumentationState> combineAll(List<Instrumentation> instrumentations, InstrumentationCreateStateParameters parameters) {
+            Async.CombinedBuilder<InstrumentationState> builder = Async.ofExpectedSize(instrumentations.size());
+            for (Instrumentation instrumentation : instrumentations) {
+                // state can be null including the CF so handle that
+                CompletableFuture<InstrumentationState> stateCF = Async.orNullCompletedFuture(instrumentation.createStateAsync(parameters));
+                builder.add(stateCF);
+            }
+            return builder.await().thenApply(instrumentationStates -> new ChainedInstrumentationState(instrumentations, instrumentationStates));
+        }
     }
 
     private static class ChainedInstrumentationContext<T> implements InstrumentationContext<T> {
