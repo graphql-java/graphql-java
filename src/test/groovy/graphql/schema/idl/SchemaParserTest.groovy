@@ -480,4 +480,14 @@ type Virus {
         def printedSchema = new SchemaPrinter(options).print(graphQL.graphQLSchema)
         printedSchema == schema
     }
+
+    def "testNumberFormatException"() {
+        when:
+        SchemaParser parser = new SchemaParser();
+        parser.parse("{B(t:66E3333333320,t:#\n66666666660)},622»» »»»6666662}}6666660t:z6666")
+
+        then:
+        thrown(SchemaProblem)
+    }
+
 }
