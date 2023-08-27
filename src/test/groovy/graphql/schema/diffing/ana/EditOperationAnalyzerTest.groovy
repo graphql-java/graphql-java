@@ -3044,6 +3044,111 @@ class EditOperationAnalyzerTest extends Specification {
         userModification.details.isEmpty()
     }
 
+    def "deleted field with fixed parent binding can map to isolated node"() {
+        given:
+        def oldSdl = '''
+            type Query {
+                notifications: NotificationQuery
+            }
+            type NotificationQuery {
+                notificationFeed(
+                    feedFilter: NotificationFeedFilter
+                    first: Int = 25
+                    after: String
+                ): NotificationGroupedConnection!
+                unseenNotificationCount(workspaceId: String, product: String): Int!
+            }
+            input NotificationFeedFilter {
+                workspaceId: String
+                productFilter: String
+                groupId: String
+            }
+            type NotificationItem {
+                notificationId: ID!
+                workspaceId: String
+            }
+            type NotificationGroupedItem {
+                groupId: ID!
+                groupSize: Int!
+                headNotification: NotificationItem!
+                childItems(first: Int, after: String): [NotificationItem!]
+            }
+            type NotificationGroupedConnection {
+                nodes: [NotificationGroupedItem!]!
+            }
+        '''
+        def newSdl = '''
+            type Query {
+                notifications: NotificationQuery
+            }
+            type NotificationQuery {
+                notificationFeed(
+                    filter: NotificationFilter
+                    first: Int = 25
+                    after: String
+                ): NotificationFeedConnection!
+                notificationGroup(
+                    groupId: String!
+                    filter: NotificationFilter
+                    first: Int = 25
+                    after: String
+                ): NotificationGroupConnection!
+                unseenNotificationCount(workspaceId: String, product: String): Int!
+            }
+            input NotificationFilter {
+                workspaceId: String
+                productFilter: String
+            }
+            type NotificationEntityModel{
+                objectId: String!
+                containerId: String
+                workspaceId: String
+                cloudId: String
+            }
+            type NotificationItem {
+                notificationId: ID!
+                entityModel: NotificationEntityModel
+                workspaceId: String
+            }
+            type NotificationHeadItem {
+                groupId: ID!
+                groupSize: Int!
+                readStates: [String]!
+                additionalTypes: [String!]!
+                headNotification: NotificationItem!
+                endCursor: String
+            }
+            type NotificationFeedConnection {
+                nodes: [NotificationHeadItem!]!
+            }
+            type NotificationGroupConnection {
+                nodes: [NotificationItem!]!
+            }
+        '''
+
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+
+        then:
+        changes["NotificationGroupedItem"] === changes["NotificationHeadItem"]
+        changes["NotificationGroupedConnection"] === changes["NotificationFeedConnection"]
+        changes["NotificationGroupedItem"] instanceof ObjectModification
+        changes["NotificationGroupedConnection"] instanceof ObjectModification
+        changes["NotificationEntityModel"] instanceof ObjectAddition
+        changes["NotificationGroupConnection"] instanceof ObjectAddition
+        changes["NotificationItem"] instanceof ObjectModification
+        changes["NotificationQuery"] instanceof ObjectModification
+
+        changes["NotificationFeedFilter"] === changes["NotificationFilter"]
+        changes["NotificationFeedFilter"] instanceof InputObjectModification
+
+        def notificationFeedFilterChange = changes["NotificationFeedFilter"] as InputObjectModification
+        notificationFeedFilterChange.details.size() == 1
+        notificationFeedFilterChange.details[0] instanceof InputObjectFieldDeletion
+        def groupIdInputObjectFieldDeletion = notificationFeedFilterChange.details[0] as InputObjectFieldDeletion
+        groupIdInputObjectFieldDeletion.name == "groupId"
+    }
+
     EditOperationAnalysisResult calcDiff(
             String oldSdl,
             String newSdl
