@@ -1,6 +1,7 @@
 package graphql;
 
 import graphql.execution.AbortExecutionException;
+import graphql.execution.Async;
 import graphql.execution.AsyncExecutionStrategy;
 import graphql.execution.AsyncSerialExecutionStrategy;
 import graphql.execution.DataFetcherExceptionHandler;
@@ -421,31 +422,33 @@ public class GraphQL {
         if (logNotSafe.isDebugEnabled()) {
             logNotSafe.debug("Executing request. operation name: '{}'. query: '{}'. variables '{}'", executionInput.getOperationName(), executionInput.getQuery(), executionInput.getVariables());
         }
-        executionInput = ensureInputHasId(executionInput);
+        ExecutionInput executionInputWithId = ensureInputHasId(executionInput);
 
-        InstrumentationState instrumentationState = instrumentation.createState(new InstrumentationCreateStateParameters(this.graphQLSchema, executionInput));
-        try {
-            InstrumentationExecutionParameters inputInstrumentationParameters = new InstrumentationExecutionParameters(executionInput, this.graphQLSchema, instrumentationState);
-            executionInput = instrumentation.instrumentExecutionInput(executionInput, inputInstrumentationParameters, instrumentationState);
+        CompletableFuture<InstrumentationState> instrumentationStateCF = instrumentation.createStateAsync(new InstrumentationCreateStateParameters(this.graphQLSchema, executionInput));
+        return Async.orNullCompletedFuture(instrumentationStateCF).thenCompose(instrumentationState -> {
+            try {
+                InstrumentationExecutionParameters inputInstrumentationParameters = new InstrumentationExecutionParameters(executionInputWithId, this.graphQLSchema, instrumentationState);
+                ExecutionInput instrumentedExecutionInput = instrumentation.instrumentExecutionInput(executionInputWithId, inputInstrumentationParameters, instrumentationState);
 
-            CompletableFuture<ExecutionResult> beginExecutionCF = new CompletableFuture<>();
-            InstrumentationExecutionParameters instrumentationParameters = new InstrumentationExecutionParameters(executionInput, this.graphQLSchema, instrumentationState);
-            InstrumentationContext<ExecutionResult> executionInstrumentation = nonNullCtx(instrumentation.beginExecution(instrumentationParameters, instrumentationState));
-            executionInstrumentation.onDispatched(beginExecutionCF);
+                CompletableFuture<ExecutionResult> beginExecutionCF = new CompletableFuture<>();
+                InstrumentationExecutionParameters instrumentationParameters = new InstrumentationExecutionParameters(instrumentedExecutionInput, this.graphQLSchema, instrumentationState);
+                InstrumentationContext<ExecutionResult> executionInstrumentation = nonNullCtx(instrumentation.beginExecution(instrumentationParameters, instrumentationState));
+                executionInstrumentation.onDispatched(beginExecutionCF);
 
-            GraphQLSchema graphQLSchema = instrumentation.instrumentSchema(this.graphQLSchema, instrumentationParameters, instrumentationState);
+                GraphQLSchema graphQLSchema = instrumentation.instrumentSchema(this.graphQLSchema, instrumentationParameters, instrumentationState);
 
-            CompletableFuture<ExecutionResult> executionResult = parseValidateAndExecute(executionInput, graphQLSchema, instrumentationState);
-            //
-            // finish up instrumentation
-            executionResult = executionResult.whenComplete(completeInstrumentationCtxCF(executionInstrumentation, beginExecutionCF));
-            //
-            // allow instrumentation to tweak the result
-            executionResult = executionResult.thenCompose(result -> instrumentation.instrumentExecutionResult(result, instrumentationParameters, instrumentationState));
-            return executionResult;
-        } catch (AbortExecutionException abortException) {
-            return handleAbortException(executionInput, instrumentationState, abortException);
-        }
+                CompletableFuture<ExecutionResult> executionResult = parseValidateAndExecute(instrumentedExecutionInput, graphQLSchema, instrumentationState);
+                //
+                // finish up instrumentation
+                executionResult = executionResult.whenComplete(completeInstrumentationCtxCF(executionInstrumentation, beginExecutionCF));
+                //
+                // allow instrumentation to tweak the result
+                executionResult = executionResult.thenCompose(result -> instrumentation.instrumentExecutionResult(result, instrumentationParameters, instrumentationState));
+                return executionResult;
+            } catch (AbortExecutionException abortException) {
+                return handleAbortException(executionInput, instrumentationState, abortException);
+            }
+        });
     }
 
     private CompletableFuture<ExecutionResult> handleAbortException(ExecutionInput executionInput, InstrumentationState instrumentationState, AbortExecutionException abortException) {

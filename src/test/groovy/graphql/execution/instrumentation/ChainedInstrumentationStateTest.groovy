@@ -1,17 +1,13 @@
 package graphql.execution.instrumentation
 
+import graphql.ExecutionInput
 import graphql.ExecutionResult
 import graphql.GraphQL
 import graphql.StarWarsSchema
 import graphql.execution.AsyncExecutionStrategy
-import graphql.execution.instrumentation.parameters.InstrumentationExecuteOperationParameters
+import graphql.execution.instrumentation.parameters.InstrumentationCreateStateParameters
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters
-import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters
-import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters
-import graphql.execution.instrumentation.parameters.InstrumentationFieldParameters
 import graphql.execution.instrumentation.parameters.InstrumentationValidationParameters
-import graphql.language.Document
-import graphql.schema.DataFetcher
 import graphql.validation.ValidationError
 import spock.lang.Specification
 
@@ -277,6 +273,75 @@ class ChainedInstrumentationStateTest extends Specification {
 
         assertCalls(a)
 
+    }
+
+
+    class StringInstrumentationState implements InstrumentationState {
+        StringInstrumentationState(String value) {
+            this.value = value
+        }
+
+        String value
+    }
+
+    def "can have an multiple async createState() calls in play"() {
+
+
+        given:
+
+        def query = '''query Q($var: String!) {
+                                  human(id: $var) {
+                                    id
+                                    name
+                                  }
+                                }
+                            '''
+
+
+        def instrumentation1 = new SimplePerformantInstrumentation() {
+            @Override
+            CompletableFuture<InstrumentationState> createStateAsync(InstrumentationCreateStateParameters parameters) {
+                return CompletableFuture.supplyAsync {
+                    return new StringInstrumentationState("I1")
+                } as CompletableFuture<InstrumentationState>
+            }
+
+            @Override
+            CompletableFuture<ExecutionResult> instrumentExecutionResult(ExecutionResult executionResult, InstrumentationExecutionParameters parameters, InstrumentationState state) {
+                return CompletableFuture.completedFuture(
+                        executionResult.transform { it.addExtension("i1", ((StringInstrumentationState) state).value) }
+                )
+            }
+        }
+        def instrumentation2 = new SimplePerformantInstrumentation() {
+            @Override
+            CompletableFuture<InstrumentationState> createStateAsync(InstrumentationCreateStateParameters parameters) {
+                return CompletableFuture.supplyAsync {
+                    return new StringInstrumentationState("I2")
+                } as CompletableFuture<InstrumentationState>
+            }
+
+            @Override
+            CompletableFuture<ExecutionResult> instrumentExecutionResult(ExecutionResult executionResult, InstrumentationExecutionParameters parameters, InstrumentationState state) {
+                return CompletableFuture.completedFuture(
+                        executionResult.transform { it.addExtension("i2", ((StringInstrumentationState) state).value) }
+                )
+            }
+
+        }
+
+        def graphQL = GraphQL
+                .newGraphQL(StarWarsSchema.starWarsSchema)
+                .instrumentation(new ChainedInstrumentation([instrumentation1, instrumentation2]))
+                .doNotAddDefaultInstrumentations() // important, otherwise a chained one wil be used
+                .build()
+
+        when:
+        def variables = [var: "1001"]
+        def er = graphQL.execute(ExecutionInput.newExecutionInput().query(query).variables(variables)) // Luke
+
+        then:
+        er.extensions == [i1: "I1", i2: "I2"]
     }
 
     private void assertCalls(NamedInstrumentation instrumentation) {
