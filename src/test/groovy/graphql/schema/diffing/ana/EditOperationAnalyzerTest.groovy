@@ -3130,19 +3130,19 @@ class EditOperationAnalyzerTest extends Specification {
         def changes = calcDiff(oldSdl, newSdl)
 
         then:
-        changes["NotificationGroupedItem"] === changes["NotificationHeadItem"]
-        changes["NotificationGroupedConnection"] === changes["NotificationFeedConnection"]
-        changes["NotificationGroupedItem"] instanceof ObjectModification
-        changes["NotificationGroupedConnection"] instanceof ObjectModification
-        changes["NotificationEntityModel"] instanceof ObjectAddition
-        changes["NotificationGroupConnection"] instanceof ObjectAddition
-        changes["NotificationItem"] instanceof ObjectModification
-        changes["NotificationQuery"] instanceof ObjectModification
+        changes.objectDifferences["NotificationGroupedItem"] === changes.objectDifferences["NotificationHeadItem"]
+        changes.objectDifferences["NotificationGroupedConnection"] === changes.objectDifferences["NotificationFeedConnection"]
+        changes.objectDifferences["NotificationGroupedItem"] instanceof ObjectModification
+        changes.objectDifferences["NotificationGroupedConnection"] instanceof ObjectModification
+        changes.objectDifferences["NotificationEntityModel"] instanceof ObjectAddition
+        changes.objectDifferences["NotificationGroupConnection"] instanceof ObjectAddition
+        changes.objectDifferences["NotificationItem"] instanceof ObjectModification
+        changes.objectDifferences["NotificationQuery"] instanceof ObjectModification
 
-        changes["NotificationFeedFilter"] === changes["NotificationFilter"]
-        changes["NotificationFeedFilter"] instanceof InputObjectModification
+        changes.inputObjectDifferences["NotificationFeedFilter"] === changes.inputObjectDifferences["NotificationFilter"]
+        changes.inputObjectDifferences["NotificationFeedFilter"] instanceof InputObjectModification
 
-        def notificationFeedFilterChange = changes["NotificationFeedFilter"] as InputObjectModification
+        def notificationFeedFilterChange = changes.inputObjectDifferences["NotificationFeedFilter"] as InputObjectModification
         notificationFeedFilterChange.details.size() == 1
         notificationFeedFilterChange.details[0] instanceof InputObjectFieldDeletion
         def groupIdInputObjectFieldDeletion = notificationFeedFilterChange.details[0] as InputObjectFieldDeletion
