@@ -1,5 +1,6 @@
 package graphql.execution
 
+import graphql.Directives
 import graphql.ErrorType
 import graphql.ExecutionInput
 import graphql.GraphQLContext
@@ -137,22 +138,22 @@ class ValuesResolverTest extends Specification {
         given:
         def schema = TestUtil.schemaWithInputType(list(GraphQLString))
         VariableDefinition variableDefinition = new VariableDefinition("variable", new ListType(new TypeName("String")))
-        List<String> value = ["hello","world"]
+        List<String> value = ["hello", "world"]
         when:
         def resolvedValues = ValuesResolver.coerceVariableValues(schema, [variableDefinition], RawVariables.of([variable: value]), graphQLContext, locale)
         then:
-        resolvedValues.get('variable') == ['hello','world']
+        resolvedValues.get('variable') == ['hello', 'world']
     }
 
     def "getVariableValues: array value gets resolved to a list when the type is a List"() {
         given:
         def schema = TestUtil.schemaWithInputType(list(GraphQLString))
         VariableDefinition variableDefinition = new VariableDefinition("variable", new ListType(new TypeName("String")))
-        String[] value = ["hello","world"] as String[]
+        String[] value = ["hello", "world"] as String[]
         when:
         def resolvedValues = ValuesResolver.coerceVariableValues(schema, [variableDefinition], RawVariables.of([variable: value]), graphQLContext, locale)
         then:
-        resolvedValues.get('variable') == ['hello','world']
+        resolvedValues.get('variable') == ['hello', 'world']
     }
 
     def "getArgumentValues: resolves argument with variable reference"() {
@@ -343,6 +344,162 @@ class ValuesResolverTest extends Specification {
 
         then:
         values['arg'] == ['world']
+    }
+
+    def "getArgumentValues: invalid oneOf input because of duplicate keys - #testCase"() {
+        given: "schema defining input object"
+        def inputObjectType = newInputObject()
+                .name("oneOfInputObject")
+                .withAppliedDirective(Directives.OneOfDirective.toAppliedDirective())
+                .field(newInputObjectField()
+                        .name("a")
+                        .type(GraphQLString)
+                        .build())
+                .field(newInputObjectField()
+                        .name("b")
+                        .type(GraphQLInt)
+                        .build())
+                .build()
+        def fieldArgument = newArgument().name("arg").type(inputObjectType).build()
+
+        when:
+        def argument = new Argument("arg", inputValue)
+        ValuesResolver.getArgumentValues([fieldArgument], [argument], variables, graphQLContext, locale)
+
+        then:
+        def e = thrown(OneOfTooManyKeysException)
+        e.message == "Exactly one key must be specified for OneOf type 'oneOfInputObject'."
+
+        where:
+        // from https://github.com/graphql/graphql-spec/pull/825/files#diff-30a69c5a5eded8e1aea52e53dad1181e6ec8f549ca2c50570b035153e2de1c43R1692
+        testCase                             | inputValue   | variables
+
+        '{ a: "abc", b: 123 } {}'            | buildObjectLiteral([
+                a: StringValue.of("abc"),
+                b: IntValue.of(123)
+        ])                                                  | CoercedVariables.emptyVariables()
+
+        '{ a: null, b: 123 } {}'             | buildObjectLiteral([
+                a: NullValue.of(),
+                b: IntValue.of(123)
+        ])                                                  | CoercedVariables.emptyVariables()
+
+        '{ a: $var, b: 123 } { var: null }'  | buildObjectLiteral([
+                a: VariableReference.of("var"),
+                b: IntValue.of(123)
+        ])                                                  | CoercedVariables.of(["var": null])
+
+        '{ a: $var, b: 123 } {}'             | buildObjectLiteral([
+                a: VariableReference.of("var"),
+                b: IntValue.of(123)
+        ])                                                  | CoercedVariables.emptyVariables()
+
+        '{ a : "abc", b : null} {}'          | buildObjectLiteral([
+                a: StringValue.of("abc"),
+                b: NullValue.of()
+        ])                                                  | CoercedVariables.emptyVariables()
+
+        '{ a : null, b : null} {}'           | buildObjectLiteral([
+                a: NullValue.of(),
+                b: NullValue.of()
+        ])                                                  | CoercedVariables.emptyVariables()
+
+        '{ a : $a, b : $b} {a : "abc"}'      | buildObjectLiteral([
+                a: VariableReference.of("a"),
+                b: VariableReference.of("v")
+        ])                                                  | CoercedVariables.of(["a": "abc"])
+
+        '$var {var : { a : "abc", b : 123}}' | VariableReference.of("var")
+                                                            | CoercedVariables.of(["var": ["a": "abc", "b": 123]])
+
+        '$var {var : {}}'                    | VariableReference.of("var")
+                                                            | CoercedVariables.of(["var": [:]])
+    }
+
+    def "getArgumentValues: invalid oneOf input because of null value - #testCase"() {
+        given: "schema defining input object"
+        def inputObjectType = newInputObject()
+                .name("oneOfInputObject")
+                .withAppliedDirective(Directives.OneOfDirective.toAppliedDirective())
+                .field(newInputObjectField()
+                        .name("a")
+                        .type(GraphQLString)
+                        .build())
+                .field(newInputObjectField()
+                        .name("b")
+                        .type(GraphQLInt)
+                        .build())
+                .build()
+        def fieldArgument = newArgument().name("arg").type(inputObjectType).build()
+
+        when:
+        def argument = new Argument("arg", inputValue)
+        ValuesResolver.getArgumentValues([fieldArgument], [argument], variables, graphQLContext, locale)
+
+        then:
+        def e = thrown(OneOfNullValueException)
+        e.message == "OneOf type field 'oneOfInputObject.a' must be non-null."
+
+        where:
+        // from https://github.com/graphql/graphql-spec/pull/825/files#diff-30a69c5a5eded8e1aea52e53dad1181e6ec8f549ca2c50570b035153e2de1c43R1692
+        testCase                       | inputValue   | variables
+
+        '`{ a: null }` {}'             | buildObjectLiteral([
+                a: NullValue.of()
+        ])                                            | CoercedVariables.emptyVariables()
+
+        '`{ a: $var }`  { var : null}' | buildObjectLiteral([
+                a: VariableReference.of("var")
+        ])                                            | CoercedVariables.of(["var": null])
+
+    }
+
+    def "getArgumentValues: valid oneOf input - #testCase"() {
+        given: "schema defining input object"
+        def inputObjectType = newInputObject()
+                .name("oneOfInputObject")
+                .withAppliedDirective(Directives.OneOfDirective.toAppliedDirective())
+                .field(newInputObjectField()
+                        .name("a")
+                        .type(GraphQLString)
+                        .build())
+                .field(newInputObjectField()
+                        .name("b")
+                        .type(GraphQLInt)
+                        .build())
+                .build()
+        def fieldArgument = newArgument().name("arg").type(inputObjectType).build()
+
+        when:
+        def argument = new Argument("arg", inputValue)
+        def values = ValuesResolver.getArgumentValues([fieldArgument], [argument], variables, graphQLContext, locale)
+
+        then:
+        values == expectedValues
+
+        where:
+        // from https://github.com/graphql/graphql-spec/pull/825/files#diff-30a69c5a5eded8e1aea52e53dad1181e6ec8f549ca2c50570b035153e2de1c43R1692
+        testCase                       | inputValue   | variables                              | expectedValues
+
+        '{ b: 123 }` {}'               | buildObjectLiteral([
+                b: IntValue.of(123)
+        ])                                            | CoercedVariables.emptyVariables()      | [arg: [b: 123]]
+
+        '`$var` { var: { b: 123 } }'   | VariableReference.of("var")
+                                                      | CoercedVariables.of([var: [b: 123]])   | [arg: [b: 123]]
+
+        '{ a: "abc" }` {}'             | buildObjectLiteral([
+                a: StringValue.of("abc")
+        ])                                            | CoercedVariables.emptyVariables()      | [arg: [a: "abc"]]
+
+
+        '`$var` { var: { a: "abc" } }' | VariableReference.of("var")
+                                                      | CoercedVariables.of([var: [a: "abc"]]) | [arg: [a: "abc"]]
+
+        '{ a: $var }` { var : "abc"}'  | buildObjectLiteral([
+                a: VariableReference.of("var")
+        ])                                            | CoercedVariables.of([var: "abc"])      | [arg: [a: "abc"]]
+
     }
 
     def "getVariableValues: enum as variable input"() {
@@ -594,7 +751,7 @@ class ValuesResolverTest extends Specification {
 
         def executionInput = ExecutionInput.newExecutionInput()
                 .query(mutation)
-                .variables([input: [name: 'Name', position: 'UNKNOWN_POSITION'] ])
+                .variables([input: [name: 'Name', position: 'UNKNOWN_POSITION']])
                 .build()
 
         def executionResult = graphQL.execute(executionInput)
@@ -632,7 +789,7 @@ class ValuesResolverTest extends Specification {
 
         def executionInput = ExecutionInput.newExecutionInput()
                 .query(mutation)
-                .variables([input: [name: 'Name', hilarious: 'sometimes'] ])
+                .variables([input: [name: 'Name', hilarious: 'sometimes']])
                 .build()
 
         def executionResult = graphQL.execute(executionInput)
@@ -670,7 +827,7 @@ class ValuesResolverTest extends Specification {
 
         def executionInput = ExecutionInput.newExecutionInput()
                 .query(mutation)
-                .variables([input: [name: 'Name', laughsPerMinute: 'none'] ])
+                .variables([input: [name: 'Name', laughsPerMinute: 'none']])
                 .build()
 
         def executionResult = graphQL.execute(executionInput)

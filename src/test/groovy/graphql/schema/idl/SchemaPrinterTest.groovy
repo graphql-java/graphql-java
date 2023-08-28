@@ -3,13 +3,21 @@ package graphql.schema.idl
 import graphql.GraphQL
 import graphql.TestUtil
 import graphql.TypeResolutionEnvironment
+import graphql.introspection.Introspection
 import graphql.introspection.IntrospectionQuery
 import graphql.introspection.IntrospectionResultToSchema
+import graphql.language.Comment
+import graphql.language.DirectiveDefinition
+import graphql.language.EnumValueDefinition
+import graphql.language.FieldDefinition
 import graphql.language.IntValue
+import graphql.language.ScalarTypeDefinition
+import graphql.language.SchemaDefinition
 import graphql.language.StringValue
 import graphql.schema.Coercing
 import graphql.schema.GraphQLAppliedDirective
 import graphql.schema.GraphQLCodeRegistry
+import graphql.schema.GraphQLDirective
 import graphql.schema.GraphQLEnumType
 import graphql.schema.GraphQLEnumValueDefinition
 import graphql.schema.GraphQLFieldDefinition
@@ -30,11 +38,19 @@ import spock.lang.Specification
 
 import java.util.function.Predicate
 import java.util.function.UnaryOperator
+import java.util.stream.Collectors
 
+import static graphql.Scalars.GraphQLID
 import static graphql.Scalars.GraphQLInt
 import static graphql.Scalars.GraphQLString
 import static graphql.TestUtil.mockScalar
 import static graphql.TestUtil.mockTypeRuntimeWiring
+import static graphql.language.EnumTypeDefinition.newEnumTypeDefinition
+import static graphql.language.InputObjectTypeDefinition.newInputObjectDefinition
+import static graphql.language.InputValueDefinition.newInputValueDefinition
+import static graphql.language.InterfaceTypeDefinition.newInterfaceTypeDefinition
+import static graphql.language.ObjectTypeDefinition.newObjectTypeDefinition
+import static graphql.language.UnionTypeDefinition.newUnionTypeDefinition
 import static graphql.schema.GraphQLArgument.newArgument
 import static graphql.schema.GraphQLEnumType.newEnum
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition
@@ -44,6 +60,7 @@ import static graphql.schema.GraphQLList.list
 import static graphql.schema.GraphQLNonNull.nonNull
 import static graphql.schema.GraphQLObjectType.newObject
 import static graphql.schema.GraphQLScalarType.newScalar
+import static graphql.schema.GraphQLTypeReference.typeRef
 import static graphql.schema.GraphQLUnionType.newUnionType
 import static graphql.schema.idl.RuntimeWiring.newRuntimeWiring
 import static graphql.schema.idl.SchemaPrinter.ExcludeGraphQLSpecifiedDirectivesPredicate
@@ -980,6 +997,9 @@ directive @interfaceImplementingTypeDirective on OBJECT
 
 directive @interfaceTypeDirective on INTERFACE
 
+"Indicates an Input Object is a OneOf Input Object."
+directive @oneOf on INPUT_OBJECT
+
 directive @query1 repeatable on OBJECT
 
 directive @query2(arg1: String) on OBJECT
@@ -1133,6 +1153,9 @@ directive @include(
     if: Boolean!
   ) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
 
+"Indicates an Input Object is a OneOf Input Object."
+directive @oneOf on INPUT_OBJECT
+
 "Directs the executor to skip this field or fragment when the `if` argument is true."
 directive @skip(
     "Skipped when true."
@@ -1230,6 +1253,9 @@ directive @include(
 
 directive @moreComplex(arg1: String = "default", arg2: Int) on FIELD_DEFINITION | INPUT_FIELD_DEFINITION
 
+"Indicates an Input Object is a OneOf Input Object."
+directive @oneOf on INPUT_OBJECT
+
 "Directs the executor to skip this field or fragment when the `if` argument is true."
 directive @skip(
     "Skipped when true."
@@ -1294,6 +1320,9 @@ directive @include(
   ) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
 
 directive @moreComplex(arg1: String = "default", arg2: Int) on FIELD_DEFINITION | INPUT_FIELD_DEFINITION
+
+"Indicates an Input Object is a OneOf Input Object."
+directive @oneOf on INPUT_OBJECT
 
 "Directs the executor to skip this field or fragment when the `if` argument is true."
 directive @skip(
@@ -1426,6 +1455,9 @@ directive @include(
     "Included when true."
     if: Boolean!
   ) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
+
+"Indicates an Input Object is a OneOf Input Object."
+directive @oneOf on INPUT_OBJECT
 
 "Directs the executor to skip this field or fragment when the `if` argument is true."
 directive @skip(
@@ -1929,6 +1961,9 @@ directive @include(
     if: Boolean!
   ) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
 
+"Indicates an Input Object is a OneOf Input Object."
+directive @oneOf on INPUT_OBJECT
+
 "Directs the executor to skip this field or fragment when the `if` argument is true."
 directive @skip(
     "Skipped when true."
@@ -2135,6 +2170,9 @@ directive @skip(
     if: Boolean!
   ) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
 
+"Indicates an Input Object is a OneOf Input Object."
+directive @oneOf on INPUT_OBJECT
+
 "Directs the executor to include this field or fragment only when the `if` argument is true"
 directive @include(
     "Included when true."
@@ -2248,5 +2286,418 @@ type TestObjectB {
   field: String
 }
 '''
+    }
+
+    final def SDL_WITH_COMMENTS = '''#schema comment 1
+#       schema comment 2 with leading spaces
+schema {
+  query: Query
+  mutation: Mutation
+}
+
+"Marks the field, argument, input field or enum value as deprecated"
+directive @deprecated(
+    "The reason for the deprecation"
+    reason: String = "No longer supported"
+  ) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION
+
+" custom directive 'example' description 1"
+# custom directive 'example' comment 1
+directive @example on ENUM_VALUE
+
+"Directs the executor to include this field or fragment only when the `if` argument is true"
+directive @include(
+    "Included when true."
+    if: Boolean!
+  ) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
+
+"Indicates an Input Object is a OneOf Input Object."
+directive @oneOf on INPUT_OBJECT
+
+"Directs the executor to skip this field or fragment when the `if` argument is true."
+directive @skip(
+    "Skipped when true."
+    if: Boolean!
+  ) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
+
+"Exposes a URL that specifies the behaviour of this scalar."
+directive @specifiedBy(
+    "The URL that specifies the behaviour of this scalar."
+    url: String!
+  ) on SCALAR
+
+# interface Character comment 1
+# interface Character comment 2
+interface Character implements Node {
+  appearsIn: [Episode]
+  friends: [Character]
+  id: ID!
+  name: String
+}
+
+interface Node {
+  id: ID!
+}
+
+# union type Humanoid comment 1
+union Humanoid = Droid | Human
+
+type Droid implements Character & Node {
+  appearsIn: [Episode]!
+  friends: [Character]
+  id: ID!
+  madeOn: Planet
+  name: String!
+  primaryFunction: String
+}
+
+type Human implements Character & Node {
+  appearsIn: [Episode]!
+  friends: [Character]
+  homePlanet: String
+  id: ID!
+  name: String!
+}
+
+type Mutation {
+  shoot(
+    # arg 'id\'
+    id: String!,
+    # arg 'with\'
+    with: Gun
+  ): Query
+}
+
+type Planet {
+  hitBy: Asteroid
+  name: String
+}
+
+# type query comment 1
+# type query comment 2
+type Query {
+  # query field 'hero' comment
+  hero(episode: Episode): Character
+  # query field 'humanoid' comment
+  humanoid(id: ID!): Humanoid
+}
+
+# enum Episode comment 1
+# enum Episode comment 2
+enum Episode {
+  # enum value EMPIRE comment 1
+  EMPIRE
+  JEDI
+  NEWHOPE @example
+}
+
+"desc"
+# scalar Asteroid comment 1
+scalar Asteroid
+
+# input type Gun comment 1
+input Gun {
+  # gun 'caliber' input value comment
+  caliber: Int
+  # gun 'name' input value comment
+  name: String
+}
+'''
+
+    static List<Comment> makeComments(String... strings) {
+        return strings.stream()
+                .map(s -> new Comment(s, null))
+                .collect(Collectors.toList())
+    }
+
+    def "prints with AST comments"() {
+        given:
+        def exampleDirective = GraphQLDirective.newDirective().name("example").validLocation(Introspection.DirectiveLocation.ENUM_VALUE)
+                .description(" custom directive 'example' description 1")
+                .definition(DirectiveDefinition.newDirectiveDefinition().comments(makeComments(" custom directive 'example' comment 1")).build()).build()
+        def asteroidType = newScalar().name("Asteroid").description("desc")
+                .definition(ScalarTypeDefinition.newScalarTypeDefinition().comments(makeComments(" scalar Asteroid comment 1")).build())
+                .coercing(TestUtil.mockCoercing())
+                .build()
+        def nodeType = newInterface().name("Node")
+                .field(newFieldDefinition().name("id").type(nonNull(GraphQLID)).build())
+                .build()
+        def planetType = newObject().name("Planet")
+                .field(newFieldDefinition().name("hitBy").type(asteroidType).build())
+                .field(newFieldDefinition().name("name").type(GraphQLString).build())
+                .build()
+        def episodeType = newEnum().name("Episode")
+                .definition(newEnumTypeDefinition().comments(
+                        makeComments(" enum Episode comment 1", " enum Episode comment 2")).build())
+                .values(List.of(
+                        GraphQLEnumValueDefinition.newEnumValueDefinition().name("EMPIRE")
+                                .definition(EnumValueDefinition.newEnumValueDefinition().comments(makeComments(" enum value EMPIRE comment 1")).build()).build(),
+                        GraphQLEnumValueDefinition.newEnumValueDefinition().name("JEDI").build(),
+                        GraphQLEnumValueDefinition.newEnumValueDefinition().name("NEWHOPE").withDirective(exampleDirective).build()))
+                .build()
+        def characterType = newInterface().name("Character").withInterface(nodeType)
+                .definition(newInterfaceTypeDefinition().comments(
+                        makeComments(" interface Character comment 1", " interface Character comment 2")).build())
+                .field(newFieldDefinition().name("appearsIn").type(list(episodeType)).build())
+                .field(newFieldDefinition().name("friends").type(list(typeRef("Character"))).build())
+                .field(newFieldDefinition().name("id").type(nonNull(GraphQLID)).build())
+                .field(newFieldDefinition().name("name").type(GraphQLString).build())
+                .build()
+        def droidType = newObject().name("Droid").withInterfaces(characterType, nodeType)
+                .field(newFieldDefinition().name("appearsIn").type(nonNull(list(episodeType))).build())
+                .field(newFieldDefinition().name("friends").type(list(typeRef("Character"))).build())
+                .field(newFieldDefinition().name("id").type(nonNull(GraphQLID)).build())
+                .field(newFieldDefinition().name("madeOn").type(planetType).build())
+                .field(newFieldDefinition().name("name").type(nonNull(GraphQLString)).build())
+                .field(newFieldDefinition().name("primaryFunction").type(GraphQLString).build())
+                .build()
+        def humanType = newObject().name("Human").withInterfaces(characterType, nodeType)
+                .field(newFieldDefinition().name("appearsIn").type(nonNull(list(episodeType))).build())
+                .field(newFieldDefinition().name("friends").type(list(typeRef("Character"))).build())
+                .field(newFieldDefinition().name("homePlanet").type(GraphQLString).build())
+                .field(newFieldDefinition().name("id").type(nonNull(GraphQLID)).build())
+                .field(newFieldDefinition().name("name").type(nonNull(GraphQLString)).build())
+                .build()
+        def humanoidType = newUnionType().name("Humanoid")
+                .definition(newUnionTypeDefinition().comments(makeComments(" union type Humanoid comment 1")).build())
+                .possibleTypes(humanType, droidType)
+                .build()
+        def queryType = newObject().name("Query")
+                .definition(newObjectTypeDefinition().comments(makeComments(" type query comment 1", " type query comment 2")).build())
+                .field(newFieldDefinition().name("hero").type(characterType)
+                        .definition(FieldDefinition.newFieldDefinition().comments(makeComments(" query field 'hero' comment")).build())
+                        .argument(newArgument().name("episode").type(episodeType).build())
+                        .build())
+                .field(newFieldDefinition().name("humanoid").type(humanoidType)
+                        .definition(FieldDefinition.newFieldDefinition().comments(makeComments(" query field 'humanoid' comment")).build())
+                        .argument(newArgument().name("id").type(nonNull(GraphQLID)).build())
+                        .build())
+                .build()
+        def gunType = GraphQLInputObjectType.newInputObject().name("Gun")
+                .definition(newInputObjectDefinition().comments(makeComments(" input type Gun comment 1")).build())
+                .field(newInputObjectField().name("name").type(GraphQLString)
+                        .definition(newInputValueDefinition().comments(makeComments(" gun 'name' input value comment")).build()).build())
+                .field(newInputObjectField().name("caliber").type(GraphQLInt)
+                        .definition(newInputValueDefinition().comments(makeComments(" gun 'caliber' input value comment")).build()).build())
+                .build()
+        def schema = GraphQLSchema.newSchema()
+                .additionalDirective(exampleDirective)
+                .codeRegistry(GraphQLCodeRegistry.newCodeRegistry()
+                        .typeResolver(characterType, resolver)
+                        .typeResolver(humanoidType, resolver)
+                        .typeResolver(nodeType, resolver)
+                        .build())
+                .definition(SchemaDefinition.newSchemaDefinition().comments(
+                        makeComments("schema comment 1", "       schema comment 2 with leading spaces")).build())
+                .mutation(newObject().name("Mutation")
+                        .field(newFieldDefinition().name("shoot").type(queryType).arguments(List.of(
+                                newArgument().name("id").type(nonNull(GraphQLString))
+                                        .definition(newInputValueDefinition().comments(makeComments(" arg 'id'")).build()).build(),
+                                newArgument().name("with").type(gunType)
+                                        .definition(newInputValueDefinition().comments(makeComments(" arg 'with'")).build()).build()))
+                                .build())
+                        .build())
+                .query(queryType)
+                .build()
+        when:
+        def result = new SchemaPrinter(defaultOptions().includeSchemaDefinition(true).includeAstDefinitionComments(true)).print(schema)
+        println(result)
+
+        then:
+        result == SDL_WITH_COMMENTS
+    }
+
+    def "parses, generates and prints with AST comments"() {
+        given:
+        def registry = new SchemaParser().parse(SDL_WITH_COMMENTS)
+        def wiring = newRuntimeWiring()
+                .scalar(mockScalar(registry.scalars().get("Asteroid")))
+                .type(mockTypeRuntimeWiring("Character", true))
+                .type(mockTypeRuntimeWiring("Humanoid", true))
+                .type(mockTypeRuntimeWiring("Node", true))
+                .build()
+        def options = SchemaGenerator.Options.defaultOptions().useCommentsAsDescriptions(false)
+        def schema = new SchemaGenerator().makeExecutableSchema(options, registry, wiring)
+        when:
+        def result = new SchemaPrinter(defaultOptions().includeSchemaDefinition(true).includeAstDefinitionComments(true)).print(schema)
+        println(result)
+
+        // @TODO: Schema Parser seems to be ignoring directive and scalar comments and needs to be fixed.
+        // The expected result below should be the same as the SDL_WITH_COMMENTS above BUT with the two comments temporarily removed.
+        then:
+        result == '''#schema comment 1
+#       schema comment 2 with leading spaces
+schema {
+  query: Query
+  mutation: Mutation
+}
+
+"Marks the field, argument, input field or enum value as deprecated"
+directive @deprecated(
+    "The reason for the deprecation"
+    reason: String = "No longer supported"
+  ) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION
+
+" custom directive 'example' description 1"
+directive @example on ENUM_VALUE
+
+"Directs the executor to include this field or fragment only when the `if` argument is true"
+directive @include(
+    "Included when true."
+    if: Boolean!
+  ) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
+
+"Indicates an Input Object is a OneOf Input Object."
+directive @oneOf on INPUT_OBJECT
+
+"Directs the executor to skip this field or fragment when the `if` argument is true."
+directive @skip(
+    "Skipped when true."
+    if: Boolean!
+  ) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
+
+"Exposes a URL that specifies the behaviour of this scalar."
+directive @specifiedBy(
+    "The URL that specifies the behaviour of this scalar."
+    url: String!
+  ) on SCALAR
+
+# interface Character comment 1
+# interface Character comment 2
+interface Character implements Node {
+  appearsIn: [Episode]
+  friends: [Character]
+  id: ID!
+  name: String
+}
+
+interface Node {
+  id: ID!
+}
+
+# union type Humanoid comment 1
+union Humanoid = Droid | Human
+
+type Droid implements Character & Node {
+  appearsIn: [Episode]!
+  friends: [Character]
+  id: ID!
+  madeOn: Planet
+  name: String!
+  primaryFunction: String
+}
+
+type Human implements Character & Node {
+  appearsIn: [Episode]!
+  friends: [Character]
+  homePlanet: String
+  id: ID!
+  name: String!
+}
+
+type Mutation {
+  shoot(
+    # arg 'id\'
+    id: String!,
+    # arg 'with\'
+    with: Gun
+  ): Query
+}
+
+type Planet {
+  hitBy: Asteroid
+  name: String
+}
+
+# type query comment 1
+# type query comment 2
+type Query {
+  # query field 'hero' comment
+  hero(episode: Episode): Character
+  # query field 'humanoid' comment
+  humanoid(id: ID!): Humanoid
+}
+
+# enum Episode comment 1
+# enum Episode comment 2
+enum Episode {
+  # enum value EMPIRE comment 1
+  EMPIRE
+  JEDI
+  NEWHOPE @example
+}
+
+"desc"
+scalar Asteroid
+
+# input type Gun comment 1
+input Gun {
+  # gun 'caliber' input value comment
+  caliber: Int
+  # gun 'name' input value comment
+  name: String
+}
+'''
+    }
+
+    def "issue 3285 - deprecated defaultValue on programmatic args prints as expected"() {
+        def queryObjType = newObject().name("Query")
+                .field(newFieldDefinition().name("f").type(GraphQLString)
+                        .argument(newArgument().name("arg").type(GraphQLString).defaultValue(null)))
+                .build()
+        def schema = GraphQLSchema.newSchema().query(queryObjType).build()
+
+
+        when:
+        def options = defaultOptions().includeDirectiveDefinitions(false)
+        def sdl = new SchemaPrinter(options).print(schema)
+        then:
+        sdl == '''type Query {
+  f(arg: String = null): String
+}
+'''
+    }
+
+    def "deprecated directive with custom reason"() {
+        given:
+        def enumType = newEnum().name("Enum")
+                .values(List.of(
+                        GraphQLEnumValueDefinition.newEnumValueDefinition().name("DEPRECATED_WITH_REASON").deprecationReason("Custom enum value reason").build()))
+                .build()
+        def fieldType = newObject().name("Field")
+                .field(newFieldDefinition().name("deprecatedWithReason").type(enumType).deprecate("Custom field reason").build())
+                .build()
+        def inputType = GraphQLInputObjectType.newInputObject().name("Input")
+                .field(newInputObjectField().name("deprecatedWithReason").type(enumType).deprecate("Custom input reason").build())
+                .build()
+        def queryType = newObject().name("Query")
+                .field(newFieldDefinition().name("field").type(fieldType)
+                        .argument(newArgument().name("deprecatedWithReason").type(inputType).deprecate("Custom argument reason").build()).build())
+                .build()
+        def schema = GraphQLSchema.newSchema()
+                .query(queryType)
+                .build()
+        when:
+        def result = "\n" + new SchemaPrinter(noDirectivesOption).print(schema)
+        println(result)
+
+        then:
+        result == """
+type Field {
+  deprecatedWithReason: Enum @deprecated(reason : "Custom field reason")
+}
+
+type Query {
+  field(deprecatedWithReason: Input @deprecated(reason : "Custom argument reason")): Field
+}
+
+enum Enum {
+  DEPRECATED_WITH_REASON @deprecated(reason : "Custom enum value reason")
+}
+
+input Input {
+  deprecatedWithReason: Enum @deprecated(reason : "Custom input reason")
+}
+"""
     }
 }

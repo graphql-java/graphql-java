@@ -33,7 +33,12 @@ public class UnicodeUtil {
         int continueIndex = isBracedEscape(string, i) ? endIndexExclusive : endIndexExclusive - 1;
 
         String hexStr = string.substring(startIndex, endIndexExclusive);
-        int codePoint = Integer.parseInt(hexStr, 16);
+        int codePoint;
+        try {
+            codePoint = Integer.parseInt(hexStr, 16);
+        } catch (NumberFormatException e) {
+            throw new InvalidUnicodeSyntaxException(i18n, "InvalidUnicode.invalidHexString", sourceLocation, offendingToken(string, i, continueIndex));
+        }
 
         if (isTrailingSurrogateValue(codePoint)) {
             throw new InvalidUnicodeSyntaxException(i18n, "InvalidUnicode.trailingLeadingSurrogate", sourceLocation, offendingToken(string, i, continueIndex));

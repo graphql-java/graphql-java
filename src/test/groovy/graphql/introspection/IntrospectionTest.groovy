@@ -1,5 +1,6 @@
 package graphql.introspection
 
+
 import graphql.TestUtil
 import graphql.schema.DataFetcher
 import graphql.schema.FieldCoordinates
@@ -438,7 +439,7 @@ class IntrospectionTest extends Specification {
 
     def "test AST printed introspection query is equivalent to original string"() {
         when:
-            def oldIntrospectionQuery = "\n" +
+        def oldIntrospectionQuery = "\n" +
                 "  query IntrospectionQuery {\n" +
                 "    __schema {\n" +
                 "      queryType { name }\n" +
@@ -463,6 +464,7 @@ class IntrospectionTest extends Specification {
                 "    kind\n" +
                 "    name\n" +
                 "    description\n" +
+                "    isOneOf\n" +
                 "    fields(includeDeprecated: true) {\n" +
                 "      name\n" +
                 "      description\n" +
@@ -540,12 +542,13 @@ class IntrospectionTest extends Specification {
                 "  }\n" +
                 "\n"
 
-            def newIntrospectionQuery = IntrospectionQuery.INTROSPECTION_QUERY;
+        def newIntrospectionQuery = IntrospectionQuery.INTROSPECTION_QUERY
+
 
         then:
-            oldIntrospectionQuery.replaceAll("\\s+","").equals(
-                newIntrospectionQuery.replaceAll("\\s+","")
-            )
+        def oldQuery = oldIntrospectionQuery.replaceAll("\\s+", "")
+        def newQuery = newIntrospectionQuery.replaceAll("\\s+","")
+        oldQuery == newQuery
     }
 
     def "test parameterized introspection queries"() {
@@ -582,44 +585,107 @@ class IntrospectionTest extends Specification {
 
         def parseExecutionResult = {
             [
-                it.data["__schema"]["types"].find{it["name"] == "Query"}["fields"].find{it["name"] == "notDeprecated"}["description"] != null, // descriptions is true
-                it.data["__schema"]["types"].find{it["name"] == "UUID"}["specifiedByURL"] != null, // specifiedByUrl is true
-                it.data["__schema"]["directives"].find{it["name"] == "repeatableDirective"}["isRepeatable"] != null, // directiveIsRepeatable is true
-                it.data["__schema"]["description"] != null, // schemaDescription is true
-                it.data["__schema"]["types"].find { it['name'] == 'InputType' }["inputFields"].find({ it["name"] == "inputField" }) != null // inputValueDeprecation is true
+                    it.data["__schema"]["types"].find { it["name"] == "Query" }["fields"].find { it["name"] == "notDeprecated" }["description"] != null, // descriptions is true
+                    it.data["__schema"]["types"].find { it["name"] == "UUID" }["specifiedByURL"] != null, // specifiedByUrl is true
+                    it.data["__schema"]["directives"].find { it["name"] == "repeatableDirective" }["isRepeatable"] != null, // directiveIsRepeatable is true
+                    it.data["__schema"]["description"] != null, // schemaDescription is true
+                    it.data["__schema"]["types"].find { it['name'] == 'InputType' }["inputFields"].find({ it["name"] == "inputField" }) != null // inputValueDeprecation is true
             ]
         }
 
         when:
-            def allFalseExecutionResult = graphQL.execute(
+        def allFalseExecutionResult = graphQL.execute(
                 IntrospectionQueryBuilder.build(
-                    IntrospectionQueryBuilder.Options.defaultOptions()
-                        .descriptions(false)
-                        .specifiedByUrl(false)
-                        .directiveIsRepeatable(false)
-                        .schemaDescription(false)
-                        .inputValueDeprecation(false)
-                        .typeRefFragmentDepth(5)
+                        IntrospectionQueryBuilder.Options.defaultOptions()
+                                .descriptions(false)
+                                .specifiedByUrl(false)
+                                .directiveIsRepeatable(false)
+                                .schemaDescription(false)
+                                .inputValueDeprecation(false)
+                                .typeRefFragmentDepth(5)
                 )
-            )
+        )
         then:
-            !parseExecutionResult(allFalseExecutionResult).any()
-            allFalseExecutionResult.data["__schema"]["types"].find{it["name"] == "Query"}["fields"].find{it["name"] == "tenDimensionalList"}["type"]["ofType"]["ofType"]["ofType"]["ofType"]["ofType"]["ofType"] == null // typeRefFragmentDepth is 5
+        !parseExecutionResult(allFalseExecutionResult).any()
+        allFalseExecutionResult.data["__schema"]["types"].find { it["name"] == "Query" }["fields"].find { it["name"] == "tenDimensionalList" }["type"]["ofType"]["ofType"]["ofType"]["ofType"]["ofType"]["ofType"] == null // typeRefFragmentDepth is 5
 
         when:
-            def allTrueExecutionResult = graphQL.execute(
+        def allTrueExecutionResult = graphQL.execute(
                 IntrospectionQueryBuilder.build(
-                    IntrospectionQueryBuilder.Options.defaultOptions()
-                        .descriptions(true)
-                        .specifiedByUrl(true)
-                        .directiveIsRepeatable(true)
-                        .schemaDescription(true)
-                        .inputValueDeprecation(true)
-                        .typeRefFragmentDepth(7)
+                        IntrospectionQueryBuilder.Options.defaultOptions()
+                                .descriptions(true)
+                                .specifiedByUrl(true)
+                                .directiveIsRepeatable(true)
+                                .schemaDescription(true)
+                                .inputValueDeprecation(true)
+                                .typeRefFragmentDepth(7)
                 )
-            )
+        )
         then:
-            parseExecutionResult(allTrueExecutionResult).every()
-            allTrueExecutionResult.data["__schema"]["types"].find{it["name"] == "Query"}["fields"].find{it["name"] == "tenDimensionalList"}["type"]["ofType"]["ofType"]["ofType"]["ofType"]["ofType"]["ofType"]["ofType"]["ofType"] == null // typeRefFragmentDepth is 7
+        parseExecutionResult(allTrueExecutionResult).every()
+        allTrueExecutionResult.data["__schema"]["types"].find { it["name"] == "Query" }["fields"].find { it["name"] == "tenDimensionalList" }["type"]["ofType"]["ofType"]["ofType"]["ofType"]["ofType"]["ofType"]["ofType"]["ofType"] == null // typeRefFragmentDepth is 7
     }
+
+    def "issue 3285 - deprecated defaultValue on programmatic args prints AST literal as expected"() {
+        def queryObjType = newObject().name("Query")
+                .field(newFieldDefinition().name("f").type(GraphQLString)
+                        .argument(newArgument().name("arg").type(GraphQLString).defaultValue(null)))
+                .build()
+        def schema = newSchema().query(queryObjType).build()
+        def graphQL = newGraphQL(schema).build()
+
+
+        when:
+        def executionResult = graphQL.execute(IntrospectionQuery.INTROSPECTION_QUERY)
+        then:
+        executionResult.errors.isEmpty()
+
+        def types = executionResult.data['__schema']['types'] as List
+        def queryType = types.find { it['name'] == 'Query' }
+        def fField = (queryType['fields'] as List)[0]
+        def arg = (fField['args'] as List)[0]
+        arg['name'] == "arg"
+        arg['defaultValue'] == "null" // printed AST
+    }
+
+
+    def "introspection for oneOf support"() {
+        def spec = '''
+
+            type Query {
+               oneOfNamedField(arg : OneOfInputType) : Enum
+               namedField(arg : InputType) : Enum
+            }
+            enum Enum {
+                RED
+                BLUE
+            }
+            input InputType {
+                inputField : String
+            }
+            input OneOfInputType @oneOf {
+                inputFieldA : String
+                inputFieldB : String
+            }
+        '''
+
+        when:
+        def graphQL = TestUtil.graphQL(spec).build()
+        def executionResult = graphQL.execute(IntrospectionQuery.INTROSPECTION_QUERY)
+
+        then:
+        executionResult.errors.isEmpty()
+
+        def types = executionResult.data['__schema']['types'] as List
+
+        def inputType = types.find { it['name'] == 'InputType' }
+        inputType["isOneOf"] == false
+
+        def oneOfInputType = types.find { it['name'] == 'OneOfInputType' }
+        oneOfInputType["isOneOf"] == true
+
+        def queryType = types.find { it['name'] == 'Query' }
+        queryType["isOneOf"] == null
+    }
+
 }

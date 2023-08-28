@@ -2,7 +2,9 @@ package graphql.schema;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import graphql.Directives;
 import graphql.DirectivesUtil;
+import graphql.ExperimentalApi;
 import graphql.Internal;
 import graphql.PublicApi;
 import graphql.language.InputObjectTypeDefinition;
@@ -34,6 +36,7 @@ import static graphql.util.FpKit.getByName;
 public class GraphQLInputObjectType implements GraphQLNamedInputType, GraphQLUnmodifiedType, GraphQLNullableType, GraphQLInputFieldsContainer, GraphQLDirectiveContainer {
 
     private final String name;
+    private final boolean isOneOf;
     private final String description;
     private final ImmutableMap<String, GraphQLInputObjectField> fieldMap;
     private final InputObjectTypeDefinition definition;
@@ -60,6 +63,7 @@ public class GraphQLInputObjectType implements GraphQLNamedInputType, GraphQLUnm
         this.extensionDefinitions = ImmutableList.copyOf(extensionDefinitions);
         this.directives = new DirectivesUtil.DirectivesHolder(directives, appliedDirectives);
         this.fieldMap = buildDefinitionMap(fields);
+        this.isOneOf = hasOneOf(directives, appliedDirectives);
     }
 
     private ImmutableMap<String, GraphQLInputObjectField> buildDefinitionMap(List<GraphQLInputObjectField> fieldDefinitions) {
@@ -67,9 +71,31 @@ public class GraphQLInputObjectType implements GraphQLNamedInputType, GraphQLUnm
                 (fld1, fld2) -> assertShouldNeverHappen("Duplicated definition for field '%s' in type '%s'", fld1.getName(), this.name)));
     }
 
+    private boolean hasOneOf(List<GraphQLDirective> directives, List<GraphQLAppliedDirective> appliedDirectives) {
+        if (appliedDirectives.stream().anyMatch(d -> Directives.OneOfDirective.getName().equals(d.getName()))) {
+            return true;
+        }
+        // eventually GraphQLDirective as applied directive goes away
+        return directives.stream().anyMatch(d -> Directives.OneOfDirective.getName().equals(d.getName()));
+    }
+
     @Override
     public String getName() {
         return name;
+    }
+
+
+    /**
+     * An Input Object is considered a OneOf Input Object if it has the `@oneOf` directive applied to it.
+     * <p>
+     * This API is currently considered experimental since the graphql specification has not yet ratified
+     * this approach.
+     *
+     * @return true if it's a OneOf Input Object
+     */
+    @ExperimentalApi
+    public boolean isOneOf() {
+        return isOneOf;
     }
 
     public String getDescription() {
