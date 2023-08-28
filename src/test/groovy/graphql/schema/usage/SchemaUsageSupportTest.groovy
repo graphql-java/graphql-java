@@ -246,10 +246,11 @@ class SchemaUsageSupportTest extends Specification {
         !schemaUsage.isStronglyReferenced(schema, "UnRefHangingInputType3")
         !schemaUsage.isStronglyReferenced(schema, "UnRefHangingArgDirective")
 
-        schemaUsage.getDirectiveReferenceCounts()["UnRefHangingArgDirective"] == 1
+        // 2 because of the dual nature of directives and applied directives
+        schemaUsage.getDirectiveReferenceCounts()["UnRefHangingArgDirective"] == 2
         schemaUsage.getArgumentReferenceCounts()["UnRefHangingInputType"] == 1
         schemaUsage.getFieldReferenceCounts()["UnRefHangingType2"] == 2
-        schemaUsage.getArgumentReferenceCounts()["UnRefHangingInputType3"] == 2
+        schemaUsage.getArgumentReferenceCounts()["UnRefHangingInputType3"] == 3
     }
 
     def "can handle cleared directives"() {
