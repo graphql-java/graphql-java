@@ -211,14 +211,13 @@ public class DataFetchingFieldSelectionSetImpl implements DataFetchingFieldSelec
         // this supplier is a once only thread synced call - so do it outside this lock
         // if only to have only 1 lock in action at a time
         ExecutableNormalizedField currentNormalisedField = normalizedFieldSupplier.get();
-        Runnable runnable = () -> {
+        computedOnce.runOnce(() -> {
             flattenedFieldsForGlobSearching = new LinkedHashSet<>();
             normalisedSelectionSetFields = new LinkedHashMap<>();
             ImmutableList.Builder<SelectedField> immediateFieldsBuilder = ImmutableList.builder();
             traverseSubSelectedFields(currentNormalisedField, immediateFieldsBuilder, "", "", true);
             immediateFields = immediateFieldsBuilder.build();
-        };
-        computedOnce.runOnce(runnable);
+        });
     }
 
 
