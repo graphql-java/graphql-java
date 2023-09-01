@@ -2,7 +2,7 @@
 
 ## Supported Versions
 
-As per our [Release Policy](https://www.graphql-java.com/blog/release-policy/), we will backport critical bugfixes and security fixes for versions dating back 18 months. These fixes will be backported depending on severity and demand.
+As stated in our [Release Policy](https://www.graphql-java.com/blog/release-policy/), we will backport critical bugfixes and security fixes for versions dating back 18 months. These fixes will be backported depending on severity and demand.
 
 ## Reporting a Vulnerability
 
