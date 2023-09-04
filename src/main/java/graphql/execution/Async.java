@@ -28,7 +28,20 @@ public class Async {
 
         void addObject(T objectT);
 
+        /**
+         * This will return a CompletableFuture to a List<T> even if the inputs are all materialised values
+         *
+         * @return a CompletableFuture to a List of values
+         */
         CompletableFuture<List<T>> await();
+
+        /**
+         * This will return a CompletableFuture to a List<T> if ANY of the input values are async
+         * otherwise it just return a materialised List<T>
+         *
+         * @return either a CompletableFuture or a materialised list
+         */
+        /* CompletableFuture<List<T>> | List<T> */ Object awaitPolymorphic();
     }
 
     /**
@@ -69,6 +82,11 @@ public class Async {
             return typedEmpty();
         }
 
+        @Override
+        public Object awaitPolymorphic() {
+            Assert.assertTrue(ix == 0, () -> "expected size was " + 0 + " got " + ix);
+            return typedEmpty();
+        }
 
         // implementation details: infer the type of Completable<List<T>> from a singleton empty
         private static final CompletableFuture<List<?>> EMPTY = CompletableFuture.completedFuture(Collections.emptyList());
@@ -99,13 +117,29 @@ public class Async {
 
         @Override
         public CompletableFuture<List<T>> await() {
-            Assert.assertTrue(ix == 1, () -> "expected size was " + 1 + " got " + ix);
+            commonSizeAssert();
             if (value instanceof CompletableFuture) {
                 @SuppressWarnings("unchecked")
                 CompletableFuture<T> cf = (CompletableFuture<T>) value;
                 return cf.thenApply(Collections::singletonList);
             }
+            //noinspection unchecked
             return CompletableFuture.completedFuture(Collections.singletonList((T) value));
+        }
+
+        @Override
+        public Object awaitPolymorphic() {
+            commonSizeAssert();
+            if (value instanceof CompletableFuture) {
+                @SuppressWarnings("unchecked")
+                CompletableFuture<T> cf = (CompletableFuture<T>) value;
+                return cf.thenApply(Collections::singletonList);
+            }
+            return Collections.singletonList((T) value);
+        }
+
+        private void commonSizeAssert() {
+            Assert.assertTrue(ix == 1, () -> "expected size was " + 1 + " got " + ix);
         }
     }
 
@@ -136,7 +170,7 @@ public class Async {
         @SuppressWarnings("unchecked")
         @Override
         public CompletableFuture<List<T>> await() {
-            Assert.assertTrue(ix == array.length, () -> "expected size was " + array.length + " got " + ix);
+            commonSizeAssert();
 
             CompletableFuture<List<T>> overallResult = new CompletableFuture<>();
             if (!containsCFs) {
@@ -166,6 +200,24 @@ public class Async {
                         });
             }
             return overallResult;
+        }
+
+        @Override
+        public Object awaitPolymorphic() {
+            if (!containsCFs) {
+                commonSizeAssert();
+                List<T> results = new ArrayList<>(array.length);
+                for (Object object : array) {
+                    results.add((T) object);
+                }
+                return results;
+            } else {
+                return await();
+            }
+        }
+
+        private void commonSizeAssert() {
+            Assert.assertTrue(ix == array.length, () -> "expected size was " + array.length + " got " + ix);
         }
 
         @NotNull
