@@ -164,7 +164,7 @@ class DataLoaderHangingTest extends Specification {
                 assert res.errors.empty
             })
             // add all futures
-            futures.add(result)
+            futures.addFuture(result)
         }
         // wait for each future to complete and grab the results
         futures.await()

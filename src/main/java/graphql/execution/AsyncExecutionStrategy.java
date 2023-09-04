@@ -52,8 +52,14 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
             ExecutionStrategyParameters newParameters = parameters
                     .transform(builder -> builder.field(currentField).path(fieldPath).parent(parameters));
 
-            CompletableFuture<FieldValueInfo> future = resolveFieldWithInfo(executionContext, newParameters);
-            futures.add(future);
+            Object fieldValueWithInfo = resolveFieldWithInfo(executionContext, newParameters);
+            if (fieldValueWithInfo instanceof CompletableFuture) {
+                @SuppressWarnings("unchecked")
+                CompletableFuture<FieldValueInfo> future = (CompletableFuture<FieldValueInfo>) fieldValueWithInfo;
+                futures.addFuture(future);
+            } else {
+                futures.addObject((FieldValueInfo) fieldValueWithInfo);
+            }
         }
         CompletableFuture<ExecutionResult> overallResult = new CompletableFuture<>();
         executionStrategyCtx.onDispatched(overallResult);
@@ -67,7 +73,7 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
 
             Async.CombinedBuilder<ExecutionResult> executionResultFutures = Async.ofExpectedSize(completeValueInfos.size());
             for (FieldValueInfo completeValueInfo : completeValueInfos) {
-                executionResultFutures.add(completeValueInfo.getFieldValue());
+                executionResultFutures.addFuture(completeValueInfo.getFieldValue());
             }
             executionStrategyCtx.onFieldValuesInfo(completeValueInfos);
             executionResultFutures.await().whenComplete(handleResultsConsumer);

@@ -58,7 +58,13 @@ public class BreadthFirstExecutionTestStrategy extends ExecutionStrategy {
         ExecutionStrategyParameters newParameters = parameters
                 .transform(builder -> builder.field(currentField).path(fieldPath));
 
-        return fetchField(executionContext, newParameters).join();
+        Object fetchedField = fetchField(executionContext, newParameters);
+        if (fetchedField instanceof CompletableFuture) {
+            Object join = ((CompletableFuture) fetchedField).join();
+            return (FetchedValue) join;
+        } else {
+            return (FetchedValue) fetchedField;
+        }
     }
 
     private void completeValue(ExecutionContext executionContext, Map<String, Object> results, String fieldName, FetchedValue fetchedValue, ExecutionStrategyParameters newParameters) {

@@ -4,8 +4,8 @@ import spock.lang.Specification
 
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionException
-import java.util.function.Function
 import java.util.function.BiFunction
+import java.util.function.Function
 
 import static java.util.concurrent.CompletableFuture.completedFuture
 
@@ -130,4 +130,44 @@ class AsyncTest extends Specification {
         exception.getCause().getMessage() == "some error"
     }
 
+    def "can wait on objects of cfs or both"() {
+        when:
+        def asyncBuilder = Async.ofExpectedSize(5)
+        asyncBuilder.addFuture(completedFuture("0"))
+        asyncBuilder.addFuture(completedFuture("1"))
+        asyncBuilder.addObject("2")
+        asyncBuilder.addObject("3")
+        asyncBuilder.addFuture(completedFuture("4"))
+
+        def list = asyncBuilder.await().join()
+
+        then:
+        list == ["0", "1", "2", "3", "4"]
+
+        when:
+        asyncBuilder = Async.ofExpectedSize(5)
+        asyncBuilder.addFuture(completedFuture("0"))
+        asyncBuilder.addFuture(completedFuture("1"))
+        asyncBuilder.addFuture(completedFuture("2"))
+        asyncBuilder.addFuture(completedFuture("3"))
+        asyncBuilder.addFuture(completedFuture("4"))
+
+        list = asyncBuilder.await().join()
+
+        then:
+        list == ["0", "1", "2", "3", "4"]
+
+        when:
+        asyncBuilder = Async.ofExpectedSize(5)
+        asyncBuilder.addObject("0")
+        asyncBuilder.addObject("1")
+        asyncBuilder.addObject("2")
+        asyncBuilder.addObject("3")
+        asyncBuilder.addObject("4")
+
+        list = asyncBuilder.await().join()
+
+        then:
+        list == ["0", "1", "2", "3", "4"]
+    }
 }

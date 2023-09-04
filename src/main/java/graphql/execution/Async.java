@@ -6,6 +6,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
@@ -23,7 +24,9 @@ public class Async {
 
     public interface CombinedBuilder<T> {
 
-        void add(CompletableFuture<T> completableFuture);
+        void addFuture(CompletableFuture<T> completableFuture);
+
+        void addObject(T objectT);
 
         CompletableFuture<List<T>> await();
     }
@@ -51,10 +54,14 @@ public class Async {
         private int ix;
 
         @Override
-        public void add(CompletableFuture<T> completableFuture) {
+        public void addFuture(CompletableFuture<T> completableFuture) {
             this.ix++;
         }
 
+        @Override
+        public void addObject(T objectT) {
+            this.ix++;
+        }
 
         @Override
         public CompletableFuture<List<T>> await() {
@@ -75,56 +82,97 @@ public class Async {
     private static class Single<T> implements CombinedBuilder<T> {
 
         // avoiding array allocation as there is only 1 CF
-        private CompletableFuture<T> completableFuture;
+        private Object value;
         private int ix;
 
         @Override
-        public void add(CompletableFuture<T> completableFuture) {
-            this.completableFuture = completableFuture;
+        public void addFuture(CompletableFuture<T> completableFuture) {
+            this.value = completableFuture;
+            this.ix++;
+        }
+
+        @Override
+        public void addObject(T objectT) {
+            this.value = objectT;
             this.ix++;
         }
 
         @Override
         public CompletableFuture<List<T>> await() {
             Assert.assertTrue(ix == 1, () -> "expected size was " + 1 + " got " + ix);
-            return completableFuture.thenApply(Collections::singletonList);
+            if (value instanceof CompletableFuture) {
+                @SuppressWarnings("unchecked")
+                CompletableFuture<T> cf = (CompletableFuture<T>) value;
+                return cf.thenApply(Collections::singletonList);
+            }
+            return CompletableFuture.completedFuture(Collections.singletonList((T) value));
         }
     }
 
     private static class Many<T> implements CombinedBuilder<T> {
 
-        private final CompletableFuture<T>[] array;
+        private final Object[] array;
         private int ix;
+        private boolean containsCFs;
 
         @SuppressWarnings("unchecked")
         private Many(int size) {
-            this.array = new CompletableFuture[size];
+            this.array = new Object[size];
             this.ix = 0;
+            containsCFs = false;
         }
 
         @Override
-        public void add(CompletableFuture<T> completableFuture) {
+        public void addFuture(CompletableFuture<T> completableFuture) {
             array[ix++] = completableFuture;
+            containsCFs = true;
         }
 
+        @Override
+        public void addObject(T objectT) {
+            array[ix++] = objectT;
+        }
+
+        @SuppressWarnings("unchecked")
         @Override
         public CompletableFuture<List<T>> await() {
             Assert.assertTrue(ix == array.length, () -> "expected size was " + array.length + " got " + ix);
 
             CompletableFuture<List<T>> overallResult = new CompletableFuture<>();
-            CompletableFuture.allOf(array)
-                    .whenComplete((ignored, exception) -> {
-                        if (exception != null) {
-                            overallResult.completeExceptionally(exception);
-                            return;
-                        }
-                        List<T> results = new ArrayList<>(array.length);
-                        for (CompletableFuture<T> future : array) {
-                            results.add(future.join());
-                        }
-                        overallResult.complete(results);
-                    });
+            if (!containsCFs) {
+                List<T> results = new ArrayList<>(array.length);
+                for (Object object : array) {
+                    results.add((T) object);
+                }
+                overallResult.complete(results);
+            } else {
+                CompletableFuture<?>[] cfsArr = copyOnlyCFsToArray();
+                CompletableFuture.allOf(cfsArr)
+                        .whenComplete((ignored, exception) -> {
+                            if (exception != null) {
+                                overallResult.completeExceptionally(exception);
+                                return;
+                            }
+                            List<T> results = new ArrayList<>(array.length);
+                            for (Object object : array) {
+                                if (object instanceof CompletableFuture) {
+                                    CompletableFuture<T> cf = (CompletableFuture<T>) object;
+                                    results.add(cf.join());
+                                } else {
+                                    results.add((T) object);
+                                }
+                            }
+                            overallResult.complete(results);
+                        });
+            }
             return overallResult;
+        }
+
+        @NotNull
+        private CompletableFuture<?>[] copyOnlyCFsToArray() {
+            return Arrays.stream(array)
+                    .filter(obj -> obj instanceof CompletableFuture)
+                    .toArray(CompletableFuture[]::new);
         }
 
     }
@@ -141,7 +189,7 @@ public class Async {
                 // Async.each makes sure that it is not a CompletionException inside a CompletionException
                 cf.completeExceptionally(new CompletionException(e));
             }
-            futures.add(cf);
+            futures.addFuture(cf);
         }
         return futures.await();
     }
@@ -190,6 +238,16 @@ public class Async {
             return ((CompletionStage<T>) t).toCompletableFuture();
         } else {
             return CompletableFuture.completedFuture(t);
+        }
+    }
+
+    public static <T> CompletableFuture<T> asCompletableFuture(Object t) {
+        if (t instanceof CompletionStage) {
+            //noinspection unchecked
+            return ((CompletionStage<T>) t).toCompletableFuture();
+        } else {
+            //noinspection unchecked
+            return (CompletableFuture<T>) CompletableFuture.completedFuture(t);
         }
     }
 

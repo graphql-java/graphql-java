@@ -380,7 +380,7 @@ public class ChainedInstrumentation implements Instrumentation {
             for (Instrumentation instrumentation : instrumentations) {
                 // state can be null including the CF so handle that
                 CompletableFuture<InstrumentationState> stateCF = Async.orNullCompletedFuture(instrumentation.createStateAsync(parameters));
-                builder.add(stateCF);
+                builder.addFuture(stateCF);
             }
             return builder.await().thenApply(instrumentationStates -> new ChainedInstrumentationState(instrumentations, instrumentationStates));
         }
