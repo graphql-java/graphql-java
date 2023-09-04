@@ -133,11 +133,11 @@ class AsyncTest extends Specification {
     def "can wait on objects of cfs or both"() {
         when:
         def asyncBuilder = Async.ofExpectedSize(5)
-        asyncBuilder.addFuture(completedFuture("0"))
-        asyncBuilder.addFuture(completedFuture("1"))
+        asyncBuilder.add(completedFuture("0"))
+        asyncBuilder.add(completedFuture("1"))
         asyncBuilder.addObject("2")
         asyncBuilder.addObject("3")
-        asyncBuilder.addFuture(completedFuture("4"))
+        asyncBuilder.add(completedFuture("4"))
 
         def list = asyncBuilder.await().join()
 
@@ -146,11 +146,11 @@ class AsyncTest extends Specification {
 
         when:
         asyncBuilder = Async.ofExpectedSize(5)
-        asyncBuilder.addFuture(completedFuture("0"))
-        asyncBuilder.addFuture(completedFuture("1"))
-        asyncBuilder.addFuture(completedFuture("2"))
-        asyncBuilder.addFuture(completedFuture("3"))
-        asyncBuilder.addFuture(completedFuture("4"))
+        asyncBuilder.add(completedFuture("0"))
+        asyncBuilder.add(completedFuture("1"))
+        asyncBuilder.add(completedFuture("2"))
+        asyncBuilder.add(completedFuture("3"))
+        asyncBuilder.add(completedFuture("4"))
 
         list = asyncBuilder.await().join()
 

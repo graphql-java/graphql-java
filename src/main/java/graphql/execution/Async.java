@@ -24,7 +24,7 @@ public class Async {
 
     public interface CombinedBuilder<T> {
 
-        void addFuture(CompletableFuture<T> completableFuture);
+        void add(CompletableFuture<T> completableFuture);
 
         void addObject(T objectT);
 
@@ -67,7 +67,7 @@ public class Async {
         private int ix;
 
         @Override
-        public void addFuture(CompletableFuture<T> completableFuture) {
+        public void add(CompletableFuture<T> completableFuture) {
             this.ix++;
         }
 
@@ -104,7 +104,7 @@ public class Async {
         private int ix;
 
         @Override
-        public void addFuture(CompletableFuture<T> completableFuture) {
+        public void add(CompletableFuture<T> completableFuture) {
             this.value = completableFuture;
             this.ix++;
         }
@@ -157,7 +157,7 @@ public class Async {
         }
 
         @Override
-        public void addFuture(CompletableFuture<T> completableFuture) {
+        public void add(CompletableFuture<T> completableFuture) {
             array[ix++] = completableFuture;
             containsCFs = true;
         }
@@ -241,7 +241,7 @@ public class Async {
                 // Async.each makes sure that it is not a CompletionException inside a CompletionException
                 cf.completeExceptionally(new CompletionException(e));
             }
-            futures.addFuture(cf);
+            futures.add(cf);
         }
         return futures.await();
     }

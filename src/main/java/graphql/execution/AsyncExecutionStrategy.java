@@ -65,7 +65,7 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
             Object fieldValueWithInfo = resolveFieldWithInfo(executionContext, newParameters);
             if (fieldValueWithInfo instanceof CompletableFuture) {
                 CompletableFuture<FieldValueInfo> future = (CompletableFuture<FieldValueInfo>) fieldValueWithInfo;
-                futures.addFuture(future);
+                futures.add(future);
             } else {
                 futures.addObject((FieldValueInfo) fieldValueWithInfo);
             }
@@ -94,7 +94,7 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
 
             Async.CombinedBuilder<ExecutionResult> executionResultFutures = Async.ofExpectedSize(completeValueInfos.size());
             for (FieldValueInfo completeValueInfo : completeValueInfos) {
-                executionResultFutures.addFuture(completeValueInfo.getFieldValue());
+                executionResultFutures.add(completeValueInfo.getFieldValue());
             }
             executionStrategyCtx.onFieldValuesInfo(completeValueInfos);
             executionResultFutures.await().whenComplete(handleResultsConsumer);
@@ -116,7 +116,7 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
         Async.CombinedBuilder<ExecutionResult> executionResultFutures = Async.ofExpectedSize(completeValueInfos.size());
         for (FieldValueInfo completeValueInfo : completeValueInfos) {
             if (completeValueInfo.isFutureValue()) {
-                executionResultFutures.addFuture(completeValueInfo.getFieldValue());
+                executionResultFutures.add(completeValueInfo.getFieldValue());
             } else {
                 executionResultFutures.addObject(completeValueInfo.getFieldValueMaterialised());
             }

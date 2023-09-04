@@ -636,7 +636,7 @@ public abstract class ExecutionStrategy {
         Async.CombinedBuilder<ExecutionResult> futures = Async.ofExpectedSize(fieldValueInfos.size());
         for (FieldValueInfo fieldValueInfo : fieldValueInfos) {
             if (fieldValueInfo.isFutureValue()) {
-                futures.addFuture(fieldValueInfo.getFieldValue());
+                futures.add(fieldValueInfo.getFieldValue());
             } else {
                 futures.addObject(fieldValueInfo.getFieldValueMaterialised());
             }
