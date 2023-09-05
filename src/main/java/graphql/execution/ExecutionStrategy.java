@@ -169,7 +169,7 @@ public abstract class ExecutionStrategy {
      * This is the re-entry point to an execution strategy.  If the engine needs to call bck to the execution strategy (say to complete an object)
      * then it will call this method.
      * <p>
-     * This method can return `CompletableFuture<ExecutionResult>` or a `ExecutionResult` depending on
+     * This method can return {@code CompletableFuture<ExecutionResult>} or a {@code ExecutionResult} depending on
      * whether the fields values are asynchronous or not
      *
      * @param executionContext contains the top level execution parameters

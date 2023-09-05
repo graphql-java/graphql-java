@@ -29,15 +29,15 @@ public class Async {
         void addObject(T objectT);
 
         /**
-         * This will return a CompletableFuture to a List<T> even if the inputs are all materialised values
+         * This will return a {@code CompletableFuture<List<T>>} even if the inputs are all materialised values
          *
          * @return a CompletableFuture to a List of values
          */
         CompletableFuture<List<T>> await();
 
         /**
-         * This will return a CompletableFuture to a List<T> if ANY of the input values are async
-         * otherwise it just return a materialised List<T>
+         * This will return a {@code CompletableFuture<List<T>>} if ANY of the input values are async
+         * otherwise it just return a materialised {@code List<T>}
          *
          * @return either a CompletableFuture or a materialised list
          */
