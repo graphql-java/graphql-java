@@ -653,6 +653,7 @@ public abstract class ExecutionStrategy {
             // TODO - we need new instrumentation call here saying we entered a ES recursively
             // TODO - something like beginList() so we can complete it here
             //completeListCtx.onDispatched(overallResult);
+            completeListCtx.onDispatched(FAKE_ER_CF);
             resultsFuture.whenComplete((results, exception) -> {
                 if (exception != null) {
                     Optional<Throwable> throwableOpt = handleNonNullExceptionForList(exception);
@@ -667,7 +668,7 @@ public abstract class ExecutionStrategy {
                         //
                         // TODO - we need new instrumentation call here saying we entered a ES recursively
                         // TODO - something like beginList() so we can complete it here
-                        //completeListCtx.onCompleted(null, null);
+                        completeListCtx.onCompleted(null, null);
                     }
                     return;
                 }
@@ -678,7 +679,8 @@ public abstract class ExecutionStrategy {
             //
             // TODO - we need new instrumentation call here saying we entered a ES recursively
             // TODO - something like beginList() so we can complete it here
-            // overallResult.whenComplete(completeListCtx::onCompleted);
+            //overallResult.whenComplete(completeListCtx::onCompleted);
+            FAKE_ER_CF.whenComplete(completeListCtx::onCompleted);
             fieldValueResult = overallResult;
         } else {
             @SuppressWarnings("unchecked")
@@ -687,6 +689,7 @@ public abstract class ExecutionStrategy {
             // TODO - we need new instrumentation call here saying we entered a ES recursively
             // TODO - something like beginList() so we can complete it here
             //completeListCtx.onDispatched(overallResult);
+            completeListCtx.onDispatched(FAKE_ER_CF);
 
             List<Object> completedResults = new ArrayList<>(results.size());
             completedResults.addAll(results);
@@ -696,6 +699,7 @@ public abstract class ExecutionStrategy {
             // TODO - we need new instrumentation call here saying we entered a ES recursively
             // TODO - something like beginList() so we can complete it here
             //overallResult.whenComplete(completeListCtx::onCompleted);
+            FAKE_ER_CF.whenComplete(completeListCtx::onCompleted);
 
             fieldValueResult = completedResults;
         }
@@ -985,4 +989,7 @@ public abstract class ExecutionStrategy {
         Field field = currentField.get(0);
         return field.getResultKey();
     }
+
+    static CompletableFuture<ExecutionResult> FAKE_ER_CF = CompletableFuture.completedFuture(null);
+    static ExecutionResult FAKE_ER = null;
 }

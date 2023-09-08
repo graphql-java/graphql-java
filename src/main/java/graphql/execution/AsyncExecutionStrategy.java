@@ -95,6 +95,7 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
         // TODO - we need new instrumentation call here saying we entered a ES recursively
         // TODO - something like beginObjectExecution()
         //executionStrategyCtx.onDispatched(overallResult);
+        executionStrategyCtx.onDispatched(FAKE_ER_CF);
 
         Object awaitedFieldsWithInfo = futures.awaitPolymorphic();
         if (awaitedFieldsWithInfo instanceof CompletableFuture) {
@@ -153,7 +154,8 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
             //
             // TODO - we need new instrumentation call here saying we entered a ES recursively
             // TODO - something like beginObjectExecution() so we can complete it here
-            // overallResult.whenComplete(executionStrategyCtx::onCompleted);
+            //overallResult.whenComplete(executionStrategyCtx::onCompleted);
+            FAKE_ER_CF.whenComplete(executionStrategyCtx::onCompleted);
             return overallResult;
         } else {
             List<Object> completedValues = (List<Object>) awaitedValues;
@@ -162,6 +164,7 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
             // TODO - we need new instrumentation call here saying we entered a ES recursively
             // TODO - something like beginObjectExecution() so we can complete it here
             //executionStrategyCtx.onCompleted(resultMap, null);
+            executionStrategyCtx.onCompleted(FAKE_ER, null);
             return resultMap;
         }
     }
