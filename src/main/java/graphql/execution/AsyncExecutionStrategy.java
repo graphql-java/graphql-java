@@ -99,17 +99,17 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
         Object awaitedFieldsWithInfo = futures.awaitPolymorphic();
         if (awaitedFieldsWithInfo instanceof CompletableFuture) {
             CompletableFuture<List<FieldValueInfo>> fieldsWithInfo = (CompletableFuture<List<FieldValueInfo>>) awaitedFieldsWithInfo;
-            return handleAsyncFields(executionContext, fieldsWithInfo, fieldNames, overallResult, executionStrategyCtx);
+            return handleAsyncFields(fieldsWithInfo, fieldNames, overallResult, executionStrategyCtx);
         } else {
             List<FieldValueInfo> fieldsWithInfo = (List<FieldValueInfo>) awaitedFieldsWithInfo;
-            return handleSyncFields(executionContext, fieldsWithInfo, fieldNames, overallResult, executionStrategyCtx);
+            return handleSyncFields(fieldsWithInfo, fieldNames, overallResult, executionStrategyCtx);
         }
     }
 
     @NotNull
-    private CompletableFuture<Map<String, Object>> handleAsyncFields(ExecutionContext executionContext, CompletableFuture<List<FieldValueInfo>> fieldWithInfo, List<String> fieldNames, CompletableFuture<Map<String, Object>> overallResult, ExecutionStrategyInstrumentationContext executionStrategyCtx) {
+    private CompletableFuture<Map<String, Object>> handleAsyncFields(CompletableFuture<List<FieldValueInfo>> fieldWithInfo, List<String> fieldNames, CompletableFuture<Map<String, Object>> overallResult, ExecutionStrategyInstrumentationContext executionStrategyCtx) {
         fieldWithInfo.whenComplete((completeValueInfos, throwable) -> {
-            BiConsumer<List<Object>, Throwable> handleResultsConsumer = buildAsyncFieldMap(executionContext, fieldNames, overallResult);
+            BiConsumer<List<Object>, Throwable> handleResultsConsumer = buildAsyncFieldMap(fieldNames, overallResult);
             if (throwable != null) {
                 handleResultsConsumer.accept(null, throwable.getCause());
                 return;
@@ -133,7 +133,7 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
     }
 
     @SuppressWarnings("unchecked")
-    private /* CompletableFuture<Map<String, Object>> | Map<String, Object> */ Object handleSyncFields(ExecutionContext executionContext, List<FieldValueInfo> completeValueInfos, List<String> fieldNames, CompletableFuture<Map<String, Object>> overallResult, ExecutionStrategyInstrumentationContext executionStrategyCtx) {
+    private /* CompletableFuture<Map<String, Object>> | Map<String, Object> */ Object handleSyncFields(List<FieldValueInfo> completeValueInfos, List<String> fieldNames, CompletableFuture<Map<String, Object>> overallResult, ExecutionStrategyInstrumentationContext executionStrategyCtx) {
 
         Async.CombinedBuilder<Object> executionResultFutures = Async.ofExpectedSize(completeValueInfos.size());
         for (FieldValueInfo completeValueInfo : completeValueInfos) {
@@ -146,7 +146,7 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
         executionStrategyCtx.onFieldValuesInfo(completeValueInfos);
         Object awaitedValues = executionResultFutures.awaitPolymorphic();
         if (awaitedValues instanceof CompletableFuture) {
-            BiConsumer<List<Object>, Throwable> handleResultsConsumer = buildAsyncFieldMap(executionContext, fieldNames, overallResult);
+            BiConsumer<List<Object>, Throwable> handleResultsConsumer = buildAsyncFieldMap(fieldNames, overallResult);
 
             CompletableFuture<List<Object>> completedValuesCF = (CompletableFuture<List<Object>>) awaitedValues;
             completedValuesCF.whenComplete(handleResultsConsumer);
@@ -176,9 +176,7 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
         return resolvedValuesByField;
     }
 
-    private BiConsumer<List<Object>, Throwable> buildAsyncFieldMap(ExecutionContext executionContext,
-                                                                   List<String> fieldNames,
-                                                                   CompletableFuture<Map<String, Object>> overallResult) {
+    private BiConsumer<List<Object>, Throwable> buildAsyncFieldMap(List<String> fieldNames, CompletableFuture<Map<String, Object>> overallResult) {
         return (List<Object> fieldResults, Throwable exception) -> {
             if (exception != null) {
                 overallResult.completeExceptionally(exception);
