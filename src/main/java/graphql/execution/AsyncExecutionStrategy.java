@@ -40,12 +40,32 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
     @Override
     @SuppressWarnings("FutureReturnValueIgnored")
     public CompletableFuture<ExecutionResult> execute(ExecutionContext executionContext, ExecutionStrategyParameters parameters) throws NonNullableFieldWasNullException {
-        return Async.asCompletableFuture(executePolymorphic(executionContext, parameters));
+
+        Object fieldValues = executePolymorphic(executionContext, parameters);
+        CompletableFuture<ExecutionResult> overallResult = new CompletableFuture<>();
+        if (fieldValues instanceof CompletableFuture) {
+            @SuppressWarnings("unchecked")
+            CompletableFuture<Map<String, Object>> fieldResultsCF = (CompletableFuture<Map<String, Object>>) fieldValues;
+            fieldResultsCF.whenComplete((fieldResults, exception) -> {
+                if (exception != null) {
+                    handleNonNullException(executionContext, overallResult, exception);
+                    return;
+                }
+                ExecutionResultImpl executionResult = new ExecutionResultImpl(fieldResults, executionContext.getErrors());
+                overallResult.complete(executionResult);
+            });
+        } else {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> fieldResults = (Map<String, Object>) fieldValues;
+            ExecutionResultImpl executionResult = new ExecutionResultImpl(fieldResults, executionContext.getErrors());
+            overallResult.complete(executionResult);
+        }
+        return overallResult;
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public /* CompletableFuture<ExecutionResult> | ExecutionResult */ Object executePolymorphic(ExecutionContext executionContext, ExecutionStrategyParameters parameters) throws NonNullableFieldWasNullException {
+    public /* CompletableFuture<Map<String, Object>> | Map<String, Object> */ Object executePolymorphic(ExecutionContext executionContext, ExecutionStrategyParameters parameters) throws NonNullableFieldWasNullException {
 
         Instrumentation instrumentation = executionContext.getInstrumentation();
         InstrumentationExecutionStrategyParameters instrumentationParameters = new InstrumentationExecutionStrategyParameters(executionContext, parameters);
@@ -70,8 +90,11 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
                 futures.addObject((FieldValueInfo) fieldValueWithInfo);
             }
         }
-        CompletableFuture<ExecutionResult> overallResult = new CompletableFuture<>();
-        executionStrategyCtx.onDispatched(overallResult);
+        CompletableFuture<Map<String, Object>> overallResult = new CompletableFuture<>();
+
+        // TODO - we need new instrumentation call here saying we entered a ES recursively
+        // TODO - something like beginObjectExecution()
+        //executionStrategyCtx.onDispatched(overallResult);
 
         Object awaitedFieldsWithInfo = futures.awaitPolymorphic();
         if (awaitedFieldsWithInfo instanceof CompletableFuture) {
@@ -84,17 +107,17 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
     }
 
     @NotNull
-    private CompletableFuture<ExecutionResult> handleAsyncFields(ExecutionContext executionContext, CompletableFuture<List<FieldValueInfo>> fieldWithInfo, List<String> fieldNames, CompletableFuture<ExecutionResult> overallResult, ExecutionStrategyInstrumentationContext executionStrategyCtx) {
+    private CompletableFuture<Map<String, Object>> handleAsyncFields(ExecutionContext executionContext, CompletableFuture<List<FieldValueInfo>> fieldWithInfo, List<String> fieldNames, CompletableFuture<Map<String, Object>> overallResult, ExecutionStrategyInstrumentationContext executionStrategyCtx) {
         fieldWithInfo.whenComplete((completeValueInfos, throwable) -> {
-            BiConsumer<List<ExecutionResult>, Throwable> handleResultsConsumer = handleResults(executionContext, fieldNames, overallResult);
+            BiConsumer<List<Object>, Throwable> handleResultsConsumer = buildAsyncFieldMap(executionContext, fieldNames, overallResult);
             if (throwable != null) {
                 handleResultsConsumer.accept(null, throwable.getCause());
                 return;
             }
 
-            Async.CombinedBuilder<ExecutionResult> executionResultFutures = Async.ofExpectedSize(completeValueInfos.size());
+            Async.CombinedBuilder<Object> executionResultFutures = Async.ofExpectedSize(completeValueInfos.size());
             for (FieldValueInfo completeValueInfo : completeValueInfos) {
-                executionResultFutures.add(completeValueInfo.getFieldValue());
+                executionResultFutures.add(completeValueInfo.getFieldValueFuture());
             }
             executionStrategyCtx.onFieldValuesInfo(completeValueInfos);
             executionResultFutures.await().whenComplete(handleResultsConsumer);
@@ -106,17 +129,16 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
             overallResult.completeExceptionally(ex);
             return null;
         });
-        overallResult.whenComplete(executionStrategyCtx::onCompleted);
         return overallResult;
     }
 
     @SuppressWarnings("unchecked")
-    private Object handleSyncFields(ExecutionContext executionContext, List<FieldValueInfo> completeValueInfos, List<String> fieldNames, CompletableFuture<ExecutionResult> overallResult, ExecutionStrategyInstrumentationContext executionStrategyCtx) {
+    private /* CompletableFuture<Map<String, Object>> | Map<String, Object> */ Object handleSyncFields(ExecutionContext executionContext, List<FieldValueInfo> completeValueInfos, List<String> fieldNames, CompletableFuture<Map<String, Object>> overallResult, ExecutionStrategyInstrumentationContext executionStrategyCtx) {
 
-        Async.CombinedBuilder<ExecutionResult> executionResultFutures = Async.ofExpectedSize(completeValueInfos.size());
+        Async.CombinedBuilder<Object> executionResultFutures = Async.ofExpectedSize(completeValueInfos.size());
         for (FieldValueInfo completeValueInfo : completeValueInfos) {
             if (completeValueInfo.isFutureValue()) {
-                executionResultFutures.add(completeValueInfo.getFieldValue());
+                executionResultFutures.add(completeValueInfo.getFieldValueFuture());
             } else {
                 executionResultFutures.addObject(completeValueInfo.getFieldValueMaterialised());
             }
@@ -124,28 +146,52 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
         executionStrategyCtx.onFieldValuesInfo(completeValueInfos);
         Object awaitedValues = executionResultFutures.awaitPolymorphic();
         if (awaitedValues instanceof CompletableFuture) {
-            BiConsumer<List<ExecutionResult>, Throwable> handleResultsConsumer = handleResults(executionContext, fieldNames, overallResult);
+            BiConsumer<List<Object>, Throwable> handleResultsConsumer = buildAsyncFieldMap(executionContext, fieldNames, overallResult);
 
-            CompletableFuture<List<ExecutionResult>> completedValuesCF = (CompletableFuture<List<ExecutionResult>>) awaitedValues;
+            CompletableFuture<List<Object>> completedValuesCF = (CompletableFuture<List<Object>>) awaitedValues;
             completedValuesCF.whenComplete(handleResultsConsumer);
-
-            overallResult.whenComplete(executionStrategyCtx::onCompleted);
+            //
+            // TODO - we need new instrumentation call here saying we entered a ES recursively
+            // TODO - something like beginObjectExecution() so we can complete it here
+            // overallResult.whenComplete(executionStrategyCtx::onCompleted);
             return overallResult;
         } else {
-            List<ExecutionResult> completedValues = (List<ExecutionResult>) awaitedValues;
-            ExecutionResult executionResult = handleSyncResults(executionContext, fieldNames, completedValues);
-            executionStrategyCtx.onCompleted(executionResult, null);
-            return executionResult;
+            List<Object> completedValues = (List<Object>) awaitedValues;
+            Map<String, Object> resultMap = buildFieldMap(fieldNames, completedValues);
+            //
+            // TODO - we need new instrumentation call here saying we entered a ES recursively
+            // TODO - something like beginObjectExecution() so we can complete it here
+            //executionStrategyCtx.onCompleted(resultMap, null);
+            return resultMap;
         }
     }
 
-    private ExecutionResult handleSyncResults(ExecutionContext executionContext, List<String> fieldNames, List<ExecutionResult> results) {
+    private Map<String, Object> buildFieldMap(List<String> fieldNames, List<Object> fieldResults) {
         Map<String, Object> resolvedValuesByField = Maps.newLinkedHashMapWithExpectedSize(fieldNames.size());
         int ix = 0;
-        for (ExecutionResult executionResult : results) {
+        for (Object fieldResult : fieldResults) {
             String fieldName = fieldNames.get(ix++);
-            resolvedValuesByField.put(fieldName, executionResult.getData());
+            resolvedValuesByField.put(fieldName, fieldResult);
         }
-        return new ExecutionResultImpl(resolvedValuesByField, executionContext.getErrors());
+        return resolvedValuesByField;
     }
+
+    private BiConsumer<List<Object>, Throwable> buildAsyncFieldMap(ExecutionContext executionContext,
+                                                                   List<String> fieldNames,
+                                                                   CompletableFuture<Map<String, Object>> overallResult) {
+        return (List<Object> fieldResults, Throwable exception) -> {
+            if (exception != null) {
+                overallResult.completeExceptionally(exception);
+                return;
+            }
+            Map<String, Object> resolvedValuesByField = Maps.newLinkedHashMapWithExpectedSize(fieldNames.size());
+            int ix = 0;
+            for (Object fieldResult : fieldResults) {
+                String fieldName = fieldNames.get(ix++);
+                resolvedValuesByField.put(fieldName, fieldResult);
+            }
+            overallResult.complete(resolvedValuesByField);
+        };
+    }
+
 }

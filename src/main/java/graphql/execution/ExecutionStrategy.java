@@ -48,6 +48,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
@@ -131,9 +132,8 @@ public abstract class ExecutionStrategy {
 
     protected final FieldCollector fieldCollector = new FieldCollector();
     protected final ExecutionStepInfoFactory executionStepInfoFactory = new ExecutionStepInfoFactory();
-    private final ResolveType resolvedType = new ResolveType();
-
     protected final DataFetcherExceptionHandler dataFetcherExceptionHandler;
+    private final ResolveType resolvedType = new ResolveType();
 
     /**
      * The default execution strategy constructor uses the {@link SimpleDataFetcherExceptionHandler}
@@ -153,6 +153,22 @@ public abstract class ExecutionStrategy {
         this.dataFetcherExceptionHandler = dataFetcherExceptionHandler;
     }
 
+    @Internal
+    public static String mkNameForPath(Field currentField) {
+        return mkNameForPath(Collections.singletonList(currentField));
+    }
+
+    @Internal
+    public static String mkNameForPath(MergedField mergedField) {
+        return mkNameForPath(mergedField.getFields());
+    }
+
+    @Internal
+    public static String mkNameForPath(List<Field> currentField) {
+        Field field = currentField.get(0);
+        return field.getResultKey();
+    }
+
     /**
      * This is the entry point to an execution strategy.  It will be passed the fields to execute and get values for.
      *
@@ -169,7 +185,7 @@ public abstract class ExecutionStrategy {
      * This is the re-entry point to an execution strategy.  If the engine needs to call bck to the execution strategy (say to complete an object)
      * then it will call this method.
      * <p>
-     * This method can return {@code CompletableFuture<ExecutionResult>} or a {@code ExecutionResult} depending on
+     * This method can return {@code CompletableFuture<Map<String, Object>>} or a {@code Map<String, Object>} depending on
      * whether the fields values are asynchronous or not
      *
      * @param executionContext contains the top level execution parameters
@@ -179,7 +195,7 @@ public abstract class ExecutionStrategy {
      *
      * @throws NonNullableFieldWasNullException in the future if a non-null field resolves to a null value
      */
-    public /* CompletableFuture<ExecutionResult> | ExecutionResult */ Object executePolymorphic(ExecutionContext executionContext, ExecutionStrategyParameters parameters) throws NonNullableFieldWasNullException {
+    public /* CompletableFuture<Map<String, Object>> | Map<String, Object> */ Object executePolymorphic(ExecutionContext executionContext, ExecutionStrategyParameters parameters) throws NonNullableFieldWasNullException {
         return execute(executionContext, parameters);
     }
 
@@ -486,7 +502,6 @@ public abstract class ExecutionStrategy {
         return fieldValueInfo;
     }
 
-
     /**
      * Called to complete a value for a field based on the type of the field.
      * <p>
@@ -510,7 +525,7 @@ public abstract class ExecutionStrategy {
         Object fieldValue;
 
         if (result == null) {
-            return getFieldValueInfoForNull(executionContext, parameters);
+            return getFieldValueInfoForNull(parameters);
         } else if (isList(fieldType)) {
             return completeValueForList(executionContext, parameters, result);
         } else if (isScalar(fieldType)) {
@@ -532,7 +547,7 @@ public abstract class ExecutionStrategy {
             // consider the result to be null and add the error on the context
             handleUnresolvedTypeProblem(executionContext, parameters, ex);
             // complete field as null, validating it is nullable
-            return getFieldValueInfoForNull(executionContext, parameters);
+            return getFieldValueInfoForNull(parameters);
         }
         return FieldValueInfo.newFieldValueInfo(OBJECT).fieldValue(fieldValue).build();
     }
@@ -547,23 +562,24 @@ public abstract class ExecutionStrategy {
     /**
      * Called to complete a null value.
      *
-     * @param executionContext contains the top level execution parameters
-     * @param parameters       contains the parameters holding the fields to be executed and source object
+     * @param parameters contains the parameters holding the fields to be executed and source object
      *
      * @return a {@link FieldValueInfo}
      *
      * @throws NonNullableFieldWasNullException if a non null field resolves to a null value
      */
-    private FieldValueInfo getFieldValueInfoForNull(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
-        CompletableFuture<ExecutionResult> fieldValue = completeValueForNull(executionContext, parameters);
+    private FieldValueInfo getFieldValueInfoForNull(ExecutionStrategyParameters parameters) {
+        Object fieldValue = completeValueForNull(parameters);
         return FieldValueInfo.newFieldValueInfo(NULL).fieldValue(fieldValue).build();
     }
 
-    protected CompletableFuture<ExecutionResult> completeValueForNull(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
-        return Async.tryCatch(() -> {
-            Object nullValue = parameters.getNonNullFieldValidator().validate(parameters.getPath(), null);
-            return completedFuture(new ExecutionResultImpl(nullValue, executionContext.getErrors()));
-        });
+    protected /* CompletableFuture<Object> | Object */ Object completeValueForNull(ExecutionStrategyParameters parameters) {
+        try {
+            parameters.getNonNullFieldValidator().validate(parameters.getPath(), null);
+            return null;
+        } catch (NonNullableFieldWasNullException e) {
+            return Async.exceptionallyCompletedFuture(e);
+        }
     }
 
     /**
@@ -633,53 +649,70 @@ public abstract class ExecutionStrategy {
             index++;
         }
 
-        Async.CombinedBuilder<ExecutionResult> futures = Async.ofExpectedSize(fieldValueInfos.size());
+        Async.CombinedBuilder<Object> futures = Async.ofExpectedSize(fieldValueInfos.size());
         for (FieldValueInfo fieldValueInfo : fieldValueInfos) {
             if (fieldValueInfo.isFutureValue()) {
-                futures.add(fieldValueInfo.getFieldValue());
+                futures.add(fieldValueInfo.getFieldValueFuture());
             } else {
                 futures.addObject(fieldValueInfo.getFieldValueMaterialised());
             }
         }
+        CompletableFuture<Object> overallResult = new CompletableFuture<>();
+
         Object fieldValueResult;
         Object listOfResults = futures.awaitPolymorphic();
         if (listOfResults instanceof CompletableFuture) {
             @SuppressWarnings("unchecked")
-            CompletableFuture<List<ExecutionResult>> resultsFuture = (CompletableFuture<List<ExecutionResult>>) listOfResults;
-
-            CompletableFuture<ExecutionResult> overallResult = new CompletableFuture<>();
-            completeListCtx.onDispatched(overallResult);
+            CompletableFuture<List<Object>> resultsFuture = (CompletableFuture<List<Object>>) listOfResults;
+            //
+            // TODO - we need new instrumentation call here saying we entered a ES recursively
+            // TODO - something like beginList() so we can complete it here
+            //completeListCtx.onDispatched(overallResult);
             resultsFuture.whenComplete((results, exception) -> {
                 if (exception != null) {
-                    ExecutionResult executionResult = handleNonNullException(executionContext, overallResult, exception);
-                    completeListCtx.onCompleted(executionResult, exception);
+                    Optional<Throwable> throwableOpt = handleNonNullExceptionForList(exception);
+                    // if there was an acceptable exception
+                    if (throwableOpt.isPresent()) {
+                        overallResult.completeExceptionally(throwableOpt.get());
+                        completeListCtx.onCompleted(null, throwableOpt.get());
+                    } else {
+                        //
+                        // the exception was a non-null BUT we can just return null since it's allowed to be nullable
+                        overallResult.complete(null);
+                        //
+                        // TODO - we need new instrumentation call here saying we entered a ES recursively
+                        // TODO - something like beginList() so we can complete it here
+                        //completeListCtx.onCompleted(null, null);
+                    }
                     return;
                 }
                 List<Object> completedResults = new ArrayList<>(results.size());
-                for (ExecutionResult completedValue : results) {
-                    completedResults.add(completedValue.getData());
-                }
-                ExecutionResultImpl executionResult = new ExecutionResultImpl(completedResults, executionContext.getErrors());
-                overallResult.complete(executionResult);
+                completedResults.addAll(results);
+                overallResult.complete(completedResults);
             });
-            overallResult.whenComplete(completeListCtx::onCompleted);
+            //
+            // TODO - we need new instrumentation call here saying we entered a ES recursively
+            // TODO - something like beginList() so we can complete it here
+            // overallResult.whenComplete(completeListCtx::onCompleted);
             fieldValueResult = overallResult;
         } else {
-            CompletableFuture<ExecutionResult> overallResult = new CompletableFuture<>();
-            // TODO - fix this since we dont want a CF here
-            completeListCtx.onDispatched(overallResult);
-
             @SuppressWarnings("unchecked")
-            List<ExecutionResult> results = (List<ExecutionResult>) listOfResults;
-            List<Object> completedResults = new ArrayList<>(results.size());
-            for (ExecutionResult completedValue : results) {
-                completedResults.add(completedValue.getData());
-            }
-            ExecutionResultImpl executionResult = new ExecutionResultImpl(completedResults, executionContext.getErrors());
+            List<Object> results = (List<Object>) listOfResults;
+            //
+            // TODO - we need new instrumentation call here saying we entered a ES recursively
+            // TODO - something like beginList() so we can complete it here
+            //completeListCtx.onDispatched(overallResult);
 
-            overallResult.complete(executionResult); // TODO - this goes if we fix InstrumentationContext
-            completeListCtx.onCompleted(executionResult, null);
-            fieldValueResult = executionResult;
+            List<Object> completedResults = new ArrayList<>(results.size());
+            completedResults.addAll(results);
+
+            overallResult.complete(completedResults);
+            //
+            // TODO - we need new instrumentation call here saying we entered a ES recursively
+            // TODO - something like beginList() so we can complete it here
+            //overallResult.whenComplete(completeListCtx::onCompleted);
+
+            fieldValueResult = completedResults;
         }
 
         return FieldValueInfo.newFieldValueInfo(LIST)
@@ -687,6 +720,24 @@ public abstract class ExecutionStrategy {
                 .fieldValueInfos(fieldValueInfos)
                 .build();
     }
+
+    private Optional<Throwable> handleNonNullExceptionForList(Throwable e) {
+        Throwable underlyingException = e;
+        if (e instanceof CompletionException) {
+            underlyingException = e.getCause();
+        }
+        if (underlyingException instanceof NonNullableFieldWasNullException) {
+            NonNullableFieldWasNullException nonNullableFieldWasNullException = (NonNullableFieldWasNullException) underlyingException;
+            ExecutionStepInfo executionStepInfo = nonNullableFieldWasNullException.getExecutionStepInfo();
+            if (executionStepInfo.hasParent() && executionStepInfo.getParent().isNonNullType()) {
+                return Optional.of(new NonNullableFieldWasNullException(nonNullableFieldWasNullException));
+            }
+            return Optional.empty();
+        } else {
+            return Optional.of(underlyingException);
+        }
+    }
+
 
     /**
      * Called to turn an object into a scalar value according to the {@link GraphQLScalarType} by asking that scalar type to coerce the object
@@ -699,7 +750,7 @@ public abstract class ExecutionStrategy {
      *
      * @return a promise to an {@link ExecutionResult}
      */
-    protected /* CompletableFuture<ExecutionResult> | ExecutionResult */ Object completeValueForScalar(ExecutionContext executionContext, ExecutionStrategyParameters parameters, GraphQLScalarType scalarType, Object result) {
+    protected /* CompletableFuture<Object> | Object */ Object completeValueForScalar(ExecutionContext executionContext, ExecutionStrategyParameters parameters, GraphQLScalarType scalarType, Object result) {
         Object serialized;
         try {
             serialized = scalarType.getCoercing().serialize(result, executionContext.getGraphQLContext(), executionContext.getLocale());
@@ -712,7 +763,7 @@ public abstract class ExecutionStrategy {
         } catch (NonNullableFieldWasNullException e) {
             return exceptionallyCompletedFuture(e);
         }
-        return new ExecutionResultImpl(serialized, executionContext.getErrors());
+        return serialized;
     }
 
     /**
@@ -725,7 +776,7 @@ public abstract class ExecutionStrategy {
      *
      * @return a promise to an {@link ExecutionResult}
      */
-    protected /* CompletableFuture<ExecutionResult> | ExecutionResult */ Object completeValueForEnum(ExecutionContext executionContext, ExecutionStrategyParameters parameters, GraphQLEnumType enumType, Object result) {
+    protected /* CompletableFuture<Object> | Object */ Object completeValueForEnum(ExecutionContext executionContext, ExecutionStrategyParameters parameters, GraphQLEnumType enumType, Object result) {
         Object serialized;
         try {
             serialized = enumType.serialize(result, executionContext.getGraphQLContext(), executionContext.getLocale());
@@ -737,7 +788,7 @@ public abstract class ExecutionStrategy {
         } catch (NonNullableFieldWasNullException e) {
             return exceptionallyCompletedFuture(e);
         }
-        return new ExecutionResultImpl(serialized, executionContext.getErrors());
+        return serialized;
     }
 
     /**
@@ -750,7 +801,7 @@ public abstract class ExecutionStrategy {
      *
      * @return a promise to an {@link ExecutionResult}
      */
-    protected /* CompletableFuture<ExecutionResult> | ExecutionResult */ Object completeValueForObject(ExecutionContext executionContext, ExecutionStrategyParameters parameters, GraphQLObjectType resolvedObjectType, Object result) {
+    protected /* CompletableFuture<Map<String, Object>> | Map<String, Object> */ Object completeValueForObject(ExecutionContext executionContext, ExecutionStrategyParameters parameters, GraphQLObjectType resolvedObjectType, Object result) {
         ExecutionStepInfo executionStepInfo = parameters.getExecutionStepInfo();
 
         FieldCollectorParameters collectorParameters = newParameters()
@@ -794,7 +845,6 @@ public abstract class ExecutionStrategy {
         return resolvedType.resolveType(executionContext, parameters.getField(), parameters.getSource(), parameters.getExecutionStepInfo(), fieldType, parameters.getLocalContext());
     }
 
-
     protected Iterable<Object> toIterable(ExecutionContext context, ExecutionStrategyParameters parameters, Object result) {
         if (FpKit.isIterable(result)) {
             return FpKit.toIterable(result);
@@ -804,13 +854,11 @@ public abstract class ExecutionStrategy {
         return null;
     }
 
-
     private void handleTypeMismatchProblem(ExecutionContext context, ExecutionStrategyParameters parameters, Object result) {
         TypeMismatchError error = new TypeMismatchError(parameters.getPath(), parameters.getExecutionStepInfo().getUnwrappedNonNullType());
         logNotSafe.warn("{} got {}", error.getMessage(), result.getClass());
         context.addError(error);
     }
-
 
     /**
      * Called to discover the field definition give the current parameters and the AST {@link Field}
@@ -935,23 +983,5 @@ public abstract class ExecutionStrategy {
                 .parentInfo(parentStepInfo)
                 .arguments(argumentValues)
                 .build();
-    }
-
-
-    @Internal
-    public static String mkNameForPath(Field currentField) {
-        return mkNameForPath(Collections.singletonList(currentField));
-    }
-
-    @Internal
-    public static String mkNameForPath(MergedField mergedField) {
-        return mkNameForPath(mergedField.getFields());
-    }
-
-
-    @Internal
-    public static String mkNameForPath(List<Field> currentField) {
-        Field field = currentField.get(0);
-        return field.getResultKey();
     }
 }

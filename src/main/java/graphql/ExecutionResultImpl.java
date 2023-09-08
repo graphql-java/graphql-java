@@ -53,6 +53,10 @@ public class ExecutionResultImpl implements ExecutionResult {
         this.extensions = extensions;
     }
 
+    public static Builder newExecutionResult() {
+        return new Builder();
+    }
+
     public boolean isDataPresent() {
         return dataPresent;
     }
@@ -103,8 +107,11 @@ public class ExecutionResultImpl implements ExecutionResult {
                 '}';
     }
 
-    public static Builder newExecutionResult() {
-        return new Builder();
+    public static ExecutionResult asExecutionResult(Object dataOrER) {
+        if (dataOrER instanceof ExecutionResult) {
+            return (ExecutionResult) dataOrER;
+        }
+        return newExecutionResult().data(dataOrER).build();
     }
 
     public static class Builder implements ExecutionResult.Builder<Builder> {
