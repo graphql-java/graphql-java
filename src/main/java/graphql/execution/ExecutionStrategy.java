@@ -153,21 +153,6 @@ public abstract class ExecutionStrategy {
         this.dataFetcherExceptionHandler = dataFetcherExceptionHandler;
     }
 
-    @Internal
-    public static String mkNameForPath(Field currentField) {
-        return mkNameForPath(Collections.singletonList(currentField));
-    }
-
-    @Internal
-    public static String mkNameForPath(MergedField mergedField) {
-        return mkNameForPath(mergedField.getFields());
-    }
-
-    @Internal
-    public static String mkNameForPath(List<Field> currentField) {
-        Field field = currentField.get(0);
-        return field.getResultKey();
-    }
 
     /**
      * This is the entry point to an execution strategy.  It will be passed the fields to execute and get values for.
@@ -983,5 +968,21 @@ public abstract class ExecutionStrategy {
                 .parentInfo(parentStepInfo)
                 .arguments(argumentValues)
                 .build();
+    }
+
+    @Internal
+    public static String mkNameForPath(Field currentField) {
+        return mkNameForPath(Collections.singletonList(currentField));
+    }
+
+    @Internal
+    public static String mkNameForPath(MergedField mergedField) {
+        return mkNameForPath(mergedField.getFields());
+    }
+
+    @Internal
+    public static String mkNameForPath(List<Field> currentField) {
+        Field field = currentField.get(0);
+        return field.getResultKey();
     }
 }
