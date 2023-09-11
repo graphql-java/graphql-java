@@ -53,7 +53,7 @@ class ChainedInstrumentationStateTest extends Specification {
                 "end:fetch-hero",
                 "start:complete-hero",
 
-                "start:execution-strategy",
+                "start:execute-object",
 
                 "start:field-id",
                 "start:fetch-id",
@@ -62,7 +62,7 @@ class ChainedInstrumentationStateTest extends Specification {
                 "end:complete-id",
                 "end:field-id",
 
-                "end:execution-strategy",
+                "end:execute-object",
 
                 "end:complete-hero",
                 "end:field-hero",
@@ -139,7 +139,7 @@ class ChainedInstrumentationStateTest extends Specification {
                 "end:fetch-hero",
                 "start:complete-hero",
 
-                "start:execution-strategy",
+                "start:execute-object",
 
                 "start:field-id",
                 "start:fetch-id",
@@ -148,7 +148,7 @@ class ChainedInstrumentationStateTest extends Specification {
                 "end:complete-id",
                 "end:field-id",
 
-                "end:execution-strategy",
+                "end:execute-object",
 
                 "end:complete-hero",
                 "end:field-hero",
@@ -179,7 +179,7 @@ class ChainedInstrumentationStateTest extends Specification {
                 "end:fetch-hero",
                 "start:complete-hero",
 
-                "start:execution-strategy",
+                "start:execute-object",
 
                 "start:field-id",
                 "start:fetch-id",
@@ -188,7 +188,7 @@ class ChainedInstrumentationStateTest extends Specification {
                 "end:complete-id",
                 "end:field-id",
 
-                "end:execution-strategy",
+                "end:execute-object",
 
                 "end:complete-hero",
                 "end:field-hero",

@@ -8,6 +8,7 @@ import graphql.execution.ResultPath;
 import graphql.execution.instrumentation.ExecutionStrategyInstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationState;
+import graphql.execution.instrumentation.ExecuteObjectInstrumentationContext;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters;
 import org.dataloader.DataLoaderRegistry;
@@ -15,6 +16,7 @@ import org.slf4j.Logger;
 
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
@@ -138,6 +140,47 @@ public class FieldLevelTrackingApproach {
             @Override
             public void onCompleted(ExecutionResult result, Throwable t) {
 
+            }
+
+            @Override
+            public void onFieldValuesInfo(List<FieldValueInfo> fieldValueInfoList) {
+                boolean dispatchNeeded;
+                synchronized (callStack) {
+                    dispatchNeeded = handleOnFieldValuesInfo(fieldValueInfoList, callStack, curLevel);
+                }
+                if (dispatchNeeded) {
+                    dispatch();
+                }
+            }
+
+            @Override
+            public void onFieldValuesException() {
+                synchronized (callStack) {
+                    callStack.increaseHappenedOnFieldValueCalls(curLevel);
+                }
+            }
+        };
+    }
+
+    ExecuteObjectInstrumentationContext beginObjectResolution(InstrumentationExecutionStrategyParameters parameters, InstrumentationState rawState) {
+        CallStack callStack = (CallStack) rawState;
+        ResultPath path = parameters.getExecutionStrategyParameters().getPath();
+        int parentLevel = path.getLevel();
+        int curLevel = parentLevel + 1;
+        int fieldCount = parameters.getExecutionStrategyParameters().getFields().size();
+        synchronized (callStack) {
+            callStack.increaseExpectedFetchCount(curLevel, fieldCount);
+            callStack.increaseHappenedStrategyCalls(curLevel);
+        }
+
+        return new ExecuteObjectInstrumentationContext() {
+
+            @Override
+            public void onDispatched(CompletableFuture<Map<String, Object>> result) {
+            }
+
+            @Override
+            public void onCompleted(Map<String, Object> result, Throwable t) {
             }
 
             @Override

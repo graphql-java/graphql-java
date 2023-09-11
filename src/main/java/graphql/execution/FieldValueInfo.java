@@ -1,6 +1,8 @@
 package graphql.execution;
 
+import graphql.DeprecatedAt;
 import graphql.ExecutionResult;
+import graphql.ExecutionResultImpl;
 import graphql.PublicApi;
 
 import java.util.ArrayList;
@@ -22,10 +24,10 @@ public class FieldValueInfo {
     }
 
     private final CompleteValueType completeValueType;
-    private final CompletableFuture<ExecutionResult> fieldValue;
+    private final CompletableFuture<Object> fieldValue;
     private final List<FieldValueInfo> fieldValueInfos;
 
-    private FieldValueInfo(CompleteValueType completeValueType, CompletableFuture<ExecutionResult> fieldValue, List<FieldValueInfo> fieldValueInfos) {
+    private FieldValueInfo(CompleteValueType completeValueType, CompletableFuture<Object> fieldValue, List<FieldValueInfo> fieldValueInfos) {
         assertNotNull(fieldValueInfos, () -> "fieldValueInfos can't be null");
         this.completeValueType = completeValueType;
         this.fieldValue = fieldValue;
@@ -36,7 +38,12 @@ public class FieldValueInfo {
         return completeValueType;
     }
 
+    @Deprecated
+    @DeprecatedAt("2023-09-11")
     public CompletableFuture<ExecutionResult> getFieldValue() {
+        return fieldValue.thenApply(fv -> ExecutionResultImpl.newExecutionResult().data(fv).build());
+    }
+    public CompletableFuture<Object> getFieldValueFuture() {
         return fieldValue;
     }
 
@@ -60,7 +67,7 @@ public class FieldValueInfo {
     @SuppressWarnings("unused")
     public static class Builder {
         private CompleteValueType completeValueType;
-        private CompletableFuture<ExecutionResult> executionResultFuture;
+        private CompletableFuture<Object> fieldValueFuture;
         private List<FieldValueInfo> listInfos = new ArrayList<>();
 
         public Builder(CompleteValueType completeValueType) {
@@ -72,8 +79,8 @@ public class FieldValueInfo {
             return this;
         }
 
-        public Builder fieldValue(CompletableFuture<ExecutionResult> executionResultFuture) {
-            this.executionResultFuture = executionResultFuture;
+        public Builder fieldValue(CompletableFuture<Object> executionResultFuture) {
+            this.fieldValueFuture = executionResultFuture;
             return this;
         }
 
@@ -84,7 +91,7 @@ public class FieldValueInfo {
         }
 
         public FieldValueInfo build() {
-            return new FieldValueInfo(completeValueType, executionResultFuture, listInfos);
+            return new FieldValueInfo(completeValueType, fieldValueFuture, listInfos);
         }
     }
 }

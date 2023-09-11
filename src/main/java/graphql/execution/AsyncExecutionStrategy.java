@@ -42,35 +42,24 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
 
         ExecutionStrategyInstrumentationContext executionStrategyCtx = ExecutionStrategyInstrumentationContext.nonNullCtx(instrumentation.beginExecutionStrategy(instrumentationParameters, executionContext.getInstrumentationState()));
 
-        MergedSelectionSet fields = parameters.getFields();
-        List<String> fieldNames = fields.getKeys();
-        Async.CombinedBuilder<FieldValueInfo> futures = Async.ofExpectedSize(fields.size());
-        for (String fieldName : fieldNames) {
-            MergedField currentField = fields.getSubField(fieldName);
-
-            ResultPath fieldPath = parameters.getPath().segment(mkNameForPath(currentField));
-            ExecutionStrategyParameters newParameters = parameters
-                    .transform(builder -> builder.field(currentField).path(fieldPath).parent(parameters));
-
-            CompletableFuture<FieldValueInfo> future = resolveFieldWithInfo(executionContext, newParameters);
-            futures.add(future);
-        }
+        List<String> fieldNames = parameters.getFields().getKeys();
+        Async.CombinedBuilder<FieldValueInfo> futures = getAsyncFieldValueInfo(executionContext, parameters);
         CompletableFuture<ExecutionResult> overallResult = new CompletableFuture<>();
         executionStrategyCtx.onDispatched(overallResult);
 
         futures.await().whenComplete((completeValueInfos, throwable) -> {
-            BiConsumer<List<ExecutionResult>, Throwable> handleResultsConsumer = handleResults(executionContext, fieldNames, overallResult);
+            BiConsumer<List<Object>, Throwable> handleResultsConsumer = handleResults(executionContext, fieldNames, overallResult);
             if (throwable != null) {
                 handleResultsConsumer.accept(null, throwable.getCause());
                 return;
             }
 
-            Async.CombinedBuilder<ExecutionResult> executionResultFutures = Async.ofExpectedSize(completeValueInfos.size());
+            Async.CombinedBuilder<Object> fieldValuesFutures = Async.ofExpectedSize(completeValueInfos.size());
             for (FieldValueInfo completeValueInfo : completeValueInfos) {
-                executionResultFutures.add(completeValueInfo.getFieldValue());
+                fieldValuesFutures.add(completeValueInfo.getFieldValueFuture());
             }
             executionStrategyCtx.onFieldValuesInfo(completeValueInfos);
-            executionResultFutures.await().whenComplete(handleResultsConsumer);
+            fieldValuesFutures.await().whenComplete(handleResultsConsumer);
         }).exceptionally((ex) -> {
             // if there are any issues with combining/handling the field results,
             // complete the future at all costs and bubble up any thrown exception so
