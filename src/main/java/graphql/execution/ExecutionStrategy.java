@@ -191,7 +191,7 @@ public abstract class ExecutionStrategy {
      * @param executionContext contains the top level execution parameters
      * @param parameters       contains the parameters holding the fields to be executed and source object
      *
-     * @return a promise to an {@link Map<String,Object>}
+     * @return a promise to a map of object field values
      *
      * @throws NonNullableFieldWasNullException in the future if a non-null field resolves to a null value
      */

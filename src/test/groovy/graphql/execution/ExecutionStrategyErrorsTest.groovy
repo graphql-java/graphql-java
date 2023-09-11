@@ -70,11 +70,11 @@ class ExecutionStrategyErrorsTest extends Specification {
 
         Instrumentation instrumentation = new SimplePerformantInstrumentation() {
             @Override
-            InstrumentationContext<ExecutionResult> beginFieldListComplete(InstrumentationFieldCompleteParameters parameters, InstrumentationState state) {
+            InstrumentationContext<Object> beginFieldListCompletion(InstrumentationFieldCompleteParameters parameters, InstrumentationState state) {
                 if (parameters.field.name == "diceyListCallAbort") {
                     throw new AbortExecutionException("No lists for you")
                 }
-                return super.beginFieldListComplete(parameters, state)
+                return super.beginFieldListCompletion(parameters, state)
             }
         }
         def graphQL = GraphQL.newGraphQL(schema).instrumentation(instrumentation).build()
