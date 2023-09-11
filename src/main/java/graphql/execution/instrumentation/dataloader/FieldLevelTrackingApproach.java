@@ -122,14 +122,8 @@ public class FieldLevelTrackingApproach {
 
     ExecutionStrategyInstrumentationContext beginExecutionStrategy(InstrumentationExecutionStrategyParameters parameters, InstrumentationState rawState) {
         CallStack callStack = (CallStack) rawState;
-        ResultPath path = parameters.getExecutionStrategyParameters().getPath();
-        int parentLevel = path.getLevel();
-        int curLevel = parentLevel + 1;
-        int fieldCount = parameters.getExecutionStrategyParameters().getFields().size();
-        synchronized (callStack) {
-            callStack.increaseExpectedFetchCount(curLevel, fieldCount);
-            callStack.increaseHappenedStrategyCalls(curLevel);
-        }
+        int curLevel = getCurrentLevel(parameters);
+        increaseCallCounts(callStack, curLevel, parameters);
 
         return new ExecutionStrategyInstrumentationContext() {
             @Override
@@ -144,13 +138,7 @@ public class FieldLevelTrackingApproach {
 
             @Override
             public void onFieldValuesInfo(List<FieldValueInfo> fieldValueInfoList) {
-                boolean dispatchNeeded;
-                synchronized (callStack) {
-                    dispatchNeeded = handleOnFieldValuesInfo(fieldValueInfoList, callStack, curLevel);
-                }
-                if (dispatchNeeded) {
-                    dispatch();
-                }
+                onFieldValuesInfoDispatchIfNeeded(callStack, fieldValueInfoList, curLevel);
             }
 
             @Override
@@ -164,14 +152,8 @@ public class FieldLevelTrackingApproach {
 
     ExecuteObjectInstrumentationContext beginObjectResolution(InstrumentationExecutionStrategyParameters parameters, InstrumentationState rawState) {
         CallStack callStack = (CallStack) rawState;
-        ResultPath path = parameters.getExecutionStrategyParameters().getPath();
-        int parentLevel = path.getLevel();
-        int curLevel = parentLevel + 1;
-        int fieldCount = parameters.getExecutionStrategyParameters().getFields().size();
-        synchronized (callStack) {
-            callStack.increaseExpectedFetchCount(curLevel, fieldCount);
-            callStack.increaseHappenedStrategyCalls(curLevel);
-        }
+        int curLevel = getCurrentLevel(parameters);
+        increaseCallCounts(callStack, curLevel, parameters);
 
         return new ExecuteObjectInstrumentationContext() {
 
@@ -185,13 +167,7 @@ public class FieldLevelTrackingApproach {
 
             @Override
             public void onFieldValuesInfo(List<FieldValueInfo> fieldValueInfoList) {
-                boolean dispatchNeeded;
-                synchronized (callStack) {
-                    dispatchNeeded = handleOnFieldValuesInfo(fieldValueInfoList, callStack, curLevel);
-                }
-                if (dispatchNeeded) {
-                    dispatch();
-                }
+                onFieldValuesInfoDispatchIfNeeded(callStack, fieldValueInfoList, curLevel);
             }
 
             @Override
@@ -201,6 +177,31 @@ public class FieldLevelTrackingApproach {
                 }
             }
         };
+    }
+
+    private int getCurrentLevel(InstrumentationExecutionStrategyParameters parameters) {
+        ResultPath path = parameters.getExecutionStrategyParameters().getPath();
+        return path.getLevel() + 1;
+    }
+
+    @SuppressWarnings("SynchronizationOnLocalVariableOrMethodParameter")
+    private static void increaseCallCounts(CallStack callStack, int curLevel, InstrumentationExecutionStrategyParameters parameters) {
+        int fieldCount = parameters.getExecutionStrategyParameters().getFields().size();
+        synchronized (callStack) {
+            callStack.increaseExpectedFetchCount(curLevel, fieldCount);
+            callStack.increaseHappenedStrategyCalls(curLevel);
+        }
+    }
+
+    @SuppressWarnings("SynchronizationOnLocalVariableOrMethodParameter")
+    private void onFieldValuesInfoDispatchIfNeeded(CallStack callStack, List<FieldValueInfo> fieldValueInfoList, int curLevel) {
+        boolean dispatchNeeded;
+        synchronized (callStack) {
+            dispatchNeeded = handleOnFieldValuesInfo(fieldValueInfoList, callStack, curLevel);
+        }
+        if (dispatchNeeded) {
+            dispatch();
+        }
     }
 
     //
