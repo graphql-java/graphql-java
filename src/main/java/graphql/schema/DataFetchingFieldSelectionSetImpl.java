@@ -264,7 +264,11 @@ public class DataFetchingFieldSelectionSetImpl implements DataFetchingFieldSelec
     }
 
     private static String mkFieldGlobName(String fieldPrefix, String fieldName) {
-        return (!fieldPrefix.isEmpty() ? fieldPrefix + SEP : "") + fieldName;
+        if (fieldPrefix.isEmpty()) {
+            return fieldName;
+        }
+
+        return fieldPrefix.concat(SEP).concat(fieldName);
     }
 
     private static PathMatcher globMatcher(String fieldGlobPattern) {
