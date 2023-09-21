@@ -374,7 +374,7 @@ class OverlappingFieldsCanBeMergedTest extends Specification {
         errorCollector.getErrors()[0].locations == [new SourceLocation(3, 13), new SourceLocation(4, 13)]
     }
 
-    def 'issue 3332  -Alias masking direct field access non fragment with cats'() {
+    def 'issue 3332  -Alias masking direct field access non fragment with non null parent type'() {
         given:
         def query = """
         query GetCat {
@@ -386,7 +386,7 @@ class OverlappingFieldsCanBeMergedTest extends Specification {
          """
         def schema = schema('''
         type Query {    
-            cat: Cat!
+            cat: Cat! # non null parent type
         }
         type Cat {
             foo1: String!
@@ -398,8 +398,8 @@ class OverlappingFieldsCanBeMergedTest extends Specification {
 
         then:
         errorCollector.getErrors().size() == 1
-        errorCollector.getErrors()[0].message == "Validation error (FieldsConflict@[cat]) : 'name' : 'foo1' and 'foo2' are different fields"
-        errorCollector.getErrors()[0].locations == [new SourceLocation(3, 13), new SourceLocation(4, 13)]
+        errorCollector.getErrors()[0].message == "Validation error (FieldsConflict@[cat]) : 'foo1' : 'foo1' and 'foo2' are different fields"
+        errorCollector.getErrors()[0].locations == [new SourceLocation(4, 17), new SourceLocation(5, 17)]
     }
 
     def 'conflicting args'() {
