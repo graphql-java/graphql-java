@@ -21,16 +21,23 @@ java {
 }
 
 def getDevelopmentVersion() {
+    def dateTime = new SimpleDateFormat('yyyy-MM-dd\'T\'HH-mm-ss').format(new Date())
     def gitCheckOutput = new StringBuilder()
     def gitCheckError = new StringBuilder()
     def gitCheck = ["git", "rev-parse", "--is-inside-work-tree"].execute()
     gitCheck.waitForProcessOutput(gitCheckOutput, gitCheckError)
     def isGit = gitCheckOutput.toString().trim()
     if (isGit != "true") {
-        def version = "0.0.0-" + new SimpleDateFormat('yyyy-MM-dd\'T\'HH-mm-ss').format(new Date()) + "-no-git"
+        def version = "0.0.0-" + dateTime + "-no-git"
         println "created development version: $version"
         return version
     }
+
+    def gitStatusOutput = new StringBuilder()
+    def gitStatusError = new StringBuilder()
+    def gitStatus = ["git", "-C", projectDir.toString(), "status", "--porcelain"].execute()
+    gitStatus.waitForProcessOutput(gitStatusOutput, gitStatusError)
+    def gitIsDirty = !gitStatusOutput.toString().trim().isEmpty()
 
     def gitHashOutput = new StringBuilder()
     def gitHashError = new StringBuilder()
@@ -41,7 +48,7 @@ def getDevelopmentVersion() {
         println "git hash is empty: error: ${error.toString()}"
         throw new IllegalStateException("git hash could not be determined")
     }
-    def version = "0.0.0-" + new SimpleDateFormat('yyyy-MM-dd\'T\'HH-mm-ss').format(new Date()) + "-" + gitHash
+    def version = "0.0.0-" + (gitIsDirty ? "${dateTime}-" : "") + gitHash
     println "created development version: $version"
     version
 }
