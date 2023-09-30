@@ -2,8 +2,10 @@ package graphql.language;
 
 
 import graphql.PublicApi;
+import graphql.schema.GraphQLModifiedType;
 import graphql.schema.GraphQLNamedSchemaElement;
 import graphql.schema.GraphQLSchemaElement;
+import graphql.schema.GraphQLTypeUtil;
 import graphql.schema.idl.SchemaGenerator;
 
 import java.io.Serializable;
@@ -90,6 +92,9 @@ public class SourceLocation implements Serializable {
      * @return the source location if available or null if it's not.
      */
     public static SourceLocation getLocation(GraphQLSchemaElement schemaElement) {
+        if (schemaElement instanceof GraphQLModifiedType) {
+            schemaElement = GraphQLTypeUtil.unwrapAllAs((GraphQLModifiedType) schemaElement);
+        }
         if (schemaElement instanceof GraphQLNamedSchemaElement) {
             Node<?> node = ((GraphQLNamedSchemaElement) schemaElement).getDefinition();
             return node != null ? node.getSourceLocation() : null;

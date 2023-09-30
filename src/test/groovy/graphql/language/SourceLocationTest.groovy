@@ -13,7 +13,7 @@ class SourceLocationTest extends Specification {
     def "can get source location"() {
         def sdl = """
             type Query {
-                a : A
+                a : A!
             }
             
             type A {
@@ -46,6 +46,16 @@ class SourceLocationTest extends Specification {
         location.sourceName == "sourceName"
         location.line == 3
         location.column == 17
+
+        when:
+        schemaElement = schema.getFieldDefinition(coordinates("Query", "a")).getType()
+        // unwrapped
+        location = SourceLocation.getLocation(schemaElement)
+
+        then:
+        location.sourceName == "sourceName"
+        location.line == 6
+        location.column == 13
 
         when:
         schemaElement = schema.getType("A")
