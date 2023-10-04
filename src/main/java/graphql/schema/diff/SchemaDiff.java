@@ -1,5 +1,7 @@
 package graphql.schema.diff;
 
+import graphql.Assert;
+import graphql.DeprecatedAt;
 import graphql.PublicSpi;
 import graphql.introspection.IntrospectionResultToSchema;
 import graphql.language.Argument;
@@ -119,26 +121,42 @@ public class SchemaDiff {
      *
      * @return the number of API breaking changes
      */
+    @Deprecated
+    @DeprecatedAt("2023-10-04")
     @SuppressWarnings("unchecked")
     public int diffSchema(DiffSet diffSet, DifferenceReporter reporter) {
-
         CountingReporter countingReporter = new CountingReporter(reporter);
-        diffSchemaImpl(diffSet, countingReporter);
+        Document oldDoc = new IntrospectionResultToSchema().createSchemaDefinition(diffSet.getOld());
+        Document newDoc = new IntrospectionResultToSchema().createSchemaDefinition(diffSet.getNew());
+        diffSchemaImpl(oldDoc, newDoc, countingReporter);
         return countingReporter.breakingCount;
     }
 
-    private void diffSchemaImpl(DiffSet diffSet, DifferenceReporter reporter) {
-        Map<String, Object> oldApi = diffSet.getOld();
-        Map<String, Object> newApi = diffSet.getNew();
+    /**
+     * This will perform a difference on the two schemas.  The reporter callback
+     * interface will be called when differences are encountered.
+     *
+     * @param schemaDiffSet  the two schemas to compare for difference
+     * @param reporter the place to report difference events to
+     *
+     * @return the number of API breaking changes
+     */
+    @SuppressWarnings("unchecked")
+    public int diffSchema(SchemaDiffSet schemaDiffSet, DifferenceReporter reporter) {
+        if (options.enforceDirectives) {
+            Assert.assertTrue(schemaDiffSet.supportsEnforcingDirectives(), () ->
+                    "The provided schema diff set implementation does not supporting enforcing directives during schema diff.");
+        }
 
-        Document oldDoc = new IntrospectionResultToSchema().createSchemaDefinition(oldApi);
-        Document newDoc = new IntrospectionResultToSchema().createSchemaDefinition(newApi);
+        CountingReporter countingReporter = new CountingReporter(reporter);
+        diffSchemaImpl(schemaDiffSet.getOldSchemaDefinitionDoc(), schemaDiffSet.getNewSchemaDefinitionDoc(), countingReporter);
+        return countingReporter.breakingCount;
+    }
 
+    private void diffSchemaImpl(Document oldDoc, Document newDoc, DifferenceReporter reporter) {
         DiffCtx ctx = new DiffCtx(reporter, oldDoc, newDoc);
-
         Optional<SchemaDefinition> oldSchemaDef = getSchemaDef(oldDoc);
         Optional<SchemaDefinition> newSchemaDef = getSchemaDef(newDoc);
-
 
         // check query operation
         checkOperation(ctx, "query", oldSchemaDef, newSchemaDef);
