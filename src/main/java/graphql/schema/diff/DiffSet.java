@@ -1,9 +1,11 @@
 package graphql.schema.diff;
 
-import graphql.*;
+import graphql.Assert;
+import graphql.DeprecatedAt;
+import graphql.ExecutionResult;
+import graphql.GraphQL;
+import graphql.PublicApi;
 import graphql.introspection.IntrospectionQuery;
-import graphql.introspection.IntrospectionResultToSchema;
-import graphql.language.Document;
 import graphql.schema.GraphQLSchema;
 
 import java.util.Map;
