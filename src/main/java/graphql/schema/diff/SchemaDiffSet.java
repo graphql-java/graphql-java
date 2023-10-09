@@ -77,9 +77,9 @@ public class SchemaDiffSet {
      */
     public static SchemaDiffSet diffSetFromIntrospection(final GraphQLSchema oldSchema,
                                                          final GraphQLSchema newSchema) {
-        final Document oldDoc = getDocumentFromIntrospection(introspect(oldSchema));
-        final Document newDoc = getDocumentFromIntrospection(introspect(newSchema));
-        return new SchemaDiffSet(oldDoc, newDoc, false);
+        final Map<String, Object> introspectionOld = introspect(oldSchema);
+        final Map<String, Object> introspectionNew = introspect(newSchema);
+        return diffSetFromIntrospection(introspectionOld, introspectionNew);
     }
 
     /**
@@ -107,9 +107,9 @@ public class SchemaDiffSet {
      */
     public static SchemaDiffSet diffSetFromSdl(final GraphQLSchema oldSchema,
                                                final GraphQLSchema newSchema) {
-        final Document oldDoc = getDocumentFromSDLString(getSchemaSdl(oldSchema));
-        final Document newDoc =  getDocumentFromSDLString(getSchemaSdl(newSchema));
-        return new SchemaDiffSet(oldDoc, newDoc, true);
+        final String oldSchemaSdl = getSchemaSdl(oldSchema);
+        final String newSchemaSdl = getSchemaSdl(newSchema);
+        return diffSetFromSdl(oldSchemaSdl, newSchemaSdl);
     }
 
     private static Document getDocumentFromIntrospection(final Map<String, Object> introspectionResult) {
