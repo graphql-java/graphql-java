@@ -103,8 +103,8 @@ class SchemaDiffTest extends Specification {
     }
 
     void compareDiff(String newFile) {
-        IntrospectionSchemaDiffSet introspectionSchemaDiffSet = introspectionSchemaDiffSet(newFile)
-        SDLSchemaDiffSet sdlSchemaDiffSet = sdlSchemaDiffSet(newFile)
+        SchemaDiffSet introspectionSchemaDiffSet = introspectionSchemaDiffSet(newFile)
+        SchemaDiffSet sdlSchemaDiffSet = sdlSchemaDiffSet(newFile)
 
         def diff = new SchemaDiff()
         diff.diffSchema(introspectionSchemaDiffSet, introspectionChainedReporter)
@@ -112,8 +112,8 @@ class SchemaDiffTest extends Specification {
     }
 
     void compareDiff(GraphQLSchema oldSchema, GraphQLSchema newSchema) {
-        IntrospectionSchemaDiffSet introspectionSchemaDiffSet = IntrospectionSchemaDiffSet.diffSet(oldSchema, newSchema)
-        SDLSchemaDiffSet sdlSchemaDiffSet = SDLSchemaDiffSet.diffSet(oldSchema, newSchema)
+        SchemaDiffSet introspectionSchemaDiffSet = SchemaDiffSet.diffSetFromIntrospection(oldSchema, newSchema)
+        SchemaDiffSet sdlSchemaDiffSet = SchemaDiffSet.diffSetFromSdl(oldSchema, newSchema)
 
         def diff = new SchemaDiff()
         diff.diffSchema(introspectionSchemaDiffSet, introspectionChainedReporter)
@@ -134,7 +134,7 @@ class SchemaDiffTest extends Specification {
         def schemaOld = TestUtil.schemaFile("diff/" + "schema_ABaseLine.graphqls", wireWithNoFetching())
         def schemaNew = TestUtil.schemaFile("diff/" + newFile, wireWithNoFetching())
 
-        def diffSet = IntrospectionSchemaDiffSet.diffSet(schemaOld, schemaNew)
+        def diffSet = SchemaDiffSet.diffSetFromIntrospection(schemaOld, schemaNew)
         diffSet
     }
 
@@ -142,7 +142,7 @@ class SchemaDiffTest extends Specification {
         def schemaOld = TestUtil.schemaFile("diff/" + "schema_ABaseLine.graphqls", wireWithNoFetching())
         def schemaNew = TestUtil.schemaFile("diff/" + newFile, wireWithNoFetching())
 
-        def diffSet = SDLSchemaDiffSet.diffSet(schemaOld, schemaNew)
+        def diffSet = SchemaDiffSet.diffSetFromSdl(schemaOld, schemaNew)
         diffSet
     }
 
@@ -538,8 +538,8 @@ class SchemaDiffTest extends Specification {
 
     def "deprecated fields are unchanged"() {
         def schema = TestUtil.schemaFile("diff/" + "schema_deprecated_fields_new.graphqls", wireWithNoFetching())
-        IntrospectionSchemaDiffSet introspectionSchemaDiffSet = IntrospectionSchemaDiffSet.diffSet(schema, schema)
-        SDLSchemaDiffSet sdlSchemaDiffSet = SDLSchemaDiffSet.diffSet(schema, schema)
+        SchemaDiffSet introspectionSchemaDiffSet = SchemaDiffSet.diffSetFromIntrospection(schema, schema)
+        SchemaDiffSet sdlSchemaDiffSet = SchemaDiffSet.diffSetFromSdl(schema, schema)
 
         def diff = new SchemaDiff()
         diff.diffSchema(introspectionSchemaDiffSet, introspectionChainedReporter)
@@ -567,8 +567,8 @@ class SchemaDiffTest extends Specification {
         def schemaOld = TestUtil.schemaFile("diff/" + "schema_deprecated_fields_new.graphqls", wireWithNoFetching())
         def schemaNew = TestUtil.schemaFile("diff/" + "schema_deprecated_fields_removed.graphqls", wireWithNoFetching())
 
-        IntrospectionSchemaDiffSet introspectionSchemaDiffSet = IntrospectionSchemaDiffSet.diffSet(schemaOld, schemaNew)
-        SDLSchemaDiffSet sdlSchemaDiffSet = SDLSchemaDiffSet.diffSet(schemaOld, schemaNew)
+        SchemaDiffSet introspectionSchemaDiffSet = SchemaDiffSet.diffSetFromIntrospection(schemaOld, schemaNew)
+        SchemaDiffSet sdlSchemaDiffSet = SchemaDiffSet.diffSetFromSdl(schemaOld, schemaNew)
 
         def diff = new SchemaDiff()
         diff.diffSchema(introspectionSchemaDiffSet, introspectionChainedReporter)
@@ -688,7 +688,7 @@ class SchemaDiffTest extends Specification {
         when:
         def capturingReporter = new CapturingReporter()
         def schemaDiff = new SchemaDiff()
-        def breakingCount = schemaDiff.diffSchema(IntrospectionSchemaDiffSet.diffSet(schema1, schema1), capturingReporter)
+        def breakingCount = schemaDiff.diffSchema(SchemaDiffSet.diffSetFromIntrospection(schema1, schema1), capturingReporter)
         then:
         breakingCount == capturingReporter.getBreakageCount()
         breakingCount == 0
@@ -696,7 +696,7 @@ class SchemaDiffTest extends Specification {
         when:
         capturingReporter = new CapturingReporter()
         schemaDiff = new SchemaDiff()
-        breakingCount = schemaDiff.diffSchema(IntrospectionSchemaDiffSet.diffSet(schema1, schema2), capturingReporter)
+        breakingCount = schemaDiff.diffSchema(SchemaDiffSet.diffSetFromIntrospection(schema1, schema2), capturingReporter)
 
         then:
         breakingCount == capturingReporter.getBreakageCount()
@@ -725,7 +725,7 @@ class SchemaDiffTest extends Specification {
       }
      ''')
         def reporter = new CapturingReporter()
-        SchemaDiffSet diffSet = SDLSchemaDiffSet.diffSet(oldSchema, newSchema)
+        SchemaDiffSet diffSet = SchemaDiffSet.diffSetFromSdl(oldSchema, newSchema)
         def diff = new SchemaDiff(SchemaDiff.Options.defaultOptions().enforceDirectives())
         when:
         diff.diffSchema(diffSet, reporter)
@@ -760,7 +760,7 @@ class SchemaDiffTest extends Specification {
       }
      ''')
         def reporter = new CapturingReporter()
-        SchemaDiffSet diffSet = IntrospectionSchemaDiffSet.diffSet(oldSchema, newSchema)
+        SchemaDiffSet diffSet = SchemaDiffSet.diffSetFromIntrospection(oldSchema, newSchema)
         def diff = new SchemaDiff(SchemaDiff.Options.defaultOptions().enforceDirectives())
         when:
         diff.diffSchema(diffSet, reporter)
