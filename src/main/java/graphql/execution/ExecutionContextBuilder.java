@@ -9,6 +9,7 @@ import graphql.GraphQLError;
 import graphql.Internal;
 import graphql.PublicApi;
 import graphql.collect.ImmutableKit;
+import graphql.engine.GraphQLEngine;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationState;
 import graphql.language.Document;
@@ -30,9 +31,6 @@ public class ExecutionContextBuilder {
     ExecutionId executionId;
     InstrumentationState instrumentationState;
     GraphQLSchema graphQLSchema;
-    ExecutionStrategy queryStrategy;
-    ExecutionStrategy mutationStrategy;
-    ExecutionStrategy subscriptionStrategy;
     Object context;
     GraphQLContext graphQLContext;
     Object root;
@@ -46,6 +44,7 @@ public class ExecutionContextBuilder {
     ValueUnboxer valueUnboxer;
     Object localContext;
     ExecutionInput executionInput;
+    GraphQLEngine graphQLEngine;
 
     /**
      * @return a new builder of {@link graphql.execution.ExecutionContext}s
@@ -71,13 +70,11 @@ public class ExecutionContextBuilder {
 
     @Internal
     ExecutionContextBuilder(ExecutionContext other) {
-        instrumentation = other.getInstrumentation();
+        instrumentation = other.getInstrumentationAs(Instrumentation.class);
         executionId = other.getExecutionId();
         instrumentationState = other.getInstrumentationState();
         graphQLSchema = other.getGraphQLSchema();
-        queryStrategy = other.getQueryStrategy();
-        mutationStrategy = other.getMutationStrategy();
-        subscriptionStrategy = other.getSubscriptionStrategy();
+        graphQLEngine = other.getGraphQLEngine(GraphQLEngine.class);
         context = other.getContext();
         graphQLContext = other.getGraphQLContext();
         localContext = other.getLocalContext();
@@ -113,21 +110,6 @@ public class ExecutionContextBuilder {
         return this;
     }
 
-    public ExecutionContextBuilder queryStrategy(ExecutionStrategy queryStrategy) {
-        this.queryStrategy = queryStrategy;
-        return this;
-    }
-
-    public ExecutionContextBuilder mutationStrategy(ExecutionStrategy mutationStrategy) {
-        this.mutationStrategy = mutationStrategy;
-        return this;
-    }
-
-    public ExecutionContextBuilder subscriptionStrategy(ExecutionStrategy subscriptionStrategy) {
-        this.subscriptionStrategy = subscriptionStrategy;
-        return this;
-    }
-
     /*
      * @deprecated use {@link #graphQLContext(GraphQLContext)} instead
      */
@@ -155,6 +137,7 @@ public class ExecutionContextBuilder {
 
     /**
      * @param variables map of already coerced variables
+     *
      * @return this builder
      *
      * @deprecated use {@link #coercedVariables(CoercedVariables)} instead
@@ -208,6 +191,11 @@ public class ExecutionContextBuilder {
 
     public ExecutionContextBuilder resetErrors() {
         this.errors = emptyList();
+        return this;
+    }
+
+    public ExecutionContextBuilder graphQLEngine(GraphQLEngine graphQLEngine) {
+        this.graphQLEngine = graphQLEngine;
         return this;
     }
 

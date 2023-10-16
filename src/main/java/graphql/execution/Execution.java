@@ -7,6 +7,8 @@ import graphql.ExecutionResultImpl;
 import graphql.GraphQLContext;
 import graphql.GraphQLError;
 import graphql.Internal;
+import graphql.engine.EngineParameters;
+import graphql.engine.GraphQLEngine;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationState;
@@ -40,17 +42,11 @@ public class Execution {
     private static final Logger logNotSafe = LogKit.getNotPrivacySafeLogger(Execution.class);
 
     private final FieldCollector fieldCollector = new FieldCollector();
-    private final ExecutionStrategy queryStrategy;
-    private final ExecutionStrategy mutationStrategy;
-    private final ExecutionStrategy subscriptionStrategy;
-    private final Instrumentation instrumentation;
+    private final GraphQLEngine graphQLEngine;
     private final ValueUnboxer valueUnboxer;
 
-    public Execution(ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy, ExecutionStrategy subscriptionStrategy, Instrumentation instrumentation, ValueUnboxer valueUnboxer) {
-        this.queryStrategy = queryStrategy != null ? queryStrategy : new AsyncExecutionStrategy();
-        this.mutationStrategy = mutationStrategy != null ? mutationStrategy : new AsyncSerialExecutionStrategy();
-        this.subscriptionStrategy = subscriptionStrategy != null ? subscriptionStrategy : new AsyncExecutionStrategy();
-        this.instrumentation = instrumentation;
+    public Execution(GraphQLEngine graphQLEngine, ValueUnboxer valueUnboxer) {
+        this.graphQLEngine = graphQLEngine;
         this.valueUnboxer = valueUnboxer;
     }
 
@@ -73,14 +69,14 @@ public class Execution {
             throw rte;
         }
 
+        Instrumentation instrumentation = graphQLEngine.getInstrumentation();
+
         ExecutionContext executionContext = newExecutionContextBuilder()
                 .instrumentation(instrumentation)
                 .instrumentationState(instrumentationState)
                 .executionId(executionId)
                 .graphQLSchema(graphQLSchema)
-                .queryStrategy(queryStrategy)
-                .mutationStrategy(mutationStrategy)
-                .subscriptionStrategy(subscriptionStrategy)
+                .graphQLEngine(graphQLEngine)
                 .context(executionInput.getContext())
                 .graphQLContext(executionInput.getGraphQLContext())
                 .localContext(executionInput.getLocalContext())
@@ -105,6 +101,7 @@ public class Execution {
 
 
     private CompletableFuture<ExecutionResult> executeOperation(ExecutionContext executionContext, Object root, OperationDefinition operationDefinition) {
+        Instrumentation instrumentation = graphQLEngine.getInstrumentation();
 
         GraphQLContext graphQLContext = executionContext.getGraphQLContext();
         addExtensionsBuilderNotPresent(graphQLContext);
@@ -143,7 +140,8 @@ public class Execution {
         ExecutionStepInfo executionStepInfo = newExecutionStepInfo().type(operationRootType).path(path).build();
         NonNullableFieldValidator nonNullableFieldValidator = new NonNullableFieldValidator(executionContext, executionStepInfo);
 
-        ExecutionStrategyParameters parameters = newParameters()
+        EngineParameters parameters = EngineParameters.newParameters()
+                .operation(operation)
                 .executionStepInfo(executionStepInfo)
                 .source(root)
                 .localContext(executionContext.getLocalContext())
@@ -154,11 +152,7 @@ public class Execution {
 
         CompletableFuture<ExecutionResult> result;
         try {
-            ExecutionStrategy executionStrategy = executionContext.getStrategy(operation);
-            if (logNotSafe.isDebugEnabled()) {
-                logNotSafe.debug("Executing '{}' query operation: '{}' using '{}' execution strategy", executionContext.getExecutionId(), operation, executionStrategy.getClass().getName());
-            }
-            result = executionStrategy.execute(executionContext, parameters);
+            result = graphQLEngine.execute(executionContext, parameters);
         } catch (NonNullableFieldWasNullException e) {
             // this means it was non-null types all the way from an offending non-null type
             // up to the root object type and there was a null value somewhere.

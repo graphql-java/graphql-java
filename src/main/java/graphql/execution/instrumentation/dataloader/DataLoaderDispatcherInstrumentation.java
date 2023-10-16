@@ -4,6 +4,8 @@ import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
 import graphql.PublicApi;
 import graphql.collect.ImmutableKit;
+import graphql.engine.GraphQLEngine;
+import graphql.engine.original.OriginalGraphQlEngine;
 import graphql.execution.AsyncExecutionStrategy;
 import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionStrategy;
@@ -118,8 +120,12 @@ public class DataLoaderDispatcherInstrumentation extends SimplePerformantInstrum
         // This may change in the future but this is the fix for now.
         //
         OperationDefinition.Operation operation = executionContext.getOperationDefinition().getOperation();
-        ExecutionStrategy strategy = executionContext.getStrategy(operation);
-        return (strategy instanceof AsyncExecutionStrategy);
+        GraphQLEngine graphQLEngine = executionContext.getGraphQLEngine(GraphQLEngine.class);
+        if (graphQLEngine instanceof OriginalGraphQlEngine) {
+            ExecutionStrategy strategy = ((OriginalGraphQlEngine) graphQLEngine).getStrategy(operation);
+            return (strategy instanceof AsyncExecutionStrategy);
+        }
+        return false;
     }
 
     @Override

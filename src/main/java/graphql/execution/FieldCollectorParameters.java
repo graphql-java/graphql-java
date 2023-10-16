@@ -4,6 +4,7 @@ import graphql.Assert;
 import graphql.GraphQLContext;
 import graphql.Internal;
 import graphql.language.FragmentDefinition;
+import graphql.language.OperationDefinition;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
 
@@ -95,6 +96,5 @@ public class FieldCollectorParameters {
             Assert.assertNotNull(graphQLSchema, () -> "You must provide a schema");
             return new FieldCollectorParameters(this);
         }
-
     }
 }

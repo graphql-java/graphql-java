@@ -11,10 +11,11 @@ import graphql.TrivialDataFetcher;
 import graphql.TypeMismatchError;
 import graphql.UnresolvedTypeError;
 import graphql.collect.ImmutableKit;
+import graphql.engine.original.OriginalGraphQlEngine;
 import graphql.execution.directives.QueryDirectives;
 import graphql.execution.directives.QueryDirectivesImpl;
-import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationContext;
+import graphql.execution.instrumentation.original.OriginalEngineInstrumentation;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldCompleteParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldParameters;
@@ -205,7 +206,7 @@ public abstract class ExecutionStrategy {
         GraphQLFieldDefinition fieldDef = getFieldDef(executionContext, parameters, parameters.getField().getSingleField());
         Supplier<ExecutionStepInfo> executionStepInfo = FpKit.intraThreadMemoize(() -> createExecutionStepInfo(executionContext, parameters, fieldDef, null));
 
-        Instrumentation instrumentation = executionContext.getInstrumentation();
+        OriginalEngineInstrumentation instrumentation = executionContext.getInstrumentationAs(OriginalEngineInstrumentation.class);
         InstrumentationContext<ExecutionResult> fieldCtx = nonNullCtx(instrumentation.beginField(
                 new InstrumentationFieldParameters(executionContext, executionStepInfo), executionContext.getInstrumentationState()
         ));
@@ -276,7 +277,7 @@ public abstract class ExecutionStrategy {
         });
         DataFetcher<?> dataFetcher = codeRegistry.getDataFetcher(parentType, fieldDef);
 
-        Instrumentation instrumentation = executionContext.getInstrumentation();
+        OriginalEngineInstrumentation instrumentation = executionContext.getInstrumentationAs(OriginalEngineInstrumentation.class);
 
         InstrumentationFieldFetchParameters instrumentationFieldFetchParams = new InstrumentationFieldFetchParameters(executionContext, dataFetchingEnvironment, parameters, dataFetcher instanceof TrivialDataFetcher);
         InstrumentationContext<Object> fetchCtx = nonNullCtx(instrumentation.beginFieldFetch(instrumentationFieldFetchParams,
@@ -413,7 +414,7 @@ public abstract class ExecutionStrategy {
         GraphQLFieldDefinition fieldDef = getFieldDef(executionContext.getGraphQLSchema(), parentType, field);
         ExecutionStepInfo executionStepInfo = createExecutionStepInfo(executionContext, parameters, fieldDef, parentType);
 
-        Instrumentation instrumentation = executionContext.getInstrumentation();
+        OriginalEngineInstrumentation instrumentation = executionContext.getInstrumentationAs(OriginalEngineInstrumentation.class);
         InstrumentationFieldCompleteParameters instrumentationParams = new InstrumentationFieldCompleteParameters(executionContext, parameters, () -> executionStepInfo, fetchedValue);
         InstrumentationContext<ExecutionResult> ctxCompleteField = nonNullCtx(instrumentation.beginFieldComplete(
                 instrumentationParams, executionContext.getInstrumentationState()
@@ -559,7 +560,7 @@ public abstract class ExecutionStrategy {
         ExecutionStepInfo executionStepInfo = parameters.getExecutionStepInfo();
 
         InstrumentationFieldCompleteParameters instrumentationParams = new InstrumentationFieldCompleteParameters(executionContext, parameters, () -> executionStepInfo, iterableValues);
-        Instrumentation instrumentation = executionContext.getInstrumentation();
+        OriginalEngineInstrumentation instrumentation = executionContext.getInstrumentationAs(OriginalEngineInstrumentation.class);
 
         InstrumentationContext<ExecutionResult> completeListCtx = nonNullCtx(instrumentation.beginFieldListComplete(
                 instrumentationParams, executionContext.getInstrumentationState()
@@ -698,8 +699,8 @@ public abstract class ExecutionStrategy {
         );
 
         // Calling this from the executionContext to ensure we shift back from mutation strategy to the query strategy.
-
-        return executionContext.getQueryStrategy().execute(executionContext, newParameters);
+        OriginalGraphQlEngine originalGraphQlEngine = executionContext.getGraphQLEngine(OriginalGraphQlEngine.class);
+        return originalGraphQlEngine.getQueryStrategy().execute(executionContext, newParameters);
     }
 
     @SuppressWarnings("SameReturnValue")

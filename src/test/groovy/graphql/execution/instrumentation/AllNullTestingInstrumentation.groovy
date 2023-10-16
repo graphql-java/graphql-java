@@ -3,6 +3,7 @@ package graphql.execution.instrumentation
 import graphql.ExecutionInput
 import graphql.ExecutionResult
 import graphql.execution.ExecutionContext
+import graphql.execution.instrumentation.original.OriginalEngineInstrumentation
 import graphql.execution.instrumentation.parameters.InstrumentationCreateStateParameters
 import graphql.execution.instrumentation.parameters.InstrumentationExecuteOperationParameters
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters
@@ -19,7 +20,7 @@ import graphql.validation.ValidationError
 
 import java.util.concurrent.CompletableFuture
 
-class AllNullTestingInstrumentation implements Instrumentation {
+class AllNullTestingInstrumentation implements OriginalEngineInstrumentation {
 
     InstrumentationState instrumentationState = new InstrumentationState() {}
     List<String> executionList = []

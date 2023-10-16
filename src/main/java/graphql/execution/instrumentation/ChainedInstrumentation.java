@@ -9,6 +9,7 @@ import graphql.PublicApi;
 import graphql.execution.Async;
 import graphql.execution.ExecutionContext;
 import graphql.execution.FieldValueInfo;
+import graphql.execution.instrumentation.original.OriginalEngineInstrumentation;
 import graphql.execution.instrumentation.parameters.InstrumentationCreateStateParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecuteOperationParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters;
@@ -43,24 +44,24 @@ import static graphql.collect.ImmutableKit.mapAndDropNulls;
  */
 @SuppressWarnings("deprecation")
 @PublicApi
-public class ChainedInstrumentation implements Instrumentation {
+public class ChainedInstrumentation implements OriginalEngineInstrumentation {
 
     // This class is inspired from https://github.com/leangen/graphql-spqr/blob/master/src/main/java/io/leangen/graphql/GraphQLRuntime.java#L80
 
-    protected final ImmutableList<Instrumentation> instrumentations;
+    protected final ImmutableList<OriginalEngineInstrumentation> instrumentations;
 
-    public ChainedInstrumentation(List<Instrumentation> instrumentations) {
+    public ChainedInstrumentation(List<OriginalEngineInstrumentation> instrumentations) {
         this.instrumentations = ImmutableList.copyOf(assertNotNull(instrumentations));
     }
 
-    public ChainedInstrumentation(Instrumentation... instrumentations) {
+    public ChainedInstrumentation(OriginalEngineInstrumentation... instrumentations) {
         this(Arrays.asList(instrumentations));
     }
 
     /**
      * @return the list of instrumentations in play
      */
-    public List<Instrumentation> getInstrumentations() {
+    public List<OriginalEngineInstrumentation> getInstrumentations() {
         return instrumentations;
     }
 
@@ -69,7 +70,7 @@ public class ChainedInstrumentation implements Instrumentation {
         return chainedInstrumentationState.getState(instrumentation);
     }
 
-    private <T> InstrumentationContext<T> chainedCtx(Function<Instrumentation, InstrumentationContext<T>> mapper) {
+    private <T> InstrumentationContext<T> chainedCtx(Function<OriginalEngineInstrumentation, InstrumentationContext<T>> mapper) {
         // if we have zero or 1 instrumentations (and 1 is the most common), then we can avoid an object allocation
         // of the ChainedInstrumentationContext since it won't be needed
         if (instrumentations.isEmpty()) {
@@ -165,7 +166,7 @@ public class ChainedInstrumentation implements Instrumentation {
         if (instrumentations.isEmpty()) {
             return ExecutionStrategyInstrumentationContext.NOOP;
         }
-        Function<Instrumentation, ExecutionStrategyInstrumentationContext> mapper = instrumentation -> {
+        Function<OriginalEngineInstrumentation, ExecutionStrategyInstrumentationContext> mapper = instrumentation -> {
             InstrumentationState specificState = getSpecificState(instrumentation, state);
             return instrumentation.beginExecutionStrategy(parameters, specificState);
         };
@@ -334,7 +335,7 @@ public class ChainedInstrumentation implements Instrumentation {
         if (instrumentations.isEmpty()) {
             return dataFetcher;
         }
-        for (Instrumentation instrumentation : instrumentations) {
+        for (OriginalEngineInstrumentation instrumentation : instrumentations) {
             InstrumentationState specificState = getSpecificState(instrumentation, state);
             dataFetcher = instrumentation.instrumentDataFetcher(dataFetcher, parameters, specificState);
         }
@@ -362,7 +363,7 @@ public class ChainedInstrumentation implements Instrumentation {
         private final Map<Instrumentation, InstrumentationState> instrumentationToStates;
 
 
-        private ChainedInstrumentationState(List<Instrumentation> instrumentations, List<InstrumentationState> instrumentationStates) {
+        private ChainedInstrumentationState(List<OriginalEngineInstrumentation> instrumentations, List<InstrumentationState> instrumentationStates) {
             instrumentationToStates = Maps.newLinkedHashMapWithExpectedSize(instrumentations.size());
             for (int i = 0; i < instrumentations.size(); i++) {
                 Instrumentation instrumentation = instrumentations.get(i);
@@ -375,9 +376,9 @@ public class ChainedInstrumentation implements Instrumentation {
             return instrumentationToStates.get(instrumentation);
         }
 
-        private static CompletableFuture<InstrumentationState> combineAll(List<Instrumentation> instrumentations, InstrumentationCreateStateParameters parameters) {
+        private static CompletableFuture<InstrumentationState> combineAll(List<OriginalEngineInstrumentation> instrumentations, InstrumentationCreateStateParameters parameters) {
             Async.CombinedBuilder<InstrumentationState> builder = Async.ofExpectedSize(instrumentations.size());
-            for (Instrumentation instrumentation : instrumentations) {
+            for (OriginalEngineInstrumentation instrumentation : instrumentations) {
                 // state can be null including the CF so handle that
                 CompletableFuture<InstrumentationState> stateCF = Async.orNullCompletedFuture(instrumentation.createStateAsync(parameters));
                 builder.add(stateCF);

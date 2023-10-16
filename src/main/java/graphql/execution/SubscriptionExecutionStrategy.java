@@ -6,6 +6,7 @@ import graphql.PublicApi;
 import graphql.execution.instrumentation.ExecutionStrategyInstrumentationContext;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationContext;
+import graphql.execution.instrumentation.original.OriginalEngineInstrumentation;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldParameters;
@@ -48,7 +49,7 @@ public class SubscriptionExecutionStrategy extends ExecutionStrategy {
     @Override
     public CompletableFuture<ExecutionResult> execute(ExecutionContext executionContext, ExecutionStrategyParameters parameters) throws NonNullableFieldWasNullException {
 
-        Instrumentation instrumentation = executionContext.getInstrumentation();
+        OriginalEngineInstrumentation instrumentation = executionContext.getInstrumentationAs(OriginalEngineInstrumentation.class);
         InstrumentationExecutionStrategyParameters instrumentationParameters = new InstrumentationExecutionStrategyParameters(executionContext, parameters);
         ExecutionStrategyInstrumentationContext executionStrategyCtx = ExecutionStrategyInstrumentationContext.nonNullCtx(instrumentation.beginExecutionStrategy(
                 instrumentationParameters,
@@ -118,7 +119,7 @@ public class SubscriptionExecutionStrategy extends ExecutionStrategy {
      */
 
     private CompletableFuture<ExecutionResult> executeSubscriptionEvent(ExecutionContext executionContext, ExecutionStrategyParameters parameters, Object eventPayload) {
-        Instrumentation instrumentation = executionContext.getInstrumentation();
+        OriginalEngineInstrumentation instrumentation = executionContext.getInstrumentationAs(OriginalEngineInstrumentation.class);
 
         ExecutionContext newExecutionContext = executionContext.transform(builder -> builder
                 .root(eventPayload)

@@ -2,6 +2,7 @@ package graphql.execution.instrumentation;
 
 import graphql.ExecutionResult;
 import graphql.PublicApi;
+import graphql.execution.instrumentation.original.OriginalEngineInstrumentation;
 import graphql.execution.instrumentation.parameters.InstrumentationExecuteOperationParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters;
@@ -39,16 +40,16 @@ import java.util.function.BiConsumer;
 @PublicApi
 public class NoContextChainedInstrumentation extends ChainedInstrumentation {
 
-    public NoContextChainedInstrumentation(List<Instrumentation> instrumentations) {
+    public NoContextChainedInstrumentation(List<OriginalEngineInstrumentation> instrumentations) {
         super(instrumentations);
     }
 
-    public NoContextChainedInstrumentation(Instrumentation... instrumentations) {
+    public NoContextChainedInstrumentation(OriginalEngineInstrumentation... instrumentations) {
         super(instrumentations);
     }
 
-    private <T> T runAll(InstrumentationState state, BiConsumer<Instrumentation, InstrumentationState> stateConsumer) {
-        for (Instrumentation instrumentation : instrumentations) {
+    private <T> T runAll(InstrumentationState state, BiConsumer<OriginalEngineInstrumentation, InstrumentationState> stateConsumer) {
+        for (OriginalEngineInstrumentation instrumentation : instrumentations) {
             InstrumentationState specificState = getSpecificState(instrumentation, state);
             stateConsumer.accept(instrumentation, specificState);
         }

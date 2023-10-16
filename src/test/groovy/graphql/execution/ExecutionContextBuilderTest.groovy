@@ -82,7 +82,7 @@ class ExecutionContextBuilderTest extends Specification {
 
         then:
         executionContext.executionId == executionId
-        executionContext.instrumentation == instrumentation
+        executionContext.instrumentationAs == instrumentation
         executionContext.graphQLSchema == schema
         executionContext.queryStrategy == queryStrategy
         executionContext.mutationStrategy == mutationStrategy
@@ -117,7 +117,7 @@ class ExecutionContextBuilderTest extends Specification {
 
         then:
         executionContext.executionId == executionId
-        executionContext.instrumentation == instrumentation
+        executionContext.instrumentationAs == instrumentation
         executionContext.graphQLSchema == schema
         executionContext.queryStrategy == queryStrategy
         executionContext.mutationStrategy == mutationStrategy
@@ -155,7 +155,7 @@ class ExecutionContextBuilderTest extends Specification {
 
         then:
         executionContext.executionId == executionId
-        executionContext.instrumentation == instrumentation
+        executionContext.instrumentationAs == instrumentation
         executionContext.graphQLSchema == schema
         executionContext.queryStrategy == queryStrategy
         executionContext.mutationStrategy == mutationStrategy
@@ -193,7 +193,7 @@ class ExecutionContextBuilderTest extends Specification {
 
         then:
         executionContext.executionId == executionId
-        executionContext.instrumentation == instrumentation
+        executionContext.instrumentationAs == instrumentation
         executionContext.graphQLSchema == schema
         executionContext.queryStrategy == queryStrategy
         executionContext.mutationStrategy == mutationStrategy
