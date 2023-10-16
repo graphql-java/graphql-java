@@ -74,7 +74,7 @@ public class ExecutionContextBuilder {
         executionId = other.getExecutionId();
         instrumentationState = other.getInstrumentationState();
         graphQLSchema = other.getGraphQLSchema();
-        graphQLEngine = other.getGraphQLEngine(GraphQLEngine.class);
+        graphQLEngine = other.getGraphQLEngineAs(GraphQLEngine.class);
         context = other.getContext();
         graphQLContext = other.getGraphQLContext();
         localContext = other.getLocalContext();

@@ -699,7 +699,7 @@ public abstract class ExecutionStrategy {
         );
 
         // Calling this from the executionContext to ensure we shift back from mutation strategy to the query strategy.
-        OriginalGraphQlEngine originalGraphQlEngine = executionContext.getGraphQLEngine(OriginalGraphQlEngine.class);
+        OriginalGraphQlEngine originalGraphQlEngine = executionContext.getGraphQLEngineAs(OriginalGraphQlEngine.class);
         return originalGraphQlEngine.getQueryStrategy().execute(executionContext, newParameters);
     }
 

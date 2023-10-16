@@ -99,7 +99,7 @@ public class ExecutionContext {
         return graphQLSchema;
     }
 
-    public <T extends GraphQLEngine> T getGraphQLEngine(Class<T> clazz) {
+    public <T extends GraphQLEngine> T getGraphQLEngineAs(Class<T> clazz) {
         return clazz.cast(graphQLEngine);
     }
 

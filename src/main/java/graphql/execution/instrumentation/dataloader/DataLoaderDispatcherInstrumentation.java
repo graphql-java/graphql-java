@@ -120,7 +120,7 @@ public class DataLoaderDispatcherInstrumentation extends SimplePerformantInstrum
         // This may change in the future but this is the fix for now.
         //
         OperationDefinition.Operation operation = executionContext.getOperationDefinition().getOperation();
-        GraphQLEngine graphQLEngine = executionContext.getGraphQLEngine(GraphQLEngine.class);
+        GraphQLEngine graphQLEngine = executionContext.getGraphQLEngineAs(GraphQLEngine.class);
         if (graphQLEngine instanceof OriginalGraphQlEngine) {
             ExecutionStrategy strategy = ((OriginalGraphQlEngine) graphQLEngine).getStrategy(operation);
             return (strategy instanceof AsyncExecutionStrategy);
