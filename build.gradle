@@ -20,30 +20,45 @@ java {
     }
 }
 
+def makeDevelopmentVersion(parts) {
+    def version = String.join("-", parts)
+    println "created development version: $version"
+    return version
+}
+
 def getDevelopmentVersion() {
+    def dateTime = new SimpleDateFormat('yyyy-MM-dd\'T\'HH-mm-ss').format(new Date())
     def gitCheckOutput = new StringBuilder()
     def gitCheckError = new StringBuilder()
-    def gitCheck = ["git", "rev-parse", "--is-inside-work-tree"].execute()
+    def gitCheck = ["git", "-C", projectDir.toString(), "rev-parse", "--is-inside-work-tree"].execute()
     gitCheck.waitForProcessOutput(gitCheckOutput, gitCheckError)
     def isGit = gitCheckOutput.toString().trim()
     if (isGit != "true") {
-        def version = "0.0.0-" + new SimpleDateFormat('yyyy-MM-dd\'T\'HH-mm-ss').format(new Date()) + "-no-git"
-        println "created development version: $version"
-        return version
+        return makeDevelopmentVersion(["0.0.0", dateTime, "no-git"])
     }
 
-    def gitHashOutput = new StringBuilder()
-    def gitHashError = new StringBuilder()
-    def gitShortHash = ["git", "-C", projectDir.toString(), "rev-parse", "--short", "HEAD"].execute()
-    gitShortHash.waitForProcessOutput(gitHashOutput, gitHashError)
-    def gitHash = gitHashOutput.toString().trim()
-    if (gitHash.isEmpty()) {
-        println "git hash is empty: error: ${error.toString()}"
-        throw new IllegalStateException("git hash could not be determined")
+    def isCi = Boolean.parseBoolean(System.env.CI)
+    if (isCi) {
+        def gitHashOutput = new StringBuilder()
+        def gitHashError = new StringBuilder()
+        def gitShortHash = ["git", "-C", projectDir.toString(), "rev-parse", "--short", "HEAD"].execute()
+        gitShortHash.waitForProcessOutput(gitHashOutput, gitHashError)
+        def gitHash = gitHashOutput.toString().trim()
+        if (gitHash.isEmpty()) {
+            println "git hash is empty: error: ${gitHashError.toString()}"
+            throw new IllegalStateException("git hash could not be determined")
+        }
+
+        return makeDevelopmentVersion(["0.0.0", dateTime, gitHash])
     }
-    def version = "0.0.0-" + new SimpleDateFormat('yyyy-MM-dd\'T\'HH-mm-ss').format(new Date()) + "-" + gitHash
-    println "created development version: $version"
-    version
+
+    def gitRevParseOutput = new StringBuilder()
+    def gitRevParseError = new StringBuilder()
+    def gitRevParse = ["git", "-C", projectDir.toString(), "rev-parse", "--abbrev-ref", "HEAD"].execute()
+    gitRevParse.waitForProcessOutput(gitRevParseOutput, gitRevParseError)
+    def branchName = gitRevParseOutput.toString().trim()
+
+    return makeDevelopmentVersion(["0.0.0", branchName, "SNAPSHOT"])
 }
 
 def reactiveStreamsVersion = '1.0.3'
@@ -203,7 +218,10 @@ generateGrammarSource {
     arguments += ["-visitor"]
     outputDirectory = file("${project.buildDir}/generated-src/antlr/main/graphql/parser/antlr")
 }
-generateGrammarSource.inputs.dir('src/main/antlr')
+generateGrammarSource.inputs
+    .dir('src/main/antlr')
+    .withPropertyName('sourceDir')
+    .withPathSensitivity(PathSensitivity.RELATIVE)
 
 
 task sourcesJar(type: Jar) {
