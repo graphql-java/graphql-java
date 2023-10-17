@@ -102,7 +102,7 @@ dependencies {
     compileOnly 'org.jetbrains:annotations:24.0.1'
     implementation 'org.antlr:antlr4-runtime:' + antlrVersion
     implementation 'org.slf4j:slf4j-api:' + slf4jVersion
-    api 'com.graphql-java:java-dataloader:3.2.0'
+    api 'com.graphql-java:java-dataloader:3.2.1'
     api 'org.reactivestreams:reactive-streams:' + reactiveStreamsVersion
     antlr 'org.antlr:antlr4:' + antlrVersion
     implementation 'com.google.guava:guava:' + guavaVersion
