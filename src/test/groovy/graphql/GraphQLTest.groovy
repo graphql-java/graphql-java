@@ -2,6 +2,7 @@ package graphql
 
 import graphql.analysis.MaxQueryComplexityInstrumentation
 import graphql.analysis.MaxQueryDepthInstrumentation
+import graphql.engine.original.OriginalGraphQlEngine
 import graphql.execution.AsyncExecutionStrategy
 import graphql.execution.AsyncSerialExecutionStrategy
 import graphql.execution.DataFetcherExceptionHandler
@@ -919,7 +920,7 @@ class GraphQLTest extends Specification {
         @Override
         CompletableFuture<ExecutionResult> execute(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
             executionId = executionContext.executionId
-            instrumentation = executionContext.instrumentation
+            instrumentation = executionContext.getInstrumentationAs(Instrumentation.class)
             return super.execute(executionContext, parameters)
         }
     }
@@ -1421,13 +1422,15 @@ many lines''']
         def graphQL = GraphQL.newGraphQL(StarWarsSchema.starWarsSchema).instrumentation(instrumentation).build()
         then:
         graphQL.getGraphQLSchema() == StarWarsSchema.starWarsSchema
+        graphQL.getGraphQLEngine() instanceof OriginalGraphQlEngine
         graphQL.getIdProvider() == ExecutionIdProvider.DEFAULT_EXECUTION_ID_PROVIDER
         graphQL.getValueUnboxer() == ValueUnboxer.DEFAULT
         graphQL.getPreparsedDocumentProvider() == NoOpPreparsedDocumentProvider.INSTANCE
         graphQL.getInstrumentation() instanceof ChainedInstrumentation
-        graphQL.getQueryStrategy() instanceof AsyncExecutionStrategy
-        graphQL.getMutationStrategy() instanceof AsyncSerialExecutionStrategy
-        graphQL.getSubscriptionStrategy() instanceof SubscriptionExecutionStrategy
+        def engine = graphQL.getGraphQLEngine() as OriginalGraphQlEngine
+        engine.getQueryStrategy() instanceof AsyncExecutionStrategy
+        engine.getMutationStrategy() instanceof AsyncSerialExecutionStrategy
+        engine.getSubscriptionStrategy() instanceof SubscriptionExecutionStrategy
     }
 
     def "null locale on input is handled under the covers"() {

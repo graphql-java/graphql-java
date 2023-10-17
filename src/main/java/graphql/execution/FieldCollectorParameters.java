@@ -95,6 +95,5 @@ public class FieldCollectorParameters {
             Assert.assertNotNull(graphQLSchema, () -> "You must provide a schema");
             return new FieldCollectorParameters(this);
         }
-
     }
 }

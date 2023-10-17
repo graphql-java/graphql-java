@@ -4,6 +4,7 @@ import graphql.ExecutionInput;
 import graphql.ExecutionResult;
 import graphql.PublicApi;
 import graphql.execution.ExecutionContext;
+import graphql.execution.instrumentation.original.OriginalEngineInstrumentation;
 import graphql.execution.instrumentation.parameters.InstrumentationCreateStateParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecuteOperationParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters;
@@ -39,7 +40,7 @@ import static graphql.execution.instrumentation.SimpleInstrumentationContext.noO
  */
 @SuppressWarnings("deprecation")
 @PublicApi
-public class SimplePerformantInstrumentation implements Instrumentation {
+public class SimplePerformantInstrumentation implements OriginalEngineInstrumentation {
 
     /**
      * A singleton instance of a {@link Instrumentation} that does nothing

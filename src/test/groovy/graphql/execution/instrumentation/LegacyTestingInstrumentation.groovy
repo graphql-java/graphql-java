@@ -3,6 +3,7 @@ package graphql.execution.instrumentation
 import graphql.ExecutionInput
 import graphql.ExecutionResult
 import graphql.execution.ExecutionContext
+import graphql.execution.instrumentation.original.OriginalEngineInstrumentation
 import graphql.execution.instrumentation.parameters.InstrumentationExecuteOperationParameters
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters
@@ -21,7 +22,7 @@ import java.util.concurrent.CompletableFuture
 /**
  * This class overrides the old deprecated methods and shows that they still can be called
  */
-class LegacyTestingInstrumentation implements Instrumentation {
+class LegacyTestingInstrumentation implements OriginalEngineInstrumentation {
 
     def instrumentationState = new InstrumentationState() {}
     List<String> executionList = []

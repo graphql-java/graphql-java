@@ -3,6 +3,7 @@ package graphql.execution.instrumentation
 import graphql.ExecutionInput
 import graphql.ExecutionResult
 import graphql.execution.ExecutionContext
+import graphql.execution.instrumentation.original.OriginalEngineInstrumentation
 import graphql.execution.instrumentation.parameters.InstrumentationCreateStateParameters
 import graphql.execution.instrumentation.parameters.InstrumentationExecuteOperationParameters
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters
@@ -22,7 +23,7 @@ import java.util.concurrent.CompletableFuture
 /**
  * This class overrides the new methods that take state directly as a parameter
  */
-class ModernTestingInstrumentation implements Instrumentation {
+class ModernTestingInstrumentation implements OriginalEngineInstrumentation {
 
     InstrumentationState instrumentationState = new InstrumentationState() {}
     List<String> executionList = []

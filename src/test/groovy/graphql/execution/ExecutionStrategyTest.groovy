@@ -9,6 +9,7 @@ import graphql.Scalars
 import graphql.SerializationError
 import graphql.StarWarsSchema
 import graphql.TypeMismatchError
+import graphql.engine.original.OriginalGraphQlEngine
 import graphql.execution.instrumentation.InstrumentationContext
 import graphql.execution.instrumentation.InstrumentationState
 import graphql.execution.instrumentation.SimplePerformantInstrumentation
@@ -73,9 +74,6 @@ class ExecutionStrategyTest extends Specification {
                 .instrumentation(SimplePerformantInstrumentation.INSTANCE)
                 .executionId(executionId)
                 .graphQLSchema(schema ?: StarWarsSchema.starWarsSchema)
-                .queryStrategy(executionStrategy)
-                .mutationStrategy(executionStrategy)
-                .subscriptionStrategy(executionStrategy)
                 .coercedVariables(CoercedVariables.of(variables))
                 .graphQLContext(GraphQLContext.newContext().of("key", "context").build())
                 .root("root")
@@ -116,10 +114,14 @@ class ExecutionStrategyTest extends Specification {
                 .query(objectType)
                 .build()
 
+        def queryES = Mock(ExecutionStrategy)
+        def mutationES = Mock(ExecutionStrategy)
+        def subscriptionES = Mock(ExecutionStrategy)
+        def engine = OriginalGraphQlEngine.newEngine()
+                .queryExecutionStrategy(queryES).mutationExecutionStrategy(mutationES).subscriptionExecutionStrategy(subscriptionES).build()
         def builder = new ExecutionContextBuilder()
-        builder.queryStrategy(Mock(ExecutionStrategy))
-        builder.mutationStrategy(Mock(ExecutionStrategy))
-        builder.subscriptionStrategy(Mock(ExecutionStrategy))
+
+        builder.graphQLEngine(engine)
         builder.graphQLSchema(schema)
         builder.valueUnboxer(ValueUnboxer.DEFAULT)
 
@@ -139,9 +141,9 @@ class ExecutionStrategyTest extends Specification {
         executionStrategy.completeValue(executionContext, parameters)
 
         then:
-        1 * executionContext.queryStrategy.execute(_, _)
-        0 * executionContext.mutationStrategy.execute(_, _)
-        0 * executionContext.subscriptionStrategy.execute(_, _)
+        1 * queryES.execute(_, _)
+        0 * mutationES.execute(_, _)
+        0 * subscriptionES.execute(_, _)
     }
 
 

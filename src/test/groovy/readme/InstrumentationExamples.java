@@ -15,6 +15,7 @@ import graphql.execution.instrumentation.fieldvalidation.FieldValidation;
 import graphql.execution.instrumentation.fieldvalidation.FieldValidationEnvironment;
 import graphql.execution.instrumentation.fieldvalidation.FieldValidationInstrumentation;
 import graphql.execution.instrumentation.fieldvalidation.SimpleFieldValidation;
+import graphql.execution.instrumentation.original.OriginalEngineInstrumentation;
 import graphql.execution.instrumentation.parameters.InstrumentationCreateStateParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters;
@@ -112,7 +113,7 @@ public class InstrumentationExamples {
     }
 
     private void chained() {
-        List<Instrumentation> chainedList = new ArrayList<>();
+        List<OriginalEngineInstrumentation> chainedList = new ArrayList<>();
         chainedList.add(new FooInstrumentation());
         chainedList.add(new BarInstrumentation());
         ChainedInstrumentation chainedInstrumentation = new ChainedInstrumentation(chainedList);

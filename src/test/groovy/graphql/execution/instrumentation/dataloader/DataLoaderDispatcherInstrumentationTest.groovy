@@ -36,7 +36,7 @@ class DataLoaderDispatcherInstrumentationTest extends Specification {
 
         @Override
         CompletableFuture<ExecutionResult> execute(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
-            instrumentation = executionContext.instrumentation
+            instrumentation = executionContext.getInstrumentationAs(Instrumentation.class)
             return super.execute(executionContext, parameters)
         }
     }

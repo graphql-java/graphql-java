@@ -9,6 +9,7 @@ import graphql.GraphQLContext;
 import graphql.GraphQLError;
 import graphql.PublicApi;
 import graphql.collect.ImmutableKit;
+import graphql.engine.GraphQLEngine;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationState;
 import graphql.language.Document;
@@ -35,11 +36,10 @@ import java.util.function.Supplier;
 public class ExecutionContext {
 
     private final GraphQLSchema graphQLSchema;
+    private final GraphQLEngine graphQLEngine;
+
     private final ExecutionId executionId;
     private final InstrumentationState instrumentationState;
-    private final ExecutionStrategy queryStrategy;
-    private final ExecutionStrategy mutationStrategy;
-    private final ExecutionStrategy subscriptionStrategy;
     private final ImmutableMap<String, FragmentDefinition> fragmentsByName;
     private final OperationDefinition operationDefinition;
     private final Document document;
@@ -60,11 +60,9 @@ public class ExecutionContext {
 
     ExecutionContext(ExecutionContextBuilder builder) {
         this.graphQLSchema = builder.graphQLSchema;
+        this.graphQLEngine = builder.graphQLEngine;
         this.executionId = builder.executionId;
         this.instrumentationState = builder.instrumentationState;
-        this.queryStrategy = builder.queryStrategy;
-        this.mutationStrategy = builder.mutationStrategy;
-        this.subscriptionStrategy = builder.subscriptionStrategy;
         this.fragmentsByName = builder.fragmentsByName;
         this.coercedVariables = builder.coercedVariables;
         this.document = builder.document;
@@ -95,12 +93,16 @@ public class ExecutionContext {
         return instrumentationState;
     }
 
-    public Instrumentation getInstrumentation() {
-        return instrumentation;
+    public <T extends Instrumentation> T getInstrumentationAs(Class<T> clazz) {
+        return clazz.cast(instrumentation);
     }
 
     public GraphQLSchema getGraphQLSchema() {
         return graphQLSchema;
+    }
+
+    public <T extends GraphQLEngine> T getGraphQLEngineAs(Class<T> clazz) {
+        return clazz.cast(graphQLEngine);
     }
 
     public Map<String, FragmentDefinition> getFragmentsByName() {
@@ -246,26 +248,6 @@ public class ExecutionContext {
      */
     public List<GraphQLError> getErrors() {
         return errors.get();
-    }
-
-    public ExecutionStrategy getQueryStrategy() { return queryStrategy; }
-
-    public ExecutionStrategy getMutationStrategy() {
-        return mutationStrategy;
-    }
-
-    public ExecutionStrategy getSubscriptionStrategy() {
-        return subscriptionStrategy;
-    }
-
-    public ExecutionStrategy getStrategy(OperationDefinition.Operation operation) {
-        if (operation == OperationDefinition.Operation.MUTATION) {
-            return getMutationStrategy();
-        } else if (operation == OperationDefinition.Operation.SUBSCRIPTION) {
-            return getSubscriptionStrategy();
-        } else {
-            return getQueryStrategy();
-        }
     }
 
     public Supplier<ExecutableNormalizedOperation> getNormalizedQueryTree() {
