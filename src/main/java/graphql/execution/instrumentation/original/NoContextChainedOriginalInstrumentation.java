@@ -1,9 +1,18 @@
-package graphql.execution.instrumentation;
+package graphql.execution.instrumentation.original;
 
 import graphql.ExecutionResult;
 import graphql.PublicApi;
+import graphql.execution.instrumentation.ChainedInstrumentation;
+import graphql.execution.instrumentation.ExecutionStrategyInstrumentationContext;
+import graphql.execution.instrumentation.Instrumentation;
+import graphql.execution.instrumentation.InstrumentationContext;
+import graphql.execution.instrumentation.InstrumentationState;
 import graphql.execution.instrumentation.parameters.InstrumentationExecuteOperationParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters;
+import graphql.execution.instrumentation.original.parameters.InstrumentationExecutionStrategyParameters;
+import graphql.execution.instrumentation.original.parameters.InstrumentationFieldCompleteParameters;
+import graphql.execution.instrumentation.original.parameters.InstrumentationFieldFetchParameters;
+import graphql.execution.instrumentation.original.parameters.InstrumentationFieldParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationValidationParameters;
 import graphql.language.Document;
 import graphql.validation.ValidationError;
@@ -26,25 +35,25 @@ import java.util.function.BiConsumer;
  * certain execution step finishes.
  *
  * The {@link InstrumentationContext} is used ot know when an execution step has completed, so instrumentations that do
- * timings say need to use this callback mechanism.  Putting such an instrumentation into {@link NoContextChainedInstrumentation} would
+ * timings say need to use this callback mechanism.  Putting such an instrumentation into {@link NoContextChainedOriginalInstrumentation} would
  * be a mistake because no callback will occur.  Therefore, use of this class is reserved for very specific us cases.  You are fore-warned.
  *
  * This class never holds onto the returned {@link InstrumentationContext} objects and always returns null
  * as itself.
  */
 @PublicApi
-public class NoContextChainedInstrumentation extends ChainedInstrumentation {
+public class NoContextChainedOriginalInstrumentation extends ChainedOriginalInstrumentation {
 
-    public NoContextChainedInstrumentation(List<Instrumentation> instrumentations) {
+    public NoContextChainedOriginalInstrumentation(List<Instrumentation> instrumentations) {
         super(instrumentations);
     }
 
-    public NoContextChainedInstrumentation(Instrumentation... instrumentations) {
+    public NoContextChainedOriginalInstrumentation(Instrumentation... instrumentations) {
         super(instrumentations);
     }
 
-    private <T> T runAll(InstrumentationState state, BiConsumer<Instrumentation, InstrumentationState> stateConsumer) {
-        for (Instrumentation instrumentation : instrumentations) {
+    private <T> T runAll(InstrumentationState state, BiConsumer<OriginalInstrumentation, InstrumentationState> stateConsumer) {
+        for (OriginalInstrumentation instrumentation : originalInstrumentationsOnly) {
             InstrumentationState specificState = getSpecificState(instrumentation, state);
             stateConsumer.accept(instrumentation, specificState);
         }
@@ -69,6 +78,36 @@ public class NoContextChainedInstrumentation extends ChainedInstrumentation {
     @Override
     public InstrumentationContext<ExecutionResult> beginExecuteOperation(InstrumentationExecuteOperationParameters parameters, InstrumentationState state) {
         return runAll(state, (instrumentation, specificState) -> instrumentation.beginExecuteOperation(parameters, specificState));
+    }
+
+    @Override
+    public ExecutionStrategyInstrumentationContext beginExecutionStrategy(InstrumentationExecutionStrategyParameters parameters, InstrumentationState state) {
+        return runAll(state, (instrumentation, specificState) -> instrumentation.beginExecutionStrategy(parameters, specificState));
+    }
+
+    @Override
+    public InstrumentationContext<ExecutionResult> beginSubscribedFieldEvent(InstrumentationFieldParameters parameters, InstrumentationState state) {
+        return runAll(state, (instrumentation, specificState) -> instrumentation.beginSubscribedFieldEvent(parameters, specificState));
+    }
+
+    @Override
+    public InstrumentationContext<ExecutionResult> beginField(InstrumentationFieldParameters parameters, InstrumentationState state) {
+        return runAll(state, (instrumentation, specificState) -> instrumentation.beginField(parameters, specificState));
+    }
+
+    @Override
+    public InstrumentationContext<Object> beginFieldFetch(InstrumentationFieldFetchParameters parameters, InstrumentationState state) {
+        return runAll(state, (instrumentation, specificState) -> instrumentation.beginFieldFetch(parameters, specificState));
+    }
+
+    @Override
+    public InstrumentationContext<ExecutionResult> beginFieldComplete(InstrumentationFieldCompleteParameters parameters, InstrumentationState state) {
+        return runAll(state, (instrumentation, specificState) -> instrumentation.beginFieldComplete(parameters, specificState));
+    }
+
+    @Override
+    public InstrumentationContext<ExecutionResult> beginFieldListComplete(InstrumentationFieldCompleteParameters parameters, InstrumentationState state) {
+        return runAll(state, (instrumentation, specificState) -> instrumentation.beginFieldListComplete(parameters, specificState));
     }
 
     // relies on the other methods from ChainedInstrumentation which this does not change

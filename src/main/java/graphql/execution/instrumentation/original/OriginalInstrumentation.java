@@ -1,32 +1,20 @@
 package graphql.execution.instrumentation.original;
 
 import graphql.DeprecatedAt;
-import graphql.ExecutionInput;
 import graphql.ExecutionResult;
 import graphql.PublicSpi;
-import graphql.execution.ExecutionContext;
-import graphql.execution.instrumentation.DocumentAndVariables;
 import graphql.execution.instrumentation.ExecutionStrategyInstrumentationContext;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationState;
 import graphql.execution.instrumentation.parameters.InstrumentationCreateStateParameters;
-import graphql.execution.instrumentation.parameters.InstrumentationExecuteOperationParameters;
-import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters;
-import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters;
-import graphql.execution.instrumentation.parameters.InstrumentationFieldCompleteParameters;
-import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters;
-import graphql.execution.instrumentation.parameters.InstrumentationFieldParameters;
-import graphql.execution.instrumentation.parameters.InstrumentationValidationParameters;
-import graphql.language.Document;
+import graphql.execution.instrumentation.original.parameters.InstrumentationExecutionStrategyParameters;
+import graphql.execution.instrumentation.original.parameters.InstrumentationFieldCompleteParameters;
+import graphql.execution.instrumentation.original.parameters.InstrumentationFieldFetchParameters;
+import graphql.execution.instrumentation.original.parameters.InstrumentationFieldParameters;
 import graphql.schema.DataFetcher;
-import graphql.schema.GraphQLSchema;
-import graphql.validation.ValidationError;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-import java.util.List;
-import java.util.concurrent.CompletableFuture;
 
 import static graphql.execution.instrumentation.SimpleInstrumentationContext.noOp;
 
@@ -44,7 +32,7 @@ import static graphql.execution.instrumentation.SimpleInstrumentationContext.noO
  * operations such as fetching data and resolving it into objects.
  */
 @PublicSpi
-public interface OriginalEngineInstrumentation extends Instrumentation {
+public interface OriginalInstrumentation extends Instrumentation {
 
     /**
      * This is called each time an {@link graphql.execution.ExecutionStrategy} is invoked, which may be multiple times

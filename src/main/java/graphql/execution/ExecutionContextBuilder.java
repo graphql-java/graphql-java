@@ -12,6 +12,7 @@ import graphql.collect.ImmutableKit;
 import graphql.engine.GraphQLEngine;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationState;
+import graphql.execution.instrumentation.SimplePerformantInstrumentation;
 import graphql.language.Document;
 import graphql.language.FragmentDefinition;
 import graphql.language.OperationDefinition;
@@ -70,7 +71,7 @@ public class ExecutionContextBuilder {
 
     @Internal
     ExecutionContextBuilder(ExecutionContext other) {
-        instrumentation = other.getInstrumentationAs(Instrumentation.class);
+        instrumentation = other.getInstrumentation();
         executionId = other.getExecutionId();
         instrumentationState = other.getInstrumentationState();
         graphQLSchema = other.getGraphQLSchema();

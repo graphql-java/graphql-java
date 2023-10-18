@@ -15,10 +15,11 @@ import graphql.execution.instrumentation.fieldvalidation.FieldValidation;
 import graphql.execution.instrumentation.fieldvalidation.FieldValidationEnvironment;
 import graphql.execution.instrumentation.fieldvalidation.FieldValidationInstrumentation;
 import graphql.execution.instrumentation.fieldvalidation.SimpleFieldValidation;
-import graphql.execution.instrumentation.original.OriginalEngineInstrumentation;
+import graphql.execution.instrumentation.original.OriginalInstrumentation;
+import graphql.execution.instrumentation.original.SimplePerformantOriginalInstrumentation;
 import graphql.execution.instrumentation.parameters.InstrumentationCreateStateParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters;
-import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters;
+import graphql.execution.instrumentation.original.parameters.InstrumentationFieldFetchParameters;
 import graphql.execution.instrumentation.tracing.TracingInstrumentation;
 import graphql.schema.DataFetcher;
 import graphql.schema.GraphQLSchema;
@@ -64,7 +65,7 @@ public class InstrumentationExamples {
         }
     }
 
-    class CustomInstrumentation extends SimplePerformantInstrumentation {
+    class CustomInstrumentation extends SimplePerformantOriginalInstrumentation {
         @Override
         public @Nullable InstrumentationState createState(InstrumentationCreateStateParameters parameters) {
             //
@@ -113,7 +114,7 @@ public class InstrumentationExamples {
     }
 
     private void chained() {
-        List<OriginalEngineInstrumentation> chainedList = new ArrayList<>();
+        List<Instrumentation> chainedList = new ArrayList<>();
         chainedList.add(new FooInstrumentation());
         chainedList.add(new BarInstrumentation());
         ChainedInstrumentation chainedInstrumentation = new ChainedInstrumentation(chainedList);

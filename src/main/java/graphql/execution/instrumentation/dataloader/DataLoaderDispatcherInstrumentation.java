@@ -12,12 +12,12 @@ import graphql.execution.ExecutionStrategy;
 import graphql.execution.instrumentation.ExecutionStrategyInstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationState;
-import graphql.execution.instrumentation.SimplePerformantInstrumentation;
+import graphql.execution.instrumentation.original.SimplePerformantOriginalInstrumentation;
 import graphql.execution.instrumentation.parameters.InstrumentationCreateStateParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecuteOperationParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters;
-import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters;
-import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters;
+import graphql.execution.instrumentation.original.parameters.InstrumentationExecutionStrategyParameters;
+import graphql.execution.instrumentation.original.parameters.InstrumentationFieldFetchParameters;
 import graphql.language.OperationDefinition;
 import graphql.schema.DataFetcher;
 import org.dataloader.DataLoader;
@@ -50,7 +50,7 @@ import static graphql.execution.instrumentation.SimpleInstrumentationContext.noO
  * @see org.dataloader.DataLoaderRegistry
  */
 @PublicApi
-public class DataLoaderDispatcherInstrumentation extends SimplePerformantInstrumentation {
+public class DataLoaderDispatcherInstrumentation extends SimplePerformantOriginalInstrumentation {
 
     private static final Logger log = LoggerFactory.getLogger(DataLoaderDispatcherInstrumentation.class);
 

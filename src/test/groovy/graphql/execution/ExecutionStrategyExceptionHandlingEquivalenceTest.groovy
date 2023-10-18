@@ -6,7 +6,8 @@ import graphql.StarWarsSchema
 import graphql.execution.instrumentation.InstrumentationContext
 import graphql.execution.instrumentation.InstrumentationState
 import graphql.execution.instrumentation.SimplePerformantInstrumentation
-import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters
+import graphql.execution.instrumentation.original.SimplePerformantOriginalInstrumentation
+import graphql.execution.instrumentation.original.parameters.InstrumentationFieldFetchParameters
 import graphql.validation.ValidationError
 import graphql.validation.ValidationErrorType
 import spock.lang.Specification
@@ -14,7 +15,7 @@ import spock.lang.Unroll
 
 class ExecutionStrategyExceptionHandlingEquivalenceTest extends Specification {
 
-    class TestInstrumentation extends SimplePerformantInstrumentation {
+    class TestInstrumentation extends SimplePerformantOriginalInstrumentation {
 
         @Override
         InstrumentationContext<Object> beginFieldFetch(InstrumentationFieldFetchParameters parameters, InstrumentationState state) {

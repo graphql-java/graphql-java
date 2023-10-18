@@ -1,4 +1,4 @@
-package graphql.execution.instrumentation.parameters;
+package graphql.execution.instrumentation.original.parameters;
 
 import graphql.DeprecatedAt;
 import graphql.PublicApi;

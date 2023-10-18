@@ -3,8 +3,8 @@ package graphql.execution;
 import graphql.ExecutionResult;
 import graphql.PublicApi;
 import graphql.execution.instrumentation.ExecutionStrategyInstrumentationContext;
-import graphql.execution.instrumentation.original.OriginalEngineInstrumentation;
-import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters;
+import graphql.execution.instrumentation.original.OriginalInstrumentation;
+import graphql.execution.instrumentation.original.parameters.InstrumentationExecutionStrategyParameters;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -37,7 +37,7 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
     @SuppressWarnings("FutureReturnValueIgnored")
     public CompletableFuture<ExecutionResult> execute(ExecutionContext executionContext, ExecutionStrategyParameters parameters) throws NonNullableFieldWasNullException {
 
-        OriginalEngineInstrumentation instrumentation = executionContext.getInstrumentationAs(OriginalEngineInstrumentation.class);
+        OriginalInstrumentation instrumentation = getInstrumentation(executionContext);
         InstrumentationExecutionStrategyParameters instrumentationParameters = new InstrumentationExecutionStrategyParameters(executionContext, parameters);
 
         ExecutionStrategyInstrumentationContext executionStrategyCtx = ExecutionStrategyInstrumentationContext.nonNullCtx(instrumentation.beginExecutionStrategy(instrumentationParameters, executionContext.getInstrumentationState()));

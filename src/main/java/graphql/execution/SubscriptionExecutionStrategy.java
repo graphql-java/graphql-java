@@ -4,12 +4,11 @@ import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
 import graphql.PublicApi;
 import graphql.execution.instrumentation.ExecutionStrategyInstrumentationContext;
-import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationContext;
-import graphql.execution.instrumentation.original.OriginalEngineInstrumentation;
+import graphql.execution.instrumentation.original.OriginalInstrumentation;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters;
-import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters;
-import graphql.execution.instrumentation.parameters.InstrumentationFieldParameters;
+import graphql.execution.instrumentation.original.parameters.InstrumentationExecutionStrategyParameters;
+import graphql.execution.instrumentation.original.parameters.InstrumentationFieldParameters;
 import graphql.execution.reactive.SubscriptionPublisher;
 import graphql.language.Field;
 import graphql.schema.GraphQLFieldDefinition;
@@ -49,7 +48,7 @@ public class SubscriptionExecutionStrategy extends ExecutionStrategy {
     @Override
     public CompletableFuture<ExecutionResult> execute(ExecutionContext executionContext, ExecutionStrategyParameters parameters) throws NonNullableFieldWasNullException {
 
-        OriginalEngineInstrumentation instrumentation = executionContext.getInstrumentationAs(OriginalEngineInstrumentation.class);
+        OriginalInstrumentation instrumentation = getInstrumentation(executionContext);
         InstrumentationExecutionStrategyParameters instrumentationParameters = new InstrumentationExecutionStrategyParameters(executionContext, parameters);
         ExecutionStrategyInstrumentationContext executionStrategyCtx = ExecutionStrategyInstrumentationContext.nonNullCtx(instrumentation.beginExecutionStrategy(
                 instrumentationParameters,
@@ -119,7 +118,7 @@ public class SubscriptionExecutionStrategy extends ExecutionStrategy {
      */
 
     private CompletableFuture<ExecutionResult> executeSubscriptionEvent(ExecutionContext executionContext, ExecutionStrategyParameters parameters, Object eventPayload) {
-        OriginalEngineInstrumentation instrumentation = executionContext.getInstrumentationAs(OriginalEngineInstrumentation.class);
+        OriginalInstrumentation instrumentation = getInstrumentation(executionContext);
 
         ExecutionContext newExecutionContext = executionContext.transform(builder -> builder
                 .root(eventPayload)

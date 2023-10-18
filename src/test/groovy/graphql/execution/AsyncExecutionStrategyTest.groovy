@@ -6,7 +6,8 @@ import graphql.GraphQLContext
 import graphql.execution.instrumentation.ExecutionStrategyInstrumentationContext
 import graphql.execution.instrumentation.InstrumentationState
 import graphql.execution.instrumentation.SimplePerformantInstrumentation
-import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters
+import graphql.execution.instrumentation.original.SimplePerformantOriginalInstrumentation
+import graphql.execution.instrumentation.original.parameters.InstrumentationExecutionStrategyParameters
 import graphql.language.Field
 import graphql.language.OperationDefinition
 import graphql.parser.Parser
@@ -266,7 +267,7 @@ class AsyncExecutionStrategyTest extends Specification {
                 .valueUnboxer(ValueUnboxer.DEFAULT)
                 .graphQLContext(GraphQLContext.getDefault())
                 .locale(Locale.getDefault())
-                .instrumentation(new SimplePerformantInstrumentation() {
+                .instrumentation(new SimplePerformantOriginalInstrumentation() {
 
                     @Override
                     ExecutionStrategyInstrumentationContext beginExecutionStrategy(InstrumentationExecutionStrategyParameters parameters, InstrumentationState state) {

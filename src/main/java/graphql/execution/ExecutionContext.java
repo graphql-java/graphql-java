@@ -91,8 +91,8 @@ public class ExecutionContext {
         return instrumentationState;
     }
 
-    public <T extends Instrumentation> T getInstrumentationAs(Class<T> clazz) {
-        return clazz.cast(instrumentation);
+    public Instrumentation getInstrumentation() {
+        return instrumentation;
     }
 
     public GraphQLSchema getGraphQLSchema() {

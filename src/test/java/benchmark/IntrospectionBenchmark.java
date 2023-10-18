@@ -4,8 +4,8 @@ import graphql.ExecutionResult;
 import graphql.GraphQL;
 import graphql.execution.DataFetcherResult;
 import graphql.execution.instrumentation.InstrumentationState;
-import graphql.execution.instrumentation.SimplePerformantInstrumentation;
-import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters;
+import graphql.execution.instrumentation.original.SimplePerformantOriginalInstrumentation;
+import graphql.execution.instrumentation.original.parameters.InstrumentationFieldFetchParameters;
 import graphql.introspection.IntrospectionQuery;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
@@ -32,7 +32,7 @@ public class IntrospectionBenchmark {
     private final GraphQL graphQL;
     private final DFCountingInstrumentation countingInstrumentation = new DFCountingInstrumentation();
 
-    static class DFCountingInstrumentation extends SimplePerformantInstrumentation {
+    static class DFCountingInstrumentation extends SimplePerformantOriginalInstrumentation {
         Map<String, Long> counts = new LinkedHashMap<>();
         Map<String, Long> times = new LinkedHashMap<>();
 

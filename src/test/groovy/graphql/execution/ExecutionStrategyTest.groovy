@@ -13,7 +13,8 @@ import graphql.engine.original.OriginalGraphQlEngine
 import graphql.execution.instrumentation.InstrumentationContext
 import graphql.execution.instrumentation.InstrumentationState
 import graphql.execution.instrumentation.SimplePerformantInstrumentation
-import graphql.execution.instrumentation.parameters.InstrumentationFieldCompleteParameters
+import graphql.execution.instrumentation.original.SimplePerformantOriginalInstrumentation
+import graphql.execution.instrumentation.original.parameters.InstrumentationFieldCompleteParameters
 import graphql.language.Argument
 import graphql.language.Field
 import graphql.language.OperationDefinition
@@ -679,7 +680,7 @@ class ExecutionStrategyTest extends Specification {
         def (ExecutionContext executionContext, GraphQLFieldDefinition fieldDefinition, ResultPath expectedPath, ExecutionStrategyParameters params, Field field, SourceLocation sourceLocation) = exceptionSetupFixture(expectedException)
 
         ExecutionContextBuilder executionContextBuilder = ExecutionContextBuilder.newExecutionContextBuilder(executionContext)
-        def instrumentation = new SimplePerformantInstrumentation() {
+        def instrumentation = new SimplePerformantOriginalInstrumentation() {
             Map<String, FetchedValue> fetchedValues = [:]
 
             @Override

@@ -11,7 +11,8 @@ import graphql.execution.instrumentation.Instrumentation
 import graphql.execution.instrumentation.InstrumentationContext
 import graphql.execution.instrumentation.InstrumentationState
 import graphql.execution.instrumentation.SimplePerformantInstrumentation
-import graphql.execution.instrumentation.parameters.InstrumentationFieldCompleteParameters
+import graphql.execution.instrumentation.original.SimplePerformantOriginalInstrumentation
+import graphql.execution.instrumentation.original.parameters.InstrumentationFieldCompleteParameters
 import graphql.schema.DataFetcher
 import spock.lang.Specification
 
@@ -68,7 +69,7 @@ class ExecutionStrategyErrorsTest extends Specification {
         ]
         )
 
-        Instrumentation instrumentation = new SimplePerformantInstrumentation() {
+        Instrumentation instrumentation = new SimplePerformantOriginalInstrumentation() {
             @Override
             InstrumentationContext<ExecutionResult> beginFieldListComplete(InstrumentationFieldCompleteParameters parameters, InstrumentationState state) {
                 if (parameters.field.name == "diceyListCallAbort") {

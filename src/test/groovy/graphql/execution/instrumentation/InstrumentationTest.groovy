@@ -5,10 +5,11 @@ import graphql.ExecutionResult
 import graphql.GraphQL
 import graphql.StarWarsSchema
 import graphql.execution.AsyncExecutionStrategy
+import graphql.execution.instrumentation.original.SimplePerformantOriginalInstrumentation
 import graphql.execution.instrumentation.parameters.InstrumentationCreateStateParameters
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters
-import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters
-import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters
+import graphql.execution.instrumentation.original.parameters.InstrumentationExecutionStrategyParameters
+import graphql.execution.instrumentation.original.parameters.InstrumentationFieldFetchParameters
 import graphql.language.AstPrinter
 import graphql.parser.Parser
 import graphql.schema.DataFetcher
@@ -160,7 +161,7 @@ class InstrumentationTest extends Specification {
      * java-dataloader works.  That is calls inside DataFetchers are "batched"
      * until a "dispatch" signal is made.
      */
-    class WaitingInstrumentation extends SimplePerformantInstrumentation {
+    class WaitingInstrumentation extends SimplePerformantOriginalInstrumentation {
 
         final AtomicBoolean goSignal = new AtomicBoolean()
 

@@ -8,8 +8,8 @@ import graphql.execution.ResultPath;
 import graphql.execution.instrumentation.ExecutionStrategyInstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationState;
-import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters;
-import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters;
+import graphql.execution.instrumentation.original.parameters.InstrumentationExecutionStrategyParameters;
+import graphql.execution.instrumentation.original.parameters.InstrumentationFieldFetchParameters;
 import org.dataloader.DataLoaderRegistry;
 import org.slf4j.Logger;
 

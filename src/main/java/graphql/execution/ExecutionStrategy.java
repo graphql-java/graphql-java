@@ -14,11 +14,13 @@ import graphql.collect.ImmutableKit;
 import graphql.engine.original.OriginalGraphQlEngine;
 import graphql.execution.directives.QueryDirectives;
 import graphql.execution.directives.QueryDirectivesImpl;
+import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationContext;
-import graphql.execution.instrumentation.original.OriginalEngineInstrumentation;
-import graphql.execution.instrumentation.parameters.InstrumentationFieldCompleteParameters;
-import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters;
-import graphql.execution.instrumentation.parameters.InstrumentationFieldParameters;
+import graphql.execution.instrumentation.original.OriginalInstrumentation;
+import graphql.execution.instrumentation.original.SimplePerformantOriginalInstrumentation;
+import graphql.execution.instrumentation.original.parameters.InstrumentationFieldCompleteParameters;
+import graphql.execution.instrumentation.original.parameters.InstrumentationFieldFetchParameters;
+import graphql.execution.instrumentation.original.parameters.InstrumentationFieldParameters;
 import graphql.extensions.ExtensionsBuilder;
 import graphql.introspection.Introspection;
 import graphql.language.Argument;
@@ -206,7 +208,7 @@ public abstract class ExecutionStrategy {
         GraphQLFieldDefinition fieldDef = getFieldDef(executionContext, parameters, parameters.getField().getSingleField());
         Supplier<ExecutionStepInfo> executionStepInfo = FpKit.intraThreadMemoize(() -> createExecutionStepInfo(executionContext, parameters, fieldDef, null));
 
-        OriginalEngineInstrumentation instrumentation = executionContext.getInstrumentationAs(OriginalEngineInstrumentation.class);
+        OriginalInstrumentation instrumentation = getInstrumentation(executionContext);
         InstrumentationContext<ExecutionResult> fieldCtx = nonNullCtx(instrumentation.beginField(
                 new InstrumentationFieldParameters(executionContext, executionStepInfo), executionContext.getInstrumentationState()
         ));
@@ -277,7 +279,7 @@ public abstract class ExecutionStrategy {
         });
         DataFetcher<?> dataFetcher = codeRegistry.getDataFetcher(parentType, fieldDef);
 
-        OriginalEngineInstrumentation instrumentation = executionContext.getInstrumentationAs(OriginalEngineInstrumentation.class);
+        OriginalInstrumentation instrumentation = getInstrumentation(executionContext);
 
         InstrumentationFieldFetchParameters instrumentationFieldFetchParams = new InstrumentationFieldFetchParameters(executionContext, dataFetchingEnvironment, parameters, dataFetcher instanceof TrivialDataFetcher);
         InstrumentationContext<Object> fetchCtx = nonNullCtx(instrumentation.beginFieldFetch(instrumentationFieldFetchParams,
@@ -414,7 +416,7 @@ public abstract class ExecutionStrategy {
         GraphQLFieldDefinition fieldDef = getFieldDef(executionContext.getGraphQLSchema(), parentType, field);
         ExecutionStepInfo executionStepInfo = createExecutionStepInfo(executionContext, parameters, fieldDef, parentType);
 
-        OriginalEngineInstrumentation instrumentation = executionContext.getInstrumentationAs(OriginalEngineInstrumentation.class);
+        OriginalInstrumentation instrumentation = getInstrumentation(executionContext);
         InstrumentationFieldCompleteParameters instrumentationParams = new InstrumentationFieldCompleteParameters(executionContext, parameters, () -> executionStepInfo, fetchedValue);
         InstrumentationContext<ExecutionResult> ctxCompleteField = nonNullCtx(instrumentation.beginFieldComplete(
                 instrumentationParams, executionContext.getInstrumentationState()
@@ -560,7 +562,7 @@ public abstract class ExecutionStrategy {
         ExecutionStepInfo executionStepInfo = parameters.getExecutionStepInfo();
 
         InstrumentationFieldCompleteParameters instrumentationParams = new InstrumentationFieldCompleteParameters(executionContext, parameters, () -> executionStepInfo, iterableValues);
-        OriginalEngineInstrumentation instrumentation = executionContext.getInstrumentationAs(OriginalEngineInstrumentation.class);
+        OriginalInstrumentation instrumentation = getInstrumentation(executionContext);
 
         InstrumentationContext<ExecutionResult> completeListCtx = nonNullCtx(instrumentation.beginFieldListComplete(
                 instrumentationParams, executionContext.getInstrumentationState()
@@ -864,6 +866,12 @@ public abstract class ExecutionStrategy {
                 .build();
     }
 
+    @Internal
+    protected OriginalInstrumentation getInstrumentation(ExecutionContext executionContext) {
+        Instrumentation instrumentation = executionContext.getInstrumentation();
+        return instrumentation instanceof OriginalInstrumentation
+                ? (OriginalInstrumentation) instrumentation : SimplePerformantOriginalInstrumentation.INSTANCE;
+    }
 
     @Internal
     public static String mkNameForPath(Field currentField) {

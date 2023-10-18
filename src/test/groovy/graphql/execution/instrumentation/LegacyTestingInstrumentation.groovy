@@ -3,13 +3,13 @@ package graphql.execution.instrumentation
 import graphql.ExecutionInput
 import graphql.ExecutionResult
 import graphql.execution.ExecutionContext
-import graphql.execution.instrumentation.original.OriginalEngineInstrumentation
+import graphql.execution.instrumentation.original.OriginalInstrumentation
 import graphql.execution.instrumentation.parameters.InstrumentationExecuteOperationParameters
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters
-import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters
-import graphql.execution.instrumentation.parameters.InstrumentationFieldCompleteParameters
-import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters
-import graphql.execution.instrumentation.parameters.InstrumentationFieldParameters
+import graphql.execution.instrumentation.original.parameters.InstrumentationExecutionStrategyParameters
+import graphql.execution.instrumentation.original.parameters.InstrumentationFieldCompleteParameters
+import graphql.execution.instrumentation.original.parameters.InstrumentationFieldFetchParameters
+import graphql.execution.instrumentation.original.parameters.InstrumentationFieldParameters
 import graphql.execution.instrumentation.parameters.InstrumentationValidationParameters
 import graphql.language.Document
 import graphql.schema.DataFetcher
@@ -22,7 +22,7 @@ import java.util.concurrent.CompletableFuture
 /**
  * This class overrides the old deprecated methods and shows that they still can be called
  */
-class LegacyTestingInstrumentation implements OriginalEngineInstrumentation {
+class LegacyTestingInstrumentation implements OriginalInstrumentation {
 
     def instrumentationState = new InstrumentationState() {}
     List<String> executionList = []

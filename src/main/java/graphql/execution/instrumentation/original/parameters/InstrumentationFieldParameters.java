@@ -1,4 +1,4 @@
-package graphql.execution.instrumentation.parameters;
+package graphql.execution.instrumentation.original.parameters;
 
 import graphql.DeprecatedAt;
 import graphql.PublicApi;
@@ -6,6 +6,7 @@ import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionStepInfo;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationState;
+import graphql.execution.instrumentation.parameters.InstrumentationCreateStateParameters;
 import graphql.schema.GraphQLFieldDefinition;
 
 import java.util.function.Supplier;

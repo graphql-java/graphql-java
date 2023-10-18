@@ -2,7 +2,6 @@ package graphql.execution.instrumentation;
 
 import graphql.DeprecatedAt;
 import graphql.PublicApi;
-import graphql.execution.instrumentation.original.OriginalEngineInstrumentation;
 
 /**
  * An implementation of {@link graphql.execution.instrumentation.Instrumentation} that does nothing.  It can be used
@@ -15,7 +14,7 @@ import graphql.execution.instrumentation.original.OriginalEngineInstrumentation;
 @PublicApi
 @Deprecated
 @DeprecatedAt(value = "2022-10-05")
-public class SimpleInstrumentation implements OriginalEngineInstrumentation {
+public class SimpleInstrumentation implements Instrumentation {
 
     /**
      * A singleton instance of a {@link graphql.execution.instrumentation.Instrumentation} that does nothing

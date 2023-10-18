@@ -6,8 +6,8 @@ import graphql.Internal;
 import graphql.TrivialDataFetcher;
 import graphql.execution.Async;
 import graphql.execution.instrumentation.InstrumentationState;
-import graphql.execution.instrumentation.SimplePerformantInstrumentation;
-import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters;
+import graphql.execution.instrumentation.original.SimplePerformantOriginalInstrumentation;
+import graphql.execution.instrumentation.original.parameters.InstrumentationFieldFetchParameters;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
 import org.jetbrains.annotations.NotNull;
@@ -41,7 +41,7 @@ import static graphql.execution.instrumentation.threadpools.ExecutorInstrumentat
  */
 @Internal
 @Beta
-public class ExecutorInstrumentation extends SimplePerformantInstrumentation {
+public class ExecutorInstrumentation extends SimplePerformantOriginalInstrumentation {
 
     private static final Consumer<Action> NOOP = a -> {
     };

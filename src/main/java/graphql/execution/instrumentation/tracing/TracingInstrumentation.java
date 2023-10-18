@@ -7,10 +7,10 @@ import graphql.collect.ImmutableKit;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationState;
-import graphql.execution.instrumentation.SimplePerformantInstrumentation;
+import graphql.execution.instrumentation.original.SimplePerformantOriginalInstrumentation;
 import graphql.execution.instrumentation.parameters.InstrumentationCreateStateParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters;
-import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters;
+import graphql.execution.instrumentation.original.parameters.InstrumentationFieldFetchParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationValidationParameters;
 import graphql.language.Document;
 import graphql.validation.ValidationError;
@@ -30,7 +30,7 @@ import static graphql.execution.instrumentation.SimpleInstrumentationContext.whe
  * capture tracing information and puts it into the {@link ExecutionResult}
  */
 @PublicApi
-public class TracingInstrumentation extends SimplePerformantInstrumentation {
+public class TracingInstrumentation extends SimplePerformantOriginalInstrumentation {
 
     public static class Options {
         private final boolean includeTrivialDataFetchers;

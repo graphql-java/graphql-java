@@ -9,17 +9,11 @@ import graphql.PublicApi;
 import graphql.execution.Async;
 import graphql.execution.ExecutionContext;
 import graphql.execution.FieldValueInfo;
-import graphql.execution.instrumentation.original.OriginalEngineInstrumentation;
 import graphql.execution.instrumentation.parameters.InstrumentationCreateStateParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecuteOperationParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters;
-import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters;
-import graphql.execution.instrumentation.parameters.InstrumentationFieldCompleteParameters;
-import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters;
-import graphql.execution.instrumentation.parameters.InstrumentationFieldParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationValidationParameters;
 import graphql.language.Document;
-import graphql.schema.DataFetcher;
 import graphql.schema.GraphQLSchema;
 import graphql.validation.ValidationError;
 import org.jetbrains.annotations.NotNull;
@@ -44,24 +38,24 @@ import static graphql.collect.ImmutableKit.mapAndDropNulls;
  */
 @SuppressWarnings("deprecation")
 @PublicApi
-public class ChainedInstrumentation implements OriginalEngineInstrumentation {
+public class ChainedInstrumentation implements Instrumentation {
 
     // This class is inspired from https://github.com/leangen/graphql-spqr/blob/master/src/main/java/io/leangen/graphql/GraphQLRuntime.java#L80
 
-    protected final ImmutableList<OriginalEngineInstrumentation> instrumentations;
+    protected final ImmutableList<Instrumentation> instrumentations;
 
-    public ChainedInstrumentation(List<OriginalEngineInstrumentation> instrumentations) {
+    public ChainedInstrumentation(List<Instrumentation> instrumentations) {
         this.instrumentations = ImmutableList.copyOf(assertNotNull(instrumentations));
     }
 
-    public ChainedInstrumentation(OriginalEngineInstrumentation... instrumentations) {
+    public ChainedInstrumentation(Instrumentation... instrumentations) {
         this(Arrays.asList(instrumentations));
     }
 
     /**
      * @return the list of instrumentations in play
      */
-    public List<OriginalEngineInstrumentation> getInstrumentations() {
+    public List<Instrumentation> getInstrumentations() {
         return instrumentations;
     }
 
@@ -70,7 +64,7 @@ public class ChainedInstrumentation implements OriginalEngineInstrumentation {
         return chainedInstrumentationState.getState(instrumentation);
     }
 
-    private <T> InstrumentationContext<T> chainedCtx(Function<OriginalEngineInstrumentation, InstrumentationContext<T>> mapper) {
+    protected <T, I extends Instrumentation> InstrumentationContext<T> chainedCtx(List<I> instrumentations, Function<I, InstrumentationContext<T>> mapper) {
         // if we have zero or 1 instrumentations (and 1 is the most common), then we can avoid an object allocation
         // of the ChainedInstrumentationContext since it won't be needed
         if (instrumentations.isEmpty()) {
@@ -107,7 +101,7 @@ public class ChainedInstrumentation implements OriginalEngineInstrumentation {
 
     @Override
     public InstrumentationContext<ExecutionResult> beginExecution(InstrumentationExecutionParameters parameters, InstrumentationState state) {
-        return chainedCtx(instrumentation -> {
+        return chainedCtx(instrumentations, instrumentation -> {
             InstrumentationState specificState = getSpecificState(instrumentation, state);
             return instrumentation.beginExecution(parameters, specificState);
         });
@@ -121,7 +115,7 @@ public class ChainedInstrumentation implements OriginalEngineInstrumentation {
 
     @Override
     public InstrumentationContext<Document> beginParse(InstrumentationExecutionParameters parameters, InstrumentationState state) {
-        return chainedCtx(instrumentation -> {
+        return chainedCtx(instrumentations, instrumentation -> {
             InstrumentationState specificState = getSpecificState(instrumentation, state);
             return instrumentation.beginParse(parameters, specificState);
         });
@@ -135,7 +129,7 @@ public class ChainedInstrumentation implements OriginalEngineInstrumentation {
 
     @Override
     public InstrumentationContext<List<ValidationError>> beginValidation(InstrumentationValidationParameters parameters, InstrumentationState state) {
-        return chainedCtx(instrumentation -> {
+        return chainedCtx(instrumentations, instrumentation -> {
             InstrumentationState specificState = getSpecificState(instrumentation, state);
             return instrumentation.beginValidation(parameters, specificState);
         });
@@ -149,103 +143,12 @@ public class ChainedInstrumentation implements OriginalEngineInstrumentation {
 
     @Override
     public InstrumentationContext<ExecutionResult> beginExecuteOperation(InstrumentationExecuteOperationParameters parameters, InstrumentationState state) {
-        return chainedCtx(instrumentation -> {
+        return chainedCtx(instrumentations, instrumentation -> {
             InstrumentationState specificState = getSpecificState(instrumentation, state);
             return instrumentation.beginExecuteOperation(parameters, specificState);
         });
     }
 
-    @Override
-    @NotNull
-    public ExecutionStrategyInstrumentationContext beginExecutionStrategy(InstrumentationExecutionStrategyParameters parameters) {
-        return Assert.assertShouldNeverHappen("The deprecated " + "beginExecutionStrategy" + " was called");
-    }
-
-    @Override
-    public ExecutionStrategyInstrumentationContext beginExecutionStrategy(InstrumentationExecutionStrategyParameters parameters, InstrumentationState state) {
-        if (instrumentations.isEmpty()) {
-            return ExecutionStrategyInstrumentationContext.NOOP;
-        }
-        Function<OriginalEngineInstrumentation, ExecutionStrategyInstrumentationContext> mapper = instrumentation -> {
-            InstrumentationState specificState = getSpecificState(instrumentation, state);
-            return instrumentation.beginExecutionStrategy(parameters, specificState);
-        };
-        if (instrumentations.size() == 1) {
-            return mapper.apply(instrumentations.get(0));
-        }
-        return new ChainedExecutionStrategyInstrumentationContext(mapAndDropNulls(instrumentations, mapper));
-    }
-
-    @Override
-    @NotNull
-    public InstrumentationContext<ExecutionResult> beginSubscribedFieldEvent(InstrumentationFieldParameters parameters) {
-        return Assert.assertShouldNeverHappen("The deprecated " + "beginSubscribedFieldEvent" + " was called");
-    }
-
-    @Override
-    public InstrumentationContext<ExecutionResult> beginSubscribedFieldEvent(InstrumentationFieldParameters parameters, InstrumentationState state) {
-        return chainedCtx(instrumentation -> {
-            InstrumentationState specificState = getSpecificState(instrumentation, state);
-            return instrumentation.beginSubscribedFieldEvent(parameters, specificState);
-        });
-    }
-
-    @Override
-    @NotNull
-    public InstrumentationContext<ExecutionResult> beginField(InstrumentationFieldParameters parameters) {
-        return Assert.assertShouldNeverHappen("The deprecated " + "beginField" + " was called");
-    }
-
-    @Override
-    public InstrumentationContext<ExecutionResult> beginField(InstrumentationFieldParameters parameters, InstrumentationState state) {
-        return chainedCtx(instrumentation -> {
-            InstrumentationState specificState = getSpecificState(instrumentation, state);
-            return instrumentation.beginField(parameters, specificState);
-        });
-    }
-
-    @Override
-    @NotNull
-    public InstrumentationContext<Object> beginFieldFetch(InstrumentationFieldFetchParameters parameters) {
-        return Assert.assertShouldNeverHappen("The deprecated " + "beginFieldFetch" + " was called");
-    }
-
-    @Override
-    public InstrumentationContext<Object> beginFieldFetch(InstrumentationFieldFetchParameters parameters, InstrumentationState state) {
-        return chainedCtx(instrumentation -> {
-            InstrumentationState specificState = getSpecificState(instrumentation, state);
-            return instrumentation.beginFieldFetch(parameters, specificState);
-        });
-    }
-
-
-    @Override
-    @NotNull
-    public InstrumentationContext<ExecutionResult> beginFieldComplete(InstrumentationFieldCompleteParameters parameters) {
-        return Assert.assertShouldNeverHappen("The deprecated " + "beginFieldComplete" + " was called");
-    }
-
-    @Override
-    public InstrumentationContext<ExecutionResult> beginFieldComplete(InstrumentationFieldCompleteParameters parameters, InstrumentationState state) {
-        return chainedCtx(instrumentation -> {
-            InstrumentationState specificState = getSpecificState(instrumentation, state);
-            return instrumentation.beginFieldComplete(parameters, specificState);
-        });
-    }
-
-    @Override
-    @NotNull
-    public InstrumentationContext<ExecutionResult> beginFieldListComplete(InstrumentationFieldCompleteParameters parameters) {
-        return Assert.assertShouldNeverHappen("The deprecated " + "beginFieldListComplete" + " was called");
-    }
-
-    @Override
-    public InstrumentationContext<ExecutionResult> beginFieldListComplete(InstrumentationFieldCompleteParameters parameters, InstrumentationState state) {
-        return chainedCtx(instrumentation -> {
-            InstrumentationState specificState = getSpecificState(instrumentation, state);
-            return instrumentation.beginFieldListComplete(parameters, specificState);
-        });
-    }
 
     @Override
     @NotNull
@@ -323,24 +226,6 @@ public class ChainedInstrumentation implements OriginalEngineInstrumentation {
         return executionContext;
     }
 
-    @Override
-    @NotNull
-    public DataFetcher<?> instrumentDataFetcher(DataFetcher<?> dataFetcher, InstrumentationFieldFetchParameters parameters) {
-        return Assert.assertShouldNeverHappen("The deprecated " + "instrumentDataFetcher" + " was called");
-    }
-
-    @NotNull
-    @Override
-    public DataFetcher<?> instrumentDataFetcher(DataFetcher<?> dataFetcher, InstrumentationFieldFetchParameters parameters, InstrumentationState state) {
-        if (instrumentations.isEmpty()) {
-            return dataFetcher;
-        }
-        for (OriginalEngineInstrumentation instrumentation : instrumentations) {
-            InstrumentationState specificState = getSpecificState(instrumentation, state);
-            dataFetcher = instrumentation.instrumentDataFetcher(dataFetcher, parameters, specificState);
-        }
-        return dataFetcher;
-    }
 
     @Override
     @NotNull
@@ -359,11 +244,11 @@ public class ChainedInstrumentation implements OriginalEngineInstrumentation {
         return resultsFuture.thenApply((results) -> results.isEmpty() ? executionResult : results.get(results.size() - 1));
     }
 
-    static class ChainedInstrumentationState implements InstrumentationState {
+    protected static class ChainedInstrumentationState implements InstrumentationState {
         private final Map<Instrumentation, InstrumentationState> instrumentationToStates;
 
 
-        private ChainedInstrumentationState(List<OriginalEngineInstrumentation> instrumentations, List<InstrumentationState> instrumentationStates) {
+        protected ChainedInstrumentationState(List<Instrumentation> instrumentations, List<InstrumentationState> instrumentationStates) {
             instrumentationToStates = Maps.newLinkedHashMapWithExpectedSize(instrumentations.size());
             for (int i = 0; i < instrumentations.size(); i++) {
                 Instrumentation instrumentation = instrumentations.get(i);
@@ -376,9 +261,9 @@ public class ChainedInstrumentation implements OriginalEngineInstrumentation {
             return instrumentationToStates.get(instrumentation);
         }
 
-        private static CompletableFuture<InstrumentationState> combineAll(List<OriginalEngineInstrumentation> instrumentations, InstrumentationCreateStateParameters parameters) {
+        private static CompletableFuture<InstrumentationState> combineAll(List<Instrumentation> instrumentations, InstrumentationCreateStateParameters parameters) {
             Async.CombinedBuilder<InstrumentationState> builder = Async.ofExpectedSize(instrumentations.size());
-            for (OriginalEngineInstrumentation instrumentation : instrumentations) {
+            for (Instrumentation instrumentation : instrumentations) {
                 // state can be null including the CF so handle that
                 CompletableFuture<InstrumentationState> stateCF = Async.orNullCompletedFuture(instrumentation.createStateAsync(parameters));
                 builder.add(stateCF);
@@ -387,11 +272,11 @@ public class ChainedInstrumentation implements OriginalEngineInstrumentation {
         }
     }
 
-    private static class ChainedInstrumentationContext<T> implements InstrumentationContext<T> {
+    protected static class ChainedInstrumentationContext<T> implements InstrumentationContext<T> {
 
         private final ImmutableList<InstrumentationContext<T>> contexts;
 
-        ChainedInstrumentationContext(ImmutableList<InstrumentationContext<T>> contexts) {
+        protected ChainedInstrumentationContext(ImmutableList<InstrumentationContext<T>> contexts) {
             this.contexts = contexts;
         }
 

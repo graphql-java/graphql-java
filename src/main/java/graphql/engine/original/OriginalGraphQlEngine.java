@@ -14,18 +14,18 @@ import graphql.execution.SimpleDataFetcherExceptionHandler;
 import graphql.execution.SubscriptionExecutionStrategy;
 import graphql.execution.instrumentation.ChainedInstrumentation;
 import graphql.execution.instrumentation.Instrumentation;
-import graphql.execution.instrumentation.NoContextChainedInstrumentation;
-import graphql.execution.instrumentation.SimplePerformantInstrumentation;
 import graphql.execution.instrumentation.dataloader.DataLoaderDispatcherInstrumentation;
-import graphql.execution.instrumentation.original.OriginalEngineInstrumentation;
+import graphql.execution.instrumentation.original.ChainedOriginalInstrumentation;
+import graphql.execution.instrumentation.original.NoContextChainedOriginalInstrumentation;
+import graphql.execution.instrumentation.original.SimplePerformantOriginalInstrumentation;
 import graphql.language.OperationDefinition;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotNull;
-import static graphql.Assert.assertTrue;
 
 public class OriginalGraphQlEngine implements GraphQLEngine {
 
@@ -74,10 +74,6 @@ public class OriginalGraphQlEngine implements GraphQLEngine {
         return executionStrategy.execute(executionContext, strategyParameters);
     }
 
-    public static Builder newEngine() {
-        return new Builder();
-    }
-
     public DataFetcherExceptionHandler getDefaultExceptionHandler() {
         return defaultExceptionHandler;
     }
@@ -94,6 +90,16 @@ public class OriginalGraphQlEngine implements GraphQLEngine {
         return subscriptionExecutionStrategy;
     }
 
+    public OriginalGraphQlEngine transform(Consumer<Builder> builderConsumer) {
+        Builder builder = new Builder(this);
+        builderConsumer.accept(builder);
+        return builder.build();
+    }
+
+    public static Builder newEngine() {
+        return new Builder();
+    }
+
     public static class Builder {
 
         private DataFetcherExceptionHandler defaultExceptionHandler = new SimpleDataFetcherExceptionHandler();
@@ -102,10 +108,17 @@ public class OriginalGraphQlEngine implements GraphQLEngine {
 
         private ExecutionStrategy mutationExecutionStrategy;
         private ExecutionStrategy subscriptionExecutionStrategy;
-        private OriginalEngineInstrumentation instrumentation = null; // deliberate default here
+        private Instrumentation instrumentation = null; // deliberate default here
         private boolean doNotAddDefaultInstrumentations = false;
 
         public Builder() {
+        }
+
+        private Builder(OriginalGraphQlEngine other) {
+            this.queryExecutionStrategy = other.queryExecutionStrategy;
+            this.mutationExecutionStrategy = other.mutationExecutionStrategy;
+            this.subscriptionExecutionStrategy = other.subscriptionExecutionStrategy;
+            this.instrumentation = other.instrumentation;
         }
 
         public Builder queryExecutionStrategy(ExecutionStrategy executionStrategy) {
@@ -137,8 +150,7 @@ public class OriginalGraphQlEngine implements GraphQLEngine {
         }
 
         public Builder instrumentation(Instrumentation instrumentation) {
-            assertTrue(instrumentation instanceof OriginalEngineInstrumentation, () -> "Instrumentation must an instance of OriginalEngineInstrumentation");
-            this.instrumentation = (OriginalEngineInstrumentation) instrumentation;
+            this.instrumentation = instrumentation;
             return this;
         }
 
@@ -159,14 +171,14 @@ public class OriginalGraphQlEngine implements GraphQLEngine {
             return this;
         }
 
-        private static OriginalEngineInstrumentation checkInstrumentationDefaultState(OriginalEngineInstrumentation instrumentation, boolean doNotAddDefaultInstrumentations) {
+        private static Instrumentation checkInstrumentationDefaultState(Instrumentation instrumentation, boolean doNotAddDefaultInstrumentations) {
             if (doNotAddDefaultInstrumentations) {
-                return instrumentation == null ? SimplePerformantInstrumentation.INSTANCE : instrumentation;
+                return instrumentation == null ? SimplePerformantOriginalInstrumentation.INSTANCE : instrumentation;
             }
             if (instrumentation instanceof DataLoaderDispatcherInstrumentation) {
                 return instrumentation;
             }
-            if (instrumentation instanceof NoContextChainedInstrumentation) {
+            if (instrumentation instanceof NoContextChainedOriginalInstrumentation) {
                 return instrumentation;
             }
             if (instrumentation == null) {
@@ -177,7 +189,7 @@ public class OriginalGraphQlEngine implements GraphQLEngine {
             // if we don't have a DataLoaderDispatcherInstrumentation in play, we add one.  We want DataLoader to be 1st class in graphql without requiring
             // people to remember to wire it in.  Later we may decide to have more default instrumentations but for now it's just the one
             //
-            List<OriginalEngineInstrumentation> instrumentationList = new ArrayList<>();
+            List<Instrumentation> instrumentationList = new ArrayList<>();
             if (instrumentation instanceof ChainedInstrumentation) {
                 instrumentationList.addAll(((ChainedInstrumentation) instrumentation).getInstrumentations());
             } else {
@@ -187,7 +199,7 @@ public class OriginalGraphQlEngine implements GraphQLEngine {
             if (!containsDLInstrumentation) {
                 instrumentationList.add(new DataLoaderDispatcherInstrumentation());
             }
-            return new ChainedInstrumentation(instrumentationList);
+            return new ChainedOriginalInstrumentation(instrumentationList);
         }
 
 

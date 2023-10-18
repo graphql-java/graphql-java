@@ -3,7 +3,7 @@ package graphql.execution;
 import com.google.common.collect.ImmutableList;
 import graphql.GraphQLError;
 import graphql.PublicApi;
-import graphql.execution.instrumentation.parameters.InstrumentationFieldCompleteParameters;
+import graphql.execution.instrumentation.original.parameters.InstrumentationFieldCompleteParameters;
 
 import java.util.List;
 import java.util.function.Consumer;
