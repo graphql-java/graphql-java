@@ -2,6 +2,7 @@ package graphql.execution;
 
 import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
+import graphql.Internal;
 import graphql.PublicApi;
 import graphql.execution.instrumentation.ExecutionStrategyInstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationContext;
@@ -34,7 +35,7 @@ import static java.util.Collections.singletonMap;
  * <p>
  * See <a href="https://www.reactive-streams.org/">https://www.reactive-streams.org/</a>
  */
-@PublicApi
+@Internal
 public class SubscriptionExecutionStrategy extends ExecutionStrategy {
 
     public SubscriptionExecutionStrategy() {

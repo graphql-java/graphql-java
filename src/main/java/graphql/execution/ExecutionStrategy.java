@@ -125,7 +125,7 @@ import static java.util.concurrent.CompletableFuture.completedFuture;
  * <p>
  * {@link #execute(ExecutionContext, ExecutionStrategyParameters)} is the entry point of the execution strategy.
  */
-@PublicSpi
+@Internal
 @SuppressWarnings("FutureReturnValueIgnored")
 public abstract class ExecutionStrategy {
 

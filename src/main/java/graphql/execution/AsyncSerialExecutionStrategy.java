@@ -2,6 +2,7 @@ package graphql.execution;
 
 import com.google.common.collect.ImmutableList;
 import graphql.ExecutionResult;
+import graphql.Internal;
 import graphql.PublicApi;
 import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.original.OriginalInstrumentation;
@@ -16,7 +17,7 @@ import static graphql.execution.instrumentation.SimpleInstrumentationContext.non
  * Async non-blocking execution, but serial: only one field at the time will be resolved.
  * See {@link AsyncExecutionStrategy} for a non-serial (parallel) execution of every field.
  */
-@PublicApi
+@Internal
 public class AsyncSerialExecutionStrategy extends AbstractAsyncExecutionStrategy {
 
     public AsyncSerialExecutionStrategy() {

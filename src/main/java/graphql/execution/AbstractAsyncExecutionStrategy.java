@@ -3,6 +3,7 @@ package graphql.execution;
 import com.google.common.collect.Maps;
 import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
+import graphql.Internal;
 import graphql.PublicSpi;
 
 import java.util.LinkedHashMap;
@@ -12,7 +13,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
 
 
-@PublicSpi
+@Internal
 public abstract class AbstractAsyncExecutionStrategy extends ExecutionStrategy {
 
     public AbstractAsyncExecutionStrategy() {

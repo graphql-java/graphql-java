@@ -1,6 +1,7 @@
 package graphql.execution;
 
 import graphql.ExecutionResult;
+import graphql.Internal;
 import graphql.PublicApi;
 import graphql.execution.instrumentation.ExecutionStrategyInstrumentationContext;
 import graphql.execution.instrumentation.original.OriginalInstrumentation;
@@ -14,7 +15,7 @@ import java.util.function.BiConsumer;
 /**
  * The standard graphql execution strategy that runs fields asynchronously non-blocking.
  */
-@PublicApi
+@Internal
 public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
 
     /**
