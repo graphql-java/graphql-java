@@ -920,7 +920,7 @@ class GraphQLTest extends Specification {
         @Override
         CompletableFuture<ExecutionResult> execute(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
             executionId = executionContext.executionId
-            instrumentation = getInstrumentation(executionContext)
+            instrumentation = executionContext.getInstrumentation()
             return super.execute(executionContext, parameters)
         }
     }
@@ -967,7 +967,9 @@ class GraphQLTest extends Specification {
         }
 
         newGraphQL = graphQL.transform({ builder ->
-            builder.executionIdProvider(newExecutionIdProvider).instrumentation(newInstrumentation)
+            def engine = graphQL.getGraphQLEngine() as OriginalGraphQlEngine
+            engine  = engine.transform { it.instrumentation(newInstrumentation)}
+            builder.executionIdProvider(newExecutionIdProvider).graphQLEngine(engine)
         })
         result = newGraphQL.execute('{ hello }').data
 
@@ -983,14 +985,13 @@ class GraphQLTest extends Specification {
         given:
         def queryStrategy = new CaptureStrategy()
         def instrumentation = new SimplePerformantInstrumentation()
-        def builder = GraphQL.newGraphQL(simpleSchema())
-                .queryExecutionStrategy(queryStrategy)
-                .instrumentation(instrumentation)
+        def builder = OriginalGraphQlEngine.newEngine().queryExecutionStrategy(queryStrategy).instrumentation(instrumentation)
 
         when:
-        def graphql = builder
+        def engine = builder
                 .doNotAddDefaultInstrumentations()
                 .build()
+        def graphql = GraphQL.newGraphQL(simpleSchema()).graphQLEngine(engine).build()
         graphql.execute('{ hello }')
 
         then:

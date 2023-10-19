@@ -8,6 +8,7 @@ import graphql.GraphQLError
 import graphql.GraphqlErrorBuilder
 import graphql.TestUtil
 import graphql.TypeMismatchError
+import graphql.engine.original.OriginalGraphQlEngine
 import graphql.execution.instrumentation.LegacyTestingInstrumentation
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters
 import graphql.execution.pubsub.CapturingSubscriber
@@ -585,7 +586,11 @@ class SubscriptionExecutionStrategyTest extends Specification {
             }
         }
         GraphQL graphQL = buildSubscriptionQL(newMessageDF)
-        graphQL = graphQL.transform({ builder -> builder.instrumentation(instrumentation) })
+        graphQL = graphQL.transform({ builder ->
+            def engine = graphQL.getGraphQLEngine() as OriginalGraphQlEngine
+            engine = engine.transform { it.instrumentation(instrumentation) }
+            builder.graphQLEngine(engine)
+        })
 
         def executionInput = ExecutionInput.newExecutionInput().query("""
             subscription NewMessages {

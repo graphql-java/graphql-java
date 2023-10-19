@@ -3,6 +3,7 @@ package graphql.execution.instrumentation
 import graphql.GraphQL
 import graphql.StarWarsSchema
 import graphql.execution.AsyncExecutionStrategy
+import graphql.execution.instrumentation.original.NoContextChainedOriginalInstrumentation
 import spock.lang.Specification
 
 class NoContextChainedInstrumentationTest extends Specification {
@@ -12,7 +13,7 @@ class NoContextChainedInstrumentationTest extends Specification {
         def a = new NamedInstrumentation("A")
         def b = new NamedInstrumentation("B")
         def c = new NamedInstrumentation("C")
-        def noContextChainedInstrumentation = new NoContextChainedInstrumentation([
+        def noContextChainedInstrumentation = new NoContextChainedOriginalInstrumentation([
                 a,
                 b,
                 c,
@@ -26,7 +27,7 @@ class NoContextChainedInstrumentationTest extends Specification {
         }
         """
 
-        // no end: statements becaue the context is never called
+        // no end: statements because the context is never called
         def expected = [
                 "start:execution",
 
