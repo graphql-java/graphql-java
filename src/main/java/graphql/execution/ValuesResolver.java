@@ -27,6 +27,7 @@ import graphql.schema.GraphQLList;
 import graphql.schema.GraphQLScalarType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLType;
+import graphql.schema.GraphQLTypeUtil;
 import graphql.schema.InputValueWithState;
 import graphql.schema.visibility.GraphqlFieldVisibility;
 import org.jetbrains.annotations.NotNull;
@@ -376,8 +377,9 @@ public class ValuesResolver {
                     coercedValues.put(argumentName, value);
                 }
                 // @oneOf input must be checked now that all variables and literals have been converted
-                if (argumentType instanceof GraphQLInputObjectType) {
-                    GraphQLInputObjectType inputObjectType = (GraphQLInputObjectType) argumentType;
+                GraphQLType unwrappedType = GraphQLTypeUtil.unwrapNonNull(argumentType);
+                if (unwrappedType instanceof GraphQLInputObjectType) {
+                    GraphQLInputObjectType inputObjectType = (GraphQLInputObjectType) unwrappedType;
                     if (inputObjectType.isOneOf() && ! ValuesResolverConversion.isNullValue(value)) {
                         validateOneOfInputTypes(inputObjectType, argumentValue, argumentName, value, locale);
                     }
