@@ -216,7 +216,7 @@ public abstract class ExecutionStrategy {
 
         CompletableFuture<ExecutionResult> executionResultFuture = result.thenCompose(FieldValueInfo::getFieldValue);
 
-        fieldCtx.onDispatched(executionResultFuture);
+        fieldCtx.onDispatched();
         executionResultFuture.whenComplete(fieldCtx::onCompleted);
         return result;
     }
@@ -286,7 +286,7 @@ public abstract class ExecutionStrategy {
         dataFetcher = instrumentation.instrumentDataFetcher(dataFetcher, instrumentationFieldFetchParams, executionContext.getInstrumentationState());
         CompletableFuture<Object> fetchedValue = invokeDataFetcher(executionContext, parameters, fieldDef, dataFetchingEnvironment, dataFetcher);
 
-        fetchCtx.onDispatched(fetchedValue);
+        fetchCtx.onDispatched();
         return fetchedValue
                 .handle((result, exception) -> {
                     fetchCtx.onCompleted(result, exception);
@@ -435,7 +435,7 @@ public abstract class ExecutionStrategy {
         FieldValueInfo fieldValueInfo = completeValue(executionContext, newParameters);
 
         CompletableFuture<ExecutionResult> executionResultFuture = fieldValueInfo.getFieldValue();
-        ctxCompleteField.onDispatched(executionResultFuture);
+        ctxCompleteField.onDispatched();
         executionResultFuture.whenComplete(ctxCompleteField::onCompleted);
         return fieldValueInfo;
     }
@@ -590,7 +590,7 @@ public abstract class ExecutionStrategy {
         CompletableFuture<List<ExecutionResult>> resultsFuture = Async.each(fieldValueInfos, FieldValueInfo::getFieldValue);
 
         CompletableFuture<ExecutionResult> overallResult = new CompletableFuture<>();
-        completeListCtx.onDispatched(overallResult);
+        completeListCtx.onDispatched();
 
         resultsFuture.whenComplete((results, exception) -> {
             if (exception != null) {

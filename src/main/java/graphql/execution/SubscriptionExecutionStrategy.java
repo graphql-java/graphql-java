@@ -69,7 +69,7 @@ public class SubscriptionExecutionStrategy extends ExecutionStrategy {
         });
 
         // dispatched the subscription query
-        executionStrategyCtx.onDispatched(overallResult);
+        executionStrategyCtx.onDispatched();
         overallResult.whenComplete(executionStrategyCtx::onCompleted);
 
         return overallResult;
@@ -139,7 +139,7 @@ public class SubscriptionExecutionStrategy extends ExecutionStrategy {
                 .thenApply(executionResult -> wrapWithRootFieldName(newParameters, executionResult));
 
         // dispatch instrumentation so they can know about each subscription event
-        subscribedFieldCtx.onDispatched(overallResult);
+        subscribedFieldCtx.onDispatched();
         overallResult.whenComplete(subscribedFieldCtx::onCompleted);
 
         // allow them to instrument each ER should they want to

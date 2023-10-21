@@ -56,7 +56,7 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
             futures.add(future);
         }
         CompletableFuture<ExecutionResult> overallResult = new CompletableFuture<>();
-        executionStrategyCtx.onDispatched(overallResult);
+        executionStrategyCtx.onDispatched();
 
         futures.await().whenComplete((completeValueInfos, throwable) -> {
             BiConsumer<List<ExecutionResult>, Throwable> handleResultsConsumer = handleResults(executionContext, fieldNames, overallResult);
