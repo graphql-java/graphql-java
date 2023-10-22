@@ -23,6 +23,7 @@ import graphql.language.Value
 import graphql.language.VariableDefinition
 import graphql.language.VariableReference
 import graphql.schema.CoercingParseValueException
+import graphql.schema.GraphQLNonNull
 import spock.lang.Specification
 import spock.lang.Unroll
 
@@ -360,15 +361,25 @@ class ValuesResolverTest extends Specification {
                         .type(GraphQLInt)
                         .build())
                 .build()
-        def fieldArgument = newArgument().name("arg").type(inputObjectType).build()
+
+        def argument = new Argument("arg", inputValue)
 
         when:
-        def argument = new Argument("arg", inputValue)
+        def fieldArgument = newArgument().name("arg").type(inputObjectType).build()
         ValuesResolver.getArgumentValues([fieldArgument], [argument], variables, graphQLContext, locale)
 
         then:
         def e = thrown(OneOfTooManyKeysException)
         e.message == "Exactly one key must be specified for OneOf type 'oneOfInputObject'."
+
+        when: "input type is wrapped in non-null"
+        def nonNullInputObjectType = GraphQLNonNull.nonNull(inputObjectType)
+        def fieldArgumentNonNull = newArgument().name("arg").type(nonNullInputObjectType).build()
+        ValuesResolver.getArgumentValues([fieldArgumentNonNull], [argument], variables, graphQLContext, locale)
+
+        then:
+        def eNonNull = thrown(OneOfTooManyKeysException)
+        eNonNull.message == "Exactly one key must be specified for OneOf type 'oneOfInputObject'."
 
         where:
         // from https://github.com/graphql/graphql-spec/pull/825/files#diff-30a69c5a5eded8e1aea52e53dad1181e6ec8f549ca2c50570b035153e2de1c43R1692
@@ -499,6 +510,44 @@ class ValuesResolverTest extends Specification {
         '{ a: $var }` { var : "abc"}'  | buildObjectLiteral([
                 a: VariableReference.of("var")
         ])                                            | CoercedVariables.of([var: "abc"])      | [arg: [a: "abc"]]
+
+    }
+
+    def "getArgumentValues: invalid oneOf input no values where passed - #testCase"() {
+        given: "schema defining input object"
+        def inputObjectType = newInputObject()
+                .name("oneOfInputObject")
+                .withAppliedDirective(Directives.OneOfDirective.toAppliedDirective())
+                .field(newInputObjectField()
+                        .name("a")
+                        .type(GraphQLString)
+                        .build())
+                .field(newInputObjectField()
+                        .name("b")
+                        .type(GraphQLInt)
+                        .build())
+                .build()
+        def fieldArgument = newArgument().name("arg").type(inputObjectType).build()
+
+        when:
+        def argument = new Argument("arg", inputValue)
+        ValuesResolver.getArgumentValues([fieldArgument], [argument], variables, graphQLContext, locale)
+
+        then:
+        def e = thrown(OneOfNullValueException)
+        e.message == "OneOf type field 'oneOfInputObject.a' must be non-null."
+
+        where:
+        // from https://github.com/graphql/graphql-spec/pull/825/files#diff-30a69c5a5eded8e1aea52e53dad1181e6ec8f549ca2c50570b035153e2de1c43R1692
+        testCase                       | inputValue   | variables
+
+        '`{ a: null }` {}'             | buildObjectLiteral([
+                a: NullValue.of()
+        ])                                            | CoercedVariables.emptyVariables()
+
+        '`{ a: $var }`  { var : null}' | buildObjectLiteral([
+                a: VariableReference.of("var")
+        ])                                            | CoercedVariables.of(["var": null])
 
     }
 
