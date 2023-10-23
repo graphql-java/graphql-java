@@ -135,7 +135,7 @@ public class OverlappingFieldsCanBeMerged extends AbstractRule {
             GraphQLFieldDefinition fieldDefinition = getVisibleFieldDefinition(fieldsContainer, field);
             fieldType = fieldDefinition != null ? fieldDefinition.getType() : null;
         }
-        fieldMap.get(responseName).add(new FieldAndType(field, fieldType, parentType));
+        fieldMap.get(responseName).add(new FieldAndType(field, fieldType, unwrappedParent));
     }
 
     private GraphQLFieldDefinition getVisibleFieldDefinition(GraphQLFieldsContainer fieldsContainer, Field field) {
