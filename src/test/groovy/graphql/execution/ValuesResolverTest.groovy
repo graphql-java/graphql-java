@@ -427,6 +427,48 @@ class ValuesResolverTest extends Specification {
                                                             | CoercedVariables.of(["var": [:]])
     }
 
+    def "getArgumentValues: invalid oneOf input validation applied with nested input types"() {
+        given: "schema defining input object"
+        def oneOfObjectType = newInputObject()
+                .name("OneOfInputObject")
+                .withAppliedDirective(Directives.OneOfDirective.toAppliedDirective())
+                .field(newInputObjectField()
+                        .name("a")
+                        .type(GraphQLString)
+                        .build())
+                .field(newInputObjectField()
+                        .name("b")
+                        .type(GraphQLInt)
+                        .build())
+                .build()
+
+        def parentObjectType = newInputObject()
+                .name("ParentInputObject")
+                .field(newInputObjectField()
+                        .name("oneOfField")
+                        .type(oneOfObjectType)
+                        .build())
+                .build()
+
+        def inputValue = buildObjectLiteral([
+                oneOfField: [
+                        a: StringValue.of("abc"),
+                        b: IntValue.of(123)
+                ]
+        ])
+
+        def argument = new Argument("arg", inputValue)
+
+        when:
+        def fieldArgument = newArgument().name("arg").type(parentObjectType).build()
+        ValuesResolver.getArgumentValues([fieldArgument], [argument], CoercedVariables.emptyVariables(), graphQLContext, locale)
+
+        then:
+        def e = thrown(OneOfTooManyKeysException)
+        e.message == "Exactly one key must be specified for OneOf type 'oneOfInputObject'."
+
+    }
+
     def "getArgumentValues: invalid oneOf input because of null value - #testCase"() {
         given: "schema defining input object"
         def inputObjectType = newInputObject()
