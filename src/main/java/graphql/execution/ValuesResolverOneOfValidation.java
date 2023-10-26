@@ -20,7 +20,6 @@ final class ValuesResolverOneOfValidation {
 
     @SuppressWarnings("unchecked")
     static void validateOneOfInputTypes(GraphQLType type, Object inputValue, Value<?> argumentValue, String argumentName, Locale locale) {
-        // @oneOf input must be checked now that all variables and literals have been converted
         GraphQLType unwrappedType = GraphQLTypeUtil.unwrapNonNull(type);
 
         if (unwrappedType instanceof GraphQLInputObjectType && !ValuesResolverConversion.isNullValue(inputValue)) {
