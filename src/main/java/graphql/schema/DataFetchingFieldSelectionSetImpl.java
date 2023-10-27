@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableSet;
 import graphql.Internal;
 import graphql.collect.ImmutableKit;
 import graphql.normalized.ExecutableNormalizedField;
+import graphql.util.LockKit;
 
 import java.io.File;
 import java.nio.file.FileSystems;
@@ -89,7 +90,7 @@ public class DataFetchingFieldSelectionSetImpl implements DataFetchingFieldSelec
 
     private final Supplier<ExecutableNormalizedField> normalizedFieldSupplier;
 
-    private volatile boolean computedValues;
+    private LockKit.ComputedOnce computedOnce = new LockKit.ComputedOnce();
     // we have multiple entries in this map so that we can do glob matching in multiple ways
     // however it needs to be normalised back to a set of unique fields when give back out to
     // the caller.
@@ -101,7 +102,6 @@ public class DataFetchingFieldSelectionSetImpl implements DataFetchingFieldSelec
     private DataFetchingFieldSelectionSetImpl(Supplier<ExecutableNormalizedField> normalizedFieldSupplier, GraphQLSchema schema) {
         this.schema = schema;
         this.normalizedFieldSupplier = normalizedFieldSupplier;
-        this.computedValues = false;
     }
 
     @Override
@@ -205,23 +205,19 @@ public class DataFetchingFieldSelectionSetImpl implements DataFetchingFieldSelec
     }
 
     private void computeValuesLazily() {
-        if (computedValues) {
+        if (computedOnce.hasBeenComputed()) {
             return;
         }
         // this supplier is a once only thread synced call - so do it outside this lock
         // if only to have only 1 lock in action at a time
         ExecutableNormalizedField currentNormalisedField = normalizedFieldSupplier.get();
-        synchronized (this) {
-            if (computedValues) {
-                return;
-            }
+        computedOnce.runOnce(() -> {
             flattenedFieldsForGlobSearching = new LinkedHashSet<>();
             normalisedSelectionSetFields = new LinkedHashMap<>();
             ImmutableList.Builder<SelectedField> immediateFieldsBuilder = ImmutableList.builder();
             traverseSubSelectedFields(currentNormalisedField, immediateFieldsBuilder, "", "", true);
             immediateFields = immediateFieldsBuilder.build();
-            computedValues = true;
-        }
+        });
     }
 
 
@@ -280,7 +276,7 @@ public class DataFetchingFieldSelectionSetImpl implements DataFetchingFieldSelec
 
     @Override
     public String toString() {
-        if (!computedValues) {
+        if (!computedOnce.hasBeenComputed()) {
             return "notComputed";
         }
         return String.join("\n", flattenedFieldsForGlobSearching);

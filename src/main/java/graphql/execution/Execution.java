@@ -4,6 +4,7 @@ package graphql.execution;
 import graphql.ExecutionInput;
 import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
+import graphql.GraphQLContext;
 import graphql.GraphQLError;
 import graphql.Internal;
 import graphql.execution.instrumentation.Instrumentation;
@@ -11,6 +12,7 @@ import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationState;
 import graphql.execution.instrumentation.parameters.InstrumentationExecuteOperationParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters;
+import graphql.extensions.ExtensionsBuilder;
 import graphql.language.Document;
 import graphql.language.FragmentDefinition;
 import graphql.language.NodeUtil;
@@ -18,6 +20,7 @@ import graphql.language.OperationDefinition;
 import graphql.language.VariableDefinition;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
+import graphql.schema.impl.SchemaUtil;
 import graphql.util.LogKit;
 import org.slf4j.Logger;
 
@@ -26,14 +29,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
-import static graphql.Assert.assertShouldNeverHappen;
 import static graphql.execution.ExecutionContextBuilder.newExecutionContextBuilder;
 import static graphql.execution.ExecutionStepInfo.newExecutionStepInfo;
 import static graphql.execution.ExecutionStrategyParameters.newParameters;
 import static graphql.execution.instrumentation.SimpleInstrumentationContext.nonNullCtx;
-import static graphql.language.OperationDefinition.Operation.MUTATION;
-import static graphql.language.OperationDefinition.Operation.QUERY;
-import static graphql.language.OperationDefinition.Operation.SUBSCRIPTION;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 
 @Internal
@@ -45,7 +44,7 @@ public class Execution {
     private final ExecutionStrategy mutationStrategy;
     private final ExecutionStrategy subscriptionStrategy;
     private final Instrumentation instrumentation;
-    private ValueUnboxer valueUnboxer;
+    private final ValueUnboxer valueUnboxer;
 
     public Execution(ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy, ExecutionStrategy subscriptionStrategy, Instrumentation instrumentation, ValueUnboxer valueUnboxer) {
         this.queryStrategy = queryStrategy != null ? queryStrategy : new AsyncExecutionStrategy();
@@ -66,7 +65,7 @@ public class Execution {
 
         CoercedVariables coercedVariables;
         try {
-            coercedVariables = ValuesResolver.coerceVariableValues(graphQLSchema, variableDefinitions, inputVariables);
+            coercedVariables = ValuesResolver.coerceVariableValues(graphQLSchema, variableDefinitions, inputVariables, executionInput.getGraphQLContext(), executionInput.getLocale());
         } catch (RuntimeException rte) {
             if (rte instanceof GraphQLError) {
                 return completedFuture(new ExecutionResultImpl((GraphQLError) rte));
@@ -91,7 +90,6 @@ public class Execution {
                 .document(document)
                 .operationDefinition(operationDefinition)
                 .dataLoaderRegistry(executionInput.getDataLoaderRegistry())
-                .cacheControl(executionInput.getCacheControl())
                 .locale(executionInput.getLocale())
                 .valueUnboxer(valueUnboxer)
                 .executionInput(executionInput)
@@ -108,6 +106,9 @@ public class Execution {
 
     private CompletableFuture<ExecutionResult> executeOperation(ExecutionContext executionContext, Object root, OperationDefinition operationDefinition) {
 
+        GraphQLContext graphQLContext = executionContext.getGraphQLContext();
+        addExtensionsBuilderNotPresent(graphQLContext);
+
         InstrumentationExecuteOperationParameters instrumentationParams = new InstrumentationExecuteOperationParameters(executionContext);
         InstrumentationContext<ExecutionResult> executeOperationCtx = nonNullCtx(instrumentation.beginExecuteOperation(instrumentationParams, executionContext.getInstrumentationState()));
 
@@ -115,7 +116,7 @@ public class Execution {
         GraphQLObjectType operationRootType;
 
         try {
-            operationRootType = getOperationRootType(executionContext.getGraphQLSchema(), operationDefinition);
+            operationRootType = SchemaUtil.getOperationRootType(executionContext.getGraphQLSchema(), operationDefinition);
         } catch (RuntimeException rte) {
             if (rte instanceof GraphQLError) {
                 ExecutionResult executionResult = new ExecutionResultImpl(Collections.singletonList((GraphQLError) rte));
@@ -132,7 +133,8 @@ public class Execution {
                 .schema(executionContext.getGraphQLSchema())
                 .objectType(operationRootType)
                 .fragments(executionContext.getFragmentsByName())
-                .variables(executionContext.getVariables())
+                .variables(executionContext.getCoercedVariables().toMap())
+                .graphQLContext(graphQLContext)
                 .build();
 
         MergedSelectionSet fields = fieldCollector.collectFields(collectorParameters, operationDefinition.getSelectionSet());
@@ -158,12 +160,12 @@ public class Execution {
             }
             result = executionStrategy.execute(executionContext, parameters);
         } catch (NonNullableFieldWasNullException e) {
-            // this means it was non null types all the way from an offending non null type
-            // up to the root object type and there was a a null value some where.
+            // this means it was non-null types all the way from an offending non-null type
+            // up to the root object type and there was a null value somewhere.
             //
             // The spec says we should return null for the data in this case
             //
-            // http://facebook.github.io/graphql/#sec-Errors-and-Non-Nullability
+            // https://spec.graphql.org/October2021/#sec-Handling-Field-Errors
             //
             result = completedFuture(new ExecutionResultImpl(null, executionContext.getErrors()));
         }
@@ -171,34 +173,30 @@ public class Execution {
         // note this happens NOW - not when the result completes
         executeOperationCtx.onDispatched(result);
 
-        result = result.whenComplete(executeOperationCtx::onCompleted);
+        // fill out extensions if we have them
+        result = result.thenApply(er -> mergeExtensionsBuilderIfPresent(er, graphQLContext));
 
+        result = result.whenComplete(executeOperationCtx::onCompleted);
         return result;
     }
 
-
-    private GraphQLObjectType getOperationRootType(GraphQLSchema graphQLSchema, OperationDefinition operationDefinition) {
-        OperationDefinition.Operation operation = operationDefinition.getOperation();
-        if (operation == MUTATION) {
-            GraphQLObjectType mutationType = graphQLSchema.getMutationType();
-            if (mutationType == null) {
-                throw new MissingRootTypeException("Schema is not configured for mutations.", operationDefinition.getSourceLocation());
-            }
-            return mutationType;
-        } else if (operation == QUERY) {
-            GraphQLObjectType queryType = graphQLSchema.getQueryType();
-            if (queryType == null) {
-                throw new MissingRootTypeException("Schema does not define the required query root type.", operationDefinition.getSourceLocation());
-            }
-            return queryType;
-        } else if (operation == SUBSCRIPTION) {
-            GraphQLObjectType subscriptionType = graphQLSchema.getSubscriptionType();
-            if (subscriptionType == null) {
-                throw new MissingRootTypeException("Schema is not configured for subscriptions.", operationDefinition.getSourceLocation());
-            }
-            return subscriptionType;
-        } else {
-            return assertShouldNeverHappen("Unhandled case.  An extra operation enum has been added without code support");
+    private void addExtensionsBuilderNotPresent(GraphQLContext graphQLContext) {
+        Object builder = graphQLContext.get(ExtensionsBuilder.class);
+        if (builder == null) {
+            graphQLContext.put(ExtensionsBuilder.class, ExtensionsBuilder.newExtensionsBuilder());
         }
+    }
+
+    private ExecutionResult mergeExtensionsBuilderIfPresent(ExecutionResult executionResult, GraphQLContext graphQLContext) {
+        Object builder = graphQLContext.get(ExtensionsBuilder.class);
+        if (builder instanceof ExtensionsBuilder) {
+            ExtensionsBuilder extensionsBuilder = (ExtensionsBuilder) builder;
+            Map<Object, Object> currentExtensions = executionResult.getExtensions();
+            if (currentExtensions != null) {
+                extensionsBuilder.addValues(currentExtensions);
+            }
+            executionResult = extensionsBuilder.setExtensions(executionResult);
+        }
+        return executionResult;
     }
 }

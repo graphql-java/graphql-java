@@ -13,31 +13,6 @@ import graphql.util.TreeTransformerUtil;
  */
 @PublicApi
 public interface GraphQLTypeVisitor {
-    TraversalControl visitGraphQLArgument(GraphQLArgument node, TraverserContext<GraphQLSchemaElement> context);
-
-    TraversalControl visitGraphQLInterfaceType(GraphQLInterfaceType node, TraverserContext<GraphQLSchemaElement> context);
-
-    TraversalControl visitGraphQLEnumType(GraphQLEnumType node, TraverserContext<GraphQLSchemaElement> context);
-
-    TraversalControl visitGraphQLEnumValueDefinition(GraphQLEnumValueDefinition node, TraverserContext<GraphQLSchemaElement> context);
-
-    TraversalControl visitGraphQLFieldDefinition(GraphQLFieldDefinition node, TraverserContext<GraphQLSchemaElement> context);
-
-    /**
-     * This method will be called twice.  Once for a directive definition in a schema and then do each time a directive is applied to a schema element
-     *
-     * When it's applied to a schema element then {@link TraverserContext#getParentNode()} will be the schema element that this is applied to.
-     *
-     * The graphql-java code base is trying to slowly move away from using {@link GraphQLDirective}s when they really should be {@link GraphQLAppliedDirective}s
-     * and this is another place that has been left in.  In the future this behavior will change and this will only visit directive definitions of a schema, not where
-     * they are applied.
-     *
-     * @param node the directive
-     * @param context the traversal context
-     * @return how to control the visitation processing
-     */
-    TraversalControl visitGraphQLDirective(GraphQLDirective node, TraverserContext<GraphQLSchemaElement> context);
-
     /**
      * This method will be called when a directive is applied to a schema element.
      *
@@ -45,8 +20,9 @@ public interface GraphQLTypeVisitor {
      *
      * The graphql-java code base is trying to slowly move away from using {@link GraphQLDirective}s when they really should be {@link GraphQLAppliedDirective}s
      *
-     * @param node the applied directive
+     * @param node    the applied directive
      * @param context the traversal context
+     *
      * @return how to control the visitation processing
      */
     default TraversalControl visitGraphQLAppliedDirective(GraphQLAppliedDirective node, TraverserContext<GraphQLSchemaElement> context) {
@@ -57,9 +33,35 @@ public interface GraphQLTypeVisitor {
         return TraversalControl.CONTINUE;
     }
 
+    TraversalControl visitGraphQLArgument(GraphQLArgument node, TraverserContext<GraphQLSchemaElement> context);
+
+    /**
+     * This method will be called twice.  Once for a directive definition in a schema and then do each time a directive is applied to a schema element
+     *
+     * When it's applied to a schema element then {@link TraverserContext#getParentNode()} will be the schema element that this is applied to.
+     *
+     * The graphql-java code base is trying to slowly move away from using {@link GraphQLDirective}s when they really should be {@link GraphQLAppliedDirective}s
+     * and this is another place that has been left in.  In the future this behavior will change and this will only visit directive definitions of a schema, not where
+     * they are applied.
+     *
+     * @param node    the directive
+     * @param context the traversal context
+     *
+     * @return how to control the visitation processing
+     */
+    TraversalControl visitGraphQLDirective(GraphQLDirective node, TraverserContext<GraphQLSchemaElement> context);
+
+    TraversalControl visitGraphQLEnumType(GraphQLEnumType node, TraverserContext<GraphQLSchemaElement> context);
+
+    TraversalControl visitGraphQLEnumValueDefinition(GraphQLEnumValueDefinition node, TraverserContext<GraphQLSchemaElement> context);
+
+    TraversalControl visitGraphQLFieldDefinition(GraphQLFieldDefinition node, TraverserContext<GraphQLSchemaElement> context);
+
     TraversalControl visitGraphQLInputObjectField(GraphQLInputObjectField node, TraverserContext<GraphQLSchemaElement> context);
 
     TraversalControl visitGraphQLInputObjectType(GraphQLInputObjectType node, TraverserContext<GraphQLSchemaElement> context);
+
+    TraversalControl visitGraphQLInterfaceType(GraphQLInterfaceType node, TraverserContext<GraphQLSchemaElement> context);
 
     TraversalControl visitGraphQLList(GraphQLList node, TraverserContext<GraphQLSchemaElement> context);
 
@@ -86,10 +88,6 @@ public interface GraphQLTypeVisitor {
     }
 
     // Marker interfaces
-    default TraversalControl visitGraphQLModifiedType(GraphQLModifiedType node, TraverserContext<GraphQLSchemaElement> context) {
-        throw new UnsupportedOperationException();
-    }
-
     default TraversalControl visitGraphQLCompositeType(GraphQLCompositeType node, TraverserContext<GraphQLSchemaElement> context) {
         throw new UnsupportedOperationException();
     }
@@ -107,6 +105,10 @@ public interface GraphQLTypeVisitor {
     }
 
     default TraversalControl visitGraphQLInputType(GraphQLInputType node, TraverserContext<GraphQLSchemaElement> context) {
+        throw new UnsupportedOperationException();
+    }
+
+    default TraversalControl visitGraphQLModifiedType(GraphQLModifiedType node, TraverserContext<GraphQLSchemaElement> context) {
         throw new UnsupportedOperationException();
     }
 

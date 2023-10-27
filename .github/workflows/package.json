@@ -1,0 +1,14 @@
+{
+  "name": "workflow-testrunner-tasksenqueuer",
+  "private": true,
+  "engines": {
+    "node": ">=12.0.0"
+  },
+  "files": [
+    "*.js"
+  ],
+  "dependencies": {
+    "@google-cloud/tasks": "^3.0.0",
+    "uuid": "^8.0.0"
+  }
+}

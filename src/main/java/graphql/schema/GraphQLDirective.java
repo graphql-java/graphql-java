@@ -23,7 +23,7 @@ import static graphql.util.FpKit.getByName;
 /**
  * A directive can be used to modify the behavior of a graphql field or type.
  * <p>
- * See http://graphql.org/learn/queries/#directives for more details on the concept.
+ * See <a href="https://graphql.org/learn/queries/#directives">https://graphql.org/learn/queries/#directives</a> for more details on the concept.
  * <p>
  * A directive has a definition, that is what arguments it takes, and it can also be applied
  * to other schema elements.  Originally graphql-java re-used the {@link GraphQLDirective} and {@link GraphQLArgument}

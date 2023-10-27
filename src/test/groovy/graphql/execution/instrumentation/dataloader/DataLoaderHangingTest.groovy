@@ -2,7 +2,6 @@ package graphql.execution.instrumentation.dataloader
 
 import com.github.javafaker.Faker
 import graphql.ExecutionInput
-import graphql.ExecutionResult
 import graphql.GraphQL
 import graphql.TestUtil
 import graphql.execution.Async
@@ -19,6 +18,7 @@ import graphql.schema.idl.RuntimeWiring
 import org.apache.commons.lang3.concurrent.BasicThreadFactory
 import org.dataloader.BatchLoader
 import org.dataloader.DataLoader
+import org.dataloader.DataLoaderFactory
 import org.dataloader.DataLoaderOptions
 import org.dataloader.DataLoaderRegistry
 import spock.lang.Specification
@@ -129,7 +129,7 @@ class DataLoaderHangingTest extends Specification {
                 .build()
 
         then: "execution shouldn't hang"
-        List<CompletableFuture<ExecutionResult>> futures = []
+        def futures = Async.ofExpectedSize(NUM_OF_REPS)
         for (int i = 0; i < NUM_OF_REPS; i++) {
             DataLoaderRegistry dataLoaderRegistry = mkNewDataLoaderRegistry(executor)
 
@@ -167,7 +167,7 @@ class DataLoaderHangingTest extends Specification {
             futures.add(result)
         }
         // wait for each future to complete and grab the results
-        Async.each(futures)
+        futures.await()
                 .whenComplete({ results, error ->
                     if (error) {
                         throw error
@@ -178,7 +178,7 @@ class DataLoaderHangingTest extends Specification {
     }
 
     private DataLoaderRegistry mkNewDataLoaderRegistry(executor) {
-        def dataLoaderAlbums = new DataLoader<Object, Object>(new BatchLoader<DataFetchingEnvironment, List<Object>>() {
+        def dataLoaderAlbums = DataLoaderFactory.newDataLoader(new BatchLoader<DataFetchingEnvironment, List<Object>>() {
             @Override
             CompletionStage<List<List<Object>>> load(List<DataFetchingEnvironment> keys) {
                 return CompletableFuture.supplyAsync({
@@ -195,7 +195,7 @@ class DataLoaderHangingTest extends Specification {
             }
         }, DataLoaderOptions.newOptions().setMaxBatchSize(5))
 
-        def dataLoaderSongs = new DataLoader<Object, Object>(new BatchLoader<DataFetchingEnvironment, List<Object>>() {
+        def dataLoaderSongs = DataLoaderFactory.newDataLoader(new BatchLoader<DataFetchingEnvironment, List<Object>>() {
             @Override
             CompletionStage<List<List<Object>>> load(List<DataFetchingEnvironment> keys) {
                 return CompletableFuture.supplyAsync({
@@ -241,8 +241,13 @@ class DataLoaderHangingTest extends Specification {
         """
 
     DataFetcherExceptionHandler customExceptionHandlerThatThrows = new DataFetcherExceptionHandler() {
+
         @Override
-        DataFetcherExceptionHandlerResult onException(DataFetcherExceptionHandlerParameters handlerParameters) {
+        CompletableFuture<DataFetcherExceptionHandlerResult> handleException(DataFetcherExceptionHandlerParameters handlerParameters) {
+            //
+            // this is a weird test case - its not actually handling the exception - its a test
+            // case where the handler code itself throws an exception during the handling
+            // and that will not stop the DataLoader from being dispatched
             throw handlerParameters.exception
         }
     }
@@ -289,7 +294,7 @@ class DataLoaderHangingTest extends Specification {
         @Override
         Object get(DataFetchingEnvironment environment) {
             Product source = environment.getSource()
-            DataLoaderRegistry dlRegistry = environment.getContext()
+            DataLoaderRegistry dlRegistry = environment.getGraphQlContext().get("registry")
             DataLoader<Integer, Person> personDL = dlRegistry.getDataLoader("person")
             return personDL.load(source.getSuppliedById()).thenApply({ person ->
                 if (person.id == 0) {
@@ -304,7 +309,7 @@ class DataLoaderHangingTest extends Specification {
         @Override
         Object get(DataFetchingEnvironment environment) {
             Person source = environment.getSource()
-            DataLoaderRegistry dlRegistry = environment.getContext()
+            DataLoaderRegistry dlRegistry = environment.getGraphQlContext().get("registry")
             DataLoader<Integer, Company> companyDL = dlRegistry.getDataLoader("company")
             return companyDL.load(source.getCompanyId())
         }
@@ -332,8 +337,8 @@ class DataLoaderHangingTest extends Specification {
         """
 
     private DataLoaderRegistry buildRegistry() {
-        DataLoader<Integer, Person> personDataLoader = new DataLoader<>(personBatchLoader)
-        DataLoader<Integer, Company> companyDataLoader = new DataLoader<>(companyBatchLoader)
+        DataLoader<Integer, Person> personDataLoader = DataLoaderFactory.newDataLoader(personBatchLoader)
+        DataLoader<Integer, Company> companyDataLoader = DataLoaderFactory.newDataLoader(companyBatchLoader)
 
         DataLoaderRegistry registry = new DataLoaderRegistry()
         registry.register("person", personDataLoader)
@@ -355,7 +360,7 @@ class DataLoaderHangingTest extends Specification {
 
         ExecutionInput executionInput = newExecutionInput()
                 .query(query)
-                .context(registry)
+                .graphQLContext(["registry": registry])
                 .dataLoaderRegistry(registry)
                 .build()
 

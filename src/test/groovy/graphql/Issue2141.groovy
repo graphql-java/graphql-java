@@ -36,7 +36,10 @@ directive @include(
     if: Boolean!
   ) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
 
-"Directs the executor to skip this field or fragment when the `if`'argument is true."
+"Indicates an Input Object is a OneOf Input Object."
+directive @oneOf on INPUT_OBJECT
+
+"Directs the executor to skip this field or fragment when the `if` argument is true."
 directive @skip(
     "Skipped when true."
     if: Boolean!

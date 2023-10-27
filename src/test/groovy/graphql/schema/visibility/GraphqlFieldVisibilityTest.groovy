@@ -6,6 +6,8 @@ import graphql.StarWarsSchema
 import graphql.execution.AsyncExecutionStrategy
 import graphql.introspection.IntrospectionQuery
 import graphql.language.Field
+import graphql.schema.DataFetcher
+import graphql.schema.FieldCoordinates
 import graphql.schema.GraphQLCodeRegistry
 import graphql.schema.GraphQLFieldDefinition
 import graphql.schema.GraphQLObjectType
@@ -25,11 +27,11 @@ import static graphql.schema.visibility.NoIntrospectionGraphqlFieldVisibility.NO
 class GraphqlFieldVisibilityTest extends Specification {
 
     def "visibility is enforced"() {
-
         GraphqlFieldVisibility banNameVisibility = newBlock().addPattern(".*\\.name").build()
         def schema = GraphQLSchema.newSchema()
                 .query(StarWarsSchema.queryType)
-                .fieldVisibility(banNameVisibility)
+                .codeRegistry(StarWarsSchema.codeRegistry)
+                .fieldVisibility(banNameVisibility) // Retain deprecated builder for test coverage
                 .build()
 
         def graphQL = GraphQL.newGraphQL(schema).build()
@@ -56,13 +58,13 @@ class GraphqlFieldVisibilityTest extends Specification {
     }
 
     def "introspection visibility is enforced"() {
-
-
         given:
-
+        GraphQLCodeRegistry codeRegistry = StarWarsSchema.codeRegistry.transform(builder -> {
+            builder.fieldVisibility(fieldVisibility)
+        })
         def schema = GraphQLSchema.newSchema()
                 .query(StarWarsSchema.queryType)
-                .fieldVisibility(fieldVisibility)
+                .codeRegistry(codeRegistry)
                 .build()
 
         def graphQL = GraphQL.newGraphQL(schema).build()
@@ -93,10 +95,12 @@ class GraphqlFieldVisibilityTest extends Specification {
 
     def "introspection turned off via field visibility"() {
         given:
-
+        GraphQLCodeRegistry codeRegistry = StarWarsSchema.codeRegistry.transform(builder -> {
+            builder.fieldVisibility(NO_INTROSPECTION_FIELD_VISIBILITY)
+        })
         def schema = GraphQLSchema.newSchema()
                 .query(StarWarsSchema.queryType)
-                .fieldVisibility(NO_INTROSPECTION_FIELD_VISIBILITY)
+                .codeRegistry(codeRegistry)
                 .build()
 
         def graphQL = GraphQL.newGraphQL(schema).build()
@@ -115,7 +119,9 @@ class GraphqlFieldVisibilityTest extends Specification {
     def "schema printing filters on visibility"() {
 
         when:
-        def codeRegistry = GraphQLCodeRegistry.newCodeRegistry().fieldVisibility(DEFAULT_FIELD_VISIBILITY).build()
+        def codeRegistry = StarWarsSchema.codeRegistry.transform(builder -> {
+            builder.fieldVisibility(DEFAULT_FIELD_VISIBILITY)
+        })
         def schema = GraphQLSchema.newSchema()
                 .query(StarWarsSchema.queryType)
                 .codeRegistry(codeRegistry)
@@ -197,7 +203,9 @@ enum Episode {
         // and with specific bans
 
         when:
-        codeRegistry = GraphQLCodeRegistry.newCodeRegistry().fieldVisibility(ban(['Droid.id', 'Character.name', "QueryType.hero"])).build()
+        codeRegistry = StarWarsSchema.codeRegistry.transform(builder -> {
+            builder.fieldVisibility(ban(['Droid.id', 'Character.name', "QueryType.hero"]))
+        })
         schema = GraphQLSchema.newSchema()
                 .query(StarWarsSchema.queryType)
                 .codeRegistry(codeRegistry)
@@ -278,15 +286,14 @@ enum Episode {
     }
 
     def "ensure execution cant get to the field"() {
-
-
         when:
-        def schema = GraphQLSchema.newSchema()
-                .query(StarWarsSchema.queryType)
+        GraphQLCodeRegistry codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
                 .fieldVisibility(ban(['Droid.appearsIn']))
                 .build()
-
-
+        def schema = GraphQLSchema.newSchema()
+                .query(StarWarsSchema.queryType)
+                .codeRegistry(codeRegistry)
+                .build()
 
         def executionStrategy = new AsyncExecutionStrategy() {
 
@@ -310,17 +317,28 @@ enum Episode {
             .field(newInputObjectField().name("closedField").type(GraphQLString))
             .build()
 
-    def inputQueryType = GraphQLObjectType.newObject().name("InputQuery")
-            .field(newFieldDefinition().name("hello").type(GraphQLString)
-            .argument(newArgument().name("arg").type(inputType))
-            .dataFetcher({ env -> return "world" })
-    )
-            .build()
+    DataFetcher<?> inputDataFetcher = { env -> return "world" }
+
+    def inputQueryType = GraphQLObjectType.newObject()
+            .name("InputQuery")
+            .field(newFieldDefinition()
+                    .name("hello")
+                    .type(GraphQLString)
+                    .argument(newArgument()
+                            .name("arg")
+                            .type(inputType))
+            ).build()
 
     def "ensure input field are blocked"() {
 
         when:
+        def inputTypeCoordinates = FieldCoordinates.coordinates("InputQuery", "hello")
+        GraphQLCodeRegistry codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+                .dataFetcher(inputTypeCoordinates, inputDataFetcher)
+                .build()
+
         def schema = GraphQLSchema.newSchema()
+                .codeRegistry(codeRegistry)
                 .query(inputQueryType)
                 .build()
 
@@ -340,9 +358,10 @@ enum Episode {
         er.getData() == ["hello": "world"]
 
         when:
+        codeRegistry = codeRegistry.transform({builder -> builder.fieldVisibility(ban(['InputType.closedField']))})
         schema = GraphQLSchema.newSchema()
                 .query(inputQueryType)
-                .fieldVisibility(ban(['InputType.closedField']))
+                .codeRegistry(codeRegistry)
                 .build()
 
         graphQL = GraphQL.newGraphQL(schema).build()
@@ -366,9 +385,12 @@ enum Episode {
 
         given:
 
+        GraphQLCodeRegistry codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+                .fieldVisibility(fieldVisibility)
+                .build()
         def schema = GraphQLSchema.newSchema()
                 .query(inputQueryType)
-                .fieldVisibility(fieldVisibility)
+                .codeRegistry(codeRegistry)
                 .build()
 
         def graphQL = GraphQL.newGraphQL(schema).build()

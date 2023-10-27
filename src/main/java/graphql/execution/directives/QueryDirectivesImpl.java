@@ -2,6 +2,7 @@ package graphql.execution.directives;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import graphql.GraphQLContext;
 import graphql.Internal;
 import graphql.collect.ImmutableKit;
 import graphql.execution.MergedField;
@@ -10,17 +11,20 @@ import graphql.language.Field;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLDirective;
 import graphql.schema.GraphQLSchema;
+import graphql.util.FpKit;
+import graphql.util.LockKit;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import static graphql.collect.ImmutableKit.emptyList;
 
 /**
  * These objects are ALWAYS in the context of a single MergedField
- *
+ * <p>
  * Also note we compute these values lazily
  */
 @Internal
@@ -30,32 +34,35 @@ public class QueryDirectivesImpl implements QueryDirectives {
     private final MergedField mergedField;
     private final GraphQLSchema schema;
     private final Map<String, Object> variables;
+    private final GraphQLContext graphQLContext;
+    private final Locale locale;
+
+    private final LockKit.ComputedOnce computedOnce = new LockKit.ComputedOnce();
     private volatile ImmutableMap<Field, List<GraphQLDirective>> fieldDirectivesByField;
     private volatile ImmutableMap<String, List<GraphQLDirective>> fieldDirectivesByName;
     private volatile ImmutableMap<Field, List<QueryAppliedDirective>> fieldAppliedDirectivesByField;
     private volatile ImmutableMap<String, List<QueryAppliedDirective>> fieldAppliedDirectivesByName;
 
-    public QueryDirectivesImpl(MergedField mergedField, GraphQLSchema schema, Map<String, Object> variables) {
+    public QueryDirectivesImpl(MergedField mergedField, GraphQLSchema schema, Map<String, Object> variables, GraphQLContext graphQLContext, Locale locale) {
         this.mergedField = mergedField;
         this.schema = schema;
         this.variables = variables;
+        this.graphQLContext = graphQLContext;
+        this.locale = locale;
     }
 
     private void computeValuesLazily() {
-        synchronized (this) {
-            if (fieldDirectivesByField != null) {
-                return;
-            }
+        computedOnce.runOnce(() -> {
 
             final Map<Field, List<GraphQLDirective>> byField = new LinkedHashMap<>();
             final Map<Field, List<QueryAppliedDirective>> byFieldApplied = new LinkedHashMap<>();
             mergedField.getFields().forEach(field -> {
                 List<Directive> directives = field.getDirectives();
-                ImmutableList<GraphQLDirective> resolvedDirectives = ImmutableList.copyOf(
+                ImmutableList<GraphQLDirective> resolvedDirectives = ImmutableList.copyOf(FpKit.flatList(
                         directivesResolver
-                                .resolveDirectives(directives, schema, variables)
+                                .resolveDirectives(directives, schema, variables, graphQLContext, locale)
                                 .values()
-                );
+                ));
                 byField.put(field, resolvedDirectives);
                 // at some point we will only use applied
                 byFieldApplied.put(field, ImmutableKit.map(resolvedDirectives, this::toAppliedDirective));
@@ -74,7 +81,7 @@ public class QueryDirectivesImpl implements QueryDirectives {
             this.fieldDirectivesByField = ImmutableMap.copyOf(byField);
             this.fieldAppliedDirectivesByName = ImmutableMap.copyOf(byNameApplied);
             this.fieldAppliedDirectivesByField = ImmutableMap.copyOf(byFieldApplied);
-        }
+        });
     }
 
     private QueryAppliedDirective toAppliedDirective(GraphQLDirective directive) {

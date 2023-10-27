@@ -2,6 +2,7 @@ package graphql.parser;
 
 import graphql.Assert;
 import graphql.PublicApi;
+import graphql.util.LockKit;
 
 import java.io.IOException;
 import java.io.LineNumberReader;
@@ -27,6 +28,7 @@ public class MultiSourceReader extends Reader {
     private int currentIndex = 0;
     private int overallLineNumber = 0;
     private final boolean trackData;
+    private final LockKit.ReentrantLock readerLock = new LockKit.ReentrantLock();
 
 
     private MultiSourceReader(Builder builder) {
@@ -37,7 +39,8 @@ public class MultiSourceReader extends Reader {
     @Override
     public int read(char[] cbuf, int off, int len) throws IOException {
         while (true) {
-            synchronized (this) {
+            readerLock.lock();
+            try {
                 if (currentIndex >= sourceParts.size()) {
                     return -1;
                 }
@@ -50,6 +53,8 @@ public class MultiSourceReader extends Reader {
                     trackData(cbuf, off, read);
                     return read;
                 }
+            } finally {
+                readerLock.unlock();
             }
         }
     }
@@ -147,7 +152,7 @@ public class MultiSourceReader extends Reader {
      * @return the line number of the current source.  This is zeroes based like {@link java.io.LineNumberReader#getLineNumber()}
      */
     public int getLineNumber() {
-        synchronized (this) {
+        return readerLock.callLocked(() -> {
             if (sourceParts.isEmpty()) {
                 return 0;
             }
@@ -155,14 +160,14 @@ public class MultiSourceReader extends Reader {
                 return sourceParts.get(sourceParts.size() - 1).lineReader.getLineNumber();
             }
             return sourceParts.get(currentIndex).lineReader.getLineNumber();
-        }
+        });
     }
 
     /**
      * @return The name of the current source
      */
     public String getSourceName() {
-        synchronized (this) {
+        return readerLock.callLocked(() -> {
             if (sourceParts.isEmpty()) {
                 return null;
             }
@@ -170,7 +175,7 @@ public class MultiSourceReader extends Reader {
                 return sourceParts.get(sourceParts.size() - 1).sourceName;
             }
             return sourceParts.get(currentIndex).sourceName;
-        }
+        });
     }
 
     /**
@@ -198,13 +203,16 @@ public class MultiSourceReader extends Reader {
 
     @Override
     public void close() throws IOException {
-        synchronized (this) {
+        readerLock.lock();
+        try {
             for (SourcePart sourcePart : sourceParts) {
                 if (!sourcePart.closed) {
                     sourcePart.lineReader.close();
                     sourcePart.closed = true;
                 }
             }
+        } finally {
+            readerLock.unlock();
         }
     }
 

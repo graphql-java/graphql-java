@@ -1,6 +1,5 @@
 package graphql.schema
 
-import graphql.AssertException
 import graphql.TestUtil
 import graphql.language.Node
 import spock.lang.Specification
@@ -95,13 +94,12 @@ class GraphQLDirectiveTest extends Specification {
         when:
         def schema = TestUtil.schema(sdl)
         then:
-        schema.getSchemaDirective("d1").name == "d1"
-        schema.getSchemaDirectiveByName().keySet() == ["d1"] as Set
+        schema.getSchemaAppliedDirective("d1").name == "d1"
+        schema.getAllSchemaAppliedDirectivesByName().keySet() == ["d1", "dr"] as Set
 
-        schema.getAllSchemaDirectivesByName().keySet() == ["d1", "dr"] as Set
-        schema.getAllSchemaDirectivesByName()["d1"].size() == 1
-        schema.getAllSchemaDirectivesByName()["dr"].size() == 2
-        schema.getAllSchemaDirectivesByName()["dr"].collect({ printAst(it.getArgument("arg").argumentValue.value) }) == ['"a1"', '"a2"']
+        schema.getAllSchemaAppliedDirectivesByName()["d1"].size() == 1
+        schema.getAllSchemaAppliedDirectivesByName()["dr"].size() == 2
+        schema.getAllSchemaAppliedDirectivesByName()["dr"].collect({ printAst(it.getArgument("arg").argumentValue.value) }) == ['"a1"', '"a2"']
 
         when:
         def queryType = schema.getObjectType("Query")
@@ -174,20 +172,23 @@ class GraphQLDirectiveTest extends Specification {
     }
 
     static boolean assertDirectiveContainer(GraphQLDirectiveContainer container) {
-        assert container.hasDirective("d1")
-        assert container.hasDirective("dr")
-        assert !container.hasDirective("non existent")
-        assert container.getDirectives().collect({ it.name }) == ["d1", "dr", "dr"]
-        assert container.getDirective("d1").name == "d1"
-        assert container.getDirectivesByName().keySet() == ["d1"] as Set
+        assert container.hasDirective("d1") // Retain for test coverage
+        assert container.hasAppliedDirective("d1")
+        assert container.hasAppliedDirective("dr")
+        assert !container.hasAppliedDirective("non existent")
+        assert container.getDirectives().collect({ it.name }) == ["d1", "dr", "dr"] // Retain for test coverage
+        assert container.getAppliedDirectives().collect({ it.name }) == ["d1", "dr", "dr"]
+        assert container.getAppliedDirective("d1").name == "d1"
+        assert container.getDirectivesByName().keySet() == ["d1"] as Set // Retain for test coverage, there is no equivalent non-repeatable directive method
 
-        assert container.getAllDirectivesByName().keySet() == ["d1", "dr"] as Set
-        assert container.getAllDirectivesByName()["d1"].size() == 1
-        assert container.getAllDirectivesByName()["dr"].size() == 2
+        assert container.getAllDirectivesByName().keySet() == ["d1", "dr"] as Set // Retain for test coverage
+        assert container.getAllAppliedDirectivesByName().keySet() == ["d1", "dr"] as Set
+        assert container.getAllAppliedDirectivesByName()["d1"].size() == 1
+        assert container.getAllAppliedDirectivesByName()["dr"].size() == 2
 
-        assert container.getDirectives("d1").size() == 1
-        assert container.getDirectives("dr").size() == 2
-        assert container.getDirectives("dr").collect({ printAst(it.getArgument("arg").argumentValue.value as Node) }) == ['"a1"', '"a2"']
+        assert container.getAppliedDirectives("d1").size() == 1
+        assert container.getAppliedDirectives("dr").size() == 2
+        assert container.getAppliedDirectives("dr").collect({ printAst(it.getArgument("arg").argumentValue.value as Node) }) == ['"a1"', '"a2"']
 
         return true
     }

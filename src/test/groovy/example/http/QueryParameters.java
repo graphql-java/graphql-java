@@ -1,6 +1,6 @@
 package example.http;
 
-import javax.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequest;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.util.Collections;
@@ -10,15 +10,15 @@ import java.util.Map;
 /**
  * Graphql clients can send GET or POST HTTP requests.  The spec does not make an explicit
  * distinction.  So you may need to handle both.  The following was tested using
- * a graphiql client tool found here : https://github.com/skevy/graphiql-app
- *
+ * a graphiql client tool found here : <a href="https://github.com/skevy/graphiql-app">graphiql-app</a>
+ * <p>
  * You should consider bundling graphiql in your application
- *
- * https://github.com/graphql/graphiql
- *
+ * <p>
+ * <a href="https://github.com/graphql/graphiql">https://github.com/graphql/graphiql</a>
+ * <p>
  * This outlines more information on how to handle parameters over http
- *
- * http://graphql.org/learn/serving-over-http/
+ * <p>
+ * <a href="https://graphql.org/learn/serving-over-http/">https://graphql.org/learn/serving-over-http/</a>
  */
 class QueryParameters {
 

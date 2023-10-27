@@ -1,6 +1,7 @@
 package graphql.schema
 
 import graphql.AssertException
+import graphql.GraphQLContext
 import graphql.language.EnumValue
 import graphql.language.StringValue
 import spock.lang.Specification
@@ -19,32 +20,52 @@ class GraphQLEnumTypeTest extends Specification {
 
     def "parse throws exception for unknown value"() {
         when:
-        enumType.parseValue("UNKNOWN")
+        enumType.parseValue("UNKNOWN", GraphQLContext.default, Locale.default)
 
         then:
         thrown(CoercingParseValueException)
     }
 
+    def "parse throws exception for unknown value with deprecated method"() {
+        when:
+        enumType.parseValue("UNKNOWN") // Retain for test coverage
+
+        then:
+        thrown(CoercingParseValueException)
+    }
 
     def "parse value return value for the name"() {
         expect:
-        enumType.parseValue("NAME") == 42
+        enumType.parseValue("NAME", GraphQLContext.default, Locale.default) == 42
     }
 
     def "serialize returns name for value"() {
+        expect:
+        enumType.serialize(42, GraphQLContext.default, Locale.default) == "NAME"
+    }
+
+    def "serialize returns name for value with deprecated method"() {
         expect:
         enumType.serialize(42) == "NAME"
     }
 
     def "serialize throws exception for unknown value"() {
         when:
-        enumType.serialize(12)
+        enumType.serialize(12, GraphQLContext.default, Locale.default)
         then:
         thrown(CoercingSerializeException)
     }
 
-
     def "parseLiteral return null for invalid input"() {
+        when:
+        enumType.parseLiteral(StringValue.newStringValue("foo").build(),
+                GraphQLContext.default,
+                Locale.default)
+        then:
+        thrown(CoercingParseLiteralException)
+    }
+
+    def "parseLiteral return null for invalid input with deprecated method"() {
         when:
         enumType.parseLiteral(StringValue.newStringValue("foo").build())
         then:
@@ -53,16 +74,19 @@ class GraphQLEnumTypeTest extends Specification {
 
     def "parseLiteral return null for invalid enum name"() {
         when:
-        enumType.parseLiteral(EnumValue.newEnumValue("NOT_NAME").build())
+        enumType.parseLiteral(EnumValue.newEnumValue("NOT_NAME").build(),
+                GraphQLContext.default,
+                Locale.default)
         then:
         thrown(CoercingParseLiteralException)
     }
 
     def "parseLiteral returns value for 'NAME'"() {
         expect:
-        enumType.parseLiteral(EnumValue.newEnumValue("NAME").build()) == 42
+        enumType.parseLiteral(EnumValue.newEnumValue("NAME").build(),
+                GraphQLContext.default,
+                Locale.default) == 42
     }
-
 
     def "null values are not allowed"() {
         when:
@@ -71,7 +95,6 @@ class GraphQLEnumTypeTest extends Specification {
         then:
         thrown(AssertException)
     }
-
 
     def "duplicate value definition overwrites"() {
         when:
@@ -96,7 +119,7 @@ class GraphQLEnumTypeTest extends Specification {
                 .build()
 
         when:
-        def serialized = enumType.serialize(Episode.EMPIRE)
+        def serialized = enumType.serialize(Episode.EMPIRE, GraphQLContext.default, Locale.default)
 
         then:
         serialized == "EMPIRE"
@@ -111,7 +134,7 @@ class GraphQLEnumTypeTest extends Specification {
                 .build()
 
         when:
-        def serialized = enumType.serialize(Episode.NEWHOPE)
+        def serialized = enumType.serialize(Episode.NEWHOPE, GraphQLContext.default, Locale.default)
 
         then:
         serialized == "NEWHOPE"
@@ -128,7 +151,7 @@ class GraphQLEnumTypeTest extends Specification {
         String stringInput = Episode.NEWHOPE.toString()
 
         when:
-        def serialized = enumType.serialize(stringInput)
+        def serialized = enumType.serialize(stringInput, GraphQLContext.default, Locale.default)
 
         then:
         serialized == "NEWHOPE"

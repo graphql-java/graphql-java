@@ -3,6 +3,7 @@ package graphql.schema;
 import com.google.common.collect.ImmutableList;
 import graphql.Assert;
 import graphql.AssertException;
+import graphql.DeprecatedAt;
 import graphql.DirectivesUtil;
 import graphql.Internal;
 import graphql.PublicApi;
@@ -31,10 +32,10 @@ import static java.lang.String.format;
  * In graphql, an interface is an abstract type that defines the set of fields that a type must include to
  * implement that interface.
  * <p>
- * At runtime a {@link graphql.schema.TypeResolver} is used to take an interface object value and decide what {@link graphql.schema.GraphQLObjectType}
+ * At runtime a {@link TypeResolver} is used to take an interface object value and decide what {@link GraphQLObjectType}
  * represents this interface type.
  * <p>
- * See http://graphql.org/learn/schema/#interfaces for more details on the concept.
+ * See <a href="https://graphql.org/learn/schema/#interfaces">https://graphql.org/learn/schema/#interfaces</a> for more details on the concept.
  */
 @PublicApi
 public class GraphQLInterfaceType implements GraphQLNamedType, GraphQLCompositeType, GraphQLUnmodifiedType, GraphQLNullableType, GraphQLDirectiveContainer, GraphQLImplementingType {
@@ -112,6 +113,9 @@ public class GraphQLInterfaceType implements GraphQLNamedType, GraphQLCompositeT
     }
 
     // to be removed in a future version when all code is in the code registry
+    @Internal
+    @Deprecated
+    @DeprecatedAt("2018-12-03")
     TypeResolver getTypeResolver() {
         return typeResolver;
     }
@@ -359,8 +363,15 @@ public class GraphQLInterfaceType implements GraphQLNamedType, GraphQLCompositeT
             return this;
         }
 
-
+        /**
+         * @param typeResolver the type resolver
+         *
+         * @return this builder
+         *
+         * @deprecated use {@link graphql.schema.GraphQLCodeRegistry.Builder#typeResolver(GraphQLInterfaceType, TypeResolver)} instead
+         */
         @Deprecated
+        @DeprecatedAt("2018-12-03")
         public Builder typeResolver(TypeResolver typeResolver) {
             this.typeResolver = typeResolver;
             return this;

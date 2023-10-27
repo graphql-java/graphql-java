@@ -66,9 +66,11 @@ public class SchemaTraverser {
         roots.addAll(schema.getAdditionalTypes());
         roots.addAll(schema.getDirectives());
         roots.addAll(schema.getSchemaDirectives());
+        roots.addAll(schema.getSchemaAppliedDirectives());
         roots.add(schema.getIntrospectionSchemaType());
         TraverserDelegateListVisitor traverserDelegateListVisitor = new TraverserDelegateListVisitor(typeVisitors);
-        return initTraverser().rootVars(rootVars).traverse(roots, traverserDelegateListVisitor);
+        Traverser<GraphQLSchemaElement> traverser = initTraverser().rootVars(rootVars).rootVar(GraphQLSchema.class, schema);
+        return traverser.traverse(roots, traverserDelegateListVisitor);
     }
 
     public TraverserResult depthFirst(GraphQLTypeVisitor graphQLTypeVisitor, GraphQLSchemaElement root) {
@@ -131,7 +133,10 @@ public class SchemaTraverser {
         @Override
         public TraversalControl enter(TraverserContext<GraphQLSchemaElement> context) {
             for (GraphQLTypeVisitor graphQLTypeVisitor : typeVisitors) {
-                context.thisNode().accept(context, graphQLTypeVisitor);
+                TraversalControl control = context.thisNode().accept(context, graphQLTypeVisitor);
+                if (control != CONTINUE) {
+                    return control;
+                }
             }
             return CONTINUE;
         }

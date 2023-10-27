@@ -5,6 +5,7 @@ import graphql.ExecutionResult
 import graphql.GraphQL
 import graphql.StarWarsSchema
 import graphql.execution.AsyncExecutionStrategy
+import graphql.execution.instrumentation.parameters.InstrumentationCreateStateParameters
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters
 import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters
@@ -15,6 +16,7 @@ import graphql.schema.DataFetchingEnvironment
 import graphql.schema.PropertyDataFetcher
 import graphql.schema.StaticDataFetcher
 import org.awaitility.Awaitility
+import org.jetbrains.annotations.NotNull
 import spock.lang.Specification
 
 import java.util.concurrent.CompletableFuture
@@ -158,7 +160,7 @@ class InstrumentationTest extends Specification {
      * java-dataloader works.  That is calls inside DataFetchers are "batched"
      * until a "dispatch" signal is made.
      */
-    class WaitingInstrumentation extends SimpleInstrumentation {
+    class WaitingInstrumentation extends SimplePerformantInstrumentation {
 
         final AtomicBoolean goSignal = new AtomicBoolean()
 
@@ -180,6 +182,7 @@ class InstrumentationTest extends Specification {
             }
         }
 
+        @NotNull
         @Override
         DataFetcher<?> instrumentDataFetcher(DataFetcher<?> dataFetcher, InstrumentationFieldFetchParameters parameters, InstrumentationState state) {
             System.out.println(String.format("t%s instrument DF for %s", Thread.currentThread().getId(), parameters.environment.getExecutionStepInfo().getPath()))
@@ -401,5 +404,57 @@ class InstrumentationTest extends Specification {
         ]
 
         instrumentation.executionList == expected
+    }
+
+    class StringInstrumentationState implements InstrumentationState {
+        StringInstrumentationState(String value) {
+            this.value = value
+        }
+
+        String value
+    }
+
+    def "can have an single async createState() in play"() {
+
+
+        given:
+
+        def query = '''query Q($var: String!) {
+                                  human(id: $var) {
+                                    id
+                                    name
+                                  }
+                                }
+                            '''
+
+
+        def instrumentation1 = new SimplePerformantInstrumentation() {
+            @Override
+            CompletableFuture<InstrumentationState> createStateAsync(InstrumentationCreateStateParameters parameters) {
+                return CompletableFuture.supplyAsync {
+                    return new StringInstrumentationState("I1")
+                } as CompletableFuture<InstrumentationState>
+            }
+
+            @Override
+            CompletableFuture<ExecutionResult> instrumentExecutionResult(ExecutionResult executionResult, InstrumentationExecutionParameters parameters, InstrumentationState state) {
+                return CompletableFuture.completedFuture(
+                        executionResult.transform { it.addExtension("i1", ((StringInstrumentationState) state).value) }
+                )
+            }
+        }
+
+        def graphQL = GraphQL
+                .newGraphQL(StarWarsSchema.starWarsSchema)
+                .instrumentation(instrumentation1)
+                .doNotAddDefaultInstrumentations() // important, otherwise a chained one wil be used
+                .build()
+
+        when:
+        def variables = [var: "1001"]
+        def er = graphQL.execute(ExecutionInput.newExecutionInput().query(query).variables(variables)) // Luke
+
+        then:
+        er.extensions == [i1: "I1"]
     }
 }

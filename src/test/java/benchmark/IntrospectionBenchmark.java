@@ -1,11 +1,10 @@
 package benchmark;
 
-import com.google.common.base.Charsets;
-import com.google.common.io.Resources;
 import graphql.ExecutionResult;
 import graphql.GraphQL;
 import graphql.execution.DataFetcherResult;
-import graphql.execution.instrumentation.SimpleInstrumentation;
+import graphql.execution.instrumentation.InstrumentationState;
+import graphql.execution.instrumentation.SimplePerformantInstrumentation;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters;
 import graphql.introspection.IntrospectionQuery;
 import graphql.schema.DataFetcher;
@@ -13,6 +12,7 @@ import graphql.schema.DataFetchingEnvironment;
 import graphql.schema.GraphQLNamedType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.idl.SchemaGenerator;
+import org.jetbrains.annotations.NotNull;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Measurement;
@@ -21,14 +21,10 @@ import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 
-import java.io.IOException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-
-import static com.google.common.io.Resources.getResource;
 
 @State(Scope.Benchmark)
 public class IntrospectionBenchmark {
@@ -36,12 +32,12 @@ public class IntrospectionBenchmark {
     private final GraphQL graphQL;
     private final DFCountingInstrumentation countingInstrumentation = new DFCountingInstrumentation();
 
-    static class DFCountingInstrumentation extends SimpleInstrumentation {
+    static class DFCountingInstrumentation extends SimplePerformantInstrumentation {
         Map<String, Long> counts = new LinkedHashMap<>();
         Map<String, Long> times = new LinkedHashMap<>();
 
         @Override
-        public DataFetcher<?> instrumentDataFetcher(DataFetcher<?> dataFetcher, InstrumentationFieldFetchParameters parameters) {
+        public @NotNull DataFetcher<?> instrumentDataFetcher(DataFetcher<?> dataFetcher, InstrumentationFieldFetchParameters parameters, InstrumentationState state) {
             return (DataFetcher<Object>) env -> {
                 long then = System.nanoTime();
                 Object value = dataFetcher.get(env);
@@ -77,21 +73,11 @@ public class IntrospectionBenchmark {
     }
 
     public IntrospectionBenchmark() {
-        String largeSchema = readFromClasspath("large-schema-4.graphqls");
+        String largeSchema = BenchmarkUtils.loadResource("large-schema-4.graphqls");
         GraphQLSchema graphQLSchema = SchemaGenerator.createdMockedSchema(largeSchema);
         graphQL = GraphQL.newGraphQL(graphQLSchema)
                 //.instrumentation(countingInstrumentation)
                 .build();
-    }
-
-
-    private static String readFromClasspath(String file) {
-        URL url = getResource(file);
-        try {
-            return Resources.toString(url, Charsets.UTF_8);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
     }
 
     public static void main(String[] args) {

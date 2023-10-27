@@ -1,6 +1,5 @@
 package graphql;
 
-import graphql.cachecontrol.CacheControl;
 import graphql.collect.ImmutableKit;
 import graphql.execution.ExecutionId;
 import graphql.execution.RawVariables;
@@ -28,7 +27,6 @@ public class ExecutionInput {
     private final RawVariables rawVariables;
     private final Map<String, Object> extensions;
     private final DataLoaderRegistry dataLoaderRegistry;
-    private final CacheControl cacheControl;
     private final ExecutionId executionId;
     private final Locale locale;
 
@@ -42,9 +40,8 @@ public class ExecutionInput {
         this.root = builder.root;
         this.rawVariables = builder.rawVariables;
         this.dataLoaderRegistry = builder.dataLoaderRegistry;
-        this.cacheControl = builder.cacheControl;
         this.executionId = builder.executionId;
-        this.locale = builder.locale;
+        this.locale = builder.locale != null ? builder.locale : Locale.getDefault(); // always have a locale in place
         this.localContext = builder.localContext;
         this.extensions = builder.extensions;
     }
@@ -72,6 +69,7 @@ public class ExecutionInput {
      * @deprecated - use {@link #getGraphQLContext()}
      */
     @Deprecated
+    @DeprecatedAt("2021-07-05")
     public Object getContext() {
         return context;
     }
@@ -118,15 +116,6 @@ public class ExecutionInput {
         return dataLoaderRegistry;
     }
 
-    /**
-     * @return the cache control helper associated with this execution
-     *
-     * @deprecated - Apollo has deprecated the Cache Control specification
-     */
-    @Deprecated
-    public CacheControl getCacheControl() {
-        return cacheControl;
-    }
 
     /**
      * @return Id that will be/was used to execute this operation.
@@ -168,7 +157,6 @@ public class ExecutionInput {
                 .localContext(this.localContext)
                 .root(this.root)
                 .dataLoaderRegistry(this.dataLoaderRegistry)
-                .cacheControl(this.cacheControl)
                 .variables(this.rawVariables.toMap())
                 .extensions(this.extensions)
                 .executionId(this.executionId)
@@ -227,7 +215,6 @@ public class ExecutionInput {
         // dataloader field tracking away.
         //
         private DataLoaderRegistry dataLoaderRegistry = DataLoaderDispatcherInstrumentationState.EMPTY_DATALOADER_REGISTRY;
-        private CacheControl cacheControl = CacheControl.newCacheControl();
         private Locale locale = Locale.getDefault();
         private ExecutionId executionId;
 
@@ -287,6 +274,7 @@ public class ExecutionInput {
          * @deprecated - the {@link ExecutionInput#getGraphQLContext()} is a fixed mutable instance now
          */
         @Deprecated
+        @DeprecatedAt("2021-07-05")
         public Builder context(Object context) {
             this.context = context;
             return this;
@@ -302,6 +290,7 @@ public class ExecutionInput {
          * @deprecated - the {@link ExecutionInput#getGraphQLContext()} is a fixed mutable instance now
          */
         @Deprecated
+        @DeprecatedAt("2021-07-05")
         public Builder context(GraphQLContext.Builder contextBuilder) {
             this.context = contextBuilder.build();
             return this;
@@ -317,6 +306,7 @@ public class ExecutionInput {
          * @deprecated - the {@link ExecutionInput#getGraphQLContext()} is a fixed mutable instance now
          */
         @Deprecated
+        @DeprecatedAt("2021-07-05")
         public Builder context(UnaryOperator<GraphQLContext.Builder> contextBuilderFunction) {
             GraphQLContext.Builder builder = GraphQLContext.newContext();
             builder = contextBuilderFunction.apply(builder);
@@ -390,12 +380,6 @@ public class ExecutionInput {
          */
         public Builder dataLoaderRegistry(DataLoaderRegistry dataLoaderRegistry) {
             this.dataLoaderRegistry = assertNotNull(dataLoaderRegistry);
-            return this;
-        }
-
-        @Deprecated
-        public Builder cacheControl(CacheControl cacheControl) {
-            this.cacheControl = assertNotNull(cacheControl);
             return this;
         }
 

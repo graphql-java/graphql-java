@@ -1,13 +1,16 @@
 package graphql.execution
 
-
-import graphql.execution.instrumentation.SimpleInstrumentation
+import graphql.GraphQLContext
+import graphql.execution.instrumentation.SimplePerformantInstrumentation
 import graphql.language.Field
 import graphql.language.OperationDefinition
 import graphql.parser.Parser
 import graphql.schema.DataFetcher
+import graphql.schema.FieldCoordinates
+import graphql.schema.GraphQLCodeRegistry
 import graphql.schema.GraphQLFieldDefinition
 import graphql.schema.GraphQLSchema
+import graphql.schema.LightDataFetcher
 import spock.lang.Specification
 
 import java.util.concurrent.CompletableFuture
@@ -23,27 +26,42 @@ import static graphql.schema.GraphQLSchema.newSchema
 
 class AsyncSerialExecutionStrategyTest extends Specification {
     GraphQLSchema schema(DataFetcher dataFetcher1, DataFetcher dataFetcher2, DataFetcher dataFetcher3) {
-        GraphQLFieldDefinition.Builder fieldDefinition = newFieldDefinition()
-                .name("hello")
-                .type(GraphQLString)
-                .dataFetcher(dataFetcher1)
-        GraphQLFieldDefinition.Builder fieldDefinition2 = newFieldDefinition()
-                .name("hello2")
-                .type(GraphQLString)
-                .dataFetcher(dataFetcher2)
-        GraphQLFieldDefinition.Builder fieldDefinition3 = newFieldDefinition()
-                .name("hello3")
-                .type(GraphQLString)
-                .dataFetcher(dataFetcher3)
+        def queryName = "RootQueryType"
+        def field1Name = "hello"
+        def field2Name = "hello2"
+        def field3Name = "hello3"
 
-        GraphQLSchema schema = newSchema().query(
-                newObject()
-                        .name("RootQueryType")
-                        .field(fieldDefinition)
+        GraphQLFieldDefinition.Builder fieldDefinition1 = newFieldDefinition()
+                .name(field1Name)
+                .type(GraphQLString)
+        GraphQLFieldDefinition.Builder fieldDefinition2 = newFieldDefinition()
+                .name(field2Name)
+                .type(GraphQLString)
+        GraphQLFieldDefinition.Builder fieldDefinition3 = newFieldDefinition()
+                .name(field3Name)
+                .type(GraphQLString)
+
+        def field1Coordinates = FieldCoordinates.coordinates(queryName, field1Name)
+        def field2Coordinates = FieldCoordinates.coordinates(queryName, field2Name)
+        def field3Coordinates = FieldCoordinates.coordinates(queryName, field3Name)
+
+        GraphQLCodeRegistry codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+                .dataFetcher(field1Coordinates, dataFetcher1)
+                .dataFetcher(field2Coordinates, dataFetcher2)
+                .dataFetcher(field3Coordinates, dataFetcher3)
+                .build()
+
+        GraphQLSchema schema = newSchema()
+                .codeRegistry(codeRegistry)
+                .query(newObject()
+                        .name(queryName)
+                        .field(fieldDefinition1)
                         .field(fieldDefinition2)
                         .field(fieldDefinition3)
                         .build()
-        ).build()
+                )
+                .build()
+
         schema
     }
 
@@ -84,8 +102,10 @@ class AsyncSerialExecutionStrategyTest extends Specification {
                 .graphQLSchema(schema)
                 .executionId(ExecutionId.generate())
                 .operationDefinition(operation)
-                .instrumentation(SimpleInstrumentation.INSTANCE)
+                .instrumentation(SimplePerformantInstrumentation.INSTANCE)
                 .valueUnboxer(ValueUnboxer.DEFAULT)
+                .locale(Locale.getDefault())
+                .graphQLContext(GraphQLContext.getDefault())
                 .build()
         ExecutionStrategyParameters executionStrategyParameters = ExecutionStrategyParameters
                 .newParameters()
@@ -106,13 +126,13 @@ class AsyncSerialExecutionStrategyTest extends Specification {
     @SuppressWarnings("GroovyAssignabilityCheck")
     def "async serial execution test"() {
         given:
-        def df1 = Mock(DataFetcher)
+        def df1 = Mock(LightDataFetcher)
         def cf1 = new CompletableFuture()
 
-        def df2 = Mock(DataFetcher)
+        def df2 = Mock(LightDataFetcher)
         def cf2 = new CompletableFuture()
 
-        def df3 = Mock(DataFetcher)
+        def df3 = Mock(LightDataFetcher)
         def cf3 = new CompletableFuture()
 
         GraphQLSchema schema = schema(df1, df2, df3)
@@ -128,8 +148,10 @@ class AsyncSerialExecutionStrategyTest extends Specification {
                 .graphQLSchema(schema)
                 .executionId(ExecutionId.generate())
                 .operationDefinition(operation)
-                .instrumentation(SimpleInstrumentation.INSTANCE)
+                .instrumentation(SimplePerformantInstrumentation.INSTANCE)
                 .valueUnboxer(ValueUnboxer.DEFAULT)
+                .locale(Locale.getDefault())
+                .graphQLContext(GraphQLContext.getDefault())
                 .build()
         ExecutionStrategyParameters executionStrategyParameters = ExecutionStrategyParameters
                 .newParameters()
@@ -144,35 +166,35 @@ class AsyncSerialExecutionStrategyTest extends Specification {
 
         then:
         !result.isDone()
-        1 * df1.get(_) >> cf1
-        0 * df2.get(_) >> cf2
-        0 * df3.get(_) >> cf3
+        1 * df1.get(_,_,_) >> cf1
+        0 * df2.get(_,_,_) >> cf2
+        0 * df3.get(_,_,_) >> cf3
 
         when:
         cf1.complete("world1")
 
         then:
         !result.isDone()
-        0 * df1.get(_) >> cf1
-        1 * df2.get(_) >> cf2
-        0 * df3.get(_) >> cf3
+        0 * df1.get(_,_,_) >> cf1
+        1 * df2.get(_,_,_) >> cf2
+        0 * df3.get(_,_,_) >> cf3
 
         when:
         cf2.complete("world2")
 
         then:
         !result.isDone()
-        0 * df1.get(_) >> cf1
-        0 * df2.get(_) >> cf2
-        1 * df3.get(_) >> cf3
+        0 * df1.get(_,_,_) >> cf1
+        0 * df2.get(_,_,_) >> cf2
+        1 * df3.get(_,_,_) >> cf3
 
         when:
         cf3.complete("world3")
 
         then:
-        0 * df1.get(_) >> cf1
-        0 * df2.get(_) >> cf2
-        0 * df3.get(_) >> cf3
+        0 * df1.get(_,_,_) >> cf1
+        0 * df2.get(_,_,_) >> cf2
+        0 * df3.get(_,_,_) >> cf3
         result.isDone()
         result.get().data == ['hello': 'world1', 'hello2': 'world2', 'hello3': 'world3']
     }

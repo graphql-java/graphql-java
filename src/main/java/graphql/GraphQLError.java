@@ -1,7 +1,9 @@
 package graphql;
 
 
+import graphql.execution.ResultPath;
 import graphql.language.SourceLocation;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.Serializable;
 import java.util.List;
@@ -38,7 +40,7 @@ public interface GraphQLError extends Serializable {
 
     /**
      * The graphql spec says that the (optional) path field of any error should be a list
-     * of path entries - http://facebook.github.io/graphql/#sec-Errors
+     * of path entries https://spec.graphql.org/October2021/#sec-Handling-Field-Errors
      *
      * @return the path in list format
      */
@@ -66,5 +68,85 @@ public interface GraphQLError extends Serializable {
         return null;
     }
 
+    /**
+     * @return a new builder of {@link GraphQLError}s
+     */
+    static Builder<?> newError() {
+        return new GraphqlErrorBuilder<>();
+    }
 
+    /**
+     * A builder of {@link GraphQLError}s
+     */
+    interface Builder<B extends Builder<B>> {
+
+        /**
+         * Sets the message of the error using {@link String#format(String, Object...)} with the arguments
+         *
+         * @param message    the message
+         * @param formatArgs the arguments to use
+         *
+         * @return this builder
+         */
+        B message(String message, Object... formatArgs);
+
+        /**
+         * This adds locations to the error
+         *
+         * @param locations the locations to add
+         *
+         * @return this builder
+         */
+        B locations(@Nullable List<SourceLocation> locations);
+
+        /**
+         * This adds a location to the error
+         *
+         * @param location the locations to add
+         *
+         * @return this builder
+         */
+        B location(@Nullable SourceLocation location);
+
+        /**
+         * Sets the path of the message
+         *
+         * @param path can be null
+         *
+         * @return this builder
+         */
+        B path(@Nullable ResultPath path);
+
+        /**
+         * Sets the path of the message
+         *
+         * @param path can be null
+         *
+         * @return this builder
+         */
+        B path(@Nullable List<Object> path);
+
+        /**
+         * Sets the {@link ErrorClassification} of the message
+         *
+         * @param errorType the error classification to use
+         *
+         * @return this builder
+         */
+        B errorType(ErrorClassification errorType);
+
+        /**
+         * Sets the extensions of the message
+         *
+         * @param extensions the extensions to use
+         *
+         * @return this builder
+         */
+        B extensions(@Nullable Map<String, Object> extensions);
+
+        /**
+         * @return a newly built GraphqlError
+         */
+        GraphQLError build();
+    }
 }

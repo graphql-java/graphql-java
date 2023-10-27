@@ -110,7 +110,7 @@ class ParseAndValidateTest extends Specification {
         result.variables == [var1: 1]
         result.syntaxException != null
 
-        (result.errors[0] as InvalidSyntaxError).message.contains("Invalid Syntax")
+        (result.errors[0] as InvalidSyntaxError).message.contains("Invalid syntax")
     }
 
     def "can use the graphql context to stop certain validation rules"() {

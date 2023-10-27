@@ -5,8 +5,10 @@ import graphql.GraphQLError;
 import graphql.PublicApi;
 import graphql.execution.AbortExecutionException;
 import graphql.execution.instrumentation.InstrumentationContext;
-import graphql.execution.instrumentation.SimpleInstrumentation;
+import graphql.execution.instrumentation.InstrumentationState;
+import graphql.execution.instrumentation.SimplePerformantInstrumentation;
 import graphql.execution.instrumentation.parameters.InstrumentationExecuteOperationParameters;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
@@ -22,7 +24,7 @@ import static graphql.Assert.assertNotNull;
  * @see FieldValidation
  */
 @PublicApi
-public class FieldValidationInstrumentation extends SimpleInstrumentation {
+public class FieldValidationInstrumentation extends SimplePerformantInstrumentation {
 
     private final FieldValidation fieldValidation;
 
@@ -36,12 +38,11 @@ public class FieldValidationInstrumentation extends SimpleInstrumentation {
     }
 
     @Override
-    public InstrumentationContext<ExecutionResult> beginExecuteOperation(InstrumentationExecuteOperationParameters parameters) {
-
+    public @Nullable InstrumentationContext<ExecutionResult> beginExecuteOperation(InstrumentationExecuteOperationParameters parameters, InstrumentationState state) {
         List<GraphQLError> errors = FieldValidationSupport.validateFieldsAndArguments(fieldValidation, parameters.getExecutionContext());
         if (errors != null && !errors.isEmpty()) {
             throw new AbortExecutionException(errors);
         }
-        return super.beginExecuteOperation(parameters);
+        return super.beginExecuteOperation(parameters, state);
     }
 }

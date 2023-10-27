@@ -1,14 +1,11 @@
 package graphql.validation.rules
 
-
-import graphql.TypeResolutionEnvironment
 import graphql.i18n.I18n
 import graphql.language.Document
 import graphql.language.SourceLocation
 import graphql.parser.Parser
-import graphql.schema.GraphQLObjectType
+import graphql.schema.GraphQLCodeRegistry
 import graphql.schema.GraphQLSchema
-import graphql.schema.TypeResolver
 import graphql.validation.LanguageTraversal
 import graphql.validation.RulesVisitor
 import graphql.validation.ValidationContext
@@ -79,7 +76,7 @@ class OverlappingFieldsCanBeMergedTest extends Specification {
         errorCollector.getErrors()[0].locations == [new SourceLocation(3, 17), new SourceLocation(4, 17)]
     }
 
-    GraphQLSchema unionSchema() {
+    static GraphQLSchema unionSchema() {
         def StringBox = newObject().name("StringBox")
                 .field(newFieldDefinition().name("scalar").type(GraphQLString))
                 .build()
@@ -102,17 +99,18 @@ class OverlappingFieldsCanBeMergedTest extends Specification {
         def BoxUnion = newUnionType()
                 .name("BoxUnion")
                 .possibleTypes(StringBox, IntBox, NonNullStringBox1, NonNullStringBox2, ListStringBox1)
-                .typeResolver(new TypeResolver() {
-                    @Override
-                    GraphQLObjectType getType(TypeResolutionEnvironment env) {
-                        return null
-                    }
-                })
+                .build()
+        def codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+                .typeResolver(BoxUnion, { env -> null })
                 .build()
         def QueryRoot = newObject()
                 .name("QueryRoot")
                 .field(newFieldDefinition().name("boxUnion").type(BoxUnion)).build()
-        return GraphQLSchema.newSchema().query(QueryRoot).build()
+
+        return GraphQLSchema.newSchema()
+                .codeRegistry(codeRegistry)
+                .query(QueryRoot)
+                .build()
     }
 
     def 'conflicting scalar return types'() {
@@ -339,6 +337,7 @@ class OverlappingFieldsCanBeMergedTest extends Specification {
         def schema = schema('''
         type Dog {
             nickname: String
+            name : String
         }
         type Query { dog: Dog }
         ''')
@@ -349,6 +348,58 @@ class OverlappingFieldsCanBeMergedTest extends Specification {
         errorCollector.getErrors().size() == 1
         errorCollector.getErrors()[0].message == "Validation error (FieldsConflict@[aliasMaskingDirectFieldAccess]) : 'name' : 'nickname' and 'name' are different fields"
         errorCollector.getErrors()[0].locations == [new SourceLocation(3, 13), new SourceLocation(4, 13)]
+    }
+
+    def 'issue 3332 - Alias masking direct field access non fragment'() {
+        given:
+        def query = """
+        { dog {
+            name: nickname
+            name
+        }}
+         """
+        def schema = schema('''
+        type Dog {
+            name : String
+            nickname: String
+        }
+        type Query { dog: Dog }
+        ''')
+        when:
+        traverse(query, schema)
+
+        then:
+        errorCollector.getErrors().size() == 1
+        errorCollector.getErrors()[0].message == "Validation error (FieldsConflict@[dog]) : 'name' : 'nickname' and 'name' are different fields"
+        errorCollector.getErrors()[0].locations == [new SourceLocation(3, 13), new SourceLocation(4, 13)]
+    }
+
+    def 'issue 3332  -Alias masking direct field access non fragment with non null parent type'() {
+        given:
+        def query = """
+        query GetCat {
+              cat {
+                foo1
+                foo1: foo2
+              }
+            }
+         """
+        def schema = schema('''
+        type Query {    
+            cat: Cat! # non null parent type
+        }
+        type Cat {
+            foo1: String!
+            foo2: String!
+        }
+        ''')
+        when:
+        traverse(query, schema)
+
+        then:
+        errorCollector.getErrors().size() == 1
+        errorCollector.getErrors()[0].message == "Validation error (FieldsConflict@[cat]) : 'foo1' : 'foo1' and 'foo2' are different fields"
+        errorCollector.getErrors()[0].locations == [new SourceLocation(4, 17), new SourceLocation(5, 17)]
     }
 
     def 'conflicting args'() {

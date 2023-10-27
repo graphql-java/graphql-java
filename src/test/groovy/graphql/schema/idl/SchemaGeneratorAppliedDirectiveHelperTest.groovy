@@ -2,7 +2,6 @@ package graphql.schema.idl
 
 
 import graphql.TestUtil
-import graphql.schema.GraphQLArgument
 import graphql.schema.GraphQLInputType
 import spock.lang.Specification
 
@@ -59,6 +58,7 @@ class SchemaGeneratorAppliedDirectiveHelperTest extends Specification {
                 "deprecated",
                 "foo",
                 "include",
+                "oneOf",
                 "skip",
                 "specifiedBy",
         ]
@@ -69,30 +69,13 @@ class SchemaGeneratorAppliedDirectiveHelperTest extends Specification {
         barType.directives.collect { it.name }.sort() == ["foo"]
         barType.appliedDirectives.collect { it.name }.sort() == ["foo"]
 
-
-        def fooDirective = field.getDirective("foo")
-        fooDirective.arguments.collect { it.name }.sort() == ["arg1", "arg2"]
-        fooDirective.arguments.collect { GraphQLArgument.getArgumentValue(it) }.sort() == ["arg2Value", "fooArg1Value",]
-
         def fooAppliedDirective = field.getAppliedDirective("foo")
         fooAppliedDirective.arguments.collect { it.name }.sort() == ["arg1", "arg2"]
         fooAppliedDirective.arguments.collect { it.getValue() }.sort() == ["arg2Value", "fooArg1Value"]
 
-
-        def fooDirectiveOnType = barType.getDirective("foo")
-        fooDirectiveOnType.arguments.collect { it.name }.sort() == ["arg1", "arg2"]
-        fooDirectiveOnType.arguments.collect { GraphQLArgument.getArgumentValue(it) }.sort() == ["BarTypeValue", "arg2Value",]
-
         def fooAppliedDirectiveOnType = barType.getAppliedDirective("foo")
         fooAppliedDirectiveOnType.arguments.collect { it.name }.sort() == ["arg1", "arg2"]
         fooAppliedDirectiveOnType.arguments.collect { it.getValue() }.sort() == ["BarTypeValue", "arg2Value",]
-
-
-        def complexDirective = complexField.getDirective("complex")
-        complexDirective.arguments.collect { it.name }.sort() == ["complexArg1"]
-        complexDirective.arguments.collect { GraphQLArgument.getArgumentValue(it) }.sort() == [
-                [name:"Boris", address:[number:10, street:"Downing St", town:"London"]]
-        ]
 
         def complexAppliedDirective = complexField.getAppliedDirective("complex")
         GraphQLInputType complexInputType = schema.getTypeAs("ComplexInput")
@@ -100,9 +83,7 @@ class SchemaGeneratorAppliedDirectiveHelperTest extends Specification {
         complexAppliedDirective.arguments.collect { it.getValue() }.sort() == [
                 [name:"Boris", address:[number:10, street:"Downing St", town:"London"]]
         ]
-
     }
-
 
     def "can capture ONLY applied directives"() {
 
@@ -127,6 +108,7 @@ class SchemaGeneratorAppliedDirectiveHelperTest extends Specification {
                 "deprecated",
                 "foo",
                 "include",
+                "oneOf",
                 "skip",
                 "specifiedBy",
         ]

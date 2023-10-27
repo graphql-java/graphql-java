@@ -47,6 +47,8 @@ public class SchemaUsage {
     private final Map<String, Set<String>> interfaceImplementors;
     private final Map<String, Set<String>> elementBackReferences;
 
+    private final Map<String, Set<String>> unionReferences;
+
     private SchemaUsage(Builder builder) {
         this.fieldReferenceCounts = ImmutableMap.copyOf(builder.fieldReferenceCounts);
         this.inputFieldReferenceCounts = ImmutableMap.copyOf(builder.inputFieldReferenceCounts);
@@ -57,6 +59,7 @@ public class SchemaUsage {
         this.directiveReferenceCount = ImmutableMap.copyOf(builder.directiveReferenceCount);
         this.interfaceImplementors = ImmutableMap.copyOf(builder.interfaceImplementors);
         this.elementBackReferences = ImmutableMap.copyOf(builder.elementBackReferences);
+        this.unionReferences = ImmutableMap.copyOf(builder.unionReferences);
     }
 
     /**
@@ -225,6 +228,13 @@ public class SchemaUsage {
                     }
                 }
             }
+
+            Set<String> unionContainers = unionReferences.getOrDefault(type.getName(), emptySet());
+            for (String unionContainer : unionContainers) {
+                if (isReferencedImpl(schema, unionContainer, pathSoFar)) {
+                    return true;
+                }
+            }
         }
         return false;
     }
@@ -249,6 +259,8 @@ public class SchemaUsage {
         Map<String, Integer> unionReferenceCount = new LinkedHashMap<>();
         Map<String, Integer> directiveReferenceCount = new LinkedHashMap<>();
         Map<String, Set<String>> interfaceImplementors = new LinkedHashMap<>();
+
+        Map<String, Set<String>> unionReferences = new LinkedHashMap<>();
         Map<String, Set<String>> elementBackReferences = new LinkedHashMap<>();
 
         SchemaUsage build() {

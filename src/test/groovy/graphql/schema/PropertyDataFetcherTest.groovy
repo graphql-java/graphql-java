@@ -2,9 +2,12 @@ package graphql.schema
 
 import graphql.ExecutionInput
 import graphql.TestUtil
+import graphql.schema.fetching.ConfusedPojo
 import graphql.schema.somepackage.ClassWithDFEMethods
 import graphql.schema.somepackage.ClassWithInterfaces
 import graphql.schema.somepackage.ClassWithInteritanceAndInterfaces
+import graphql.schema.somepackage.RecordLikeClass
+import graphql.schema.somepackage.RecordLikeTwoClassesDown
 import graphql.schema.somepackage.TestClass
 import graphql.schema.somepackage.TwoClassesDown
 import spock.lang.Specification
@@ -20,6 +23,7 @@ class PropertyDataFetcherTest extends Specification {
         PropertyDataFetcher.setUseSetAccessible(true)
         PropertyDataFetcher.setUseNegativeCache(true)
         PropertyDataFetcher.clearReflectionCache()
+        PropertyDataFetcherHelper.setUseLambdaFactory(true)
     }
 
     def env(obj) {
@@ -29,7 +33,7 @@ class PropertyDataFetcherTest extends Specification {
                 .build()
     }
 
-    class SomeObject {
+    static class SomeObject {
         String value
     }
 
@@ -95,6 +99,91 @@ class PropertyDataFetcherTest extends Specification {
         result == null
     }
 
+    def "fetch via record method"() {
+        def environment = env(new RecordLikeClass())
+        when:
+        def fetcher = new PropertyDataFetcher("recordProperty")
+        def result = fetcher.get(environment)
+        then:
+        result == "recordProperty"
+
+        // caching works
+        when:
+        fetcher = new PropertyDataFetcher("recordProperty")
+        result = fetcher.get(environment)
+        then:
+        result == "recordProperty"
+
+        // recordArgumentMethod will not work because it takes a parameter
+        when:
+        fetcher = new PropertyDataFetcher("recordArgumentMethod")
+        result = fetcher.get(environment)
+        then:
+        result == null
+
+        // equals will not work because it takes a parameter
+        when:
+        fetcher = new PropertyDataFetcher("equals")
+        result = fetcher.get(environment)
+        then:
+        result == null
+
+        // we allow hashCode() and toString() because why not - they are valid property names
+        // they might not be that useful but they can be accessed
+
+        when:
+        fetcher = new PropertyDataFetcher("hashCode")
+        result = fetcher.get(environment)
+        then:
+        result == 666
+
+        when:
+        fetcher = new PropertyDataFetcher("toString")
+        result = fetcher.get(environment)
+        then:
+        result == "toString"
+    }
+
+    def "can fetch record like methods that are public and on super classes"() {
+        def environment = env(new RecordLikeTwoClassesDown())
+        when:
+        def fetcher = new PropertyDataFetcher("recordProperty")
+        def result = fetcher.get(environment)
+        then:
+        result == "recordProperty"
+    }
+
+    def "fetch via record method without lambda support"() {
+        PropertyDataFetcherHelper.setUseLambdaFactory(false)
+        PropertyDataFetcherHelper.clearReflectionCache()
+
+        when:
+        def environment = env(new RecordLikeClass())
+        def fetcher = new PropertyDataFetcher("recordProperty")
+        def result = fetcher.get(environment)
+        then:
+        result == "recordProperty"
+
+        when:
+        environment = env(new RecordLikeTwoClassesDown())
+        fetcher = new PropertyDataFetcher("recordProperty")
+        result = fetcher.get(environment)
+        then:
+        result == "recordProperty"
+    }
+
+    def "fetch via record method without lambda support in preference to getter methods"() {
+        PropertyDataFetcherHelper.setUseLambdaFactory(false)
+        PropertyDataFetcherHelper.clearReflectionCache()
+
+        when:
+        def environment = env(new ConfusedPojo())
+        def fetcher = new PropertyDataFetcher("recordLike")
+        def result = fetcher.get(environment)
+        then:
+        result == "recordLike"
+    }
+
     def "fetch via public method"() {
         def environment = env(new TestClass())
         def fetcher = new PropertyDataFetcher("publicProperty")
@@ -106,9 +195,16 @@ class PropertyDataFetcherTest extends Specification {
     def "fetch via public method declared two classes up"() {
         def environment = env(new TwoClassesDown("aValue"))
         def fetcher = new PropertyDataFetcher("publicProperty")
+        when:
         def result = fetcher.get(environment)
-        expect:
+        then:
         result == "publicValue"
+
+        when:
+        result = fetcher.get(environment)
+        then:
+        result == "publicValue"
+
     }
 
     def "fetch via property only defined on package protected impl"() {
@@ -387,7 +483,7 @@ class PropertyDataFetcherTest extends Specification {
 
     }
 
-    class ProductDTO {
+    static class ProductDTO {
         String name
         String model
     }
@@ -441,7 +537,7 @@ class PropertyDataFetcherTest extends Specification {
     private static class Bar implements Foo {
         @Override
         String getSomething() {
-            return "bar";
+            return "bar"
         }
     }
 
@@ -465,5 +561,134 @@ class PropertyDataFetcherTest extends Specification {
 
         then:
         result == "bar"
+    }
+
+    def "issue 3247 - record like statics should not be used"() {
+        given:
+        def payload = new UpdateOrganizerSubscriptionPayload(true, new OrganizerSubscriptionError())
+        PropertyDataFetcher propertyDataFetcher = new PropertyDataFetcher("success")
+        def dfe = Mock(DataFetchingEnvironment)
+        dfe.getSource() >> payload
+        when:
+        def result = propertyDataFetcher.get(dfe)
+
+        then:
+        result == true
+
+        // repeat - should be cached
+        when:
+        result = propertyDataFetcher.get(dfe)
+
+        then:
+        result == true
+    }
+
+    def "issue 3247 - record like statics should not be found"() {
+        given:
+        def errorShape = new OrganizerSubscriptionError()
+        PropertyDataFetcher propertyDataFetcher = new PropertyDataFetcher("message")
+        def dfe = Mock(DataFetchingEnvironment)
+        dfe.getSource() >> errorShape
+        when:
+        def result = propertyDataFetcher.get(dfe)
+
+        then:
+        result == null // not found as its a static recordLike() method
+
+        // repeat - should be cached
+        when:
+        result = propertyDataFetcher.get(dfe)
+
+        then:
+        result == null
+    }
+
+    def "issue 3247 - getter statics should be found"() {
+        given:
+        def objectInQuestion = new BarClassWithStaticProperties()
+        PropertyDataFetcher propertyDataFetcher = new PropertyDataFetcher("foo")
+        def dfe = Mock(DataFetchingEnvironment)
+        dfe.getSource() >> objectInQuestion
+        when:
+        def result = propertyDataFetcher.get(dfe)
+
+        then:
+        result == "foo"
+
+        // repeat - should be cached
+        when:
+        result = propertyDataFetcher.get(dfe)
+
+        then:
+        result == "foo"
+
+        when:
+        propertyDataFetcher = new PropertyDataFetcher("bar")
+        result = propertyDataFetcher.get(dfe)
+
+        then:
+        result == "bar"
+
+        // repeat - should be cached
+        when:
+        result = propertyDataFetcher.get(dfe)
+
+        then:
+        result == "bar"
+    }
+
+    /**
+     * Classes from issue to ensure we reproduce as reported by customers
+     *
+     * In the UpdateOrganizerSubscriptionPayload class we will find the getSuccess() because static recordLike() methods are no longer allowed
+     */
+    static class OrganizerSubscriptionError {
+        static String message() { return "error " }
+    }
+
+    static class UpdateOrganizerSubscriptionPayload {
+        private final Boolean success
+        private final OrganizerSubscriptionError error
+
+        UpdateOrganizerSubscriptionPayload(Boolean success, OrganizerSubscriptionError error) {
+            this.success = success
+            this.error = error
+        }
+
+        static UpdateOrganizerSubscriptionPayload success() {
+            // 👈 note the static factory method for creating a success payload
+            return new UpdateOrganizerSubscriptionPayload(Boolean.TRUE, null)
+        }
+
+        static UpdateOrganizerSubscriptionPayload error(OrganizerSubscriptionError error) {
+            // 👈 note the static factory method for creating a success payload
+            return new UpdateOrganizerSubscriptionPayload(null, error)
+        }
+
+        Boolean getSuccess() {
+            return success
+        }
+
+        OrganizerSubscriptionError getError() {
+            return error
+        }
+
+
+        @Override
+        String toString() {
+            return new StringJoiner(
+                    ", ", UpdateOrganizerSubscriptionPayload.class.getSimpleName() + "[", "]")
+                    .add("success=" + success)
+                    .add("error=" + error)
+                    .toString()
+        }
+    }
+
+    static class FooClassWithStaticProperties {
+        static String getFoo() { return "foo" }
+    }
+
+    static class BarClassWithStaticProperties extends FooClassWithStaticProperties {
+        static String getBar() { return "bar" }
     }
 }

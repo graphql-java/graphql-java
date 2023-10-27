@@ -2,14 +2,14 @@ Thanks for contributing to graphql-java!
 
 
 Please be sure that you read the [Code of Conduct](CODE_OF_CONDUCT.md) before contributing to this project and please
-create a new Issue and discuss first what your are planning to do for bigger changes.
+create a new Issue and discuss first what you are planning to do for larger changes.
 
 
 The overall goal of graphql-java is to have a correct implementation of the [GraphQL Spec](https://github.com/facebook/graphql/) in a production ready way.
 
 In order to achieve that we have a strong focus on maintainability and high test coverage:
 
-- We expect new or modified unit test for every change (written in [Spock](http://spockframework.org/)).
+- We expect new or modified unit test for every change (written in [Spock](https://spockframework.org/)).
 
 - Your code should be formatted with our IntelliJ [graphql-java-code-style](graphql-java-code-style.xml).
 

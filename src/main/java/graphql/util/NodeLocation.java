@@ -33,7 +33,7 @@ public class NodeLocation {
 
     @Override
     public String toString() {
-        return "NodeLocation{" +
+        return "{" +
             "name='" + name + '\'' +
             ", index=" + index +
             '}';

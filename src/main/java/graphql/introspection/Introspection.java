@@ -3,6 +3,7 @@ package graphql.introspection;
 
 import com.google.common.collect.ImmutableSet;
 import graphql.Assert;
+import graphql.GraphQLContext;
 import graphql.Internal;
 import graphql.PublicApi;
 import graphql.execution.ValuesResolver;
@@ -36,8 +37,10 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static graphql.Assert.assertTrue;
@@ -54,7 +57,6 @@ import static graphql.schema.GraphQLTypeReference.typeRef;
 import static graphql.schema.GraphQLTypeUtil.simplePrint;
 import static graphql.schema.GraphQLTypeUtil.unwrapAllAs;
 import static graphql.schema.GraphQLTypeUtil.unwrapOne;
-import static graphql.schema.visibility.DefaultGraphqlFieldVisibility.DEFAULT_FIELD_VISIBILITY;
 
 @PublicApi
 public class Introspection {
@@ -62,6 +64,27 @@ public class Introspection {
 
     private static void register(GraphQLFieldsContainer parentType, String fieldName, IntrospectionDataFetcher<?> introspectionDataFetcher) {
         introspectionDataFetchers.put(coordinates(parentType.getName(), fieldName), introspectionDataFetcher);
+    }
+
+    /**
+     * To help runtimes such as graalvm, we make sure we have an explicit data fetchers rather then use {@link graphql.schema.PropertyDataFetcher}
+     * and its reflective mechanisms.  This is not reflective because we have the class
+     *
+     * @param parentType  the containing parent type
+     * @param fieldName   the field name
+     * @param targetClass the target class of the getter
+     * @param getter      the function to call to get a value of T
+     * @param <T>         for two
+     */
+    private static <T> void register(GraphQLFieldsContainer parentType, String fieldName, Class<T> targetClass, Function<T, Object> getter) {
+        IntrospectionDataFetcher<?> dataFetcher = env -> {
+            Object source = env.getSource();
+            if (targetClass.isInstance(source)) {
+                return getter.apply(targetClass.cast(source));
+            }
+            return null;
+        };
+        introspectionDataFetchers.put(coordinates(parentType.getName(), fieldName), dataFetcher);
     }
 
     @Internal
@@ -89,7 +112,7 @@ public class Introspection {
     public static final GraphQLEnumType __TypeKind = GraphQLEnumType.newEnum()
             .name("__TypeKind")
             .description("An enum describing what kind of type a given __Type is")
-            .value("SCALAR", TypeKind.SCALAR, "Indicates this type is a scalar. 'specifiedByUrl' is a valid field")
+            .value("SCALAR", TypeKind.SCALAR, "Indicates this type is a scalar. 'specifiedByURL' is a valid field")
             .value("OBJECT", TypeKind.OBJECT, "Indicates this type is an object. `fields` and `interfaces` are valid fields.")
             .value("INTERFACE", TypeKind.INTERFACE, "Indicates this type is an interface. `fields` and `possibleTypes` are valid fields.")
             .value("UNION", TypeKind.UNION, "Indicates this type is a union. `possibleTypes` is a valid field.")
@@ -159,18 +182,22 @@ public class Introspection {
             .build();
 
     static {
-        register(__InputValue, "defaultValue", environment -> {
+        IntrospectionDataFetcher<?> defaultValueDataFetcher = environment -> {
             Object type = environment.getSource();
             if (type instanceof GraphQLArgument) {
                 GraphQLArgument inputField = (GraphQLArgument) type;
-                return inputField.hasSetDefaultValue() ? printDefaultValue(inputField.getArgumentDefaultValue(), inputField.getType()) : null;
+                return inputField.hasSetDefaultValue()
+                        ? printDefaultValue(inputField.getArgumentDefaultValue(), inputField.getType(), environment.getGraphQlContext(), environment.getLocale())
+                        : null;
             } else if (type instanceof GraphQLInputObjectField) {
                 GraphQLInputObjectField inputField = (GraphQLInputObjectField) type;
-                return inputField.hasSetDefaultValue() ? printDefaultValue(inputField.getInputFieldDefaultValue(), inputField.getType()) : null;
+                return inputField.hasSetDefaultValue()
+                        ? printDefaultValue(inputField.getInputFieldDefaultValue(), inputField.getType(), environment.getGraphQlContext(), environment.getLocale())
+                        : null;
             }
             return null;
-        });
-        register(__InputValue, "isDeprecated", environment -> {
+        };
+        IntrospectionDataFetcher<?> isDeprecatedDataFetcher = environment -> {
             Object type = environment.getSource();
             if (type instanceof GraphQLArgument) {
                 return ((GraphQLArgument) type).isDeprecated();
@@ -178,13 +205,36 @@ public class Introspection {
                 return ((GraphQLInputObjectField) type).isDeprecated();
             }
             return null;
-        });
+        };
+        IntrospectionDataFetcher<?> typeDataFetcher = environment -> {
+            Object type = environment.getSource();
+            if (type instanceof GraphQLArgument) {
+                return ((GraphQLArgument) type).getType();
+            } else if (type instanceof GraphQLInputObjectField) {
+                return ((GraphQLInputObjectField) type).getType();
+            }
+            return null;
+        };
+        IntrospectionDataFetcher<?> deprecationReasonDataFetcher = environment -> {
+            Object type = environment.getSource();
+            if (type instanceof GraphQLArgument) {
+                return ((GraphQLArgument) type).getDeprecationReason();
+            } else if (type instanceof GraphQLInputObjectField) {
+                return ((GraphQLInputObjectField) type).getDeprecationReason();
+            }
+            return null;
+        };
+
         register(__InputValue, "name", nameDataFetcher);
         register(__InputValue, "description", descriptionDataFetcher);
+        register(__InputValue, "type", typeDataFetcher);
+        register(__InputValue, "defaultValue", defaultValueDataFetcher);
+        register(__InputValue, "isDeprecated", isDeprecatedDataFetcher);
+        register(__InputValue, "deprecationReason", deprecationReasonDataFetcher);
     }
 
-    private static String printDefaultValue(InputValueWithState inputValueWithState, GraphQLInputType type) {
-        return AstPrinter.printAst(ValuesResolver.valueToLiteral(DEFAULT_FIELD_VISIBILITY, inputValueWithState, type));
+    private static String printDefaultValue(InputValueWithState inputValueWithState, GraphQLInputType type, GraphQLContext graphQLContext, Locale locale) {
+        return AstPrinter.printAst(ValuesResolver.valueToLiteral(inputValueWithState, type, graphQLContext, locale));
     }
 
 
@@ -215,20 +265,20 @@ public class Introspection {
             .build();
 
     static {
-        register(__Field, "args", environment -> {
+        IntrospectionDataFetcher<?> argsDataFetcher = environment -> {
             Object type = environment.getSource();
             GraphQLFieldDefinition fieldDef = (GraphQLFieldDefinition) type;
             Boolean includeDeprecated = environment.getArgument("includeDeprecated");
             return fieldDef.getArguments().stream()
                     .filter(arg -> includeDeprecated || !arg.isDeprecated())
                     .collect(Collectors.toList());
-        });
-        register(__Field, "isDeprecated", environment -> {
-            Object type = environment.getSource();
-            return ((GraphQLFieldDefinition) type).isDeprecated();
-        });
+        };
         register(__Field, "name", nameDataFetcher);
         register(__Field, "description", descriptionDataFetcher);
+        register(__Field, "args", argsDataFetcher);
+        register(__Field, "type", GraphQLFieldDefinition.class, GraphQLFieldDefinition::getType);
+        register(__Field, "isDeprecated", GraphQLFieldDefinition.class, GraphQLFieldDefinition::isDeprecated);
+        register(__Field, "deprecationReason", GraphQLFieldDefinition.class, GraphQLFieldDefinition::getDeprecationReason);
     }
 
 
@@ -249,12 +299,10 @@ public class Introspection {
             .build();
 
     static {
-        register(__EnumValue, "isDeprecated", environment -> {
-            GraphQLEnumValueDefinition enumValue = environment.getSource();
-            return enumValue.isDeprecated();
-        });
         register(__EnumValue, "name", nameDataFetcher);
         register(__EnumValue, "description", descriptionDataFetcher);
+        register(__EnumValue, "isDeprecated", GraphQLEnumValueDefinition.class, GraphQLEnumValueDefinition::isDeprecated);
+        register(__EnumValue, "deprecationReason", GraphQLEnumValueDefinition.class, GraphQLEnumValueDefinition::getDeprecationReason);
     }
 
 
@@ -351,6 +399,14 @@ public class Introspection {
         return null;
     };
 
+    private static final IntrospectionDataFetcher<?> isOneOfFetcher = environment -> {
+        Object type = environment.getSource();
+        if (type instanceof GraphQLInputObjectType) {
+            return ((GraphQLInputObjectType) type).isOneOf();
+        }
+        return null;
+    };
+
     public static final GraphQLObjectType __Type = newObject()
             .name("__Type")
             .field(newFieldDefinition()
@@ -393,21 +449,32 @@ public class Introspection {
                     .name("ofType")
                     .type(typeRef("__Type")))
             .field(newFieldDefinition()
-                    .name("specifiedByUrl")
+                    .name("isOneOf")
+                    .description("This field is considered experimental because it has not yet been ratified in the graphql specification")
+                    .type(GraphQLBoolean))
+            .field(newFieldDefinition()
+                    .name("specifiedByURL")
                     .type(GraphQLString))
+            .field(newFieldDefinition()
+                    .name("specifiedByUrl")
+                    .type(GraphQLString)
+                    .deprecate("This legacy name has been replaced by `specifiedByURL`")
+            )
             .build();
 
     static {
         register(__Type, "kind", kindDataFetcher);
+        register(__Type, "name", nameDataFetcher);
+        register(__Type, "description", descriptionDataFetcher);
         register(__Type, "fields", fieldsFetcher);
         register(__Type, "interfaces", interfacesFetcher);
         register(__Type, "possibleTypes", possibleTypesFetcher);
         register(__Type, "enumValues", enumValuesTypesFetcher);
         register(__Type, "inputFields", inputFieldsFetcher);
         register(__Type, "ofType", OfTypeFetcher);
-        register(__Type, "name", nameDataFetcher);
-        register(__Type, "description", descriptionDataFetcher);
-        register(__Type, "specifiedByUrl", specifiedByUrlDataFetcher);
+        register(__Type, "isOneOf", isOneOfFetcher);
+        register(__Type, "specifiedByURL", specifiedByUrlDataFetcher);
+        register(__Type, "specifiedByUrl", specifiedByUrlDataFetcher); // note that this field is deprecated
     }
 
 
@@ -486,38 +553,25 @@ public class Introspection {
                             .name("includeDeprecated")
                             .type(GraphQLBoolean)
                             .defaultValueProgrammatic(false)))
-            .field(newFieldDefinition()
-                    .name("onOperation")
-                    .type(GraphQLBoolean)
-                    .deprecate("Use `locations`."))
-            .field(newFieldDefinition()
-                    .name("onFragment")
-                    .type(GraphQLBoolean)
-                    .deprecate("Use `locations`."))
-            .field(newFieldDefinition()
-                    .name("onField")
-                    .type(GraphQLBoolean)
-                    .deprecate("Use `locations`."))
             .build();
 
     static {
-        register(__Directive, "locations", environment -> {
+        IntrospectionDataFetcher<?> locationsDataFetcher = environment -> {
             GraphQLDirective directive = environment.getSource();
             return new ArrayList<>(directive.validLocations());
-        });
-        register(__Directive, "args", environment -> {
+        };
+        IntrospectionDataFetcher<?> argsDataFetcher = environment -> {
             GraphQLDirective directive = environment.getSource();
             Boolean includeDeprecated = environment.getArgument("includeDeprecated");
             return directive.getArguments().stream()
                     .filter(arg -> includeDeprecated || !arg.isDeprecated())
                     .collect(Collectors.toList());
-        });
+        };
         register(__Directive, "name", nameDataFetcher);
         register(__Directive, "description", descriptionDataFetcher);
-        register(__Directive, "isRepeatable", environment -> {
-            GraphQLDirective directive = environment.getSource();
-            return directive.isRepeatable();
-        });
+        register(__Directive, "isRepeatable", GraphQLDirective.class, GraphQLDirective::isRepeatable);
+        register(__Directive, "locations", locationsDataFetcher);
+        register(__Directive, "args", argsDataFetcher);
     }
 
     public static final GraphQLObjectType __Schema = newObject()
@@ -551,24 +605,14 @@ public class Introspection {
             .build();
 
     static {
-        register(__Schema, "description", environment -> environment.getGraphQLSchema().getDescription());
-        register(__Schema, "types", environment -> {
-            GraphQLSchema schema = environment.getSource();
-            return schema.getAllTypesAsList();
-        });
-        register(__Schema, "queryType", environment -> {
-            GraphQLSchema schema = environment.getSource();
-            return schema.getQueryType();
-        });
-        register(__Schema, "mutationType", environment -> {
-            GraphQLSchema schema = environment.getSource();
-            return schema.getMutationType();
-        });
-        register(__Schema, "directives", environment -> environment.getGraphQLSchema().getDirectives());
-        register(__Schema, "subscriptionType", environment -> {
-            GraphQLSchema schema = environment.getSource();
-            return schema.getSubscriptionType();
-        });
+        IntrospectionDataFetcher<?> descriptionsDataFetcher = environment -> environment.getGraphQLSchema().getDescription();
+
+        register(__Schema, "description", descriptionsDataFetcher);
+        register(__Schema, "types", GraphQLSchema.class, GraphQLSchema::getAllTypesAsList);
+        register(__Schema, "queryType", GraphQLSchema.class, GraphQLSchema::getQueryType);
+        register(__Schema, "mutationType", GraphQLSchema.class, GraphQLSchema::getMutationType);
+        register(__Schema, "directives", GraphQLSchema.class, GraphQLSchema::getDirectives);
+        register(__Schema, "subscriptionType", GraphQLSchema.class, GraphQLSchema::getSubscriptionType);
     }
 
     public static final GraphQLFieldDefinition SchemaMetaFieldDef = buildSchemaField(__Schema);

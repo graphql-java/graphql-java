@@ -8,18 +8,21 @@ import graphql.execution.instrumentation.ChainedInstrumentation;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationState;
-import graphql.execution.instrumentation.SimpleInstrumentation;
 import graphql.execution.instrumentation.SimpleInstrumentationContext;
+import graphql.execution.instrumentation.SimplePerformantInstrumentation;
 import graphql.execution.instrumentation.fieldvalidation.FieldAndArguments;
 import graphql.execution.instrumentation.fieldvalidation.FieldValidation;
 import graphql.execution.instrumentation.fieldvalidation.FieldValidationEnvironment;
 import graphql.execution.instrumentation.fieldvalidation.FieldValidationInstrumentation;
 import graphql.execution.instrumentation.fieldvalidation.SimpleFieldValidation;
+import graphql.execution.instrumentation.parameters.InstrumentationCreateStateParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters;
 import graphql.execution.instrumentation.tracing.TracingInstrumentation;
 import graphql.schema.DataFetcher;
 import graphql.schema.GraphQLSchema;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -60,9 +63,9 @@ public class InstrumentationExamples {
         }
     }
 
-    class CustomInstrumentation extends SimpleInstrumentation {
+    class CustomInstrumentation extends SimplePerformantInstrumentation {
         @Override
-        public InstrumentationState createState() {
+        public @Nullable InstrumentationState createState(InstrumentationCreateStateParameters parameters) {
             //
             // instrumentation state is passed during each invocation of an Instrumentation method
             // and allows you to put stateful data away and reference it during the query execution
@@ -71,19 +74,18 @@ public class InstrumentationExamples {
         }
 
         @Override
-        public InstrumentationContext<ExecutionResult> beginExecution(InstrumentationExecutionParameters parameters) {
+        public @Nullable InstrumentationContext<ExecutionResult> beginExecution(InstrumentationExecutionParameters parameters, InstrumentationState state) {
             long startNanos = System.nanoTime();
             return new SimpleInstrumentationContext<ExecutionResult>() {
                 @Override
                 public void onCompleted(ExecutionResult result, Throwable t) {
-                    CustomInstrumentationState state = parameters.getInstrumentationState();
-                    state.recordTiming(parameters.getQuery(), System.nanoTime() - startNanos);
+                    ((CustomInstrumentationState) state).recordTiming(parameters.getQuery(), System.nanoTime() - startNanos);
                 }
             };
         }
 
         @Override
-        public DataFetcher<?> instrumentDataFetcher(DataFetcher<?> dataFetcher, InstrumentationFieldFetchParameters parameters) {
+        public @NotNull DataFetcher<?> instrumentDataFetcher(DataFetcher<?> dataFetcher, InstrumentationFieldFetchParameters parameters, InstrumentationState state) {
             //
             // this allows you to intercept the data fetcher used to fetch a field and provide another one, perhaps
             // that enforces certain behaviours or has certain side effects on the data
@@ -92,9 +94,9 @@ public class InstrumentationExamples {
         }
 
         @Override
-        public CompletableFuture<ExecutionResult> instrumentExecutionResult(ExecutionResult executionResult, InstrumentationExecutionParameters parameters) {
+        public @NotNull CompletableFuture<ExecutionResult> instrumentExecutionResult(ExecutionResult executionResult, InstrumentationExecutionParameters parameters, InstrumentationState state) {
             //
-            // this allows you to instrument the execution result some how.  For example the Tracing support uses this to put
+            // this allows you to instrument the execution result somehow.  For example the Tracing support uses this to put
             // the `extensions` map of data in place
             //
             return CompletableFuture.completedFuture(executionResult);

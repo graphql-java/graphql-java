@@ -11,7 +11,10 @@ import graphql.execution.Execution
 import graphql.execution.ExecutionId
 import graphql.execution.ResultPath
 import graphql.execution.ValueUnboxer
-import graphql.execution.instrumentation.SimpleInstrumentation
+import graphql.execution.instrumentation.ChainedInstrumentation
+import graphql.execution.instrumentation.Instrumentation
+import graphql.execution.instrumentation.SimplePerformantInstrumentation
+import graphql.execution.instrumentation.parameters.InstrumentationCreateStateParameters
 import spock.lang.Specification
 
 import java.util.concurrent.CompletableFuture
@@ -154,11 +157,11 @@ class FieldValidationTest extends Specification {
 
         SimpleFieldValidation validation = new SimpleFieldValidation()
                 .addRule(ResultPath.parse("/field1"),
-                { fieldAndArguments, env -> err("Not happy Jan!", env, fieldAndArguments) })
+                        { fieldAndArguments, env -> err("Not happy Jan!", env, fieldAndArguments) })
                 .addRule(ResultPath.parse("/field1/informationLink/informationLink/informationString"),
-                { fieldAndArguments, env -> err("Also not happy Jan!", env, fieldAndArguments) })
+                        { fieldAndArguments, env -> err("Also not happy Jan!", env, fieldAndArguments) })
                 .addRule(ResultPath.parse("/does/not/exist"),
-                { fieldAndArguments, env -> err("Wont happen", env, fieldAndArguments) })
+                        { fieldAndArguments, env -> err("Wont happen", env, fieldAndArguments) })
 
 
         when:
@@ -203,15 +206,15 @@ class FieldValidationTest extends Specification {
 
         SimpleFieldValidation validation = new SimpleFieldValidation()
                 .addRule(ResultPath.parse("/field1/informationString"),
-                { fieldAndArguments, env ->
-                    def value = fieldAndArguments.getArgumentValue("fmt1")
-                    if (value != "ok") {
-                        return err("Nope : " + value, env, fieldAndArguments)
-                    } else {
-                        return Optional.empty()
-                    }
-                }
-        )
+                        { fieldAndArguments, env ->
+                            def value = fieldAndArguments.getArgumentValue("fmt1")
+                            if (value != "ok") {
+                                return err("Nope : " + value, env, fieldAndArguments)
+                            } else {
+                                return Optional.empty()
+                            }
+                        }
+                )
 
 
         when:
@@ -249,15 +252,15 @@ class FieldValidationTest extends Specification {
 
         SimpleFieldValidation validation = new SimpleFieldValidation()
                 .addRule(ResultPath.parse("/field1/informationString"),
-                { fieldAndArguments, env ->
-                    String value = fieldAndArguments.getArgumentValue("fmt1")
-                    if (value.contains("alias")) {
-                        return err("Nope : " + value, env, fieldAndArguments)
-                    } else {
-                        return Optional.empty()
-                    }
-                }
-        )
+                        { fieldAndArguments, env ->
+                            String value = fieldAndArguments.getArgumentValue("fmt1")
+                            if (value.contains("alias")) {
+                                return err("Nope : " + value, env, fieldAndArguments)
+                            } else {
+                                return Optional.empty()
+                            }
+                        }
+                )
 
 
         when:
@@ -308,7 +311,29 @@ class FieldValidationTest extends Specification {
         def execution = new Execution(strategy, strategy, strategy, instrumentation, ValueUnboxer.DEFAULT)
 
         def executionInput = ExecutionInput.newExecutionInput().query(query).variables(variables).build()
-        execution.execute(document, schema, ExecutionId.generate(), executionInput, SimpleInstrumentation.INSTANCE.createState())
+        execution.execute(document, schema, ExecutionId.generate(), executionInput, SimplePerformantInstrumentation.INSTANCE.createState(new InstrumentationCreateStateParameters(schema, executionInput)))
+    }
+
+    def "test graphql from end to end with chained instrumentation"() {
+        def fieldValidation = new FieldValidation() {
+            @Override
+            List<GraphQLError> validateFields(final FieldValidationEnvironment validationEnvironment) {
+                return new ArrayList<GraphQLError>();
+            }
+        }
+        def instrumentations = [new FieldValidationInstrumentation
+                (fieldValidation)]
+        def chainedInstrumentation = new ChainedInstrumentation(instrumentations);
+        def graphql = GraphQL
+                .newGraphQL(schema)
+                .instrumentation(chainedInstrumentation)
+                .build();
+
+        when:
+        def result = graphql.execute("{ field2 }")
+
+        then:
+        result.getErrors().size() == 0
     }
 
 }

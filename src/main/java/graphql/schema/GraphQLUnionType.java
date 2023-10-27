@@ -3,6 +3,7 @@ package graphql.schema;
 
 import com.google.common.collect.ImmutableList;
 import graphql.Assert;
+import graphql.DeprecatedAt;
 import graphql.DirectivesUtil;
 import graphql.Internal;
 import graphql.PublicApi;
@@ -27,12 +28,12 @@ import static graphql.util.FpKit.getByName;
 /**
  * A union type is a polymorphic type that dynamically represents one of more concrete object types.
  * <p>
- * At runtime a {@link graphql.schema.TypeResolver} is used to take an union object value and decide what {@link graphql.schema.GraphQLObjectType}
+ * At runtime a {@link TypeResolver} is used to take an union object value and decide what {@link GraphQLObjectType}
  * represents this union of types.
  * <p>
  * Note that members of a union type need to be concrete object types; you can't create a union type out of interfaces or other unions.
  * <p>
- * See http://graphql.org/learn/schema/#union-types for more details on the concept.
+ * See <a href="https://graphql.org/learn/schema/#union-types">https://graphql.org/learn/schema/#union-types</a> for more details on the concept.
  */
 @PublicApi
 public class GraphQLUnionType implements GraphQLNamedOutputType, GraphQLCompositeType, GraphQLUnmodifiedType, GraphQLNullableType, GraphQLDirectiveContainer {
@@ -100,6 +101,9 @@ public class GraphQLUnionType implements GraphQLNamedOutputType, GraphQLComposit
     }
 
     // to be removed in a future version when all code is in the code registry
+    @Internal
+    @Deprecated
+    @DeprecatedAt("2018-12-03")
     TypeResolver getTypeResolver() {
         return typeResolver;
     }
@@ -271,7 +275,15 @@ public class GraphQLUnionType implements GraphQLNamedOutputType, GraphQLComposit
             return this;
         }
 
+        /**
+         * @param typeResolver the type resolver
+         *
+         * @return this builder
+         *
+         * @deprecated use {@link graphql.schema.GraphQLCodeRegistry.Builder#typeResolver(GraphQLUnionType, TypeResolver)} instead
+         */
         @Deprecated
+        @DeprecatedAt("2018-12-03")
         public Builder typeResolver(TypeResolver typeResolver) {
             this.typeResolver = typeResolver;
             return this;

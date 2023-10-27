@@ -1,5 +1,6 @@
 package graphql.validation.rules
 
+import graphql.GraphQLContext
 import graphql.language.Argument
 import graphql.language.ArrayValue
 import graphql.language.BooleanValue
@@ -35,6 +36,8 @@ class ArgumentsOfCorrectTypeTest extends Specification {
 
     def setup() {
         argumentsOfCorrectType = new ArgumentsOfCorrectType(validationContext, errorCollector)
+        def context = GraphQLContext.getDefault()
+        validationContext.getGraphQLContext() >> context
     }
 
     def "valid type results in no error"() {
@@ -77,7 +80,7 @@ class ArgumentsOfCorrectTypeTest extends Specification {
         !validationErrors.empty
         validationErrors.size() == 1
         validationErrors.get(0).getValidationErrorType() == ValidationErrorType.WrongType
-        validationErrors.get(0).message == "Validation error (WrongType@[dog]) : argument 'arg1' with value 'IntValue{value=1}' is not a valid 'String' - Expected AST type 'StringValue' but was 'IntValue'."
+        validationErrors.get(0).message == "Validation error (WrongType@[dog]) : argument 'arg1' with value 'IntValue{value=1}' is not a valid 'String' - Expected an AST type of 'StringValue' but it was a 'IntValue'"
     }
 
     def "invalid input object type results in error"() {
@@ -329,7 +332,7 @@ class ArgumentsOfCorrectTypeTest extends Specification {
         !validationErrors.empty
         validationErrors.size() == 1
         validationErrors.get(0).getValidationErrorType() == ValidationErrorType.WrongType
-        validationErrors.get(0).message == "Validation error (WrongType@[dog/doesKnowCommand]) : argument 'dogCommand' with value 'EnumValue{name='PRETTY'}' is not a valid 'DogCommand' - Expected enum literal value not in allowable values -  'EnumValue{name='PRETTY'}'."
+        validationErrors.get(0).message == "Validation error (WrongType@[dog/doesKnowCommand]) : argument 'dogCommand' with value 'EnumValue{name='PRETTY'}' is not a valid 'DogCommand' - Literal value not in allowable values for enum 'DogCommand' - 'EnumValue{name='PRETTY'}'"
     }
 
     static List<ValidationError> validate(String query) {

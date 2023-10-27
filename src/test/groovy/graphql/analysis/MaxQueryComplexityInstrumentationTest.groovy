@@ -6,6 +6,7 @@ import graphql.execution.AbortExecutionException
 import graphql.execution.ExecutionContext
 import graphql.execution.ExecutionContextBuilder
 import graphql.execution.ExecutionId
+import graphql.execution.instrumentation.InstrumentationState
 import graphql.execution.instrumentation.parameters.InstrumentationExecuteOperationParameters
 import graphql.execution.instrumentation.parameters.InstrumentationValidationParameters
 import graphql.language.Document
@@ -40,9 +41,10 @@ class MaxQueryComplexityInstrumentationTest extends Specification {
             """)
         MaxQueryComplexityInstrumentation queryComplexityInstrumentation = new MaxQueryComplexityInstrumentation(10)
         ExecutionInput executionInput = Mock(ExecutionInput)
-        InstrumentationExecuteOperationParameters executeOperationParameters = createExecuteOperationParameters(queryComplexityInstrumentation, executionInput, query, schema)
+        def state = createInstrumentationState(queryComplexityInstrumentation)
+        InstrumentationExecuteOperationParameters executeOperationParameters = createExecuteOperationParameters(queryComplexityInstrumentation, executionInput, query, schema, state)
         when:
-        queryComplexityInstrumentation.beginExecuteOperation(executeOperationParameters)
+        queryComplexityInstrumentation.beginExecuteOperation(executeOperationParameters, state)
         then:
         def e = thrown(AbortExecutionException)
         e.message == "maximum query complexity exceeded 11 > 10"
@@ -62,9 +64,10 @@ class MaxQueryComplexityInstrumentationTest extends Specification {
             """)
         MaxQueryComplexityInstrumentation queryComplexityInstrumentation = new MaxQueryComplexityInstrumentation(1)
         ExecutionInput executionInput = Mock(ExecutionInput)
-        InstrumentationExecuteOperationParameters executeOperationParameters = createExecuteOperationParameters(queryComplexityInstrumentation, executionInput, query, schema)
+        def state = createInstrumentationState(queryComplexityInstrumentation)
+        InstrumentationExecuteOperationParameters executeOperationParameters = createExecuteOperationParameters(queryComplexityInstrumentation, executionInput, query, schema, state)
         when:
-        queryComplexityInstrumentation.beginExecuteOperation(executeOperationParameters)
+        queryComplexityInstrumentation.beginExecuteOperation(executeOperationParameters, state)
         then:
         def e = thrown(AbortExecutionException)
         e.message == "maximum query complexity exceeded 2 > 1"
@@ -89,9 +92,10 @@ class MaxQueryComplexityInstrumentationTest extends Specification {
         def calculator = Mock(FieldComplexityCalculator)
         MaxQueryComplexityInstrumentation queryComplexityInstrumentation = new MaxQueryComplexityInstrumentation(5, calculator)
         ExecutionInput executionInput = Mock(ExecutionInput)
-        InstrumentationExecuteOperationParameters executeOperationParameters = createExecuteOperationParameters(queryComplexityInstrumentation, executionInput, query, schema)
+        def state = createInstrumentationState(queryComplexityInstrumentation)
+        InstrumentationExecuteOperationParameters executeOperationParameters = createExecuteOperationParameters(queryComplexityInstrumentation, executionInput, query, schema, state)
         when:
-        queryComplexityInstrumentation.beginExecuteOperation(executeOperationParameters)
+        queryComplexityInstrumentation.beginExecuteOperation(executeOperationParameters, state)
 
         then:
         1 * calculator.calculate({ FieldComplexityEnvironment env -> env.field.name == "scalar" }, 0) >> 10
@@ -128,9 +132,10 @@ class MaxQueryComplexityInstrumentationTest extends Specification {
         }
         MaxQueryComplexityInstrumentation queryComplexityInstrumentation = new MaxQueryComplexityInstrumentation(10, maxQueryComplexityExceededFunction)
         ExecutionInput executionInput = Mock(ExecutionInput)
-        InstrumentationExecuteOperationParameters executeOperationParameters = createExecuteOperationParameters(queryComplexityInstrumentation, executionInput, query, schema)
+        def state = createInstrumentationState(queryComplexityInstrumentation)
+        InstrumentationExecuteOperationParameters executeOperationParameters = createExecuteOperationParameters(queryComplexityInstrumentation, executionInput, query, schema, state)
         when:
-        queryComplexityInstrumentation.beginExecuteOperation(executeOperationParameters)
+        queryComplexityInstrumentation.beginExecuteOperation(executeOperationParameters, state)
         then:
         customFunctionCalled
         notThrown(Exception)
@@ -151,23 +156,28 @@ class MaxQueryComplexityInstrumentationTest extends Specification {
 
         MaxQueryComplexityInstrumentation queryComplexityInstrumentation = new MaxQueryComplexityInstrumentation(0)
         ExecutionInput executionInput = Mock(ExecutionInput)
-        InstrumentationExecuteOperationParameters executeOperationParameters = createExecuteOperationParameters(queryComplexityInstrumentation, executionInput, query, schema)
+        def state = createInstrumentationState(queryComplexityInstrumentation)
+        InstrumentationExecuteOperationParameters executeOperationParameters = createExecuteOperationParameters(queryComplexityInstrumentation, executionInput, query, schema, state)
         when:
-        queryComplexityInstrumentation.beginExecuteOperation(executeOperationParameters)
+        queryComplexityInstrumentation.beginExecuteOperation(executeOperationParameters, state)
         then:
         def e = thrown(AbortExecutionException)
         e.message == "maximum query complexity exceeded 1 > 0"
     }
 
-    private InstrumentationExecuteOperationParameters createExecuteOperationParameters(MaxQueryComplexityInstrumentation queryComplexityInstrumentation, ExecutionInput executionInput, Document query, GraphQLSchema schema) {
+    private InstrumentationExecuteOperationParameters createExecuteOperationParameters(MaxQueryComplexityInstrumentation queryComplexityInstrumentation, ExecutionInput executionInput, Document query, GraphQLSchema schema, InstrumentationState state) {
         // we need to run N steps to create instrumentation state
-        def instrumentationState = queryComplexityInstrumentation.createState(null)
-        def validationParameters = new InstrumentationValidationParameters(executionInput, query, schema, instrumentationState)
-        queryComplexityInstrumentation.beginValidation(validationParameters)
+        def validationParameters = new InstrumentationValidationParameters(executionInput, query, schema, state)
+        queryComplexityInstrumentation.beginValidation(validationParameters, state)
         def executionContext = executionCtx(executionInput, query, schema)
-        def executeOperationParameters = new InstrumentationExecuteOperationParameters(executionContext).withNewState(instrumentationState)
+        def executeOperationParameters = new InstrumentationExecuteOperationParameters(executionContext)
         executeOperationParameters
     }
+
+    def createInstrumentationState(MaxQueryComplexityInstrumentation queryComplexityInstrumentation) {
+        queryComplexityInstrumentation.createState(null)
+    }
+
 
     private ExecutionContext executionCtx(ExecutionInput executionInput, Document query, GraphQLSchema schema) {
         ExecutionContextBuilder.newExecutionContextBuilder()

@@ -1,7 +1,5 @@
 package benchmark;
 
-import com.google.common.base.Charsets;
-import com.google.common.io.Resources;
 import graphql.ExecutionResult;
 import graphql.GraphQL;
 import graphql.i18n.I18n;
@@ -28,14 +26,11 @@ import org.openjdk.jmh.annotations.Threads;
 import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
 
-import java.io.IOException;
-import java.net.URL;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 
-import static com.google.common.io.Resources.getResource;
 import static graphql.Assert.assertTrue;
 
 @State(Scope.Benchmark)
@@ -56,8 +51,8 @@ public class OverlappingFieldValidationBenchmark {
         @Setup
         public void setup() {
             try {
-                String schemaString = readFromClasspath("large-schema-4.graphqls");
-                String query = readFromClasspath("large-schema-4-query.graphql");
+                String schemaString = BenchmarkUtils.loadResource("large-schema-4.graphqls");
+                String query = BenchmarkUtils.loadResource("large-schema-4-query.graphql");
                 schema = SchemaGenerator.createdMockedSchema(schemaString);
                 document = Parser.parse(query);
 
@@ -66,14 +61,8 @@ public class OverlappingFieldValidationBenchmark {
                 ExecutionResult executionResult = graphQL.execute(query);
                 assertTrue(executionResult.getErrors().size() == 0);
             } catch (Exception e) {
-                System.out.println(e);
                 throw new RuntimeException(e);
             }
-        }
-
-        private String readFromClasspath(String file) throws IOException {
-            URL url = getResource(file);
-            return Resources.toString(url, Charsets.UTF_8);
         }
     }
 

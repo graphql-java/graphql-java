@@ -16,7 +16,7 @@ schemaDefinition : description? SCHEMA directives? '{' operationTypeDefinition+ 
 
 schemaExtension :
     EXTEND SCHEMA directives? '{' operationTypeDefinition+ '}' |
-    EXTEND SCHEMA directives+
+    EXTEND SCHEMA directives
 ;
 
 operationTypeDefinition : description? operationType ':' typeName;

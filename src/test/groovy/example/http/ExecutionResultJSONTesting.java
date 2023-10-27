@@ -20,7 +20,7 @@ import graphql.schema.CoercingSerializeException;
 import graphql.validation.ValidationError;
 import graphql.validation.ValidationErrorType;
 
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -70,7 +70,7 @@ public class ExecutionResultJSONTesting {
     private ExecutionResult createER() {
         List<GraphQLError> errors = new ArrayList<>();
 
-        errors.add(new ValidationError(ValidationErrorType.UnknownType, mkLocations(), "Test ValidationError"));
+        errors.add(new ValidationError(ValidationErrorType.UnknownType, mkLocations(), "Test ValidationError")); // Retain as there is no alternative constructor for ValidationError
         errors.add(new MissingRootTypeException("Mutations are not supported.", null));
         errors.add(new InvalidSyntaxError(mkLocations(), "Not good syntax m'kay"));
         errors.add(new NonNullableFieldWasNullError(new NonNullableFieldWasNullException(mkExecutionInfo(), mkPath())));

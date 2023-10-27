@@ -28,7 +28,7 @@ class DelegatingDataFetchingEnvironmentTest extends Specification {
             }
 
             @Override
-            def getContext() {
+            def getContext() { // Retain for test coverage
                 return "overriddenContext"
             }
         }

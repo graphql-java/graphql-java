@@ -1,13 +1,10 @@
 package graphql;
 
 
-import com.google.common.collect.ImmutableSet;
 import graphql.language.Description;
 import graphql.language.DirectiveDefinition;
 import graphql.language.StringValue;
 import graphql.schema.GraphQLDirective;
-
-import java.util.Set;
 
 import static graphql.Scalars.GraphQLBoolean;
 import static graphql.Scalars.GraphQLString;
@@ -18,6 +15,7 @@ import static graphql.introspection.Introspection.DirectiveLocation.FIELD_DEFINI
 import static graphql.introspection.Introspection.DirectiveLocation.FRAGMENT_SPREAD;
 import static graphql.introspection.Introspection.DirectiveLocation.INLINE_FRAGMENT;
 import static graphql.introspection.Introspection.DirectiveLocation.INPUT_FIELD_DEFINITION;
+import static graphql.introspection.Introspection.DirectiveLocation.INPUT_OBJECT;
 import static graphql.introspection.Introspection.DirectiveLocation.SCALAR;
 import static graphql.language.DirectiveLocation.newDirectiveLocation;
 import static graphql.language.InputValueDefinition.newInputValueDefinition;
@@ -34,10 +32,13 @@ public class Directives {
 
     private static final String SPECIFIED_BY = "specifiedBy";
     private static final String DEPRECATED = "deprecated";
+    private static final String ONE_OF = "oneOf";
 
     public static final String NO_LONGER_SUPPORTED = "No longer supported";
     public static final DirectiveDefinition DEPRECATED_DIRECTIVE_DEFINITION;
     public static final DirectiveDefinition SPECIFIED_BY_DIRECTIVE_DEFINITION;
+    @ExperimentalApi
+    public static final DirectiveDefinition ONE_OF_DIRECTIVE_DEFINITION;
 
 
     static {
@@ -68,6 +69,12 @@ public class Directives {
                                 .type(newNonNullType(newTypeName().name("String").build()).build())
                                 .build())
                 .build();
+
+        ONE_OF_DIRECTIVE_DEFINITION = DirectiveDefinition.newDirectiveDefinition()
+                .name(ONE_OF)
+                .directiveLocation(newDirectiveLocation().name(INPUT_OBJECT.name()).build())
+                .description(createDescription("Indicates an Input Object is a OneOf Input Object."))
+                .build();
     }
 
     public static final GraphQLDirective IncludeDirective = GraphQLDirective.newDirective()
@@ -82,7 +89,7 @@ public class Directives {
 
     public static final GraphQLDirective SkipDirective = GraphQLDirective.newDirective()
             .name("skip")
-            .description("Directs the executor to skip this field or fragment when the `if`'argument is true.")
+            .description("Directs the executor to skip this field or fragment when the `if` argument is true.")
             .argument(newArgument()
                     .name("if")
                     .type(nonNull(GraphQLBoolean))
@@ -120,6 +127,14 @@ public class Directives {
                     .description("The URL that specifies the behaviour of this scalar."))
             .validLocations(SCALAR)
             .definition(SPECIFIED_BY_DIRECTIVE_DEFINITION)
+            .build();
+
+    @ExperimentalApi
+    public static final GraphQLDirective OneOfDirective = GraphQLDirective.newDirective()
+            .name(ONE_OF)
+            .description("Indicates an Input Object is a OneOf Input Object.")
+            .validLocations(INPUT_OBJECT)
+            .definition(ONE_OF_DIRECTIVE_DEFINITION)
             .build();
 
     private static Description createDescription(String s) {

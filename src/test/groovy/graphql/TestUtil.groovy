@@ -103,18 +103,18 @@ class TestUtil {
         schema(specReader, mockRuntimeWiring)
     }
 
-    static GraphQLSchema schema(String spec, RuntimeWiring runtimeWiring) {
-        schema(new StringReader(spec), runtimeWiring)
+    static GraphQLSchema schema(String spec, RuntimeWiring runtimeWiring, boolean commentsAsDescription = true) {
+        schema(new StringReader(spec), runtimeWiring, commentsAsDescription)
     }
 
     static GraphQLSchema schema(InputStream specStream, RuntimeWiring runtimeWiring) {
         schema(new InputStreamReader(specStream), runtimeWiring)
     }
 
-    static GraphQLSchema schema(Reader specReader, RuntimeWiring runtimeWiring) {
+    static GraphQLSchema schema(Reader specReader, RuntimeWiring runtimeWiring, boolean commentsAsDescription = true) {
         try {
             def registry = new SchemaParser().parse(specReader)
-            def options = SchemaGenerator.Options.defaultOptions()
+            def options = SchemaGenerator.Options.defaultOptions().useCommentsAsDescriptions(commentsAsDescription)
             return new SchemaGenerator().makeExecutableSchema(options, registry, runtimeWiring)
         } catch (SchemaProblem e) {
             assert false: "The schema could not be compiled : ${e}"

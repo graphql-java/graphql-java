@@ -1,5 +1,6 @@
 package graphql.normalized;
 
+import graphql.PublicApi;
 import graphql.language.Value;
 
 import java.util.Objects;
@@ -10,8 +11,9 @@ import static graphql.Assert.assertValidName;
 import static graphql.language.AstPrinter.printAst;
 
 /**
- * A value with type information.
+ * An argument value with type information.
  */
+@PublicApi
 public class NormalizedInputValue {
     private final String typeName;
     private final Object value;

@@ -2,7 +2,8 @@ package graphql.schema.transform
 
 import graphql.Scalars
 import graphql.TestUtil
-import graphql.introspection.Introspection
+import graphql.schema.GraphQLAppliedDirective
+import graphql.schema.GraphQLCodeRegistry
 import graphql.schema.GraphQLDirectiveContainer
 import graphql.schema.GraphQLInputObjectType
 import graphql.schema.GraphQLObjectType
@@ -11,7 +12,6 @@ import graphql.schema.TypeResolver
 import graphql.schema.idl.SchemaPrinter
 import spock.lang.Specification
 
-import static graphql.schema.GraphQLDirective.newDirective
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition
 import static graphql.schema.GraphQLInterfaceType.newInterface
 import static graphql.schema.GraphQLObjectType.newObject
@@ -20,7 +20,7 @@ import static graphql.schema.GraphQLTypeReference.typeRef
 class FieldVisibilitySchemaTransformationTest extends Specification {
 
     def visibilitySchemaTransformation = new FieldVisibilitySchemaTransformation({ environment ->
-        def directives = (environment.schemaElement as GraphQLDirectiveContainer).directives
+        def directives = (environment.schemaElement as GraphQLDirectiveContainer).appliedDirectives
         return directives.find({ directive -> directive.name == "private" }) == null
     })
 
@@ -941,11 +941,11 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
                 .field(newFieldDefinition().name("account").type(typeRef("Account")).build())
                 .build()
 
-        def privateDirective = newDirective().name("private").build()
+        def privateDirective = GraphQLAppliedDirective.newDirective().name("private").build()
         def account = newObject()
                 .name("Account")
                 .field(newFieldDefinition().name("name").type(Scalars.GraphQLString).build())
-                .field(newFieldDefinition().name("billingStatus").type(typeRef("SuperSecretCustomerData")).withDirective(privateDirective).build())
+                .field(newFieldDefinition().name("billingStatus").type(typeRef("SuperSecretCustomerData")).withAppliedDirective(privateDirective).build())
                 .build()
 
         def billingStatus = newObject()
@@ -957,16 +957,19 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
         def secretData = newInterface()
                 .name("SuperSecretCustomerData")
                 .field(newFieldDefinition().name("id").type(Scalars.GraphQLString).build())
-                .typeResolver(Mock(TypeResolver))
+                .build()
+
+        def codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+                .typeResolver(secretData, Mock(TypeResolver))
                 .build()
 
         def schema = GraphQLSchema.newSchema()
+                .codeRegistry(codeRegistry)
                 .query(query)
                 .additionalType(billingStatus)
                 .additionalType(account)
                 .additionalType(billingStatus)
                 .additionalType(secretData)
-                .additionalDirective(privateDirective)
                 .build()
         when:
 
@@ -987,11 +990,11 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
                 .field(newFieldDefinition().name("account").type(typeRef("Account")).build())
                 .build()
 
-        def privateDirective = newDirective().name("private").build()
+        def privateDirective = GraphQLAppliedDirective.newDirective().name("private").build()
         def account = newObject()
                 .name("Account")
                 .field(newFieldDefinition().name("name").type(Scalars.GraphQLString).build())
-                .field(newFieldDefinition().name("billingStatus").type(typeRef("BillingStatus")).withDirective(privateDirective).build())
+                .field(newFieldDefinition().name("billingStatus").type(typeRef("BillingStatus")).withAppliedDirective(privateDirective).build())
                 .build()
 
         def billingStatus = newObject()
@@ -1003,16 +1006,19 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
         def secretData = newInterface()
                 .name("SuperSecretCustomerData")
                 .field(newFieldDefinition().name("id").type(Scalars.GraphQLString).build())
-                .typeResolver(Mock(TypeResolver))
+                .build()
+
+        def codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+                .typeResolver(secretData, Mock(TypeResolver))
                 .build()
 
         def schema = GraphQLSchema.newSchema()
+                .codeRegistry(codeRegistry)
                 .query(query)
                 .additionalType(billingStatus)
                 .additionalType(account)
                 .additionalType(billingStatus)
                 .additionalType(secretData)
-                .additionalDirective(privateDirective)
                 .build()
         when:
 
@@ -1032,11 +1038,11 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
                 .field(newFieldDefinition().name("account").type(typeRef("Account")).build())
                 .build()
 
-        def privateDirective = newDirective().name("private").build()
+        def privateDirective = GraphQLAppliedDirective.newDirective().name("private").build()
         def account = newObject()
                 .name("Account")
                 .field(newFieldDefinition().name("name").type(Scalars.GraphQLString).build())
-                .field(newFieldDefinition().name("billingStatus").type(typeRef("BillingStatus")).withDirective(privateDirective).build())
+                .field(newFieldDefinition().name("billingStatus").type(typeRef("BillingStatus")).withAppliedDirective(privateDirective).build())
                 .build()
 
         def billingStatus = newObject()
@@ -1048,7 +1054,6 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
                 .query(query)
                 .additionalType(billingStatus)
                 .additionalType(account)
-                .additionalDirective(privateDirective)
                 .build()
         when:
 
@@ -1066,7 +1071,7 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
         def callbacks = []
 
         def visibilitySchemaTransformation = new FieldVisibilitySchemaTransformation({ environment ->
-            def directives = (environment.schemaElement as GraphQLDirectiveContainer).directives
+            def directives = (environment.schemaElement as GraphQLDirectiveContainer).appliedDirectives
             return directives.find({ directive -> directive.name == "private" }) == null
         }, { -> callbacks << "before" }, { -> callbacks << "after"} )
 
@@ -1177,5 +1182,68 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
         then:
         (restrictedSchema.getType("Account") as GraphQLObjectType).getFieldDefinition("billingStatus") == null
         restrictedSchema.getType("BillingStatus") != null
+    }
+
+    def "can remove a field with a directive containing enum argument"() {
+        given:
+        GraphQLSchema schema = TestUtil.schema("""
+
+        directive @private(privateType: SecretType) on FIELD_DEFINITION
+        enum SecretType {
+            SUPER_SECRET
+            NOT_SO_SECRET
+        }
+
+        type Query {
+            account: Account
+        }
+        
+        type Account {
+            name: String
+            billingStatus: BillingStatus @private(privateType: NOT_SO_SECRET)
+        }
+        
+        type BillingStatus {
+            accountNumber: String
+        }
+        """)
+
+        when:
+        GraphQLSchema restrictedSchema = visibilitySchemaTransformation.apply(schema)
+
+        then:
+        (restrictedSchema.getType("Account") as GraphQLObjectType).getFieldDefinition("billingStatus") == null
+        restrictedSchema.getType("BillingStatus") == null
+    }
+
+    def "can remove a field with a directive containing type argument"() {
+        given:
+        GraphQLSchema schema = TestUtil.schema("""
+
+        directive @private(privateType: SecretType) on FIELD_DEFINITION
+        input SecretType {
+            description: String
+        }
+
+        type Query {
+            account: Account
+        }
+        
+        type Account {
+            name: String
+            billingStatus: BillingStatus @private(privateType: { description: "secret" })
+        }
+        
+        type BillingStatus {
+            accountNumber: String
+        }
+        """)
+
+        when:
+        GraphQLSchema restrictedSchema = visibilitySchemaTransformation.apply(schema)
+
+        then:
+        (restrictedSchema.getType("Account") as GraphQLObjectType).getFieldDefinition("billingStatus") == null
+        restrictedSchema.getType("BillingStatus") == null
     }
 }

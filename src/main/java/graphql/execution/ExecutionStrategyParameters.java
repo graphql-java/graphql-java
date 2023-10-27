@@ -19,8 +19,6 @@ public class ExecutionStrategyParameters {
     private final NonNullableFieldValidator nonNullableFieldValidator;
     private final ResultPath path;
     private final MergedField currentField;
-    private final int listSize;
-    private final int currentListIndex;
     private final ExecutionStrategyParameters parent;
 
     private ExecutionStrategyParameters(ExecutionStepInfo executionStepInfo,
@@ -30,8 +28,6 @@ public class ExecutionStrategyParameters {
                                         NonNullableFieldValidator nonNullableFieldValidator,
                                         ResultPath path,
                                         MergedField currentField,
-                                        int listSize,
-                                        int currentListIndex,
                                         ExecutionStrategyParameters parent) {
 
         this.executionStepInfo = assertNotNull(executionStepInfo, () -> "executionStepInfo is null");
@@ -41,8 +37,6 @@ public class ExecutionStrategyParameters {
         this.nonNullableFieldValidator = nonNullableFieldValidator;
         this.path = path;
         this.currentField = currentField;
-        this.listSize = listSize;
-        this.currentListIndex = currentListIndex;
         this.parent = parent;
     }
 
@@ -68,14 +62,6 @@ public class ExecutionStrategyParameters {
 
     public Object getLocalContext() {
         return localContext;
-    }
-
-    public int getListSize() {
-        return listSize;
-    }
-
-    public int getCurrentListIndex() {
-        return currentListIndex;
     }
 
     public ExecutionStrategyParameters getParent() {
@@ -119,8 +105,6 @@ public class ExecutionStrategyParameters {
         NonNullableFieldValidator nonNullableFieldValidator;
         ResultPath path = ResultPath.rootPath();
         MergedField currentField;
-        int listSize;
-        int currentListIndex;
         ExecutionStrategyParameters parent;
 
         /**
@@ -141,8 +125,6 @@ public class ExecutionStrategyParameters {
             this.currentField = oldParameters.currentField;
             this.path = oldParameters.path;
             this.parent = oldParameters.parent;
-            this.listSize = oldParameters.listSize;
-            this.currentListIndex = oldParameters.currentListIndex;
         }
 
         public Builder executionStepInfo(ExecutionStepInfo executionStepInfo) {
@@ -185,16 +167,6 @@ public class ExecutionStrategyParameters {
             return this;
         }
 
-        public Builder listSize(int listSize) {
-            this.listSize = listSize;
-            return this;
-        }
-
-        public Builder currentListIndex(int currentListIndex) {
-            this.currentListIndex = currentListIndex;
-            return this;
-        }
-
         public Builder parent(ExecutionStrategyParameters parent) {
             this.parent = parent;
             return this;
@@ -202,7 +174,7 @@ public class ExecutionStrategyParameters {
 
 
         public ExecutionStrategyParameters build() {
-            return new ExecutionStrategyParameters(executionStepInfo, source, localContext, fields, nonNullableFieldValidator, path, currentField, listSize, currentListIndex, parent);
+            return new ExecutionStrategyParameters(executionStepInfo, source, localContext, fields, nonNullableFieldValidator, path, currentField, parent);
         }
     }
 }

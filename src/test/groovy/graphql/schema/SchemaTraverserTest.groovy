@@ -1,7 +1,7 @@
 package graphql.schema
 
 import graphql.Scalars
-import graphql.TypeResolutionEnvironment
+import graphql.TestUtil
 import graphql.util.TraversalControl
 import graphql.util.TraverserContext
 import spock.lang.Specification
@@ -117,7 +117,6 @@ class SchemaTraverserTest extends Specification {
                         .name("bar")
                         .type(Scalars.GraphQLString)
                         .build())
-                .typeResolver(NOOP_RESOLVER)
                 .build())
         then:
         visitor.getStack() == ["interface: foo", "fallback: foo",
@@ -155,7 +154,6 @@ class SchemaTraverserTest extends Specification {
                         .build())
                 .withInterface(GraphQLInterfaceType.newInterface()
                         .name("bar")
-                        .typeResolver(NOOP_RESOLVER)
                         .build())
                 .build())
         then:
@@ -181,7 +179,6 @@ class SchemaTraverserTest extends Specification {
                 .name("foo")
                 .possibleType(GraphQLObjectType.newObject().name("dummy").build())
                 .possibleType(typeRef("dummyRef"))
-                .typeResolver(NOOP_RESOLVER)
                 .build())
         then:
         visitor.getStack() == ["union: foo", "fallback: foo",
@@ -193,21 +190,21 @@ class SchemaTraverserTest extends Specification {
         when:
         def visitor = new GraphQLTestingVisitor()
         def coercing = new Coercing() {
-            private static final String TEST_ONLY = "For testing only";
+            private static final String TEST_ONLY = "For testing only"
 
             @Override
             Object serialize(Object dataFetcherResult) throws CoercingSerializeException {
-                throw new UnsupportedOperationException(TEST_ONLY);
+                throw new UnsupportedOperationException(TEST_ONLY)
             }
 
             @Override
             Object parseValue(Object input) throws CoercingParseValueException {
-                throw new UnsupportedOperationException(TEST_ONLY);
+                throw new UnsupportedOperationException(TEST_ONLY)
             }
 
             @Override
             Object parseLiteral(Object input) throws CoercingParseLiteralException {
-                throw new UnsupportedOperationException(TEST_ONLY);
+                throw new UnsupportedOperationException(TEST_ONLY)
             }
         }
         def scalarType = GraphQLScalarType.newScalar()
@@ -283,7 +280,6 @@ class SchemaTraverserTest extends Specification {
         def visitor = new GraphQLTestingVisitor()
         def interfaceType = GraphQLInterfaceType.newInterface()
                 .name("foo")
-                .typeResolver(NOOP_RESOLVER)
                 .withDirective(GraphQLDirective.newDirective()
                         .name("bar"))
                 .withAppliedDirective(GraphQLAppliedDirective.newDirective()
@@ -302,7 +298,6 @@ class SchemaTraverserTest extends Specification {
         def unionType = GraphQLUnionType.newUnionType()
                 .name("foo")
                 .possibleType(GraphQLObjectType.newObject().name("dummy").build())
-                .typeResolver(NOOP_RESOLVER)
                 .withDirective(GraphQLDirective.newDirective()
                         .name("bar"))
                 .build()
@@ -385,17 +380,51 @@ class SchemaTraverserTest extends Specification {
         visitor.getStack() == ["argument: Test1", "fallback: Test1", "reference: String", "fallback: String",
                                "argument: Test2", "fallback: Test2", "backRef: String"
         ]
-
     }
 
+    def "can quit the schema traverser"() {
+        def sdl = """
+            type Query {
+                f : ObjType
+                f2NeverVisited : String
+            }
+            
+            type ObjType {
+                fQuit : ObjType2
+            }
+            
+            type ObjType2 {
+                neverVisited : String
+            }
+        """
 
-    def NOOP_RESOLVER = new TypeResolver() {
-        @Override
-        GraphQLObjectType getType(TypeResolutionEnvironment env) {
-            return null
+        def schema = TestUtil.schema(sdl)
+
+        def visitor = new GraphQLTestingVisitor() {
+            @Override
+            TraversalControl visitGraphQLFieldDefinition(GraphQLFieldDefinition node, TraverserContext<GraphQLSchemaElement> context) {
+                super.visitGraphQLFieldDefinition(node, context)
+                if (node.name.contains("Quit")) {
+                    return TraversalControl.QUIT
+                }
+                return TraversalControl.CONTINUE
+            }
         }
-    }
 
+        when:
+        new SchemaTraverser().depthFirstFullSchema(visitor, schema)
+
+        then:
+        visitor.getStack() == ["object: Query",
+                               "fallback: Query",
+                               "field: f",
+                               "fallback: f",
+                               "object: ObjType",
+                               "fallback: ObjType",
+                               "field: fQuit",
+                               "fallback: fQuit",
+        ]
+    }
 
     class GraphQLTestingVisitor extends GraphQLTypeVisitorStub {
 

@@ -3,25 +3,25 @@ package graphql.schema;
 
 import graphql.Assert;
 import graphql.PublicApi;
-import graphql.TrivialDataFetcher;
 
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 /**
- * This is the default data fetcher used in graphql-java.  It will examine
- * maps and POJO java beans for values that match the desired name, typically the field name
+ * This is the default data fetcher used in graphql-java, and it will examine
+ * maps, records and POJO java beans for values that match the desired name, typically the field name,
  * or it will use a provided function to obtain values.
- * maps and POJO java beans for values that match the desired name.
  * <p>
  * It uses the following strategies
  * <ul>
  * <li>If the source is null, return null</li>
  * <li>If the source is a Map, return map.get(propertyName)</li>
  * <li>If a function is provided, it is used</li>
- * <li>Find a public JavaBean getter method named `propertyName`</li>
- * <li>Find any getter method named `propertyName` and call method.setAccessible(true)</li>
+ * <li>Find a public JavaBean getter method named `getPropertyName()` or `isPropertyName()`</li>
+ * <li>Find any getter method named `getPropertyName()` or `isPropertyName()` and call method.setAccessible(true)</li>
  * <li>Find a public field named `propertyName`</li>
  * <li>Find any field named `propertyName` and call field.setAccessible(true)</li>
+ * <li>Find a public Record like method named `propertyName()`</li>
  * <li>If this cant find anything, then null is returned</li>
  * </ul>
  * <p>
@@ -31,7 +31,7 @@ import java.util.function.Function;
  * @see graphql.schema.DataFetcher
  */
 @PublicApi
-public class PropertyDataFetcher<T> implements DataFetcher<T>, TrivialDataFetcher<T> {
+public class PropertyDataFetcher<T> implements LightDataFetcher<T> {
 
     private final String propertyName;
     private final Function<Object, Object> function;
@@ -69,6 +69,7 @@ public class PropertyDataFetcher<T> implements DataFetcher<T>, TrivialDataFetche
      *
      * @param propertyName the name of the property to retrieve
      * @param <T>          the type of result
+     *
      * @return a new PropertyDataFetcher using the provided function as its source of values
      */
     public static <T> PropertyDataFetcher<T> fetching(String propertyName) {
@@ -92,6 +93,7 @@ public class PropertyDataFetcher<T> implements DataFetcher<T>, TrivialDataFetche
      * @param function the function to use to obtain a value from the source object
      * @param <O>      the type of the source object
      * @param <T>      the type of result
+     *
      * @return a new PropertyDataFetcher using the provided function as its source of values
      */
     public static <T, O> PropertyDataFetcher<T> fetching(Function<O, T> function) {
@@ -105,10 +107,19 @@ public class PropertyDataFetcher<T> implements DataFetcher<T>, TrivialDataFetche
         return propertyName;
     }
 
-    @SuppressWarnings("unchecked")
+    @Override
+    public T get(GraphQLFieldDefinition fieldDefinition, Object source, Supplier<DataFetchingEnvironment> environmentSupplier) throws Exception {
+        return getImpl(source, fieldDefinition.getType(), environmentSupplier);
+    }
+
     @Override
     public T get(DataFetchingEnvironment environment) {
         Object source = environment.getSource();
+        return getImpl(source, environment.getFieldType(), () -> environment);
+    }
+
+    @SuppressWarnings("unchecked")
+    private T getImpl(Object source, GraphQLOutputType fieldDefinition, Supplier<DataFetchingEnvironment> environmentSupplier) {
         if (source == null) {
             return null;
         }
@@ -117,7 +128,7 @@ public class PropertyDataFetcher<T> implements DataFetcher<T>, TrivialDataFetche
             return (T) function.apply(source);
         }
 
-        return (T) PropertyDataFetcherHelper.getPropertyValue(propertyName, source, environment.getFieldType(), environment);
+        return (T) PropertyDataFetcherHelper.getPropertyValue(propertyName, source, fieldDefinition, environmentSupplier);
     }
 
     /**
@@ -138,6 +149,7 @@ public class PropertyDataFetcher<T> implements DataFetcher<T>, TrivialDataFetche
      * values.  By default it PropertyDataFetcher WILL use setAccessible.
      *
      * @param flag whether to use setAccessible
+     *
      * @return the previous value of the flag
      */
     public static boolean setUseSetAccessible(boolean flag) {
@@ -148,6 +160,7 @@ public class PropertyDataFetcher<T> implements DataFetcher<T>, TrivialDataFetche
      * This can be used to control whether PropertyDataFetcher will cache negative lookups for a property for performance reasons.  By default it PropertyDataFetcher WILL cache misses.
      *
      * @param flag whether to cache misses
+     *
      * @return the previous value of the flag
      */
     public static boolean setUseNegativeCache(boolean flag) {

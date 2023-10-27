@@ -1,5 +1,7 @@
 package graphql.schema.diff;
 
+import graphql.Assert;
+import graphql.DeprecatedAt;
 import graphql.PublicSpi;
 import graphql.introspection.IntrospectionResultToSchema;
 import graphql.language.Argument;
@@ -70,7 +72,7 @@ public class SchemaDiff {
 
     private static class CountingReporter implements DifferenceReporter {
         final DifferenceReporter delegate;
-        int breakingCount = 1;
+        int breakingCount = 0;
 
         private CountingReporter(DifferenceReporter delegate) {
             this.delegate = delegate;
@@ -119,26 +121,42 @@ public class SchemaDiff {
      *
      * @return the number of API breaking changes
      */
+    @Deprecated
+    @DeprecatedAt("2023-10-04")
     @SuppressWarnings("unchecked")
     public int diffSchema(DiffSet diffSet, DifferenceReporter reporter) {
-
         CountingReporter countingReporter = new CountingReporter(reporter);
-        diffSchemaImpl(diffSet, countingReporter);
+        Document oldDoc = new IntrospectionResultToSchema().createSchemaDefinition(diffSet.getOld());
+        Document newDoc = new IntrospectionResultToSchema().createSchemaDefinition(diffSet.getNew());
+        diffSchemaImpl(oldDoc, newDoc, countingReporter);
         return countingReporter.breakingCount;
     }
 
-    private void diffSchemaImpl(DiffSet diffSet, DifferenceReporter reporter) {
-        Map<String, Object> oldApi = diffSet.getOld();
-        Map<String, Object> newApi = diffSet.getNew();
+    /**
+     * This will perform a difference on the two schemas.  The reporter callback
+     * interface will be called when differences are encountered.
+     *
+     * @param schemaDiffSet  the two schemas to compare for difference
+     * @param reporter the place to report difference events to
+     *
+     * @return the number of API breaking changes
+     */
+    @SuppressWarnings("unchecked")
+    public int diffSchema(SchemaDiffSet schemaDiffSet, DifferenceReporter reporter) {
+        if (options.enforceDirectives) {
+            Assert.assertTrue(schemaDiffSet.supportsEnforcingDirectives(), () ->
+                    "The provided schema diff set implementation does not supporting enforcing directives during schema diff.");
+        }
 
-        Document oldDoc = new IntrospectionResultToSchema().createSchemaDefinition(oldApi);
-        Document newDoc = new IntrospectionResultToSchema().createSchemaDefinition(newApi);
+        CountingReporter countingReporter = new CountingReporter(reporter);
+        diffSchemaImpl(schemaDiffSet.getOldSchemaDefinitionDoc(), schemaDiffSet.getNewSchemaDefinitionDoc(), countingReporter);
+        return countingReporter.breakingCount;
+    }
 
+    private void diffSchemaImpl(Document oldDoc, Document newDoc, DifferenceReporter reporter) {
         DiffCtx ctx = new DiffCtx(reporter, oldDoc, newDoc);
-
         Optional<SchemaDefinition> oldSchemaDef = getSchemaDef(oldDoc);
         Optional<SchemaDefinition> newSchemaDef = getSchemaDef(newDoc);
-
 
         // check query operation
         checkOperation(ctx, "query", oldSchemaDef, newSchemaDef);
@@ -397,7 +415,7 @@ public class SchemaDiff {
                         .reasonMsg(message, mkDotName(old.getName(), oldField.getName()))
                         .build());
             } else {
-                DiffCategory category = checkTypeWithNonNullAndList(oldField.getType(), newField.get().getType());
+                DiffCategory category = checkTypeWithNonNullAndListOnInputOrArg(oldField.getType(), newField.get().getType());
                 if (category != null) {
                     ctx.report(DiffEvent.apiBreakage()
                             .category(category)
@@ -612,7 +630,7 @@ public class SchemaDiff {
         Type oldFieldType = oldField.getType();
         Type newFieldType = newField.getType();
 
-        DiffCategory category = checkTypeWithNonNullAndList(oldFieldType, newFieldType);
+        DiffCategory category = checkTypeWithNonNullAndListOnObjectOrInterface(oldFieldType, newFieldType);
         if (category != null) {
             ctx.report(DiffEvent.apiBreakage()
                     .category(category)
@@ -701,7 +719,7 @@ public class SchemaDiff {
         Type oldArgType = oldArg.getType();
         Type newArgType = newArg.getType();
 
-        DiffCategory category = checkTypeWithNonNullAndList(oldArgType, newArgType);
+        DiffCategory category = checkTypeWithNonNullAndListOnInputOrArg(oldArgType, newArgType);
         if (category != null) {
             ctx.report(DiffEvent.apiBreakage()
                     .category(category)
@@ -831,7 +849,7 @@ public class SchemaDiff {
         }
     }
 
-    DiffCategory checkTypeWithNonNullAndList(Type oldType, Type newType) {
+    DiffCategory checkTypeWithNonNullAndListOnInputOrArg(Type oldType, Type newType) {
         TypeInfo oldTypeInfo = typeInfo(oldType);
         TypeInfo newTypeInfo = typeInfo(newType);
 
@@ -840,31 +858,83 @@ public class SchemaDiff {
         }
 
         while (true) {
-            //
-            // its allowed to get more less strict in the new but not more strict
-            if (oldTypeInfo.isNonNull() && newTypeInfo.isNonNull()) {
-                oldTypeInfo = oldTypeInfo.unwrapOne();
-                newTypeInfo = newTypeInfo.unwrapOne();
-            } else if (oldTypeInfo.isNonNull() && !newTypeInfo.isNonNull()) {
-                oldTypeInfo = oldTypeInfo.unwrapOne();
-            } else if (!oldTypeInfo.isNonNull() && newTypeInfo.isNonNull()) {
-                return DiffCategory.STRICTER;
-            }
-            // lists
-            if (oldTypeInfo.isList() && !newTypeInfo.isList()) {
-                return DiffCategory.INVALID;
-            }
-            // plain
-            if (oldTypeInfo.isPlain()) {
-                if (!newTypeInfo.isPlain()) {
+            if (oldTypeInfo.isNonNull()) {
+                if (newTypeInfo.isNonNull()) {
+                    // if they're both non-null, compare the unwrapped types
+                    oldTypeInfo = oldTypeInfo.unwrapOne();
+                    newTypeInfo = newTypeInfo.unwrapOne();
+                } else {
+                    // non-null to nullable is valid, as long as the underlying types are also valid
+                    oldTypeInfo = oldTypeInfo.unwrapOne();
+                }
+            } else if (oldTypeInfo.isList()) {
+                if (newTypeInfo.isList()) {
+                    // if they're both lists, compare the unwrapped types
+                    oldTypeInfo = oldTypeInfo.unwrapOne();
+                    newTypeInfo = newTypeInfo.unwrapOne();
+                } else if (newTypeInfo.isNonNull()) {
+                    // nullable to non-null creates a stricter input requirement for clients to specify
+                    return DiffCategory.STRICTER;
+                } else {
+                    // list to non-list is not valid
                     return DiffCategory.INVALID;
                 }
-                break;
+            } else {
+                if (newTypeInfo.isNonNull()) {
+                    // nullable to non-null creates a stricter input requirement for clients to specify
+                    return DiffCategory.STRICTER;
+                } else if (newTypeInfo.isList()) {
+                    // non-list to list is not valid
+                    return DiffCategory.INVALID;
+                } else {
+                    return null;
+                }
             }
-            oldTypeInfo = oldTypeInfo.unwrapOne();
-            newTypeInfo = newTypeInfo.unwrapOne();
         }
-        return null;
+    }
+
+    DiffCategory checkTypeWithNonNullAndListOnObjectOrInterface(Type oldType, Type newType) {
+        TypeInfo oldTypeInfo = typeInfo(oldType);
+        TypeInfo newTypeInfo = typeInfo(newType);
+
+        if (!oldTypeInfo.getName().equals(newTypeInfo.getName())) {
+            return DiffCategory.INVALID;
+        }
+
+        while (true) {
+            if (oldTypeInfo.isNonNull()) {
+                if (newTypeInfo.isNonNull()) {
+                    // if they're both non-null, compare the unwrapped types
+                    oldTypeInfo = oldTypeInfo.unwrapOne();
+                    newTypeInfo = newTypeInfo.unwrapOne();
+                } else {
+                    // non-null to nullable requires a stricter check from clients since it removes the guarantee of presence
+                    return DiffCategory.STRICTER;
+                }
+            } else if (oldTypeInfo.isList()) {
+                if (newTypeInfo.isList()) {
+                    // if they're both lists, compare the unwrapped types
+                    oldTypeInfo = oldTypeInfo.unwrapOne();
+                    newTypeInfo = newTypeInfo.unwrapOne();
+                } else if (newTypeInfo.isNonNull()) {
+                    // nullable to non-null is valid, as long as the underlying types are also valid
+                    newTypeInfo = newTypeInfo.unwrapOne();
+                } else {
+                    // list to non-list is not valid
+                    return DiffCategory.INVALID;
+                }
+            } else {
+                if (newTypeInfo.isNonNull()) {
+                    // nullable to non-null is valid, as long as the underlying types are also valid
+                    newTypeInfo = newTypeInfo.unwrapOne();
+                } else if (newTypeInfo.isList()) {
+                    // non-list to list is not valid
+                    return DiffCategory.INVALID;
+                } else {
+                    return null;
+                }
+            }
+        }
     }
 
 

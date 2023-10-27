@@ -7,19 +7,22 @@ import graphql.collect.ImmutableKit;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationState;
-import graphql.execution.instrumentation.SimpleInstrumentation;
+import graphql.execution.instrumentation.SimplePerformantInstrumentation;
+import graphql.execution.instrumentation.parameters.InstrumentationCreateStateParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationValidationParameters;
 import graphql.language.Document;
 import graphql.validation.ValidationError;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
+import static graphql.execution.instrumentation.InstrumentationState.ofState;
 import static graphql.execution.instrumentation.SimpleInstrumentationContext.whenCompleted;
 
 /**
@@ -27,7 +30,7 @@ import static graphql.execution.instrumentation.SimpleInstrumentationContext.whe
  * capture tracing information and puts it into the {@link ExecutionResult}
  */
 @PublicApi
-public class TracingInstrumentation extends SimpleInstrumentation {
+public class TracingInstrumentation extends SimplePerformantInstrumentation {
 
     public static class Options {
         private final boolean includeTrivialDataFetchers;
@@ -69,15 +72,15 @@ public class TracingInstrumentation extends SimpleInstrumentation {
     private final Options options;
 
     @Override
-    public InstrumentationState createState() {
+    public @Nullable InstrumentationState createState(InstrumentationCreateStateParameters parameters) {
         return new TracingSupport(options.includeTrivialDataFetchers);
     }
 
     @Override
-    public CompletableFuture<ExecutionResult> instrumentExecutionResult(ExecutionResult executionResult, InstrumentationExecutionParameters parameters) {
+    public @NotNull CompletableFuture<ExecutionResult> instrumentExecutionResult(ExecutionResult executionResult, InstrumentationExecutionParameters parameters, InstrumentationState rawState) {
         Map<Object, Object> currentExt = executionResult.getExtensions();
 
-        TracingSupport tracingSupport = parameters.getInstrumentationState();
+        TracingSupport tracingSupport = ofState(rawState);
         Map<Object, Object> withTracingExt = new LinkedHashMap<>(currentExt == null ? ImmutableKit.emptyMap() : currentExt);
         withTracingExt.put("tracing", tracingSupport.snapshotTracingData());
 
@@ -85,22 +88,22 @@ public class TracingInstrumentation extends SimpleInstrumentation {
     }
 
     @Override
-    public InstrumentationContext<Object> beginFieldFetch(InstrumentationFieldFetchParameters parameters) {
-        TracingSupport tracingSupport = parameters.getInstrumentationState();
+    public InstrumentationContext<Object> beginFieldFetch(InstrumentationFieldFetchParameters parameters, InstrumentationState rawState) {
+        TracingSupport tracingSupport = ofState(rawState);
         TracingSupport.TracingContext ctx = tracingSupport.beginField(parameters.getEnvironment(), parameters.isTrivialDataFetcher());
         return whenCompleted((result, t) -> ctx.onEnd());
     }
 
     @Override
-    public InstrumentationContext<Document> beginParse(InstrumentationExecutionParameters parameters) {
-        TracingSupport tracingSupport = parameters.getInstrumentationState();
+    public InstrumentationContext<Document> beginParse(InstrumentationExecutionParameters parameters, InstrumentationState rawState) {
+        TracingSupport tracingSupport = ofState(rawState);
         TracingSupport.TracingContext ctx = tracingSupport.beginParse();
         return whenCompleted((result, t) -> ctx.onEnd());
     }
 
     @Override
-    public InstrumentationContext<List<ValidationError>> beginValidation(InstrumentationValidationParameters parameters) {
-        TracingSupport tracingSupport = parameters.getInstrumentationState();
+    public InstrumentationContext<List<ValidationError>> beginValidation(InstrumentationValidationParameters parameters, InstrumentationState rawState) {
+        TracingSupport tracingSupport = ofState(rawState);
         TracingSupport.TracingContext ctx = tracingSupport.beginValidation();
         return whenCompleted((result, t) -> ctx.onEnd());
     }

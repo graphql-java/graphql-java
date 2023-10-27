@@ -13,6 +13,7 @@ import graphql.schema.GraphQLAppliedDirective;
 import graphql.schema.GraphQLCodeRegistry;
 import graphql.schema.GraphQLDirective;
 import graphql.schema.GraphQLDirectiveContainer;
+import graphql.schema.GraphQLNamedSchemaElement;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLSchemaElement;
@@ -204,11 +205,21 @@ public class IntrospectionWithDirectivesSupport {
         DataFetcher<?> argValueDF = env -> {
             final GraphQLAppliedDirectiveArgument argument = env.getSource();
             InputValueWithState value = argument.getArgumentValue();
-            Node<?> literal = ValuesResolver.valueToLiteral(value, argument.getType());
+            Node<?> literal = ValuesResolver.valueToLiteral(value, argument.getType(), env.getGraphQlContext(), env.getLocale());
             return AstPrinter.printAst(literal);
         };
+        DataFetcher<?> nameDF = env -> {
+            if (env.getSource() instanceof GraphQLNamedSchemaElement) {
+                return ((GraphQLNamedSchemaElement) env.getSource()).getName();
+            }
+            return null;
+        };
+
         codeRegistry.dataFetcher(coordinates(objectType, "appliedDirectives"), df);
+        codeRegistry.dataFetcher(coordinates(appliedDirectiveType, "name"), nameDF);
         codeRegistry.dataFetcher(coordinates(appliedDirectiveType, "args"), argsDF);
+
+        codeRegistry.dataFetcher(coordinates(directiveArgumentType, "name"), nameDF);
         codeRegistry.dataFetcher(coordinates(directiveArgumentType, "value"), argValueDF);
         return objectType;
     }

@@ -5,8 +5,10 @@ import graphql.PublicApi;
 import graphql.execution.AbortExecutionException;
 import graphql.execution.ExecutionContext;
 import graphql.execution.instrumentation.InstrumentationContext;
-import graphql.execution.instrumentation.SimpleInstrumentation;
+import graphql.execution.instrumentation.InstrumentationState;
+import graphql.execution.instrumentation.SimplePerformantInstrumentation;
 import graphql.execution.instrumentation.parameters.InstrumentationExecuteOperationParameters;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,12 +18,12 @@ import static graphql.execution.instrumentation.SimpleInstrumentationContext.noO
 
 /**
  * Prevents execution if the query depth is greater than the specified maxDepth.
- *
+ * <p>
  * Use the {@code Function<QueryDepthInfo, Boolean>} parameter to supply a function to perform a custom action when the max depth is
  * exceeded. If the function returns {@code true} a {@link AbortExecutionException} is thrown.
  */
 @PublicApi
-public class MaxQueryDepthInstrumentation extends SimpleInstrumentation {
+public class MaxQueryDepthInstrumentation extends SimplePerformantInstrumentation {
 
     private static final Logger log = LoggerFactory.getLogger(MaxQueryDepthInstrumentation.class);
 
@@ -49,7 +51,7 @@ public class MaxQueryDepthInstrumentation extends SimpleInstrumentation {
     }
 
     @Override
-    public InstrumentationContext<ExecutionResult> beginExecuteOperation(InstrumentationExecuteOperationParameters parameters) {
+    public @Nullable InstrumentationContext<ExecutionResult> beginExecuteOperation(InstrumentationExecuteOperationParameters parameters, InstrumentationState state) {
         QueryTraverser queryTraverser = newQueryTraverser(parameters.getExecutionContext());
         int depth = queryTraverser.reducePreOrder((env, acc) -> Math.max(getPathLength(env.getParentEnvironment()), acc), 0);
         if (log.isDebugEnabled()) {
@@ -73,7 +75,7 @@ public class MaxQueryDepthInstrumentation extends SimpleInstrumentation {
      * @param depth    the depth of the query
      * @param maxDepth the maximum depth allowed
      *
-     * @return a instance of AbortExecutionException
+     * @return an instance of AbortExecutionException
      */
     protected AbortExecutionException mkAbortException(int depth, int maxDepth) {
         return new AbortExecutionException("maximum query depth exceeded " + depth + " > " + maxDepth);

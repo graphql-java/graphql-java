@@ -1,6 +1,7 @@
 package graphql;
 
 import graphql.execution.AbortExecutionException;
+import graphql.execution.Async;
 import graphql.execution.AsyncExecutionStrategy;
 import graphql.execution.AsyncSerialExecutionStrategy;
 import graphql.execution.DataFetcherExceptionHandler;
@@ -17,7 +18,7 @@ import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationState;
 import graphql.execution.instrumentation.NoContextChainedInstrumentation;
-import graphql.execution.instrumentation.SimpleInstrumentation;
+import graphql.execution.instrumentation.SimplePerformantInstrumentation;
 import graphql.execution.instrumentation.dataloader.DataLoaderDispatcherInstrumentation;
 import graphql.execution.instrumentation.parameters.InstrumentationCreateStateParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters;
@@ -34,7 +35,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
@@ -323,93 +324,6 @@ public class GraphQL {
         return execute(executionInput);
     }
 
-    /**
-     * Info: This sets context = root to be backwards compatible.
-     *
-     * @param query   the query/mutation/subscription
-     * @param context custom object provided to each {@link graphql.schema.DataFetcher}
-     *
-     * @return an {@link ExecutionResult} which can include errors
-     *
-     * @deprecated Use {@link #execute(ExecutionInput)}
-     */
-    @Deprecated
-    public ExecutionResult execute(String query, Object context) {
-        ExecutionInput executionInput = ExecutionInput.newExecutionInput()
-                .query(query)
-                .context(context)
-                .root(context) // This we are doing do be backwards compatible
-                .build();
-        return execute(executionInput);
-    }
-
-    /**
-     * Info: This sets context = root to be backwards compatible.
-     *
-     * @param query         the query/mutation/subscription
-     * @param operationName the name of the operation to execute
-     * @param context       custom object provided to each {@link graphql.schema.DataFetcher}
-     *
-     * @return an {@link ExecutionResult} which can include errors
-     *
-     * @deprecated Use {@link #execute(ExecutionInput)}
-     */
-    @Deprecated
-    public ExecutionResult execute(String query, String operationName, Object context) {
-        ExecutionInput executionInput = ExecutionInput.newExecutionInput()
-                .query(query)
-                .operationName(operationName)
-                .context(context)
-                .root(context) // This we are doing do be backwards compatible
-                .build();
-        return execute(executionInput);
-    }
-
-    /**
-     * Info: This sets context = root to be backwards compatible.
-     *
-     * @param query     the query/mutation/subscription
-     * @param context   custom object provided to each {@link graphql.schema.DataFetcher}
-     * @param variables variable values uses as argument
-     *
-     * @return an {@link ExecutionResult} which can include errors
-     *
-     * @deprecated Use {@link #execute(ExecutionInput)}
-     */
-    @Deprecated
-    public ExecutionResult execute(String query, Object context, Map<String, Object> variables) {
-        ExecutionInput executionInput = ExecutionInput.newExecutionInput()
-                .query(query)
-                .context(context)
-                .root(context) // This we are doing do be backwards compatible
-                .variables(variables)
-                .build();
-        return execute(executionInput);
-    }
-
-    /**
-     * Info: This sets context = root to be backwards compatible.
-     *
-     * @param query         the query/mutation/subscription
-     * @param operationName name of the operation to execute
-     * @param context       custom object provided to each {@link graphql.schema.DataFetcher}
-     * @param variables     variable values uses as argument
-     *
-     * @return an {@link ExecutionResult} which can include errors
-     *
-     * @deprecated Use {@link #execute(ExecutionInput)}
-     */
-    @Deprecated
-    public ExecutionResult execute(String query, String operationName, Object context, Map<String, Object> variables) {
-        ExecutionInput executionInput = ExecutionInput.newExecutionInput()
-                .query(query)
-                .operationName(operationName)
-                .context(context)
-                .root(context) // This we are doing do be backwards compatible
-                .variables(variables)
-                .build();
-        return execute(executionInput);
-    }
 
     /**
      * Executes the graphql query using the provided input object builder
@@ -505,35 +419,45 @@ public class GraphQL {
      * @return a promise to an {@link ExecutionResult} which can include errors
      */
     public CompletableFuture<ExecutionResult> executeAsync(ExecutionInput executionInput) {
-        try {
-            if (logNotSafe.isDebugEnabled()) {
-                logNotSafe.debug("Executing request. operation name: '{}'. query: '{}'. variables '{}'", executionInput.getOperationName(), executionInput.getQuery(), executionInput.getVariables());
-            }
-            executionInput = ensureInputHasId(executionInput);
-
-            InstrumentationState instrumentationState = instrumentation.createState(new InstrumentationCreateStateParameters(this.graphQLSchema, executionInput));
-
-            InstrumentationExecutionParameters inputInstrumentationParameters = new InstrumentationExecutionParameters(executionInput, this.graphQLSchema, instrumentationState);
-            executionInput = instrumentation.instrumentExecutionInput(executionInput, inputInstrumentationParameters, instrumentationState);
-
-            CompletableFuture<ExecutionResult> beginExecutionCF = new CompletableFuture<>();
-            InstrumentationExecutionParameters instrumentationParameters = new InstrumentationExecutionParameters(executionInput, this.graphQLSchema, instrumentationState);
-            InstrumentationContext<ExecutionResult> executionInstrumentation = nonNullCtx(instrumentation.beginExecution(instrumentationParameters, instrumentationState));
-            executionInstrumentation.onDispatched(beginExecutionCF);
-
-            GraphQLSchema graphQLSchema = instrumentation.instrumentSchema(this.graphQLSchema, instrumentationParameters, instrumentationState);
-
-            CompletableFuture<ExecutionResult> executionResult = parseValidateAndExecute(executionInput, graphQLSchema, instrumentationState);
-            //
-            // finish up instrumentation
-            executionResult = executionResult.whenComplete(completeInstrumentationCtxCF(executionInstrumentation, beginExecutionCF));
-            //
-            // allow instrumentation to tweak the result
-            executionResult = executionResult.thenCompose(result -> instrumentation.instrumentExecutionResult(result, instrumentationParameters, instrumentationState));
-            return executionResult;
-        } catch (AbortExecutionException abortException) {
-            return CompletableFuture.completedFuture(abortException.toExecutionResult());
+        if (logNotSafe.isDebugEnabled()) {
+            logNotSafe.debug("Executing request. operation name: '{}'. query: '{}'. variables '{}'", executionInput.getOperationName(), executionInput.getQuery(), executionInput.getVariables());
         }
+        ExecutionInput executionInputWithId = ensureInputHasId(executionInput);
+
+        CompletableFuture<InstrumentationState> instrumentationStateCF = instrumentation.createStateAsync(new InstrumentationCreateStateParameters(this.graphQLSchema, executionInput));
+        return Async.orNullCompletedFuture(instrumentationStateCF).thenCompose(instrumentationState -> {
+            try {
+                InstrumentationExecutionParameters inputInstrumentationParameters = new InstrumentationExecutionParameters(executionInputWithId, this.graphQLSchema, instrumentationState);
+                ExecutionInput instrumentedExecutionInput = instrumentation.instrumentExecutionInput(executionInputWithId, inputInstrumentationParameters, instrumentationState);
+
+                CompletableFuture<ExecutionResult> beginExecutionCF = new CompletableFuture<>();
+                InstrumentationExecutionParameters instrumentationParameters = new InstrumentationExecutionParameters(instrumentedExecutionInput, this.graphQLSchema, instrumentationState);
+                InstrumentationContext<ExecutionResult> executionInstrumentation = nonNullCtx(instrumentation.beginExecution(instrumentationParameters, instrumentationState));
+                executionInstrumentation.onDispatched(beginExecutionCF);
+
+                GraphQLSchema graphQLSchema = instrumentation.instrumentSchema(this.graphQLSchema, instrumentationParameters, instrumentationState);
+
+                CompletableFuture<ExecutionResult> executionResult = parseValidateAndExecute(instrumentedExecutionInput, graphQLSchema, instrumentationState);
+                //
+                // finish up instrumentation
+                executionResult = executionResult.whenComplete(completeInstrumentationCtxCF(executionInstrumentation, beginExecutionCF));
+                //
+                // allow instrumentation to tweak the result
+                executionResult = executionResult.thenCompose(result -> instrumentation.instrumentExecutionResult(result, instrumentationParameters, instrumentationState));
+                return executionResult;
+            } catch (AbortExecutionException abortException) {
+                return handleAbortException(executionInput, instrumentationState, abortException);
+            }
+        });
+    }
+
+    private CompletableFuture<ExecutionResult> handleAbortException(ExecutionInput executionInput, InstrumentationState instrumentationState, AbortExecutionException abortException) {
+        CompletableFuture<ExecutionResult> executionResult = CompletableFuture.completedFuture(abortException.toExecutionResult());
+        InstrumentationExecutionParameters instrumentationParameters = new InstrumentationExecutionParameters(executionInput, this.graphQLSchema, instrumentationState);
+        //
+        // allow instrumentation to tweak the result
+        executionResult = executionResult.thenCompose(result -> instrumentation.instrumentExecutionResult(result, instrumentationParameters, instrumentationState));
+        return executionResult;
     }
 
     private ExecutionInput ensureInputHasId(ExecutionInput executionInput) {
@@ -625,7 +549,8 @@ public class GraphQL {
         validationCtx.onDispatched(cf);
 
         Predicate<Class<?>> validationRulePredicate = executionInput.getGraphQLContext().getOrDefault(ParseAndValidate.INTERNAL_VALIDATION_PREDICATE_HINT, r -> true);
-        List<ValidationError> validationErrors = ParseAndValidate.validate(graphQLSchema, document, validationRulePredicate, executionInput.getLocale());
+        Locale locale = executionInput.getLocale() != null ? executionInput.getLocale() : Locale.getDefault();
+        List<ValidationError> validationErrors = ParseAndValidate.validate(graphQLSchema, document, validationRulePredicate, locale);
 
         validationCtx.onCompleted(validationErrors, null);
         cf.complete(validationErrors);
@@ -660,7 +585,7 @@ public class GraphQL {
 
     private static Instrumentation checkInstrumentationDefaultState(Instrumentation instrumentation, boolean doNotAddDefaultInstrumentations) {
         if (doNotAddDefaultInstrumentations) {
-            return instrumentation == null ? SimpleInstrumentation.INSTANCE : instrumentation;
+            return instrumentation == null ? SimplePerformantInstrumentation.INSTANCE : instrumentation;
         }
         if (instrumentation instanceof DataLoaderDispatcherInstrumentation) {
             return instrumentation;

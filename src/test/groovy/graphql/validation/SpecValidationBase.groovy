@@ -5,7 +5,7 @@ import spock.lang.Specification
 
 /**
  * validation examples used in the spec
- * http://facebook.github.io/graphql/#sec-Validation
+ * https://spec.graphql.org/October2021/#sec-Validation
  * @author dwinsor
  *
  */

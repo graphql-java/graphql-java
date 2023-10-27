@@ -1,7 +1,10 @@
 package graphql;
 
 import graphql.schema.Coercing;
+import graphql.schema.GraphQLAppliedDirective;
+import graphql.schema.GraphQLAppliedDirectiveArgument;
 import graphql.schema.GraphQLArgument;
+import graphql.schema.GraphQLCodeRegistry;
 import graphql.schema.GraphQLDirective;
 import graphql.schema.GraphQLEnumType;
 import graphql.schema.GraphQLFieldDefinition;
@@ -148,7 +151,6 @@ public class TypeReferenceSchema {
                 .name("Pet")
                 .possibleType(GraphQLTypeReference.typeRef(CatType.getName()))
                 .possibleType(GraphQLTypeReference.typeRef(DogType.getName()))
-                .typeResolver(new TypeResolverProxy())
                 .withDirective(unionDirective)
                 .build();
     }
@@ -171,7 +173,6 @@ public class TypeReferenceSchema {
 
         Addressable = GraphQLInterfaceType.newInterface()
                 .name("Addressable")
-                .typeResolver(new TypeResolverProxy())
                 .field(GraphQLFieldDefinition.newFieldDefinition()
                         .name("address")
                         .type(GraphQLString))
@@ -316,6 +317,20 @@ public class TypeReferenceSchema {
                     .type(QueryDirectiveInput))
             .build();
 
+    public static GraphQLAppliedDirective cacheApplied = GraphQLAppliedDirective.newDirective()
+            .name("cache")
+            .argument(GraphQLAppliedDirectiveArgument.newArgument()
+                    .name("enabled")
+                    .type(GraphQLTypeReference.typeRef(OnOff.getName()))
+                    .valueProgrammatic("On"))
+            .build();
+
+    public static GraphQLCodeRegistry codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+            .typeResolver("Pet", new TypeResolverProxy())
+            .typeResolver("Addressable", new TypeResolverProxy())
+            .typeResolver("Named", GarfieldSchema.namedTypeResolver)
+            .build();
+
     public static GraphQLSchema SchemaWithReferences = GraphQLSchema.newSchema()
             .query(PersonService)
             .additionalTypes(new HashSet<>(Arrays.asList(PersonType, PersonInputType, PetType, CatType, DogType, NamedType, HairStyle, OnOff)))
@@ -330,6 +345,7 @@ public class TypeReferenceSchema {
             .additionalDirective(enumDirective)
             .additionalDirective(enumValueDirective)
             .additionalDirective(interfaceDirective)
-
+            .codeRegistry(codeRegistry)
+            .withSchemaAppliedDirectives(cacheApplied)
             .build();
 }

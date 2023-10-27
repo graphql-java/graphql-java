@@ -1,5 +1,6 @@
 package graphql.schema;
 
+import graphql.DeprecatedAt;
 import graphql.PublicApi;
 
 import java.util.List;
@@ -8,15 +9,15 @@ import java.util.Map;
 import static graphql.collect.ImmutableKit.emptyList;
 
 /**
- * Represents a graphql runtime type that can have {@link graphql.schema.GraphQLAppliedDirective}'s.
+ * Represents a graphql runtime type that can have {@link graphql.schema.GraphQLAppliedDirective}s.
  * <p>
  * Directives can be repeatable and (by default) non-repeatable.
  * <p>
  * There are access methods here that get the two different types.
  * <p>
  * The use of {@link GraphQLDirective} to represent a directive applied to an element is deprecated in favour of
- * {@link GraphQLAppliedDirective}.   A {@link GraphQLDirective} really should represent the definition of a directive in a schema not its use
- * on schema elements.  However, it has been left in place for legacy reasons and will be removed in a
+ * {@link GraphQLAppliedDirective}. A {@link GraphQLDirective} really should represent the definition of a directive in a schema, not its use
+ * on schema elements. However, it has been left in place for legacy reasons and will be removed in a
  * future version.
  *
  * @see graphql.language.DirectiveDefinition
@@ -76,6 +77,7 @@ public interface GraphQLDirectiveContainer extends GraphQLNamedSchemaElement {
      * @deprecated use {@link #hasAppliedDirective(String)} instead
      */
     @Deprecated
+    @DeprecatedAt("2022-02-24")
     default boolean hasDirective(String directiveName) {
         return getAllDirectivesByName().containsKey(directiveName);
     }
@@ -100,6 +102,7 @@ public interface GraphQLDirectiveContainer extends GraphQLNamedSchemaElement {
      * @deprecated - use the {@link GraphQLAppliedDirective} methods instead
      */
     @Deprecated
+    @DeprecatedAt("2022-02-24")
     List<GraphQLDirective> getDirectives();
 
     /**
@@ -111,6 +114,7 @@ public interface GraphQLDirectiveContainer extends GraphQLNamedSchemaElement {
      * @deprecated - use the {@link GraphQLAppliedDirective} methods instead
      */
     @Deprecated
+    @DeprecatedAt("2022-02-24")
     Map<String, GraphQLDirective> getDirectivesByName();
 
     /**
@@ -122,6 +126,7 @@ public interface GraphQLDirectiveContainer extends GraphQLNamedSchemaElement {
      * @deprecated - use the {@link GraphQLAppliedDirective} methods instead
      */
     @Deprecated
+    @DeprecatedAt("2022-02-24")
     Map<String, List<GraphQLDirective>> getAllDirectivesByName();
 
     /**
@@ -135,6 +140,7 @@ public interface GraphQLDirectiveContainer extends GraphQLNamedSchemaElement {
      * @deprecated - use the {@link GraphQLAppliedDirective} methods instead
      */
     @Deprecated
+    @DeprecatedAt("2022-02-24")
     GraphQLDirective getDirective(String directiveName);
 
     /**
@@ -147,6 +153,7 @@ public interface GraphQLDirectiveContainer extends GraphQLNamedSchemaElement {
      * @deprecated - use the {@link GraphQLAppliedDirective} methods instead
      */
     @Deprecated
+    @DeprecatedAt("2022-02-24")
     default List<GraphQLDirective> getDirectives(String directiveName) {
         return getAllDirectivesByName().getOrDefault(directiveName, emptyList());
     }

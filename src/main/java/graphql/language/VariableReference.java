@@ -7,7 +7,6 @@ import graphql.PublicApi;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -90,6 +89,10 @@ public class VariableReference extends AbstractNode<VariableReference> implement
     @Override
     public TraversalControl accept(TraverserContext<Node> context, NodeVisitor visitor) {
         return visitor.visitVariableReference(this, context);
+    }
+
+    public static VariableReference of(String name) {
+        return newVariableReference().name(name).build();
     }
 
     public static Builder newVariableReference() {

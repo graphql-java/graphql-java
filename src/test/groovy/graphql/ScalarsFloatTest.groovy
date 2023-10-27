@@ -1,5 +1,6 @@
 package graphql
 
+import graphql.execution.CoercedVariables
 import graphql.language.BooleanValue
 import graphql.language.FloatValue
 import graphql.language.IntValue
@@ -17,7 +18,7 @@ class ScalarsFloatTest extends Specification {
     @Unroll
     def "Float parse literal #literal.value as #result"() {
         expect:
-        Scalars.GraphQLFloat.getCoercing().parseLiteral(literal) == result
+        Scalars.GraphQLFloat.getCoercing().parseLiteral(literal, CoercedVariables.emptyVariables(), GraphQLContext.default, Locale.default) == result
 
         where:
         literal                                 | result
@@ -25,13 +26,25 @@ class ScalarsFloatTest extends Specification {
         new FloatValue(Double.MAX_VALUE)        | Double.MAX_VALUE
         new FloatValue(Double.MIN_VALUE)        | Double.MIN_VALUE
         new IntValue(12345678910 as BigInteger) | 12345678910
+    }
 
+    @Unroll
+    def "Float parse literal #literal.value as #result with deprecated method"() {
+        expect:
+        Scalars.GraphQLFloat.getCoercing().parseLiteral(literal) == result // Retain deprecated for test coverage
+
+        where:
+        literal                                 | result
+        new FloatValue(42.442 as BigDecimal)    | 42.442
+        new FloatValue(Double.MAX_VALUE)        | Double.MAX_VALUE
+        new FloatValue(Double.MIN_VALUE)        | Double.MIN_VALUE
+        new IntValue(12345678910 as BigInteger) | 12345678910
     }
 
     @Unroll
     def "Float returns null for invalid #literal"() {
         when:
-        Scalars.GraphQLFloat.getCoercing().parseLiteral(literal)
+        Scalars.GraphQLFloat.getCoercing().parseLiteral(literal, CoercedVariables.emptyVariables(), GraphQLContext.default, Locale.default)
         then:
         thrown(CoercingParseLiteralException)
 
@@ -44,8 +57,32 @@ class ScalarsFloatTest extends Specification {
     @Unroll
     def "Float serialize #value into #result (#result.class)"() {
         expect:
-        Scalars.GraphQLFloat.getCoercing().serialize(value) == result
-        Scalars.GraphQLFloat.getCoercing().parseValue(value) == result
+        Scalars.GraphQLFloat.getCoercing().serialize(value, GraphQLContext.default, Locale.default) == result
+
+        where:
+        value                 | result
+        "42"                  | 42d
+        "42.123"              | 42.123d
+        42.0000d              | 42
+        new Integer(42)       | 42
+        "-1"                  | -1
+        new BigInteger("42")  | 42
+        new BigDecimal("42")  | 42
+        new BigDecimal("4.2") | 4.2d
+        42.3f                 | 42.3d
+        42.0d                 | 42d
+        new Byte("42")        | 42
+        new Short("42")       | 42
+        1234567l              | 1234567d
+        new AtomicInteger(42) | 42
+        Double.MAX_VALUE      | Double.MAX_VALUE
+        Double.MIN_VALUE      | Double.MIN_VALUE
+    }
+
+    @Unroll
+    def "Float serialize #value into #result (#result.class) with deprecated methods"() {
+        expect:
+        Scalars.GraphQLFloat.getCoercing().serialize(value) == result // Retain deprecated method for coverage
 
         where:
         value                 | result
@@ -70,29 +107,102 @@ class ScalarsFloatTest extends Specification {
     @Unroll
     def "serialize throws exception for invalid input #value"() {
         when:
-        Scalars.GraphQLFloat.getCoercing().serialize(value)
+        Scalars.GraphQLFloat.getCoercing().serialize(value, GraphQLContext.default, Locale.default)
         then:
         thrown(CoercingSerializeException)
 
         where:
-        value           | _
-        ""              | _
-        "not a number " | _
-        Double.NaN      | _
+        value                               | _
+        ""                                  | _
+        "not a number "                     | _
+        Double.NaN                          | _
+        Double.NaN.toString()               | _
+        Double.POSITIVE_INFINITY            | _
+        Double.POSITIVE_INFINITY.toString() | _
+        Double.NEGATIVE_INFINITY            | _
+        Double.NEGATIVE_INFINITY.toString() | _
+        Float.NaN                           | _
+        Float.NaN.toString()                | _
+        Float.POSITIVE_INFINITY             | _
+        Float.POSITIVE_INFINITY.toString()  | _
+        Float.NEGATIVE_INFINITY             | _
+        Float.NEGATIVE_INFINITY.toString()  | _
     }
 
     @Unroll
-    def "serialize/parseValue throws exception for invalid input #value"() {
+    def "Float parseValue #value into #result (#result.class)"() {
+        expect:
+        Scalars.GraphQLFloat.getCoercing().parseValue(value, GraphQLContext.default, Locale.default) == result
+
+        where:
+        value                 | result
+        42.0000d              | 42
+        new Integer(42)       | 42
+        new BigInteger("42")  | 42
+        new BigDecimal("42")  | 42
+        new BigDecimal("4.2") | 4.2d
+        42.3f                 | 42.3d
+        42.0d                 | 42d
+        new Byte("42")        | 42
+        new Short("42")       | 42
+        1234567l              | 1234567d
+        new AtomicInteger(42) | 42
+        Double.MAX_VALUE      | Double.MAX_VALUE
+        Double.MIN_VALUE      | Double.MIN_VALUE
+        "42"                  | 42d
+        "42.123"              | 42.123d
+        "-1"                  | -1
+    }
+
+    @Unroll
+    def "Float parseValue #value into #result (#result.class) with deprecated methods"() {
+        expect:
+        Scalars.GraphQLFloat.getCoercing().parseValue(value) == result // Retain deprecated method for coverage
+
+        where:
+        value                 | result
+        42.0000d              | 42
+        new Integer(42)       | 42
+        new BigInteger("42")  | 42
+        new BigDecimal("42")  | 42
+        new BigDecimal("4.2") | 4.2d
+        42.3f                 | 42.3d
+        42.0d                 | 42d
+        new Byte("42")        | 42
+        new Short("42")       | 42
+        1234567l              | 1234567d
+        new AtomicInteger(42) | 42
+        Double.MAX_VALUE      | Double.MAX_VALUE
+        Double.MIN_VALUE      | Double.MIN_VALUE
+        "42"                  | 42d
+        "42.123"              | 42.123d
+        "-1"                  | -1
+    }
+
+
+    @Unroll
+    def "parseValue throws exception for invalid input #value"() {
         when:
-        Scalars.GraphQLFloat.getCoercing().parseValue(value)
+        Scalars.GraphQLFloat.getCoercing().parseValue(value, GraphQLContext.default, Locale.default)
         then:
         thrown(CoercingParseValueException)
 
         where:
-        value           | _
-        ""              | _
-        "not a number " | _
-        Double.NaN      | _
+        value                               | _
+        ""                                  | _
+        "not a number "                     | _
+        Double.NaN                          | _
+        Double.NaN.toString()               | _
+        Double.POSITIVE_INFINITY            | _
+        Double.POSITIVE_INFINITY.toString() | _
+        Double.NEGATIVE_INFINITY            | _
+        Double.NEGATIVE_INFINITY.toString() | _
+        Float.NaN                           | _
+        Float.NaN.toString()                | _
+        Float.POSITIVE_INFINITY             | _
+        Float.POSITIVE_INFINITY.toString()  | _
+        Float.NEGATIVE_INFINITY             | _
+        Float.NEGATIVE_INFINITY.toString()  | _
     }
 
 }

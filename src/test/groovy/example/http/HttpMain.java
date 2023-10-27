@@ -18,6 +18,7 @@ import graphql.schema.idl.SchemaParser;
 import graphql.schema.idl.TypeDefinitionRegistry;
 import org.dataloader.BatchLoader;
 import org.dataloader.DataLoader;
+import org.dataloader.DataLoaderFactory;
 import org.dataloader.DataLoaderRegistry;
 import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Request;
@@ -26,9 +27,9 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.eclipse.jetty.server.handler.HandlerList;
 import org.eclipse.jetty.server.handler.ResourceHandler;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -46,9 +47,9 @@ import static graphql.schema.idl.TypeRuntimeWiring.newTypeWiring;
 import static java.util.Arrays.asList;
 
 /**
- * An very simple example of serving a qraphql schema over http.
+ * A very simple example of serving a graphql schema over http.
  * <p>
- * More info can be found here : http://graphql.org/learn/serving-over-http/
+ * More info can be found here : <a href="https://graphql.org/learn/serving-over-http/">https://graphql.org/learn/serving-over-http/</a>
  */
 @SuppressWarnings("unchecked")
 public class HttpMain extends AbstractHandler {
@@ -178,7 +179,7 @@ public class HttpMain extends AbstractHandler {
                 CompletableFuture.supplyAsync(() ->
                         loadCharactersViaHTTP(keys));
 
-        DataLoader<String, Object> friendsDataLoader = new DataLoader<>(friendsBatchLoader);
+        DataLoader<String, Object> friendsDataLoader = DataLoaderFactory.newDataLoader(friendsBatchLoader);
 
         DataLoaderRegistry dataLoaderRegistry = new DataLoaderRegistry();
         //
@@ -275,7 +276,7 @@ public class HttpMain extends AbstractHandler {
     }
 
     // Lots of the data happens to be maps of objects and this allows us to get back into type safety land
-    // with less boiler plate and casts
+    // with less boilerplate and casts
     //
     @SuppressWarnings("TypeParameterUnusedInFormals")
     private <T> T asMapGet(Object mapObj, Object mapKey) {

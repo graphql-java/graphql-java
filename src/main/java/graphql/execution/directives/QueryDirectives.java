@@ -1,10 +1,16 @@
 package graphql.execution.directives;
 
+import graphql.DeprecatedAt;
+import graphql.GraphQLContext;
 import graphql.PublicApi;
+import graphql.execution.CoercedVariables;
+import graphql.execution.MergedField;
 import graphql.language.Field;
 import graphql.schema.GraphQLDirective;
+import graphql.schema.GraphQLSchema;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -51,6 +57,7 @@ public interface QueryDirectives {
      * @deprecated - use the {@link QueryAppliedDirective} methods instead
      */
     @Deprecated
+    @DeprecatedAt("2022-02-24")
     Map<String, List<GraphQLDirective>> getImmediateDirectivesByName();
 
     /**
@@ -73,6 +80,7 @@ public interface QueryDirectives {
      * @deprecated - use the {@link QueryAppliedDirective} methods instead
      */
     @Deprecated
+    @DeprecatedAt("2022-02-24")
     List<GraphQLDirective> getImmediateDirective(String directiveName);
 
     /**
@@ -84,5 +92,30 @@ public interface QueryDirectives {
      * @deprecated - use the {@link QueryAppliedDirective} methods instead
      */
     @Deprecated
+    @DeprecatedAt("2022-02-24")
     Map<Field, List<GraphQLDirective>> getImmediateDirectivesByField();
+
+    /**
+     * @return a builder of {@link QueryDirectives}
+     */
+    static Builder newQueryDirectives() {
+        return new QueryDirectivesBuilder();
+    }
+
+    interface Builder {
+
+        Builder schema(GraphQLSchema schema);
+
+        Builder mergedField(MergedField mergedField);
+
+        Builder field(Field field);
+
+        Builder coercedVariables(CoercedVariables coercedVariables);
+
+        Builder graphQLContext(GraphQLContext graphQLContext);
+
+        Builder locale(Locale locale);
+
+        QueryDirectives build();
+    }
 }

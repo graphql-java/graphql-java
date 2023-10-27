@@ -37,7 +37,6 @@ class ExecutionStepInfoTest extends Specification {
 
     def interfaceType = GraphQLInterfaceType.newInterface().name("Interface")
             .field(field1Def)
-            .typeResolver({ env -> null })
             .build()
 
     def fieldType = GraphQLObjectType.newObject()
@@ -49,7 +48,6 @@ class ExecutionStepInfoTest extends Specification {
             .name("RootType")
             .field(newFieldDefinition().name("rootField1").type(fieldType))
             .build()
-
 
     def "basic hierarchy"() {
         given:

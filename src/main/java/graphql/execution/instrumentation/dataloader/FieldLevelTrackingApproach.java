@@ -10,6 +10,7 @@ import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationState;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters;
+import graphql.util.LockKit;
 import org.dataloader.DataLoaderRegistry;
 import org.slf4j.Logger;
 
@@ -28,6 +29,8 @@ public class FieldLevelTrackingApproach {
     private final Logger log;
 
     private static class CallStack implements InstrumentationState {
+
+        private final LockKit.ReentrantLock lock = new LockKit.ReentrantLock();
 
         private final LevelMap expectedFetchCountPerLevel = new LevelMap();
         private final LevelMap fetchCountPerLevel = new LevelMap();
@@ -76,13 +79,13 @@ public class FieldLevelTrackingApproach {
         @Override
         public String toString() {
             return "CallStack{" +
-                "expectedFetchCountPerLevel=" + expectedFetchCountPerLevel +
-                ", fetchCountPerLevel=" + fetchCountPerLevel +
-                ", expectedStrategyCallsPerLevel=" + expectedStrategyCallsPerLevel +
-                ", happenedStrategyCallsPerLevel=" + happenedStrategyCallsPerLevel +
-                ", happenedOnFieldValueCallsPerLevel=" + happenedOnFieldValueCallsPerLevel +
-                ", dispatchedLevels" + dispatchedLevels +
-                '}';
+                    "expectedFetchCountPerLevel=" + expectedFetchCountPerLevel +
+                    ", fetchCountPerLevel=" + fetchCountPerLevel +
+                    ", expectedStrategyCallsPerLevel=" + expectedStrategyCallsPerLevel +
+                    ", happenedStrategyCallsPerLevel=" + happenedStrategyCallsPerLevel +
+                    ", happenedOnFieldValueCallsPerLevel=" + happenedOnFieldValueCallsPerLevel +
+                    ", dispatchedLevels" + dispatchedLevels +
+                    '}';
         }
 
         public boolean dispatchIfNotDispatchedBefore(int level) {
@@ -118,16 +121,16 @@ public class FieldLevelTrackingApproach {
         return new CallStack();
     }
 
-    ExecutionStrategyInstrumentationContext beginExecutionStrategy(InstrumentationExecutionStrategyParameters parameters) {
-        CallStack callStack = parameters.getInstrumentationState();
+    ExecutionStrategyInstrumentationContext beginExecutionStrategy(InstrumentationExecutionStrategyParameters parameters, InstrumentationState rawState) {
+        CallStack callStack = (CallStack) rawState;
         ResultPath path = parameters.getExecutionStrategyParameters().getPath();
         int parentLevel = path.getLevel();
         int curLevel = parentLevel + 1;
         int fieldCount = parameters.getExecutionStrategyParameters().getFields().size();
-        synchronized (callStack) {
+        callStack.lock.runLocked(() -> {
             callStack.increaseExpectedFetchCount(curLevel, fieldCount);
             callStack.increaseHappenedStrategyCalls(curLevel);
-        }
+        });
 
         return new ExecutionStrategyInstrumentationContext() {
             @Override
@@ -142,10 +145,9 @@ public class FieldLevelTrackingApproach {
 
             @Override
             public void onFieldValuesInfo(List<FieldValueInfo> fieldValueInfoList) {
-                boolean dispatchNeeded;
-                synchronized (callStack) {
-                    dispatchNeeded = handleOnFieldValuesInfo(fieldValueInfoList, callStack, curLevel);
-                }
+                boolean dispatchNeeded = callStack.lock.callLocked(() ->
+                        handleOnFieldValuesInfo(fieldValueInfoList, callStack, curLevel)
+                );
                 if (dispatchNeeded) {
                     dispatch();
                 }
@@ -153,9 +155,9 @@ public class FieldLevelTrackingApproach {
 
             @Override
             public void onFieldValuesException() {
-                synchronized (callStack) {
-                    callStack.increaseHappenedOnFieldValueCalls(curLevel);
-                }
+                callStack.lock.runLocked(() ->
+                        callStack.increaseHappenedOnFieldValueCalls(curLevel)
+                );
             }
         };
     }
@@ -183,23 +185,21 @@ public class FieldLevelTrackingApproach {
     }
 
 
-    public InstrumentationContext<Object> beginFieldFetch(InstrumentationFieldFetchParameters parameters) {
-        CallStack callStack = parameters.getInstrumentationState();
+    public InstrumentationContext<Object> beginFieldFetch(InstrumentationFieldFetchParameters parameters, InstrumentationState rawState) {
+        CallStack callStack = (CallStack) rawState;
         ResultPath path = parameters.getEnvironment().getExecutionStepInfo().getPath();
         int level = path.getLevel();
-        return new InstrumentationContext<Object>() {
+        return new InstrumentationContext<>() {
 
             @Override
             public void onDispatched(CompletableFuture<Object> result) {
-                boolean dispatchNeeded;
-                synchronized (callStack) {
+                boolean dispatchNeeded = callStack.lock.callLocked(() -> {
                     callStack.increaseFetchCount(level);
-                    dispatchNeeded = dispatchIfNeeded(callStack, level);
-                }
+                    return dispatchIfNeeded(callStack, level);
+                });
                 if (dispatchNeeded) {
                     dispatch();
                 }
-
             }
 
             @Override
@@ -228,7 +228,7 @@ public class FieldLevelTrackingApproach {
             return callStack.allFetchesHappened(1);
         }
         if (levelReady(callStack, level - 1) && callStack.allOnFieldCallsHappened(level - 1)
-            && callStack.allStrategyCallsHappened(level) && callStack.allFetchesHappened(level)) {
+                && callStack.allStrategyCallsHappened(level) && callStack.allFetchesHappened(level)) {
             return true;
         }
         return false;

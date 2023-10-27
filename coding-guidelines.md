@@ -26,7 +26,7 @@ We have a mix of Optional and allowing null values because GraphQL Java was orig
 We are aiming to not use Optional moving forward in order to be consistent overall.
 
 ### Unit testing and dependencies
-All tests are written in [Spock](http://spockframework.org).
+All tests are written in [Spock](https://spockframework.org).
 
 All new code has to have unit tests. 
 

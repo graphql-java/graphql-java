@@ -225,6 +225,13 @@ public class GraphQLContext {
     }
 
     /**
+     * @return a new and empty graphql context object
+     */
+    public static GraphQLContext getDefault() {
+        return GraphQLContext.newContext().build();
+    }
+
+    /**
      * Creates a new GraphqlContext builder
      *
      * @return the new builder

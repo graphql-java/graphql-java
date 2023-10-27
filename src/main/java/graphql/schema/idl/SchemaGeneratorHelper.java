@@ -80,8 +80,11 @@ import java.util.stream.Collectors;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.Directives.DEPRECATED_DIRECTIVE_DEFINITION;
+import static graphql.Directives.IncludeDirective;
 import static graphql.Directives.NO_LONGER_SUPPORTED;
+import static graphql.Directives.ONE_OF_DIRECTIVE_DEFINITION;
 import static graphql.Directives.SPECIFIED_BY_DIRECTIVE_DEFINITION;
+import static graphql.Directives.SkipDirective;
 import static graphql.Directives.SpecifiedByDirective;
 import static graphql.collect.ImmutableKit.emptyList;
 import static graphql.introspection.Introspection.DirectiveLocation.ARGUMENT_DEFINITION;
@@ -907,10 +910,13 @@ public class SchemaGeneratorHelper {
 
         Optional<OperationTypeDefinition> mutationOperation = getOperationNamed("mutation", operationTypeDefs);
         if (!mutationOperation.isPresent()) {
-            Optional<TypeDefinition> mutationTypeDef = typeRegistry.getType("Mutation");
-            if (mutationTypeDef.isPresent()) {
-                mutation = buildOutputType(buildCtx, TypeName.newTypeName().name(mutationTypeDef.get().getName()).build());
-                schemaBuilder.mutation(mutation);
+            if (!typeRegistry.schemaDefinition().isPresent()) {
+                // If no schema definition, then there is no schema keyword. Default to using type called Mutation
+                Optional<TypeDefinition> mutationTypeDef = typeRegistry.getType("Mutation");
+                if (mutationTypeDef.isPresent()) {
+                    mutation = buildOutputType(buildCtx, TypeName.newTypeName().name(mutationTypeDef.get().getName()).build());
+                    schemaBuilder.mutation(mutation);
+                }
             }
         } else {
             mutation = buildOperation(buildCtx, mutationOperation.get());
@@ -919,10 +925,13 @@ public class SchemaGeneratorHelper {
 
         Optional<OperationTypeDefinition> subscriptionOperation = getOperationNamed("subscription", operationTypeDefs);
         if (!subscriptionOperation.isPresent()) {
-            Optional<TypeDefinition> subscriptionTypeDef = typeRegistry.getType("Subscription");
-            if (subscriptionTypeDef.isPresent()) {
-                subscription = buildOutputType(buildCtx, TypeName.newTypeName().name(subscriptionTypeDef.get().getName()).build());
-                schemaBuilder.subscription(subscription);
+            if (!typeRegistry.schemaDefinition().isPresent()) {
+                // If no schema definition, then there is no schema keyword. Default to using type called Subscription
+                Optional<TypeDefinition> subscriptionTypeDef = typeRegistry.getType("Subscription");
+                if (subscriptionTypeDef.isPresent()) {
+                    subscription = buildOutputType(buildCtx, TypeName.newTypeName().name(subscriptionTypeDef.get().getName()).build());
+                    schemaBuilder.subscription(subscription);
+                }
             }
         } else {
             subscription = buildOperation(buildCtx, subscriptionOperation.get());
@@ -1055,6 +1064,11 @@ public class SchemaGeneratorHelper {
         TypeDefinitionRegistry typeRegistry = buildCtx.getTypeRegistry();
 
         for (DirectiveDefinition directiveDefinition : typeRegistry.getDirectiveDefinitions().values()) {
+            if (IncludeDirective.getName().equals(directiveDefinition.getName())
+                    || SkipDirective.getName().equals(directiveDefinition.getName())) {
+                // skip and include directives are added by default to the GraphQLSchema via the GraphQLSchema builder.
+                continue;
+            }
             GraphQLDirective directive = buildDirectiveDefinitionFromAst(buildCtx, directiveDefinition, inputTypeFactory(buildCtx));
             buildCtx.addDirectiveDefinition(directive);
             additionalDirectives.add(directive);
@@ -1066,6 +1080,7 @@ public class SchemaGeneratorHelper {
         // we synthesize this into the type registry - no need for them to add it
         typeRegistry.add(DEPRECATED_DIRECTIVE_DEFINITION);
         typeRegistry.add(SPECIFIED_BY_DIRECTIVE_DEFINITION);
+        typeRegistry.add(ONE_OF_DIRECTIVE_DEFINITION);
     }
 
     private Optional<OperationTypeDefinition> getOperationNamed(String name, Map<String, OperationTypeDefinition> operationTypeDefs) {
@@ -1087,7 +1102,7 @@ public class SchemaGeneratorHelper {
     private <T extends GraphQLDirectiveContainer> T directivesObserve(BuildContext buildCtx, T directiveContainer) {
         if (!buildCtx.directiveWiringRequired) {
             boolean requiresWiring = SchemaGeneratorDirectiveHelper.schemaDirectiveWiringIsRequired(directiveContainer, buildCtx.getTypeRegistry(), buildCtx.getWiring());
-            buildCtx.directiveWiringRequired = buildCtx.directiveWiringRequired | requiresWiring;
+            buildCtx.directiveWiringRequired = buildCtx.directiveWiringRequired || requiresWiring;
         }
         return directiveContainer;
     }

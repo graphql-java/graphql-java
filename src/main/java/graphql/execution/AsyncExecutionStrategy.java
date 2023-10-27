@@ -6,9 +6,7 @@ import graphql.execution.instrumentation.ExecutionStrategyInstrumentationContext
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
 
@@ -45,9 +43,8 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
         ExecutionStrategyInstrumentationContext executionStrategyCtx = ExecutionStrategyInstrumentationContext.nonNullCtx(instrumentation.beginExecutionStrategy(instrumentationParameters, executionContext.getInstrumentationState()));
 
         MergedSelectionSet fields = parameters.getFields();
-        Set<String> fieldNames = fields.keySet();
+        List<String> fieldNames = fields.getKeys();
         Async.CombinedBuilder<FieldValueInfo> futures = Async.ofExpectedSize(fields.size());
-        List<String> resolvedFields = new ArrayList<>(fieldNames.size());
         for (String fieldName : fieldNames) {
             MergedField currentField = fields.getSubField(fieldName);
 
@@ -55,7 +52,6 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
             ExecutionStrategyParameters newParameters = parameters
                     .transform(builder -> builder.field(currentField).path(fieldPath).parent(parameters));
 
-            resolvedFields.add(fieldName);
             CompletableFuture<FieldValueInfo> future = resolveFieldWithInfo(executionContext, newParameters);
             futures.add(future);
         }
@@ -63,11 +59,12 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
         executionStrategyCtx.onDispatched(overallResult);
 
         futures.await().whenComplete((completeValueInfos, throwable) -> {
-            BiConsumer<List<ExecutionResult>, Throwable> handleResultsConsumer = handleResults(executionContext, resolvedFields, overallResult);
+            BiConsumer<List<ExecutionResult>, Throwable> handleResultsConsumer = handleResults(executionContext, fieldNames, overallResult);
             if (throwable != null) {
                 handleResultsConsumer.accept(null, throwable.getCause());
                 return;
             }
+
             Async.CombinedBuilder<ExecutionResult> executionResultFutures = Async.ofExpectedSize(completeValueInfos.size());
             for (FieldValueInfo completeValueInfo : completeValueInfos) {
                 executionResultFutures.add(completeValueInfo.getFieldValue());
