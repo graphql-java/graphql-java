@@ -57,7 +57,7 @@ jobs:
         uses: actions/upload-artifact@v3
         if: ${{ failure() }}
         with:
-          name: gradle-test-summary-b${{ matrix.java.c }}-${{ matrix.dist.name }}-${{ matrix.os }}
+          name: gradle-test-summary-${{ matrix.java }}-${{ matrix.dist }}-${{ matrix.os }}
           path: build/reports/tests/test/
           retention-days: 5
           if-no-files-found: ignore
