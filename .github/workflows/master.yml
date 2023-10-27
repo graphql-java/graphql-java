@@ -20,5 +20,15 @@ jobs:
         with:
           java-version: '11'
           distribution: 'corretto'
-      - name: build test and publish
-        run: ./gradlew assemble && ./gradlew check --info && ./gradlew publishToSonatype closeAndReleaseSonatypeStagingRepository -x check --info --stacktrace
+      - name: Build
+        uses: gradle/gradle-build-action@v2
+        with:
+          arguments: assemble
+      - name: Test
+        uses: gradle/gradle-build-action@v2
+        with:
+          arguments: check --info
+      - name: Publish
+        uses: gradle/gradle-build-action@v2
+        with:
+          arguments: publishToSonatype closeAndReleaseSonatypeStagingRepository -x check --info --stacktrace

@@ -14,92 +14,50 @@ on:
 
 jobs:
   buildAndTest:
-    name: buildAndTest ${{ matrix.java.c }}/${{ matrix.java.t || matrix.java.c }} (${{ matrix.dist.vm }}) on ${{ matrix.os }}
+    name: buildAndTest ${{ matrix.java }} (${{ matrix.dist }}) on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         os: [ 'ubuntu-latest', 'windows-latest' ]
-        java:
-          - { c: '8', t: '8' } # Latest Java 8
-          - { c: '8.0.282', t: '8.0.282' } # Earliest supported Java 8
-          - { c: '11', t: '11' }
-          - { c: '17', t: '17' }
-          - { c: '18', t: '18' }
-        # - { c: '19-ea', t: '19-ea' } # Will be supported by Gradle 7.5
-        dist:
-          - { name: 'zulu', vm: 'hotspot' }
-          - { name: 'adopt-openj9', vm: 'openj9' }
+        java: [ '11', '17', '21' ]
+        dist: [ 'temurin', 'semeru' ]
         exclude:
-          - # IBM Semeru does not offer Java 18
+          - # Unsupported
             os: 'ubuntu-latest'
-            java: { c: '18', t: '18' }
-            dist: { name: 'adopt-openj9', vm: 'openj9' }
-          - # IBM Semeru does not offer Java 18
+            java: '21'
+            dist: 'semeru'
+          - # Unsupported
             os: 'windows-latest'
-            java: { c: '18', t: '18' }
-            dist: { name: 'adopt-openj9', vm: 'openj9' }
-          - # Save some CPU (and the environment)
-            os: 'ubuntu-latest'
-            java: { c: '11', t: '11' }
-            dist: { name: 'adopt-openj9', vm: 'openj9' }
-          - # Save some CPU (and the environment)
-            os: 'windows-latest'
-            java: { c: '11', t: '11' }
-            dist: { name: 'adopt-openj9', vm: 'openj9' }
-        include:
-          - # Build on 8.0.282 (earliest supported), and test on 17
-            os: 'ubuntu-latest'
-            java: { c: '8.0.282', t: '17' }
-            dist: { name: 'zulu', vm: 'hotspot' }
-          - # Remove when https://github.com/graphql-java/graphql-java/issues/2709 is fixed
-            os: 'windows-latest'
-            java: { c: '16', t: '16' }
-            dist: { name: 'zulu', vm: 'hotspot' }
+            java: '21'
+            dist: 'semeru'
     env:
-      ORG_GRADLE_PROJECT_toolchainCompileVersion: ${{ matrix.java.c }}
-      ORG_GRADLE_PROJECT_toolchainJavadocVersion: ${{ matrix.java.c }}
-      ORG_GRADLE_PROJECT_toolchainTestVersion: ${{ matrix.java.t || matrix.java.c }}
-      ORG_GRADLE_PROJECT_toolchainVm: ${{ matrix.dist.vm }}
+      ORG_GRADLE_PROJECT_javaVersion: ${{ matrix.java }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - uses: gradle/wrapper-validation-action@v1
-      - id: setup-test-jdk
-        name: Set up testing JDK (${{ matrix.java.t || 'undefined' }}, ${{ matrix.dist.name }})
-        uses: actions/setup-java@v3
-        if: ${{ matrix.java.t != null && (matrix.java.c != matrix.java.t) }}
-        with:
-          java-version: ${{ matrix.java.t }}
-          distribution: ${{ matrix.dist.name }}
-      - id: setup-base-jdk
-        name: Set up base JDK (${{ matrix.java.c }}, ${{ matrix.dist.name }})
+      - name: Set up JDK (${{ matrix.java }}, ${{ matrix.dist }})
         uses: actions/setup-java@v3
         with:
-          java-version: ${{ matrix.java.c }}
-          distribution: ${{ matrix.dist.name }}
+          java-version: ${{ matrix.java }}
+          distribution: ${{ matrix.dist }}
       - name: Setup Gradle
         uses: gradle/gradle-build-action@v2
-      - name: Gradle version information
+        with:
+          arguments: --version
+      - name: Build
         uses: gradle/gradle-build-action@v2
         with:
-          arguments: --version -Porg.gradle.java.installations.paths=${{ steps.setup-test-jdk.outputs.path }}
-      - name: Gradle Java toolchains
+          arguments: assemble
+      - name: Test
         uses: gradle/gradle-build-action@v2
         with:
-          arguments: javaToolchains printUsedVersions -Porg.gradle.java.installations.paths=${{ steps.setup-test-jdk.outputs.path }}
-      - name: Build (on Java ${{ matrix.java.c }})
-        uses: gradle/gradle-build-action@v2
-        with:
-          arguments: assemble -Porg.gradle.java.installations.paths=${{ steps.setup-test-jdk.outputs.path }}
-      - name: Test (on Java ${{ matrix.java.t || matrix.java.c }})
-        uses: gradle/gradle-build-action@v2
-        with:
-          arguments: check --info --stacktrace -Porg.gradle.java.installations.paths=${{ steps.setup-test-jdk.outputs.path }}
+          arguments: check --info --stacktrace
       - name: Archive Gradle Test Summary
         uses: actions/upload-artifact@v3
         if: ${{ failure() }}
         with:
-          name: gradle-test-summary-b${{ matrix.java.c }}-t${{ matrix.java.t || matrix.java.c }}-${{ matrix.dist.name }}-${{ matrix.os }}
+          name: gradle-test-summary-b${{ matrix.java.c }}-${{ matrix.dist.name }}-${{ matrix.os }}
           path: build/reports/tests/test/
-          retention-days: 4
+          retention-days: 5
           if-no-files-found: ignore

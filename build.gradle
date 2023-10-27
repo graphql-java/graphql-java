@@ -14,9 +14,16 @@ plugins {
     id "me.champeau.jmh" version "0.7.1"
 }
 
+final String javaVersion = project.hasProperty("javaVersion") ?
+        (project.property("javaVersion") as String).replaceAll("^([0-9]+).*", "\$1")
+        : null
+if (javaVersion == null) {
+    throw new Throwable("Please define a javaVersion in your gradle.properties")
+}
+
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of(11)
+        languageVersion = JavaLanguageVersion.of(javaVersion)
     }
 }
 
@@ -24,26 +31,6 @@ def makeDevelopmentVersion(parts) {
     def version = String.join("-", parts)
     println "created development version: $version"
     return version
-}
-
-final String compileVersion = project.hasProperty("toolchainCompileVersion") ?
-        (project.property("toolchainCompileVersion") as String).replaceAll("^([0-9]+).*", "\$1") : "8"
-final String testVersion = project.hasProperty("toolchainTestVersion") ?
-        (project.property("toolchainTestVersion") as String).replaceAll("^([0-9]+).*", "\$1") : "8"
-final String javadocVersion = project.hasProperty("toolchainJavadocVersion") ?
-        (project.property("toolchainJavadocVersion") as String).replaceAll("^([0-9]+).*", "\$1"): "8"
-def toolchainVm = project.property("toolchainVm")
-JvmImplementation vmImplementation = null
-if ("hotspot" == toolchainVm) {
-    vmImplementation = JvmImplementation.VENDOR_SPECIFIC
-} else if ("openj9" == toolchainVm) {
-    vmImplementation = JvmImplementation.J9
-} else {
-    throw new GradleException("Unknown toolchain VM `${toolchainVm}`, should be `openj9` or `hotspot`")
-}
-
-task("printUsedVersions") {
-    println("Java versions: (compile: ${compileVersion}), (test: ${testVersion}), (javadoc: ${javadocVersion})")
 }
 
 def getDevelopmentVersion() {
@@ -390,32 +377,4 @@ tasks.withType(GenerateModuleMetadata) {
 
 test {
     useJUnitPlatform()
-}
-
-tasks.withType(JavaCompile).configureEach {
-    javaCompiler.set(javaToolchains.compilerFor {
-        languageVersion = JavaLanguageVersion.of(compileVersion)
-        implementation = vmImplementation
-    })
-}
-
-tasks.withType(Javadoc).configureEach {
-    javadocTool.set(javaToolchains.javadocToolFor {
-        languageVersion = JavaLanguageVersion.of(javadocVersion)
-        implementation = vmImplementation
-    })
-}
-
-tasks.withType(Test).configureEach {
-    javaLauncher.set(javaToolchains.launcherFor {
-        languageVersion = JavaLanguageVersion.of(testVersion)
-        implementation = vmImplementation
-    })
-}
-
-tasks.withType(GroovyCompile).configureEach {
-    javaLauncher.set(javaToolchains.launcherFor {
-        languageVersion = JavaLanguageVersion.of(compileVersion)
-        implementation = vmImplementation
-    })
 }
