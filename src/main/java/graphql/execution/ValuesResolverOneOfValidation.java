@@ -1,6 +1,7 @@
 package graphql.execution;
 
 import graphql.Assert;
+import graphql.Internal;
 import graphql.i18n.I18n;
 import graphql.language.ObjectField;
 import graphql.language.ObjectValue;
@@ -16,6 +17,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+@Internal
 final class ValuesResolverOneOfValidation {
 
     @SuppressWarnings("unchecked")
