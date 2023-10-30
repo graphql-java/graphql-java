@@ -603,6 +603,40 @@ class ValuesResolverTest extends Specification {
 
     }
 
+    def "getArgumentValues: invalid oneOf input validation applied with list of input type"() {
+        given: "schema defining input object"
+        def inputObjectType = newInputObject()
+                .name("oneOfInputObject")
+                .withAppliedDirective(Directives.OneOfDirective.toAppliedDirective())
+                .field(newInputObjectField()
+                        .name("a")
+                        .type(GraphQLString)
+                        .build())
+                .field(newInputObjectField()
+                        .name("b")
+                        .type(GraphQLInt)
+                        .build())
+                .build()
+
+        def inputValue = buildObjectLiteral([
+                oneOfField: [
+                        a: StringValue.of("abc"),
+                        b: IntValue.of(123)
+                ]
+        ])
+        def inputArray = ArrayValue.newArrayValue().value(inputValue).build()
+
+        def argument = new Argument("arg", inputArray)
+
+        when:
+        def fieldArgumentList = newArgument().name("arg").type(list(inputObjectType)).build()
+        ValuesResolver.getArgumentValues([fieldArgumentList], [argument], CoercedVariables.emptyVariables(), graphQLContext, locale)
+
+        then:
+        def e = thrown(OneOfTooManyKeysException)
+        e.message == "Exactly one key must be specified for OneOf type 'oneOfInputObject'."
+    }
+
     def "getArgumentValues: valid oneOf input - #testCase"() {
         given: "schema defining input object"
         def inputObjectType = newInputObject()
