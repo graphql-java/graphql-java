@@ -887,6 +887,54 @@ class ValuesResolverTest extends Specification {
 
     }
 
+    def "getArgumentValues: valid oneOf list input - #testCase"() {
+        given: "schema defining input object"
+        def inputObjectType = newInputObject()
+                .name("oneOfInputObject")
+                .withAppliedDirective(Directives.OneOfDirective.toAppliedDirective())
+                .field(newInputObjectField()
+                        .name("a")
+                        .type(GraphQLString)
+                        .build())
+                .field(newInputObjectField()
+                        .name("b")
+                        .type(GraphQLInt)
+                        .build())
+                .build()
+
+        when:
+        def argument = new Argument("arg", inputArray)
+        def fieldArgumentList = newArgument().name("arg").type(list(inputObjectType)).build()
+        def values = ValuesResolver.getArgumentValues([fieldArgumentList], [argument], variables, graphQLContext, locale)
+
+        then:
+        values == expectedValues
+
+        where:
+
+        testCase    | inputArray    | variables | expectedValues
+
+        '[{ a: "abc"}]'
+                    | ArrayValue.newArrayValue()
+                        .value(buildObjectLiteral([
+                            a: StringValue.of("abc"),
+                        ])).build()
+                                    | CoercedVariables.emptyVariables()
+                                                | [arg: [[a: "abc"]]]
+
+        '[{ a: "abc" }, $var ] [{ a: "abc" }, { b: 789 }]'
+                    | ArrayValue.newArrayValue()
+                        .values([
+                            buildObjectLiteral([
+                                a: StringValue.of("abc")
+                            ]),
+                            VariableReference.of("var")
+                        ]).build()
+                                    | CoercedVariables.of("var": [b: 789])
+                                                | [arg: [[a: "abc"], [b: 789]]]
+
+    }
+
     def "getArgumentValues: invalid oneOf input no values where passed - #testCase"() {
         given: "schema defining input object"
         def inputObjectType = newInputObject()
