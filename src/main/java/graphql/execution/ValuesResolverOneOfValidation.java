@@ -3,12 +3,14 @@ package graphql.execution;
 import graphql.Assert;
 import graphql.Internal;
 import graphql.i18n.I18n;
+import graphql.language.ArrayValue;
 import graphql.language.ObjectField;
 import graphql.language.ObjectValue;
 import graphql.language.Value;
 import graphql.schema.GraphQLInputObjectField;
 import graphql.schema.GraphQLInputObjectType;
 import graphql.schema.GraphQLInputType;
+import graphql.schema.GraphQLList;
 import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLTypeUtil;
 
@@ -17,18 +19,33 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import static graphql.schema.GraphQLTypeUtil.isList;
+
 @Internal
 final class ValuesResolverOneOfValidation {
 
     @SuppressWarnings("unchecked")
     static void validateOneOfInputTypes(GraphQLType type, Object inputValue, Value<?> argumentValue, String argumentName, Locale locale) {
-        GraphQLType unwrappedType = GraphQLTypeUtil.unwrapNonNull(type);
+        GraphQLType unwrappedNonNullType = GraphQLTypeUtil.unwrapNonNull(type);
 
-        if (unwrappedType instanceof GraphQLInputObjectType && !ValuesResolverConversion.isNullValue(inputValue)) {
+        if (isList(unwrappedNonNullType)
+                && !ValuesResolverConversion.isNullValue(inputValue)
+                && inputValue instanceof List
+                && argumentValue instanceof ArrayValue) {
+            GraphQLType elementType = ((GraphQLList) unwrappedNonNullType).getWrappedType();
+            List<Object> inputList = (List<Object>) inputValue;
+            List<Value> argumentList = ((ArrayValue) argumentValue).getValues();
+
+            for (int i = 0; i < argumentList.size(); i++) {
+                validateOneOfInputTypes(elementType, inputList.get(i), argumentList.get(i), argumentName, locale);
+            }
+        }
+
+        if (unwrappedNonNullType instanceof GraphQLInputObjectType && !ValuesResolverConversion.isNullValue(inputValue)) {
             Assert.assertTrue(inputValue instanceof Map, () -> String.format("The coerced argument %s GraphQLInputObjectType is unexpectedly not a map", argumentName));
             Map<String, Object> objectMap = (Map<String, Object>) inputValue;
 
-            GraphQLInputObjectType inputObjectType = (GraphQLInputObjectType) unwrappedType;
+            GraphQLInputObjectType inputObjectType = (GraphQLInputObjectType) unwrappedNonNullType;
 
             if (inputObjectType.isOneOf()) {
                 validateOneOfInputTypesInternal(inputObjectType, argumentValue, objectMap, locale);
