@@ -645,8 +645,8 @@ class ValuesResolverTest extends Specification {
                                 a: StringValue.of("abc")
                             ]),
                             buildObjectLiteral([
-                                    a: StringValue.of("xyz"),
-                                    b: IntValue.of(789)
+                                a: StringValue.of("xyz"),
+                                b: IntValue.of(789)
                             ]),
                         ]).build()
                                     | CoercedVariables.emptyVariables()
@@ -655,7 +655,7 @@ class ValuesResolverTest extends Specification {
                     | ArrayValue.newArrayValue()
                         .values([
                             buildObjectLiteral([
-                                    a: StringValue.of("abc")
+                                a: StringValue.of("abc")
                             ]),
                             VariableReference.of("var")
                         ]).build()
@@ -695,10 +695,10 @@ class ValuesResolverTest extends Specification {
                     | ArrayValue.newArrayValue()
                         .values([
                             buildObjectLiteral([
-                                    a: StringValue.of("abc")
+                                a: StringValue.of("abc")
                             ]),
                             buildObjectLiteral([
-                                    a: NullValue.of()
+                                a: NullValue.of()
                             ]),
                         ]).build()
                                     | CoercedVariables.emptyVariables()
@@ -707,10 +707,10 @@ class ValuesResolverTest extends Specification {
                     | ArrayValue.newArrayValue()
                         .values([
                             buildObjectLiteral([
-                                    a: StringValue.of("abc")
+                                a: StringValue.of("abc")
                             ]),
                             buildObjectLiteral([
-                                    a: VariableReference.of("var")
+                                a: VariableReference.of("var")
                             ]),
                         ]).build()
                                     | CoercedVariables.of("var": null)
@@ -757,11 +757,11 @@ class ValuesResolverTest extends Specification {
                     | ArrayValue.newArrayValue()
                         .values([
                             buildObjectLiteral([
-                                    a: StringValue.of("abc")
+                                a: StringValue.of("abc")
                             ]),
                             buildObjectLiteral([
-                                    a: StringValue.of("xyz"),
-                                    b: IntValue.of(789)
+                                a: StringValue.of("xyz"),
+                                b: IntValue.of(789)
                             ]),
                         ]).build()
                                     | CoercedVariables.emptyVariables()
@@ -770,7 +770,7 @@ class ValuesResolverTest extends Specification {
                     | ArrayValue.newArrayValue()
                         .values([
                             buildObjectLiteral([
-                                    a: StringValue.of("abc")
+                                a: StringValue.of("abc")
                             ]),
                             VariableReference.of("var")
                         ]).build()
@@ -818,11 +818,11 @@ class ValuesResolverTest extends Specification {
                     | ArrayValue.newArrayValue()
                         .values([
                             buildObjectLiteral([
-                                    a: StringValue.of("abc")
+                                a: StringValue.of("abc")
                             ]),
                             buildObjectLiteral([
-                                    a: StringValue.of("xyz"),
-                                    b: IntValue.of(789)
+                                a: StringValue.of("xyz"),
+                                b: IntValue.of(789)
                             ]),
                         ]).build()
                                     | CoercedVariables.emptyVariables()
@@ -831,7 +831,7 @@ class ValuesResolverTest extends Specification {
                     | ArrayValue.newArrayValue()
                         .values([
                             buildObjectLiteral([
-                                    a: StringValue.of("abc")
+                                a: StringValue.of("abc")
                             ]),
                             VariableReference.of("var")
                         ]).build()
