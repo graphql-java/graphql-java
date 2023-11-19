@@ -23,7 +23,6 @@ import graphql.language.Value
 import graphql.language.VariableDefinition
 import graphql.language.VariableReference
 import graphql.schema.CoercingParseValueException
-import graphql.schema.GraphQLNonNull
 import spock.lang.Specification
 import spock.lang.Unroll
 
@@ -373,7 +372,7 @@ class ValuesResolverTest extends Specification {
         e.message == "Exactly one key must be specified for OneOf type 'oneOfInputObject'."
 
         when: "input type is wrapped in non-null"
-        def nonNullInputObjectType = GraphQLNonNull.nonNull(inputObjectType)
+        def nonNullInputObjectType = nonNull(inputObjectType)
         def fieldArgumentNonNull = newArgument().name("arg").type(nonNullInputObjectType).build()
         ValuesResolver.getArgumentValues([fieldArgumentNonNull], [argument], variables, graphQLContext, locale)
 
@@ -603,6 +602,243 @@ class ValuesResolverTest extends Specification {
 
     }
 
+    def "getArgumentValues: invalid oneOf list input because element contains duplicate key - #testCase"() {
+        given: "schema defining input object"
+        def inputObjectType = newInputObject()
+                .name("oneOfInputObject")
+                .withAppliedDirective(Directives.OneOfDirective.toAppliedDirective())
+                .field(newInputObjectField()
+                        .name("a")
+                        .type(GraphQLString)
+                        .build())
+                .field(newInputObjectField()
+                        .name("b")
+                        .type(GraphQLInt)
+                        .build())
+                .build()
+
+        when:
+        def argument = new Argument("arg", inputArray)
+        def fieldArgumentList = newArgument().name("arg").type(list(inputObjectType)).build()
+        ValuesResolver.getArgumentValues([fieldArgumentList], [argument], variables, graphQLContext, locale)
+
+        then:
+        def e = thrown(OneOfTooManyKeysException)
+        e.message == "Exactly one key must be specified for OneOf type 'oneOfInputObject'."
+
+        where:
+
+        testCase    | inputArray    | variables
+
+        '[{ a: "abc", b: 123 }]'
+                    | ArrayValue.newArrayValue()
+                        .value(buildObjectLiteral([
+                            a: StringValue.of("abc"),
+                            b: IntValue.of(123)
+                        ])).build()
+                                    | CoercedVariables.emptyVariables()
+
+        '[{ a: "abc" }, { a: "xyz", b: 789 }]'
+                    | ArrayValue.newArrayValue()
+                        .values([
+                            buildObjectLiteral([
+                                a: StringValue.of("abc")
+                            ]),
+                            buildObjectLiteral([
+                                a: StringValue.of("xyz"),
+                                b: IntValue.of(789)
+                            ]),
+                        ]).build()
+                                    | CoercedVariables.emptyVariables()
+
+        '[{ a: "abc" }, $var ] [{ a: "abc" }, { a: "xyz", b: 789 }]'
+                    | ArrayValue.newArrayValue()
+                        .values([
+                            buildObjectLiteral([
+                                a: StringValue.of("abc")
+                            ]),
+                            VariableReference.of("var")
+                        ]).build()
+                                    | CoercedVariables.of("var": [a: "xyz", b: 789])
+
+    }
+
+    def "getArgumentValues: invalid oneOf list input because element contains null value - #testCase"() {
+        given: "schema defining input object"
+        def inputObjectType = newInputObject()
+                .name("oneOfInputObject")
+                .withAppliedDirective(Directives.OneOfDirective.toAppliedDirective())
+                .field(newInputObjectField()
+                        .name("a")
+                        .type(GraphQLString)
+                        .build())
+                .field(newInputObjectField()
+                        .name("b")
+                        .type(GraphQLInt)
+                        .build())
+                .build()
+
+        when:
+        def argument = new Argument("arg", inputArray)
+        def fieldArgumentList = newArgument().name("arg").type(list(inputObjectType)).build()
+        ValuesResolver.getArgumentValues([fieldArgumentList], [argument], variables, graphQLContext, locale)
+
+        then:
+        def e = thrown(OneOfNullValueException)
+        e.message == "OneOf type field 'oneOfInputObject.a' must be non-null."
+
+        where:
+
+        testCase    | inputArray    | variables
+
+        '[{ a: "abc" }, { a: null }]'
+                    | ArrayValue.newArrayValue()
+                        .values([
+                            buildObjectLiteral([
+                                a: StringValue.of("abc")
+                            ]),
+                            buildObjectLiteral([
+                                a: NullValue.of()
+                            ]),
+                        ]).build()
+                                    | CoercedVariables.emptyVariables()
+
+        '[{ a: "abc" }, { a: $var }] [{ a: "abc" }, { a: null }]'
+                    | ArrayValue.newArrayValue()
+                        .values([
+                            buildObjectLiteral([
+                                a: StringValue.of("abc")
+                            ]),
+                            buildObjectLiteral([
+                                a: VariableReference.of("var")
+                            ]),
+                        ]).build()
+                                    | CoercedVariables.of("var": null)
+
+    }
+
+    def "getArgumentValues: invalid oneOf non-null list input because element contains duplicate key - #testCase"() {
+        given: "schema defining input object"
+        def inputObjectType = newInputObject()
+                .name("oneOfInputObject")
+                .withAppliedDirective(Directives.OneOfDirective.toAppliedDirective())
+                .field(newInputObjectField()
+                        .name("a")
+                        .type(GraphQLString)
+                        .build())
+                .field(newInputObjectField()
+                        .name("b")
+                        .type(GraphQLInt)
+                        .build())
+                .build()
+
+        when:
+        def argument = new Argument("arg", inputArray)
+        def fieldArgumentList = newArgument().name("arg").type(nonNull(list(inputObjectType))).build()
+        ValuesResolver.getArgumentValues([fieldArgumentList], [argument], variables, graphQLContext, locale)
+
+        then:
+        def e = thrown(OneOfTooManyKeysException)
+        e.message == "Exactly one key must be specified for OneOf type 'oneOfInputObject'."
+
+        where:
+
+        testCase    | inputArray    | variables
+
+        '[{ a: "abc", b: 123 }]'
+                    | ArrayValue.newArrayValue()
+                        .value(buildObjectLiteral([
+                            a: StringValue.of("abc"),
+                            b: IntValue.of(123)
+                        ])).build()
+                                    | CoercedVariables.emptyVariables()
+
+        '[{ a: "abc" }, { a: "xyz", b: 789 }]'
+                    | ArrayValue.newArrayValue()
+                        .values([
+                            buildObjectLiteral([
+                                a: StringValue.of("abc")
+                            ]),
+                            buildObjectLiteral([
+                                a: StringValue.of("xyz"),
+                                b: IntValue.of(789)
+                            ]),
+                        ]).build()
+                                    | CoercedVariables.emptyVariables()
+
+        '[{ a: "abc" }, $var ] [{ a: "abc" }, { a: "xyz", b: 789 }]'
+                    | ArrayValue.newArrayValue()
+                        .values([
+                            buildObjectLiteral([
+                                a: StringValue.of("abc")
+                            ]),
+                            VariableReference.of("var")
+                        ]).build()
+                                    | CoercedVariables.of("var": [a: "xyz", b: 789])
+
+    }
+
+    def "getArgumentValues: invalid oneOf list input with non-nullable elements, because element contains duplicate key - #testCase"() {
+        given: "schema defining input object"
+        def inputObjectType = newInputObject()
+                .name("oneOfInputObject")
+                .withAppliedDirective(Directives.OneOfDirective.toAppliedDirective())
+                .field(newInputObjectField()
+                        .name("a")
+                        .type(GraphQLString)
+                        .build())
+                .field(newInputObjectField()
+                        .name("b")
+                        .type(GraphQLInt)
+                        .build())
+                .build()
+
+        when:
+        def argument = new Argument("arg", inputArray)
+        def fieldArgumentList = newArgument().name("arg").type(list(nonNull(inputObjectType))).build()
+        ValuesResolver.getArgumentValues([fieldArgumentList], [argument], variables, graphQLContext, locale)
+
+        then:
+        def e = thrown(OneOfTooManyKeysException)
+        e.message == "Exactly one key must be specified for OneOf type 'oneOfInputObject'."
+
+        where:
+
+        testCase    | inputArray    | variables
+
+        '[{ a: "abc", b: 123 }]'
+                    | ArrayValue.newArrayValue()
+                        .value(buildObjectLiteral([
+                            a: StringValue.of("abc"),
+                            b: IntValue.of(123)
+                        ])).build()
+                                    | CoercedVariables.emptyVariables()
+
+        '[{ a: "abc" }, { a: "xyz", b: 789 }]'
+                    | ArrayValue.newArrayValue()
+                        .values([
+                            buildObjectLiteral([
+                                a: StringValue.of("abc")
+                            ]),
+                            buildObjectLiteral([
+                                a: StringValue.of("xyz"),
+                                b: IntValue.of(789)
+                            ]),
+                        ]).build()
+                                    | CoercedVariables.emptyVariables()
+
+        '[{ a: "abc" }, $var ] [{ a: "abc" }, { a: "xyz", b: 789 }]'
+                    | ArrayValue.newArrayValue()
+                        .values([
+                            buildObjectLiteral([
+                                a: StringValue.of("abc")
+                            ]),
+                            VariableReference.of("var")
+                        ]).build()
+                                    | CoercedVariables.of("var": [a: "xyz", b: 789])
+
+    }
+
     def "getArgumentValues: valid oneOf input - #testCase"() {
         given: "schema defining input object"
         def inputObjectType = newInputObject()
@@ -648,6 +884,54 @@ class ValuesResolverTest extends Specification {
         '{ a: $var }` { var : "abc"}'  | buildObjectLiteral([
                 a: VariableReference.of("var")
         ])                                            | CoercedVariables.of([var: "abc"])      | [arg: [a: "abc"]]
+
+    }
+
+    def "getArgumentValues: valid oneOf list input - #testCase"() {
+        given: "schema defining input object"
+        def inputObjectType = newInputObject()
+                .name("oneOfInputObject")
+                .withAppliedDirective(Directives.OneOfDirective.toAppliedDirective())
+                .field(newInputObjectField()
+                        .name("a")
+                        .type(GraphQLString)
+                        .build())
+                .field(newInputObjectField()
+                        .name("b")
+                        .type(GraphQLInt)
+                        .build())
+                .build()
+
+        when:
+        def argument = new Argument("arg", inputArray)
+        def fieldArgumentList = newArgument().name("arg").type(list(inputObjectType)).build()
+        def values = ValuesResolver.getArgumentValues([fieldArgumentList], [argument], variables, graphQLContext, locale)
+
+        then:
+        values == expectedValues
+
+        where:
+
+        testCase    | inputArray    | variables | expectedValues
+
+        '[{ a: "abc"}]'
+                    | ArrayValue.newArrayValue()
+                        .value(buildObjectLiteral([
+                            a: StringValue.of("abc"),
+                        ])).build()
+                                    | CoercedVariables.emptyVariables()
+                                                | [arg: [[a: "abc"]]]
+
+        '[{ a: "abc" }, $var ] [{ a: "abc" }, { b: 789 }]'
+                    | ArrayValue.newArrayValue()
+                        .values([
+                            buildObjectLiteral([
+                                a: StringValue.of("abc")
+                            ]),
+                            VariableReference.of("var")
+                        ]).build()
+                                    | CoercedVariables.of("var": [b: 789])
+                                                | [arg: [[a: "abc"], [b: 789]]]
 
     }
 
