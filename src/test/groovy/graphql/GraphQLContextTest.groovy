@@ -168,6 +168,52 @@ class GraphQLContextTest extends Specification {
         !context.hasKey("k3")
     }
 
+    def "compute works"() {
+        def context
+        when:
+        context = buildContext([k1: "foo"])
+        then:
+        context.compute("k1", (k, v) -> v ? v + "bar" : "default") == "foobar"
+        context.get("k1") == "foobar"
+        context.compute("k2", (k, v) -> v ? "new" : "default") == "default"
+        context.get("k2") == "default"
+        !context.compute("k3", (k, v) -> null)
+        !context.hasKey("k3")
+        sizeOf(context) == 2
+    }
+
+    def "computeIfAbsent works"() {
+        def context
+        when:
+        context = buildContext([k1: "v1", k2: "v2"])
+        then:
+        context.computeIfAbsent("k1", k -> "default") == "v1"
+        context.get("k1") == "v1"
+        context.computeIfAbsent("k2", k -> null) == "v2"
+        context.get("k2") == "v2"
+        context.computeIfAbsent("k3", k -> "default") == "default"
+        context.get("k3") == "default"
+        !context.computeIfAbsent("k4", k -> null)
+        !context.hasKey("k4")
+        sizeOf(context) == 3
+    }
+
+    def "computeIfPresent works"() {
+        def context
+        when:
+        context = buildContext([k1: "foo", k2: "v2"])
+        then:
+        context.computeIfPresent("k1", (k, v) -> v + "bar") == "foobar"
+        context.get("k1") == "foobar"
+        !context.computeIfPresent("k2", (k, v) -> null)
+        !context.hasKey("k2")
+        !context.computeIfPresent("k3", (k, v) -> v + "bar")
+        !context.hasKey("k3")
+        !context.computeIfPresent("k4", (k, v) -> null)
+        !context.hasKey("k4")
+        sizeOf(context) == 1
+    }
+
     def "getOrDefault works"() {
         def context
         when:
