@@ -14,9 +14,16 @@ plugins {
     id "me.champeau.jmh" version "0.7.2"
 }
 
+final String javaVersion = project.hasProperty("javaVersion") ?
+        (project.property("javaVersion") as String).replaceAll("^([0-9]+).*", "\$1")
+        : null
+if (javaVersion == null) {
+    throw new Throwable("Please define a javaVersion in your gradle.properties")
+}
+
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of(11)
+        languageVersion = JavaLanguageVersion.of(javaVersion)
     }
 }
 

@@ -3,6 +3,9 @@ package graphql.parser
 import graphql.GraphQL
 import graphql.InvalidSyntaxError
 import graphql.StarWarsSchema
+import org.spockframework.runtime.extension.builtin.PreconditionContext
+import spock.lang.IgnoreIf
+import spock.lang.Issue
 import spock.lang.Specification
 
 class ParserExceptionTest extends Specification {
@@ -46,6 +49,8 @@ fragment X on SomeType {
 '''
     }
 
+    @Issue("https://github.com/graphql-java/graphql-java/issues/2709")
+    @IgnoreIf({ PreconditionContext it -> it.jvm.java16Compatible })
     def "can work with multi source input"() {
         when:
         def multiSource = MultiSourceReader.newMultiSourceReader()

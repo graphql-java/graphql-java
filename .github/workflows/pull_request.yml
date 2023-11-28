@@ -1,4 +1,4 @@
-name: Pull Request Build
+name: PR Verify
 # For pull requests: builds and test
 on:
   push:
@@ -11,16 +11,53 @@ on:
       - 19.x
       - 18.x
       - 17.x
+
 jobs:
   buildAndTest:
-    runs-on: ubuntu-latest
+    name: buildAndTest ${{ matrix.java }} (${{ matrix.dist }}) on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ 'ubuntu-latest', 'windows-latest' ]
+        java: [ '11', '17', '21' ]
+        dist: [ 'temurin', 'semeru' ]
+        exclude:
+          - # Unsupported
+            os: 'ubuntu-latest'
+            java: '21'
+            dist: 'semeru'
+          - # Unsupported
+            os: 'windows-latest'
+            java: '21'
+            dist: 'semeru'
+    env:
+      ORG_GRADLE_PROJECT_javaVersion: ${{ matrix.java }}
     steps:
       - uses: actions/checkout@v4
       - uses: gradle/wrapper-validation-action@v1
-      - name: Set up JDK 11
+      - name: Set up JDK (${{ matrix.java }}, ${{ matrix.dist }})
         uses: actions/setup-java@v3
         with:
-          java-version: '11'
-          distribution: 'corretto'
-      - name: build and test
-        run: ./gradlew assemble && ./gradlew check --info --stacktrace
+          java-version: ${{ matrix.java }}
+          distribution: ${{ matrix.dist }}
+      - name: Setup Gradle
+        uses: gradle/gradle-build-action@v2
+        with:
+          arguments: --version
+      - name: Build
+        uses: gradle/gradle-build-action@v2
+        with:
+          arguments: assemble
+      - name: Test
+        uses: gradle/gradle-build-action@v2
+        with:
+          arguments: check --info --stacktrace
+      - name: Archive Gradle Test Summary
+        uses: actions/upload-artifact@v3
+        if: ${{ failure() }}
+        with:
+          name: gradle-test-summary-${{ matrix.java }}-${{ matrix.dist }}-${{ matrix.os }}
+          path: build/reports/tests/test/
+          retention-days: 5
+          if-no-files-found: ignore

@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - master
+
 jobs:
   buildAndPublish:
     runs-on: ubuntu-latest
@@ -11,7 +12,6 @@ jobs:
       MAVEN_CENTRAL_USER: ${{ secrets.MAVEN_CENTRAL_USER }}
       MAVEN_CENTRAL_PASSWORD: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
       MAVEN_CENTRAL_PGP_KEY: ${{ secrets.MAVEN_CENTRAL_PGP_KEY }}
-
     steps:
       - uses: actions/checkout@v4
       - uses: gradle/wrapper-validation-action@v1
@@ -20,5 +20,15 @@ jobs:
         with:
           java-version: '11'
           distribution: 'corretto'
-      - name: build test and publish
-        run: ./gradlew assemble && ./gradlew check --info && ./gradlew publishToSonatype closeAndReleaseSonatypeStagingRepository -x check --info --stacktrace
+      - name: Build
+        uses: gradle/gradle-build-action@v2
+        with:
+          arguments: assemble
+      - name: Test
+        uses: gradle/gradle-build-action@v2
+        with:
+          arguments: check --info
+      - name: Publish
+        uses: gradle/gradle-build-action@v2
+        with:
+          arguments: publishToSonatype closeAndReleaseSonatypeStagingRepository -x check --info --stacktrace

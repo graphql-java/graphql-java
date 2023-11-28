@@ -1,5 +1,8 @@
 package graphql.parser
 
+import org.spockframework.runtime.extension.builtin.PreconditionContext
+import spock.lang.IgnoreIf
+import spock.lang.Issue
 import spock.lang.Specification
 
 class MultiSourceReaderTest extends Specification {
@@ -10,6 +13,8 @@ class MultiSourceReaderTest extends Specification {
         multiSource.close()
     }
 
+    // Does not work on Windows
+    @IgnoreIf({ PreconditionContext it -> it.os.windows })
     def "can combine files"() {
         when:
         multiSource = MultiSourceReader.newMultiSourceReader()
@@ -157,6 +162,8 @@ B5*******X
         multiSource.getOverallLineNumber() == 0
     }
 
+    @Issue("https://github.com/graphql-java/graphql-java/issues/2709")
+    @IgnoreIf({ PreconditionContext it -> it.jvm.java16Compatible })
     def "can handle null source name"() {
         def sr = new StringReader("Hello\nWorld")
         when:

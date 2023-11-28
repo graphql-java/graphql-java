@@ -47,20 +47,21 @@ class ExecutableDefinitionsTest extends Specification {
 
     def 'Executable Definitions with type definition'() {
         def query = """
-              query Foo {
-                dog {
-                  name
-                }
-              }
-        
-              type Cow {
-                name: String
-              }
-        
-              extend type Dog {
-                color: String
-              }
-            """.stripIndent()
+query Foo {
+  dog {
+    name
+  }
+}
+
+type Cow {
+  name: String
+}
+
+extend type Dog {
+  color: String
+}
+"""
+
         when:
         def validationErrors = validate(query)
 
@@ -77,14 +78,15 @@ class ExecutableDefinitionsTest extends Specification {
 
     def 'Executable Definitions with schema definition'() {
         def query = """
-              schema {
-                query: QueryRoot
-              }
-        
-              type QueryRoot {
-                test: String
-              }
-            """.stripIndent()
+schema {
+  query: QueryRoot
+}
+
+type QueryRoot {
+  test: String
+}
+"""
+
         when:
         def validationErrors = validate(query)
 
@@ -118,7 +120,7 @@ class ExecutableDefinitionsTest extends Specification {
 
     def 'Executable Definitions with no directive definition'() {
         def query = """
-              directive @nope on INPUT_OBJECT
+            directive @nope on INPUT_OBJECT
             """.stripIndent()
         when:
         def document = new Parser().parseDocument(query)
