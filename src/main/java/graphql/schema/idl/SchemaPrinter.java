@@ -876,7 +876,7 @@ public class SchemaPrinter {
     private String directivesString(Class<? extends GraphQLSchemaElement> parentType, List<GraphQLAppliedDirective> directives) {
         directives = directives.stream()
                 // @deprecated is special - we always print it if something is deprecated
-                .filter(directive -> options.getIncludeDirective().test(directive.getName()) || isDeprecatedDirective(directive))
+                .filter(directive -> options.getIncludeDirective().test(directive.getName()))
                 .filter(options.getIncludeSchemaElement())
                 .collect(toList());
 
@@ -909,10 +909,7 @@ public class SchemaPrinter {
             return "";
         }
         if (!options.getIncludeDirective().test(directive.getName())) {
-            // @deprecated is special - we always print it if something is deprecated
-            if (!isDeprecatedDirective(directive)) {
-                return "";
-            }
+            return "";
         }
 
         StringBuilder sb = new StringBuilder();
@@ -948,6 +945,13 @@ public class SchemaPrinter {
         return sb.toString();
     }
 
+    private boolean isDeprecatedDirectiveAllowed() {
+        // we ask if the special deprecated directive,
+        // which can be programmatically on a type without an applied directive,
+        // should be printed or not
+        return options.getIncludeDirective().test(DeprecatedDirective.getName());
+    }
+
     private boolean isDeprecatedDirective(GraphQLAppliedDirective directive) {
         return directive.getName().equals(DeprecatedDirective.getName());
     }
@@ -960,7 +964,7 @@ public class SchemaPrinter {
 
     private List<GraphQLAppliedDirective> addDeprecatedDirectiveIfNeeded(GraphQLDirectiveContainer directiveContainer) {
         List<GraphQLAppliedDirective> directives = DirectivesUtil.toAppliedDirectives(directiveContainer);
-        if (!hasDeprecatedDirective(directives)) {
+        if (!hasDeprecatedDirective(directives)  && isDeprecatedDirectiveAllowed()) {
             directives = new ArrayList<>(directives);
                     String reason = getDeprecationReason(directiveContainer);
                     GraphQLAppliedDirectiveArgument arg = GraphQLAppliedDirectiveArgument.newArgument()

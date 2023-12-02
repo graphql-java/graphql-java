@@ -1556,7 +1556,7 @@ extend type Query {
 '''
     }
 
-    def "@deprecated directives are always printed"() {
+    def "@deprecated directives are NOT always printed - they used to be"() {
         given:
         def idl = """
 
@@ -1588,7 +1588,7 @@ extend type Query {
 
         then:
         result == '''type Field {
-  deprecated: Enum @deprecated(reason : "No longer supported")
+  deprecated: Enum
 }
 
 type Query {
@@ -1596,11 +1596,11 @@ type Query {
 }
 
 enum Enum {
-  enumVal @deprecated(reason : "No longer supported")
+  enumVal
 }
 
 input Input {
-  deprecated: String @deprecated(reason : "custom reason")
+  deprecated: String
 }
 '''
     }
@@ -1641,7 +1641,7 @@ type Query {
 '''
     }
 
-    def "@deprecated directive are always printed regardless of options"() {
+    def "@deprecated directive are NOT always printed regardless of options"() {
         given:
         def idl = '''
 
@@ -1660,6 +1660,37 @@ type Query {
 
         then:
         result == '''type Query {
+  fieldX: String
+}
+'''
+    }
+
+    def "@deprecated directive are printed respecting options"() {
+        given:
+        def idl = '''
+
+            type Query {
+              fieldX : String @deprecated
+            }
+            
+        '''
+        def registry = new SchemaParser().parse(idl)
+        def runtimeWiring = newRuntimeWiring().build()
+        def options = SchemaGenerator.Options.defaultOptions()
+        def schema = new SchemaGenerator().makeExecutableSchema(options, registry, runtimeWiring)
+
+        when:
+        def printOptions = defaultOptions().includeDirectives({ dName -> (dName == "deprecated") })
+        def result = new SchemaPrinter(printOptions).print(schema)
+
+        then:
+        result == '''"Marks the field, argument, input field or enum value as deprecated"
+directive @deprecated(
+    "The reason for the deprecation"
+    reason: String = "No longer supported"
+  ) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION
+
+type Query {
   fieldX: String @deprecated(reason : "No longer supported")
 }
 '''
@@ -2678,7 +2709,10 @@ input Gun {
                 .query(queryType)
                 .build()
         when:
-        def result = "\n" + new SchemaPrinter(noDirectivesOption).print(schema)
+
+        def printOptions = defaultOptions().includeDirectives({d -> true})
+
+        def result = "\n" + new SchemaPrinter(printOptions).print(schema)
         println(result)
 
         then:
