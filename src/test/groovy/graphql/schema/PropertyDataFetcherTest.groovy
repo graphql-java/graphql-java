@@ -637,6 +637,38 @@ class PropertyDataFetcherTest extends Specification {
         result == "bar"
     }
 
+    class BaseObject {
+        private String id
+
+        String getId() {
+            return id
+        }
+
+        void setId(String value) {
+            id = value;
+        }
+    }
+
+    class OtherObject extends BaseObject {}
+
+    def "Can access private property from base class that starts with i in Turkish"() {
+        // see https://github.com/graphql-java/graphql-java/issues/3385
+        given:
+        Locale oldLocale = Locale.getDefault()
+        Locale.setDefault(new Locale("tr", "TR"))
+
+        def environment = env(new OtherObject(id: "aValue"))
+        def fetcher = PropertyDataFetcher.fetching("id")
+
+        when:
+        String propValue = fetcher.get(environment)
+
+        then:
+        propValue == 'aValue'
+
+        cleanup:
+        Locale.setDefault(oldLocale)
+    }
     /**
      * Classes from issue to ensure we reproduce as reported by customers
      *
