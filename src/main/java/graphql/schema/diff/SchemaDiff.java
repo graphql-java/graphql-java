@@ -39,6 +39,7 @@ import java.util.stream.Collectors;
 import static graphql.language.TypeKind.getTypeKind;
 import static graphql.schema.idl.TypeInfo.getAstDesc;
 import static graphql.schema.idl.TypeInfo.typeInfo;
+import static graphql.util.StringKit.capitalize;
 
 /**
  * The SchemaDiff is called with a {@link DiffSet} and will report the
@@ -974,15 +975,6 @@ public class SchemaDiff {
         return new TreeMap<>(map);
     }
 
-    private static String capitalize(String name) {
-        if (name != null && name.length() != 0) {
-            char[] chars = name.toCharArray();
-            chars[0] = Character.toUpperCase(chars[0]);
-            return new String(chars);
-        } else {
-            return name;
-        }
-    }
 
     private String mkDotName(String... objectNames) {
         return String.join(".", objectNames);
