@@ -46,7 +46,7 @@ import static graphql.schema.GraphQLTypeUtil.unwrapAll;
 /**
  * This class can take a list of {@link ExecutableNormalizedField}s and compiling out a
  * normalised operation {@link Document} that would represent how those fields
- * maybe executed.
+ * may be executed.
  * <p>
  * This is essentially the reverse of {@link ExecutableNormalizedOperationFactory} which takes
  * operation text and makes {@link ExecutableNormalizedField}s from it, this takes {@link ExecutableNormalizedField}s

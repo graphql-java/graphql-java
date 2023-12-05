@@ -9,6 +9,7 @@ import graphql.PublicApi;
 import graphql.collect.ImmutableKit;
 import graphql.introspection.Introspection;
 import graphql.language.Argument;
+import graphql.normalized.incremental.DeferExecution;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLInterfaceType;
 import graphql.schema.GraphQLNamedOutputType;
@@ -63,6 +64,7 @@ public class ExecutableNormalizedField {
     private final String fieldName;
     private final int level;
 
+    private final DeferExecution deferExecution;
 
     private ExecutableNormalizedField(Builder builder) {
         this.alias = builder.alias;
@@ -74,6 +76,7 @@ public class ExecutableNormalizedField {
         this.children = builder.children;
         this.level = builder.level;
         this.parent = builder.parent;
+        this.deferExecution = builder.deferExecution;
     }
 
     /**
@@ -366,6 +369,14 @@ public class ExecutableNormalizedField {
 
 
     /**
+     * TODO Javadoc
+     * @return
+     */
+    public DeferExecution getDeferExecution() {
+        return deferExecution;
+    }
+
+    /**
      * @return a helper method show field details
      */
     public String printDetails() {
@@ -588,6 +599,8 @@ public class ExecutableNormalizedField {
         private LinkedHashMap<String, Object> resolvedArguments = new LinkedHashMap<>();
         private ImmutableList<Argument> astArguments = ImmutableKit.emptyList();
 
+        private DeferExecution deferExecution;
+
         private Builder() {
         }
 
@@ -596,6 +609,7 @@ public class ExecutableNormalizedField {
             this.normalizedArguments = existing.normalizedArguments;
             this.astArguments = existing.astArguments;
             this.resolvedArguments = existing.resolvedArguments;
+            this.deferExecution = existing.deferExecution;
             this.objectTypeNames = new LinkedHashSet<>(existing.getObjectTypeNames());
             this.fieldName = existing.getFieldName();
             this.children = new ArrayList<>(existing.children);
@@ -653,6 +667,11 @@ public class ExecutableNormalizedField {
 
         public Builder parent(ExecutableNormalizedField parent) {
             this.parent = parent;
+            return this;
+        }
+
+        public Builder deferExecution(DeferExecution deferExecution) {
+            this.deferExecution = deferExecution;
             return this;
         }
 

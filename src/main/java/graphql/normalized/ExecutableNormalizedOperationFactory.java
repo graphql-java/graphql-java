@@ -26,6 +26,9 @@ import graphql.language.OperationDefinition;
 import graphql.language.Selection;
 import graphql.language.SelectionSet;
 import graphql.language.VariableDefinition;
+import graphql.normalized.incremental.DeferExecution;
+import graphql.normalized.incremental.DeferLabel;
+import graphql.normalized.incremental.IncrementalNodes;
 import graphql.schema.FieldCoordinates;
 import graphql.schema.GraphQLCompositeType;
 import graphql.schema.GraphQLFieldDefinition;
@@ -146,6 +149,7 @@ public class ExecutableNormalizedOperationFactory {
     }
 
     private final ConditionalNodes conditionalNodes = new ConditionalNodes();
+    private final IncrementalNodes incrementalNodes = new IncrementalNodes();
 
     /**
      * This will create a runtime representation of the graphql operation that would be executed
@@ -155,7 +159,6 @@ public class ExecutableNormalizedOperationFactory {
      * @param document              the {@link Document} holding the operation text
      * @param operationName         the operation name to use
      * @param coercedVariableValues the coerced variables to use
-     *
      * @return a runtime representation of the graphql operation.
      */
     public static ExecutableNormalizedOperation createExecutableNormalizedOperation(
@@ -181,7 +184,6 @@ public class ExecutableNormalizedOperationFactory {
      * @param operationDefinition   the operation to be executed
      * @param fragments             a set of fragments associated with the operation
      * @param coercedVariableValues the coerced variables to use
-     *
      * @return a runtime representation of the graphql operation.
      */
     public static ExecutableNormalizedOperation createExecutableNormalizedOperation(GraphQLSchema graphQLSchema,
@@ -204,7 +206,6 @@ public class ExecutableNormalizedOperationFactory {
      * @param document      the {@link Document} holding the operation text
      * @param operationName the operation name to use
      * @param rawVariables  the raw variables to be coerced
-     *
      * @return a runtime representation of the graphql operation.
      */
     public static ExecutableNormalizedOperation createExecutableNormalizedOperationWithRawVariables(GraphQLSchema graphQLSchema,
@@ -229,7 +230,6 @@ public class ExecutableNormalizedOperationFactory {
      * @param rawVariables   the raw variables that have not yet been coerced
      * @param locale         the {@link Locale} to use during coercion
      * @param graphQLContext the {@link GraphQLContext} to use during coercion
-     *
      * @return a runtime representation of the graphql operation.
      */
     public static ExecutableNormalizedOperation createExecutableNormalizedOperationWithRawVariables(
@@ -258,7 +258,6 @@ public class ExecutableNormalizedOperationFactory {
      * @param operationName the operation name to use
      * @param rawVariables  the raw variables that have not yet been coerced
      * @param options       the {@link Options} to use for parsing
-     *
      * @return a runtime representation of the graphql operation.
      */
     public static ExecutableNormalizedOperation createExecutableNormalizedOperationWithRawVariables(GraphQLSchema graphQLSchema,
@@ -465,7 +464,8 @@ public class ExecutableNormalizedOperationFactory {
                     fieldAndAstParent.field.getSelectionSet(),
                     collectedFields,
                     (GraphQLCompositeType) astParentType,
-                    possibleObjects
+                    possibleObjects,
+                    null
             );
         }
         Map<String, List<CollectedField>> fieldsByName = fieldsByResultKey(collectedFields);
@@ -492,7 +492,7 @@ public class ExecutableNormalizedOperationFactory {
 
         Set<GraphQLObjectType> possibleObjects = ImmutableSet.of(rootType);
         List<CollectedField> collectedFields = new ArrayList<>();
-        collectFromSelectionSet(parameters, operationDefinition.getSelectionSet(), collectedFields, rootType, possibleObjects);
+        collectFromSelectionSet(parameters, operationDefinition.getSelectionSet(), collectedFields, rootType, possibleObjects, null);
         // group by result key
         Map<String, List<CollectedField>> fieldsByName = fieldsByResultKey(collectedFields);
         ImmutableList.Builder<ExecutableNormalizedField> resultNFs = ImmutableList.builder();
@@ -554,33 +554,50 @@ public class ExecutableNormalizedOperationFactory {
                 .fieldName(fieldName)
                 .level(level)
                 .parent(parent)
+                .deferExecution(collectedFieldGroup.deferExecution)
                 .build();
     }
 
     private static class CollectedFieldGroup {
         Set<GraphQLObjectType> objectTypes;
         Set<CollectedField> fields;
+        DeferExecution deferExecution;
 
-        public CollectedFieldGroup(Set<CollectedField> fields, Set<GraphQLObjectType> objectTypes) {
+        public CollectedFieldGroup(Set<CollectedField> fields, Set<GraphQLObjectType> objectTypes, DeferExecution deferExecution) {
             this.fields = fields;
             this.objectTypes = objectTypes;
+            this.deferExecution = deferExecution;
         }
     }
 
     private List<CollectedFieldGroup> groupByCommonParents(Collection<CollectedField> fields) {
         ImmutableSet.Builder<GraphQLObjectType> objectTypes = ImmutableSet.builder();
+        DeferExecution deferExecution = null;
         for (CollectedField collectedField : fields) {
             objectTypes.addAll(collectedField.objectTypes);
+
+            DeferLabel collectedDeferLabel = collectedField.deferLabel;
+
+            if (collectedDeferLabel == null) {
+                continue;
+            }
+
+            if (deferExecution == null) {
+                deferExecution = new DeferExecution();
+            }
+
+            deferExecution.addLabel(collectedDeferLabel);
         }
+
         Set<GraphQLObjectType> allRelevantObjects = objectTypes.build();
         Map<GraphQLType, ImmutableList<CollectedField>> groupByAstParent = groupingBy(fields, fieldAndType -> fieldAndType.astTypeCondition);
         if (groupByAstParent.size() == 1) {
-            return singletonList(new CollectedFieldGroup(ImmutableSet.copyOf(fields), allRelevantObjects));
+            return singletonList(new CollectedFieldGroup(ImmutableSet.copyOf(fields), allRelevantObjects, deferExecution));
         }
         ImmutableList.Builder<CollectedFieldGroup> result = ImmutableList.builder();
         for (GraphQLObjectType objectType : allRelevantObjects) {
             Set<CollectedField> relevantFields = filterSet(fields, field -> field.objectTypes.contains(objectType));
-            result.add(new CollectedFieldGroup(relevantFields, singleton(objectType)));
+            result.add(new CollectedFieldGroup(relevantFields, singleton(objectType), deferExecution));
         }
         return result.build();
     }
@@ -590,15 +607,16 @@ public class ExecutableNormalizedOperationFactory {
                                          SelectionSet selectionSet,
                                          List<CollectedField> result,
                                          GraphQLCompositeType astTypeCondition,
-                                         Set<GraphQLObjectType> possibleObjects
+                                         Set<GraphQLObjectType> possibleObjects,
+                                         DeferLabel deferLabel
     ) {
         for (Selection<?> selection : selectionSet.getSelections()) {
             if (selection instanceof Field) {
-                collectField(parameters, result, (Field) selection, possibleObjects, astTypeCondition);
+                collectField(parameters, result, (Field) selection, possibleObjects, astTypeCondition, deferLabel);
             } else if (selection instanceof InlineFragment) {
-                collectInlineFragment(parameters, result, (InlineFragment) selection, possibleObjects, astTypeCondition);
+                collectInlineFragment(parameters, result, (InlineFragment) selection, possibleObjects, astTypeCondition, deferLabel);
             } else if (selection instanceof FragmentSpread) {
-                collectFragmentSpread(parameters, result, (FragmentSpread) selection, possibleObjects);
+                collectFragmentSpread(parameters, result, (FragmentSpread) selection, possibleObjects, deferLabel);
             }
         }
     }
@@ -608,10 +626,13 @@ public class ExecutableNormalizedOperationFactory {
         Set<GraphQLObjectType> objectTypes;
         GraphQLCompositeType astTypeCondition;
 
-        public CollectedField(Field field, Set<GraphQLObjectType> objectTypes, GraphQLCompositeType astTypeCondition) {
+        DeferLabel deferLabel;
+
+        public CollectedField(Field field, Set<GraphQLObjectType> objectTypes, GraphQLCompositeType astTypeCondition, DeferLabel deferLabel) {
             this.field = field;
             this.objectTypes = objectTypes;
             this.astTypeCondition = astTypeCondition;
+            this.deferLabel = deferLabel;
         }
 
         public boolean isAbstract() {
@@ -626,7 +647,8 @@ public class ExecutableNormalizedOperationFactory {
     private void collectFragmentSpread(FieldCollectorNormalizedQueryParams parameters,
                                        List<CollectedField> result,
                                        FragmentSpread fragmentSpread,
-                                       Set<GraphQLObjectType> possibleObjects
+                                       Set<GraphQLObjectType> possibleObjects,
+                                       DeferLabel deferLabel
     ) {
         if (!conditionalNodes.shouldInclude(fragmentSpread,
                 parameters.getCoercedVariableValues(),
@@ -642,9 +664,12 @@ public class ExecutableNormalizedOperationFactory {
                 parameters.getGraphQLContext())) {
             return;
         }
+
+        DeferLabel newDeferLabel = incrementalNodes.getDeferLabel(parameters.getCoercedVariableValues(), fragmentSpread.getDirectives());
+
         GraphQLCompositeType newAstTypeCondition = (GraphQLCompositeType) assertNotNull(parameters.getGraphQLSchema().getType(fragmentDefinition.getTypeCondition().getName()));
         Set<GraphQLObjectType> newPossibleObjects = narrowDownPossibleObjects(possibleObjects, newAstTypeCondition, parameters.getGraphQLSchema());
-        collectFromSelectionSet(parameters, fragmentDefinition.getSelectionSet(), result, newAstTypeCondition, newPossibleObjects);
+        collectFromSelectionSet(parameters, fragmentDefinition.getSelectionSet(), result, newAstTypeCondition, newPossibleObjects, newDeferLabel);
     }
 
 
@@ -652,7 +677,8 @@ public class ExecutableNormalizedOperationFactory {
                                        List<CollectedField> result,
                                        InlineFragment inlineFragment,
                                        Set<GraphQLObjectType> possibleObjects,
-                                       GraphQLCompositeType astTypeCondition
+                                       GraphQLCompositeType astTypeCondition,
+                                       DeferLabel deferLabel
     ) {
         if (!conditionalNodes.shouldInclude(inlineFragment, parameters.getCoercedVariableValues(), parameters.getGraphQLSchema(), parameters.getGraphQLContext())) {
             return;
@@ -665,14 +691,18 @@ public class ExecutableNormalizedOperationFactory {
             newPossibleObjects = narrowDownPossibleObjects(possibleObjects, newAstTypeCondition, parameters.getGraphQLSchema());
 
         }
-        collectFromSelectionSet(parameters, inlineFragment.getSelectionSet(), result, newAstTypeCondition, newPossibleObjects);
+
+        DeferLabel newDeferLabel = incrementalNodes.getDeferLabel(parameters.getCoercedVariableValues(), inlineFragment.getDirectives());
+
+        collectFromSelectionSet(parameters, inlineFragment.getSelectionSet(), result, newAstTypeCondition, newPossibleObjects, newDeferLabel);
     }
 
     private void collectField(FieldCollectorNormalizedQueryParams parameters,
                               List<CollectedField> result,
                               Field field,
                               Set<GraphQLObjectType> possibleObjectTypes,
-                              GraphQLCompositeType astTypeCondition
+                              GraphQLCompositeType astTypeCondition,
+                              DeferLabel deferLabel
     ) {
         if (!conditionalNodes.shouldInclude(field,
                 parameters.getCoercedVariableValues(),
@@ -684,7 +714,7 @@ public class ExecutableNormalizedOperationFactory {
         if (possibleObjectTypes.isEmpty()) {
             return;
         }
-        result.add(new CollectedField(field, possibleObjectTypes, astTypeCondition));
+        result.add(new CollectedField(field, possibleObjectTypes, astTypeCondition, deferLabel));
     }
 
     private Set<GraphQLObjectType> narrowDownPossibleObjects(Set<GraphQLObjectType> currentOnes,
