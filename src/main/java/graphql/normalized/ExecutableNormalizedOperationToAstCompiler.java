@@ -18,8 +18,10 @@ import graphql.language.ObjectValue;
 import graphql.language.OperationDefinition;
 import graphql.language.Selection;
 import graphql.language.SelectionSet;
+import graphql.language.StringValue;
 import graphql.language.TypeName;
 import graphql.language.Value;
+import graphql.normalized.incremental.DeferLabel;
 import graphql.schema.GraphQLCompositeType;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLObjectType;
@@ -32,6 +34,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import static graphql.collect.ImmutableKit.emptyList;
@@ -82,7 +85,7 @@ public class ExecutableNormalizedOperationToAstCompiler {
 
     /**
      * This will compile an operation text {@link Document} with possibly variables from the given {@link ExecutableNormalizedField}s
-     *
+     * <p>
      * The {@link VariablePredicate} is used called to decide if the given argument values should be made into a variable
      * OR inlined into the operation text as a graphql literal.
      *
@@ -91,7 +94,6 @@ public class ExecutableNormalizedOperationToAstCompiler {
      * @param operationName     the name of the operation to use
      * @param topLevelFields    the top level {@link ExecutableNormalizedField}s to start from
      * @param variablePredicate the variable predicate that decides if arguments turn into variables or not during compilation
-     *
      * @return a {@link CompilerResult} object
      */
     public static CompilerResult compileToDocument(@NotNull GraphQLSchema schema,
@@ -99,22 +101,21 @@ public class ExecutableNormalizedOperationToAstCompiler {
                                                    @Nullable String operationName,
                                                    @NotNull List<ExecutableNormalizedField> topLevelFields,
                                                    @Nullable VariablePredicate variablePredicate) {
-        return compileToDocument(schema,operationKind,operationName,topLevelFields,Map.of(),variablePredicate);
+        return compileToDocument(schema, operationKind, operationName, topLevelFields, Map.of(), variablePredicate);
     }
 
     /**
      * This will compile an operation text {@link Document} with possibly variables from the given {@link ExecutableNormalizedField}s
-     *
+     * <p>
      * The {@link VariablePredicate} is used called to decide if the given argument values should be made into a variable
      * OR inlined into the operation text as a graphql literal.
      *
-     * @param schema                            the graphql schema to use
-     * @param operationKind                     the kind of operation
-     * @param operationName                     the name of the operation to use
-     * @param topLevelFields                    the top level {@link ExecutableNormalizedField}s to start from
-     * @param normalizedFieldToQueryDirectives  the map of normalized field to query directives
-     * @param variablePredicate                 the variable predicate that decides if arguments turn into variables or not during compilation
-     *
+     * @param schema                           the graphql schema to use
+     * @param operationKind                    the kind of operation
+     * @param operationName                    the name of the operation to use
+     * @param topLevelFields                   the top level {@link ExecutableNormalizedField}s to start from
+     * @param normalizedFieldToQueryDirectives the map of normalized field to query directives
+     * @param variablePredicate                the variable predicate that decides if arguments turn into variables or not during compilation
      * @return a {@link CompilerResult} object
      */
     public static CompilerResult compileToDocument(@NotNull GraphQLSchema schema,
@@ -153,27 +154,61 @@ public class ExecutableNormalizedOperationToAstCompiler {
 
         // All conditional fields go here instead of directly to selections, so they can be grouped together
         // in the same inline fragment in the output
-        Map<String, List<Field>> fieldsByTypeCondition = new LinkedHashMap<>();
+        //
+        Map<ExecutionFragmentDetails, List<Field>> fieldsByFragmentDetails = new LinkedHashMap<>();
 
         for (ExecutableNormalizedField nf : executableNormalizedFields) {
             if (nf.isConditional(schema)) {
                 selectionForNormalizedField(schema, nf, normalizedFieldToQueryDirectives, variableAccumulator)
+                        .forEach((objectTypeName, field) -> {
+                            if (nf.getDeferExecution() == null) {
+                                fieldsByFragmentDetails
+                                        .computeIfAbsent(new ExecutionFragmentDetails(objectTypeName, null), ignored -> new ArrayList<>())
+                                        .add(field);
+                            } else {
+                                nf.getDeferExecution().getLabels().stream()
+                                        .map(DeferLabel::getValue)
+                                        .forEach(label -> fieldsByFragmentDetails
+                                                .computeIfAbsent(new ExecutionFragmentDetails(objectTypeName, new DeferLabel(label)), ignored -> new ArrayList<>())
+                                                .add(field));
+                            }
+                        });
+
+            } else if (nf.getDeferExecution() != null) {
+                selectionForNormalizedField(schema, nf, normalizedFieldToQueryDirectives, variableAccumulator)
                         .forEach((objectTypeName, field) ->
-                                fieldsByTypeCondition
-                                        .computeIfAbsent(objectTypeName, ignored -> new ArrayList<>())
-                                        .add(field));
+                                nf.getDeferExecution().getLabels().stream()
+                                        .map(DeferLabel::getValue)
+                                        .forEach(label -> fieldsByFragmentDetails
+                                                .computeIfAbsent(new ExecutionFragmentDetails(null, new DeferLabel(label)), ignored -> new ArrayList<>())
+                                                .add(field))
+                        );
             } else {
-                selections.add(selectionForNormalizedField(schema, parentOutputType, nf, normalizedFieldToQueryDirectives,variableAccumulator));
+                selections.add(selectionForNormalizedField(schema, parentOutputType, nf, normalizedFieldToQueryDirectives, variableAccumulator));
             }
         }
 
-        fieldsByTypeCondition.forEach((objectTypeName, fields) -> {
-            TypeName typeName = newTypeName(objectTypeName).build();
-            InlineFragment inlineFragment = newInlineFragment()
-                    .typeCondition(typeName)
-                    .selectionSet(selectionSet(fields))
-                    .build();
-            selections.add(inlineFragment);
+        fieldsByFragmentDetails.forEach((typeAndDeferPair, fields) -> {
+            InlineFragment.Builder fragmentBuilder = newInlineFragment()
+                    .selectionSet(selectionSet(fields));
+
+            if (typeAndDeferPair.typeName != null) {
+                TypeName typeName = newTypeName(typeAndDeferPair.typeName).build();
+                fragmentBuilder.typeCondition(typeName);
+            }
+
+            if (typeAndDeferPair.deferLabel != null) {
+                Directive.Builder deferBuilder = Directive.newDirective().name("defer");
+
+                if (typeAndDeferPair.deferLabel.getValue() != null) {
+                    deferBuilder.argument(newArgument().name("label").value(StringValue.of(typeAndDeferPair.deferLabel.getValue())).build());
+                }
+
+                fragmentBuilder.directive(deferBuilder.build());
+            }
+
+
+            selections.add(fragmentBuilder.build());
         });
 
         return selections.build();
@@ -189,7 +224,7 @@ public class ExecutableNormalizedOperationToAstCompiler {
         Map<String, Field> groupedFields = new LinkedHashMap<>();
 
         for (String objectTypeName : executableNormalizedField.getObjectTypeNames()) {
-            groupedFields.put(objectTypeName, selectionForNormalizedField(schema, objectTypeName, executableNormalizedField,normalizedFieldToQueryDirectives, variableAccumulator));
+            groupedFields.put(objectTypeName, selectionForNormalizedField(schema, objectTypeName, executableNormalizedField, normalizedFieldToQueryDirectives, variableAccumulator));
         }
 
         return groupedFields;
@@ -230,9 +265,9 @@ public class ExecutableNormalizedOperationToAstCompiler {
                 .alias(executableNormalizedField.getAlias())
                 .selectionSet(selectionSet)
                 .arguments(arguments);
-        if(queryDirectives == null || queryDirectives.getImmediateAppliedDirectivesByField().isEmpty() ){
+        if (queryDirectives == null || queryDirectives.getImmediateAppliedDirectivesByField().isEmpty()) {
             return builder.build();
-        }else {
+        } else {
             List<Directive> directives = queryDirectives.getImmediateAppliedDirectivesByField().keySet().stream().flatMap(field -> field.getDirectives().stream()).collect(Collectors.toList());
             return builder
                     .directives(directives)
@@ -326,4 +361,27 @@ public class ExecutableNormalizedOperationToAstCompiler {
         return Assert.assertShouldNeverHappen("Unknown operation kind " + operationKind);
     }
 
+    //    TODO: This name is terrible
+    public static class ExecutionFragmentDetails {
+        private final String typeName;
+        private final DeferLabel deferLabel;
+
+        public ExecutionFragmentDetails(String typeName, DeferLabel deferLabel) {
+            this.typeName = typeName;
+            this.deferLabel = deferLabel;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            ExecutionFragmentDetails that = (ExecutionFragmentDetails) o;
+            return Objects.equals(typeName, that.typeName) && Objects.equals(deferLabel, that.deferLabel);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(typeName, deferLabel);
+        }
+    }
 }

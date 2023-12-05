@@ -16,23 +16,25 @@ import spock.lang.Specification
 class ExecutableNormalizedOperationFactoryDeferTest extends Specification {
     String schema = """
             directive @defer(if: Boolean, label: String) on FRAGMENT_SPREAD | INLINE_FRAGMENT
-            directive @stream(if: Boolean, label: String, initialCount: Int = 0) on FIELD
 
             type Query {
                 dog: Dog
+                animal: Animal
+            }
+            
+            interface Animal {
+                name: String
             }
 
-            type Dog {
+            type Dog implements Animal {
                 name: String
                 breed: String
                 owner: Person
-                friends: [Dog]
             }
             
             type Person {
                 firstname: String
                 lastname: String
-                friends: [Person]
             }
         """
 
@@ -321,6 +323,39 @@ class ExecutableNormalizedOperationFactoryDeferTest extends Specification {
         then:
         printedTree == ['Query.dog',
                         'Dog.name defer[dog-defer]',
+                        'Dog.owner defer[dog-defer]',
+                        'Person.firstname',
+                        'Person.lastname defer[lastname-defer]',
+        ]
+    }
+
+    def "nested defers - with named spreads"() {
+        given:
+
+        String query = '''
+          query q {
+            animal {
+                name
+                ... on Dog @defer(label:"dog-defer") {
+                    owner {
+                        firstname
+                        ... @defer(label: "lastname-defer") {
+                            lastname 
+                        }
+                    }
+                }
+            }
+          }
+        '''
+
+        Map<String, Object> variables = [:]
+
+        when:
+        List<String> printedTree = executeQueryAndPrintTree(query, variables)
+
+        then:
+        printedTree == ['Query.animal',
+                        'Dog.name',
                         'Dog.owner defer[dog-defer]',
                         'Person.firstname',
                         'Person.lastname defer[lastname-defer]',

@@ -40,23 +40,24 @@ class ExecutableNormalizedOperationToAstCompilerDeferTest extends Specification 
 
     String sdl = """
             directive @defer(if: Boolean, label: String) on FRAGMENT_SPREAD | INLINE_FRAGMENT
-            directive @stream(if: Boolean, label: String, initialCount: Int = 0) on FIELD
 
             type Query {
                 dog: Dog
+                animal: Animal
+            }
+            
+            interface Animal {
+                name: String
             }
 
-            type Dog {
+            type Dog implements Animal {
                 name: String
                 breed: String
                 owner: Person
-                friends: [Dog]
             }
             
             type Person {
                 firstname: String
-                lastname: String
-                friends: [Person]
             }
         """
 
@@ -78,13 +79,177 @@ class ExecutableNormalizedOperationToAstCompilerDeferTest extends Specification 
         def printed = AstPrinter.printAst(new AstSorter().sort(result.document))
         then:
         printed == '''{
-    dog {
-        name
-        ... @defer(label: "breed-defer") {
-            breed
-        }
+  dog {
+    name
+    ... @defer(label: "breed-defer") {
+      breed
     }
   }
+}
+'''
+    }
+
+    def "simple defer with named spread"() {
+        String query = """
+          query q {
+            dog {
+                name
+                ... on Dog @defer(label: "breed-defer") {
+                    breed
+                }
+            }
+          }
+        """
+        GraphQLSchema schema = mkSchema(sdl)
+        def fields = createNormalizedFields(schema, query)
+        when:
+        def result = compileToDocument(schema, QUERY, null, fields, noVariables)
+        def printed = AstPrinter.printAst(new AstSorter().sort(result.document))
+        then:
+        printed == '''{
+  dog {
+    name
+    ... @defer(label: "breed-defer") {
+      breed
+    }
+  }
+}
+'''
+    }
+
+    def "multiple labels on the same field"() {
+        String query = """
+          query q {
+            dog {
+                name
+                ... @defer(label: "breed-defer") {
+                    breed
+                }
+                ... @defer(label: "breed-defer-2") {
+                    breed
+                }
+            }
+          }
+        """
+        GraphQLSchema schema = mkSchema(sdl)
+        def fields = createNormalizedFields(schema, query)
+        when:
+        def result = compileToDocument(schema, QUERY, null, fields, noVariables)
+        def printed = AstPrinter.printAst(new AstSorter().sort(result.document))
+        then:
+        printed == '''{
+  dog {
+    name
+    ... @defer(label: "breed-defer") {
+      breed
+    }
+    ... @defer(label: "breed-defer-2") {
+      breed
+    }
+  }
+}
+'''
+    }
+
+    def "multiple defers with same label on the same field"() {
+        String query = """
+          query q {
+            dog {
+                name
+                ... @defer(label: "breed-defer") {
+                    breed
+                }
+                ... @defer(label: "breed-defer") {
+                    breed
+                }
+            }
+          }
+        """
+        GraphQLSchema schema = mkSchema(sdl)
+        def fields = createNormalizedFields(schema, query)
+        when:
+        def result = compileToDocument(schema, QUERY, null, fields, noVariables)
+        def printed = AstPrinter.printAst(new AstSorter().sort(result.document))
+        then:
+        printed == '''{
+  dog {
+    name
+    ... @defer(label: "breed-defer") {
+      breed
+    }
+  }
+}
+'''
+    }
+
+    def "multiple defers without label on the same field"() {
+        String query = """
+          query q {
+            dog {
+                name
+                ... @defer {
+                    breed
+                }
+                ... @defer {
+                    breed
+                }
+            }
+          }
+        """
+        GraphQLSchema schema = mkSchema(sdl)
+        def fields = createNormalizedFields(schema, query)
+        when:
+        def result = compileToDocument(schema, QUERY, null, fields, noVariables)
+        def printed = AstPrinter.printAst(new AstSorter().sort(result.document))
+        then:
+        printed == '''{
+  dog {
+    name
+    ... @defer {
+      breed
+    }
+  }
+}
+'''
+    }
+
+    def "defer on type spread"() {
+        String query = """
+          query q {
+            animal {
+              ... on Dog @defer {
+                breed
+              } 
+              ... on Dog {
+                name
+              } 
+              ... on Dog @defer(label: "owner-defer") {
+                owner {
+                    firstname
+                }
+              } 
+            }
+          }
+        """
+        GraphQLSchema schema = mkSchema(sdl)
+        def fields = createNormalizedFields(schema, query)
+        when:
+        def result = compileToDocument(schema, QUERY, null, fields, noVariables)
+        def printed = AstPrinter.printAst(new AstSorter().sort(result.document))
+        then:
+        printed == '''{
+  animal {
+    name
+    ... on Dog @defer {
+      breed
+    }
+    ... on Dog @defer(label: "owner-defer") {
+      owner {
+        firstname
+      }
+    }
+  }
+}
 '''
     }
 

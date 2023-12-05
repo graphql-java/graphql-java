@@ -2,7 +2,7 @@ package graphql.normalized.incremental;
 
 import graphql.ExperimentalApi;
 
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Set;
 
 /**
@@ -24,11 +24,11 @@ import java.util.Set;
  *    }
  *  }
  *  </pre>
- *  Will result on a ENF linked to a {@link DeferExecution} with both labels: "name-defer" and "another-name-defer"
+ * Will result on a ENF linked to a {@link DeferExecution} with both labels: "name-defer" and "another-name-defer"
  */
 @ExperimentalApi
 public class DeferExecution {
-    private final Set<DeferLabel> labels = new HashSet<>();
+    private final Set<DeferLabel> labels = new LinkedHashSet<>();
 
     public void addLabel(DeferLabel label) {
         this.labels.add(label);
