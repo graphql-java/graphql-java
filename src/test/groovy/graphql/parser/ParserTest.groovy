@@ -4,6 +4,7 @@ package graphql.parser
 import graphql.language.Argument
 import graphql.language.ArrayValue
 import graphql.language.AstComparator
+import graphql.language.AstPrinter
 import graphql.language.BooleanValue
 import graphql.language.Description
 import graphql.language.Directive
@@ -48,6 +49,76 @@ import spock.lang.Unroll
 import static graphql.parser.ParserEnvironment.*
 
 class ParserTest extends Specification {
+
+    /*
+    Spec time
+    StringCharacter...
+    SourceCharacter BUT NOT " or \ or line terminator
+    \ u escaped unicode
+    \ escapedcharacter... which is one of " \ / b f n r t
+    wup wup wup looks like it should be allowed
+     */
+    def "investigate bug report"() {
+        given:
+//        println("java check")
+//        println("\"\\\"\"")
+        // ok ones - as expected
+//        def src = "\"description\" scalar A"
+
+        // failing ones
+        // parses but can't print
+        // from the error report - at least what can be parsed should be printed
+        def src = "\"\\\"\" scalar A"
+        // Mega weird, where did the backslash go??
+        // After second parse - failing for an expected reason
+        // Invalid syntax with ANTLR error 'token recognition error at: '"""\nscalar A\n'' at line 1 column 1
+
+        // parses
+//        def src = "\"\f\" scalar A"
+//        def src = "\"\b\" scalar A"
+//        def src = "\"\t\" scalar A"
+//        def src = "\"/\" scalar A"
+        // what about unicode characters - same behaviour so weeeeird
+        // this is t for tab
+//        def src = "\"\u0009\" scalar A"
+
+        // Does not parse
+//        def src = "\"\\\" scalar A"
+//        Invalid syntax with ANTLR error 'token recognition error at: '"\" scalar A'' at line 1 column 1
+
+//        def src = "\"\n\" scalar A"
+//        Invalid syntax with ANTLR error 'token recognition error at: '"\n'' at line 1 column 1
+//        graphql.parser.InvalidSyntaxException: Invalid syntax with ANTLR error 'token recognition error at: '"\n'' at line 1 column 1
+
+//        def src = "\"\r\" scalar A"
+//        Invalid syntax with ANTLR error 'token recognition error at: '"\r'' at line 1 column 1
+        // the problem is that \r is not an allowed SOURCE CHARACTER. But it is ok as an escaped character
+        // but it is being seen as the combined unit "\r" and not the separate tokens \ and r... this is a lexer issue
+
+// dz todo: I notice the final closing quotation for some reason gets changed to a singular... weird
+
+
+        // correctly not parse
+//        def src = "\"\"\" scalar A" - this is actually wrong yep
+//        def src = "\"\u0022\" scalar A"
+//        Invalid syntax with ANTLR error 'token recognition error at: '""" scalar A'' at line 1 column 1 - this was a double quote yah also not ok
+
+
+//        fragment EscapedCharacter :  ["\\/bfnrt];
+        def env = newParserEnvironment()
+                .document(src)
+                .parserOptions(
+                        ParserOptions.newParserOptions()
+                                .captureIgnoredChars(true)
+                                .build()
+                )
+                .build()
+        def doc = Parser.parse(env)
+        def printed = AstPrinter.printAst(doc)
+        println("=== Parsed and printed ===")
+        println(printed)
+        Parser.parse(printed)
+    }
 
     def "parse anonymous simple query"() {
         given:

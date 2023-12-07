@@ -361,6 +361,7 @@ public class Parser {
                     msgKey = "InvalidSyntax.noMessage";
                     args = ImmutableList.of(sourceLocation.getLine(), sourceLocation.getColumn());
                 } else {
+                    // dz todo we are here
                     msgKey = "InvalidSyntax.full";
                     args = ImmutableList.of(antlerMsg, sourceLocation.getLine(), sourceLocation.getColumn());
                 }

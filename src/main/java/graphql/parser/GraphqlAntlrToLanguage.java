@@ -844,6 +844,7 @@ public class GraphqlAntlrToLanguage {
     }
 
     protected Description newDescription(GraphqlParser.DescriptionContext descriptionCtx) {
+        // dz todo here is a description
         if (descriptionCtx == null) {
             return null;
         }
