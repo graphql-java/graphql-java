@@ -175,14 +175,12 @@ public class ExecutableNormalizedOperationToAstCompiler {
                         });
 
             } else if (nf.getDeferExecution() != null) {
-                selectionForNormalizedField(schema, nf, normalizedFieldToQueryDirectives, variableAccumulator)
-                        .forEach((objectTypeName, field) ->
-                                nf.getDeferExecution().getLabels().stream()
-                                        .map(DeferLabel::getValue)
-                                        .forEach(label -> fieldsByFragmentDetails
-                                                .computeIfAbsent(new ExecutionFragmentDetails(null, new DeferLabel(label)), ignored -> new ArrayList<>())
-                                                .add(field))
-                        );
+                Field field = selectionForNormalizedField(schema, parentOutputType, nf, normalizedFieldToQueryDirectives, variableAccumulator);
+                nf.getDeferExecution().getLabels().stream()
+                        .map(DeferLabel::getValue)
+                        .forEach(label -> fieldsByFragmentDetails
+                                .computeIfAbsent(new ExecutionFragmentDetails(null, new DeferLabel(label)), ignored -> new ArrayList<>())
+                                .add(field));
             } else {
                 selections.add(selectionForNormalizedField(schema, parentOutputType, nf, normalizedFieldToQueryDirectives, variableAccumulator));
             }
@@ -362,7 +360,7 @@ public class ExecutableNormalizedOperationToAstCompiler {
     }
 
     //    TODO: This name is terrible
-    public static class ExecutionFragmentDetails {
+    private static class ExecutionFragmentDetails {
         private final String typeName;
         private final DeferLabel deferLabel;
 

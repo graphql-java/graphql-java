@@ -56,8 +56,21 @@ class ExecutableNormalizedOperationToAstCompilerDeferTest extends Specification 
                 owner: Person
             }
             
+            type Cat implements Animal {
+                name: String
+                breed: String
+                color: String
+                siblings: [Cat]
+            }
+            
+            type Fish implements Animal {
+                name: String
+            }
+            
             type Person {
                 firstname: String
+                lastname: String
+                bestFriend: Person
             }
         """
 
@@ -246,6 +259,121 @@ class ExecutableNormalizedOperationToAstCompilerDeferTest extends Specification 
     ... on Dog @defer(label: "owner-defer") {
       owner {
         firstname
+      }
+    }
+  }
+}
+'''
+    }
+
+    def "2 fragments on non-conditional fields"() {
+        String query = """
+          query q {
+            animal {
+                ... on Cat @defer {
+                    name
+                }
+                ... on Animal @defer {
+                    name
+                }
+            }
+          }
+        """
+        GraphQLSchema schema = mkSchema(sdl)
+        def fields = createNormalizedFields(schema, query)
+        when:
+        def result = compileToDocument(schema, QUERY, null, fields, noVariables)
+        def printed = AstPrinter.printAst(new AstSorter().sort(result.document))
+        then:
+        printed == '''{
+  animal {
+    ... @defer {
+      name
+    }
+  }
+}
+'''
+    }
+
+    def "2 fragments on conditional fields"() {
+        String query = """
+          query q {
+            animal {
+                ... on Cat @defer {
+                    breed
+                }
+                ... on Dog @defer {
+                    breed
+                }
+            }
+          }
+        """
+        GraphQLSchema schema = mkSchema(sdl)
+        def fields = createNormalizedFields(schema, query)
+        when:
+        def result = compileToDocument(schema, QUERY, null, fields, noVariables)
+        def printed = AstPrinter.printAst(new AstSorter().sort(result.document))
+        then:
+        printed == '''{
+  animal {
+    name
+  }
+}
+'''
+    }
+
+    def "nested defer"() {
+        String query = """
+          query q {
+            animal {
+                ... on Cat @defer {
+                    name
+                }
+                ... on Animal @defer {
+                    name
+                    ... on Dog @defer {
+                        owner {
+                            firstname
+                            ... @defer {
+                                lastname
+                            }
+                            ... @defer {
+                                bestFriend {
+                                    firstname
+                                    ... @defer {
+                                        lastname
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+          }
+        """
+        GraphQLSchema schema = mkSchema(sdl)
+        def fields = createNormalizedFields(schema, query)
+        when:
+        def result = compileToDocument(schema, QUERY, null, fields, noVariables)
+        def printed = AstPrinter.printAst(new AstSorter().sort(result.document))
+        then:
+        printed == '''{
+  animal {
+    ... @defer {
+      name
+    }
+    ... on Dog @defer {
+      owner {
+        firstname
+        ... @defer {
+          bestFriend {
+            firstname
+            ... @defer {
+              lastname
+            }
+          }
+          lastname
+        }
       }
     }
   }
