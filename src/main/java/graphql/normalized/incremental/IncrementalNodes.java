@@ -40,7 +40,7 @@ public class IncrementalNodes {
                 return new DeferLabel(null);
             }
 
-            Assert.assertTrue(label instanceof String, () -> String.format("The '%s' directive MUST have a value for the 'if' argument", DeferDirective.getName()));
+            Assert.assertTrue(label instanceof String, () -> String.format("The 'label' argument from the '%s' directive MUST contain a String value", DeferDirective.getName()));
 
             return new DeferLabel((String) label);
 
