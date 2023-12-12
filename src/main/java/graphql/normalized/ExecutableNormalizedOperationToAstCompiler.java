@@ -152,7 +152,7 @@ public class ExecutableNormalizedOperationToAstCompiler {
                                                                       VariableAccumulator variableAccumulator) {
         ImmutableList.Builder<Selection<?>> selections = ImmutableList.builder();
 
-        // All conditional fields go here instead of directly to selections, so they can be grouped together
+        // All conditional and deferred fields go here instead of directly to selections, so they can be grouped together
         // in the same inline fragment in the output
         //
         Map<ExecutionFragmentDetails, List<Field>> fieldsByFragmentDetails = new LinkedHashMap<>();

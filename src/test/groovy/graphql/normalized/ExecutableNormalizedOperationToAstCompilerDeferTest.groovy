@@ -24,20 +24,6 @@ class ExecutableNormalizedOperationToAstCompilerDeferTest extends Specification 
         }
     }
 
-    VariablePredicate jsonVariables = new VariablePredicate() {
-        @Override
-        boolean shouldMakeVariable(ExecutableNormalizedField executableNormalizedField, String argName, NormalizedInputValue normalizedInputValue) {
-            "JSON" == normalizedInputValue.unwrappedTypeName && normalizedInputValue.value != null
-        }
-    }
-
-    VariablePredicate allVariables = new VariablePredicate() {
-        @Override
-        boolean shouldMakeVariable(ExecutableNormalizedField executableNormalizedField, String argName, NormalizedInputValue normalizedInputValue) {
-            return true
-        }
-    }
-
     String sdl = """
             directive @defer(if: Boolean, label: String) on FRAGMENT_SPREAD | INLINE_FRAGMENT
 
@@ -252,9 +238,11 @@ class ExecutableNormalizedOperationToAstCompilerDeferTest extends Specification 
         then:
         printed == '''{
   animal {
-    name
     ... on Dog @defer {
       breed
+    }
+    ... on Dog {
+      name
     }
     ... on Dog @defer(label: "owner-defer") {
       owner {
@@ -316,7 +304,12 @@ class ExecutableNormalizedOperationToAstCompilerDeferTest extends Specification 
         then:
         printed == '''{
   animal {
-    name
+    ... on Cat @defer {
+      breed
+    }
+    ... on Dog @defer {
+      breed
+    }
   }
 }
 '''
