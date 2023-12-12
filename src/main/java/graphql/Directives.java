@@ -42,14 +42,6 @@ public class Directives {
     @ExperimentalApi
     public static final DirectiveDefinition ONE_OF_DIRECTIVE_DEFINITION;
 
-    /**
-     * The @defer directive can be used to defer sending data for a field till later in the query.  This is an opt-in
-     * directive that is not available unless it is explicitly put into the schema.
-     */
-//    @ExperimentalApi
-//    public static final DirectiveDefinition DEFER_DIRECTIVE_DEFINITION;
-
-
     static {
         DEPRECATED_DIRECTIVE_DEFINITION = DirectiveDefinition.newDirectiveDefinition()
                 .name(DEPRECATED)
@@ -84,36 +76,13 @@ public class Directives {
                 .directiveLocation(newDirectiveLocation().name(INPUT_OBJECT.name()).build())
                 .description(createDescription("Indicates an Input Object is a OneOf Input Object."))
                 .build();
-
-//        DEFER_DIRECTIVE_DEFINITION = DirectiveDefinition.newDirectiveDefinition()
-//                .name(DEFER)
-//                .description(createDescription("This directive allows results to be deferred during execution"))
-//                .directiveLocation(newDirectiveLocation().name(FRAGMENT_SPREAD.name()).build())
-//                .directiveLocation(newDirectiveLocation().name(INLINE_FRAGMENT.name()).build())
-//                .inputValueDefinition(
-//                        newInputValueDefinition()
-//                                .name("if")
-//                                .description(createDescription("Deferred behaviour is controlled by this argument"))
-//                                .type(newTypeName().name("Boolean").build())
-//                                .defaultValue(BooleanValue.newBooleanValue(true).build())
-//                                .build())
-//                .inputValueDefinition(
-//                        newInputValueDefinition()
-//                                // NOTE: as per the spec draft [https://github.com/graphql/graphql-spec/pull/742/files]:
-//                                // > `label` must not be provided as a variable.
-//                                // VALIDATION: the value of "label" MUST be unique across @defer and @stream in a query
-//                                .name("label")
-//                                .description(createDescription("A unique label that represents the fragment being deferred"))
-//                                .type(newTypeName().name("Boolean").build())
-//                                .defaultValue(BooleanValue.newBooleanValue(true).build())
-//                                .build())
-//                .build();
     }
 
     /**
      * The @defer directive can be used to defer sending data for a field till later in the query.  This is an opt-in
      * directive that is not available unless it is explicitly put into the schema.
      */
+    @ExperimentalApi
     public static final GraphQLDirective DeferDirective = GraphQLDirective.newDirective()
             .name("defer")
             .description("This directive allows results to be deferred during execution")
