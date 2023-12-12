@@ -1,6 +1,6 @@
 package graphql.normalized
 
-import graphql.AssertException
+
 import graphql.ExecutionInput
 import graphql.GraphQL
 import graphql.TestUtil
@@ -390,6 +390,64 @@ class ExecutableNormalizedOperationFactoryDeferTest extends Specification {
         ]
     }
 
+    def "'if' argument is respected"() {
+        given:
+
+        String query = '''
+          query q {
+            dog {
+                ... @defer(if: false, label: "name-defer") {
+                    name 
+                }
+                
+                ... @defer(if: true, label: "another-name-defer") {
+                    name 
+                }
+            }
+          }
+          
+        '''
+
+        Map<String, Object> variables = [:]
+
+        when:
+        List<String> printedTree = executeQueryAndPrintTree(query, variables)
+
+        then:
+        printedTree == ['Query.dog',
+                        'Dog.name defer[another-name-defer]',
+        ]
+    }
+
+    def "'if' argument with different values on same field and same label"() {
+        given:
+
+        String query = '''
+          query q {
+            dog {
+                ... @defer(if: false, label: "name-defer") {
+                    name 
+                }
+                
+                ... @defer(if: true, label: "name-defer") {
+                    name 
+                }
+            }
+          }
+          
+        '''
+
+        Map<String, Object> variables = [:]
+
+        when:
+        List<String> printedTree = executeQueryAndPrintTree(query, variables)
+
+        then:
+        printedTree == ['Query.dog',
+                        'Dog.name defer[name-defer]',
+        ]
+    }
+
     private List<String> executeQueryAndPrintTree(String query, Map<String, Object> variables) {
         assertValidQuery(graphQLSchema, query, variables)
         Document document = TestUtil.parseQuery(query)
@@ -416,7 +474,7 @@ class ExecutableNormalizedOperationFactoryDeferTest extends Specification {
                 }
 
                 def deferLabels = field.getDeferExecution().labels
-                        .collect {it.value}
+                        .collect { it.value }
                         .join(",")
 
                 return " defer[" + deferLabels + "]"
