@@ -3,6 +3,7 @@ package graphql.normalized;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import graphql.Assert;
+import graphql.ExperimentalApi;
 import graphql.PublicApi;
 import graphql.execution.directives.QueryDirectives;
 import graphql.introspection.Introspection;
@@ -124,10 +125,69 @@ public class ExecutableNormalizedOperationToAstCompiler {
                                                    @NotNull List<ExecutableNormalizedField> topLevelFields,
                                                    @NotNull Map<ExecutableNormalizedField, QueryDirectives> normalizedFieldToQueryDirectives,
                                                    @Nullable VariablePredicate variablePredicate) {
+        return compileToDocument(schema, operationKind, operationName, topLevelFields, normalizedFieldToQueryDirectives, variablePredicate, false);
+    }
+
+
+    /**
+     * This will compile an operation text {@link Document} with possibly variables from the given {@link ExecutableNormalizedField}s, with support for the experimental @defer directive.
+     * <p>
+     * The {@link VariablePredicate} is used called to decide if the given argument values should be made into a variable
+     * OR inlined into the operation text as a graphql literal.
+     *
+     * @param schema            the graphql schema to use
+     * @param operationKind     the kind of operation
+     * @param operationName     the name of the operation to use
+     * @param topLevelFields    the top level {@link ExecutableNormalizedField}s to start from
+     * @param variablePredicate the variable predicate that decides if arguments turn into variables or not during compilation
+     * @return a {@link CompilerResult} object
+     * @see ExecutableNormalizedOperationToAstCompiler#compileToDocument(GraphQLSchema, OperationDefinition.Operation, String, List, VariablePredicate)
+     */
+    @ExperimentalApi
+    public static CompilerResult compileToDocumentWithDeferSupport(@NotNull GraphQLSchema schema,
+                                                                   @NotNull OperationDefinition.Operation operationKind,
+                                                                   @Nullable String operationName,
+                                                                   @NotNull List<ExecutableNormalizedField> topLevelFields,
+                                                                   @Nullable VariablePredicate variablePredicate) {
+        return compileToDocumentWithDeferSupport(schema, operationKind, operationName, topLevelFields, Map.of(), variablePredicate);
+    }
+
+    /**
+     * This will compile an operation text {@link Document} with possibly variables from the given {@link ExecutableNormalizedField}s, with support for the experimental @defer directive.
+     * <p>
+     * The {@link VariablePredicate} is used called to decide if the given argument values should be made into a variable
+     * OR inlined into the operation text as a graphql literal.
+     *
+     * @param schema                           the graphql schema to use
+     * @param operationKind                    the kind of operation
+     * @param operationName                    the name of the operation to use
+     * @param topLevelFields                   the top level {@link ExecutableNormalizedField}s to start from
+     * @param normalizedFieldToQueryDirectives the map of normalized field to query directives
+     * @param variablePredicate                the variable predicate that decides if arguments turn into variables or not during compilation
+     * @return a {@link CompilerResult} object
+     * @see ExecutableNormalizedOperationToAstCompiler#compileToDocument(GraphQLSchema, OperationDefinition.Operation, String, List, Map, VariablePredicate)
+     */
+    @ExperimentalApi
+    public static CompilerResult compileToDocumentWithDeferSupport(@NotNull GraphQLSchema schema,
+                                                                   @NotNull OperationDefinition.Operation operationKind,
+                                                                   @Nullable String operationName,
+                                                                   @NotNull List<ExecutableNormalizedField> topLevelFields,
+                                                                   @NotNull Map<ExecutableNormalizedField, QueryDirectives> normalizedFieldToQueryDirectives,
+                                                                   @Nullable VariablePredicate variablePredicate) {
+        return compileToDocument(schema, operationKind, operationName, topLevelFields, normalizedFieldToQueryDirectives, variablePredicate, true);
+    }
+
+    private static CompilerResult compileToDocument(@NotNull GraphQLSchema schema,
+                                                    @NotNull OperationDefinition.Operation operationKind,
+                                                    @Nullable String operationName,
+                                                    @NotNull List<ExecutableNormalizedField> topLevelFields,
+                                                    @NotNull Map<ExecutableNormalizedField, QueryDirectives> normalizedFieldToQueryDirectives,
+                                                    @Nullable VariablePredicate variablePredicate,
+                                                    boolean deferSupport) {
         GraphQLObjectType operationType = getOperationType(schema, operationKind);
 
         VariableAccumulator variableAccumulator = new VariableAccumulator(variablePredicate);
-        List<Selection<?>> selections = subselectionsForNormalizedField(schema, operationType.getName(), topLevelFields, normalizedFieldToQueryDirectives, variableAccumulator);
+        List<Selection<?>> selections = subselectionsForNormalizedField(schema, operationType.getName(), topLevelFields, normalizedFieldToQueryDirectives, variableAccumulator, deferSupport);
         SelectionSet selectionSet = new SelectionSet(selections);
 
         OperationDefinition.Builder definitionBuilder = OperationDefinition.newOperationDefinition()
@@ -149,7 +209,56 @@ public class ExecutableNormalizedOperationToAstCompiler {
                                                                       @NotNull String parentOutputType,
                                                                       List<ExecutableNormalizedField> executableNormalizedFields,
                                                                       @NotNull Map<ExecutableNormalizedField, QueryDirectives> normalizedFieldToQueryDirectives,
-                                                                      VariableAccumulator variableAccumulator) {
+                                                                      VariableAccumulator variableAccumulator,
+                                                                      boolean deferSupport) {
+        if (deferSupport) {
+            return subselectionsForNormalizedFieldWithDeferSupport(schema, parentOutputType, executableNormalizedFields, normalizedFieldToQueryDirectives, variableAccumulator);
+        } else {
+            return subselectionsForNormalizedFieldNoDeferSupport(schema, parentOutputType, executableNormalizedFields, normalizedFieldToQueryDirectives, variableAccumulator);
+        }
+    }
+
+    private static List<Selection<?>> subselectionsForNormalizedFieldNoDeferSupport(GraphQLSchema schema,
+                                                                                    @NotNull String parentOutputType,
+                                                                                    List<ExecutableNormalizedField> executableNormalizedFields,
+                                                                                    @NotNull Map<ExecutableNormalizedField, QueryDirectives> normalizedFieldToQueryDirectives,
+                                                                                    VariableAccumulator variableAccumulator) {
+        ImmutableList.Builder<Selection<?>> selections = ImmutableList.builder();
+
+        // All conditional fields go here instead of directly to selections, so they can be grouped together
+        // in the same inline fragment in the output
+        Map<String, List<Field>> fieldsByTypeCondition = new LinkedHashMap<>();
+
+        for (ExecutableNormalizedField nf : executableNormalizedFields) {
+            if (nf.isConditional(schema)) {
+                selectionForNormalizedField(schema, nf, normalizedFieldToQueryDirectives, variableAccumulator, false)
+                        .forEach((objectTypeName, field) ->
+                                fieldsByTypeCondition
+                                        .computeIfAbsent(objectTypeName, ignored -> new ArrayList<>())
+                                        .add(field));
+            } else {
+                selections.add(selectionForNormalizedField(schema, parentOutputType, nf, normalizedFieldToQueryDirectives, variableAccumulator, false));
+            }
+        }
+
+        fieldsByTypeCondition.forEach((objectTypeName, fields) -> {
+            TypeName typeName = newTypeName(objectTypeName).build();
+            InlineFragment inlineFragment = newInlineFragment()
+                    .typeCondition(typeName)
+                    .selectionSet(selectionSet(fields))
+                    .build();
+            selections.add(inlineFragment);
+        });
+
+        return selections.build();
+    }
+
+
+    private static List<Selection<?>> subselectionsForNormalizedFieldWithDeferSupport(GraphQLSchema schema,
+                                                                                      @NotNull String parentOutputType,
+                                                                                      List<ExecutableNormalizedField> executableNormalizedFields,
+                                                                                      @NotNull Map<ExecutableNormalizedField, QueryDirectives> normalizedFieldToQueryDirectives,
+                                                                                      VariableAccumulator variableAccumulator) {
         ImmutableList.Builder<Selection<?>> selections = ImmutableList.builder();
 
         // All conditional and deferred fields go here instead of directly to selections, so they can be grouped together
@@ -159,7 +268,7 @@ public class ExecutableNormalizedOperationToAstCompiler {
 
         for (ExecutableNormalizedField nf : executableNormalizedFields) {
             if (nf.isConditional(schema)) {
-                selectionForNormalizedField(schema, nf, normalizedFieldToQueryDirectives, variableAccumulator)
+                selectionForNormalizedField(schema, nf, normalizedFieldToQueryDirectives, variableAccumulator, true)
                         .forEach((objectTypeName, field) -> {
                             if (nf.getDeferExecution() == null) {
                                 fieldsByFragmentDetails
@@ -175,14 +284,14 @@ public class ExecutableNormalizedOperationToAstCompiler {
                         });
 
             } else if (nf.getDeferExecution() != null) {
-                Field field = selectionForNormalizedField(schema, parentOutputType, nf, normalizedFieldToQueryDirectives, variableAccumulator);
+                Field field = selectionForNormalizedField(schema, parentOutputType, nf, normalizedFieldToQueryDirectives, variableAccumulator, true);
                 nf.getDeferExecution().getLabels().stream()
                         .map(DeferLabel::getValue)
                         .forEach(label -> fieldsByFragmentDetails
                                 .computeIfAbsent(new ExecutionFragmentDetails(null, new DeferLabel(label)), ignored -> new ArrayList<>())
                                 .add(field));
             } else {
-                selections.add(selectionForNormalizedField(schema, parentOutputType, nf, normalizedFieldToQueryDirectives, variableAccumulator));
+                selections.add(selectionForNormalizedField(schema, parentOutputType, nf, normalizedFieldToQueryDirectives, variableAccumulator, true));
             }
         }
 
@@ -218,11 +327,12 @@ public class ExecutableNormalizedOperationToAstCompiler {
     private static Map<String, Field> selectionForNormalizedField(GraphQLSchema schema,
                                                                   ExecutableNormalizedField executableNormalizedField,
                                                                   @NotNull Map<ExecutableNormalizedField, QueryDirectives> normalizedFieldToQueryDirectives,
-                                                                  VariableAccumulator variableAccumulator) {
+                                                                  VariableAccumulator variableAccumulator,
+                                                                  boolean deferSupport) {
         Map<String, Field> groupedFields = new LinkedHashMap<>();
 
         for (String objectTypeName : executableNormalizedField.getObjectTypeNames()) {
-            groupedFields.put(objectTypeName, selectionForNormalizedField(schema, objectTypeName, executableNormalizedField, normalizedFieldToQueryDirectives, variableAccumulator));
+            groupedFields.put(objectTypeName, selectionForNormalizedField(schema, objectTypeName, executableNormalizedField, normalizedFieldToQueryDirectives, variableAccumulator, deferSupport));
         }
 
         return groupedFields;
@@ -235,7 +345,8 @@ public class ExecutableNormalizedOperationToAstCompiler {
                                                      String objectTypeName,
                                                      ExecutableNormalizedField executableNormalizedField,
                                                      @NotNull Map<ExecutableNormalizedField, QueryDirectives> normalizedFieldToQueryDirectives,
-                                                     VariableAccumulator variableAccumulator) {
+                                                     VariableAccumulator variableAccumulator,
+                                                     boolean deferSupport) {
         final List<Selection<?>> subSelections;
         if (executableNormalizedField.getChildren().isEmpty()) {
             subSelections = emptyList();
@@ -248,7 +359,8 @@ public class ExecutableNormalizedOperationToAstCompiler {
                     fieldOutputType.getName(),
                     executableNormalizedField.getChildren(),
                     normalizedFieldToQueryDirectives,
-                    variableAccumulator
+                    variableAccumulator,
+                    deferSupport
             );
         }
 
