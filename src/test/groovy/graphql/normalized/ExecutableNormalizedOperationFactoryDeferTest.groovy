@@ -453,7 +453,13 @@ class ExecutableNormalizedOperationFactoryDeferTest extends Specification {
         Document document = TestUtil.parseQuery(query)
         ExecutableNormalizedOperationFactory dependencyGraph = new ExecutableNormalizedOperationFactory()
 
-        def tree = dependencyGraph.createExecutableNormalizedOperationWithRawVariables(graphQLSchema, document, null, RawVariables.of(variables))
+        def tree = dependencyGraph.createExecutableNormalizedOperationWithRawVariablesWithDeferSupport(
+                graphQLSchema,
+                document,
+                null,
+                RawVariables.of(variables),
+                ExecutableNormalizedOperationFactory.Options.defaultOptions(),
+        )
         return printTreeWithIncrementalExecutionDetails(tree)
     }
 

@@ -3,6 +3,7 @@ package graphql.normalized;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import graphql.Assert;
+import graphql.ExperimentalApi;
 import graphql.Internal;
 import graphql.Mutable;
 import graphql.PublicApi;
@@ -372,6 +373,7 @@ public class ExecutableNormalizedField {
      * TODO Javadoc
      * @return
      */
+    @ExperimentalApi
     public DeferExecution getDeferExecution() {
         return deferExecution;
     }
@@ -670,6 +672,8 @@ public class ExecutableNormalizedField {
             return this;
         }
 
+
+        @ExperimentalApi
         public Builder deferExecution(DeferExecution deferExecution) {
             this.deferExecution = deferExecution;
             return this;

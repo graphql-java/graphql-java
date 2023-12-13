@@ -379,7 +379,13 @@ class ExecutableNormalizedOperationToAstCompilerDeferTest extends Specification 
         Document originalDocument = TestUtil.parseQuery(query)
 
         ExecutableNormalizedOperationFactory dependencyGraph = new ExecutableNormalizedOperationFactory()
-        return dependencyGraph.createExecutableNormalizedOperationWithRawVariables(schema, originalDocument, null, RawVariables.of(variables))
+        return dependencyGraph.createExecutableNormalizedOperationWithRawVariablesWithDeferSupport(
+                schema,
+                originalDocument,
+                null,
+                RawVariables.of(variables),
+                ExecutableNormalizedOperationFactory.Options.defaultOptions()
+        )
     }
 
     private List<ExecutableNormalizedField> createNormalizedFields(GraphQLSchema schema, String query, Map<String, Object> variables = [:]) {
