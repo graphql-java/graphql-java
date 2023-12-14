@@ -79,8 +79,8 @@ public class Directives {
     }
 
     /**
-     * The @defer directive can be used to defer sending data for a field till later in the query.  This is an opt-in
-     * directive that is not available unless it is explicitly put into the schema.
+     * The @defer directive can be used to defer sending data for a fragment until later in the query.
+     * This is an opt-in directive that is not available unless it is explicitly put into the schema.
      */
     @ExperimentalApi
     public static final GraphQLDirective DeferDirective = GraphQLDirective.newDirective()
@@ -94,9 +94,6 @@ public class Directives {
                     .defaultValueLiteral(BooleanValue.newBooleanValue(true).build())
             )
             .argument(newArgument()
-                    // NOTE: as per the spec draft [https://github.com/graphql/graphql-spec/pull/742/files]:
-                    // > `label` must not be provided as a variable.
-                    // VALIDATION: the value of "label" MUST be unique across @defer and @stream in a query
                     .name("label")
                     .type(GraphQLString)
                     .description("A unique label that represents the fragment being deferred")

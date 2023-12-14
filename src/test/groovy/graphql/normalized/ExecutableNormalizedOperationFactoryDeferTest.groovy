@@ -419,6 +419,35 @@ class ExecutableNormalizedOperationFactoryDeferTest extends Specification {
         ]
     }
 
+    def "'if' argument is respected when value is passed through variable"() {
+        given:
+
+        String query = '''
+          query q($if1: Boolean, $if2: Boolean)  {
+            dog {
+                ... @defer(if: $if1, label: "name-defer") {
+                    name 
+                }
+                
+                ... @defer(if: $if2, label: "another-name-defer") {
+                    name 
+                }
+            }
+          }
+          
+        '''
+
+        Map<String, Object> variables = [if1: false, if2: true]
+
+        when:
+        List<String> printedTree = executeQueryAndPrintTree(query, variables)
+
+        then:
+        printedTree == ['Query.dog',
+                        'Dog.name defer[another-name-defer]',
+        ]
+    }
+
     def "'if' argument with different values on same field and same label"() {
         given:
 

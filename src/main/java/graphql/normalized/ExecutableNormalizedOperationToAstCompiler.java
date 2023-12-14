@@ -3,6 +3,7 @@ package graphql.normalized;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import graphql.Assert;
+import graphql.Directives;
 import graphql.ExperimentalApi;
 import graphql.PublicApi;
 import graphql.execution.directives.QueryDirectives;
@@ -305,7 +306,7 @@ public class ExecutableNormalizedOperationToAstCompiler {
             }
 
             if (typeAndDeferPair.deferLabel != null) {
-                Directive.Builder deferBuilder = Directive.newDirective().name("defer");
+                Directive.Builder deferBuilder = Directive.newDirective().name(Directives.DeferDirective.getName());
 
                 if (typeAndDeferPair.deferLabel.getValue() != null) {
                     deferBuilder.argument(newArgument().name("label").value(StringValue.of(typeAndDeferPair.deferLabel.getValue())).build());
@@ -471,7 +472,9 @@ public class ExecutableNormalizedOperationToAstCompiler {
         return Assert.assertShouldNeverHappen("Unknown operation kind " + operationKind);
     }
 
-    //    TODO: This name is terrible
+    /**
+     * Represents important execution details that can be associated with a fragment.
+     */
     private static class ExecutionFragmentDetails {
         private final String typeName;
         private final DeferLabel deferLabel;
