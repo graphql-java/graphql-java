@@ -4,6 +4,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import graphql.ExperimentalApi;
 import graphql.GraphQLContext;
 import graphql.PublicApi;
 import graphql.collect.ImmutableKit;
@@ -278,6 +279,22 @@ public class ExecutableNormalizedOperationFactory {
         );
     }
 
+
+    /**
+     * This will create a runtime representation of the graphql operation that would be executed
+     * in a runtime sense.
+     * <p>
+     * This version of the "createExecutableNormalizedOperation" method has support for the `@defer` directive,
+     * which is still a experimental feature in GraphQL Java.
+     *
+     * @param graphQLSchema         the schema to be used
+     * @param document              the {@link Document} holding the operation text
+     * @param operationName         the operation name to use
+     * @param coercedVariableValues the coerced variables to use
+     * @return a runtime representation of the graphql operation.
+     * @see ExecutableNormalizedOperationFactory#createExecutableNormalizedOperation(GraphQLSchema, Document, String, CoercedVariables)
+     */
+    @ExperimentalApi
     public static ExecutableNormalizedOperation createExecutableNormalizedOperationWithDeferSupport(
             GraphQLSchema graphQLSchema,
             Document document,
@@ -294,11 +311,27 @@ public class ExecutableNormalizedOperationFactory {
                 true);
     }
 
+    /**
+     * This will create a runtime representation of the graphql operation that would be executed
+     * in a runtime sense.
+     *
+     * <p>
+     * This version of the "createExecutableNormalizedOperationWithRawVariables" method has support for the `@defer`
+     * directive, which is still a experimental feature in GraphQL Java.
+     *
+     * @param graphQLSchema the schema to be used
+     * @param document      the {@link Document} holding the operation text
+     * @param operationName the operation name to use
+     * @param rawVariables  the raw variables that have not yet been coerced
+     * @param options       the {@link Options} to use for parsing
+     * @return a runtime representation of the graphql operation.
+     */
+    @ExperimentalApi
     public static ExecutableNormalizedOperation createExecutableNormalizedOperationWithRawVariablesWithDeferSupport(GraphQLSchema graphQLSchema,
-                                                                                                    Document document,
-                                                                                                    String operationName,
-                                                                                                    RawVariables rawVariables,
-                                                                                                    Options options) {
+                                                                                                                    Document document,
+                                                                                                                    String operationName,
+                                                                                                                    RawVariables rawVariables,
+                                                                                                                    Options options) {
         NodeUtil.GetOperationResult getOperationResult = NodeUtil.getOperation(document, operationName);
 
         return new ExecutableNormalizedOperationFactory().createExecutableNormalizedOperationImplWithRawVariables(graphQLSchema,
