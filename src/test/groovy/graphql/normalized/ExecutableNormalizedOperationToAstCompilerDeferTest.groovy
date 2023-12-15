@@ -374,6 +374,48 @@ class ExecutableNormalizedOperationToAstCompilerDeferTest extends Specification 
 '''
     }
 
+    def "multiple defers at the same level are preserved"() {
+        String query = """
+          query q {
+            dog {
+                ... @defer {
+                    name
+                }
+                ... @defer {
+                    breed
+                }
+                ... @defer {
+                    owner {
+                        firstname
+                    }
+                }
+            }
+          }
+        """
+        GraphQLSchema schema = mkSchema(sdl)
+        def fields = createNormalizedFields(schema, query)
+        when:
+        def result = compileToDocumentWithDeferSupport(schema, QUERY, null, fields, noVariables)
+        def printed = AstPrinter.printAst(new AstSorter().sort(result.document))
+        then:
+        printed == '''{
+    dog {
+        ... @defer {
+            name
+        }
+        ... @defer {
+            breed
+        }
+        ... @defer {
+            owner {
+                firstname
+            }
+        }
+    }
+  }
+'''
+    }
+
     private ExecutableNormalizedOperation createNormalizedTree(GraphQLSchema schema, String query, Map<String, Object> variables = [:]) {
         assertValidQuery(schema, query, variables)
         Document originalDocument = TestUtil.parseQuery(query)
