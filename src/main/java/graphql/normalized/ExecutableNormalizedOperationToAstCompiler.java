@@ -23,7 +23,7 @@ import graphql.language.SelectionSet;
 import graphql.language.StringValue;
 import graphql.language.TypeName;
 import graphql.language.Value;
-import graphql.normalized.incremental.DeferLabel;
+import graphql.normalized.incremental.DeferExecution;
 import graphql.schema.GraphQLCompositeType;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLObjectType;
@@ -126,7 +126,7 @@ public class ExecutableNormalizedOperationToAstCompiler {
                                                    @NotNull List<ExecutableNormalizedField> topLevelFields,
                                                    @NotNull Map<ExecutableNormalizedField, QueryDirectives> normalizedFieldToQueryDirectives,
                                                    @Nullable VariablePredicate variablePredicate) {
-        return compileToDocument(schema, operationKind, operationName, topLevelFields, normalizedFieldToQueryDirectives, variablePredicate, false);
+        return compileToDocument(schema, operationKind, operationName, topLevelFields, normalizedFieldToQueryDirectives, variablePredicate, null);
     }
 
 
@@ -149,8 +149,9 @@ public class ExecutableNormalizedOperationToAstCompiler {
                                                                    @NotNull OperationDefinition.Operation operationKind,
                                                                    @Nullable String operationName,
                                                                    @NotNull List<ExecutableNormalizedField> topLevelFields,
-                                                                   @Nullable VariablePredicate variablePredicate) {
-        return compileToDocumentWithDeferSupport(schema, operationKind, operationName, topLevelFields, Map.of(), variablePredicate);
+                                                                   @Nullable VariablePredicate variablePredicate,
+                                                                   @Nullable Map<ExecutableNormalizedField, DeferExecution> normalizedFieldToDeferExecution) {
+        return compileToDocumentWithDeferSupport(schema, operationKind, operationName, topLevelFields, Map.of(), variablePredicate, normalizedFieldToDeferExecution);
     }
 
     /**
@@ -174,8 +175,9 @@ public class ExecutableNormalizedOperationToAstCompiler {
                                                                    @Nullable String operationName,
                                                                    @NotNull List<ExecutableNormalizedField> topLevelFields,
                                                                    @NotNull Map<ExecutableNormalizedField, QueryDirectives> normalizedFieldToQueryDirectives,
-                                                                   @Nullable VariablePredicate variablePredicate) {
-        return compileToDocument(schema, operationKind, operationName, topLevelFields, normalizedFieldToQueryDirectives, variablePredicate, true);
+                                                                   @Nullable VariablePredicate variablePredicate,
+                                                                   @Nullable Map<ExecutableNormalizedField, DeferExecution> normalizedFieldToDeferExecution) {
+        return compileToDocument(schema, operationKind, operationName, topLevelFields, normalizedFieldToQueryDirectives, variablePredicate, normalizedFieldToDeferExecution);
     }
 
     private static CompilerResult compileToDocument(@NotNull GraphQLSchema schema,
@@ -184,11 +186,11 @@ public class ExecutableNormalizedOperationToAstCompiler {
                                                     @NotNull List<ExecutableNormalizedField> topLevelFields,
                                                     @NotNull Map<ExecutableNormalizedField, QueryDirectives> normalizedFieldToQueryDirectives,
                                                     @Nullable VariablePredicate variablePredicate,
-                                                    boolean deferSupport) {
+                                                    @Nullable Map<ExecutableNormalizedField, DeferExecution> normalizedFieldToDeferExecution) {
         GraphQLObjectType operationType = getOperationType(schema, operationKind);
 
         VariableAccumulator variableAccumulator = new VariableAccumulator(variablePredicate);
-        List<Selection<?>> selections = subselectionsForNormalizedField(schema, operationType.getName(), topLevelFields, normalizedFieldToQueryDirectives, variableAccumulator, deferSupport);
+        List<Selection<?>> selections = subselectionsForNormalizedField(schema, operationType.getName(), topLevelFields, normalizedFieldToQueryDirectives, variableAccumulator, normalizedFieldToDeferExecution);
         SelectionSet selectionSet = new SelectionSet(selections);
 
         OperationDefinition.Builder definitionBuilder = OperationDefinition.newOperationDefinition()
@@ -211,9 +213,9 @@ public class ExecutableNormalizedOperationToAstCompiler {
                                                                       List<ExecutableNormalizedField> executableNormalizedFields,
                                                                       @NotNull Map<ExecutableNormalizedField, QueryDirectives> normalizedFieldToQueryDirectives,
                                                                       VariableAccumulator variableAccumulator,
-                                                                      boolean deferSupport) {
-        if (deferSupport) {
-            return subselectionsForNormalizedFieldWithDeferSupport(schema, parentOutputType, executableNormalizedFields, normalizedFieldToQueryDirectives, variableAccumulator);
+                                                                      @Nullable Map<ExecutableNormalizedField, DeferExecution> normalizedFieldToDeferExecution) {
+        if (normalizedFieldToDeferExecution != null) {
+            return subselectionsForNormalizedFieldWithDeferSupport(schema, parentOutputType, executableNormalizedFields, normalizedFieldToQueryDirectives, normalizedFieldToDeferExecution, variableAccumulator);
         } else {
             return subselectionsForNormalizedFieldNoDeferSupport(schema, parentOutputType, executableNormalizedFields, normalizedFieldToQueryDirectives, variableAccumulator);
         }
@@ -232,13 +234,13 @@ public class ExecutableNormalizedOperationToAstCompiler {
 
         for (ExecutableNormalizedField nf : executableNormalizedFields) {
             if (nf.isConditional(schema)) {
-                selectionForNormalizedField(schema, nf, normalizedFieldToQueryDirectives, variableAccumulator, false)
+                selectionForNormalizedField(schema, nf, normalizedFieldToQueryDirectives, variableAccumulator, null, false)
                         .forEach((objectTypeName, field) ->
                                 fieldsByTypeCondition
                                         .computeIfAbsent(objectTypeName, ignored -> new ArrayList<>())
                                         .add(field));
             } else {
-                selections.add(selectionForNormalizedField(schema, parentOutputType, nf, normalizedFieldToQueryDirectives, variableAccumulator, false));
+                selections.add(selectionForNormalizedField(schema, parentOutputType, nf, normalizedFieldToQueryDirectives, variableAccumulator, null, false));
             }
         }
 
@@ -259,6 +261,7 @@ public class ExecutableNormalizedOperationToAstCompiler {
                                                                                       @NotNull String parentOutputType,
                                                                                       List<ExecutableNormalizedField> executableNormalizedFields,
                                                                                       @NotNull Map<ExecutableNormalizedField, QueryDirectives> normalizedFieldToQueryDirectives,
+                                                                                      @NotNull Map<ExecutableNormalizedField, DeferExecution> normalizedFieldToDeferExecution,
                                                                                       VariableAccumulator variableAccumulator) {
         ImmutableList.Builder<Selection<?>> selections = ImmutableList.builder();
 
@@ -268,31 +271,24 @@ public class ExecutableNormalizedOperationToAstCompiler {
         Map<ExecutionFragmentDetails, List<Field>> fieldsByFragmentDetails = new LinkedHashMap<>();
 
         for (ExecutableNormalizedField nf : executableNormalizedFields) {
+            DeferExecution deferExecution = normalizedFieldToDeferExecution.get(nf);
+
             if (nf.isConditional(schema)) {
-                selectionForNormalizedField(schema, nf, normalizedFieldToQueryDirectives, variableAccumulator, true)
+                selectionForNormalizedField(schema, nf, normalizedFieldToQueryDirectives, variableAccumulator, normalizedFieldToDeferExecution, true)
                         .forEach((objectTypeName, field) -> {
-                            if (nf.getDeferExecution() == null) {
-                                fieldsByFragmentDetails
-                                        .computeIfAbsent(new ExecutionFragmentDetails(objectTypeName, null), ignored -> new ArrayList<>())
-                                        .add(field);
-                            } else {
-                                nf.getDeferExecution().getLabels().stream()
-                                        .map(DeferLabel::getValue)
-                                        .forEach(label -> fieldsByFragmentDetails
-                                                .computeIfAbsent(new ExecutionFragmentDetails(objectTypeName, new DeferLabel(label)), ignored -> new ArrayList<>())
-                                                .add(field));
-                            }
+                            fieldsByFragmentDetails
+                                    .computeIfAbsent(new ExecutionFragmentDetails(objectTypeName, deferExecution), ignored -> new ArrayList<>())
+                                    .add(field);
                         });
 
-            } else if (nf.getDeferExecution() != null) {
-                Field field = selectionForNormalizedField(schema, parentOutputType, nf, normalizedFieldToQueryDirectives, variableAccumulator, true);
-                nf.getDeferExecution().getLabels().stream()
-                        .map(DeferLabel::getValue)
-                        .forEach(label -> fieldsByFragmentDetails
-                                .computeIfAbsent(new ExecutionFragmentDetails(null, new DeferLabel(label)), ignored -> new ArrayList<>())
-                                .add(field));
+            } else if (deferExecution != null) {
+                Field field = selectionForNormalizedField(schema, parentOutputType, nf, normalizedFieldToQueryDirectives, variableAccumulator, normalizedFieldToDeferExecution, true);
+
+                fieldsByFragmentDetails
+                        .computeIfAbsent(new ExecutionFragmentDetails(null, deferExecution), ignored -> new ArrayList<>())
+                        .add(field);
             } else {
-                selections.add(selectionForNormalizedField(schema, parentOutputType, nf, normalizedFieldToQueryDirectives, variableAccumulator, true));
+                selections.add(selectionForNormalizedField(schema, parentOutputType, nf, normalizedFieldToQueryDirectives, variableAccumulator, normalizedFieldToDeferExecution, true));
             }
         }
 
@@ -305,11 +301,11 @@ public class ExecutableNormalizedOperationToAstCompiler {
                 fragmentBuilder.typeCondition(typeName);
             }
 
-            if (typeAndDeferPair.deferLabel != null) {
+            if (typeAndDeferPair.deferExecution != null) {
                 Directive.Builder deferBuilder = Directive.newDirective().name(Directives.DeferDirective.getName());
 
-                if (typeAndDeferPair.deferLabel.getValue() != null) {
-                    deferBuilder.argument(newArgument().name("label").value(StringValue.of(typeAndDeferPair.deferLabel.getValue())).build());
+                if (typeAndDeferPair.deferExecution.getLabel() != null) {
+                    deferBuilder.argument(newArgument().name("label").value(StringValue.of(typeAndDeferPair.deferExecution.getLabel())).build());
                 }
 
                 fragmentBuilder.directive(deferBuilder.build());
@@ -329,11 +325,12 @@ public class ExecutableNormalizedOperationToAstCompiler {
                                                                   ExecutableNormalizedField executableNormalizedField,
                                                                   @NotNull Map<ExecutableNormalizedField, QueryDirectives> normalizedFieldToQueryDirectives,
                                                                   VariableAccumulator variableAccumulator,
+                                                                  @Nullable Map<ExecutableNormalizedField, DeferExecution> normalizedFieldToDeferExecution,
                                                                   boolean deferSupport) {
         Map<String, Field> groupedFields = new LinkedHashMap<>();
 
         for (String objectTypeName : executableNormalizedField.getObjectTypeNames()) {
-            groupedFields.put(objectTypeName, selectionForNormalizedField(schema, objectTypeName, executableNormalizedField, normalizedFieldToQueryDirectives, variableAccumulator, deferSupport));
+            groupedFields.put(objectTypeName, selectionForNormalizedField(schema, objectTypeName, executableNormalizedField, normalizedFieldToQueryDirectives, variableAccumulator, normalizedFieldToDeferExecution, deferSupport));
         }
 
         return groupedFields;
@@ -347,6 +344,7 @@ public class ExecutableNormalizedOperationToAstCompiler {
                                                      ExecutableNormalizedField executableNormalizedField,
                                                      @NotNull Map<ExecutableNormalizedField, QueryDirectives> normalizedFieldToQueryDirectives,
                                                      VariableAccumulator variableAccumulator,
+                                                     @Nullable Map<ExecutableNormalizedField, DeferExecution> normalizedFieldToDeferExecution,
                                                      boolean deferSupport) {
         final List<Selection<?>> subSelections;
         if (executableNormalizedField.getChildren().isEmpty()) {
@@ -361,7 +359,7 @@ public class ExecutableNormalizedOperationToAstCompiler {
                     executableNormalizedField.getChildren(),
                     normalizedFieldToQueryDirectives,
                     variableAccumulator,
-                    deferSupport
+                    normalizedFieldToDeferExecution
             );
         }
 
@@ -477,11 +475,11 @@ public class ExecutableNormalizedOperationToAstCompiler {
      */
     private static class ExecutionFragmentDetails {
         private final String typeName;
-        private final DeferLabel deferLabel;
+        private final DeferExecution deferExecution;
 
-        public ExecutionFragmentDetails(String typeName, DeferLabel deferLabel) {
+        public ExecutionFragmentDetails(String typeName, DeferExecution deferExecution) {
             this.typeName = typeName;
-            this.deferLabel = deferLabel;
+            this.deferExecution = deferExecution;
         }
 
         @Override
@@ -489,12 +487,12 @@ public class ExecutableNormalizedOperationToAstCompiler {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
             ExecutionFragmentDetails that = (ExecutionFragmentDetails) o;
-            return Objects.equals(typeName, that.typeName) && Objects.equals(deferLabel, that.deferLabel);
+            return Objects.equals(typeName, that.typeName) && Objects.equals(deferExecution, that.deferExecution);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(typeName, deferLabel);
+            return Objects.hash(typeName, deferExecution);
         }
     }
 }

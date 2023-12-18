@@ -2184,7 +2184,7 @@ abstract class ExecutableNormalizedOperationToAstCompilerTest extends Specificat
             Map<ExecutableNormalizedField, QueryDirectives> normalizedFieldToQueryDirectives,
             VariablePredicate variablePredicate) {
         if (deferSupport) {
-            return compileToDocumentWithDeferSupport(schema, operationKind, operationName, topLevelFields, normalizedFieldToQueryDirectives, variablePredicate)
+            return compileToDocumentWithDeferSupport(schema, operationKind, operationName, topLevelFields, normalizedFieldToQueryDirectives, variablePredicate, [:])
         }
         return compileToDocument(schema, operationKind, operationName, topLevelFields, normalizedFieldToQueryDirectives, variablePredicate)
     }

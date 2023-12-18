@@ -74,7 +74,7 @@ class ExecutableNormalizedOperationToAstCompilerDeferTest extends Specification 
         GraphQLSchema schema = mkSchema(sdl)
         def fields = createNormalizedFields(schema, query)
         when:
-        def result = compileToDocumentWithDeferSupport(schema, QUERY, null, fields, noVariables)
+        def result = compileToDocumentWithDeferSupport(schema, QUERY, null, fields, noVariables, [:])
         def printed = AstPrinter.printAst(new AstSorter().sort(result.document))
         then:
         printed == '''{
@@ -102,7 +102,7 @@ class ExecutableNormalizedOperationToAstCompilerDeferTest extends Specification 
         GraphQLSchema schema = mkSchema(sdl)
         def fields = createNormalizedFields(schema, query)
         when:
-        def result = compileToDocumentWithDeferSupport(schema, QUERY, null, fields, noVariables)
+        def result = compileToDocumentWithDeferSupport(schema, QUERY, null, fields, noVariables, [:])
         def printed = AstPrinter.printAst(new AstSorter().sort(result.document))
         then:
         printed == '''{
@@ -133,7 +133,7 @@ class ExecutableNormalizedOperationToAstCompilerDeferTest extends Specification 
         GraphQLSchema schema = mkSchema(sdl)
         def fields = createNormalizedFields(schema, query)
         when:
-        def result = compileToDocumentWithDeferSupport(schema, QUERY, null, fields, noVariables)
+        def result = compileToDocumentWithDeferSupport(schema, QUERY, null, fields, noVariables, [:])
         def printed = AstPrinter.printAst(new AstSorter().sort(result.document))
         then:
         printed == '''{
@@ -167,7 +167,7 @@ class ExecutableNormalizedOperationToAstCompilerDeferTest extends Specification 
         GraphQLSchema schema = mkSchema(sdl)
         def fields = createNormalizedFields(schema, query)
         when:
-        def result = compileToDocumentWithDeferSupport(schema, QUERY, null, fields, noVariables)
+        def result = compileToDocumentWithDeferSupport(schema, QUERY, null, fields, noVariables, [:])
         def printed = AstPrinter.printAst(new AstSorter().sort(result.document))
         then:
         printed == '''{
@@ -198,7 +198,7 @@ class ExecutableNormalizedOperationToAstCompilerDeferTest extends Specification 
         GraphQLSchema schema = mkSchema(sdl)
         def fields = createNormalizedFields(schema, query)
         when:
-        def result = compileToDocumentWithDeferSupport(schema, QUERY, null, fields, noVariables)
+        def result = compileToDocumentWithDeferSupport(schema, QUERY, null, fields, noVariables, [:])
         def printed = AstPrinter.printAst(new AstSorter().sort(result.document))
         then:
         printed == '''{
@@ -233,7 +233,7 @@ class ExecutableNormalizedOperationToAstCompilerDeferTest extends Specification 
         GraphQLSchema schema = mkSchema(sdl)
         def fields = createNormalizedFields(schema, query)
         when:
-        def result = compileToDocumentWithDeferSupport(schema, QUERY, null, fields, noVariables)
+        def result = compileToDocumentWithDeferSupport(schema, QUERY, null, fields, noVariables, [:])
         def printed = AstPrinter.printAst(new AstSorter().sort(result.document))
         then:
         printed == '''{
@@ -270,7 +270,7 @@ class ExecutableNormalizedOperationToAstCompilerDeferTest extends Specification 
         GraphQLSchema schema = mkSchema(sdl)
         def fields = createNormalizedFields(schema, query)
         when:
-        def result = compileToDocumentWithDeferSupport(schema, QUERY, null, fields, noVariables)
+        def result = compileToDocumentWithDeferSupport(schema, QUERY, null, fields, noVariables, [:])
         def printed = AstPrinter.printAst(new AstSorter().sort(result.document))
         then:
         printed == '''{
@@ -299,7 +299,7 @@ class ExecutableNormalizedOperationToAstCompilerDeferTest extends Specification 
         GraphQLSchema schema = mkSchema(sdl)
         def fields = createNormalizedFields(schema, query)
         when:
-        def result = compileToDocumentWithDeferSupport(schema, QUERY, null, fields, noVariables)
+        def result = compileToDocumentWithDeferSupport(schema, QUERY, null, fields, noVariables, [:])
         def printed = AstPrinter.printAst(new AstSorter().sort(result.document))
         then:
         printed == '''{
@@ -347,7 +347,7 @@ class ExecutableNormalizedOperationToAstCompilerDeferTest extends Specification 
         GraphQLSchema schema = mkSchema(sdl)
         def fields = createNormalizedFields(schema, query)
         when:
-        def result = compileToDocumentWithDeferSupport(schema, QUERY, null, fields, noVariables)
+        def result = compileToDocumentWithDeferSupport(schema, QUERY, null, fields, noVariables, [:])
         def printed = AstPrinter.printAst(new AstSorter().sort(result.document))
         then:
         printed == '''{
@@ -395,7 +395,7 @@ class ExecutableNormalizedOperationToAstCompilerDeferTest extends Specification 
         GraphQLSchema schema = mkSchema(sdl)
         def fields = createNormalizedFields(schema, query)
         when:
-        def result = compileToDocumentWithDeferSupport(schema, QUERY, null, fields, noVariables)
+        def result = compileToDocumentWithDeferSupport(schema, QUERY, null, fields, noVariables, [:])
         def printed = AstPrinter.printAst(new AstSorter().sort(result.document))
         then:
         printed == '''{
