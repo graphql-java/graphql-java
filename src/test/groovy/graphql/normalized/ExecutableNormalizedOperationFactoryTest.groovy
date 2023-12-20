@@ -2885,11 +2885,9 @@ fragment personName on Person {
             CoercedVariables coercedVariableValues
     ) {
         ExecutableNormalizedOperationFactory dependencyGraph = new ExecutableNormalizedOperationFactory()
-        if (deferSupport) {
-            return dependencyGraph.createExecutableNormalizedOperationWithDeferSupport(graphQLSchema, document, operationName, coercedVariableValues)
-        } else {
-            return dependencyGraph.createExecutableNormalizedOperation(graphQLSchema, document, operationName, coercedVariableValues)
-        }
+        def options = ExecutableNormalizedOperationFactory.Options.defaultOptions().deferSupport(deferSupport)
+
+        return dependencyGraph.createExecutableNormalizedOperation(graphQLSchema, document, operationName, coercedVariableValues, options)
     }
 
     private static ExecutableNormalizedOperation localCreateExecutableNormalizedOperationWithRawVariables(
@@ -2899,22 +2897,15 @@ fragment personName on Person {
             RawVariables rawVariables
     ) {
         ExecutableNormalizedOperationFactory dependencyGraph = new ExecutableNormalizedOperationFactory()
-        if (deferSupport) {
-            return dependencyGraph.createExecutableNormalizedOperationWithRawVariablesWithDeferSupport(
-                    graphQLSchema,
-                    document,
-                    operationName,
-                    rawVariables,
-                    ExecutableNormalizedOperationFactory.Options.defaultOptions()
-            )
-        } else {
-            return dependencyGraph.createExecutableNormalizedOperationWithRawVariables(
-                    graphQLSchema,
-                    document,
-                    operationName,
-                    rawVariables
-            )
-        }
+        def options = ExecutableNormalizedOperationFactory.Options.defaultOptions().deferSupport(deferSupport)
+
+        return dependencyGraph.createExecutableNormalizedOperationWithRawVariables(
+                graphQLSchema,
+                document,
+                operationName,
+                rawVariables,
+                options
+        )
     }
 }
 

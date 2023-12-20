@@ -1,6 +1,6 @@
 package graphql.normalized
 
-
+import graphql.AssertException
 import graphql.ExecutionInput
 import graphql.GraphQL
 import graphql.TestUtil
@@ -233,7 +233,7 @@ class ExecutableNormalizedOperationFactoryDeferTest extends Specification {
         ]
     }
 
-    def "multiple fields and a multiple defers with same label"() {
+    def "multiple fields and a multiple defers with same label are not allowed"() {
         given:
 
         String query = '''
@@ -254,12 +254,11 @@ class ExecutableNormalizedOperationFactoryDeferTest extends Specification {
         Map<String, Object> variables = [:]
 
         when:
-        List<String> printedTree = executeQueryAndPrintTree(query, variables)
+        executeQueryAndPrintTree(query, variables)
 
         then:
-        printedTree == ['Query.dog',
-                        'Dog.name defer[name-defer]',
-        ]
+        def exception = thrown(AssertException)
+        exception.message == "Internal error: should never happen: Duplicated @defer labels are not allowed: [name-defer]"
     }
 
     def "nested defers - no label"() {
@@ -482,12 +481,12 @@ class ExecutableNormalizedOperationFactoryDeferTest extends Specification {
         Document document = TestUtil.parseQuery(query)
         ExecutableNormalizedOperationFactory dependencyGraph = new ExecutableNormalizedOperationFactory()
 
-        def tree = dependencyGraph.createExecutableNormalizedOperationWithRawVariablesWithDeferSupport(
+        def tree = dependencyGraph.createExecutableNormalizedOperationWithRawVariables(
                 graphQLSchema,
                 document,
                 null,
                 RawVariables.of(variables),
-                ExecutableNormalizedOperationFactory.Options.defaultOptions(),
+                ExecutableNormalizedOperationFactory.Options.defaultOptions().deferSupport(true),
         )
         return printTreeWithIncrementalExecutionDetails(tree)
     }
@@ -495,6 +494,9 @@ class ExecutableNormalizedOperationFactoryDeferTest extends Specification {
     private List<String> printTreeWithIncrementalExecutionDetails(ExecutableNormalizedOperation queryExecutionTree) {
         def result = []
         Traverser<ExecutableNormalizedField> traverser = Traverser.depthFirst({ it.getChildren() })
+
+        def normalizedFieldToDeferExecution = queryExecutionTree.normalizedFieldToDeferExecution
+
         traverser.traverse(queryExecutionTree.getTopLevelFields(), new TraverserVisitorStub<ExecutableNormalizedField>() {
             @Override
             TraversalControl enter(TraverserContext<ExecutableNormalizedField> context) {
@@ -504,12 +506,13 @@ class ExecutableNormalizedOperationFactoryDeferTest extends Specification {
             }
 
             String printDeferExecutionDetails(ExecutableNormalizedField field) {
-                if (field.getDeferExecution() == null) {
+                def deferExecutions = normalizedFieldToDeferExecution.get(field)
+                if (deferExecutions.isEmpty()) {
                     return ""
                 }
 
-                def deferLabels = field.getDeferExecution().labels
-                        .collect { it.value }
+                def deferLabels = deferExecutions
+                        .collect { it.label }
                         .join(",")
 
                 return " defer[" + deferLabels + "]"

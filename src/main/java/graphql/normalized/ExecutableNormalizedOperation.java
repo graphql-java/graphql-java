@@ -2,6 +2,7 @@ package graphql.normalized;
 
 import com.google.common.collect.ImmutableListMultimap;
 import graphql.Assert;
+import graphql.ExperimentalApi;
 import graphql.PublicApi;
 import graphql.execution.MergedField;
 import graphql.execution.ResultPath;
@@ -129,6 +130,15 @@ public class ExecutableNormalizedOperation {
         return normalizedFieldToQueryDirectives;
 
     }
+
+    /**
+     * @return a map of {@link ExecutableNormalizedField} to  its {@link DeferExecution}
+     */
+    @ExperimentalApi
+    public ImmutableListMultimap<ExecutableNormalizedField, DeferExecution> getNormalizedFieldToDeferExecution() {
+        return normalizedFieldToDeferExecution;
+    }
+
 
     /**
      * This looks up the {@link QueryDirectives} associated with the given {@link ExecutableNormalizedField}
