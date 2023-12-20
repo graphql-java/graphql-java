@@ -137,11 +137,12 @@ public class ExecutableNormalizedOperationToAstCompiler {
      * The {@link VariablePredicate} is used called to decide if the given argument values should be made into a variable
      * OR inlined into the operation text as a graphql literal.
      *
-     * @param schema            the graphql schema to use
-     * @param operationKind     the kind of operation
-     * @param operationName     the name of the operation to use
-     * @param topLevelFields    the top level {@link ExecutableNormalizedField}s to start from
-     * @param variablePredicate the variable predicate that decides if arguments turn into variables or not during compilation
+     * @param schema                          the graphql schema to use
+     * @param operationKind                   the kind of operation
+     * @param operationName                   the name of the operation to use
+     * @param topLevelFields                  the top level {@link ExecutableNormalizedField}s to start from
+     * @param variablePredicate               the variable predicate that decides if arguments turn into variables or not during compilation
+     * @param normalizedFieldToDeferExecution a map associating {@link ExecutableNormalizedField}s with their {@link DeferExecution}s, this parameter needs to be present in order for defer support to work
      * @return a {@link CompilerResult} object
      * @see ExecutableNormalizedOperationToAstCompiler#compileToDocument(GraphQLSchema, OperationDefinition.Operation, String, List, VariablePredicate)
      */
@@ -167,6 +168,7 @@ public class ExecutableNormalizedOperationToAstCompiler {
      * @param topLevelFields                   the top level {@link ExecutableNormalizedField}s to start from
      * @param normalizedFieldToQueryDirectives the map of normalized field to query directives
      * @param variablePredicate                the variable predicate that decides if arguments turn into variables or not during compilation
+     * @param normalizedFieldToDeferExecution  a map associating {@link ExecutableNormalizedField}s with their {@link DeferExecution}s, this parameter needs to be present in order for defer support to work
      * @return a {@link CompilerResult} object
      * @see ExecutableNormalizedOperationToAstCompiler#compileToDocument(GraphQLSchema, OperationDefinition.Operation, String, List, Map, VariablePredicate)
      */
