@@ -89,6 +89,33 @@ class ExecutableNormalizedOperationToAstCompilerDeferTest extends Specification 
 '''
     }
 
+    def "@defer directives are not generated when map is null"() {
+        String query = """
+          query q {
+            dog {
+                name
+                ... @defer(label: "breed-defer") {
+                    breed
+                }
+            }
+          }
+        """
+        GraphQLSchema schema = mkSchema(sdl)
+        def tree = createNormalizedTree(schema, query)
+        def normalizedFieldToDeferExecution = null
+        when:
+        def result = compileToDocumentWithDeferSupport(schema, QUERY, null, tree.topLevelFields, noVariables, normalizedFieldToDeferExecution)
+        def printed = AstPrinter.printAst(new AstSorter().sort(result.document))
+        then:
+        printed == '''{
+  dog {
+    breed
+    name
+  }
+}
+'''
+    }
+
     def "simple defer with named spread"() {
         String query = """
           query q {
