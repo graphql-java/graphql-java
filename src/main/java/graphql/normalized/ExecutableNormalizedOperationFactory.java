@@ -169,7 +169,10 @@ public class ExecutableNormalizedOperationFactory {
             return maxChildrenDepth;
         }
 
-        // TODO: Javadoc
+        /**
+         * @return whether support for defer is enabled
+         * @see #deferSupport(boolean)
+         */
         @ExperimentalApi
         public boolean getDeferSupport() {
             return deferSupport;
