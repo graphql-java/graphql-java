@@ -2,12 +2,14 @@ package graphql.normalized;
 
 import com.google.common.collect.ImmutableListMultimap;
 import graphql.Assert;
+import graphql.ExperimentalApi;
 import graphql.PublicApi;
 import graphql.execution.MergedField;
 import graphql.execution.ResultPath;
 import graphql.execution.directives.QueryDirectives;
 import graphql.language.Field;
 import graphql.language.OperationDefinition;
+import graphql.normalized.incremental.DeferExecution;
 import graphql.schema.FieldCoordinates;
 import graphql.schema.GraphQLFieldsContainer;
 
@@ -30,6 +32,7 @@ public class ExecutableNormalizedOperation {
     private final ImmutableListMultimap<Field, ExecutableNormalizedField> fieldToNormalizedField;
     private final Map<ExecutableNormalizedField, MergedField> normalizedFieldToMergedField;
     private final Map<ExecutableNormalizedField, QueryDirectives> normalizedFieldToQueryDirectives;
+    private final ImmutableListMultimap<ExecutableNormalizedField, DeferExecution> normalizedFieldToDeferExecution;
     private final ImmutableListMultimap<FieldCoordinates, ExecutableNormalizedField> coordinatesToNormalizedFields;
 
     public ExecutableNormalizedOperation(
@@ -39,7 +42,8 @@ public class ExecutableNormalizedOperation {
             ImmutableListMultimap<Field, ExecutableNormalizedField> fieldToNormalizedField,
             Map<ExecutableNormalizedField, MergedField> normalizedFieldToMergedField,
             Map<ExecutableNormalizedField, QueryDirectives> normalizedFieldToQueryDirectives,
-            ImmutableListMultimap<FieldCoordinates, ExecutableNormalizedField> coordinatesToNormalizedFields
+            ImmutableListMultimap<FieldCoordinates, ExecutableNormalizedField> coordinatesToNormalizedFields,
+            ImmutableListMultimap<ExecutableNormalizedField, DeferExecution> normalizedFieldToDeferExecution
     ) {
         this.operation = operation;
         this.operationName = operationName;
@@ -48,6 +52,7 @@ public class ExecutableNormalizedOperation {
         this.normalizedFieldToMergedField = normalizedFieldToMergedField;
         this.normalizedFieldToQueryDirectives = normalizedFieldToQueryDirectives;
         this.coordinatesToNormalizedFields = coordinatesToNormalizedFields;
+        this.normalizedFieldToDeferExecution = normalizedFieldToDeferExecution;
     }
 
     /**
@@ -125,6 +130,15 @@ public class ExecutableNormalizedOperation {
         return normalizedFieldToQueryDirectives;
 
     }
+
+    /**
+     * @return a map of {@link ExecutableNormalizedField} to  its {@link DeferExecution}
+     */
+    @ExperimentalApi
+    public ImmutableListMultimap<ExecutableNormalizedField, DeferExecution> getNormalizedFieldToDeferExecution() {
+        return normalizedFieldToDeferExecution;
+    }
+
 
     /**
      * This looks up the {@link QueryDirectives} associated with the given {@link ExecutableNormalizedField}

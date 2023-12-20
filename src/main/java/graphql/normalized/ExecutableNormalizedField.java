@@ -63,7 +63,6 @@ public class ExecutableNormalizedField {
     private final String fieldName;
     private final int level;
 
-
     private ExecutableNormalizedField(Builder builder) {
         this.alias = builder.alias;
         this.resolvedArguments = builder.resolvedArguments;
@@ -261,7 +260,6 @@ public class ExecutableNormalizedField {
      * WARNING: This is not always the key in the execution result, because of possible field aliases.
      *
      * @return the name of this {@link ExecutableNormalizedField}
-     *
      * @see #getResultKey()
      * @see #getAlias()
      */
@@ -271,7 +269,6 @@ public class ExecutableNormalizedField {
 
     /**
      * @return the same value as {@link #getName()}
-     *
      * @see #getResultKey()
      * @see #getAlias()
      */
@@ -284,7 +281,6 @@ public class ExecutableNormalizedField {
      * This is either a field alias or the value of {@link #getName()}
      *
      * @return the result key for this {@link ExecutableNormalizedField}.
-     *
      * @see #getName()
      */
     public String getResultKey() {
@@ -296,7 +292,6 @@ public class ExecutableNormalizedField {
 
     /**
      * @return the field alias used or null if there is none
-     *
      * @see #getResultKey()
      * @see #getName()
      */
@@ -315,7 +310,6 @@ public class ExecutableNormalizedField {
      * Returns an argument value as a {@link NormalizedInputValue} which contains its type name and its current value
      *
      * @param name the name of the argument
-     *
      * @return an argument value
      */
     public NormalizedInputValue getNormalizedArgument(String name) {
@@ -363,7 +357,6 @@ public class ExecutableNormalizedField {
     public String getSingleObjectTypeName() {
         return objectTypeNames.iterator().next();
     }
-
 
     /**
      * @return a helper method show field details
@@ -414,7 +407,6 @@ public class ExecutableNormalizedField {
      * Returns the list of child fields that would have the same result key
      *
      * @param resultKey the result key to check
-     *
      * @return a list of all direct {@link ExecutableNormalizedField} children with the specified result key
      */
     public List<ExecutableNormalizedField> getChildrenWithSameResultKey(String resultKey) {
@@ -435,7 +427,6 @@ public class ExecutableNormalizedField {
      * This returns the child fields that can be used if the object is of the specified object type
      *
      * @param objectTypeName the object type
-     *
      * @return a list of child fields that would apply to that object type
      */
     public List<ExecutableNormalizedField> getChildren(String objectTypeName) {
@@ -568,7 +559,6 @@ public class ExecutableNormalizedField {
      * Allows this {@link ExecutableNormalizedField} to be transformed via a {@link Builder} consumer callback
      *
      * @param builderConsumer the consumer given a builder
-     *
      * @return a new transformed {@link ExecutableNormalizedField}
      */
     public ExecutableNormalizedField transform(Consumer<Builder> builderConsumer) {

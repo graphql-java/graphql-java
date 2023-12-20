@@ -1,6 +1,7 @@
 package graphql;
 
 
+import graphql.language.BooleanValue;
 import graphql.language.Description;
 import graphql.language.DirectiveDefinition;
 import graphql.language.StringValue;
@@ -33,13 +34,13 @@ public class Directives {
     private static final String SPECIFIED_BY = "specifiedBy";
     private static final String DEPRECATED = "deprecated";
     private static final String ONE_OF = "oneOf";
+    private static final String DEFER = "defer";
 
     public static final String NO_LONGER_SUPPORTED = "No longer supported";
     public static final DirectiveDefinition DEPRECATED_DIRECTIVE_DEFINITION;
     public static final DirectiveDefinition SPECIFIED_BY_DIRECTIVE_DEFINITION;
     @ExperimentalApi
     public static final DirectiveDefinition ONE_OF_DIRECTIVE_DEFINITION;
-
 
     static {
         DEPRECATED_DIRECTIVE_DEFINITION = DirectiveDefinition.newDirectiveDefinition()
@@ -76,6 +77,28 @@ public class Directives {
                 .description(createDescription("Indicates an Input Object is a OneOf Input Object."))
                 .build();
     }
+
+    /**
+     * The @defer directive can be used to defer sending data for a fragment until later in the query.
+     * This is an opt-in directive that is not available unless it is explicitly put into the schema.
+     */
+    @ExperimentalApi
+    public static final GraphQLDirective DeferDirective = GraphQLDirective.newDirective()
+            .name("defer")
+            .description("This directive allows results to be deferred during execution")
+            .validLocations(FRAGMENT_SPREAD, INLINE_FRAGMENT)
+            .argument(newArgument()
+                    .name("if")
+                    .type(nonNull(GraphQLBoolean))
+                    .description("Deferred behaviour is controlled by this argument")
+                    .defaultValueLiteral(BooleanValue.newBooleanValue(true).build())
+            )
+            .argument(newArgument()
+                    .name("label")
+                    .type(GraphQLString)
+                    .description("A unique label that represents the fragment being deferred")
+            )
+            .build();
 
     public static final GraphQLDirective IncludeDirective = GraphQLDirective.newDirective()
             .name("include")
