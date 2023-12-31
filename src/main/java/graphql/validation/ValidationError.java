@@ -2,7 +2,6 @@ package graphql.validation;
 
 
 import com.google.common.collect.ImmutableMap;
-import graphql.DeprecatedAt;
 import graphql.ErrorType;
 import graphql.GraphQLError;
 import graphql.GraphqlErrorHelper;

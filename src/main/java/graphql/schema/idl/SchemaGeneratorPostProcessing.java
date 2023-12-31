@@ -1,6 +1,5 @@
 package graphql.schema.idl;
 
-import graphql.DeprecatedAt;
 import graphql.PublicSpi;
 import graphql.schema.GraphQLSchema;
 
@@ -12,8 +11,7 @@ import graphql.schema.GraphQLSchema;
  * after the schema is built
  */
 @PublicSpi
-@Deprecated
-@DeprecatedAt(value = "2022-10-29")
+@Deprecated(since = "2022-10-29")
 public interface SchemaGeneratorPostProcessing {
 
     /**

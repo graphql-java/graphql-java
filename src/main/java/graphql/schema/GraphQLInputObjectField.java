@@ -1,7 +1,6 @@
 package graphql.schema;
 
 
-import graphql.DeprecatedAt;
 import graphql.DirectivesUtil;
 import graphql.GraphQLContext;
 import graphql.PublicApi;
@@ -315,8 +314,7 @@ public class GraphQLInputObjectField implements GraphQLNamedSchemaElement, Graph
          *
          * @deprecated use {@link #defaultValueLiteral(Value)}
          */
-        @Deprecated
-        @DeprecatedAt("2021-05-10")
+        @Deprecated(since = "2021-05-10")
         public Builder defaultValue(Object defaultValue) {
             this.defaultValue = InputValueWithState.newInternalValue(defaultValue);
             return this;

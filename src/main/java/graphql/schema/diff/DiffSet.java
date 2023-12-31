@@ -1,7 +1,6 @@
 package graphql.schema.diff;
 
 import graphql.Assert;
-import graphql.DeprecatedAt;
 import graphql.ExecutionResult;
 import graphql.GraphQL;
 import graphql.PublicApi;
@@ -16,8 +15,7 @@ import java.util.Map;
  * {@link graphql.introspection.IntrospectionQuery}.
  */
 @PublicApi
-@Deprecated
-@DeprecatedAt("2023-10-04")
+@Deprecated(since = "2023-10-04")
 public class DiffSet {
 
     private final Map<String, Object> introspectionOld;
