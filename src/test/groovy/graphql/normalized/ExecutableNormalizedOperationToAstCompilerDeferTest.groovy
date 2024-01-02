@@ -204,9 +204,6 @@ class ExecutableNormalizedOperationToAstCompilerDeferTest extends Specification 
     ... @defer {
       breed
     }
-    ... @defer {
-      breed
-    }
   }
 }
 '''
@@ -304,9 +301,6 @@ class ExecutableNormalizedOperationToAstCompilerDeferTest extends Specification 
         then:
         printed == '''{
   animal {
-    ... @defer {
-      name
-    }
     ... @defer {
       name
     }
@@ -454,9 +448,6 @@ class ExecutableNormalizedOperationToAstCompilerDeferTest extends Specification 
         then:
         printed == '''{
   animal {
-    ... @defer {
-      name
-    }
     ... @defer {
       name
     }

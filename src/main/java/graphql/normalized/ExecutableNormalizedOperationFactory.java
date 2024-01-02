@@ -27,6 +27,7 @@ import graphql.language.NodeUtil;
 import graphql.language.OperationDefinition;
 import graphql.language.Selection;
 import graphql.language.SelectionSet;
+import graphql.language.TypeName;
 import graphql.language.VariableDefinition;
 import graphql.normalized.incremental.DeferExecution;
 import graphql.normalized.incremental.IncrementalNodes;
@@ -42,19 +43,24 @@ import graphql.schema.GraphQLTypeUtil;
 import graphql.schema.GraphQLUnionType;
 import graphql.schema.GraphQLUnmodifiedType;
 import graphql.schema.impl.SchemaUtil;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 import static graphql.Assert.assertNotNull;
@@ -66,6 +72,7 @@ import static graphql.util.FpKit.groupingBy;
 import static graphql.util.FpKit.intersection;
 import static java.util.Collections.singleton;
 import static java.util.Collections.singletonList;
+import static java.util.stream.Collectors.toCollection;
 import static java.util.stream.Collectors.toSet;
 
 /**
@@ -712,8 +719,9 @@ public class ExecutableNormalizedOperationFactory {
         }
 
         Set<GraphQLObjectType> allRelevantObjects = objectTypes.build();
-        Set<DeferExecution> deferExecutions = deferExecutionsBuilder.build();
-
+        Set<DeferExecution> deferExecutions = deferExecutionsBuilder.build().stream()
+                .filter(distinctByNullLabelAndType())
+                .collect(toCollection(LinkedHashSet::new));
 
         Set<String> duplicatedLabels = listDuplicatedLabels(deferExecutions);
 
@@ -726,12 +734,59 @@ public class ExecutableNormalizedOperationFactory {
         if (groupByAstParent.size() == 1) {
             return singletonList(new CollectedFieldGroup(ImmutableSet.copyOf(fields), allRelevantObjects, deferExecutions));
         }
+
         ImmutableList.Builder<CollectedFieldGroup> result = ImmutableList.builder();
         for (GraphQLObjectType objectType : allRelevantObjects) {
             Set<CollectedField> relevantFields = filterSet(fields, field -> field.objectTypes.contains(objectType));
-            result.add(new CollectedFieldGroup(relevantFields, singleton(objectType), deferExecutions));
+
+            Set<DeferExecution> filteredDeferExecutions = deferExecutions.stream()
+                    .filter(deferExecution -> deferExecution.getTargetType() == null ||
+                            deferExecution.getTargetType().getName().equals(objectType.getName()))
+                    .collect(toCollection(LinkedHashSet::new));
+
+            result.add(new CollectedFieldGroup(relevantFields, singleton(objectType), filteredDeferExecutions));
         }
         return result.build();
+    }
+
+    /**
+     * This predicate prevents us from having more than 1 defer execution with "null" label per each TypeName.
+     * This type of duplication is exactly what ENFs want to avoid, because they are irrelevant for execution time.
+     * For example, this query:
+     * <pre>
+     *     query example {
+     *        ... @defer {
+     *            name
+     *        }
+     *        ... @defer {
+     *            name
+     *        }
+     *     }
+     * </pre>
+     * should result on single ENF. Essentially:
+     * <pre>
+     *     query example {
+     *        ... @defer {
+     *            name
+     *        }
+     *     }
+     * </pre>
+     */
+    private static @NotNull Predicate<DeferExecution> distinctByNullLabelAndType() {
+        Map<String, Boolean> seen = new ConcurrentHashMap<>();
+
+        return deferExecution -> {
+            if (deferExecution.getLabel() == null) {
+                String typeName = Optional.ofNullable(deferExecution.getTargetType())
+                        .map(TypeName::getName)
+                        .map(String::toUpperCase)
+                        .orElse("null");
+
+                return seen.putIfAbsent(typeName, Boolean.TRUE) == null;
+            }
+
+            return true;
+        };
     }
 
     private Set<String> listDuplicatedLabels(Collection<DeferExecution> deferExecutions) {

@@ -32,9 +32,21 @@ class ExecutableNormalizedOperationFactoryDeferTest extends Specification {
                 owner: Person
             }
             
+            type Cat implements Animal {
+                name: String
+                breed: String
+                color: String
+                siblings: [Cat]
+            }
+            
+            type Fish implements Animal {
+                name: String
+            }
+            
             type Person {
                 firstname: String
                 lastname: String
+                bestFriend: Person
             }
         """
 
@@ -63,6 +75,64 @@ class ExecutableNormalizedOperationFactoryDeferTest extends Specification {
         printedTree == ['Query.dog',
                         'Dog.name',
                         'Dog.breed defer[breed-defer]',
+        ]
+    }
+
+    def "fragments on non-conditional fields"() {
+        given:
+
+        String query = '''
+          query q {
+            animal {
+                ... on Cat @defer {
+                    name
+                }
+                ... on Dog @defer {
+                    name
+                }
+                ... on Animal @defer {
+                    name
+                }
+            }
+          }
+        '''
+
+        Map<String, Object> variables = [:]
+
+        when:
+        List<String> printedTree = executeQueryAndPrintTree(query, variables)
+
+        then:
+        printedTree == ['Query.animal',
+                        '[Cat, Dog, Fish].name defer[null]',
+        ]
+    }
+
+    def "fragments on conditional fields"() {
+        given:
+
+        String query = '''
+          query q {
+            animal {
+                ... on Cat @defer {
+                    breed
+                }
+                ... on Dog @defer {
+                    breed
+                }
+            }
+          }
+        '''
+
+        Map<String, Object> variables = [:]
+
+        when:
+        List<String> printedTree = executeQueryAndPrintTree(query, variables)
+
+        then:
+        printedTree == ['Query.animal',
+                        'Cat.breed defer[null]',
+                        'Dog.breed defer[null]'
         ]
     }
 
@@ -233,6 +303,35 @@ class ExecutableNormalizedOperationFactoryDeferTest extends Specification {
         ]
     }
 
+    def "multiple fields and multiple defers - no label"() {
+        given:
+
+        String query = '''
+          query q {
+            dog {
+                ... @defer {
+                    name 
+                }
+                
+                ... @defer {
+                    name 
+                }
+            }
+          }
+          
+        '''
+
+        Map<String, Object> variables = [:]
+
+        when:
+        List<String> printedTree = executeQueryAndPrintTree(query, variables)
+
+        then:
+        printedTree == ['Query.dog',
+                        'Dog.name defer[null]',
+        ]
+    }
+
     def "multiple fields and a multiple defers with same label are not allowed"() {
         given:
 
@@ -354,7 +453,7 @@ class ExecutableNormalizedOperationFactoryDeferTest extends Specification {
 
         then:
         printedTree == ['Query.animal',
-                        'Dog.name',
+                        '[Cat, Dog, Fish].name',
                         'Dog.owner defer[dog-defer]',
                         'Person.firstname',
                         'Person.lastname defer[lastname-defer]',

@@ -291,12 +291,9 @@ public class ExecutableNormalizedOperationToAstCompiler {
                                         .add(field);
                             } else {
                                 deferExecutions.forEach(deferExecution -> {
-                                    if (deferExecution.getTargetType() == null ||
-                                            objectTypeName.equals(deferExecution.getTargetType().getName())) {
-                                        fieldsByFragmentDetails
-                                                .computeIfAbsent(new ExecutionFragmentDetails(objectTypeName, deferExecution), ignored -> new ArrayList<>())
-                                                .add(field);
-                                    }
+                                    fieldsByFragmentDetails
+                                            .computeIfAbsent(new ExecutionFragmentDetails(objectTypeName, deferExecution), ignored -> new ArrayList<>())
+                                            .add(field);
                                 });
                             }
                         });
