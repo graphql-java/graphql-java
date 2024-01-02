@@ -1,14 +1,14 @@
-package graphql.defer;
+package graphql.incremental;
 
 import java.util.Collections;
 import java.util.List;
 
-public class IncrementalExecutionResultImpl implements IncrementalExecutionResult {
+public class DelayedIncrementalExecutionResultImpl implements DelayedIncrementalExecutionResult {
     private final List<IncrementalItem> incrementalItems;
     private final String label;
     private final boolean hasNext;
 
-    private IncrementalExecutionResultImpl(List<IncrementalItem> incrementalItems, String label, boolean hasNext) {
+    private DelayedIncrementalExecutionResultImpl(List<IncrementalItem> incrementalItems, String label, boolean hasNext) {
         this.incrementalItems = incrementalItems;
         this.label = label;
         this.hasNext = hasNext;
@@ -38,23 +38,23 @@ public class IncrementalExecutionResultImpl implements IncrementalExecutionResul
         private List<IncrementalItem> incrementalItems = Collections.emptyList();
         private String label = null;
 
-        public IncrementalExecutionResultImpl.Builder hasNext(boolean hasNext) {
+        public DelayedIncrementalExecutionResultImpl.Builder hasNext(boolean hasNext) {
             this.hasNext = hasNext;
             return this;
         }
 
-        public IncrementalExecutionResultImpl.Builder incrementalItems(List<IncrementalItem> incrementalItems) {
+        public DelayedIncrementalExecutionResultImpl.Builder incrementalItems(List<IncrementalItem> incrementalItems) {
             this.incrementalItems = incrementalItems;
             return this;
         }
 
-        public IncrementalExecutionResultImpl.Builder label(String label) {
+        public DelayedIncrementalExecutionResultImpl.Builder label(String label) {
             this.label = label;
             return this;
         }
 
-        public IncrementalExecutionResultImpl build() {
-            return new IncrementalExecutionResultImpl(this.incrementalItems, this.label, this.hasNext);
+        public DelayedIncrementalExecutionResultImpl build() {
+            return new DelayedIncrementalExecutionResultImpl(this.incrementalItems, this.label, this.hasNext);
         }
     }
 }

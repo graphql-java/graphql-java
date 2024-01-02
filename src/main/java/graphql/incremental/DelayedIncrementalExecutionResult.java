@@ -1,11 +1,11 @@
-package graphql.defer;
+package graphql.incremental;
 
 import graphql.ExperimentalApi;
 
 import java.util.List;
 
 @ExperimentalApi
-public interface IncrementalExecutionResult {
+public interface DelayedIncrementalExecutionResult {
     List<IncrementalItem> getIncremental();
 
     String getLabel();

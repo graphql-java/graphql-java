@@ -1,4 +1,4 @@
-package graphql.defer;
+package graphql.incremental;
 
 import graphql.ExperimentalApi;
 import graphql.GraphQLError;
@@ -77,6 +77,11 @@ public class IncrementalItem {
             if (path != null) {
                 this.path = path.toList();
             }
+            return this;
+        }
+
+        public IncrementalItem.Builder path(List<Object> path) {
+            this.path = path;
             return this;
         }
 

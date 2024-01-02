@@ -1,45 +1,46 @@
-package graphql.defer;
+package graphql.incremental;
 
 import graphql.ExperimentalApi;
 
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 @ExperimentalApi
-public class DeferredItem extends IncrementalItem {
-    private final Object data;
+public class StreamedItem extends IncrementalItem {
+    private final List<Object> items;
 
-    private DeferredItem(Object data, IncrementalItem incrementalExecutionResult) {
+    private StreamedItem(List<Object> items, IncrementalItem incrementalExecutionResult) {
         super(incrementalExecutionResult);
-        this.data = data;
+        this.items = items;
     }
 
-    public <T> T getData() {
+    public <T> List<T> getItems() {
         //noinspection unchecked
-        return (T) this.data;
+        return (List<T>) this.items;
     }
 
     @Override
     public Map<String, Object> toSpecification() {
         Map<String, Object> map = new LinkedHashMap<>(super.toSpecification());
 
-        if (data != null) {
-            map.put("data", data);
+        if (items != null) {
+            map.put("items", items);
         }
 
         return map;
     }
 
-    public static DeferredItem.Builder newDeferredItem() {
-        return new DeferredItem.Builder();
+    public static StreamedItem.Builder newStreamedItem() {
+        return new StreamedItem.Builder();
     }
 
-    public static class Builder extends IncrementalItem.Builder  {
-        private Object data = null;
+    public static class Builder extends IncrementalItem.Builder {
+        private List<Object> items = null;
         private final IncrementalItem.Builder builder = IncrementalItem.newIncrementalExecutionResult();
 
-        public Builder data(Object data) {
-            this.data = data;
+        public Builder items(List<Object> items) {
+            this.items = items;
             return this;
         }
 
@@ -50,7 +51,7 @@ public class DeferredItem extends IncrementalItem {
 
         public IncrementalItem build() {
             IncrementalItem build = builder.build();
-            return new DeferredItem(data, build);
+            return new StreamedItem(items, build);
         }
     }
 }
