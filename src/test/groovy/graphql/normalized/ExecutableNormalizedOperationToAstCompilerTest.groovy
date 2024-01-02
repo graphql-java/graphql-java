@@ -2184,7 +2184,7 @@ abstract class ExecutableNormalizedOperationToAstCompilerTest extends Specificat
             String operationName,
             List<ExecutableNormalizedField> topLevelFields,
             VariablePredicate variablePredicate,
-            ImmutableListMultimap<ExecutableNormalizedField, DeferExecution> normalizedFieldToDeferExecution
+            Map<ExecutableNormalizedField, Collection<DeferExecution>> normalizedFieldToDeferExecution
     ) {
         return localCompileToDocument(schema, operationKind, operationName, topLevelFields, Map.of(), variablePredicate, normalizedFieldToDeferExecution)
     }
@@ -2196,7 +2196,7 @@ abstract class ExecutableNormalizedOperationToAstCompilerTest extends Specificat
             List<ExecutableNormalizedField> topLevelFields,
             Map<ExecutableNormalizedField, QueryDirectives> normalizedFieldToQueryDirectives,
             VariablePredicate variablePredicate,
-            ImmutableListMultimap<ExecutableNormalizedField, DeferExecution> normalizedFieldToDeferExecution
+            Map<ExecutableNormalizedField, Collection<DeferExecution>> normalizedFieldToDeferExecution
     ) {
         if (deferSupport) {
             return compileToDocumentWithDeferSupport(schema, operationKind, operationName, topLevelFields, normalizedFieldToQueryDirectives, variablePredicate, normalizedFieldToDeferExecution)

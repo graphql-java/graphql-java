@@ -13,6 +13,7 @@ import graphql.normalized.incremental.DeferExecution;
 import graphql.schema.FieldCoordinates;
 import graphql.schema.GraphQLFieldsContainer;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -135,8 +136,8 @@ public class ExecutableNormalizedOperation {
      * @return a map of {@link ExecutableNormalizedField} to  its {@link DeferExecution}
      */
     @ExperimentalApi
-    public ImmutableListMultimap<ExecutableNormalizedField, DeferExecution> getNormalizedFieldToDeferExecution() {
-        return normalizedFieldToDeferExecution;
+    public Map<ExecutableNormalizedField, Collection<DeferExecution>> getNormalizedFieldToDeferExecution() {
+        return normalizedFieldToDeferExecution.asMap();
     }
 
 

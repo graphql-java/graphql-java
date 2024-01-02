@@ -606,7 +606,7 @@ class ExecutableNormalizedOperationFactoryDeferTest extends Specification {
 
             String printDeferExecutionDetails(ExecutableNormalizedField field) {
                 def deferExecutions = normalizedFieldToDeferExecution.get(field)
-                if (deferExecutions.isEmpty()) {
+                if (deferExecutions == null || deferExecutions.isEmpty()) {
                     return ""
                 }
 
