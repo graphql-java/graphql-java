@@ -97,6 +97,7 @@ public class ExecutableNormalizedOperationToAstCompiler {
      * @param operationName     the name of the operation to use
      * @param topLevelFields    the top level {@link ExecutableNormalizedField}s to start from
      * @param variablePredicate the variable predicate that decides if arguments turn into variables or not during compilation
+     *
      * @return a {@link CompilerResult} object
      */
     public static CompilerResult compileToDocument(@NotNull GraphQLSchema schema,
@@ -119,6 +120,7 @@ public class ExecutableNormalizedOperationToAstCompiler {
      * @param topLevelFields                   the top level {@link ExecutableNormalizedField}s to start from
      * @param normalizedFieldToQueryDirectives the map of normalized field to query directives
      * @param variablePredicate                the variable predicate that decides if arguments turn into variables or not during compilation
+     *
      * @return a {@link CompilerResult} object
      */
     public static CompilerResult compileToDocument(@NotNull GraphQLSchema schema,
@@ -143,7 +145,9 @@ public class ExecutableNormalizedOperationToAstCompiler {
      * @param topLevelFields                  the top level {@link ExecutableNormalizedField}s to start from
      * @param variablePredicate               the variable predicate that decides if arguments turn into variables or not during compilation
      * @param normalizedFieldToDeferExecution a map associating {@link ExecutableNormalizedField}s with their {@link DeferExecution}s, this parameter needs to be present in order for defer support to work
+     *
      * @return a {@link CompilerResult} object
+     *
      * @see ExecutableNormalizedOperationToAstCompiler#compileToDocument(GraphQLSchema, OperationDefinition.Operation, String, List, VariablePredicate)
      */
     @ExperimentalApi
@@ -169,7 +173,9 @@ public class ExecutableNormalizedOperationToAstCompiler {
      * @param normalizedFieldToQueryDirectives the map of normalized field to query directives
      * @param variablePredicate                the variable predicate that decides if arguments turn into variables or not during compilation
      * @param normalizedFieldToDeferExecution  a map associating {@link ExecutableNormalizedField}s with their {@link DeferExecution}s, this parameter needs to be present in order for defer support to work
+     *
      * @return a {@link CompilerResult} object
+     *
      * @see ExecutableNormalizedOperationToAstCompiler#compileToDocument(GraphQLSchema, OperationDefinition.Operation, String, List, Map, VariablePredicate)
      */
     @ExperimentalApi
@@ -498,8 +504,12 @@ public class ExecutableNormalizedOperationToAstCompiler {
 
         @Override
         public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
             ExecutionFragmentDetails that = (ExecutionFragmentDetails) o;
             return Objects.equals(typeName, that.typeName) && Objects.equals(deferExecution, that.deferExecution);
         }

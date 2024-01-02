@@ -105,6 +105,7 @@ public class ExecutableNormalizedOperationFactory {
          * e.g. can be passed to {@link graphql.schema.Coercing} for parsing.
          *
          * @param locale the locale to use
+         *
          * @return new options object to use
          */
         public Options locale(Locale locale) {
@@ -117,6 +118,7 @@ public class ExecutableNormalizedOperationFactory {
          * Can be used to intercept input values e.g. using {@link graphql.execution.values.InputInterceptor}.
          *
          * @param graphQLContext the context to use
+         *
          * @return new options object to use
          */
         public Options graphQLContext(GraphQLContext graphQLContext) {
@@ -128,6 +130,7 @@ public class ExecutableNormalizedOperationFactory {
          * against malicious operations.
          *
          * @param maxChildrenDepth the max depth
+         *
          * @return new options object to use
          */
         public Options maxChildrenDepth(int maxChildrenDepth) {
@@ -138,6 +141,7 @@ public class ExecutableNormalizedOperationFactory {
          * Controls whether defer execution is supported when creating instances of {@link ExecutableNormalizedOperation}.
          *
          * @param deferSupport true to enable support for defer
+         *
          * @return new options object to use
          */
         @ExperimentalApi
@@ -147,6 +151,7 @@ public class ExecutableNormalizedOperationFactory {
 
         /**
          * @return context to use during operation parsing
+         *
          * @see #graphQLContext(GraphQLContext)
          */
         public GraphQLContext getGraphQLContext() {
@@ -155,6 +160,7 @@ public class ExecutableNormalizedOperationFactory {
 
         /**
          * @return locale to use during operation parsing
+         *
          * @see #locale(Locale)
          */
         public Locale getLocale() {
@@ -163,6 +169,7 @@ public class ExecutableNormalizedOperationFactory {
 
         /**
          * @return maximum children depth before aborting parsing
+         *
          * @see #maxChildrenDepth(int)
          */
         public int getMaxChildrenDepth() {
@@ -171,6 +178,7 @@ public class ExecutableNormalizedOperationFactory {
 
         /**
          * @return whether support for defer is enabled
+         *
          * @see #deferSupport(boolean)
          */
         @ExperimentalApi
@@ -190,6 +198,7 @@ public class ExecutableNormalizedOperationFactory {
      * @param document              the {@link Document} holding the operation text
      * @param operationName         the operation name to use
      * @param coercedVariableValues the coerced variables to use
+     *
      * @return a runtime representation of the graphql operation.
      */
     public static ExecutableNormalizedOperation createExecutableNormalizedOperation(
@@ -215,6 +224,7 @@ public class ExecutableNormalizedOperationFactory {
      * @param operationName         the operation name to use
      * @param coercedVariableValues the coerced variables to use
      * @param options               the {@link Options} to use for parsing
+     *
      * @return a runtime representation of the graphql operation.
      */
     public static ExecutableNormalizedOperation createExecutableNormalizedOperation(
@@ -241,6 +251,7 @@ public class ExecutableNormalizedOperationFactory {
      * @param operationDefinition   the operation to be executed
      * @param fragments             a set of fragments associated with the operation
      * @param coercedVariableValues the coerced variables to use
+     *
      * @return a runtime representation of the graphql operation.
      */
     public static ExecutableNormalizedOperation createExecutableNormalizedOperation(GraphQLSchema graphQLSchema,
@@ -263,6 +274,7 @@ public class ExecutableNormalizedOperationFactory {
      * @param document      the {@link Document} holding the operation text
      * @param operationName the operation name to use
      * @param rawVariables  the raw variables to be coerced
+     *
      * @return a runtime representation of the graphql operation.
      */
     public static ExecutableNormalizedOperation createExecutableNormalizedOperationWithRawVariables(GraphQLSchema graphQLSchema,
@@ -287,6 +299,7 @@ public class ExecutableNormalizedOperationFactory {
      * @param rawVariables   the raw variables that have not yet been coerced
      * @param locale         the {@link Locale} to use during coercion
      * @param graphQLContext the {@link GraphQLContext} to use during coercion
+     *
      * @return a runtime representation of the graphql operation.
      */
     public static ExecutableNormalizedOperation createExecutableNormalizedOperationWithRawVariables(
@@ -315,6 +328,7 @@ public class ExecutableNormalizedOperationFactory {
      * @param operationName the operation name to use
      * @param rawVariables  the raw variables that have not yet been coerced
      * @param options       the {@link Options} to use for parsing
+     *
      * @return a runtime representation of the graphql operation.
      */
     public static ExecutableNormalizedOperation createExecutableNormalizedOperationWithRawVariables(GraphQLSchema graphQLSchema,
