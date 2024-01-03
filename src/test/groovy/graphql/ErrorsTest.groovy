@@ -43,9 +43,21 @@ class ErrorsTest extends Specification {
     def "ValidationError equals and hashcode works"() {
         expect:
 
-        def same1 = new ValidationError(ValidationErrorType.BadValueForDefaultArg, [src(15, 34), src(23, 567)], "bad ju ju")
-        def same2 = new ValidationError(ValidationErrorType.BadValueForDefaultArg, [src(15, 34), src(23, 567)], "bad ju ju")
-        def different1 = new ValidationError(ValidationErrorType.FieldsConflict, [src(15, 34), src(23, 567)], "bad ju ju")
+        def same1 = ValidationError.newValidationError()
+                .validationErrorType(ValidationErrorType.BadValueForDefaultArg)
+                .sourceLocations([src(15, 34), src(23, 567)])
+                .description("bad ju ju")
+                .build()
+        def same2 = ValidationError.newValidationError()
+                .validationErrorType(ValidationErrorType.BadValueForDefaultArg)
+                .sourceLocations([src(15, 34), src(23, 567)])
+                .description("bad ju ju")
+                .build()
+        def different1 = ValidationError.newValidationError()
+                .validationErrorType(ValidationErrorType.FieldsConflict)
+                .sourceLocations([src(15, 34), src(23, 567)])
+                .description("bad ju ju")
+                .build()
 
         commonAssert(same1, same2, different1)
     }
