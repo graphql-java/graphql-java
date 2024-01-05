@@ -20,27 +20,36 @@ class ExecutableNormalizedOperationFactoryDeferTest extends Specification {
             type Query {
                 dog: Dog
                 animal: Animal
+                mammal: Mammal
             }
             
-            interface Animal {
+            interface LivingThing {
+                age: Int
+            }
+            
+            interface Animal implements LivingThing {
                 name: String
+                age: Int
             }
 
-            type Dog implements Animal {
+            type Dog implements Animal & LivingThing {
                 name: String
+                age: Int
                 breed: String
                 owner: Person
             }
             
-            type Cat implements Animal {
+            type Cat implements Animal & LivingThing  {
                 name: String
+                age: Int
                 breed: String
                 color: String
                 siblings: [Cat]
             }
             
-            type Fish implements Animal {
+            type Fish implements Animal & LivingThing  {
                 name: String
+                age: Int
             }
             
             type Person {
@@ -48,6 +57,8 @@ class ExecutableNormalizedOperationFactoryDeferTest extends Specification {
                 lastname: String
                 bestFriend: Person
             }
+            
+            union Mammal = Dog | Cat
         """
 
     GraphQLSchema graphQLSchema = TestUtil.schema(schema)
@@ -74,7 +85,31 @@ class ExecutableNormalizedOperationFactoryDeferTest extends Specification {
         then:
         printedTree == ['Query.dog',
                         'Dog.name',
-                        'Dog.breed defer[breed-defer]',
+                        'Dog.breed defer{[label=breed-defer;types=[Dog]]}',
+        ]
+    }
+
+    def "fragment on interface field with no type"() {
+        given:
+
+        String query = '''
+          query q {
+            animal {
+                ... @defer {
+                    name
+                }
+            }
+          }
+        '''
+
+        Map<String, Object> variables = [:]
+
+        when:
+        List<String> printedTree = executeQueryAndPrintTree(query, variables)
+
+        then:
+        printedTree == ['Query.animal',
+                        "[Cat, Dog, Fish].name defer{[label=null;types=[Cat, Dog, Fish]]}",
         ]
     }
 
@@ -104,7 +139,171 @@ class ExecutableNormalizedOperationFactoryDeferTest extends Specification {
 
         then:
         printedTree == ['Query.animal',
-                        '[Cat, Dog, Fish].name defer[null]',
+                        "[Cat, Dog, Fish].name defer{[label=null;types=[Cat, Dog, Fish]]}",
+        ]
+    }
+
+    def "fragments on subset of non-conditional fields"() {
+        given:
+
+        String query = '''
+          query q {
+            animal {
+                ... on Cat @defer {
+                    name
+                }
+                ... on Dog @defer {
+                    name
+                }
+                ... on Fish {
+                    name
+                }
+            }
+          }
+        '''
+
+        Map<String, Object> variables = [:]
+
+        when:
+        List<String> printedTree = executeQueryAndPrintTree(query, variables)
+
+        then:
+        printedTree == ['Query.animal',
+                        "[Cat, Dog, Fish].name defer{[label=null;types=[Cat, Dog]]}",
+        ]
+    }
+
+    def "fragment on interface"() {
+        given:
+
+        String query = '''
+          query q {
+            animal {
+                ... on Animal @defer {
+                    name
+                }
+            }
+          }
+        '''
+
+        Map<String, Object> variables = [:]
+
+        when:
+        List<String> printedTree = executeQueryAndPrintTree(query, variables)
+
+        then:
+        printedTree == ['Query.animal',
+                        '[Cat, Dog, Fish].name defer{[label=null;types=[Cat, Dog, Fish]]}',
+        ]
+    }
+
+    def "fragment on distant interface"() {
+        given:
+
+        String query = '''
+          query q {
+            animal {
+                ... on LivingThing @defer {
+                    age
+                }
+            }
+          }
+        '''
+
+        Map<String, Object> variables = [:]
+
+        when:
+        List<String> printedTree = executeQueryAndPrintTree(query, variables)
+
+        then:
+        printedTree == ['Query.animal',
+                        '[Cat, Dog, Fish].age defer{[label=null;types=[Cat, Dog, Fish]]}',
+        ]
+    }
+
+    def "fragment on union"() {
+        given:
+
+        String query = '''
+          query q {
+            mammal {
+                ... on Dog @defer {
+                    name
+                    breed
+                }
+                ... on Cat @defer {
+                    name
+                    breed
+                }
+            }
+          }
+        '''
+
+        Map<String, Object> variables = [:]
+
+        when:
+        List<String> printedTree = executeQueryAndPrintTree(query, variables)
+
+        then:
+        printedTree == ['Query.mammal',
+                        '[Dog, Cat].name defer{[label=null;types=[Cat, Dog]]}',
+                        'Dog.breed defer{[label=null;types=[Dog]]}',
+                        'Cat.breed defer{[label=null;types=[Cat]]}',
+        ]
+    }
+
+    def "fragments on interface"() {
+        given:
+
+        String query = '''
+          query q {
+            animal {
+                ... on Animal @defer {
+                    name
+                }
+                ... on Animal @defer {
+                    age
+                }
+            }
+          }
+        '''
+
+        Map<String, Object> variables = [:]
+
+        when:
+        List<String> printedTree = executeQueryAndPrintTree(query, variables)
+
+        then:
+        printedTree == ['Query.animal',
+                        '[Cat, Dog, Fish].name defer{[label=null;types=[Cat, Dog, Fish]]}',
+                        '[Cat, Dog, Fish].age defer{[label=null;types=[Cat, Dog, Fish]]}',
+        ]
+    }
+
+    def "defer on a subselection of non-conditional fields"() {
+        given:
+
+        String query = '''
+          query q {
+            animal {
+                ... on Cat @defer {
+                    name
+                }
+                ... on Dog {
+                    name
+                }
+            }
+          }
+        '''
+
+        Map<String, Object> variables = [:]
+
+        when:
+        List<String> printedTree = executeQueryAndPrintTree(query, variables)
+
+        then:
+        printedTree == ['Query.animal',
+                        '[Cat, Dog].name defer{[label=null;types=[Cat]]}',
         ]
     }
 
@@ -131,8 +330,8 @@ class ExecutableNormalizedOperationFactoryDeferTest extends Specification {
 
         then:
         printedTree == ['Query.animal',
-                        'Cat.breed defer[null]',
-                        'Dog.breed defer[null]'
+                        'Cat.breed defer{[label=null;types=[Cat]]}',
+                        'Dog.breed defer{[label=null;types=[Dog]]}'
         ]
     }
 
@@ -158,18 +357,26 @@ class ExecutableNormalizedOperationFactoryDeferTest extends Specification {
         then:
         printedTree == ['Query.dog',
                         'Dog.name',
-                        'Dog.breed defer[breed-defer]',
+                        'Dog.breed defer{[label=breed-defer;types=[Dog]]}',
         ]
     }
 
-    def "defer on 2 fields"() {
+    def "1 defer on 2 fields"() {
         given:
-
         String query = '''
           query q {
-            dog {
-                ... @defer(label: "breed-defer") {
+            animal {
+                ... @defer {
                     name
+                }
+                
+                ... on Dog @defer {
+                    name 
+                    breed
+                }
+                
+                ... on Cat @defer {
+                    name 
                     breed
                 }
             }
@@ -179,12 +386,66 @@ class ExecutableNormalizedOperationFactoryDeferTest extends Specification {
         Map<String, Object> variables = [:]
 
         when:
-        List<String> printedTree = executeQueryAndPrintTree(query, variables)
+        def executableNormalizedOperation = createExecutableNormalizedOperations(query, variables);
 
-        then:
+        List<String> printedTree = printTreeWithIncrementalExecutionDetails(executableNormalizedOperation)
+
+        then: "should result in the same instance of defer"
+        def nameField = findField(executableNormalizedOperation,"[Cat, Dog, Fish]","name")
+        def dogBreedField = findField(executableNormalizedOperation, "Dog", "breed")
+        def catBreedField = findField(executableNormalizedOperation, "Cat", "breed")
+
+        nameField.deferExecutions.size() == 1
+        dogBreedField.deferExecutions.size() == 1
+        catBreedField.deferExecutions.size() == 1
+
+        // same label instances
+        nameField.deferExecutions[0].deferBlock == dogBreedField.deferExecutions[0].deferBlock
+        dogBreedField.deferExecutions[0].deferBlock == catBreedField.deferExecutions[0].deferBlock
+
+        printedTree == ['Query.animal',
+                        '[Cat, Dog, Fish].name defer{[label=null;types=[Cat, Dog, Fish]]}',
+                        'Dog.breed defer{[label=null;types=[Dog]]}',
+                        'Cat.breed defer{[label=null;types=[Cat]]}',
+        ]
+    }
+
+    def "2 defers on 2 fields"() {
+        given:
+
+        String query = '''
+          query q {
+            dog {
+                ... @defer{
+                    name
+                }
+                ... @defer{
+                    breed
+                }
+            }
+          }
+        '''
+
+        Map<String, Object> variables = [:]
+
+        when:
+        def executableNormalizedOperation = createExecutableNormalizedOperations(query, variables);
+
+        List<String> printedTree = printTreeWithIncrementalExecutionDetails(executableNormalizedOperation)
+
+        then: "should result in 2 different instances of defer"
+        def nameField = findField(executableNormalizedOperation, "Dog", "name")
+        def breedField = findField(executableNormalizedOperation, "Dog", "breed")
+
+        nameField.deferExecutions.size() == 1
+        breedField.deferExecutions.size() == 1
+
+        // different label instances
+        nameField.deferExecutions[0].deferBlock != breedField.deferExecutions[0].deferBlock
+
         printedTree == ['Query.dog',
-                        'Dog.name defer[breed-defer]',
-                        'Dog.breed defer[breed-defer]',
+                        'Dog.name defer{[label=null;types=[Dog]]}',
+                        'Dog.breed defer{[label=null;types=[Dog]]}',
         ]
     }
 
@@ -211,8 +472,8 @@ class ExecutableNormalizedOperationFactoryDeferTest extends Specification {
 
         then:
         printedTree == ['Query.dog',
-                        'Dog.name defer[breed-defer]',
-                        'Dog.breed defer[breed-defer]',
+                        'Dog.name defer{[label=breed-defer;types=[Dog]]}',
+                        'Dog.breed defer{[label=breed-defer;types=[Dog]]}',
         ]
     }
 
@@ -241,7 +502,7 @@ class ExecutableNormalizedOperationFactoryDeferTest extends Specification {
 
         then:
         printedTree == ['Query.dog',
-                        'Dog.name defer[name-defer,another-name-defer]',
+                        'Dog.name defer{[label=another-name-defer;types=[Dog]],[label=name-defer;types=[Dog]]}'
         ]
     }
 
@@ -270,7 +531,7 @@ class ExecutableNormalizedOperationFactoryDeferTest extends Specification {
 
         then:
         printedTree == ['Query.dog',
-                        'Dog.name defer[name-defer]',
+                        'Dog.name defer{[label=name-defer;types=[Dog]]}',
         ]
     }
 
@@ -299,7 +560,7 @@ class ExecutableNormalizedOperationFactoryDeferTest extends Specification {
 
         then:
         printedTree == ['Query.dog',
-                        'Dog.name defer[null]',
+                        'Dog.name defer{[label=null;types=[Dog]]}',
         ]
     }
 
@@ -328,7 +589,7 @@ class ExecutableNormalizedOperationFactoryDeferTest extends Specification {
 
         then:
         printedTree == ['Query.dog',
-                        'Dog.name defer[null]',
+                        'Dog.name defer{[label=null;types=[Dog]]}',
         ]
     }
 
@@ -387,10 +648,10 @@ class ExecutableNormalizedOperationFactoryDeferTest extends Specification {
 
         then:
         printedTree == ['Query.dog',
-                        'Dog.name defer[null]',
-                        'Dog.owner defer[null]',
+                        'Dog.name defer{[label=null;types=[Dog]]}',
+                        'Dog.owner defer{[label=null;types=[Dog]]}',
                         'Person.firstname',
-                        'Person.lastname defer[null]',
+                        'Person.lastname defer{[label=null;types=[Person]]}',
         ]
     }
 
@@ -420,10 +681,10 @@ class ExecutableNormalizedOperationFactoryDeferTest extends Specification {
 
         then:
         printedTree == ['Query.dog',
-                        'Dog.name defer[dog-defer]',
-                        'Dog.owner defer[dog-defer]',
+                        'Dog.name defer{[label=dog-defer;types=[Dog]]}',
+                        'Dog.owner defer{[label=dog-defer;types=[Dog]]}',
                         'Person.firstname',
-                        'Person.lastname defer[lastname-defer]',
+                        'Person.lastname defer{[label=lastname-defer;types=[Person]]}',
         ]
     }
 
@@ -454,9 +715,9 @@ class ExecutableNormalizedOperationFactoryDeferTest extends Specification {
         then:
         printedTree == ['Query.animal',
                         '[Cat, Dog, Fish].name',
-                        'Dog.owner defer[dog-defer]',
+                        'Dog.owner defer{[label=dog-defer;types=[Dog]]}',
                         'Person.firstname',
-                        'Person.lastname defer[lastname-defer]',
+                        'Person.lastname defer{[label=lastname-defer;types=[Person]]}',
         ]
     }
 
@@ -484,7 +745,7 @@ class ExecutableNormalizedOperationFactoryDeferTest extends Specification {
 
         then:
         printedTree == ['Query.dog',
-                        'Dog.name defer[three]',
+                        'Dog.name defer{[label=three;types=[Dog]]}',
         ]
     }
 
@@ -513,7 +774,7 @@ class ExecutableNormalizedOperationFactoryDeferTest extends Specification {
 
         then:
         printedTree == ['Query.dog',
-                        'Dog.name defer[another-name-defer]',
+                        'Dog.name defer{[label=another-name-defer;types=[Dog]]}',
         ]
     }
 
@@ -542,7 +803,7 @@ class ExecutableNormalizedOperationFactoryDeferTest extends Specification {
 
         then:
         printedTree == ['Query.dog',
-                        'Dog.name defer[another-name-defer]',
+                        'Dog.name defer{[label=another-name-defer;types=[Dog]]}',
         ]
     }
 
@@ -571,8 +832,22 @@ class ExecutableNormalizedOperationFactoryDeferTest extends Specification {
 
         then:
         printedTree == ['Query.dog',
-                        'Dog.name defer[name-defer]',
+                        'Dog.name defer{[label=name-defer;types=[Dog]]}',
         ]
+    }
+
+    private ExecutableNormalizedOperation createExecutableNormalizedOperations(String query, Map<String, Object> variables) {
+        assertValidQuery(graphQLSchema, query, variables)
+        Document document = TestUtil.parseQuery(query)
+        ExecutableNormalizedOperationFactory dependencyGraph = new ExecutableNormalizedOperationFactory()
+
+        return dependencyGraph.createExecutableNormalizedOperationWithRawVariables(
+                graphQLSchema,
+                document,
+                null,
+                RawVariables.of(variables),
+                ExecutableNormalizedOperationFactory.Options.defaultOptions().deferSupport(true),
+        )
     }
 
     private List<String> executeQueryAndPrintTree(String query, Map<String, Object> variables) {
@@ -592,9 +867,7 @@ class ExecutableNormalizedOperationFactoryDeferTest extends Specification {
 
     private List<String> printTreeWithIncrementalExecutionDetails(ExecutableNormalizedOperation queryExecutionTree) {
         def result = []
-        Traverser<ExecutableNormalizedField> traverser = Traverser.depthFirst({ it.getChildren() })
-
-        def normalizedFieldToDeferExecution = queryExecutionTree.normalizedFieldToDeferExecution
+        Traverser traverser = Traverser.depthFirst({ it.getChildren() })
 
         traverser.traverse(queryExecutionTree.getTopLevelFields(), new TraverserVisitorStub<ExecutableNormalizedField>() {
             @Override
@@ -605,25 +878,33 @@ class ExecutableNormalizedOperationFactoryDeferTest extends Specification {
             }
 
             String printDeferExecutionDetails(ExecutableNormalizedField field) {
-                def deferExecutions = normalizedFieldToDeferExecution.get(field)
+                def deferExecutions = field.deferExecutions
                 if (deferExecutions == null || deferExecutions.isEmpty()) {
                     return ""
                 }
 
-                def deferLabels = deferExecutions
-                        .collect { it.label }
+                def deferLabels = new ArrayList<>(deferExecutions)
+                        .sort { it.deferBlock.label }
+                        .collect { "[label=${it.deferBlock.label};types=${it.objectTypeNames.sort()}]" }
                         .join(",")
 
-                return " defer[" + deferLabels + "]"
+                return " defer{${deferLabels}}"
             }
         })
 
         result
     }
 
-    private void assertValidQuery(GraphQLSchema graphQLSchema, String query, Map variables = [:]) {
+    private static void assertValidQuery(GraphQLSchema graphQLSchema, String query, Map variables = [:]) {
         GraphQL graphQL = GraphQL.newGraphQL(graphQLSchema).build()
         def ei = ExecutionInput.newExecutionInput(query).variables(variables).build()
         assert graphQL.execute(ei).errors.size() == 0
+    }
+
+    private static ExecutableNormalizedField findField(ExecutableNormalizedOperation operation, String objectTypeNames, String fieldName) {
+        return operation.normalizedFieldToMergedField
+                .collect { it.key }
+                .find { it.fieldName == fieldName
+                        && it.objectTypeNamesToString() == objectTypeNames}
     }
 }

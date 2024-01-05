@@ -2,13 +2,16 @@ package graphql.normalized;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import graphql.Assert;
+import graphql.ExperimentalApi;
 import graphql.Internal;
 import graphql.Mutable;
 import graphql.PublicApi;
 import graphql.collect.ImmutableKit;
 import graphql.introspection.Introspection;
 import graphql.language.Argument;
+import graphql.normalized.incremental.NormalizedDeferExecution;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLInterfaceType;
 import graphql.schema.GraphQLNamedOutputType;
@@ -63,6 +66,9 @@ public class ExecutableNormalizedField {
     private final String fieldName;
     private final int level;
 
+    // Mutable List on purpose: it is modified after creation
+    private final LinkedHashSet<NormalizedDeferExecution> deferExecutions;
+
     private ExecutableNormalizedField(Builder builder) {
         this.alias = builder.alias;
         this.resolvedArguments = builder.resolvedArguments;
@@ -73,6 +79,7 @@ public class ExecutableNormalizedField {
         this.children = builder.children;
         this.level = builder.level;
         this.parent = builder.parent;
+        this.deferExecutions = builder.deferExecutions;
     }
 
     /**
@@ -253,6 +260,12 @@ public class ExecutableNormalizedField {
     @Internal
     public void clearChildren() {
         this.children.clear();
+    }
+
+    @Internal
+    public void setDeferExecutions(Collection<NormalizedDeferExecution> deferExecutions) {
+        this.deferExecutions.clear();
+        this.deferExecutions.addAll(deferExecutions);
     }
 
     /**
@@ -460,6 +473,12 @@ public class ExecutableNormalizedField {
         return parent;
     }
 
+    // TODO: Javadoc
+    @ExperimentalApi
+    public LinkedHashSet<NormalizedDeferExecution> getDeferExecutions() {
+        return deferExecutions;
+    }
+
     @Internal
     public void replaceParent(ExecutableNormalizedField newParent) {
         this.parent = newParent;
@@ -587,6 +606,8 @@ public class ExecutableNormalizedField {
         private LinkedHashMap<String, Object> resolvedArguments = new LinkedHashMap<>();
         private ImmutableList<Argument> astArguments = ImmutableKit.emptyList();
 
+        private LinkedHashSet<NormalizedDeferExecution> deferExecutions = new LinkedHashSet<>();
+
         private Builder() {
         }
 
@@ -600,6 +621,7 @@ public class ExecutableNormalizedField {
             this.children = new ArrayList<>(existing.children);
             this.level = existing.getLevel();
             this.parent = existing.getParent();
+            this.deferExecutions = existing.getDeferExecutions();
         }
 
         public Builder clearObjectTypesNames() {
@@ -652,6 +674,11 @@ public class ExecutableNormalizedField {
 
         public Builder parent(ExecutableNormalizedField parent) {
             this.parent = parent;
+            return this;
+        }
+
+        public Builder deferExecutions(LinkedHashSet<NormalizedDeferExecution> deferExecutions) {
+            this.deferExecutions = deferExecutions;
             return this;
         }
 

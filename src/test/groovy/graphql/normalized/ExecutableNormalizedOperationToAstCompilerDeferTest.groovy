@@ -75,7 +75,7 @@ class ExecutableNormalizedOperationToAstCompilerDeferTest extends Specification 
         GraphQLSchema schema = mkSchema(sdl)
         def tree = createNormalizedTree(schema, query)
         when:
-        def result = compileToDocumentWithDeferSupport(schema, QUERY, null, tree.topLevelFields, noVariables, tree.normalizedFieldToDeferExecution)
+        def result = compileToDocumentWithDeferSupport(schema, QUERY, null, tree.topLevelFields, noVariables)
         def printed = AstPrinter.printAst(new AstSorter().sort(result.document))
         then:
         printed == '''{
@@ -84,33 +84,6 @@ class ExecutableNormalizedOperationToAstCompilerDeferTest extends Specification 
     ... @defer(label: "breed-defer") {
       breed
     }
-  }
-}
-'''
-    }
-
-    def "@defer directives are not generated when map is null"() {
-        String query = """
-          query q {
-            dog {
-                name
-                ... @defer(label: "breed-defer") {
-                    breed
-                }
-            }
-          }
-        """
-        GraphQLSchema schema = mkSchema(sdl)
-        def tree = createNormalizedTree(schema, query)
-        def normalizedFieldToDeferExecution = null
-        when:
-        def result = compileToDocumentWithDeferSupport(schema, QUERY, null, tree.topLevelFields, noVariables, normalizedFieldToDeferExecution)
-        def printed = AstPrinter.printAst(new AstSorter().sort(result.document))
-        then:
-        printed == '''{
-  dog {
-    breed
-    name
   }
 }
 '''
@@ -130,7 +103,7 @@ class ExecutableNormalizedOperationToAstCompilerDeferTest extends Specification 
         GraphQLSchema schema = mkSchema(sdl)
         def tree = createNormalizedTree(schema, query)
         when:
-        def result = compileToDocumentWithDeferSupport(schema, QUERY, null, tree.topLevelFields, noVariables, tree.normalizedFieldToDeferExecution)
+        def result = compileToDocumentWithDeferSupport(schema, QUERY, null, tree.topLevelFields, noVariables)
         def printed = AstPrinter.printAst(new AstSorter().sort(result.document))
         then:
         printed == '''{
@@ -161,7 +134,7 @@ class ExecutableNormalizedOperationToAstCompilerDeferTest extends Specification 
         GraphQLSchema schema = mkSchema(sdl)
         def tree = createNormalizedTree(schema, query)
         when:
-        def result = compileToDocumentWithDeferSupport(schema, QUERY, null, tree.topLevelFields, noVariables, tree.normalizedFieldToDeferExecution)
+        def result = compileToDocumentWithDeferSupport(schema, QUERY, null, tree.topLevelFields, noVariables)
         def printed = AstPrinter.printAst(new AstSorter().sort(result.document))
         then:
         printed == '''{
@@ -195,7 +168,7 @@ class ExecutableNormalizedOperationToAstCompilerDeferTest extends Specification 
         GraphQLSchema schema = mkSchema(sdl)
         def tree = createNormalizedTree(schema, query)
         when:
-        def result = compileToDocumentWithDeferSupport(schema, QUERY, null, tree.topLevelFields, noVariables, tree.normalizedFieldToDeferExecution)
+        def result = compileToDocumentWithDeferSupport(schema, QUERY, null, tree.topLevelFields, noVariables)
         def printed = AstPrinter.printAst(new AstSorter().sort(result.document))
         then:
         printed == '''{
@@ -225,7 +198,7 @@ class ExecutableNormalizedOperationToAstCompilerDeferTest extends Specification 
         GraphQLSchema schema = mkSchema(sdl)
         def tree = createNormalizedTree(schema, query)
         when:
-        def result = compileToDocumentWithDeferSupport(schema, QUERY, null, tree.topLevelFields, noVariables, tree.normalizedFieldToDeferExecution)
+        def result = compileToDocumentWithDeferSupport(schema, QUERY, null, tree.topLevelFields, noVariables)
         def printed = AstPrinter.printAst(new AstSorter().sort(result.document))
         then:
         printed == '''{
@@ -259,7 +232,7 @@ class ExecutableNormalizedOperationToAstCompilerDeferTest extends Specification 
         GraphQLSchema schema = mkSchema(sdl)
         def tree = createNormalizedTree(schema, query)
         when:
-        def result = compileToDocumentWithDeferSupport(schema, QUERY, null, tree.topLevelFields, noVariables, tree.normalizedFieldToDeferExecution)
+        def result = compileToDocumentWithDeferSupport(schema, QUERY, null, tree.topLevelFields, noVariables)
         def printed = AstPrinter.printAst(new AstSorter().sort(result.document))
         then:
         printed == '''{
@@ -296,7 +269,7 @@ class ExecutableNormalizedOperationToAstCompilerDeferTest extends Specification 
         GraphQLSchema schema = mkSchema(sdl)
         def tree = createNormalizedTree(schema, query)
         when:
-        def result = compileToDocumentWithDeferSupport(schema, QUERY, null, tree.topLevelFields, noVariables, tree.normalizedFieldToDeferExecution)
+        def result = compileToDocumentWithDeferSupport(schema, QUERY, null, tree.topLevelFields, noVariables)
         def printed = AstPrinter.printAst(new AstSorter().sort(result.document))
         then:
         printed == '''{
@@ -325,7 +298,7 @@ class ExecutableNormalizedOperationToAstCompilerDeferTest extends Specification 
         GraphQLSchema schema = mkSchema(sdl)
         def tree = createNormalizedTree(schema, query)
         when:
-        def result = compileToDocumentWithDeferSupport(schema, QUERY, null, tree.topLevelFields, noVariables, tree.normalizedFieldToDeferExecution)
+        def result = compileToDocumentWithDeferSupport(schema, QUERY, null, tree.topLevelFields, noVariables)
         def printed = AstPrinter.printAst(new AstSorter().sort(result.document))
         then:
         printed == '''{
@@ -357,7 +330,7 @@ class ExecutableNormalizedOperationToAstCompilerDeferTest extends Specification 
         GraphQLSchema schema = mkSchema(sdl)
         def tree = createNormalizedTree(schema, query)
         when:
-        def result = compileToDocumentWithDeferSupport(schema, QUERY, null, tree.topLevelFields, noVariables, tree.normalizedFieldToDeferExecution)
+        def result = compileToDocumentWithDeferSupport(schema, QUERY, null, tree.topLevelFields, noVariables)
         def printed = AstPrinter.printAst(new AstSorter().sort(result.document))
         then:
         printed == '''{
@@ -392,7 +365,7 @@ class ExecutableNormalizedOperationToAstCompilerDeferTest extends Specification 
         GraphQLSchema schema = mkSchema(sdl)
         def tree = createNormalizedTree(schema, query)
         when:
-        def result = compileToDocumentWithDeferSupport(schema, QUERY, null, tree.topLevelFields, noVariables, tree.normalizedFieldToDeferExecution)
+        def result = compileToDocumentWithDeferSupport(schema, QUERY, null, tree.topLevelFields, noVariables)
         def printed = AstPrinter.printAst(new AstSorter().sort(result.document))
         then:
         printed == '''{
@@ -443,7 +416,7 @@ class ExecutableNormalizedOperationToAstCompilerDeferTest extends Specification 
         GraphQLSchema schema = mkSchema(sdl)
         def tree = createNormalizedTree(schema, query)
         when:
-        def result = compileToDocumentWithDeferSupport(schema, QUERY, null, tree.topLevelFields, noVariables, tree.normalizedFieldToDeferExecution)
+        def result = compileToDocumentWithDeferSupport(schema, QUERY, null, tree.topLevelFields, noVariables)
         def printed = AstPrinter.printAst(new AstSorter().sort(result.document))
         then:
         printed == '''{
@@ -493,7 +466,7 @@ class ExecutableNormalizedOperationToAstCompilerDeferTest extends Specification 
         GraphQLSchema schema = mkSchema(sdl)
         def tree = createNormalizedTree(schema, query)
         when:
-        def result = compileToDocumentWithDeferSupport(schema, QUERY, null, tree.topLevelFields, noVariables, tree.normalizedFieldToDeferExecution)
+        def result = compileToDocumentWithDeferSupport(schema, QUERY, null, tree.topLevelFields, noVariables)
         def printed = AstPrinter.printAst(new AstSorter().sort(result.document))
         then:
         printed == '''{
