@@ -1,9 +1,11 @@
 package graphql.normalized;
 
+import com.google.common.collect.Multimap;
 import graphql.Internal;
 import graphql.introspection.Introspection;
 import graphql.language.Argument;
 import graphql.language.AstComparator;
+import graphql.normalized.incremental.DeferDeclaration;
 import graphql.schema.GraphQLInterfaceType;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
@@ -19,7 +21,12 @@ import java.util.Set;
 @Internal
 public class ENFMerger {
 
-    public static void merge(ExecutableNormalizedField parent, List<ExecutableNormalizedField> childrenWithSameResultKey, GraphQLSchema schema) {
+    public static void merge(
+            ExecutableNormalizedField parent,
+            List<ExecutableNormalizedField> childrenWithSameResultKey,
+            GraphQLSchema schema,
+            Multimap<ExecutableNormalizedField, DeferDeclaration> normalizedFieldToDeferExecution
+    ) {
         // they have all the same result key
         // we can only merge the fields if they have the same field name + arguments + all children are the same
         List<Set<ExecutableNormalizedField>> possibleGroupsToMerge = new ArrayList<>();
@@ -28,7 +35,7 @@ public class ENFMerger {
             overPossibleGroups:
             for (Set<ExecutableNormalizedField> group : possibleGroupsToMerge) {
                 for (ExecutableNormalizedField fieldInGroup : group) {
-                    if(field.getFieldName().equals(Introspection.TypeNameMetaFieldDef.getName())) {
+                    if (field.getFieldName().equals(Introspection.TypeNameMetaFieldDef.getName())) {
                         addToGroup = true;
                         group.add(field);
                         continue overPossibleGroups;
@@ -58,13 +65,18 @@ public class ENFMerger {
             }
             boolean mergeable = areFieldSetsTheSame(listOfChildrenForGroup);
             if (mergeable) {
-                Set<String> mergedObjects = new LinkedHashSet<>();
-                groupOfFields.forEach(f -> mergedObjects.addAll(f.getObjectTypeNames()));
                 // patching the first one to contain more objects, remove all others
                 Iterator<ExecutableNormalizedField> iterator = groupOfFields.iterator();
                 ExecutableNormalizedField first = iterator.next();
+
+                Set<String> mergedObjects = new LinkedHashSet<>();
+                groupOfFields.forEach(f -> mergedObjects.addAll(f.getObjectTypeNames()));
                 while (iterator.hasNext()) {
-                    parent.getChildren().remove(iterator.next());
+                    ExecutableNormalizedField next = iterator.next();
+                    // Move defer executions from removed field into the merged field's entry
+                    normalizedFieldToDeferExecution.putAll(first, normalizedFieldToDeferExecution.get(next));
+                    parent.getChildren().remove(next);
+                    normalizedFieldToDeferExecution.removeAll(next);
                 }
                 first.setObjectTypeNames(mergedObjects);
             }

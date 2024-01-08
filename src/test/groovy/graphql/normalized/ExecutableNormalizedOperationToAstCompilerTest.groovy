@@ -1,6 +1,5 @@
 package graphql.normalized
 
-import com.google.common.collect.ImmutableListMultimap
 import graphql.GraphQL
 import graphql.TestUtil
 import graphql.execution.RawVariables
@@ -12,7 +11,6 @@ import graphql.language.Field
 import graphql.language.IntValue
 import graphql.language.OperationDefinition
 import graphql.language.StringValue
-import graphql.normalized.incremental.DeferExecution
 import graphql.parser.Parser
 import graphql.schema.GraphQLSchema
 import graphql.schema.idl.RuntimeWiring
@@ -205,7 +203,7 @@ abstract class ExecutableNormalizedOperationToAstCompilerTest extends Specificat
         def tree = createNormalizedTree(schema, query)
 
         when:
-        def result = localCompileToDocument(schema, QUERY, null, tree.topLevelFields, noVariables, tree.normalizedFieldToDeferExecution)
+        def result = localCompileToDocument(schema, QUERY, null, tree.topLevelFields, noVariables)
         def printed = AstPrinter.printAst(new AstSorter().sort(result.document))
 
         then:
@@ -256,7 +254,7 @@ abstract class ExecutableNormalizedOperationToAstCompilerTest extends Specificat
         // printTreeWithLevelInfo(tree, schema).forEach { println it }
 
         when:
-        def result = localCompileToDocument(schema, QUERY, null, tree.topLevelFields, noVariables, tree.normalizedFieldToDeferExecution)
+        def result = localCompileToDocument(schema, QUERY, null, tree.topLevelFields, noVariables)
         def printed = AstPrinter.printAst(new AstSorter().sort(result.document))
 
         then:
@@ -337,7 +335,7 @@ abstract class ExecutableNormalizedOperationToAstCompilerTest extends Specificat
         // printTreeWithLevelInfo(tree, schema).forEach { println it }
 
         when:
-        def result = localCompileToDocument(schema, QUERY, null, tree.topLevelFields, noVariables, tree.normalizedFieldToDeferExecution)
+        def result = localCompileToDocument(schema, QUERY, null, tree.topLevelFields, noVariables)
         def printed = AstPrinter.printAst(new AstSorter().sort(result.document))
 
         then:
@@ -429,7 +427,7 @@ abstract class ExecutableNormalizedOperationToAstCompilerTest extends Specificat
         // printTreeWithLevelInfo(tree, schema).forEach { println it }
 
         when:
-        def result = localCompileToDocument(schema, QUERY, null, tree.topLevelFields, noVariables, tree.normalizedFieldToDeferExecution)
+        def result = localCompileToDocument(schema, QUERY, null, tree.topLevelFields, noVariables)
         def printed = AstPrinter.printAst(new AstSorter().sort(result.document))
 
         then:
@@ -524,7 +522,7 @@ abstract class ExecutableNormalizedOperationToAstCompilerTest extends Specificat
         // printTreeWithLevelInfo(tree, schema).forEach { println it }
 
         when:
-        def result = localCompileToDocument(schema, QUERY, null, tree.topLevelFields, noVariables, tree.normalizedFieldToDeferExecution)
+        def result = localCompileToDocument(schema, QUERY, null, tree.topLevelFields, noVariables)
         def printed = AstPrinter.printAst(new AstSorter().sort(result.document))
 
         then:
@@ -591,7 +589,7 @@ abstract class ExecutableNormalizedOperationToAstCompilerTest extends Specificat
         // printTreeWithLevelInfo(tree, schema).forEach { println it }
 
         when:
-        def result = localCompileToDocument(schema, QUERY, null, tree.topLevelFields, noVariables, tree.normalizedFieldToDeferExecution)
+        def result = localCompileToDocument(schema, QUERY, null, tree.topLevelFields, noVariables)
         def printed = AstPrinter.printAst(new AstSorter().sort(result.document))
 
         then:
@@ -648,7 +646,7 @@ abstract class ExecutableNormalizedOperationToAstCompilerTest extends Specificat
         // printTreeWithLevelInfo(tree, schema).forEach { println it }
 
         when:
-        def result = localCompileToDocument(schema, QUERY, null, tree.topLevelFields, noVariables, tree.normalizedFieldToDeferExecution)
+        def result = localCompileToDocument(schema, QUERY, null, tree.topLevelFields, noVariables)
         def printed = AstPrinter.printAst(new AstSorter().sort(result.document))
 
         then:
@@ -706,7 +704,7 @@ abstract class ExecutableNormalizedOperationToAstCompilerTest extends Specificat
         // printTreeWithLevelInfo(tree, schema).forEach { println it }
 
         when:
-        def result = localCompileToDocument(schema, QUERY, null, tree.topLevelFields, noVariables, tree.normalizedFieldToDeferExecution)
+        def result = localCompileToDocument(schema, QUERY, null, tree.topLevelFields, noVariables)
         def printed = AstPrinter.printAst(new AstSorter().sort(result.document))
 
         then:
@@ -773,7 +771,7 @@ abstract class ExecutableNormalizedOperationToAstCompilerTest extends Specificat
         // printTreeWithLevelInfo(tree, schema).forEach { println it }
 
         when:
-        def result = localCompileToDocument(schema, QUERY, null, tree.topLevelFields, noVariables, tree.normalizedFieldToDeferExecution)
+        def result = localCompileToDocument(schema, QUERY, null, tree.topLevelFields, noVariables)
         def printed = AstPrinter.printAst(new AstSorter().sort(result.document))
 
         then:
@@ -871,7 +869,7 @@ abstract class ExecutableNormalizedOperationToAstCompilerTest extends Specificat
         // printTreeWithLevelInfo(tree, schema).forEach { println it }
 
         when:
-        def result = localCompileToDocument(schema, QUERY, null, tree.topLevelFields, noVariables, tree.normalizedFieldToDeferExecution)
+        def result = localCompileToDocument(schema, QUERY, null, tree.topLevelFields, noVariables)
         def printed = AstPrinter.printAst(new AstSorter().sort(result.document))
 
         then:
@@ -969,7 +967,7 @@ abstract class ExecutableNormalizedOperationToAstCompilerTest extends Specificat
         // printTreeWithLevelInfo(tree, schema).forEach { println it }
 
         when:
-        def result = localCompileToDocument(schema, QUERY, null, tree.topLevelFields, noVariables, tree.normalizedFieldToDeferExecution)
+        def result = localCompileToDocument(schema, QUERY, null, tree.topLevelFields, noVariables)
         def printed = AstPrinter.printAst(new AstSorter().sort(result.document))
 
         then:
@@ -1285,7 +1283,7 @@ abstract class ExecutableNormalizedOperationToAstCompilerTest extends Specificat
 
 
         when:
-        def result = localCompileToDocument(schema, SUBSCRIPTION, null, eno.topLevelFields, eno.normalizedFieldToQueryDirectives, noVariables, null)
+        def result = localCompileToDocument(schema, SUBSCRIPTION, null, eno.topLevelFields, eno.normalizedFieldToQueryDirectives, noVariables)
         OperationDefinition operationDefinition = result.document.getDefinitionsOfType(OperationDefinition.class)[0]
         def fooField = (Field) operationDefinition.selectionSet.children[0]
         def nameField = (Field) fooField.selectionSet.children[0]
@@ -2175,18 +2173,7 @@ abstract class ExecutableNormalizedOperationToAstCompilerTest extends Specificat
             List<ExecutableNormalizedField> topLevelFields,
             VariablePredicate variablePredicate
     ) {
-        return localCompileToDocument(schema, operationKind, operationName, topLevelFields, variablePredicate, null)
-    }
-
-    private static ExecutableNormalizedOperationToAstCompiler.CompilerResult localCompileToDocument(
-            GraphQLSchema schema,
-            OperationDefinition.Operation operationKind,
-            String operationName,
-            List<ExecutableNormalizedField> topLevelFields,
-            VariablePredicate variablePredicate,
-            ImmutableListMultimap<ExecutableNormalizedField, DeferExecution> normalizedFieldToDeferExecution
-    ) {
-        return localCompileToDocument(schema, operationKind, operationName, topLevelFields, Map.of(), variablePredicate, normalizedFieldToDeferExecution)
+        return localCompileToDocument(schema, operationKind, operationName, topLevelFields,Map.of(), variablePredicate);
     }
 
     private static ExecutableNormalizedOperationToAstCompiler.CompilerResult localCompileToDocument(
@@ -2195,11 +2182,10 @@ abstract class ExecutableNormalizedOperationToAstCompilerTest extends Specificat
             String operationName,
             List<ExecutableNormalizedField> topLevelFields,
             Map<ExecutableNormalizedField, QueryDirectives> normalizedFieldToQueryDirectives,
-            VariablePredicate variablePredicate,
-            ImmutableListMultimap<ExecutableNormalizedField, DeferExecution> normalizedFieldToDeferExecution
+            VariablePredicate variablePredicate
     ) {
         if (deferSupport) {
-            return compileToDocumentWithDeferSupport(schema, operationKind, operationName, topLevelFields, normalizedFieldToQueryDirectives, variablePredicate, normalizedFieldToDeferExecution)
+            return compileToDocumentWithDeferSupport(schema, operationKind, operationName, topLevelFields, normalizedFieldToQueryDirectives, variablePredicate)
         }
         return compileToDocument(schema, operationKind, operationName, topLevelFields, normalizedFieldToQueryDirectives, variablePredicate)
     }
