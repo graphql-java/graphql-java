@@ -491,9 +491,8 @@ class ExecutableNormalizedOperationToAstCompilerDeferTest extends Specification 
         assertValidQuery(schema, query, variables)
         Document originalDocument = TestUtil.parseQuery(query)
 
-        ExecutableNormalizedOperationFactory dependencyGraph = new ExecutableNormalizedOperationFactory()
         def options = ExecutableNormalizedOperationFactory.Options.defaultOptions().deferSupport(true)
-        return dependencyGraph.createExecutableNormalizedOperationWithRawVariables(
+        return ExecutableNormalizedOperationFactory.createExecutableNormalizedOperationWithRawVariables(
                 schema,
                 originalDocument,
                 null,
