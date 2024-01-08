@@ -4,6 +4,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import graphql.DeprecatedAt;
 import graphql.GraphQLContext;
 import graphql.PublicApi;
 import graphql.collect.ImmutableKit;
@@ -151,6 +152,14 @@ public class ExecutableNormalizedOperationFactory {
         }
     }
 
+    /**
+     * @deprecated the API surface of this class is all static methods, eventually this constructor will be made `private`.
+     */
+    @Deprecated
+    @DeprecatedAt("2024-01-08")
+    public ExecutableNormalizedOperationFactory() {
+
+    }
 
     private static final ConditionalNodes conditionalNodes = new ConditionalNodes();
 
