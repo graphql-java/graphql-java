@@ -341,18 +341,11 @@ public class ExecutableNormalizedOperationFactory {
 
             CollectNFResult collectFromOperationResult = collectFromOperation(rootType);
 
-            BiConsumer<ExecutableNormalizedField, MergedField> captureMergedField = (enf, mergedFld) -> {
-                // QueryDirectivesImpl is a lazy object and only computes itself when asked for
-                QueryDirectives queryDirectives = new QueryDirectivesImpl(mergedFld, graphQLSchema, coercedVariableValues.toMap(), options.getGraphQLContext(), options.getLocale());
-                normalizedFieldToQueryDirectives.put(enf, queryDirectives);
-                normalizedFieldToMergedField.put(enf, mergedFld);
-            };
-
             for (ExecutableNormalizedField topLevel : collectFromOperationResult.children) {
                 ImmutableList<FieldAndAstParent> fieldAndAstParents = collectFromOperationResult.normalizedFieldToAstFields.get(topLevel);
                 MergedField mergedField = newMergedField(fieldAndAstParents);
 
-                captureMergedField.accept(topLevel, mergedField);
+                captureMergedField(topLevel, mergedField);
 
                 updateFieldToNFMap(topLevel, fieldAndAstParents);
                 updateCoordinatedToNFMap(topLevel);
@@ -360,7 +353,6 @@ public class ExecutableNormalizedOperationFactory {
                 buildFieldWithChildren(
                         topLevel,
                         fieldAndAstParents,
-                        captureMergedField,
                         1,
                         options.getMaxChildrenDepth());
             }
@@ -380,10 +372,15 @@ public class ExecutableNormalizedOperationFactory {
             );
         }
 
+        private void captureMergedField(ExecutableNormalizedField enf, MergedField mergedFld)  {
+            // QueryDirectivesImpl is a lazy object and only computes itself when asked for
+            QueryDirectives queryDirectives = new QueryDirectivesImpl(mergedFld, graphQLSchema, coercedVariableValues.toMap(), options.getGraphQLContext(), options.getLocale());
+            normalizedFieldToQueryDirectives.put(enf, queryDirectives);
+            normalizedFieldToMergedField.put(enf, mergedFld);
+        }
 
         private void buildFieldWithChildren(ExecutableNormalizedField executableNormalizedField,
                                             ImmutableList<FieldAndAstParent> fieldAndAstParents,
-                                            BiConsumer<ExecutableNormalizedField, MergedField> captureMergedField,
                                             int curLevel,
                                             int maxLevel) {
             if (curLevel > maxLevel) {
@@ -397,14 +394,13 @@ public class ExecutableNormalizedOperationFactory {
                 ImmutableList<FieldAndAstParent> childFieldAndAstParents = nextLevel.normalizedFieldToAstFields.get(childENF);
 
                 MergedField mergedField = newMergedField(childFieldAndAstParents);
-                captureMergedField.accept(childENF, mergedField);
+                captureMergedField(childENF, mergedField);
 
                 updateFieldToNFMap(childENF, childFieldAndAstParents);
                 updateCoordinatedToNFMap(childENF);
 
                 buildFieldWithChildren(childENF,
                         childFieldAndAstParents,
-                        captureMergedField,
                         curLevel + 1,
                         maxLevel);
             }
