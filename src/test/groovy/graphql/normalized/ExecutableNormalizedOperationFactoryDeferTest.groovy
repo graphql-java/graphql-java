@@ -31,26 +31,20 @@ class ExecutableNormalizedOperationFactoryDeferTest extends Specification {
                 name: String
                 age: Int
             }
-            
-            interface HousePet implements Animal & LivingThing {
-                name: String
-                age: Int
-                owner: Person
-            }
 
-            type Dog implements Animal & LivingThing & HousePet {
+            type Dog implements Animal & LivingThing {
                 name: String
                 age: Int
                 breed: String
                 owner: Person
             }
             
-            type Cat implements Animal & LivingThing & HousePet {
+            type Cat implements Animal & LivingThing  {
                 name: String
                 age: Int
                 breed: String
                 color: String
-                owner: Person
+                siblings: [Cat]
             }
             
             type Fish implements Animal & LivingThing  {
@@ -116,37 +110,6 @@ class ExecutableNormalizedOperationFactoryDeferTest extends Specification {
         then:
         printedTree == ['Query.animal',
                         "[Cat, Dog, Fish].name defer{[label=null;types=[Cat, Dog, Fish]]}",
-        ]
-    }
-
-    def "fragment on field from interface that reduces the possible object types"() {
-        given:
-
-        String query = '''
-          query q {
-            animal {
-                ... on HousePet @defer {
-                    name
-                    owner {
-                        firstname
-                    }
-                    age
-                }
-            }
-          }
-        '''
-
-        Map<String, Object> variables = [:]
-
-        when:
-        List<String> printedTree = executeQueryAndPrintTree(query, variables)
-
-        then:
-        printedTree == ['Query.animal',
-                        "[Cat, Dog].name defer{[label=null;types=[Cat, Dog]]}",
-                        "[Cat, Dog].owner defer{[label=null;types=[Cat, Dog]]}",
-                        "Person.firstname",
-                        "[Cat, Dog].age defer{[label=null;types=[Cat, Dog]]}"
         ]
     }
 
@@ -427,7 +390,7 @@ class ExecutableNormalizedOperationFactoryDeferTest extends Specification {
 
         List<String> printedTree = printTreeWithIncrementalExecutionDetails(executableNormalizedOperation)
 
-        then: "should result in different instances of defer"
+        then: "should result in the same instance of defer"
         def nameField = findField(executableNormalizedOperation,"[Cat, Dog, Fish]","name")
         def dogBreedField = findField(executableNormalizedOperation, "Dog", "breed")
         def catBreedField = findField(executableNormalizedOperation, "Cat", "breed")
@@ -437,9 +400,8 @@ class ExecutableNormalizedOperationFactoryDeferTest extends Specification {
         catBreedField.deferExecutions.size() == 1
 
         // same label instances
-        nameField.deferExecutions[0] != dogBreedField.deferExecutions[0]
-        dogBreedField.deferExecutions[0] != catBreedField.deferExecutions[0]
-        nameField.deferExecutions[0] != catBreedField.deferExecutions[0]
+        nameField.deferExecutions[0].deferBlock == dogBreedField.deferExecutions[0].deferBlock
+        dogBreedField.deferExecutions[0].deferBlock == catBreedField.deferExecutions[0].deferBlock
 
         printedTree == ['Query.animal',
                         '[Cat, Dog, Fish].name defer{[label=null;types=[Cat, Dog, Fish]]}',
@@ -479,7 +441,7 @@ class ExecutableNormalizedOperationFactoryDeferTest extends Specification {
         breedField.deferExecutions.size() == 1
 
         // different label instances
-        nameField.deferExecutions[0] != breedField.deferExecutions[0]
+        nameField.deferExecutions[0].deferBlock != breedField.deferExecutions[0].deferBlock
 
         printedTree == ['Query.dog',
                         'Dog.name defer{[label=null;types=[Dog]]}',
@@ -922,8 +884,8 @@ class ExecutableNormalizedOperationFactoryDeferTest extends Specification {
                 }
 
                 def deferLabels = new ArrayList<>(deferExecutions)
-                        .sort { it.label }
-                        .collect { "[label=${it.label};types=${it.objectTypeNames.sort()}]" }
+                        .sort { it.deferBlock.label }
+                        .collect { "[label=${it.deferBlock.label};types=${it.objectTypeNames.sort()}]" }
                         .join(",")
 
                 return " defer{${deferLabels}}"

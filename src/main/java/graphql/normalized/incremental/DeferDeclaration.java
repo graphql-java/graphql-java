@@ -1,15 +1,8 @@
 package graphql.normalized.incremental;
 
-import graphql.Assert;
 import graphql.Internal;
-import graphql.schema.GraphQLObjectType;
 
-import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.Collection;
-import java.util.LinkedHashSet;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * TODO: Javadoc
@@ -17,15 +10,11 @@ import java.util.stream.Collectors;
 @Internal
 public class DeferDeclaration {
     private final String label;
+    private final String targetType;
 
-    private final LinkedHashSet<GraphQLObjectType> objectTypes;
-
-    public DeferDeclaration(@Nullable String label, @Nonnull Set<GraphQLObjectType> objectTypes) {
+    public DeferDeclaration(@Nullable String label, @Nullable String targetType) {
         this.label = label;
-
-        Assert.assertNotEmpty(objectTypes, () -> "A defer declaration must be associated with at least 1 GraphQL object");
-
-        this.objectTypes = new LinkedHashSet<>(objectTypes);
+        this.targetType = targetType;
     }
 
     /**
@@ -36,20 +25,11 @@ public class DeferDeclaration {
         return label;
     }
 
-    public void addObjectTypes(Collection<GraphQLObjectType> objectTypes) {
-        this.objectTypes.addAll(objectTypes);
-    }
-
     /**
-     * TODO Javadoc
+     * @return the name of the type that is the target of the defer declaration
      */
-    public Set<GraphQLObjectType> getObjectTypes() {
-        return objectTypes;
-    }
-
-    public Set<String> getObjectTypeNames() {
-        return objectTypes.stream()
-                .map(GraphQLObjectType::getName)
-                .collect(Collectors.toSet());
+    @Nullable
+    public String getTargetType() {
+        return targetType;
     }
 }
