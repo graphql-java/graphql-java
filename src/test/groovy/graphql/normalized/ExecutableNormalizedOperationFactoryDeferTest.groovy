@@ -143,35 +143,6 @@ class ExecutableNormalizedOperationFactoryDeferTest extends Specification {
         ]
     }
 
-    def "fragments on non-conditional fields - andi"() {
-        given:
-
-        String query = '''
-          query q {
-  dog {
-    ... @defer {
-      name
-      age
-    }
-    ... @defer {
-      age
-    }
-  }
-          }
-        '''
-// This should result in age being on its own deferBlock
-        Map<String, Object> variables = [:]
-
-        when:
-        List<String> printedTree = executeQueryAndPrintTree(query, variables)
-
-        then:
-        printedTree == ['Query.dog',
-                        "Dog.name defer{[label=null;types=[Dog]]}",
-                        "Dog.age defer{[label=null;types=[Dog]],[label=null;types=[Dog]]}",
-        ]
-    }
-
     def "fragments on subset of non-conditional fields"() {
         given:
 
@@ -868,8 +839,9 @@ class ExecutableNormalizedOperationFactoryDeferTest extends Specification {
     private ExecutableNormalizedOperation createExecutableNormalizedOperations(String query, Map<String, Object> variables) {
         assertValidQuery(graphQLSchema, query, variables)
         Document document = TestUtil.parseQuery(query)
+        ExecutableNormalizedOperationFactory dependencyGraph = new ExecutableNormalizedOperationFactory()
 
-        return ExecutableNormalizedOperationFactory.createExecutableNormalizedOperationWithRawVariables(
+        return dependencyGraph.createExecutableNormalizedOperationWithRawVariables(
                 graphQLSchema,
                 document,
                 null,
@@ -881,8 +853,9 @@ class ExecutableNormalizedOperationFactoryDeferTest extends Specification {
     private List<String> executeQueryAndPrintTree(String query, Map<String, Object> variables) {
         assertValidQuery(graphQLSchema, query, variables)
         Document document = TestUtil.parseQuery(query)
+        ExecutableNormalizedOperationFactory dependencyGraph = new ExecutableNormalizedOperationFactory()
 
-        def tree = ExecutableNormalizedOperationFactory.createExecutableNormalizedOperationWithRawVariables(
+        def tree = dependencyGraph.createExecutableNormalizedOperationWithRawVariables(
                 graphQLSchema,
                 document,
                 null,

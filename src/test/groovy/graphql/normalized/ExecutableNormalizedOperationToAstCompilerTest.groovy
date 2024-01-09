@@ -2145,8 +2145,9 @@ abstract class ExecutableNormalizedOperationToAstCompilerTest extends Specificat
         assertValidQuery(schema, query, variables)
         Document originalDocument = TestUtil.parseQuery(query)
 
+        ExecutableNormalizedOperationFactory dependencyGraph = new ExecutableNormalizedOperationFactory()
         def options = ExecutableNormalizedOperationFactory.Options.defaultOptions().deferSupport(deferSupport)
-        return ExecutableNormalizedOperationFactory.createExecutableNormalizedOperationWithRawVariables(schema, originalDocument, null, RawVariables.of(variables), options)
+        return dependencyGraph.createExecutableNormalizedOperationWithRawVariables(schema, originalDocument, null, RawVariables.of(variables), options)
     }
 
     private List<ExecutableNormalizedField> createNormalizedFields(GraphQLSchema schema, String query, Map<String, Object> variables = [:]) {
