@@ -192,8 +192,7 @@ class ConditionalNodesTest extends Specification {
         then:
         er["data"] == ["in": "in", "out": "out"]
 
-        // TODO: this test demonstrates that the GraphQLContext is missing for Pet
-        // and therefore, fields are being incorrectly included
+        // A test for fields below the top level
         when:
         ei = ExecutionInput.newExecutionInput()
                 .graphQLContext(contextMap)
@@ -210,7 +209,6 @@ class ConditionalNodesTest extends Specification {
         er = graphQL.execute(ei)
 
         then:
-        // TODO: favouriteSnack should not appear in the data
         er["data"] == ["in": "in", "pet": ["name": "name"]]
     }
 
