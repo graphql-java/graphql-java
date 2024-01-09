@@ -440,15 +440,15 @@ class ExecutableNormalizedOperationFactoryDeferTest extends Specification {
 
         // nameField should share a defer block with each of the other fields
         nameField.deferExecutions.any {
-            it.deferBlock == dogBreedField.deferExecutions[0].deferBlock
+            it == dogBreedField.deferExecutions[0]
         }
         nameField.deferExecutions.any {
-            it.deferBlock == catBreedField.deferExecutions[0].deferBlock
+            it == catBreedField.deferExecutions[0]
         }
         // also, nameField should have a defer block that is not shared with any other field
         nameField.deferExecutions.any {
-            it.deferBlock != dogBreedField.deferExecutions[0].deferBlock &&
-                    it.deferBlock != catBreedField.deferExecutions[0].deferBlock
+            it != dogBreedField.deferExecutions[0] &&
+                    it != catBreedField.deferExecutions[0]
         }
 
         printedTree == ['Query.animal',
@@ -489,7 +489,7 @@ class ExecutableNormalizedOperationFactoryDeferTest extends Specification {
         breedField.deferExecutions.size() == 1
 
         // different label instances
-        nameField.deferExecutions[0].deferBlock != breedField.deferExecutions[0].deferBlock
+        nameField.deferExecutions[0] != breedField.deferExecutions[0]
 
         printedTree == ['Query.dog',
                         'Dog.name defer{[label=null;types=[Dog]]}',
@@ -932,9 +932,9 @@ class ExecutableNormalizedOperationFactoryDeferTest extends Specification {
                 }
 
                 def deferLabels = new ArrayList<>(deferExecutions)
-                        .sort { it.deferBlock.label }
-                        .sort { it.objectTypeNames }
-                        .collect { "[label=${it.deferBlock.label};types=${it.objectTypeNames.sort()}]" }
+                        .sort { it.label }
+                        .sort { it.possibleTypes.collect {it.name} }
+                        .collect { "[label=${it.label};types=${it.possibleTypes.collect{it.name}.sort()}]" }
                         .join(",")
 
                 return " defer{${deferLabels}}"

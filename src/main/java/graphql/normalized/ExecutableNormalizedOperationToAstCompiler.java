@@ -23,8 +23,7 @@ import graphql.language.SelectionSet;
 import graphql.language.StringValue;
 import graphql.language.TypeName;
 import graphql.language.Value;
-import graphql.normalized.incremental.DeferDeclaration;
-import graphql.normalized.incremental.NormalizedDeferExecution;
+import graphql.normalized.incremental.DeferExecution;
 import graphql.schema.GraphQLCompositeType;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLObjectType;
@@ -34,7 +33,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -279,7 +277,7 @@ public class ExecutableNormalizedOperationToAstCompiler {
         Map<ExecutionFragmentDetails, List<Field>> fieldsByFragmentDetails = new LinkedHashMap<>();
 
         for (ExecutableNormalizedField nf : executableNormalizedFields) {
-            LinkedHashSet<NormalizedDeferExecution> deferExecutions = nf.getDeferExecutions();
+            LinkedHashSet<DeferExecution> deferExecutions = nf.getDeferExecutions();
 
             if (nf.isConditional(schema)) {
                 selectionForNormalizedField(schema, nf, normalizedFieldToQueryDirectives, variableAccumulator, true)
@@ -322,8 +320,8 @@ public class ExecutableNormalizedOperationToAstCompiler {
             if (typeAndDeferPair.deferExecution != null) {
                 Directive.Builder deferBuilder = Directive.newDirective().name(Directives.DeferDirective.getName());
 
-                if (typeAndDeferPair.deferExecution.getDeferBlock().getLabel() != null) {
-                    deferBuilder.argument(newArgument().name("label").value(StringValue.of(typeAndDeferPair.deferExecution.getDeferBlock().getLabel())).build());
+                if (typeAndDeferPair.deferExecution.getLabel() != null) {
+                    deferBuilder.argument(newArgument().name("label").value(StringValue.of(typeAndDeferPair.deferExecution.getLabel())).build());
                 }
 
                 fragmentBuilder.directive(deferBuilder.build());
@@ -491,9 +489,9 @@ public class ExecutableNormalizedOperationToAstCompiler {
      */
     private static class ExecutionFragmentDetails {
         private final String typeName;
-        private final NormalizedDeferExecution deferExecution;
+        private final DeferExecution deferExecution;
 
-        public ExecutionFragmentDetails(String typeName, NormalizedDeferExecution deferExecution) {
+        public ExecutionFragmentDetails(String typeName, DeferExecution deferExecution) {
             this.typeName = typeName;
             this.deferExecution = deferExecution;
         }
