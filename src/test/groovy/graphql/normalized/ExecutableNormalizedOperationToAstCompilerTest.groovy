@@ -2139,15 +2139,14 @@ abstract class ExecutableNormalizedOperationToAstCompilerTest extends Specificat
                  v3: [arg1: "barFragArg"],
                  v4: [arg1: "barArg"],
                  v5: [arg1: "fooArg"]]
-    }
+
 
     private ExecutableNormalizedOperation createNormalizedTree(GraphQLSchema schema, String query, Map<String, Object> variables = [:]) {
         assertValidQuery(schema, query, variables)
         Document originalDocument = TestUtil.parseQuery(query)
 
-        ExecutableNormalizedOperationFactory dependencyGraph = new ExecutableNormalizedOperationFactory()
         def options = ExecutableNormalizedOperationFactory.Options.defaultOptions().deferSupport(deferSupport)
-        return dependencyGraph.createExecutableNormalizedOperationWithRawVariables(schema, originalDocument, null, RawVariables.of(variables), options)
+        return ExecutableNormalizedOperationFactory.createExecutableNormalizedOperationWithRawVariables(schema, originalDocument, null, RawVariables.of(variables), options)
     }
 
     private List<ExecutableNormalizedField> createNormalizedFields(GraphQLSchema schema, String query, Map<String, Object> variables = [:]) {
