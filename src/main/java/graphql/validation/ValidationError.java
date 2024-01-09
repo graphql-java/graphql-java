@@ -2,7 +2,6 @@ package graphql.validation;
 
 
 import com.google.common.collect.ImmutableMap;
-import graphql.DeprecatedAt;
 import graphql.ErrorType;
 import graphql.GraphQLError;
 import graphql.GraphqlErrorHelper;
@@ -23,51 +22,6 @@ public class ValidationError implements GraphQLError {
     private final ValidationErrorClassification validationErrorType;
     private final List<String> queryPath = new ArrayList<>();
     private final ImmutableMap<String, Object> extensions;
-
-    @Deprecated
-    @DeprecatedAt("2022-07-10")
-    public ValidationError(ValidationErrorClassification validationErrorType) {
-        this(newValidationError()
-                .validationErrorType(validationErrorType));
-    }
-
-    @Deprecated
-    @DeprecatedAt("2022-07-10")
-    public ValidationError(ValidationErrorClassification validationErrorType, SourceLocation sourceLocation, String description) {
-        this(newValidationError()
-                .validationErrorType(validationErrorType)
-                .sourceLocation(sourceLocation)
-                .description(description));
-    }
-
-    @Deprecated
-    @DeprecatedAt("2022-07-10")
-    public ValidationError(ValidationErrorType validationErrorType, SourceLocation sourceLocation, String description, List<String> queryPath) {
-        this(newValidationError()
-                .validationErrorType(validationErrorType)
-                .sourceLocation(sourceLocation)
-                .description(description)
-                .queryPath(queryPath));
-    }
-
-    @Deprecated
-    @DeprecatedAt("2022-07-10")
-    public ValidationError(ValidationErrorType validationErrorType, List<SourceLocation> sourceLocations, String description) {
-        this(newValidationError()
-                .validationErrorType(validationErrorType)
-                .sourceLocations(sourceLocations)
-                .description(description));
-    }
-
-    @Deprecated
-    @DeprecatedAt("2022-07-10")
-    public ValidationError(ValidationErrorType validationErrorType, List<SourceLocation> sourceLocations, String description, List<String> queryPath) {
-        this(newValidationError()
-                .validationErrorType(validationErrorType)
-                .sourceLocations(sourceLocations)
-                .description(description)
-                .queryPath(queryPath));
-    }
 
     private ValidationError(Builder builder) {
         this.validationErrorType = builder.validationErrorType;

@@ -8,21 +8,24 @@ import graphql.execution.ValuesResolver;
 import graphql.language.Directive;
 import graphql.language.NodeUtil;
 import graphql.language.TypeName;
+import graphql.schema.GraphQLObjectType;
 
 import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 
 import static graphql.Directives.DeferDirective;
 
 @Internal
 public class IncrementalNodes {
 
-    public DeferDeclaration getDeferExecution(
+    public DeferExecution getDeferExecution(
             Map<String, Object> variables,
             List<Directive> directives,
-            @Nullable TypeName targetType
+            @Nullable TypeName targetType,
+            Set<GraphQLObjectType> possibleTypes
     ) {
         Directive deferDirective = NodeUtil.findNodeByName(directives, DeferDirective.getName());
 
@@ -41,13 +44,12 @@ public class IncrementalNodes {
             String targetTypeName = targetType == null ? null : targetType.getName();
 
             if (label == null) {
-                return new DeferDeclaration(null, targetTypeName);
+                return new DeferExecution(null, targetTypeName, possibleTypes);
             }
 
             Assert.assertTrue(label instanceof String, () -> String.format("The 'label' argument from the '%s' directive MUST contain a String value", DeferDirective.getName()));
 
-            return new DeferDeclaration((String) label, targetTypeName);
-
+            return new DeferExecution((String) label, targetTypeName, possibleTypes);
         }
 
         return null;

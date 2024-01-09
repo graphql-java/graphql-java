@@ -7,7 +7,7 @@ import spock.lang.Specification
 
 class DataFetcherResultTest extends Specification {
 
-    def error1 = new ValidationError(ValidationErrorType.DuplicateOperationName)
+    def error1 = ValidationError.newValidationError().validationErrorType(ValidationErrorType.DuplicateOperationName).build()
     def error2 = new InvalidSyntaxError([], "Boo")
 
     def "basic building"() {
