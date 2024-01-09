@@ -2139,7 +2139,7 @@ abstract class ExecutableNormalizedOperationToAstCompilerTest extends Specificat
                  v3: [arg1: "barFragArg"],
                  v4: [arg1: "barArg"],
                  v5: [arg1: "fooArg"]]
-
+    }
 
     private ExecutableNormalizedOperation createNormalizedTree(GraphQLSchema schema, String query, Map<String, Object> variables = [:]) {
         assertValidQuery(schema, query, variables)
