@@ -1,11 +1,9 @@
 package graphql.normalized;
 
-import com.google.common.collect.Multimap;
 import graphql.Internal;
 import graphql.introspection.Introspection;
 import graphql.language.Argument;
 import graphql.language.AstComparator;
-import graphql.normalized.incremental.DeferDeclaration;
 import graphql.schema.GraphQLInterfaceType;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
@@ -25,7 +23,7 @@ public class ENFMerger {
             ExecutableNormalizedField parent,
             List<ExecutableNormalizedField> childrenWithSameResultKey,
             GraphQLSchema schema,
-            Multimap<ExecutableNormalizedField, DeferDeclaration> normalizedFieldToDeferExecution
+            boolean deferSupport
     ) {
         // they have all the same result key
         // we can only merge the fields if they have the same field name + arguments + all children are the same
@@ -74,9 +72,20 @@ public class ENFMerger {
                 while (iterator.hasNext()) {
                     ExecutableNormalizedField next = iterator.next();
                     // Move defer executions from removed field into the merged field's entry
-                    normalizedFieldToDeferExecution.putAll(first, normalizedFieldToDeferExecution.get(next));
+//                    normalizedFieldToDeferExecution.putAll(first, normalizedFieldToDeferExecution.get(next));
+                    if (deferSupport) {
+                        first.getDeferExecutions().forEach(deferDeclarationFirst -> {
+                            next.getDeferExecutions().forEach(deferDeclarationNext -> {
+                                if (Objects.equals(deferDeclarationFirst.getLabel(), deferDeclarationNext.getLabel())
+                                        && mergedObjects.containsAll(deferDeclarationNext.getObjectTypeNames())
+                                ) {
+                                    deferDeclarationFirst.addObjectTypes(deferDeclarationNext.getObjectTypes());
+                                }
+                            });
+                        });
+                    }
                     parent.getChildren().remove(next);
-                    normalizedFieldToDeferExecution.removeAll(next);
+//                    normalizedFieldToDeferExecution.removeAll(next);
                 }
                 first.setObjectTypeNames(mergedObjects);
             }

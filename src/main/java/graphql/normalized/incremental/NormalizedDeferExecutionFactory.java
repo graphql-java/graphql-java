@@ -74,7 +74,7 @@ public class NormalizedDeferExecutionFactory {
                             Set<String> types = executionsForLabel.stream()
                                     .map(deferExecution -> {
                                         declarationToBlock.put(deferExecution, deferBlock);
-                                        return deferExecution.getTargetType();
+                                        return "MOCK"; //deferExecution.getTargetType();
                                     })
                                     .flatMap(mapToPossibleTypes(fieldTypeNames, fieldTypes))
                                     .collect(Collectors.toSet());
@@ -86,7 +86,7 @@ public class NormalizedDeferExecutionFactory {
 
                 if (!deferExecutions.isEmpty()) {
                     // Mutate the field, by setting deferExecutions
-                    field.setDeferExecutions(deferExecutions);
+//                    field.setDeferExecutions(deferExecutions);
                 }
             });
         }

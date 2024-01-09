@@ -11,6 +11,7 @@ import graphql.PublicApi;
 import graphql.collect.ImmutableKit;
 import graphql.introspection.Introspection;
 import graphql.language.Argument;
+import graphql.normalized.incremental.DeferDeclaration;
 import graphql.normalized.incremental.NormalizedDeferExecution;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLInterfaceType;
@@ -67,7 +68,7 @@ public class ExecutableNormalizedField {
     private final int level;
 
     // Mutable List on purpose: it is modified after creation
-    private final LinkedHashSet<NormalizedDeferExecution> deferExecutions;
+    private final LinkedHashSet<DeferDeclaration> deferExecutions;
 
     private ExecutableNormalizedField(Builder builder) {
         this.alias = builder.alias;
@@ -263,9 +264,14 @@ public class ExecutableNormalizedField {
     }
 
     @Internal
-    public void setDeferExecutions(Collection<NormalizedDeferExecution> deferExecutions) {
+    public void setDeferExecutions(Collection<DeferDeclaration> deferExecutions) {
         this.deferExecutions.clear();
         this.deferExecutions.addAll(deferExecutions);
+    }
+
+    @Internal
+    public void addDeferExecutions(Collection<DeferDeclaration> deferDeclarations) {
+        this.deferExecutions.addAll(deferDeclarations);
     }
 
     /**
@@ -475,7 +481,7 @@ public class ExecutableNormalizedField {
 
     // TODO: Javadoc
     @ExperimentalApi
-    public LinkedHashSet<NormalizedDeferExecution> getDeferExecutions() {
+    public LinkedHashSet<DeferDeclaration> getDeferExecutions() {
         return deferExecutions;
     }
 
@@ -606,7 +612,7 @@ public class ExecutableNormalizedField {
         private LinkedHashMap<String, Object> resolvedArguments = new LinkedHashMap<>();
         private ImmutableList<Argument> astArguments = ImmutableKit.emptyList();
 
-        private LinkedHashSet<NormalizedDeferExecution> deferExecutions = new LinkedHashSet<>();
+        private LinkedHashSet<DeferDeclaration> deferExecutions = new LinkedHashSet<>();
 
         private Builder() {
         }
@@ -677,7 +683,7 @@ public class ExecutableNormalizedField {
             return this;
         }
 
-        public Builder deferExecutions(LinkedHashSet<NormalizedDeferExecution> deferExecutions) {
+        public Builder deferExecutions(LinkedHashSet<DeferDeclaration> deferExecutions) {
             this.deferExecutions = deferExecutions;
             return this;
         }

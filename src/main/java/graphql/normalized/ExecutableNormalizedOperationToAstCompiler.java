@@ -279,7 +279,7 @@ public class ExecutableNormalizedOperationToAstCompiler {
         Map<ExecutionFragmentDetails, List<Field>> fieldsByFragmentDetails = new LinkedHashMap<>();
 
         for (ExecutableNormalizedField nf : executableNormalizedFields) {
-            LinkedHashSet<NormalizedDeferExecution> deferExecutions = nf.getDeferExecutions();
+            LinkedHashSet<DeferDeclaration> deferExecutions = nf.getDeferExecutions();
 
             if (nf.isConditional(schema)) {
                 selectionForNormalizedField(schema, nf, normalizedFieldToQueryDirectives, variableAccumulator, true)
@@ -322,8 +322,8 @@ public class ExecutableNormalizedOperationToAstCompiler {
             if (typeAndDeferPair.deferExecution != null) {
                 Directive.Builder deferBuilder = Directive.newDirective().name(Directives.DeferDirective.getName());
 
-                if (typeAndDeferPair.deferExecution.getDeferBlock().getLabel() != null) {
-                    deferBuilder.argument(newArgument().name("label").value(StringValue.of(typeAndDeferPair.deferExecution.getDeferBlock().getLabel())).build());
+                if (typeAndDeferPair.deferExecution.getLabel() != null) {
+                    deferBuilder.argument(newArgument().name("label").value(StringValue.of(typeAndDeferPair.deferExecution.getLabel())).build());
                 }
 
                 fragmentBuilder.directive(deferBuilder.build());
@@ -491,9 +491,9 @@ public class ExecutableNormalizedOperationToAstCompiler {
      */
     private static class ExecutionFragmentDetails {
         private final String typeName;
-        private final NormalizedDeferExecution deferExecution;
+        private final DeferDeclaration deferExecution;
 
-        public ExecutionFragmentDetails(String typeName, NormalizedDeferExecution deferExecution) {
+        public ExecutionFragmentDetails(String typeName, DeferDeclaration deferExecution) {
             this.typeName = typeName;
             this.deferExecution = deferExecution;
         }
