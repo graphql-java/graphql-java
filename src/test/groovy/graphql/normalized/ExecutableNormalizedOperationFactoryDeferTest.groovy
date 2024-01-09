@@ -173,24 +173,21 @@ class ExecutableNormalizedOperationFactoryDeferTest extends Specification {
         ]
     }
 
-    def "fragments on non-conditional fields - andi"() {
+    def "field on multiple defer declarations is associated with "() {
         given:
-
-
         String query = '''
           query q {
-  dog {
-    ... @defer {
-      name
-      age
-    }
-    ... @defer {
-      age
-    }
-  }
-          }
+            dog {
+                ... @defer {
+                    name
+                    age
+                }
+                ... @defer {
+                    age
+                }
+            }
+        }
         '''
-// This should result in age being on its own deferBlock
         Map<String, Object> variables = [:]
 
         when:
@@ -205,6 +202,15 @@ class ExecutableNormalizedOperationFactoryDeferTest extends Specification {
 
         nameField.deferExecutions.size() == 1
         ageField.deferExecutions.size() == 2
+
+        // age field is associated with 2 defer executions, one of then is shared with "name" the other isn't
+        ageField.deferExecutions.any {
+            it == nameField.deferExecutions[0]
+        }
+
+        ageField.deferExecutions.any {
+            it != nameField.deferExecutions[0]
+        }
 
         printedTree == ['Query.dog',
                         "Dog.name defer{[label=null;types=[Dog]]}",
