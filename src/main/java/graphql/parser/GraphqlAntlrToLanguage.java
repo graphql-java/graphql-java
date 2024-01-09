@@ -80,6 +80,8 @@ import static graphql.collect.ImmutableKit.emptyList;
 import static graphql.collect.ImmutableKit.map;
 import static graphql.parser.Parser.CHANNEL_COMMENTS;
 import static graphql.parser.Parser.CHANNEL_WHITESPACE;
+import static graphql.parser.Parser.parse;
+import static graphql.parser.Parser.parseValue;
 import static graphql.parser.StringValueParsing.parseSingleQuotedString;
 import static graphql.parser.StringValueParsing.parseTripleQuotedString;
 import static java.util.Optional.ofNullable;
@@ -858,8 +860,13 @@ public class GraphqlAntlrToLanguage {
         if (multiLine) {
             content = parseTripleQuotedString(content);
         } else {
+            // dz todo - the problem is, we actually have to check the whole string is valid after parsing and we never do that
             content = parseSingleQuotedString(i18N, content, sourceLocation);
+            // The problem is, we never actually check the string is valid after the unicode twizzling
+            // But do we really want to double parse every description? Or let this go
+            parseValue(content);
         }
+        // at this point we've assumed that the contents are valid
         return new Description(content, sourceLocation, multiLine);
     }
 

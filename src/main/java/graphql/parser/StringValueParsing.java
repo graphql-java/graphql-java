@@ -115,7 +115,6 @@ public class StringValueParsing {
             }
             char escaped = string.charAt(i + 1);
             i += 1;
-            // dz todo omg what about this
             switch (escaped) {
                 case '"':
                     writer.write('"');

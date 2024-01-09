@@ -68,7 +68,7 @@ class ParserTest extends Specification {
         // failing ones
         // parses but can't print
         // from the error report - at least what can be parsed should be printed
-        def src = "\"\\\"\" scalar A"
+//        def src = "\"\\\"\" scalar A"
         // Mega weird, where did the backslash go??
         // After second parse - failing for an expected reason
         // Invalid syntax with ANTLR error 'token recognition error at: '"""\nscalar A\n'' at line 1 column 1
@@ -105,6 +105,24 @@ class ParserTest extends Specification {
 
 
 //        fragment EscapedCharacter :  ["\\/bfnrt];
+
+        // An example that obviously fails to parse, which is what you want
+//        def src = "total garbage"
+
+        // An example of straight up invalid GraphQL
+//        def src = "query {}"
+
+        // The example which relies on escaping certain characters, which is the problem
+        def src = "\"\\\"\" scalar A"
+        // I'm going to guess the fundamental problem is, we never verify if the resultant string is valid
+        // because we only read it from left to right.
+
+//        How about triple quoted strings? This would be the invalid, triple equivalent
+        // This correctly fails to even parse. So the problem is, we don't do it just for the single line
+        // So this is fine, because the escaped unicode remains in the slash form - its not considered a quote. thats good.
+        // the triple quote situation is fine
+//        def src = "\"\"\"triple\\\"quotes\"\"\" scalar A"
+
         def env = newParserEnvironment()
                 .document(src)
                 .parserOptions(
@@ -114,9 +132,11 @@ class ParserTest extends Specification {
                 )
                 .build()
         def doc = Parser.parse(env)
+        println("=== Parsed - invalid ===")
         def printed = AstPrinter.printAst(doc)
-        println("=== Parsed and printed ===")
+        println("=== Printed ===")
         println(printed)
+        println("=== Trying to parse it again - blows up! ===")
         Parser.parse(printed)
     }
 
