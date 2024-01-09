@@ -40,7 +40,6 @@ import graphql.schema.GraphQLNamedOutputType;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLType;
-import graphql.schema.GraphQLTypeUtil;
 import graphql.schema.GraphQLUnionType;
 import graphql.schema.GraphQLUnmodifiedType;
 import graphql.schema.impl.SchemaUtil;
@@ -113,7 +112,7 @@ public class ExecutableNormalizedOperationFactory {
          * @return new options object to use
          */
         public Options locale(Locale locale) {
-            return new Options(this.graphQLContext, locale, this.maxChildrenDepth, true);
+            return new Options(this.graphQLContext, locale, this.maxChildrenDepth, this.deferSupport);
         }
 
         /**
@@ -126,7 +125,7 @@ public class ExecutableNormalizedOperationFactory {
          * @return new options object to use
          */
         public Options graphQLContext(GraphQLContext graphQLContext) {
-            return new Options(graphQLContext, this.locale, this.maxChildrenDepth, true);
+            return new Options(graphQLContext, this.locale, this.maxChildrenDepth, this.deferSupport);
         }
 
         /**
@@ -138,7 +137,7 @@ public class ExecutableNormalizedOperationFactory {
          * @return new options object to use
          */
         public Options maxChildrenDepth(int maxChildrenDepth) {
-            return new Options(this.graphQLContext, this.locale, maxChildrenDepth, true);
+            return new Options(this.graphQLContext, this.locale, maxChildrenDepth, this.deferSupport);
         }
 
         /**
@@ -666,7 +665,7 @@ public class ExecutableNormalizedOperationFactory {
                 Set<CollectedField> relevantFields = filterSet(fields, field -> field.objectTypes.contains(objectType));
 
                 Set<DeferExecution> filteredDeferExecutions = deferExecutions.stream()
-                        .filter(filter(objectType))
+                        .filter(filterExecutionsFromType(objectType))
                         .collect(toCollection(LinkedHashSet::new));
 
                 result.add(new CollectedFieldGroup(relevantFields, singleton(objectType), filteredDeferExecutions));
@@ -674,7 +673,7 @@ public class ExecutableNormalizedOperationFactory {
             return result.build();
         }
 
-        private static Predicate<DeferExecution> filter(GraphQLObjectType objectType) {
+        private static Predicate<DeferExecution> filterExecutionsFromType(GraphQLObjectType objectType) {
             return deferExecution -> {
                 if (deferExecution.getTargetType() == null) {
                     return true;
@@ -867,14 +866,6 @@ public class ExecutableNormalizedOperationFactory {
                 this.objectTypes = objectTypes;
                 this.astTypeCondition = astTypeCondition;
                 this.deferExecution = deferExecution;
-            }
-
-            public boolean isAbstract() {
-                return GraphQLTypeUtil.isInterfaceOrUnion(astTypeCondition);
-            }
-
-            public boolean isConcrete() {
-                return GraphQLTypeUtil.isObjectType(astTypeCondition);
             }
         }
 
