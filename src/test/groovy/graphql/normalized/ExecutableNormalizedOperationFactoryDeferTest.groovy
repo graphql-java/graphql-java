@@ -139,7 +139,7 @@ class ExecutableNormalizedOperationFactoryDeferTest extends Specification {
 
         then:
         printedTree == ['Query.animal',
-                        "[Cat, Dog, Fish].name defer{[label=null;types=[Cat, Dog, Fish]]}",
+                        "[Cat, Dog, Fish].name defer{[label=null;types=[Cat]],[label=null;types=[Dog]],[label=null;types=[Cat, Dog, Fish]]}",
         ]
     }
 
@@ -169,7 +169,46 @@ class ExecutableNormalizedOperationFactoryDeferTest extends Specification {
 
         then:
         printedTree == ['Query.animal',
-                        "[Cat, Dog, Fish].name defer{[label=null;types=[Cat, Dog]]}",
+                        "[Cat, Dog, Fish].name defer{[label=null;types=[Cat]],[label=null;types=[Dog]]}",
+        ]
+    }
+
+    def "fragments on non-conditional fields - andi"() {
+        given:
+
+
+        String query = '''
+          query q {
+  dog {
+    ... @defer {
+      name
+      age
+    }
+    ... @defer {
+      age
+    }
+  }
+          }
+        '''
+// This should result in age being on its own deferBlock
+        Map<String, Object> variables = [:]
+
+        when:
+        def executableNormalizedOperation = createExecutableNormalizedOperations(query, variables);
+
+        List<String> printedTree = printTreeWithIncrementalExecutionDetails(executableNormalizedOperation)
+
+        then:
+
+        def nameField = findField(executableNormalizedOperation, "Dog", "name")
+        def ageField = findField(executableNormalizedOperation, "Dog", "age")
+
+        nameField.deferExecutions.size() == 1
+        ageField.deferExecutions.size() == 2
+
+        printedTree == ['Query.dog',
+                        "Dog.name defer{[label=null;types=[Dog]]}",
+                        "Dog.age defer{[label=null;types=[Dog]],[label=null;types=[Dog]]}",
         ]
     }
 
@@ -246,7 +285,7 @@ class ExecutableNormalizedOperationFactoryDeferTest extends Specification {
 
         then:
         printedTree == ['Query.mammal',
-                        '[Dog, Cat].name defer{[label=null;types=[Cat, Dog]]}',
+                        '[Dog, Cat].name defer{[label=null;types=[Cat]],[label=null;types=[Dog]]}',
                         'Dog.breed defer{[label=null;types=[Dog]]}',
                         'Cat.breed defer{[label=null;types=[Cat]]}',
         ]
@@ -390,21 +429,30 @@ class ExecutableNormalizedOperationFactoryDeferTest extends Specification {
 
         List<String> printedTree = printTreeWithIncrementalExecutionDetails(executableNormalizedOperation)
 
-        then: "should result in the same instance of defer"
+        then: "should result in the same instance of defer block"
         def nameField = findField(executableNormalizedOperation,"[Cat, Dog, Fish]","name")
         def dogBreedField = findField(executableNormalizedOperation, "Dog", "breed")
         def catBreedField = findField(executableNormalizedOperation, "Cat", "breed")
 
-        nameField.deferExecutions.size() == 1
+        nameField.deferExecutions.size() == 3
         dogBreedField.deferExecutions.size() == 1
         catBreedField.deferExecutions.size() == 1
 
-        // same label instances
-        nameField.deferExecutions[0].deferBlock == dogBreedField.deferExecutions[0].deferBlock
-        dogBreedField.deferExecutions[0].deferBlock == catBreedField.deferExecutions[0].deferBlock
+        // nameField should share a defer block with each of the other fields
+        nameField.deferExecutions.any {
+            it.deferBlock == dogBreedField.deferExecutions[0].deferBlock
+        }
+        nameField.deferExecutions.any {
+            it.deferBlock == catBreedField.deferExecutions[0].deferBlock
+        }
+        // also, nameField should have a defer block that is not shared with any other field
+        nameField.deferExecutions.any {
+            it.deferBlock != dogBreedField.deferExecutions[0].deferBlock &&
+                    it.deferBlock != catBreedField.deferExecutions[0].deferBlock
+        }
 
         printedTree == ['Query.animal',
-                        '[Cat, Dog, Fish].name defer{[label=null;types=[Cat, Dog, Fish]]}',
+                        '[Cat, Dog, Fish].name defer{[label=null;types=[Cat]],[label=null;types=[Dog]],[label=null;types=[Cat, Dog, Fish]]}',
                         'Dog.breed defer{[label=null;types=[Dog]]}',
                         'Cat.breed defer{[label=null;types=[Cat]]}',
         ]
@@ -589,7 +637,7 @@ class ExecutableNormalizedOperationFactoryDeferTest extends Specification {
 
         then:
         printedTree == ['Query.dog',
-                        'Dog.name defer{[label=null;types=[Dog]]}',
+                        'Dog.name defer{[label=null;types=[Dog]],[label=null;types=[Dog]]}',
         ]
     }
 
@@ -885,6 +933,7 @@ class ExecutableNormalizedOperationFactoryDeferTest extends Specification {
 
                 def deferLabels = new ArrayList<>(deferExecutions)
                         .sort { it.deferBlock.label }
+                        .sort { it.objectTypeNames }
                         .collect { "[label=${it.deferBlock.label};types=${it.objectTypeNames.sort()}]" }
                         .join(",")
 

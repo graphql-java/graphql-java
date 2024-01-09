@@ -14,7 +14,6 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
@@ -25,18 +24,20 @@ import java.util.stream.Stream;
 // TODO: Javadoc
 @Internal
 public class NormalizedDeferExecutionFactory {
+    private NormalizedDeferExecutionFactory() {
+    }
     public static void normalizeDeferExecutions(
             GraphQLSchema graphQLSchema,
             Multimap<ExecutableNormalizedField, DeferDeclaration> normalizedFieldDeferExecution
     ) {
-        new DeferExecutionMergerInner(graphQLSchema, normalizedFieldDeferExecution).execute();
+        new DeferExecutionMergerImpl(graphQLSchema, normalizedFieldDeferExecution).execute();
     }
 
-    private static class DeferExecutionMergerInner {
+    private static class DeferExecutionMergerImpl {
         private final GraphQLSchema graphQLSchema;
         private final Multimap<ExecutableNormalizedField, DeferDeclaration> input;
 
-        private DeferExecutionMergerInner(
+        private DeferExecutionMergerImpl(
                 GraphQLSchema graphQLSchema,
                 Multimap<ExecutableNormalizedField, DeferDeclaration> normalizedFieldToDeferExecution
         ) {
@@ -62,25 +63,20 @@ public class NormalizedDeferExecutionFactory {
                         .collect(Collectors.groupingBy(execution -> Optional.ofNullable(execution.getLabel())));
 
                 Set<NormalizedDeferExecution> deferExecutions = executionsByLabel.keySet().stream()
-                        .map(label -> {
+                        .flatMap(label -> {
                             List<DeferDeclaration> executionsForLabel = executionsByLabel.get(label);
 
-                            DeferBlock deferBlock = executionsForLabel.stream()
-                                    .map(declarationToBlock::get)
-                                    .filter(Objects::nonNull)
-                                    .findFirst()
-                                    .orElse(new DeferBlock(label.orElse(null)));
+                            return executionsForLabel.stream()
+                                    .map(deferDeclaration -> {
+                                        DeferBlock deferBlock = declarationToBlock.computeIfAbsent(deferDeclaration,
+                                                key -> new DeferBlock(label.orElse(null)));
 
-                            Set<String> types = executionsForLabel.stream()
-                                    .map(deferExecution -> {
-                                        declarationToBlock.put(deferExecution, deferBlock);
-                                        return deferExecution.getTargetType();
-                                    })
-                                    .flatMap(mapToPossibleTypes(fieldTypeNames, fieldTypes))
-                                    .collect(Collectors.toSet());
+                                        Set<String> types = mapToPossibleTypes(fieldTypeNames, fieldTypes)
+                                                .apply(deferDeclaration.getTargetType())
+                                                .collect(Collectors.toSet());
 
-                            return new NormalizedDeferExecution(deferBlock, types);
-
+                                        return new NormalizedDeferExecution(deferBlock, types);
+                                    });
                         })
                         .collect(Collectors.toSet());
 

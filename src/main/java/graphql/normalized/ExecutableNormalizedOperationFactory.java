@@ -45,7 +45,6 @@ import graphql.schema.GraphQLTypeUtil;
 import graphql.schema.GraphQLUnionType;
 import graphql.schema.GraphQLUnmodifiedType;
 import graphql.schema.impl.SchemaUtil;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -56,9 +55,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -415,9 +412,9 @@ public class ExecutableNormalizedOperationFactory {
         LinkedHashMultimap<ExecutableNormalizedField, DeferDeclaration> normalizedFieldToDeferExecution = LinkedHashMultimap.create();
         normalizedFieldToDeferExecution.putAll(collectFromOperationResult.normalizedFieldToDeferExecution);
 
-        Consumer<CollectNFResult> captureCollectNFResult = (collectNFResult -> {
-            normalizedFieldToDeferExecution.putAll(collectNFResult.normalizedFieldToDeferExecution);
-        });
+        Consumer<CollectNFResult> captureCollectNFResult = (collectNFResult ->
+                normalizedFieldToDeferExecution.putAll(collectNFResult.normalizedFieldToDeferExecution)
+        );
 
         for (ExecutableNormalizedField topLevel : collectFromOperationResult.children) {
             ImmutableList<FieldAndAstParent> fieldAndAstParents = collectFromOperationResult.normalizedFieldToAstFields.get(topLevel);
@@ -442,7 +439,7 @@ public class ExecutableNormalizedOperationFactory {
         }
         for (FieldCollectorNormalizedQueryParams.PossibleMerger possibleMerger : parameters.getPossibleMergerList()) {
             List<ExecutableNormalizedField> childrenWithSameResultKey = possibleMerger.parent.getChildrenWithSameResultKey(possibleMerger.resultKey);
-            ENFMerger.merge(possibleMerger.parent, childrenWithSameResultKey, graphQLSchema, normalizedFieldToDeferExecution);
+            ENFMerger.merge(possibleMerger.parent, childrenWithSameResultKey, graphQLSchema, normalizedFieldToDeferExecution, options.deferSupport);
         }
 
         if (options.deferSupport) {
@@ -729,9 +726,7 @@ public class ExecutableNormalizedOperationFactory {
         }
 
         Set<GraphQLObjectType> allRelevantObjects = objectTypes.build();
-        Set<DeferDeclaration> deferExecutions = deferExecutionsBuilder.build().stream()
-                .filter(distinctByNullLabelAndType())
-                .collect(toCollection(LinkedHashSet::new));
+        Set<DeferDeclaration> deferExecutions = deferExecutionsBuilder.build();
 
         Set<String> duplicatedLabels = listDuplicatedLabels(deferExecutions);
 
@@ -770,45 +765,6 @@ public class ExecutableNormalizedOperationFactory {
 
             return objectType.getInterfaces().stream()
                     .anyMatch(inter -> inter.getName().equals(deferExecution.getTargetType()));
-        };
-    }
-
-    /**
-     * This predicate prevents us from having more than 1 defer execution with "null" label per each TypeName.
-     * This type of duplication is exactly what ENFs want to avoid, because they are irrelevant for execution time.
-     * For example, this query:
-     * <pre>
-     *     query example {
-     *        ... @defer {
-     *            name
-     *        }
-     *        ... @defer {
-     *            name
-     *        }
-     *     }
-     * </pre>
-     * should result on single ENF. Essentially:
-     * <pre>
-     *     query example {
-     *        ... @defer {
-     *            name
-     *        }
-     *     }
-     * </pre>
-     */
-    private static @NotNull Predicate<DeferDeclaration> distinctByNullLabelAndType() {
-        Map<String, Boolean> seen = new ConcurrentHashMap<>();
-
-        return deferExecution -> {
-            if (deferExecution.getLabel() == null) {
-                String typeName = Optional.ofNullable(deferExecution.getTargetType())
-                        .map(String::toUpperCase)
-                        .orElse("null");
-
-                return seen.putIfAbsent(typeName, Boolean.TRUE) == null;
-            }
-
-            return true;
         };
     }
 

@@ -25,7 +25,8 @@ public class ENFMerger {
             ExecutableNormalizedField parent,
             List<ExecutableNormalizedField> childrenWithSameResultKey,
             GraphQLSchema schema,
-            Multimap<ExecutableNormalizedField, DeferDeclaration> normalizedFieldToDeferExecution
+            Multimap<ExecutableNormalizedField, DeferDeclaration> normalizedFieldToDeferExecution,
+            boolean deferSupport
     ) {
         // they have all the same result key
         // we can only merge the fields if they have the same field name + arguments + all children are the same
@@ -74,9 +75,12 @@ public class ENFMerger {
                 while (iterator.hasNext()) {
                     ExecutableNormalizedField next = iterator.next();
                     // Move defer executions from removed field into the merged field's entry
-                    normalizedFieldToDeferExecution.putAll(first, normalizedFieldToDeferExecution.get(next));
                     parent.getChildren().remove(next);
-                    normalizedFieldToDeferExecution.removeAll(next);
+
+                    if (deferSupport) {
+                        normalizedFieldToDeferExecution.putAll(first, normalizedFieldToDeferExecution.get(next));
+                        normalizedFieldToDeferExecution.removeAll(next);
+                    }
                 }
                 first.setObjectTypeNames(mergedObjects);
             }
