@@ -1,0 +1,46 @@
+# Mark inactive issues and PRs as stale
+# GitHub action based on https://github.com/actions/stale
+
+name: 'Close stale issues and PRs'
+on:
+  schedule:
+    # Execute every day
+    - cron: '0 0 * * *'
+
+permissions:
+  issues: write
+  pull-requests: write
+
+jobs:
+  close-pending:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/stale@v9
+        with:
+          # GLOBAL ------------------------------------------------------------
+          # Exempt any PRs or issues already added to a milestone
+          exempt-all-milestones: true
+          # Days until issues or pull requests are labelled as stale
+          days-before-stale: 60
+
+          # ISSUES ------------------------------------------------------------
+          # Issues will be closed after 90 days of inactive (60 to mark as stale + 30 to close)
+          days-before-issue-close: 30
+          stale-issue-message: >
+            Hello, this issue has been inactive for 60 days, so we're marking it as stale.
+            If you would like to continue this discussion, please comment within the next 30 days or we'll close the issue.
+          close-issue-message: >
+            Hello, as this issue has been inactive for 90 days, we're closing the issue.
+            If you would like to resume the discussion, please create a new issue.
+          exempt-issue-labels: keep-open
+
+          # PULL REQUESTS -----------------------------------------------------
+          # PRs will be closed after 90 days of inactive (60 to mark as stale + 30 to close)
+          days-before-pr-close: 30
+          stale-pr-message: >
+            Hello, this pull request has been inactive for 60 days, so we're marking it as stale.
+            If you would like to continue working on this pull request, please make an update within the next 30 days, or we'll close the pull request.
+          close-pr-message: >
+            Hello, as this pull request has been inactive for 90 days, we're closing this pull request.
+            We always welcome contributions, and if you would like to continue, please open a new pull request.
+          exempt-pr-labels: keep-open
