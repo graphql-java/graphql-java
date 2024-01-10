@@ -674,18 +674,11 @@ public class ExecutableNormalizedOperationFactory {
         }
 
         private static Predicate<DeferExecution> filterExecutionsFromType(GraphQLObjectType objectType) {
-            return deferExecution -> {
-                if (deferExecution.getTargetType() == null) {
-                    return true;
-                }
-
-                if (deferExecution.getTargetType().equals(objectType.getName())) {
-                    return true;
-                }
-
-                return objectType.getInterfaces().stream()
-                        .anyMatch(inter -> inter.getName().equals(deferExecution.getTargetType()));
-            };
+            String objectTypeName = objectType.getName();
+            return deferExecution -> deferExecution.getPossibleTypes()
+                    .stream()
+                    .map(GraphQLObjectType::getName)
+                    .anyMatch(objectTypeName::equals);
         }
 
         private Set<String> listDuplicatedLabels(Collection<DeferExecution> deferExecutions) {
@@ -780,7 +773,7 @@ public class ExecutableNormalizedOperationFactory {
                 return null;
             }
 
-            return incrementalNodes.getDeferExecution(
+            return incrementalNodes.createDeferExecution(
                     this.coercedVariableValues.toMap(),
                     directives,
                     typeCondition,
