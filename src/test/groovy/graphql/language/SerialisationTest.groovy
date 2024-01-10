@@ -112,7 +112,11 @@ class SerialisationTest extends Specification {
 
         when:
         GraphQLError syntaxError1 = new InvalidSyntaxError(srcLoc(1, 1), "Bad Syntax 1")
-        GraphQLError validationError2 = new ValidationError(ValidationErrorType.FieldUndefined, srcLoc(2, 2), "Bad Query 2")
+        GraphQLError validationError2 = ValidationError.newValidationError()
+                .validationErrorType(ValidationErrorType.FieldUndefined)
+                .sourceLocation(srcLoc(2, 2))
+                .description("Bad Query 2")
+                .build()
         def originalEntry = new PreparsedDocumentEntry([syntaxError1, validationError2])
 
         PreparsedDocumentEntry newEntry = serialisedDownAndBack(originalEntry)
@@ -146,7 +150,11 @@ class SerialisationTest extends Specification {
 
         Document originalDoc = TestUtil.parseQuery(query)
         GraphQLError syntaxError1 = new InvalidSyntaxError(srcLoc(1, 1), "Bad Syntax 1")
-        GraphQLError validationError2 = new ValidationError(ValidationErrorType.FieldUndefined, srcLoc(2, 2), "Bad Query 2")
+        GraphQLError validationError2 = ValidationError.newValidationError()
+                .validationErrorType(ValidationErrorType.FieldUndefined)
+                .sourceLocation(srcLoc(2, 2))
+                .description("Bad Query 2")
+                .build()
         def originalEntry = new PreparsedDocumentEntry(originalDoc, [syntaxError1, validationError2])
         def originalAst = AstPrinter.printAst(originalEntry.getDocument())
         PreparsedDocumentEntry newEntry = serialisedDownAndBack(originalEntry)
