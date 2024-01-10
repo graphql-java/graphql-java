@@ -2,7 +2,6 @@ package graphql.schema;
 
 
 import com.google.common.collect.ImmutableMap;
-import graphql.DeprecatedAt;
 import graphql.GraphQLContext;
 import graphql.Internal;
 import graphql.collect.ImmutableKit;
@@ -306,8 +305,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
             return this;
         }
 
-        @Deprecated
-        @DeprecatedAt("2021-07-05")
+        @Deprecated(since = "2021-07-05")
         public Builder context(Object context) {
             this.context = context;
             return this;

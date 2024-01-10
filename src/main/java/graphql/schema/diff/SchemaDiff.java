@@ -1,7 +1,6 @@
 package graphql.schema.diff;
 
 import graphql.Assert;
-import graphql.DeprecatedAt;
 import graphql.PublicSpi;
 import graphql.introspection.IntrospectionResultToSchema;
 import graphql.language.Argument;
@@ -121,8 +120,7 @@ public class SchemaDiff {
      *
      * @return the number of API breaking changes
      */
-    @Deprecated
-    @DeprecatedAt("2023-10-04")
+    @Deprecated(since = "2023-10-04")
     @SuppressWarnings("unchecked")
     public int diffSchema(DiffSet diffSet, DifferenceReporter reporter) {
         CountingReporter countingReporter = new CountingReporter(reporter);

@@ -1,7 +1,6 @@
 package graphql.parser;
 
 import com.google.common.collect.ImmutableList;
-import graphql.DeprecatedAt;
 import graphql.Internal;
 import graphql.PublicApi;
 import graphql.language.Document;
@@ -167,8 +166,7 @@ public class Parser {
      * @throws InvalidSyntaxException if the input is not valid graphql syntax
      * @deprecated use {#{@link #parse(ParserEnvironment)}} instead
      */
-    @DeprecatedAt("2022-08-31")
-    @Deprecated
+    @Deprecated(since = "2022-08-31")
     public Document parseDocument(String input, String sourceName) throws InvalidSyntaxException {
         MultiSourceReader multiSourceReader = MultiSourceReader.newMultiSourceReader()
                 .string(input, sourceName)
@@ -188,8 +186,7 @@ public class Parser {
      * @throws InvalidSyntaxException if the input is not valid graphql syntax
      * @deprecated use {#{@link #parse(ParserEnvironment)}} instead
      */
-    @DeprecatedAt("2022-08-31")
-    @Deprecated
+    @Deprecated(since = "2022-08-31")
     public Document parseDocument(String input, ParserOptions parserOptions) throws InvalidSyntaxException {
         MultiSourceReader multiSourceReader = MultiSourceReader.newMultiSourceReader()
                 .string(input, null)
@@ -209,8 +206,7 @@ public class Parser {
      * @throws InvalidSyntaxException if the input is not valid graphql syntax
      * @deprecated use {#{@link #parse(ParserEnvironment)}} instead
      */
-    @DeprecatedAt("2022-08-31")
-    @Deprecated
+    @Deprecated(since = "2022-08-31")
     public Document parseDocument(Reader reader, ParserOptions parserOptions) throws InvalidSyntaxException {
         ParserEnvironment parserEnvironment = ParserEnvironment.newParserEnvironment()
                 .document(reader)
