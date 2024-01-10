@@ -1,6 +1,7 @@
 package graphql.incremental;
 
 import graphql.ExperimentalApi;
+import graphql.GraphQLError;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -10,8 +11,8 @@ import java.util.Map;
 public class StreamedItem extends IncrementalItem {
     private final List<Object> items;
 
-    private StreamedItem(List<Object> items, IncrementalItem incrementalExecutionResult) {
-        super(incrementalExecutionResult);
+    private StreamedItem(List<Object> items, List<Object> path, List<GraphQLError> errors, Map<Object, Object> extensions) {
+        super(path, errors, extensions);
         this.items = items;
     }
 
@@ -35,23 +36,23 @@ public class StreamedItem extends IncrementalItem {
         return new StreamedItem.Builder();
     }
 
-    public static class Builder extends IncrementalItem.Builder {
+    public static class Builder extends IncrementalItem.Builder<StreamedItem> {
         private List<Object> items = null;
-        private final IncrementalItem.Builder builder = IncrementalItem.newIncrementalExecutionResult();
 
         public Builder items(List<Object> items) {
             this.items = items;
             return this;
         }
 
-        public Builder from(IncrementalItem incrementalExecutionResult) {
-            builder.from(incrementalExecutionResult);
+        public Builder from(StreamedItem streamedItem) {
+            super.from(streamedItem);
+            this.items = streamedItem.items;
             return this;
         }
 
-        public IncrementalItem build() {
-            IncrementalItem build = builder.build();
-            return new StreamedItem(items, build);
+        @Override
+        public StreamedItem build() {
+            return new StreamedItem(items, this.path, this.errors, this.extensions);
         }
     }
 }

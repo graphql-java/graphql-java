@@ -12,34 +12,30 @@ import java.util.Map;
 import static java.util.stream.Collectors.toList;
 
 @ExperimentalApi
-public class IncrementalItem {
+public abstract class IncrementalItem {
     private final List<Object> path;
     private final List<GraphQLError> errors;
     private final transient Map<Object, Object> extensions;
 
-    private IncrementalItem(List<Object> path, List<GraphQLError> errors, Map<Object, Object> extensions) {
+    protected IncrementalItem(List<Object> path, List<GraphQLError> errors, Map<Object, Object> extensions) {
         this.path = path;
         this.errors = errors;
         this.extensions = extensions;
     }
 
-    IncrementalItem(IncrementalItem incrementalItem) {
-        this(incrementalItem.getPath(), incrementalItem.getErrors(), incrementalItem.getExtensions());
-    }
-
     public List<Object> getPath() {
-        return null;
+        return this.path;
     }
 
     public List<GraphQLError> getErrors() {
-        return null;
+        return this.errors;
     }
 
     public Map<Object, Object> getExtensions() {
-        return null;
+        return this.extensions;
     }
 
-    public Map<String, Object> toSpecification() {
+    protected Map<String, Object> toSpecification() {
         Map<String, Object> result = new LinkedHashMap<>();
         if (errors != null && !errors.isEmpty()) {
             result.put("errors", errorsToSpec(errors));
@@ -53,66 +49,60 @@ public class IncrementalItem {
         return result;
     }
 
-    private Object errorsToSpec(List<GraphQLError> errors) {
+    protected Object errorsToSpec(List<GraphQLError> errors) {
         return errors.stream().map(GraphQLError::toSpecification).collect(toList());
     }
 
-    static IncrementalItem.Builder newIncrementalExecutionResult() {
-        return new IncrementalItem.Builder();
-    }
+    protected static abstract class Builder<T extends IncrementalItem> {
+        protected List<Object> path;
+        protected List<GraphQLError> errors = new ArrayList<>();
+        protected Map<Object, Object> extensions;
 
-    public static class Builder {
-        private List<Object> path;
-        private List<GraphQLError> errors = new ArrayList<>();
-        private Map<Object, Object> extensions;
-
-        public IncrementalItem.Builder from(IncrementalItem incrementalExecutionResult) {
-            path = incrementalExecutionResult.getPath();
-            errors = new ArrayList<>(incrementalExecutionResult.getErrors());
-            extensions = incrementalExecutionResult.getExtensions();
+        public Builder<T> from(T incrementalExecutionResult) {
+            this.path = incrementalExecutionResult.getPath();
+            this.errors = new ArrayList<>(incrementalExecutionResult.getErrors());
+            this.extensions = incrementalExecutionResult.getExtensions();
             return this;
         }
 
-        public IncrementalItem.Builder path(ResultPath path) {
+        public Builder<T> path(ResultPath path) {
             if (path != null) {
                 this.path = path.toList();
             }
             return this;
         }
 
-        public IncrementalItem.Builder path(List<Object> path) {
+        public Builder<T> path(List<Object> path) {
             this.path = path;
             return this;
         }
 
-        public IncrementalItem.Builder errors(List<GraphQLError> errors) {
+        public Builder<T> errors(List<GraphQLError> errors) {
             this.errors = errors;
             return this;
         }
 
-        public IncrementalItem.Builder addErrors(List<GraphQLError> errors) {
+        public Builder<T> addErrors(List<GraphQLError> errors) {
             this.errors.addAll(errors);
             return this;
         }
 
-        public IncrementalItem.Builder addError(GraphQLError error) {
+        public Builder<T> addError(GraphQLError error) {
             this.errors.add(error);
             return this;
         }
 
-        public IncrementalItem.Builder extensions(Map<Object, Object> extensions) {
+        public Builder<T> extensions(Map<Object, Object> extensions) {
             this.extensions = extensions;
             return this;
         }
 
-        public IncrementalItem.Builder addExtension(String key, Object value) {
+        public Builder<T> addExtension(String key, Object value) {
             this.extensions = (this.extensions == null ? new LinkedHashMap<>() : this.extensions);
             this.extensions.put(key, value);
             return this;
         }
 
-        public IncrementalItem build() {
-            return new IncrementalItem(path, errors, extensions);
-        }
+        public abstract T build();
     }
 }
