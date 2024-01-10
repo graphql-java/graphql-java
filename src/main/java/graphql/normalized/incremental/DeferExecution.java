@@ -1,6 +1,6 @@
 package graphql.normalized.incremental;
 
-import graphql.Internal;
+import graphql.ExperimentalApi;
 import graphql.schema.GraphQLObjectType;
 
 import javax.annotation.Nullable;
@@ -102,7 +102,7 @@ import java.util.Set;
  * and deliver both fields at the same time.
  *
  */
-@Internal
+@ExperimentalApi
 public class DeferExecution {
     private final String label;
     private final Set<GraphQLObjectType> possibleTypes;

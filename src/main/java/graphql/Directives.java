@@ -81,10 +81,16 @@ public class Directives {
     /**
      * The @defer directive can be used to defer sending data for a fragment until later in the query.
      * This is an opt-in directive that is not available unless it is explicitly put into the schema.
+     * <p>
+     * This implementation is based on the state of <a href="https://github.com/graphql/graphql-spec/pull/742">Defer/Stream PR</a>
+     * More specifically at the state of this
+     * <a href="https://github.com/graphql/graphql-spec/commit/c630301560d9819d33255d3ba00f548e8abbcdc6">commit</a>
+     * <p>
+     * The execution behaviour should match what we get from running Apollo Server 4.9.5 with graphql-js v17.0.0-alpha.2
      */
     @ExperimentalApi
     public static final GraphQLDirective DeferDirective = GraphQLDirective.newDirective()
-            .name("defer")
+            .name(DEFER)
             .description("This directive allows results to be deferred during execution")
             .validLocations(FRAGMENT_SPREAD, INLINE_FRAGMENT)
             .argument(newArgument()
