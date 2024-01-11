@@ -1,12 +1,17 @@
 package readme;
 
+import graphql.GraphQLContext;
+import graphql.execution.CoercedVariables;
 import graphql.language.StringValue;
+import graphql.language.Value;
 import graphql.schema.Coercing;
 import graphql.schema.CoercingParseLiteralException;
 import graphql.schema.CoercingParseValueException;
 import graphql.schema.CoercingSerializeException;
 import graphql.schema.GraphQLScalarType;
+import org.jetbrains.annotations.NotNull;
 
+import java.util.Locale;
 import java.util.regex.Pattern;
 
 @SuppressWarnings("unused")
@@ -19,17 +24,17 @@ public class ScalarExamples {
                 .description("A custom scalar that handles emails")
                 .coercing(new Coercing() {
                     @Override
-                    public Object serialize(Object dataFetcherResult) {
+                    public Object serialize(@NotNull Object dataFetcherResult, @NotNull GraphQLContext graphQLContext, @NotNull Locale locale) {
                         return serializeEmail(dataFetcherResult);
                     }
 
                     @Override
-                    public Object parseValue(Object input) {
+                    public Object parseValue(@NotNull Object input, @NotNull GraphQLContext graphQLContext, @NotNull Locale locale) {
                         return parseEmailFromVariable(input);
                     }
 
                     @Override
-                    public Object parseLiteral(Object input) {
+                    public Object parseLiteral(@NotNull Value input, @NotNull CoercedVariables variables, @NotNull GraphQLContext graphQLContext, @NotNull Locale locale) {
                         return parseEmailFromAstLiteral(input);
                     }
                 })
@@ -72,6 +77,5 @@ public class ScalarExamples {
             );
         }
     }
-
 
 }
