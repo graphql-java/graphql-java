@@ -61,7 +61,7 @@ import java.util.List;
  * }
  * </pre>
  *
- * <b>Response 3, contains the final stream payload. Note how "hasNext" is "false", indicating this is the final response.
+ * <b>Response 3, contains the final stream payload. Note how "hasNext" is "false", indicating this is the final response.</b>
  * <pre>
  * {
  *   "incremental": [
@@ -93,7 +93,7 @@ public interface IncrementalExecutionResult extends ExecutionResult {
     /**
      * Returns a list of defer and/or stream payloads that the execution engine decided (for whatever reason) to resolve at the same time as the initial payload.
      * <p>
-     * <quote>(...)this field may appear on both the initial and subsequent values.</quote>
+     * (...)this field may appear on both the initial and subsequent values.
      * <p>
      * <a href="https://github.com/graphql/graphql-spec/pull/742/files#diff-98d0cd153b72b63c417ad4238e8cc0d3385691ccbde7f7674bc0d2a718b896ecR271">source</a>
      *
