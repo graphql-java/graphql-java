@@ -1,20 +1,24 @@
 package graphql.incremental;
 
 import graphql.ExecutionResultImpl;
+import graphql.ExperimentalApi;
 import org.reactivestreams.Publisher;
 
+import javax.annotation.Nullable;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
+@ExperimentalApi
 public class IncrementalExecutionResultImpl extends ExecutionResultImpl implements IncrementalExecutionResult {
     private final boolean hasNext;
+    private final List<IncrementalPayload> incremental;
     private final Publisher<DelayedIncrementalExecutionResult> incrementalItemPublisher;
 
-    private IncrementalExecutionResultImpl(
-            Builder builder
-    ) {
+    private IncrementalExecutionResultImpl(Builder builder) {
         super(builder);
         this.hasNext = builder.hasNext;
+        this.incremental = builder.incremental;
         this.incrementalItemPublisher = builder.incrementalItemPublisher;
     }
 
@@ -23,11 +27,20 @@ public class IncrementalExecutionResultImpl extends ExecutionResultImpl implemen
         return this.hasNext;
     }
 
+    @Nullable
+    @Override
+    public List<IncrementalPayload> getIncremental() {
+        return this.incremental;
+    }
+
     @Override
     public Publisher<DelayedIncrementalExecutionResult> getIncrementalItemPublisher() {
         return incrementalItemPublisher;
     }
 
+    /**
+     * @return a {@link Builder} that can be used to create an instance of {@link IncrementalExecutionResultImpl}
+     */
     public static Builder newIncrementalExecutionResult() {
         return new Builder();
     }
@@ -41,10 +54,16 @@ public class IncrementalExecutionResultImpl extends ExecutionResultImpl implemen
 
     public static class Builder extends ExecutionResultImpl.Builder<Builder> {
         private boolean hasNext = true;
+        public List<IncrementalPayload> incremental;
         private Publisher<DelayedIncrementalExecutionResult> incrementalItemPublisher;
 
         public Builder hasNext(boolean hasNext) {
             this.hasNext = hasNext;
+            return this;
+        }
+
+        public Builder incremental(List<IncrementalPayload> incremental) {
+            this.incremental = incremental;
             return this;
         }
 
@@ -53,10 +72,11 @@ public class IncrementalExecutionResultImpl extends ExecutionResultImpl implemen
             return this;
         }
 
-//        public Builder from(ExecutionResult executionResult) {
-//            builder.from(executionResult);
-//            return this;
-//        }
+        public Builder from(IncrementalExecutionResult incrementalExecutionResult) {
+            super.from(incrementalExecutionResult);
+            this.hasNext = incrementalExecutionResult.hasNext();
+            return this;
+        }
 
         public IncrementalExecutionResult build() {
             return new IncrementalExecutionResultImpl(this);

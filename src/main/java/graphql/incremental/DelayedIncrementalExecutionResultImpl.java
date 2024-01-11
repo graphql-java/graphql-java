@@ -1,27 +1,26 @@
 package graphql.incremental;
 
+import graphql.ExperimentalApi;
+
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
+@ExperimentalApi
 public class DelayedIncrementalExecutionResultImpl implements DelayedIncrementalExecutionResult {
-    private final List<IncrementalItem> incrementalItems;
-    private final String label;
+    private final List<IncrementalPayload> incrementalItems;
     private final boolean hasNext;
+    private final Map<Object, Object> extensions;
 
-    private DelayedIncrementalExecutionResultImpl(List<IncrementalItem> incrementalItems, String label, boolean hasNext) {
-        this.incrementalItems = incrementalItems;
-        this.label = label;
-        this.hasNext = hasNext;
+    private DelayedIncrementalExecutionResultImpl(Builder builder) {
+        this.incrementalItems = builder.incrementalItems;
+        this.hasNext = builder.hasNext;
+        this.extensions = builder.extensions;
     }
 
     @Override
-    public List<IncrementalItem> getIncremental() {
+    public List<IncrementalPayload> getIncremental() {
         return this.incrementalItems;
-    }
-
-    @Override
-    public String getLabel() {
-        return this.label;
     }
 
     @Override
@@ -29,32 +28,40 @@ public class DelayedIncrementalExecutionResultImpl implements DelayedIncremental
         return this.hasNext;
     }
 
+    @Override
+    public Map<Object, Object> getExtensions() {
+        return this.extensions;
+    }
+
+    /**
+     * @return a {@link Builder} that can be used to create an instance of {@link DelayedIncrementalExecutionResultImpl}
+     */
     public static Builder newIncrementalExecutionResult() {
         return new Builder();
     }
 
     public static class Builder {
         private boolean hasNext = false;
-        private List<IncrementalItem> incrementalItems = Collections.emptyList();
-        private String label = null;
+        private List<IncrementalPayload> incrementalItems = Collections.emptyList();
+        private Map<Object, Object> extensions;
 
-        public DelayedIncrementalExecutionResultImpl.Builder hasNext(boolean hasNext) {
+        public Builder hasNext(boolean hasNext) {
             this.hasNext = hasNext;
             return this;
         }
 
-        public DelayedIncrementalExecutionResultImpl.Builder incrementalItems(List<IncrementalItem> incrementalItems) {
+        public Builder incrementalItems(List<IncrementalPayload> incrementalItems) {
             this.incrementalItems = incrementalItems;
             return this;
         }
 
-        public DelayedIncrementalExecutionResultImpl.Builder label(String label) {
-            this.label = label;
+        public Builder extensions(boolean hasNext) {
+            this.hasNext = hasNext;
             return this;
         }
 
         public DelayedIncrementalExecutionResultImpl build() {
-            return new DelayedIncrementalExecutionResultImpl(this.incrementalItems, this.label, this.hasNext);
+            return new DelayedIncrementalExecutionResultImpl(this);
         }
     }
 }
