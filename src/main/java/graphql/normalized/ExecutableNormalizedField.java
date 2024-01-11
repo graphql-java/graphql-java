@@ -476,7 +476,10 @@ public class ExecutableNormalizedField {
         return parent;
     }
 
-    // TODO: Javadoc
+    /**
+     * @return the {@link DeferExecution}s associated with this {@link ExecutableNormalizedField}.
+     * @see DeferExecution
+     */
     @ExperimentalApi
     public LinkedHashSet<DeferExecution> getDeferExecutions() {
         return deferExecutions;

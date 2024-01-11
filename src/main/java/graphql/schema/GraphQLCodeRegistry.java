@@ -1,7 +1,6 @@
 package graphql.schema;
 
 import graphql.Assert;
-import graphql.DeprecatedAt;
 import graphql.Internal;
 import graphql.PublicApi;
 import graphql.schema.visibility.GraphqlFieldVisibility;
@@ -62,8 +61,7 @@ public class GraphQLCodeRegistry {
      * @deprecated This is confusing because {@link GraphQLInterfaceType}s cant have data fetchers.  At runtime only a {@link GraphQLObjectType}
      * can be used to fetch a field.  This method allows the mapping to be made, but it is never useful if an interface is passed in.
      */
-    @Deprecated
-    @DeprecatedAt("2023-05-13")
+    @Deprecated(since = "2023-05-13")
     public DataFetcher<?> getDataFetcher(GraphQLFieldsContainer parentType, GraphQLFieldDefinition fieldDefinition) {
         return getDataFetcherImpl(FieldCoordinates.coordinates(parentType, fieldDefinition), fieldDefinition, dataFetcherMap, systemDataFetcherMap, defaultDataFetcherFactory);
     }
@@ -266,8 +264,7 @@ public class GraphQLCodeRegistry {
          * @deprecated This is confusing because {@link GraphQLInterfaceType}s cant have data fetchers.  At runtime only a {@link GraphQLObjectType}
          * can be used to fetch a field.  This method allows the mapping to be made, but it is never useful if an interface is passed in.
          */
-        @Deprecated
-        @DeprecatedAt("2023-05-13")
+        @Deprecated(since = "2023-05-13")
         public DataFetcher<?> getDataFetcher(GraphQLFieldsContainer parentType, GraphQLFieldDefinition fieldDefinition) {
             return getDataFetcherImpl(FieldCoordinates.coordinates(parentType, fieldDefinition), fieldDefinition, dataFetcherMap, systemDataFetcherMap, defaultDataFetcherFactory);
         }
@@ -373,12 +370,10 @@ public class GraphQLCodeRegistry {
          * @deprecated This is confusing because {@link GraphQLInterfaceType}s cant have data fetchers.  At runtime only a {@link GraphQLObjectType}
          * can be used to fetch a field.  This method allows the mapping to be made, but it is never useful if an interface is passed in.
          */
-        @Deprecated
-        @DeprecatedAt("2023-05-13")
+        @Deprecated(since = "2023-05-13")
         public Builder dataFetcher(GraphQLFieldsContainer parentType, GraphQLFieldDefinition fieldDefinition, DataFetcher<?> dataFetcher) {
             return dataFetcher(FieldCoordinates.coordinates(parentType.getName(), fieldDefinition.getName()), dataFetcher);
         }
-
 
         /**
          * Sets the data fetcher for a specific field inside an object type

@@ -3,7 +3,6 @@ package graphql.schema;
 import com.google.common.collect.ImmutableList;
 import graphql.Assert;
 import graphql.AssertException;
-import graphql.DeprecatedAt;
 import graphql.DirectivesUtil;
 import graphql.Internal;
 import graphql.PublicApi;
@@ -114,8 +113,7 @@ public class GraphQLInterfaceType implements GraphQLNamedType, GraphQLCompositeT
 
     // to be removed in a future version when all code is in the code registry
     @Internal
-    @Deprecated
-    @DeprecatedAt("2018-12-03")
+    @Deprecated(since = "2018-12-03")
     TypeResolver getTypeResolver() {
         return typeResolver;
     }
@@ -370,8 +368,7 @@ public class GraphQLInterfaceType implements GraphQLNamedType, GraphQLCompositeT
          *
          * @deprecated use {@link graphql.schema.GraphQLCodeRegistry.Builder#typeResolver(GraphQLInterfaceType, TypeResolver)} instead
          */
-        @Deprecated
-        @DeprecatedAt("2018-12-03")
+        @Deprecated(since = "2018-12-03")
         public Builder typeResolver(TypeResolver typeResolver) {
             this.typeResolver = typeResolver;
             return this;

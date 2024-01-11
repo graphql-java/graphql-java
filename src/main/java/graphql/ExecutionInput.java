@@ -68,8 +68,7 @@ public class ExecutionInput {
      *
      * @deprecated - use {@link #getGraphQLContext()}
      */
-    @Deprecated
-    @DeprecatedAt("2021-07-05")
+    @Deprecated(since = "2021-07-05")
     public Object getContext() {
         return context;
     }
@@ -273,8 +272,7 @@ public class ExecutionInput {
          *
          * @deprecated - the {@link ExecutionInput#getGraphQLContext()} is a fixed mutable instance now
          */
-        @Deprecated
-        @DeprecatedAt("2021-07-05")
+        @Deprecated(since = "2021-07-05")
         public Builder context(Object context) {
             this.context = context;
             return this;
@@ -289,8 +287,7 @@ public class ExecutionInput {
          *
          * @deprecated - the {@link ExecutionInput#getGraphQLContext()} is a fixed mutable instance now
          */
-        @Deprecated
-        @DeprecatedAt("2021-07-05")
+        @Deprecated(since = "2021-07-05")
         public Builder context(GraphQLContext.Builder contextBuilder) {
             this.context = contextBuilder.build();
             return this;
@@ -305,8 +302,7 @@ public class ExecutionInput {
          *
          * @deprecated - the {@link ExecutionInput#getGraphQLContext()} is a fixed mutable instance now
          */
-        @Deprecated
-        @DeprecatedAt("2021-07-05")
+        @Deprecated(since = "2021-07-05")
         public Builder context(UnaryOperator<GraphQLContext.Builder> contextBuilderFunction) {
             GraphQLContext.Builder builder = GraphQLContext.newContext();
             builder = contextBuilderFunction.apply(builder);

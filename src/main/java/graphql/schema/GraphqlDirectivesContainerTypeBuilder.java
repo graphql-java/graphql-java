@@ -1,6 +1,5 @@
 package graphql.schema;
 
-import graphql.DeprecatedAt;
 import graphql.Internal;
 
 import java.util.ArrayList;
@@ -50,8 +49,7 @@ public abstract class GraphqlDirectivesContainerTypeBuilder<B extends GraphqlDir
      *
      * @deprecated - use the {@link GraphQLAppliedDirective} methods instead
      */
-    @Deprecated
-    @DeprecatedAt("2022-02-24")
+    @Deprecated(since = "2022-02-24")
     public B replaceDirectives(List<GraphQLDirective> directives) {
         assertNotNull(directives, () -> "directive can't be null");
         this.directives.clear();
@@ -66,8 +64,7 @@ public abstract class GraphqlDirectivesContainerTypeBuilder<B extends GraphqlDir
      *
      * @deprecated - use the {@link GraphQLAppliedDirective} methods instead
      */
-    @Deprecated
-    @DeprecatedAt("2022-02-24")
+    @Deprecated(since = "2022-02-24")
     public B withDirectives(GraphQLDirective... directives) {
         assertNotNull(directives, () -> "directives can't be null");
         this.directives.clear();
@@ -84,8 +81,7 @@ public abstract class GraphqlDirectivesContainerTypeBuilder<B extends GraphqlDir
      *
      * @deprecated - use the {@link GraphQLAppliedDirective} methods instead
      */
-    @Deprecated
-    @DeprecatedAt("2022-02-24")
+    @Deprecated(since = "2022-02-24")
     public B withDirective(GraphQLDirective directive) {
         assertNotNull(directive, () -> "directive can't be null");
         this.directives.add(directive);
@@ -99,8 +95,7 @@ public abstract class GraphqlDirectivesContainerTypeBuilder<B extends GraphqlDir
      *
      * @deprecated - use the {@link GraphQLAppliedDirective} methods instead
      */
-    @Deprecated
-    @DeprecatedAt("2022-02-24")
+    @Deprecated(since = "2022-02-24")
     public B withDirective(GraphQLDirective.Builder builder) {
         return withDirective(builder.build());
     }

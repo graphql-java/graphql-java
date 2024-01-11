@@ -1,6 +1,5 @@
 package graphql.schema;
 
-import graphql.DeprecatedAt;
 import graphql.GraphQLContext;
 import graphql.PublicApi;
 import graphql.execution.ExecutionId;
@@ -87,8 +86,7 @@ public interface DataFetchingEnvironment extends IntrospectionDataFetchingEnviro
      *
      * @deprecated - use {@link #getGraphQlContext()} instead
      */
-    @Deprecated
-    @DeprecatedAt("2021-07-05")
+    @Deprecated(since = "2021-07-05")
     <T> T getContext();
 
     /**
@@ -138,8 +136,7 @@ public interface DataFetchingEnvironment extends IntrospectionDataFetchingEnviro
      *
      * @deprecated Use {@link #getMergedField()}.
      */
-    @Deprecated
-    @DeprecatedAt("2018-12-20")
+    @Deprecated(since = "2018-12-20")
     List<Field> getFields();
 
     /**
