@@ -6,8 +6,12 @@ import org.reactivestreams.Publisher;
 
 import javax.annotation.Nullable;
 import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+
+import static java.util.stream.Collectors.toList;
 
 @ExperimentalApi
 public class IncrementalExecutionResultImpl extends ExecutionResultImpl implements IncrementalExecutionResult {
@@ -49,6 +53,15 @@ public class IncrementalExecutionResultImpl extends ExecutionResultImpl implemen
     public Map<String, Object> toSpecification() {
         Map<String, Object> map = new LinkedHashMap<>(super.toSpecification());
         map.put("hasNext", hasNext);
+
+        if (this.incremental != null) {
+            map.put("incremental",
+                    this.incremental.stream()
+                            .map(IncrementalPayload::toSpecification)
+                            .collect(Collectors.toCollection(LinkedList::new))
+            );
+        }
+
         return map;
     }
 

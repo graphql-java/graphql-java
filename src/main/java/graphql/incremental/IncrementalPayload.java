@@ -4,7 +4,6 @@ import graphql.ExperimentalApi;
 import graphql.GraphQLError;
 import graphql.execution.ResultPath;
 
-import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -63,14 +62,18 @@ public abstract class IncrementalPayload {
 
     protected Map<String, Object> toSpecification() {
         Map<String, Object> result = new LinkedHashMap<>();
+
+        result.put("path", path);
+
+        if (label != null) {
+            result.put("label", label);
+        }
+
         if (errors != null && !errors.isEmpty()) {
             result.put("errors", errorsToSpec(errors));
         }
         if (extensions != null) {
             result.put("extensions", extensions);
-        }
-        if (path != null) {
-            result.put("path", path);
         }
         return result;
     }
@@ -79,40 +82,42 @@ public abstract class IncrementalPayload {
         return errors.stream().map(GraphQLError::toSpecification).collect(toList());
     }
 
-    protected static abstract class Builder<T extends IncrementalPayload> {
+    protected static abstract class Builder<T extends Builder<T>> {
         protected List<Object> path;
         protected String label;
         protected List<GraphQLError> errors = new ArrayList<>();
         protected Map<Object, Object> extensions;
 
-        public Builder<T> from(T incrementalExecutionResult) {
-            this.path = incrementalExecutionResult.getPath();
-            this.label = incrementalExecutionResult.getLabel();
-            this.errors = new ArrayList<>(incrementalExecutionResult.getErrors());
-            this.extensions = incrementalExecutionResult.getExtensions();
-            return this;
+        public T from(IncrementalPayload incrementalPayload) {
+            this.path = incrementalPayload.getPath();
+            this.label = incrementalPayload.getLabel();
+            if (incrementalPayload.getErrors() != null) {
+                this.errors = new ArrayList<>(incrementalPayload.getErrors());
+            }
+            this.extensions = incrementalPayload.getExtensions();
+            return (T) this;
         }
 
-        public Builder<T> path(ResultPath path) {
+        public T path(ResultPath path) {
             if (path != null) {
                 this.path = path.toList();
             }
-            return this;
+            return (T) this;
         }
 
-        public Builder<T> path(List<Object> path) {
+        public T path(List<Object> path) {
             this.path = path;
-            return this;
+            return (T) this;
         }
 
-        public Builder<T> label(String label) {
+        public T label(String label) {
             this.label = label;
-            return this;
+            return (T) this;
         }
 
-        public Builder<T> errors(List<GraphQLError> errors) {
+        public T errors(List<GraphQLError> errors) {
             this.errors = errors;
-            return this;
+            return (T) this;
         }
 
         public Builder<T> addErrors(List<GraphQLError> errors) {
@@ -135,7 +140,5 @@ public abstract class IncrementalPayload {
             this.extensions.put(key, value);
             return this;
         }
-
-        public abstract T build();
     }
 }

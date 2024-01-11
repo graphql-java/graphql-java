@@ -51,7 +51,7 @@ public class StreamPayload extends IncrementalPayload {
         return new StreamPayload.Builder();
     }
 
-    public static class Builder extends IncrementalPayload.Builder<StreamPayload> {
+    public static class Builder extends IncrementalPayload.Builder<Builder> {
         private List<Object> items = null;
 
         public Builder items(List<Object> items) {
@@ -65,7 +65,6 @@ public class StreamPayload extends IncrementalPayload {
             return this;
         }
 
-        @Override
         public StreamPayload build() {
             return new StreamPayload(items, this.path, this.label, this.errors, this.extensions);
         }

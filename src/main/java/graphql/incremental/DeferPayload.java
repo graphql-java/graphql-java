@@ -51,7 +51,7 @@ public class DeferPayload extends IncrementalPayload {
         return new DeferPayload.Builder();
     }
 
-    public static class Builder extends IncrementalPayload.Builder<DeferPayload> {
+    public static class Builder extends IncrementalPayload.Builder<Builder> {
         private Object data = null;
 
         public Builder data(Object data) {
@@ -65,7 +65,6 @@ public class DeferPayload extends IncrementalPayload {
             return this;
         }
 
-        @Override
         public DeferPayload build() {
             return new DeferPayload(data, this.path, this.label, this.errors, this.extensions);
         }
