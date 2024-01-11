@@ -4,6 +4,7 @@ import graphql.execution.ResultPath
 import spock.lang.Specification
 
 import static graphql.incremental.DeferPayload.newDeferredItem
+import static graphql.incremental.IncrementalExecutionResultImpl.newIncrementalExecutionResult
 import static graphql.incremental.StreamPayload.newStreamedItem
 
 class IncrementalExecutionResultTest extends Specification {
@@ -28,8 +29,7 @@ class IncrementalExecutionResultTest extends Specification {
                 .items([[title: "Return of the Jedi"]])
                 .build()
 
-        def result = IncrementalExecutionResultImpl
-                .newIncrementalExecutionResult()
+        def result = newIncrementalExecutionResult()
                 .data([
                         person: [
                                 name : "Luke Skywalker",
