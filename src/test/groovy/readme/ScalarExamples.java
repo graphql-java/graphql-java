@@ -9,7 +9,6 @@ import graphql.schema.CoercingParseLiteralException;
 import graphql.schema.CoercingParseValueException;
 import graphql.schema.CoercingSerializeException;
 import graphql.schema.GraphQLScalarType;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.Locale;
 import java.util.regex.Pattern;
@@ -24,17 +23,17 @@ public class ScalarExamples {
                 .description("A custom scalar that handles emails")
                 .coercing(new Coercing() {
                     @Override
-                    public Object serialize(@NotNull Object dataFetcherResult, @NotNull GraphQLContext graphQLContext, @NotNull Locale locale) {
+                    public Object serialize(Object dataFetcherResult, GraphQLContext graphQLContext, Locale locale) {
                         return serializeEmail(dataFetcherResult);
                     }
 
                     @Override
-                    public Object parseValue(@NotNull Object input, @NotNull GraphQLContext graphQLContext, @NotNull Locale locale) {
+                    public Object parseValue(Object input, GraphQLContext graphQLContext, Locale locale) {
                         return parseEmailFromVariable(input);
                     }
 
                     @Override
-                    public Object parseLiteral(@NotNull Value input, @NotNull CoercedVariables variables, @NotNull GraphQLContext graphQLContext, @NotNull Locale locale) {
+                    public Object parseLiteral(Value input, CoercedVariables variables, GraphQLContext graphQLContext, Locale locale) {
                         return parseEmailFromAstLiteral(input);
                     }
                 })
