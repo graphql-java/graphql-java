@@ -7,6 +7,9 @@ import graphql.language.Document;
 import graphql.schema.GraphQLSchema;
 import graphql.validation.rules.ArgumentsOfCorrectType;
 import graphql.validation.rules.UniqueObjectFieldName;
+import graphql.validation.rules.DeferredDirectiveOnNonNullableField;
+import graphql.validation.rules.DeferredDirectiveOnQueryOperation;
+import graphql.validation.rules.DeferredMustBeOnAllFields;
 import graphql.validation.rules.ExecutableDefinitions;
 import graphql.validation.rules.FieldsOnCorrectType;
 import graphql.validation.rules.FragmentsOnCompositeType;
@@ -22,6 +25,7 @@ import graphql.validation.rules.NoUnusedVariables;
 import graphql.validation.rules.OverlappingFieldsCanBeMerged;
 import graphql.validation.rules.PossibleFragmentSpreads;
 import graphql.validation.rules.ProvidedNonNullArguments;
+import graphql.validation.rules.ScalarLeafs;
 import graphql.validation.rules.ScalarLeaves;
 import graphql.validation.rules.SubscriptionUniqueRootField;
 import graphql.validation.rules.UniqueArgumentNames;
@@ -32,6 +36,8 @@ import graphql.validation.rules.UniqueVariableNames;
 import graphql.validation.rules.VariableDefaultValuesOfCorrectType;
 import graphql.validation.rules.VariableTypesMatch;
 import graphql.validation.rules.VariablesAreInputTypes;
+import graphql.validation.rules.UniqueArgumentNamesRule;
+import graphql.validation.rules.UniqueVariableNamesRule;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -147,6 +153,16 @@ public class Validator {
 
         UniqueArgumentNames uniqueArgumentNamesRule = new UniqueArgumentNames(validationContext, validationErrorCollector);
         rules.add(uniqueArgumentNamesRule);
+
+        // our extensions beyond spec
+        DeferredDirectiveOnNonNullableField deferredDirectiveOnNonNullableField = new DeferredDirectiveOnNonNullableField(validationContext, validationErrorCollector);
+        rules.add(deferredDirectiveOnNonNullableField);
+
+        DeferredDirectiveOnQueryOperation deferredDirectiveOnQueryOperation = new DeferredDirectiveOnQueryOperation(validationContext, validationErrorCollector);
+        rules.add(deferredDirectiveOnQueryOperation);
+
+        DeferredMustBeOnAllFields deferredMustBeOnAllFields = new DeferredMustBeOnAllFields(validationContext, validationErrorCollector);
+        rules.add(deferredMustBeOnAllFields);
 
         UniqueVariableNames uniqueVariableNamesRule = new UniqueVariableNames(validationContext, validationErrorCollector);
         rules.add(uniqueVariableNamesRule);

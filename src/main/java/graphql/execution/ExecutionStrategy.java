@@ -372,6 +372,10 @@ public abstract class ExecutionStrategy {
                 .exception(e)
                 .build();
 
+        // TODO: parameters here is an instance of ExecutionStrategyParameters
+        // TODO: not sure if this method call goes here, inside the try block below, or in the async method
+        parameters.deferredErrorSupport().onFetchingException(parameters, e);
+
         try {
             return asyncHandleException(dataFetcherExceptionHandler, handlerParameters);
         } catch (Exception handlerException) {
@@ -496,6 +500,7 @@ public abstract class ExecutionStrategy {
         logNotSafe.warn(error.getMessage(), e);
         context.addError(error);
 
+        parameters.deferredErrorSupport().onError(error);
     }
 
     /**
@@ -708,6 +713,7 @@ public abstract class ExecutionStrategy {
         logNotSafe.warn(error.getMessage(), e);
         context.addError(error);
 
+        parameters.deferredErrorSupport().onError(error);
 
         return null;
     }
@@ -735,6 +741,8 @@ public abstract class ExecutionStrategy {
         TypeMismatchError error = new TypeMismatchError(parameters.getPath(), parameters.getExecutionStepInfo().getUnwrappedNonNullType());
         logNotSafe.warn("{} got {}", error.getMessage(), result.getClass());
         context.addError(error);
+
+        parameters.deferredErrorSupport().onError(error);
     }
 
 

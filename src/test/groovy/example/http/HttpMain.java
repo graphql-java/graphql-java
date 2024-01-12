@@ -160,6 +160,10 @@ public class HttpMain extends AbstractHandler {
 
 
     private void returnAsJson(HttpServletResponse response, ExecutionResult executionResult) throws IOException {
+        Map<Object, Object> extensions = executionResult.getExtensions();
+        if (extensions != null && extensions.containsKey(GraphQL.DEFERRED_RESULTS)) {
+            DeferHttpSupport.sendDeferredResponse(response, executionResult, extensions);
+        }
         sendNormalResponse(response, executionResult);
     }
 
