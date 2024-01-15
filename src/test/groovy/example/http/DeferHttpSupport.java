@@ -3,11 +3,11 @@ package example.http;
 import graphql.DeferredExecutionResult;
 import graphql.ExecutionResult;
 import graphql.GraphQL;
+import jakarta.servlet.http.HttpServletResponse;
 import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.UncheckedIOException;

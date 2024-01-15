@@ -1,6 +1,6 @@
 package graphql;
 
-import graphql.execution.ExecutionPath;
+import graphql.execution.ResultPath;
 
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -45,7 +45,7 @@ public class DeferredExecutionResultImpl extends ExecutionResultImpl implements 
         private List<Object> path = Collections.emptyList();
         private ExecutionResultImpl.Builder builder = ExecutionResultImpl.newExecutionResult();
 
-        public Builder path(ExecutionPath path) {
+        public Builder path(ResultPath path) {
             this.path = assertNotNull(path).toList();
             return this;
         }
@@ -61,8 +61,11 @@ public class DeferredExecutionResultImpl extends ExecutionResultImpl implements 
         }
 
         public DeferredExecutionResult build() {
-            ExecutionResultImpl build = builder.build();
-            return new DeferredExecutionResultImpl(path, build);
+            // TODO: This class will be deleted anyway
+//            ExecutionResultImpl build = builder.build();
+//            return new DeferredExecutionResultImpl(path, build);
+
+            return null;
         }
     }
 }

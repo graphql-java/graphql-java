@@ -6,11 +6,11 @@ import graphql.ExecutionInput;
 import graphql.ExecutionResult;
 import graphql.GraphQL;
 import graphql.schema.GraphQLSchema;
+import jakarta.servlet.http.HttpServletResponse;
 import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 
-import javax.servlet.http.HttpServletResponse;
 import java.util.Map;
 
 @SuppressWarnings({"unused", "ConstantConditions", "UnusedAssignment", "unchecked"})

@@ -68,11 +68,12 @@ class LegacyTestingInstrumentation implements Instrumentation {
         return new TestingInstrumentContext("execute-operation", executionList, throwableList, useOnDispatch)
     }
 
-    @Override
-    DeferredFieldInstrumentationContext beginDeferredField(InstrumentationDeferredFieldParameters parameters) {
-        assert parameters.getInstrumentationState() == instrumentationState
-        return new TestingInstrumentContext("deferred-field-$parameters.field.name", executionList, throwableList)
-    }
+    // TODO: Need that?
+//    @Override
+//    DeferredFieldInstrumentationContext beginDeferredField(InstrumentationDeferredFieldParameters parameters) {
+//        assert parameters.getInstrumentationState() == instrumentationState
+//        return new TestingInstrumentContext("deferred-field-$parameters.field.name", executionList, throwableList)
+//    }
 
     @Override
     InstrumentationContext<ExecutionResult> beginSubscribedFieldEvent(InstrumentationFieldParameters parameters) {

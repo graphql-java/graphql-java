@@ -177,13 +177,16 @@ public class ChainedInstrumentation implements Instrumentation {
     }
 
     @Override
-    public DeferredFieldInstrumentationContext beginDeferredField(InstrumentationDeferredFieldParameters parameters) {
-        return new ChainedDeferredExecutionStrategyInstrumentationContext(instrumentations.stream()
-                .map(instrumentation -> {
-                    InstrumentationState state = getState(instrumentation, parameters.getInstrumentationState());
-                    return instrumentation.beginDeferredField(parameters.withNewState(state));
-                })
-                .collect(toList()));
+    public DeferredFieldInstrumentationContext beginDeferredField(InstrumentationDeferredFieldParameters parameters, InstrumentationState state) {
+//        return new ChainedDeferredExecutionStrategyInstrumentationContext(instrumentations.stream()
+//                .map(instrumentation -> {
+//                    InstrumentationState specificState = getSpecificState(instrumentation, parameters.getInstrumentationState());
+//                    return instrumentation.beginDeferredField(parameters, specificState);
+//                })
+//                .collect(Collectors.toList()));
+
+        // TODO: Fix this
+        throw new UnsupportedOperationException("TODO: fix this");
     }
 
     @Override
@@ -445,28 +448,28 @@ public class ChainedInstrumentation implements Instrumentation {
         }
     }
 
-    private static class ChainedDeferredExecutionStrategyInstrumentationContext implements DeferredFieldInstrumentationContext {
-
-        private final List<DeferredFieldInstrumentationContext> contexts;
-
-        ChainedDeferredExecutionStrategyInstrumentationContext(List<DeferredFieldInstrumentationContext> contexts) {
-            this.contexts = Collections.unmodifiableList(contexts);
-        }
-
-        @Override
-        public void onDispatched(CompletableFuture<ExecutionResult> result) {
-            contexts.forEach(context -> context.onDispatched(result));
-        }
-
-        @Override
-        public void onCompleted(ExecutionResult result, Throwable t) {
-            contexts.forEach(context -> context.onCompleted(result, t));
-        }
-
-        @Override
-        public void onFieldValueInfo(FieldValueInfo fieldValueInfo) {
-            contexts.forEach(context -> context.onFieldValueInfo(fieldValueInfo));
-        }
-    }
+//    private static class ChainedDeferredExecutionStrategyInstrumentationContext implements DeferredFieldInstrumentationContext {
+//
+//        private final List<DeferredFieldInstrumentationContext> contexts;
+//
+//        ChainedDeferredExecutionStrategyInstrumentationContext(List<InstrumentationContext<ExecutionResult>> contexts) {
+//            this.contexts = Collections.unmodifiableList(contexts);
+//        }
+//
+//        @Override
+//        public void onDispatched(CompletableFuture<ExecutionResult> result) {
+//            contexts.forEach(context -> context.onDispatched(result));
+//        }
+//
+//        @Override
+//        public void onCompleted(ExecutionResult result, Throwable t) {
+//            contexts.forEach(context -> context.onCompleted(result, t));
+//        }
+//
+//        @Override
+//        public void onFieldValueInfo(FieldValueInfo fieldValueInfo) {
+//            contexts.forEach(context -> context.onFieldValueInfo(fieldValueInfo));
+//        }
+//    }
 }
 

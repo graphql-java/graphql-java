@@ -21,6 +21,16 @@ import java.util.function.Supplier;
 @SuppressWarnings("FutureReturnValueIgnored")
 public class Async {
 
+    public static <T> void copyResults(CompletableFuture<T> source, CompletableFuture<T> target) {
+        source.whenComplete((o, throwable) -> {
+            if (throwable != null) {
+                target.completeExceptionally(throwable);
+                return;
+            }
+            target.complete(o);
+        });
+    }
+
     public interface CombinedBuilder<T> {
 
         void add(CompletableFuture<T> completableFuture);

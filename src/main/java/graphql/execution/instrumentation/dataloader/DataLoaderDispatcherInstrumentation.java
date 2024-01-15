@@ -137,8 +137,8 @@ public class DataLoaderDispatcherInstrumentation extends SimplePerformantInstrum
     }
 
     @Override
-    public DeferredFieldInstrumentationContext beginDeferredField(InstrumentationDeferredFieldParameters parameters) {
-        DataLoaderDispatcherInstrumentationState state = parameters.getInstrumentationState();
+    public DeferredFieldInstrumentationContext beginDeferredField(InstrumentationDeferredFieldParameters parameters, InstrumentationState rawState) {
+        DataLoaderDispatcherInstrumentationState state = ofState(rawState);
         //
         // if there are no data loaders, there is nothing to do
         //
@@ -154,7 +154,7 @@ public class DataLoaderDispatcherInstrumentation extends SimplePerformantInstrum
             };
 
         }
-        return state.getApproach().beginDeferredField(parameters.withNewState(state.getState()));
+        return state.getApproach().beginDeferredField(parameters, state.getState());
     }
 
     @Override

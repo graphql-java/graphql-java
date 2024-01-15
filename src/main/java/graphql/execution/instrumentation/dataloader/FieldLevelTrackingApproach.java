@@ -189,8 +189,9 @@ public class FieldLevelTrackingApproach {
         return result;
     }
 
-    DeferredFieldInstrumentationContext beginDeferredField(InstrumentationDeferredFieldParameters parameters) {
-        CallStack callStack = parameters.getInstrumentationState();
+    DeferredFieldInstrumentationContext beginDeferredField(InstrumentationDeferredFieldParameters parameters, InstrumentationState state) {
+        // TODO: Is this cast safe?
+        CallStack callStack = (CallStack) state;
         int level = parameters.getExecutionStrategyParameters().getPath().getLevel();
         synchronized (callStack) {
             callStack.clearAndMarkCurrentLevelAsReady(level);

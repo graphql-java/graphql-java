@@ -221,6 +221,13 @@ public abstract class ExecutionStrategy {
         return result;
     }
 
+    protected CompletableFuture<FieldValueInfo> resolveFieldWithInfoToNull(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
+        FetchedValue fetchedValue = FetchedValue.newFetchedValue().build();
+        FieldValueInfo fieldValueInfo = completeField(executionContext, parameters, fetchedValue);
+        return CompletableFuture.completedFuture(fieldValueInfo);
+    }
+
+
     /**
      * Called to fetch a value for a field from the {@link DataFetcher} associated with the field
      * {@link GraphQLFieldDefinition}.
@@ -291,7 +298,7 @@ public abstract class ExecutionStrategy {
                 .handle((result, exception) -> {
                     fetchCtx.onCompleted(result, exception);
                     if (exception != null) {
-                        return handleFetchingException(dataFetchingEnvironment.get(), exception);
+                        return handleFetchingException(dataFetchingEnvironment.get(), parameters, exception);
                     } else {
                         // we can simply return the fetched value CF and avoid a allocation
                         return fetchedValue;
@@ -366,13 +373,12 @@ public abstract class ExecutionStrategy {
 
     protected <T> CompletableFuture<T> handleFetchingException(
             DataFetchingEnvironment environment,
-            Throwable e) {
+            ExecutionStrategyParameters parameters, Throwable e) {
         DataFetcherExceptionHandlerParameters handlerParameters = DataFetcherExceptionHandlerParameters.newExceptionParameters()
                 .dataFetchingEnvironment(environment)
                 .exception(e)
                 .build();
 
-        // TODO: parameters here is an instance of ExecutionStrategyParameters
         // TODO: not sure if this method call goes here, inside the try block below, or in the async method
         parameters.deferredErrorSupport().onFetchingException(parameters, e);
 
