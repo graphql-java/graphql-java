@@ -22,7 +22,7 @@ class DeferSupportTest extends Specification {
     def "emits N deferred calls with order preserved"() {
 
         given:
-        def deferSupport = new DeferSupport()
+        def deferSupport = new DeferExecutionSupport()
         deferSupport.enqueue(offThread("A", 100, "/field/path")) // <-- will finish last
         deferSupport.enqueue(offThread("B", 50, "/field/path")) // <-- will finish second
         deferSupport.enqueue(offThread("C", 10, "/field/path")) // <-- will finish first
@@ -48,7 +48,7 @@ class DeferSupportTest extends Specification {
 
     def "calls within calls are enqueued correctly"() {
         given:
-        def deferSupport = new DeferSupport()
+        def deferSupport = new DeferExecutionSupport()
         deferSupport.enqueue(offThreadCallWithinCall(deferSupport, "A", "a", 100, "/a"))
         deferSupport.enqueue(offThreadCallWithinCall(deferSupport, "B", "b", 50, "/b"))
         deferSupport.enqueue(offThreadCallWithinCall(deferSupport, "C", "c", 10, "/c"))
@@ -78,7 +78,7 @@ class DeferSupportTest extends Specification {
 
     def "stops at first exception encountered"() {
         given:
-        def deferSupport = new DeferSupport()
+        def deferSupport = new DeferExecutionSupport()
         deferSupport.enqueue(offThread("A", 100, "/field/path"))
         deferSupport.enqueue(offThread("Bang", 50, "/field/path")) // <-- will throw exception
         deferSupport.enqueue(offThread("C", 10, "/field/path"))
@@ -114,7 +114,7 @@ class DeferSupportTest extends Specification {
 
     def "you can cancel the subscription"() {
         given:
-        def deferSupport = new DeferSupport()
+        def deferSupport = new DeferExecutionSupport()
         deferSupport.enqueue(offThread("A", 100, "/field/path")) // <-- will finish last
         deferSupport.enqueue(offThread("B", 50, "/field/path")) // <-- will finish second
         deferSupport.enqueue(offThread("C", 10, "/field/path")) // <-- will finish first
@@ -141,7 +141,7 @@ class DeferSupportTest extends Specification {
 
     def "you cant subscribe twice"() {
         given:
-        def deferSupport = new DeferSupport()
+        def deferSupport = new DeferExecutionSupport()
         deferSupport.enqueue(offThread("A", 100, "/field/path"))
         deferSupport.enqueue(offThread("Bang", 50, "/field/path")) // <-- will finish second
         deferSupport.enqueue(offThread("C", 10, "/field/path")) // <-- will finish first
@@ -161,7 +161,7 @@ class DeferSupportTest extends Specification {
 
     def "indicates of there any defers present"() {
         given:
-        def deferSupport = new DeferSupport()
+        def deferSupport = new DeferExecutionSupport()
 
         when:
         def deferPresent1 = deferSupport.isDeferDetected()
@@ -179,7 +179,7 @@ class DeferSupportTest extends Specification {
 
     def "detects @defer directive"() {
         given:
-        def deferSupport = new DeferSupport()
+        def deferSupport = new DeferExecutionSupport()
 
         when:
         def noDirectivePresent = deferSupport.checkForDeferDirective(mergedField([
@@ -202,7 +202,7 @@ class DeferSupportTest extends Specification {
 
     def "detects @defer directive can be controlled via if"() {
         given:
-        def deferSupport = new DeferSupport()
+        def deferSupport = new DeferExecutionSupport()
 
         when:
         def ifArg = new Argument("if", new BooleanValue(false))
@@ -259,7 +259,7 @@ class DeferSupportTest extends Specification {
     }
 
     private
-    static DeferredCall offThreadCallWithinCall(DeferSupport deferSupport, String dataParent, String dataChild, int sleepTime, String path) {
+    static DeferredCall offThreadCallWithinCall(DeferExecutionSupport deferSupport, String dataParent, String dataChild, int sleepTime, String path) {
         def callSupplier = {
             CompletableFuture.supplyAsync({
                 Thread.sleep(sleepTime)

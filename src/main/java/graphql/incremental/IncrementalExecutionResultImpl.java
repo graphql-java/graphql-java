@@ -1,5 +1,6 @@
 package graphql.incremental;
 
+import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
 import graphql.ExperimentalApi;
 import org.reactivestreams.Publisher;
@@ -47,6 +48,10 @@ public class IncrementalExecutionResultImpl extends ExecutionResultImpl implemen
      */
     public static Builder newIncrementalExecutionResult() {
         return new Builder();
+    }
+
+    public static Builder fromExecutionResult(ExecutionResult executionResult) {
+        return new Builder().from(executionResult);
     }
 
     @Override

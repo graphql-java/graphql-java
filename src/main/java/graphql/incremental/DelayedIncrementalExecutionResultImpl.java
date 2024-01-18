@@ -3,8 +3,10 @@ package graphql.incremental;
 import graphql.ExperimentalApi;
 
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @ExperimentalApi
 public class DelayedIncrementalExecutionResultImpl implements DelayedIncrementalExecutionResult {
@@ -31,6 +33,24 @@ public class DelayedIncrementalExecutionResultImpl implements DelayedIncremental
     @Override
     public Map<Object, Object> getExtensions() {
         return this.extensions;
+    }
+
+    @Override
+    public Map<String, Object> toSpecification() {
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("hasNext", hasNext);
+
+        if (extensions != null) {
+            result.put("extensions", extensions);
+        }
+
+        if(incrementalItems != null) {
+            result.put("incremental", incrementalItems.stream()
+                    .map(IncrementalPayload::toSpecification)
+                    .collect(Collectors.toList()));
+        }
+
+        return result;
     }
 
     /**

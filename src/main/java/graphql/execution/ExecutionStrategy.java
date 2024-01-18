@@ -696,7 +696,11 @@ public abstract class ExecutionStrategy {
                 .variables(executionContext.getCoercedVariables().toMap())
                 .build();
 
-        MergedSelectionSet subFields = fieldCollector.collectFields(collectorParameters, parameters.getField());
+        MergedSelectionSet subFields = fieldCollector.collectFields(
+                collectorParameters,
+                parameters.getField(),
+                executionContext.getExecutionInput().isIncrementalSupport()
+        );
 
         ExecutionStepInfo newExecutionStepInfo = executionStepInfo.changeTypeWithPreservedNonNull(resolvedObjectType);
         NonNullableFieldValidator nonNullableFieldValidator = new NonNullableFieldValidator(executionContext, newExecutionStepInfo);

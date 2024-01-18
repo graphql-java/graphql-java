@@ -1,5 +1,6 @@
 package graphql.incremental;
 
+import graphql.ExecutionResult;
 import graphql.ExperimentalApi;
 import graphql.GraphQLError;
 import graphql.execution.ResultPath;
@@ -81,6 +82,7 @@ public abstract class IncrementalPayload {
     protected Object errorsToSpec(List<GraphQLError> errors) {
         return errors.stream().map(GraphQLError::toSpecification).collect(toList());
     }
+
 
     protected static abstract class Builder<T extends Builder<T>> {
         protected List<Object> path;

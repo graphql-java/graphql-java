@@ -1,20 +1,22 @@
 package graphql.execution.defer
 
 import graphql.DeferredExecutionResult
+import graphql.incremental.DeferPayload
+import graphql.incremental.DelayedIncrementalExecutionResult
 import org.reactivestreams.Publisher
 import org.reactivestreams.Subscriber
 import org.reactivestreams.Subscription
 
 import java.util.concurrent.atomic.AtomicBoolean
 
-class CapturingSubscriber implements Subscriber<DeferredExecutionResult> {
+class CapturingSubscriber implements Subscriber<DelayedIncrementalExecutionResult> {
     Subscription subscription
     AtomicBoolean finished = new AtomicBoolean()
     Throwable throwable
-    List<DeferredExecutionResult> executionResults = []
+    List<DelayedIncrementalExecutionResult> executionResults = []
     List<Object> executionResultData = []
 
-    AtomicBoolean subscribeTo(Publisher<DeferredExecutionResult> publisher) {
+    AtomicBoolean subscribeTo(Publisher<DelayedIncrementalExecutionResult> publisher) {
         publisher.subscribe(this)
         return finished
     }
@@ -27,9 +29,12 @@ class CapturingSubscriber implements Subscriber<DeferredExecutionResult> {
     }
 
     @Override
-    void onNext(DeferredExecutionResult executionResult) {
-        executionResults.add(executionResult)
-        executionResultData.add(executionResult.getData())
+    void onNext(DelayedIncrementalExecutionResult incrementalExecutionResult) {
+        executionResults.add(incrementalExecutionResult)
+        executionResultData.addAll(incrementalExecutionResult.incremental
+                // We only support defer (and not stream) for now
+                .collect {((DeferPayload) it).data}
+        )
         subscription.request(1)
     }
 

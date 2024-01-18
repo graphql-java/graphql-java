@@ -1,5 +1,6 @@
 package graphql.incremental;
 
+import graphql.ExecutionResult;
 import graphql.ExperimentalApi;
 import graphql.GraphQLError;
 
@@ -62,6 +63,14 @@ public class DeferPayload extends IncrementalPayload {
         public Builder from(DeferPayload deferredItem) {
             super.from(deferredItem);
             this.data = deferredItem.data;
+            return this;
+        }
+
+        public Builder from(ExecutionResult executionResult) {
+            this.data = executionResult.getData();
+            this.errors = executionResult.getErrors();
+            this.extensions = executionResult.getExtensions();
+
             return this;
         }
 

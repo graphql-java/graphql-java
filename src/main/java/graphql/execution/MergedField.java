@@ -1,10 +1,13 @@
 package graphql.execution;
 
 import com.google.common.collect.ImmutableList;
+import graphql.ExperimentalApi;
 import graphql.PublicApi;
+import graphql.execution.incremental.DeferExecution;
 import graphql.language.Argument;
 import graphql.language.Field;
 
+import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Consumer;
@@ -61,11 +64,13 @@ public class MergedField {
 
     private final ImmutableList<Field> fields;
     private final Field singleField;
+    private final ImmutableList<DeferExecution> deferExecutions;
 
-    private MergedField(ImmutableList<Field> fields) {
+    private MergedField(ImmutableList<Field> fields, ImmutableList<DeferExecution> deferExecutions) {
         assertNotEmpty(fields);
         this.fields = fields;
         this.singleField = fields.get(0);
+        this.deferExecutions = deferExecutions;
     }
 
     /**
@@ -120,6 +125,17 @@ public class MergedField {
         return fields;
     }
 
+    /**
+     * TODO: Javadoc
+     * TODO: should be getIncrementalExecutions?
+     * @return
+     */
+    @ExperimentalApi
+    public ImmutableList<DeferExecution> getDeferExecutions() {
+        return deferExecutions;
+    }
+
+
     public static Builder newMergedField() {
         return new Builder();
     }
@@ -141,12 +157,14 @@ public class MergedField {
     public static class Builder {
 
         private final ImmutableList.Builder<Field> fields = new ImmutableList.Builder<>();
+        private final ImmutableList.Builder<DeferExecution> deferExecutions = new ImmutableList.Builder<>();
 
         private Builder() {
         }
 
         private Builder(MergedField existing) {
             fields.addAll(existing.getFields());
+            deferExecutions.addAll(existing.deferExecutions);
         }
 
         public Builder fields(List<Field> fields) {
@@ -159,8 +177,20 @@ public class MergedField {
             return this;
         }
 
+        public Builder addDeferExecutions(List<DeferExecution> deferExecutions) {
+            this.deferExecutions.addAll(deferExecutions);
+            return this;
+        }
+
+        public Builder addDeferExecution(@Nullable DeferExecution deferExecution) {
+            if(deferExecution != null) {
+                this.deferExecutions.add(deferExecution);
+            }
+            return this;
+        }
+
         public MergedField build() {
-            return new MergedField(fields.build());
+            return new MergedField(fields.build(), deferExecutions.build());
         }
 
     }

@@ -35,4 +35,10 @@ public interface DelayedIncrementalExecutionResult {
      */
     @Nullable
     Map<Object, Object> getExtensions();
+
+    /**
+     * TODO: Javadoc
+     * @return
+     */
+    Map<String, Object> toSpecification();
 }
