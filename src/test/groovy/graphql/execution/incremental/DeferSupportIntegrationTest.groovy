@@ -12,6 +12,7 @@ import graphql.incremental.DelayedIncrementalExecutionResult
 import graphql.incremental.IncrementalExecutionResult
 import graphql.incremental.IncrementalExecutionResultImpl
 import graphql.schema.DataFetcher
+import graphql.schema.DataFetchingEnvironment
 import graphql.schema.idl.RuntimeWiring
 import graphql.validation.ValidationError
 import graphql.validation.ValidationErrorType
@@ -28,37 +29,65 @@ class DeferSupportIntegrationTest extends Specification {
     def schemaSpec = '''
             type Query {
                 post : Post 
+                hello: String
             }
             
             type Post {
                 id: ID!
-                # takes 100ms to resolve
                 summary : String
-                # takes 300ms to resolve
                 text : String
+                latestComment: Comment
+                comments: [Comment]
             }
+            
+            type Comment {
+                title: String
+                content: String
+                author: Person 
+            }
+            
+            type Person {
+                name: String
+                avatar: String
+            }
+                
         '''
 
     GraphQL graphQL = null
 
     private static DataFetcher resolve(Object value) {
-        return (env) -> value
+        return resolve(value, 0)
     }
 
     private static DataFetcher resolve(Object value, Integer sleepMs) {
-        return (env) -> CompletableFuture.supplyAsync {
-            println("" + new Date().getTime() + "|calling df for: " + value + ". Sleeping: " + sleepMs + ". Thread name: " + Thread.currentThread().name)
-            Thread.sleep(sleepMs)
-            println("" + new Date().getTime() + "|value resolved: " + value)
-            return value
+        return new DataFetcher() {
+            boolean executed = false;
+            @Override
+            Object get(DataFetchingEnvironment environment) throws Exception {
+                if(executed) {
+                    throw new IllegalStateException("This data fetcher can run only once")
+                }
+                executed = true;
+                return CompletableFuture.supplyAsync {
+                    Thread.sleep(sleepMs)
+                    return value
+                }
+            }
         }
     }
 
     void setup() {
         def runtimeWiring = RuntimeWiring.newRuntimeWiring()
-                .type(newTypeWiring("Query").dataFetcher("post", resolve([id: "1001"])))
+                .type(newTypeWiring("Query")
+                        .dataFetcher("post", resolve([id: "1001"]))
+                        .dataFetcher("hello", resolve("world"))
+                )
                 .type(newTypeWiring("Post").dataFetcher("summary", resolve("A summary", 10)))
-                .type(newTypeWiring("Post").dataFetcher("text", resolve("The full text", 1000)))
+                .type(newTypeWiring("Post").dataFetcher("text", resolve("The full text", 100)))
+                .type(newTypeWiring("Post").dataFetcher("latestComment", resolve([title: "Comment title"], 10)))
+                .type(newTypeWiring("Comment").dataFetcher("content", resolve("Full content", 100)))
+                .type(newTypeWiring("Comment").dataFetcher("author", resolve([name: "Author name"], 10)))
+                .type(newTypeWiring("Person").dataFetcher("avatar", resolve("Avatar image", 100)))
                 .build()
 
         def schema = TestUtil.schema(schemaSpec, runtimeWiring)
@@ -137,6 +166,47 @@ class DeferSupportIntegrationTest extends Specification {
                                         path : ["post"],
                                         label: "summary-defer",
                                         data : [summary: "A summary"]
+                                ]
+                        ]
+                ]
+        ]
+    }
+
+    def "simple defer with fragment definition"() {
+        def query = '''
+            query {
+                post {
+                    id
+                    ... PostData @defer
+                }
+            }
+            
+            fragment PostData on Post {
+                summary
+                text
+            }
+        '''
+
+        when:
+        IncrementalExecutionResult initialResult = executeQuery(query)
+
+        then:
+        initialResult.toSpecification() == [
+                data   : [post: [id: "1001"]],
+                hasNext: true
+        ]
+
+        when:
+        def incrementalResults = getIncrementalResults(initialResult)
+
+        then:
+        incrementalResults == [
+                [
+                        hasNext    : false,
+                        incremental: [
+                                [
+                                        path : ["post"],
+                                        data : [summary: "A summary", text: "The full text"]
                                 ]
                         ]
                 ]
@@ -333,19 +403,95 @@ class DeferSupportIntegrationTest extends Specification {
         ]
     }
 
-    def "multiple defers on same field"() {
-
+    def "defer result in initial result being empty object"() {
         def query = '''
             query {
                 post {
-                    sentAt
                     ... @defer {
-                        postText
+                        summary
                     }
-                    ... @defer(label: "defer-outer") {
-                        postText
-                        ... @defer(label: "defer-inner") {
-                            postText
+                }
+            }
+        '''
+
+        when:
+        IncrementalExecutionResult initialResult = executeQuery(query)
+
+        then:
+        initialResult.toSpecification() == [
+                data   : [post: [:]],
+                hasNext: true
+        ]
+
+        when:
+        def incrementalResults = getIncrementalResults(initialResult)
+
+        then:
+        incrementalResults == [
+                [
+                        hasNext    : false,
+                        incremental: [
+                                [
+                                        path: ["post"],
+                                        data: [summary: "A summary"]
+                                ]
+                        ]
+                ]
+        ]
+    }
+
+    def "defer on top level field"() {
+        def query = '''
+            query {
+                hello
+                ... @defer {
+                    post {
+                        id
+                    }
+                }
+            }
+        '''
+
+        when:
+        IncrementalExecutionResult initialResult = executeQuery(query)
+
+        then:
+        initialResult.toSpecification() == [
+                data   : [hello: "world"],
+                hasNext: true
+        ]
+
+        when:
+        def incrementalResults = getIncrementalResults(initialResult)
+
+        then:
+        incrementalResults == [
+                [
+                        hasNext    : false,
+                        incremental: [
+                                [
+                                        path: [],
+                                        data: [post: [id: "1001"]]
+                                ]
+                        ]
+                ]
+        ]
+    }
+
+    def "nested defers"() {
+        def query = '''
+            query {
+                ... @defer {
+                    post {
+                        id
+                        ... @defer {
+                            summary
+                            latestComment {
+                                title
+                                ... @defer {
+                                    content
+                                }
+                            }
                         }
                     }
                 }
@@ -353,27 +499,97 @@ class DeferSupportIntegrationTest extends Specification {
         '''
 
         when:
+        IncrementalExecutionResult initialResult = executeQuery(query)
+
+        then:
+        initialResult.toSpecification() == [
+                data   : [:],
+                hasNext: true
+        ]
+
+        when:
+        def incrementalResults = getIncrementalResults(initialResult)
+
+        then:
+        incrementalResults == [
+                [
+                        hasNext    : true,
+                        incremental: [
+                                [
+                                        path: [],
+                                        data: [post: [id: "1001"]]
+                                ]
+                        ]
+                ],
+                [
+                        hasNext    : true,
+                        incremental: [
+                                [
+                                        path: ["post"],
+                                        data: [summary: "A summary", latestComment: [title: "Comment title"]]
+                                ]
+                        ]
+                ],
+                [
+                        hasNext    : false,
+                        incremental: [
+                                [
+                                        path: ["post", "latestComment"],
+                                        data: [content: "Full content"]
+                                ]
+                        ]
+                ]
+        ]
+    }
+
+    def "multiple defers on same field"() {
+
+        def query = '''
+            query {
+                post {
+                    ... @defer {
+                        summary
+                    }
+                    ... @defer(label: "defer-outer") {
+                        summary
+                        ... @defer(label: "defer-inner") {
+                            summary
+                        }
+                    }
+                }
+            }
+        '''
+
+        when:
+
         def initialResult = executeQuery(query)
 
         then:
-        initialResult.errors.isEmpty()
-        initialResult.data == ["post": ["postText": "post_data"]]
+        initialResult.toSpecification() == [
+                data   : [post: [:]],
+                hasNext: true
+        ]
 
-        throw new IllegalStateException("Need to assert data fetcher for field is called just once")
+        when:
+        def incrementalResults = getIncrementalResults(initialResult)
 
-//        when:
-//
-//        Publisher<DeferredExecutionResult> deferredResultStream = initialResult.extensions[GraphQL.DEFERRED_RESULTS] as Publisher<DeferredExecutionResult>
-//
-//        def subscriber = new CapturingSubscriber()
-//        subscriber.subscribeTo(deferredResultStream)
-//        Awaitility.await().untilTrue(subscriber.finished)
-//
-//        List<ExecutionResult> resultList = subscriber.executionResults
-//
-//        then:
-//
-//        assertDeferredData(resultList)
+        then:
+        // Ordering is non-deterministic, so we assert on the things we know are going to be true.
+
+        incrementalResults.size() == 3
+        // only the last payload has "hasNext=true"
+        incrementalResults[0].hasNext == true
+        incrementalResults[1].hasNext == true
+        incrementalResults[2].hasNext == false
+
+        // every payload has only 1 incremental item, and the data is the same for all of them
+        incrementalResults.every { it.incremental.size == 1 }
+        incrementalResults.every { it.incremental[0].data == [summary: "A summary"] }
+
+        // "label" is different for every payload
+        incrementalResults.any { it.incremental[0].label == null }
+        incrementalResults.any { it.incremental[0].label == "defer-inner" }
+        incrementalResults.any { it.incremental[0].label == "defer-outer" }
     }
 
     def "test defer support end to end"() {

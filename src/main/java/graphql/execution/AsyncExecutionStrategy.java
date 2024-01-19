@@ -15,7 +15,6 @@ import graphql.execution.instrumentation.parameters.InstrumentationDeferredField
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.util.FpKit;
-import graphql.util.Pair;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -193,7 +192,8 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
         private SomethingDefer(
                 MergedSelectionSet mergedSelectionSet,
                 ExecutionStrategyParameters parameters,
-                ExecutionContext executionContext, BiFunction<ExecutionContext, ExecutionStrategyParameters, CompletableFuture<FieldValueInfo>> resolveFieldWithInfoFn
+                ExecutionContext executionContext,
+                BiFunction<ExecutionContext, ExecutionStrategyParameters, CompletableFuture<FieldValueInfo>> resolveFieldWithInfoFn
         ) {
             this.executionContext = executionContext;
             this.resolveFieldWithInfoFn = resolveFieldWithInfoFn;
@@ -233,10 +233,10 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
                                                 builder.deferredErrorSupport(errorSupport)
                                                         .field(currentField)
                                                         .fields(mergedSelectionSet)
-                                                        .parent(null); // this is a break in the parent -> child chain - its a new start effectively
+                                                        .path(builder.path.segment(currentField.getName()))
+                                                        .parent(null); // this is a break in the parent -> child chain - it's a new start effectively
                                             }
                                     );
-
 
                                     return (Supplier<CompletableFuture<DeferredCall.FieldWithExecutionResult>>) () -> resolveFieldWithInfoFn
                                             .apply(executionContext, callParameters)
@@ -257,36 +257,5 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
                     .collect(Collectors.toSet());
         }
 
-        @SuppressWarnings("FutureReturnValueIgnored")
-        private Supplier<CompletableFuture<ExecutionResult>> deferredExecutionResult(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
-            return () -> {
-//                GraphQLFieldDefinition fieldDef = getFieldDef(executionContext, parameters, parameters.getField().getSingleField());
-                // TODO: freis: This is suddenly not needed anymore
-//            GraphQLObjectType fieldContainer = (GraphQLObjectType) parameters.getExecutionStepInfo().getUnwrappedNonNullType();
-
-//                Instrumentation instrumentation = executionContext.getInstrumentation();
-
-//                Supplier<ExecutionStepInfo> executionStepInfo = FpKit.intraThreadMemoize(() -> createExecutionStepInfo(executionContext, parameters, fieldDef, null));
-
-//                InstrumentationContext<ExecutionResult> fieldCtx = instrumentation.beginDeferredField(
-//                        new InstrumentationDeferredFieldParameters(executionContext, executionStepInfo, parameters),
-//                        executionContext.getInstrumentationState()
-//                );
-
-                CompletableFuture<ExecutionResult> result = new CompletableFuture<>();
-//                fieldCtx.onDispatched(result);
-                CompletableFuture<FieldValueInfo> fieldValueInfoFuture = resolveFieldWithInfoFn.apply(executionContext, parameters);
-
-                fieldValueInfoFuture.whenComplete((fieldValueInfo, throwable) -> {
-                    // TODO:
-//                fieldCtx.onFieldValueInfo(fieldValueInfo);
-
-                    CompletableFuture<ExecutionResult> execResultFuture = fieldValueInfo.getFieldValue();
-//                    execResultFuture = execResultFuture.whenComplete(fieldCtx::onCompleted);
-                    Async.copyResults(execResultFuture, result);
-                });
-                return result;
-            };
-        }
     }
 }

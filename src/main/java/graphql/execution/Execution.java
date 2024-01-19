@@ -141,7 +141,11 @@ public class Execution {
                 .graphQLContext(graphQLContext)
                 .build();
 
-        MergedSelectionSet fields = fieldCollector.collectFields(collectorParameters, operationDefinition.getSelectionSet());
+        MergedSelectionSet fields = fieldCollector.collectFields(
+                collectorParameters,
+                operationDefinition.getSelectionSet(),
+                executionContext.getExecutionInput().isIncrementalSupport()
+        );
 
         ResultPath path = ResultPath.rootPath();
         ExecutionStepInfo executionStepInfo = newExecutionStepInfo().type(operationRootType).path(path).build();
