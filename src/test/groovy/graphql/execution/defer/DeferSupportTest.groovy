@@ -4,17 +4,10 @@ import graphql.DeferredExecutionResult
 import graphql.ExecutionResult
 import graphql.ExecutionResultImpl
 import graphql.execution.ResultPath
-import graphql.language.Argument
-import graphql.language.BooleanValue
-import graphql.language.Directive
-import graphql.language.Field
-import graphql.language.VariableReference
 import org.awaitility.Awaitility
 import spock.lang.Specification
 
 import java.util.concurrent.CompletableFuture
-
-import static graphql.TestUtil.mergedField
 
 class DeferSupportTest extends Specification {
 
@@ -175,74 +168,6 @@ class DeferSupportTest extends Specification {
 
         then:
         deferPresent2
-    }
-
-    def "detects @defer directive"() {
-        given:
-        def deferSupport = new DeferExecutionSupport()
-
-        when:
-        def noDirectivePresent = deferSupport.checkForDeferDirective(mergedField([
-                new Field("a"),
-                new Field("b")
-        ]), [:])
-
-        then:
-        !noDirectivePresent
-
-        when:
-        def directivePresent = deferSupport.checkForDeferDirective(mergedField([
-                Field.newField("a").directives([new Directive("defer")]).build(),
-                new Field("b")
-        ]), [:])
-
-        then:
-        directivePresent
-    }
-
-    def "detects @defer directive can be controlled via if"() {
-        given:
-        def deferSupport = new DeferExecutionSupport()
-
-        when:
-        def ifArg = new Argument("if", new BooleanValue(false))
-        def directivePresent = deferSupport.checkForDeferDirective(mergedField([
-                Field.newField("a").directives([new Directive("defer", [ifArg])]).build(),
-                new Field("b")
-        ]), [:])
-
-        then:
-        !directivePresent
-
-        when:
-        ifArg = new Argument("if", new BooleanValue(true))
-        directivePresent = deferSupport.checkForDeferDirective(mergedField([
-                Field.newField("a").directives([new Directive("defer", [ifArg])]).build(),
-                new Field("b")
-        ]), [:])
-
-        then:
-        directivePresent
-
-        when:
-        ifArg = new Argument("if", new VariableReference("varRef"))
-        directivePresent = deferSupport.checkForDeferDirective(mergedField([
-                Field.newField("a").directives([new Directive("defer", [ifArg])]).build(),
-                new Field("b")
-        ]), [varRef: false])
-
-        then:
-        !directivePresent
-
-        when:
-        ifArg = new Argument("if", new VariableReference("varRef"))
-        directivePresent = deferSupport.checkForDeferDirective(mergedField([
-                Field.newField("a").directives([new Directive("defer", [ifArg])]).build(),
-                new Field("b")
-        ]), [varRef: true])
-
-        then:
-        directivePresent
     }
 
     private static DeferredCall offThread(String data, int sleepTime, String path) {

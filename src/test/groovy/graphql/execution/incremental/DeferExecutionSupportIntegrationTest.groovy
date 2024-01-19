@@ -25,7 +25,7 @@ import java.util.concurrent.CompletableFuture
 
 import static graphql.schema.idl.TypeRuntimeWiring.newTypeWiring
 
-class DeferSupportIntegrationTest extends Specification {
+class DeferExecutionSupportIntegrationTest extends Specification {
     def schemaSpec = '''
             type Query {
                 post : Post 

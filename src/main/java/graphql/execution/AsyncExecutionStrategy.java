@@ -4,7 +4,6 @@ import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ImmutableSet;
 import graphql.ExecutionResult;
 import graphql.PublicApi;
-import graphql.execution.defer.DeferExecutionSupport;
 import graphql.execution.defer.DeferredCall;
 import graphql.execution.defer.DeferredErrorSupport;
 import graphql.execution.incremental.DeferExecution;
@@ -16,6 +15,7 @@ import graphql.execution.instrumentation.parameters.InstrumentationExecutionStra
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.util.FpKit;
 
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -86,7 +86,6 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
 
             if (somethingDefer.isDeferredField(currentField)) {
                 executionStrategyCtx.onDeferredField(currentField);
-//                future = resolveFieldWithInfoToNull(executionContext, newParameters);
             } else {
                 future = resolveFieldWithInfo(executionContext, newParameters);
                 futures.add(future);
@@ -120,33 +119,6 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
 
         overallResult.whenComplete(executionStrategyCtx::onCompleted);
         return overallResult;
-    }
-
-    private boolean isDeferred(ExecutionContext executionContext, ExecutionStrategyParameters parameters, MergedField currentField) {
-        DeferExecutionSupport deferSupport = executionContext.getDeferSupport();
-
-        if (currentField.getDeferExecutions() != null && !currentField.getDeferExecutions().isEmpty()) {
-            DeferredErrorSupport errorSupport = new DeferredErrorSupport();
-
-            // with a deferred field we are really resetting where we execute from, that is from this current field onwards
-            Map<String, MergedField> fields = new LinkedHashMap<>();
-            fields.put(currentField.getName(), currentField);
-
-            ExecutionStrategyParameters callParameters = parameters.transform(builder ->
-                    {
-                        MergedSelectionSet mergedSelectionSet = newMergedSelectionSet().subFields(fields).build();
-                        builder.deferredErrorSupport(errorSupport)
-                                .field(currentField)
-                                .fields(mergedSelectionSet)
-                                .parent(null); // this is a break in the parent -> child chain - its a new start effectively
-                    }
-            );
-
-//            DeferredCall call = new DeferredCall(null /* TODO extract label somehow*/, parameters.getPath(), deferredExecutionResult(executionContext, callParameters), errorSupport);
-//            deferSupport.enqueue(call);
-            return true;
-        }
-        return false;
     }
 
     @SuppressWarnings("FutureReturnValueIgnored")
@@ -188,6 +160,7 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
         private final ExecutionStrategyParameters parameters;
         private final ExecutionContext executionContext;
         private final BiFunction<ExecutionContext, ExecutionStrategyParameters, CompletableFuture<FieldValueInfo>> resolveFieldWithInfoFn;
+        private final Map<String, Supplier<CompletableFuture<DeferredCall.FieldWithExecutionResult>>> dfCache = new HashMap<>();
 
         private SomethingDefer(
                 MergedSelectionSet mergedSelectionSet,
@@ -217,7 +190,8 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
         }
 
         private Set<DeferredCall> createCalls() {
-            return deferExecutionToFields.keySet().stream().map(deferExecution -> {
+            return deferExecutionToFields.keySet().stream()
+                    .map(deferExecution -> {
                         DeferredErrorSupport errorSupport = new DeferredErrorSupport();
 
                         List<MergedField> mergedFields = deferExecutionToFields.get(deferExecution);
@@ -238,10 +212,16 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
                                             }
                                     );
 
-                                    return (Supplier<CompletableFuture<DeferredCall.FieldWithExecutionResult>>) () -> resolveFieldWithInfoFn
-                                            .apply(executionContext, callParameters)
-                                            .thenCompose(FieldValueInfo::getFieldValue)
-                                            .thenApply(executionResult -> new DeferredCall.FieldWithExecutionResult(currentField.getName(), executionResult));
+                                    return dfCache.computeIfAbsent(
+                                            currentField.getName(),
+                                            // The same field can be associated with multiple defer executions, so
+                                            // we memoize the field resolution to avoid multiple calls to the same data fetcher
+                                            key -> FpKit.interThreadMemoize(() -> resolveFieldWithInfoFn
+                                                    .apply(executionContext, callParameters)
+                                                    .thenCompose(FieldValueInfo::getFieldValue)
+                                                    .thenApply(executionResult -> new DeferredCall.FieldWithExecutionResult(currentField.getName(), executionResult)))
+                                    );
+
 
                                 })
                                 .collect(Collectors.toList());
