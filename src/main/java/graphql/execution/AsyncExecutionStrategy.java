@@ -9,10 +9,7 @@ import graphql.execution.defer.DeferredErrorSupport;
 import graphql.execution.incremental.DeferExecution;
 import graphql.execution.instrumentation.ExecutionStrategyInstrumentationContext;
 import graphql.execution.instrumentation.Instrumentation;
-import graphql.execution.instrumentation.InstrumentationContext;
-import graphql.execution.instrumentation.parameters.InstrumentationDeferredFieldParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters;
-import graphql.schema.GraphQLFieldDefinition;
 import graphql.util.FpKit;
 
 import java.util.HashMap;
@@ -120,39 +117,6 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
         overallResult.whenComplete(executionStrategyCtx::onCompleted);
         return overallResult;
     }
-
-    @SuppressWarnings("FutureReturnValueIgnored")
-    private Supplier<CompletableFuture<ExecutionResult>> deferredExecutionResult(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
-        return () -> {
-            GraphQLFieldDefinition fieldDef = getFieldDef(executionContext, parameters, parameters.getField().getSingleField());
-            // TODO: freis: This is suddenly not needed anymore
-//            GraphQLObjectType fieldContainer = (GraphQLObjectType) parameters.getExecutionStepInfo().getUnwrappedNonNullType();
-
-            Instrumentation instrumentation = executionContext.getInstrumentation();
-
-            Supplier<ExecutionStepInfo> executionStepInfo = FpKit.intraThreadMemoize(() -> createExecutionStepInfo(executionContext, parameters, fieldDef, null));
-
-            InstrumentationContext<ExecutionResult> fieldCtx = instrumentation.beginDeferredField(
-                    new InstrumentationDeferredFieldParameters(executionContext, executionStepInfo, parameters),
-                    executionContext.getInstrumentationState()
-            );
-
-            CompletableFuture<ExecutionResult> result = new CompletableFuture<>();
-            fieldCtx.onDispatched(result);
-            CompletableFuture<FieldValueInfo> fieldValueInfoFuture = resolveFieldWithInfo(executionContext, parameters);
-
-            fieldValueInfoFuture.whenComplete((fieldValueInfo, throwable) -> {
-                // TODO:
-//                fieldCtx.onFieldValueInfo(fieldValueInfo);
-
-                CompletableFuture<ExecutionResult> execResultFuture = fieldValueInfo.getFieldValue();
-                execResultFuture = execResultFuture.whenComplete(fieldCtx::onCompleted);
-                Async.copyResults(execResultFuture, result);
-            });
-            return result;
-        };
-    }
-
 
     private static class SomethingDefer {
         private final ImmutableListMultimap<DeferExecution, MergedField> deferExecutionToFields;
