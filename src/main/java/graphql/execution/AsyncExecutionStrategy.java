@@ -69,7 +69,7 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
                     this::resolveFieldWithInfo
                 ) : DeferExecutionSupport.NOOP;
 
-        executionContext.getDefferContext().enqueue(deferExecutionSupport.createCalls());
+        executionContext.getIncrementalContext().enqueue(deferExecutionSupport.createCalls());
 
         Async.CombinedBuilder<FieldValueInfo> futures = Async.ofExpectedSize(fields.size() - deferExecutionSupport.deferredFieldsCount());
 

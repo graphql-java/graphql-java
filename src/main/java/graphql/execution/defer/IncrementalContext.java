@@ -3,6 +3,7 @@ package graphql.execution.defer;
 import graphql.Internal;
 import graphql.execution.reactive.SingleSubscriberPublisher;
 import graphql.incremental.DelayedIncrementalExecutionResult;
+import graphql.incremental.IncrementalPayload;
 import graphql.util.LockKit;
 import org.reactivestreams.Publisher;
 
@@ -20,20 +21,19 @@ import static graphql.incremental.DelayedIncrementalExecutionResultImpl.newIncre
  * the main result is sent via a Publisher stream.
  */
 @Internal
-// TODO: This should be called IncrementalSupport and handle both @defer and @stream
-public class DeferContext {
+public class IncrementalContext {
     private final AtomicBoolean deferDetected = new AtomicBoolean(false);
-    private final Deque<DeferredCall> deferredCalls = new ConcurrentLinkedDeque<>();
+    private final Deque<IncrementalCall<? extends IncrementalPayload>> incrementalCalls = new ConcurrentLinkedDeque<>();
     private final SingleSubscriberPublisher<DelayedIncrementalExecutionResult> publisher = new SingleSubscriberPublisher<>();
     private final AtomicInteger pendingCalls = new AtomicInteger();
     private final LockKit.ReentrantLock publisherLock = new LockKit.ReentrantLock();
 
     @SuppressWarnings("FutureReturnValueIgnored")
     private void drainDeferredCalls() {
-        DeferredCall deferredCall = deferredCalls.poll();
+        IncrementalCall<? extends IncrementalPayload> incrementalCall = incrementalCalls.poll();
 
-        while (deferredCall != null) {
-            deferredCall.invoke()
+        while (incrementalCall != null) {
+            incrementalCall.invoke()
                     .whenComplete((payload, exception) -> {
                         if (exception != null) {
                             publisher.offerError(exception);
@@ -65,20 +65,20 @@ public class DeferContext {
                             drainDeferredCalls();
                         }
                     });
-            deferredCall = deferredCalls.poll();
+            incrementalCall = incrementalCalls.poll();
         }
     }
 
     public void enqueue(DeferredCall deferredCall) {
         deferDetected.set(true);
-        deferredCalls.offer(deferredCall);
+        incrementalCalls.offer(deferredCall);
         pendingCalls.incrementAndGet();
     }
 
     public void enqueue(Collection<DeferredCall> calls) {
         if (!calls.isEmpty()) {
             deferDetected.set(true);
-            deferredCalls.addAll(calls);
+            incrementalCalls.addAll(calls);
             pendingCalls.addAndGet(calls.size());
         }
     }

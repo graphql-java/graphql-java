@@ -8,7 +8,7 @@ import graphql.GraphQLContext;
 import graphql.GraphQLError;
 import graphql.PublicApi;
 import graphql.collect.ImmutableKit;
-import graphql.execution.defer.DeferContext;
+import graphql.execution.defer.IncrementalContext;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationState;
 import graphql.language.Document;
@@ -54,7 +54,7 @@ public class ExecutionContext {
     private final Set<ResultPath> errorPaths = new HashSet<>();
     private final DataLoaderRegistry dataLoaderRegistry;
     private final Locale locale;
-    private final DeferContext defferContext = new DeferContext();
+    private final IncrementalContext incrementalContext = new IncrementalContext();
     private final ValueUnboxer valueUnboxer;
     private final ExecutionInput executionInput;
     private final Supplier<ExecutableNormalizedOperation> queryTree;
@@ -257,8 +257,8 @@ public class ExecutionContext {
         return subscriptionStrategy;
     }
 
-    public DeferContext getDefferContext() {
-        return defferContext;
+    public IncrementalContext getIncrementalContext() {
+        return incrementalContext;
     }
 
     public ExecutionStrategy getStrategy(OperationDefinition.Operation operation) {

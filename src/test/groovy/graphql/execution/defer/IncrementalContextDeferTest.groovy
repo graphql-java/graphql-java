@@ -10,14 +10,14 @@ import spock.lang.Specification
 import java.util.concurrent.CompletableFuture
 import java.util.function.Supplier
 
-class DeferContextTest extends Specification {
+class IncrementalContextDeferTest extends Specification {
 
     def "emits N deferred calls - ordering depends on call latency"() {
         given:
-        def deferContext = new DeferContext()
-        deferContext.enqueue(offThread("A", 100, "/field/path")) // <-- will finish last
-        deferContext.enqueue(offThread("B", 50, "/field/path")) // <-- will finish second
-        deferContext.enqueue(offThread("C", 10, "/field/path")) // <-- will finish first
+        def incrementalContext = new IncrementalContext()
+        incrementalContext.enqueue(offThread("A", 100, "/field/path")) // <-- will finish last
+        incrementalContext.enqueue(offThread("B", 50, "/field/path")) // <-- will finish second
+        incrementalContext.enqueue(offThread("C", 10, "/field/path")) // <-- will finish first
 
         when:
         List<DelayedIncrementalExecutionResult> results = []
@@ -28,7 +28,7 @@ class DeferContextTest extends Specification {
                 subscription.request(1)
             }
         }
-        deferContext.startDeferredCalls().subscribe(subscriber)
+        incrementalContext.startDeferredCalls().subscribe(subscriber)
         Awaitility.await().untilTrue(subscriber.finished)
         then:
 
@@ -40,10 +40,10 @@ class DeferContextTest extends Specification {
 
     def "calls within calls are enqueued correctly"() {
         given:
-        def deferContext = new DeferContext()
-        deferContext.enqueue(offThreadCallWithinCall(deferContext, "A", "A_Child", 500, "/a"))
-        deferContext.enqueue(offThreadCallWithinCall(deferContext, "B", "B_Child", 300, "/b"))
-        deferContext.enqueue(offThreadCallWithinCall(deferContext, "C", "C_Child", 100, "/c"))
+        def incrementalContext = new IncrementalContext()
+        incrementalContext.enqueue(offThreadCallWithinCall(incrementalContext, "A", "A_Child", 500, "/a"))
+        incrementalContext.enqueue(offThreadCallWithinCall(incrementalContext, "B", "B_Child", 300, "/b"))
+        incrementalContext.enqueue(offThreadCallWithinCall(incrementalContext, "C", "C_Child", 100, "/c"))
 
         when:
         List<DelayedIncrementalExecutionResult> results = []
@@ -54,7 +54,7 @@ class DeferContextTest extends Specification {
                 subscription.request(1)
             }
         }
-        deferContext.startDeferredCalls().subscribe(subscriber)
+        incrementalContext.startDeferredCalls().subscribe(subscriber)
 
         Awaitility.await().untilTrue(subscriber.finished)
         then:
@@ -70,10 +70,10 @@ class DeferContextTest extends Specification {
 
     def "stops at first exception encountered"() {
         given:
-        def deferContext = new DeferContext()
-        deferContext.enqueue(offThread("A", 100, "/field/path"))
-        deferContext.enqueue(offThread("Bang", 50, "/field/path")) // <-- will throw exception
-        deferContext.enqueue(offThread("C", 10, "/field/path"))
+        def incrementalContext = new IncrementalContext()
+        incrementalContext.enqueue(offThread("A", 100, "/field/path"))
+        incrementalContext.enqueue(offThread("Bang", 50, "/field/path")) // <-- will throw exception
+        incrementalContext.enqueue(offThread("C", 10, "/field/path"))
 
         when:
         List<DelayedIncrementalExecutionResult> results = []
@@ -96,7 +96,7 @@ class DeferContextTest extends Specification {
                 assert false, "This should not be called!"
             }
         }
-        deferContext.startDeferredCalls().subscribe(subscriber)
+        incrementalContext.startDeferredCalls().subscribe(subscriber)
 
         Awaitility.await().untilTrue(subscriber.finished)
         then:
@@ -107,10 +107,10 @@ class DeferContextTest extends Specification {
 
     def "you can cancel the subscription"() {
         given:
-        def deferContext = new DeferContext()
-        deferContext.enqueue(offThread("A", 100, "/field/path")) // <-- will finish last
-        deferContext.enqueue(offThread("B", 50, "/field/path")) // <-- will finish second
-        deferContext.enqueue(offThread("C", 10, "/field/path")) // <-- will finish first
+        def incrementalContext = new IncrementalContext()
+        incrementalContext.enqueue(offThread("A", 100, "/field/path")) // <-- will finish last
+        incrementalContext.enqueue(offThread("B", 50, "/field/path")) // <-- will finish second
+        incrementalContext.enqueue(offThread("C", 10, "/field/path")) // <-- will finish first
 
         when:
         List<DelayedIncrementalExecutionResult> results = []
@@ -122,7 +122,7 @@ class DeferContextTest extends Specification {
                 finished.set(true)
             }
         }
-        deferContext.startDeferredCalls().subscribe(subscriber)
+        incrementalContext.startDeferredCalls().subscribe(subscriber)
 
         Awaitility.await().untilTrue(subscriber.finished)
         then:
@@ -135,15 +135,15 @@ class DeferContextTest extends Specification {
 
     def "you cant subscribe twice"() {
         given:
-        def deferContext = new DeferContext()
-        deferContext.enqueue(offThread("A", 100, "/field/path"))
-        deferContext.enqueue(offThread("Bang", 50, "/field/path")) // <-- will finish second
-        deferContext.enqueue(offThread("C", 10, "/field/path")) // <-- will finish first
+        def incrementalContext = new IncrementalContext()
+        incrementalContext.enqueue(offThread("A", 100, "/field/path"))
+        incrementalContext.enqueue(offThread("Bang", 50, "/field/path")) // <-- will finish second
+        incrementalContext.enqueue(offThread("C", 10, "/field/path")) // <-- will finish first
 
         when:
         Throwable expectedThrowable
-        deferContext.startDeferredCalls().subscribe(new BasicSubscriber())
-        deferContext.startDeferredCalls().subscribe(new BasicSubscriber() {
+        incrementalContext.startDeferredCalls().subscribe(new BasicSubscriber())
+        incrementalContext.startDeferredCalls().subscribe(new BasicSubscriber() {
             @Override
             void onError(Throwable t) {
                 expectedThrowable = t
@@ -155,17 +155,17 @@ class DeferContextTest extends Specification {
 
     def "indicates if there are any defers present"() {
         given:
-        def deferContext = new DeferContext()
+        def incrementalContext = new IncrementalContext()
 
         when:
-        def deferPresent1 = deferContext.isDeferDetected()
+        def deferPresent1 = incrementalContext.isDeferDetected()
 
         then:
         !deferPresent1
 
         when:
-        deferContext.enqueue(offThread("A", 100, "/field/path"))
-        def deferPresent2 = deferContext.isDeferDetected()
+        incrementalContext.enqueue(offThread("A", 100, "/field/path"))
+        def deferPresent2 = incrementalContext.isDeferDetected()
 
         then:
         deferPresent2
@@ -196,8 +196,8 @@ class DeferContextTest extends Specification {
         def deferredCall = new DeferredCall(null, ResultPath.parse("/field/path"), [call1, call2], new DeferredErrorSupport())
 
         when:
-        def deferContext = new DeferContext()
-        deferContext.enqueue(deferredCall)
+        def incrementalContext = new IncrementalContext()
+        incrementalContext.enqueue(deferredCall)
 
         List<DelayedIncrementalExecutionResult> results = []
         BasicSubscriber subscriber = new BasicSubscriber() {
@@ -207,7 +207,7 @@ class DeferContextTest extends Specification {
                 subscription.request(1)
             }
         }
-        deferContext.startDeferredCalls().subscribe(subscriber)
+        incrementalContext.startDeferredCalls().subscribe(subscriber)
 
         Awaitility.await().untilTrue(subscriber.finished)
         then:
@@ -218,10 +218,10 @@ class DeferContextTest extends Specification {
 
     def "race conditions should not impact the calculation of the hasNext value"() {
         given: "calls that have the same sleepTime"
-        def deferContext = new DeferContext()
-        deferContext.enqueue(offThread("A", 10, "/field/path")) // <-- will finish last
-        deferContext.enqueue(offThread("B", 10, "/field/path")) // <-- will finish second
-        deferContext.enqueue(offThread("C", 10, "/field/path")) // <-- will finish first
+        def incrementalContext = new IncrementalContext()
+        incrementalContext.enqueue(offThread("A", 10, "/field/path")) // <-- will finish last
+        incrementalContext.enqueue(offThread("B", 10, "/field/path")) // <-- will finish second
+        incrementalContext.enqueue(offThread("C", 10, "/field/path")) // <-- will finish first
 
         when:
         List<DelayedIncrementalExecutionResult> results = []
@@ -232,7 +232,7 @@ class DeferContextTest extends Specification {
                 subscription.request(1)
             }
         }
-        deferContext.startDeferredCalls().subscribe(subscriber)
+        incrementalContext.startDeferredCalls().subscribe(subscriber)
         Awaitility.await().untilTrue(subscriber.finished)
 
         then: "hasNext placement should be deterministic - only the last event published should have 'hasNext=true'"
@@ -261,20 +261,19 @@ class DeferContextTest extends Specification {
         return new DeferredCall(null, ResultPath.parse(path), [callSupplier], new DeferredErrorSupport())
     }
 
-    private static DeferredCall offThreadCallWithinCall(DeferContext deferContext, String dataParent, String dataChild, int sleepTime, String path) {
+    private static DeferredCall offThreadCallWithinCall(IncrementalContext incrementalContext, String dataParent, String dataChild, int sleepTime, String path) {
         def callSupplier = new Supplier<CompletableFuture<DeferredCall.FieldWithExecutionResult>>() {
             @Override
             CompletableFuture<DeferredCall.FieldWithExecutionResult> get() {
                 CompletableFuture.supplyAsync({
                     Thread.sleep(sleepTime)
-                    deferContext.enqueue(offThread(dataChild, sleepTime, path))
+                    incrementalContext.enqueue(offThread(dataChild, sleepTime, path))
                     new DeferredCall.FieldWithExecutionResult(dataParent.toLowerCase(), new ExecutionResultImpl(dataParent, []))
                 })
             }
         }
         return new DeferredCall(null, ResultPath.parse("/field/path"), [callSupplier], new DeferredErrorSupport())
     }
-
 
     private static void assertResultsSizeAndHasNextRule(int expectedSize, List<DelayedIncrementalExecutionResult> results) {
         assert results.size() == expectedSize

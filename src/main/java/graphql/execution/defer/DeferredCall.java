@@ -14,11 +14,25 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 
 /**
- * This represents a deferred call (aka @defer) to get an execution result sometime after
- * the initial query has returned
+ * Represents a deferred call (aka @defer) to get an execution result sometime after the initial query has returned.
+ * <p>
+ * A deferred call can encompass multiple fields. The deferred call will resolve once all sub-fields resolve.
+ * <p>
+ * For example, this query:
+ * <pre>
+ * {
+ *     post {
+ *         ... @defer(label: "defer-post") {
+ *             text
+ *             summary
+ *         }
+ *     }
+ * }
+ * </pre>
+ * Will result on 1 instance of `DeferredCall`, containing calls for the 2 fields: "text" and "summary".
  */
 @Internal
-public class DeferredCall {
+public class DeferredCall implements IncrementalCall<DeferPayload> {
     private final String label;
     private final ResultPath path;
     private final List<Supplier<CompletableFuture<FieldWithExecutionResult>>> calls;
@@ -36,7 +50,8 @@ public class DeferredCall {
         this.errorSupport = deferredErrorSupport;
     }
 
-    CompletableFuture<DeferPayload> invoke() {
+    @Override
+    public CompletableFuture<DeferPayload> invoke() {
         Async.CombinedBuilder<FieldWithExecutionResult> futures = Async.ofExpectedSize(calls.size());
 
         calls.forEach(call -> futures.add(call.get()));
