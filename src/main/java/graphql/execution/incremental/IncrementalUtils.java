@@ -1,31 +1,16 @@
 package graphql.execution.incremental;
 
 import graphql.Assert;
-import graphql.DeferredExecutionResult;
 import graphql.GraphQLContext;
 import graphql.Internal;
 import graphql.execution.CoercedVariables;
-import graphql.execution.ExecutionContext;
-import graphql.execution.MergedField;
 import graphql.execution.ValuesResolver;
-import graphql.execution.defer.DeferredCall;
-import graphql.execution.reactive.SingleSubscriberPublisher;
 import graphql.language.Directive;
-import graphql.language.Field;
 import graphql.language.NodeUtil;
-import graphql.language.TypeName;
-import graphql.schema.GraphQLObjectType;
-import org.reactivestreams.Publisher;
 
-import javax.annotation.Nullable;
-import java.util.Deque;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentLinkedDeque;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import static graphql.Directives.DeferDirective;
 

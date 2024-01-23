@@ -1,6 +1,6 @@
 package graphql.execution.defer
 
-import graphql.DeferredExecutionResult
+
 import graphql.incremental.DeferPayload
 import graphql.incremental.DelayedIncrementalExecutionResult
 import org.reactivestreams.Publisher

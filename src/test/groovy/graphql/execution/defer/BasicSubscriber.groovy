@@ -1,13 +1,12 @@
 package graphql.execution.defer
 
-import graphql.DeferredExecutionResult
-import graphql.ExecutionResult
+import graphql.incremental.DelayedIncrementalExecutionResult
 import org.reactivestreams.Subscriber
 import org.reactivestreams.Subscription
 
 import java.util.concurrent.atomic.AtomicBoolean
 
-class BasicSubscriber implements Subscriber<DeferredExecutionResult> {
+class BasicSubscriber implements Subscriber<DelayedIncrementalExecutionResult> {
     Subscription subscription
     AtomicBoolean finished = new AtomicBoolean()
     Throwable throwable
@@ -20,7 +19,7 @@ class BasicSubscriber implements Subscriber<DeferredExecutionResult> {
     }
 
     @Override
-    void onNext(DeferredExecutionResult executionResult) {
+    void onNext(DelayedIncrementalExecutionResult executionResult) {
     }
 
     @Override

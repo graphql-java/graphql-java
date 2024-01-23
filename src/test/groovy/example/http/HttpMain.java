@@ -8,6 +8,7 @@ import graphql.execution.instrumentation.ChainedInstrumentation;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.dataloader.DataLoaderDispatcherInstrumentation;
 import graphql.execution.instrumentation.tracing.TracingInstrumentation;
+import graphql.incremental.IncrementalExecutionResult;
 import graphql.schema.DataFetcher;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
@@ -16,6 +17,9 @@ import graphql.schema.idl.RuntimeWiring;
 import graphql.schema.idl.SchemaGenerator;
 import graphql.schema.idl.SchemaParser;
 import graphql.schema.idl.TypeDefinitionRegistry;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.dataloader.BatchLoader;
 import org.dataloader.DataLoader;
 import org.dataloader.DataLoaderFactory;
@@ -27,9 +31,6 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.eclipse.jetty.server.handler.HandlerList;
 import org.eclipse.jetty.server.handler.ResourceHandler;
 
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -160,9 +161,8 @@ public class HttpMain extends AbstractHandler {
 
 
     private void returnAsJson(HttpServletResponse response, ExecutionResult executionResult) throws IOException {
-        Map<Object, Object> extensions = executionResult.getExtensions();
-        if (extensions != null && extensions.containsKey(GraphQL.DEFERRED_RESULTS)) {
-            DeferHttpSupport.sendDeferredResponse(response, executionResult, extensions);
+        if (executionResult instanceof IncrementalExecutionResult) {
+            DeferHttpSupport.sendIncrementalResponse(response, (IncrementalExecutionResult) executionResult);
         }
         sendNormalResponse(response, executionResult);
     }

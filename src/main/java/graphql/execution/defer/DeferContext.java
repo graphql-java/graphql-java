@@ -21,7 +21,7 @@ import static graphql.incremental.DelayedIncrementalExecutionResultImpl.newIncre
  */
 @Internal
 // TODO: This should be called IncrementalSupport and handle both @defer and @stream
-public class DeferExecutionSupport {
+public class DeferContext {
     private final AtomicBoolean deferDetected = new AtomicBoolean(false);
     private final Deque<DeferredCall> deferredCalls = new ConcurrentLinkedDeque<>();
     private final SingleSubscriberPublisher<DelayedIncrementalExecutionResult> publisher = new SingleSubscriberPublisher<>();

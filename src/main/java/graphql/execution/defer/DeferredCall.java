@@ -6,16 +6,12 @@ import graphql.Internal;
 import graphql.execution.Async;
 import graphql.execution.ResultPath;
 import graphql.incremental.DeferPayload;
-import graphql.incremental.DelayedIncrementalExecutionResult;
-import graphql.incremental.DelayedIncrementalExecutionResultImpl;
 
-import java.util.Collections;
-import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 /**
  * This represents a deferred call (aka @defer) to get an execution result sometime after
@@ -53,17 +49,17 @@ public class DeferredCall {
         // TODO: Not sure how/if this errorSupport works
         List<GraphQLError> errorsEncountered = errorSupport.getErrors();
 
-        Map<String, Object> data = fieldWithExecutionResults.stream()
-                .collect(Collectors.toMap(
-                        fieldWithExecutionResult -> fieldWithExecutionResult.fieldName,
-                        fieldWithExecutionResult -> fieldWithExecutionResult.executionResult.getData()
-                ));
+        Map<String, Object> dataMap = new HashMap<>();
+
+        fieldWithExecutionResults.forEach(entry -> {
+            dataMap.put(entry.fieldName, entry.executionResult.getData());
+        });
 
         return DeferPayload.newDeferredItem()
                 .errors(errorsEncountered)
                 .path(path)
                 .label(label)
-                .data(data)
+                .data(dataMap)
                 .build();
     }
 

@@ -1,10 +1,11 @@
 package graphql.execution.instrumentation.dataloader
 
-import graphql.DeferredExecutionResult
 import graphql.ExecutionInput
 import graphql.GraphQL
 import graphql.execution.defer.CapturingSubscriber
 import graphql.execution.instrumentation.Instrumentation
+import graphql.incremental.DelayedIncrementalExecutionResult
+import graphql.incremental.IncrementalExecutionResult
 import org.awaitility.Awaitility
 import org.dataloader.DataLoaderRegistry
 import org.reactivestreams.Publisher
@@ -103,8 +104,7 @@ class DataLoaderPerformanceTest extends Specification {
         ExecutionInput executionInput = ExecutionInput.newExecutionInput().query(deferredQuery).dataLoaderRegistry(dataLoaderRegistry).build()
         def result = graphQL.execute(executionInput)
 
-        Map<Object, Object> extensions = result.getExtensions()
-        Publisher<DeferredExecutionResult> deferredResultStream = (Publisher<DeferredExecutionResult>) extensions.get(GraphQL.DEFERRED_RESULTS)
+        Publisher<DelayedIncrementalExecutionResult> deferredResultStream = ((IncrementalExecutionResult) result).incrementalItemPublisher
 
         def subscriber = new CapturingSubscriber()
         subscriber.subscribeTo(deferredResultStream)
@@ -130,8 +130,7 @@ class DataLoaderPerformanceTest extends Specification {
         ExecutionInput executionInput = ExecutionInput.newExecutionInput().query(expensiveDeferredQuery).dataLoaderRegistry(dataLoaderRegistry).build()
         def result = graphQL.execute(executionInput)
 
-        Map<Object, Object> extensions = result.getExtensions()
-        Publisher<DeferredExecutionResult> deferredResultStream = (Publisher<DeferredExecutionResult>) extensions.get(GraphQL.DEFERRED_RESULTS)
+        Publisher<DelayedIncrementalExecutionResult> deferredResultStream = ((IncrementalExecutionResult) result).incrementalItemPublisher
 
         def subscriber = new CapturingSubscriber()
         subscriber.subscribeTo(deferredResultStream)

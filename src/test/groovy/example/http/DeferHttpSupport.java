@@ -1,8 +1,7 @@
 package example.http;
 
-import graphql.DeferredExecutionResult;
-import graphql.ExecutionResult;
-import graphql.GraphQL;
+import graphql.incremental.DelayedIncrementalExecutionResult;
+import graphql.incremental.IncrementalExecutionResult;
 import jakarta.servlet.http.HttpServletResponse;
 import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
@@ -18,17 +17,23 @@ public class DeferHttpSupport {
     private static final String CRLF = "\r\n";
 
     @SuppressWarnings("unchecked")
-    static void sendDeferredResponse(HttpServletResponse response, ExecutionResult executionResult, Map<Object, Object> extensions) {
-        Publisher<DeferredExecutionResult> deferredResults = (Publisher<DeferredExecutionResult>) extensions.get(GraphQL.DEFERRED_RESULTS);
+    static void sendIncrementalResponse(HttpServletResponse response, IncrementalExecutionResult incrementalExecutionResult) {
+
+        Publisher<DelayedIncrementalExecutionResult> incrementalResults = incrementalExecutionResult.getIncrementalItemPublisher();
+
         try {
-            sendMultipartResponse(response, executionResult, deferredResults);
+            sendMultipartResponse(response, incrementalExecutionResult, incrementalResults);
         } catch (Exception e) {
             e.printStackTrace();
             throw new RuntimeException(e);
         }
     }
 
-    static private void sendMultipartResponse(HttpServletResponse response, ExecutionResult executionResult, Publisher<DeferredExecutionResult> deferredResults) {
+    static private void sendMultipartResponse(
+            HttpServletResponse response,
+            IncrementalExecutionResult incrementalExecutionResult,
+            Publisher<DelayedIncrementalExecutionResult> incrementalResults
+    ) {
         // this implements this apollo defer spec: https://github.com/apollographql/apollo-server/blob/defer-support/docs/source/defer-support.md
         // the spec says CRLF + "-----" + CRLF is needed at the end, but it works without it and with it we get client
         // side errors with it, so we skp it
@@ -38,11 +43,11 @@ public class DeferHttpSupport {
         response.setHeader("Connection", "keep-alive");
 
         // send the first "un deferred" part of the result
-        writeAndFlushPart(response, executionResult.toSpecification());
+        writeAndFlushPart(response, incrementalExecutionResult.toSpecification());
 
         // now send each deferred part which is given to us as a reactive stream
         // of deferred values
-        deferredResults.subscribe(new Subscriber<DeferredExecutionResult>() {
+        incrementalResults.subscribe(new Subscriber<DelayedIncrementalExecutionResult>() {
             Subscription subscription;
 
             @Override
@@ -52,10 +57,10 @@ public class DeferHttpSupport {
             }
 
             @Override
-            public void onNext(DeferredExecutionResult deferredExecutionResult) {
+            public void onNext(DelayedIncrementalExecutionResult delayedIncrementalExecutionResult) {
                 subscription.request(1);
 
-                writeAndFlushPart(response, deferredExecutionResult.toSpecification());
+                writeAndFlushPart(response, delayedIncrementalExecutionResult.toSpecification());
             }
 
             @Override

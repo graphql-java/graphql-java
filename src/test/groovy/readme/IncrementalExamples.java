@@ -1,10 +1,11 @@
 package readme;
 
-import graphql.DeferredExecutionResult;
 import graphql.Directives;
 import graphql.ExecutionInput;
 import graphql.ExecutionResult;
 import graphql.GraphQL;
+import graphql.incremental.DelayedIncrementalExecutionResult;
+import graphql.incremental.IncrementalExecutionResult;
 import graphql.schema.GraphQLSchema;
 import jakarta.servlet.http.HttpServletResponse;
 import org.reactivestreams.Publisher;
@@ -13,8 +14,8 @@ import org.reactivestreams.Subscription;
 
 import java.util.Map;
 
-@SuppressWarnings({"unused", "ConstantConditions", "UnusedAssignment", "unchecked"})
-public class DeferredExamples {
+@SuppressWarnings({"unused", "ConstantConditions"})
+public class IncrementalExamples {
 
     GraphQLSchema buildSchemaWithDirective() {
 
@@ -35,18 +36,19 @@ public class DeferredExamples {
         ExecutionResult initialResult = graphQL.execute(ExecutionInput.newExecutionInput().query(deferredQuery).build());
 
         //
-        // then initial results happen first, the deferred ones will begin AFTER these initial
+        // then initial results happen first, the incremental ones will begin AFTER these initial
         // results have completed
         //
         sendMultipartHttpResult(httpServletResponse, initialResult);
 
         Map<Object, Object> extensions = initialResult.getExtensions();
-        Publisher<DeferredExecutionResult> deferredResults = (Publisher<DeferredExecutionResult>) extensions.get(GraphQL.DEFERRED_RESULTS);
+        Publisher<DelayedIncrementalExecutionResult> delayedIncrementalResults =
+                ((IncrementalExecutionResult) initialResult).getIncrementalItemPublisher();
 
         //
-        // you subscribe to the deferred results like any other reactive stream
+        // you subscribe to the incremental results like any other reactive stream
         //
-        deferredResults.subscribe(new Subscriber<DeferredExecutionResult>() {
+        delayedIncrementalResults.subscribe(new Subscriber<>() {
 
             Subscription subscription;
 
@@ -59,7 +61,7 @@ public class DeferredExamples {
             }
 
             @Override
-            public void onNext(DeferredExecutionResult executionResult) {
+            public void onNext(DelayedIncrementalExecutionResult executionResult) {
                 //
                 // as each deferred result arrives, send it to where it needs to go
                 //
@@ -85,7 +87,7 @@ public class DeferredExamples {
     private void handleError(HttpServletResponse httpServletResponse, Throwable t) {
     }
 
-    private void sendMultipartHttpResult(HttpServletResponse httpServletResponse, ExecutionResult initialResult) {
+    private void sendMultipartHttpResult(HttpServletResponse httpServletResponse, Object result) {
     }
 
 

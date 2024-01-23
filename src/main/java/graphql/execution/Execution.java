@@ -7,7 +7,7 @@ import graphql.ExecutionResultImpl;
 import graphql.GraphQLContext;
 import graphql.GraphQLError;
 import graphql.Internal;
-import graphql.execution.defer.DeferExecutionSupport;
+import graphql.execution.defer.DeferContext;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationState;
@@ -194,7 +194,7 @@ public class Execution {
      */
     private CompletableFuture<ExecutionResult> deferSupport(ExecutionContext executionContext, CompletableFuture<ExecutionResult> result) {
         return result.thenApply(er -> {
-            DeferExecutionSupport deferSupport = executionContext.getDeferSupport();
+            DeferContext deferSupport = executionContext.getDefferContext();
             if (deferSupport.isDeferDetected()) {
                 // we start the rest of the query now to maximize throughput.  We have the initial important results
                 // and now we can start the rest of the calls as early as possible (even before some one subscribes)
@@ -205,11 +205,6 @@ public class Execution {
                         .hasNext(true)
                         .incrementalItemPublisher(publisher)
                         .build();
-//
-//
-//                return ExecutionResultImpl.newExecutionResult().from(er)
-//                        .addExtension(GraphQL.DEFERRED_RESULTS, publisher)
-//                        .build();
             }
             return er;
         });
