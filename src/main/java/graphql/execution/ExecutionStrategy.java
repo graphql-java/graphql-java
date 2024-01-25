@@ -372,7 +372,6 @@ public abstract class ExecutionStrategy {
                 .exception(e)
                 .build();
 
-        // TODO: not sure if this method call goes here, inside the try block below, or in the async method
         parameters.deferredErrorSupport().onFetchingException(parameters, e);
 
         try {
@@ -692,7 +691,7 @@ public abstract class ExecutionStrategy {
         MergedSelectionSet subFields = fieldCollector.collectFields(
                 collectorParameters,
                 parameters.getField(),
-                executionContext.getExecutionInput().isIncrementalSupport()
+                executionContext.isIncrementalSupport()
         );
 
         ExecutionStepInfo newExecutionStepInfo = executionStepInfo.changeTypeWithPreservedNonNull(resolvedObjectType);

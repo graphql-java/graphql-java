@@ -40,6 +40,8 @@ class CapturingSubscriber implements Subscriber<DelayedIncrementalExecutionResul
 
     @Override
     void onError(Throwable t) {
+        println "Publisher emitted an error"
+        t.printStackTrace()
         finished.set(true)
     }
 

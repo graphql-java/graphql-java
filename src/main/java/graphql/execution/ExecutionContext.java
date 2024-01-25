@@ -261,6 +261,10 @@ public class ExecutionContext {
         return incrementalContext;
     }
 
+    public boolean isIncrementalSupport() {
+        return executionInput != null && executionInput.isIncrementalSupport();
+    }
+
     public ExecutionStrategy getStrategy(OperationDefinition.Operation operation) {
         if (operation == OperationDefinition.Operation.MUTATION) {
             return getMutationStrategy();

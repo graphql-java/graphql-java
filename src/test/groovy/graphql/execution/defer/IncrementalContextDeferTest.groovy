@@ -193,7 +193,7 @@ class IncrementalContextDeferTest extends Specification {
             }
         }
 
-        def deferredCall = new DeferredCall(null, ResultPath.parse("/field/path"), [call1, call2], new DeferredErrorSupport())
+        def deferredCall = new DeferredCall(null, ResultPath.parse("/field/path"), [call1, call2], new DeferredCallContext())
 
         when:
         def incrementalContext = new IncrementalContext()
@@ -258,7 +258,7 @@ class IncrementalContextDeferTest extends Specification {
             }
         }
 
-        return new DeferredCall(null, ResultPath.parse(path), [callSupplier], new DeferredErrorSupport())
+        return new DeferredCall(null, ResultPath.parse(path), [callSupplier], new DeferredCallContext())
     }
 
     private static DeferredCall offThreadCallWithinCall(IncrementalContext incrementalContext, String dataParent, String dataChild, int sleepTime, String path) {
@@ -272,7 +272,7 @@ class IncrementalContextDeferTest extends Specification {
                 })
             }
         }
-        return new DeferredCall(null, ResultPath.parse("/field/path"), [callSupplier], new DeferredErrorSupport())
+        return new DeferredCall(null, ResultPath.parse("/field/path"), [callSupplier], new DeferredCallContext())
     }
 
     private static void assertResultsSizeAndHasNextRule(int expectedSize, List<DelayedIncrementalExecutionResult> results) {

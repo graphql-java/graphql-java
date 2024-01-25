@@ -2,7 +2,7 @@ package graphql.execution;
 
 import graphql.Assert;
 import graphql.PublicApi;
-import graphql.execution.defer.DeferredErrorSupport;
+import graphql.execution.defer.DeferredCallContext;
 
 import java.util.function.Consumer;
 
@@ -21,7 +21,7 @@ public class ExecutionStrategyParameters {
     private final ResultPath path;
     private final MergedField currentField;
     private final ExecutionStrategyParameters parent;
-    private final DeferredErrorSupport deferredErrorSupport;
+    private final DeferredCallContext deferredErrorSupport;
 
     private ExecutionStrategyParameters(ExecutionStepInfo executionStepInfo,
                                         Object source,
@@ -31,7 +31,7 @@ public class ExecutionStrategyParameters {
                                         ResultPath path,
                                         MergedField currentField,
                                         ExecutionStrategyParameters parent,
-                                        DeferredErrorSupport deferredErrorSupport) {
+                                        DeferredCallContext deferredErrorSupport) {
 
         this.executionStepInfo = assertNotNull(executionStepInfo, () -> "executionStepInfo is null");
         this.localContext = localContext;
@@ -72,7 +72,7 @@ public class ExecutionStrategyParameters {
         return parent;
     }
 
-    public DeferredErrorSupport deferredErrorSupport() {
+    public DeferredCallContext deferredErrorSupport() {
         return deferredErrorSupport;
     }
 
@@ -114,7 +114,7 @@ public class ExecutionStrategyParameters {
         ResultPath path = ResultPath.rootPath();
         MergedField currentField;
         ExecutionStrategyParameters parent;
-        DeferredErrorSupport deferredErrorSupport = new DeferredErrorSupport();
+        DeferredCallContext deferredErrorSupport = new DeferredCallContext();
 
         /**
          * @see ExecutionStrategyParameters#newParameters()
@@ -182,7 +182,7 @@ public class ExecutionStrategyParameters {
             return this;
         }
 
-        public Builder deferredErrorSupport(DeferredErrorSupport deferredErrorSupport) {
+        public Builder deferredErrorSupport(DeferredCallContext deferredErrorSupport) {
             this.deferredErrorSupport = deferredErrorSupport;
             return this;
         }

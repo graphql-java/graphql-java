@@ -6,7 +6,7 @@ import com.google.common.collect.ImmutableSet;
 import graphql.ExecutionResult;
 import graphql.PublicApi;
 import graphql.execution.defer.DeferredCall;
-import graphql.execution.defer.DeferredErrorSupport;
+import graphql.execution.defer.DeferredCallContext;
 import graphql.execution.incremental.DeferExecution;
 import graphql.execution.instrumentation.ExecutionStrategyInstrumentationContext;
 import graphql.execution.instrumentation.Instrumentation;
@@ -52,7 +52,6 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
     @Override
     @SuppressWarnings("FutureReturnValueIgnored")
     public CompletableFuture<ExecutionResult> execute(ExecutionContext executionContext, ExecutionStrategyParameters parameters) throws NonNullableFieldWasNullException {
-
         Instrumentation instrumentation = executionContext.getInstrumentation();
         InstrumentationExecutionStrategyParameters instrumentationParameters = new InstrumentationExecutionStrategyParameters(executionContext, parameters);
 
@@ -61,7 +60,7 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
         MergedSelectionSet fields = parameters.getFields();
         List<String> fieldNames = fields.getKeys();
 
-        DeferExecutionSupport deferExecutionSupport = executionContext.getExecutionInput().isIncrementalSupport() ?
+        DeferExecutionSupport deferExecutionSupport = executionContext.isIncrementalSupport() ?
                 new DeferExecutionSupport.DeferExecutionSupportImpl(
                     fields,
                     parameters,
@@ -189,7 +188,7 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
             public Set<DeferredCall> createCalls() {
                 return deferExecutionToFields.keySet().stream()
                         .map(deferExecution -> {
-                            DeferredErrorSupport errorSupport = new DeferredErrorSupport();
+                            DeferredCallContext errorSupport = new DeferredCallContext();
 
                             List<MergedField> mergedFields = deferExecutionToFields.get(deferExecution);
 

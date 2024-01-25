@@ -144,7 +144,7 @@ public class Execution {
         MergedSelectionSet fields = fieldCollector.collectFields(
                 collectorParameters,
                 operationDefinition.getSelectionSet(),
-                executionContext.getExecutionInput().isIncrementalSupport()
+                executionContext.isIncrementalSupport()
         );
 
         ResultPath path = ResultPath.rootPath();

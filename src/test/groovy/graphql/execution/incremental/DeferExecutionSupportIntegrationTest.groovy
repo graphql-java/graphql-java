@@ -50,6 +50,10 @@ class DeferExecutionSupportIntegrationTest extends Specification {
                 latestComment: Comment
                 comments: [Comment]
                 resolvesToNull: String
+                dataFetcherError: String
+                coercionError: Int 
+                typeMismatchError: [String]
+                nonNullableError: String!
             }
             
             type Comment {
@@ -93,17 +97,24 @@ class DeferExecutionSupportIntegrationTest extends Specification {
 
     private static DataFetcher resolveItem() {
         return (env) -> {
-            def data = env.getArgument("type") == "Post"
-                    ? [__typename: "Post", id: "1001"]
-                    : [__typename: "Page", id: "1002"]
+            def type = env.getArgument("type")
 
-            return CompletableFuture.supplyAsync { data }
+            return CompletableFuture.supplyAsync { [__typename: type, id: "1001"] }
         }
     }
 
     private static TypeResolver itemTypeResolver() {
         return (env) -> {
             env.getSchema().getObjectType(env.object["__typename"])
+        }
+    }
+
+    private static DataFetcher resolveWithException() {
+        return new DataFetcher() {
+            @Override
+            Object get(DataFetchingEnvironment environment) throws Exception {
+                throw new RuntimeException("Bang!!!")
+            }
         }
     }
 
@@ -117,6 +128,10 @@ class DeferExecutionSupportIntegrationTest extends Specification {
                 .type(newTypeWiring("Post").dataFetcher("summary", resolve("A summary", 10)))
                 .type(newTypeWiring("Post").dataFetcher("text", resolve("The full text", 100)))
                 .type(newTypeWiring("Post").dataFetcher("latestComment", resolve([title: "Comment title"], 10)))
+                .type(newTypeWiring("Post").dataFetcher("dataFetcherError", resolveWithException()))
+                .type(newTypeWiring("Post").dataFetcher("coercionError", resolve("Not a number", 10)))
+                .type(newTypeWiring("Post").dataFetcher("typeMismatchError", resolve([a: "A Map instead of a List"], 10)))
+                .type(newTypeWiring("Post").dataFetcher("nonNullableError", resolve(null)))
                 .type(newTypeWiring("Page").dataFetcher("summary", resolve("A page summary", 10)))
                 .type(newTypeWiring("Page").dataFetcher("text", resolve("The page full text", 100)))
                 .type(newTypeWiring("Comment").dataFetcher("content", resolve("Full content", 100)))
@@ -204,7 +219,7 @@ class DeferExecutionSupportIntegrationTest extends Specification {
             ]
         } else {
             assert initialResult.toSpecification() == [
-                    data   : [item: [__typename: "Page", id: "1002"]],
+                    data   : [item: [__typename: "Page", id: "1001"]],
                     hasNext: true
             ]
         }
@@ -921,6 +936,301 @@ class DeferExecutionSupportIntegrationTest extends Specification {
                                 [
                                         path: ["addPost"],
                                         data: [text: "The full text"]
+                                ]
+                        ]
+                ]
+        ]
+    }
+
+    def "can handle error raised by data fetcher"() {
+        def query = '''
+            query {
+                post {
+                    id
+                    ... @defer {
+                        dataFetcherError
+                    }
+                    ... @defer {
+                        text
+                    }
+                }
+            }
+        '''
+
+        when:
+        def initialResult = executeQuery(query)
+
+        then:
+        initialResult.toSpecification() == [
+                data   : [post: [id: "1001"]],
+                hasNext: true
+        ]
+
+        when:
+        def incrementalResults = getIncrementalResults(initialResult)
+
+        then:
+        incrementalResults == [
+                [
+                        hasNext    : true,
+                        incremental: [
+                                [
+                                        path  : ["post"],
+                                        data  : [dataFetcherError: null],
+                                        errors: [[
+                                                         message   : "Exception while fetching data (/post/dataFetcherError) : Bang!!!",
+                                                         locations : [[line: 6, column: 25]],
+                                                         path      : ["post", "dataFetcherError"],
+                                                         extensions: [classification: "DataFetchingException"]
+                                                 ]],
+                                ],
+                        ]
+                ],
+                [
+                        hasNext    : false,
+                        incremental: [
+                                [
+                                        path: ["post"],
+                                        data: [text: "The full text"],
+                                ]
+                        ]
+                ]
+        ]
+    }
+
+    def "can handle UnresolvedTypeException"() {
+        def query = """
+            query {
+                post {
+                    id
+                    ... @defer {
+                        text 
+                    }
+                }
+                ... @defer {
+                    item(type: "NonExistingType") {
+                        id
+                        summary
+                    }
+                }
+            }
+        """
+
+        when:
+        def initialResult = executeQuery(query)
+
+        then:
+        initialResult.toSpecification() == [
+                data   : [post: [id: "1001"]],
+                hasNext: true
+        ]
+
+        when:
+        def incrementalResults = getIncrementalResults(initialResult)
+
+        then:
+        incrementalResults == [
+                [
+                        hasNext    : true,
+                        incremental: [
+                                [
+                                        path  : [],
+                                        data  : [item: null],
+                                        errors: [
+                                                [
+                                                        message   : "Can't resolve '/item'. Abstract type 'Item' must resolve to an Object type at runtime for field 'Query.item'. Could not determine the exact type of 'Item'",
+                                                        path      : ["item"],
+                                                        extensions: [
+                                                                classification: "DataFetchingException"
+                                                        ]
+                                                ]
+                                        ],
+                                ]
+                        ]
+                ],
+                [
+                        hasNext    : false,
+                        incremental: [
+                                [
+                                        path  : ["post"],
+                                        data  : [text: "The full text"],
+                                ]
+                        ]
+                ]
+        ]
+    }
+
+    def "can handle coercion problem"() {
+        def query = """
+            query {
+                post {
+                    id
+                    ... @defer {
+                        text 
+                    }
+                    ... @defer {
+                        coercionError
+                    }
+                }
+            }
+        """
+
+        when:
+        def initialResult = executeQuery(query)
+
+        then:
+        initialResult.toSpecification() == [
+                data   : [post: [id: "1001"]],
+                hasNext: true
+        ]
+
+        when:
+        def incrementalResults = getIncrementalResults(initialResult)
+
+        then:
+        incrementalResults == [
+                [
+                        hasNext    : true,
+                        incremental: [
+                                [
+                                        path  : ["post"],
+                                        data  : [coercionError: null],
+                                        errors: [
+                                                [
+                                                        message   : "Can't serialize value (/post/coercionError) : Expected a value that can be converted to type 'Int' but it was a 'String'",
+                                                        path      : ["post", "coercionError"],
+                                                        extensions: [
+                                                                classification: "DataFetchingException"
+                                                        ]
+                                                ]
+                                        ],
+                                ]
+                        ]
+                ],
+                [
+                        hasNext    : false,
+                        incremental: [
+                                [
+                                        path  : ["post"],
+                                        data  : [text: "The full text"],
+                                ]
+                        ]
+                ]
+        ]
+    }
+
+    def "can handle type mismatch problem"() {
+        def query = """
+            query {
+                post {
+                    id
+                    ... @defer {
+                        text 
+                    }
+                    ... @defer {
+                        typeMismatchError
+                    }
+                }
+            }
+        """
+
+        when:
+        def initialResult = executeQuery(query)
+
+        then:
+        initialResult.toSpecification() == [
+                data   : [post: [id: "1001"]],
+                hasNext: true
+        ]
+
+        when:
+        def incrementalResults = getIncrementalResults(initialResult)
+
+        then:
+        incrementalResults == [
+                [
+                        hasNext    : true,
+                        incremental: [
+                                [
+                                        path  : ["post"],
+                                        data  : [typeMismatchError: null],
+                                        errors: [
+                                                [
+                                                        message   : "Can't resolve value (/post/typeMismatchError) : type mismatch error, expected type LIST",
+                                                        path      : ["post", "typeMismatchError"],
+                                                        extensions: [
+                                                                classification: "DataFetchingException"
+                                                        ]
+                                                ]
+                                        ],
+                                ]
+                        ]
+                ],
+                [
+                        hasNext    : false,
+                        incremental: [
+                                [
+                                        path  : ["post"],
+                                        data  : [text: "The full text"],
+                                ]
+                        ]
+                ]
+        ]
+    }
+
+    def "can handle non nullable error"() {
+        def query = """
+            query {
+                post {
+                    id
+                    ... @defer {
+                        text 
+                    }
+                    ... @defer {
+                        summary
+                        nonNullableError
+                    }
+                }
+            }
+        """
+
+        when:
+        def initialResult = executeQuery(query)
+
+        then:
+        initialResult.toSpecification() == [
+                data   : [post: [id: "1001"]],
+                hasNext: true
+        ]
+
+        when:
+        def incrementalResults = getIncrementalResults(initialResult)
+
+        then:
+        incrementalResults == [
+                [
+                        hasNext    : true,
+                        incremental: [
+                                [
+                                        path  : ["post"],
+                                        errors: [
+                                                [
+                                                        message   : "The field at path '/post/nonNullableError' was declared as a non null type, but the code involved in retrieving data has wrongly returned a null value.  The graphql specification requires that the parent field be set to null, or if that is non nullable that it bubble up null to its parent and so on. The non-nullable type is 'String' within parent type 'Post'",
+                                                        path      : ["post", "nonNullableError"],
+                                                        extensions: [
+                                                                classification: "NullValueInNonNullableField"
+                                                        ]
+                                                ]
+                                        ],
+                                ]
+                        ]
+                ],
+                [
+                        hasNext    : false,
+                        incremental: [
+                                [
+                                        path  : ["post"],
+                                        data  : [text: "The full text"],
                                 ]
                         ]
                 ]

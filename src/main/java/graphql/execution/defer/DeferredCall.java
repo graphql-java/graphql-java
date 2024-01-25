@@ -1,16 +1,21 @@
 package graphql.execution.defer;
 
+import com.google.common.collect.ImmutableList;
 import graphql.ExecutionResult;
 import graphql.GraphQLError;
 import graphql.Internal;
 import graphql.execution.Async;
+import graphql.execution.NonNullableFieldWasNullError;
+import graphql.execution.NonNullableFieldWasNullException;
 import graphql.execution.ResultPath;
 import graphql.incremental.DeferPayload;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.function.Supplier;
 
 /**
@@ -36,13 +41,13 @@ public class DeferredCall implements IncrementalCall<DeferPayload> {
     private final String label;
     private final ResultPath path;
     private final List<Supplier<CompletableFuture<FieldWithExecutionResult>>> calls;
-    private final DeferredErrorSupport errorSupport;
+    private final DeferredCallContext errorSupport;
 
     public DeferredCall(
             String label,
             ResultPath path,
             List<Supplier<CompletableFuture<FieldWithExecutionResult>>> calls,
-            DeferredErrorSupport deferredErrorSupport
+            DeferredCallContext deferredErrorSupport
     ) {
         this.label = label;
         this.path = path;
@@ -57,17 +62,45 @@ public class DeferredCall implements IncrementalCall<DeferPayload> {
         calls.forEach(call -> futures.add(call.get()));
 
         return futures.await()
-                .thenApply(this::transformToDeferredPayload);
+                .thenApply(this::transformToDeferredPayload)
+                .handle(this::handleNonNullableFieldError);
+    }
+
+    /**
+     * Non-nullable errors need special treatment.
+     * When they happen, all the sibling fields will be ignored in the result. So as soon as one of the field calls
+     * throw this error, we can ignore the {@link ExecutionResult} from all the fields associated with this {@link DeferredCall}
+     * and build a special {@link DeferPayload} that captures the details of the error.
+     */
+    private DeferPayload handleNonNullableFieldError(DeferPayload result, Throwable throwable) {
+        if (throwable != null) {
+            Throwable cause = throwable.getCause();
+            if (cause instanceof NonNullableFieldWasNullException) {
+                GraphQLError error = new NonNullableFieldWasNullError((NonNullableFieldWasNullException) cause);
+                return DeferPayload.newDeferredItem()
+                        .errors(Collections.singletonList(error))
+                        .label(label)
+                        .path(path)
+                        .build();
+            }
+            if (cause instanceof CompletionException) {
+                throw (CompletionException) cause;
+            }
+            throw new CompletionException(cause);
+        }
+        return result;
     }
 
     private DeferPayload transformToDeferredPayload(List<FieldWithExecutionResult> fieldWithExecutionResults) {
-        // TODO: Not sure how/if this errorSupport works
         List<GraphQLError> errorsEncountered = errorSupport.getErrors();
 
         Map<String, Object> dataMap = new HashMap<>();
 
+        ImmutableList.Builder<GraphQLError> errorsBuilder = ImmutableList.builder();
+
         fieldWithExecutionResults.forEach(entry -> {
             dataMap.put(entry.fieldName, entry.executionResult.getData());
+            errorsBuilder.addAll(entry.executionResult.getErrors());
         });
 
         return DeferPayload.newDeferredItem()
