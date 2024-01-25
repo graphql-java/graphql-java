@@ -1178,7 +1178,7 @@ class DeferExecutionSupportIntegrationTest extends Specification {
         ]
     }
 
-    def "can handle non nullable error"() {
+    def "can handle non nullable error in one of the defer calls"() {
         def query = """
             query {
                 post {
@@ -1231,6 +1231,51 @@ class DeferExecutionSupportIntegrationTest extends Specification {
                                 [
                                         path  : ["post"],
                                         data  : [text: "The full text"],
+                                ]
+                        ]
+                ]
+        ]
+    }
+
+    def "can handle non nullable error in the initial result"() {
+        def query = """
+            query {
+                post {
+                    id
+                    nonNullableError
+                    ... @defer {
+                        summary
+                    }
+                }
+            }
+        """
+
+        when:
+        def initialResult = executeQuery(query)
+
+        then:
+        initialResult.toSpecification() == [
+                data   : [post: null],
+                errors : [
+                        [message   : "The field at path '/post/nonNullableError' was declared as a non null type, but the code involved in retrieving data has wrongly returned a null value.  The graphql specification requires that the parent field be set to null, or if that is non nullable that it bubble up null to its parent and so on. The non-nullable type is 'String' within parent type 'Post'",
+                         path      : ["post", "nonNullableError"],
+                         extensions: [classification: "NullValueInNonNullableField"]
+                        ]
+                ],
+                hasNext: true
+        ]
+
+        when:
+        def incrementalResults = getIncrementalResults(initialResult)
+
+        then:
+        incrementalResults == [
+                [
+                        hasNext    : false,
+                        incremental: [
+                                [
+                                        path: ["post"],
+                                        data: [summary: "A summary"],
                                 ]
                         ]
                 ]
