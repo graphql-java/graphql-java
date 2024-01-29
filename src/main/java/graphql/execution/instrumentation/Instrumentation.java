@@ -1,6 +1,5 @@
 package graphql.execution.instrumentation;
 
-import graphql.DeprecatedAt;
 import graphql.ExecutionInput;
 import graphql.ExecutionResult;
 import graphql.PublicSpi;
@@ -49,8 +48,7 @@ public interface Instrumentation {
      *
      * @deprecated use {@link #createState(InstrumentationCreateStateParameters)} instead
      */
-    @Deprecated
-    @DeprecatedAt("2022-07-26")
+    @Deprecated(since = "2022-07-26")
     default InstrumentationState createState() {
         return null;
     }
@@ -63,8 +61,7 @@ public interface Instrumentation {
      *
      * @return a state object that is passed to each method
      */
-    @Deprecated
-    @DeprecatedAt("2023-08-25")
+    @Deprecated(since = "2023-08-25")
     @Nullable
     default InstrumentationState createState(InstrumentationCreateStateParameters parameters) {
         return createState();
@@ -92,8 +89,7 @@ public interface Instrumentation {
      *
      * @deprecated use {@link #beginExecution(InstrumentationExecutionParameters, InstrumentationState)} instead
      */
-    @Deprecated
-    @DeprecatedAt("2022-07-26")
+    @Deprecated(since = "2022-07-26")
     @NotNull
     default InstrumentationContext<ExecutionResult> beginExecution(InstrumentationExecutionParameters parameters) {
         return noOp();
@@ -121,8 +117,7 @@ public interface Instrumentation {
      *
      * @deprecated use {@link #beginParse(InstrumentationExecutionParameters, InstrumentationState)}  instead
      */
-    @Deprecated
-    @DeprecatedAt("2022-07-26")
+    @Deprecated(since = "2022-07-26")
     @NotNull
     default InstrumentationContext<Document> beginParse(InstrumentationExecutionParameters parameters) {
         return noOp();
@@ -150,8 +145,7 @@ public interface Instrumentation {
      *
      * @deprecated use {@link #beginValidation(InstrumentationValidationParameters, InstrumentationState)} instead
      */
-    @Deprecated
-    @DeprecatedAt("2022-07-26")
+    @Deprecated(since = "2022-07-26")
     @NotNull
     default InstrumentationContext<List<ValidationError>> beginValidation(InstrumentationValidationParameters parameters) {
         return noOp();
@@ -179,8 +173,7 @@ public interface Instrumentation {
      *
      * @deprecated use {@link #beginExecuteOperation(InstrumentationExecuteOperationParameters, InstrumentationState)} instead
      */
-    @Deprecated
-    @DeprecatedAt("2022-07-26")
+    @Deprecated(since = "2022-07-26")
     @NotNull
     default InstrumentationContext<ExecutionResult> beginExecuteOperation(InstrumentationExecuteOperationParameters parameters) {
         return noOp();
@@ -209,8 +202,7 @@ public interface Instrumentation {
      *
      * @deprecated use {@link #beginExecutionStrategy(InstrumentationExecutionStrategyParameters, InstrumentationState)} instead
      */
-    @Deprecated
-    @DeprecatedAt("2022-07-26")
+    @Deprecated(since = "2022-07-26")
     @NotNull
     default ExecutionStrategyInstrumentationContext beginExecutionStrategy(InstrumentationExecutionStrategyParameters parameters) {
         return ExecutionStrategyInstrumentationContext.NOOP;
@@ -240,8 +232,7 @@ public interface Instrumentation {
      *
      * @deprecated use {@link #beginSubscribedFieldEvent(InstrumentationFieldParameters, InstrumentationState)}  instead
      */
-    @Deprecated
-    @DeprecatedAt("2022-07-26")
+    @Deprecated(since = "2022-07-26")
     @NotNull
     default InstrumentationContext<ExecutionResult> beginSubscribedFieldEvent(InstrumentationFieldParameters parameters) {
         return noOp();
@@ -269,8 +260,7 @@ public interface Instrumentation {
      *
      * @deprecated use {@link #beginField(InstrumentationFieldParameters, InstrumentationState)}   instead
      */
-    @Deprecated
-    @DeprecatedAt("2022-07-26")
+    @Deprecated(since = "2022-07-26")
     @NotNull
     default InstrumentationContext<ExecutionResult> beginField(InstrumentationFieldParameters parameters) {
         return noOp();
@@ -298,8 +288,7 @@ public interface Instrumentation {
      *
      * @deprecated use {@link #beginFieldFetch(InstrumentationFieldFetchParameters, InstrumentationState)} instead
      */
-    @Deprecated
-    @DeprecatedAt("2022-07-26")
+    @Deprecated(since = "2022-07-26")
     @NotNull
     default InstrumentationContext<Object> beginFieldFetch(InstrumentationFieldFetchParameters parameters) {
         return noOp();
@@ -328,8 +317,7 @@ public interface Instrumentation {
      *
      * @deprecated use {@link #beginFieldComplete(InstrumentationFieldCompleteParameters, InstrumentationState)} instead
      */
-    @Deprecated
-    @DeprecatedAt("2022-07-26")
+    @Deprecated(since = "2022-07-26")
     @NotNull
     default InstrumentationContext<ExecutionResult> beginFieldComplete(InstrumentationFieldCompleteParameters parameters) {
         return noOp();
@@ -357,8 +345,7 @@ public interface Instrumentation {
      *
      * @deprecated use {@link #beginFieldListComplete(InstrumentationFieldCompleteParameters, InstrumentationState)}  instead
      */
-    @Deprecated
-    @DeprecatedAt("2022-07-26")
+    @Deprecated(since = "2022-07-26")
     @NotNull
     default InstrumentationContext<ExecutionResult> beginFieldListComplete(InstrumentationFieldCompleteParameters parameters) {
         return noOp();
@@ -388,8 +375,7 @@ public interface Instrumentation {
      *
      * @deprecated use {@link #instrumentExecutionInput(ExecutionInput, InstrumentationExecutionParameters, InstrumentationState)} instead
      */
-    @Deprecated
-    @DeprecatedAt("2022-07-26")
+    @Deprecated(since = "2022-07-26")
     @NotNull
     default ExecutionInput instrumentExecutionInput(ExecutionInput executionInput, InstrumentationExecutionParameters parameters) {
         return executionInput;
@@ -420,8 +406,7 @@ public interface Instrumentation {
      *
      * @deprecated use {@link #instrumentDocumentAndVariables(DocumentAndVariables, InstrumentationExecutionParameters, InstrumentationState)}  instead
      */
-    @Deprecated
-    @DeprecatedAt("2022-07-26")
+    @Deprecated(since = "2022-07-26")
     @NotNull
     default DocumentAndVariables instrumentDocumentAndVariables(DocumentAndVariables documentAndVariables, InstrumentationExecutionParameters parameters) {
         return documentAndVariables;
@@ -452,8 +437,7 @@ public interface Instrumentation {
      *
      * @deprecated use {@link #instrumentSchema(GraphQLSchema, InstrumentationExecutionParameters, InstrumentationState)}  instead
      */
-    @Deprecated
-    @DeprecatedAt("2022-07-26")
+    @Deprecated(since = "2022-07-26")
     @NotNull
     default GraphQLSchema instrumentSchema(GraphQLSchema schema, InstrumentationExecutionParameters parameters) {
         return schema;
@@ -485,8 +469,7 @@ public interface Instrumentation {
      *
      * @deprecated use {@link #instrumentExecutionContext(ExecutionContext, InstrumentationExecutionParameters, InstrumentationState)} instead
      */
-    @Deprecated
-    @DeprecatedAt("2022-07-26")
+    @Deprecated(since = "2022-07-26")
     @NotNull
     default ExecutionContext instrumentExecutionContext(ExecutionContext executionContext, InstrumentationExecutionParameters parameters) {
         return executionContext;
@@ -507,7 +490,6 @@ public interface Instrumentation {
         return instrumentExecutionContext(executionContext, parameters.withNewState(state));
     }
 
-
     /**
      * This is called to instrument a {@link DataFetcher} just before it is used to fetch a field, allowing you
      * to adjust what information is passed back or record information about specific data fetches.  Note
@@ -521,8 +503,7 @@ public interface Instrumentation {
      *
      * @deprecated use {@link #instrumentDataFetcher(DataFetcher, InstrumentationFieldFetchParameters, InstrumentationState)}  instead
      */
-    @Deprecated
-    @DeprecatedAt("2022-07-26")
+    @Deprecated(since = "2022-07-26")
     @NotNull
     default DataFetcher<?> instrumentDataFetcher(DataFetcher<?> dataFetcher, InstrumentationFieldFetchParameters parameters) {
         return dataFetcher;
@@ -555,8 +536,7 @@ public interface Instrumentation {
      *
      * @deprecated use {@link #instrumentExecutionResult(ExecutionResult, InstrumentationExecutionParameters, InstrumentationState)}   instead
      */
-    @Deprecated
-    @DeprecatedAt("2022-07-26")
+    @Deprecated(since = "2022-07-26")
     @NotNull
     default CompletableFuture<ExecutionResult> instrumentExecutionResult(ExecutionResult executionResult, InstrumentationExecutionParameters parameters) {
         return CompletableFuture.completedFuture(executionResult);

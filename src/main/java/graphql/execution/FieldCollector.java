@@ -25,7 +25,7 @@ import static graphql.execution.TypeFromAST.getTypeFromAST;
 
 /**
  * A field collector can iterate over field selection sets and build out the sub fields that have been selected,
- * expanding named and inline fragments as it goes.s
+ * expanding named and inline fragments as it goes.
  */
 @Internal
 public class FieldCollector {

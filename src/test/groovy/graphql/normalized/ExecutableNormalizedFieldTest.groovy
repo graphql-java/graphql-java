@@ -48,8 +48,7 @@ class ExecutableNormalizedFieldTest extends Specification {
         """
         Document document = TestUtil.parseQuery(query)
 
-        ExecutableNormalizedOperationFactory normalizedOperationFactory = new ExecutableNormalizedOperationFactory()
-        def normalizedOperation = normalizedOperationFactory.createExecutableNormalizedOperation(graphQLSchema, document, null, CoercedVariables.emptyVariables())
+        def normalizedOperation = ExecutableNormalizedOperationFactory.createExecutableNormalizedOperation(graphQLSchema, document, null, CoercedVariables.emptyVariables())
 
         def pets = normalizedOperation.getTopLevelFields()[0]
         def allChildren = pets.getChildren()

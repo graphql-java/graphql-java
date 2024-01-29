@@ -2,7 +2,6 @@ package graphql.validation;
 
 
 import com.google.common.collect.ImmutableMap;
-import graphql.DeprecatedAt;
 import graphql.ErrorType;
 import graphql.GraphQLError;
 import graphql.GraphqlErrorHelper;
@@ -24,49 +23,44 @@ public class ValidationError implements GraphQLError {
     private final List<String> queryPath = new ArrayList<>();
     private final ImmutableMap<String, Object> extensions;
 
-    @Deprecated
-    @DeprecatedAt("2022-07-10")
+    @Deprecated(since = "2022-07-10", forRemoval = true)
     public ValidationError(ValidationErrorClassification validationErrorType) {
         this(newValidationError()
-                .validationErrorType(validationErrorType));
+          .validationErrorType(validationErrorType));
     }
 
-    @Deprecated
-    @DeprecatedAt("2022-07-10")
+    @Deprecated(since = "2022-07-10", forRemoval = true)
     public ValidationError(ValidationErrorClassification validationErrorType, SourceLocation sourceLocation, String description) {
         this(newValidationError()
-                .validationErrorType(validationErrorType)
-                .sourceLocation(sourceLocation)
-                .description(description));
+          .validationErrorType(validationErrorType)
+          .sourceLocation(sourceLocation)
+          .description(description));
     }
 
-    @Deprecated
-    @DeprecatedAt("2022-07-10")
+    @Deprecated(since = "2022-07-10", forRemoval = true)
     public ValidationError(ValidationErrorType validationErrorType, SourceLocation sourceLocation, String description, List<String> queryPath) {
         this(newValidationError()
-                .validationErrorType(validationErrorType)
-                .sourceLocation(sourceLocation)
-                .description(description)
-                .queryPath(queryPath));
+          .validationErrorType(validationErrorType)
+          .sourceLocation(sourceLocation)
+          .description(description)
+          .queryPath(queryPath));
     }
 
-    @Deprecated
-    @DeprecatedAt("2022-07-10")
+    @Deprecated(since = "2022-07-10", forRemoval = true)
     public ValidationError(ValidationErrorType validationErrorType, List<SourceLocation> sourceLocations, String description) {
         this(newValidationError()
-                .validationErrorType(validationErrorType)
-                .sourceLocations(sourceLocations)
-                .description(description));
+          .validationErrorType(validationErrorType)
+          .sourceLocations(sourceLocations)
+          .description(description));
     }
 
-    @Deprecated
-    @DeprecatedAt("2022-07-10")
+    @Deprecated(since = "2022-07-10", forRemoval = true)
     public ValidationError(ValidationErrorType validationErrorType, List<SourceLocation> sourceLocations, String description, List<String> queryPath) {
         this(newValidationError()
-                .validationErrorType(validationErrorType)
-                .sourceLocations(sourceLocations)
-                .description(description)
-                .queryPath(queryPath));
+          .validationErrorType(validationErrorType)
+          .sourceLocations(sourceLocations)
+          .description(description)
+          .queryPath(queryPath));
     }
 
     private ValidationError(Builder builder) {

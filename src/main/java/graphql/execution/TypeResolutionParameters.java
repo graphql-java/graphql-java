@@ -1,6 +1,5 @@
 package graphql.execution;
 
-import graphql.DeprecatedAt;
 import graphql.GraphQLContext;
 import graphql.Internal;
 import graphql.TypeResolutionEnvironment;
@@ -74,8 +73,7 @@ public class TypeResolutionParameters {
      *
      * @deprecated use {@link #getGraphQLContext()} instead
      */
-    @Deprecated
-    @DeprecatedAt("2021-07-05")
+    @Deprecated(since = "2021-07-05")
     public Object getContext() {
         return context;
     }
@@ -125,8 +123,7 @@ public class TypeResolutionParameters {
             return this;
         }
 
-        @Deprecated
-        @DeprecatedAt("2021-07-05")
+        @Deprecated(since = "2021-07-05")
         public Builder context(Object context) {
             this.context = context;
             return this;
