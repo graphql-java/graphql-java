@@ -26,6 +26,7 @@ class DeferExecutionSupportIntegrationTest extends Specification {
     def schemaSpec = '''
             type Query {
                 post : Post 
+                posts: [Post]
                 hello: String
                 item(type: String!): Item 
             }
@@ -54,6 +55,7 @@ class DeferExecutionSupportIntegrationTest extends Specification {
                 coercionError: Int 
                 typeMismatchError: [String]
                 nonNullableError: String!
+                wordCount: Int
             }
             
             type Comment {
@@ -75,15 +77,19 @@ class DeferExecutionSupportIntegrationTest extends Specification {
     GraphQL graphQL = null
 
     private static DataFetcher resolve(Object value) {
-        return resolve(value, 0)
+        return resolve(value, 0, false)
     }
 
     private static DataFetcher resolve(Object value, Integer sleepMs) {
+        return resolve(value, sleepMs, false)
+    }
+
+    private static DataFetcher resolve(Object value, Integer sleepMs, boolean allowMultipleCalls) {
         return new DataFetcher() {
             boolean executed = false;
             @Override
             Object get(DataFetchingEnvironment environment) throws Exception {
-                if(executed) {
+                if(executed && !allowMultipleCalls) {
                     throw new IllegalStateException("This data fetcher can run only once")
                 }
                 executed = true;
@@ -122,11 +128,17 @@ class DeferExecutionSupportIntegrationTest extends Specification {
         def runtimeWiring = RuntimeWiring.newRuntimeWiring()
                 .type(newTypeWiring("Query")
                         .dataFetcher("post", resolve([id: "1001"]))
+                        .dataFetcher("posts", resolve([
+                                [id: "1001"],
+                                [id: "1002"],
+                                [id: "1003"]
+                        ]))
                         .dataFetcher("hello", resolve("world"))
                         .dataFetcher("item", resolveItem())
                 )
                 .type(newTypeWiring("Post").dataFetcher("summary", resolve("A summary", 10)))
                 .type(newTypeWiring("Post").dataFetcher("text", resolve("The full text", 100)))
+                .type(newTypeWiring("Post").dataFetcher("wordCount", resolve(45999, 10, true)))
                 .type(newTypeWiring("Post").dataFetcher("latestComment", resolve([title: "Comment title"], 10)))
                 .type(newTypeWiring("Post").dataFetcher("dataFetcherError", resolveWithException()))
                 .type(newTypeWiring("Post").dataFetcher("coercionError", resolve("Not a number", 10)))
@@ -1280,6 +1292,49 @@ class DeferExecutionSupportIntegrationTest extends Specification {
                         ]
                 ]
         ]
+    }
+
+    def "defer on list items"() {
+        def query = '''
+            query {
+                posts {
+                    id
+                    ... @defer {
+                        wordCount
+                    }
+                }
+            }
+        '''
+
+        when:
+        def initialResult = executeQuery(query)
+
+        then:
+        initialResult.toSpecification() == [
+                data   : [posts: [[id: "1001"], [id: "1002"], [id: "1003"]]],
+                hasNext: true
+        ]
+
+        when:
+        def incrementalResults = getIncrementalResults(initialResult)
+
+        then:
+        // Ordering is non-deterministic, so we assert on the things we know are going to be true.
+
+        incrementalResults.size() == 3
+        // only the last payload has "hasNext=true"
+        incrementalResults[0].hasNext == true
+        incrementalResults[1].hasNext == true
+        incrementalResults[2].hasNext == false
+
+        // every payload has only 1 incremental item, and the data is the same for all of them
+        incrementalResults.every { it.incremental.size == 1 }
+        incrementalResults.every { it.incremental[0].data == [wordCount: 45999] }
+
+        // path is different for every payload
+        incrementalResults.any { it.incremental[0].path == ["posts", 0] }
+        incrementalResults.any { it.incremental[0].path == ["posts", 1] }
+        incrementalResults.any { it.incremental[0].path == ["posts", 2] }
     }
 
     private ExecutionResult executeQuery(String query) {
