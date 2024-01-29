@@ -11,6 +11,7 @@ import graphql.language.NodeUtil;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.function.Function;
 
 import static graphql.Directives.DeferDirective;
 
@@ -19,9 +20,10 @@ public class IncrementalUtils {
     private IncrementalUtils() {}
 
     // TODO: Refactor this to reduce duplication with IncrementalNodes
-    public static DeferExecution createDeferExecution(
+    public static <T> T createDeferExecution(
             Map<String, Object> variables,
-            List<Directive> directives
+            List<Directive> directives,
+            Function<String, T> builderFunction
     ) {
         Directive deferDirective = NodeUtil.findNodeByName(directives, DeferDirective.getName());
 
@@ -38,12 +40,12 @@ public class IncrementalUtils {
             Object label = argumentValues.get("label");
 
             if (label == null) {
-                return new DeferExecution(null);
+                return builderFunction.apply(null);
             }
 
             Assert.assertTrue(label instanceof String, () -> String.format("The 'label' argument from the '%s' directive MUST contain a String value", DeferDirective.getName()));
 
-            return new DeferExecution((String) label);
+            return builderFunction.apply((String) label);
         }
 
         return null;

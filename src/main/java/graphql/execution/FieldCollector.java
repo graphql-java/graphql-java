@@ -108,7 +108,8 @@ public class FieldCollector {
 
         DeferExecution deferExecution = incrementalSupport ? IncrementalUtils.createDeferExecution(
                 parameters.getVariables(),
-                fragmentSpread.getDirectives()
+                fragmentSpread.getDirectives(),
+                DeferExecution::new
         ) : null;
 
         collectFields(parameters, fragmentDefinition.getSelectionSet(), visitedFragments, fields, deferExecution, incrementalSupport);
@@ -125,7 +126,8 @@ public class FieldCollector {
 
         DeferExecution deferExecution = incrementalSupport ? IncrementalUtils.createDeferExecution(
                 parameters.getVariables(),
-                inlineFragment.getDirectives()
+                inlineFragment.getDirectives(),
+                DeferExecution::new
         ) : null;
 
         collectFields(parameters, inlineFragment.getSelectionSet(), visitedFragments, fields, deferExecution, incrementalSupport);
