@@ -20,18 +20,9 @@ class IncrementalContextDeferTest extends Specification {
         incrementalContext.enqueue(offThread("C", 10, "/field/path")) // <-- will finish first
 
         when:
-        List<DelayedIncrementalExecutionResult> results = []
-        def subscriber = new BasicSubscriber() {
-            @Override
-            void onNext(DelayedIncrementalExecutionResult executionResult) {
-                results.add(executionResult)
-                subscription.request(1)
-            }
-        }
-        incrementalContext.startDeferredCalls().subscribe(subscriber)
-        Awaitility.await().untilTrue(subscriber.finished)
-        then:
+        List<DelayedIncrementalExecutionResult> results = startAndWaitCalls(incrementalContext)
 
+        then:
         assertResultsSizeAndHasNextRule(3, results)
         results[0].incremental[0].data["c"] == "C"
         results[1].incremental[0].data["b"] == "B"
@@ -46,19 +37,9 @@ class IncrementalContextDeferTest extends Specification {
         incrementalContext.enqueue(offThreadCallWithinCall(incrementalContext, "C", "C_Child", 100, "/c"))
 
         when:
-        List<DelayedIncrementalExecutionResult> results = []
-        BasicSubscriber subscriber = new BasicSubscriber() {
-            @Override
-            void onNext(DelayedIncrementalExecutionResult executionResult) {
-                results.add(executionResult)
-                subscription.request(1)
-            }
-        }
-        incrementalContext.startDeferredCalls().subscribe(subscriber)
+        List<DelayedIncrementalExecutionResult> results = startAndWaitCalls(incrementalContext)
 
-        Awaitility.await().untilTrue(subscriber.finished)
         then:
-
         assertResultsSizeAndHasNextRule(6, results)
         results[0].incremental[0].data["c"] == "C"
         results[1].incremental[0].data["c_child"] == "C_Child"
@@ -76,21 +57,7 @@ class IncrementalContextDeferTest extends Specification {
         incrementalContext.enqueue(offThread("C", 10, "/field/path"))
 
         when:
-        List<DelayedIncrementalExecutionResult> results = []
-        Throwable thrown = null
-        def subscriber = new BasicSubscriber() {
-            @Override
-            void onNext(DelayedIncrementalExecutionResult executionResult) {
-                results.add(executionResult)
-                subscription.request(1)
-            }
-
-            @Override
-            void onError(Throwable t) {
-                thrown = t
-                finished.set(true)
-            }
-
+        def subscriber = new CapturingSubscriber() {
             @Override
             void onComplete() {
                 assert false, "This should not be called!"
@@ -99,8 +66,11 @@ class IncrementalContextDeferTest extends Specification {
         incrementalContext.startDeferredCalls().subscribe(subscriber)
 
         Awaitility.await().untilTrue(subscriber.finished)
-        then:
 
+        def results = subscriber.executionResults
+        def thrown = subscriber.throwable
+
+        then:
         thrown.message == "java.lang.RuntimeException: Bang"
         results[0].incremental[0].data["c"] == "C"
     }
@@ -113,11 +83,10 @@ class IncrementalContextDeferTest extends Specification {
         incrementalContext.enqueue(offThread("C", 10, "/field/path")) // <-- will finish first
 
         when:
-        List<DelayedIncrementalExecutionResult> results = []
-        def subscriber = new BasicSubscriber() {
+        def subscriber = new CapturingSubscriber() {
             @Override
             void onNext(DelayedIncrementalExecutionResult executionResult) {
-                results.add(executionResult)
+                this.executionResults.add(executionResult)
                 subscription.cancel()
                 finished.set(true)
             }
@@ -125,15 +94,17 @@ class IncrementalContextDeferTest extends Specification {
         incrementalContext.startDeferredCalls().subscribe(subscriber)
 
         Awaitility.await().untilTrue(subscriber.finished)
-        then:
+        def results = subscriber.executionResults
 
+        then:
         results.size() == 1
         results[0].incremental[0].data["c"] == "C"
-        // Cancelling the subscription will result in an invalid state. The last result item will have "hasNext=true".
+        // Cancelling the subscription will result in an invalid state.
+        // The last result item will have "hasNext=true" (but there will be no next)
         results[0].hasNext
     }
 
-    def "you cant subscribe twice"() {
+    def "you can't subscribe twice"() {
         given:
         def incrementalContext = new IncrementalContext()
         incrementalContext.enqueue(offThread("A", 100, "/field/path"))
@@ -141,16 +112,14 @@ class IncrementalContextDeferTest extends Specification {
         incrementalContext.enqueue(offThread("C", 10, "/field/path")) // <-- will finish first
 
         when:
-        Throwable expectedThrowable
-        incrementalContext.startDeferredCalls().subscribe(new BasicSubscriber())
-        incrementalContext.startDeferredCalls().subscribe(new BasicSubscriber() {
-            @Override
-            void onError(Throwable t) {
-                expectedThrowable = t
-            }
-        })
+        def subscriber1 = new CapturingSubscriber()
+        def subscriber2 = new CapturingSubscriber()
+        incrementalContext.startDeferredCalls().subscribe(subscriber1)
+        incrementalContext.startDeferredCalls().subscribe(subscriber2)
+
         then:
-        expectedThrowable != null
+        subscriber2.throwable != null
+        subscriber2.throwable.message == "This publisher only supports one subscriber"
     }
 
     def "indicates if there are any defers present"() {
@@ -199,17 +168,8 @@ class IncrementalContextDeferTest extends Specification {
         def incrementalContext = new IncrementalContext()
         incrementalContext.enqueue(deferredCall)
 
-        List<DelayedIncrementalExecutionResult> results = []
-        BasicSubscriber subscriber = new BasicSubscriber() {
-            @Override
-            void onNext(DelayedIncrementalExecutionResult executionResult) {
-                results.add(executionResult)
-                subscription.request(1)
-            }
-        }
-        incrementalContext.startDeferredCalls().subscribe(subscriber)
+        def results = startAndWaitCalls(incrementalContext)
 
-        Awaitility.await().untilTrue(subscriber.finished)
         then:
         assertResultsSizeAndHasNextRule(1, results)
         results[0].incremental[0].data["call1"] == "Call 1"
@@ -224,16 +184,7 @@ class IncrementalContextDeferTest extends Specification {
         incrementalContext.enqueue(offThread("C", 10, "/field/path")) // <-- will finish first
 
         when:
-        List<DelayedIncrementalExecutionResult> results = []
-        def subscriber = new BasicSubscriber() {
-            @Override
-            void onNext(DelayedIncrementalExecutionResult executionResult) {
-                results.add(executionResult)
-                subscription.request(1)
-            }
-        }
-        incrementalContext.startDeferredCalls().subscribe(subscriber)
-        Awaitility.await().untilTrue(subscriber.finished)
+        List<DelayedIncrementalExecutionResult> results = startAndWaitCalls(incrementalContext)
 
         then: "hasNext placement should be deterministic - only the last event published should have 'hasNext=true'"
         assertResultsSizeAndHasNextRule(3, results)
@@ -285,5 +236,14 @@ class IncrementalContextDeferTest extends Specification {
             assert (hasNext && !isLastResult)
                     || (!hasNext && isLastResult)
         }
+    }
+
+    private static List<DelayedIncrementalExecutionResult> startAndWaitCalls(IncrementalContext incrementalContext) {
+        def subscriber = new CapturingSubscriber()
+
+        incrementalContext.startDeferredCalls().subscribe(subscriber)
+
+        Awaitility.await().untilTrue(subscriber.finished)
+        return subscriber.executionResults
     }
 }
