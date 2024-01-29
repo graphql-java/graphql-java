@@ -1,6 +1,5 @@
 package graphql.execution.instrumentation.parameters;
 
-import graphql.DeprecatedAt;
 import graphql.ExecutionInput;
 import graphql.PublicApi;
 import graphql.execution.instrumentation.Instrumentation;
@@ -29,8 +28,7 @@ public class InstrumentationValidationParameters extends InstrumentationExecutio
      *
      * @deprecated state is now passed in direct to instrumentation methods
      */
-    @Deprecated
-    @DeprecatedAt("2022-07-26")
+    @Deprecated(since = "2022-07-26")
     @Override
     public InstrumentationValidationParameters withNewState(InstrumentationState instrumentationState) {
         return new InstrumentationValidationParameters(

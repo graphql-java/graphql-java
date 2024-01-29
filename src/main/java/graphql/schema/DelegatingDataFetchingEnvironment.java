@@ -1,6 +1,5 @@
 package graphql.schema;
 
-import graphql.DeprecatedAt;
 import graphql.GraphQLContext;
 import graphql.PublicApi;
 import graphql.execution.ExecutionId;
@@ -64,8 +63,7 @@ public class DelegatingDataFetchingEnvironment implements DataFetchingEnvironmen
         return delegateEnvironment.getArgumentOrDefault(name, defaultValue);
     }
 
-    @Deprecated
-    @DeprecatedAt("2022-04-17")
+    @Deprecated(since = "2022-04-17")
     @Override
     public <T> T getContext() {
         return delegateEnvironment.getContext();
@@ -91,8 +89,7 @@ public class DelegatingDataFetchingEnvironment implements DataFetchingEnvironmen
         return delegateEnvironment.getFieldDefinition();
     }
 
-    @Deprecated
-    @DeprecatedAt("2019-10-07")
+    @Deprecated(since = "2019-10-07")
     @Override
     public List<Field> getFields() {
         return delegateEnvironment.getFields();

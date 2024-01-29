@@ -19,7 +19,12 @@ import java.util.Set;
 @Internal
 public class ENFMerger {
 
-    public static void merge(ExecutableNormalizedField parent, List<ExecutableNormalizedField> childrenWithSameResultKey, GraphQLSchema schema) {
+    public static void merge(
+            ExecutableNormalizedField parent,
+            List<ExecutableNormalizedField> childrenWithSameResultKey,
+            GraphQLSchema schema,
+            boolean deferSupport
+    ) {
         // they have all the same result key
         // we can only merge the fields if they have the same field name + arguments + all children are the same
         List<Set<ExecutableNormalizedField>> possibleGroupsToMerge = new ArrayList<>();
@@ -28,7 +33,7 @@ public class ENFMerger {
             overPossibleGroups:
             for (Set<ExecutableNormalizedField> group : possibleGroupsToMerge) {
                 for (ExecutableNormalizedField fieldInGroup : group) {
-                    if(field.getFieldName().equals(Introspection.TypeNameMetaFieldDef.getName())) {
+                    if (field.getFieldName().equals(Introspection.TypeNameMetaFieldDef.getName())) {
                         addToGroup = true;
                         group.add(field);
                         continue overPossibleGroups;
@@ -63,8 +68,15 @@ public class ENFMerger {
                 // patching the first one to contain more objects, remove all others
                 Iterator<ExecutableNormalizedField> iterator = groupOfFields.iterator();
                 ExecutableNormalizedField first = iterator.next();
+
                 while (iterator.hasNext()) {
-                    parent.getChildren().remove(iterator.next());
+                    ExecutableNormalizedField next = iterator.next();
+                    parent.getChildren().remove(next);
+
+                    if (deferSupport) {
+                        // Move defer executions from removed field into the merged field's entry
+                        first.addDeferExecutions(next.getDeferExecutions());
+                    }
                 }
                 first.setObjectTypeNames(mergedObjects);
             }

@@ -668,6 +668,7 @@ public abstract class ExecutionStrategy {
                 .objectType(resolvedObjectType)
                 .fragments(executionContext.getFragmentsByName())
                 .variables(executionContext.getCoercedVariables().toMap())
+                .graphQLContext(executionContext.getGraphQLContext())
                 .build();
 
         MergedSelectionSet subFields = fieldCollector.collectFields(collectorParameters, parameters.getField());

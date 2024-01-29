@@ -3,7 +3,6 @@ package graphql.schema;
 
 import com.google.common.collect.ImmutableList;
 import graphql.Assert;
-import graphql.DeprecatedAt;
 import graphql.DirectivesUtil;
 import graphql.Internal;
 import graphql.PublicApi;
@@ -102,8 +101,7 @@ public class GraphQLUnionType implements GraphQLNamedOutputType, GraphQLComposit
 
     // to be removed in a future version when all code is in the code registry
     @Internal
-    @Deprecated
-    @DeprecatedAt("2018-12-03")
+    @Deprecated(since = "2018-12-03")
     TypeResolver getTypeResolver() {
         return typeResolver;
     }
@@ -282,13 +280,11 @@ public class GraphQLUnionType implements GraphQLNamedOutputType, GraphQLComposit
          *
          * @deprecated use {@link graphql.schema.GraphQLCodeRegistry.Builder#typeResolver(GraphQLUnionType, TypeResolver)} instead
          */
-        @Deprecated
-        @DeprecatedAt("2018-12-03")
+        @Deprecated(since = "2018-12-03")
         public Builder typeResolver(TypeResolver typeResolver) {
             this.typeResolver = typeResolver;
             return this;
         }
-
 
         public Builder possibleType(GraphQLObjectType type) {
             assertNotNull(type, () -> "possible type can't be null");

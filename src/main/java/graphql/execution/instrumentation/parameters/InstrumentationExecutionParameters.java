@@ -1,6 +1,5 @@
 package graphql.execution.instrumentation.parameters;
 
-import graphql.DeprecatedAt;
 import graphql.ExecutionInput;
 import graphql.GraphQLContext;
 import graphql.PublicApi;
@@ -45,8 +44,7 @@ public class InstrumentationExecutionParameters {
      *
      * @deprecated state is now passed in direct to instrumentation methods
      */
-    @Deprecated
-    @DeprecatedAt("2022-07-26")
+    @Deprecated(since = "2022-07-26")
     public InstrumentationExecutionParameters withNewState(InstrumentationState instrumentationState) {
         return new InstrumentationExecutionParameters(this.getExecutionInput(), this.schema, instrumentationState);
     }
@@ -70,8 +68,7 @@ public class InstrumentationExecutionParameters {
      *
      * @deprecated use {@link #getGraphQLContext()} instead
      */
-    @Deprecated
-    @DeprecatedAt("2021-07-05")
+    @Deprecated(since = "2021-07-05")
     @SuppressWarnings({"unchecked", "TypeParameterUnusedInFormals"})
     public <T> T getContext() {
         return (T) context;
@@ -95,8 +92,7 @@ public class InstrumentationExecutionParameters {
      *
      * @deprecated state is now passed in direct to instrumentation methods
      */
-    @Deprecated
-    @DeprecatedAt("2022-07-26")
+    @Deprecated(since = "2022-07-26")
     @SuppressWarnings("TypeParameterUnusedInFormals")
     public <T extends InstrumentationState> T getInstrumentationState() {
         //noinspection unchecked

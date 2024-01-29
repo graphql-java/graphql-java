@@ -25,7 +25,11 @@ class GraphQLErrorTest extends Specification {
         where:
 
         gError                                                                                         | expectedMap
-        new ValidationError(ValidationErrorType.UnknownType, mkLocations(), "Test ValidationError")    |
+        ValidationError.newValidationError()
+                .validationErrorType(ValidationErrorType.UnknownType)
+                .sourceLocations(mkLocations())
+                .description("Test ValidationError")
+                .build()                                                                               |
                 [
                         locations: [[line: 666, column: 999], [line: 333, column: 0]],
                         message  : "Test ValidationError",
