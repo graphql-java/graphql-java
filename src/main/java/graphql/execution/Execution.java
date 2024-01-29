@@ -196,12 +196,14 @@ public class Execution {
         return result.thenApply(er -> {
             IncrementalContext deferSupport = executionContext.getIncrementalContext();
             if (deferSupport.isDeferDetected()) {
-                // we start the rest of the query now to maximize throughput.  We have the initial important results
-                // and now we can start the rest of the calls as early as possible (even before some one subscribes)
+                // we start the rest of the query now to maximize throughput.  We have the initial important results,
+                // and now we can start the rest of the calls as early as possible (even before someone subscribes)
                 Publisher<DelayedIncrementalExecutionResult> publisher = deferSupport.startDeferredCalls();
 
                 return IncrementalExecutionResultImpl.fromExecutionResult(er)
-                        // TODO: would `hasNext` ever be false?
+                        // "hasNext" can, in theory, be "false" when all the incremental items are delivered in the
+                        // first response payload. However, the current implementation will never result in this.
+                        // The behaviour might change if we decide to make optimizations in the future.
                         .hasNext(true)
                         .incrementalItemPublisher(publisher)
                         .build();

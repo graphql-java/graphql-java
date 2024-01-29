@@ -126,9 +126,9 @@ public class MergedField {
     }
 
     /**
-     * TODO: Javadoc
-     * TODO: should be getIncrementalExecutions?
-     * @return
+     * Get a list of all {@link DeferExecution}s that this field is part of
+     *
+     * @return all defer executions.
      */
     @ExperimentalApi
     public ImmutableList<DeferExecution> getDeferExecutions() {

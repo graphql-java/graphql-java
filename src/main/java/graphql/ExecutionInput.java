@@ -142,14 +142,14 @@ public class ExecutionInput {
     }
 
     /**
-     * TODO: Javadoc
-     * @return
+     * @return whether the execution has support for incremental delivery of data, via the @defer and @stream directives.
+     *
+     * This is currently an experimental feature, and only @defer is supported.
      */
     @ExperimentalApi
     public boolean isIncrementalSupport() {
         return incrementalSupport;
     }
-
 
     /**
      * This helps you transform the current ExecutionInput object into another one by starting a builder with all
@@ -394,9 +394,11 @@ public class ExecutionInput {
         }
 
         /**
-         * TODO: Javadoc
-         * @param incrementalSupport
-         * @return
+         * @param incrementalSupport whether the execution has support for incremental delivery of data, via the @defer and @stream directives.
+         * <p>
+         * This is currently an experimental feature, and only @defer is supported.
+         *
+         * @return this builder
          */
         @ExperimentalApi
         public Builder incrementalSupport(boolean incrementalSupport) {
