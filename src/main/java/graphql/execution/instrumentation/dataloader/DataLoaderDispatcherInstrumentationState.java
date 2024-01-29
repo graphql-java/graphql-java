@@ -6,7 +6,6 @@ import graphql.PublicApi;
 import graphql.execution.instrumentation.InstrumentationState;
 import org.dataloader.DataLoader;
 import org.dataloader.DataLoaderRegistry;
-import org.slf4j.Logger;
 
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
@@ -45,9 +44,9 @@ public class DataLoaderDispatcherInstrumentationState implements Instrumentation
     private volatile boolean aggressivelyBatching = true;
     private volatile boolean hasNoDataLoaders;
 
-    public DataLoaderDispatcherInstrumentationState(Logger log, DataLoaderRegistry dataLoaderRegistry) {
+    public DataLoaderDispatcherInstrumentationState(DataLoaderRegistry dataLoaderRegistry) {
         this.dataLoaderRegistry = new AtomicReference<>(dataLoaderRegistry);
-        this.approach = new FieldLevelTrackingApproach(log, this::getDataLoaderRegistry);
+        this.approach = new FieldLevelTrackingApproach(this::getDataLoaderRegistry);
         this.state = approach.createState();
         hasNoDataLoaders = checkForNoDataLoader(dataLoaderRegistry);
     }

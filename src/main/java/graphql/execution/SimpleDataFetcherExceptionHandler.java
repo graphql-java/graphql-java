@@ -3,8 +3,6 @@ package graphql.execution;
 import graphql.ExceptionWhileDataFetching;
 import graphql.PublicApi;
 import graphql.language.SourceLocation;
-import graphql.util.LogKit;
-import org.slf4j.Logger;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
@@ -15,8 +13,6 @@ import java.util.concurrent.CompletionException;
  */
 @PublicApi
 public class SimpleDataFetcherExceptionHandler implements DataFetcherExceptionHandler {
-
-    private static final Logger logNotSafe = LogKit.getNotPrivacySafeLogger(SimpleDataFetcherExceptionHandler.class);
 
     static final SimpleDataFetcherExceptionHandler defaultImpl = new SimpleDataFetcherExceptionHandler();
 
@@ -43,7 +39,6 @@ public class SimpleDataFetcherExceptionHandler implements DataFetcherExceptionHa
      * @param exception the exception that happened
      */
     protected void logException(ExceptionWhileDataFetching error, Throwable exception) {
-        logNotSafe.warn(error.getMessage(), exception);
     }
 
     /**
