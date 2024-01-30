@@ -203,7 +203,7 @@ public abstract class ExecutionStrategy {
         resolveObjectCtx.onDispatched(overallResult);
 
         resolvedFieldFutures.await().whenComplete((completeValueInfos, throwable) -> {
-            BiConsumer<List<Object>, Throwable> handleResultsConsumer = buildFieldValueMap(fieldNames, overallResult);
+            BiConsumer<List<Object>, Throwable> handleResultsConsumer = buildFieldValueMap(fieldNames, overallResult,executionContext);
             if (throwable != null) {
                 handleResultsConsumer.accept(null, throwable);
                 return;
@@ -228,10 +228,10 @@ public abstract class ExecutionStrategy {
         return overallResult;
     }
 
-    private BiConsumer<List<Object>, Throwable> buildFieldValueMap(List<String> fieldNames, CompletableFuture<Map<String, Object>> overallResult) {
+    private BiConsumer<List<Object>, Throwable> buildFieldValueMap(List<String> fieldNames, CompletableFuture<Map<String, Object>> overallResult, ExecutionContext executionContext) {
         return (List<Object> results, Throwable exception) -> {
             if (exception != null) {
-                handleValueException(overallResult, exception);
+                handleValueException(overallResult, exception, executionContext);
                 return;
             }
             Map<String, Object> resolvedValuesByField = Maps.newLinkedHashMapWithExpectedSize(fieldNames.size());
@@ -681,7 +681,7 @@ public abstract class ExecutionStrategy {
 
         resultsFuture.whenComplete((results, exception) -> {
             if (exception != null) {
-                handleValueException(overallResult, exception);
+                handleValueException(overallResult, exception, executionContext);
                 return;
             }
             List<Object> completedResults = new ArrayList<>(results.size());
@@ -695,13 +695,19 @@ public abstract class ExecutionStrategy {
                 .build();
     }
 
-    protected <T> void handleValueException(CompletableFuture<T> overallResult, Throwable e) {
+    protected <T> void handleValueException(CompletableFuture<T> overallResult, Throwable e, ExecutionContext executionContext) {
         Throwable underlyingException = e;
         if (e instanceof CompletionException) {
             underlyingException = e.getCause();
         }
         if (underlyingException instanceof NonNullableFieldWasNullException) {
             assertNonNullFieldPrecondition((NonNullableFieldWasNullException) underlyingException, overallResult);
+            if (!overallResult.isDone()) {
+                overallResult.complete(null);
+            }
+        } else if (underlyingException instanceof AbortExecutionException) {
+            AbortExecutionException abortException = (AbortExecutionException) underlyingException;
+            executionContext.addError(abortException);
             if (!overallResult.isDone()) {
                 overallResult.complete(null);
             }
