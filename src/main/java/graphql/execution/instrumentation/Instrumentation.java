@@ -290,8 +290,7 @@ public interface Instrumentation {
      *
      * @return a nullable {@link InstrumentationContext} object that will be called back when the step ends (assuming it's not null)
      */
-    @Deprecated
-    @DeprecatedAt("2023-09-11")
+    @Deprecated(since="2023-09-11" )
     @Nullable
     default InstrumentationContext<ExecutionResult> beginField(InstrumentationFieldParameters parameters, InstrumentationState state) {
         return beginField(parameters.withNewState(state));
@@ -363,8 +362,7 @@ public interface Instrumentation {
      *
      * @return a nullable {@link InstrumentationContext} object that will be called back when the step ends (assuming it's not null)
      */
-    @Deprecated
-    @DeprecatedAt("2023-09-11")
+    @Deprecated(since = "2023-09-11")
     @Nullable
     default InstrumentationContext<ExecutionResult> beginFieldComplete(InstrumentationFieldCompleteParameters parameters, InstrumentationState state) {
         return beginFieldComplete(parameters.withNewState(state));
@@ -407,8 +405,7 @@ public interface Instrumentation {
      *
      * @return a nullable {@link InstrumentationContext} object that will be called back when the step ends (assuming it's not null)
      */
-    @Deprecated
-    @DeprecatedAt("2023-09-11")
+    @Deprecated(since = "2023-09-11")
     @Nullable
     default InstrumentationContext<ExecutionResult> beginFieldListComplete(InstrumentationFieldCompleteParameters parameters, InstrumentationState state) {
         return beginFieldListComplete(parameters.withNewState(state));

@@ -1,6 +1,5 @@
 package graphql.execution;
 
-import graphql.DeprecatedAt;
 import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
 import graphql.PublicApi;
@@ -38,8 +37,7 @@ public class FieldValueInfo {
         return completeValueType;
     }
 
-    @Deprecated
-    @DeprecatedAt("2023-09-11")
+    @Deprecated(since="2023-09-11" )
     public CompletableFuture<ExecutionResult> getFieldValue() {
         return fieldValue.thenApply(fv -> ExecutionResultImpl.newExecutionResult().data(fv).build());
     }
