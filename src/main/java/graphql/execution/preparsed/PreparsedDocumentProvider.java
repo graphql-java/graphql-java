@@ -1,7 +1,6 @@
 package graphql.execution.preparsed;
 
 
-import graphql.DeprecatedAt;
 import graphql.ExecutionInput;
 import graphql.PublicSpi;
 
@@ -27,8 +26,7 @@ public interface PreparsedDocumentProvider {
      * <p>
      * @deprecated - use {@link #getDocumentAsync(ExecutionInput executionInput, Function parseAndValidateFunction)}
      */
-    @Deprecated
-    @DeprecatedAt("2021-12-06")
+    @Deprecated(since = "2021-12-06")
     PreparsedDocumentEntry getDocument(ExecutionInput executionInput, Function<ExecutionInput, PreparsedDocumentEntry> parseAndValidateFunction);
 
     /**

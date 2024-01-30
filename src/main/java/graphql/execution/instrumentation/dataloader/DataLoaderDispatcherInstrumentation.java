@@ -50,9 +50,6 @@ import static graphql.execution.instrumentation.SimpleInstrumentationContext.noO
  */
 @PublicApi
 public class DataLoaderDispatcherInstrumentation extends SimplePerformantInstrumentation {
-
-    private static final Logger log = LoggerFactory.getLogger(DataLoaderDispatcherInstrumentation.class);
-
     private final DataLoaderDispatcherInstrumentationOptions options;
 
     /**
@@ -74,7 +71,7 @@ public class DataLoaderDispatcherInstrumentation extends SimplePerformantInstrum
 
     @Override
     public InstrumentationState createState(InstrumentationCreateStateParameters parameters) {
-        return new DataLoaderDispatcherInstrumentationState(log, parameters.getExecutionInput().getDataLoaderRegistry());
+        return new DataLoaderDispatcherInstrumentationState(parameters.getExecutionInput().getDataLoaderRegistry());
     }
 
     @Override
@@ -169,10 +166,6 @@ public class DataLoaderDispatcherInstrumentation extends SimplePerformantInstrum
         Map<Object, Object> statsMap = new LinkedHashMap<>(currentExt == null ? ImmutableKit.emptyMap() : currentExt);
         Map<Object, Object> dataLoaderStats = buildStatsMap(state);
         statsMap.put("dataloader", dataLoaderStats);
-
-        if (log.isDebugEnabled()) {
-            log.debug("Data loader stats : {}", dataLoaderStats);
-        }
 
         return CompletableFuture.completedFuture(new ExecutionResultImpl(executionResult.getData(), executionResult.getErrors(), statsMap));
     }

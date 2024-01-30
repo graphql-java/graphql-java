@@ -3,12 +3,14 @@ package graphql.normalized;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import graphql.Assert;
+import graphql.ExperimentalApi;
 import graphql.Internal;
 import graphql.Mutable;
 import graphql.PublicApi;
 import graphql.collect.ImmutableKit;
 import graphql.introspection.Introspection;
 import graphql.language.Argument;
+import graphql.normalized.incremental.DeferExecution;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLInterfaceType;
 import graphql.schema.GraphQLNamedOutputType;
@@ -63,6 +65,8 @@ public class ExecutableNormalizedField {
     private final String fieldName;
     private final int level;
 
+    // Mutable List on purpose: it is modified after creation
+    private final LinkedHashSet<DeferExecution> deferExecutions;
 
     private ExecutableNormalizedField(Builder builder) {
         this.alias = builder.alias;
@@ -74,6 +78,7 @@ public class ExecutableNormalizedField {
         this.children = builder.children;
         this.level = builder.level;
         this.parent = builder.parent;
+        this.deferExecutions = builder.deferExecutions;
     }
 
     /**
@@ -129,6 +134,7 @@ public class ExecutableNormalizedField {
      * NOT {@code Cat} or {@code Dog} as their respective implementations would say.
      *
      * @param schema - the graphql schema in play
+     *
      * @return true if the field is conditional
      */
     public boolean isConditional(@NotNull GraphQLSchema schema) {
@@ -255,6 +261,16 @@ public class ExecutableNormalizedField {
         this.children.clear();
     }
 
+    @Internal
+    public void setDeferExecutions(Collection<DeferExecution> deferExecutions) {
+        this.deferExecutions.clear();
+        this.deferExecutions.addAll(deferExecutions);
+    }
+
+    public void addDeferExecutions(Collection<DeferExecution> deferExecutions) {
+        this.deferExecutions.addAll(deferExecutions);
+    }
+
     /**
      * All merged fields have the same name so this is the name of the {@link ExecutableNormalizedField}.
      * <p>
@@ -364,7 +380,6 @@ public class ExecutableNormalizedField {
         return objectTypeNames.iterator().next();
     }
 
-
     /**
      * @return a helper method show field details
      */
@@ -459,6 +474,15 @@ public class ExecutableNormalizedField {
      */
     public ExecutableNormalizedField getParent() {
         return parent;
+    }
+
+    /**
+     * @return the {@link DeferExecution}s associated with this {@link ExecutableNormalizedField}.
+     * @see DeferExecution
+     */
+    @ExperimentalApi
+    public LinkedHashSet<DeferExecution> getDeferExecutions() {
+        return deferExecutions;
     }
 
     @Internal
@@ -588,6 +612,8 @@ public class ExecutableNormalizedField {
         private LinkedHashMap<String, Object> resolvedArguments = new LinkedHashMap<>();
         private ImmutableList<Argument> astArguments = ImmutableKit.emptyList();
 
+        private LinkedHashSet<DeferExecution> deferExecutions = new LinkedHashSet<>();
+
         private Builder() {
         }
 
@@ -601,6 +627,7 @@ public class ExecutableNormalizedField {
             this.children = new ArrayList<>(existing.children);
             this.level = existing.getLevel();
             this.parent = existing.getParent();
+            this.deferExecutions = existing.getDeferExecutions();
         }
 
         public Builder clearObjectTypesNames() {
@@ -653,6 +680,11 @@ public class ExecutableNormalizedField {
 
         public Builder parent(ExecutableNormalizedField parent) {
             this.parent = parent;
+            return this;
+        }
+
+        public Builder deferExecutions(LinkedHashSet<DeferExecution> deferExecutions) {
+            this.deferExecutions = deferExecutions;
             return this;
         }
 

@@ -1,7 +1,6 @@
 package graphql.collect;
 
 import graphql.Assert;
-import graphql.DeprecatedAt;
 import graphql.Internal;
 
 import java.util.Collection;
@@ -82,29 +81,25 @@ public final class ImmutableMapWithNullValues<K, V> implements Map<K, V> {
     }
 
     @Override
-    @Deprecated
-    @DeprecatedAt("2020-11-10")
+    @Deprecated(since = "2020-11-10")
     public V put(K key, V value) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    @Deprecated
-    @DeprecatedAt("2020-11-10")
+    @Deprecated(since = "2020-11-10")
     public V remove(Object key) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    @Deprecated
-    @DeprecatedAt("2020-11-10")
+    @Deprecated(since = "2020-11-10")
     public void putAll(Map<? extends K, ? extends V> m) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    @Deprecated
-    @DeprecatedAt("2020-11-10")
+    @Deprecated(since = "2020-11-10")
     public void clear() {
         throw new UnsupportedOperationException();
     }
@@ -145,64 +140,55 @@ public final class ImmutableMapWithNullValues<K, V> implements Map<K, V> {
     }
 
     @Override
-    @Deprecated
-    @DeprecatedAt("2020-11-10")
+    @Deprecated(since = "2020-11-10")
     public void replaceAll(BiFunction<? super K, ? super V, ? extends V> function) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    @Deprecated
-    @DeprecatedAt("2020-11-10")
+    @Deprecated(since = "2020-11-10")
     public V putIfAbsent(K key, V value) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    @Deprecated
-    @DeprecatedAt("2020-11-10")
+    @Deprecated(since = "2020-11-10")
     public boolean remove(Object key, Object value) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    @Deprecated
-    @DeprecatedAt("2020-11-10")
+    @Deprecated(since = "2020-11-10")
     public boolean replace(K key, V oldValue, V newValue) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    @Deprecated
-    @DeprecatedAt("2020-11-10")
+    @Deprecated(since = "2020-11-10")
     public V replace(K key, V value) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    @Deprecated
-    @DeprecatedAt("2020-11-10")
+    @Deprecated(since = "2020-11-10")
     public V computeIfAbsent(K key, Function<? super K, ? extends V> mappingFunction) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    @Deprecated
-    @DeprecatedAt("2020-11-10")
+    @Deprecated(since = "2020-11-10")
     public V computeIfPresent(K key, BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    @Deprecated
-    @DeprecatedAt("2020-11-10")
+    @Deprecated(since = "2020-11-10")
     public V compute(K key, BiFunction<? super K, ? super V, ? extends V> remappingFunction) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    @Deprecated
-    @DeprecatedAt("2020-11-10")
+    @Deprecated(since = "2020-11-10")
     public V merge(K key, V value, BiFunction<? super V, ? super V, ? extends V> remappingFunction) {
         throw new UnsupportedOperationException();
     }

@@ -111,10 +111,18 @@ class ConditionalNodesTest extends Specification {
             type Query {
                 in : String
                 out : String
+                pet : Pet
+            }
+            
+            type Pet {
+                name: String
+                favouriteSnack: String
             }
         """
         DataFetcher df = { DataFetchingEnvironment env -> env.getFieldDefinition().name }
-        def graphQL = TestUtil.graphQL(sdl, [Query: ["in": df, "out": df]]).build()
+        def graphQL = TestUtil.graphQL(sdl, [
+                Query: ["in": df, "out": df, "pet": (DataFetcher<Map>) { [ : ] } ],
+                Pet: ["name": df, "favouriteSnack": df]]).build()
         ConditionalNodeDecision customDecision = new ConditionalNodeDecision() {
             @Override
             boolean shouldInclude(ConditionalNodeDecisionEnvironment env) {
@@ -183,6 +191,25 @@ class ConditionalNodesTest extends Specification {
 
         then:
         er["data"] == ["in": "in", "out": "out"]
+
+        // A test for fields below the top level
+        when:
+        ei = ExecutionInput.newExecutionInput()
+                .graphQLContext(contextMap)
+                .query("""
+            query q {
+                in
+                pet {
+                  name
+                  favouriteSnack @featureFlag(flagName : "OFF")
+                } 
+            }
+        """
+                ).build()
+        er = graphQL.execute(ei)
+
+        then:
+        er["data"] == ["in": "in", "pet": ["name": "name"]]
     }
 
     private ArrayList<Directive> directive(String name, Argument argument) {

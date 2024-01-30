@@ -12,6 +12,7 @@ import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLDirective;
 import graphql.schema.GraphQLSchema;
 import graphql.util.FpKit;
+import graphql.util.LockKit;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -35,6 +36,8 @@ public class QueryDirectivesImpl implements QueryDirectives {
     private final Map<String, Object> variables;
     private final GraphQLContext graphQLContext;
     private final Locale locale;
+
+    private final LockKit.ComputedOnce computedOnce = new LockKit.ComputedOnce();
     private volatile ImmutableMap<Field, List<GraphQLDirective>> fieldDirectivesByField;
     private volatile ImmutableMap<String, List<GraphQLDirective>> fieldDirectivesByName;
     private volatile ImmutableMap<Field, List<QueryAppliedDirective>> fieldAppliedDirectivesByField;
@@ -49,10 +52,7 @@ public class QueryDirectivesImpl implements QueryDirectives {
     }
 
     private void computeValuesLazily() {
-        synchronized (this) {
-            if (fieldDirectivesByField != null) {
-                return;
-            }
+        computedOnce.runOnce(() -> {
 
             final Map<Field, List<GraphQLDirective>> byField = new LinkedHashMap<>();
             final Map<Field, List<QueryAppliedDirective>> byFieldApplied = new LinkedHashMap<>();
@@ -81,7 +81,7 @@ public class QueryDirectivesImpl implements QueryDirectives {
             this.fieldDirectivesByField = ImmutableMap.copyOf(byField);
             this.fieldAppliedDirectivesByName = ImmutableMap.copyOf(byNameApplied);
             this.fieldAppliedDirectivesByField = ImmutableMap.copyOf(byFieldApplied);
-        }
+        });
     }
 
     private QueryAppliedDirective toAppliedDirective(GraphQLDirective directive) {

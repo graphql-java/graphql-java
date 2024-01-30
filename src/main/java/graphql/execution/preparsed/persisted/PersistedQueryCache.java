@@ -1,6 +1,5 @@
 package graphql.execution.preparsed.persisted;
 
-import graphql.DeprecatedAt;
 import graphql.ExecutionInput;
 import graphql.PublicSpi;
 import graphql.execution.preparsed.PreparsedDocumentEntry;
@@ -32,8 +31,7 @@ public interface PersistedQueryCache {
      *
      * @deprecated - use {@link #getPersistedQueryDocumentAsync(Object persistedQueryId, ExecutionInput executionInput, PersistedQueryCacheMiss onCacheMiss)}
      */
-    @Deprecated
-    @DeprecatedAt("2021-12-06")
+    @Deprecated(since = "2021-12-06")
     PreparsedDocumentEntry getPersistedQueryDocument(Object persistedQueryId, ExecutionInput executionInput, PersistedQueryCacheMiss onCacheMiss) throws PersistedQueryNotFound;
 
     /**

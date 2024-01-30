@@ -65,7 +65,11 @@ class GraphqlErrorHelperTest extends Specification {
 
     def "can turn error classifications into extensions"() {
 
-        def validationErr = new ValidationError(ValidationErrorType.InvalidFragmentType, new SourceLocation(6, 9), "Things are not valid")
+        def validationErr = ValidationError.newValidationError()
+                .validationErrorType(ValidationErrorType.InvalidFragmentType)
+                .sourceLocation(new SourceLocation(6, 9))
+                .description("Things are not valid")
+                .build()
 
         when:
         def specMap = GraphqlErrorHelper.toSpecification(validationErr)

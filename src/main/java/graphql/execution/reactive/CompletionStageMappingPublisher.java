@@ -1,6 +1,7 @@
 package graphql.execution.reactive;
 
 import graphql.Internal;
+import graphql.util.LockKit;
 import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
@@ -44,6 +45,7 @@ public class CompletionStageMappingPublisher<D, U> implements Publisher<D> {
 
     /**
      * Get instance of an upstreamPublisher
+     *
      * @return upstream instance of {@link Publisher}
      */
     public Publisher<U> getUpstreamPublisher() {
@@ -56,6 +58,7 @@ public class CompletionStageMappingPublisher<D, U> implements Publisher<D> {
         private final Subscriber<? super D> downstreamSubscriber;
         Subscription delegatingSubscription;
         final Queue<CompletionStage<?>> inFlightDataQ;
+        final LockKit.ReentrantLock lock = new LockKit.ReentrantLock();
         final AtomicReference<Runnable> onCompleteOrErrorRun;
         final AtomicBoolean onCompleteOrErrorRunCalled;
 
@@ -137,6 +140,7 @@ public class CompletionStageMappingPublisher<D, U> implements Publisher<D> {
 
         /**
          * Get instance of downstream subscriber
+         *
          * @return {@link Subscriber}
          */
         public Subscriber<? super D> getDownstreamSubscriber() {
@@ -153,23 +157,21 @@ public class CompletionStageMappingPublisher<D, U> implements Publisher<D> {
         }
 
         private void offerToInFlightQ(CompletionStage<?> completionStage) {
-            synchronized (inFlightDataQ) {
-                inFlightDataQ.offer(completionStage);
-            }
+            lock.runLocked(() ->
+                    inFlightDataQ.offer(completionStage)
+            );
         }
 
         private boolean removeFromInFlightQAndCheckIfEmpty(CompletionStage<?> completionStage) {
             // uncontested locks in java are cheap - we don't expect much contention here
-            synchronized (inFlightDataQ) {
+            return lock.callLocked(() -> {
                 inFlightDataQ.remove(completionStage);
                 return inFlightDataQ.isEmpty();
-            }
+            });
         }
 
         private boolean inFlightQIsEmpty() {
-            synchronized (inFlightDataQ) {
-                return inFlightDataQ.isEmpty();
-            }
+            return lock.callLocked(inFlightDataQ::isEmpty);
         }
     }
 }

@@ -1,6 +1,5 @@
 package graphql.execution;
 
-import graphql.DeprecatedAt;
 import graphql.ExecutionResult;
 import graphql.PublicSpi;
 import graphql.schema.DataFetcher;

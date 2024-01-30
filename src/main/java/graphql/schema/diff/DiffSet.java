@@ -15,6 +15,7 @@ import java.util.Map;
  * {@link graphql.introspection.IntrospectionQuery}.
  */
 @PublicApi
+@Deprecated(since = "2023-10-04")
 public class DiffSet {
 
     private final Map<String, Object> introspectionOld;
@@ -38,7 +39,6 @@ public class DiffSet {
     public Map<String, Object> getNew() {
         return introspectionNew;
     }
-
 
     /**
      * Creates a diff set out of the result of 2 introspection queries.

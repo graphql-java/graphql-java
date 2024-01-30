@@ -1,7 +1,6 @@
 package graphql.execution;
 
 import com.google.common.collect.ImmutableList;
-import graphql.DeprecatedAt;
 import graphql.ExecutionResult;
 import graphql.GraphQLError;
 import graphql.Internal;
@@ -49,8 +48,7 @@ public class DataFetcherResult<T> {
      * @deprecated use the {@link #newResult()} builder instead
      */
     @Internal
-    @Deprecated
-    @DeprecatedAt("2019-01-11")
+    @Deprecated(since = "2019-01-11")
     public DataFetcherResult(T data, List<GraphQLError> errors) {
         this(data, errors, null, null);
     }
