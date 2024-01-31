@@ -4,6 +4,7 @@ import graphql.ExecutionInput;
 import graphql.ExecutionResult;
 import graphql.PublicSpi;
 import graphql.execution.ExecutionContext;
+import graphql.execution.ExecutionStrategyParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationCreateStateParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecuteOperationParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters;
@@ -15,6 +16,7 @@ import graphql.execution.instrumentation.parameters.InstrumentationValidationPar
 import graphql.language.Document;
 import graphql.schema.DataFetcher;
 import graphql.schema.GraphQLSchema;
+import graphql.schema.GraphQLType;
 import graphql.validation.ValidationError;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -45,7 +47,6 @@ public interface Instrumentation {
      * to allow them to have per execution request state
      *
      * @return a state object that is passed to each method
-     *
      * @deprecated use {@link #createState(InstrumentationCreateStateParameters)} instead
      */
     @Deprecated(since = "2022-07-26")
@@ -58,7 +59,6 @@ public interface Instrumentation {
      * to allow them to have per execution request state
      *
      * @param parameters the parameters to this step
-     *
      * @return a state object that is passed to each method
      */
     @Deprecated(since = "2023-08-25")
@@ -72,7 +72,6 @@ public interface Instrumentation {
      * to allow them to have per execution request state
      *
      * @param parameters the parameters to this step
-     *
      * @return a state object that is passed to each method
      */
     @Nullable
@@ -84,9 +83,7 @@ public interface Instrumentation {
      * This is called right at the start of query execution, and it's the first step in the instrumentation chain.
      *
      * @param parameters the parameters to this step
-     *
      * @return a non null {@link InstrumentationContext} object that will be called back when the step ends
-     *
      * @deprecated use {@link #beginExecution(InstrumentationExecutionParameters, InstrumentationState)} instead
      */
     @Deprecated(since = "2022-07-26")
@@ -100,7 +97,6 @@ public interface Instrumentation {
      *
      * @param parameters the parameters to this step
      * @param state      the state created during the call to {@link #createState(InstrumentationCreateStateParameters)}
-     *
      * @return a nullable {@link InstrumentationContext} object that will be called back when the step ends (assuming it's not null)
      */
     @Nullable
@@ -112,9 +108,7 @@ public interface Instrumentation {
      * This is called just before a query is parsed.
      *
      * @param parameters the parameters to this step
-     *
      * @return a non null {@link InstrumentationContext} object that will be called back when the step ends
-     *
      * @deprecated use {@link #beginParse(InstrumentationExecutionParameters, InstrumentationState)}  instead
      */
     @Deprecated(since = "2022-07-26")
@@ -128,7 +122,6 @@ public interface Instrumentation {
      *
      * @param parameters the parameters to this step
      * @param state      the state created during the call to {@link #createState(InstrumentationCreateStateParameters)}
-     *
      * @return a nullable {@link InstrumentationContext} object that will be called back when the step ends (assuming it's not null)
      */
     @Nullable
@@ -140,9 +133,7 @@ public interface Instrumentation {
      * This is called just before the parsed query document is validated.
      *
      * @param parameters the parameters to this step
-     *
      * @return a non null {@link InstrumentationContext} object that will be called back when the step ends
-     *
      * @deprecated use {@link #beginValidation(InstrumentationValidationParameters, InstrumentationState)} instead
      */
     @Deprecated(since = "2022-07-26")
@@ -156,7 +147,6 @@ public interface Instrumentation {
      *
      * @param parameters the parameters to this step
      * @param state      the state created during the call to {@link #createState(InstrumentationCreateStateParameters)}
-     *
      * @return a nullable {@link InstrumentationContext} object that will be called back when the step ends (assuming it's not null)
      */
     @Nullable
@@ -168,9 +158,7 @@ public interface Instrumentation {
      * This is called just before the execution of the query operation is started.
      *
      * @param parameters the parameters to this step
-     *
      * @return a non null {@link InstrumentationContext} object that will be called back when the step ends
-     *
      * @deprecated use {@link #beginExecuteOperation(InstrumentationExecuteOperationParameters, InstrumentationState)} instead
      */
     @Deprecated(since = "2022-07-26")
@@ -184,7 +172,6 @@ public interface Instrumentation {
      *
      * @param parameters the parameters to this step
      * @param state      the state created during the call to {@link #createState(InstrumentationCreateStateParameters)}
-     *
      * @return a nullable {@link InstrumentationContext} object that will be called back when the step ends (assuming it's not null)
      */
     @Nullable
@@ -197,9 +184,7 @@ public interface Instrumentation {
      * per query as the engine recursively descends down over the query.
      *
      * @param parameters the parameters to this step
-     *
      * @return a non null {@link ExecutionStrategyInstrumentationContext} object that will be called back when the step ends
-     *
      * @deprecated use {@link #beginExecutionStrategy(InstrumentationExecutionStrategyParameters, InstrumentationState)} instead
      */
     @Deprecated(since = "2022-07-26")
@@ -214,7 +199,6 @@ public interface Instrumentation {
      *
      * @param parameters the parameters to this step
      * @param state      the state created during the call to {@link #createState(InstrumentationCreateStateParameters)}
-     *
      * @return a nullable {@link ExecutionStrategyInstrumentationContext} object that will be called back when the step ends (assuming it's not null)
      */
     @Nullable
@@ -227,9 +211,7 @@ public interface Instrumentation {
      * This is called each time a subscription field produces a new reactive stream event value and it needs to be mapped over via the graphql field subselection.
      *
      * @param parameters the parameters to this step
-     *
      * @return a non null {@link InstrumentationContext} object that will be called back when the step ends
-     *
      * @deprecated use {@link #beginSubscribedFieldEvent(InstrumentationFieldParameters, InstrumentationState)}  instead
      */
     @Deprecated(since = "2022-07-26")
@@ -243,7 +225,6 @@ public interface Instrumentation {
      *
      * @param parameters the parameters to this step
      * @param state      the state created during the call to {@link #createState(InstrumentationCreateStateParameters)}
-     *
      * @return a nullable {@link InstrumentationContext} object that will be called back when the step ends (assuming it's not null)
      */
     @Nullable
@@ -255,9 +236,7 @@ public interface Instrumentation {
      * This is called just before a field is resolved into a value.
      *
      * @param parameters the parameters to this step
-     *
      * @return a non null {@link InstrumentationContext} object that will be called back when the step ends
-     *
      * @deprecated use {@link #beginField(InstrumentationFieldParameters, InstrumentationState)}   instead
      */
     @Deprecated(since = "2022-07-26")
@@ -271,7 +250,6 @@ public interface Instrumentation {
      *
      * @param parameters the parameters to this step
      * @param state      the state created during the call to {@link #createState(InstrumentationCreateStateParameters)}
-     *
      * @return a nullable {@link InstrumentationContext} object that will be called back when the step ends (assuming it's not null)
      */
     @Nullable
@@ -283,9 +261,7 @@ public interface Instrumentation {
      * This is called just before a field {@link DataFetcher} is invoked.
      *
      * @param parameters the parameters to this step
-     *
      * @return a non null {@link InstrumentationContext} object that will be called back when the step ends
-     *
      * @deprecated use {@link #beginFieldFetch(InstrumentationFieldFetchParameters, InstrumentationState)} instead
      */
     @Deprecated(since = "2022-07-26")
@@ -299,7 +275,6 @@ public interface Instrumentation {
      *
      * @param parameters the parameters to this step
      * @param state      the state created during the call to {@link #createState(InstrumentationCreateStateParameters)}
-     *
      * @return a nullable {@link InstrumentationContext} object that will be called back when the step ends (assuming it's not null)
      */
     @Nullable
@@ -312,9 +287,7 @@ public interface Instrumentation {
      * This is called just before the complete field is started.
      *
      * @param parameters the parameters to this step
-     *
      * @return a non null {@link InstrumentationContext} object that will be called back when the step ends
-     *
      * @deprecated use {@link #beginFieldComplete(InstrumentationFieldCompleteParameters, InstrumentationState)} instead
      */
     @Deprecated(since = "2022-07-26")
@@ -328,7 +301,6 @@ public interface Instrumentation {
      *
      * @param parameters the parameters to this step
      * @param state      the state created during the call to {@link #createState(InstrumentationCreateStateParameters)}
-     *
      * @return a nullable {@link InstrumentationContext} object that will be called back when the step ends (assuming it's not null)
      */
     @Nullable
@@ -340,9 +312,7 @@ public interface Instrumentation {
      * This is called just before the complete field list is started.
      *
      * @param parameters the parameters to this step
-     *
      * @return a non null {@link InstrumentationContext} object that will be called back when the step ends
-     *
      * @deprecated use {@link #beginFieldListComplete(InstrumentationFieldCompleteParameters, InstrumentationState)}  instead
      */
     @Deprecated(since = "2022-07-26")
@@ -356,7 +326,6 @@ public interface Instrumentation {
      *
      * @param parameters the parameters to this step
      * @param state      the state created during the call to {@link #createState(InstrumentationCreateStateParameters)}
-     *
      * @return a nullable {@link InstrumentationContext} object that will be called back when the step ends (assuming it's not null)
      */
     @Nullable
@@ -370,9 +339,7 @@ public interface Instrumentation {
      *
      * @param executionInput the execution input to be used
      * @param parameters     the parameters describing the field to be fetched
-     *
      * @return a non null instrumented ExecutionInput, the default is to return to the same object
-     *
      * @deprecated use {@link #instrumentExecutionInput(ExecutionInput, InstrumentationExecutionParameters, InstrumentationState)} instead
      */
     @Deprecated(since = "2022-07-26")
@@ -388,7 +355,6 @@ public interface Instrumentation {
      * @param executionInput the execution input to be used
      * @param parameters     the parameters describing the field to be fetched
      * @param state          the state created during the call to {@link #createState(InstrumentationCreateStateParameters)}
-     *
      * @return a non null instrumented ExecutionInput, the default is to return to the same object
      */
     @NotNull
@@ -401,9 +367,7 @@ public interface Instrumentation {
      *
      * @param documentAndVariables the document and variables to be used
      * @param parameters           the parameters describing the execution
-     *
      * @return a non null instrumented DocumentAndVariables, the default is to return to the same objects
-     *
      * @deprecated use {@link #instrumentDocumentAndVariables(DocumentAndVariables, InstrumentationExecutionParameters, InstrumentationState)}  instead
      */
     @Deprecated(since = "2022-07-26")
@@ -418,7 +382,6 @@ public interface Instrumentation {
      * @param documentAndVariables the document and variables to be used
      * @param parameters           the parameters describing the execution
      * @param state                the state created during the call to {@link #createState(InstrumentationCreateStateParameters)}
-     *
      * @return a non null instrumented DocumentAndVariables, the default is to return to the same objects
      */
     @NotNull
@@ -432,9 +395,7 @@ public interface Instrumentation {
      *
      * @param schema     the schema to be used
      * @param parameters the parameters describing the field to be fetched
-     *
      * @return a non null instrumented GraphQLSchema, the default is to return to the same object
-     *
      * @deprecated use {@link #instrumentSchema(GraphQLSchema, InstrumentationExecutionParameters, InstrumentationState)}  instead
      */
     @Deprecated(since = "2022-07-26")
@@ -450,7 +411,6 @@ public interface Instrumentation {
      * @param schema     the schema to be used
      * @param parameters the parameters describing the field to be fetched
      * @param state      the state created during the call to {@link #createState(InstrumentationCreateStateParameters)}
-     *
      * @return a non null instrumented GraphQLSchema, the default is to return to the same object
      */
     @NotNull
@@ -464,9 +424,7 @@ public interface Instrumentation {
      *
      * @param executionContext the execution context to be used
      * @param parameters       the parameters describing the field to be fetched
-     *
      * @return a non null instrumented ExecutionContext, the default is to return to the same object
-     *
      * @deprecated use {@link #instrumentExecutionContext(ExecutionContext, InstrumentationExecutionParameters, InstrumentationState)} instead
      */
     @Deprecated(since = "2022-07-26")
@@ -482,7 +440,6 @@ public interface Instrumentation {
      * @param executionContext the execution context to be used
      * @param parameters       the parameters describing the field to be fetched
      * @param state            the state created during the call to {@link #createState(InstrumentationCreateStateParameters)}
-     *
      * @return a non null instrumented ExecutionContext, the default is to return to the same object
      */
     @NotNull
@@ -498,9 +455,7 @@ public interface Instrumentation {
      *
      * @param dataFetcher the data fetcher about to be used
      * @param parameters  the parameters describing the field to be fetched
-     *
      * @return a non null instrumented DataFetcher, the default is to return to the same object
-     *
      * @deprecated use {@link #instrumentDataFetcher(DataFetcher, InstrumentationFieldFetchParameters, InstrumentationState)}  instead
      */
     @Deprecated(since = "2022-07-26")
@@ -518,7 +473,6 @@ public interface Instrumentation {
      * @param dataFetcher the data fetcher about to be used
      * @param parameters  the parameters describing the field to be fetched
      * @param state       the state created during the call to {@link #createState(InstrumentationCreateStateParameters)}
-     *
      * @return a non null instrumented DataFetcher, the default is to return to the same object
      */
     @NotNull
@@ -531,9 +485,7 @@ public interface Instrumentation {
      *
      * @param executionResult {@link java.util.concurrent.CompletableFuture} of the result to instrument
      * @param parameters      the parameters to this step
-     *
      * @return a new execution result completable future
-     *
      * @deprecated use {@link #instrumentExecutionResult(ExecutionResult, InstrumentationExecutionParameters, InstrumentationState)}   instead
      */
     @Deprecated(since = "2022-07-26")
@@ -548,11 +500,18 @@ public interface Instrumentation {
      * @param executionResult {@link java.util.concurrent.CompletableFuture} of the result to instrument
      * @param parameters      the parameters to this step
      * @param state           the state created during the call to {@link #createState(InstrumentationCreateStateParameters)}
-     *
      * @return a new execution result completable future
      */
     @NotNull
     default CompletableFuture<ExecutionResult> instrumentExecutionResult(ExecutionResult executionResult, InstrumentationExecutionParameters parameters, InstrumentationState state) {
         return instrumentExecutionResult(executionResult, parameters.withNewState(state));
     }
+
+    default void completeValue(ExecutionContext executionContext, Object value, GraphQLType fieldType, ExecutionStrategyParameters parameters, InstrumentationState state) {
+    }
+    default void finishedListCompletion(ExecutionContext executionContext, ExecutionStrategyParameters parameters, InstrumentationState instrumentationState, int count) {
+
+    }
+
+
 }
