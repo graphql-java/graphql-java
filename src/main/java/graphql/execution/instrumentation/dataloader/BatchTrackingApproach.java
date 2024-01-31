@@ -36,11 +36,6 @@ public class BatchTrackingApproach {
 
         private final LockKit.ReentrantLock lock = new LockKit.ReentrantLock();
 
-        private final LevelMap expectedFetchCountPerLevel = new LevelMap();
-        private final LevelMap fetchCountPerLevel = new LevelMap();
-        private final LevelMap expectedStrategyCallsPerLevel = new LevelMap();
-        private final LevelMap happenedStrategyCallsPerLevel = new LevelMap();
-        private final LevelMap happenedOnFieldValueCallsPerLevel = new LevelMap();
 
         private final Set<Integer> dispatchedLevels = new LinkedHashSet<>();
         private final Set<ResultPath> expectedFetches = new LinkedHashSet<>();
@@ -48,7 +43,6 @@ public class BatchTrackingApproach {
         private final Set<ResultPath> expectedStrategyCalls = new LinkedHashSet<>();
 
         CallStack() {
-            expectedStrategyCallsPerLevel.set(1, 1);
         }
 
         void addExpectedStrategyCall(ResultPath path) {
@@ -68,51 +62,10 @@ public class BatchTrackingApproach {
             waitForChildren.remove(path);
         }
 
-        public LevelMap getExpectedFetchCountPerLevel() {
-            return expectedFetchCountPerLevel;
-        }
-
-        void increaseExpectedFetchCount(int level, int count) {
-            expectedFetchCountPerLevel.increment(level, count);
-        }
-
-        void increaseFetchCount(int level) {
-            fetchCountPerLevel.increment(level, 1);
-        }
-
-        void increaseExpectedStrategyCalls(int level, int count) {
-            expectedStrategyCallsPerLevel.increment(level, count);
-        }
-
-        void increaseHappenedStrategyCalls(int level) {
-            happenedStrategyCallsPerLevel.increment(level, 1);
-        }
-
-        void increaseHappenedOnFieldValueCalls(int level) {
-            happenedOnFieldValueCallsPerLevel.increment(level, 1);
-        }
-
-        boolean allStrategyCallsHappened(int level) {
-            return happenedStrategyCallsPerLevel.get(level) == expectedStrategyCallsPerLevel.get(level);
-        }
-
-        boolean allOnFieldCallsHappened(int level) {
-            return happenedOnFieldValueCallsPerLevel.get(level) == expectedStrategyCallsPerLevel.get(level);
-        }
-
-        boolean allFetchesHappened(int level) {
-            return fetchCountPerLevel.get(level) == expectedFetchCountPerLevel.get(level);
-        }
 
         @Override
         public String toString() {
             return "CallStack{" +
-                "expectedFetchCountPerLevel=" + expectedFetchCountPerLevel +
-                ", fetchCountPerLevel=" + fetchCountPerLevel +
-                ", expectedStrategyCallsPerLevel=" + expectedStrategyCallsPerLevel +
-                ", happenedStrategyCallsPerLevel=" + happenedStrategyCallsPerLevel +
-                ", happenedOnFieldValueCallsPerLevel=" + happenedOnFieldValueCallsPerLevel +
-                ", dispatchedLevels" + dispatchedLevels +
                 '}';
         }
 
@@ -238,25 +191,9 @@ public class BatchTrackingApproach {
                 // }
             }
 
-            @Override
-            public void onFieldValuesException() {
-                callStack.lock.runLocked(() ->
-                    callStack.increaseHappenedOnFieldValueCalls(curLevel)
-                );
-            }
         };
     }
 
-    //
-    // thread safety : called with synchronised(callStack)
-    //
-    private boolean handleOnFieldValuesInfo(List<FieldValueInfo> fieldValueInfos, CallStack callStack,
-                                            int curLevel) {
-        callStack.increaseHappenedOnFieldValueCalls(curLevel);
-        int expectedStrategyCalls = getCountForList(fieldValueInfos);
-        callStack.increaseExpectedStrategyCalls(curLevel + 1, expectedStrategyCalls);
-        return isDispatchNeeded(callStack);
-    }
 
     private int getCountForList(List<FieldValueInfo> fieldValueInfos) {
         int result = 0;
@@ -321,17 +258,6 @@ public class BatchTrackingApproach {
     //
     // thread safety : called with synchronised(callStack)
     //
-    private boolean levelReady(CallStack callStack, int level) {
-        if (level == 1) {
-            // level 1 is special: there is only one strategy call and that's it
-            return callStack.allFetchesHappened(1);
-        }
-        if (levelReady(callStack, level - 1) && callStack.allOnFieldCallsHappened(level - 1)
-            && callStack.allStrategyCallsHappened(level) && callStack.allFetchesHappened(level)) {
-            return true;
-        }
-        return false;
-    }
 
     void dispatch() {
         System.out.println("Dispatch");
