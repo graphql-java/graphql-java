@@ -12,8 +12,15 @@ class SubscriptionUniqueRootFieldTest extends Specification {
         given:
         def subscriptionOneRoot = '''
             subscription doggo {
-              dog {
-                name
+              ... {
+                  dog {
+                    name
+                  }
+                ... {
+                  dog2: dog {
+                    name
+                  }
+                }
               }
             }
         '''
@@ -22,7 +29,7 @@ class SubscriptionUniqueRootFieldTest extends Specification {
         def validationErrors = validate(subscriptionOneRoot)
 
         then:
-        validationErrors.empty
+        !validationErrors.empty
     }
 
     def "5.2.3.1 subscription with only one root field with fragment passes validation"() {

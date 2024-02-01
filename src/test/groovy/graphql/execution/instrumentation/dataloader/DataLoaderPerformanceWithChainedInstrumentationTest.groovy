@@ -110,7 +110,11 @@ class DataLoaderPerformanceWithChainedInstrumentationTest extends Specification 
 
         when:
 
-        ExecutionInput executionInput = ExecutionInput.newExecutionInput().query(deferredQuery).dataLoaderRegistry(dataLoaderRegistry).build()
+        ExecutionInput executionInput = ExecutionInput.newExecutionInput()
+                .query(deferredQuery)
+                .dataLoaderRegistry(dataLoaderRegistry)
+                .incrementalSupport(true)
+                .build()
         def result = graphQL.execute(executionInput)
 
         Publisher<DelayedIncrementalExecutionResult> deferredResultStream = ((IncrementalExecutionResult) result).incrementalItemPublisher
@@ -123,7 +127,6 @@ class DataLoaderPerformanceWithChainedInstrumentationTest extends Specification 
         then:
 
         result.data == expectedInitialDeferredData
-
         subscriber.executionResultData == expectedListOfDeferredData
 
         //

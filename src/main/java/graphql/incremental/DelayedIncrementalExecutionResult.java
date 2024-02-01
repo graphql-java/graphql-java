@@ -37,8 +37,7 @@ public interface DelayedIncrementalExecutionResult {
     Map<Object, Object> getExtensions();
 
     /**
-     * TODO: Javadoc
-     * @return
+     * @return a map of the result that strictly follows the spec
      */
     Map<String, Object> toSpecification();
 }

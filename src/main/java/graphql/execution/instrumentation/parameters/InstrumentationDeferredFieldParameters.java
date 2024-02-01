@@ -10,20 +10,21 @@ import java.util.function.Supplier;
 /**
  * Parameters sent to {@link graphql.execution.instrumentation.Instrumentation} methods
  */
-public class InstrumentationDeferredFieldParameters extends InstrumentationFieldParameters {
-
+public class InstrumentationDeferredFieldParameters {
+    private final ExecutionContext executionContext;
     private final ExecutionStrategyParameters executionStrategyParameters;
 
-    public InstrumentationDeferredFieldParameters(ExecutionContext executionContext, Supplier<ExecutionStepInfo> executionStepInfo, ExecutionStrategyParameters executionStrategyParameters) {
-        this(executionContext, executionStepInfo, executionContext.getInstrumentationState(), executionStrategyParameters);
-    }
-
-    InstrumentationDeferredFieldParameters(ExecutionContext executionContext, Supplier<ExecutionStepInfo> executionStepInfo, InstrumentationState instrumentationState, ExecutionStrategyParameters executionStrategyParameters) {
-        super(executionContext, executionStepInfo, instrumentationState);
+    public InstrumentationDeferredFieldParameters(ExecutionContext executionContext, ExecutionStrategyParameters executionStrategyParameters) {
+        this.executionContext = executionContext;
         this.executionStrategyParameters = executionStrategyParameters;
     }
 
+
     public ExecutionStrategyParameters getExecutionStrategyParameters() {
         return executionStrategyParameters;
+    }
+
+    public ExecutionContext getExecutionContext() {
+        return executionContext;
     }
 }

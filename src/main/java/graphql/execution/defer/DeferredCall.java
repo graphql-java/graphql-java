@@ -8,6 +8,7 @@ import graphql.execution.Async;
 import graphql.execution.NonNullableFieldWasNullError;
 import graphql.execution.NonNullableFieldWasNullException;
 import graphql.execution.ResultPath;
+import graphql.execution.instrumentation.DeferredFieldInstrumentationContext;
 import graphql.incremental.DeferPayload;
 
 import java.util.Collections;
@@ -39,9 +40,14 @@ import java.util.function.Supplier;
 @Internal
 public class DeferredCall implements IncrementalCall<DeferPayload> {
     private final String label;
+
+    public ResultPath getPath() {
+        return path;
+    }
+
     private final ResultPath path;
     private final List<Supplier<CompletableFuture<FieldWithExecutionResult>>> calls;
-    private final DeferredCallContext errorSupport;
+    private final DeferredCallContext deferredCallContext;
 
     public DeferredCall(
             String label,
@@ -52,14 +58,18 @@ public class DeferredCall implements IncrementalCall<DeferPayload> {
         this.label = label;
         this.path = path;
         this.calls = calls;
-        this.errorSupport = deferredErrorSupport;
+        this.deferredCallContext = deferredErrorSupport;
     }
 
     @Override
     public CompletableFuture<DeferPayload> invoke() {
+        System.out.println("DeferredCall.invoke(): " + this.getPath());
         Async.CombinedBuilder<FieldWithExecutionResult> futures = Async.ofExpectedSize(calls.size());
 
-        calls.forEach(call -> futures.add(call.get()));
+        calls.forEach(call -> {
+            CompletableFuture<FieldWithExecutionResult> cf = call.get();
+            futures.add(cf);
+        });
 
         return futures.await()
                 .thenApply(this::transformToDeferredPayload)
@@ -73,6 +83,7 @@ public class DeferredCall implements IncrementalCall<DeferPayload> {
      * and build a special {@link DeferPayload} that captures the details of the error.
      */
     private DeferPayload handleNonNullableFieldError(DeferPayload result, Throwable throwable) {
+        System.out.println("DeferredCall.handleNonNullableFieldError(): " + this.getPath());
         if (throwable != null) {
             Throwable cause = throwable.getCause();
             if (cause instanceof NonNullableFieldWasNullException) {
@@ -92,7 +103,8 @@ public class DeferredCall implements IncrementalCall<DeferPayload> {
     }
 
     private DeferPayload transformToDeferredPayload(List<FieldWithExecutionResult> fieldWithExecutionResults) {
-        List<GraphQLError> errorsEncountered = errorSupport.getErrors();
+        System.out.println("DeferredCall.transformToDeferredPayload(): " + this.getPath());
+        List<GraphQLError> errorsEncountered = deferredCallContext.getErrors();
 
         Map<String, Object> dataMap = new HashMap<>();
 

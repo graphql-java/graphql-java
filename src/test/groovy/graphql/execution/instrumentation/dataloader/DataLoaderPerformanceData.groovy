@@ -196,12 +196,14 @@ class DataLoaderPerformanceData {
             query { 
                 shops { 
                     id name 
-                    departments @defer { 
-                        id name 
-                        products { 
+                    ... @defer {
+                        departments { 
                             id name 
+                            products { 
+                                id name 
+                            } 
                         } 
-                    } 
+                    }
                 } 
             }
             """

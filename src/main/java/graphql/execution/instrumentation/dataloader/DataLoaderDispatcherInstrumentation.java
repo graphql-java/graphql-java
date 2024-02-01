@@ -7,6 +7,7 @@ import graphql.collect.ImmutableKit;
 import graphql.execution.AsyncExecutionStrategy;
 import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionStrategy;
+import graphql.execution.defer.DeferredCall;
 import graphql.execution.instrumentation.DeferredFieldInstrumentationContext;
 import graphql.execution.instrumentation.ExecutionStrategyInstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationContext;
@@ -145,11 +146,11 @@ public class DataLoaderDispatcherInstrumentation extends SimplePerformantInstrum
         if (state.hasNoDataLoaders()) {
             return new DeferredFieldInstrumentationContext() {
                 @Override
-                public void onDispatched(CompletableFuture<ExecutionResult> result) {
+                public void onDispatched(CompletableFuture<DeferredCall.FieldWithExecutionResult> result) {
                 }
 
                 @Override
-                public void onCompleted(ExecutionResult result, Throwable t) {
+                public void onCompleted(DeferredCall.FieldWithExecutionResult result, Throwable t) {
                 }
             };
 

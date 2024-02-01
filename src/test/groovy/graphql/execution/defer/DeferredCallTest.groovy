@@ -1,9 +1,9 @@
 package graphql.execution.defer
 
-
 import graphql.ExecutionResultImpl
-import graphql.validation.ValidationError
-import graphql.validation.ValidationErrorType
+import graphql.GraphQLError
+import graphql.execution.NonNullableFieldWasNullException
+import graphql.execution.ResultPath
 import spock.lang.Specification
 
 import java.util.concurrent.CompletableFuture
@@ -50,40 +50,68 @@ class DeferredCallTest extends Specification {
         ]
     }
 
-    def "test error capture happens via CF"() {
+    def "can handle non-nullable field error"() {
         given:
-        def errorSupport = new DeferredCallContext()
-        errorSupport.onError(new ValidationError(ValidationErrorType.MissingFieldArgument))
-        errorSupport.onError(new ValidationError(ValidationErrorType.FieldsConflict))
+        def deferredCallContext = new DeferredCallContext()
+        def mockedException = Mock(NonNullableFieldWasNullException) {
+            getMessage() >> "Field value can't be null"
+            getPath() >> ResultPath.parse("/path")
+        }
 
-        DeferredCall call = new DeferredCall(parse("/path"), {
-            completedFuture(new ExecutionResultImpl("some data", [new ValidationError(ValidationErrorType.FieldUndefined)]))
-        }, errorSupport)
+        DeferredCall call = new DeferredCall("my-label", parse("/path"), [
+                createFieldCallThatThrowsException(mockedException),
+                createResolvedFieldCall("field1", "some data")
+        ], deferredCallContext)
 
         when:
         def future = call.invoke()
-        def er = future.join()
+        def deferPayload = future.join()
 
         then:
-        er.errors.size() == 3
-        er.errors[0].message.contains("Validation error of type FieldUndefined")
-        er.errors[1].message.contains("Validation error of type MissingFieldArgument")
-        er.errors[2].message.contains("Validation error of type FieldsConflict")
-        er.path == ["path"]
+        deferPayload.toSpecification() == [
+                path  : ["path"],
+                label : "my-label",
+                errors: [
+                        [
+                                message   : "Field value can't be null",
+                                path      : ["path"],
+                                extensions: [classification: "NullValueInNonNullableField"]
+                        ]
+                ],
+        ]
     }
 
     private static Supplier<CompletableFuture<DeferredCall.FieldWithExecutionResult>> createResolvedFieldCall(
             String fieldName,
             Object data
     ) {
+        return createResolvedFieldCall(fieldName, data, Collections.emptyList())
+    }
+
+    private static Supplier<CompletableFuture<DeferredCall.FieldWithExecutionResult>> createResolvedFieldCall(
+            String fieldName,
+            Object data,
+            List<GraphQLError> errors
+    ) {
         return new Supplier<CompletableFuture<DeferredCall.FieldWithExecutionResult>>() {
             @Override
             CompletableFuture<DeferredCall.FieldWithExecutionResult> get() {
                 return completedFuture(
                         new DeferredCall.FieldWithExecutionResult(fieldName,
-                                new ExecutionResultImpl(data, Collections.emptyList())
+                                new ExecutionResultImpl(data, errors)
                         )
                 )
+            }
+        }
+    }
+
+    private static Supplier<CompletableFuture<DeferredCall.FieldWithExecutionResult>> createFieldCallThatThrowsException(
+            Throwable exception
+    ) {
+        return new Supplier<CompletableFuture<DeferredCall.FieldWithExecutionResult>>() {
+            @Override
+            CompletableFuture<DeferredCall.FieldWithExecutionResult> get() {
+                return CompletableFuture.failedFuture(exception)
             }
         }
     }

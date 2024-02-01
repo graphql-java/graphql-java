@@ -9,6 +9,7 @@ import graphql.PublicApi;
 import graphql.execution.Async;
 import graphql.execution.ExecutionContext;
 import graphql.execution.FieldValueInfo;
+import graphql.execution.defer.DeferredCall;
 import graphql.execution.instrumentation.parameters.InstrumentationCreateStateParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationDeferredFieldParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecuteOperationParameters;
@@ -26,10 +27,12 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.collect.ImmutableKit.mapAndDropNulls;
@@ -177,16 +180,14 @@ public class ChainedInstrumentation implements Instrumentation {
     }
 
     @Override
-    public DeferredFieldInstrumentationContext beginDeferredField(InstrumentationDeferredFieldParameters parameters, InstrumentationState state) {
-//        return new ChainedDeferredExecutionStrategyInstrumentationContext(instrumentations.stream()
-//                .map(instrumentation -> {
-//                    InstrumentationState specificState = getSpecificState(instrumentation, parameters.getInstrumentationState());
-//                    return instrumentation.beginDeferredField(parameters, specificState);
-//                })
-//                .collect(Collectors.toList()));
+    public DeferredFieldInstrumentationContext beginDeferredField(InstrumentationDeferredFieldParameters parameters, InstrumentationState instrumentationState) {
+        return new ChainedDeferredExecutionStrategyInstrumentationContext(instrumentations.stream()
+                .map(instrumentation -> {
+                    InstrumentationState specificState = getSpecificState(instrumentation, instrumentationState);
+                    return instrumentation.beginDeferredField(parameters, specificState);
+                })
+                .collect(Collectors.toList()));
 
-        // TODO: Fix this
-        throw new UnsupportedOperationException("TODO: fix this");
     }
 
     @Override
@@ -448,28 +449,28 @@ public class ChainedInstrumentation implements Instrumentation {
         }
     }
 
-//    private static class ChainedDeferredExecutionStrategyInstrumentationContext implements DeferredFieldInstrumentationContext {
-//
-//        private final List<DeferredFieldInstrumentationContext> contexts;
-//
-//        ChainedDeferredExecutionStrategyInstrumentationContext(List<InstrumentationContext<ExecutionResult>> contexts) {
-//            this.contexts = Collections.unmodifiableList(contexts);
-//        }
-//
-//        @Override
-//        public void onDispatched(CompletableFuture<ExecutionResult> result) {
-//            contexts.forEach(context -> context.onDispatched(result));
-//        }
-//
-//        @Override
-//        public void onCompleted(ExecutionResult result, Throwable t) {
-//            contexts.forEach(context -> context.onCompleted(result, t));
-//        }
-//
-//        @Override
-//        public void onFieldValueInfo(FieldValueInfo fieldValueInfo) {
-//            contexts.forEach(context -> context.onFieldValueInfo(fieldValueInfo));
-//        }
-//    }
+    private static class ChainedDeferredExecutionStrategyInstrumentationContext implements DeferredFieldInstrumentationContext {
+
+        private final List<DeferredFieldInstrumentationContext> contexts;
+
+        ChainedDeferredExecutionStrategyInstrumentationContext(List<DeferredFieldInstrumentationContext> contexts) {
+            this.contexts = Collections.unmodifiableList(contexts);
+        }
+
+        @Override
+        public void onDispatched(CompletableFuture<DeferredCall.FieldWithExecutionResult> result) {
+            contexts.forEach(context -> context.onDispatched(result));
+        }
+
+        @Override
+        public void onCompleted(DeferredCall.FieldWithExecutionResult result, Throwable t) {
+            contexts.forEach(context -> context.onCompleted(result, t));
+        }
+
+        @Override
+        public void onFieldValueInfo(FieldValueInfo fieldValueInfo) {
+            contexts.forEach(context -> context.onFieldValueInfo(fieldValueInfo));
+        }
+    }
 }
 

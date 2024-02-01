@@ -8,8 +8,10 @@ import graphql.PublicApi;
 import graphql.execution.defer.DeferredCall;
 import graphql.execution.defer.DeferredCallContext;
 import graphql.execution.incremental.DeferExecution;
+import graphql.execution.instrumentation.DeferredFieldInstrumentationContext;
 import graphql.execution.instrumentation.ExecutionStrategyInstrumentationContext;
 import graphql.execution.instrumentation.Instrumentation;
+import graphql.execution.instrumentation.parameters.InstrumentationDeferredFieldParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters;
 import graphql.util.FpKit;
 
@@ -192,7 +194,7 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
 
                             List<MergedField> mergedFields = deferExecutionToFields.get(deferExecution);
 
-                            List<Supplier<CompletableFuture<DeferredCall.FieldWithExecutionResult>>> collect = mergedFields.stream()
+                            List<Supplier<CompletableFuture<DeferredCall.FieldWithExecutionResult>>> calls = mergedFields.stream()
                                     .map(currentField -> {
                                         Map<String, MergedField> fields = new LinkedHashMap<>();
                                         fields.put(currentField.getName(), currentField);
@@ -208,14 +210,33 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
                                                 }
                                         );
 
+
+                                        Instrumentation instrumentation = executionContext.getInstrumentation();
+                                        DeferredFieldInstrumentationContext fieldCtx = instrumentation.beginDeferredField(
+                                                new InstrumentationDeferredFieldParameters(executionContext, parameters), executionContext.getInstrumentationState()
+                                        );
+
+
                                         return dfCache.computeIfAbsent(
                                                 currentField.getName(),
                                                 // The same field can be associated with multiple defer executions, so
                                                 // we memoize the field resolution to avoid multiple calls to the same data fetcher
-                                                key -> FpKit.interThreadMemoize(() -> resolveFieldWithInfoFn
-                                                        .apply(executionContext, callParameters)
-                                                        .thenCompose(FieldValueInfo::getFieldValue)
-                                                        .thenApply(executionResult -> new DeferredCall.FieldWithExecutionResult(currentField.getName(), executionResult)))
+                                                key -> FpKit.interThreadMemoize(() -> {
+                                                            CompletableFuture<FieldValueInfo> fieldValueResult = resolveFieldWithInfoFn.apply(executionContext, callParameters);
+
+                                                            fieldCtx.onDispatched(null);
+
+                                                            return fieldValueResult
+                                                                    .thenApply(fieldValueInfo -> {
+                                                                        System.out.println("then apply: " + fieldValueInfo.getFieldValue().isDone());
+                                                                        fieldCtx.onFieldValueInfo(fieldValueInfo);
+                                                                        return fieldValueInfo;
+                                                                    })
+                                                                    .thenCompose(FieldValueInfo::getFieldValue)
+                                                                    .thenApply(executionResult -> new DeferredCall.FieldWithExecutionResult(currentField.getName(), executionResult));
+                                                        }
+//                                                            .whenComplete(fieldCtx::onCompleted)
+                                                )
                                         );
 
                                     })
@@ -225,12 +246,19 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
                             return new DeferredCall(
                                     deferExecution.getLabel(),
                                     this.parameters.getPath(),
-                                    collect,
+                                    calls,
                                     errorSupport
                             );
                         })
                         .collect(Collectors.toSet());
             }
+
+//            private ExecutionStepInfo createSubscribedFieldStepInfo(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
+//                Field field = parameters.getField().getSingleField();
+//                GraphQLObjectType parentType = (GraphQLObjectType) parameters.getExecutionStepInfo().getUnwrappedNonNullType();
+//                GraphQLFieldDefinition fieldDef = getFieldDef(executionContext.getGraphQLSchema(), parentType, field);
+//                return createExecutionStepInfo(executionContext, parameters, fieldDef, parentType);
+//            }
         }
 
         class NoOp implements DeferExecutionSupport {

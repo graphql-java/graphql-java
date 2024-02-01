@@ -4,6 +4,7 @@ import graphql.ExecutionInput;
 import graphql.ExecutionResult;
 import graphql.PublicSpi;
 import graphql.execution.ExecutionContext;
+import graphql.execution.defer.DeferredCall;
 import graphql.execution.instrumentation.parameters.InstrumentationCreateStateParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationDeferredFieldParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecuteOperationParameters;
@@ -224,14 +225,21 @@ public interface Instrumentation {
     }
 
     /**
-     * This is called just before a deferred field is resolved into a value.
-     *
-     * @param parameters the parameters to this step
-     *
-     * @return a non null {@link InstrumentationContext} object that will be called back when the step ends
+     * TODO Javadoc
+     * @return
      */
-    default InstrumentationContext<ExecutionResult> beginDeferredField(InstrumentationDeferredFieldParameters parameters, InstrumentationState state) {
-        return noOp();
+    default DeferredFieldInstrumentationContext beginDeferredField(InstrumentationDeferredFieldParameters parameters, InstrumentationState instrumentationState) {
+        return new DeferredFieldInstrumentationContext() {
+            @Override
+            public void onDispatched(CompletableFuture<DeferredCall.FieldWithExecutionResult> result) {
+
+            }
+
+            @Override
+            public void onCompleted(DeferredCall.FieldWithExecutionResult result, Throwable t) {
+
+            }
+        };
     }
 
     /**
