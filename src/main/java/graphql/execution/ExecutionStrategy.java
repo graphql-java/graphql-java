@@ -357,7 +357,9 @@ public abstract class ExecutionStrategy {
 
     protected <T> CompletableFuture<T> handleFetchingException(
             DataFetchingEnvironment environment,
-            ExecutionStrategyParameters parameters, Throwable e) {
+            ExecutionStrategyParameters parameters,
+            Throwable e
+    ) {
         DataFetcherExceptionHandlerParameters handlerParameters = DataFetcherExceptionHandlerParameters.newExceptionParameters()
                 .dataFetchingEnvironment(environment)
                 .exception(e)

@@ -17,6 +17,7 @@ import graphql.execution.ValuesResolver;
 import graphql.execution.conditional.ConditionalNodes;
 import graphql.execution.directives.QueryDirectives;
 import graphql.execution.directives.QueryDirectivesImpl;
+import graphql.execution.incremental.IncrementalUtils;
 import graphql.introspection.Introspection;
 import graphql.language.Directive;
 import graphql.language.Document;
@@ -30,7 +31,6 @@ import graphql.language.Selection;
 import graphql.language.SelectionSet;
 import graphql.language.VariableDefinition;
 import graphql.normalized.incremental.NormalizedDeferExecution;
-import graphql.normalized.incremental.IncrementalNodes;
 import graphql.schema.FieldCoordinates;
 import graphql.schema.GraphQLCompositeType;
 import graphql.schema.GraphQLFieldDefinition;
@@ -190,7 +190,6 @@ public class ExecutableNormalizedOperationFactory {
     }
 
     private static final ConditionalNodes conditionalNodes = new ConditionalNodes();
-    private static final IncrementalNodes incrementalNodes = new IncrementalNodes();
 
     private ExecutableNormalizedOperationFactory() {
 
@@ -769,10 +768,10 @@ public class ExecutableNormalizedOperationFactory {
                 return null;
             }
 
-            return incrementalNodes.createDeferExecution(
+            return IncrementalUtils.createDeferExecution(
                     this.coercedVariableValues.toMap(),
                     directives,
-                    newPossibleObjects
+                    (label) -> new NormalizedDeferExecution(label, newPossibleObjects)
             );
         }
 
