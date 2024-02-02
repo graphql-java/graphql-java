@@ -5,7 +5,7 @@ import graphql.ExecutionInput
 import graphql.ExecutionResult
 import graphql.GraphQL
 import graphql.TestUtil
-import graphql.execution.defer.CapturingSubscriber
+import graphql.execution.pubsub.CapturingSubscriber
 import graphql.incremental.DelayedIncrementalExecutionResult
 import graphql.incremental.IncrementalExecutionResult
 import graphql.incremental.IncrementalExecutionResultImpl
@@ -86,13 +86,13 @@ class DeferExecutionSupportIntegrationTest extends Specification {
 
     private static DataFetcher resolve(Object value, Integer sleepMs, boolean allowMultipleCalls) {
         return new DataFetcher() {
-            boolean executed = false;
+            boolean executed = false
             @Override
             Object get(DataFetchingEnvironment environment) throws Exception {
                 if(executed && !allowMultipleCalls) {
                     throw new IllegalStateException("This data fetcher can run only once")
                 }
-                executed = true;
+                executed = true
                 return CompletableFuture.supplyAsync {
                     Thread.sleep(sleepMs)
                     return value
@@ -1358,11 +1358,13 @@ class DeferExecutionSupportIntegrationTest extends Specification {
     private static List<Map<String, Object>> getIncrementalResults(IncrementalExecutionResult initialResult) {
         Publisher<DelayedIncrementalExecutionResult> deferredResultStream = initialResult.incrementalItemPublisher
 
-        def subscriber = new CapturingSubscriber()
-        subscriber.subscribeTo(deferredResultStream)
-        Awaitility.await().untilTrue(subscriber.finished)
+        def subscriber = new CapturingSubscriber<DelayedIncrementalExecutionResult>()
 
-        return subscriber.executionResults
+        deferredResultStream.subscribe(subscriber)
+
+        Awaitility.await().untilTrue(subscriber.isDone())
+
+        return subscriber.getEvents()
                 .collect { it.toSpecification() }
     }
 }

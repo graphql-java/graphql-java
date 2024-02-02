@@ -2,24 +2,20 @@ package graphql.execution.instrumentation.dataloader
 
 import graphql.ExecutionInput
 import graphql.GraphQL
-import graphql.execution.defer.CapturingSubscriber
 import graphql.execution.instrumentation.Instrumentation
-import graphql.incremental.DelayedIncrementalExecutionResult
 import graphql.incremental.IncrementalExecutionResult
-import org.awaitility.Awaitility
 import org.dataloader.DataLoaderRegistry
-import org.reactivestreams.Publisher
 import spock.lang.Specification
 
+import static graphql.execution.instrumentation.dataloader.DataLoaderPerformanceData.assertIncrementalExpensiveData
+import static graphql.execution.instrumentation.dataloader.DataLoaderPerformanceData.expectedExpensiveData
 import static graphql.execution.instrumentation.dataloader.DataLoaderPerformanceData.expectedInitialDeferredData
-import static graphql.execution.instrumentation.dataloader.DataLoaderPerformanceData.expectedInitialExpensiveDeferredData
 import static graphql.execution.instrumentation.dataloader.DataLoaderPerformanceData.getDeferredQuery
 import static graphql.execution.instrumentation.dataloader.DataLoaderPerformanceData.getExpectedData
-import static graphql.execution.instrumentation.dataloader.DataLoaderPerformanceData.getExpectedExpensiveData
-import static graphql.execution.instrumentation.dataloader.DataLoaderPerformanceData.getExpectedExpensiveDeferredData
 import static graphql.execution.instrumentation.dataloader.DataLoaderPerformanceData.getExpectedListOfDeferredData
 import static graphql.execution.instrumentation.dataloader.DataLoaderPerformanceData.getExpensiveDeferredQuery
 import static graphql.execution.instrumentation.dataloader.DataLoaderPerformanceData.getExpensiveQuery
+import static graphql.execution.instrumentation.dataloader.DataLoaderPerformanceData.getIncrementalResults
 import static graphql.execution.instrumentation.dataloader.DataLoaderPerformanceData.getQuery
 
 class DataLoaderPerformanceTest extends Specification {
@@ -101,24 +97,24 @@ class DataLoaderPerformanceTest extends Specification {
 
         when:
 
-        ExecutionInput executionInput = ExecutionInput.newExecutionInput().query(deferredQuery).dataLoaderRegistry(dataLoaderRegistry).build()
-        def result = graphQL.execute(executionInput)
+        ExecutionInput executionInput = ExecutionInput.newExecutionInput()
+                .query(deferredQuery)
+                .dataLoaderRegistry(dataLoaderRegistry)
+                .incrementalSupport(true)
+                .build()
 
-        Publisher<DelayedIncrementalExecutionResult> deferredResultStream = ((IncrementalExecutionResult) result).incrementalItemPublisher
-
-        def subscriber = new CapturingSubscriber()
-        subscriber.subscribeTo(deferredResultStream)
-        Awaitility.await().untilTrue(subscriber.finished)
-
+        IncrementalExecutionResult result = graphQL.execute(executionInput)
 
         then:
+        result.toSpecification() == expectedInitialDeferredData
 
-        result.data == expectedInitialDeferredData
+        when:
+        def incrementalResults = getIncrementalResults(result)
 
-        subscriber.executionResultData == expectedListOfDeferredData
+        then:
+        incrementalResults == expectedListOfDeferredData
 
-        //
-        //  with deferred results, we don't achieve the same efficiency
+        //  With deferred results, we don't achieve the same efficiency.
         batchCompareDataFetchers.departmentsForShopsBatchLoaderCounter.get() == 3
         batchCompareDataFetchers.productsForDepartmentsBatchLoaderCounter.get() == 3
     }
@@ -127,25 +123,26 @@ class DataLoaderPerformanceTest extends Specification {
 
         when:
 
-        ExecutionInput executionInput = ExecutionInput.newExecutionInput().query(expensiveDeferredQuery).dataLoaderRegistry(dataLoaderRegistry).build()
-        def result = graphQL.execute(executionInput)
+        ExecutionInput executionInput = ExecutionInput.newExecutionInput()
+                .query(expensiveDeferredQuery)
+                .dataLoaderRegistry(dataLoaderRegistry)
+                .incrementalSupport(true)
+                .build()
 
-        Publisher<DelayedIncrementalExecutionResult> deferredResultStream = ((IncrementalExecutionResult) result).incrementalItemPublisher
-
-        def subscriber = new CapturingSubscriber()
-        subscriber.subscribeTo(deferredResultStream)
-        Awaitility.await().untilTrue(subscriber.finished)
-
+        IncrementalExecutionResult result = graphQL.execute(executionInput)
 
         then:
+        result.toSpecification() == expectedInitialDeferredData
 
-        result.data == expectedInitialExpensiveDeferredData
+        when:
+        def incrementalResults = getIncrementalResults(result)
 
-        subscriber.executionResultData == expectedExpensiveDeferredData
+        then:
+        assertIncrementalExpensiveData(incrementalResults)
 
-        //
-        //  with deferred results, we don't achieve the same efficiency
-        batchCompareDataFetchers.departmentsForShopsBatchLoaderCounter.get() == 3
-        batchCompareDataFetchers.productsForDepartmentsBatchLoaderCounter.get() == 3
+        // With deferred results, we don't achieve the same efficiency.
+        // The final number of loader calls is non-deterministic, so we can't assert an exact number.
+        batchCompareDataFetchers.departmentsForShopsBatchLoaderCounter.get() >= 3
+        batchCompareDataFetchers.productsForDepartmentsBatchLoaderCounter.get() >= 3
     }
 }

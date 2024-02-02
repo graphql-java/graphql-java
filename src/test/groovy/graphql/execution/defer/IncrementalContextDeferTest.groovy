@@ -57,7 +57,7 @@ class IncrementalContextDeferTest extends Specification {
         incrementalContext.enqueue(offThread("C", 10, "/field/path"))
 
         when:
-        def subscriber = new CapturingSubscriber() {
+        def subscriber = new graphql.execution.pubsub.CapturingSubscriber<DelayedIncrementalExecutionResult>() {
             @Override
             void onComplete() {
                 assert false, "This should not be called!"
@@ -65,10 +65,10 @@ class IncrementalContextDeferTest extends Specification {
         }
         incrementalContext.startDeferredCalls().subscribe(subscriber)
 
-        Awaitility.await().untilTrue(subscriber.finished)
+        Awaitility.await().untilTrue(subscriber.isDone())
 
-        def results = subscriber.executionResults
-        def thrown = subscriber.throwable
+        def results = subscriber.getEvents()
+        def thrown = subscriber.getThrowable()
 
         then:
         thrown.message == "java.lang.RuntimeException: Bang"
@@ -83,18 +83,18 @@ class IncrementalContextDeferTest extends Specification {
         incrementalContext.enqueue(offThread("C", 10, "/field/path")) // <-- will finish first
 
         when:
-        def subscriber = new CapturingSubscriber() {
+        def subscriber = new graphql.execution.pubsub.CapturingSubscriber<DelayedIncrementalExecutionResult>() {
             @Override
             void onNext(DelayedIncrementalExecutionResult executionResult) {
-                this.executionResults.add(executionResult)
+                this.getEvents().add(executionResult)
                 subscription.cancel()
-                finished.set(true)
+                this.isDone().set(true)
             }
         }
         incrementalContext.startDeferredCalls().subscribe(subscriber)
 
-        Awaitility.await().untilTrue(subscriber.finished)
-        def results = subscriber.executionResults
+        Awaitility.await().untilTrue(subscriber.isDone())
+        def results = subscriber.getEvents()
 
         then:
         results.size() == 1
@@ -112,8 +112,8 @@ class IncrementalContextDeferTest extends Specification {
         incrementalContext.enqueue(offThread("C", 10, "/field/path")) // <-- will finish first
 
         when:
-        def subscriber1 = new CapturingSubscriber()
-        def subscriber2 = new CapturingSubscriber()
+        def subscriber1 = new graphql.execution.pubsub.CapturingSubscriber<DelayedIncrementalExecutionResult>()
+        def subscriber2 = new graphql.execution.pubsub.CapturingSubscriber<DelayedIncrementalExecutionResult>()
         incrementalContext.startDeferredCalls().subscribe(subscriber1)
         incrementalContext.startDeferredCalls().subscribe(subscriber2)
 
@@ -239,11 +239,11 @@ class IncrementalContextDeferTest extends Specification {
     }
 
     private static List<DelayedIncrementalExecutionResult> startAndWaitCalls(IncrementalContext incrementalContext) {
-        def subscriber = new CapturingSubscriber()
+        def subscriber = new graphql.execution.pubsub.CapturingSubscriber<DelayedIncrementalExecutionResult>()
 
         incrementalContext.startDeferredCalls().subscribe(subscriber)
 
-        Awaitility.await().untilTrue(subscriber.finished)
-        return subscriber.executionResults
+        Awaitility.await().untilTrue(subscriber.isDone())
+        return subscriber.getEvents()
     }
 }

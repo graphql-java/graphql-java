@@ -213,7 +213,7 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
 
                                         Instrumentation instrumentation = executionContext.getInstrumentation();
                                         DeferredFieldInstrumentationContext fieldCtx = instrumentation.beginDeferredField(
-                                                new InstrumentationDeferredFieldParameters(executionContext, parameters), executionContext.getInstrumentationState()
+                                                new InstrumentationDeferredFieldParameters(executionContext, callParameters), executionContext.getInstrumentationState()
                                         );
 
 
@@ -228,7 +228,6 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
 
                                                             return fieldValueResult
                                                                     .thenApply(fieldValueInfo -> {
-                                                                        System.out.println("then apply: " + fieldValueInfo.getFieldValue().isDone());
                                                                         fieldCtx.onFieldValueInfo(fieldValueInfo);
                                                                         return fieldValueInfo;
                                                                     })

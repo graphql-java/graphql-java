@@ -8,7 +8,6 @@ import graphql.execution.Async;
 import graphql.execution.NonNullableFieldWasNullError;
 import graphql.execution.NonNullableFieldWasNullException;
 import graphql.execution.ResultPath;
-import graphql.execution.instrumentation.DeferredFieldInstrumentationContext;
 import graphql.incremental.DeferPayload;
 
 import java.util.Collections;
@@ -63,7 +62,6 @@ public class DeferredCall implements IncrementalCall<DeferPayload> {
 
     @Override
     public CompletableFuture<DeferPayload> invoke() {
-        System.out.println("DeferredCall.invoke(): " + this.getPath());
         Async.CombinedBuilder<FieldWithExecutionResult> futures = Async.ofExpectedSize(calls.size());
 
         calls.forEach(call -> {
@@ -83,7 +81,6 @@ public class DeferredCall implements IncrementalCall<DeferPayload> {
      * and build a special {@link DeferPayload} that captures the details of the error.
      */
     private DeferPayload handleNonNullableFieldError(DeferPayload result, Throwable throwable) {
-        System.out.println("DeferredCall.handleNonNullableFieldError(): " + this.getPath());
         if (throwable != null) {
             Throwable cause = throwable.getCause();
             if (cause instanceof NonNullableFieldWasNullException) {
@@ -103,7 +100,6 @@ public class DeferredCall implements IncrementalCall<DeferPayload> {
     }
 
     private DeferPayload transformToDeferredPayload(List<FieldWithExecutionResult> fieldWithExecutionResults) {
-        System.out.println("DeferredCall.transformToDeferredPayload(): " + this.getPath());
         List<GraphQLError> errorsEncountered = deferredCallContext.getErrors();
 
         Map<String, Object> dataMap = new HashMap<>();

@@ -17,7 +17,6 @@ import graphql.util.LockKit;
 import org.dataloader.DataLoaderRegistry;
 import org.slf4j.Logger;
 
-import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -203,28 +202,13 @@ public class FieldLevelTrackingApproach {
                     return dispatchIfNeeded(callStack, level);
                 });
                 if (dispatchNeeded) {
-                    // TODO: I think "dispatch" is being called before it should
-                    System.out.println("InstrumentationContext.onDispatched(): dispatching");
                     dispatch();
                 }
             }
 
             @Override
             public void onCompleted(DeferredCall.FieldWithExecutionResult result, Throwable t) {
-                System.out.println("DeferredFieldInstrumentationContext.onCompleted(): " + parameters.getExecutionStrategyParameters().getPath());
             }
-
-//            @Override
-//            public void onFieldValueInfo(FieldValueInfo fieldValueInfo) {
-//                System.out.println("DeferredFieldInstrumentationContext.onFieldValueInfo(): " + parameters.getExecutionStrategyParameters().getPath());
-//                boolean dispatchNeeded;
-//                synchronized (callStack) {
-//                    dispatchNeeded = handleOnFieldValuesInfo(Collections.singletonList(fieldValueInfo), callStack, level);
-//                }
-//                if (dispatchNeeded) {
-//                    dispatch();
-//                }
-//            }
         };
     }
 
@@ -241,8 +225,6 @@ public class FieldLevelTrackingApproach {
                     return dispatchIfNeeded(callStack, level);
                 });
                 if (dispatchNeeded) {
-                    // TODO: I think "dispatch" is being called before it should
-                    System.out.println("InstrumentationContext.onDispatched(): dispatching");
                     dispatch();
                 }
             }
