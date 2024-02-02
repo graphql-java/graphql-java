@@ -8,9 +8,9 @@ import graphql.PublicApi;
 import graphql.execution.defer.DeferredCall;
 import graphql.execution.defer.DeferredCallContext;
 import graphql.execution.incremental.DeferExecution;
-import graphql.execution.instrumentation.DeferredFieldInstrumentationContext;
 import graphql.execution.instrumentation.ExecutionStrategyInstrumentationContext;
 import graphql.execution.instrumentation.Instrumentation;
+import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.parameters.InstrumentationDeferredFieldParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters;
 import graphql.util.FpKit;
@@ -212,10 +212,9 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
 
 
                                         Instrumentation instrumentation = executionContext.getInstrumentation();
-                                        DeferredFieldInstrumentationContext fieldCtx = instrumentation.beginDeferredField(
+                                        InstrumentationContext<ExecutionResult> fieldCtx = instrumentation.beginDeferredField(
                                                 new InstrumentationDeferredFieldParameters(executionContext, callParameters), executionContext.getInstrumentationState()
                                         );
-
 
                                         return dfCache.computeIfAbsent(
                                                 currentField.getName(),
@@ -224,17 +223,19 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
                                                 key -> FpKit.interThreadMemoize(() -> {
                                                             CompletableFuture<FieldValueInfo> fieldValueResult = resolveFieldWithInfoFn.apply(executionContext, callParameters);
 
-                                                            fieldCtx.onDispatched(null);
+                                                    CompletableFuture<ExecutionResult> executionResultCF = fieldValueResult
+                                                            .thenCompose(FieldValueInfo::getFieldValue);
 
-                                                            return fieldValueResult
-                                                                    .thenApply(fieldValueInfo -> {
-                                                                        fieldCtx.onFieldValueInfo(fieldValueInfo);
-                                                                        return fieldValueInfo;
-                                                                    })
-                                                                    .thenCompose(FieldValueInfo::getFieldValue)
-                                                                    .thenApply(executionResult -> new DeferredCall.FieldWithExecutionResult(currentField.getName(), executionResult));
+                                                    fieldCtx.onDispatched(executionResultCF);
+
+                                                    return executionResultCF
+                                                            .thenApply(executionResult ->
+                                                                    new DeferredCall.FieldWithExecutionResult(currentField.getName(), executionResult)
+                                                            )
+                                                            .whenComplete((fieldWithExecutionResult, throwable) ->
+                                                                    fieldCtx.onCompleted(fieldWithExecutionResult.getExecutionResult(), throwable)
+                                                            );
                                                         }
-//                                                            .whenComplete(fieldCtx::onCompleted)
                                                 )
                                         );
 

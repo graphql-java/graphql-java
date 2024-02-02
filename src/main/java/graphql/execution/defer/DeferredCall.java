@@ -127,5 +127,9 @@ public class DeferredCall implements IncrementalCall<DeferPayload> {
             this.fieldName = fieldName;
             this.executionResult = executionResult;
         }
+
+        public ExecutionResult getExecutionResult() {
+            return executionResult;
+        }
     }
 }

@@ -5,8 +5,6 @@ import graphql.ExecutionResult;
 import graphql.Internal;
 import graphql.execution.FieldValueInfo;
 import graphql.execution.ResultPath;
-import graphql.execution.defer.DeferredCall;
-import graphql.execution.instrumentation.DeferredFieldInstrumentationContext;
 import graphql.execution.instrumentation.ExecutionStrategyInstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationState;
@@ -187,16 +185,16 @@ public class FieldLevelTrackingApproach {
         return result;
     }
 
-    DeferredFieldInstrumentationContext beginDeferredField(InstrumentationDeferredFieldParameters parameters, InstrumentationState state) {
+    InstrumentationContext<ExecutionResult> beginDeferredField(InstrumentationDeferredFieldParameters parameters, InstrumentationState state) {
         CallStack callStack = new CallStack();
         int level = parameters.getExecutionStrategyParameters().getPath().getLevel();
         synchronized (callStack) {
             callStack.clearAndMarkCurrentLevelAsReady(level);
         }
 
-        return new DeferredFieldInstrumentationContext() {
+        return new InstrumentationContext<>() {
             @Override
-            public void onDispatched(CompletableFuture<DeferredCall.FieldWithExecutionResult> result) {
+            public void onDispatched(CompletableFuture<ExecutionResult> result) {
                 boolean dispatchNeeded = callStack.lock.callLocked(() -> {
                     callStack.increaseFetchCount(level);
                     return dispatchIfNeeded(callStack, level);
@@ -207,7 +205,7 @@ public class FieldLevelTrackingApproach {
             }
 
             @Override
-            public void onCompleted(DeferredCall.FieldWithExecutionResult result, Throwable t) {
+            public void onCompleted(ExecutionResult result, Throwable t) {
             }
         };
     }

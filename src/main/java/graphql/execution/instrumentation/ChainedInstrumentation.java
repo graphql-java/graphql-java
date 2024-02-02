@@ -9,7 +9,6 @@ import graphql.PublicApi;
 import graphql.execution.Async;
 import graphql.execution.ExecutionContext;
 import graphql.execution.FieldValueInfo;
-import graphql.execution.defer.DeferredCall;
 import graphql.execution.instrumentation.parameters.InstrumentationCreateStateParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationDeferredFieldParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecuteOperationParameters;
@@ -180,7 +179,7 @@ public class ChainedInstrumentation implements Instrumentation {
     }
 
     @Override
-    public DeferredFieldInstrumentationContext beginDeferredField(InstrumentationDeferredFieldParameters parameters, InstrumentationState instrumentationState) {
+    public InstrumentationContext<ExecutionResult> beginDeferredField(InstrumentationDeferredFieldParameters parameters, InstrumentationState instrumentationState) {
         return new ChainedDeferredExecutionStrategyInstrumentationContext(instrumentations.stream()
                 .map(instrumentation -> {
                     InstrumentationState specificState = getSpecificState(instrumentation, instrumentationState);
@@ -449,27 +448,22 @@ public class ChainedInstrumentation implements Instrumentation {
         }
     }
 
-    private static class ChainedDeferredExecutionStrategyInstrumentationContext implements DeferredFieldInstrumentationContext {
+    private static class ChainedDeferredExecutionStrategyInstrumentationContext implements InstrumentationContext<ExecutionResult> {
 
-        private final List<DeferredFieldInstrumentationContext> contexts;
+        private final List<InstrumentationContext<ExecutionResult>> contexts;
 
-        ChainedDeferredExecutionStrategyInstrumentationContext(List<DeferredFieldInstrumentationContext> contexts) {
+        ChainedDeferredExecutionStrategyInstrumentationContext(List<InstrumentationContext<ExecutionResult>> contexts) {
             this.contexts = Collections.unmodifiableList(contexts);
         }
 
         @Override
-        public void onDispatched(CompletableFuture<DeferredCall.FieldWithExecutionResult> result) {
+        public void onDispatched(CompletableFuture<ExecutionResult> result) {
             contexts.forEach(context -> context.onDispatched(result));
         }
 
         @Override
-        public void onCompleted(DeferredCall.FieldWithExecutionResult result, Throwable t) {
+        public void onCompleted(ExecutionResult result, Throwable t) {
             contexts.forEach(context -> context.onCompleted(result, t));
-        }
-
-        @Override
-        public void onFieldValueInfo(FieldValueInfo fieldValueInfo) {
-            contexts.forEach(context -> context.onFieldValueInfo(fieldValueInfo));
         }
     }
 }
