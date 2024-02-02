@@ -24,9 +24,7 @@ import graphql.language.VariableDefinition;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.impl.SchemaUtil;
-import graphql.util.LogKit;
 import org.reactivestreams.Publisher;
-import org.slf4j.Logger;
 
 import java.util.Collections;
 import java.util.List;
@@ -41,8 +39,6 @@ import static java.util.concurrent.CompletableFuture.completedFuture;
 
 @Internal
 public class Execution {
-    private static final Logger logNotSafe = LogKit.getNotPrivacySafeLogger(Execution.class);
-
     private final FieldCollector fieldCollector = new FieldCollector();
     private final ExecutionStrategy queryStrategy;
     private final ExecutionStrategy mutationStrategy;
@@ -163,9 +159,6 @@ public class Execution {
         CompletableFuture<ExecutionResult> result;
         try {
             ExecutionStrategy executionStrategy = executionContext.getStrategy(operation);
-            if (logNotSafe.isDebugEnabled()) {
-                logNotSafe.debug("Executing '{}' query operation: '{}' using '{}' execution strategy", executionContext.getExecutionId(), operation, executionStrategy.getClass().getName());
-            }
             result = executionStrategy.execute(executionContext, parameters);
         } catch (NonNullableFieldWasNullException e) {
             // this means it was non-null types all the way from an offending non-null type

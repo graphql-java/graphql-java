@@ -13,7 +13,6 @@ import graphql.execution.instrumentation.parameters.InstrumentationExecutionStra
 import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters;
 import graphql.util.LockKit;
 import org.dataloader.DataLoaderRegistry;
-import org.slf4j.Logger;
 
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -27,7 +26,6 @@ import java.util.function.Supplier;
 @Internal
 public class FieldLevelTrackingApproach {
     private final Supplier<DataLoaderRegistry> dataLoaderRegistrySupplier;
-    private final Logger log;
 
     private static class CallStack implements InstrumentationState {
 
@@ -113,9 +111,8 @@ public class FieldLevelTrackingApproach {
         }
     }
 
-    public FieldLevelTrackingApproach(Logger log, Supplier<DataLoaderRegistry> dataLoaderRegistrySupplier) {
+    public FieldLevelTrackingApproach(Supplier<DataLoaderRegistry> dataLoaderRegistrySupplier) {
         this.dataLoaderRegistrySupplier = dataLoaderRegistrySupplier;
-        this.log = log;
     }
 
     public InstrumentationState createState() {
@@ -261,9 +258,6 @@ public class FieldLevelTrackingApproach {
 
     void dispatch() {
         DataLoaderRegistry dataLoaderRegistry = getDataLoaderRegistry();
-        if (log.isDebugEnabled()) {
-            log.debug("Dispatching data loaders ({})", dataLoaderRegistry.getKeys());
-        }
         dataLoaderRegistry.dispatchAll();
     }
 
