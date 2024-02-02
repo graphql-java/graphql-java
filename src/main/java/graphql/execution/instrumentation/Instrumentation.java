@@ -2,6 +2,7 @@ package graphql.execution.instrumentation;
 
 import graphql.ExecutionInput;
 import graphql.ExecutionResult;
+import graphql.ExperimentalApi;
 import graphql.PublicSpi;
 import graphql.execution.ExecutionContext;
 import graphql.execution.instrumentation.parameters.InstrumentationCreateStateParameters;
@@ -229,6 +230,7 @@ public interface Instrumentation {
      * @param state      the state created during the call to {@link #createState(InstrumentationCreateStateParameters)}
      * @return a non-null {@link InstrumentationContext} object that will be called back when the step ends
      */
+    @ExperimentalApi
     default InstrumentationContext<ExecutionResult> beginDeferredField(InstrumentationDeferredFieldParameters parameters, InstrumentationState state) {
         return noOp();
     }

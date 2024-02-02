@@ -1,6 +1,7 @@
 package graphql.execution.instrumentation;
 
 import graphql.ExecutionResult;
+import graphql.ExperimentalApi;
 import graphql.Internal;
 import graphql.PublicSpi;
 import graphql.execution.FieldValueInfo;
@@ -21,6 +22,7 @@ public interface ExecutionStrategyInstrumentationContext extends Instrumentation
 
     }
 
+    @ExperimentalApi
     default void onDeferredField(MergedField field) {
 
     }

@@ -183,6 +183,7 @@ public class FieldLevelTrackingApproach {
     }
 
     InstrumentationContext<ExecutionResult> beginDeferredField(InstrumentationDeferredFieldParameters parameters, InstrumentationState state) {
+        // Create a new CallStack, since every deferred fields can execute in parallel.
         CallStack callStack = new CallStack();
         int level = parameters.getExecutionStrategyParameters().getPath().getLevel();
         synchronized (callStack) {

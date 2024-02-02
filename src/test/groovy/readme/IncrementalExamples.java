@@ -12,8 +12,6 @@ import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 
-import java.util.Map;
-
 @SuppressWarnings({"unused", "ConstantConditions"})
 public class IncrementalExamples {
 
@@ -35,15 +33,21 @@ public class IncrementalExamples {
         //
         ExecutionResult initialResult = graphQL.execute(ExecutionInput.newExecutionInput().query(deferredQuery).build());
 
+        if (!(initialResult instanceof IncrementalExecutionResult)) {
+            // handle non incremental response
+            return;
+        }
+
+        IncrementalExecutionResult incrementalResult = (IncrementalExecutionResult) initialResult;
+
         //
         // then initial results happen first, the incremental ones will begin AFTER these initial
         // results have completed
         //
         sendMultipartHttpResult(httpServletResponse, initialResult);
 
-        Map<Object, Object> extensions = initialResult.getExtensions();
-        Publisher<DelayedIncrementalExecutionResult> delayedIncrementalResults =
-                ((IncrementalExecutionResult) initialResult).getIncrementalItemPublisher();
+        Publisher<DelayedIncrementalExecutionResult> delayedIncrementalResults = incrementalResult
+                .getIncrementalItemPublisher();
 
         //
         // you subscribe to the incremental results like any other reactive stream

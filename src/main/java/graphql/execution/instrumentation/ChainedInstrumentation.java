@@ -5,6 +5,7 @@ import com.google.common.collect.Maps;
 import graphql.Assert;
 import graphql.ExecutionInput;
 import graphql.ExecutionResult;
+import graphql.ExperimentalApi;
 import graphql.PublicApi;
 import graphql.execution.Async;
 import graphql.execution.ExecutionContext;
@@ -178,6 +179,7 @@ public class ChainedInstrumentation implements Instrumentation {
         return new ChainedExecutionStrategyInstrumentationContext(mapAndDropNulls(instrumentations, mapper));
     }
 
+    @ExperimentalApi
     @Override
     public InstrumentationContext<ExecutionResult> beginDeferredField(InstrumentationDeferredFieldParameters parameters, InstrumentationState instrumentationState) {
         return new ChainedDeferredExecutionStrategyInstrumentationContext(instrumentations.stream()

@@ -19,7 +19,6 @@ import static graphql.Directives.DeferDirective;
 public class IncrementalUtils {
     private IncrementalUtils() {}
 
-    // TODO: Refactor this to reduce duplication with IncrementalNodes
     public static <T> T createDeferExecution(
             Map<String, Object> variables,
             List<Directive> directives,

@@ -8,7 +8,6 @@ import graphql.execution.instrumentation.ChainedInstrumentation;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.dataloader.DataLoaderDispatcherInstrumentation;
 import graphql.execution.instrumentation.tracing.TracingInstrumentation;
-import graphql.incremental.IncrementalExecutionResult;
 import graphql.schema.DataFetcher;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
@@ -161,9 +160,6 @@ public class HttpMain extends AbstractHandler {
 
 
     private void returnAsJson(HttpServletResponse response, ExecutionResult executionResult) throws IOException {
-        if (executionResult instanceof IncrementalExecutionResult) {
-            DeferHttpSupport.sendIncrementalResponse(response, (IncrementalExecutionResult) executionResult);
-        }
         sendNormalResponse(response, executionResult);
     }
 

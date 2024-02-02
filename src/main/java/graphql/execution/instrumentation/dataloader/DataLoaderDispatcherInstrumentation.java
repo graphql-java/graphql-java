@@ -24,8 +24,6 @@ import org.dataloader.DataLoaderRegistry;
 import org.dataloader.stats.Statistics;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -139,16 +137,7 @@ public class DataLoaderDispatcherInstrumentation extends SimplePerformantInstrum
         // if there are no data loaders, there is nothing to do
         //
         if (state.hasNoDataLoaders()) {
-            return new InstrumentationContext<>() {
-                @Override
-                public void onDispatched(CompletableFuture<ExecutionResult> result) {
-                }
-
-                @Override
-                public void onCompleted(ExecutionResult result, Throwable t) {
-                }
-            };
-
+            return ExecutionStrategyInstrumentationContext.NOOP;
         }
         return state.getApproach().beginDeferredField(parameters, state.getState());
     }
