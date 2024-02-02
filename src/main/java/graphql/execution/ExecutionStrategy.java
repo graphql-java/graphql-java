@@ -363,7 +363,7 @@ public abstract class ExecutionStrategy {
                 .exception(e)
                 .build();
 
-        parameters.deferredErrorSupport().onFetchingException(parameters, e);
+        parameters.getDeferredCallContext().onFetchingException(parameters, e);
 
         try {
             return asyncHandleException(dataFetcherExceptionHandler, handlerParameters);
@@ -484,7 +484,7 @@ public abstract class ExecutionStrategy {
         UnresolvedTypeError error = new UnresolvedTypeError(parameters.getPath(), parameters.getExecutionStepInfo(), e);
         context.addError(error);
 
-        parameters.deferredErrorSupport().onError(error);
+        parameters.getDeferredCallContext().onError(error);
     }
 
     /**
@@ -701,7 +701,7 @@ public abstract class ExecutionStrategy {
         SerializationError error = new SerializationError(parameters.getPath(), e);
         context.addError(error);
 
-        parameters.deferredErrorSupport().onError(error);
+        parameters.getDeferredCallContext().onError(error);
 
         return null;
     }
@@ -729,7 +729,7 @@ public abstract class ExecutionStrategy {
         TypeMismatchError error = new TypeMismatchError(parameters.getPath(), parameters.getExecutionStepInfo().getUnwrappedNonNullType());
         context.addError(error);
 
-        parameters.deferredErrorSupport().onError(error);
+        parameters.getDeferredCallContext().onError(error);
     }
 
 

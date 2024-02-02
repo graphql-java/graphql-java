@@ -1,9 +1,11 @@
-package graphql.execution.defer
+package graphql.execution.incremental
 
 import graphql.ExecutionResultImpl
 import graphql.GraphQLError
 import graphql.execution.NonNullableFieldWasNullException
 import graphql.execution.ResultPath
+import graphql.execution.incremental.DeferredCall
+import graphql.execution.incremental.DeferredCallContext
 import spock.lang.Specification
 
 import java.util.concurrent.CompletableFuture

@@ -1,4 +1,4 @@
-package graphql.execution.defer;
+package graphql.execution.incremental;
 
 import graphql.Internal;
 import graphql.incremental.StreamPayload;

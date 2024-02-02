@@ -7,7 +7,7 @@ import graphql.ExecutionResultImpl;
 import graphql.GraphQLContext;
 import graphql.GraphQLError;
 import graphql.Internal;
-import graphql.execution.defer.IncrementalContext;
+import graphql.execution.incremental.IncrementalContext;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationState;
@@ -187,11 +187,11 @@ public class Execution {
      */
     private CompletableFuture<ExecutionResult> deferSupport(ExecutionContext executionContext, CompletableFuture<ExecutionResult> result) {
         return result.thenApply(er -> {
-            IncrementalContext deferSupport = executionContext.getIncrementalContext();
-            if (deferSupport.isDeferDetected()) {
+            IncrementalContext incrementalContext = executionContext.getIncrementalContext();
+            if (incrementalContext.getIncrementalCallsDetected()) {
                 // we start the rest of the query now to maximize throughput.  We have the initial important results,
                 // and now we can start the rest of the calls as early as possible (even before someone subscribes)
-                Publisher<DelayedIncrementalExecutionResult> publisher = deferSupport.startDeferredCalls();
+                Publisher<DelayedIncrementalExecutionResult> publisher = incrementalContext.startDeferredCalls();
 
                 return IncrementalExecutionResultImpl.fromExecutionResult(er)
                         // "hasNext" can, in theory, be "false" when all the incremental items are delivered in the

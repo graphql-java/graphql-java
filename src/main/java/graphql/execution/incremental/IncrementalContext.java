@@ -1,4 +1,4 @@
-package graphql.execution.defer;
+package graphql.execution.incremental;
 
 import graphql.Internal;
 import graphql.execution.reactive.SingleSubscriberPublisher;
@@ -22,14 +22,14 @@ import static graphql.incremental.DelayedIncrementalExecutionResultImpl.newIncre
  */
 @Internal
 public class IncrementalContext {
-    private final AtomicBoolean deferDetected = new AtomicBoolean(false);
+    private final AtomicBoolean incrementalCallsDetected = new AtomicBoolean(false);
     private final Deque<IncrementalCall<? extends IncrementalPayload>> incrementalCalls = new ConcurrentLinkedDeque<>();
     private final SingleSubscriberPublisher<DelayedIncrementalExecutionResult> publisher = new SingleSubscriberPublisher<>();
     private final AtomicInteger pendingCalls = new AtomicInteger();
     private final LockKit.ReentrantLock publisherLock = new LockKit.ReentrantLock();
 
     @SuppressWarnings("FutureReturnValueIgnored")
-    private void drainDeferredCalls() {
+    private void drainIncrementalCalls() {
         IncrementalCall<? extends IncrementalPayload> incrementalCall = incrementalCalls.poll();
 
         while (incrementalCall != null) {
@@ -62,29 +62,29 @@ public class IncrementalContext {
                             publisher.noMoreData();
                         } else {
                             // Nested calls were added, let's try to drain the queue again.
-                            drainDeferredCalls();
+                            drainIncrementalCalls();
                         }
                     });
             incrementalCall = incrementalCalls.poll();
         }
     }
 
-    public void enqueue(DeferredCall deferredCall) {
-        deferDetected.set(true);
-        incrementalCalls.offer(deferredCall);
+    public void enqueue(IncrementalCall<? extends IncrementalPayload> incrementalCall) {
+        incrementalCallsDetected.set(true);
+        incrementalCalls.offer(incrementalCall);
         pendingCalls.incrementAndGet();
     }
 
-    public void enqueue(Collection<DeferredCall> calls) {
+    public void enqueue(Collection<IncrementalCall<? extends IncrementalPayload>> calls) {
         if (!calls.isEmpty()) {
-            deferDetected.set(true);
+            incrementalCallsDetected.set(true);
             incrementalCalls.addAll(calls);
             pendingCalls.addAndGet(calls.size());
         }
     }
 
-    public boolean isDeferDetected() {
-        return deferDetected.get();
+    public boolean getIncrementalCallsDetected() {
+        return incrementalCallsDetected.get();
     }
 
     /**
@@ -93,7 +93,7 @@ public class IncrementalContext {
      * @return the publisher of deferred results
      */
     public Publisher<DelayedIncrementalExecutionResult> startDeferredCalls() {
-        drainDeferredCalls();
+        drainIncrementalCalls();
         return publisher;
     }
 }

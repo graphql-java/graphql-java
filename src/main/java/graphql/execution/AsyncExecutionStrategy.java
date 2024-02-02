@@ -5,14 +5,16 @@ import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ImmutableSet;
 import graphql.ExecutionResult;
 import graphql.PublicApi;
-import graphql.execution.defer.DeferredCall;
-import graphql.execution.defer.DeferredCallContext;
+import graphql.execution.incremental.DeferredCall;
+import graphql.execution.incremental.DeferredCallContext;
+import graphql.execution.incremental.IncrementalCall;
 import graphql.execution.incremental.DeferExecution;
 import graphql.execution.instrumentation.ExecutionStrategyInstrumentationContext;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.parameters.InstrumentationDeferredFieldParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters;
+import graphql.incremental.IncrementalPayload;
 import graphql.util.FpKit;
 
 import java.util.Collections;
@@ -72,7 +74,9 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
 
         executionContext.getIncrementalContext().enqueue(deferExecutionSupport.createCalls());
 
-        Async.CombinedBuilder<FieldValueInfo> futures = Async.ofExpectedSize(fields.size() - deferExecutionSupport.deferredFieldsCount());
+        // Only non-deferred fields should be considered for calculating the expected size of futures.
+        Async.CombinedBuilder<FieldValueInfo> futures = Async
+                .ofExpectedSize(fields.size() - deferExecutionSupport.deferredFieldsCount());
 
         for (String fieldName : fieldNames) {
             MergedField currentField = fields.getSubField(fieldName);
@@ -94,9 +98,9 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
         executionStrategyCtx.onDispatched(overallResult);
 
         futures.await().whenComplete((completeValueInfos, throwable) -> {
-            List<String> fieldsExecutedInInitialResult = deferExecutionSupport.getNonDeferredFieldNames(fieldNames);
+            List<String> fieldsExecutedOnInitialResult = deferExecutionSupport.getNonDeferredFieldNames(fieldNames);
 
-            BiConsumer<List<ExecutionResult>, Throwable> handleResultsConsumer = handleResults(executionContext, fieldsExecutedInInitialResult, overallResult);
+            BiConsumer<List<ExecutionResult>, Throwable> handleResultsConsumer = handleResults(executionContext, fieldsExecutedOnInitialResult, overallResult);
             if (throwable != null) {
                 handleResultsConsumer.accept(null, throwable.getCause());
                 return;
@@ -121,6 +125,15 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
         return overallResult;
     }
 
+    /**
+     * The purpose of this class hierarchy is to encapsulate most of the logic for deferring field execution, thus
+     * keeping the main execution strategy code clean and focused on the main execution logic.
+     * <p>
+     * The {@link NoOp} instance should be used when incremental support is not enabled for the current execution. The
+     * methods in this class will return empty or no-op results, that should not impact the main execution.
+     * <p>
+     * {@link DeferExecutionSupportImpl} is the actual implementation that will be used when incremental support is enabled.
+     */
     private interface DeferExecutionSupport {
 
         boolean isDeferredField(MergedField mergedField);
@@ -129,10 +142,13 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
 
         List<String> getNonDeferredFieldNames(List<String> allFieldNames);
 
-        Set<DeferredCall> createCalls();
+        Set<IncrementalCall<? extends IncrementalPayload>> createCalls();
 
         DeferExecutionSupport NOOP = new DeferExecutionSupport.NoOp();
 
+        /**
+         * An implementation that actually executes the deferred fields.
+         */
         class DeferExecutionSupportImpl implements DeferExecutionSupport {
             private final ImmutableListMultimap<DeferExecution, MergedField> deferExecutionToFields;
             private final ImmutableSet<MergedField> deferredFields;
@@ -185,82 +201,85 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
             public List<String> getNonDeferredFieldNames(List<String> allFieldNames) {
                 return this.nonDeferredFieldNames;
             }
-
             @Override
-            public Set<DeferredCall> createCalls() {
+            public Set<IncrementalCall<? extends IncrementalPayload>> createCalls() {
                 return deferExecutionToFields.keySet().stream()
-                        .map(deferExecution -> {
-                            DeferredCallContext errorSupport = new DeferredCallContext();
-
-                            List<MergedField> mergedFields = deferExecutionToFields.get(deferExecution);
-
-                            List<Supplier<CompletableFuture<DeferredCall.FieldWithExecutionResult>>> calls = mergedFields.stream()
-                                    .map(currentField -> {
-                                        Map<String, MergedField> fields = new LinkedHashMap<>();
-                                        fields.put(currentField.getName(), currentField);
-
-                                        ExecutionStrategyParameters callParameters = parameters.transform(builder ->
-                                                {
-                                                    MergedSelectionSet mergedSelectionSet = newMergedSelectionSet().subFields(fields).build();
-                                                    builder.deferredErrorSupport(errorSupport)
-                                                            .field(currentField)
-                                                            .fields(mergedSelectionSet)
-                                                            .path(parameters.getPath().segment(currentField.getName()))
-                                                            .parent(null); // this is a break in the parent -> child chain - it's a new start effectively
-                                                }
-                                        );
-
-
-                                        Instrumentation instrumentation = executionContext.getInstrumentation();
-                                        InstrumentationContext<ExecutionResult> fieldCtx = instrumentation.beginDeferredField(
-                                                new InstrumentationDeferredFieldParameters(executionContext, callParameters), executionContext.getInstrumentationState()
-                                        );
-
-                                        return dfCache.computeIfAbsent(
-                                                currentField.getName(),
-                                                // The same field can be associated with multiple defer executions, so
-                                                // we memoize the field resolution to avoid multiple calls to the same data fetcher
-                                                key -> FpKit.interThreadMemoize(() -> {
-                                                            CompletableFuture<FieldValueInfo> fieldValueResult = resolveFieldWithInfoFn.apply(executionContext, callParameters);
-
-                                                    CompletableFuture<ExecutionResult> executionResultCF = fieldValueResult
-                                                            .thenCompose(FieldValueInfo::getFieldValue);
-
-                                                    fieldCtx.onDispatched(executionResultCF);
-
-                                                    return executionResultCF
-                                                            .thenApply(executionResult ->
-                                                                    new DeferredCall.FieldWithExecutionResult(currentField.getName(), executionResult)
-                                                            )
-                                                            .whenComplete((fieldWithExecutionResult, throwable) ->
-                                                                    fieldCtx.onCompleted(fieldWithExecutionResult.getExecutionResult(), throwable)
-                                                            );
-                                                        }
-                                                )
-                                        );
-
-                                    })
-                                    .collect(Collectors.toList());
-
-                            // with a deferred field we are really resetting where we execute from, that is from this current field onwards
-                            return new DeferredCall(
-                                    deferExecution.getLabel(),
-                                    this.parameters.getPath(),
-                                    calls,
-                                    errorSupport
-                            );
-                        })
+                        .map(this::createDeferredCall)
                         .collect(Collectors.toSet());
             }
 
-//            private ExecutionStepInfo createSubscribedFieldStepInfo(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
-//                Field field = parameters.getField().getSingleField();
-//                GraphQLObjectType parentType = (GraphQLObjectType) parameters.getExecutionStepInfo().getUnwrappedNonNullType();
-//                GraphQLFieldDefinition fieldDef = getFieldDef(executionContext.getGraphQLSchema(), parentType, field);
-//                return createExecutionStepInfo(executionContext, parameters, fieldDef, parentType);
-//            }
+            private DeferredCall createDeferredCall(DeferExecution deferExecution) {
+                DeferredCallContext deferredCallContext = new DeferredCallContext();
+
+                List<MergedField> mergedFields = deferExecutionToFields.get(deferExecution);
+
+                List<Supplier<CompletableFuture<DeferredCall.FieldWithExecutionResult>>> calls = mergedFields.stream()
+                        .map(currentField -> this.createResultSupplier(currentField, deferredCallContext))
+                        .collect(Collectors.toList());
+
+                return new DeferredCall(
+                        deferExecution.getLabel(),
+                        this.parameters.getPath(),
+                        calls,
+                        deferredCallContext
+                );
+            }
+
+            private Supplier<CompletableFuture<DeferredCall.FieldWithExecutionResult>> createResultSupplier(
+                    MergedField currentField,
+                    DeferredCallContext deferredCallContext
+            ) {
+                Map<String, MergedField> fields = new LinkedHashMap<>();
+                fields.put(currentField.getName(), currentField);
+
+                ExecutionStrategyParameters callParameters = parameters.transform(builder ->
+                        {
+                            MergedSelectionSet mergedSelectionSet = newMergedSelectionSet().subFields(fields).build();
+                            builder.deferredCallContext(deferredCallContext)
+                                    .field(currentField)
+                                    .fields(mergedSelectionSet)
+                                    .path(parameters.getPath().segment(currentField.getName()))
+                                    .parent(null); // this is a break in the parent -> child chain - it's a new start effectively
+                        }
+                );
+
+
+                Instrumentation instrumentation = executionContext.getInstrumentation();
+                InstrumentationContext<ExecutionResult> fieldCtx = instrumentation.beginDeferredField(
+                        new InstrumentationDeferredFieldParameters(executionContext, callParameters), executionContext.getInstrumentationState()
+                );
+
+                return dfCache.computeIfAbsent(
+                        currentField.getName(),
+                        // The same field can be associated with multiple defer executions, so
+                        // we memoize the field resolution to avoid multiple calls to the same data fetcher
+                        key -> FpKit.interThreadMemoize(() -> {
+                                    CompletableFuture<FieldValueInfo> fieldValueResult = resolveFieldWithInfoFn
+                                            .apply(executionContext, callParameters);
+
+                                    // Create a reference to the CompletableFuture that resolves an ExecutionResult
+                                    // so we can pass it to the Instrumentation "onDispatched" callback.
+                                    CompletableFuture<ExecutionResult> executionResultCF = fieldValueResult
+                                            .thenCompose(FieldValueInfo::getFieldValue);
+
+                                    fieldCtx.onDispatched(executionResultCF);
+
+                                    return executionResultCF
+                                            .thenApply(executionResult ->
+                                                    new DeferredCall.FieldWithExecutionResult(currentField.getName(), executionResult)
+                                            )
+                                            .whenComplete((fieldWithExecutionResult, throwable) ->
+                                                    fieldCtx.onCompleted(fieldWithExecutionResult.getExecutionResult(), throwable)
+                                            );
+                                }
+                        )
+                );
+            }
         }
 
+        /**
+         * A no-op implementation that should be used when incremental support is not enabled for the current execution.
+         */
         class NoOp implements DeferExecutionSupport {
 
             @Override
@@ -279,7 +298,7 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
             }
 
             @Override
-            public Set<DeferredCall> createCalls() {
+            public Set<IncrementalCall<? extends IncrementalPayload>> createCalls() {
                 return Collections.emptySet();
             }
         }

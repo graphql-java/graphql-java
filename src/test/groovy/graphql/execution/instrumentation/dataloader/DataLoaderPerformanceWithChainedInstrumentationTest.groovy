@@ -40,7 +40,12 @@ class DataLoaderPerformanceWithChainedInstrumentationTest extends Specification 
     def "chainedInstrumentation: 760 ensure data loader is performant for lists"() {
         when:
 
-        ExecutionInput executionInput = ExecutionInput.newExecutionInput().query(query).dataLoaderRegistry(dataLoaderRegistry).build()
+        ExecutionInput executionInput = ExecutionInput.newExecutionInput()
+                .query(query)
+                .dataLoaderRegistry(dataLoaderRegistry)
+                .incrementalSupport(incrementalSupport)
+                .build()
+
         def result = graphQL.execute(executionInput)
 
         then:
@@ -49,6 +54,9 @@ class DataLoaderPerformanceWithChainedInstrumentationTest extends Specification 
         //  eg 1 for shops-->departments and one for departments --> products
         batchCompareDataFetchers.departmentsForShopsBatchLoaderCounter.get() == 1
         batchCompareDataFetchers.productsForDepartmentsBatchLoaderCounter.get() == 1
+
+        where:
+        incrementalSupport << [true, false]
     }
 
     @Ignore("This test flakes on Travis for some reason.  Clearly this indicates some sort of problem to investigate.  However it also stop releases.")
@@ -56,7 +64,11 @@ class DataLoaderPerformanceWithChainedInstrumentationTest extends Specification 
 
         when:
 
-        ExecutionInput executionInput = ExecutionInput.newExecutionInput().query(expensiveQuery).dataLoaderRegistry(dataLoaderRegistry).build()
+        ExecutionInput executionInput = ExecutionInput.newExecutionInput()
+                .query(expensiveQuery)
+                .dataLoaderRegistry(dataLoaderRegistry)
+                .incrementalSupport(incrementalSupport)
+                .build()
 
         def result = graphQL.execute(executionInput)
 
@@ -66,6 +78,8 @@ class DataLoaderPerformanceWithChainedInstrumentationTest extends Specification 
         batchCompareDataFetchers.departmentsForShopsBatchLoaderCounter.get() == 1
         batchCompareDataFetchers.productsForDepartmentsBatchLoaderCounter.get() == 1
 
+        where:
+        incrementalSupport << [true, false]
     }
 
     def "chainedInstrumentation: ensure data loader is performant for lists using async batch loading"() {
@@ -74,7 +88,11 @@ class DataLoaderPerformanceWithChainedInstrumentationTest extends Specification 
 
         batchCompareDataFetchers.useAsyncBatchLoading(true)
 
-        ExecutionInput executionInput = ExecutionInput.newExecutionInput().query(query).dataLoaderRegistry(dataLoaderRegistry).build()
+        ExecutionInput executionInput = ExecutionInput.newExecutionInput()
+                .query(query)
+                .dataLoaderRegistry(dataLoaderRegistry)
+                .incrementalSupport(incrementalSupport)
+                .build()
         def result = graphQL.execute(executionInput)
 
         then:
@@ -84,6 +102,8 @@ class DataLoaderPerformanceWithChainedInstrumentationTest extends Specification 
         batchCompareDataFetchers.departmentsForShopsBatchLoaderCounter.get() == 1
         batchCompareDataFetchers.productsForDepartmentsBatchLoaderCounter.get() == 1
 
+        where:
+        incrementalSupport << [true, false]
     }
 
     def "chainedInstrumentation: 970 ensure data loader is performant for multiple field with lists using async batch loading"() {
@@ -92,7 +112,11 @@ class DataLoaderPerformanceWithChainedInstrumentationTest extends Specification 
 
         batchCompareDataFetchers.useAsyncBatchLoading(true)
 
-        ExecutionInput executionInput = ExecutionInput.newExecutionInput().query(expensiveQuery).dataLoaderRegistry(dataLoaderRegistry).build()
+        ExecutionInput executionInput = ExecutionInput.newExecutionInput()
+                .query(expensiveQuery)
+                .dataLoaderRegistry(dataLoaderRegistry)
+                .incrementalSupport(incrementalSupport)
+                .build()
         def result = graphQL.execute(executionInput)
 
         then:
@@ -100,6 +124,9 @@ class DataLoaderPerformanceWithChainedInstrumentationTest extends Specification 
 
         batchCompareDataFetchers.departmentsForShopsBatchLoaderCounter.get() <= 2
         batchCompareDataFetchers.productsForDepartmentsBatchLoaderCounter.get() <= 2
+
+        where:
+        incrementalSupport << [true, false]
     }
 
     def "chainedInstrumentation: data loader will work with deferred queries"() {

@@ -1,4 +1,4 @@
-package graphql.execution.defer;
+package graphql.execution.incremental;
 
 import com.google.common.collect.ImmutableList;
 import graphql.ExecutionResult;
@@ -52,12 +52,12 @@ public class DeferredCall implements IncrementalCall<DeferPayload> {
             String label,
             ResultPath path,
             List<Supplier<CompletableFuture<FieldWithExecutionResult>>> calls,
-            DeferredCallContext deferredErrorSupport
+            DeferredCallContext deferredCallContext
     ) {
         this.label = label;
         this.path = path;
         this.calls = calls;
-        this.deferredCallContext = deferredErrorSupport;
+        this.deferredCallContext = deferredCallContext;
     }
 
     @Override

@@ -8,7 +8,7 @@ import graphql.GraphQLContext;
 import graphql.GraphQLError;
 import graphql.PublicApi;
 import graphql.collect.ImmutableKit;
-import graphql.execution.defer.IncrementalContext;
+import graphql.execution.incremental.IncrementalContext;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationState;
 import graphql.language.Document;

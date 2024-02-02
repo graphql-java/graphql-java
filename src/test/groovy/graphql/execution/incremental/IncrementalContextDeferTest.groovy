@@ -1,8 +1,11 @@
-package graphql.execution.defer
+package graphql.execution.incremental
 
 
 import graphql.ExecutionResultImpl
 import graphql.execution.ResultPath
+import graphql.execution.incremental.DeferredCall
+import graphql.execution.incremental.DeferredCallContext
+import graphql.execution.incremental.IncrementalContext
 import graphql.incremental.DelayedIncrementalExecutionResult
 import org.awaitility.Awaitility
 import spock.lang.Specification
@@ -127,14 +130,14 @@ class IncrementalContextDeferTest extends Specification {
         def incrementalContext = new IncrementalContext()
 
         when:
-        def deferPresent1 = incrementalContext.isDeferDetected()
+        def deferPresent1 = incrementalContext.getIncrementalCallsDetected()
 
         then:
         !deferPresent1
 
         when:
         incrementalContext.enqueue(offThread("A", 100, "/field/path"))
-        def deferPresent2 = incrementalContext.isDeferDetected()
+        def deferPresent2 = incrementalContext.getIncrementalCallsDetected()
 
         then:
         deferPresent2
