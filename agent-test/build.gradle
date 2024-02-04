@@ -1,0 +1,40 @@
+plugins {
+    id 'java'
+}
+
+dependencies {
+    implementation(rootProject)
+    implementation("net.bytebuddy:byte-buddy-agent:1.14.11")
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(11)
+    }
+}
+
+
+repositories {
+    mavenCentral()
+    mavenLocal()
+}
+
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(11)
+    }
+}
+
+
+jar {
+    manifest {
+        attributes(
+                'Agent-Class': 'graphql.agent.GraphQLJavaAgent',
+                'Can-Redefine-Classes': 'true',
+                'Can-Retransform-Classes': 'true',
+                'Premain-Class': 'graphql.agent.GraphQLJavaAgent'
+        )
+    }
+}
+

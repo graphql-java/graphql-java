@@ -1,0 +1,38 @@
+plugins {
+    id 'java'
+    id "com.github.johnrengelman.shadow" version "8.1.1"
+}
+
+dependencies {
+    implementation("net.bytebuddy:byte-buddy:1.14.11")
+    implementation(rootProject)
+}
+
+repositories {
+    mavenCentral()
+    mavenLocal()
+}
+
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(11)
+    }
+}
+
+shadowJar {
+    minimize()
+    archiveClassifier.set('')
+    configurations = [project.configurations.compileClasspath]
+    dependencies {
+        exclude(dependency(rootProject))
+    }
+    manifest {
+        attributes(
+                'Agent-Class': 'graphql.agent.GraphQLJavaAgent',
+                'Can-Redefine-Classes': 'true',
+                'Can-Retransform-Classes': 'true',
+                'Premain-Class': 'graphql.agent.GraphQLJavaAgent'
+        )
+    }
+}
