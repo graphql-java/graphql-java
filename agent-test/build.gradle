@@ -19,6 +19,16 @@ java {
     }
 }
 
+tasks.named('test', Test) {
+    useJUnitPlatform()
+
+    maxHeapSize = '4G'
+
+    testLogging {
+        events "passed"
+    }
+}
+
 
 repositories {
     mavenCentral()

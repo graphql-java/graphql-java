@@ -21,7 +21,7 @@ public class AgentTest {
     @Test
     void test() {
         ExecutionTrackingResult executionTrackingResult = TestQuery.executeQuery();
-        assertThat(executionTrackingResult.dataFetcherCount()).isEqualTo(4);
+        assertThat(executionTrackingResult.dataFetcherCount()).isEqualTo(5);
         assertThat(executionTrackingResult.getTime("/issues")).isGreaterThan(100);
     }
 }

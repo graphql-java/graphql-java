@@ -19,6 +19,10 @@ java {
         languageVersion = JavaLanguageVersion.of(11)
     }
 }
+tasks.named('test', Test) {
+    dependsOn('shadowJar')
+}
+
 
 shadowJar {
     minimize()
