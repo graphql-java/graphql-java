@@ -3,10 +3,12 @@ package graphql.agent;
 import graphql.agent.result.ExecutionTrackingResult;
 import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionStrategyParameters;
+import graphql.execution.ResultPath;
 import net.bytebuddy.agent.builder.AgentBuilder;
 import net.bytebuddy.asm.Advice;
 
 import java.lang.instrument.Instrumentation;
+import java.util.concurrent.CompletableFuture;
 
 import static graphql.agent.result.ExecutionTrackingResult.EXECUTION_TRACKING_KEY;
 import static net.bytebuddy.matcher.ElementMatchers.nameMatches;
@@ -57,9 +59,22 @@ class DataFetcherInvokeAdvice {
 
     @Advice.OnMethodExit
     public static void invokeDataFetcherExit(@Advice.Argument(0) ExecutionContext executionContext,
-                                             @Advice.Argument(1) ExecutionStrategyParameters parameters) {
+                                             @Advice.Argument(1) ExecutionStrategyParameters parameters,
+                                             @Advice.Return CompletableFuture<Object> result) {
         ExecutionTrackingResult executionTrackingResult = executionContext.getGraphQLContext().get(EXECUTION_TRACKING_KEY);
-        executionTrackingResult.end(parameters.getPath(), System.nanoTime());
+        ResultPath path = parameters.getPath();
+        executionTrackingResult.end(path, System.nanoTime());
+        if (result.isDone()) {
+            if (result.isCancelled()) {
+                executionTrackingResult.setDfResultTypes(path, ExecutionTrackingResult.DFResultType.DONE_CANCELLED);
+            } else if (result.isCompletedExceptionally()) {
+                executionTrackingResult.setDfResultTypes(path, ExecutionTrackingResult.DFResultType.DONE_EXCEPTIONALLY);
+            } else {
+                executionTrackingResult.setDfResultTypes(path, ExecutionTrackingResult.DFResultType.DONE_OK);
+            }
+        } else {
+            executionTrackingResult.setDfResultTypes(path, ExecutionTrackingResult.DFResultType.PENDING);
+        }
     }
 
 }

@@ -23,5 +23,7 @@ public class AgentTest {
         ExecutionTrackingResult executionTrackingResult = TestQuery.executeQuery();
         assertThat(executionTrackingResult.dataFetcherCount()).isEqualTo(5);
         assertThat(executionTrackingResult.getTime("/issues")).isGreaterThan(100);
+        assertThat(executionTrackingResult.getDfResultTypes("/issues"))
+                .isEqualTo(ExecutionTrackingResult.DFResultType.DONE_OK);
     }
 }

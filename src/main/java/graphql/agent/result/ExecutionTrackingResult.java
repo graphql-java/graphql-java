@@ -2,12 +2,21 @@ package graphql.agent.result;
 
 import graphql.execution.ResultPath;
 
-import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class ExecutionTrackingResult {
+
+    public enum DFResultType {
+        DONE_OK,
+        DONE_EXCEPTIONALLY,
+        DONE_CANCELLED,
+        PENDING,
+    }
+
     public static final String EXECUTION_TRACKING_KEY = "__GJ_AGENT_EXECUTION_TRACKING";
-    private final Map<ResultPath, Long> timePerPath = new LinkedHashMap<>();
+    private final Map<ResultPath, Long> timePerPath = new ConcurrentHashMap<>();
+    private final Map<ResultPath, DFResultType> dfResultTypes = new ConcurrentHashMap<>();
 
     public void start(ResultPath path, long startTime) {
         timePerPath.put(path, startTime);
@@ -27,6 +36,18 @@ public class ExecutionTrackingResult {
 
     public long getTime(String path) {
         return timePerPath.get(ResultPath.parse(path));
+    }
+
+    public void setDfResultTypes(ResultPath resultPath, DFResultType resultTypes) {
+        dfResultTypes.put(resultPath, resultTypes);
+    }
+
+    public DFResultType getDfResultTypes(ResultPath resultPath) {
+        return dfResultTypes.get(resultPath);
+    }
+
+    public DFResultType getDfResultTypes(String resultPath) {
+        return dfResultTypes.get(ResultPath.parse(resultPath));
     }
 
     @Override

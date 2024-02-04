@@ -20,13 +20,6 @@ java {
     }
 }
 
-// making sure the fat jar is build when running tests
-// so that the agent-test module can load it during tests
-tasks.named('test', Test) {
-    dependsOn('shadowJar')
-}
-
-
 shadowJar {
     minimize()
     archiveClassifier.set('')
