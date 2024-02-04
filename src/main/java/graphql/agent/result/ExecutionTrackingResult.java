@@ -17,6 +17,18 @@ public class ExecutionTrackingResult {
         timePerPath.put(path, endTime - timePerPath.get(path));
     }
 
+    public int dataFetcherCount() {
+        return timePerPath.size();
+    }
+
+    public long getTime(ResultPath path) {
+        return timePerPath.get(path);
+    }
+
+    public long getTime(String path) {
+        return timePerPath.get(ResultPath.parse(path));
+    }
+
     @Override
     public String toString() {
         return "ExecutionTrackingResult{" +
