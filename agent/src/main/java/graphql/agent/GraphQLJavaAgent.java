@@ -19,26 +19,43 @@ public class GraphQLJavaAgent {
     public static void agentmain(String agentArgs, Instrumentation inst) {
         System.out.println("Agent is running");
         new AgentBuilder.Default()
-//                .with(AgentBuilder.RedefinitionStrategy.REDEFINITION)
-//                .with(AgentBuilder.LambdaInstrumentationStrategy.ENABLED)
-                .disableClassFormatChanges()
-                .type(named("graphql.execution.ExecutionStrategy"))
-                .transform((builder, typeDescription, classLoader, module, protectionDomain) -> {
-                    System.out.println("Transforming " + typeDescription);
-                    return builder
-                            .visit(Advice.to(DataFetcherInvokeAdvice.class).on(nameMatches("invokeDataFetcher")));
-                })
-                .installOn(inst);
+            .disableClassFormatChanges()
+            .type(named("graphql.execution.ExecutionStrategy"))
+            .transform((builder, typeDescription, classLoader, module, protectionDomain) -> {
+                System.out.println("Transforming " + typeDescription);
+                return builder
+                    .visit(Advice.to(DataFetcherInvokeAdvice.class).on(nameMatches("invokeDataFetcher")));
+            })
+            .installOn(inst);
 
         new AgentBuilder.Default()
-                .disableClassFormatChanges()
-                .type(named("graphql.execution.Execution"))
-                .transform((builder, typeDescription, classLoader, module, protectionDomain) -> {
-                    System.out.println("transforming " + typeDescription);
-                    return builder
-                            .visit(Advice.to(ExecutionAdvice.class).on(nameMatches("executeOperation")));
-                }).installOn(inst);
+            .disableClassFormatChanges()
+            .type(named("graphql.execution.Execution"))
+            .transform((builder, typeDescription, classLoader, module, protectionDomain) -> {
+                System.out.println("transforming " + typeDescription);
+                return builder
+                    .visit(Advice.to(ExecutionAdvice.class).on(nameMatches("executeOperation")));
+            }).installOn(inst);
+
+        new AgentBuilder.Default()
+            .disableClassFormatChanges()
+            .with(AgentBuilder.RedefinitionStrategy.DISABLED)
+            .type(named("org.dataloader.DataLoaderRegistry"))
+            .transform((builder, typeDescription, classLoader, module, protectionDomain) -> {
+                System.out.println("transforming " + typeDescription);
+                return builder
+                    .visit(Advice.to(DataLoaderRegistryAdvice.class).on(nameMatches("dispatchAll")));
+            }).installOn(inst);
     }
+}
+
+class DataLoaderRegistryAdvice {
+
+    @Advice.OnMethodEnter
+    public static void dispatchAll() {
+        System.out.println("calling dispatchAll");
+    }
+
 }
 
 class ExecutionAdvice {

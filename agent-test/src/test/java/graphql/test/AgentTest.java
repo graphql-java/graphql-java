@@ -24,6 +24,17 @@ public class AgentTest {
         assertThat(executionTrackingResult.dataFetcherCount()).isEqualTo(5);
         assertThat(executionTrackingResult.getTime("/issues")).isGreaterThan(100);
         assertThat(executionTrackingResult.getDfResultTypes("/issues"))
-                .isEqualTo(ExecutionTrackingResult.DFResultType.DONE_OK);
+            .isEqualTo(ExecutionTrackingResult.DFResultType.DONE_OK);
+    }
+
+    @Test
+    void testBatchLoader() {
+        ExecutionTrackingResult executionTrackingResult = TestQuery.executeBatchedQuery();
+        assertThat(executionTrackingResult.dataFetcherCount()).isEqualTo(9);
+        assertThat(executionTrackingResult.getTime("/issues")).isGreaterThan(100);
+        assertThat(executionTrackingResult.getDfResultTypes("/issues[0]/author"))
+            .isEqualTo(ExecutionTrackingResult.DFResultType.PENDING);
+        assertThat(executionTrackingResult.getDfResultTypes("/issues[1]/author"))
+            .isEqualTo(ExecutionTrackingResult.DFResultType.PENDING);
     }
 }
