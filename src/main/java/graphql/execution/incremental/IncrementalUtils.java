@@ -19,7 +19,7 @@ import static graphql.Directives.DeferDirective;
 public class IncrementalUtils {
     private IncrementalUtils() {}
 
-    public static <T> T createDeferExecution(
+    public static <T> T createDeferredExecution(
             Map<String, Object> variables,
             List<Directive> directives,
             Function<String, T> builderFunction

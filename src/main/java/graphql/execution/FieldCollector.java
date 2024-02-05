@@ -3,7 +3,7 @@ package graphql.execution;
 
 import graphql.Internal;
 import graphql.execution.conditional.ConditionalNodes;
-import graphql.execution.incremental.DeferExecution;
+import graphql.execution.incremental.DeferredExecution;
 import graphql.execution.incremental.IncrementalUtils;
 import graphql.language.Field;
 import graphql.language.FragmentDefinition;
@@ -70,11 +70,11 @@ public class FieldCollector {
     }
 
 
-    private void collectFields(FieldCollectorParameters parameters, SelectionSet selectionSet, Set<String> visitedFragments, Map<String, MergedField> fields, DeferExecution deferExecution, boolean incrementalSupport) {
+    private void collectFields(FieldCollectorParameters parameters, SelectionSet selectionSet, Set<String> visitedFragments, Map<String, MergedField> fields, DeferredExecution deferredExecution, boolean incrementalSupport) {
 
         for (Selection selection : selectionSet.getSelections()) {
             if (selection instanceof Field) {
-                collectField(parameters, fields, (Field) selection, deferExecution);
+                collectField(parameters, fields, (Field) selection, deferredExecution);
             } else if (selection instanceof InlineFragment) {
                 collectInlineFragment(parameters, visitedFragments, fields, (InlineFragment) selection, incrementalSupport);
             } else if (selection instanceof FragmentSpread) {
@@ -106,13 +106,13 @@ public class FieldCollector {
             return;
         }
 
-        DeferExecution deferExecution = incrementalSupport ? IncrementalUtils.createDeferExecution(
+        DeferredExecution deferredExecution = incrementalSupport ? IncrementalUtils.createDeferredExecution(
                 parameters.getVariables(),
                 fragmentSpread.getDirectives(),
-                DeferExecution::new
+                DeferredExecution::new
         ) : null;
 
-        collectFields(parameters, fragmentDefinition.getSelectionSet(), visitedFragments, fields, deferExecution, incrementalSupport);
+        collectFields(parameters, fragmentDefinition.getSelectionSet(), visitedFragments, fields, deferredExecution, incrementalSupport);
     }
 
     private void collectInlineFragment(FieldCollectorParameters parameters, Set<String> visitedFragments, Map<String, MergedField> fields, InlineFragment inlineFragment, boolean incrementalSupport) {
@@ -124,16 +124,16 @@ public class FieldCollector {
             return;
         }
 
-        DeferExecution deferExecution = incrementalSupport ? IncrementalUtils.createDeferExecution(
+        DeferredExecution deferredExecution = incrementalSupport ? IncrementalUtils.createDeferredExecution(
                 parameters.getVariables(),
                 inlineFragment.getDirectives(),
-                DeferExecution::new
+                DeferredExecution::new
         ) : null;
 
-        collectFields(parameters, inlineFragment.getSelectionSet(), visitedFragments, fields, deferExecution, incrementalSupport);
+        collectFields(parameters, inlineFragment.getSelectionSet(), visitedFragments, fields, deferredExecution, incrementalSupport);
     }
 
-    private void collectField(FieldCollectorParameters parameters, Map<String, MergedField> fields, Field field, DeferExecution deferExecution) {
+    private void collectField(FieldCollectorParameters parameters, Map<String, MergedField> fields, Field field, DeferredExecution deferredExecution) {
         if (!conditionalNodes.shouldInclude(field,
                 parameters.getVariables(),
                 parameters.getGraphQLSchema(),
@@ -145,12 +145,12 @@ public class FieldCollector {
             MergedField curFields = fields.get(name);
             fields.put(name, curFields.transform(builder -> builder
                     .addField(field)
-                    .addDeferExecution(deferExecution))
+                    .addDeferredExecution(deferredExecution))
             );
         } else {
             fields.put(name, MergedField
                     .newMergedField(field)
-                    .addDeferExecution(deferExecution).build()
+                    .addDeferredExecution(deferredExecution).build()
             );
         }
     }

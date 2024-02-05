@@ -8,7 +8,7 @@ import graphql.GraphQLContext;
 import graphql.GraphQLError;
 import graphql.PublicApi;
 import graphql.collect.ImmutableKit;
-import graphql.execution.incremental.IncrementalContext;
+import graphql.execution.incremental.IncrementalCallState;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationState;
 import graphql.language.Document;
@@ -54,7 +54,7 @@ public class ExecutionContext {
     private final Set<ResultPath> errorPaths = new HashSet<>();
     private final DataLoaderRegistry dataLoaderRegistry;
     private final Locale locale;
-    private final IncrementalContext incrementalContext = new IncrementalContext();
+    private final IncrementalCallState incrementalCallState = new IncrementalCallState();
     private final ValueUnboxer valueUnboxer;
     private final ExecutionInput executionInput;
     private final Supplier<ExecutableNormalizedOperation> queryTree;
@@ -257,8 +257,8 @@ public class ExecutionContext {
         return subscriptionStrategy;
     }
 
-    public IncrementalContext getIncrementalContext() {
-        return incrementalContext;
+    public IncrementalCallState getIncrementalCallState() {
+        return incrementalCallState;
     }
 
     public boolean isIncrementalSupport() {

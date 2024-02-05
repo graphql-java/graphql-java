@@ -8,7 +8,7 @@ import graphql.PublicApi;
 import graphql.execution.incremental.DeferredCall;
 import graphql.execution.incremental.DeferredCallContext;
 import graphql.execution.incremental.IncrementalCall;
-import graphql.execution.incremental.DeferExecution;
+import graphql.execution.incremental.DeferredExecution;
 import graphql.execution.instrumentation.ExecutionStrategyInstrumentationContext;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationContext;
@@ -64,19 +64,19 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
         MergedSelectionSet fields = parameters.getFields();
         List<String> fieldNames = fields.getKeys();
 
-        DeferExecutionSupport deferExecutionSupport = executionContext.isIncrementalSupport() ?
-                new DeferExecutionSupport.DeferExecutionSupportImpl(
+        DeferredExecutionSupport deferredExecutionSupport = executionContext.isIncrementalSupport() ?
+                new DeferredExecutionSupport.DeferredExecutionSupportImpl(
                     fields,
                     parameters,
                     executionContext,
                     this::resolveFieldWithInfo
-                ) : DeferExecutionSupport.NOOP;
+                ) : DeferredExecutionSupport.NOOP;
 
-        executionContext.getIncrementalContext().enqueue(deferExecutionSupport.createCalls());
+        executionContext.getIncrementalCallState().enqueue(deferredExecutionSupport.createCalls());
 
         // Only non-deferred fields should be considered for calculating the expected size of futures.
         Async.CombinedBuilder<FieldValueInfo> futures = Async
-                .ofExpectedSize(fields.size() - deferExecutionSupport.deferredFieldsCount());
+                .ofExpectedSize(fields.size() - deferredExecutionSupport.deferredFieldsCount());
 
         for (String fieldName : fieldNames) {
             MergedField currentField = fields.getSubField(fieldName);
@@ -87,7 +87,7 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
 
             CompletableFuture<FieldValueInfo> future;
 
-            if (deferExecutionSupport.isDeferredField(currentField)) {
+            if (deferredExecutionSupport.isDeferredField(currentField)) {
                 executionStrategyCtx.onDeferredField(currentField);
             } else {
                 future = resolveFieldWithInfo(executionContext, newParameters);
@@ -98,7 +98,7 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
         executionStrategyCtx.onDispatched(overallResult);
 
         futures.await().whenComplete((completeValueInfos, throwable) -> {
-            List<String> fieldsExecutedOnInitialResult = deferExecutionSupport.getNonDeferredFieldNames(fieldNames);
+            List<String> fieldsExecutedOnInitialResult = deferredExecutionSupport.getNonDeferredFieldNames(fieldNames);
 
             BiConsumer<List<ExecutionResult>, Throwable> handleResultsConsumer = handleResults(executionContext, fieldsExecutedOnInitialResult, overallResult);
             if (throwable != null) {
@@ -132,9 +132,9 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
      * The {@link NoOp} instance should be used when incremental support is not enabled for the current execution. The
      * methods in this class will return empty or no-op results, that should not impact the main execution.
      * <p>
-     * {@link DeferExecutionSupportImpl} is the actual implementation that will be used when incremental support is enabled.
+     * {@link DeferredExecutionSupportImpl} is the actual implementation that will be used when incremental support is enabled.
      */
-    private interface DeferExecutionSupport {
+    private interface DeferredExecutionSupport {
 
         boolean isDeferredField(MergedField mergedField);
 
@@ -144,13 +144,13 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
 
         Set<IncrementalCall<? extends IncrementalPayload>> createCalls();
 
-        DeferExecutionSupport NOOP = new DeferExecutionSupport.NoOp();
+        DeferredExecutionSupport NOOP = new DeferredExecutionSupport.NoOp();
 
         /**
          * An implementation that actually executes the deferred fields.
          */
-        class DeferExecutionSupportImpl implements DeferExecutionSupport {
-            private final ImmutableListMultimap<DeferExecution, MergedField> deferExecutionToFields;
+        class DeferredExecutionSupportImpl implements DeferredExecutionSupport {
+            private final ImmutableListMultimap<DeferredExecution, MergedField> deferredExecutionToFields;
             private final ImmutableSet<MergedField> deferredFields;
             private final ImmutableList<String> nonDeferredFieldNames;
             private final ExecutionStrategyParameters parameters;
@@ -158,7 +158,7 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
             private final BiFunction<ExecutionContext, ExecutionStrategyParameters, CompletableFuture<FieldValueInfo>> resolveFieldWithInfoFn;
             private final Map<String, Supplier<CompletableFuture<DeferredCall.FieldWithExecutionResult>>> dfCache = new HashMap<>();
 
-            private DeferExecutionSupportImpl(
+            private DeferredExecutionSupportImpl(
                     MergedSelectionSet mergedSelectionSet,
                     ExecutionStrategyParameters parameters,
                     ExecutionContext executionContext,
@@ -166,22 +166,22 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
             ) {
                 this.executionContext = executionContext;
                 this.resolveFieldWithInfoFn = resolveFieldWithInfoFn;
-                ImmutableListMultimap.Builder<DeferExecution, MergedField> deferExecutionToFieldsBuilder = ImmutableListMultimap.builder();
+                ImmutableListMultimap.Builder<DeferredExecution, MergedField> deferredExecutionToFieldsBuilder = ImmutableListMultimap.builder();
                 ImmutableSet.Builder<MergedField> deferredFieldsBuilder = ImmutableSet.builder();
                 ImmutableList.Builder<String> nonDeferredFieldNamesBuilder = ImmutableList.builder();
 
                 mergedSelectionSet.getSubFields().values().forEach(mergedField -> {
-                    mergedField.getDeferExecutions().forEach(de -> {
-                        deferExecutionToFieldsBuilder.put(de, mergedField);
+                    mergedField.getDeferredExecutions().forEach(de -> {
+                        deferredExecutionToFieldsBuilder.put(de, mergedField);
                         deferredFieldsBuilder.add(mergedField);
                     });
 
-                    if (mergedField.getDeferExecutions().isEmpty()) {
+                    if (mergedField.getDeferredExecutions().isEmpty()) {
                         nonDeferredFieldNamesBuilder.add(mergedField.getSingleField().getResultKey());
                     }
                 });
 
-                this.deferExecutionToFields = deferExecutionToFieldsBuilder.build();
+                this.deferredExecutionToFields = deferredExecutionToFieldsBuilder.build();
                 this.deferredFields = deferredFieldsBuilder.build();
                 this.parameters = parameters;
                 this.nonDeferredFieldNames = nonDeferredFieldNamesBuilder.build();
@@ -203,22 +203,22 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
             }
             @Override
             public Set<IncrementalCall<? extends IncrementalPayload>> createCalls() {
-                return deferExecutionToFields.keySet().stream()
+                return deferredExecutionToFields.keySet().stream()
                         .map(this::createDeferredCall)
                         .collect(Collectors.toSet());
             }
 
-            private DeferredCall createDeferredCall(DeferExecution deferExecution) {
+            private DeferredCall createDeferredCall(DeferredExecution deferredExecution) {
                 DeferredCallContext deferredCallContext = new DeferredCallContext();
 
-                List<MergedField> mergedFields = deferExecutionToFields.get(deferExecution);
+                List<MergedField> mergedFields = deferredExecutionToFields.get(deferredExecution);
 
                 List<Supplier<CompletableFuture<DeferredCall.FieldWithExecutionResult>>> calls = mergedFields.stream()
                         .map(currentField -> this.createResultSupplier(currentField, deferredCallContext))
                         .collect(Collectors.toList());
 
                 return new DeferredCall(
-                        deferExecution.getLabel(),
+                        deferredExecution.getLabel(),
                         this.parameters.getPath(),
                         calls,
                         deferredCallContext
@@ -280,7 +280,7 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
         /**
          * A no-op implementation that should be used when incremental support is not enabled for the current execution.
          */
-        class NoOp implements DeferExecutionSupport {
+        class NoOp implements DeferredExecutionSupport {
 
             @Override
             public boolean isDeferredField(MergedField mergedField) {

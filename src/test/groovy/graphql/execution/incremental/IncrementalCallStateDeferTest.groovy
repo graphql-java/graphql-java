@@ -3,9 +3,6 @@ package graphql.execution.incremental
 
 import graphql.ExecutionResultImpl
 import graphql.execution.ResultPath
-import graphql.execution.incremental.DeferredCall
-import graphql.execution.incremental.DeferredCallContext
-import graphql.execution.incremental.IncrementalContext
 import graphql.incremental.DelayedIncrementalExecutionResult
 import org.awaitility.Awaitility
 import spock.lang.Specification
@@ -13,17 +10,17 @@ import spock.lang.Specification
 import java.util.concurrent.CompletableFuture
 import java.util.function.Supplier
 
-class IncrementalContextDeferTest extends Specification {
+class IncrementalCallStateDeferTest extends Specification {
 
     def "emits N deferred calls - ordering depends on call latency"() {
         given:
-        def incrementalContext = new IncrementalContext()
-        incrementalContext.enqueue(offThread("A", 100, "/field/path")) // <-- will finish last
-        incrementalContext.enqueue(offThread("B", 50, "/field/path")) // <-- will finish second
-        incrementalContext.enqueue(offThread("C", 10, "/field/path")) // <-- will finish first
+        def incrementalCallState = new IncrementalCallState()
+        incrementalCallState.enqueue(offThread("A", 100, "/field/path")) // <-- will finish last
+        incrementalCallState.enqueue(offThread("B", 50, "/field/path")) // <-- will finish second
+        incrementalCallState.enqueue(offThread("C", 10, "/field/path")) // <-- will finish first
 
         when:
-        List<DelayedIncrementalExecutionResult> results = startAndWaitCalls(incrementalContext)
+        List<DelayedIncrementalExecutionResult> results = startAndWaitCalls(incrementalCallState)
 
         then:
         assertResultsSizeAndHasNextRule(3, results)
@@ -34,13 +31,13 @@ class IncrementalContextDeferTest extends Specification {
 
     def "calls within calls are enqueued correctly"() {
         given:
-        def incrementalContext = new IncrementalContext()
-        incrementalContext.enqueue(offThreadCallWithinCall(incrementalContext, "A", "A_Child", 500, "/a"))
-        incrementalContext.enqueue(offThreadCallWithinCall(incrementalContext, "B", "B_Child", 300, "/b"))
-        incrementalContext.enqueue(offThreadCallWithinCall(incrementalContext, "C", "C_Child", 100, "/c"))
+        def incrementalCallState = new IncrementalCallState()
+        incrementalCallState.enqueue(offThreadCallWithinCall(incrementalCallState, "A", "A_Child", 500, "/a"))
+        incrementalCallState.enqueue(offThreadCallWithinCall(incrementalCallState, "B", "B_Child", 300, "/b"))
+        incrementalCallState.enqueue(offThreadCallWithinCall(incrementalCallState, "C", "C_Child", 100, "/c"))
 
         when:
-        List<DelayedIncrementalExecutionResult> results = startAndWaitCalls(incrementalContext)
+        List<DelayedIncrementalExecutionResult> results = startAndWaitCalls(incrementalCallState)
 
         then:
         assertResultsSizeAndHasNextRule(6, results)
@@ -54,10 +51,10 @@ class IncrementalContextDeferTest extends Specification {
 
     def "stops at first exception encountered"() {
         given:
-        def incrementalContext = new IncrementalContext()
-        incrementalContext.enqueue(offThread("A", 100, "/field/path"))
-        incrementalContext.enqueue(offThread("Bang", 50, "/field/path")) // <-- will throw exception
-        incrementalContext.enqueue(offThread("C", 10, "/field/path"))
+        def incrementalCallState = new IncrementalCallState()
+        incrementalCallState.enqueue(offThread("A", 100, "/field/path"))
+        incrementalCallState.enqueue(offThread("Bang", 50, "/field/path")) // <-- will throw exception
+        incrementalCallState.enqueue(offThread("C", 10, "/field/path"))
 
         when:
         def subscriber = new graphql.execution.pubsub.CapturingSubscriber<DelayedIncrementalExecutionResult>() {
@@ -66,7 +63,7 @@ class IncrementalContextDeferTest extends Specification {
                 assert false, "This should not be called!"
             }
         }
-        incrementalContext.startDeferredCalls().subscribe(subscriber)
+        incrementalCallState.startDeferredCalls().subscribe(subscriber)
 
         Awaitility.await().untilTrue(subscriber.isDone())
 
@@ -80,10 +77,10 @@ class IncrementalContextDeferTest extends Specification {
 
     def "you can cancel the subscription"() {
         given:
-        def incrementalContext = new IncrementalContext()
-        incrementalContext.enqueue(offThread("A", 100, "/field/path")) // <-- will finish last
-        incrementalContext.enqueue(offThread("B", 50, "/field/path")) // <-- will finish second
-        incrementalContext.enqueue(offThread("C", 10, "/field/path")) // <-- will finish first
+        def incrementalCallState = new IncrementalCallState()
+        incrementalCallState.enqueue(offThread("A", 100, "/field/path")) // <-- will finish last
+        incrementalCallState.enqueue(offThread("B", 50, "/field/path")) // <-- will finish second
+        incrementalCallState.enqueue(offThread("C", 10, "/field/path")) // <-- will finish first
 
         when:
         def subscriber = new graphql.execution.pubsub.CapturingSubscriber<DelayedIncrementalExecutionResult>() {
@@ -94,7 +91,7 @@ class IncrementalContextDeferTest extends Specification {
                 this.isDone().set(true)
             }
         }
-        incrementalContext.startDeferredCalls().subscribe(subscriber)
+        incrementalCallState.startDeferredCalls().subscribe(subscriber)
 
         Awaitility.await().untilTrue(subscriber.isDone())
         def results = subscriber.getEvents()
@@ -109,16 +106,16 @@ class IncrementalContextDeferTest extends Specification {
 
     def "you can't subscribe twice"() {
         given:
-        def incrementalContext = new IncrementalContext()
-        incrementalContext.enqueue(offThread("A", 100, "/field/path"))
-        incrementalContext.enqueue(offThread("Bang", 50, "/field/path")) // <-- will finish second
-        incrementalContext.enqueue(offThread("C", 10, "/field/path")) // <-- will finish first
+        def incrementalCallState = new IncrementalCallState()
+        incrementalCallState.enqueue(offThread("A", 100, "/field/path"))
+        incrementalCallState.enqueue(offThread("Bang", 50, "/field/path")) // <-- will finish second
+        incrementalCallState.enqueue(offThread("C", 10, "/field/path")) // <-- will finish first
 
         when:
         def subscriber1 = new graphql.execution.pubsub.CapturingSubscriber<DelayedIncrementalExecutionResult>()
         def subscriber2 = new graphql.execution.pubsub.CapturingSubscriber<DelayedIncrementalExecutionResult>()
-        incrementalContext.startDeferredCalls().subscribe(subscriber1)
-        incrementalContext.startDeferredCalls().subscribe(subscriber2)
+        incrementalCallState.startDeferredCalls().subscribe(subscriber1)
+        incrementalCallState.startDeferredCalls().subscribe(subscriber2)
 
         then:
         subscriber2.throwable != null
@@ -127,17 +124,17 @@ class IncrementalContextDeferTest extends Specification {
 
     def "indicates if there are any defers present"() {
         given:
-        def incrementalContext = new IncrementalContext()
+        def incrementalCallState = new IncrementalCallState()
 
         when:
-        def deferPresent1 = incrementalContext.getIncrementalCallsDetected()
+        def deferPresent1 = incrementalCallState.getIncrementalCallsDetected()
 
         then:
         !deferPresent1
 
         when:
-        incrementalContext.enqueue(offThread("A", 100, "/field/path"))
-        def deferPresent2 = incrementalContext.getIncrementalCallsDetected()
+        incrementalCallState.enqueue(offThread("A", 100, "/field/path"))
+        def deferPresent2 = incrementalCallState.getIncrementalCallsDetected()
 
         then:
         deferPresent2
@@ -168,10 +165,10 @@ class IncrementalContextDeferTest extends Specification {
         def deferredCall = new DeferredCall(null, ResultPath.parse("/field/path"), [call1, call2], new DeferredCallContext())
 
         when:
-        def incrementalContext = new IncrementalContext()
-        incrementalContext.enqueue(deferredCall)
+        def incrementalCallState = new IncrementalCallState()
+        incrementalCallState.enqueue(deferredCall)
 
-        def results = startAndWaitCalls(incrementalContext)
+        def results = startAndWaitCalls(incrementalCallState)
 
         then:
         assertResultsSizeAndHasNextRule(1, results)
@@ -181,13 +178,13 @@ class IncrementalContextDeferTest extends Specification {
 
     def "race conditions should not impact the calculation of the hasNext value"() {
         given: "calls that have the same sleepTime"
-        def incrementalContext = new IncrementalContext()
-        incrementalContext.enqueue(offThread("A", 10, "/field/path")) // <-- will finish last
-        incrementalContext.enqueue(offThread("B", 10, "/field/path")) // <-- will finish second
-        incrementalContext.enqueue(offThread("C", 10, "/field/path")) // <-- will finish first
+        def incrementalCallState = new IncrementalCallState()
+        incrementalCallState.enqueue(offThread("A", 10, "/field/path")) // <-- will finish last
+        incrementalCallState.enqueue(offThread("B", 10, "/field/path")) // <-- will finish second
+        incrementalCallState.enqueue(offThread("C", 10, "/field/path")) // <-- will finish first
 
         when:
-        List<DelayedIncrementalExecutionResult> results = startAndWaitCalls(incrementalContext)
+        List<DelayedIncrementalExecutionResult> results = startAndWaitCalls(incrementalCallState)
 
         then: "hasNext placement should be deterministic - only the last event published should have 'hasNext=true'"
         assertResultsSizeAndHasNextRule(3, results)
@@ -215,13 +212,13 @@ class IncrementalContextDeferTest extends Specification {
         return new DeferredCall(null, ResultPath.parse(path), [callSupplier], new DeferredCallContext())
     }
 
-    private static DeferredCall offThreadCallWithinCall(IncrementalContext incrementalContext, String dataParent, String dataChild, int sleepTime, String path) {
+    private static DeferredCall offThreadCallWithinCall(IncrementalCallState incrementalCallState, String dataParent, String dataChild, int sleepTime, String path) {
         def callSupplier = new Supplier<CompletableFuture<DeferredCall.FieldWithExecutionResult>>() {
             @Override
             CompletableFuture<DeferredCall.FieldWithExecutionResult> get() {
                 CompletableFuture.supplyAsync({
                     Thread.sleep(sleepTime)
-                    incrementalContext.enqueue(offThread(dataChild, sleepTime, path))
+                    incrementalCallState.enqueue(offThread(dataChild, sleepTime, path))
                     new DeferredCall.FieldWithExecutionResult(dataParent.toLowerCase(), new ExecutionResultImpl(dataParent, []))
                 })
             }
@@ -241,10 +238,10 @@ class IncrementalContextDeferTest extends Specification {
         }
     }
 
-    private static List<DelayedIncrementalExecutionResult> startAndWaitCalls(IncrementalContext incrementalContext) {
+    private static List<DelayedIncrementalExecutionResult> startAndWaitCalls(IncrementalCallState incrementalCallState) {
         def subscriber = new graphql.execution.pubsub.CapturingSubscriber<DelayedIncrementalExecutionResult>()
 
-        incrementalContext.startDeferredCalls().subscribe(subscriber)
+        incrementalCallState.startDeferredCalls().subscribe(subscriber)
 
         Awaitility.await().untilTrue(subscriber.isDone())
         return subscriber.getEvents()

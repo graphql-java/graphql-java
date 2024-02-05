@@ -768,7 +768,7 @@ public class ExecutableNormalizedOperationFactory {
                 return null;
             }
 
-            return IncrementalUtils.createDeferExecution(
+            return IncrementalUtils.createDeferredExecution(
                     this.coercedVariableValues.toMap(),
                     directives,
                     (label) -> new NormalizedDeferExecution(label, newPossibleObjects)

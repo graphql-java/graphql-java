@@ -11,10 +11,10 @@ import javax.annotation.Nullable;
  * for the normalized representation of @defer.
  */
 @ExperimentalApi
-public class DeferExecution {
+public class DeferredExecution {
     private final String label;
 
-    public DeferExecution(String label) {
+    public DeferredExecution(String label) {
         this.label = label;
     }
 

@@ -21,7 +21,7 @@ import static graphql.incremental.DelayedIncrementalExecutionResultImpl.newIncre
  * the main result is sent via a Publisher stream.
  */
 @Internal
-public class IncrementalContext {
+public class IncrementalCallState {
     private final AtomicBoolean incrementalCallsDetected = new AtomicBoolean(false);
     private final Deque<IncrementalCall<? extends IncrementalPayload>> incrementalCalls = new ConcurrentLinkedDeque<>();
     private final SingleSubscriberPublisher<DelayedIncrementalExecutionResult> publisher = new SingleSubscriberPublisher<>();
@@ -70,16 +70,16 @@ public class IncrementalContext {
     }
 
     public void enqueue(IncrementalCall<? extends IncrementalPayload> incrementalCall) {
-        incrementalCallsDetected.set(true);
-        incrementalCalls.offer(incrementalCall);
-        pendingCalls.incrementAndGet();
+        publisherLock.runLocked(() -> {
+            incrementalCallsDetected.set(true);
+            incrementalCalls.offer(incrementalCall);
+            pendingCalls.incrementAndGet();
+        });
     }
 
     public void enqueue(Collection<IncrementalCall<? extends IncrementalPayload>> calls) {
         if (!calls.isEmpty()) {
-            incrementalCallsDetected.set(true);
-            incrementalCalls.addAll(calls);
-            pendingCalls.addAndGet(calls.size());
+            calls.forEach(this::enqueue);
         }
     }
 
