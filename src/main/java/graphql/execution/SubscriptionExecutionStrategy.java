@@ -93,7 +93,7 @@ public class SubscriptionExecutionStrategy extends ExecutionStrategy {
     private CompletableFuture<Publisher<Object>> createSourceEventStream(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
         ExecutionStrategyParameters newParameters = firstFieldOfSubscriptionSelection(parameters);
 
-        CompletableFuture<FetchedValue> fieldFetched = fetchField(executionContext, newParameters);
+        CompletableFuture<FetchedValue> fieldFetched = Async.asCompletableFuture(fetchField(executionContext, newParameters));
         return fieldFetched.thenApply(fetchedValue -> {
             Object publisher = fetchedValue.getFetchedValue();
             if (publisher != null) {

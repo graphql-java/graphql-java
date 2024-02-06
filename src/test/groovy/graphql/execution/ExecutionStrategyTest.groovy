@@ -139,7 +139,7 @@ class ExecutionStrategyTest extends Specification {
         executionStrategy.completeValue(executionContext, parameters)
 
         then:
-        1 * executionContext.queryStrategy.execute(_, _)
+        1 * executionContext.queryStrategy.executePolymorphic(_, _)
         0 * executionContext.mutationStrategy.execute(_, _)
         0 * executionContext.subscriptionStrategy.execute(_, _)
     }

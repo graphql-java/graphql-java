@@ -22,10 +22,10 @@ public class FieldValueInfo {
     }
 
     private final CompleteValueType completeValueType;
-    private final CompletableFuture<ExecutionResult> fieldValue;
+    private final /* CompletableFuture<ExecutionResult> | ExecutionResult */ Object fieldValue;
     private final List<FieldValueInfo> fieldValueInfos;
 
-    private FieldValueInfo(CompleteValueType completeValueType, CompletableFuture<ExecutionResult> fieldValue, List<FieldValueInfo> fieldValueInfos) {
+    private FieldValueInfo(CompleteValueType completeValueType, /* CompletableFuture<ExecutionResult> | ExecutionResult */ Object fieldValue, List<FieldValueInfo> fieldValueInfos) {
         assertNotNull(fieldValueInfos, () -> "fieldValueInfos can't be null");
         this.completeValueType = completeValueType;
         this.fieldValue = fieldValue;
@@ -37,7 +37,15 @@ public class FieldValueInfo {
     }
 
     public CompletableFuture<ExecutionResult> getFieldValue() {
-        return fieldValue;
+        return Async.asCompletableFuture(fieldValue);
+    }
+
+    public ExecutionResult getFieldValueMaterialised() {
+        return (ExecutionResult) fieldValue;
+    }
+
+    public boolean isFutureValue() {
+        return fieldValue instanceof CompletableFuture;
     }
 
     public List<FieldValueInfo> getFieldValueInfos() {
@@ -60,7 +68,7 @@ public class FieldValueInfo {
     @SuppressWarnings("unused")
     public static class Builder {
         private CompleteValueType completeValueType;
-        private CompletableFuture<ExecutionResult> executionResultFuture;
+        private /* CompletableFuture<ExecutionResult> | ExecutionResult*/ Object fieldValue;
         private List<FieldValueInfo> listInfos = new ArrayList<>();
 
         public Builder(CompleteValueType completeValueType) {
@@ -72,8 +80,8 @@ public class FieldValueInfo {
             return this;
         }
 
-        public Builder fieldValue(CompletableFuture<ExecutionResult> executionResultFuture) {
-            this.executionResultFuture = executionResultFuture;
+        public Builder fieldValue(/* CompletableFuture<ExecutionResult> | ExecutionResult */ Object fieldValue) {
+            this.fieldValue = fieldValue;
             return this;
         }
 
@@ -84,7 +92,7 @@ public class FieldValueInfo {
         }
 
         public FieldValueInfo build() {
-            return new FieldValueInfo(completeValueType, executionResultFuture, listInfos);
+            return new FieldValueInfo(completeValueType, fieldValue, listInfos);
         }
     }
 }
