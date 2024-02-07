@@ -186,9 +186,10 @@ public class FieldLevelTrackingApproach {
         // Create a new CallStack, since every deferred fields can execute in parallel.
         CallStack callStack = new CallStack();
         int level = parameters.getExecutionStrategyParameters().getPath().getLevel();
-        synchronized (callStack) {
-            callStack.clearAndMarkCurrentLevelAsReady(level);
-        }
+
+        callStack.lock.runLocked(() ->
+                callStack.clearAndMarkCurrentLevelAsReady(level)
+        );
 
         return new InstrumentationContext<>() {
             @Override
