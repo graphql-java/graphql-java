@@ -30,12 +30,8 @@ public class DeferDirectiveOnRootLevel extends AbstractRule {
             Optional<Node> fragmentAncestor = getFragmentAncestor(ancestors);
             if (fragmentAncestor.isPresent() && fragmentAncestor.get() instanceof OperationDefinition){
                 OperationDefinition operationDefinition = (OperationDefinition) fragmentAncestor.get();
-
-                if (OperationDefinition.Operation.MUTATION.equals(operationDefinition.getOperation())) {
-                    String message = i18n(MisplacedDirective, "DirectiveMisplaced.notAllowedOperationRootLevel", directive.getName(), OperationDefinition.Operation.MUTATION.name().toLowerCase());
-                    addError(MisplacedDirective, directive.getSourceLocation(), message);
-                } else if (OperationDefinition.Operation.SUBSCRIPTION.equals(operationDefinition.getOperation())) {
-                    String message = i18n(MisplacedDirective, "DirectiveMisplaced.notAllowedOperationRootLevel", directive.getName(), OperationDefinition.Operation.SUBSCRIPTION.name().toLowerCase());
+                if (OperationDefinition.Operation.MUTATION.equals(operationDefinition.getOperation()) || OperationDefinition.Operation.SUBSCRIPTION.equals(operationDefinition.getOperation())) {
+                    String message = i18n(MisplacedDirective, "DirectiveMisplaced.notAllowedOperationRootLevel", directive.getName(), operationDefinition.getOperation().name().toLowerCase());
                     addError(MisplacedDirective, directive.getSourceLocation(), message);
                 }
             }
