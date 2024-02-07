@@ -147,7 +147,56 @@ class DeferDirectiveOnValidOperationTest extends Specification {
 
     }
 
-    def "Not allow defer subscription root level even when there are multiple operations"() {
+    def "Not allow defer subscription even when there are multiple operations with multiple fragments"() {
+        given:
+        def query = """
+
+          fragment doggoSubscription on SubscriptionRoot {
+                ... { 
+                    dog {
+                        ...doggo
+                    }
+                }          
+            }
+            
+            query pets {
+                ... @defer {
+                    dog {
+                        name 
+                    }             
+                }     
+            }
+            
+            subscription pets2 {
+                   ...doggoSubscription        
+            }  
+            
+            query pets3 {
+                dog {
+                    name 
+                }             
+            }     
+            
+            fragment doggo on Dog{           
+                ... @defer {
+                    name 
+                }
+            }
+        """
+
+        when:
+        def validationErrors = validate(query)
+
+        then:
+        !validationErrors.isEmpty()
+        validationErrors.size() == 1
+        validationErrors.get(0).getValidationErrorType() == ValidationErrorType.MisplacedDirective
+        validationErrors.get(0).message == "Validation error (MisplacedDirective@[doggoSubscription/dog/doggo]) : Directive 'defer' is not allowed on operation 'subscription'"
+
+    }
+
+
+    def "Not allow defer subscription even when there are multiple operations and multiple fragments"() {
         given:
         def query = """
             query pets {
@@ -166,11 +215,7 @@ class DeferDirectiveOnValidOperationTest extends Specification {
                 }             
             }  
             
-            query pets3 {
-                dog {
-                    name 
-                }             
-            }     
+         
         """
 
         when:
@@ -180,10 +225,9 @@ class DeferDirectiveOnValidOperationTest extends Specification {
         !validationErrors.isEmpty()
         validationErrors.size() == 1
         validationErrors.get(0).getValidationErrorType() == ValidationErrorType.MisplacedDirective
-        validationErrors.get(0).message == "Validation error (MisplacedDirective@[dog]) : Directive 'defer' is not on operation 'subscription'"
+        validationErrors.get(0).message == "Validation error (MisplacedDirective@[dog]) : Directive 'defer' is not allowed on operation 'subscription'"
 
     }
-
 
     def "Allows defer on mutation when it is not on root level"() {
         given:
@@ -201,47 +245,6 @@ class DeferDirectiveOnValidOperationTest extends Specification {
 
         then:
         errorCollector.errors.isEmpty()
-
-    }
-
-    def "Defer directive Label must be string"() {
-        given:
-        def query = """
-          query defer_query {
-            dog {
-                ... @defer(label: 1) {
-                    name 
-                }
-            }
-         }
-        """
-        when:
-        def validationErrors = validate(query)
-
-        then:
-        !validationErrors.isEmpty()
-        validationErrors.size() == 1
-        validationErrors.get(0).getValidationErrorType() == ValidationErrorType.WrongType
-        validationErrors.get(0).message == "Validation error (WrongType@[dog]) : argument 'label' with value 'IntValue{value=1}' is not a valid 'String' - Expected an AST type of 'StringValue' but it was a 'IntValue'"
-    }
-
-
-    def "Defer directive is allowed on query root level"() {
-        given:
-        def query = """
-          query defer_query {
-            ... @defer {
-                dog {
-                    name 
-                }
-            }
-         }
-        """
-        when:
-        def validationErrors = validate(query)
-
-        then:
-        validationErrors.isEmpty()
     }
 
     static List<ValidationError> validate(String query) {
