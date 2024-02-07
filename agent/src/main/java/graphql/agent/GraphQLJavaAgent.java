@@ -66,6 +66,13 @@ public class GraphQLJavaAgent {
             s.append("==========================").append("\n");
             for (String dataLoaderName : dataLoaderNameToBatchCall.keySet()) {
                 s.append("DataLoader: '").append(dataLoaderName).append("' called ").append(dataLoaderNameToBatchCall.get(dataLoaderName).size()).append(" times, ").append("\n");
+                List<ResultPath> resultPathUsed = new ArrayList<>();
+                for (ResultPath resultPath : resultPathToDataLoaderUsed.keySet()) {
+                    if (resultPathToDataLoaderUsed.get(resultPath).equals(dataLoaderName)) {
+                        resultPathUsed.add(resultPath);
+                    }
+                }
+                s.append("DataLoader: '").append(dataLoaderName).append("' used in fields: ").append(resultPathUsed).append("\n");
                 for (BatchLoadingCall batchLoadingCall : dataLoaderNameToBatchCall.get(dataLoaderName)) {
                     s.append("Batch call with ").append(batchLoadingCall.resultCount).append(" results").append("\n");
                 }
