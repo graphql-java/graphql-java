@@ -534,6 +534,7 @@ public class AstPrinter {
         if (description.isMultiLine()) {
             s = "\"\"\"" + (startNewLine ? "" : "\n") + description.getContent() + "\n\"\"\"\n";
         } else {
+            //escaping here? use json method
             s = "\"" + description.getContent() + "\"\n";
         }
         return s;

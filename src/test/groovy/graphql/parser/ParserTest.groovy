@@ -113,7 +113,6 @@ class ParserTest extends Specification {
 //        def src = "query {}"
 
         // The example which relies on escaping certain characters, which is the problem
-        def src = "\"\\\"\" scalar A"
         // I'm going to guess the fundamental problem is, we never verify if the resultant string is valid
         // because we only read it from left to right.
 
@@ -122,6 +121,9 @@ class ParserTest extends Specification {
         // So this is fine, because the escaped unicode remains in the slash form - its not considered a quote. thats good.
         // the triple quote situation is fine
 //        def src = "\"\"\"triple\\\"quotes\"\"\" scalar A"
+
+        def src = '''"\\"" scalar A'''
+//        def src = "\"\\\"\" scalar A"
 
         def env = newParserEnvironment()
                 .document(src)

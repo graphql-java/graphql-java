@@ -15,6 +15,7 @@ public final class EscapeUtil {
      *
      * @return the encoded string
      */
+    // here
     public static String escapeJsonString(String stringValue) {
         int len = stringValue.length();
         StringBuilder sb = new StringBuilder(len);

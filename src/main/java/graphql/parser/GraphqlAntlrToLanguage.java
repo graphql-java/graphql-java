@@ -864,7 +864,7 @@ public class GraphqlAntlrToLanguage {
             content = parseSingleQuotedString(i18N, content, sourceLocation);
             // The problem is, we never actually check the string is valid after the unicode twizzling
             // But do we really want to double parse every description? Or let this go
-            parseValue(content);
+//            parseValue(content);
         }
         // at this point we've assumed that the contents are valid
         return new Description(content, sourceLocation, multiLine);
