@@ -348,7 +348,7 @@ nexusPublishing {
 }
 
 signing {
-    required { !version.toString().endsWith('-SNAPSHOT') }
+    required { !version.endsWith('-SNAPSHOT') }
     def signingKey = System.env.MAVEN_CENTRAL_PGP_KEY
     useInMemoryPgpKeys(signingKey, "")
     sign publishing.publications
