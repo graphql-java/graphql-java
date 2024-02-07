@@ -103,11 +103,11 @@ import java.util.Set;
  *
  */
 @ExperimentalApi
-public class NormalizedDeferExecution {
+public class DeferExecution {
     private final String label;
     private final Set<GraphQLObjectType> possibleTypes;
 
-    public NormalizedDeferExecution(@Nullable String label, Set<GraphQLObjectType> possibleTypes) {
+    public DeferExecution(@Nullable String label, Set<GraphQLObjectType> possibleTypes) {
         this.label = label;
         this.possibleTypes = possibleTypes;
     }

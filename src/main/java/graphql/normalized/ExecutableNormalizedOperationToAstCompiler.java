@@ -23,7 +23,7 @@ import graphql.language.SelectionSet;
 import graphql.language.StringValue;
 import graphql.language.TypeName;
 import graphql.language.Value;
-import graphql.normalized.incremental.NormalizedDeferExecution;
+import graphql.normalized.incremental.DeferExecution;
 import graphql.schema.GraphQLCompositeType;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLObjectType;
@@ -277,7 +277,7 @@ public class ExecutableNormalizedOperationToAstCompiler {
         Map<ExecutionFragmentDetails, List<Field>> fieldsByFragmentDetails = new LinkedHashMap<>();
 
         for (ExecutableNormalizedField nf : executableNormalizedFields) {
-            LinkedHashSet<NormalizedDeferExecution> deferExecutions = nf.getDeferExecutions();
+            LinkedHashSet<DeferExecution> deferExecutions = nf.getDeferExecutions();
 
             if (nf.isConditional(schema)) {
                 selectionForNormalizedField(schema, nf, normalizedFieldToQueryDirectives, variableAccumulator, true)
@@ -489,9 +489,9 @@ public class ExecutableNormalizedOperationToAstCompiler {
      */
     private static class ExecutionFragmentDetails {
         private final String typeName;
-        private final NormalizedDeferExecution deferExecution;
+        private final DeferExecution deferExecution;
 
-        public ExecutionFragmentDetails(String typeName, NormalizedDeferExecution deferExecution) {
+        public ExecutionFragmentDetails(String typeName, DeferExecution deferExecution) {
             this.typeName = typeName;
             this.deferExecution = deferExecution;
         }

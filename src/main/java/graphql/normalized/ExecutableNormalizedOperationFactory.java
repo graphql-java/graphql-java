@@ -30,7 +30,7 @@ import graphql.language.OperationDefinition;
 import graphql.language.Selection;
 import graphql.language.SelectionSet;
 import graphql.language.VariableDefinition;
-import graphql.normalized.incremental.NormalizedDeferExecution;
+import graphql.normalized.incremental.DeferExecution;
 import graphql.schema.FieldCoordinates;
 import graphql.schema.GraphQLCompositeType;
 import graphql.schema.GraphQLFieldDefinition;
@@ -631,12 +631,12 @@ public class ExecutableNormalizedOperationFactory {
 
         private List<CollectedFieldGroup> groupByCommonParentsWithDeferSupport(Collection<CollectedField> fields) {
             ImmutableSet.Builder<GraphQLObjectType> objectTypes = ImmutableSet.builder();
-            ImmutableSet.Builder<NormalizedDeferExecution> deferExecutionsBuilder = ImmutableSet.builder();
+            ImmutableSet.Builder<DeferExecution> deferExecutionsBuilder = ImmutableSet.builder();
 
             for (CollectedField collectedField : fields) {
                 objectTypes.addAll(collectedField.objectTypes);
 
-                NormalizedDeferExecution collectedDeferExecution = collectedField.deferExecution;
+                DeferExecution collectedDeferExecution = collectedField.deferExecution;
 
                 if (collectedDeferExecution != null) {
                     deferExecutionsBuilder.add(collectedDeferExecution);
@@ -644,7 +644,7 @@ public class ExecutableNormalizedOperationFactory {
             }
 
             Set<GraphQLObjectType> allRelevantObjects = objectTypes.build();
-            Set<NormalizedDeferExecution> deferExecutions = deferExecutionsBuilder.build();
+            Set<DeferExecution> deferExecutions = deferExecutionsBuilder.build();
 
             Set<String> duplicatedLabels = listDuplicatedLabels(deferExecutions);
 
@@ -662,7 +662,7 @@ public class ExecutableNormalizedOperationFactory {
             for (GraphQLObjectType objectType : allRelevantObjects) {
                 Set<CollectedField> relevantFields = filterSet(fields, field -> field.objectTypes.contains(objectType));
 
-                Set<NormalizedDeferExecution> filteredDeferExecutions = deferExecutions.stream()
+                Set<DeferExecution> filteredDeferExecutions = deferExecutions.stream()
                         .filter(filterExecutionsFromType(objectType))
                         .collect(toCollection(LinkedHashSet::new));
 
@@ -671,7 +671,7 @@ public class ExecutableNormalizedOperationFactory {
             return result.build();
         }
 
-        private static Predicate<NormalizedDeferExecution> filterExecutionsFromType(GraphQLObjectType objectType) {
+        private static Predicate<DeferExecution> filterExecutionsFromType(GraphQLObjectType objectType) {
             String objectTypeName = objectType.getName();
             return deferExecution -> deferExecution.getPossibleTypes()
                     .stream()
@@ -679,9 +679,9 @@ public class ExecutableNormalizedOperationFactory {
                     .anyMatch(objectTypeName::equals);
         }
 
-        private Set<String> listDuplicatedLabels(Collection<NormalizedDeferExecution> deferExecutions) {
+        private Set<String> listDuplicatedLabels(Collection<DeferExecution> deferExecutions) {
             return deferExecutions.stream()
-                    .map(NormalizedDeferExecution::getLabel)
+                    .map(DeferExecution::getLabel)
                     .filter(Objects::nonNull)
                     .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()))
                     .entrySet()
@@ -695,7 +695,7 @@ public class ExecutableNormalizedOperationFactory {
                                              List<CollectedField> result,
                                              GraphQLCompositeType astTypeCondition,
                                              Set<GraphQLObjectType> possibleObjects,
-                                             NormalizedDeferExecution deferExecution
+                                             DeferExecution deferExecution
         ) {
             for (Selection<?> selection : selectionSet.getSelections()) {
                 if (selection instanceof Field) {
@@ -729,7 +729,7 @@ public class ExecutableNormalizedOperationFactory {
             GraphQLCompositeType newAstTypeCondition = (GraphQLCompositeType) assertNotNull(this.graphQLSchema.getType(fragmentDefinition.getTypeCondition().getName()));
             Set<GraphQLObjectType> newPossibleObjects = narrowDownPossibleObjects(possibleObjects, newAstTypeCondition);
 
-            NormalizedDeferExecution newDeferExecution = buildDeferExecution(
+            DeferExecution newDeferExecution = buildDeferExecution(
                     fragmentSpread.getDirectives(),
                     newPossibleObjects);
 
@@ -753,7 +753,7 @@ public class ExecutableNormalizedOperationFactory {
 
             }
 
-            NormalizedDeferExecution newDeferExecution = buildDeferExecution(
+            DeferExecution newDeferExecution = buildDeferExecution(
                     inlineFragment.getDirectives(),
                     newPossibleObjects
             );
@@ -761,7 +761,7 @@ public class ExecutableNormalizedOperationFactory {
             collectFromSelectionSet(inlineFragment.getSelectionSet(), result, newAstTypeCondition, newPossibleObjects, newDeferExecution);
         }
 
-        private NormalizedDeferExecution buildDeferExecution(
+        private DeferExecution buildDeferExecution(
                 List<Directive> directives,
                 Set<GraphQLObjectType> newPossibleObjects)  {
             if(!options.deferSupport) {
@@ -771,7 +771,7 @@ public class ExecutableNormalizedOperationFactory {
             return IncrementalUtils.createDeferredExecution(
                     this.coercedVariableValues.toMap(),
                     directives,
-                    (label) -> new NormalizedDeferExecution(label, newPossibleObjects)
+                    (label) -> new DeferExecution(label, newPossibleObjects)
             );
         }
 
@@ -779,7 +779,7 @@ public class ExecutableNormalizedOperationFactory {
                                   Field field,
                                   Set<GraphQLObjectType> possibleObjectTypes,
                                   GraphQLCompositeType astTypeCondition,
-                                  NormalizedDeferExecution deferExecution
+                                  DeferExecution deferExecution
         ) {
             if (!conditionalNodes.shouldInclude(field,
                     this.coercedVariableValues.toMap(),
@@ -846,9 +846,9 @@ public class ExecutableNormalizedOperationFactory {
             Field field;
             Set<GraphQLObjectType> objectTypes;
             GraphQLCompositeType astTypeCondition;
-            NormalizedDeferExecution deferExecution;
+            DeferExecution deferExecution;
 
-            public CollectedField(Field field, Set<GraphQLObjectType> objectTypes, GraphQLCompositeType astTypeCondition, NormalizedDeferExecution deferExecution) {
+            public CollectedField(Field field, Set<GraphQLObjectType> objectTypes, GraphQLCompositeType astTypeCondition, DeferExecution deferExecution) {
                 this.field = field;
                 this.objectTypes = objectTypes;
                 this.astTypeCondition = astTypeCondition;
@@ -879,9 +879,9 @@ public class ExecutableNormalizedOperationFactory {
         private static class CollectedFieldGroup {
             Set<GraphQLObjectType> objectTypes;
             Set<CollectedField> fields;
-            Set<NormalizedDeferExecution> deferExecutions;
+            Set<DeferExecution> deferExecutions;
 
-            public CollectedFieldGroup(Set<CollectedField> fields, Set<GraphQLObjectType> objectTypes, Set<NormalizedDeferExecution> deferExecutions) {
+            public CollectedFieldGroup(Set<CollectedField> fields, Set<GraphQLObjectType> objectTypes, Set<DeferExecution> deferExecutions) {
                 this.fields = fields;
                 this.objectTypes = objectTypes;
                 this.deferExecutions = deferExecutions;
