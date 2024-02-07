@@ -1,24 +1,18 @@
 package graphql.validation.rules;
 
 import graphql.language.Directive;
-import graphql.language.Document;
 import graphql.language.FragmentDefinition;
-import graphql.language.FragmentSpread;
 import graphql.language.InlineFragment;
 import graphql.language.Node;
 import graphql.language.OperationDefinition;
 import graphql.language.SelectionSet;
 import graphql.validation.AbstractRule;
-import graphql.validation.DocumentVisitor;
-import graphql.validation.LanguageTraversal;
 import graphql.validation.ValidationContext;
 import graphql.validation.ValidationErrorCollector;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 import static graphql.validation.ValidationErrorType.MisplacedDirective;

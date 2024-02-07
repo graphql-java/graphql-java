@@ -8,7 +8,6 @@ import graphql.language.OperationDefinition;
 import graphql.validation.AbstractRule;
 import graphql.validation.ValidationContext;
 import graphql.validation.ValidationErrorCollector;
-
 import java.util.List;
 import java.util.Optional;
 

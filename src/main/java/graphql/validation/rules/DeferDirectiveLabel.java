@@ -5,11 +5,9 @@ import graphql.language.Argument;
 import graphql.language.Directive;
 import graphql.language.Node;
 import graphql.language.StringValue;
-import graphql.language.Value;
 import graphql.validation.AbstractRule;
 import graphql.validation.ValidationContext;
 import graphql.validation.ValidationErrorCollector;
-
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
