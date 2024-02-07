@@ -47,7 +47,6 @@ public class TestQuery {
     }
 
     static ExecutionTrackingResult executeBatchedQuery() {
-        System.out.println("ClassLoader: " + TestQuery.class.getClassLoader());
         String sdl = "type Query{issues: [Issue]} " +
             "type Issue {id: ID, author: User}" +
             "type User {id: ID, name: String}";
@@ -57,7 +56,7 @@ public class TestQuery {
             Map.of("id", "2", "title", "issue-2", "authorId", "user-2"));
 
         BatchLoader<String, Map> userBatchLoader = keys -> {
-            System.out.println("batch users with keys: " + keys);
+            // System.out.println("batch users with keys: " + keys);
             return CompletableFuture.supplyAsync(() -> {
                 try {
                     Thread.sleep(100);
@@ -75,7 +74,7 @@ public class TestQuery {
 
         DataFetcher<CompletableFuture<Map>> authorDF = (env) -> {
             DataLoader<String, Map> userLoader = env.getDataLoader("userLoader");
-            System.out.println("author id: " + (String) ((Map) env.getSource()).get("authorId"));
+            // System.out.println("author id: " + (String) ((Map) env.getSource()).get("authorId"));
             return userLoader.load((String) ((Map) env.getSource()).get("authorId"));
         };
         TypeDefinitionRegistry typeDefinitionRegistry = new SchemaParser().parse(sdl);
