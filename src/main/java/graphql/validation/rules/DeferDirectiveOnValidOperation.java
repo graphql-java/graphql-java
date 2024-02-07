@@ -27,11 +27,6 @@ public class DeferDirectiveOnValidOperation extends AbstractRule {
     }
 
     @Override
-    public void documentFinished(Document document) {
-        super.documentFinished(document);
-    }
-
-    @Override
     public void checkDirective(Directive directive, List<Node> ancestors) {
         if (!directive.getName().equals("defer") ||
                 (directive.getArgumentsByName().get("if") != null && !((BooleanValue) directive.getArgumentsByName().get("if").getValue()).isValue() )) {
@@ -45,13 +40,12 @@ public class DeferDirectiveOnValidOperation extends AbstractRule {
         }
     }
 
-
     /**
      * Extract from ancestors the OperationDefinition using the document ancestor.
      * @param ancestors list of ancestors
      * @return OperationDefinition
      */
-    protected Optional<OperationDefinition> getOperation(List<Node> ancestors) {
+    private Optional<OperationDefinition> getOperation(List<Node> ancestors) {
         return ancestors.stream()
                 .filter(doc -> doc instanceof OperationDefinition)
                 .map((def -> (OperationDefinition) def))

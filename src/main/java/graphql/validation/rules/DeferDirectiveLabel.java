@@ -16,7 +16,6 @@ import static graphql.validation.ValidationErrorType.DuplicateArgumentNames;
 
 @Internal
 public class DeferDirectiveLabel extends AbstractRule {
-
     private Set<String> labels = new LinkedHashSet<>();
     public DeferDirectiveLabel(ValidationContext validationContext, ValidationErrorCollector validationErrorCollector) {
         super(validationContext, validationErrorCollector);
@@ -27,7 +26,6 @@ public class DeferDirectiveLabel extends AbstractRule {
         if (!directive.getName().equals("defer") || directive.getArguments().size() == 0) {
             return;
         }
-
         Argument labelArgument = directive.getArgument("label");
         // argument type is validated in DeferDirectiveArgumentType
         if (labelArgument != null && labelArgument.getValue() instanceof StringValue) {

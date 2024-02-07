@@ -53,6 +53,5 @@ public class DeferDirectiveOnRootLevel extends AbstractRule {
                                 node instanceof FragmentDefinition
                 )
         ).findFirst();
-
     }
 }
