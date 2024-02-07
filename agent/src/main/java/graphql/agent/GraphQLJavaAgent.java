@@ -10,8 +10,10 @@ import net.bytebuddy.agent.builder.AgentBuilder;
 import net.bytebuddy.asm.Advice;
 import net.bytebuddy.implementation.bytecode.assign.Assigner;
 import org.dataloader.DataLoader;
+import org.dataloader.DataLoaderRegistry;
 
 import java.lang.instrument.Instrumentation;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -113,12 +115,10 @@ class DataLoaderAdvice {
 class DataLoaderRegistryAdvice {
 
     @Advice.OnMethodEnter
-    public static void dispatchAll() {
-        // StackWalker instance = StackWalker.getInstance();
-        // instance.forEach(stackFrame -> {
-        //     System.out.println(stackFrame.getClassName() + " " + stackFrame.getMethodName() + " " + stackFrame.getLineNumber());
-        // });
-        System.out.println("calling dispatchAll");
+    public static void dispatchAll(@Advice.This(typing = Assigner.Typing.DYNAMIC) Object dataLoaderRegistry) {
+        List<DataLoader<?, ?>> dataLoaders = ((DataLoaderRegistry) dataLoaderRegistry).getDataLoaders();
+        ExecutionId executionId = GraphQLJavaAgent.dataLoaderToExecutionId.get(dataLoaders.get(0));
+        System.out.println("calling dispatchAll for " + executionId);
     }
 
 }
@@ -134,7 +134,13 @@ class ExecutionAdvice {
 
     @Advice.OnMethodExit
     public static void executeOperationExit(@Advice.Argument(0) ExecutionContext executionContext) {
-        System.out.println("execution finished for: " + executionContext.getExecutionId());
+        ExecutionId executionId = executionContext.getExecutionId();
+        System.out.println("execution finished for: " + executionId);
+        // cleanup
+        GraphQLJavaAgent.executionDataMap.get(executionId).dataLoaderToName.forEach((dataLoader, s) -> {
+          GraphQLJavaAgent.dataLoaderToExecutionId.remove(dataLoader);
+        });
+        GraphQLJavaAgent.executionDataMap.remove(executionContext.getExecutionId());
     }
 }
 
