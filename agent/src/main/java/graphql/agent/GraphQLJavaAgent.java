@@ -137,10 +137,10 @@ class ExecutionAdvice {
         ExecutionId executionId = executionContext.getExecutionId();
         System.out.println("execution finished for: " + executionId);
         // cleanup
-        GraphQLJavaAgent.executionDataMap.get(executionId).dataLoaderToName.forEach((dataLoader, s) -> {
-          GraphQLJavaAgent.dataLoaderToExecutionId.remove(dataLoader);
-        });
-        GraphQLJavaAgent.executionDataMap.remove(executionContext.getExecutionId());
+        // GraphQLJavaAgent.executionDataMap.get(executionId).dataLoaderToName.forEach((dataLoader, s) -> {
+        //   GraphQLJavaAgent.dataLoaderToExecutionId.remove(dataLoader);
+        // });
+        // GraphQLJavaAgent.executionDataMap.remove(executionContext.getExecutionId());
     }
 }
 
