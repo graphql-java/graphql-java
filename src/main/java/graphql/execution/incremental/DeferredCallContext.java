@@ -3,7 +3,8 @@ package graphql.execution.incremental;
 import graphql.ExceptionWhileDataFetching;
 import graphql.GraphQLError;
 import graphql.Internal;
-import graphql.execution.ExecutionStrategyParameters;
+import graphql.execution.ResultPath;
+import graphql.language.SourceLocation;
 
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -22,8 +23,8 @@ public class DeferredCallContext {
 
     private final List<GraphQLError> errors = new CopyOnWriteArrayList<>();
 
-    public void onFetchingException(ExecutionStrategyParameters parameters, Throwable e) {
-        ExceptionWhileDataFetching error = new ExceptionWhileDataFetching(parameters.getPath(), e, parameters.getField().getSingleField().getSourceLocation());
+    public void onFetchingException(ResultPath path, SourceLocation sourceLocation, Throwable throwable) {
+        ExceptionWhileDataFetching error = new ExceptionWhileDataFetching(path, throwable, sourceLocation);
         onError(error);
     }
 

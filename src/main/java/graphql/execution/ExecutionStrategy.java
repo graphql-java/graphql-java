@@ -365,7 +365,11 @@ public abstract class ExecutionStrategy {
                 .exception(e)
                 .build();
 
-        parameters.getDeferredCallContext().onFetchingException(parameters, e);
+        parameters.getDeferredCallContext().onFetchingException(
+                parameters.getPath(),
+                parameters.getField().getSingleField().getSourceLocation(),
+                e
+        );
 
         try {
             return asyncHandleException(dataFetcherExceptionHandler, handlerParameters);
