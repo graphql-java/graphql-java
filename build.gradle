@@ -348,7 +348,7 @@ nexusPublishing {
 }
 
 signing {
-    required { !project.hasProperty('publishToMavenLocal')  }
+    required { !project.hasProperty('publishToMavenLocal') }
     def signingKey = System.env.MAVEN_CENTRAL_PGP_KEY
     useInMemoryPgpKeys(signingKey, "")
     sign publishing.publications
