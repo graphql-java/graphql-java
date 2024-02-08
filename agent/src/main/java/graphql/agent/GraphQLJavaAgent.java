@@ -42,8 +42,10 @@ public class GraphQLJavaAgent {
         public final Map<ResultPath, String> resultPathToDataLoaderUsed = new ConcurrentHashMap<>();
         public final Map<DataLoader, String> dataLoaderToName = new ConcurrentHashMap<>();
 
-        private final Map<ResultPath, Long> timePerPath = new ConcurrentHashMap<>();
-        private final Map<ResultPath, String> invocationThreadPerPath = new ConcurrentHashMap<>();
+        public final Map<ResultPath, Long> timePerPath = new ConcurrentHashMap<>();
+        public final Map<ResultPath, Long> finishedTimePerPath = new ConcurrentHashMap<>();
+        public final Map<ResultPath, String> finishedThreadPerPath = new ConcurrentHashMap<>();
+        public final Map<ResultPath, String> invocationThreadPerPath = new ConcurrentHashMap<>();
         private final Map<ResultPath, DFResultType> dfResultTypes = new ConcurrentHashMap<>();
 
         public static class BatchLoadingCall {
@@ -51,7 +53,7 @@ public class GraphQLJavaAgent {
                 this.resultCount = resultCount;
             }
 
-            public int resultCount;
+            public final int resultCount;
         }
 
         public final Map<String, List<BatchLoadingCall>> dataLoaderNameToBatchCall = new ConcurrentHashMap<>();
@@ -67,6 +69,7 @@ public class GraphQLJavaAgent {
             s.append("Nonblocking fields count: ").append(dfResultTypes.values().stream().filter(dfResultType -> dfResultType == PENDING).count()).append("\n");
             s.append("DataLoaders used: ").append(dataLoaderToName.size()).append("\n");
             s.append("DataLoader names: ").append(dataLoaderToName.values()).append("\n");
+            s.append("start thread: '" + startThread.get() + "' end thread: '" + endThread.get()).append("'\n");
             s.append("BatchLoader calls details: ").append("\n");
             s.append("==========================").append("\n");
             for (String dataLoaderName : dataLoaderNameToBatchCall.keySet()) {
@@ -209,6 +212,7 @@ public class GraphQLJavaAgent {
                 ExecutionId executionId = executionContext.getExecutionId();
                 GraphQLJavaAgent.ExecutionData executionData = GraphQLJavaAgent.executionIdToData.get(executionId);
                 executionData.endExecutionTime.set(System.nanoTime());
+                executionData.endThread.set(Thread.currentThread().getName());
                 System.out.println("execution finished for: " + executionId + " with data " + executionData);
                 System.out.println(executionData.print(executionId.toString()));
             }
@@ -240,6 +244,63 @@ public class GraphQLJavaAgent {
 
             result.whenComplete(new AfterExecutionHandler(executionContext));
         }
+    }
+
+    public static class DataFetcherInvokeAdvice {
+
+        public static class DataFetcherFinishedHandler implements BiConsumer<Object, Throwable> {
+
+            private final ExecutionContext executionContext;
+            private final ExecutionStrategyParameters parameters;
+            private final long startTime;
+
+            public DataFetcherFinishedHandler(ExecutionContext executionContext, ExecutionStrategyParameters parameters, long startTime) {
+                this.executionContext = executionContext;
+                this.parameters = parameters;
+                this.startTime = startTime;
+            }
+
+            @Override
+            public void accept(Object o, Throwable throwable) {
+                ExecutionId executionId = executionContext.getExecutionId();
+                GraphQLJavaAgent.ExecutionData executionData = GraphQLJavaAgent.executionIdToData.get(executionId);
+                ResultPath path = parameters.getPath();
+                executionData.finishedTimePerPath.put(path, System.nanoTime() - startTime);
+                executionData.finishedThreadPerPath.put(path, Thread.currentThread().getName());
+            }
+        }
+
+        @Advice.OnMethodEnter
+        public static void invokeDataFetcherEnter(@Advice.Argument(0) ExecutionContext executionContext,
+                                                  @Advice.Argument(1) ExecutionStrategyParameters parameters) {
+            GraphQLJavaAgent.ExecutionData executionData = GraphQLJavaAgent.executionIdToData.get(executionContext.getExecutionId());
+            executionData.start(parameters.getPath(), System.nanoTime());
+            executionData.invocationThreadPerPath.put(parameters.getPath(), Thread.currentThread().getName());
+        }
+
+        @Advice.OnMethodExit
+        public static void invokeDataFetcherExit(@Advice.Argument(0) ExecutionContext executionContext,
+                                                 @Advice.Argument(1) ExecutionStrategyParameters parameters,
+                                                 @Advice.Return CompletableFuture<Object> result) {
+            // ExecutionTrackingResult executionTrackingResult = executionContext.getGraphQLContext().get(EXECUTION_TRACKING_KEY);
+            GraphQLJavaAgent.ExecutionData executionData = GraphQLJavaAgent.executionIdToData.get(executionContext.getExecutionId());
+            ResultPath path = parameters.getPath();
+            long startTime = executionData.timePerPath.get(path);
+            executionData.end(path, System.nanoTime());
+            if (result.isDone()) {
+                if (result.isCancelled()) {
+                    executionData.setDfResultTypes(path, DONE_CANCELLED);
+                } else if (result.isCompletedExceptionally()) {
+                    executionData.setDfResultTypes(path, DONE_EXCEPTIONALLY);
+                } else {
+                    executionData.setDfResultTypes(path, DONE_OK);
+                }
+            } else {
+                executionData.setDfResultTypes(path, PENDING);
+            }
+            result.whenComplete(new DataFetcherFinishedHandler(executionContext, parameters, startTime));
+        }
+
     }
 
 }
@@ -310,33 +371,3 @@ class DataLoaderRegistryAdvice {
 }
 
 
-class DataFetcherInvokeAdvice {
-    @Advice.OnMethodEnter
-    public static void invokeDataFetcherEnter(@Advice.Argument(0) ExecutionContext executionContext,
-                                              @Advice.Argument(1) ExecutionStrategyParameters parameters) {
-        GraphQLJavaAgent.executionIdToData.get(executionContext.getExecutionId())
-            .start(parameters.getPath(), System.nanoTime());
-    }
-
-    @Advice.OnMethodExit
-    public static void invokeDataFetcherExit(@Advice.Argument(0) ExecutionContext executionContext,
-                                             @Advice.Argument(1) ExecutionStrategyParameters parameters,
-                                             @Advice.Return CompletableFuture<Object> result) {
-        // ExecutionTrackingResult executionTrackingResult = executionContext.getGraphQLContext().get(EXECUTION_TRACKING_KEY);
-        GraphQLJavaAgent.ExecutionData executionData = GraphQLJavaAgent.executionIdToData.get(executionContext.getExecutionId());
-        ResultPath path = parameters.getPath();
-        executionData.end(path, System.nanoTime());
-        if (result.isDone()) {
-            if (result.isCancelled()) {
-                executionData.setDfResultTypes(path, DONE_CANCELLED);
-            } else if (result.isCompletedExceptionally()) {
-                executionData.setDfResultTypes(path, DONE_EXCEPTIONALLY);
-            } else {
-                executionData.setDfResultTypes(path, DONE_OK);
-            }
-        } else {
-            executionData.setDfResultTypes(path, PENDING);
-        }
-    }
-
-}
