@@ -45,7 +45,7 @@ public class GraphQLJavaAgent {
         public final Map<ResultPath, Long> timePerPath = new ConcurrentHashMap<>();
         public final Map<ResultPath, Long> finishedTimePerPath = new ConcurrentHashMap<>();
         public final Map<ResultPath, String> finishedThreadPerPath = new ConcurrentHashMap<>();
-        public final Map<ResultPath, String> invocationThreadPerPath = new ConcurrentHashMap<>();
+        public final Map<ResultPath, String> startInvocationThreadPerPath = new ConcurrentHashMap<>();
         private final Map<ResultPath, DFResultType> dfResultTypes = new ConcurrentHashMap<>();
 
         public static class BatchLoadingCall {
@@ -69,7 +69,8 @@ public class GraphQLJavaAgent {
             s.append("Nonblocking fields count: ").append(dfResultTypes.values().stream().filter(dfResultType -> dfResultType == PENDING).count()).append("\n");
             s.append("DataLoaders used: ").append(dataLoaderToName.size()).append("\n");
             s.append("DataLoader names: ").append(dataLoaderToName.values()).append("\n");
-            s.append("start thread: '" + startThread.get() + "' end thread: '" + endThread.get()).append("'\n");
+            s.append("start execution thread: '").append(startThread.get()).append("'\n");
+            s.append("end execution  thread: '").append(endThread.get()).append("'\n");
             s.append("BatchLoader calls details: ").append("\n");
             s.append("==========================").append("\n");
             for (String dataLoaderName : dataLoaderNameToBatchCall.keySet()) {
@@ -88,8 +89,13 @@ public class GraphQLJavaAgent {
             s.append("Field details:").append("\n");
             s.append("===============").append("\n");
             for (ResultPath path : timePerPath.keySet()) {
-                s.append("Field: '").append(path).append("' took: ").append(timePerPath.get(path)).append(" nano seconds, ").append("\n");
+                s.append("Field: '").append(path).append("'\n");
+                s.append("invocation time: ").append(timePerPath.get(path)).append(" nano seconds, ").append("\n");
+                s.append("completion time: ").append(finishedTimePerPath.get(path)).append(" nano seconds, ").append("\n");
                 s.append("Result type: ").append(dfResultTypes.get(path)).append("\n");
+                s.append("invoked in thread: ").append(startInvocationThreadPerPath.get(path)).append("\n");
+                s.append("finished in thread: ").append(finishedThreadPerPath.get(path)).append("\n");
+                s.append("-------------\n");
             }
             s.append("==========================").append("\n");
             s.append("==========================").append("\n");
@@ -265,6 +271,7 @@ public class GraphQLJavaAgent {
                 ExecutionId executionId = executionContext.getExecutionId();
                 GraphQLJavaAgent.ExecutionData executionData = GraphQLJavaAgent.executionIdToData.get(executionId);
                 ResultPath path = parameters.getPath();
+                System.out.println("finished " + path);
                 executionData.finishedTimePerPath.put(path, System.nanoTime() - startTime);
                 executionData.finishedThreadPerPath.put(path, Thread.currentThread().getName());
             }
@@ -275,13 +282,13 @@ public class GraphQLJavaAgent {
                                                   @Advice.Argument(1) ExecutionStrategyParameters parameters) {
             GraphQLJavaAgent.ExecutionData executionData = GraphQLJavaAgent.executionIdToData.get(executionContext.getExecutionId());
             executionData.start(parameters.getPath(), System.nanoTime());
-            executionData.invocationThreadPerPath.put(parameters.getPath(), Thread.currentThread().getName());
+            executionData.startInvocationThreadPerPath.put(parameters.getPath(), Thread.currentThread().getName());
         }
 
         @Advice.OnMethodExit
         public static void invokeDataFetcherExit(@Advice.Argument(0) ExecutionContext executionContext,
                                                  @Advice.Argument(1) ExecutionStrategyParameters parameters,
-                                                 @Advice.Return CompletableFuture<Object> result) {
+                                                 @Advice.Return(readOnly = false) CompletableFuture<Object> result) {
             // ExecutionTrackingResult executionTrackingResult = executionContext.getGraphQLContext().get(EXECUTION_TRACKING_KEY);
             GraphQLJavaAgent.ExecutionData executionData = GraphQLJavaAgent.executionIdToData.get(executionContext.getExecutionId());
             ResultPath path = parameters.getPath();
@@ -298,7 +305,9 @@ public class GraphQLJavaAgent {
             } else {
                 executionData.setDfResultTypes(path, PENDING);
             }
-            result.whenComplete(new DataFetcherFinishedHandler(executionContext, parameters, startTime));
+            // overriding the result to make sure the finished handler is called first when the DF is finished
+            // otherwise it is a completion tree instead of chain
+            result = result.whenComplete(new DataFetcherFinishedHandler(executionContext, parameters, startTime));
         }
 
     }

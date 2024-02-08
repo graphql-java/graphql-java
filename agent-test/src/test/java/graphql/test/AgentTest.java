@@ -28,6 +28,9 @@ public class AgentTest {
     @Test
     void testBatchLoader() {
         ExecutionTrackingResult executionTrackingResult = TestQuery.executeBatchedQuery();
+        TestQuery.executeBatchedQuery();
+        TestQuery.executeBatchedQuery();
+        TestQuery.executeBatchedQuery();
         // assertThat(executionTrackingResult.dataFetcherCount()).isEqualTo(9);
         // assertThat(executionTrackingResult.getTime("/issues")).isGreaterThan(100);
         // assertThat(executionTrackingResult.getDfResultTypes("/issues[0]/author"))
