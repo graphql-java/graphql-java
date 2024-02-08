@@ -22,6 +22,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.BiConsumer;
 
 import static graphql.agent.GraphQLJavaAgent.ExecutionData.DFResultType.DONE_CANCELLED;
 import static graphql.agent.GraphQLJavaAgent.ExecutionData.DFResultType.DONE_EXCEPTIONALLY;
@@ -193,6 +194,54 @@ public class GraphQLJavaAgent {
             .installOn(inst);
 
     }
+
+    public static class ExecutionAdvice {
+
+        public static class AfterExecutionHandler implements BiConsumer<Object, Throwable> {
+
+            private final ExecutionContext executionContext;
+
+            public AfterExecutionHandler(ExecutionContext executionContext) {
+                this.executionContext = executionContext;
+            }
+
+            public void accept(Object o, Throwable throwable) {
+                ExecutionId executionId = executionContext.getExecutionId();
+                GraphQLJavaAgent.ExecutionData executionData = GraphQLJavaAgent.executionIdToData.get(executionId);
+                executionData.endExecutionTime.set(System.nanoTime());
+                System.out.println("execution finished for: " + executionId + " with data " + executionData);
+                System.out.println(executionData.print(executionId.toString()));
+            }
+
+        }
+
+
+        @Advice.OnMethodEnter
+        public static void executeOperationEnter(@Advice.Argument(0) ExecutionContext executionContext) {
+            GraphQLJavaAgent.ExecutionData executionData = new GraphQLJavaAgent.ExecutionData();
+            executionData.startExecutionTime.set(System.nanoTime());
+            executionData.startThread.set(Thread.currentThread().getName());
+            System.out.println("execution started for: " + executionContext.getExecutionId());
+            executionContext.getGraphQLContext().put(EXECUTION_TRACKING_KEY, new ExecutionTrackingResult());
+
+            GraphQLJavaAgent.executionIdToData.put(executionContext.getExecutionId(), executionData);
+
+            DataLoaderRegistry dataLoaderRegistry = executionContext.getDataLoaderRegistry();
+            for (String name : dataLoaderRegistry.getDataLoadersMap().keySet()) {
+                DataLoader dataLoader = dataLoaderRegistry.getDataLoader(name);
+                GraphQLJavaAgent.dataLoaderToExecutionId.put(dataLoader, executionContext.getExecutionId());
+                executionData.dataLoaderToName.put(dataLoader, name);
+            }
+        }
+
+        @Advice.OnMethodExit
+        public static void executeOperationExit(@Advice.Argument(0) ExecutionContext executionContext,
+                                                @Advice.Return(typing = Assigner.Typing.DYNAMIC) CompletableFuture<Object> result) {
+
+            result.whenComplete(new AfterExecutionHandler(executionContext));
+        }
+    }
+
 }
 
 class DataFetchingEnvironmentAdvice {
@@ -260,43 +309,6 @@ class DataLoaderRegistryAdvice {
 
 }
 
-class ExecutionAdvice{
-
-    @Advice.OnMethodEnter
-    public static void executeOperationEnter(@Advice.Argument(0) ExecutionContext executionContext) {
-        GraphQLJavaAgent.ExecutionData executionData = new GraphQLJavaAgent.ExecutionData();
-        executionData.startExecutionTime.set(System.nanoTime());
-        executionData.startThread.set(Thread.currentThread().getName());
-        System.out.println("execution started for: " + executionContext.getExecutionId());
-        executionContext.getGraphQLContext().put(EXECUTION_TRACKING_KEY, new ExecutionTrackingResult());
-
-        GraphQLJavaAgent.executionIdToData.put(executionContext.getExecutionId(), executionData);
-
-        DataLoaderRegistry dataLoaderRegistry = executionContext.getDataLoaderRegistry();
-        for (String name : dataLoaderRegistry.getDataLoadersMap().keySet()) {
-            DataLoader dataLoader = dataLoaderRegistry.getDataLoader(name);
-            GraphQLJavaAgent.dataLoaderToExecutionId.put(dataLoader, executionContext.getExecutionId());
-            executionData.dataLoaderToName.put(dataLoader, name);
-        }
-    }
-
-    @Advice.OnMethodExit
-    public static void executeOperationExit(@Advice.Argument(0) ExecutionContext executionContext,
-                                            @Advice.Return(typing = Assigner.Typing.DYNAMIC) CompletableFuture<Object> result) {
-
-        result.whenComplete(new AfterExecutionHandler(executionContext));
-        // ExecutionId executionId = executionContext.getExecutionId();
-        // GraphQLJavaAgent.ExecutionData executionData = GraphQLJavaAgent.executionIdToData.get(executionId);
-        // executionData.endExecutionTime.set(System.nanoTime());
-        // System.out.println("execution finished for: " + executionId + " with data " + executionData);
-        // System.out.println(executionData.print(executionId.toString()));
-        // cleanup
-        // GraphQLJavaAgent.executionDataMap.get(executionId).dataLoaderToName.forEach((dataLoader, s) -> {
-        //   GraphQLJavaAgent.dataLoaderToExecutionId.remove(dataLoader);
-        // });
-        // GraphQLJavaAgent.executionDataMap.remove(executionContext.getExecutionId());
-    }
-}
 
 class DataFetcherInvokeAdvice {
     @Advice.OnMethodEnter
