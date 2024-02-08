@@ -31,6 +31,7 @@ import static graphql.agent.GraphQLJavaAgent.ExecutionData.DFResultType.PENDING;
 import static graphql.agent.result.ExecutionTrackingResult.EXECUTION_TRACKING_KEY;
 import static net.bytebuddy.matcher.ElementMatchers.nameMatches;
 import static net.bytebuddy.matcher.ElementMatchers.named;
+import static net.bytebuddy.matcher.ElementMatchers.takesArguments;
 
 public class GraphQLJavaAgent {
 
@@ -49,11 +50,13 @@ public class GraphQLJavaAgent {
         private final Map<ResultPath, DFResultType> dfResultTypes = new ConcurrentHashMap<>();
 
         public static class BatchLoadingCall {
-            public BatchLoadingCall(int resultCount) {
-                this.resultCount = resultCount;
+            public BatchLoadingCall(int keyCount, String threadName) {
+                this.keyCount = keyCount;
+                this.threadName = threadName;
             }
 
-            public final int resultCount;
+            public final int keyCount;
+            public final String threadName;
         }
 
         public final Map<String, List<BatchLoadingCall>> dataLoaderNameToBatchCall = new ConcurrentHashMap<>();
@@ -74,7 +77,10 @@ public class GraphQLJavaAgent {
             s.append("BatchLoader calls details: ").append("\n");
             s.append("==========================").append("\n");
             for (String dataLoaderName : dataLoaderNameToBatchCall.keySet()) {
-                s.append("DataLoader: '").append(dataLoaderName).append("' called ").append(dataLoaderNameToBatchCall.get(dataLoaderName).size()).append(" times, ").append("\n");
+                s.append("Batch call: '").append(dataLoaderName).append("' made ").append(dataLoaderNameToBatchCall.get(dataLoaderName).size()).append(" times, ").append("\n");
+                for (BatchLoadingCall batchLoadingCall : dataLoaderNameToBatchCall.get(dataLoaderName)) {
+                    s.append("Batch call with ").append(batchLoadingCall.keyCount).append(" keys ").append(" in thread ").append(batchLoadingCall.threadName).append("\n");
+                }
                 List<ResultPath> resultPathUsed = new ArrayList<>();
                 for (ResultPath resultPath : resultPathToDataLoaderUsed.keySet()) {
                     if (resultPathToDataLoaderUsed.get(resultPath).equals(dataLoaderName)) {
@@ -82,9 +88,6 @@ public class GraphQLJavaAgent {
                     }
                 }
                 s.append("DataLoader: '").append(dataLoaderName).append("' used in fields: ").append(resultPathUsed).append("\n");
-                for (BatchLoadingCall batchLoadingCall : dataLoaderNameToBatchCall.get(dataLoaderName)) {
-                    s.append("Batch call with ").append(batchLoadingCall.resultCount).append(" results").append("\n");
-                }
             }
             s.append("Field details:").append("\n");
             s.append("===============").append("\n");
@@ -191,7 +194,9 @@ public class GraphQLJavaAgent {
             .transform((builder, typeDescription, classLoader, module, protectionDomain) -> {
                 // System.out.println("transforming " + typeDescription);
                 return builder
-                    .visit(Advice.to(DataLoaderHelperDispatchAdvice.class).on(nameMatches("dispatch")));
+                    .visit(Advice.to(DataLoaderHelperDispatchAdvice.class).on(nameMatches("dispatch")))
+                    .visit(Advice.to(DataLoaderHelperInvokeBatchLoaderAdvice.class)
+                        .on(nameMatches("invokeLoader").and(takesArguments(List.class, List.class))));
             })
             .type(named("graphql.schema.DataFetchingEnvironmentImpl"))
             .transform((builder, typeDescription, classLoader, module, protectionDomain) -> {
@@ -271,7 +276,6 @@ public class GraphQLJavaAgent {
                 ExecutionId executionId = executionContext.getExecutionId();
                 GraphQLJavaAgent.ExecutionData executionData = GraphQLJavaAgent.executionIdToData.get(executionId);
                 ResultPath path = parameters.getPath();
-                System.out.println("finished " + path);
                 executionData.finishedTimePerPath.put(path, System.nanoTime() - startTime);
                 executionData.finishedThreadPerPath.put(path, Thread.currentThread().getName());
             }
@@ -312,6 +316,63 @@ public class GraphQLJavaAgent {
 
     }
 
+
+    public static class DataLoaderHelperInvokeBatchLoaderAdvice {
+
+        @Advice.OnMethodEnter
+        public static void invokeLoader(@Advice.Argument(0) List keys,
+                                        @Advice.Argument(1) List keysContext,
+                                        @Advice.This(typing = Assigner.Typing.DYNAMIC) Object dataLoaderHelper) {
+            DataLoader dataLoader = getDataLoaderForHelper(dataLoaderHelper);
+            ExecutionId executionId = GraphQLJavaAgent.dataLoaderToExecutionId.get(dataLoader);
+            ExecutionData executionData = GraphQLJavaAgent.executionIdToData.get(executionId);
+            String dataLoaderName = executionData.dataLoaderToName.get(dataLoader);
+
+            synchronized (executionData.dataLoaderNameToBatchCall) {
+                executionData.dataLoaderNameToBatchCall.putIfAbsent(dataLoaderName, new ArrayList<>());
+                executionData.dataLoaderNameToBatchCall.get(dataLoaderName)
+                    .add(new GraphQLJavaAgent.ExecutionData.BatchLoadingCall(keys.size(), Thread.currentThread().getName()));
+            }
+
+        }
+    }
+
+    public static class DataLoaderHelperDispatchAdvice {
+
+        @Advice.OnMethodExit
+        public static void dispatch(@Advice.This(typing = Assigner.Typing.DYNAMIC) Object dataLoaderHelper,
+                                    @Advice.Return(typing = Assigner.Typing.DYNAMIC) DispatchResult dispatchResult) {
+            try {
+                // System.out.println("dataloader helper Dispatch " + dataLoaderHelper + " load for execution " + dispatchResult);
+                // DataLoader dataLoader = getDataLoaderForHelper(dataLoaderHelper);
+                // // System.out.println("dataLoader: " + dataLoader);
+                // ExecutionId executionId = GraphQLJavaAgent.dataLoaderToExecutionId.get(dataLoader);
+                // GraphQLJavaAgent.ExecutionData executionData = GraphQLJavaAgent.executionIdToData.get(executionId);
+                // String dataLoaderName = executionData.dataLoaderToName.get(dataLoader);
+                //
+                // executionData.dataLoaderNameToBatchCall.putIfAbsent(dataLoaderName, new ArrayList<>());
+                // executionData.dataLoaderNameToBatchCall.get(dataLoaderName).add(new GraphQLJavaAgent.ExecutionData.BatchLoadingCall(dispatchResult.getKeysCount()));
+
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
+        }
+
+    }
+
+    public static DataLoader getDataLoaderForHelper(Object dataLoaderHelper) {
+        try {
+            Field field = dataLoaderHelper.getClass().getDeclaredField("dataLoader");
+            field.setAccessible(true);
+            return (DataLoader) field.get(dataLoaderHelper);
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException(e);
+        }
+    }
+
+
 }
 
 class DataFetchingEnvironmentAdvice {
@@ -331,31 +392,6 @@ class DataFetchingEnvironmentAdvice {
 
 }
 
-class DataLoaderHelperDispatchAdvice {
-
-    @Advice.OnMethodExit
-    public static void dispatch(@Advice.This(typing = Assigner.Typing.DYNAMIC) Object dataLoaderHelper,
-                                @Advice.Return(typing = Assigner.Typing.DYNAMIC) DispatchResult dispatchResult) {
-        try {
-            // System.out.println("dataloader helper Dispatch " + dataLoaderHelper + " load for execution " + dispatchResult);
-            Field field = dataLoaderHelper.getClass().getDeclaredField("dataLoader");
-            field.setAccessible(true);
-            DataLoader dataLoader = (DataLoader) field.get(dataLoaderHelper);
-            // System.out.println("dataLoader: " + dataLoader);
-            ExecutionId executionId = GraphQLJavaAgent.dataLoaderToExecutionId.get(dataLoader);
-            GraphQLJavaAgent.ExecutionData executionData = GraphQLJavaAgent.executionIdToData.get(executionId);
-            String dataLoaderName = executionData.dataLoaderToName.get(dataLoader);
-
-            executionData.dataLoaderNameToBatchCall.putIfAbsent(dataLoaderName, new ArrayList<>());
-            executionData.dataLoaderNameToBatchCall.get(dataLoaderName).add(new GraphQLJavaAgent.ExecutionData.BatchLoadingCall(dispatchResult.getKeysCount()));
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-    }
-
-}
 
 class DataLoaderLoadAdvice {
 
@@ -374,9 +410,9 @@ class DataLoaderRegistryAdvice {
     public static void dispatchAll(@Advice.This(typing = Assigner.Typing.DYNAMIC) Object dataLoaderRegistry) {
         List<DataLoader<?, ?>> dataLoaders = ((DataLoaderRegistry) dataLoaderRegistry).getDataLoaders();
         ExecutionId executionId = GraphQLJavaAgent.dataLoaderToExecutionId.get(dataLoaders.get(0));
-        System.out.println("calling dispatchAll for " + executionId);
     }
 
 }
+
 
 
