@@ -21,6 +21,7 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static graphql.agent.GraphQLJavaAgent.ExecutionData.DFResultType.DONE_CANCELLED;
 import static graphql.agent.GraphQLJavaAgent.ExecutionData.DFResultType.DONE_EXCEPTIONALLY;
@@ -33,12 +34,15 @@ import static net.bytebuddy.matcher.ElementMatchers.named;
 public class GraphQLJavaAgent {
 
     public static class ExecutionData {
+        public final AtomicReference<String> startThread = new AtomicReference<>();
+        public final AtomicReference<String> endThread = new AtomicReference<>();
         public final AtomicLong startExecutionTime = new AtomicLong();
         public final AtomicLong endExecutionTime = new AtomicLong();
         public final Map<ResultPath, String> resultPathToDataLoaderUsed = new ConcurrentHashMap<>();
         public final Map<DataLoader, String> dataLoaderToName = new ConcurrentHashMap<>();
 
         private final Map<ResultPath, Long> timePerPath = new ConcurrentHashMap<>();
+        private final Map<ResultPath, String> invocationThreadPerPath = new ConcurrentHashMap<>();
         private final Map<ResultPath, DFResultType> dfResultTypes = new ConcurrentHashMap<>();
 
         public static class BatchLoadingCall {
@@ -150,6 +154,7 @@ public class GraphQLJavaAgent {
         new AgentBuilder.Default()
             .type(named("graphql.execution.Execution"))
             .transform((builder, typeDescription, classLoader, module, protectionDomain) -> {
+                // ClassInjector.UsingInstrumentation.of()
                 // System.out.println("transforming " + typeDescription);
                 return builder
                     .visit(Advice.to(ExecutionAdvice.class).on(nameMatches("executeOperation")));
@@ -184,6 +189,7 @@ public class GraphQLJavaAgent {
                 return builder
                     .visit(Advice.to(DataFetchingEnvironmentAdvice.class).on(nameMatches("getDataLoader")));
             })
+            .disableClassFormatChanges()
             .installOn(inst);
 
     }
@@ -254,12 +260,13 @@ class DataLoaderRegistryAdvice {
 
 }
 
-class ExecutionAdvice {
+class ExecutionAdvice{
 
     @Advice.OnMethodEnter
     public static void executeOperationEnter(@Advice.Argument(0) ExecutionContext executionContext) {
         GraphQLJavaAgent.ExecutionData executionData = new GraphQLJavaAgent.ExecutionData();
         executionData.startExecutionTime.set(System.nanoTime());
+        executionData.startThread.set(Thread.currentThread().getName());
         System.out.println("execution started for: " + executionContext.getExecutionId());
         executionContext.getGraphQLContext().put(EXECUTION_TRACKING_KEY, new ExecutionTrackingResult());
 
@@ -274,12 +281,15 @@ class ExecutionAdvice {
     }
 
     @Advice.OnMethodExit
-    public static void executeOperationExit(@Advice.Argument(0) ExecutionContext executionContext) {
-        ExecutionId executionId = executionContext.getExecutionId();
-        GraphQLJavaAgent.ExecutionData executionData = GraphQLJavaAgent.executionIdToData.get(executionId);
-        executionData.endExecutionTime.set(System.nanoTime());
-        System.out.println("execution finished for: " + executionId + " with data " + executionData);
-        System.out.println(executionData.print(executionId.toString()));
+    public static void executeOperationExit(@Advice.Argument(0) ExecutionContext executionContext,
+                                            @Advice.Return(typing = Assigner.Typing.DYNAMIC) CompletableFuture<Object> result) {
+
+        result.whenComplete(new AfterExecutionHandler(executionContext));
+        // ExecutionId executionId = executionContext.getExecutionId();
+        // GraphQLJavaAgent.ExecutionData executionData = GraphQLJavaAgent.executionIdToData.get(executionId);
+        // executionData.endExecutionTime.set(System.nanoTime());
+        // System.out.println("execution finished for: " + executionId + " with data " + executionData);
+        // System.out.println(executionData.print(executionId.toString()));
         // cleanup
         // GraphQLJavaAgent.executionDataMap.get(executionId).dataLoaderToName.forEach((dataLoader, s) -> {
         //   GraphQLJavaAgent.dataLoaderToExecutionId.remove(dataLoader);
