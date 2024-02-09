@@ -12,7 +12,6 @@ import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationState;
 import graphql.execution.instrumentation.SimplePerformantInstrumentation;
 import graphql.execution.instrumentation.parameters.InstrumentationCreateStateParameters;
-import graphql.execution.instrumentation.parameters.InstrumentationDeferredFieldParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecuteOperationParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters;
@@ -131,7 +130,7 @@ public class DataLoaderDispatcherInstrumentation extends SimplePerformantInstrum
     }
 
     @Override
-    public InstrumentationContext<ExecutionResult> beginDeferredField(InstrumentationDeferredFieldParameters parameters, InstrumentationState rawState) {
+    public InstrumentationContext<ExecutionResult> beginDeferredField(InstrumentationState rawState) {
         DataLoaderDispatcherInstrumentationState state = ofState(rawState);
         //
         // if there are no data loaders, there is nothing to do
@@ -139,7 +138,10 @@ public class DataLoaderDispatcherInstrumentation extends SimplePerformantInstrum
         if (state.hasNoDataLoaders()) {
             return ExecutionStrategyInstrumentationContext.NOOP;
         }
-        return state.getApproach().beginDeferredField(parameters, state.getState());
+
+        // The support for @defer in graphql-java is not yet complete. At this time, the resolution of deferred fields
+        // cannot be done via Data Loaders.
+        throw new UnsupportedOperationException("Data Loaders cannot be used to resolve deferred fields");
     }
 
     @Override

@@ -6,6 +6,7 @@ import graphql.GraphQLContext
 import graphql.execution.instrumentation.Instrumentation
 import graphql.incremental.IncrementalExecutionResult
 import org.dataloader.DataLoaderRegistry
+import spock.lang.Ignore
 import spock.lang.Specification
 
 import static graphql.execution.instrumentation.dataloader.DataLoaderPerformanceData.assertIncrementalExpensiveData
@@ -123,6 +124,22 @@ class DataLoaderPerformanceTest extends Specification {
         incrementalSupport << [true, false]
     }
 
+    def "data loader will not work with deferred queries"() {
+        when:
+        ExecutionInput executionInput = ExecutionInput.newExecutionInput()
+                .query(deferredQuery)
+                .dataLoaderRegistry(dataLoaderRegistry)
+                .graphQLContext([(GraphQLContext.ENABLE_INCREMENTAL_SUPPORT): true])
+                .build()
+
+        graphQL.execute(executionInput)
+
+        then:
+        def exception = thrown(UnsupportedOperationException)
+        exception.message == "Data Loaders cannot be used to resolve deferred fields"
+    }
+
+    @Ignore("Resolution of deferred fields via Data loaders is not yet supported")
     def "data loader will work with deferred queries"() {
 
         when:
@@ -149,6 +166,7 @@ class DataLoaderPerformanceTest extends Specification {
         batchCompareDataFetchers.productsForDepartmentsBatchLoaderCounter.get() == 3
     }
 
+    @Ignore("Resolution of deferred fields via Data loaders is not yet supported")
     def "data loader will work with deferred queries on multiple levels deep"() {
 
         when:

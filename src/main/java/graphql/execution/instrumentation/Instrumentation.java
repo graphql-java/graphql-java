@@ -6,7 +6,6 @@ import graphql.ExperimentalApi;
 import graphql.PublicSpi;
 import graphql.execution.ExecutionContext;
 import graphql.execution.instrumentation.parameters.InstrumentationCreateStateParameters;
-import graphql.execution.instrumentation.parameters.InstrumentationDeferredFieldParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecuteOperationParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters;
@@ -225,13 +224,15 @@ public interface Instrumentation {
     }
 
     /**
-     * This is called just before a deferred field is resolved into a value
-     * @param parameters the parameters to this step
+     * This is called just before a deferred field is resolved into a value.
+     * <p>
+     * This is an EXPERIMENTAL instrumentation callback. The method signature will definitely change.
+     *
      * @param state      the state created during the call to {@link #createState(InstrumentationCreateStateParameters)}
      * @return a non-null {@link InstrumentationContext} object that will be called back when the step ends
      */
     @ExperimentalApi
-    default InstrumentationContext<ExecutionResult> beginDeferredField(InstrumentationDeferredFieldParameters parameters, InstrumentationState state) {
+    default InstrumentationContext<ExecutionResult> beginDeferredField(InstrumentationState state) {
         return noOp();
     }
 

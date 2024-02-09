@@ -11,7 +11,6 @@ import graphql.execution.Async;
 import graphql.execution.ExecutionContext;
 import graphql.execution.FieldValueInfo;
 import graphql.execution.instrumentation.parameters.InstrumentationCreateStateParameters;
-import graphql.execution.instrumentation.parameters.InstrumentationDeferredFieldParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecuteOperationParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters;
@@ -181,14 +180,13 @@ public class ChainedInstrumentation implements Instrumentation {
 
     @ExperimentalApi
     @Override
-    public InstrumentationContext<ExecutionResult> beginDeferredField(InstrumentationDeferredFieldParameters parameters, InstrumentationState instrumentationState) {
+    public InstrumentationContext<ExecutionResult> beginDeferredField(InstrumentationState instrumentationState) {
         return new ChainedDeferredExecutionStrategyInstrumentationContext(instrumentations.stream()
                 .map(instrumentation -> {
                     InstrumentationState specificState = getSpecificState(instrumentation, instrumentationState);
-                    return instrumentation.beginDeferredField(parameters, specificState);
+                    return instrumentation.beginDeferredField(specificState);
                 })
                 .collect(Collectors.toList()));
-
     }
 
     @Override

@@ -130,6 +130,22 @@ class DataLoaderPerformanceWithChainedInstrumentationTest extends Specification 
         incrementalSupport << [true, false]
     }
 
+    def "chainedInstrumentation: data loader will not work with deferred queries"() {
+        when:
+        ExecutionInput executionInput = ExecutionInput.newExecutionInput()
+                .query(deferredQuery)
+                .dataLoaderRegistry(dataLoaderRegistry)
+                .graphQLContext([(GraphQLContext.ENABLE_INCREMENTAL_SUPPORT): true])
+                .build()
+
+        graphQL.execute(executionInput)
+
+        then:
+        def exception = thrown(UnsupportedOperationException)
+        exception.message == "Data Loaders cannot be used to resolve deferred fields"
+    }
+
+    @Ignore("Resolution of deferred fields via Data loaders is not yet supported")
     def "chainedInstrumentation: data loader will work with deferred queries"() {
 
         when:
@@ -157,6 +173,7 @@ class DataLoaderPerformanceWithChainedInstrumentationTest extends Specification 
     }
 
 
+    @Ignore("Resolution of deferred fields via Data loaders is not yet supported")
     def "chainedInstrumentation: data loader will work with deferred queries on multiple levels deep"() {
         when:
         ExecutionInput executionInput = ExecutionInput.newExecutionInput()

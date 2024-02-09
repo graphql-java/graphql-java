@@ -12,8 +12,6 @@ import graphql.execution.incremental.DeferredExecution;
 import graphql.execution.incremental.IncrementalCall;
 import graphql.execution.instrumentation.ExecutionStrategyInstrumentationContext;
 import graphql.execution.instrumentation.Instrumentation;
-import graphql.execution.instrumentation.InstrumentationContext;
-import graphql.execution.instrumentation.parameters.InstrumentationDeferredFieldParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters;
 import graphql.incremental.IncrementalPayload;
 import graphql.util.FpKit;
@@ -250,9 +248,8 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
 
 
                 Instrumentation instrumentation = executionContext.getInstrumentation();
-                InstrumentationContext<ExecutionResult> fieldCtx = instrumentation.beginDeferredField(
-                        new InstrumentationDeferredFieldParameters(executionContext, callParameters), executionContext.getInstrumentationState()
-                );
+
+                instrumentation.beginDeferredField(executionContext.getInstrumentationState());
 
                 return dfCache.computeIfAbsent(
                         currentField.getName(),
@@ -267,14 +264,9 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
                                     CompletableFuture<ExecutionResult> executionResultCF = fieldValueResult
                                             .thenCompose(FieldValueInfo::getFieldValue);
 
-                                    fieldCtx.onDispatched(executionResultCF);
-
                                     return executionResultCF
                                             .thenApply(executionResult ->
                                                     new DeferredCall.FieldWithExecutionResult(currentField.getName(), executionResult)
-                                            )
-                                            .whenComplete((fieldWithExecutionResult, throwable) ->
-                                                    fieldCtx.onCompleted(fieldWithExecutionResult.getExecutionResult(), throwable)
                                             );
                                 }
                         )
