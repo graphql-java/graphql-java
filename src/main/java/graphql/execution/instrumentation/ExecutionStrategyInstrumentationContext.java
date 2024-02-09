@@ -1,11 +1,9 @@
 package graphql.execution.instrumentation;
 
 import graphql.ExecutionResult;
-import graphql.ExperimentalApi;
 import graphql.Internal;
 import graphql.PublicSpi;
 import graphql.execution.FieldValueInfo;
-import graphql.execution.MergedField;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
@@ -19,11 +17,6 @@ public interface ExecutionStrategyInstrumentationContext extends Instrumentation
     }
 
     default void onFieldValuesException() {
-
-    }
-
-    @ExperimentalApi
-    default void onDeferredField(MergedField field) {
 
     }
 

@@ -1,7 +1,6 @@
 package graphql.execution;
 
 import graphql.ExecutionResult;
-import graphql.GraphQLContext;
 import graphql.PublicApi;
 import graphql.execution.incremental.DeferredExecutionSupport;
 import graphql.execution.instrumentation.ExecutionStrategyInstrumentationContext;
@@ -9,7 +8,6 @@ import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
 
@@ -46,20 +44,9 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
         MergedSelectionSet fields = parameters.getFields();
         List<String> fieldNames = fields.getKeys();
 
-        DeferredExecutionSupport deferredExecutionSupport =
-                Optional.ofNullable(executionContext.getGraphQLContext())
-                        .map(graphqlContext -> (Boolean) graphqlContext.get(GraphQLContext.ENABLE_INCREMENTAL_SUPPORT))
-                        .orElse(false) ?
-                        new DeferredExecutionSupport.DeferredExecutionSupportImpl(
-                                fields,
-                                parameters,
-                                executionContext,
-                                this::resolveFieldWithInfo
-                        ) : DeferredExecutionSupport.NOOP;
+        DeferredExecutionSupport deferredExecutionSupport = createDeferredExecutionSupport(executionContext, parameters);
+        Async.CombinedBuilder<FieldValueInfo> futures = getAsyncFieldValueInfo(executionContext, parameters, deferredExecutionSupport);
 
-        executionContext.getIncrementalCallState().enqueue(deferredExecutionSupport.createCalls());
-
-        Async.CombinedBuilder<FieldValueInfo> futures = getAsyncFieldValueInfo(executionContext, parameters);
         CompletableFuture<ExecutionResult> overallResult = new CompletableFuture<>();
         executionStrategyCtx.onDispatched(overallResult);
 

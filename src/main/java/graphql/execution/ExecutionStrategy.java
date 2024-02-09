@@ -15,9 +15,10 @@ import graphql.UnresolvedTypeError;
 import graphql.collect.ImmutableKit;
 import graphql.execution.directives.QueryDirectives;
 import graphql.execution.directives.QueryDirectivesImpl;
+import graphql.execution.incremental.DeferredExecutionSupport;
+import graphql.execution.instrumentation.ExecuteObjectInstrumentationContext;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationContext;
-import graphql.execution.instrumentation.ExecuteObjectInstrumentationContext;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldCompleteParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters;
@@ -200,12 +201,17 @@ public abstract class ExecutionStrategy {
         );
 
         List<String> fieldNames = parameters.getFields().getKeys();
-        Async.CombinedBuilder<FieldValueInfo> resolvedFieldFutures = getAsyncFieldValueInfo(executionContext, parameters);
+
+        DeferredExecutionSupport deferredExecutionSupport = createDeferredExecutionSupport(executionContext, parameters);
+        Async.CombinedBuilder<FieldValueInfo> resolvedFieldFutures = getAsyncFieldValueInfo(executionContext, parameters, deferredExecutionSupport);
+
         CompletableFuture<Map<String, Object>> overallResult = new CompletableFuture<>();
         resolveObjectCtx.onDispatched(overallResult);
 
         resolvedFieldFutures.await().whenComplete((completeValueInfos, throwable) -> {
-            BiConsumer<List<Object>, Throwable> handleResultsConsumer = buildFieldValueMap(fieldNames, overallResult,executionContext);
+            List<String> fieldsExecutedOnInitialResult = deferredExecutionSupport.getNonDeferredFieldNames(fieldNames);
+
+            BiConsumer<List<Object>, Throwable> handleResultsConsumer = buildFieldValueMap(fieldsExecutedOnInitialResult, overallResult,executionContext);
             if (throwable != null) {
                 handleResultsConsumer.accept(null, throwable);
                 return;
@@ -246,10 +252,35 @@ public abstract class ExecutionStrategy {
         };
     }
 
-    @NotNull
-    Async.CombinedBuilder<FieldValueInfo> getAsyncFieldValueInfo(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
+    DeferredExecutionSupport createDeferredExecutionSupport(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
         MergedSelectionSet fields = parameters.getFields();
-        Async.CombinedBuilder<FieldValueInfo> futures = Async.ofExpectedSize(fields.size());
+
+        return Optional.ofNullable(executionContext.getGraphQLContext())
+                .map(graphqlContext -> (Boolean) graphqlContext.get(GraphQLContext.ENABLE_INCREMENTAL_SUPPORT))
+                .orElse(false) ?
+                new DeferredExecutionSupport.DeferredExecutionSupportImpl(
+                        fields,
+                        parameters,
+                        executionContext,
+                        this::resolveFieldWithInfo
+                ) : DeferredExecutionSupport.NOOP;
+
+    }
+
+    @NotNull
+    Async.CombinedBuilder<FieldValueInfo> getAsyncFieldValueInfo(
+            ExecutionContext executionContext,
+            ExecutionStrategyParameters parameters,
+            DeferredExecutionSupport deferredExecutionSupport
+    ) {
+        MergedSelectionSet fields = parameters.getFields();
+
+        executionContext.getIncrementalCallState().enqueue(deferredExecutionSupport.createCalls());
+
+        // Only non-deferred fields should be considered for calculating the expected size of futures.
+        Async.CombinedBuilder<FieldValueInfo> futures = Async
+                .ofExpectedSize(fields.size() - deferredExecutionSupport.deferredFieldsCount());
+
         for (String fieldName : fields.getKeys()) {
             MergedField currentField = fields.getSubField(fieldName);
 
@@ -257,8 +288,10 @@ public abstract class ExecutionStrategy {
             ExecutionStrategyParameters newParameters = parameters
                     .transform(builder -> builder.field(currentField).path(fieldPath).parent(parameters));
 
-            CompletableFuture<FieldValueInfo> future = resolveFieldWithInfo(executionContext, newParameters);
-            futures.add(future);
+            if (!deferredExecutionSupport.isDeferredField(currentField)) {
+                CompletableFuture<FieldValueInfo> future = resolveFieldWithInfo(executionContext, newParameters);
+                futures.add(future);
+            }
         }
         return futures;
     }

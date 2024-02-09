@@ -195,7 +195,7 @@ public class ChainedInstrumentation implements Instrumentation {
 
     @ExperimentalApi
     @Override
-    public InstrumentationContext<ExecutionResult> beginDeferredField(InstrumentationState instrumentationState) {
+    public InstrumentationContext<Object> beginDeferredField(InstrumentationState instrumentationState) {
         return new ChainedDeferredExecutionStrategyInstrumentationContext(instrumentations.stream()
                 .map(instrumentation -> {
                     InstrumentationState specificState = getSpecificState(instrumentation, instrumentationState);
@@ -511,21 +511,21 @@ public class ChainedInstrumentation implements Instrumentation {
         }
     }
 
-    private static class ChainedDeferredExecutionStrategyInstrumentationContext implements InstrumentationContext<ExecutionResult> {
+    private static class ChainedDeferredExecutionStrategyInstrumentationContext implements InstrumentationContext<Object> {
 
-        private final List<InstrumentationContext<ExecutionResult>> contexts;
+        private final List<InstrumentationContext<Object>> contexts;
 
-        ChainedDeferredExecutionStrategyInstrumentationContext(List<InstrumentationContext<ExecutionResult>> contexts) {
+        ChainedDeferredExecutionStrategyInstrumentationContext(List<InstrumentationContext<Object>> contexts) {
             this.contexts = Collections.unmodifiableList(contexts);
         }
 
         @Override
-        public void onDispatched(CompletableFuture<ExecutionResult> result) {
+        public void onDispatched(CompletableFuture<Object> result) {
             contexts.forEach(context -> context.onDispatched(result));
         }
 
         @Override
-        public void onCompleted(ExecutionResult result, Throwable t) {
+        public void onCompleted(Object result, Throwable t) {
             contexts.forEach(context -> context.onCompleted(result, t));
         }
     }

@@ -248,8 +248,8 @@ public interface Instrumentation {
      * @return a nullable {@link ExecutionStrategyInstrumentationContext} object that will be called back when the step ends (assuming it's not null)
      */
     @ExperimentalApi
-    default ExecuteObjectInstrumentationContext beginDeferredField(InstrumentationState state) {
-        return ExecuteObjectInstrumentationContext.NOOP;
+    default InstrumentationContext<Object> beginDeferredField(InstrumentationState state) {
+        return noOp();
     }
 
     /**
