@@ -178,6 +178,21 @@ public class ChainedInstrumentation implements Instrumentation {
         return new ChainedExecutionStrategyInstrumentationContext(mapAndDropNulls(instrumentations, mapper));
     }
 
+    @Override
+    public @Nullable ExecuteObjectInstrumentationContext beginExecuteObject(InstrumentationExecutionStrategyParameters parameters, InstrumentationState state) {
+        if (instrumentations.isEmpty()) {
+            return ExecuteObjectInstrumentationContext.NOOP;
+        }
+        Function<Instrumentation, ExecuteObjectInstrumentationContext> mapper = instrumentation -> {
+            InstrumentationState specificState = getSpecificState(instrumentation, state);
+            return instrumentation.beginExecuteObject(parameters, specificState);
+        };
+        if (instrumentations.size() == 1) {
+            return mapper.apply(instrumentations.get(0));
+        }
+        return new ChainedExecuteObjectInstrumentationContext(mapAndDropNulls(instrumentations, mapper));
+    }
+
     @ExperimentalApi
     @Override
     public InstrumentationContext<ExecutionResult> beginDeferredField(InstrumentationState instrumentationState) {
@@ -211,9 +226,14 @@ public class ChainedInstrumentation implements Instrumentation {
 
     @Override
     public InstrumentationContext<ExecutionResult> beginField(InstrumentationFieldParameters parameters, InstrumentationState state) {
+        return Assert.assertShouldNeverHappen("The deprecated " + "beginField" + " was called");
+    }
+
+    @Override
+    public @Nullable InstrumentationContext<Object> beginFieldExecution(InstrumentationFieldParameters parameters, InstrumentationState state) {
         return chainedCtx(instrumentation -> {
             InstrumentationState specificState = getSpecificState(instrumentation, state);
-            return instrumentation.beginField(parameters, specificState);
+            return instrumentation.beginFieldExecution(parameters, specificState);
         });
     }
 
@@ -240,11 +260,17 @@ public class ChainedInstrumentation implements Instrumentation {
 
     @Override
     public InstrumentationContext<ExecutionResult> beginFieldComplete(InstrumentationFieldCompleteParameters parameters, InstrumentationState state) {
+        return Assert.assertShouldNeverHappen("The deprecated " + "beginFieldComplete" + " was called");
+    }
+
+    @Override
+    public @Nullable InstrumentationContext<Object> beginFieldCompletion(InstrumentationFieldCompleteParameters parameters, InstrumentationState state) {
         return chainedCtx(instrumentation -> {
             InstrumentationState specificState = getSpecificState(instrumentation, state);
-            return instrumentation.beginFieldComplete(parameters, specificState);
+            return instrumentation.beginFieldCompletion(parameters, specificState);
         });
     }
+
 
     @Override
     @NotNull
@@ -257,6 +283,14 @@ public class ChainedInstrumentation implements Instrumentation {
         return chainedCtx(instrumentation -> {
             InstrumentationState specificState = getSpecificState(instrumentation, state);
             return instrumentation.beginFieldListComplete(parameters, specificState);
+        });
+    }
+
+    @Override
+    public @Nullable InstrumentationContext<Object> beginFieldListCompletion(InstrumentationFieldCompleteParameters parameters, InstrumentationState state) {
+        return chainedCtx(instrumentation -> {
+            InstrumentationState specificState = getSpecificState(instrumentation, state);
+            return instrumentation.beginFieldListCompletion(parameters, specificState);
         });
     }
 
@@ -385,10 +419,6 @@ public class ChainedInstrumentation implements Instrumentation {
             }
         }
 
-        private InstrumentationState getState(Instrumentation instrumentation) {
-            return instrumentationToStates.get(instrumentation);
-        }
-
         private static CompletableFuture<InstrumentationState> combineAll(List<Instrumentation> instrumentations, InstrumentationCreateStateParameters parameters) {
             Async.CombinedBuilder<InstrumentationState> builder = Async.ofExpectedSize(instrumentations.size());
             for (Instrumentation instrumentation : instrumentations) {
@@ -397,6 +427,10 @@ public class ChainedInstrumentation implements Instrumentation {
                 builder.add(stateCF);
             }
             return builder.await().thenApply(instrumentationStates -> new ChainedInstrumentationState(instrumentations, instrumentationStates));
+        }
+
+        private InstrumentationState getState(Instrumentation instrumentation) {
+            return instrumentationToStates.get(instrumentation);
         }
     }
 
@@ -445,6 +479,35 @@ public class ChainedInstrumentation implements Instrumentation {
         @Override
         public void onFieldValuesException() {
             contexts.forEach(ExecutionStrategyInstrumentationContext::onFieldValuesException);
+        }
+    }
+
+    private static class ChainedExecuteObjectInstrumentationContext implements ExecuteObjectInstrumentationContext {
+
+        private final ImmutableList<ExecuteObjectInstrumentationContext> contexts;
+
+        ChainedExecuteObjectInstrumentationContext(ImmutableList<ExecuteObjectInstrumentationContext> contexts) {
+            this.contexts = contexts;
+        }
+
+        @Override
+        public void onDispatched(CompletableFuture<Map<String, Object>> result) {
+            contexts.forEach(context -> context.onDispatched(result));
+        }
+
+        @Override
+        public void onCompleted(Map<String, Object> result, Throwable t) {
+            contexts.forEach(context -> context.onCompleted(result, t));
+        }
+
+        @Override
+        public void onFieldValuesInfo(List<FieldValueInfo> fieldValueInfoList) {
+            contexts.forEach(context -> context.onFieldValuesInfo(fieldValueInfoList));
+        }
+
+        @Override
+        public void onFieldValuesException() {
+            contexts.forEach(ExecuteObjectInstrumentationContext::onFieldValuesException);
         }
     }
 

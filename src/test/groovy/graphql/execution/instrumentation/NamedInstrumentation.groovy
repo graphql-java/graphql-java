@@ -72,6 +72,12 @@ class NamedInstrumentation extends ModernTestingInstrumentation {
     }
 
     @Override
+    InstrumentationContext<Object> beginFieldExecution(InstrumentationFieldParameters parameters, InstrumentationState state) {
+        assertState(state)
+        return super.beginFieldExecution(parameters, state)
+    }
+
+    @Override
     InstrumentationContext<Object> beginFieldFetch(InstrumentationFieldFetchParameters parameters, InstrumentationState state) {
         assertState(state)
         return super.beginFieldFetch(parameters, state)

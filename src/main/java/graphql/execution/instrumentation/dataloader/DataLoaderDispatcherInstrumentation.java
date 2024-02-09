@@ -10,6 +10,7 @@ import graphql.execution.ExecutionStrategy;
 import graphql.execution.instrumentation.ExecutionStrategyInstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationState;
+import graphql.execution.instrumentation.ExecuteObjectInstrumentationContext;
 import graphql.execution.instrumentation.SimplePerformantInstrumentation;
 import graphql.execution.instrumentation.parameters.InstrumentationCreateStateParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecuteOperationParameters;
@@ -130,13 +131,25 @@ public class DataLoaderDispatcherInstrumentation extends SimplePerformantInstrum
     }
 
     @Override
-    public InstrumentationContext<ExecutionResult> beginDeferredField(InstrumentationState rawState) {
+    public @Nullable ExecuteObjectInstrumentationContext beginExecuteObject(InstrumentationExecutionStrategyParameters parameters, InstrumentationState rawState) {
         DataLoaderDispatcherInstrumentationState state = ofState(rawState);
         //
         // if there are no data loaders, there is nothing to do
         //
         if (state.hasNoDataLoaders()) {
-            return ExecutionStrategyInstrumentationContext.NOOP;
+            return ExecuteObjectInstrumentationContext.NOOP;
+        }
+        return state.getApproach().beginObjectResolution(parameters, state.getState());
+    }
+
+    @Override
+    public @Nullable InstrumentationContext<Object> beginDeferredField(InstrumentationState rawState) {
+        DataLoaderDispatcherInstrumentationState state = ofState(rawState);
+        //
+        // if there are no data loaders, there is nothing to do
+        //
+        if (state.hasNoDataLoaders()) {
+            return noOp();
         }
 
         // The support for @defer in graphql-java is not yet complete. At this time, the resolution of deferred fields

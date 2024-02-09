@@ -2,7 +2,6 @@ package graphql.execution
 
 import graphql.ExceptionWhileDataFetching
 import graphql.ExecutionInput
-import graphql.ExecutionResult
 import graphql.GraphQL
 import graphql.SerializationError
 import graphql.TestUtil
@@ -70,11 +69,11 @@ class ExecutionStrategyErrorsTest extends Specification {
 
         Instrumentation instrumentation = new SimplePerformantInstrumentation() {
             @Override
-            InstrumentationContext<ExecutionResult> beginFieldListComplete(InstrumentationFieldCompleteParameters parameters, InstrumentationState state) {
+            InstrumentationContext<Object> beginFieldListCompletion(InstrumentationFieldCompleteParameters parameters, InstrumentationState state) {
                 if (parameters.field.name == "diceyListCallAbort") {
                     throw new AbortExecutionException("No lists for you")
                 }
-                return super.beginFieldListComplete(parameters, state)
+                return super.beginFieldListCompletion(parameters, state)
             }
         }
         def graphQL = GraphQL.newGraphQL(schema).instrumentation(instrumentation).build()
@@ -108,7 +107,7 @@ class ExecutionStrategyErrorsTest extends Specification {
         def er = graphQL.execute(ei)
 
         then:
-        er.errors.size() == 6
+        er.errors.size() == 7
         er.errors[0] instanceof TypeMismatchError
         er.errors[0].path == ["notAList"]
 
@@ -116,17 +115,19 @@ class ExecutionStrategyErrorsTest extends Specification {
         er.errors[1].path == ["notAFloat"]
 
         er.errors[2] instanceof ExceptionWhileDataFetching
-        er.errors[2].path ==["notAnProperObject", "diceyListCall", 0, "bang"]
-        ((ExceptionWhileDataFetching)er.errors[2]).exception.message == "dicey call"
+        er.errors[2].path == ["notAnProperObject", "diceyListCall", 0, "bang"]
+        ((ExceptionWhileDataFetching) er.errors[2]).exception.message == "dicey call"
 
         er.errors[3] instanceof ExceptionWhileDataFetching
-        er.errors[3].path ==["notAnProperObject", "diceyListCall", 0, "abort"]
-        ((ExceptionWhileDataFetching)er.errors[3]).exception.message == "abort abort"
+        er.errors[3].path == ["notAnProperObject", "diceyListCall", 0, "abort"]
+        ((ExceptionWhileDataFetching) er.errors[3]).exception.message == "abort abort"
 
         er.errors[4] instanceof NonNullableFieldWasNullError
-        er.errors[4].path ==["notAnProperObject", "diceyListCall", 0, "nonNull"]
+        er.errors[4].path == ["notAnProperObject", "diceyListCall", 0, "nonNull"]
 
         er.errors[5] instanceof NonNullableFieldWasNullError
-        er.errors[5].path ==["notAnProperObject", "diceyListCall", 1]  // the entry itself was null in a non null list entry
+        er.errors[5].path == ["notAnProperObject", "diceyListCall", 1]  // the entry itself was null in a non null list entry
+
+        er.errors[6] instanceof AbortExecutionException
     }
 }
