@@ -4,7 +4,7 @@ import graphql.Directives;
 import graphql.ExecutionInput;
 import graphql.ExecutionResult;
 import graphql.GraphQL;
-import graphql.incremental.DelayedIncrementalExecutionResult;
+import graphql.incremental.DelayedIncrementalPartialResult;
 import graphql.incremental.IncrementalExecutionResult;
 import graphql.schema.GraphQLSchema;
 import jakarta.servlet.http.HttpServletResponse;
@@ -46,7 +46,7 @@ public class IncrementalExamples {
         //
         sendMultipartHttpResult(httpServletResponse, initialResult);
 
-        Publisher<DelayedIncrementalExecutionResult> delayedIncrementalResults = incrementalResult
+        Publisher<DelayedIncrementalPartialResult> delayedIncrementalResults = incrementalResult
                 .getIncrementalItemPublisher();
 
         //
@@ -65,7 +65,7 @@ public class IncrementalExamples {
             }
 
             @Override
-            public void onNext(DelayedIncrementalExecutionResult executionResult) {
+            public void onNext(DelayedIncrementalPartialResult executionResult) {
                 //
                 // as each deferred result arrives, send it to where it needs to go
                 //

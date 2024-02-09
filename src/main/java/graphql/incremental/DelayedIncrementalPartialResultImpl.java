@@ -9,12 +9,12 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @ExperimentalApi
-public class DelayedIncrementalExecutionResultImpl implements DelayedIncrementalExecutionResult {
+public class DelayedIncrementalPartialResultImpl implements DelayedIncrementalPartialResult {
     private final List<IncrementalPayload> incrementalItems;
     private final boolean hasNext;
     private final Map<Object, Object> extensions;
 
-    private DelayedIncrementalExecutionResultImpl(Builder builder) {
+    private DelayedIncrementalPartialResultImpl(Builder builder) {
         this.incrementalItems = builder.incrementalItems;
         this.hasNext = builder.hasNext;
         this.extensions = builder.extensions;
@@ -54,7 +54,7 @@ public class DelayedIncrementalExecutionResultImpl implements DelayedIncremental
     }
 
     /**
-     * @return a {@link Builder} that can be used to create an instance of {@link DelayedIncrementalExecutionResultImpl}
+     * @return a {@link Builder} that can be used to create an instance of {@link DelayedIncrementalPartialResultImpl}
      */
     public static Builder newIncrementalExecutionResult() {
         return new Builder();
@@ -80,8 +80,8 @@ public class DelayedIncrementalExecutionResultImpl implements DelayedIncremental
             return this;
         }
 
-        public DelayedIncrementalExecutionResultImpl build() {
-            return new DelayedIncrementalExecutionResultImpl(this);
+        public DelayedIncrementalPartialResultImpl build() {
+            return new DelayedIncrementalPartialResultImpl(this);
         }
     }
 }

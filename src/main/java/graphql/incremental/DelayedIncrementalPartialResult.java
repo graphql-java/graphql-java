@@ -10,10 +10,10 @@ import java.util.Map;
  * Represents a result that is delivered asynchronously, after the initial {@link IncrementalExecutionResult}.
  * <p>
  * Multiple defer and/or stream payloads (represented by {@link IncrementalPayload}) can be part of the same
- * {@link DelayedIncrementalExecutionResult}
+ * {@link DelayedIncrementalPartialResult}
  */
 @ExperimentalApi
-public interface DelayedIncrementalExecutionResult {
+public interface DelayedIncrementalPartialResult {
     /**
      * @return a list of defer and/or stream payloads.
      */
@@ -21,7 +21,7 @@ public interface DelayedIncrementalExecutionResult {
     List<IncrementalPayload> getIncremental();
 
     /**
-     * Indicates whether the stream will continue emitting {@link DelayedIncrementalExecutionResult}s after this one.
+     * Indicates whether the stream will continue emitting {@link DelayedIncrementalPartialResult}s after this one.
      * <p>
      * The value returned by this method should be "true" for all but the last response in the stream. The value of this
      * entry is `false` for the last response of the stream.

@@ -4,7 +4,7 @@ import graphql.Directives
 import graphql.GraphQL
 import graphql.execution.instrumentation.Instrumentation
 import graphql.execution.pubsub.CapturingSubscriber
-import graphql.incremental.DelayedIncrementalExecutionResult
+import graphql.incremental.DelayedIncrementalPartialResult
 import graphql.incremental.IncrementalExecutionResult
 import graphql.schema.GraphQLSchema
 import org.awaitility.Awaitility
@@ -339,9 +339,9 @@ class DataLoaderPerformanceData {
     ]
 
     static List<Map<String, Object>> getIncrementalResults(IncrementalExecutionResult initialResult) {
-        Publisher<DelayedIncrementalExecutionResult> deferredResultStream = initialResult.incrementalItemPublisher
+        Publisher<DelayedIncrementalPartialResult> deferredResultStream = initialResult.incrementalItemPublisher
 
-        def subscriber = new CapturingSubscriber<DelayedIncrementalExecutionResult>()
+        def subscriber = new CapturingSubscriber<DelayedIncrementalPartialResult>()
         deferredResultStream.subscribe(subscriber)
         Awaitility.await().untilTrue(subscriber.isDone())
 

@@ -7,7 +7,7 @@ import graphql.GraphQL
 import graphql.GraphQLContext
 import graphql.TestUtil
 import graphql.execution.pubsub.CapturingSubscriber
-import graphql.incremental.DelayedIncrementalExecutionResult
+import graphql.incremental.DelayedIncrementalPartialResult
 import graphql.incremental.IncrementalExecutionResult
 import graphql.incremental.IncrementalExecutionResultImpl
 import graphql.schema.DataFetcher
@@ -1357,9 +1357,9 @@ class DeferExecutionSupportIntegrationTest extends Specification {
     }
 
     private static List<Map<String, Object>> getIncrementalResults(IncrementalExecutionResult initialResult) {
-        Publisher<DelayedIncrementalExecutionResult> deferredResultStream = initialResult.incrementalItemPublisher
+        Publisher<DelayedIncrementalPartialResult> deferredResultStream = initialResult.incrementalItemPublisher
 
-        def subscriber = new CapturingSubscriber<DelayedIncrementalExecutionResult>()
+        def subscriber = new CapturingSubscriber<DelayedIncrementalPartialResult>()
 
         deferredResultStream.subscribe(subscriber)
 

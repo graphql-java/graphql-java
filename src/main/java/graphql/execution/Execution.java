@@ -14,7 +14,7 @@ import graphql.execution.instrumentation.InstrumentationState;
 import graphql.execution.instrumentation.parameters.InstrumentationExecuteOperationParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters;
 import graphql.extensions.ExtensionsBuilder;
-import graphql.incremental.DelayedIncrementalExecutionResult;
+import graphql.incremental.DelayedIncrementalPartialResult;
 import graphql.incremental.IncrementalExecutionResultImpl;
 import graphql.language.Document;
 import graphql.language.FragmentDefinition;
@@ -194,7 +194,7 @@ public class Execution {
             if (incrementalCallState.getIncrementalCallsDetected()) {
                 // we start the rest of the query now to maximize throughput.  We have the initial important results,
                 // and now we can start the rest of the calls as early as possible (even before someone subscribes)
-                Publisher<DelayedIncrementalExecutionResult> publisher = incrementalCallState.startDeferredCalls();
+                Publisher<DelayedIncrementalPartialResult> publisher = incrementalCallState.startDeferredCalls();
 
                 return IncrementalExecutionResultImpl.fromExecutionResult(er)
                         // "hasNext" can, in theory, be "false" when all the incremental items are delivered in the

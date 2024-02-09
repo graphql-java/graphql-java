@@ -107,5 +107,5 @@ public interface IncrementalExecutionResult extends ExecutionResult {
      *
      * @return a {@link Publisher} that clients can subscribe to receive incremental payloads.
      */
-    Publisher<DelayedIncrementalExecutionResult> getIncrementalItemPublisher();
+    Publisher<DelayedIncrementalPartialResult> getIncrementalItemPublisher();
 }

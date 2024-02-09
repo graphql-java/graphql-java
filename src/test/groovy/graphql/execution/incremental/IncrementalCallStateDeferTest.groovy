@@ -3,7 +3,7 @@ package graphql.execution.incremental
 
 import graphql.ExecutionResultImpl
 import graphql.execution.ResultPath
-import graphql.incremental.DelayedIncrementalExecutionResult
+import graphql.incremental.DelayedIncrementalPartialResult
 import org.awaitility.Awaitility
 import spock.lang.Specification
 
@@ -20,7 +20,7 @@ class IncrementalCallStateDeferTest extends Specification {
         incrementalCallState.enqueue(offThread("C", 10, "/field/path")) // <-- will finish first
 
         when:
-        List<DelayedIncrementalExecutionResult> results = startAndWaitCalls(incrementalCallState)
+        List<DelayedIncrementalPartialResult> results = startAndWaitCalls(incrementalCallState)
 
         then:
         assertResultsSizeAndHasNextRule(3, results)
@@ -37,7 +37,7 @@ class IncrementalCallStateDeferTest extends Specification {
         incrementalCallState.enqueue(offThreadCallWithinCall(incrementalCallState, "C", "C_Child", 100, "/c"))
 
         when:
-        List<DelayedIncrementalExecutionResult> results = startAndWaitCalls(incrementalCallState)
+        List<DelayedIncrementalPartialResult> results = startAndWaitCalls(incrementalCallState)
 
         then:
         assertResultsSizeAndHasNextRule(6, results)
@@ -57,7 +57,7 @@ class IncrementalCallStateDeferTest extends Specification {
         incrementalCallState.enqueue(offThread("C", 10, "/field/path"))
 
         when:
-        def subscriber = new graphql.execution.pubsub.CapturingSubscriber<DelayedIncrementalExecutionResult>() {
+        def subscriber = new graphql.execution.pubsub.CapturingSubscriber<DelayedIncrementalPartialResult>() {
             @Override
             void onComplete() {
                 assert false, "This should not be called!"
@@ -83,9 +83,9 @@ class IncrementalCallStateDeferTest extends Specification {
         incrementalCallState.enqueue(offThread("C", 10, "/field/path")) // <-- will finish first
 
         when:
-        def subscriber = new graphql.execution.pubsub.CapturingSubscriber<DelayedIncrementalExecutionResult>() {
+        def subscriber = new graphql.execution.pubsub.CapturingSubscriber<DelayedIncrementalPartialResult>() {
             @Override
-            void onNext(DelayedIncrementalExecutionResult executionResult) {
+            void onNext(DelayedIncrementalPartialResult executionResult) {
                 this.getEvents().add(executionResult)
                 subscription.cancel()
                 this.isDone().set(true)
@@ -112,8 +112,8 @@ class IncrementalCallStateDeferTest extends Specification {
         incrementalCallState.enqueue(offThread("C", 10, "/field/path")) // <-- will finish first
 
         when:
-        def subscriber1 = new graphql.execution.pubsub.CapturingSubscriber<DelayedIncrementalExecutionResult>()
-        def subscriber2 = new graphql.execution.pubsub.CapturingSubscriber<DelayedIncrementalExecutionResult>()
+        def subscriber1 = new graphql.execution.pubsub.CapturingSubscriber<DelayedIncrementalPartialResult>()
+        def subscriber2 = new graphql.execution.pubsub.CapturingSubscriber<DelayedIncrementalPartialResult>()
         incrementalCallState.startDeferredCalls().subscribe(subscriber1)
         incrementalCallState.startDeferredCalls().subscribe(subscriber2)
 
@@ -184,7 +184,7 @@ class IncrementalCallStateDeferTest extends Specification {
         incrementalCallState.enqueue(offThread("C", 10, "/field/path")) // <-- will finish first
 
         when:
-        List<DelayedIncrementalExecutionResult> results = startAndWaitCalls(incrementalCallState)
+        List<DelayedIncrementalPartialResult> results = startAndWaitCalls(incrementalCallState)
 
         then: "hasNext placement should be deterministic - only the last event published should have 'hasNext=true'"
         assertResultsSizeAndHasNextRule(3, results)
@@ -226,7 +226,7 @@ class IncrementalCallStateDeferTest extends Specification {
         return new DeferredCall(null, ResultPath.parse("/field/path"), [callSupplier], new DeferredCallContext())
     }
 
-    private static void assertResultsSizeAndHasNextRule(int expectedSize, List<DelayedIncrementalExecutionResult> results) {
+    private static void assertResultsSizeAndHasNextRule(int expectedSize, List<DelayedIncrementalPartialResult> results) {
         assert results.size() == expectedSize
 
         for (def i = 0; i < results.size(); i++) {
@@ -238,8 +238,8 @@ class IncrementalCallStateDeferTest extends Specification {
         }
     }
 
-    private static List<DelayedIncrementalExecutionResult> startAndWaitCalls(IncrementalCallState incrementalCallState) {
-        def subscriber = new graphql.execution.pubsub.CapturingSubscriber<DelayedIncrementalExecutionResult>()
+    private static List<DelayedIncrementalPartialResult> startAndWaitCalls(IncrementalCallState incrementalCallState) {
+        def subscriber = new graphql.execution.pubsub.CapturingSubscriber<DelayedIncrementalPartialResult>()
 
         incrementalCallState.startDeferredCalls().subscribe(subscriber)
 

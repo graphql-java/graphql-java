@@ -12,13 +12,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import static java.util.stream.Collectors.toList;
-
 @ExperimentalApi
 public class IncrementalExecutionResultImpl extends ExecutionResultImpl implements IncrementalExecutionResult {
     private final boolean hasNext;
     private final List<IncrementalPayload> incremental;
-    private final Publisher<DelayedIncrementalExecutionResult> incrementalItemPublisher;
+    private final Publisher<DelayedIncrementalPartialResult> incrementalItemPublisher;
 
     private IncrementalExecutionResultImpl(Builder builder) {
         super(builder);
@@ -39,7 +37,7 @@ public class IncrementalExecutionResultImpl extends ExecutionResultImpl implemen
     }
 
     @Override
-    public Publisher<DelayedIncrementalExecutionResult> getIncrementalItemPublisher() {
+    public Publisher<DelayedIncrementalPartialResult> getIncrementalItemPublisher() {
         return incrementalItemPublisher;
     }
 
@@ -73,7 +71,7 @@ public class IncrementalExecutionResultImpl extends ExecutionResultImpl implemen
     public static class Builder extends ExecutionResultImpl.Builder<Builder> {
         private boolean hasNext = true;
         public List<IncrementalPayload> incremental;
-        private Publisher<DelayedIncrementalExecutionResult> incrementalItemPublisher;
+        private Publisher<DelayedIncrementalPartialResult> incrementalItemPublisher;
 
         public Builder hasNext(boolean hasNext) {
             this.hasNext = hasNext;
@@ -85,7 +83,7 @@ public class IncrementalExecutionResultImpl extends ExecutionResultImpl implemen
             return this;
         }
 
-        public Builder incrementalItemPublisher(Publisher<DelayedIncrementalExecutionResult> incrementalItemPublisher) {
+        public Builder incrementalItemPublisher(Publisher<DelayedIncrementalPartialResult> incrementalItemPublisher) {
             this.incrementalItemPublisher = incrementalItemPublisher;
             return this;
         }

@@ -2,7 +2,7 @@ package graphql.execution.incremental;
 
 import graphql.Internal;
 import graphql.execution.reactive.SingleSubscriberPublisher;
-import graphql.incremental.DelayedIncrementalExecutionResult;
+import graphql.incremental.DelayedIncrementalPartialResult;
 import graphql.incremental.IncrementalPayload;
 import graphql.util.LockKit;
 import org.reactivestreams.Publisher;
@@ -14,7 +14,7 @@ import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static graphql.incremental.DelayedIncrementalExecutionResultImpl.newIncrementalExecutionResult;
+import static graphql.incremental.DelayedIncrementalPartialResultImpl.newIncrementalExecutionResult;
 
 /**
  * This provides support for @defer directives on fields that mean that results will be sent AFTER
@@ -24,7 +24,7 @@ import static graphql.incremental.DelayedIncrementalExecutionResultImpl.newIncre
 public class IncrementalCallState {
     private final AtomicBoolean incrementalCallsDetected = new AtomicBoolean(false);
     private final Deque<IncrementalCall<? extends IncrementalPayload>> incrementalCalls = new ConcurrentLinkedDeque<>();
-    private final SingleSubscriberPublisher<DelayedIncrementalExecutionResult> publisher = new SingleSubscriberPublisher<>();
+    private final SingleSubscriberPublisher<DelayedIncrementalPartialResult> publisher = new SingleSubscriberPublisher<>();
     private final AtomicInteger pendingCalls = new AtomicInteger();
     private final LockKit.ReentrantLock publisherLock = new LockKit.ReentrantLock();
 
@@ -48,7 +48,7 @@ public class IncrementalCallState {
                         try {
                             remainingCalls = pendingCalls.decrementAndGet();
 
-                            DelayedIncrementalExecutionResult executionResult = newIncrementalExecutionResult()
+                            DelayedIncrementalPartialResult executionResult = newIncrementalExecutionResult()
                                     .incrementalItems(Collections.singletonList(payload))
                                     .hasNext(remainingCalls != 0)
                                     .build();
@@ -92,7 +92,7 @@ public class IncrementalCallState {
      *
      * @return the publisher of deferred results
      */
-    public Publisher<DelayedIncrementalExecutionResult> startDeferredCalls() {
+    public Publisher<DelayedIncrementalPartialResult> startDeferredCalls() {
         drainIncrementalCalls();
         return publisher;
     }
