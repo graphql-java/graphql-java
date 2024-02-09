@@ -1,7 +1,6 @@
 package graphql.execution
 
 import graphql.ErrorType
-import graphql.ExecutionInput
 import graphql.ExecutionResult
 import graphql.GraphQLContext
 import graphql.execution.instrumentation.ExecutionStrategyInstrumentationContext
@@ -34,7 +33,7 @@ import static org.awaitility.Awaitility.await
 abstract class AsyncExecutionStrategyTest extends Specification {
     static boolean incrementalSupport
 
-    def executionInputMock = Mock(ExecutionInput)
+    def graphqlContextMock = Mock(GraphQLContext)
 
     GraphQLSchema schema(DataFetcher dataFetcher1, DataFetcher dataFetcher2) {
         def queryName = "RootQueryType"
@@ -70,7 +69,7 @@ abstract class AsyncExecutionStrategyTest extends Specification {
     }
 
     def setup() {
-        executionInputMock.isIncrementalSupport() >> incrementalSupport
+        graphqlContextMock.get(GraphQLContext.ENABLE_INCREMENTAL_SUPPORT) >> incrementalSupport
     }
 
     def "execution is serial if the dataFetchers are blocking"() {
@@ -106,9 +105,8 @@ abstract class AsyncExecutionStrategyTest extends Specification {
                 .operationDefinition(operation)
                 .instrumentation(SimplePerformantInstrumentation.INSTANCE)
                 .valueUnboxer(ValueUnboxer.DEFAULT)
-                .graphQLContext(GraphQLContext.getDefault())
+                .graphQLContext(graphqlContextMock)
                 .locale(Locale.getDefault())
-                .executionInput(executionInputMock)
                 .build()
         ExecutionStrategyParameters executionStrategyParameters = ExecutionStrategyParameters
                 .newParameters()
@@ -149,8 +147,7 @@ abstract class AsyncExecutionStrategyTest extends Specification {
                 .valueUnboxer(ValueUnboxer.DEFAULT)
                 .instrumentation(SimplePerformantInstrumentation.INSTANCE)
                 .locale(Locale.getDefault())
-                .graphQLContext(GraphQLContext.getDefault())
-                .executionInput(executionInputMock)
+                .graphQLContext(graphqlContextMock)
                 .build()
         ExecutionStrategyParameters executionStrategyParameters = ExecutionStrategyParameters
                 .newParameters()
@@ -192,9 +189,8 @@ abstract class AsyncExecutionStrategyTest extends Specification {
                 .operationDefinition(operation)
                 .valueUnboxer(ValueUnboxer.DEFAULT)
                 .instrumentation(SimplePerformantInstrumentation.INSTANCE)
-                .graphQLContext(GraphQLContext.getDefault())
+                .graphQLContext(graphqlContextMock)
                 .locale(Locale.getDefault())
-                .executionInput(executionInputMock)
                 .build()
         ExecutionStrategyParameters executionStrategyParameters = ExecutionStrategyParameters
                 .newParameters()
@@ -236,8 +232,7 @@ abstract class AsyncExecutionStrategyTest extends Specification {
                 .instrumentation(SimplePerformantInstrumentation.INSTANCE)
                 .valueUnboxer(ValueUnboxer.DEFAULT)
                 .locale(Locale.getDefault())
-                .graphQLContext(GraphQLContext.getDefault())
-                .executionInput(executionInputMock)
+                .graphQLContext(graphqlContextMock)
                 .build()
         ExecutionStrategyParameters executionStrategyParameters = ExecutionStrategyParameters
                 .newParameters()
@@ -276,7 +271,7 @@ abstract class AsyncExecutionStrategyTest extends Specification {
                 .executionId(ExecutionId.generate())
                 .operationDefinition(operation)
                 .valueUnboxer(ValueUnboxer.DEFAULT)
-                .graphQLContext(GraphQLContext.getDefault())
+                .graphQLContext(graphqlContextMock)
                 .locale(Locale.getDefault())
                 .instrumentation(new SimplePerformantInstrumentation() {
 
@@ -299,7 +294,6 @@ abstract class AsyncExecutionStrategyTest extends Specification {
                         }
                     }
                 })
-                .executionInput(executionInputMock)
                 .build()
         ExecutionStrategyParameters executionStrategyParameters = ExecutionStrategyParameters
                 .newParameters()

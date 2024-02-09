@@ -4,11 +4,12 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ImmutableSet;
 import graphql.ExecutionResult;
+import graphql.GraphQLContext;
 import graphql.PublicApi;
 import graphql.execution.incremental.DeferredCall;
 import graphql.execution.incremental.DeferredCallContext;
-import graphql.execution.incremental.IncrementalCall;
 import graphql.execution.incremental.DeferredExecution;
+import graphql.execution.incremental.IncrementalCall;
 import graphql.execution.instrumentation.ExecutionStrategyInstrumentationContext;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationContext;
@@ -22,6 +23,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
@@ -64,7 +66,10 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
         MergedSelectionSet fields = parameters.getFields();
         List<String> fieldNames = fields.getKeys();
 
-        DeferredExecutionSupport deferredExecutionSupport = executionContext.isIncrementalSupport() ?
+        DeferredExecutionSupport deferredExecutionSupport =
+                Optional.ofNullable(executionContext.getGraphQLContext())
+                        .map(graphqlContext -> (Boolean) graphqlContext.get(GraphQLContext.ENABLE_INCREMENTAL_SUPPORT))
+                        .orElse(false) ?
                 new DeferredExecutionSupport.DeferredExecutionSupportImpl(
                     fields,
                     parameters,

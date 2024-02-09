@@ -29,7 +29,6 @@ public class ExecutionInput {
     private final DataLoaderRegistry dataLoaderRegistry;
     private final ExecutionId executionId;
     private final Locale locale;
-    private final boolean incrementalSupport;
 
 
     @Internal
@@ -45,7 +44,6 @@ public class ExecutionInput {
         this.locale = builder.locale != null ? builder.locale : Locale.getDefault(); // always have a locale in place
         this.localContext = builder.localContext;
         this.extensions = builder.extensions;
-        this.incrementalSupport = builder.incrementalSupport;
     }
 
     /**
@@ -142,16 +140,6 @@ public class ExecutionInput {
     }
 
     /**
-     * @return whether the execution has support for incremental delivery of data, via the @defer and @stream directives.
-     *
-     * This is currently an experimental feature, and only @defer is supported.
-     */
-    @ExperimentalApi
-    public boolean isIncrementalSupport() {
-        return incrementalSupport;
-    }
-
-    /**
      * This helps you transform the current ExecutionInput object into another one by starting a builder with all
      * the current values and allows you to transform it how you want.
      *
@@ -171,8 +159,7 @@ public class ExecutionInput {
                 .variables(this.rawVariables.toMap())
                 .extensions(this.extensions)
                 .executionId(this.executionId)
-                .locale(this.locale)
-                .incrementalSupport(this.incrementalSupport);
+                .locale(this.locale);
 
         builderConsumer.accept(builder);
 
@@ -229,7 +216,6 @@ public class ExecutionInput {
         private DataLoaderRegistry dataLoaderRegistry = DataLoaderDispatcherInstrumentationState.EMPTY_DATALOADER_REGISTRY;
         private Locale locale = Locale.getDefault();
         private ExecutionId executionId;
-        public boolean incrementalSupport = false;
 
         public Builder query(String query) {
             this.query = assertNotNull(query, () -> "query can't be null");
@@ -390,19 +376,6 @@ public class ExecutionInput {
          */
         public Builder dataLoaderRegistry(DataLoaderRegistry dataLoaderRegistry) {
             this.dataLoaderRegistry = assertNotNull(dataLoaderRegistry);
-            return this;
-        }
-
-        /**
-         * @param incrementalSupport whether the execution has support for incremental delivery of data, via the @defer and @stream directives.
-         * <p>
-         * This is currently an experimental feature, and only @defer is supported.
-         *
-         * @return this builder
-         */
-        @ExperimentalApi
-        public Builder incrementalSupport(boolean incrementalSupport) {
-            this.incrementalSupport = incrementalSupport;
             return this;
         }
 

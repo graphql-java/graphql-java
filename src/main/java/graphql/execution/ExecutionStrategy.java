@@ -3,6 +3,7 @@ package graphql.execution;
 import com.google.common.collect.ImmutableList;
 import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
+import graphql.GraphQLContext;
 import graphql.GraphQLError;
 import graphql.Internal;
 import graphql.PublicSpi;
@@ -45,6 +46,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
@@ -684,7 +686,9 @@ public abstract class ExecutionStrategy {
         MergedSelectionSet subFields = fieldCollector.collectFields(
                 collectorParameters,
                 parameters.getField(),
-                executionContext.isIncrementalSupport()
+                Optional.ofNullable(executionContext.getGraphQLContext())
+                        .map(graphqlContext -> (Boolean) graphqlContext.get(GraphQLContext.ENABLE_INCREMENTAL_SUPPORT))
+                        .orElse(false)
         );
 
         ExecutionStepInfo newExecutionStepInfo = executionStepInfo.changeTypeWithPreservedNonNull(resolvedObjectType);

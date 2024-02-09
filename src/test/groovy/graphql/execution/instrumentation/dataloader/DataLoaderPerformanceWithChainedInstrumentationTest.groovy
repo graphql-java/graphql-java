@@ -2,6 +2,7 @@ package graphql.execution.instrumentation.dataloader
 
 import graphql.ExecutionInput
 import graphql.GraphQL
+import graphql.GraphQLContext
 import graphql.execution.instrumentation.ChainedInstrumentation
 import graphql.execution.instrumentation.Instrumentation
 import graphql.incremental.IncrementalExecutionResult
@@ -43,7 +44,7 @@ class DataLoaderPerformanceWithChainedInstrumentationTest extends Specification 
         ExecutionInput executionInput = ExecutionInput.newExecutionInput()
                 .query(query)
                 .dataLoaderRegistry(dataLoaderRegistry)
-                .incrementalSupport(incrementalSupport)
+                .graphQLContext([(GraphQLContext.ENABLE_INCREMENTAL_SUPPORT): incrementalSupport])
                 .build()
 
         def result = graphQL.execute(executionInput)
@@ -67,7 +68,7 @@ class DataLoaderPerformanceWithChainedInstrumentationTest extends Specification 
         ExecutionInput executionInput = ExecutionInput.newExecutionInput()
                 .query(expensiveQuery)
                 .dataLoaderRegistry(dataLoaderRegistry)
-                .incrementalSupport(incrementalSupport)
+                .graphQLContext([(GraphQLContext.ENABLE_INCREMENTAL_SUPPORT): incrementalSupport])
                 .build()
 
         def result = graphQL.execute(executionInput)
@@ -91,7 +92,7 @@ class DataLoaderPerformanceWithChainedInstrumentationTest extends Specification 
         ExecutionInput executionInput = ExecutionInput.newExecutionInput()
                 .query(query)
                 .dataLoaderRegistry(dataLoaderRegistry)
-                .incrementalSupport(incrementalSupport)
+                .graphQLContext([(GraphQLContext.ENABLE_INCREMENTAL_SUPPORT): incrementalSupport])
                 .build()
         def result = graphQL.execute(executionInput)
 
@@ -115,7 +116,7 @@ class DataLoaderPerformanceWithChainedInstrumentationTest extends Specification 
         ExecutionInput executionInput = ExecutionInput.newExecutionInput()
                 .query(expensiveQuery)
                 .dataLoaderRegistry(dataLoaderRegistry)
-                .incrementalSupport(incrementalSupport)
+                .graphQLContext([(GraphQLContext.ENABLE_INCREMENTAL_SUPPORT): incrementalSupport])
                 .build()
         def result = graphQL.execute(executionInput)
 
@@ -136,7 +137,7 @@ class DataLoaderPerformanceWithChainedInstrumentationTest extends Specification 
         ExecutionInput executionInput = ExecutionInput.newExecutionInput()
                 .query(deferredQuery)
                 .dataLoaderRegistry(dataLoaderRegistry)
-                .incrementalSupport(true)
+                .graphQLContext([(GraphQLContext.ENABLE_INCREMENTAL_SUPPORT): true])
                 .build()
 
         IncrementalExecutionResult result = graphQL.execute(executionInput)
@@ -159,7 +160,7 @@ class DataLoaderPerformanceWithChainedInstrumentationTest extends Specification 
     def "chainedInstrumentation: data loader will work with deferred queries on multiple levels deep"() {
         when:
         ExecutionInput executionInput = ExecutionInput.newExecutionInput()
-                .incrementalSupport(true)
+                .graphQLContext([(GraphQLContext.ENABLE_INCREMENTAL_SUPPORT): true])
                 .query(expensiveDeferredQuery)
                 .dataLoaderRegistry(dataLoaderRegistry)
                 .build()

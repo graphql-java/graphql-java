@@ -29,6 +29,7 @@ import org.reactivestreams.Publisher;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 import static graphql.execution.ExecutionContextBuilder.newExecutionContextBuilder;
@@ -140,7 +141,9 @@ public class Execution {
         MergedSelectionSet fields = fieldCollector.collectFields(
                 collectorParameters,
                 operationDefinition.getSelectionSet(),
-                executionContext.isIncrementalSupport()
+                Optional.ofNullable(executionContext.getGraphQLContext())
+                        .map(graphqlContext -> (Boolean) graphqlContext.get(GraphQLContext.ENABLE_INCREMENTAL_SUPPORT))
+                        .orElse(false)
         );
 
         ResultPath path = ResultPath.rootPath();
@@ -179,13 +182,13 @@ public class Execution {
 
         result = result.whenComplete(executeOperationCtx::onCompleted);
 
-        return deferSupport(executionContext, result);
+        return incrementalSupport(executionContext, result);
     }
 
     /*
      * Adds the deferred publisher if it's needed at the end of the query.  This is also a good time for the deferred code to start running
      */
-    private CompletableFuture<ExecutionResult> deferSupport(ExecutionContext executionContext, CompletableFuture<ExecutionResult> result) {
+    private CompletableFuture<ExecutionResult> incrementalSupport(ExecutionContext executionContext, CompletableFuture<ExecutionResult> result) {
         return result.thenApply(er -> {
             IncrementalCallState incrementalCallState = executionContext.getIncrementalCallState();
             if (incrementalCallState.getIncrementalCallsDetected()) {
