@@ -42,7 +42,7 @@ class NoContextChainedInstrumentationTest extends Specification {
                 "start:fetch-hero",
                 "start:complete-hero",
 
-                "start:execution-strategy",
+                "start:execute-object",
 
                 "start:field-id",
                 "start:fetch-id",

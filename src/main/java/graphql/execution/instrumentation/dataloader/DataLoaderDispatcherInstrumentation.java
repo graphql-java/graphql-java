@@ -10,6 +10,7 @@ import graphql.execution.ExecutionStrategy;
 import graphql.execution.instrumentation.ExecutionStrategyInstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationState;
+import graphql.execution.instrumentation.ExecuteObjectInstrumentationContext;
 import graphql.execution.instrumentation.SimplePerformantInstrumentation;
 import graphql.execution.instrumentation.parameters.InstrumentationCreateStateParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecuteOperationParameters;
@@ -131,6 +132,17 @@ public class DataLoaderDispatcherInstrumentation extends SimplePerformantInstrum
         return state.getApproach().beginExecutionStrategy(parameters, state.getState());
     }
 
+    @Override
+    public @Nullable ExecuteObjectInstrumentationContext beginExecuteObject(InstrumentationExecutionStrategyParameters parameters, InstrumentationState rawState) {
+        DataLoaderDispatcherInstrumentationState state = ofState(rawState);
+        //
+        // if there are no data loaders, there is nothing to do
+        //
+        if (state.hasNoDataLoaders()) {
+            return ExecuteObjectInstrumentationContext.NOOP;
+        }
+        return state.getApproach().beginObjectResolution(parameters, state.getState());
+    }
 
     @Override
     public @Nullable InstrumentationContext<Object> beginFieldFetch(InstrumentationFieldFetchParameters parameters, InstrumentationState rawState) {
