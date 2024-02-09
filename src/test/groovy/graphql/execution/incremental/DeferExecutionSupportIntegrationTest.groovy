@@ -893,7 +893,7 @@ class DeferExecutionSupportIntegrationTest extends Specification {
         incrementalResults[2].hasNext == false
 
         // every payload has only 1 incremental item, and the data is the same for all of them
-        incrementalResults.every { it.incremental.size == 1 }
+        incrementalResults.every { it.incremental.size() == 1 }
         incrementalResults.every { it.incremental[0].data == [summary: "A summary"] }
 
         // "label" is different for every payload
@@ -1328,7 +1328,7 @@ class DeferExecutionSupportIntegrationTest extends Specification {
         incrementalResults[2].hasNext == false
 
         // every payload has only 1 incremental item, and the data is the same for all of them
-        incrementalResults.every { it.incremental.size == 1 }
+        incrementalResults.every { it.incremental.size() == 1 }
         incrementalResults.every { it.incremental[0].data == [wordCount: 45999] }
 
         // path is different for every payload

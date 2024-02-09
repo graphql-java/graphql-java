@@ -122,7 +122,7 @@ class DataLoaderPerformanceData {
         assert incrementalResults[24].hasNext == false
 
         // every payload has only 1 incremental item, and the data is the same for all of them
-        assert incrementalResults.every { it.incremental.size == 1 }
+        assert incrementalResults.every { it.incremental.size() == 1 }
 
         def incrementalResultsItems = incrementalResults.collect { it.incremental[0] }
 
