@@ -6,7 +6,7 @@ import com.google.common.collect.ImmutableSet;
 import graphql.ExecutionResult;
 import graphql.GraphQLContext;
 import graphql.PublicApi;
-import graphql.execution.incremental.DeferredCall;
+import graphql.execution.incremental.DeferredFragmentCall;
 import graphql.execution.incremental.DeferredCallContext;
 import graphql.execution.incremental.DeferredExecution;
 import graphql.execution.incremental.IncrementalCall;
@@ -159,7 +159,7 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
             private final ExecutionStrategyParameters parameters;
             private final ExecutionContext executionContext;
             private final BiFunction<ExecutionContext, ExecutionStrategyParameters, CompletableFuture<FieldValueInfo>> resolveFieldWithInfoFn;
-            private final Map<String, Supplier<CompletableFuture<DeferredCall.FieldWithExecutionResult>>> dfCache = new HashMap<>();
+            private final Map<String, Supplier<CompletableFuture<DeferredFragmentCall.FieldWithExecutionResult>>> dfCache = new HashMap<>();
 
             private DeferredExecutionSupportImpl(
                     MergedSelectionSet mergedSelectionSet,
@@ -207,20 +207,20 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
             @Override
             public Set<IncrementalCall<? extends IncrementalPayload>> createCalls() {
                 return deferredExecutionToFields.keySet().stream()
-                        .map(this::createDeferredCall)
+                        .map(this::createDeferredFragmentCall)
                         .collect(Collectors.toSet());
             }
 
-            private DeferredCall createDeferredCall(DeferredExecution deferredExecution) {
+            private DeferredFragmentCall createDeferredFragmentCall(DeferredExecution deferredExecution) {
                 DeferredCallContext deferredCallContext = new DeferredCallContext();
 
                 List<MergedField> mergedFields = deferredExecutionToFields.get(deferredExecution);
 
-                List<Supplier<CompletableFuture<DeferredCall.FieldWithExecutionResult>>> calls = mergedFields.stream()
+                List<Supplier<CompletableFuture<DeferredFragmentCall.FieldWithExecutionResult>>> calls = mergedFields.stream()
                         .map(currentField -> this.createResultSupplier(currentField, deferredCallContext))
                         .collect(Collectors.toList());
 
-                return new DeferredCall(
+                return new DeferredFragmentCall(
                         deferredExecution.getLabel(),
                         this.parameters.getPath(),
                         calls,
@@ -228,7 +228,7 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
                 );
             }
 
-            private Supplier<CompletableFuture<DeferredCall.FieldWithExecutionResult>> createResultSupplier(
+            private Supplier<CompletableFuture<DeferredFragmentCall.FieldWithExecutionResult>> createResultSupplier(
                     MergedField currentField,
                     DeferredCallContext deferredCallContext
             ) {
@@ -266,7 +266,7 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
 
                                     return executionResultCF
                                             .thenApply(executionResult ->
-                                                    new DeferredCall.FieldWithExecutionResult(currentField.getName(), executionResult)
+                                                    new DeferredFragmentCall.FieldWithExecutionResult(currentField.getName(), executionResult)
                                             );
                                 }
                         )

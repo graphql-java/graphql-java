@@ -10,12 +10,12 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
- * Contains data relevant to the execution of a {@link DeferredCall}.
+ * Contains data relevant to the execution of a {@link DeferredFragmentCall}.
  * <p>
  * The responsibilities of this class are similar to {@link graphql.execution.ExecutionContext}, but restricted to the
  * execution of a deferred call (instead of the whole GraphQL execution like {@link graphql.execution.ExecutionContext}).
  * <p>
- * Some behaviours, like error capturing, need to be scoped to a single {@link DeferredCall}, because each defer payload
+ * Some behaviours, like error capturing, need to be scoped to a single {@link DeferredFragmentCall}, because each defer payload
  * contains its own distinct list of errors.
  */
 @Internal

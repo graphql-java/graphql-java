@@ -4,8 +4,6 @@ import graphql.ExecutionResultImpl
 import graphql.GraphQLError
 import graphql.execution.NonNullableFieldWasNullException
 import graphql.execution.ResultPath
-import graphql.execution.incremental.DeferredCall
-import graphql.execution.incremental.DeferredCallContext
 import spock.lang.Specification
 
 import java.util.concurrent.CompletableFuture
@@ -18,7 +16,7 @@ class DeferredCallTest extends Specification {
 
     def "test call capture gives a CF"() {
         given:
-        DeferredCall call = new DeferredCall("my-label", parse("/path"),
+        DeferredFragmentCall call = new DeferredFragmentCall("my-label", parse("/path"),
                 [createResolvedFieldCall("field", "some data")], new DeferredCallContext())
 
         when:
@@ -33,7 +31,7 @@ class DeferredCallTest extends Specification {
 
     def "multiple field calls are resolved together"() {
         given:
-        DeferredCall call = new DeferredCall("my-label", parse("/path"),
+        DeferredFragmentCall call = new DeferredFragmentCall("my-label", parse("/path"),
                 [
                         createResolvedFieldCall("field1", "some data 1"),
                         createResolvedFieldCall("field2", "some data 2"),
@@ -60,7 +58,7 @@ class DeferredCallTest extends Specification {
             getPath() >> ResultPath.parse("/path")
         }
 
-        DeferredCall call = new DeferredCall("my-label", parse("/path"), [
+        DeferredFragmentCall call = new DeferredFragmentCall("my-label", parse("/path"), [
                 createFieldCallThatThrowsException(mockedException),
                 createResolvedFieldCall("field1", "some data")
         ], deferredCallContext)
@@ -83,23 +81,23 @@ class DeferredCallTest extends Specification {
         ]
     }
 
-    private static Supplier<CompletableFuture<DeferredCall.FieldWithExecutionResult>> createResolvedFieldCall(
+    private static Supplier<CompletableFuture<DeferredFragmentCall.FieldWithExecutionResult>> createResolvedFieldCall(
             String fieldName,
             Object data
     ) {
         return createResolvedFieldCall(fieldName, data, Collections.emptyList())
     }
 
-    private static Supplier<CompletableFuture<DeferredCall.FieldWithExecutionResult>> createResolvedFieldCall(
+    private static Supplier<CompletableFuture<DeferredFragmentCall.FieldWithExecutionResult>> createResolvedFieldCall(
             String fieldName,
             Object data,
             List<GraphQLError> errors
     ) {
-        return new Supplier<CompletableFuture<DeferredCall.FieldWithExecutionResult>>() {
+        return new Supplier<CompletableFuture<DeferredFragmentCall.FieldWithExecutionResult>>() {
             @Override
-            CompletableFuture<DeferredCall.FieldWithExecutionResult> get() {
+            CompletableFuture<DeferredFragmentCall.FieldWithExecutionResult> get() {
                 return completedFuture(
-                        new DeferredCall.FieldWithExecutionResult(fieldName,
+                        new DeferredFragmentCall.FieldWithExecutionResult(fieldName,
                                 new ExecutionResultImpl(data, errors)
                         )
                 )
@@ -107,12 +105,12 @@ class DeferredCallTest extends Specification {
         }
     }
 
-    private static Supplier<CompletableFuture<DeferredCall.FieldWithExecutionResult>> createFieldCallThatThrowsException(
+    private static Supplier<CompletableFuture<DeferredFragmentCall.FieldWithExecutionResult>> createFieldCallThatThrowsException(
             Throwable exception
     ) {
-        return new Supplier<CompletableFuture<DeferredCall.FieldWithExecutionResult>>() {
+        return new Supplier<CompletableFuture<DeferredFragmentCall.FieldWithExecutionResult>>() {
             @Override
-            CompletableFuture<DeferredCall.FieldWithExecutionResult> get() {
+            CompletableFuture<DeferredFragmentCall.FieldWithExecutionResult> get() {
                 return CompletableFuture.failedFuture(exception)
             }
         }

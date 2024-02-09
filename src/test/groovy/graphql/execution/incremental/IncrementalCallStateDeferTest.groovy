@@ -142,27 +142,27 @@ class IncrementalCallStateDeferTest extends Specification {
 
     def "multiple fields are part of the same call"() {
         given: "a DeferredCall that contains resolution of multiple fields"
-        def call1 = new Supplier<CompletableFuture<DeferredCall.FieldWithExecutionResult>>() {
+        def call1 = new Supplier<CompletableFuture<DeferredFragmentCall.FieldWithExecutionResult>>() {
             @Override
-            CompletableFuture<DeferredCall.FieldWithExecutionResult> get() {
+            CompletableFuture<DeferredFragmentCall.FieldWithExecutionResult> get() {
                 return CompletableFuture.supplyAsync({
                     Thread.sleep(10)
-                    new DeferredCall.FieldWithExecutionResult("call1", new ExecutionResultImpl("Call 1", []))
+                    new DeferredFragmentCall.FieldWithExecutionResult("call1", new ExecutionResultImpl("Call 1", []))
                 })
             }
         }
 
-        def call2 = new Supplier<CompletableFuture<DeferredCall.FieldWithExecutionResult>>() {
+        def call2 = new Supplier<CompletableFuture<DeferredFragmentCall.FieldWithExecutionResult>>() {
             @Override
-            CompletableFuture<DeferredCall.FieldWithExecutionResult> get() {
+            CompletableFuture<DeferredFragmentCall.FieldWithExecutionResult> get() {
                 return CompletableFuture.supplyAsync({
                     Thread.sleep(100)
-                    new DeferredCall.FieldWithExecutionResult("call2", new ExecutionResultImpl("Call 2", []))
+                    new DeferredFragmentCall.FieldWithExecutionResult("call2", new ExecutionResultImpl("Call 2", []))
                 })
             }
         }
 
-        def deferredCall = new DeferredCall(null, ResultPath.parse("/field/path"), [call1, call2], new DeferredCallContext())
+        def deferredCall = new DeferredFragmentCall(null, ResultPath.parse("/field/path"), [call1, call2], new DeferredCallContext())
 
         when:
         def incrementalCallState = new IncrementalCallState()
@@ -195,35 +195,35 @@ class IncrementalCallStateDeferTest extends Specification {
         results.any { it.incremental[0].data["c"] == "C" }
     }
 
-    private static DeferredCall offThread(String data, int sleepTime, String path) {
-        def callSupplier = new Supplier<CompletableFuture<DeferredCall.FieldWithExecutionResult>>() {
+    private static DeferredFragmentCall offThread(String data, int sleepTime, String path) {
+        def callSupplier = new Supplier<CompletableFuture<DeferredFragmentCall.FieldWithExecutionResult>>() {
             @Override
-            CompletableFuture<DeferredCall.FieldWithExecutionResult> get() {
+            CompletableFuture<DeferredFragmentCall.FieldWithExecutionResult> get() {
                 return CompletableFuture.supplyAsync({
                     Thread.sleep(sleepTime)
                     if (data == "Bang") {
                         throw new RuntimeException(data)
                     }
-                    new DeferredCall.FieldWithExecutionResult(data.toLowerCase(), new ExecutionResultImpl(data, []))
+                    new DeferredFragmentCall.FieldWithExecutionResult(data.toLowerCase(), new ExecutionResultImpl(data, []))
                 })
             }
         }
 
-        return new DeferredCall(null, ResultPath.parse(path), [callSupplier], new DeferredCallContext())
+        return new DeferredFragmentCall(null, ResultPath.parse(path), [callSupplier], new DeferredCallContext())
     }
 
-    private static DeferredCall offThreadCallWithinCall(IncrementalCallState incrementalCallState, String dataParent, String dataChild, int sleepTime, String path) {
-        def callSupplier = new Supplier<CompletableFuture<DeferredCall.FieldWithExecutionResult>>() {
+    private static DeferredFragmentCall offThreadCallWithinCall(IncrementalCallState incrementalCallState, String dataParent, String dataChild, int sleepTime, String path) {
+        def callSupplier = new Supplier<CompletableFuture<DeferredFragmentCall.FieldWithExecutionResult>>() {
             @Override
-            CompletableFuture<DeferredCall.FieldWithExecutionResult> get() {
+            CompletableFuture<DeferredFragmentCall.FieldWithExecutionResult> get() {
                 CompletableFuture.supplyAsync({
                     Thread.sleep(sleepTime)
                     incrementalCallState.enqueue(offThread(dataChild, sleepTime, path))
-                    new DeferredCall.FieldWithExecutionResult(dataParent.toLowerCase(), new ExecutionResultImpl(dataParent, []))
+                    new DeferredFragmentCall.FieldWithExecutionResult(dataParent.toLowerCase(), new ExecutionResultImpl(dataParent, []))
                 })
             }
         }
-        return new DeferredCall(null, ResultPath.parse("/field/path"), [callSupplier], new DeferredCallContext())
+        return new DeferredFragmentCall(null, ResultPath.parse("/field/path"), [callSupplier], new DeferredCallContext())
     }
 
     private static void assertResultsSizeAndHasNextRule(int expectedSize, List<DelayedIncrementalPartialResult> results) {

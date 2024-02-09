@@ -37,7 +37,7 @@ import java.util.function.Supplier;
  * Will result on 1 instance of `DeferredCall`, containing calls for the 2 fields: "text" and "summary".
  */
 @Internal
-public class DeferredCall implements IncrementalCall<DeferPayload> {
+public class DeferredFragmentCall implements IncrementalCall<DeferPayload> {
     private final String label;
 
     public ResultPath getPath() {
@@ -48,7 +48,7 @@ public class DeferredCall implements IncrementalCall<DeferPayload> {
     private final List<Supplier<CompletableFuture<FieldWithExecutionResult>>> calls;
     private final DeferredCallContext deferredCallContext;
 
-    public DeferredCall(
+    public DeferredFragmentCall(
             String label,
             ResultPath path,
             List<Supplier<CompletableFuture<FieldWithExecutionResult>>> calls,
@@ -77,7 +77,7 @@ public class DeferredCall implements IncrementalCall<DeferPayload> {
     /**
      * Non-nullable errors need special treatment.
      * When they happen, all the sibling fields will be ignored in the result. So as soon as one of the field calls
-     * throw this error, we can ignore the {@link ExecutionResult} from all the fields associated with this {@link DeferredCall}
+     * throw this error, we can ignore the {@link ExecutionResult} from all the fields associated with this {@link DeferredFragmentCall}
      * and build a special {@link DeferPayload} that captures the details of the error.
      */
     private DeferPayload handleNonNullableFieldError(DeferPayload result, Throwable throwable) {
