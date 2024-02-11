@@ -277,6 +277,10 @@ public class GraphQLTypeUtil {
         return type instanceof GraphQLInterfaceType || type instanceof GraphQLUnionType;
     }
 
+    public static boolean isCompositeOutputType(GraphQLType type) {
+        return type instanceof GraphQLInterfaceType || type instanceof GraphQLUnionType || type instanceof GraphQLObjectType;
+    }
+
     public static boolean isObjectType(GraphQLType type) {
         return type instanceof GraphQLObjectType;
     }

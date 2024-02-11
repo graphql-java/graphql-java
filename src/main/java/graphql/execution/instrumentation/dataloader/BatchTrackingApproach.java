@@ -21,6 +21,7 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 
+import static graphql.schema.GraphQLTypeUtil.isCompositeOutputType;
 import static graphql.schema.GraphQLTypeUtil.isObjectType;
 import static graphql.schema.GraphQLTypeUtil.unwrapAll;
 
@@ -37,9 +38,10 @@ public class BatchTrackingApproach {
         private final LockKit.ReentrantLock lock = new LockKit.ReentrantLock();
 
 
-        private final Set<Integer> dispatchedLevels = new LinkedHashSet<>();
         private final Set<ResultPath> expectedFetches = new LinkedHashSet<>();
         private final Set<ResultPath> waitForChildren = new LinkedHashSet<>();
+        private final Set<ResultPath> twoDataLoader = new LinkedHashSet<>();
+        private final Set<ResultPath> secondDataLoaderCalled = new LinkedHashSet<>();
         private final Set<ResultPath> expectedStrategyCalls = new LinkedHashSet<>();
 
         CallStack() {
@@ -212,11 +214,10 @@ public class BatchTrackingApproach {
                                                               parameters, InstrumentationState rawState) {
         CallStack callStack = (CallStack) rawState;
         ResultPath path = parameters.getEnvironment().getExecutionStepInfo().getPath();
-        int level = path.getLevel();
         boolean isTrivialDF = parameters.isTrivialDataFetcher();
 
         // for trivial DF we also expect the children to be fetched before dispatching
-        if (isTrivialDF && isObjectType(unwrapAll(parameters.getExecutionStepInfo().getType()))) {
+        if (isTrivialDF && isCompositeOutputType(unwrapAll(parameters.getExecutionStepInfo().getType()))) {
             callStack.lock.runLocked(() -> {
                 System.out.println("trivial DF: waiting for children for: " + path);
                 callStack.waitForChildren(path);
@@ -243,6 +244,12 @@ public class BatchTrackingApproach {
 
             @Override
             public void onCompleted(Object result, Throwable t) {
+                if (result instanceof ChainedDataLoader) {
+                    ((ChainedDataLoader<?, ?>) result).runWhenSecondDataLoaderHasCalled(() -> {
+                        callStack.secondDataLoaderCalled.add(path);
+                    });
+
+                }
             }
         };
     }

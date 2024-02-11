@@ -28,7 +28,7 @@ class BatchInstrumentationTest extends Specification {
         graphQL = dataLoaderPerformanceData.setupGraphQL(instrumentation)
     }
 
-    def "batch loading test"() {
+    def "batch loading with trivial DF"() {
         when:
         def rootIssueDf = { env ->
             return env.getDataLoader("issue").load("1");
@@ -84,10 +84,15 @@ class BatchInstrumentationTest extends Specification {
                 .instrumentation(new BatchInstrumentation())
                 .build();
 
+        int calledCount = 0;
+        int idsCount = 0;
         BatchLoader<String, List<String>> issueBatchLoader = ids -> {
+            calledCount++;
+            idsCount = ids.size();
             println "batch loader with ids: $ids"
             return CompletableFuture.completedFuture([[name: "Issue 1"], [name: "Issue 2"], [name: "Issue 3"]])
         };
+
         DataLoader<String, List<String>> issueLoader = DataLoaderFactory.newDataLoader(issueBatchLoader);
 
         DataLoaderRegistry dataLoaderRegistry = new DataLoaderRegistry()
@@ -98,6 +103,92 @@ class BatchInstrumentationTest extends Specification {
 
         then:
         result.data == [issue: [name: "Issue 1"], insights: [[issue: [name: "Issue 2"]], null, [issue: [name: "Issue 3"]], null]]
+        calledCount == 1
+        idsCount == 3
     }
+
+
+//    def "batch loading chained dataloader"() {
+//        when:
+//        def rootIssueDf = { env ->
+//            return ChainedDataLoader.two(env.getDataLoader("issue").load("1"), { result ->
+//                return env.getDataLoader("issueDetails").load("1");
+//            })
+//        } as DataFetcher;
+//
+//        def insightsIssueDf = { env ->
+//            return ChainedDataLoader.two(env.getDataLoader("issue").load(env.source["issueId"]), { result ->
+//                return env.getDataLoader("issueDetails").load(env.source["issueId"]);
+//            })
+//        } as DataFetcher;
+//
+//        TrivialDataFetcher insightsDf = env -> {
+//            return [[issueId: "2"], null, [issueId: "3"], null]
+//        }
+//        def Map<String, Map<String, DataFetcher>> dataFetchers = [
+//                "Query"  : [
+//                        "issue"   : rootIssueDf,
+//                        "insights": insightsDf
+//                ],
+//                "Insight": [
+//                        "issue": insightsIssueDf
+//                ]
+//        ]
+//
+//        def schema = TestUtil.schema("""
+//            type Query {
+//                issue: Issue
+//                insights: [Insight]
+//            }
+//
+//            type Issue {
+//                id: ID!
+//                name: String
+//            }
+//            type Insight {
+//                issue: Issue
+//            }
+//        """,
+//                dataFetchers)
+//
+//        def query = """
+//            query {
+//                issue {
+//                    name
+//                }
+//                insights {
+//                    issue {
+//                        name
+//                    }
+//                }
+//            }
+//        """
+//        def graphQL = GraphQL.newGraphQL(schema)
+//                .doNotAddDefaultInstrumentations()
+//                .instrumentation(new BatchInstrumentation())
+//                .build();
+//
+//        BatchLoader<String, List<String>> issueBatchLoader = ids -> {
+//            println "batch loader with ids: $ids"
+//            return CompletableFuture.completedFuture([[name: "Issue 1"], [name: "Issue 2"], [name: "Issue 3"]])
+//        };
+//        BatchLoader<String, List<String>> issueDetailsBatchLoader = ids -> {
+//            println "batch loader with ids: $ids"
+//            return CompletableFuture.completedFuture([[name: "Issue 1"], [name: "Issue 2"], [name: "Issue 3"]])
+//
+//            DataLoader<String, List<String>> issueLoader = DataLoaderFactory.newDataLoader(issueBatchLoader);
+//            DataLoader<String, List<String>> issueDetailsLoader = DataLoaderFactory.newDataLoader(issueBatchLoader);
+//
+//            DataLoaderRegistry dataLoaderRegistry = new DataLoaderRegistry()
+//            dataLoaderRegistry.register("issue", issueLoader)
+//
+//            ExecutionInput executionInput = ExecutionInput.newExecutionInput().query(query).dataLoaderRegistry(dataLoaderRegistry).build()
+//            def result = graphQL.execute(executionInput)
+//
+//            then:
+//            result.data == [issue: [name: "Issue 1"], insights: [[issue: [name: "Issue 2"]], null, [issue: [name: "Issue 3"]], null]]
+//        }
+//
+//    }
 
 }
