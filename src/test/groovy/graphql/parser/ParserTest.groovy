@@ -4,6 +4,7 @@ package graphql.parser
 import graphql.language.Argument
 import graphql.language.ArrayValue
 import graphql.language.AstComparator
+import graphql.language.AstPrinter
 import graphql.language.BooleanValue
 import graphql.language.Description
 import graphql.language.Directive
@@ -1151,5 +1152,35 @@ triple3 : """edge cases \\""" "" " \\"" \\" edge cases"""
         document.getDefinitions()[0].getSourceLocation() == SourceLocation.EMPTY
     }
 
+    def "escape characters correctly printed when printing AST"() {
+        given:
+        def src = "\"\\\"\" scalar A"
+
+        def env = newParserEnvironment()
+                .document(src)
+                .parserOptions(
+                        ParserOptions.newParserOptions()
+                                .captureIgnoredChars(true)
+                                .build()
+                )
+                .build()
+
+        when:
+        // Parse the original Document
+        def doc = Parser.parse(env)
+        // Print the AST
+        def printed = AstPrinter.printAst(doc)
+        // Re-parse printed AST
+        def reparsed = Parser.parse(printed)
+
+        then:
+        noExceptionThrown() // The printed AST was re-parsed without exception
+
+        when:
+        def reparsedPrinted = AstPrinter.printAst(reparsed)
+        
+        then:
+        reparsedPrinted == printed // Re-parsing and re-printing produces the same result
+    }
 
 }
