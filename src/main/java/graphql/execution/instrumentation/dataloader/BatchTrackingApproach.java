@@ -19,6 +19,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 
 import static graphql.schema.GraphQLTypeUtil.isCompositeOutputType;
@@ -37,9 +38,11 @@ public class BatchTrackingApproach {
 
         private final LockKit.ReentrantLock lock = new LockKit.ReentrantLock();
 
+        private final AtomicInteger dispatchCounter = new AtomicInteger(0);
+
 
         private final Set<ResultPath> expectedFetches = new LinkedHashSet<>();
-        private final Set<ResultPath> waitForChildren = new LinkedHashSet<>();
+        private final Set<ResultPath> waitForCompletion = new LinkedHashSet<>();
         private final Set<ResultPath> twoDataLoader = new LinkedHashSet<>();
         private final Set<ResultPath> secondDataLoaderCalled = new LinkedHashSet<>();
         private final Set<ResultPath> expectedStrategyCalls = new LinkedHashSet<>();
@@ -56,12 +59,12 @@ public class BatchTrackingApproach {
         }
 
 
-        void waitForChildren(ResultPath path) {
-            waitForChildren.add(path);
+        void waitForCompletion(ResultPath path) {
+            waitForCompletion.add(path);
         }
 
-        void removeWaitForChildren(ResultPath path) {
-            waitForChildren.remove(path);
+        void removeWaitForCompletion(ResultPath path) {
+            waitForCompletion.remove(path);
         }
 
 
@@ -96,7 +99,7 @@ public class BatchTrackingApproach {
         }
         ResultPath finalPathWithoutList = pathWithoutList;
         boolean waitingFor = callStack.lock.callLocked(() -> {
-            return callStack.waitForChildren.contains(finalPathWithoutList);
+            return callStack.waitForCompletion.contains(finalPathWithoutList);
         });
         if (!waitingFor) {
             return;
@@ -104,7 +107,7 @@ public class BatchTrackingApproach {
         if (path == pathWithoutList) {
             if (value == null) {
                 boolean dispatch = callStack.lock.callLocked(() -> {
-                    callStack.removeWaitForChildren(path);
+                    callStack.removeWaitForCompletion(path);
                     return isDispatchNeeded(callStack);
                 });
                 if (dispatch) {
@@ -113,7 +116,7 @@ public class BatchTrackingApproach {
             }
             if (isObjectType(fieldType)) {
                 callStack.lock.runLocked(() -> {
-                    callStack.removeWaitForChildren(finalPathWithoutList);
+                    callStack.removeWaitForCompletion(finalPathWithoutList);
                     callStack.addExpectedStrategyCall(path);
                 });
             }
@@ -134,7 +137,7 @@ public class BatchTrackingApproach {
         CallStack callStack = (CallStack) rawState;
         boolean dispatch = callStack.lock.callLocked(() -> {
             System.out.println("list finished: " + parameters.getPath());
-            callStack.removeWaitForChildren(parameters.getPath());
+            callStack.removeWaitForCompletion(parameters.getPath());
             return isDispatchNeeded(callStack);
         });
         if (dispatch) {
@@ -169,6 +172,8 @@ public class BatchTrackingApproach {
                     });
                     callStack.expectedStrategyCalls.remove(path);
                 });
+            } else {
+
             }
         }
 
@@ -220,7 +225,7 @@ public class BatchTrackingApproach {
         if (isTrivialDF && isCompositeOutputType(unwrapAll(parameters.getExecutionStepInfo().getType()))) {
             callStack.lock.runLocked(() -> {
                 System.out.println("trivial DF: waiting for children for: " + path);
-                callStack.waitForChildren(path);
+                callStack.waitForCompletion(path);
             });
         }
 
@@ -259,7 +264,7 @@ public class BatchTrackingApproach {
     // thread safety : called with synchronised(callStack)
     //
     private boolean isDispatchNeeded(CallStack callStack) {
-        return callStack.expectedFetches.isEmpty() && callStack.waitForChildren.isEmpty() && callStack.expectedStrategyCalls.isEmpty();
+        return callStack.expectedFetches.isEmpty() && callStack.waitForCompletion.isEmpty() && callStack.expectedStrategyCalls.isEmpty();
     }
 
     //
