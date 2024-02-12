@@ -78,9 +78,7 @@ public class IncrementalCallState {
     }
 
     public void enqueue(Collection<IncrementalCall<? extends IncrementalPayload>> calls) {
-        if (!calls.isEmpty()) {
-            calls.forEach(this::enqueue);
-        }
+        calls.forEach(this::enqueue);
     }
 
     public boolean getIncrementalCallsDetected() {
