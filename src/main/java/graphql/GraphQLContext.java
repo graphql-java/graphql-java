@@ -42,12 +42,6 @@ public class GraphQLContext {
 
     private final ConcurrentMap<Object, Object> map;
 
-    /**
-     * The key that should be associated with a boolean value which indicates whether @defer and @stream behaviour is enabled for this execution.
-     */
-    @ExperimentalApi
-    public static final String ENABLE_INCREMENTAL_SUPPORT  = "ENABLE_INCREMENTAL_SUPPORT";
-
     private GraphQLContext(ConcurrentMap<Object, Object> map) {
         this.map = map;
     }

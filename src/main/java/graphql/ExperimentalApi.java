@@ -20,4 +20,8 @@ import static java.lang.annotation.ElementType.TYPE;
 @Target(value = {CONSTRUCTOR, METHOD, TYPE, FIELD})
 @Documented
 public @interface ExperimentalApi {
+    /**
+     * The key that should be associated with a boolean value which indicates whether @defer and @stream behaviour is enabled for this execution.
+     */
+    String ENABLE_INCREMENTAL_SUPPORT  = "ENABLE_INCREMENTAL_SUPPORT";
 }

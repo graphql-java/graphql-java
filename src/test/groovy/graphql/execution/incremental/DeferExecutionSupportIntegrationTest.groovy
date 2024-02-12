@@ -3,6 +3,7 @@ package graphql.execution.incremental
 import graphql.Directives
 import graphql.ExecutionInput
 import graphql.ExecutionResult
+import graphql.ExperimentalApi
 import graphql.GraphQL
 import graphql.GraphQLContext
 import graphql.TestUtil
@@ -1349,7 +1350,7 @@ class DeferExecutionSupportIntegrationTest extends Specification {
     private ExecutionResult executeQuery(String query, boolean incrementalSupport, Map<String, Object> variables) {
         return graphQL.execute(
                 ExecutionInput.newExecutionInput()
-                        .graphQLContext([(GraphQLContext.ENABLE_INCREMENTAL_SUPPORT): incrementalSupport])
+                        .graphQLContext([(ExperimentalApi.ENABLE_INCREMENTAL_SUPPORT): incrementalSupport])
                         .query(query)
                         .variables(variables)
                         .build()

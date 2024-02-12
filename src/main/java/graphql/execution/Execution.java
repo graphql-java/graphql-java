@@ -4,6 +4,7 @@ package graphql.execution;
 import graphql.ExecutionInput;
 import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
+import graphql.ExperimentalApi;
 import graphql.GraphQLContext;
 import graphql.GraphQLError;
 import graphql.Internal;
@@ -142,7 +143,7 @@ public class Execution {
                 collectorParameters,
                 operationDefinition.getSelectionSet(),
                 Optional.ofNullable(executionContext.getGraphQLContext())
-                        .map(graphqlContext -> (Boolean) graphqlContext.get(GraphQLContext.ENABLE_INCREMENTAL_SUPPORT))
+                        .map(graphqlContext -> (Boolean) graphqlContext.get(ExperimentalApi.ENABLE_INCREMENTAL_SUPPORT))
                         .orElse(false)
         );
 

@@ -1,6 +1,7 @@
 package graphql.execution.instrumentation.dataloader
 
 import graphql.ExecutionInput
+import graphql.ExperimentalApi
 import graphql.GraphQL
 import graphql.GraphQLContext
 import graphql.execution.instrumentation.Instrumentation
@@ -9,6 +10,7 @@ import org.dataloader.DataLoaderRegistry
 import spock.lang.Ignore
 import spock.lang.Specification
 
+import static graphql.ExperimentalApi.ENABLE_INCREMENTAL_SUPPORT
 import static graphql.execution.instrumentation.dataloader.DataLoaderPerformanceData.assertIncrementalExpensiveData
 import static graphql.execution.instrumentation.dataloader.DataLoaderPerformanceData.expectedExpensiveData
 import static graphql.execution.instrumentation.dataloader.DataLoaderPerformanceData.expectedInitialDeferredData
@@ -39,7 +41,7 @@ class DataLoaderPerformanceTest extends Specification {
         ExecutionInput executionInput = ExecutionInput.newExecutionInput()
                 .query(query)
                 .dataLoaderRegistry(dataLoaderRegistry)
-                .graphQLContext([(GraphQLContext.ENABLE_INCREMENTAL_SUPPORT): incrementalSupport])
+                .graphQLContext([(ENABLE_INCREMENTAL_SUPPORT): incrementalSupport])
                 .build()
         def result = graphQL.execute(executionInput)
 
@@ -61,7 +63,7 @@ class DataLoaderPerformanceTest extends Specification {
         ExecutionInput executionInput = ExecutionInput.newExecutionInput()
                 .query(expensiveQuery)
                 .dataLoaderRegistry(dataLoaderRegistry)
-                .graphQLContext([(GraphQLContext.ENABLE_INCREMENTAL_SUPPORT): incrementalSupport])
+                .graphQLContext([(ENABLE_INCREMENTAL_SUPPORT): incrementalSupport])
                 .build()
         def result = graphQL.execute(executionInput)
 
@@ -84,7 +86,7 @@ class DataLoaderPerformanceTest extends Specification {
         ExecutionInput executionInput = ExecutionInput.newExecutionInput()
                 .query(query)
                 .dataLoaderRegistry(dataLoaderRegistry)
-                .graphQLContext([(GraphQLContext.ENABLE_INCREMENTAL_SUPPORT): incrementalSupport])
+                .graphQLContext([(ENABLE_INCREMENTAL_SUPPORT): incrementalSupport])
                 .build()
 
         def result = graphQL.execute(executionInput)
@@ -109,7 +111,7 @@ class DataLoaderPerformanceTest extends Specification {
         ExecutionInput executionInput = ExecutionInput.newExecutionInput()
                 .query(expensiveQuery)
                 .dataLoaderRegistry(dataLoaderRegistry)
-                .graphQLContext([(GraphQLContext.ENABLE_INCREMENTAL_SUPPORT): incrementalSupport])
+                .graphQLContext([(ENABLE_INCREMENTAL_SUPPORT): incrementalSupport])
                 .build()
 
         def result = graphQL.execute(executionInput)
@@ -129,7 +131,7 @@ class DataLoaderPerformanceTest extends Specification {
         ExecutionInput executionInput = ExecutionInput.newExecutionInput()
                 .query(deferredQuery)
                 .dataLoaderRegistry(dataLoaderRegistry)
-                .graphQLContext([(GraphQLContext.ENABLE_INCREMENTAL_SUPPORT): true])
+                .graphQLContext([(ENABLE_INCREMENTAL_SUPPORT): true])
                 .build()
 
         graphQL.execute(executionInput)
@@ -147,7 +149,7 @@ class DataLoaderPerformanceTest extends Specification {
         ExecutionInput executionInput = ExecutionInput.newExecutionInput()
                 .query(deferredQuery)
                 .dataLoaderRegistry(dataLoaderRegistry)
-                .graphQLContext([(GraphQLContext.ENABLE_INCREMENTAL_SUPPORT): true])
+                .graphQLContext([(ENABLE_INCREMENTAL_SUPPORT): true])
                 .build()
 
         IncrementalExecutionResult result = graphQL.execute(executionInput)
@@ -174,7 +176,7 @@ class DataLoaderPerformanceTest extends Specification {
         ExecutionInput executionInput = ExecutionInput.newExecutionInput()
                 .query(expensiveDeferredQuery)
                 .dataLoaderRegistry(dataLoaderRegistry)
-                .graphQLContext([(GraphQLContext.ENABLE_INCREMENTAL_SUPPORT): true])
+                .graphQLContext([(ENABLE_INCREMENTAL_SUPPORT): true])
                 .build()
 
         IncrementalExecutionResult result = graphQL.execute(executionInput)

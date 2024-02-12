@@ -4,7 +4,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
 import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
-import graphql.GraphQLContext;
+import graphql.ExperimentalApi;
 import graphql.GraphQLError;
 import graphql.Internal;
 import graphql.PublicSpi;
@@ -256,7 +256,7 @@ public abstract class ExecutionStrategy {
         MergedSelectionSet fields = parameters.getFields();
 
         return Optional.ofNullable(executionContext.getGraphQLContext())
-                .map(graphqlContext -> (Boolean) graphqlContext.get(GraphQLContext.ENABLE_INCREMENTAL_SUPPORT))
+                .map(graphqlContext -> (Boolean) graphqlContext.get(ExperimentalApi.ENABLE_INCREMENTAL_SUPPORT))
                 .orElse(false) ?
                 new DeferredExecutionSupport.DeferredExecutionSupportImpl(
                         fields,
@@ -839,7 +839,7 @@ public abstract class ExecutionStrategy {
                 collectorParameters,
                 parameters.getField(),
                 Optional.ofNullable(executionContext.getGraphQLContext())
-                        .map(graphqlContext -> (Boolean) graphqlContext.get(GraphQLContext.ENABLE_INCREMENTAL_SUPPORT))
+                        .map(graphqlContext -> (Boolean) graphqlContext.get(ExperimentalApi.ENABLE_INCREMENTAL_SUPPORT))
                         .orElse(false)
         );
 

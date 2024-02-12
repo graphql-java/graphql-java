@@ -2,6 +2,7 @@ package graphql.execution
 
 import graphql.ErrorType
 import graphql.ExecutionResult
+import graphql.ExperimentalApi
 import graphql.GraphQLContext
 import graphql.execution.instrumentation.ExecutionStrategyInstrumentationContext
 import graphql.execution.instrumentation.InstrumentationState
@@ -22,6 +23,7 @@ import java.util.concurrent.CompletionException
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.locks.ReentrantLock
 
+import static graphql.ExperimentalApi.ENABLE_INCREMENTAL_SUPPORT
 import static graphql.Scalars.GraphQLString
 import static graphql.TestUtil.mergedField
 import static graphql.TestUtil.mergedSelectionSet
@@ -69,7 +71,7 @@ abstract class AsyncExecutionStrategyTest extends Specification {
     }
 
     def setup() {
-        graphqlContextMock.get(GraphQLContext.ENABLE_INCREMENTAL_SUPPORT) >> incrementalSupport
+        graphqlContextMock.get(ENABLE_INCREMENTAL_SUPPORT) >> incrementalSupport
     }
 
     def "execution is serial if the dataFetchers are blocking"() {
