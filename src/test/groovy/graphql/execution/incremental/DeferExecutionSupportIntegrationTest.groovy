@@ -344,6 +344,44 @@ class DeferExecutionSupportIntegrationTest extends Specification {
         ]
     }
 
+    def "defer with null label should behave as if no label was provided"() {
+        def query = '''
+            query {
+                post {
+                    id
+                    ... @defer(label: null) {
+                        summary
+                    }
+                }
+            }
+        '''
+
+        when:
+        IncrementalExecutionResult initialResult = executeQuery(query)
+
+        then:
+        initialResult.toSpecification() == [
+                data   : [post: [id: "1001"]],
+                hasNext: true
+        ]
+
+        when:
+        def incrementalResults = getIncrementalResults(initialResult)
+
+        then:
+        incrementalResults == [
+                [
+                        hasNext    : false,
+                        incremental: [
+                                [
+                                        path : ["post"],
+                                        data : [summary: "A summary"]
+                                ]
+                        ]
+                ]
+        ]
+    }
+
     def "deferred field results in 'null'"() {
         def query = '''
             query {
