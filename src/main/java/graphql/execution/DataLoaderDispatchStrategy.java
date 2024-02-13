@@ -2,16 +2,14 @@ package graphql.execution;
 
 import graphql.Internal;
 import graphql.schema.DataFetcher;
-import graphql.schema.DataFetchingEnvironment;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.Supplier;
 
 @Internal
 public interface DataLoaderDispatchStrategy {
 
-    public static final DataLoaderDispatchStrategy NO_OP = new DataLoaderDispatchStrategy() {
+    DataLoaderDispatchStrategy NO_OP = new DataLoaderDispatchStrategy() {
     };
 
 
@@ -19,11 +17,11 @@ public interface DataLoaderDispatchStrategy {
 
     }
 
-    default void executionStrategy_onFieldValuesInfo(List<FieldValueInfo> fieldValueInfoList) {
+    default void executionStrategy_onFieldValuesInfo(List<FieldValueInfo> fieldValueInfoList, ExecutionStrategyParameters parameters) {
 
     }
 
-    default void executionStrategy_onFieldValuesException(Throwable t) {
+    default void executionStrategy_onFieldValuesException(Throwable t, ExecutionStrategyParameters parameters) {
 
     }
 
@@ -32,16 +30,15 @@ public interface DataLoaderDispatchStrategy {
 
     }
 
-    default void executeObject_onFieldValuesInfo(List<FieldValueInfo> fieldValueInfoList) {
+    default void executeObject_onFieldValuesInfo(List<FieldValueInfo> fieldValueInfoList, ExecutionStrategyParameters parameters) {
 
     }
 
-    default void executeObject_onFieldValuesException(Throwable t) {
+    default void executeObject_onFieldValuesException(Throwable t, ExecutionStrategyParameters parameters) {
 
     }
 
     default void fieldFetched(ExecutionContext executionContext,
-                              Supplier<DataFetchingEnvironment> dataFetchingEnvironment,
                               ExecutionStrategyParameters executionStrategyParameters,
                               DataFetcher<?> dataFetcher,
                               CompletableFuture<Object> fetchedValue) {
@@ -49,4 +46,7 @@ public interface DataLoaderDispatchStrategy {
     }
 
 
+    default DataFetcher<?> modifyDataFetcher(DataFetcher<?> dataFetcher) {
+        return dataFetcher;
+    }
 }

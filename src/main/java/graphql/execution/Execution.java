@@ -151,6 +151,7 @@ public class Execution {
         CompletableFuture<ExecutionResult> result;
         try {
             ExecutionStrategy executionStrategy = executionContext.getStrategy(operation);
+            executionStrategy.initBeforeExecution(executionContext);
             result = executionStrategy.execute(executionContext, parameters);
         } catch (NonNullableFieldWasNullException e) {
             // this means it was non-null types all the way from an offending non-null type

@@ -36,7 +36,6 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
     @Override
     @SuppressWarnings("FutureReturnValueIgnored")
     public CompletableFuture<ExecutionResult> execute(ExecutionContext executionContext, ExecutionStrategyParameters parameters) throws NonNullableFieldWasNullException {
-
         dataLoaderDispatcherStrategy.executionStrategy(executionContext, parameters);
 
         Instrumentation instrumentation = executionContext.getInstrumentation();
@@ -60,14 +59,14 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
             for (FieldValueInfo completeValueInfo : completeValueInfos) {
                 fieldValuesFutures.add(completeValueInfo.getFieldValueFuture());
             }
-            dataLoaderDispatcherStrategy.executionStrategy_onFieldValuesInfo(completeValueInfos);
+            dataLoaderDispatcherStrategy.executionStrategy_onFieldValuesInfo(completeValueInfos, parameters);
             executionStrategyCtx.onFieldValuesInfo(completeValueInfos);
             fieldValuesFutures.await().whenComplete(handleResultsConsumer);
         }).exceptionally((ex) -> {
             // if there are any issues with combining/handling the field results,
             // complete the future at all costs and bubble up any thrown exception so
             // the execution does not hang.
-            dataLoaderDispatcherStrategy.executeObject_onFieldValuesException(ex);
+            dataLoaderDispatcherStrategy.executeObject_onFieldValuesException(ex, parameters);
             executionStrategyCtx.onFieldValuesException();
             overallResult.completeExceptionally(ex);
             return null;

@@ -17,6 +17,9 @@ import graphql.execution.directives.QueryDirectivesImpl;
 import graphql.execution.instrumentation.ExecuteObjectInstrumentationContext;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationContext;
+import graphql.execution.instrumentation.dataloader.DataLoaderDispatcherInstrumentationState;
+import graphql.execution.instrumentation.dataloader.FallbackDataLoaderDispatchStrategy;
+import graphql.execution.instrumentation.dataloader.PerLevelDataLoaderDispatchStrategy;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldCompleteParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters;
@@ -133,7 +136,7 @@ public abstract class ExecutionStrategy {
     protected final DataFetcherExceptionHandler dataFetcherExceptionHandler;
     private final ResolveType resolvedType = new ResolveType();
 
-    protected final DataLoaderDispatchStrategy dataLoaderDispatcherStrategy = DataLoaderDispatchStrategy.NO_OP;
+    protected DataLoaderDispatchStrategy dataLoaderDispatcherStrategy;
 
     /**
      * The default execution strategy constructor uses the {@link SimpleDataFetcherExceptionHandler}
@@ -142,6 +145,7 @@ public abstract class ExecutionStrategy {
     protected ExecutionStrategy() {
         dataFetcherExceptionHandler = new SimpleDataFetcherExceptionHandler();
     }
+
 
     /**
      * The consumers of the execution strategy can pass in a {@link DataFetcherExceptionHandler} to better
@@ -152,6 +156,23 @@ public abstract class ExecutionStrategy {
     protected ExecutionStrategy(DataFetcherExceptionHandler dataFetcherExceptionHandler) {
         this.dataFetcherExceptionHandler = dataFetcherExceptionHandler;
     }
+
+    public void initBeforeExecution(ExecutionContext executionContext) {
+        initDataLoaderStrategy(executionContext);
+    }
+
+    private void initDataLoaderStrategy(ExecutionContext executionContext) {
+        if (executionContext.getDataLoaderRegistry() == DataLoaderDispatcherInstrumentationState.EMPTY_DATALOADER_REGISTRY) {
+            this.dataLoaderDispatcherStrategy = DataLoaderDispatchStrategy.NO_OP;
+            return;
+        }
+        if (this instanceof AsyncExecutionStrategy) {
+            this.dataLoaderDispatcherStrategy = new PerLevelDataLoaderDispatchStrategy(executionContext);
+        } else {
+            this.dataLoaderDispatcherStrategy = new FallbackDataLoaderDispatchStrategy(executionContext);
+        }
+    }
+
 
     @Internal
     public static String mkNameForPath(Field currentField) {
@@ -188,6 +209,7 @@ public abstract class ExecutionStrategy {
      * @throws NonNullableFieldWasNullException in the future if a non-null field resolves to a null value
      */
     protected CompletableFuture<Map<String, Object>> executeObject(ExecutionContext executionContext, ExecutionStrategyParameters parameters) throws NonNullableFieldWasNullException {
+        dataLoaderDispatcherStrategy.executeObject(executionContext, parameters);
         Instrumentation instrumentation = executionContext.getInstrumentation();
         InstrumentationExecutionStrategyParameters instrumentationParameters = new InstrumentationExecutionStrategyParameters(executionContext, parameters);
 
@@ -211,12 +233,14 @@ public abstract class ExecutionStrategy {
             for (FieldValueInfo completeValueInfo : completeValueInfos) {
                 resultFutures.add(completeValueInfo.getFieldValueFuture());
             }
+            dataLoaderDispatcherStrategy.executeObject_onFieldValuesInfo(completeValueInfos, parameters);
             resolveObjectCtx.onFieldValuesInfo(completeValueInfos);
             resultFutures.await().whenComplete(handleResultsConsumer);
         }).exceptionally((ex) -> {
             // if there are any issues with combining/handling the field results,
             // complete the future at all costs and bubble up any thrown exception so
             // the execution does not hang.
+            dataLoaderDispatcherStrategy.executeObject_onFieldValuesException(ex, parameters);
             resolveObjectCtx.onFieldValuesException();
             overallResult.completeExceptionally(ex);
             return null;
@@ -371,9 +395,10 @@ public abstract class ExecutionStrategy {
             executionContext.getInstrumentationState())
         );
 
+        dataFetcher = dataLoaderDispatcherStrategy.modifyDataFetcher(dataFetcher);
         dataFetcher = instrumentation.instrumentDataFetcher(dataFetcher, instrumentationFieldFetchParams, executionContext.getInstrumentationState());
         CompletableFuture<Object> fetchedValue = invokeDataFetcher(executionContext, parameters, fieldDef, dataFetchingEnvironment, dataFetcher);
-
+        dataLoaderDispatcherStrategy.fieldFetched(executionContext, parameters, dataFetcher, fetchedValue);
         fetchCtx.onDispatched(fetchedValue);
         return fetchedValue
             .handle((result, exception) -> {
