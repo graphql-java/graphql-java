@@ -17,8 +17,6 @@ import graphql.execution.directives.QueryDirectivesImpl;
 import graphql.execution.instrumentation.ExecuteObjectInstrumentationContext;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationContext;
-import graphql.execution.instrumentation.dataloader.FallbackDataLoaderDispatchStrategy;
-import graphql.execution.instrumentation.dataloader.PerLevelDataLoaderDispatchStrategy;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldCompleteParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters;
@@ -67,7 +65,6 @@ import static graphql.execution.FieldValueInfo.CompleteValueType.NULL;
 import static graphql.execution.FieldValueInfo.CompleteValueType.OBJECT;
 import static graphql.execution.FieldValueInfo.CompleteValueType.SCALAR;
 import static graphql.execution.instrumentation.SimpleInstrumentationContext.nonNullCtx;
-import static graphql.execution.instrumentation.dataloader.EmptyDataLoaderRegistryInstance.EMPTY_DATALOADER_REGISTRY;
 import static graphql.schema.DataFetchingEnvironmentImpl.newDataFetchingEnvironment;
 import static graphql.schema.GraphQLTypeUtil.isEnum;
 import static graphql.schema.GraphQLTypeUtil.isList;
@@ -157,21 +154,12 @@ public abstract class ExecutionStrategy {
         this.dataFetcherExceptionHandler = dataFetcherExceptionHandler;
     }
 
-    public void initBeforeExecution(ExecutionContext executionContext) {
-        initDataLoaderStrategy(executionContext);
+
+    @Internal
+    void setDataLoaderDispatcherStrategy(DataLoaderDispatchStrategy dataLoaderDispatcherStrategy) {
+        this.dataLoaderDispatcherStrategy = dataLoaderDispatcherStrategy;
     }
 
-    private void initDataLoaderStrategy(ExecutionContext executionContext) {
-        if (executionContext.getDataLoaderRegistry() == EMPTY_DATALOADER_REGISTRY) {
-            this.dataLoaderDispatcherStrategy = DataLoaderDispatchStrategy.NO_OP;
-            return;
-        }
-        if (this instanceof AsyncExecutionStrategy) {
-            this.dataLoaderDispatcherStrategy = new PerLevelDataLoaderDispatchStrategy(executionContext);
-        } else {
-            this.dataLoaderDispatcherStrategy = new FallbackDataLoaderDispatchStrategy(executionContext);
-        }
-    }
 
 
     @Internal

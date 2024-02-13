@@ -353,7 +353,6 @@ class DataLoaderHangingTest extends Specification {
         GraphQL graphQL = GraphQL
                 .newGraphQL(graphQLSchema)
                 .queryExecutionStrategy(new AsyncExecutionStrategy(customExceptionHandlerThatThrows))
-//                .instrumentation(new DataLoaderDispatcherInstrumentation())
                 .build()
 
         when:

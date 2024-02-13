@@ -10,6 +10,8 @@ import graphql.Internal;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationState;
+import graphql.execution.instrumentation.dataloader.FallbackDataLoaderDispatchStrategy;
+import graphql.execution.instrumentation.dataloader.PerLevelDataLoaderDispatchStrategy;
 import graphql.execution.instrumentation.parameters.InstrumentationExecuteOperationParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters;
 import graphql.extensions.ExtensionsBuilder;
@@ -31,6 +33,7 @@ import static graphql.execution.ExecutionContextBuilder.newExecutionContextBuild
 import static graphql.execution.ExecutionStepInfo.newExecutionStepInfo;
 import static graphql.execution.ExecutionStrategyParameters.newParameters;
 import static graphql.execution.instrumentation.SimpleInstrumentationContext.nonNullCtx;
+import static graphql.execution.instrumentation.dataloader.EmptyDataLoaderRegistryInstance.EMPTY_DATALOADER_REGISTRY;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 
 @Internal
@@ -41,13 +44,20 @@ public class Execution {
     private final ExecutionStrategy subscriptionStrategy;
     private final Instrumentation instrumentation;
     private final ValueUnboxer valueUnboxer;
+    private final boolean doNotAutomaticallyDispatchDataLoader;
 
-    public Execution(ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy, ExecutionStrategy subscriptionStrategy, Instrumentation instrumentation, ValueUnboxer valueUnboxer) {
+    public Execution(ExecutionStrategy queryStrategy,
+                     ExecutionStrategy mutationStrategy,
+                     ExecutionStrategy subscriptionStrategy,
+                     Instrumentation instrumentation,
+                     ValueUnboxer valueUnboxer,
+                     boolean doNotAutomaticallyDispatchDataLoader) {
         this.queryStrategy = queryStrategy != null ? queryStrategy : new AsyncExecutionStrategy();
         this.mutationStrategy = mutationStrategy != null ? mutationStrategy : new AsyncSerialExecutionStrategy();
         this.subscriptionStrategy = subscriptionStrategy != null ? subscriptionStrategy : new AsyncExecutionStrategy();
         this.instrumentation = instrumentation;
         this.valueUnboxer = valueUnboxer;
+        this.doNotAutomaticallyDispatchDataLoader = doNotAutomaticallyDispatchDataLoader;
     }
 
     public CompletableFuture<ExecutionResult> execute(Document document, GraphQLSchema graphQLSchema, ExecutionId executionId, ExecutionInput executionInput, InstrumentationState instrumentationState) {
@@ -70,30 +80,30 @@ public class Execution {
         }
 
         ExecutionContext executionContext = newExecutionContextBuilder()
-                .instrumentation(instrumentation)
-                .instrumentationState(instrumentationState)
-                .executionId(executionId)
-                .graphQLSchema(graphQLSchema)
-                .queryStrategy(queryStrategy)
-                .mutationStrategy(mutationStrategy)
-                .subscriptionStrategy(subscriptionStrategy)
-                .context(executionInput.getContext())
-                .graphQLContext(executionInput.getGraphQLContext())
-                .localContext(executionInput.getLocalContext())
-                .root(executionInput.getRoot())
-                .fragmentsByName(fragmentsByName)
-                .coercedVariables(coercedVariables)
-                .document(document)
-                .operationDefinition(operationDefinition)
-                .dataLoaderRegistry(executionInput.getDataLoaderRegistry())
-                .locale(executionInput.getLocale())
-                .valueUnboxer(valueUnboxer)
-                .executionInput(executionInput)
-                .build();
+            .instrumentation(instrumentation)
+            .instrumentationState(instrumentationState)
+            .executionId(executionId)
+            .graphQLSchema(graphQLSchema)
+            .queryStrategy(queryStrategy)
+            .mutationStrategy(mutationStrategy)
+            .subscriptionStrategy(subscriptionStrategy)
+            .context(executionInput.getContext())
+            .graphQLContext(executionInput.getGraphQLContext())
+            .localContext(executionInput.getLocalContext())
+            .root(executionInput.getRoot())
+            .fragmentsByName(fragmentsByName)
+            .coercedVariables(coercedVariables)
+            .document(document)
+            .operationDefinition(operationDefinition)
+            .dataLoaderRegistry(executionInput.getDataLoaderRegistry())
+            .locale(executionInput.getLocale())
+            .valueUnboxer(valueUnboxer)
+            .executionInput(executionInput)
+            .build();
 
 
         InstrumentationExecutionParameters parameters = new InstrumentationExecutionParameters(
-                executionInput, graphQLSchema, instrumentationState
+            executionInput, graphQLSchema, instrumentationState
         );
         executionContext = instrumentation.instrumentExecutionContext(executionContext, parameters, instrumentationState);
         return executeOperation(executionContext, executionInput.getRoot(), executionContext.getOperationDefinition());
@@ -126,12 +136,12 @@ public class Execution {
         }
 
         FieldCollectorParameters collectorParameters = FieldCollectorParameters.newParameters()
-                .schema(executionContext.getGraphQLSchema())
-                .objectType(operationRootType)
-                .fragments(executionContext.getFragmentsByName())
-                .variables(executionContext.getCoercedVariables().toMap())
-                .graphQLContext(graphQLContext)
-                .build();
+            .schema(executionContext.getGraphQLSchema())
+            .objectType(operationRootType)
+            .fragments(executionContext.getFragmentsByName())
+            .variables(executionContext.getCoercedVariables().toMap())
+            .graphQLContext(graphQLContext)
+            .build();
 
         MergedSelectionSet fields = fieldCollector.collectFields(collectorParameters, operationDefinition.getSelectionSet());
 
@@ -140,20 +150,23 @@ public class Execution {
         NonNullableFieldValidator nonNullableFieldValidator = new NonNullableFieldValidator(executionContext, executionStepInfo);
 
         ExecutionStrategyParameters parameters = newParameters()
-                .executionStepInfo(executionStepInfo)
-                .source(root)
-                .localContext(executionContext.getLocalContext())
-                .fields(fields)
-                .nonNullFieldValidator(nonNullableFieldValidator)
-                .path(path)
-                .build();
+            .executionStepInfo(executionStepInfo)
+            .source(root)
+            .localContext(executionContext.getLocalContext())
+            .fields(fields)
+            .nonNullFieldValidator(nonNullableFieldValidator)
+            .path(path)
+            .build();
 
-        executionContext.getQueryStrategy().initBeforeExecution(executionContext);
-        executionContext.getMutationStrategy().initBeforeExecution(executionContext);
-        executionContext.getSubscriptionStrategy().initBeforeExecution(executionContext);
+
         CompletableFuture<ExecutionResult> result;
         try {
             ExecutionStrategy executionStrategy = executionContext.getStrategy(operation);
+            DataLoaderDispatchStrategy dataLoaderDispatchStrategy = createDataLoaderDispatchStrategy(executionContext, executionStrategy);
+            executionContext.getQueryStrategy().setDataLoaderDispatcherStrategy(dataLoaderDispatchStrategy);
+            executionContext.getMutationStrategy().setDataLoaderDispatcherStrategy(dataLoaderDispatchStrategy);
+            executionContext.getSubscriptionStrategy().setDataLoaderDispatcherStrategy(dataLoaderDispatchStrategy);
+
             result = executionStrategy.execute(executionContext, parameters);
         } catch (NonNullableFieldWasNullException e) {
             // this means it was non-null types all the way from an offending non-null type
@@ -175,6 +188,18 @@ public class Execution {
         result = result.whenComplete(executeOperationCtx::onCompleted);
         return result;
     }
+
+    private DataLoaderDispatchStrategy createDataLoaderDispatchStrategy(ExecutionContext executionContext, ExecutionStrategy executionStrategy) {
+        if (executionContext.getDataLoaderRegistry() == EMPTY_DATALOADER_REGISTRY || doNotAutomaticallyDispatchDataLoader) {
+            return DataLoaderDispatchStrategy.NO_OP;
+        }
+        if (executionStrategy instanceof AsyncExecutionStrategy) {
+            return new PerLevelDataLoaderDispatchStrategy(executionContext);
+        } else {
+            return new FallbackDataLoaderDispatchStrategy(executionContext);
+        }
+    }
+
 
     private void addExtensionsBuilderNotPresent(GraphQLContext graphQLContext) {
         Object builder = graphQLContext.get(ExtensionsBuilder.class);

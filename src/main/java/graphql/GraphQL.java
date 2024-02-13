@@ -93,6 +93,7 @@ public class GraphQL {
     private final Instrumentation instrumentation;
     private final PreparsedDocumentProvider preparsedDocumentProvider;
     private final ValueUnboxer valueUnboxer;
+    private final boolean doNotAutomaticallyDispatchDataLoader;
 
 
     private GraphQL(Builder builder) {
@@ -104,6 +105,7 @@ public class GraphQL {
         this.instrumentation = assertNotNull(builder.instrumentation, () -> "instrumentation must not be null");
         this.preparsedDocumentProvider = assertNotNull(builder.preparsedDocumentProvider, () -> "preparsedDocumentProvider must be non null");
         this.valueUnboxer = assertNotNull(builder.valueUnboxer, () -> "valueUnboxer must not be null");
+        this.doNotAutomaticallyDispatchDataLoader = builder.doNotAutomaticallyDispatchDataLoader;
     }
 
     /**
@@ -146,6 +148,10 @@ public class GraphQL {
      */
     public Instrumentation getInstrumentation() {
         return instrumentation;
+    }
+
+    public boolean isDoNotAutomaticallyDispatchDataLoader() {
+        return doNotAutomaticallyDispatchDataLoader;
     }
 
     /**
@@ -537,9 +543,13 @@ public class GraphQL {
         return validationErrors;
     }
 
-    private CompletableFuture<ExecutionResult> execute(ExecutionInput executionInput, Document document, GraphQLSchema graphQLSchema, InstrumentationState instrumentationState) {
+    private CompletableFuture<ExecutionResult> execute(ExecutionInput executionInput,
+                                                       Document document,
+                                                       GraphQLSchema graphQLSchema,
+                                                       InstrumentationState instrumentationState
+    ) {
 
-        Execution execution = new Execution(queryStrategy, mutationStrategy, subscriptionStrategy, instrumentation, valueUnboxer);
+        Execution execution = new Execution(queryStrategy, mutationStrategy, subscriptionStrategy, instrumentation, valueUnboxer, doNotAutomaticallyDispatchDataLoader);
         ExecutionId executionId = executionInput.getExecutionId();
 
         return execution.execute(document, graphQLSchema, executionId, executionInput, instrumentationState);

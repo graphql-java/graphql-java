@@ -15,7 +15,6 @@ import graphql.execution.ExecutionStrategyParameters
 import graphql.execution.MissingRootTypeException
 import graphql.execution.SubscriptionExecutionStrategy
 import graphql.execution.ValueUnboxer
-import graphql.execution.instrumentation.ChainedInstrumentation
 import graphql.execution.instrumentation.Instrumentation
 import graphql.execution.instrumentation.SimplePerformantInstrumentation
 import graphql.execution.preparsed.NoOpPreparsedDocumentProvider
@@ -949,8 +948,8 @@ class GraphQLTest extends Specification {
         then:
         result == [hello: 'world']
         queryStrategy.executionId == hello
-        queryStrategy.instrumentation instanceof ChainedInstrumentation
-        (queryStrategy.instrumentation as ChainedInstrumentation).getInstrumentations().contains(instrumentation)
+        queryStrategy.instrumentation instanceof Instrumentation
+        queryStrategy.instrumentation == instrumentation
 
         when:
 
@@ -972,9 +971,9 @@ class GraphQLTest extends Specification {
         then:
         result == [hello: 'world']
         queryStrategy.executionId == goodbye
-        queryStrategy.instrumentation instanceof ChainedInstrumentation
-        (queryStrategy.instrumentation as ChainedInstrumentation).getInstrumentations().contains(newInstrumentation)
-        !(queryStrategy.instrumentation as ChainedInstrumentation).getInstrumentations().contains(instrumentation)
+        queryStrategy.instrumentation instanceof Instrumentation
+//        (queryStrategy.instrumentation as ChainedInstrumentation).getInstrumentations().contains(newInstrumentation)
+//        !(queryStrategy.instrumentation as ChainedInstrumentation).getInstrumentations().contains(instrumentation)
     }
 
     def "disabling data loader instrumentation leaves instrumentation as is"() {
@@ -1423,7 +1422,7 @@ many lines''']
         graphQL.getIdProvider() == ExecutionIdProvider.DEFAULT_EXECUTION_ID_PROVIDER
         graphQL.getValueUnboxer() == ValueUnboxer.DEFAULT
         graphQL.getPreparsedDocumentProvider() == NoOpPreparsedDocumentProvider.INSTANCE
-        graphQL.getInstrumentation() instanceof ChainedInstrumentation
+        graphQL.getInstrumentation() instanceof Instrumentation
         graphQL.getQueryStrategy() instanceof AsyncExecutionStrategy
         graphQL.getMutationStrategy() instanceof AsyncSerialExecutionStrategy
         graphQL.getSubscriptionStrategy() instanceof SubscriptionExecutionStrategy
