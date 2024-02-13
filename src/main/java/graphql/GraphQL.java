@@ -12,7 +12,6 @@ import graphql.execution.ExecutionStrategy;
 import graphql.execution.SimpleDataFetcherExceptionHandler;
 import graphql.execution.SubscriptionExecutionStrategy;
 import graphql.execution.ValueUnboxer;
-import graphql.execution.instrumentation.ChainedInstrumentation;
 import graphql.execution.instrumentation.DocumentAndVariables;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationContext;
@@ -29,7 +28,6 @@ import graphql.language.Document;
 import graphql.schema.GraphQLSchema;
 import graphql.validation.ValidationError;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
@@ -207,6 +205,7 @@ public class GraphQL {
         private Instrumentation instrumentation = null; // deliberate default here
         private PreparsedDocumentProvider preparsedDocumentProvider = NoOpPreparsedDocumentProvider.INSTANCE;
         private boolean doNotAddDefaultInstrumentations = false;
+        private boolean doNotAutomaticallyDispatchDataLoader = false;
         private ValueUnboxer valueUnboxer = ValueUnboxer.DEFAULT;
 
 
@@ -262,19 +261,28 @@ public class GraphQL {
         }
 
         /**
-         * For performance reasons you can opt into situation where the default instrumentations (such
-         * as {@link graphql.execution.instrumentation.dataloader.DataLoaderDispatcherInstrumentation} will not be
-         * automatically added into the graphql instance.
+         * As of GraphQL Java 22 there are no default instrumentations. Before that a DataLoaderDispatcherInstrumentation
+         * was added by default.
          * <p>
-         * For most situations this is not needed unless you are really pushing the boundaries of performance
-         * <p>
-         * By default a certain graphql instrumentations will be added to the mix to more easily enable certain functionality.  This
-         * allows you to stop this behavior
+         * For GraphQL Java 22 calling this method is equal to calling {@link #doNotAutomaticallyDispatchDataLoader()}
          *
          * @return this builder
          */
         public Builder doNotAddDefaultInstrumentations() {
             this.doNotAddDefaultInstrumentations = true;
+            // legacy reasons: calling this method is equal to calling doNotAutomaticallyDispatchDataLoader
+            this.doNotAutomaticallyDispatchDataLoader = true;
+            return this;
+        }
+
+        /**
+         * Deactivates the automatic dispatching of DataLoaders.
+         * If deactivated the user is responsible for dispatching the DataLoaders manually.
+         *
+         * @return this builder
+         */
+        public Builder doNotAutomaticallyDispatchDataLoader() {
+            this.doNotAutomaticallyDispatchDataLoader = true;
             return this;
         }
 
@@ -541,31 +549,12 @@ public class GraphQL {
         if (doNotAddDefaultInstrumentations) {
             return instrumentation == null ? SimplePerformantInstrumentation.INSTANCE : instrumentation;
         }
-        // if (instrumentation instanceof DataLoaderDispatcherInstrumentation) {
-        //     return instrumentation;
-        // }
         if (instrumentation instanceof NoContextChainedInstrumentation) {
             return instrumentation;
         }
         if (instrumentation == null) {
-            // return new DataLoaderDispatcherInstrumentation();
             return SimplePerformantInstrumentation.INSTANCE;
         }
-
-        //
-        // if we don't have a DataLoaderDispatcherInstrumentation in play, we add one.  We want DataLoader to be 1st class in graphql without requiring
-        // people to remember to wire it in.  Later we may decide to have more default instrumentations but for now it's just the one
-        //
-        List<Instrumentation> instrumentationList = new ArrayList<>();
-        if (instrumentation instanceof ChainedInstrumentation) {
-            instrumentationList.addAll(((ChainedInstrumentation) instrumentation).getInstrumentations());
-        } else {
-            instrumentationList.add(instrumentation);
-        }
-        // boolean containsDLInstrumentation = instrumentationList.stream().anyMatch(instr -> instr instanceof DataLoaderDispatcherInstrumentation);
-        // if (!containsDLInstrumentation) {
-        //     instrumentationList.add(new DataLoaderDispatcherInstrumentation());
-        // }
-        return new ChainedInstrumentation(instrumentationList);
+        return instrumentation;
     }
 }

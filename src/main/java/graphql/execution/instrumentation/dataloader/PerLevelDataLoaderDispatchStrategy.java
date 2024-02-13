@@ -77,6 +77,7 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
                 '}';
         }
 
+
         public boolean dispatchIfNotDispatchedBefore(int level) {
             if (dispatchedLevels.contains(level)) {
                 Assert.assertShouldNeverHappen("level " + level + " already dispatched");
@@ -102,6 +103,12 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
     public void executionStrategy_onFieldValuesInfo(List<FieldValueInfo> fieldValueInfoList, ExecutionStrategyParameters parameters) {
         int curLevel = parameters.getPath().getLevel() + 1;
         onFieldValuesInfoDispatchIfNeeded(fieldValueInfoList, curLevel);
+    }
+
+    @Override
+    public void executeObject(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
+        int curLevel = parameters.getExecutionStepInfo().getPath().getLevel() + 1;
+        increaseCallCounts(curLevel, parameters);
     }
 
     @Override
@@ -144,7 +151,7 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
             dispatchNeeded = handleOnFieldValuesInfo(fieldValueInfoList, curLevel);
         }
         if (dispatchNeeded) {
-            dispatch();
+            dispatch(curLevel);
         }
     }
 
@@ -180,7 +187,7 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
             dispatchNeeded = dispatchIfNeeded(level);
         }
         if (dispatchNeeded) {
-            dispatch();
+            dispatch(level);
         }
 
     }
@@ -190,7 +197,8 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
 // thread safety : called with synchronised(callStack)
 //
     private boolean dispatchIfNeeded(int level) {
-        if (levelReady(level)) {
+        boolean ready = levelReady(level);
+        if (ready) {
             return callStack.dispatchIfNotDispatchedBefore(level);
         }
         return false;
@@ -206,12 +214,13 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
         }
         if (levelReady(level - 1) && callStack.allOnFieldCallsHappened(level - 1)
             && callStack.allStrategyCallsHappened(level) && callStack.allFetchesHappened(level)) {
+
             return true;
         }
         return false;
     }
 
-    void dispatch() {
+    void dispatch(int level) {
         DataLoaderRegistry dataLoaderRegistry = executionContext.getDataLoaderRegistry();
         dataLoaderRegistry.dispatchAll();
     }

@@ -148,10 +148,12 @@ public class Execution {
                 .path(path)
                 .build();
 
+        executionContext.getQueryStrategy().initBeforeExecution(executionContext);
+        executionContext.getMutationStrategy().initBeforeExecution(executionContext);
+        executionContext.getSubscriptionStrategy().initBeforeExecution(executionContext);
         CompletableFuture<ExecutionResult> result;
         try {
             ExecutionStrategy executionStrategy = executionContext.getStrategy(operation);
-            executionStrategy.initBeforeExecution(executionContext);
             result = executionStrategy.execute(executionContext, parameters);
         } catch (NonNullableFieldWasNullException e) {
             // this means it was non-null types all the way from an offending non-null type

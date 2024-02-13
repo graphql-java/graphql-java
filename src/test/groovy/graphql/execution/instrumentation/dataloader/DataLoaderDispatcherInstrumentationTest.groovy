@@ -187,14 +187,13 @@ class DataLoaderDispatcherInstrumentationTest extends Specification {
         "AsyncSerialExecutionStrategy" | new AsyncSerialExecutionStrategy() || _
     }
 
-    def "basic batch loading is possible via instrumentation interception of Execution Strategies"() {
+    def "basic batch loading is possible"() {
 
         given:
         def starWarsWiring = new StarWarsDataLoaderWiring()
         def dlRegistry = starWarsWiring.newDataLoaderRegistry()
-//        def batchingInstrumentation = new DataLoaderDispatcherInstrumentation()
 
-        def graphql = GraphQL.newGraphQL(starWarsWiring.schema).instrumentation(batchingInstrumentation).build()
+        def graphql = GraphQL.newGraphQL(starWarsWiring.schema).build()
 
         when:
 
@@ -230,10 +229,8 @@ class DataLoaderDispatcherInstrumentationTest extends Specification {
         given:
         def starWarsWiring = new StarWarsDataLoaderWiring()
         def dlRegistry = starWarsWiring.newDataLoaderRegistry()
-//        def batchingInstrumentation = new DataLoaderDispatcherInstrumentation()
 
         def graphql = GraphQL.newGraphQL(starWarsWiring.schema)
-//                .instrumentation(batchingInstrumentation)
                 .build()
 
         when:
@@ -305,9 +302,7 @@ class DataLoaderDispatcherInstrumentationTest extends Specification {
         given:
         def support = new DeepDataFetchers()
         def dummyDataloaderRegistry = new DataLoaderRegistry()
-//        def batchingInstrumentation = new DataLoaderDispatcherInstrumentation()
         def graphql = GraphQL.newGraphQL(support.schema())
-//                .instrumentation(batchingInstrumentation)
                 .build()
         // FieldLevelTrackingApproach uses LevelMaps with a default size of 16.
         // Use a value greater than 16 to ensure that the underlying LevelMaps are resized

@@ -136,7 +136,7 @@ public abstract class ExecutionStrategy {
     protected final DataFetcherExceptionHandler dataFetcherExceptionHandler;
     private final ResolveType resolvedType = new ResolveType();
 
-    protected DataLoaderDispatchStrategy dataLoaderDispatcherStrategy;
+    protected DataLoaderDispatchStrategy dataLoaderDispatcherStrategy = DataLoaderDispatchStrategy.NO_OP;
 
     /**
      * The default execution strategy constructor uses the {@link SimpleDataFetcherExceptionHandler}

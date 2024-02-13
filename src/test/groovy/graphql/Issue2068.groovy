@@ -93,7 +93,6 @@ class Issue2068 extends Specification {
 
         when:
         def graphql = GraphQL.newGraphQL(schema)
-//                .instrumentation(new DataLoaderDispatcherInstrumentation())
                 .build()
         DataLoaderRegistry dataLoaderRegistry = mkNewDataLoaderRegistry(executor)
 
@@ -125,9 +124,6 @@ class Issue2068 extends Specification {
 
         when:
         graphql = GraphQL.newGraphQL(schema)
-//                .instrumentation(new ChainedInstrumentation(
-//                        Collections.singletonList(new DataLoaderDispatcherInstrumentation()))
-//                )
                 .build()
 
         graphql.execute(newExecutionInput()
