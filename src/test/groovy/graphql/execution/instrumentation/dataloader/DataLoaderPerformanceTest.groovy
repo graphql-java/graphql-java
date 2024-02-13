@@ -1,9 +1,7 @@
 package graphql.execution.instrumentation.dataloader
 
-
 import graphql.ExecutionInput
 import graphql.GraphQL
-import graphql.execution.instrumentation.Instrumentation
 import org.dataloader.DataLoaderRegistry
 import spock.lang.Specification
 
@@ -22,7 +20,7 @@ class DataLoaderPerformanceTest extends Specification {
         batchCompareDataFetchers = new BatchCompareDataFetchers()
         DataLoaderPerformanceData dataLoaderPerformanceData = new DataLoaderPerformanceData(batchCompareDataFetchers)
         dataLoaderRegistry = dataLoaderPerformanceData.setupDataLoaderRegistry()
-        Instrumentation instrumentation = new DataLoaderDispatcherInstrumentation()
+//        Instrumentation instrumentation = new DataLoaderDispatcherInstrumentation()
         graphQL = dataLoaderPerformanceData.setupGraphQL(instrumentation)
     }
 

@@ -3,8 +3,6 @@ package readme;
 import graphql.ExecutionInput;
 import graphql.ExecutionResult;
 import graphql.GraphQL;
-import graphql.execution.instrumentation.dataloader.DataLoaderDispatcherInstrumentation;
-import graphql.execution.instrumentation.dataloader.DataLoaderDispatcherInstrumentationOptions;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
 import graphql.schema.GraphQLSchema;
@@ -85,12 +83,12 @@ public class DataLoaderBatchingExamples {
         // available to the query and the associated DataFetchers
         //
         // In this case we use options to make it keep statistics on the batching efficiency
+        // //
+        // DataLoaderDispatcherInstrumentationOptions options = DataLoaderDispatcherInstrumentationOptions
+        //         .newOptions().includeStatistics(true);
         //
-        DataLoaderDispatcherInstrumentationOptions options = DataLoaderDispatcherInstrumentationOptions
-                .newOptions().includeStatistics(true);
-
-        DataLoaderDispatcherInstrumentation dispatcherInstrumentation
-                = new DataLoaderDispatcherInstrumentation(options);
+        // DataLoaderDispatcherInstrumentation dispatcherInstrumentation
+        //         = new DataLoaderDispatcherInstrumentation(options);
 
         //
         // now build your graphql object and execute queries on it.
@@ -98,7 +96,7 @@ public class DataLoaderBatchingExamples {
         // schema fields
         //
         GraphQL graphQL = GraphQL.newGraphQL(buildSchema())
-                .instrumentation(dispatcherInstrumentation)
+            // .instrumentation(dispatcherInstrumentation)
                 .build();
 
         //

@@ -28,6 +28,13 @@ class DataLoaderPerformanceData {
                 .build()
     }
 
+    GraphQL setupGraphQL() {
+        GraphQLSchema schema = new BatchCompare().buildDataLoaderSchema(batchCompareDataFetchers)
+
+        GraphQL.newGraphQL(schema)
+                .build()
+    }
+
     static def expectedData = [
             shops: [
                     [id         : "shop-1", name: "Shop 1",

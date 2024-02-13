@@ -65,20 +65,20 @@ class DataLoaderDispatcherInstrumentationTest extends Specification {
     ]
 
 
-    def "dataloader instrumentation is always added and an empty data loader registry is in place"() {
-
-        def captureStrategy = new CaptureStrategy()
-        def graphQL = GraphQL.newGraphQL(starWarsSchema).queryExecutionStrategy(captureStrategy)
-                .instrumentation(new SimplePerformantInstrumentation())
-                .build()
-        def executionInput = newExecutionInput().query('{ hero { name } }').build()
-        when:
-        graphQL.execute(executionInput)
-        then:
-        executionInput.getDataLoaderRegistry() != null
-        def chainedInstrumentation = captureStrategy.instrumentation as ChainedInstrumentation
-        chainedInstrumentation.instrumentations.any { instr -> instr instanceof DataLoaderDispatcherInstrumentation }
-    }
+//    def "dataloader instrumentation is always added and an empty data loader registry is in place"() {
+//
+//        def captureStrategy = new CaptureStrategy()
+//        def graphQL = GraphQL.newGraphQL(starWarsSchema).queryExecutionStrategy(captureStrategy)
+//                .instrumentation(new SimplePerformantInstrumentation())
+//                .build()
+//        def executionInput = newExecutionInput().query('{ hero { name } }').build()
+//        when:
+//        graphQL.execute(executionInput)
+//        then:
+//        executionInput.getDataLoaderRegistry() != null
+//        def chainedInstrumentation = captureStrategy.instrumentation as ChainedInstrumentation
+////        chainedInstrumentation.instrumentations.any { instr -> instr instanceof DataLoaderDispatcherInstrumentation }
+//    }
 
     def "dispatch is never called if data loader registry is not set"() {
         def dataLoaderRegistry = new DataLoaderRegistry() {
@@ -131,7 +131,7 @@ class DataLoaderDispatcherInstrumentationTest extends Specification {
         DataLoaderRegistry startingDataLoaderRegistry = new DataLoaderRegistry()
         def enhancedDataLoaderRegistry = starWarsWiring.newDataLoaderRegistry()
 
-        def dlInstrumentation = new DataLoaderDispatcherInstrumentation()
+//        def dlInstrumentation = new DataLoaderDispatcherInstrumentation()
         def enhancingInstrumentation = new SimplePerformantInstrumentation() {
 
             @NotNull
@@ -142,7 +142,7 @@ class DataLoaderDispatcherInstrumentationTest extends Specification {
             }
         }
 
-        def chainedInstrumentation = new ChainedInstrumentation([dlInstrumentation, enhancingInstrumentation])
+        def chainedInstrumentation = new ChainedInstrumentation([enhancingInstrumentation])
 
         def graphql = GraphQL.newGraphQL(starWarsWiring.schema)
                 .instrumentation(chainedInstrumentation).build()
@@ -165,11 +165,12 @@ class DataLoaderDispatcherInstrumentationTest extends Specification {
         def starWarsWiring = new StarWarsDataLoaderWiring()
         def dlRegistry = starWarsWiring.newDataLoaderRegistry()
 
-        def batchingInstrumentation = new DataLoaderDispatcherInstrumentation()
+//        def batchingInstrumentation = new DataLoaderDispatcherInstrumentation()
 
         def graphql = GraphQL.newGraphQL(starWarsWiring.schema)
                 .queryExecutionStrategy(executionStrategy)
-                .instrumentation(batchingInstrumentation).build()
+//                .instrumentation(batchingInstrumentation)
+                .build()
 
         when:
 
@@ -191,7 +192,7 @@ class DataLoaderDispatcherInstrumentationTest extends Specification {
         given:
         def starWarsWiring = new StarWarsDataLoaderWiring()
         def dlRegistry = starWarsWiring.newDataLoaderRegistry()
-        def batchingInstrumentation = new DataLoaderDispatcherInstrumentation()
+//        def batchingInstrumentation = new DataLoaderDispatcherInstrumentation()
 
         def graphql = GraphQL.newGraphQL(starWarsWiring.schema).instrumentation(batchingInstrumentation).build()
 
@@ -229,9 +230,11 @@ class DataLoaderDispatcherInstrumentationTest extends Specification {
         given:
         def starWarsWiring = new StarWarsDataLoaderWiring()
         def dlRegistry = starWarsWiring.newDataLoaderRegistry()
-        def batchingInstrumentation = new DataLoaderDispatcherInstrumentation()
+//        def batchingInstrumentation = new DataLoaderDispatcherInstrumentation()
 
-        def graphql = GraphQL.newGraphQL(starWarsWiring.schema).instrumentation(batchingInstrumentation).build()
+        def graphql = GraphQL.newGraphQL(starWarsWiring.schema)
+//                .instrumentation(batchingInstrumentation)
+                .build()
 
         when:
         def query = """
@@ -302,9 +305,9 @@ class DataLoaderDispatcherInstrumentationTest extends Specification {
         given:
         def support = new DeepDataFetchers()
         def dummyDataloaderRegistry = new DataLoaderRegistry()
-        def batchingInstrumentation = new DataLoaderDispatcherInstrumentation()
+//        def batchingInstrumentation = new DataLoaderDispatcherInstrumentation()
         def graphql = GraphQL.newGraphQL(support.schema())
-                .instrumentation(batchingInstrumentation)
+//                .instrumentation(batchingInstrumentation)
                 .build()
         // FieldLevelTrackingApproach uses LevelMaps with a default size of 16.
         // Use a value greater than 16 to ensure that the underlying LevelMaps are resized

@@ -19,7 +19,6 @@ import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationState;
 import graphql.execution.instrumentation.NoContextChainedInstrumentation;
 import graphql.execution.instrumentation.SimplePerformantInstrumentation;
-import graphql.execution.instrumentation.dataloader.DataLoaderDispatcherInstrumentation;
 import graphql.execution.instrumentation.parameters.InstrumentationCreateStateParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationValidationParameters;
@@ -169,7 +168,6 @@ public class GraphQL {
      * Helps you build a GraphQL object ready to execute queries
      *
      * @param graphQLSchema the schema to use
-     *
      * @return a builder of GraphQL objects
      */
     public static Builder newGraphQL(GraphQLSchema graphQLSchema) {
@@ -181,18 +179,17 @@ public class GraphQL {
      * the current values and allows you to transform it how you want.
      *
      * @param builderConsumer the consumer code that will be given a builder to transform
-     *
      * @return a new GraphQL object based on calling build on that builder
      */
     public GraphQL transform(Consumer<GraphQL.Builder> builderConsumer) {
         Builder builder = new Builder(this.graphQLSchema);
         builder
-                .queryExecutionStrategy(this.queryStrategy)
-                .mutationExecutionStrategy(this.mutationStrategy)
-                .subscriptionExecutionStrategy(this.subscriptionStrategy)
-                .executionIdProvider(Optional.ofNullable(this.idProvider).orElse(builder.idProvider))
-                .instrumentation(Optional.ofNullable(this.instrumentation).orElse(builder.instrumentation))
-                .preparsedDocumentProvider(Optional.ofNullable(this.preparsedDocumentProvider).orElse(builder.preparsedDocumentProvider));
+            .queryExecutionStrategy(this.queryStrategy)
+            .mutationExecutionStrategy(this.mutationStrategy)
+            .subscriptionExecutionStrategy(this.subscriptionStrategy)
+            .executionIdProvider(Optional.ofNullable(this.idProvider).orElse(builder.idProvider))
+            .instrumentation(Optional.ofNullable(this.instrumentation).orElse(builder.instrumentation))
+            .preparsedDocumentProvider(Optional.ofNullable(this.preparsedDocumentProvider).orElse(builder.preparsedDocumentProvider));
 
         builderConsumer.accept(builder);
 
@@ -242,7 +239,6 @@ public class GraphQL {
          * in {@link graphql.schema.DataFetcher} invocations.
          *
          * @param dataFetcherExceptionHandler the default handler for data fetching exception
-         *
          * @return this builder
          */
         public Builder defaultDataFetcherExceptionHandler(DataFetcherExceptionHandler dataFetcherExceptionHandler) {
@@ -308,13 +304,12 @@ public class GraphQL {
      * Executes the specified graphql query/mutation/subscription
      *
      * @param query the query/mutation/subscription
-     *
      * @return an {@link ExecutionResult} which can include errors
      */
     public ExecutionResult execute(String query) {
         ExecutionInput executionInput = ExecutionInput.newExecutionInput()
-                .query(query)
-                .build();
+            .query(query)
+            .build();
         return execute(executionInput);
     }
 
@@ -323,7 +318,6 @@ public class GraphQL {
      * Executes the graphql query using the provided input object builder
      *
      * @param executionInputBuilder {@link ExecutionInput.Builder}
-     *
      * @return an {@link ExecutionResult} which can include errors
      */
     public ExecutionResult execute(ExecutionInput.Builder executionInputBuilder) {
@@ -341,7 +335,6 @@ public class GraphQL {
      * </pre>
      *
      * @param builderFunction a function that is given a {@link ExecutionInput.Builder}
-     *
      * @return an {@link ExecutionResult} which can include errors
      */
     public ExecutionResult execute(UnaryOperator<ExecutionInput.Builder> builderFunction) {
@@ -352,7 +345,6 @@ public class GraphQL {
      * Executes the graphql query using the provided input object
      *
      * @param executionInput {@link ExecutionInput}
-     *
      * @return an {@link ExecutionResult} which can include errors
      */
     public ExecutionResult execute(ExecutionInput executionInput) {
@@ -374,7 +366,6 @@ public class GraphQL {
      * which is the result of executing the provided query.
      *
      * @param executionInputBuilder {@link ExecutionInput.Builder}
-     *
      * @return a promise to an {@link ExecutionResult} which can include errors
      */
     public CompletableFuture<ExecutionResult> executeAsync(ExecutionInput.Builder executionInputBuilder) {
@@ -395,7 +386,6 @@ public class GraphQL {
      * </pre>
      *
      * @param builderFunction a function that is given a {@link ExecutionInput.Builder}
-     *
      * @return a promise to an {@link ExecutionResult} which can include errors
      */
     public CompletableFuture<ExecutionResult> executeAsync(UnaryOperator<ExecutionInput.Builder> builderFunction) {
@@ -409,7 +399,6 @@ public class GraphQL {
      * which is the result of executing the provided query.
      *
      * @param executionInput {@link ExecutionInput}
-     *
      * @return a promise to an {@link ExecutionResult} which can include errors
      */
     public CompletableFuture<ExecutionResult> executeAsync(ExecutionInput executionInput) {
@@ -522,7 +511,7 @@ public class GraphQL {
             DocumentAndVariables documentAndVariables = parseResult.getDocumentAndVariables();
             documentAndVariables = instrumentation.instrumentDocumentAndVariables(documentAndVariables, parameters, instrumentationState);
             return ParseAndValidateResult.newResult()
-                    .document(documentAndVariables.getDocument()).variables(documentAndVariables.getVariables()).build();
+                .document(documentAndVariables.getDocument()).variables(documentAndVariables.getVariables()).build();
         }
     }
 
@@ -552,14 +541,15 @@ public class GraphQL {
         if (doNotAddDefaultInstrumentations) {
             return instrumentation == null ? SimplePerformantInstrumentation.INSTANCE : instrumentation;
         }
-        if (instrumentation instanceof DataLoaderDispatcherInstrumentation) {
-            return instrumentation;
-        }
+        // if (instrumentation instanceof DataLoaderDispatcherInstrumentation) {
+        //     return instrumentation;
+        // }
         if (instrumentation instanceof NoContextChainedInstrumentation) {
             return instrumentation;
         }
         if (instrumentation == null) {
-            return new DataLoaderDispatcherInstrumentation();
+            // return new DataLoaderDispatcherInstrumentation();
+            return SimplePerformantInstrumentation.INSTANCE;
         }
 
         //
@@ -572,10 +562,10 @@ public class GraphQL {
         } else {
             instrumentationList.add(instrumentation);
         }
-        boolean containsDLInstrumentation = instrumentationList.stream().anyMatch(instr -> instr instanceof DataLoaderDispatcherInstrumentation);
-        if (!containsDLInstrumentation) {
-            instrumentationList.add(new DataLoaderDispatcherInstrumentation());
-        }
+        // boolean containsDLInstrumentation = instrumentationList.stream().anyMatch(instr -> instr instanceof DataLoaderDispatcherInstrumentation);
+        // if (!containsDLInstrumentation) {
+        //     instrumentationList.add(new DataLoaderDispatcherInstrumentation());
+        // }
         return new ChainedInstrumentation(instrumentationList);
     }
 }
