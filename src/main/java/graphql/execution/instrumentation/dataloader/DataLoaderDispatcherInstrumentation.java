@@ -24,8 +24,6 @@ import org.dataloader.DataLoaderRegistry;
 import org.dataloader.stats.Statistics;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -142,6 +140,21 @@ public class DataLoaderDispatcherInstrumentation extends SimplePerformantInstrum
             return ExecuteObjectInstrumentationContext.NOOP;
         }
         return state.getApproach().beginObjectResolution(parameters, state.getState());
+    }
+
+    @Override
+    public @Nullable InstrumentationContext<Object> beginDeferredField(InstrumentationState rawState) {
+        DataLoaderDispatcherInstrumentationState state = ofState(rawState);
+        //
+        // if there are no data loaders, there is nothing to do
+        //
+        if (state.hasNoDataLoaders()) {
+            return noOp();
+        }
+
+        // The support for @defer in graphql-java is not yet complete. At this time, the resolution of deferred fields
+        // cannot be done via Data Loaders.
+        throw new UnsupportedOperationException("Data Loaders cannot be used to resolve deferred fields");
     }
 
     @Override
