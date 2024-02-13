@@ -415,7 +415,7 @@ public class GraphQL {
     public CompletableFuture<ExecutionResult> executeAsync(ExecutionInput executionInput) {
         ExecutionInput executionInputWithId = ensureInputHasId(executionInput);
 
-        CompletableFuture<InstrumentationState> instrumentationStateCF = instrumentation.createStateAsync(new InstrumentationCreateStateParameters(this.graphQLSchema, executionInput));
+        CompletableFuture<InstrumentationState> instrumentationStateCF = instrumentation.createStateAsync(new InstrumentationCreateStateParameters(this.graphQLSchema, executionInputWithId));
         return Async.orNullCompletedFuture(instrumentationStateCF).thenCompose(instrumentationState -> {
             try {
                 InstrumentationExecutionParameters inputInstrumentationParameters = new InstrumentationExecutionParameters(executionInputWithId, this.graphQLSchema, instrumentationState);
