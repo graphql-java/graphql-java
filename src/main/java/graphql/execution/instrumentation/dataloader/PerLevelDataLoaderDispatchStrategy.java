@@ -96,7 +96,7 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
 
     @Override
     public void deferredField(ExecutionContext executionContext, MergedField currentField) {
-        throw new UnsupportedOperationException("Data Loaders cannot be used to resolve deferred fields at the moment");
+        throw new UnsupportedOperationException("Data Loaders cannot be used to resolve deferred fields");
     }
 
     @Override

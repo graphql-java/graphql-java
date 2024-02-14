@@ -36,6 +36,7 @@ class DataLoaderPerformanceData {
 
     GraphQL setupGraphQL() {
         GraphQLSchema schema = new BatchCompare().buildDataLoaderSchema(batchCompareDataFetchers)
+        schema = schema.transform({ bldr -> bldr.additionalDirective(Directives.DeferDirective) })
 
         GraphQL.newGraphQL(schema)
                 .build()
