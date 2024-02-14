@@ -17,8 +17,11 @@ import graphql.execution.SubscriptionExecutionStrategy
 import graphql.execution.ValueUnboxer
 import graphql.execution.instrumentation.ChainedInstrumentation
 import graphql.execution.instrumentation.Instrumentation
+import graphql.execution.instrumentation.InstrumentationState
+import graphql.execution.instrumentation.SimpleInstrumentation
 import graphql.execution.instrumentation.SimplePerformantInstrumentation
 import graphql.execution.instrumentation.dataloader.DataLoaderDispatcherInstrumentation
+import graphql.execution.instrumentation.parameters.InstrumentationCreateStateParameters
 import graphql.execution.preparsed.NoOpPreparsedDocumentProvider
 import graphql.language.SourceLocation
 import graphql.schema.DataFetcher
@@ -1061,6 +1064,26 @@ many lines""") }''')
         result.data == [hello: '''world
 over
 many lines''']
+    }
+
+    def "executionId is set before being passed to instrumentation"() {
+        InstrumentationCreateStateParameters seenParams
+
+        def instrumentation = new Instrumentation() {
+            @Override InstrumentationState createState(InstrumentationCreateStateParameters params) {
+                seenParams = params
+                null
+            }
+        }
+
+        when:
+            GraphQL.newGraphQL(StarWarsSchema.starWarsSchema)
+                .instrumentation(instrumentation)
+                .build()
+                .execute("{ __typename }")
+
+        then:
+            seenParams.executionInput.executionId != null
     }
 
     def "variables map can't be null via ExecutionInput"() {
