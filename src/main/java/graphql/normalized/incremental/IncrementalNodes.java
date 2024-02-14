@@ -21,7 +21,7 @@ import static graphql.Directives.DeferDirective;
 @Internal
 public class IncrementalNodes {
 
-    public DeferExecution createDeferExecution(
+    public NormalizedDeferredExecution createDeferExecution(
             Map<String, Object> variables,
             List<Directive> directives,
             @Nullable TypeName targetType,
@@ -42,12 +42,12 @@ public class IncrementalNodes {
             Object label = argumentValues.get("label");
 
             if (label == null) {
-                return new DeferExecution(null, possibleTypes);
+                return new NormalizedDeferredExecution(null, possibleTypes);
             }
 
             Assert.assertTrue(label instanceof String, () -> String.format("The 'label' argument from the '%s' directive MUST contain a String value", DeferDirective.getName()));
 
-            return new DeferExecution((String) label, possibleTypes);
+            return new NormalizedDeferredExecution((String) label, possibleTypes);
         }
 
         return null;

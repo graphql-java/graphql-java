@@ -1,14 +1,14 @@
 package graphql.execution.incremental;
 
 import graphql.ExperimentalApi;
-import graphql.normalized.incremental.DeferExecution;
+import graphql.normalized.incremental.NormalizedDeferredExecution;
 
 import javax.annotation.Nullable;
 
 /**
  * Represents details about the defer execution that can be associated with a {@link graphql.execution.MergedField}.
  * <p>
- * This representation is used during graphql execution. Check {@link DeferExecution}
+ * This representation is used during graphql execution. Check {@link NormalizedDeferredExecution}
  * for the normalized representation of @defer.
  */
 @ExperimentalApi
