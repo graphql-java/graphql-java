@@ -201,6 +201,44 @@ class DeferExecutionSupportIntegrationTest extends Specification {
         ]
     }
 
+    def "defer with aliased fields"() {
+        def query = '''
+            query {
+                postAlias: post {
+                    idAlias: id
+                    ... @defer {
+                        summaryAlias: summary
+                    }
+                }
+            }
+        '''
+
+        when:
+        IncrementalExecutionResult initialResult = executeQuery(query)
+
+        then:
+        initialResult.toSpecification() == [
+                data   : [postAlias: [idAlias: "1001"]],
+                hasNext: true
+        ]
+
+        when:
+        def incrementalResults = getIncrementalResults(initialResult)
+
+        then:
+        incrementalResults == [
+                [
+                        hasNext    : false,
+                        incremental: [
+                                [
+                                        path: ["postAlias"],
+                                        data: [summaryAlias: "A summary"]
+                                ]
+                        ]
+                ]
+        ]
+    }
+
     def "defer on interface field"() {
         def query = """
             query {

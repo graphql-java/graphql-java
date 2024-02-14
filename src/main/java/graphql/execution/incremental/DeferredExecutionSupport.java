@@ -165,7 +165,7 @@ public interface DeferredExecutionSupport {
 
                                 return executionResultCF
                                         .thenApply(executionResult ->
-                                                new DeferredFragmentCall.FieldWithExecutionResult(currentField.getName(), executionResult)
+                                                new DeferredFragmentCall.FieldWithExecutionResult(currentField.getResultKey(), executionResult)
                                         );
                             }
                     )
