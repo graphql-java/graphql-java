@@ -4,6 +4,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
 import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
+import graphql.ExperimentalApi;
 import graphql.GraphQLError;
 import graphql.Internal;
 import graphql.PublicSpi;
@@ -14,6 +15,7 @@ import graphql.UnresolvedTypeError;
 import graphql.collect.ImmutableKit;
 import graphql.execution.directives.QueryDirectives;
 import graphql.execution.directives.QueryDirectivesImpl;
+import graphql.execution.incremental.DeferredExecutionSupport;
 import graphql.execution.instrumentation.ExecuteObjectInstrumentationContext;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationContext;
@@ -49,6 +51,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
@@ -154,7 +157,6 @@ public abstract class ExecutionStrategy {
     }
 
 
-
     @Internal
     public static String mkNameForPath(Field currentField) {
         return mkNameForPath(Collections.singletonList(currentField));
@@ -199,12 +201,17 @@ public abstract class ExecutionStrategy {
         );
 
         List<String> fieldNames = parameters.getFields().getKeys();
-        Async.CombinedBuilder<FieldValueInfo> resolvedFieldFutures = getAsyncFieldValueInfo(executionContext, parameters);
+
+        DeferredExecutionSupport deferredExecutionSupport = createDeferredExecutionSupport(executionContext, parameters);
+        Async.CombinedBuilder<FieldValueInfo> resolvedFieldFutures = getAsyncFieldValueInfo(executionContext, parameters, deferredExecutionSupport);
+
         CompletableFuture<Map<String, Object>> overallResult = new CompletableFuture<>();
         resolveObjectCtx.onDispatched(overallResult);
 
         resolvedFieldFutures.await().whenComplete((completeValueInfos, throwable) -> {
-            BiConsumer<List<Object>, Throwable> handleResultsConsumer = buildFieldValueMap(fieldNames, overallResult, executionContext);
+            List<String> fieldsExecutedOnInitialResult = deferredExecutionSupport.getNonDeferredFieldNames(fieldNames);
+
+            BiConsumer<List<Object>, Throwable> handleResultsConsumer = buildFieldValueMap(fieldsExecutedOnInitialResult, overallResult, executionContext);
             if (throwable != null) {
                 handleResultsConsumer.accept(null, throwable);
                 return;
@@ -247,10 +254,35 @@ public abstract class ExecutionStrategy {
         };
     }
 
-    @NotNull
-    Async.CombinedBuilder<FieldValueInfo> getAsyncFieldValueInfo(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
+    DeferredExecutionSupport createDeferredExecutionSupport(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
         MergedSelectionSet fields = parameters.getFields();
-        Async.CombinedBuilder<FieldValueInfo> futures = Async.ofExpectedSize(fields.size());
+
+        return Optional.ofNullable(executionContext.getGraphQLContext())
+            .map(graphqlContext -> (Boolean) graphqlContext.get(ExperimentalApi.ENABLE_INCREMENTAL_SUPPORT))
+            .orElse(false) ?
+            new DeferredExecutionSupport.DeferredExecutionSupportImpl(
+                fields,
+                parameters,
+                executionContext,
+                this::resolveFieldWithInfo
+            ) : DeferredExecutionSupport.NOOP;
+
+    }
+
+    @NotNull
+    Async.CombinedBuilder<FieldValueInfo> getAsyncFieldValueInfo(
+        ExecutionContext executionContext,
+        ExecutionStrategyParameters parameters,
+        DeferredExecutionSupport deferredExecutionSupport
+    ) {
+        MergedSelectionSet fields = parameters.getFields();
+
+        executionContext.getIncrementalCallState().enqueue(deferredExecutionSupport.createCalls());
+
+        // Only non-deferred fields should be considered for calculating the expected size of futures.
+        Async.CombinedBuilder<FieldValueInfo> futures = Async
+            .ofExpectedSize(fields.size() - deferredExecutionSupport.deferredFieldsCount());
+
         for (String fieldName : fields.getKeys()) {
             MergedField currentField = fields.getSubField(fieldName);
 
@@ -258,8 +290,10 @@ public abstract class ExecutionStrategy {
             ExecutionStrategyParameters newParameters = parameters
                 .transform(builder -> builder.field(currentField).path(fieldPath).parent(parameters));
 
-            CompletableFuture<FieldValueInfo> future = resolveFieldWithInfo(executionContext, newParameters);
-            futures.add(future);
+            if (!deferredExecutionSupport.isDeferredField(currentField)) {
+                CompletableFuture<FieldValueInfo> future = resolveFieldWithInfo(executionContext, newParameters);
+                futures.add(future);
+            }
         }
         return futures;
     }
@@ -385,7 +419,7 @@ public abstract class ExecutionStrategy {
             .handle((result, exception) -> {
                 fetchCtx.onCompleted(result, exception);
                 if (exception != null) {
-                    return handleFetchingException(dataFetchingEnvironment.get(), exception);
+                    return handleFetchingException(dataFetchingEnvironment.get(), parameters, exception);
                 } else {
                     // we can simply return the fetched value CF and avoid a allocation
                     return fetchedValue;
@@ -457,11 +491,19 @@ public abstract class ExecutionStrategy {
 
     protected <T> CompletableFuture<T> handleFetchingException(
         DataFetchingEnvironment environment,
-        Throwable e) {
+        ExecutionStrategyParameters parameters,
+        Throwable e
+    ) {
         DataFetcherExceptionHandlerParameters handlerParameters = DataFetcherExceptionHandlerParameters.newExceptionParameters()
             .dataFetchingEnvironment(environment)
             .exception(e)
             .build();
+
+        parameters.getDeferredCallContext().onFetchingException(
+            parameters.getPath(),
+            parameters.getField().getSingleField().getSourceLocation(),
+            e
+        );
 
         try {
             return asyncHandleException(dataFetcherExceptionHandler, handlerParameters);
@@ -577,6 +619,8 @@ public abstract class ExecutionStrategy {
     private void handleUnresolvedTypeProblem(ExecutionContext context, ExecutionStrategyParameters parameters, UnresolvedTypeException e) {
         UnresolvedTypeError error = new UnresolvedTypeError(parameters.getPath(), parameters.getExecutionStepInfo(), e);
         context.addError(error);
+
+        parameters.getDeferredCallContext().onError(error);
     }
 
     /**
@@ -777,7 +821,13 @@ public abstract class ExecutionStrategy {
             .graphQLContext(executionContext.getGraphQLContext())
             .build();
 
-        MergedSelectionSet subFields = fieldCollector.collectFields(collectorParameters, parameters.getField());
+        MergedSelectionSet subFields = fieldCollector.collectFields(
+            collectorParameters,
+            parameters.getField(),
+            Optional.ofNullable(executionContext.getGraphQLContext())
+                .map(graphqlContext -> (Boolean) graphqlContext.get(ExperimentalApi.ENABLE_INCREMENTAL_SUPPORT))
+                .orElse(false)
+        );
 
         ExecutionStepInfo newExecutionStepInfo = executionStepInfo.changeTypeWithPreservedNonNull(resolvedObjectType);
         NonNullableFieldValidator nonNullableFieldValidator = new NonNullableFieldValidator(executionContext, newExecutionStepInfo);
@@ -797,6 +847,9 @@ public abstract class ExecutionStrategy {
     private Object handleCoercionProblem(ExecutionContext context, ExecutionStrategyParameters parameters, CoercingSerializeException e) {
         SerializationError error = new SerializationError(parameters.getPath(), e);
         context.addError(error);
+
+        parameters.getDeferredCallContext().onError(error);
+
         return null;
     }
 
@@ -820,6 +873,8 @@ public abstract class ExecutionStrategy {
     private void handleTypeMismatchProblem(ExecutionContext context, ExecutionStrategyParameters parameters, Object result) {
         TypeMismatchError error = new TypeMismatchError(parameters.getPath(), parameters.getExecutionStepInfo().getUnwrappedNonNullType());
         context.addError(error);
+
+        parameters.getDeferredCallContext().onError(error);
     }
 
     /**

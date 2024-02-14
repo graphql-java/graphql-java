@@ -4,9 +4,11 @@ package graphql.execution;
 import graphql.ExecutionInput;
 import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
+import graphql.ExperimentalApi;
 import graphql.GraphQLContext;
 import graphql.GraphQLError;
 import graphql.Internal;
+import graphql.execution.incremental.IncrementalCallState;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationState;
@@ -15,6 +17,8 @@ import graphql.execution.instrumentation.dataloader.PerLevelDataLoaderDispatchSt
 import graphql.execution.instrumentation.parameters.InstrumentationExecuteOperationParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters;
 import graphql.extensions.ExtensionsBuilder;
+import graphql.incremental.DelayedIncrementalPartialResult;
+import graphql.incremental.IncrementalExecutionResultImpl;
 import graphql.language.Document;
 import graphql.language.FragmentDefinition;
 import graphql.language.NodeUtil;
@@ -23,10 +27,12 @@ import graphql.language.VariableDefinition;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.impl.SchemaUtil;
+import org.reactivestreams.Publisher;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 import static graphql.execution.ExecutionContextBuilder.newExecutionContextBuilder;
@@ -143,7 +149,13 @@ public class Execution {
             .graphQLContext(graphQLContext)
             .build();
 
-        MergedSelectionSet fields = fieldCollector.collectFields(collectorParameters, operationDefinition.getSelectionSet());
+        MergedSelectionSet fields = fieldCollector.collectFields(
+                collectorParameters,
+                operationDefinition.getSelectionSet(),
+                Optional.ofNullable(executionContext.getGraphQLContext())
+                        .map(graphqlContext -> (Boolean) graphqlContext.get(ExperimentalApi.ENABLE_INCREMENTAL_SUPPORT))
+                        .orElse(false)
+        );
 
         ResultPath path = ResultPath.rootPath();
         ExecutionStepInfo executionStepInfo = newExecutionStepInfo().type(operationRootType).path(path).build();
@@ -183,7 +195,31 @@ public class Execution {
         result = result.thenApply(er -> mergeExtensionsBuilderIfPresent(er, graphQLContext));
 
         result = result.whenComplete(executeOperationCtx::onCompleted);
-        return result;
+
+        return incrementalSupport(executionContext, result);
+    }
+
+    /*
+     * Adds the deferred publisher if it's needed at the end of the query.  This is also a good time for the deferred code to start running
+     */
+    private CompletableFuture<ExecutionResult> incrementalSupport(ExecutionContext executionContext, CompletableFuture<ExecutionResult> result) {
+        return result.thenApply(er -> {
+            IncrementalCallState incrementalCallState = executionContext.getIncrementalCallState();
+            if (incrementalCallState.getIncrementalCallsDetected()) {
+                // we start the rest of the query now to maximize throughput.  We have the initial important results,
+                // and now we can start the rest of the calls as early as possible (even before someone subscribes)
+                Publisher<DelayedIncrementalPartialResult> publisher = incrementalCallState.startDeferredCalls();
+
+                return IncrementalExecutionResultImpl.fromExecutionResult(er)
+                        // "hasNext" can, in theory, be "false" when all the incremental items are delivered in the
+                        // first response payload. However, the current implementation will never result in this.
+                        // The behaviour might change if we decide to make optimizations in the future.
+                        .hasNext(true)
+                        .incrementalItemPublisher(publisher)
+                        .build();
+            }
+            return er;
+        });
     }
 
     private DataLoaderDispatchStrategy createDataLoaderDispatchStrategy(ExecutionContext executionContext, ExecutionStrategy executionStrategy) {

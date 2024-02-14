@@ -15,7 +15,7 @@ public class MergedSelectionSet {
 
     private final ImmutableMap<String, MergedField> subFields;
 
-    private MergedSelectionSet(Map<String, MergedField> subFields) {
+    protected MergedSelectionSet(Map<String, MergedField> subFields) {
         this.subFields = ImmutableMap.copyOf(Assert.assertNotNull(subFields));
     }
 

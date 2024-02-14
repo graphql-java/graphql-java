@@ -49,4 +49,8 @@ public interface DataLoaderDispatchStrategy {
     default DataFetcher<?> modifyDataFetcher(DataFetcher<?> dataFetcher) {
         return dataFetcher;
     }
+
+    default void deferredField(ExecutionContext executionContext, MergedField currentField) {
+
+    }
 }

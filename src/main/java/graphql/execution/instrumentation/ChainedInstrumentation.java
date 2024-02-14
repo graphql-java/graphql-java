@@ -5,6 +5,7 @@ import com.google.common.collect.Maps;
 import graphql.Assert;
 import graphql.ExecutionInput;
 import graphql.ExecutionResult;
+import graphql.ExperimentalApi;
 import graphql.PublicApi;
 import graphql.execution.Async;
 import graphql.execution.ExecutionContext;
@@ -25,10 +26,12 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.collect.ImmutableKit.mapAndDropNulls;
@@ -188,6 +191,17 @@ public class ChainedInstrumentation implements Instrumentation {
             return mapper.apply(instrumentations.get(0));
         }
         return new ChainedExecuteObjectInstrumentationContext(mapAndDropNulls(instrumentations, mapper));
+    }
+
+    @ExperimentalApi
+    @Override
+    public InstrumentationContext<Object> beginDeferredField(InstrumentationState instrumentationState) {
+        return new ChainedDeferredExecutionStrategyInstrumentationContext(instrumentations.stream()
+                .map(instrumentation -> {
+                    InstrumentationState specificState = getSpecificState(instrumentation, instrumentationState);
+                    return instrumentation.beginDeferredField(specificState);
+                })
+                .collect(Collectors.toList()));
     }
 
     @Override
@@ -494,6 +508,25 @@ public class ChainedInstrumentation implements Instrumentation {
         @Override
         public void onFieldValuesException() {
             contexts.forEach(ExecuteObjectInstrumentationContext::onFieldValuesException);
+        }
+    }
+
+    private static class ChainedDeferredExecutionStrategyInstrumentationContext implements InstrumentationContext<Object> {
+
+        private final List<InstrumentationContext<Object>> contexts;
+
+        ChainedDeferredExecutionStrategyInstrumentationContext(List<InstrumentationContext<Object>> contexts) {
+            this.contexts = Collections.unmodifiableList(contexts);
+        }
+
+        @Override
+        public void onDispatched(CompletableFuture<Object> result) {
+            contexts.forEach(context -> context.onDispatched(result));
+        }
+
+        @Override
+        public void onCompleted(Object result, Throwable t) {
+            contexts.forEach(context -> context.onCompleted(result, t));
         }
     }
 }

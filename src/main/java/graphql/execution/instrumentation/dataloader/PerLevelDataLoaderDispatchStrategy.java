@@ -6,6 +6,7 @@ import graphql.execution.DataLoaderDispatchStrategy;
 import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionStrategyParameters;
 import graphql.execution.FieldValueInfo;
+import graphql.execution.MergedField;
 import graphql.schema.DataFetcher;
 import org.dataloader.DataLoaderRegistry;
 
@@ -91,6 +92,11 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
     public PerLevelDataLoaderDispatchStrategy(ExecutionContext executionContext) {
         this.callStack = new CallStack();
         this.executionContext = executionContext;
+    }
+
+    @Override
+    public void deferredField(ExecutionContext executionContext, MergedField currentField) {
+        throw new UnsupportedOperationException("Data Loaders cannot be used to resolve deferred fields at the moment");
     }
 
     @Override

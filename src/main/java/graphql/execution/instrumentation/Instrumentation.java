@@ -2,6 +2,7 @@ package graphql.execution.instrumentation;
 
 import graphql.ExecutionInput;
 import graphql.ExecutionResult;
+import graphql.ExperimentalApi;
 import graphql.PublicSpi;
 import graphql.execution.ExecutionContext;
 import graphql.execution.instrumentation.adapters.ExecutionResultInstrumentationContextAdapter;
@@ -238,6 +239,18 @@ public interface Instrumentation {
         return ExecuteObjectInstrumentationContext.NOOP;
     }
 
+    /**
+     * This is called just before a deferred field is resolved into a value.
+     * <p>
+     * This is an EXPERIMENTAL instrumentation callback. The method signature will definitely change.
+     *
+     * @param state      the state created during the call to {@link #createState(InstrumentationCreateStateParameters)}
+     * @return a nullable {@link ExecutionStrategyInstrumentationContext} object that will be called back when the step ends (assuming it's not null)
+     */
+    @ExperimentalApi
+    default InstrumentationContext<Object> beginDeferredField(InstrumentationState state) {
+        return noOp();
+    }
 
     /**
      * This is called each time a subscription field produces a new reactive stream event value and it needs to be mapped over via the graphql field subselection.
