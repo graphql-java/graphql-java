@@ -17,6 +17,7 @@ import graphql.execution.ValuesResolver;
 import graphql.execution.conditional.ConditionalNodes;
 import graphql.execution.directives.QueryDirectives;
 import graphql.execution.directives.QueryDirectivesImpl;
+import graphql.execution.incremental.IncrementalUtils;
 import graphql.introspection.Introspection;
 import graphql.language.Directive;
 import graphql.language.Document;
@@ -28,10 +29,8 @@ import graphql.language.NodeUtil;
 import graphql.language.OperationDefinition;
 import graphql.language.Selection;
 import graphql.language.SelectionSet;
-import graphql.language.TypeName;
 import graphql.language.VariableDefinition;
 import graphql.normalized.incremental.NormalizedDeferredExecution;
-import graphql.normalized.incremental.IncrementalNodes;
 import graphql.schema.FieldCoordinates;
 import graphql.schema.GraphQLCompositeType;
 import graphql.schema.GraphQLFieldDefinition;
@@ -191,7 +190,6 @@ public class ExecutableNormalizedOperationFactory {
     }
 
     private static final ConditionalNodes conditionalNodes = new ConditionalNodes();
-    private static final IncrementalNodes incrementalNodes = new IncrementalNodes();
 
     private ExecutableNormalizedOperationFactory() {
 
@@ -733,7 +731,6 @@ public class ExecutableNormalizedOperationFactory {
 
             NormalizedDeferredExecution newDeferredExecution = buildDeferredExecution(
                     fragmentSpread.getDirectives(),
-                    fragmentDefinition.getTypeCondition(),
                     newPossibleObjects);
 
             collectFromSelectionSet(fragmentDefinition.getSelectionSet(), result, newAstTypeCondition, newPossibleObjects, newDeferredExecution);
@@ -758,7 +755,6 @@ public class ExecutableNormalizedOperationFactory {
 
             NormalizedDeferredExecution newDeferredExecution = buildDeferredExecution(
                     inlineFragment.getDirectives(),
-                    inlineFragment.getTypeCondition(),
                     newPossibleObjects
             );
 
@@ -767,17 +763,15 @@ public class ExecutableNormalizedOperationFactory {
 
         private NormalizedDeferredExecution buildDeferredExecution(
                 List<Directive> directives,
-                TypeName typeCondition,
                 Set<GraphQLObjectType> newPossibleObjects)  {
             if(!options.deferSupport) {
                 return null;
             }
 
-            return incrementalNodes.createDeferExecution(
+            return IncrementalUtils.createDeferredExecution(
                     this.coercedVariableValues.toMap(),
                     directives,
-                    typeCondition,
-                    newPossibleObjects
+                    (label) -> new NormalizedDeferredExecution(label, newPossibleObjects)
             );
         }
 
