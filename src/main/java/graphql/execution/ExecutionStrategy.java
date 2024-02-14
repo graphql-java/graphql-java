@@ -133,7 +133,6 @@ public abstract class ExecutionStrategy {
     protected final DataFetcherExceptionHandler dataFetcherExceptionHandler;
     private final ResolveType resolvedType = new ResolveType();
 
-    protected DataLoaderDispatchStrategy dataLoaderDispatcherStrategy = DataLoaderDispatchStrategy.NO_OP;
 
     /**
      * The default execution strategy constructor uses the {@link SimpleDataFetcherExceptionHandler}
@@ -152,12 +151,6 @@ public abstract class ExecutionStrategy {
      */
     protected ExecutionStrategy(DataFetcherExceptionHandler dataFetcherExceptionHandler) {
         this.dataFetcherExceptionHandler = dataFetcherExceptionHandler;
-    }
-
-
-    @Internal
-    void setDataLoaderDispatcherStrategy(DataLoaderDispatchStrategy dataLoaderDispatcherStrategy) {
-        this.dataLoaderDispatcherStrategy = dataLoaderDispatcherStrategy;
     }
 
 
@@ -197,7 +190,7 @@ public abstract class ExecutionStrategy {
      * @throws NonNullableFieldWasNullException in the future if a non-null field resolves to a null value
      */
     protected CompletableFuture<Map<String, Object>> executeObject(ExecutionContext executionContext, ExecutionStrategyParameters parameters) throws NonNullableFieldWasNullException {
-        dataLoaderDispatcherStrategy.executeObject(executionContext, parameters);
+        executionContext.getDataLoaderDispatcherStrategy().executeObject(executionContext, parameters);
         Instrumentation instrumentation = executionContext.getInstrumentation();
         InstrumentationExecutionStrategyParameters instrumentationParameters = new InstrumentationExecutionStrategyParameters(executionContext, parameters);
 
@@ -221,14 +214,14 @@ public abstract class ExecutionStrategy {
             for (FieldValueInfo completeValueInfo : completeValueInfos) {
                 resultFutures.add(completeValueInfo.getFieldValueFuture());
             }
-            dataLoaderDispatcherStrategy.executeObject_onFieldValuesInfo(completeValueInfos, parameters);
+            executionContext.getDataLoaderDispatcherStrategy().executeObject_onFieldValuesInfo(completeValueInfos, parameters);
             resolveObjectCtx.onFieldValuesInfo(completeValueInfos);
             resultFutures.await().whenComplete(handleResultsConsumer);
         }).exceptionally((ex) -> {
             // if there are any issues with combining/handling the field results,
             // complete the future at all costs and bubble up any thrown exception so
             // the execution does not hang.
-            dataLoaderDispatcherStrategy.executeObject_onFieldValuesException(ex, parameters);
+            executionContext.getDataLoaderDispatcherStrategy().executeObject_onFieldValuesException(ex, parameters);
             resolveObjectCtx.onFieldValuesException();
             overallResult.completeExceptionally(ex);
             return null;
@@ -383,10 +376,10 @@ public abstract class ExecutionStrategy {
             executionContext.getInstrumentationState())
         );
 
-        dataFetcher = dataLoaderDispatcherStrategy.modifyDataFetcher(dataFetcher);
+        dataFetcher = executionContext.getDataLoaderDispatcherStrategy().modifyDataFetcher(dataFetcher);
         dataFetcher = instrumentation.instrumentDataFetcher(dataFetcher, instrumentationFieldFetchParams, executionContext.getInstrumentationState());
         CompletableFuture<Object> fetchedValue = invokeDataFetcher(executionContext, parameters, fieldDef, dataFetchingEnvironment, dataFetcher);
-        dataLoaderDispatcherStrategy.fieldFetched(executionContext, parameters, dataFetcher, fetchedValue);
+        executionContext.getDataLoaderDispatcherStrategy().fieldFetched(executionContext, parameters, dataFetcher, fetchedValue);
         fetchCtx.onDispatched(fetchedValue);
         return fetchedValue
             .handle((result, exception) -> {

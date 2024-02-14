@@ -20,8 +20,7 @@ class DataLoaderPerformanceTest extends Specification {
         batchCompareDataFetchers = new BatchCompareDataFetchers()
         DataLoaderPerformanceData dataLoaderPerformanceData = new DataLoaderPerformanceData(batchCompareDataFetchers)
         dataLoaderRegistry = dataLoaderPerformanceData.setupDataLoaderRegistry()
-//        Instrumentation instrumentation = new DataLoaderDispatcherInstrumentation()
-        graphQL = dataLoaderPerformanceData.setupGraphQL(instrumentation)
+        graphQL = dataLoaderPerformanceData.setupGraphQL()
     }
 
     def "760 ensure data loader is performant for lists"() {

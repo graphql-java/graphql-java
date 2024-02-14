@@ -163,10 +163,7 @@ public class Execution {
         try {
             ExecutionStrategy executionStrategy = executionContext.getStrategy(operation);
             DataLoaderDispatchStrategy dataLoaderDispatchStrategy = createDataLoaderDispatchStrategy(executionContext, executionStrategy);
-            executionContext.getQueryStrategy().setDataLoaderDispatcherStrategy(dataLoaderDispatchStrategy);
-            executionContext.getMutationStrategy().setDataLoaderDispatcherStrategy(dataLoaderDispatchStrategy);
-            executionContext.getSubscriptionStrategy().setDataLoaderDispatcherStrategy(dataLoaderDispatchStrategy);
-
+            executionContext.setDataLoaderDispatcherStrategy(dataLoaderDispatchStrategy);
             result = executionStrategy.execute(executionContext, parameters);
         } catch (NonNullableFieldWasNullException e) {
             // this means it was non-null types all the way from an offending non-null type
