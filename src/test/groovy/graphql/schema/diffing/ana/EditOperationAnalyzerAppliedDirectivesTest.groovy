@@ -5,6 +5,7 @@ import graphql.schema.diffing.SchemaDiffing
 import spock.lang.Specification
 
 import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveAddition
+import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveArgumentAddition
 import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveArgumentDeletion
 import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveArgumentRename
 import static graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveArgumentValueModification
@@ -58,7 +59,7 @@ class EditOperationAnalyzerAppliedDirectivesTest extends Specification {
         def changes = calcDiff(oldSdl, newSdl)
         then:
         changes.interfaceDifferences["I"] instanceof InterfaceModification
-        def argumentAddition = (changes.interfaceDifferences["I"] as InterfaceModification).getDetails(SchemaDifference.AppliedDirectiveArgumentAddition)
+        def argumentAddition = (changes.interfaceDifferences["I"] as InterfaceModification).getDetails(AppliedDirectiveArgumentAddition)
         def location = argumentAddition[0].locationDetail as AppliedDirectiveInterfaceFieldLocation
         location.interfaceName == "I"
         location.fieldName == "foo"
@@ -230,7 +231,7 @@ class EditOperationAnalyzerAppliedDirectivesTest extends Specification {
         def changes = calcDiff(oldSdl, newSdl)
         then:
         changes.objectDifferences["Query"] instanceof ObjectModification
-        def argumentAddition = (changes.objectDifferences["Query"] as ObjectModification).getDetails(SchemaDifference.AppliedDirectiveArgumentAddition)
+        def argumentAddition = (changes.objectDifferences["Query"] as ObjectModification).getDetails(AppliedDirectiveArgumentAddition)
         def location = argumentAddition[0].locationDetail as AppliedDirectiveObjectFieldLocation
         location.objectName == "Query"
         location.fieldName == "foo"
@@ -616,6 +617,58 @@ class EditOperationAnalyzerAppliedDirectivesTest extends Specification {
         appliedDirective[0].name == "d"
     }
 
+    def "applied directive deleted argument enum"() {
+        given:
+        def oldSdl = '''
+        directive @d(arg:String) on ENUM
+        enum E @d(arg: "foo") { A, B }
+        type Query {
+            foo: E 
+        }
+        '''
+        def newSdl = '''
+        directive @d(arg:String) on ENUM
+        enum E @d { A, B }
+        type Query {
+            foo: E 
+        }
+        '''
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+        then:
+        changes.enumDifferences["E"] instanceof EnumModification
+        def argumentDeleted = (changes.enumDifferences["E"] as EnumModification).getDetails(AppliedDirectiveArgumentDeletion)
+        (argumentDeleted[0].locationDetail as AppliedDirectiveEnumLocation).name == "E"
+        argumentDeleted[0].argumentName == "arg"
+    }
+
+    def "applied directive added argument enum"() {
+        given:
+        def oldSdl = '''
+        directive @d(arg:String) on ENUM
+        enum E @d { A, B }
+        type Query {
+            foo: E 
+        }
+        '''
+        def newSdl = '''
+        directive @d(arg:String) on ENUM
+        enum E @d(arg: "foo"){ A, B }
+        type Query {
+            foo: E 
+        }
+        '''
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+        then:
+        changes.enumDifferences["E"] instanceof EnumModification
+        def argumentAdded = (changes.enumDifferences["E"] as EnumModification).getDetails(AppliedDirectiveArgumentAddition)
+        (argumentAdded[0].locationDetail as AppliedDirectiveEnumLocation).name == "E"
+        argumentAdded[0].argumentName == "arg"
+
+    }
+
+
     def "applied directive deleted enum value"() {
         given:
         def oldSdl = '''
@@ -873,6 +926,57 @@ class EditOperationAnalyzerAppliedDirectivesTest extends Specification {
         def appliedDirective = diff.getDetails(AppliedDirectiveDeletion)
         (appliedDirective[0].locationDetail as AppliedDirectiveUnionLocation).name == "U"
         appliedDirective[0].name == "d"
+    }
+
+
+    def "applied directive argument added scalar"() {
+        given:
+        def oldSdl = '''
+        directive @d(arg:String) on SCALAR
+        scalar DateTime @d 
+        type Query {
+            foo: DateTime 
+        }
+        '''
+        def newSdl = '''
+        directive @d(arg:String) on SCALAR
+        scalar DateTime  @d(arg: "foo")
+        type Query {
+            foo: DateTime 
+        }
+        '''
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+        then:
+        changes.scalarDifferences["DateTime"] instanceof ScalarModification
+        def argumentAdded = (changes.scalarDifferences["DateTime"] as ScalarModification).getDetails(AppliedDirectiveArgumentAddition)
+        (argumentAdded[0].locationDetail as AppliedDirectiveScalarLocation).name == "DateTime"
+        argumentAdded[0].argumentName == "arg"
+    }
+
+    def "applied directive argument deleted scalar"() {
+        given:
+        def oldSdl = '''
+        directive @d(arg:String) on SCALAR
+        scalar DateTime @d(arg: "foo")
+        type Query {
+            foo: DateTime 
+        }
+        '''
+        def newSdl = '''
+        directive @d(arg:String) on SCALAR
+        scalar DateTime  @d
+        type Query {
+            foo: DateTime 
+        }
+        '''
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+        then:
+        changes.scalarDifferences["DateTime"] instanceof ScalarModification
+        def argumentDeletion = (changes.scalarDifferences["DateTime"] as ScalarModification).getDetails(AppliedDirectiveArgumentDeletion)
+        (argumentDeletion[0].locationDetail as AppliedDirectiveScalarLocation).name == "DateTime"
+        argumentDeletion[0].argumentName == "arg"
     }
 
 

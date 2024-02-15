@@ -1598,7 +1598,7 @@ public interface SchemaDifference {
 
     }
 
-    class AppliedDirectiveArgumentAddition implements ObjectModificationDetail, InterfaceModificationDetail {
+    class AppliedDirectiveArgumentAddition implements ObjectModificationDetail, InterfaceModificationDetail, ScalarModificationDetail, EnumModificationDetail {
         private final AppliedDirectiveLocationDetail locationDetail;
         private final String argumentName;
 
@@ -1616,7 +1616,7 @@ public interface SchemaDifference {
         }
     }
 
-    class AppliedDirectiveArgumentDeletion implements ObjectModificationDetail, InterfaceModificationDetail {
+    class AppliedDirectiveArgumentDeletion implements ObjectModificationDetail, InterfaceModificationDetail, ScalarModificationDetail, EnumModificationDetail {
         private final AppliedDirectiveLocationDetail locationDetail;
         private final String argumentName;
 
