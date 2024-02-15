@@ -480,6 +480,58 @@ class EditOperationAnalyzerAppliedDirectivesTest extends Specification {
         appliedDirective[0].name == "d"
     }
 
+    def "applied directive argument added object field argument"() {
+        given:
+        def oldSdl = '''
+        directive @d(directiveArg:String) on ARGUMENT_DEFINITION 
+        type Query {
+            foo(arg: String @d) : String 
+        }
+        '''
+        def newSdl = '''
+        directive @d(directiveArg:String) on ARGUMENT_DEFINITION 
+        type Query {
+            foo(arg: String @d(directiveArg: "foo")) : String 
+        }
+        '''
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+        then:
+        changes.objectDifferences["Query"] instanceof ObjectModification
+        def appliedDirectiveArgumentAddition = (changes.objectDifferences["Query"] as ObjectModification).getDetails(AppliedDirectiveArgumentAddition)
+        def locationDetail = appliedDirectiveArgumentAddition[0].locationDetail as AppliedDirectiveObjectFieldArgumentLocation
+        locationDetail.objectName == "Query"
+        locationDetail.fieldName == "foo"
+        locationDetail.argumentName == "arg"
+        appliedDirectiveArgumentAddition[0].argumentName == "directiveArg"
+    }
+
+    def "applied directive argument deleted object field argument"() {
+        given:
+        def oldSdl = '''
+        directive @d(directiveArg:String) on ARGUMENT_DEFINITION 
+        type Query {
+            foo(arg: String @d(directiveArg: "foo")) : String 
+        }
+        '''
+        def newSdl = '''
+        directive @d(directiveArg:String) on ARGUMENT_DEFINITION 
+        type Query {
+            foo(arg: String @d) : String 
+        }
+        '''
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+        then:
+        changes.objectDifferences["Query"] instanceof ObjectModification
+        def appliedDirectiveArgumentDeletion = (changes.objectDifferences["Query"] as ObjectModification).getDetails(AppliedDirectiveArgumentDeletion)
+        def locationDetail = appliedDirectiveArgumentDeletion[0].locationDetail as AppliedDirectiveObjectFieldArgumentLocation
+        locationDetail.objectName == "Query"
+        locationDetail.fieldName == "foo"
+        locationDetail.argumentName == "arg"
+        appliedDirectiveArgumentDeletion[0].argumentName == "directiveArg"
+    }
+
     def "applied directive added interface field argument"() {
         given:
         def oldSdl = '''

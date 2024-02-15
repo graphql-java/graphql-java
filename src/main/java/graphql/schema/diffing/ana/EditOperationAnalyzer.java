@@ -343,7 +343,19 @@ public class EditOperationAnalyzer {
             return;
         }
 
-        if (container.isOfType(SchemaGraph.FIELD)) {
+        if (container.isOfType(SchemaGraph.ARGUMENT)) {
+            Vertex argument = container;
+            Vertex fieldOrDirective = oldSchemaGraph.getFieldOrDirectiveForArgument(argument);
+            if (fieldOrDirective.isOfType(SchemaGraph.FIELD)) {
+                Vertex field = fieldOrDirective;
+                Vertex fieldsContainer = oldSchemaGraph.getFieldsContainerForField(field);
+                if (fieldsContainer.isOfType(SchemaGraph.OBJECT)) {
+                    Vertex object = fieldsContainer;
+                    AppliedDirectiveObjectFieldArgumentLocation location = new AppliedDirectiveObjectFieldArgumentLocation(object.getName(), field.getName(), argument.getName(), appliedDirective.getName());
+                    getObjectModification(object.getName()).getDetails().add(new AppliedDirectiveArgumentDeletion(location, deletedArgument.getName()));
+                }
+            }
+        } else if (container.isOfType(SchemaGraph.FIELD)) {
             Vertex field = container;
             Vertex interfaceOrObjective = oldSchemaGraph.getFieldsContainerForField(field);
             if (interfaceOrObjective.isOfType(SchemaGraph.OBJECT)) {
@@ -401,7 +413,19 @@ public class EditOperationAnalyzer {
             return;
         }
 
-        if (container.isOfType(SchemaGraph.FIELD)) {
+        if (container.isOfType(SchemaGraph.ARGUMENT)) {
+            Vertex argument = container;
+            Vertex fieldOrDirective = newSchemaGraph.getFieldOrDirectiveForArgument(argument);
+            if (fieldOrDirective.isOfType(SchemaGraph.FIELD)) {
+                Vertex field = fieldOrDirective;
+                Vertex fieldsContainer = newSchemaGraph.getFieldsContainerForField(field);
+                if (fieldsContainer.isOfType(SchemaGraph.OBJECT)) {
+                    Vertex object = fieldsContainer;
+                    AppliedDirectiveObjectFieldArgumentLocation location = new AppliedDirectiveObjectFieldArgumentLocation(object.getName(), field.getName(), argument.getName(), appliedDirective.getName());
+                    getObjectModification(object.getName()).getDetails().add(new AppliedDirectiveArgumentAddition(location, addedArgument.getName()));
+                }
+            }
+        } else if (container.isOfType(SchemaGraph.FIELD)) {
             Vertex field = container;
             Vertex interfaceOrObjective = newSchemaGraph.getFieldsContainerForField(field);
             if (interfaceOrObjective.isOfType(SchemaGraph.OBJECT)) {
