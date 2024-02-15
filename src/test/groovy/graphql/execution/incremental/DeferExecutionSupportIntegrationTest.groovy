@@ -29,6 +29,7 @@ class DeferExecutionSupportIntegrationTest extends Specification {
             type Query {
                 post : Post 
                 posts: [Post]
+                postById(id: ID!): Post
                 hello: String
                 item(type: String!): Item 
             }
@@ -135,6 +136,9 @@ class DeferExecutionSupportIntegrationTest extends Specification {
                                 [id: "1002"],
                                 [id: "1003"]
                         ]))
+                        .dataFetcher("postById", (env) -> {
+                            return [id: env.getArgument("id")]
+                        })
                         .dataFetcher("hello", resolve("world"))
                         .dataFetcher("item", resolveItem())
                 )
@@ -233,6 +237,71 @@ class DeferExecutionSupportIntegrationTest extends Specification {
                                 [
                                         path: ["postAlias"],
                                         data: [summaryAlias: "A summary"]
+                                ]
+                        ]
+                ]
+        ]
+    }
+
+    def "aliased fields with different parameters"() {
+        def query = '''
+            query {
+                postById(id: "1") {
+                    id
+                }
+                ... @defer {
+                    post2: postById(id: "2") {
+                        id2: id
+                    }
+                }
+                ... @defer {
+                    post3: postById(id: "3") {
+                        ... @defer {
+                            id3: id
+                        }
+                    }
+                }
+            }
+        '''
+
+        when:
+        IncrementalExecutionResult initialResult = executeQuery(query)
+
+        then:
+        initialResult.toSpecification() == [
+                data   : [postById: [id: "1"]],
+                hasNext: true
+        ]
+
+        when:
+        def incrementalResults = getIncrementalResults(initialResult)
+
+        then:
+        incrementalResults == [
+                [
+                        hasNext    : true,
+                        incremental: [
+                                [
+                                        path: [],
+                                        data: [post2: [id2: "2"]]
+                                ]
+                        ]
+                ],
+                [
+                        hasNext    : true,
+                        incremental: [
+                                [
+                                        path: [],
+                                        data: [post3: [:]]
+                                ]
+                        ]
+                ],
+                [
+                        hasNext    : false,
+                        incremental: [
+                                [
+                                        path: ["post3"],
+                                        data: [id3: "3"]
                                 ]
                         ]
                 ]
