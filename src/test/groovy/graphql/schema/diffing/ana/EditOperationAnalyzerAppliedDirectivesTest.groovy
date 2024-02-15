@@ -563,6 +563,70 @@ class EditOperationAnalyzerAppliedDirectivesTest extends Specification {
         appliedDirective[0].name == "d"
     }
 
+    def "applied directive argument added interface field argument"() {
+        given:
+        def oldSdl = '''
+        directive @d(directiveArg:String) on ARGUMENT_DEFINITION 
+        type Query implements I {
+            foo(arg: String) : String 
+        }
+        interface I {
+            foo(arg: String @d): String
+        }
+        '''
+        def newSdl = '''
+        directive @d(directiveArg:String) on ARGUMENT_DEFINITION 
+        type Query implements I {
+            foo(arg: String) : String 
+        }
+        interface I {
+            foo(arg: String @d(directiveArg: "foo") ): String
+        }
+        '''
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+        then:
+        changes.interfaceDifferences["I"] instanceof InterfaceModification
+        def appliedDirective = (changes.interfaceDifferences["I"] as InterfaceModification).getDetails(AppliedDirectiveArgumentAddition)
+        def location = appliedDirective[0].locationDetail as AppliedDirectiveInterfaceFieldArgumentLocation
+        location.interfaceName == "I"
+        location.fieldName == "foo"
+        location.argumentName == "arg"
+        appliedDirective[0].argumentName == "directiveArg"
+    }
+
+    def "applied directive argument deleted interface field argument"() {
+        given:
+        def oldSdl = '''
+        directive @d(directiveArg:String) on ARGUMENT_DEFINITION 
+        type Query implements I {
+            foo(arg: String) : String 
+        }
+        interface I {
+            foo(arg: String @d(directiveArg: "foo")): String
+        }
+        '''
+        def newSdl = '''
+        directive @d(directiveArg:String) on ARGUMENT_DEFINITION 
+        type Query implements I {
+            foo(arg: String) : String 
+        }
+        interface I {
+            foo(arg: String @d): String
+        }
+        '''
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+        then:
+        changes.interfaceDifferences["I"] instanceof InterfaceModification
+        def appliedDirective = (changes.interfaceDifferences["I"] as InterfaceModification).getDetails(AppliedDirectiveArgumentDeletion)
+        def location = appliedDirective[0].locationDetail as AppliedDirectiveInterfaceFieldArgumentLocation
+        location.interfaceName == "I"
+        location.fieldName == "foo"
+        location.argumentName == "arg"
+        appliedDirective[0].argumentName == "directiveArg"
+    }
+
     def "applied directive added directive argument "() {
         given:
         def oldSdl = '''

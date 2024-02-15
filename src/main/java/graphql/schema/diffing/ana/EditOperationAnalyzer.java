@@ -353,6 +353,10 @@ public class EditOperationAnalyzer {
                     Vertex object = fieldsContainer;
                     AppliedDirectiveObjectFieldArgumentLocation location = new AppliedDirectiveObjectFieldArgumentLocation(object.getName(), field.getName(), argument.getName(), appliedDirective.getName());
                     getObjectModification(object.getName()).getDetails().add(new AppliedDirectiveArgumentDeletion(location, deletedArgument.getName()));
+                } else if (fieldsContainer.isOfType(SchemaGraph.INTERFACE)) {
+                    Vertex interfaze = fieldsContainer;
+                    AppliedDirectiveInterfaceFieldArgumentLocation location = new AppliedDirectiveInterfaceFieldArgumentLocation(interfaze.getName(), field.getName(), argument.getName(), appliedDirective.getName());
+                    getInterfaceModification(interfaze.getName()).getDetails().add(new AppliedDirectiveArgumentDeletion(location, deletedArgument.getName()));
                 }
             }
         } else if (container.isOfType(SchemaGraph.FIELD)) {
@@ -423,6 +427,10 @@ public class EditOperationAnalyzer {
                     Vertex object = fieldsContainer;
                     AppliedDirectiveObjectFieldArgumentLocation location = new AppliedDirectiveObjectFieldArgumentLocation(object.getName(), field.getName(), argument.getName(), appliedDirective.getName());
                     getObjectModification(object.getName()).getDetails().add(new AppliedDirectiveArgumentAddition(location, addedArgument.getName()));
+                } else if (fieldsContainer.isOfType(SchemaGraph.INTERFACE)) {
+                    Vertex interfaze = fieldsContainer;
+                    AppliedDirectiveInterfaceFieldArgumentLocation location = new AppliedDirectiveInterfaceFieldArgumentLocation(interfaze.getName(), field.getName(), argument.getName(), appliedDirective.getName());
+                    getInterfaceModification(interfaze.getName()).getDetails().add(new AppliedDirectiveArgumentAddition(location, addedArgument.getName()));
                 }
             }
         } else if (container.isOfType(SchemaGraph.FIELD)) {
