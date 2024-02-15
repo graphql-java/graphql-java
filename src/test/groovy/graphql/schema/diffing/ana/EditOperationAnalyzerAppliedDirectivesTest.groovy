@@ -1039,6 +1039,64 @@ class EditOperationAnalyzerAppliedDirectivesTest extends Specification {
         argumentDeletion[0].argumentName == "arg"
     }
 
+    def "applied directive argument added input object"() {
+        given:
+        def oldSdl = '''
+        directive @d(arg:String) on INPUT_OBJECT
+        input I @d {
+            a: String
+        }
+        type Query {
+            foo(arg: I): String 
+        }
+        '''
+        def newSdl = '''
+        directive @d(arg:String) on INPUT_OBJECT
+        input I @d(arg: "foo") {
+            a: String
+        }
+        type Query {
+            foo(arg: I): String 
+        }
+        '''
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+        then:
+        changes.inputObjectDifferences["I"] instanceof InputObjectModification
+        def argumentAdded = (changes.inputObjectDifferences["I"] as InputObjectModification).getDetails(AppliedDirectiveArgumentAddition)
+        (argumentAdded[0].locationDetail as AppliedDirectiveInputObjectLocation).name == "I"
+        argumentAdded[0].argumentName == "arg"
+    }
+
+    def "applied directive argument deleted input object"() {
+        given:
+        def oldSdl = '''
+        directive @d(arg:String) on INPUT_OBJECT
+        input I @d(arg: "foo") {
+            a: String
+        }
+        type Query {
+            foo(arg: I): String 
+        }
+        '''
+        def newSdl = '''
+        directive @d(arg:String) on INPUT_OBJECT
+        input I @d  {
+            a: String
+        }
+        type Query {
+            foo(arg: I): String 
+        }
+        '''
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+        then:
+        changes.inputObjectDifferences["I"] instanceof InputObjectModification
+        def argumentAdded = (changes.inputObjectDifferences["I"] as InputObjectModification).getDetails(AppliedDirectiveArgumentDeletion)
+        (argumentAdded[0].locationDetail as AppliedDirectiveInputObjectLocation).name == "I"
+        argumentAdded[0].argumentName == "arg"
+    }
+
 
     EditOperationAnalysisResult calcDiff(
             String oldSdl,

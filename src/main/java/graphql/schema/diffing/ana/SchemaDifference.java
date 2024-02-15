@@ -1606,7 +1606,8 @@ public interface SchemaDifference {
             InterfaceModificationDetail,
             ScalarModificationDetail,
             EnumModificationDetail,
-            UnionModificationDetail {
+            UnionModificationDetail,
+            InputObjectModificationDetail {
         private final AppliedDirectiveLocationDetail locationDetail;
         private final String argumentName;
 
@@ -1628,7 +1629,8 @@ public interface SchemaDifference {
             InterfaceModificationDetail,
             ScalarModificationDetail,
             EnumModificationDetail,
-            UnionModificationDetail {
+            UnionModificationDetail,
+            InputObjectModificationDetail {
         private final AppliedDirectiveLocationDetail locationDetail;
         private final String argumentName;
 

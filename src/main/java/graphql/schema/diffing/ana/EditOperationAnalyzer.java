@@ -383,6 +383,13 @@ public class EditOperationAnalyzer {
             }
             AppliedDirectiveUnionLocation location = new AppliedDirectiveUnionLocation(union.getName(), appliedDirective.getName());
             getUnionModification(union.getName()).getDetails().add(new AppliedDirectiveArgumentDeletion(location, deletedArgument.getName()));
+        } else if (container.isOfType(SchemaGraph.INPUT_OBJECT)) {
+            Vertex inputObject = container;
+            if (isInputObjectDeleted(inputObject.getName())) {
+                return;
+            }
+            AppliedDirectiveInputObjectLocation location = new AppliedDirectiveInputObjectLocation(inputObject.getName(), appliedDirective.getName());
+            getInputObjectModification(inputObject.getName()).getDetails().add(new AppliedDirectiveArgumentDeletion(location, deletedArgument.getName()));
         }
     }
 
@@ -435,6 +442,13 @@ public class EditOperationAnalyzer {
             }
             AppliedDirectiveUnionLocation location = new AppliedDirectiveUnionLocation(union.getName(), appliedDirective.getName());
             getUnionModification(union.getName()).getDetails().add(new AppliedDirectiveArgumentAddition(location, addedArgument.getName()));
+        } else if (container.isOfType(SchemaGraph.INPUT_OBJECT)) {
+            Vertex inputObject = container;
+            if (isInputObjectAdded(inputObject.getName())) {
+                return;
+            }
+            AppliedDirectiveInputObjectLocation location = new AppliedDirectiveInputObjectLocation(inputObject.getName(), appliedDirective.getName());
+            getInputObjectModification(inputObject.getName()).getDetails().add(new AppliedDirectiveArgumentAddition(location, addedArgument.getName()));
         } else {
 //            assertShouldNeverHappen("Unexpected applied argument container " + container);
         }
