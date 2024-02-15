@@ -9,6 +9,7 @@ import graphql.schema.diffing.EditOperation;
 import graphql.schema.diffing.Mapping;
 import graphql.schema.diffing.SchemaGraph;
 import graphql.schema.diffing.Vertex;
+import graphql.schema.diffing.ana.SchemaDifference.AppliedDirectiveArgumentAddition;
 import graphql.schema.idl.ScalarInfo;
 
 import java.util.ArrayList;
@@ -212,6 +213,8 @@ public class EditOperationAnalyzer {
                 case INSERT_VERTEX:
                     if (editOperation.getTargetVertex().isOfType(SchemaGraph.APPLIED_DIRECTIVE)) {
                         appliedDirectiveAdded(editOperation);
+                    } else if (editOperation.getTargetVertex().isOfType(SchemaGraph.APPLIED_ARGUMENT)) {
+                        appliedDirectiveArgumentAdded(editOperation);
                     }
                     break;
                 case CHANGE_VERTEX:
@@ -337,6 +340,33 @@ public class EditOperationAnalyzer {
                 }
                 AppliedDirectiveInterfaceFieldLocation location = new AppliedDirectiveInterfaceFieldLocation(interfaze.getName(), field.getName(), appliedDirective.getName());
                 getInterfaceModification(interfaze.getName()).getDetails().add(new AppliedDirectiveArgumentDeletion(location, deletedArgument.getName()));
+            }
+        }
+    }
+
+    private void appliedDirectiveArgumentAdded(EditOperation editOperation) {
+        Vertex addedArgument = editOperation.getTargetVertex();
+        Vertex appliedDirective = newSchemaGraph.getAppliedDirectiveForAppliedArgument(addedArgument);
+        Vertex container = newSchemaGraph.getAppliedDirectiveContainerForAppliedDirective(appliedDirective);
+
+        if (container.isOfType(SchemaGraph.FIELD)) {
+            Vertex field = container;
+            Vertex interfaceOrObjective = newSchemaGraph.getFieldsContainerForField(field);
+            if (interfaceOrObjective.isOfType(SchemaGraph.OBJECT)) {
+                Vertex object = interfaceOrObjective;
+                if (isObjectAdded(object.getName())) {
+                    return;
+                }
+                AppliedDirectiveObjectFieldLocation location = new AppliedDirectiveObjectFieldLocation(object.getName(), field.getName(), appliedDirective.getName());
+                getObjectModification(object.getName()).getDetails().add(new AppliedDirectiveArgumentAddition(location, addedArgument.getName()));
+            } else {
+                assertTrue(interfaceOrObjective.isOfType(SchemaGraph.INTERFACE));
+                Vertex interfaze = interfaceOrObjective;
+                if (isInterfaceAdded(interfaze.getName())) {
+                    return;
+                }
+                AppliedDirectiveInterfaceFieldLocation location = new AppliedDirectiveInterfaceFieldLocation(interfaze.getName(), field.getName(), appliedDirective.getName());
+                getInterfaceModification(interfaze.getName()).getDetails().add(new AppliedDirectiveArgumentAddition(location, addedArgument.getName()));
             }
         }
     }

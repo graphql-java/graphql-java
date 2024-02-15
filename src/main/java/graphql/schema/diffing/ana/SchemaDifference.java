@@ -1598,8 +1598,22 @@ public interface SchemaDifference {
 
     }
 
-    class AppliedDirectiveArgumentAddition {
+    class AppliedDirectiveArgumentAddition implements ObjectModificationDetail, InterfaceModificationDetail {
+        private final AppliedDirectiveLocationDetail locationDetail;
+        private final String argumentName;
 
+        public AppliedDirectiveArgumentAddition(AppliedDirectiveLocationDetail locationDetail, String argumentName) {
+            this.locationDetail = locationDetail;
+            this.argumentName = argumentName;
+        }
+
+        public AppliedDirectiveLocationDetail getLocationDetail() {
+            return locationDetail;
+        }
+
+        public String getArgumentName() {
+            return argumentName;
+        }
     }
 
     class AppliedDirectiveArgumentDeletion implements ObjectModificationDetail, InterfaceModificationDetail {

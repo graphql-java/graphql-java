@@ -32,6 +32,39 @@ import static graphql.schema.diffing.ana.SchemaDifference.UnionModification
 
 class EditOperationAnalyzerAppliedDirectivesTest extends Specification {
 
+    def "applied directive argument added interface field"() {
+        given:
+        def oldSdl = '''
+        directive @d(arg1:String) on FIELD_DEFINITION
+        
+        type Query implements I{
+            foo: String 
+        }
+        interface I {
+            foo: String @d
+        }
+        '''
+        def newSdl = '''
+        directive @d(arg1:String) on FIELD_DEFINITION
+        
+        type Query implements I{
+            foo: String 
+        }
+        interface I {
+            foo: String @d(arg1: "foo")
+        }
+        '''
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+        then:
+        changes.interfaceDifferences["I"] instanceof InterfaceModification
+        def argumentAddition = (changes.interfaceDifferences["I"] as InterfaceModification).getDetails(SchemaDifference.AppliedDirectiveArgumentAddition)
+        def location = argumentAddition[0].locationDetail as AppliedDirectiveInterfaceFieldLocation
+        location.interfaceName == "I"
+        location.fieldName == "foo"
+        argumentAddition[0].argumentName == "arg1"
+    }
+
     def "applied directive argument deleted interface field "() {
         given:
         def oldSdl = '''
@@ -175,6 +208,33 @@ class EditOperationAnalyzerAppliedDirectivesTest extends Specification {
         location.fieldName == "foo"
         argumentRenames[0].oldName == "arg1"
         argumentRenames[0].newName == "arg2"
+    }
+
+    def "applied directive argument added object field"() {
+        given:
+        def oldSdl = '''
+        directive @d(arg1:String) on FIELD_DEFINITION
+        
+        type Query {
+            foo: String @d
+        }
+        '''
+        def newSdl = '''
+        directive @d(arg1: String)  on FIELD_DEFINITION
+        
+        type Query {
+            foo: String @d(arg1: "foo")
+        }
+        '''
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+        then:
+        changes.objectDifferences["Query"] instanceof ObjectModification
+        def argumentAddition = (changes.objectDifferences["Query"] as ObjectModification).getDetails(SchemaDifference.AppliedDirectiveArgumentAddition)
+        def location = argumentAddition[0].locationDetail as AppliedDirectiveObjectFieldLocation
+        location.objectName == "Query"
+        location.fieldName == "foo"
+        argumentAddition[0].argumentName == "arg1"
     }
 
     def "applied directive argument deleted object field"() {
