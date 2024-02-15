@@ -673,6 +673,7 @@ class EditOperationAnalyzerAppliedDirectivesTest extends Specification {
         def changes = calcDiff(oldSdl, newSdl)
         then:
         changes.directiveDifferences["d2"] instanceof DirectiveModification
+        (changes.directiveDifferences["d2"] as DirectiveModification).details.size() == 1
         def appliedDirectiveArgumentAddition = (changes.directiveDifferences["d2"] as DirectiveModification).getDetails(AppliedDirectiveArgumentAddition)
         def location = appliedDirectiveArgumentAddition[0].locationDetail as AppliedDirectiveDirectiveArgumentLocation
         location.directiveName == "d"
@@ -700,6 +701,7 @@ class EditOperationAnalyzerAppliedDirectivesTest extends Specification {
         def changes = calcDiff(oldSdl, newSdl)
         then:
         changes.directiveDifferences["d2"] instanceof DirectiveModification
+        (changes.directiveDifferences["d2"] as DirectiveModification).details.size() == 1
         def appliedDirectiveArgumentDeletion = (changes.directiveDifferences["d2"] as DirectiveModification).getDetails(AppliedDirectiveArgumentDeletion)
         def location = appliedDirectiveArgumentDeletion[0].locationDetail as AppliedDirectiveDirectiveArgumentLocation
         location.directiveName == "d"
@@ -733,17 +735,17 @@ class EditOperationAnalyzerAppliedDirectivesTest extends Specification {
         appliedDirective[0].name == "d"
     }
 
-    def "applied directive deleted directive argument "() {
+    def "applied directive deleted argument directive"() {
         given:
         def oldSdl = '''
-        directive @d(arg:String) on ARGUMENT_DEFINITION 
-        directive @d2(arg:String @d) on ARGUMENT_DEFINITION 
+        directive @d(arg1:String) on ARGUMENT_DEFINITION 
+        directive @d2(arg:String @d(arg1:"foo")) on ARGUMENT_DEFINITION 
         type Query {
             foo: String
         }
         '''
         def newSdl = '''
-        directive @d(arg:String) on ARGUMENT_DEFINITION 
+        directive @d(arg1:String) on ARGUMENT_DEFINITION 
         directive @d2(arg:String) on ARGUMENT_DEFINITION 
         type Query {
             foo: String
@@ -753,6 +755,8 @@ class EditOperationAnalyzerAppliedDirectivesTest extends Specification {
         def changes = calcDiff(oldSdl, newSdl)
         then:
         changes.directiveDifferences["d2"] instanceof DirectiveModification
+        // whole applied directive is deleted, so we don't count the applied argument deletion
+        (changes.directiveDifferences["d2"] as DirectiveModification).details.size() == 1
         def appliedDirective = (changes.directiveDifferences["d2"] as DirectiveModification).getDetails(AppliedDirectiveDeletion)
         (appliedDirective[0].locationDetail as AppliedDirectiveDirectiveArgumentLocation).directiveName == "d2"
         (appliedDirective[0].locationDetail as AppliedDirectiveDirectiveArgumentLocation).argumentName == "arg"
