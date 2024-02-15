@@ -358,6 +358,10 @@ public class EditOperationAnalyzer {
                     AppliedDirectiveInterfaceFieldArgumentLocation location = new AppliedDirectiveInterfaceFieldArgumentLocation(interfaze.getName(), field.getName(), argument.getName(), appliedDirective.getName());
                     getInterfaceModification(interfaze.getName()).getDetails().add(new AppliedDirectiveArgumentDeletion(location, deletedArgument.getName()));
                 }
+            } else if (fieldOrDirective.isOfType(SchemaGraph.DIRECTIVE)) {
+                Vertex directive = fieldOrDirective;
+                AppliedDirectiveDirectiveArgumentLocation location = new AppliedDirectiveDirectiveArgumentLocation(appliedDirective.getName(), argument.getName());
+                getDirectiveModification(directive.getName()).getDetails().add(new AppliedDirectiveArgumentDeletion(location, deletedArgument.getName()));
             }
         } else if (container.isOfType(SchemaGraph.FIELD)) {
             Vertex field = container;
@@ -432,6 +436,10 @@ public class EditOperationAnalyzer {
                     AppliedDirectiveInterfaceFieldArgumentLocation location = new AppliedDirectiveInterfaceFieldArgumentLocation(interfaze.getName(), field.getName(), argument.getName(), appliedDirective.getName());
                     getInterfaceModification(interfaze.getName()).getDetails().add(new AppliedDirectiveArgumentAddition(location, addedArgument.getName()));
                 }
+            } else if (fieldOrDirective.isOfType(SchemaGraph.DIRECTIVE)) {
+                Vertex directive = fieldOrDirective;
+                AppliedDirectiveDirectiveArgumentLocation location = new AppliedDirectiveDirectiveArgumentLocation(appliedDirective.getName(), argument.getName());
+                getDirectiveModification(directive.getName()).getDetails().add(new AppliedDirectiveArgumentAddition(location, addedArgument.getName()));
             }
         } else if (container.isOfType(SchemaGraph.FIELD)) {
             Vertex field = container;

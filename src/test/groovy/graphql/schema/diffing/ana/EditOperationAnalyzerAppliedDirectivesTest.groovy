@@ -653,6 +653,61 @@ class EditOperationAnalyzerAppliedDirectivesTest extends Specification {
         appliedDirective[0].name == "d"
     }
 
+    def "applied directive argument added directive argument "() {
+        given:
+        def oldSdl = '''
+        directive @d(arg:String) on ARGUMENT_DEFINITION 
+        directive @d2(arg2:String @d) on ARGUMENT_DEFINITION 
+        type Query {
+            foo: String
+        }
+        '''
+        def newSdl = '''
+        directive @d(arg:String) on ARGUMENT_DEFINITION 
+        directive @d2(arg2:String @d(arg:"foo") ) on ARGUMENT_DEFINITION 
+        type Query {
+            foo: String
+        }
+        '''
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+        then:
+        changes.directiveDifferences["d2"] instanceof DirectiveModification
+        def appliedDirectiveArgumentAddition = (changes.directiveDifferences["d2"] as DirectiveModification).getDetails(AppliedDirectiveArgumentAddition)
+        def location = appliedDirectiveArgumentAddition[0].locationDetail as AppliedDirectiveDirectiveArgumentLocation
+        location.directiveName == "d"
+        location.argumentName == "arg2"
+        appliedDirectiveArgumentAddition[0].argumentName == "arg"
+    }
+
+    def "applied directive argument deleted directive argument "() {
+        given:
+        def oldSdl = '''
+        directive @d(arg:String) on ARGUMENT_DEFINITION 
+        directive @d2(arg2:String @d(arg:"foo")) on ARGUMENT_DEFINITION 
+        type Query {
+            foo: String
+        }
+        '''
+        def newSdl = '''
+        directive @d(arg:String) on ARGUMENT_DEFINITION 
+        directive @d2(arg2:String @d ) on ARGUMENT_DEFINITION 
+        type Query {
+            foo: String
+        }
+        '''
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+        then:
+        changes.directiveDifferences["d2"] instanceof DirectiveModification
+        def appliedDirectiveArgumentDeletion = (changes.directiveDifferences["d2"] as DirectiveModification).getDetails(AppliedDirectiveArgumentDeletion)
+        def location = appliedDirectiveArgumentDeletion[0].locationDetail as AppliedDirectiveDirectiveArgumentLocation
+        location.directiveName == "d"
+        location.argumentName == "arg2"
+        appliedDirectiveArgumentDeletion[0].argumentName == "arg"
+    }
+
+
     def "applied directive deleted object"() {
         given:
         def oldSdl = '''
