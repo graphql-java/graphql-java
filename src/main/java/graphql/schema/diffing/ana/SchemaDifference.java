@@ -1450,6 +1450,10 @@ public interface SchemaDifference {
         public String getName() {
             return name;
         }
+
+        public String getDirectiveName() {
+            return directiveName;
+        }
     }
 
     class AppliedDirectiveEnumLocation implements AppliedDirectiveLocationDetail {
@@ -1598,7 +1602,11 @@ public interface SchemaDifference {
 
     }
 
-    class AppliedDirectiveArgumentAddition implements ObjectModificationDetail, InterfaceModificationDetail, ScalarModificationDetail, EnumModificationDetail {
+    class AppliedDirectiveArgumentAddition implements ObjectModificationDetail,
+            InterfaceModificationDetail,
+            ScalarModificationDetail,
+            EnumModificationDetail,
+            UnionModificationDetail {
         private final AppliedDirectiveLocationDetail locationDetail;
         private final String argumentName;
 
@@ -1616,7 +1624,11 @@ public interface SchemaDifference {
         }
     }
 
-    class AppliedDirectiveArgumentDeletion implements ObjectModificationDetail, InterfaceModificationDetail, ScalarModificationDetail, EnumModificationDetail {
+    class AppliedDirectiveArgumentDeletion implements ObjectModificationDetail,
+            InterfaceModificationDetail,
+            ScalarModificationDetail,
+            EnumModificationDetail,
+            UnionModificationDetail {
         private final AppliedDirectiveLocationDetail locationDetail;
         private final String argumentName;
 

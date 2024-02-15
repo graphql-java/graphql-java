@@ -376,6 +376,13 @@ public class EditOperationAnalyzer {
             }
             AppliedDirectiveEnumLocation location = new AppliedDirectiveEnumLocation(enumVertex.getName(), appliedDirective.getName());
             getEnumModification(enumVertex.getName()).getDetails().add(new AppliedDirectiveArgumentDeletion(location, deletedArgument.getName()));
+        } else if (container.isOfType(SchemaGraph.UNION)) {
+            Vertex union = container;
+            if (isUnionDeleted(union.getName())) {
+                return;
+            }
+            AppliedDirectiveUnionLocation location = new AppliedDirectiveUnionLocation(union.getName(), appliedDirective.getName());
+            getUnionModification(union.getName()).getDetails().add(new AppliedDirectiveArgumentDeletion(location, deletedArgument.getName()));
         }
     }
 
@@ -383,6 +390,9 @@ public class EditOperationAnalyzer {
         Vertex addedArgument = editOperation.getTargetVertex();
         Vertex appliedDirective = newSchemaGraph.getAppliedDirectiveForAppliedArgument(addedArgument);
         Vertex container = newSchemaGraph.getAppliedDirectiveContainerForAppliedDirective(appliedDirective);
+        if (isAppliedDirectiveAdded(container, appliedDirective.getName())) {
+            return;
+        }
 
         if (container.isOfType(SchemaGraph.FIELD)) {
             Vertex field = container;
@@ -418,10 +428,18 @@ public class EditOperationAnalyzer {
             }
             AppliedDirectiveEnumLocation location = new AppliedDirectiveEnumLocation(enumVertex.getName(), appliedDirective.getName());
             getEnumModification(enumVertex.getName()).getDetails().add(new AppliedDirectiveArgumentAddition(location, addedArgument.getName()));
+        } else if (container.isOfType(SchemaGraph.UNION)) {
+            Vertex union = container;
+            if (isUnionAdded(union.getName())) {
+                return;
+            }
+            AppliedDirectiveUnionLocation location = new AppliedDirectiveUnionLocation(union.getName(), appliedDirective.getName());
+            getUnionModification(union.getName()).getDetails().add(new AppliedDirectiveArgumentAddition(location, addedArgument.getName()));
         } else {
 //            assertShouldNeverHappen("Unexpected applied argument container " + container);
         }
     }
+
 
     private void appliedDirectiveArgumentChanged(EditOperation editOperation) {
         Vertex appliedArgument = editOperation.getTargetVertex();
@@ -1490,6 +1508,75 @@ public class EditOperationAnalyzer {
         return inputObjectDifferences.containsKey(name) && inputObjectDifferences.get(name) instanceof InputObjectAddition;
     }
 
+    private boolean isAppliedDirectiveAdded(Vertex container, String appliedDirectiveName) {
+        if (container.isOfType(SchemaGraph.SCALAR)) {
+            if (scalarDifferences.containsKey(container.getName())) {
+                ScalarDifference scalarDifference = scalarDifferences.get(container.getName());
+                if (scalarDifference instanceof ScalarModification) {
+                    ScalarModification scalarModification = (ScalarModification) scalarDifference;
+                    List<AppliedDirectiveAddition> appliedDirectiveAdditions = scalarModification.getDetails(AppliedDirectiveAddition.class);
+                    return appliedDirectiveAdditions.stream().anyMatch(addition -> addition.getName().equals(appliedDirectiveName));
+                }
+            }
+        } else if (container.isOfType(SchemaGraph.ENUM)) {
+            if (enumDifferences.containsKey(container.getName())) {
+                EnumDifference enumDifference = enumDifferences.get(container.getName());
+                if (enumDifference instanceof EnumModification) {
+                    EnumModification enumModification = (EnumModification) enumDifference;
+                    List<AppliedDirectiveAddition> appliedDirectiveAdditions = enumModification.getDetails(AppliedDirectiveAddition.class);
+                    return appliedDirectiveAdditions.stream().anyMatch(addition -> addition.getName().equals(appliedDirectiveName));
+                }
+            }
+        } else if (container.isOfType(SchemaGraph.OBJECT)) {
+            if (objectDifferences.containsKey(container.getName())) {
+                ObjectDifference objectDifference = objectDifferences.get(container.getName());
+                if (objectDifference instanceof ObjectModification) {
+                    ObjectModification objectModification = (ObjectModification) objectDifference;
+                    List<AppliedDirectiveAddition> appliedDirectiveAdditions = objectModification.getDetails(AppliedDirectiveAddition.class);
+                    return appliedDirectiveAdditions.stream().anyMatch(addition -> addition.getName().equals(appliedDirectiveName));
+                }
+            }
+        } else if (container.isOfType(SchemaGraph.INTERFACE)) {
+            if (interfaceDifferences.containsKey(container.getName())) {
+                InterfaceDifference interfaceDifference = interfaceDifferences.get(container.getName());
+                if (interfaceDifference instanceof InterfaceModification) {
+                    InterfaceModification interfaceModification = (InterfaceModification) interfaceDifference;
+                    List<AppliedDirectiveAddition> appliedDirectiveAdditions = interfaceModification.getDetails(AppliedDirectiveAddition.class);
+                    return appliedDirectiveAdditions.stream().anyMatch(addition -> addition.getName().equals(appliedDirectiveName));
+                }
+            }
+        } else if (container.isOfType(SchemaGraph.INPUT_OBJECT)) {
+            if (inputObjectDifferences.containsKey(container.getName())) {
+                InputObjectDifference inputObjectDifference = inputObjectDifferences.get(container.getName());
+                if (inputObjectDifference instanceof InputObjectModification) {
+                    InputObjectModification inputObjectModification = (InputObjectModification) inputObjectDifference;
+                    List<AppliedDirectiveAddition> appliedDirectiveAdditions = inputObjectModification.getDetails(AppliedDirectiveAddition.class);
+                    return appliedDirectiveAdditions.stream().anyMatch(addition -> addition.getName().equals(appliedDirectiveName));
+                }
+            }
+        } else if (container.isOfType(SchemaGraph.UNION)) {
+            if (unionDifferences.containsKey(container.getName())) {
+                UnionDifference unionDifference = unionDifferences.get(container.getName());
+                if (unionDifference instanceof UnionModification) {
+                    UnionModification unionModification = (UnionModification) unionDifference;
+                    List<AppliedDirectiveAddition> appliedDirectiveAdditions = unionModification.getDetails(AppliedDirectiveAddition.class);
+                    return appliedDirectiveAdditions.stream().anyMatch(addition -> addition.getName().equals(appliedDirectiveName));
+                }
+            }
+        } else if (container.isOfType(SchemaGraph.DIRECTIVE)) {
+            if (directiveDifferences.containsKey(container.getName())) {
+                DirectiveDifference directiveDifference = directiveDifferences.get(container.getName());
+                if (directiveDifference instanceof DirectiveModification) {
+                    DirectiveModification directiveModification = (DirectiveModification) directiveDifference;
+                    List<AppliedDirectiveAddition> appliedDirectiveAdditions = directiveModification.getDetails(AppliedDirectiveAddition.class);
+                    return appliedDirectiveAdditions.stream().anyMatch(addition -> addition.getName().equals(appliedDirectiveName));
+                }
+            }
+        }
+        return false;
+    }
+
+
     private boolean isAppliedDirectiveDeleted(Vertex container, String appliedDirectiveName) {
         if (container.isOfType(SchemaGraph.SCALAR)) {
             if (scalarDifferences.containsKey(container.getName())) {
@@ -1506,6 +1593,51 @@ public class EditOperationAnalyzer {
                 if (enumDifference instanceof EnumModification) {
                     EnumModification enumModification = (EnumModification) enumDifference;
                     List<AppliedDirectiveDeletion> appliedDirectiveDeletions = enumModification.getDetails(AppliedDirectiveDeletion.class);
+                    return appliedDirectiveDeletions.stream().anyMatch(deletion -> deletion.getName().equals(appliedDirectiveName));
+                }
+            }
+        } else if (container.isOfType(SchemaGraph.OBJECT)) {
+            if (objectDifferences.containsKey(container.getName())) {
+                ObjectDifference objectDifference = objectDifferences.get(container.getName());
+                if (objectDifference instanceof ObjectModification) {
+                    ObjectModification objectModification = (ObjectModification) objectDifference;
+                    List<AppliedDirectiveDeletion> appliedDirectiveDeletions = objectModification.getDetails(AppliedDirectiveDeletion.class);
+                    return appliedDirectiveDeletions.stream().anyMatch(deletion -> deletion.getName().equals(appliedDirectiveName));
+                }
+            }
+        } else if (container.isOfType(SchemaGraph.INTERFACE)) {
+            if (interfaceDifferences.containsKey(container.getName())) {
+                InterfaceDifference interfaceDifference = interfaceDifferences.get(container.getName());
+                if (interfaceDifference instanceof InterfaceModification) {
+                    InterfaceModification interfaceModification = (InterfaceModification) interfaceDifference;
+                    List<AppliedDirectiveDeletion> appliedDirectiveDeletions = interfaceModification.getDetails(AppliedDirectiveDeletion.class);
+                    return appliedDirectiveDeletions.stream().anyMatch(deletion -> deletion.getName().equals(appliedDirectiveName));
+                }
+            }
+        } else if (container.isOfType(SchemaGraph.INPUT_OBJECT)) {
+            if (inputObjectDifferences.containsKey(container.getName())) {
+                InputObjectDifference inputObjectDifference = inputObjectDifferences.get(container.getName());
+                if (inputObjectDifference instanceof InputObjectModification) {
+                    InputObjectModification inputObjectModification = (InputObjectModification) inputObjectDifference;
+                    List<AppliedDirectiveDeletion> appliedDirectiveDeletions = inputObjectModification.getDetails(AppliedDirectiveDeletion.class);
+                    return appliedDirectiveDeletions.stream().anyMatch(deletion -> deletion.getName().equals(appliedDirectiveName));
+                }
+            }
+        } else if (container.isOfType(SchemaGraph.UNION)) {
+            if (unionDifferences.containsKey(container.getName())) {
+                UnionDifference unionDifference = unionDifferences.get(container.getName());
+                if (unionDifference instanceof UnionModification) {
+                    UnionModification unionModification = (UnionModification) unionDifference;
+                    List<AppliedDirectiveDeletion> appliedDirectiveDeletions = unionModification.getDetails(AppliedDirectiveDeletion.class);
+                    return appliedDirectiveDeletions.stream().anyMatch(deletion -> deletion.getName().equals(appliedDirectiveName));
+                }
+            }
+        } else if (container.isOfType(SchemaGraph.DIRECTIVE)) {
+            if (directiveDifferences.containsKey(container.getName())) {
+                DirectiveDifference directiveDifference = directiveDifferences.get(container.getName());
+                if (directiveDifference instanceof DirectiveModification) {
+                    DirectiveModification directiveModification = (DirectiveModification) directiveDifference;
+                    List<AppliedDirectiveDeletion> appliedDirectiveDeletions = directiveModification.getDetails(AppliedDirectiveDeletion.class);
                     return appliedDirectiveDeletions.stream().anyMatch(deletion -> deletion.getName().equals(appliedDirectiveName));
                 }
             }

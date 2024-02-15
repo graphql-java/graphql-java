@@ -928,6 +928,66 @@ class EditOperationAnalyzerAppliedDirectivesTest extends Specification {
         appliedDirective[0].name == "d"
     }
 
+    def "applied directive argument added union"() {
+        given:
+        def oldSdl = '''
+        directive @d(arg:String) on UNION
+        type Query {
+            foo: FooBar  
+        }
+        union FooBar @d =  A | B
+        type A { a: String }
+        type B { b: String }
+        '''
+        def newSdl = '''
+        directive @d(arg:String) on UNION
+        type Query {
+            foo: FooBar  
+        }
+        union FooBar @d(arg:"arg") = A | B
+        type A { a: String }
+        type B { b: String }
+        '''
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+        then:
+        changes.unionDifferences["FooBar"] instanceof UnionModification
+        def argumentAdded = (changes.unionDifferences["FooBar"] as UnionModification).getDetails(AppliedDirectiveArgumentAddition)
+        (argumentAdded[0].locationDetail as AppliedDirectiveUnionLocation).name == "FooBar"
+        (argumentAdded[0].locationDetail as AppliedDirectiveUnionLocation).directiveName == "d"
+        argumentAdded[0].argumentName == "arg"
+    }
+
+    def "applied directive argument deleted union"() {
+        given:
+        def oldSdl = '''
+        directive @d(arg:String) on UNION
+        type Query {
+            foo: FooBar  
+        }
+        union FooBar @d(arg:"arg") =  A | B
+        type A { a: String }
+        type B { b: String }
+        '''
+        def newSdl = '''
+        directive @d(arg:String) on UNION
+        type Query {
+            foo: FooBar  
+        }
+        union FooBar @d = A | B
+        type A { a: String }
+        type B { b: String }
+        '''
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+        then:
+        changes.unionDifferences["FooBar"] instanceof UnionModification
+        def argumentDeleted = (changes.unionDifferences["FooBar"] as UnionModification).getDetails(AppliedDirectiveArgumentDeletion)
+        (argumentDeleted[0].locationDetail as AppliedDirectiveUnionLocation).name == "FooBar"
+        (argumentDeleted[0].locationDetail as AppliedDirectiveUnionLocation).directiveName == "d"
+        argumentDeleted[0].argumentName == "arg"
+    }
+
 
     def "applied directive argument added scalar"() {
         given:
