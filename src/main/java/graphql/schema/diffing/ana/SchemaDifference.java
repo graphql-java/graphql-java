@@ -1651,7 +1651,13 @@ public interface SchemaDifference {
     }
 
 
-    class AppliedDirectiveArgumentValueModification implements ObjectModificationDetail {
+    class AppliedDirectiveArgumentValueModification implements ObjectModificationDetail,
+            InterfaceModificationDetail,
+            InputObjectModificationDetail,
+            EnumModificationDetail,
+            UnionModificationDetail,
+            ScalarModificationDetail,
+            DirectiveModificationDetail {
         private final AppliedDirectiveLocationDetail locationDetail;
         private final String argumentName;
         private final String oldValue;
@@ -1681,7 +1687,7 @@ public interface SchemaDifference {
         }
     }
 
-    class AppliedDirectiveArgumentRename implements ObjectModificationDetail {
+    class AppliedDirectiveArgumentRename implements ObjectModificationDetail, InterfaceModificationDetail {
         private final AppliedDirectiveLocationDetail locationDetail;
         private final String oldName;
         private final String newName;
