@@ -91,8 +91,8 @@ class EditOperationAnalyzerAppliedDirectivesTest extends Specification {
         location.name == "Query"
         location.directiveName == "d"
         detail[0].argumentName == "arg1"
-        detail[0].oldValue == "foo"
-        detail[0].oldValue == "bar"
+        detail[0].oldValue == '"foo"'
+        detail[0].newValue == '"bar"'
     }
 
     def "applied directive argument value changed object field"() {
@@ -121,8 +121,8 @@ class EditOperationAnalyzerAppliedDirectivesTest extends Specification {
         location.fieldName == "foo"
         location.directiveName == "d"
         detail[0].argumentName == "arg"
-        detail[0].oldValue == "foo"
-        detail[0].newValue == "bar"
+        detail[0].oldValue == '"foo"'
+        detail[0].newValue == '"bar"'
     }
 
     def "applied directive argument value changed object field argument"() {
@@ -150,8 +150,8 @@ class EditOperationAnalyzerAppliedDirectivesTest extends Specification {
         locationDetail.argumentName == "arg"
         locationDetail.directiveName == "d"
         detail[0].argumentName == "directiveArg"
-        detail[0].oldValue == "foo"
-        detail[0].newValue == "bar"
+        detail[0].oldValue == '"foo"'
+        detail[0].newValue == '"bar"'
     }
 
 
@@ -186,8 +186,8 @@ class EditOperationAnalyzerAppliedDirectivesTest extends Specification {
         location.name == "I"
         location.directiveName == "d"
         detail[0].argumentName == "arg1"
-        detail[0].oldValue == "foo"
-        detail[0].oldValue == "bar"
+        detail[0].oldValue == '"foo"'
+        detail[0].newValue == '"bar"'
     }
 
 
@@ -217,14 +217,14 @@ class EditOperationAnalyzerAppliedDirectivesTest extends Specification {
         def changes = calcDiff(oldSdl, newSdl)
         then:
         changes.interfaceDifferences["I"] instanceof InterfaceModification
-        def change = (changes.interfaceDifferences["I"] as InterfaceModification).getDetails(AppliedDirectiveArgumentValueModification)
-        def location = change[0].locationDetail as AppliedDirectiveInterfaceFieldLocation
+        def detail = (changes.interfaceDifferences["I"] as InterfaceModification).getDetails(AppliedDirectiveArgumentValueModification)
+        def location = detail[0].locationDetail as AppliedDirectiveInterfaceFieldLocation
         location.interfaceName == "I"
         location.fieldName == "foo"
         location.directiveName == "d"
-        change[0].argumentName == "arg1"
-        change[0].oldValue == "foo"
-        change[0].newValue == "bar"
+        detail[0].argumentName == "arg1"
+        detail[0].oldValue == '"foo"'
+        detail[0].newValue == '"bar"'
     }
 
     def "applied directive argument value changed interface field argument"() {
@@ -258,8 +258,8 @@ class EditOperationAnalyzerAppliedDirectivesTest extends Specification {
         location.argumentName == "arg"
         location.directiveName == "d"
         detail[0].argumentName == "directiveArg"
-        detail[0].oldValue == "foo"
-        detail[0].newValue == "bar"
+        detail[0].oldValue == '"foo"'
+        detail[0].newValue == '"bar"'
     }
 
     def "applied directive argument value changed input object"() {
@@ -291,8 +291,8 @@ class EditOperationAnalyzerAppliedDirectivesTest extends Specification {
         location.name == "I"
         location.directiveName == "d"
         detail[0].argumentName == "arg"
-        detail[0].oldValue == "foo"
-        detail[0].newValue == "bar"
+        detail[0].oldValue == '"foo"'
+        detail[0].newValue == '"bar"'
 
     }
 
@@ -327,8 +327,8 @@ class EditOperationAnalyzerAppliedDirectivesTest extends Specification {
         location.fieldName == "a"
         location.directiveName == "d"
         detail[0].argumentName == "arg"
-        detail[0].oldValue == "foo"
-        detail[0].oldValue == "bar"
+        detail[0].oldValue == '"foo"'
+        detail[0].newValue == '"bar"'
     }
 
     def "applied directive argument value changed enum"() {
@@ -356,8 +356,8 @@ class EditOperationAnalyzerAppliedDirectivesTest extends Specification {
         location.name == "E"
         location.directiveName == "d"
         detail[0].argumentName == "arg"
-        detail[0].oldValue == "foo"
-        detail[0].newValue == "bar"
+        detail[0].oldValue == '"foo"'
+        detail[0].newValue == '"bar"'
     }
 
     def "applied directive argument value changed enum value"() {
@@ -385,9 +385,9 @@ class EditOperationAnalyzerAppliedDirectivesTest extends Specification {
         location.enumName == "E"
         location.valueName == "B"
         location.directiveName == "d"
-        detail[0].argumentName == "arg  "
-        detail[0].oldValue == "foo"
-        detail[0].newValue == "bar"
+        detail[0].argumentName == "arg"
+        detail[0].oldValue == '"foo"'
+        detail[0].newValue == '"bar"'
     }
 
     def "applied directive argument value changed union"() {
@@ -417,8 +417,8 @@ class EditOperationAnalyzerAppliedDirectivesTest extends Specification {
         def detail = (changes.unionDifferences["U"] as UnionModification).getDetails(AppliedDirectiveArgumentValueModification)
         (detail[0].locationDetail as AppliedDirectiveUnionLocation).name == "U"
         detail[0].argumentName == "arg"
-        detail[0].oldValue == "foo"
-        detail[0].newValue == "bar"
+        detail[0].oldValue == '"foo"'
+        detail[0].newValue == '"bar"'
     }
 
     def "applied directive argument value changed scalar"() {
@@ -446,8 +446,8 @@ class EditOperationAnalyzerAppliedDirectivesTest extends Specification {
         location.name == "DateTime"
         location.directiveName == "d"
         detail[0].argumentName == "arg"
-        detail[0].oldValue == "foo"
-        detail[0].newValue == "bar"
+        detail[0].oldValue == '"foo"'
+        detail[0].newValue == '"bar"'
     }
 
     def "applied directive argument value changed directive argument"() {
@@ -473,12 +473,12 @@ class EditOperationAnalyzerAppliedDirectivesTest extends Specification {
         (changes.directiveDifferences["d2"] as DirectiveModification).details.size() == 1
         def detail = (changes.directiveDifferences["d2"] as DirectiveModification).getDetails(AppliedDirectiveArgumentValueModification)
         def location = detail[0].locationDetail as AppliedDirectiveDirectiveArgumentLocation
-        location.directiveName == "d2"
-        location.argumentName == "arg"
+        location.directiveDefinitionName == "d2"
         location.directiveName == "d"
-        detail[0].argumentName == "arg"
-        detail[0].oldValue == "foo"
-        detail[0].newValue == "bar"
+        location.argumentName == "arg"
+        detail[0].argumentName == "arg1"
+        detail[0].oldValue == '"foo"'
+        detail[0].newValue == '"bar"'
     }
 
 
@@ -1239,8 +1239,10 @@ class EditOperationAnalyzerAppliedDirectivesTest extends Specification {
         then:
         changes.directiveDifferences["d2"] instanceof DirectiveModification
         def appliedDirective = (changes.directiveDifferences["d2"] as DirectiveModification).getDetails(AppliedDirectiveAddition)
-        (appliedDirective[0].locationDetail as AppliedDirectiveDirectiveArgumentLocation).directiveName == "d2"
-        (appliedDirective[0].locationDetail as AppliedDirectiveDirectiveArgumentLocation).argumentName == "arg"
+        def location = appliedDirective[0].locationDetail as AppliedDirectiveDirectiveArgumentLocation
+        location.directiveDefinitionName == "d2"
+        location.argumentName == "arg"
+        location.directiveName == "d"
         appliedDirective[0].name == "d"
     }
 
@@ -1349,8 +1351,10 @@ class EditOperationAnalyzerAppliedDirectivesTest extends Specification {
         // whole applied directive is deleted, so we don't count the applied argument deletion
         (changes.directiveDifferences["d2"] as DirectiveModification).details.size() == 1
         def appliedDirective = (changes.directiveDifferences["d2"] as DirectiveModification).getDetails(AppliedDirectiveDeletion)
-        (appliedDirective[0].locationDetail as AppliedDirectiveDirectiveArgumentLocation).directiveName == "d2"
-        (appliedDirective[0].locationDetail as AppliedDirectiveDirectiveArgumentLocation).argumentName == "arg"
+        def location = appliedDirective[0].locationDetail as AppliedDirectiveDirectiveArgumentLocation
+        location.directiveDefinitionName == "d2"
+        location.argumentName == "arg"
+        location.directiveName == "d"
         appliedDirective[0].name == "d"
     }
 
