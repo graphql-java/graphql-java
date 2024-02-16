@@ -10,6 +10,7 @@ import graphql.execution.ExecutionStrategy;
 import graphql.execution.instrumentation.ExecutionStrategyInstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationState;
+import graphql.execution.instrumentation.ExecuteObjectInstrumentationContext;
 import graphql.execution.instrumentation.SimplePerformantInstrumentation;
 import graphql.execution.instrumentation.parameters.InstrumentationCreateStateParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecuteOperationParameters;
@@ -23,8 +24,6 @@ import org.dataloader.DataLoaderRegistry;
 import org.dataloader.stats.Statistics;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -49,9 +48,6 @@ import static graphql.execution.instrumentation.SimpleInstrumentationContext.noO
  */
 @PublicApi
 public class DataLoaderDispatcherInstrumentation extends SimplePerformantInstrumentation {
-
-    private static final Logger log = LoggerFactory.getLogger(DataLoaderDispatcherInstrumentation.class);
-
     private final DataLoaderDispatcherInstrumentationOptions options;
 
     /**
@@ -73,7 +69,7 @@ public class DataLoaderDispatcherInstrumentation extends SimplePerformantInstrum
 
     @Override
     public InstrumentationState createState(InstrumentationCreateStateParameters parameters) {
-        return new DataLoaderDispatcherInstrumentationState(log, parameters.getExecutionInput().getDataLoaderRegistry());
+        return new DataLoaderDispatcherInstrumentationState(parameters.getExecutionInput().getDataLoaderRegistry());
     }
 
     @Override
@@ -134,6 +130,32 @@ public class DataLoaderDispatcherInstrumentation extends SimplePerformantInstrum
         return state.getApproach().beginExecutionStrategy(parameters, state.getState());
     }
 
+    @Override
+    public @Nullable ExecuteObjectInstrumentationContext beginExecuteObject(InstrumentationExecutionStrategyParameters parameters, InstrumentationState rawState) {
+        DataLoaderDispatcherInstrumentationState state = ofState(rawState);
+        //
+        // if there are no data loaders, there is nothing to do
+        //
+        if (state.hasNoDataLoaders()) {
+            return ExecuteObjectInstrumentationContext.NOOP;
+        }
+        return state.getApproach().beginObjectResolution(parameters, state.getState());
+    }
+
+    @Override
+    public @Nullable InstrumentationContext<Object> beginDeferredField(InstrumentationState rawState) {
+        DataLoaderDispatcherInstrumentationState state = ofState(rawState);
+        //
+        // if there are no data loaders, there is nothing to do
+        //
+        if (state.hasNoDataLoaders()) {
+            return noOp();
+        }
+
+        // The support for @defer in graphql-java is not yet complete. At this time, the resolution of deferred fields
+        // cannot be done via Data Loaders.
+        throw new UnsupportedOperationException("Data Loaders cannot be used to resolve deferred fields");
+    }
 
     @Override
     public @Nullable InstrumentationContext<Object> beginFieldFetch(InstrumentationFieldFetchParameters parameters, InstrumentationState rawState) {
@@ -157,10 +179,6 @@ public class DataLoaderDispatcherInstrumentation extends SimplePerformantInstrum
         Map<Object, Object> statsMap = new LinkedHashMap<>(currentExt == null ? ImmutableKit.emptyMap() : currentExt);
         Map<Object, Object> dataLoaderStats = buildStatsMap(state);
         statsMap.put("dataloader", dataLoaderStats);
-
-        if (log.isDebugEnabled()) {
-            log.debug("Data loader stats : {}", dataLoaderStats);
-        }
 
         return CompletableFuture.completedFuture(new ExecutionResultImpl(executionResult.getData(), executionResult.getErrors(), statsMap));
     }

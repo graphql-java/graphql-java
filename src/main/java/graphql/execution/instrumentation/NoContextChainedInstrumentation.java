@@ -11,6 +11,7 @@ import graphql.execution.instrumentation.parameters.InstrumentationFieldParamete
 import graphql.execution.instrumentation.parameters.InstrumentationValidationParameters;
 import graphql.language.Document;
 import graphql.validation.ValidationError;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.function.BiConsumer;
@@ -81,13 +82,18 @@ public class NoContextChainedInstrumentation extends ChainedInstrumentation {
     }
 
     @Override
+    public @Nullable ExecuteObjectInstrumentationContext beginExecuteObject(InstrumentationExecutionStrategyParameters parameters, InstrumentationState state) {
+        return runAll(state, (instrumentation, specificState) -> instrumentation.beginExecuteObject(parameters, specificState));
+    }
+
+    @Override
     public InstrumentationContext<ExecutionResult> beginSubscribedFieldEvent(InstrumentationFieldParameters parameters, InstrumentationState state) {
         return runAll(state, (instrumentation, specificState) -> instrumentation.beginSubscribedFieldEvent(parameters, specificState));
     }
 
     @Override
-    public InstrumentationContext<ExecutionResult> beginField(InstrumentationFieldParameters parameters, InstrumentationState state) {
-        return runAll(state, (instrumentation, specificState) -> instrumentation.beginField(parameters, specificState));
+    public @Nullable InstrumentationContext<Object> beginFieldExecution(InstrumentationFieldParameters parameters, InstrumentationState state) {
+        return runAll(state, (instrumentation, specificState) -> instrumentation.beginFieldExecution(parameters, specificState));
     }
 
     @Override
@@ -96,13 +102,13 @@ public class NoContextChainedInstrumentation extends ChainedInstrumentation {
     }
 
     @Override
-    public InstrumentationContext<ExecutionResult> beginFieldComplete(InstrumentationFieldCompleteParameters parameters, InstrumentationState state) {
-        return runAll(state, (instrumentation, specificState) -> instrumentation.beginFieldComplete(parameters, specificState));
+    public @Nullable InstrumentationContext<Object> beginFieldCompletion(InstrumentationFieldCompleteParameters parameters, InstrumentationState state) {
+        return runAll(state, (instrumentation, specificState) -> instrumentation.beginFieldCompletion(parameters, specificState));
     }
 
     @Override
-    public InstrumentationContext<ExecutionResult> beginFieldListComplete(InstrumentationFieldCompleteParameters parameters, InstrumentationState state) {
-        return runAll(state, (instrumentation, specificState) -> instrumentation.beginFieldListComplete(parameters, specificState));
+    public @Nullable InstrumentationContext<Object> beginFieldListCompletion(InstrumentationFieldCompleteParameters parameters, InstrumentationState state) {
+        return runAll(state, (instrumentation, specificState) -> instrumentation.beginFieldListCompletion(parameters, specificState));
     }
 
     // relies on the other methods from ChainedInstrumentation which this does not change

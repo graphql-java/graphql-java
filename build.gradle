@@ -62,7 +62,6 @@ def getDevelopmentVersion() {
 }
 
 def reactiveStreamsVersion = '1.0.3'
-def slf4jVersion = '2.0.7'
 def releaseVersion = System.env.RELEASE_VERSION
 def antlrVersion = '4.11.1' // https://mvnrepository.com/artifact/org.antlr/antlr4-runtime
 def guavaVersion = '32.1.2-jre'
@@ -101,7 +100,6 @@ jar {
 dependencies {
     compileOnly 'org.jetbrains:annotations:24.1.0'
     implementation 'org.antlr:antlr4-runtime:' + antlrVersion
-    implementation 'org.slf4j:slf4j-api:' + slf4jVersion
     api 'com.graphql-java:java-dataloader:3.2.2'
     api 'org.reactivestreams:reactive-streams:' + reactiveStreamsVersion
     antlr 'org.antlr:antlr4:' + antlrVersion
@@ -111,9 +109,8 @@ dependencies {
     testImplementation 'org.codehaus.groovy:groovy:3.0.20'
     testImplementation 'org.codehaus.groovy:groovy-json:3.0.20'
     testImplementation 'com.google.code.gson:gson:2.10.1'
-    testImplementation 'org.eclipse.jetty:jetty-server:11.0.15'
+    testImplementation 'org.eclipse.jetty:jetty-server:11.0.20'
     testImplementation 'com.fasterxml.jackson.core:jackson-databind:2.16.1'
-    testImplementation 'org.slf4j:slf4j-simple:' + slf4jVersion
     testImplementation 'org.awaitility:awaitility-groovy:4.2.0'
     testImplementation 'com.github.javafaker:javafaker:1.0.2'
 
@@ -350,8 +347,8 @@ nexusPublishing {
     }
 }
 
-// to publish to local maven repo skip signing: ./gradlew publishToMavenLocal  -x signGraphqlJavaPublication
 signing {
+    required { !project.hasProperty('publishToMavenLocal') }
     def signingKey = System.env.MAVEN_CENTRAL_PGP_KEY
     useInMemoryPgpKeys(signingKey, "")
     sign publishing.publications

@@ -62,6 +62,12 @@ class ModernTestingInstrumentation implements Instrumentation {
     }
 
     @Override
+    ExecuteObjectInstrumentationContext beginExecuteObject(InstrumentationExecutionStrategyParameters parameters, InstrumentationState state) {
+        assert state == instrumentationState
+        return new TestingExecuteObjectInstrumentationContext("execute-object", executionList, throwableList, useOnDispatch)
+    }
+
+    @Override
     InstrumentationContext<ExecutionResult> beginExecuteOperation(InstrumentationExecuteOperationParameters parameters, InstrumentationState state) {
         assert state == instrumentationState
         return new TestingInstrumentContext("execute-operation", executionList, throwableList, useOnDispatch)
@@ -80,6 +86,12 @@ class ModernTestingInstrumentation implements Instrumentation {
     }
 
     @Override
+    InstrumentationContext<Object> beginFieldExecution(InstrumentationFieldParameters parameters, InstrumentationState state) {
+        assert state == instrumentationState
+        return new TestingInstrumentContext("field-$parameters.field.name", executionList, throwableList, useOnDispatch)
+    }
+
+    @Override
     InstrumentationContext<Object> beginFieldFetch(InstrumentationFieldFetchParameters parameters, InstrumentationState state) {
         assert state == instrumentationState
         return new TestingInstrumentContext("fetch-$parameters.field.name", executionList, throwableList, useOnDispatch)
@@ -92,7 +104,19 @@ class ModernTestingInstrumentation implements Instrumentation {
     }
 
     @Override
+    InstrumentationContext<Object> beginFieldCompletion(InstrumentationFieldCompleteParameters parameters, InstrumentationState state) {
+        assert state == instrumentationState
+        return new TestingInstrumentContext("complete-$parameters.field.name", executionList, throwableList, useOnDispatch)
+    }
+
+    @Override
     InstrumentationContext<ExecutionResult> beginFieldListComplete(InstrumentationFieldCompleteParameters parameters, InstrumentationState state) {
+        assert state == instrumentationState
+        return new TestingInstrumentContext("complete-list-$parameters.field.name", executionList, throwableList, useOnDispatch)
+    }
+
+    @Override
+    InstrumentationContext<Object> beginFieldListCompletion(InstrumentationFieldCompleteParameters parameters, InstrumentationState state) {
         assert state == instrumentationState
         return new TestingInstrumentContext("complete-list-$parameters.field.name", executionList, throwableList, useOnDispatch)
     }
