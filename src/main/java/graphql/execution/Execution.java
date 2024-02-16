@@ -86,30 +86,30 @@ public class Execution {
         }
 
         ExecutionContext executionContext = newExecutionContextBuilder()
-            .instrumentation(instrumentation)
-            .instrumentationState(instrumentationState)
-            .executionId(executionId)
-            .graphQLSchema(graphQLSchema)
-            .queryStrategy(queryStrategy)
-            .mutationStrategy(mutationStrategy)
-            .subscriptionStrategy(subscriptionStrategy)
-            .context(executionInput.getContext())
-            .graphQLContext(executionInput.getGraphQLContext())
-            .localContext(executionInput.getLocalContext())
-            .root(executionInput.getRoot())
-            .fragmentsByName(fragmentsByName)
-            .coercedVariables(coercedVariables)
-            .document(document)
-            .operationDefinition(operationDefinition)
-            .dataLoaderRegistry(executionInput.getDataLoaderRegistry())
-            .locale(executionInput.getLocale())
-            .valueUnboxer(valueUnboxer)
-            .executionInput(executionInput)
-            .build();
+                .instrumentation(instrumentation)
+                .instrumentationState(instrumentationState)
+                .executionId(executionId)
+                .graphQLSchema(graphQLSchema)
+                .queryStrategy(queryStrategy)
+                .mutationStrategy(mutationStrategy)
+                .subscriptionStrategy(subscriptionStrategy)
+                .context(executionInput.getContext())
+                .graphQLContext(executionInput.getGraphQLContext())
+                .localContext(executionInput.getLocalContext())
+                .root(executionInput.getRoot())
+                .fragmentsByName(fragmentsByName)
+                .coercedVariables(coercedVariables)
+                .document(document)
+                .operationDefinition(operationDefinition)
+                .dataLoaderRegistry(executionInput.getDataLoaderRegistry())
+                .locale(executionInput.getLocale())
+                .valueUnboxer(valueUnboxer)
+                .executionInput(executionInput)
+                .build();
 
 
         InstrumentationExecutionParameters parameters = new InstrumentationExecutionParameters(
-            executionInput, graphQLSchema, instrumentationState
+                executionInput, graphQLSchema, instrumentationState
         );
         executionContext = instrumentation.instrumentExecutionContext(executionContext, parameters, instrumentationState);
         return executeOperation(executionContext, executionInput.getRoot(), executionContext.getOperationDefinition());
@@ -142,12 +142,12 @@ public class Execution {
         }
 
         FieldCollectorParameters collectorParameters = FieldCollectorParameters.newParameters()
-            .schema(executionContext.getGraphQLSchema())
-            .objectType(operationRootType)
-            .fragments(executionContext.getFragmentsByName())
-            .variables(executionContext.getCoercedVariables().toMap())
-            .graphQLContext(graphQLContext)
-            .build();
+                .schema(executionContext.getGraphQLSchema())
+                .objectType(operationRootType)
+                .fragments(executionContext.getFragmentsByName())
+                .variables(executionContext.getCoercedVariables().toMap())
+                .graphQLContext(graphQLContext)
+                .build();
 
         MergedSelectionSet fields = fieldCollector.collectFields(
                 collectorParameters,
@@ -162,13 +162,13 @@ public class Execution {
         NonNullableFieldValidator nonNullableFieldValidator = new NonNullableFieldValidator(executionContext, executionStepInfo);
 
         ExecutionStrategyParameters parameters = newParameters()
-            .executionStepInfo(executionStepInfo)
-            .source(root)
-            .localContext(executionContext.getLocalContext())
-            .fields(fields)
-            .nonNullFieldValidator(nonNullableFieldValidator)
-            .path(path)
-            .build();
+                .executionStepInfo(executionStepInfo)
+                .source(root)
+                .localContext(executionContext.getLocalContext())
+                .fields(fields)
+                .nonNullFieldValidator(nonNullableFieldValidator)
+                .path(path)
+                .build();
 
 
         CompletableFuture<ExecutionResult> result;
