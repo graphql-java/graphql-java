@@ -66,6 +66,38 @@ class EditOperationAnalyzerAppliedDirectivesTest extends Specification {
         argumentAddition[0].argumentName == "arg1"
     }
 
+    def "applied directive argument added interface"() {
+        given:
+        def oldSdl = '''
+        directive @d(arg1:String) on INTERFACE
+        
+        type Query implements I{
+            foo: String 
+        }
+        interface I @d {
+            foo: String 
+        }
+        '''
+        def newSdl = '''
+        directive @d(arg1:String) on INTERFACE
+        
+        type Query implements I{
+            foo: String 
+        }
+        interface I @d(arg1: "foo") {
+            foo: String 
+        }
+        '''
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+        then:
+        changes.interfaceDifferences["I"] instanceof InterfaceModification
+        def argumentAddition = (changes.interfaceDifferences["I"] as InterfaceModification).getDetails(AppliedDirectiveArgumentAddition)
+        def location = argumentAddition[0].locationDetail as AppliedDirectiveInterfaceLocation
+        location.name == "I"
+        argumentAddition[0].argumentName == "arg1"
+    }
+
     def "applied directive argument deleted interface field "() {
         given:
         def oldSdl = '''
@@ -211,6 +243,32 @@ class EditOperationAnalyzerAppliedDirectivesTest extends Specification {
         argumentRenames[0].newName == "arg2"
     }
 
+    def "applied directive argument added object"() {
+        given:
+        def oldSdl = '''
+        directive @d(arg1:String) on OBJECT
+        
+        type Query @d {
+            foo: String 
+        }
+        '''
+        def newSdl = '''
+        directive @d(arg1: String)  on OBJECT
+        
+        type Query @d(arg1: "foo") {
+            foo: String
+        }
+        '''
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+        then:
+        changes.objectDifferences["Query"] instanceof ObjectModification
+        def argumentAddition = (changes.objectDifferences["Query"] as ObjectModification).getDetails(AppliedDirectiveArgumentAddition)
+        def location = argumentAddition[0].locationDetail as AppliedDirectiveObjectLocation
+        location.name == "Query"
+        argumentAddition[0].argumentName == "arg1"
+    }
+
     def "applied directive argument added object field"() {
         given:
         def oldSdl = '''
@@ -314,6 +372,7 @@ class EditOperationAnalyzerAppliedDirectivesTest extends Specification {
         def changes = calcDiff(oldSdl, newSdl)
         then:
         changes.objectDifferences["Query"] instanceof ObjectModification
+        (changes.objectDifferences as ObjectModification).details.size() == 1
         def appliedDirective = (changes.objectDifferences["Query"] as ObjectModification).getDetails(AppliedDirectiveAddition)
         (appliedDirective[0].locationDetail as AppliedDirectiveObjectLocation).name == "Query"
         appliedDirective[0].name == "d"
@@ -454,6 +513,63 @@ class EditOperationAnalyzerAppliedDirectivesTest extends Specification {
         (appliedDirective[0].locationDetail as AppliedDirectiveEnumValueLocation).valueName == "B"
         appliedDirective[0].name == "d"
     }
+
+    def "applied directive argument added enum value"() {
+        given:
+        def oldSdl = '''
+        directive @d(arg:String) on ENUM_VALUE
+        enum E { A, B @d }
+        type Query {
+            foo: E 
+        }
+        '''
+        def newSdl = '''
+        directive @d(arg:String) on ENUM_VALUE
+        enum E  { A, B @d(arg: "foo") }
+        type Query {
+            foo: E 
+        }
+        '''
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+        then:
+        changes.enumDifferences["E"] instanceof EnumModification
+        def argumentAdded = (changes.enumDifferences["E"] as EnumModification).getDetails(AppliedDirectiveArgumentAddition)
+        def location = argumentAdded[0].locationDetail as AppliedDirectiveEnumValueLocation
+        location.enumName == "E"
+        location.valueName == "B"
+        location.directiveName == "d"
+        argumentAdded[0].argumentName == "arg"
+    }
+
+    def "applied directive argument deleted enum value"() {
+        given:
+        def oldSdl = '''
+        directive @d(arg:String) on ENUM_VALUE
+        enum E { A, B @d(arg: "foo") }
+        type Query {
+            foo: E 
+        }
+        '''
+        def newSdl = '''
+        directive @d(arg:String) on ENUM_VALUE
+        enum E  { A, B @d }
+        type Query {
+            foo: E 
+        }
+        '''
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+        then:
+        changes.enumDifferences["E"] instanceof EnumModification
+        def argumentDeletion = (changes.enumDifferences["E"] as EnumModification).getDetails(AppliedDirectiveArgumentDeletion)
+        def location = argumentDeletion[0].locationDetail as AppliedDirectiveEnumValueLocation
+        location.enumName == "E"
+        location.valueName == "B"
+        location.directiveName == "d"
+        argumentDeletion[0].argumentName == "arg"
+    }
+
 
     def "applied directive added object field argument"() {
         given:
@@ -929,6 +1045,72 @@ class EditOperationAnalyzerAppliedDirectivesTest extends Specification {
         (appliedDirective[0].locationDetail as AppliedDirectiveInputObjectFieldLocation).fieldName == "a"
         appliedDirective[0].name == "d"
     }
+
+
+    def "applied directive argument added input object field "() {
+        given:
+        def oldSdl = '''
+        directive @d(arg:String) on INPUT_FIELD_DEFINITION
+        input I {
+            a: String @d
+        }
+        type Query {
+            foo(arg: I): String
+        }
+        '''
+        def newSdl = '''
+        directive @d(arg:String) on INPUT_FIELD_DEFINITION
+        input I {
+            a: String @d(arg: "foo")
+        }
+        type Query {
+            foo(arg: I): String
+        }
+        '''
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+        then:
+        changes.inputObjectDifferences["I"] instanceof InputObjectModification
+        def argumentAdded = (changes.inputObjectDifferences["I"] as InputObjectModification).getDetails(AppliedDirectiveArgumentAddition)
+        def location = argumentAdded[0].locationDetail as AppliedDirectiveInputObjectFieldLocation
+        location.inputObjectName == "I"
+        location.fieldName == "a"
+        location.directiveName == "d"
+        argumentAdded[0].argumentName == "arg"
+    }
+
+    def "applied directive argument deleted input object field "() {
+        given:
+        def oldSdl = '''
+        directive @d(arg:String) on INPUT_FIELD_DEFINITION
+        input I {
+            a: String @d(arg: "foo")
+        }
+        type Query {
+            foo(arg: I): String
+        }
+        '''
+        def newSdl = '''
+        directive @d(arg:String) on INPUT_FIELD_DEFINITION
+        input I {
+            a: String @d
+        }
+        type Query {
+            foo(arg: I): String
+        }
+        '''
+        when:
+        def changes = calcDiff(oldSdl, newSdl)
+        then:
+        changes.inputObjectDifferences["I"] instanceof InputObjectModification
+        def argumentDeletion = (changes.inputObjectDifferences["I"] as InputObjectModification).getDetails(AppliedDirectiveArgumentDeletion)
+        def location = argumentDeletion[0].locationDetail as AppliedDirectiveInputObjectFieldLocation
+        location.inputObjectName == "I"
+        location.fieldName == "a"
+        location.directiveName == "d"
+        argumentDeletion[0].argumentName == "arg"
+    }
+
 
     def "applied directive deleted interface"() {
         given:

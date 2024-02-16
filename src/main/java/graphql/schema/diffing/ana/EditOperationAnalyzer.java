@@ -447,6 +447,17 @@ public class EditOperationAnalyzer {
             }
             AppliedDirectiveEnumLocation location = new AppliedDirectiveEnumLocation(enumVertex.getName(), appliedDirective.getName());
             getEnumModification(enumVertex.getName()).getDetails().add(new AppliedDirectiveArgumentDeletion(location, deletedArgument.getName()));
+        } else if (container.isOfType(SchemaGraph.ENUM_VALUE)) {
+            Vertex enumValue = container;
+            Vertex enumVertex = oldSchemaGraph.getEnumForEnumValue(enumValue);
+            if (isEnumDeleted(enumVertex.getName())) {
+                return;
+            }
+            if (isNewEnumValueForExistingEnum(enumVertex.getName(), enumValue.getName())) {
+                return;
+            }
+            AppliedDirectiveEnumValueLocation location = new AppliedDirectiveEnumValueLocation(enumVertex.getName(), enumValue.getName(), appliedDirective.getName());
+            getEnumModification(enumVertex.getName()).getDetails().add(new AppliedDirectiveArgumentDeletion(location, deletedArgument.getName()));
         } else if (container.isOfType(SchemaGraph.UNION)) {
             Vertex union = container;
             if (isUnionDeleted(union.getName())) {
@@ -468,8 +479,21 @@ public class EditOperationAnalyzer {
             }
             AppliedDirectiveInputObjectLocation location = new AppliedDirectiveInputObjectLocation(inputObject.getName(), appliedDirective.getName());
             getInputObjectModification(inputObject.getName()).getDetails().add(new AppliedDirectiveArgumentDeletion(location, deletedArgument.getName()));
+        } else if (container.isOfType(SchemaGraph.INPUT_FIELD)) {
+            Vertex inputField = container;
+            Vertex inputObject = oldSchemaGraph.getInputObjectForInputField(inputField);
+            if (isInputObjectDeleted(inputObject.getName())) {
+                return;
+            }
+            if (isNewInputFieldExistingInputObject(inputObject.getName(), inputField.getName())) {
+                return;
+            }
+            if (isAppliedDirectiveDeleted(inputField, appliedDirective.getName())) {
+                return;
+            }
+            AppliedDirectiveInputObjectFieldLocation location = new AppliedDirectiveInputObjectFieldLocation(inputObject.getName(), inputField.getName(), appliedDirective.getName());
+            getInputObjectModification(inputObject.getName()).getDetails().add(new AppliedDirectiveArgumentDeletion(location, deletedArgument.getName()));
         }
-        //TODO: ENum values and input fields
     }
 
     private void appliedDirectiveArgumentAdded(EditOperation editOperation) {
@@ -560,50 +584,96 @@ public class EditOperationAnalyzer {
                 assertShouldNeverHappen("Unexpected field container " + interfaceOrObjective);
             }
         } else if (container.isOfType(SchemaGraph.SCALAR)) {
-            if (isAppliedDirectiveAdded(container, appliedDirective.getName())) {
-                return;
-            }
             Vertex scalar = container;
             if (isScalarAdded(scalar.getName())) {
+                return;
+            }
+            if (isAppliedDirectiveAdded(container, appliedDirective.getName())) {
                 return;
             }
             AppliedDirectiveScalarLocation location = new AppliedDirectiveScalarLocation(scalar.getName(), appliedDirective.getName());
             getScalarModification(scalar.getName()).getDetails().add(new AppliedDirectiveArgumentAddition(location, addedArgument.getName()));
         } else if (container.isOfType(SchemaGraph.ENUM)) {
-            if (isAppliedDirectiveAdded(container, appliedDirective.getName())) {
-                return;
-            }
             Vertex enumVertex = container;
             if (isEnumAdded(enumVertex.getName())) {
                 return;
             }
-            AppliedDirectiveEnumLocation location = new AppliedDirectiveEnumLocation(enumVertex.getName(), appliedDirective.getName());
-            getEnumModification(enumVertex.getName()).getDetails().add(new AppliedDirectiveArgumentAddition(location, addedArgument.getName()));
-        } else if (container.isOfType(SchemaGraph.UNION)) {
             if (isAppliedDirectiveAdded(container, appliedDirective.getName())) {
                 return;
             }
+            AppliedDirectiveEnumLocation location = new AppliedDirectiveEnumLocation(enumVertex.getName(), appliedDirective.getName());
+            getEnumModification(enumVertex.getName()).getDetails().add(new AppliedDirectiveArgumentAddition(location, addedArgument.getName()));
+        } else if (container.isOfType(SchemaGraph.ENUM_VALUE)) {
+            Vertex enumValue = container;
+            Vertex enumVertex = newSchemaGraph.getEnumForEnumValue(enumValue);
+            if (isEnumAdded(enumVertex.getName())) {
+                return;
+            }
+            if (isNewEnumValueForExistingEnum(enumVertex.getName(), enumValue.getName())) {
+                return;
+            }
+            if (isAppliedDirectiveAdded(container, appliedDirective.getName())) {
+                return;
+            }
+            AppliedDirectiveEnumValueLocation location = new AppliedDirectiveEnumValueLocation(enumVertex.getName(), enumValue.getName(), appliedDirective.getName());
+            getEnumModification(enumVertex.getName()).getDetails().add(new AppliedDirectiveArgumentAddition(location, addedArgument.getName()));
+        } else if (container.isOfType(SchemaGraph.UNION)) {
             Vertex union = container;
             if (isUnionAdded(union.getName())) {
                 return;
             }
-            AppliedDirectiveUnionLocation location = new AppliedDirectiveUnionLocation(union.getName(), appliedDirective.getName());
-            getUnionModification(union.getName()).getDetails().add(new AppliedDirectiveArgumentAddition(location, addedArgument.getName()));
-        } else if (container.isOfType(SchemaGraph.INPUT_OBJECT)) {
             if (isAppliedDirectiveAdded(container, appliedDirective.getName())) {
                 return;
             }
+            AppliedDirectiveUnionLocation location = new AppliedDirectiveUnionLocation(union.getName(), appliedDirective.getName());
+            getUnionModification(union.getName()).getDetails().add(new AppliedDirectiveArgumentAddition(location, addedArgument.getName()));
+        } else if (container.isOfType(SchemaGraph.INTERFACE)) {
+            Vertex interfaze = container;
+            if (isInterfaceAdded(interfaze.getName())) {
+                return;
+            }
+            if (isAppliedDirectiveAdded(container, appliedDirective.getName())) {
+                return;
+            }
+            AppliedDirectiveInterfaceLocation location = new AppliedDirectiveInterfaceLocation(interfaze.getName(), appliedDirective.getName());
+            getInterfaceModification(interfaze.getName()).getDetails().add(new AppliedDirectiveArgumentAddition(location, addedArgument.getName()));
+        } else if (container.isOfType(SchemaGraph.OBJECT)) {
+            Vertex interfaze = container;
+            if (isObjectAdded(interfaze.getName())) {
+                return;
+            }
+            if (isAppliedDirectiveAdded(container, appliedDirective.getName())) {
+                return;
+            }
+            AppliedDirectiveObjectLocation location = new AppliedDirectiveObjectLocation(interfaze.getName(), appliedDirective.getName());
+            getObjectModification(interfaze.getName()).getDetails().add(new AppliedDirectiveArgumentAddition(location, addedArgument.getName()));
+        } else if (container.isOfType(SchemaGraph.INPUT_OBJECT)) {
             Vertex inputObject = container;
             if (isInputObjectAdded(inputObject.getName())) {
                 return;
             }
+            if (isAppliedDirectiveAdded(container, appliedDirective.getName())) {
+                return;
+            }
             AppliedDirectiveInputObjectLocation location = new AppliedDirectiveInputObjectLocation(inputObject.getName(), appliedDirective.getName());
             getInputObjectModification(inputObject.getName()).getDetails().add(new AppliedDirectiveArgumentAddition(location, addedArgument.getName()));
+        } else if (container.isOfType(SchemaGraph.INPUT_FIELD)) {
+            Vertex inputField = container;
+            Vertex inputObject = newSchemaGraph.getInputObjectForInputField(inputField);
+            if (isInputObjectAdded(inputObject.getName())) {
+                return;
+            }
+            if (isNewInputFieldExistingInputObject(inputObject.getName(), inputField.getName())) {
+                return;
+            }
+            if (isAppliedDirectiveAdded(container, appliedDirective.getName())) {
+                return;
+            }
+            AppliedDirectiveInputObjectFieldLocation location = new AppliedDirectiveInputObjectFieldLocation(inputObject.getName(), inputField.getName(), appliedDirective.getName());
+            getInputObjectModification(inputObject.getName()).getDetails().add(new AppliedDirectiveArgumentAddition(location, addedArgument.getName()));
         } else {
-//            assertShouldNeverHappen("Unexpected applied argument container " + container);
+            assertShouldNeverHappen("Unexpected applied argument container " + container);
         }
-        // TODO: ENUM Values
-        // TODO: INput fields
     }
 
 
