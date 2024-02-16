@@ -2710,7 +2710,7 @@ input Gun {
                 .build()
         when:
 
-        def printOptions = defaultOptions().includeDirectives({d -> true})
+        def printOptions = defaultOptions().includeDirectiveDefinitions(false).includeDirectives({ d -> true })
 
         def result = "\n" + new SchemaPrinter(printOptions).print(schema)
         println(result)
@@ -2734,4 +2734,49 @@ input Input {
 }
 """
     }
+
+    def "can use predicate for directive definitions"() {
+
+        def schema = TestUtil.schema("""
+            type Query {
+                field: String @deprecated
+            }
+        """)
+
+
+        def options = defaultOptions()
+                .includeDirectiveDefinitions(true)
+                .includeDirectiveDefinition({ it != "skip" })
+        def result = new SchemaPrinter(options).print(schema)
+
+        expect: "has no skip definition"
+
+        result == """"Marks the field, argument, input field or enum value as deprecated"
+directive @deprecated(
+    "The reason for the deprecation"
+    reason: String = "No longer supported"
+  ) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION
+
+"Directs the executor to include this field or fragment only when the `if` argument is true"
+directive @include(
+    "Included when true."
+    if: Boolean!
+  ) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
+
+"Indicates an Input Object is a OneOf Input Object."
+directive @oneOf on INPUT_OBJECT
+
+"Exposes a URL that specifies the behaviour of this scalar."
+directive @specifiedBy(
+    "The URL that specifies the behaviour of this scalar."
+    url: String!
+  ) on SCALAR
+
+type Query {
+  field: String @deprecated(reason : "No longer supported")
 }
+"""
+    }
+}
+
+
