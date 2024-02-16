@@ -1859,8 +1859,9 @@ class EditOperationAnalyzerTest extends Specification {
         directiveDeletion[0].locationDetail instanceof AppliedDirectiveDirectiveArgumentLocation
 
         def location = directiveDeletion[0].locationDetail as AppliedDirectiveDirectiveArgumentLocation
-        location.directiveName == "d"
+        location.directiveDefinitionName == "d"
         location.argumentName == "message"
+        location.directiveName == "a"
     }
 
     def "field output type changed and applied directive removed"() {
