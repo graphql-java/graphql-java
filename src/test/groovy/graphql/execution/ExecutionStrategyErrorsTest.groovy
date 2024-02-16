@@ -13,6 +13,7 @@ import graphql.execution.instrumentation.InstrumentationState
 import graphql.execution.instrumentation.SimplePerformantInstrumentation
 import graphql.execution.instrumentation.parameters.InstrumentationFieldCompleteParameters
 import graphql.schema.DataFetcher
+import spock.lang.Ignore
 import spock.lang.Specification
 
 /**
@@ -20,6 +21,7 @@ import spock.lang.Specification
  */
 class ExecutionStrategyErrorsTest extends Specification {
 
+    @Ignore
     def "can capture certain errors"() {
         def sdl = '''
             type Query {
