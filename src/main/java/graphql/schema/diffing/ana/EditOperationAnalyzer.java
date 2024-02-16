@@ -469,6 +469,28 @@ public class EditOperationAnalyzer {
 
             AppliedDirectiveUnionLocation location = new AppliedDirectiveUnionLocation(union.getName(), appliedDirective.getName());
             getUnionModification(union.getName()).getDetails().add(new AppliedDirectiveArgumentDeletion(location, deletedArgument.getName()));
+        } else if (container.isOfType(SchemaGraph.OBJECT)) {
+            Vertex object = container;
+            if (isObjectDeleted(object.getName())) {
+                return;
+            }
+            if (isAppliedDirectiveDeleted(object, appliedDirective.getName())) {
+                return;
+            }
+
+            AppliedDirectiveObjectLocation location = new AppliedDirectiveObjectLocation(object.getName(), appliedDirective.getName());
+            getObjectModification(object.getName()).getDetails().add(new AppliedDirectiveArgumentDeletion(location, deletedArgument.getName()));
+        } else if (container.isOfType(SchemaGraph.INTERFACE)) {
+            Vertex interfaze = container;
+            if (isInterfaceDeleted(interfaze.getName())) {
+                return;
+            }
+            if (isAppliedDirectiveDeleted(interfaze, appliedDirective.getName())) {
+                return;
+            }
+
+            AppliedDirectiveInterfaceLocation location = new AppliedDirectiveInterfaceLocation(interfaze.getName(), appliedDirective.getName());
+            getInterfaceModification(interfaze.getName()).getDetails().add(new AppliedDirectiveArgumentDeletion(location, deletedArgument.getName()));
         } else if (container.isOfType(SchemaGraph.INPUT_OBJECT)) {
             Vertex inputObject = container;
             if (isInputObjectDeleted(inputObject.getName())) {
@@ -493,6 +515,8 @@ public class EditOperationAnalyzer {
             }
             AppliedDirectiveInputObjectFieldLocation location = new AppliedDirectiveInputObjectFieldLocation(inputObject.getName(), inputField.getName(), appliedDirective.getName());
             getInputObjectModification(inputObject.getName()).getDetails().add(new AppliedDirectiveArgumentDeletion(location, deletedArgument.getName()));
+        } else {
+            assertShouldNeverHappen("Unexpected container " + container);
         }
     }
 
