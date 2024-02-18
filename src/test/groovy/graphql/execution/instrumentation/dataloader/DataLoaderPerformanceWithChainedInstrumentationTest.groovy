@@ -31,9 +31,6 @@ class DataLoaderPerformanceWithChainedInstrumentationTest extends Specification 
         DataLoaderPerformanceData dataLoaderPerformanceData = new DataLoaderPerformanceData(batchCompareDataFetchers)
 
         dataLoaderRegistry = dataLoaderPerformanceData.setupDataLoaderRegistry()
-//        Instrumentation instrumentation = new ChainedInstrumentation(
-//                Collections.singletonList(new DataLoaderDispatcherInstrumentation())
-//                )
         graphQL = dataLoaderPerformanceData.setupGraphQL()
     }
 

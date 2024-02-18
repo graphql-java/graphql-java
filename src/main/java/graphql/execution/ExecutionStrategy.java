@@ -196,7 +196,8 @@ public abstract class ExecutionStrategy {
      * @throws NonNullableFieldWasNullException in the future if a non-null field resolves to a null value
      */
     protected CompletableFuture<Map<String, Object>> executeObject(ExecutionContext executionContext, ExecutionStrategyParameters parameters) throws NonNullableFieldWasNullException {
-        executionContext.getDataLoaderDispatcherStrategy().executeObject(executionContext, parameters);
+        DataLoaderDispatchStrategy dataLoaderDispatcherStrategy = executionContext.getDataLoaderDispatcherStrategy();
+        dataLoaderDispatcherStrategy.executeObject(executionContext, parameters);
         Instrumentation instrumentation = executionContext.getInstrumentation();
         InstrumentationExecutionStrategyParameters instrumentationParameters = new InstrumentationExecutionStrategyParameters(executionContext, parameters);
 
@@ -225,14 +226,14 @@ public abstract class ExecutionStrategy {
             for (FieldValueInfo completeValueInfo : completeValueInfos) {
                 resultFutures.add(completeValueInfo.getFieldValueFuture());
             }
-            executionContext.getDataLoaderDispatcherStrategy().executeObjectOnFieldValuesInfo(completeValueInfos, parameters);
+            dataLoaderDispatcherStrategy.executeObjectOnFieldValuesInfo(completeValueInfos, parameters);
             resolveObjectCtx.onFieldValuesInfo(completeValueInfos);
             resultFutures.await().whenComplete(handleResultsConsumer);
         }).exceptionally((ex) -> {
             // if there are any issues with combining/handling the field results,
             // complete the future at all costs and bubble up any thrown exception so
             // the execution does not hang.
-            executionContext.getDataLoaderDispatcherStrategy().executeObjectOnFieldValuesException(ex, parameters);
+            dataLoaderDispatcherStrategy.executeObjectOnFieldValuesException(ex, parameters);
             resolveObjectCtx.onFieldValuesException();
             overallResult.completeExceptionally(ex);
             return null;

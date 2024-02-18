@@ -35,7 +35,7 @@ public class AsyncSerialExecutionStrategy extends AbstractAsyncExecutionStrategy
         Instrumentation instrumentation = executionContext.getInstrumentation();
         InstrumentationExecutionStrategyParameters instrumentationParameters = new InstrumentationExecutionStrategyParameters(executionContext, parameters);
         InstrumentationContext<ExecutionResult> executionStrategyCtx = nonNullCtx(instrumentation.beginExecutionStrategy(instrumentationParameters,
-            executionContext.getInstrumentationState())
+                executionContext.getInstrumentationState())
         );
         MergedSelectionSet fields = parameters.getFields();
         ImmutableList<String> fieldNames = ImmutableList.copyOf(fields.keySet());
@@ -44,7 +44,7 @@ public class AsyncSerialExecutionStrategy extends AbstractAsyncExecutionStrategy
             MergedField currentField = fields.getSubField(fieldName);
             ResultPath fieldPath = parameters.getPath().segment(mkNameForPath(currentField));
             ExecutionStrategyParameters newParameters = parameters
-                .transform(builder -> builder.field(currentField).path(fieldPath));
+                    .transform(builder -> builder.field(currentField).path(fieldPath));
             return resolveField(executionContext, newParameters);
         });
 
