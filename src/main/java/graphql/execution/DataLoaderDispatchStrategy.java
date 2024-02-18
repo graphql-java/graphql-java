@@ -17,11 +17,11 @@ public interface DataLoaderDispatchStrategy {
 
     }
 
-    default void executionStrategy_onFieldValuesInfo(List<FieldValueInfo> fieldValueInfoList, ExecutionStrategyParameters parameters) {
+    default void executionStrategyOnFieldValuesInfo(List<FieldValueInfo> fieldValueInfoList, ExecutionStrategyParameters parameters) {
 
     }
 
-    default void executionStrategy_onFieldValuesException(Throwable t, ExecutionStrategyParameters parameters) {
+    default void executionStrategyOnFieldValuesException(Throwable t, ExecutionStrategyParameters parameters) {
 
     }
 
@@ -30,11 +30,11 @@ public interface DataLoaderDispatchStrategy {
 
     }
 
-    default void executeObject_onFieldValuesInfo(List<FieldValueInfo> fieldValueInfoList, ExecutionStrategyParameters parameters) {
+    default void executeObjectOnFieldValuesInfo(List<FieldValueInfo> fieldValueInfoList, ExecutionStrategyParameters parameters) {
 
     }
 
-    default void executeObject_onFieldValuesException(Throwable t, ExecutionStrategyParameters parameters) {
+    default void executeObjectOnFieldValuesException(Throwable t, ExecutionStrategyParameters parameters) {
 
     }
 

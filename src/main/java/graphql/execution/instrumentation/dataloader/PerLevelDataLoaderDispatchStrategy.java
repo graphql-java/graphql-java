@@ -106,12 +106,12 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
     }
 
     @Override
-    public void executionStrategy_onFieldValuesInfo(List<FieldValueInfo> fieldValueInfoList, ExecutionStrategyParameters parameters) {
+    public void executionStrategyOnFieldValuesInfo(List<FieldValueInfo> fieldValueInfoList, ExecutionStrategyParameters parameters) {
         int curLevel = parameters.getPath().getLevel() + 1;
         onFieldValuesInfoDispatchIfNeeded(fieldValueInfoList, curLevel, parameters);
     }
 
-    public void executionStrategy_onFieldValuesException(Throwable t, ExecutionStrategyParameters executionStrategyParameters) {
+    public void executionStrategyOnFieldValuesException(Throwable t, ExecutionStrategyParameters executionStrategyParameters) {
         int curLevel = executionStrategyParameters.getPath().getLevel() + 1;
         synchronized (callStack) {
             callStack.increaseHappenedOnFieldValueCalls(curLevel);
@@ -126,14 +126,14 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
     }
 
     @Override
-    public void executeObject_onFieldValuesInfo(List<FieldValueInfo> fieldValueInfoList, ExecutionStrategyParameters parameters) {
+    public void executeObjectOnFieldValuesInfo(List<FieldValueInfo> fieldValueInfoList, ExecutionStrategyParameters parameters) {
         int curLevel = parameters.getPath().getLevel() + 1;
         onFieldValuesInfoDispatchIfNeeded(fieldValueInfoList, curLevel, parameters);
     }
 
 
     @Override
-    public void executeObject_onFieldValuesException(Throwable t, ExecutionStrategyParameters parameters) {
+    public void executeObjectOnFieldValuesException(Throwable t, ExecutionStrategyParameters parameters) {
         int curLevel = parameters.getPath().getLevel() + 1;
         synchronized (callStack) {
             callStack.increaseHappenedOnFieldValueCalls(curLevel);

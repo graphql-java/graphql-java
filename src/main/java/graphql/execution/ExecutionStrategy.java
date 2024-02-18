@@ -221,14 +221,14 @@ public abstract class ExecutionStrategy {
             for (FieldValueInfo completeValueInfo : completeValueInfos) {
                 resultFutures.add(completeValueInfo.getFieldValueFuture());
             }
-            executionContext.getDataLoaderDispatcherStrategy().executeObject_onFieldValuesInfo(completeValueInfos, parameters);
+            executionContext.getDataLoaderDispatcherStrategy().executeObjectOnFieldValuesInfo(completeValueInfos, parameters);
             resolveObjectCtx.onFieldValuesInfo(completeValueInfos);
             resultFutures.await().whenComplete(handleResultsConsumer);
         }).exceptionally((ex) -> {
             // if there are any issues with combining/handling the field results,
             // complete the future at all costs and bubble up any thrown exception so
             // the execution does not hang.
-            executionContext.getDataLoaderDispatcherStrategy().executeObject_onFieldValuesException(ex, parameters);
+            executionContext.getDataLoaderDispatcherStrategy().executeObjectOnFieldValuesException(ex, parameters);
             resolveObjectCtx.onFieldValuesException();
             overallResult.completeExceptionally(ex);
             return null;

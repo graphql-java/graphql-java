@@ -64,14 +64,14 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
             for (FieldValueInfo completeValueInfo : completeValueInfos) {
                 fieldValuesFutures.add(completeValueInfo.getFieldValueFuture());
             }
-            executionContext.getDataLoaderDispatcherStrategy().executionStrategy_onFieldValuesInfo(completeValueInfos, parameters);
+            executionContext.getDataLoaderDispatcherStrategy().executionStrategyOnFieldValuesInfo(completeValueInfos, parameters);
             executionStrategyCtx.onFieldValuesInfo(completeValueInfos);
             fieldValuesFutures.await().whenComplete(handleResultsConsumer);
         }).exceptionally((ex) -> {
             // if there are any issues with combining/handling the field results,
             // complete the future at all costs and bubble up any thrown exception so
             // the execution does not hang.
-            executionContext.getDataLoaderDispatcherStrategy().executionStrategy_onFieldValuesException(ex, parameters);
+            executionContext.getDataLoaderDispatcherStrategy().executionStrategyOnFieldValuesException(ex, parameters);
             executionStrategyCtx.onFieldValuesException();
             overallResult.completeExceptionally(ex);
             return null;
