@@ -8,6 +8,7 @@ import graphql.execution.ExecutionStrategyParameters;
 import graphql.execution.FieldValueInfo;
 import graphql.execution.MergedField;
 import graphql.schema.DataFetcher;
+import graphql.util.LockKit;
 import org.dataloader.DataLoaderRegistry;
 
 import java.util.LinkedHashSet;
@@ -21,7 +22,10 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
     private final CallStack callStack;
     private final ExecutionContext executionContext;
 
+
     private static class CallStack {
+
+        private final LockKit.ReentrantLock lock = new LockKit.ReentrantLock();
         private final LevelMap expectedFetchCountPerLevel = new LevelMap();
         private final LevelMap fetchCountPerLevel = new LevelMap();
         private final LevelMap expectedStrategyCallsPerLevel = new LevelMap();
@@ -69,13 +73,13 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
         @Override
         public String toString() {
             return "CallStack{" +
-                "expectedFetchCountPerLevel=" + expectedFetchCountPerLevel +
-                ", fetchCountPerLevel=" + fetchCountPerLevel +
-                ", expectedStrategyCallsPerLevel=" + expectedStrategyCallsPerLevel +
-                ", happenedStrategyCallsPerLevel=" + happenedStrategyCallsPerLevel +
-                ", happenedOnFieldValueCallsPerLevel=" + happenedOnFieldValueCallsPerLevel +
-                ", dispatchedLevels" + dispatchedLevels +
-                '}';
+                    "expectedFetchCountPerLevel=" + expectedFetchCountPerLevel +
+                    ", fetchCountPerLevel=" + fetchCountPerLevel +
+                    ", expectedStrategyCallsPerLevel=" + expectedStrategyCallsPerLevel +
+                    ", happenedStrategyCallsPerLevel=" + happenedStrategyCallsPerLevel +
+                    ", happenedOnFieldValueCallsPerLevel=" + happenedOnFieldValueCallsPerLevel +
+                    ", dispatchedLevels" + dispatchedLevels +
+                    '}';
         }
 
 
@@ -113,9 +117,9 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
 
     public void executionStrategyOnFieldValuesException(Throwable t, ExecutionStrategyParameters executionStrategyParameters) {
         int curLevel = executionStrategyParameters.getPath().getLevel() + 1;
-        synchronized (callStack) {
-            callStack.increaseHappenedOnFieldValueCalls(curLevel);
-        }
+        callStack.lock.runLocked(() ->
+                callStack.increaseHappenedOnFieldValueCalls(curLevel)
+        );
     }
 
 
@@ -135,34 +139,31 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
     @Override
     public void executeObjectOnFieldValuesException(Throwable t, ExecutionStrategyParameters parameters) {
         int curLevel = parameters.getPath().getLevel() + 1;
-        synchronized (callStack) {
-            callStack.increaseHappenedOnFieldValueCalls(curLevel);
-        }
+        callStack.lock.runLocked(() ->
+                callStack.increaseHappenedOnFieldValueCalls(curLevel)
+        );
     }
 
 
-    @SuppressWarnings("SynchronizationOnLocalVariableOrMethodParameter")
     private void increaseCallCounts(int curLevel, ExecutionStrategyParameters executionStrategyParameters) {
         int fieldCount = executionStrategyParameters.getFields().size();
-        synchronized (callStack) {
+        callStack.lock.runLocked(() -> {
             callStack.increaseExpectedFetchCount(curLevel, fieldCount);
             callStack.increaseHappenedStrategyCalls(curLevel);
-        }
+        });
     }
 
-    @SuppressWarnings("SynchronizationOnLocalVariableOrMethodParameter")
     private void onFieldValuesInfoDispatchIfNeeded(List<FieldValueInfo> fieldValueInfoList, int curLevel, ExecutionStrategyParameters parameters) {
-        boolean dispatchNeeded;
-        synchronized (callStack) {
-            dispatchNeeded = handleOnFieldValuesInfo(fieldValueInfoList, curLevel);
-        }
+        boolean dispatchNeeded = callStack.lock.callLocked(() ->
+                handleOnFieldValuesInfo(fieldValueInfoList, curLevel)
+        );
         if (dispatchNeeded) {
             dispatch(curLevel);
         }
     }
 
     //
-// thread safety: called with synchronised(callStack)
+// thread safety: called with callStack.lock
 //
     private boolean handleOnFieldValuesInfo(List<FieldValueInfo> fieldValueInfos, int curLevel) {
         callStack.increaseHappenedOnFieldValueCalls(curLevel);
@@ -187,11 +188,10 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
     @Override
     public void fieldFetched(ExecutionContext executionContext, ExecutionStrategyParameters executionStrategyParameters, DataFetcher<?> dataFetcher, CompletableFuture<Object> fetchedValue) {
         int level = executionStrategyParameters.getPath().getLevel();
-        boolean dispatchNeeded;
-        synchronized (callStack) {
+        boolean dispatchNeeded = callStack.lock.callLocked(() -> {
             callStack.increaseFetchCount(level);
-            dispatchNeeded = dispatchIfNeeded(level);
-        }
+            return dispatchIfNeeded(level);
+        });
         if (dispatchNeeded) {
             dispatch(level);
         }
@@ -200,7 +200,7 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
 
 
     //
-// thread safety : called with synchronised(callStack)
+// thread safety : called with callStack.lock
 //
     private boolean dispatchIfNeeded(int level) {
         boolean ready = levelReady(level);
@@ -211,7 +211,7 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
     }
 
     //
-// thread safety: called with synchronised(callStack)
+// thread safety: called with callStack.lock
 //
     private boolean levelReady(int level) {
         if (level == 1) {
@@ -219,7 +219,7 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
             return callStack.allFetchesHappened(1);
         }
         if (levelReady(level - 1) && callStack.allOnFieldCallsHappened(level - 1)
-            && callStack.allStrategyCallsHappened(level) && callStack.allFetchesHappened(level)) {
+                && callStack.allStrategyCallsHappened(level) && callStack.allFetchesHappened(level)) {
 
             return true;
         }
