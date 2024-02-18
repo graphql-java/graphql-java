@@ -107,7 +107,7 @@ public class DeferredFragmentCall implements IncrementalCall<DeferPayload> {
         ImmutableList.Builder<GraphQLError> errorsBuilder = ImmutableList.builder();
 
         fieldWithExecutionResults.forEach(entry -> {
-            dataMap.put(entry.fieldName, entry.executionResult.getData());
+            dataMap.put(entry.resultKey, entry.executionResult.getData());
             errorsBuilder.addAll(entry.executionResult.getErrors());
         });
 
@@ -120,11 +120,11 @@ public class DeferredFragmentCall implements IncrementalCall<DeferPayload> {
     }
 
     public static class FieldWithExecutionResult {
-        private final String fieldName;
+        private final String resultKey;
         private final ExecutionResult executionResult;
 
-        public FieldWithExecutionResult(String fieldName, ExecutionResult executionResult) {
-            this.fieldName = fieldName;
+        public FieldWithExecutionResult(String resultKey, ExecutionResult executionResult) {
+            this.resultKey = resultKey;
             this.executionResult = executionResult;
         }
 

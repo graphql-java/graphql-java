@@ -132,7 +132,7 @@ public interface DeferredExecutionSupport {
                 DeferredCallContext deferredCallContext
         ) {
             Map<String, MergedField> fields = new LinkedHashMap<>();
-            fields.put(currentField.getName(), currentField);
+            fields.put(currentField.getResultKey(), currentField);
 
             ExecutionStrategyParameters callParameters = parameters.transform(builder ->
                     {
@@ -140,7 +140,7 @@ public interface DeferredExecutionSupport {
                         builder.deferredCallContext(deferredCallContext)
                                 .field(currentField)
                                 .fields(mergedSelectionSet)
-                                .path(parameters.getPath().segment(currentField.getName()))
+                                .path(parameters.getPath().segment(currentField.getResultKey()))
                                 .parent(null); // this is a break in the parent -> child chain - it's a new start effectively
                     }
             );
@@ -151,7 +151,7 @@ public interface DeferredExecutionSupport {
             instrumentation.beginDeferredField(executionContext.getInstrumentationState());
 
             return dfCache.computeIfAbsent(
-                    currentField.getName(),
+                    currentField.getResultKey(),
                     // The same field can be associated with multiple defer executions, so
                     // we memoize the field resolution to avoid multiple calls to the same data fetcher
                     key -> FpKit.interThreadMemoize(() -> {
@@ -165,7 +165,7 @@ public interface DeferredExecutionSupport {
 
                                 return executionResultCF
                                         .thenApply(executionResult ->
-                                                new DeferredFragmentCall.FieldWithExecutionResult(currentField.getName(), executionResult)
+                                                new DeferredFragmentCall.FieldWithExecutionResult(currentField.getResultKey(), executionResult)
                                         );
                             }
                     )
