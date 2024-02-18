@@ -6,8 +6,6 @@ import graphql.StarWarsSchema
 import spock.lang.Specification
 import spock.lang.Unroll
 
-import java.util.concurrent.ForkJoinPool
-
 /**
  * This allows the testing of different execution strategies that provide the same results given the same schema,
  * and queries and results
@@ -27,8 +25,7 @@ class ExecutionStrategyEquivalenceTest extends Specification {
             name
           }
         }
-        """
-                : [
+        """: [
                         hero: [
                                 name: 'R2-D2'
                         ]
@@ -46,8 +43,7 @@ class ExecutionStrategyEquivalenceTest extends Specification {
                 }
             }
         }
-        """
-                : [
+        """: [
                         hero: [
                                 id     : '2001',
                                 name   : 'R2-D2',
@@ -73,8 +69,7 @@ class ExecutionStrategyEquivalenceTest extends Specification {
                 name
             }
         }
-        """
-                : [
+        """: [
                         human: [
                                 name: 'Luke Skywalker'
                         ]
@@ -93,8 +88,7 @@ class ExecutionStrategyEquivalenceTest extends Specification {
                 name
             }
         }
-        """
-                : [
+        """: [
                         luke:
                                 [
                                         name: 'Luke Skywalker'
@@ -132,11 +126,11 @@ class ExecutionStrategyEquivalenceTest extends Specification {
 
         where:
 
-        strategyType      | strategyUnderTest                       | expectedQueriesAndResults
-        "async"           | new AsyncExecutionStrategy()            | standardQueriesAndResults()
-        "asyncSerial"     | new AsyncSerialExecutionStrategy()      | standardQueriesAndResults()
-        "breadthFirst"    | new BreadthFirstExecutionTestStrategy() | standardQueriesAndResults()
-        "breadthFirst"    | new BreadthFirstTestStrategy()          | standardQueriesAndResults()
+        strategyType   | strategyUnderTest                       | expectedQueriesAndResults
+        "async"        | new AsyncExecutionStrategy()            | standardQueriesAndResults()
+        "asyncSerial"  | new AsyncSerialExecutionStrategy()      | standardQueriesAndResults()
+        "breadthFirst" | new BreadthFirstExecutionTestStrategy() | standardQueriesAndResults()
+        "breadthFirst" | new BreadthFirstTestStrategy()          | standardQueriesAndResults()
 
     }
 
