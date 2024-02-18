@@ -75,7 +75,7 @@ public class ENFMerger {
 
                     if (deferSupport) {
                         // Move defer executions from removed field into the merged field's entry
-                        first.addDeferExecutions(next.getDeferExecutions());
+                        first.addDeferredExecutions(next.getDeferredExecutions());
                     }
                 }
                 first.setObjectTypeNames(mergedObjects);

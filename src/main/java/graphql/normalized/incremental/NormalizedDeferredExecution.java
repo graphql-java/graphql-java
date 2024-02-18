@@ -17,7 +17,7 @@ import java.util.Set;
  *     type Dog implements Animal { name: String, age: Int }
  * </pre>
  *
- * <b>An ENF can be associated with multiple `DeferExecution`s</b>
+ * <b>An ENF can be associated with multiple `NormalizedDeferredExecution`s</b>
  *
  * For example, this query:
  * <pre>
@@ -33,12 +33,12 @@ import java.util.Set;
  *     }
  * </pre>
  *
- * Would result in one ENF (name) associated with 2 `DeferExecution` instances. This is relevant for the execution
+ * Would result in one ENF (name) associated with 2 `NormalizedDeferredExecution` instances. This is relevant for the execution
  * since the field would have to be included in 2 incremental payloads. (I know, there's some duplication here, but
  * this is the current state of the spec. There are some discussions happening around de-duplicating data in scenarios
  * like this, so this behaviour might change in the future).
  *
- * <b>A `DeferExecution` may be associated with a list of possible types</b>
+ * <b>A `NormalizedDeferredExecution` may be associated with a list of possible types</b>
  *
  * For example, this query:
  * <pre>
@@ -50,9 +50,9 @@ import java.util.Set;
  *         }
  *     }
  * </pre>
- * results in a `DeferExecution` with no label and possible types [Dog, Cat]
+ * results in a `NormalizedDeferredExecution` with no label and possible types [Dog, Cat]
  *
- * <b>A `DeferExecution` may be associated with specific types</b>
+ * <b>A `NormalizedDeferredExecution` may be associated with specific types</b>
  * For example, this query:
  * <pre>
  *     query MyQuery {
@@ -66,10 +66,10 @@ import java.util.Set;
  *         }
  *     }
  * </pre>
- * results in a single ENF (name) associated with a `DeferExecution` with only "Cat" as a possible type. This means
+ * results in a single ENF (name) associated with a `NormalizedDeferredExecution` with only "Cat" as a possible type. This means
  * that, at execution time, `name` should be deferred only if the return object is a "Cat" (but not a if it is a "Dog").
  *
- * <b>ENFs associated with the same instance of `DeferExecution` will be resolved in the same incremental response payload</b>
+ * <b>ENFs associated with the same instance of `NormalizedDeferredExecution` will be resolved in the same incremental response payload</b>
  * For example, take these queries:
  *
  * <pre>
@@ -94,20 +94,20 @@ import java.util.Set;
  *     }
  * </pre>
  *
- * In `Query1`, the ENFs name and age are associated with different instances of `DeferExecution`. This means that,
+ * In `Query1`, the ENFs name and age are associated with different instances of `NormalizedDeferredExecution`. This means that,
  * during execution, `name` and `age` can be delivered at different times (if name is resolved faster, it will be
  * delivered first, and vice-versa).
- * In `Query2` the fields will share the same instance of `DeferExecution`. This ensures that, at execution time, the
+ * In `Query2` the fields will share the same instance of `NormalizedDeferredExecution`. This ensures that, at execution time, the
  * fields are guaranteed to be delivered together. In other words, execution should wait until the slowest field resolves
  * and deliver both fields at the same time.
  *
  */
 @ExperimentalApi
-public class DeferExecution {
+public class NormalizedDeferredExecution {
     private final String label;
     private final Set<GraphQLObjectType> possibleTypes;
 
-    public DeferExecution(@Nullable String label, Set<GraphQLObjectType> possibleTypes) {
+    public NormalizedDeferredExecution(@Nullable String label, Set<GraphQLObjectType> possibleTypes) {
         this.label = label;
         this.possibleTypes = possibleTypes;
     }
