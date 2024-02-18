@@ -23,7 +23,7 @@ import graphql.language.SelectionSet;
 import graphql.language.StringValue;
 import graphql.language.TypeName;
 import graphql.language.Value;
-import graphql.normalized.incremental.DeferExecution;
+import graphql.normalized.incremental.NormalizedDeferredExecution;
 import graphql.schema.GraphQLCompositeType;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLObjectType;
@@ -277,30 +277,30 @@ public class ExecutableNormalizedOperationToAstCompiler {
         Map<ExecutionFragmentDetails, List<Field>> fieldsByFragmentDetails = new LinkedHashMap<>();
 
         for (ExecutableNormalizedField nf : executableNormalizedFields) {
-            LinkedHashSet<DeferExecution> deferExecutions = nf.getDeferExecutions();
+            LinkedHashSet<NormalizedDeferredExecution> deferredExecutions = nf.getDeferredExecutions();
 
             if (nf.isConditional(schema)) {
                 selectionForNormalizedField(schema, nf, normalizedFieldToQueryDirectives, variableAccumulator, true)
                         .forEach((objectTypeName, field) -> {
-                            if (deferExecutions == null || deferExecutions.isEmpty()) {
+                            if (deferredExecutions == null || deferredExecutions.isEmpty()) {
                                 fieldsByFragmentDetails
                                         .computeIfAbsent(new ExecutionFragmentDetails(objectTypeName, null), ignored -> new ArrayList<>())
                                         .add(field);
                             } else {
-                                deferExecutions.forEach(deferExecution -> {
+                                deferredExecutions.forEach(deferredExecution -> {
                                     fieldsByFragmentDetails
-                                            .computeIfAbsent(new ExecutionFragmentDetails(objectTypeName, deferExecution), ignored -> new ArrayList<>())
+                                            .computeIfAbsent(new ExecutionFragmentDetails(objectTypeName, deferredExecution), ignored -> new ArrayList<>())
                                             .add(field);
                                 });
                             }
                         });
 
-            } else if (deferExecutions != null && !deferExecutions.isEmpty()) {
+            } else if (deferredExecutions != null && !deferredExecutions.isEmpty()) {
                 Field field = selectionForNormalizedField(schema, parentOutputType, nf, normalizedFieldToQueryDirectives, variableAccumulator, true);
 
-                deferExecutions.forEach(deferExecution -> {
+                deferredExecutions.forEach(deferredExecution -> {
                     fieldsByFragmentDetails
-                            .computeIfAbsent(new ExecutionFragmentDetails(null, deferExecution), ignored -> new ArrayList<>())
+                            .computeIfAbsent(new ExecutionFragmentDetails(null, deferredExecution), ignored -> new ArrayList<>())
                             .add(field);
                 });
             } else {
@@ -317,11 +317,11 @@ public class ExecutableNormalizedOperationToAstCompiler {
                 fragmentBuilder.typeCondition(typeName);
             }
 
-            if (typeAndDeferPair.deferExecution != null) {
+            if (typeAndDeferPair.deferredExecution != null) {
                 Directive.Builder deferBuilder = Directive.newDirective().name(Directives.DeferDirective.getName());
 
-                if (typeAndDeferPair.deferExecution.getLabel() != null) {
-                    deferBuilder.argument(newArgument().name("label").value(StringValue.of(typeAndDeferPair.deferExecution.getLabel())).build());
+                if (typeAndDeferPair.deferredExecution.getLabel() != null) {
+                    deferBuilder.argument(newArgument().name("label").value(StringValue.of(typeAndDeferPair.deferredExecution.getLabel())).build());
                 }
 
                 fragmentBuilder.directive(deferBuilder.build());
@@ -489,11 +489,11 @@ public class ExecutableNormalizedOperationToAstCompiler {
      */
     private static class ExecutionFragmentDetails {
         private final String typeName;
-        private final DeferExecution deferExecution;
+        private final NormalizedDeferredExecution deferredExecution;
 
-        public ExecutionFragmentDetails(String typeName, DeferExecution deferExecution) {
+        public ExecutionFragmentDetails(String typeName, NormalizedDeferredExecution deferredExecution) {
             this.typeName = typeName;
-            this.deferExecution = deferExecution;
+            this.deferredExecution = deferredExecution;
         }
 
         @Override
@@ -505,12 +505,12 @@ public class ExecutableNormalizedOperationToAstCompiler {
                 return false;
             }
             ExecutionFragmentDetails that = (ExecutionFragmentDetails) o;
-            return Objects.equals(typeName, that.typeName) && Objects.equals(deferExecution, that.deferExecution);
+            return Objects.equals(typeName, that.typeName) && Objects.equals(deferredExecution, that.deferredExecution);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(typeName, deferExecution);
+            return Objects.hash(typeName, deferredExecution);
         }
     }
 }
