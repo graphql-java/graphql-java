@@ -16,7 +16,6 @@ import graphql.execution.instrumentation.DocumentAndVariables;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationState;
-import graphql.execution.instrumentation.NoContextChainedInstrumentation;
 import graphql.execution.instrumentation.SimplePerformantInstrumentation;
 import graphql.execution.instrumentation.parameters.InstrumentationCreateStateParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters;
@@ -210,7 +209,6 @@ public class GraphQL {
         private ExecutionIdProvider idProvider = DEFAULT_EXECUTION_ID_PROVIDER;
         private Instrumentation instrumentation = null; // deliberate default here
         private PreparsedDocumentProvider preparsedDocumentProvider = NoOpPreparsedDocumentProvider.INSTANCE;
-        private boolean doNotAddDefaultInstrumentations = false;
         private boolean doNotAutomaticallyDispatchDataLoader = false;
         private ValueUnboxer valueUnboxer = ValueUnboxer.DEFAULT;
 
@@ -266,20 +264,6 @@ public class GraphQL {
             return this;
         }
 
-        /**
-         * As of GraphQL Java 22 there are no default instrumentations. Before that a DataLoaderDispatcherInstrumentation
-         * was added by default.
-         * <p>
-         * For GraphQL Java 22 calling this method is equal to calling {@link #doNotAutomaticallyDispatchDataLoader()}
-         *
-         * @return this builder
-         */
-        public Builder doNotAddDefaultInstrumentations() {
-            this.doNotAddDefaultInstrumentations = true;
-            // legacy reasons: calling this method is equal to calling doNotAutomaticallyDispatchDataLoader
-            this.doNotAutomaticallyDispatchDataLoader = true;
-            return this;
-        }
 
         /**
          * Deactivates the automatic dispatching of DataLoaders.
@@ -309,7 +293,9 @@ public class GraphQL {
                 this.subscriptionExecutionStrategy = new SubscriptionExecutionStrategy(this.defaultExceptionHandler);
             }
 
-            this.instrumentation = checkInstrumentationDefaultState(this.instrumentation, this.doNotAddDefaultInstrumentations);
+            if (instrumentation == null) {
+                this.instrumentation = SimplePerformantInstrumentation.INSTANCE;
+            }
             return new GraphQL(this);
         }
     }
@@ -555,16 +541,4 @@ public class GraphQL {
         return execution.execute(document, graphQLSchema, executionId, executionInput, instrumentationState);
     }
 
-    private static Instrumentation checkInstrumentationDefaultState(Instrumentation instrumentation, boolean doNotAddDefaultInstrumentations) {
-        if (doNotAddDefaultInstrumentations) {
-            return instrumentation == null ? SimplePerformantInstrumentation.INSTANCE : instrumentation;
-        }
-        if (instrumentation instanceof NoContextChainedInstrumentation) {
-            return instrumentation;
-        }
-        if (instrumentation == null) {
-            return SimplePerformantInstrumentation.INSTANCE;
-        }
-        return instrumentation;
-    }
 }
