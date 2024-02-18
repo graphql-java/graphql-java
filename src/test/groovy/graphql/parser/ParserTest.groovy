@@ -1154,8 +1154,6 @@ triple3 : """edge cases \\""" "" " \\"" \\" edge cases"""
 
     def "escape characters correctly printed when printing AST"() {
         given:
-        def src = "\"\\\"\" scalar A"
-
         def env = newParserEnvironment()
                 .document(src)
                 .parserOptions(
@@ -1178,9 +1176,17 @@ triple3 : """edge cases \\""" "" " \\"" \\" edge cases"""
 
         when:
         def reparsedPrinted = AstPrinter.printAst(reparsed)
-        
+
         then:
         reparsedPrinted == printed // Re-parsing and re-printing produces the same result
+
+        where:
+        src                 | _
+        "\"\\\"\" scalar A" | _
+        "\"\f\" scalar A"   | _
+        "\"\b\" scalar A"   | _
+        "\"\t\" scalar A"   | _
+        "\"\\\" scalar A"   | _
     }
 
 }
