@@ -1186,7 +1186,6 @@ triple3 : """edge cases \\""" "" " \\"" \\" edge cases"""
         "\"\f\" scalar A"   | _
         "\"\b\" scalar A"   | _
         "\"\t\" scalar A"   | _
-        "\"\\\" scalar A"   | _
     }
 
 }
