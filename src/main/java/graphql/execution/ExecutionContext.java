@@ -60,7 +60,8 @@ public class ExecutionContext {
     private final ExecutionInput executionInput;
     private final Supplier<ExecutableNormalizedOperation> queryTree;
 
-    private final AtomicReference<DataLoaderDispatchStrategy> dataLoaderDispatcherStrategy = new AtomicReference<>(DataLoaderDispatchStrategy.NO_OP);
+    // this is modified after creation so it needs to be volatile to ensure visibility across Threads
+    private volatile DataLoaderDispatchStrategy dataLoaderDispatcherStrategy = DataLoaderDispatchStrategy.NO_OP;
 
     ExecutionContext(ExecutionContextBuilder builder) {
         this.graphQLSchema = builder.graphQLSchema;
@@ -250,7 +251,9 @@ public class ExecutionContext {
         return errors.get();
     }
 
-    public ExecutionStrategy getQueryStrategy() { return queryStrategy; }
+    public ExecutionStrategy getQueryStrategy() {
+        return queryStrategy;
+    }
 
     public ExecutionStrategy getMutationStrategy() {
         return mutationStrategy;
@@ -280,12 +283,12 @@ public class ExecutionContext {
 
     @Internal
     public void setDataLoaderDispatcherStrategy(DataLoaderDispatchStrategy dataLoaderDispatcherStrategy) {
-        this.dataLoaderDispatcherStrategy.set(dataLoaderDispatcherStrategy);
+        this.dataLoaderDispatcherStrategy = dataLoaderDispatcherStrategy;
     }
 
     @Internal
     public DataLoaderDispatchStrategy getDataLoaderDispatcherStrategy() {
-        return dataLoaderDispatcherStrategy.get();
+        return dataLoaderDispatcherStrategy;
     }
 
     /**
