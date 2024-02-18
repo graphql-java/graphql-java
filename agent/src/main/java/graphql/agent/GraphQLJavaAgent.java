@@ -37,6 +37,11 @@ public class GraphQLJavaAgent {
     public static final Map<ExecutionId, ExecutionTrackingResult> executionIdToData = new ConcurrentHashMap<>();
     public static final Map<DataLoader, ExecutionId> dataLoaderToExecutionId = new ConcurrentHashMap<>();
 
+    public static void premain(String agentArgs, Instrumentation inst) {
+        agentmain(agentArgs, inst);
+    }
+
+
     public static void agentmain(String agentArgs, Instrumentation inst) {
         System.out.println("GraphQL Java Agent is starting");
         new AgentBuilder.Default()
