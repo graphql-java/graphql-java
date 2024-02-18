@@ -4,6 +4,7 @@ import graphql.ExecutionInput;
 import graphql.ExecutionResult;
 import graphql.GraphQL;
 import graphql.StarWarsData;
+import graphql.execution.instrumentation.tracing.TracingInstrumentation;
 import graphql.schema.DataFetcher;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
@@ -134,18 +135,10 @@ public class HttpMain extends AbstractHandler {
         // you need a schema in order to execute queries
         GraphQLSchema schema = buildStarWarsSchema();
 
-        // DataLoaderDispatcherInstrumentation dlInstrumentation =
-        //         new DataLoaderDispatcherInstrumentation(newOptions().includeStatistics(true));
-
-        // Instrumentation instrumentation = new ChainedInstrumentation(
-        //         asList(new TracingInstrumentation(), dlInstrumentation)
-        // );
-
         // finally you build a runtime graphql object and execute the query
         GraphQL graphQL = GraphQL
                 .newGraphQL(schema)
-                // instrumentation is pluggable
-            // .instrumentation(instrumentation)
+                .instrumentation(new TracingInstrumentation())
                 .build();
         ExecutionResult executionResult = graphQL.execute(executionInput);
 

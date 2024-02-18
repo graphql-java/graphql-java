@@ -183,7 +183,6 @@ class PeopleCompaniesAndProductsDataLoaderTest extends Specification {
 
         GraphQL graphQL = GraphQL
                 .newGraphQL(graphQLSchema)
-//                .instrumentation(new DataLoaderDispatcherInstrumentation())
                 .build()
 
         when:

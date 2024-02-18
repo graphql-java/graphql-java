@@ -1,15 +1,10 @@
 package graphql.execution.instrumentation.dataloader
 
 import graphql.ExecutionInput
-import graphql.ExecutionResult
 import graphql.GraphQL
 import graphql.TestUtil
-import graphql.execution.AsyncExecutionStrategy
 import graphql.execution.AsyncSerialExecutionStrategy
-import graphql.execution.ExecutionContext
-import graphql.execution.ExecutionStrategyParameters
 import graphql.execution.instrumentation.ChainedInstrumentation
-import graphql.execution.instrumentation.Instrumentation
 import graphql.execution.instrumentation.InstrumentationState
 import graphql.execution.instrumentation.SimplePerformantInstrumentation
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters
@@ -29,17 +24,8 @@ import static graphql.StarWarsSchema.starWarsSchema
 import static graphql.schema.idl.RuntimeWiring.newRuntimeWiring
 import static graphql.schema.idl.TypeRuntimeWiring.newTypeWiring
 
-class DataLoaderDispatcherInstrumentationTest extends Specification {
+class DataLoaderDispatcherTest extends Specification {
 
-    class CaptureStrategy extends AsyncExecutionStrategy {
-        Instrumentation instrumentation = null
-
-        @Override
-        CompletableFuture<ExecutionResult> execute(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
-            instrumentation = executionContext.instrumentation
-            return super.execute(executionContext, parameters)
-        }
-    }
 
     def query = """
         query {
@@ -65,36 +51,7 @@ class DataLoaderDispatcherInstrumentationTest extends Specification {
     ]
 
 
-//    def "dataloader instrumentation is always added and an empty data loader registry is in place"() {
-//
-//        def captureStrategy = new CaptureStrategy()
-//        def graphQL = GraphQL.newGraphQL(starWarsSchema).queryExecutionStrategy(captureStrategy)
-//                .instrumentation(new SimplePerformantInstrumentation())
-//                .build()
-//        def executionInput = newExecutionInput().query('{ hero { name } }').build()
-//        when:
-//        graphQL.execute(executionInput)
-//        then:
-//        executionInput.getDataLoaderRegistry() != null
-//        def chainedInstrumentation = captureStrategy.instrumentation as ChainedInstrumentation
-////        chainedInstrumentation.instrumentations.any { instr -> instr instanceof DataLoaderDispatcherInstrumentation }
-//    }
 
-    def "dispatch is never called if data loader registry is not set"() {
-        def dataLoaderRegistry = new DataLoaderRegistry() {
-            @Override
-            void dispatchAll() {
-                assert false, "This should not be called when there are no data loaders"
-            }
-        }
-        def graphQL = GraphQL.newGraphQL(starWarsSchema).build()
-        def executionInput = newExecutionInput().query('{ hero { name } }').build()
-
-        when:
-        def er = graphQL.execute(executionInput)
-        then:
-        er.errors.isEmpty()
-    }
 
     def "dispatch is called if there are data loaders"() {
         def dispatchedCalled = false
@@ -131,7 +88,6 @@ class DataLoaderDispatcherInstrumentationTest extends Specification {
         DataLoaderRegistry startingDataLoaderRegistry = new DataLoaderRegistry()
         def enhancedDataLoaderRegistry = starWarsWiring.newDataLoaderRegistry()
 
-//        def dlInstrumentation = new DataLoaderDispatcherInstrumentation()
         def enhancingInstrumentation = new SimplePerformantInstrumentation() {
 
             @NotNull
@@ -159,17 +115,15 @@ class DataLoaderDispatcherInstrumentationTest extends Specification {
 
 
     @Unroll
-    def "ensure DataLoaderDispatcherInstrumentation works for #executionStrategyName"() {
+    def "ensure DataLoaderDispatcher works for #executionStrategyName"() {
 
         given:
         def starWarsWiring = new StarWarsDataLoaderWiring()
         def dlRegistry = starWarsWiring.newDataLoaderRegistry()
 
-//        def batchingInstrumentation = new DataLoaderDispatcherInstrumentation()
 
         def graphql = GraphQL.newGraphQL(starWarsWiring.schema)
                 .queryExecutionStrategy(executionStrategy)
-//                .instrumentation(batchingInstrumentation)
                 .build()
 
         when:

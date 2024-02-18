@@ -973,8 +973,6 @@ class GraphQLTest extends Specification {
         queryStrategy.executionId == goodbye
         queryStrategy.instrumentation instanceof SimplePerformantInstrumentation
         newGraphQL.instrumentation == newInstrumentation
-//        (queryStrategy.instrumentation as ChainedInstrumentation).getInstrumentations().contains(newInstrumentation)
-//        !(queryStrategy.instrumentation as ChainedInstrumentation).getInstrumentations().contains(instrumentation)
     }
 
     def "provided instrumentation is unchanged"() {
