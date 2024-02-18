@@ -20,14 +20,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 
-import static graphql.agent.GraphQLJavaAgent.ExecutionData.DFResultType.DONE_CANCELLED;
-import static graphql.agent.GraphQLJavaAgent.ExecutionData.DFResultType.DONE_EXCEPTIONALLY;
-import static graphql.agent.GraphQLJavaAgent.ExecutionData.DFResultType.DONE_OK;
-import static graphql.agent.GraphQLJavaAgent.ExecutionData.DFResultType.PENDING;
+import static graphql.agent.result.ExecutionTrackingResult.DFResultType.DONE_CANCELLED;
+import static graphql.agent.result.ExecutionTrackingResult.DFResultType.DONE_EXCEPTIONALLY;
+import static graphql.agent.result.ExecutionTrackingResult.DFResultType.DONE_OK;
+import static graphql.agent.result.ExecutionTrackingResult.DFResultType.PENDING;
 import static graphql.agent.result.ExecutionTrackingResult.EXECUTION_TRACKING_KEY;
 import static net.bytebuddy.matcher.ElementMatchers.nameMatches;
 import static net.bytebuddy.matcher.ElementMatchers.named;
@@ -35,177 +33,54 @@ import static net.bytebuddy.matcher.ElementMatchers.takesArguments;
 
 public class GraphQLJavaAgent {
 
-    public static class ExecutionData {
-        public final AtomicReference<String> startThread = new AtomicReference<>();
-        public final AtomicReference<String> endThread = new AtomicReference<>();
-        public final AtomicLong startExecutionTime = new AtomicLong();
-        public final AtomicLong endExecutionTime = new AtomicLong();
-        public final Map<ResultPath, String> resultPathToDataLoaderUsed = new ConcurrentHashMap<>();
-        public final Map<DataLoader, String> dataLoaderToName = new ConcurrentHashMap<>();
 
-        public final Map<ResultPath, Long> timePerPath = new ConcurrentHashMap<>();
-        public final Map<ResultPath, Long> finishedTimePerPath = new ConcurrentHashMap<>();
-        public final Map<ResultPath, String> finishedThreadPerPath = new ConcurrentHashMap<>();
-        public final Map<ResultPath, String> startInvocationThreadPerPath = new ConcurrentHashMap<>();
-        private final Map<ResultPath, DFResultType> dfResultTypes = new ConcurrentHashMap<>();
-
-        public static class BatchLoadingCall {
-            public BatchLoadingCall(int keyCount, String threadName) {
-                this.keyCount = keyCount;
-                this.threadName = threadName;
-            }
-
-            public final int keyCount;
-            public final String threadName;
-        }
-
-        public final Map<String, List<BatchLoadingCall>> dataLoaderNameToBatchCall = new ConcurrentHashMap<>();
-
-        public String print(String executionId) {
-            StringBuilder s = new StringBuilder();
-            s.append("==========================").append("\n");
-            s.append("Summary for execution with id ").append(executionId).append("\n");
-            s.append("==========================").append("\n");
-            s.append("Execution time in ms:").append((endExecutionTime.get() - startExecutionTime.get()) / 1_000_000L).append("\n");
-            s.append("Fields count: ").append(timePerPath.keySet().size()).append("\n");
-            s.append("Blocking fields count: ").append(dfResultTypes.values().stream().filter(dfResultType -> dfResultType != PENDING).count()).append("\n");
-            s.append("Nonblocking fields count: ").append(dfResultTypes.values().stream().filter(dfResultType -> dfResultType == PENDING).count()).append("\n");
-            s.append("DataLoaders used: ").append(dataLoaderToName.size()).append("\n");
-            s.append("DataLoader names: ").append(dataLoaderToName.values()).append("\n");
-            s.append("start execution thread: '").append(startThread.get()).append("'\n");
-            s.append("end execution  thread: '").append(endThread.get()).append("'\n");
-            s.append("BatchLoader calls details: ").append("\n");
-            s.append("==========================").append("\n");
-            for (String dataLoaderName : dataLoaderNameToBatchCall.keySet()) {
-                s.append("Batch call: '").append(dataLoaderName).append("' made ").append(dataLoaderNameToBatchCall.get(dataLoaderName).size()).append(" times, ").append("\n");
-                for (BatchLoadingCall batchLoadingCall : dataLoaderNameToBatchCall.get(dataLoaderName)) {
-                    s.append("Batch call with ").append(batchLoadingCall.keyCount).append(" keys ").append(" in thread ").append(batchLoadingCall.threadName).append("\n");
-                }
-                List<ResultPath> resultPathUsed = new ArrayList<>();
-                for (ResultPath resultPath : resultPathToDataLoaderUsed.keySet()) {
-                    if (resultPathToDataLoaderUsed.get(resultPath).equals(dataLoaderName)) {
-                        resultPathUsed.add(resultPath);
-                    }
-                }
-                s.append("DataLoader: '").append(dataLoaderName).append("' used in fields: ").append(resultPathUsed).append("\n");
-            }
-            s.append("Field details:").append("\n");
-            s.append("===============").append("\n");
-            for (ResultPath path : timePerPath.keySet()) {
-                s.append("Field: '").append(path).append("'\n");
-                s.append("invocation time: ").append(timePerPath.get(path)).append(" nano seconds, ").append("\n");
-                s.append("completion time: ").append(finishedTimePerPath.get(path)).append(" nano seconds, ").append("\n");
-                s.append("Result type: ").append(dfResultTypes.get(path)).append("\n");
-                s.append("invoked in thread: ").append(startInvocationThreadPerPath.get(path)).append("\n");
-                s.append("finished in thread: ").append(finishedThreadPerPath.get(path)).append("\n");
-                s.append("-------------\n");
-            }
-            s.append("==========================").append("\n");
-            s.append("==========================").append("\n");
-            return s.toString();
-
-        }
-
-        @Override
-        public String toString() {
-            return "ExecutionData{" +
-                "resultPathToDataLoaderUsed=" + resultPathToDataLoaderUsed +
-                ", dataLoaderNames=" + dataLoaderToName.values() +
-                ", timePerPath=" + timePerPath +
-                ", dfResultTypes=" + dfResultTypes +
-                '}';
-        }
-
-        public enum DFResultType {
-            DONE_OK,
-            DONE_EXCEPTIONALLY,
-            DONE_CANCELLED,
-            PENDING,
-        }
-
-
-        public void start(ResultPath path, long startTime) {
-            timePerPath.put(path, startTime);
-        }
-
-        public void end(ResultPath path, long endTime) {
-            timePerPath.put(path, endTime - timePerPath.get(path));
-        }
-
-        public int dataFetcherCount() {
-            return timePerPath.size();
-        }
-
-        public long getTime(ResultPath path) {
-            return timePerPath.get(path);
-        }
-
-        public long getTime(String path) {
-            return timePerPath.get(ResultPath.parse(path));
-        }
-
-        public void setDfResultTypes(ResultPath resultPath, DFResultType resultTypes) {
-            dfResultTypes.put(resultPath, resultTypes);
-        }
-
-        public DFResultType getDfResultTypes(ResultPath resultPath) {
-            return dfResultTypes.get(resultPath);
-        }
-
-        public DFResultType getDfResultTypes(String resultPath) {
-            return dfResultTypes.get(ResultPath.parse(resultPath));
-        }
-
-
-    }
-
-    public static final Map<ExecutionId, ExecutionData> executionIdToData = new ConcurrentHashMap<>();
+    public static final Map<ExecutionId, ExecutionTrackingResult> executionIdToData = new ConcurrentHashMap<>();
     public static final Map<DataLoader, ExecutionId> dataLoaderToExecutionId = new ConcurrentHashMap<>();
 
     public static void agentmain(String agentArgs, Instrumentation inst) {
-        System.out.println("Agent is running");
+        System.out.println("GraphQL Java Agent is starting");
         new AgentBuilder.Default()
-            .type(named("graphql.execution.Execution"))
-            .transform((builder, typeDescription, classLoader, module, protectionDomain) -> {
-                // ClassInjector.UsingInstrumentation.of()
-                // System.out.println("transforming " + typeDescription);
-                return builder
-                    .visit(Advice.to(ExecutionAdvice.class).on(nameMatches("executeOperation")));
+                .type(named("graphql.execution.Execution"))
+                .transform((builder, typeDescription, classLoader, module, protectionDomain) -> {
+                    // ClassInjector.UsingInstrumentation.of()
+                    // System.out.println("transforming " + typeDescription);
+                    return builder
+                            .visit(Advice.to(ExecutionAdvice.class).on(nameMatches("executeOperation")));
 
-            })
-            .type(named("graphql.execution.ExecutionStrategy"))
-            .transform((builder, typeDescription, classLoader, module, protectionDomain) -> {
-                return builder
-                    .visit(Advice.to(DataFetcherInvokeAdvice.class).on(nameMatches("invokeDataFetcher")));
-            })
-            .type(named("org.dataloader.DataLoaderRegistry"))
-            .transform((builder, typeDescription, classLoader, module, protectionDomain) -> {
-                // System.out.println("transforming " + typeDescription);
-                return builder
-                    .visit(Advice.to(DataLoaderRegistryAdvice.class).on(nameMatches("dispatchAll")));
-            })
-            .type(named("org.dataloader.DataLoader"))
-            .transform((builder, typeDescription, classLoader, module, protectionDomain) -> {
-                // System.out.println("transforming " + typeDescription);
-                return builder
-                    .visit(Advice.to(DataLoaderLoadAdvice.class).on(nameMatches("load")));
-            })
-            .type(named("org.dataloader.DataLoaderHelper"))
-            .transform((builder, typeDescription, classLoader, module, protectionDomain) -> {
-                // System.out.println("transforming " + typeDescription);
-                return builder
-                    .visit(Advice.to(DataLoaderHelperDispatchAdvice.class).on(nameMatches("dispatch")))
-                    .visit(Advice.to(DataLoaderHelperInvokeBatchLoaderAdvice.class)
-                        .on(nameMatches("invokeLoader").and(takesArguments(List.class, List.class))));
-            })
-            .type(named("graphql.schema.DataFetchingEnvironmentImpl"))
-            .transform((builder, typeDescription, classLoader, module, protectionDomain) -> {
-                // System.out.println("transforming " + typeDescription);
-                return builder
-                    .visit(Advice.to(DataFetchingEnvironmentAdvice.class).on(nameMatches("getDataLoader")));
-            })
-            .disableClassFormatChanges()
-            .installOn(inst);
+                })
+                .type(named("graphql.execution.ExecutionStrategy"))
+                .transform((builder, typeDescription, classLoader, module, protectionDomain) -> {
+                    return builder
+                            .visit(Advice.to(DataFetcherInvokeAdvice.class).on(nameMatches("invokeDataFetcher")));
+                })
+                .type(named("org.dataloader.DataLoaderRegistry"))
+                .transform((builder, typeDescription, classLoader, module, protectionDomain) -> {
+                    // System.out.println("transforming " + typeDescription);
+                    return builder
+                            .visit(Advice.to(DataLoaderRegistryAdvice.class).on(nameMatches("dispatchAll")));
+                })
+                .type(named("org.dataloader.DataLoader"))
+                .transform((builder, typeDescription, classLoader, module, protectionDomain) -> {
+                    // System.out.println("transforming " + typeDescription);
+                    return builder
+                            .visit(Advice.to(DataLoaderLoadAdvice.class).on(nameMatches("load")));
+                })
+                .type(named("org.dataloader.DataLoaderHelper"))
+                .transform((builder, typeDescription, classLoader, module, protectionDomain) -> {
+                    // System.out.println("transforming " + typeDescription);
+                    return builder
+                            .visit(Advice.to(DataLoaderHelperDispatchAdvice.class).on(nameMatches("dispatch")))
+                            .visit(Advice.to(DataLoaderHelperInvokeBatchLoaderAdvice.class)
+                                    .on(nameMatches("invokeLoader").and(takesArguments(List.class, List.class))));
+                })
+                .type(named("graphql.schema.DataFetchingEnvironmentImpl"))
+                .transform((builder, typeDescription, classLoader, module, protectionDomain) -> {
+                    // System.out.println("transforming " + typeDescription);
+                    return builder
+                            .visit(Advice.to(DataFetchingEnvironmentAdvice.class).on(nameMatches("getDataLoader")));
+                })
+                .disableClassFormatChanges()
+                .installOn(inst);
 
     }
 
@@ -221,11 +96,16 @@ public class GraphQLJavaAgent {
 
             public void accept(Object o, Throwable throwable) {
                 ExecutionId executionId = executionContext.getExecutionId();
-                GraphQLJavaAgent.ExecutionData executionData = GraphQLJavaAgent.executionIdToData.get(executionId);
-                executionData.endExecutionTime.set(System.nanoTime());
-                executionData.endThread.set(Thread.currentThread().getName());
-                System.out.println("execution finished for: " + executionId + " with data " + executionData);
-                System.out.println(executionData.print(executionId.toString()));
+                ExecutionTrackingResult executionTrackingResult = GraphQLJavaAgent.executionIdToData.get(executionId);
+                executionTrackingResult.endExecutionTime.set(System.nanoTime());
+                executionTrackingResult.endThread.set(Thread.currentThread().getName());
+                executionContext.getGraphQLContext().put(EXECUTION_TRACKING_KEY, executionTrackingResult);
+                // cleanup
+                for (DataLoader<?, ?> dataLoader : executionTrackingResult.dataLoaderToName.keySet()) {
+                    dataLoaderToExecutionId.remove(dataLoader);
+                }
+                executionIdToData.remove(executionId);
+
             }
 
         }
@@ -233,19 +113,18 @@ public class GraphQLJavaAgent {
 
         @Advice.OnMethodEnter
         public static void executeOperationEnter(@Advice.Argument(0) ExecutionContext executionContext) {
-            GraphQLJavaAgent.ExecutionData executionData = new GraphQLJavaAgent.ExecutionData();
-            executionData.startExecutionTime.set(System.nanoTime());
-            executionData.startThread.set(Thread.currentThread().getName());
-            System.out.println("execution started for: " + executionContext.getExecutionId());
+            ExecutionTrackingResult executionTrackingResult = new ExecutionTrackingResult();
+            executionTrackingResult.startExecutionTime.set(System.nanoTime());
+            executionTrackingResult.startThread.set(Thread.currentThread().getName());
             executionContext.getGraphQLContext().put(EXECUTION_TRACKING_KEY, new ExecutionTrackingResult());
 
-            GraphQLJavaAgent.executionIdToData.put(executionContext.getExecutionId(), executionData);
+            GraphQLJavaAgent.executionIdToData.put(executionContext.getExecutionId(), executionTrackingResult);
 
             DataLoaderRegistry dataLoaderRegistry = executionContext.getDataLoaderRegistry();
             for (String name : dataLoaderRegistry.getDataLoadersMap().keySet()) {
                 DataLoader dataLoader = dataLoaderRegistry.getDataLoader(name);
                 GraphQLJavaAgent.dataLoaderToExecutionId.put(dataLoader, executionContext.getExecutionId());
-                executionData.dataLoaderToName.put(dataLoader, name);
+                executionTrackingResult.dataLoaderToName.put(dataLoader, name);
             }
         }
 
@@ -274,19 +153,19 @@ public class GraphQLJavaAgent {
             @Override
             public void accept(Object o, Throwable throwable) {
                 ExecutionId executionId = executionContext.getExecutionId();
-                GraphQLJavaAgent.ExecutionData executionData = GraphQLJavaAgent.executionIdToData.get(executionId);
+                ExecutionTrackingResult executionTrackingResult = GraphQLJavaAgent.executionIdToData.get(executionId);
                 ResultPath path = parameters.getPath();
-                executionData.finishedTimePerPath.put(path, System.nanoTime() - startTime);
-                executionData.finishedThreadPerPath.put(path, Thread.currentThread().getName());
+                executionTrackingResult.finishedTimePerPath.put(path, System.nanoTime() - startTime);
+                executionTrackingResult.finishedThreadPerPath.put(path, Thread.currentThread().getName());
             }
         }
 
         @Advice.OnMethodEnter
         public static void invokeDataFetcherEnter(@Advice.Argument(0) ExecutionContext executionContext,
                                                   @Advice.Argument(1) ExecutionStrategyParameters parameters) {
-            GraphQLJavaAgent.ExecutionData executionData = GraphQLJavaAgent.executionIdToData.get(executionContext.getExecutionId());
-            executionData.start(parameters.getPath(), System.nanoTime());
-            executionData.startInvocationThreadPerPath.put(parameters.getPath(), Thread.currentThread().getName());
+            ExecutionTrackingResult executionTrackingResult = GraphQLJavaAgent.executionIdToData.get(executionContext.getExecutionId());
+            executionTrackingResult.start(parameters.getPath(), System.nanoTime());
+            executionTrackingResult.startInvocationThreadPerPath.put(parameters.getPath(), Thread.currentThread().getName());
         }
 
         @Advice.OnMethodExit
@@ -294,20 +173,20 @@ public class GraphQLJavaAgent {
                                                  @Advice.Argument(1) ExecutionStrategyParameters parameters,
                                                  @Advice.Return(readOnly = false) CompletableFuture<Object> result) {
             // ExecutionTrackingResult executionTrackingResult = executionContext.getGraphQLContext().get(EXECUTION_TRACKING_KEY);
-            GraphQLJavaAgent.ExecutionData executionData = GraphQLJavaAgent.executionIdToData.get(executionContext.getExecutionId());
+            ExecutionTrackingResult executionTrackingResult = GraphQLJavaAgent.executionIdToData.get(executionContext.getExecutionId());
             ResultPath path = parameters.getPath();
-            long startTime = executionData.timePerPath.get(path);
-            executionData.end(path, System.nanoTime());
+            long startTime = executionTrackingResult.timePerPath.get(path);
+            executionTrackingResult.end(path, System.nanoTime());
             if (result.isDone()) {
                 if (result.isCancelled()) {
-                    executionData.setDfResultTypes(path, DONE_CANCELLED);
+                    executionTrackingResult.setDfResultTypes(path, DONE_CANCELLED);
                 } else if (result.isCompletedExceptionally()) {
-                    executionData.setDfResultTypes(path, DONE_EXCEPTIONALLY);
+                    executionTrackingResult.setDfResultTypes(path, DONE_EXCEPTIONALLY);
                 } else {
-                    executionData.setDfResultTypes(path, DONE_OK);
+                    executionTrackingResult.setDfResultTypes(path, DONE_OK);
                 }
             } else {
-                executionData.setDfResultTypes(path, PENDING);
+                executionTrackingResult.setDfResultTypes(path, PENDING);
             }
             // overriding the result to make sure the finished handler is called first when the DF is finished
             // otherwise it is a completion tree instead of chain
@@ -325,13 +204,13 @@ public class GraphQLJavaAgent {
                                         @Advice.This(typing = Assigner.Typing.DYNAMIC) Object dataLoaderHelper) {
             DataLoader dataLoader = getDataLoaderForHelper(dataLoaderHelper);
             ExecutionId executionId = GraphQLJavaAgent.dataLoaderToExecutionId.get(dataLoader);
-            ExecutionData executionData = GraphQLJavaAgent.executionIdToData.get(executionId);
-            String dataLoaderName = executionData.dataLoaderToName.get(dataLoader);
+            ExecutionTrackingResult executionTrackingResult = GraphQLJavaAgent.executionIdToData.get(executionId);
+            String dataLoaderName = executionTrackingResult.dataLoaderToName.get(dataLoader);
 
-            synchronized (executionData.dataLoaderNameToBatchCall) {
-                executionData.dataLoaderNameToBatchCall.putIfAbsent(dataLoaderName, new ArrayList<>());
-                executionData.dataLoaderNameToBatchCall.get(dataLoaderName)
-                    .add(new GraphQLJavaAgent.ExecutionData.BatchLoadingCall(keys.size(), Thread.currentThread().getName()));
+            synchronized (executionTrackingResult.dataLoaderNameToBatchCall) {
+                executionTrackingResult.dataLoaderNameToBatchCall.putIfAbsent(dataLoaderName, new ArrayList<>());
+                executionTrackingResult.dataLoaderNameToBatchCall.get(dataLoaderName)
+                        .add(new ExecutionTrackingResult.BatchLoadingCall(keys.size(), Thread.currentThread().getName()));
             }
 
         }
@@ -347,11 +226,11 @@ public class GraphQLJavaAgent {
                 // DataLoader dataLoader = getDataLoaderForHelper(dataLoaderHelper);
                 // // System.out.println("dataLoader: " + dataLoader);
                 // ExecutionId executionId = GraphQLJavaAgent.dataLoaderToExecutionId.get(dataLoader);
-                // GraphQLJavaAgent.ExecutionData executionData = GraphQLJavaAgent.executionIdToData.get(executionId);
-                // String dataLoaderName = executionData.dataLoaderToName.get(dataLoader);
+                // ExecutionTrackingResult ExecutionTrackingResult = GraphQLJavaAgent.executionIdToData.get(executionId);
+                // String dataLoaderName = ExecutionTrackingResult.dataLoaderToName.get(dataLoader);
                 //
-                // executionData.dataLoaderNameToBatchCall.putIfAbsent(dataLoaderName, new ArrayList<>());
-                // executionData.dataLoaderNameToBatchCall.get(dataLoaderName).add(new GraphQLJavaAgent.ExecutionData.BatchLoadingCall(dispatchResult.getKeysCount()));
+                // ExecutionTrackingResult.dataLoaderNameToBatchCall.putIfAbsent(dataLoaderName, new ArrayList<>());
+                // ExecutionTrackingResult.dataLoaderNameToBatchCall.get(dataLoaderName).add(new ExecutionTrackingResult.BatchLoadingCall(dispatchResult.getKeysCount()));
 
             } catch (Exception e) {
                 e.printStackTrace();
@@ -382,10 +261,10 @@ class DataFetchingEnvironmentAdvice {
     public static void getDataLoader(@Advice.Argument(0) String dataLoaderName,
                                      @Advice.This(typing = Assigner.Typing.DYNAMIC) DataFetchingEnvironment dataFetchingEnvironment,
                                      @Advice.Return(readOnly = false, typing = Assigner.Typing.DYNAMIC) DataLoader dataLoader) {
-        GraphQLJavaAgent.ExecutionData executionData = GraphQLJavaAgent.executionIdToData.get(dataFetchingEnvironment.getExecutionId());
-        // System.out.println("execution data: " + executionData);
+        ExecutionTrackingResult executionTrackingResult = GraphQLJavaAgent.executionIdToData.get(dataFetchingEnvironment.getExecutionId());
+        // System.out.println("execution data: " + ExecutionTrackingResult);
         ResultPath resultPath = dataFetchingEnvironment.getExecutionStepInfo().getPath();
-        executionData.resultPathToDataLoaderUsed.put(resultPath, dataLoaderName);
+        executionTrackingResult.resultPathToDataLoaderUsed.put(resultPath, dataLoaderName);
 
         // System.out.println(dataLoaderName + " > " + dataLoader);
     }

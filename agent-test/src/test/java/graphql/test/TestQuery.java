@@ -94,7 +94,6 @@ public class TestQuery {
             .query(query).build();
         ExecutionResult result = graphQL.execute(executionInput);
         Assertions.assertThat(result.getErrors()).isEmpty();
-        System.out.println("result: " + result.getData());
         ExecutionTrackingResult trackingResult = executionInput.getGraphQLContext().get(ExecutionTrackingResult.EXECUTION_TRACKING_KEY);
         return trackingResult;
     }
