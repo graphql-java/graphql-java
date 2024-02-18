@@ -61,6 +61,13 @@ class AllNullTestingInstrumentation implements Instrumentation {
     }
 
     @Override
+    ExecuteObjectInstrumentationContext beginExecuteObject(InstrumentationExecutionStrategyParameters parameters, InstrumentationState state) {
+        assert state == instrumentationState
+        executionList << "start:execute-object"
+        return null
+    }
+
+    @Override
     InstrumentationContext<ExecutionResult> beginExecuteOperation(InstrumentationExecuteOperationParameters parameters, InstrumentationState state) {
         assert state == instrumentationState
         executionList << "start:execute-operation"

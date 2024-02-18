@@ -22,18 +22,17 @@ public abstract class AbstractAsyncExecutionStrategy extends ExecutionStrategy {
         super(dataFetcherExceptionHandler);
     }
 
-    // This method is kept for backward compatibility. Prefer calling/overriding another handleResults method
-    protected BiConsumer<List<ExecutionResult>, Throwable> handleResults(ExecutionContext executionContext, List<String> fieldNames, CompletableFuture<ExecutionResult> overallResult) {
-        return (List<ExecutionResult> results, Throwable exception) -> {
+    protected BiConsumer<List<Object>, Throwable> handleResults(ExecutionContext executionContext, List<String> fieldNames, CompletableFuture<ExecutionResult> overallResult) {
+        return (List<Object> results, Throwable exception) -> {
             if (exception != null) {
                 handleNonNullException(executionContext, overallResult, exception);
                 return;
             }
             Map<String, Object> resolvedValuesByField = Maps.newLinkedHashMapWithExpectedSize(fieldNames.size());
             int ix = 0;
-            for (ExecutionResult executionResult : results) {
+            for (Object result : results) {
                 String fieldName = fieldNames.get(ix++);
-                resolvedValuesByField.put(fieldName, executionResult.getData());
+                resolvedValuesByField.put(fieldName, result);
             }
             overallResult.complete(new ExecutionResultImpl(resolvedValuesByField, executionContext.getErrors()));
         };

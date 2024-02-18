@@ -62,6 +62,11 @@ class LegacyTestingInstrumentation implements Instrumentation {
     }
 
     @Override
+    ExecuteObjectInstrumentationContext beginExecuteObject(InstrumentationExecutionStrategyParameters parameters, InstrumentationState state) {
+        return new TestingExecuteObjectInstrumentationContext("execute-object", executionList, throwableList, useOnDispatch)
+    }
+
+    @Override
     InstrumentationContext<ExecutionResult> beginExecuteOperation(InstrumentationExecuteOperationParameters parameters) {
         assert parameters.getInstrumentationState() == instrumentationState // Retain for test coverage
         return new TestingInstrumentContext("execute-operation", executionList, throwableList, useOnDispatch)
