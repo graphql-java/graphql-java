@@ -36,7 +36,8 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
     @Override
     @SuppressWarnings("FutureReturnValueIgnored")
     public CompletableFuture<ExecutionResult> execute(ExecutionContext executionContext, ExecutionStrategyParameters parameters) throws NonNullableFieldWasNullException {
-        executionContext.getDataLoaderDispatcherStrategy().executionStrategy(executionContext, parameters);
+        DataLoaderDispatchStrategy dataLoaderDispatcherStrategy = executionContext.getDataLoaderDispatcherStrategy();
+        dataLoaderDispatcherStrategy.executionStrategy(executionContext, parameters);
         Instrumentation instrumentation = executionContext.getInstrumentation();
         InstrumentationExecutionStrategyParameters instrumentationParameters = new InstrumentationExecutionStrategyParameters(executionContext, parameters);
 
@@ -64,14 +65,14 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
             for (FieldValueInfo completeValueInfo : completeValueInfos) {
                 fieldValuesFutures.add(completeValueInfo.getFieldValueFuture());
             }
-            executionContext.getDataLoaderDispatcherStrategy().executionStrategyOnFieldValuesInfo(completeValueInfos, parameters);
+            dataLoaderDispatcherStrategy.executionStrategyOnFieldValuesInfo(completeValueInfos, parameters);
             executionStrategyCtx.onFieldValuesInfo(completeValueInfos);
             fieldValuesFutures.await().whenComplete(handleResultsConsumer);
         }).exceptionally((ex) -> {
             // if there are any issues with combining/handling the field results,
             // complete the future at all costs and bubble up any thrown exception so
             // the execution does not hang.
-            executionContext.getDataLoaderDispatcherStrategy().executionStrategyOnFieldValuesException(ex, parameters);
+            dataLoaderDispatcherStrategy.executionStrategyOnFieldValuesException(ex, parameters);
             executionStrategyCtx.onFieldValuesException();
             overallResult.completeExceptionally(ex);
             return null;
