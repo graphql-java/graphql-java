@@ -148,7 +148,7 @@ public class DataLoaderDispatcherInstrumentation extends SimplePerformantInstrum
         //
         // if there are no data loaders, there is nothing to do
         //
-        if (state.hasNoDataLoaders()) {
+        if (state.hasNoDataLoaders() || state.getDataLoaderRegistry().getDataLoaders().isEmpty()) {
             return noOp();
         }
 

@@ -5,7 +5,6 @@ import graphql.ExecutionInput
 import graphql.ExecutionResult
 import graphql.ExperimentalApi
 import graphql.GraphQL
-import graphql.GraphQLContext
 import graphql.TestUtil
 import graphql.execution.pubsub.CapturingSubscriber
 import graphql.incremental.DelayedIncrementalPartialResult
@@ -16,6 +15,7 @@ import graphql.schema.DataFetchingEnvironment
 import graphql.schema.TypeResolver
 import graphql.schema.idl.RuntimeWiring
 import org.awaitility.Awaitility
+import org.dataloader.DataLoaderRegistry
 import org.reactivestreams.Publisher
 import spock.lang.Specification
 import spock.lang.Unroll
@@ -1482,6 +1482,51 @@ class DeferExecutionSupportIntegrationTest extends Specification {
         incrementalResults.any { it.incremental[0].path == ["posts", 0] }
         incrementalResults.any { it.incremental[0].path == ["posts", 1] }
         incrementalResults.any { it.incremental[0].path == ["posts", 2] }
+    }
+
+    def "defer query with empty list of data loaders"() {
+        def query = '''
+            query {
+                post {
+                    id
+                    ... @defer {
+                        summary
+                    }
+                }
+            }
+        '''
+
+        when:
+        IncrementalExecutionResult initialResult = graphQL.execute(
+                ExecutionInput.newExecutionInput()
+                        .graphQLContext([(ExperimentalApi.ENABLE_INCREMENTAL_SUPPORT): true])
+                        // Adds a custom DataLoaderRegistry with no DataLoaders
+                        .dataLoaderRegistry(DataLoaderRegistry.newRegistry().build())
+                        .query(query)
+                        .build()
+        )
+
+        then:
+        initialResult.toSpecification() == [
+                data   : [post: [id: "1001"]],
+                hasNext: true
+        ]
+
+        when:
+        def incrementalResults = getIncrementalResults(initialResult)
+
+        then:
+        incrementalResults == [
+                [
+                        hasNext    : false,
+                        incremental: [
+                                [
+                                        path: ["post"],
+                                        data: [summary: "A summary"]
+                                ]
+                        ]
+                ]
+        ]
     }
 
     private ExecutionResult executeQuery(String query) {
