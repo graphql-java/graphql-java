@@ -1,9 +1,5 @@
-package graphql.test;
+package graphql;
 
-import graphql.ExecutionInput;
-import graphql.ExecutionResult;
-import graphql.GraphQL;
-import graphql.GraphQLContext;
 import graphql.agent.result.ExecutionTrackingResult;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.idl.RuntimeWiring;
@@ -11,7 +7,11 @@ import graphql.schema.idl.SchemaGenerator;
 import graphql.schema.idl.SchemaParser;
 import graphql.schema.idl.TypeDefinitionRegistry;
 
-public class StandaloneGraphQLTest {
+/**
+ * Used for testing loading the agent on startup.
+ * See StartAgentOnStartupTest
+ */
+public class GraphQLApp {
 
     public static void main(String[] args) {
         String schema = "type Query { hello: String }";
