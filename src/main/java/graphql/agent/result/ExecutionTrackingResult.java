@@ -37,6 +37,7 @@ public class ExecutionTrackingResult {
     public final Map<ResultPath, String> finishedThreadPerPath = new ConcurrentHashMap<>();
     public final Map<ResultPath, String> startInvocationThreadPerPath = new ConcurrentHashMap<>();
     private final Map<ResultPath, DFResultType> dfResultTypes = new ConcurrentHashMap<>();
+    public final Map<String, List<BatchLoadingCall>> dataLoaderNameToBatchCall = new ConcurrentHashMap<>();
 
     public static class BatchLoadingCall {
         public BatchLoadingCall(int keyCount, String threadName) {
@@ -46,9 +47,9 @@ public class ExecutionTrackingResult {
 
         public final int keyCount;
         public final String threadName;
+
     }
 
-    public final Map<String, List<BatchLoadingCall>> dataLoaderNameToBatchCall = new ConcurrentHashMap<>();
 
     public String print(String executionId) {
         StringBuilder s = new StringBuilder();
@@ -110,6 +111,10 @@ public class ExecutionTrackingResult {
         DONE_EXCEPTIONALLY,
         DONE_CANCELLED,
         PENDING,
+    }
+
+    public List<String> getDataLoaderNames() {
+        return new ArrayList<>(dataLoaderToName.values());
     }
 
 

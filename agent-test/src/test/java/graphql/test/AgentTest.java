@@ -5,6 +5,8 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -13,7 +15,7 @@ public class AgentTest {
 
     @BeforeAll
     static void init() {
-        LoadAgent.load();
+        LoadAgent.loadIntoCurrentJVM();
     }
 
     @AfterAll
@@ -41,6 +43,15 @@ public class AgentTest {
                 .isEqualTo(ExecutionTrackingResult.DFResultType.PENDING);
         assertThat(executionTrackingResult.getDfResultTypes("/issues[1]/author"))
                 .isEqualTo(ExecutionTrackingResult.DFResultType.PENDING);
+
+        assertThat(executionTrackingResult.getDataLoaderNames()).isEqualTo(Collections.singletonList("userLoader"));
+
+        assertThat(executionTrackingResult.dataLoaderNameToBatchCall).hasSize(1);
+        List<ExecutionTrackingResult.BatchLoadingCall> userLoaderCalls = executionTrackingResult.dataLoaderNameToBatchCall.get("userLoader");
+        assertThat(userLoaderCalls).hasSize(1);
+        ExecutionTrackingResult.BatchLoadingCall batchLoadingCall = userLoaderCalls.get(0);
+
+        assertThat(batchLoadingCall.keyCount).isEqualTo(2);
 
         verifyAgentDataIsEmpty();
     }
