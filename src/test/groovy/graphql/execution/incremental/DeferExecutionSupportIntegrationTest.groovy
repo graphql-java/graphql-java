@@ -1488,7 +1488,7 @@ class DeferExecutionSupportIntegrationTest extends Specification {
     def "defer query with empty list of data loaders"() {
         def query = '''
             query {
-                post {
+                posts {
                     id
                     ... @defer {
                         summary
