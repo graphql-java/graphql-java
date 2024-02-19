@@ -6,7 +6,6 @@ import graphql.execution.DataLoaderDispatchStrategy;
 import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionStrategyParameters;
 import graphql.execution.FieldValueInfo;
-import graphql.execution.MergedField;
 import graphql.schema.DataFetcher;
 import graphql.util.LockKit;
 import org.dataloader.DataLoaderRegistry;
@@ -99,11 +98,6 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
     }
 
     @Override
-    public void deferredField(ExecutionContext executionContext, MergedField currentField) {
-        throw new UnsupportedOperationException("Data Loaders cannot be used to resolve deferred fields");
-    }
-
-    @Override
     public void executionStrategy(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
         int curLevel = parameters.getExecutionStepInfo().getPath().getLevel() + 1;
         increaseCallCounts(curLevel, parameters);
@@ -125,6 +119,10 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
 
     @Override
     public void executeObject(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
+        if (executionContext.getIncrementalCallState().getIncrementalCallsDetected()) {
+            throw new UnsupportedOperationException("Data Loaders cannot be used to resolve deferred fields");
+        }
+
         int curLevel = parameters.getExecutionStepInfo().getPath().getLevel() + 1;
         increaseCallCounts(curLevel, parameters);
     }
