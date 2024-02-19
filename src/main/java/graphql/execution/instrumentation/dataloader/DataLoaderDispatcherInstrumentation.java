@@ -68,8 +68,8 @@ public class DataLoaderDispatcherInstrumentation extends SimplePerformantInstrum
 
 
     @Override
-    public InstrumentationState createState(InstrumentationCreateStateParameters parameters) {
-        return new DataLoaderDispatcherInstrumentationState(parameters.getExecutionInput().getDataLoaderRegistry());
+    public @Nullable CompletableFuture<InstrumentationState> createStateAsync(InstrumentationCreateStateParameters parameters) {
+        return CompletableFuture.completedFuture(new DataLoaderDispatcherInstrumentationState(parameters.getExecutionInput().getDataLoaderRegistry()));
     }
 
     @Override

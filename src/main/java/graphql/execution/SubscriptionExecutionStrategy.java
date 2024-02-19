@@ -145,7 +145,7 @@ public class SubscriptionExecutionStrategy extends ExecutionStrategy {
 
         // allow them to instrument each ER should they want to
         InstrumentationExecutionParameters i13nExecutionParameters = new InstrumentationExecutionParameters(
-                executionContext.getExecutionInput(), executionContext.getGraphQLSchema(), executionContext.getInstrumentationState());
+                executionContext.getExecutionInput(), executionContext.getGraphQLSchema());
 
         overallResult = overallResult.thenCompose(executionResult -> instrumentation.instrumentExecutionResult(executionResult, i13nExecutionParameters, executionContext.getInstrumentationState()));
         return overallResult;

@@ -127,8 +127,9 @@ class InstrumentationTest extends Specification {
         """
 
         def instrumentation = new LegacyTestingInstrumentation() {
+
             @Override
-            DataFetcher<?> instrumentDataFetcher(DataFetcher<?> dataFetcher, InstrumentationFieldFetchParameters parameters) {
+            DataFetcher<?> instrumentDataFetcher(DataFetcher<?> dataFetcher, InstrumentationFieldFetchParameters parameters, InstrumentationState state) {
                 return new DataFetcher<Object>() {
                     @Override
                     Object get(DataFetchingEnvironment environment) {

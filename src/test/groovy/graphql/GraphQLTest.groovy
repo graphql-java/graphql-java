@@ -1070,7 +1070,9 @@ many lines''']
         InstrumentationCreateStateParameters seenParams
 
         def instrumentation = new Instrumentation() {
-            @Override InstrumentationState createState(InstrumentationCreateStateParameters params) {
+
+            @Override
+            CompletableFuture<InstrumentationState> createStateAsync(InstrumentationCreateStateParameters params) {
                 seenParams = params
                 null
             }

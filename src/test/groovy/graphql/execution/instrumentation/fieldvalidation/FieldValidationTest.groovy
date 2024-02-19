@@ -311,7 +311,7 @@ class FieldValidationTest extends Specification {
         def execution = new Execution(strategy, strategy, strategy, instrumentation, ValueUnboxer.DEFAULT)
 
         def executionInput = ExecutionInput.newExecutionInput().query(query).variables(variables).build()
-        execution.execute(document, schema, ExecutionId.generate(), executionInput, SimplePerformantInstrumentation.INSTANCE.createState(new InstrumentationCreateStateParameters(schema, executionInput)))
+        execution.execute(document, schema, ExecutionId.generate(), executionInput, null)
     }
 
     def "test graphql from end to end with chained instrumentation"() {
