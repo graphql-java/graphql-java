@@ -124,7 +124,7 @@ public class Execution {
                 ExecutionResult executionResult = new ExecutionResultImpl(Collections.singletonList((GraphQLError) rte));
                 CompletableFuture<ExecutionResult> resultCompletableFuture = completedFuture(executionResult);
 
-                executeOperationCtx.onDispatched(resultCompletableFuture);
+                executeOperationCtx.onDispatched();
                 executeOperationCtx.onCompleted(executionResult, rte);
                 return resultCompletableFuture;
             }
@@ -176,7 +176,7 @@ public class Execution {
         }
 
         // note this happens NOW - not when the result completes
-        executeOperationCtx.onDispatched(result);
+        executeOperationCtx.onDispatched();
 
         // fill out extensions if we have them
         result = result.thenApply(er -> mergeExtensionsBuilderIfPresent(er, graphQLContext));

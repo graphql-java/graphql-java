@@ -123,7 +123,7 @@ public class FieldLevelTrackingApproach {
 
         return new ExecutionStrategyInstrumentationContext() {
             @Override
-            public void onDispatched(CompletableFuture<ExecutionResult> result) {
+            public void onDispatched() {
 
             }
 
@@ -154,7 +154,7 @@ public class FieldLevelTrackingApproach {
         return new ExecuteObjectInstrumentationContext() {
 
             @Override
-            public void onDispatched(CompletableFuture<Map<String, Object>> result) {
+            public void onDispatched() {
             }
 
             @Override
@@ -229,7 +229,7 @@ public class FieldLevelTrackingApproach {
         return new InstrumentationContext<Object>() {
 
             @Override
-            public void onDispatched(CompletableFuture<Object> result) {
+            public void onDispatched() {
                 boolean dispatchNeeded;
                 synchronized (callStack) {
                     callStack.increaseFetchCount(level);

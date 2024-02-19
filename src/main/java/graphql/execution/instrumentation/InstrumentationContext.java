@@ -20,7 +20,7 @@ public interface InstrumentationContext<T> {
      *
      * @param result the result of the step as a completable future
      */
-    void onDispatched(CompletableFuture<T> result);
+    void onDispatched();
 
     /**
      * This is invoked when the instrumentation step is fully completed

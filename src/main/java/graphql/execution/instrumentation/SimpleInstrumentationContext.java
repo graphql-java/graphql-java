@@ -15,7 +15,7 @@ public class SimpleInstrumentationContext<T> implements InstrumentationContext<T
 
     private static final InstrumentationContext<Object> NO_OP = new InstrumentationContext<Object>() {
         @Override
-        public void onDispatched(CompletableFuture<Object> result) {
+        public void onDispatched() {
         }
 
         @Override
@@ -49,21 +49,21 @@ public class SimpleInstrumentationContext<T> implements InstrumentationContext<T
     }
 
     private final BiConsumer<T, Throwable> codeToRunOnComplete;
-    private final Consumer<CompletableFuture<T>> codeToRunOnDispatch;
+    private final Runnable codeToRunOnDispatch;
 
     public SimpleInstrumentationContext() {
         this(null, null);
     }
 
-    private SimpleInstrumentationContext(Consumer<CompletableFuture<T>> codeToRunOnDispatch, BiConsumer<T, Throwable> codeToRunOnComplete) {
+    private SimpleInstrumentationContext(Runnable codeToRunOnDispatch, BiConsumer<T, Throwable> codeToRunOnComplete) {
         this.codeToRunOnComplete = codeToRunOnComplete;
         this.codeToRunOnDispatch = codeToRunOnDispatch;
     }
 
     @Override
-    public void onDispatched(CompletableFuture<T> result) {
+    public void onDispatched() {
         if (codeToRunOnDispatch != null) {
-            codeToRunOnDispatch.accept(result);
+            codeToRunOnDispatch.run();
         }
     }
 
@@ -83,7 +83,7 @@ public class SimpleInstrumentationContext<T> implements InstrumentationContext<T
      *
      * @return an instrumentation context
      */
-    public static <U> SimpleInstrumentationContext<U> whenDispatched(Consumer<CompletableFuture<U>> codeToRun) {
+    public static <U> SimpleInstrumentationContext<U> whenDispatched(Runnable codeToRun) {
         return new SimpleInstrumentationContext<>(codeToRun, null);
     }
 
@@ -101,13 +101,8 @@ public class SimpleInstrumentationContext<T> implements InstrumentationContext<T
     }
 
     public static <T> BiConsumer<? super T, ? super Throwable> completeInstrumentationCtxCF(
-            InstrumentationContext<T> instrumentationContext, CompletableFuture<T> targetCF) {
+            InstrumentationContext<T> instrumentationContext) {
         return (result, throwable) -> {
-            if (throwable != null) {
-                targetCF.completeExceptionally(throwable);
-            } else {
-                targetCF.complete(result);
-            }
             nonNullCtx(instrumentationContext).onCompleted(result, throwable);
         };
     }
