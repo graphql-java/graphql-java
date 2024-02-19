@@ -136,6 +136,7 @@ public abstract class ExecutionStrategy {
     protected final DataFetcherExceptionHandler dataFetcherExceptionHandler;
     private final ResolveType resolvedType = new ResolveType();
 
+
     /**
      * The default execution strategy constructor uses the {@link SimpleDataFetcherExceptionHandler}
      * for data fetching errors.
@@ -143,6 +144,7 @@ public abstract class ExecutionStrategy {
     protected ExecutionStrategy() {
         dataFetcherExceptionHandler = new SimpleDataFetcherExceptionHandler();
     }
+
 
     /**
      * The consumers of the execution strategy can pass in a {@link DataFetcherExceptionHandler} to better
@@ -153,6 +155,7 @@ public abstract class ExecutionStrategy {
     protected ExecutionStrategy(DataFetcherExceptionHandler dataFetcherExceptionHandler) {
         this.dataFetcherExceptionHandler = dataFetcherExceptionHandler;
     }
+
 
     @Internal
     public static String mkNameForPath(Field currentField) {
@@ -193,6 +196,8 @@ public abstract class ExecutionStrategy {
      * @throws NonNullableFieldWasNullException in the future if a non-null field resolves to a null value
      */
     protected CompletableFuture<Map<String, Object>> executeObject(ExecutionContext executionContext, ExecutionStrategyParameters parameters) throws NonNullableFieldWasNullException {
+        DataLoaderDispatchStrategy dataLoaderDispatcherStrategy = executionContext.getDataLoaderDispatcherStrategy();
+        dataLoaderDispatcherStrategy.executeObject(executionContext, parameters);
         Instrumentation instrumentation = executionContext.getInstrumentation();
         InstrumentationExecutionStrategyParameters instrumentationParameters = new InstrumentationExecutionStrategyParameters(executionContext, parameters);
 
@@ -211,7 +216,7 @@ public abstract class ExecutionStrategy {
         resolvedFieldFutures.await().whenComplete((completeValueInfos, throwable) -> {
             List<String> fieldsExecutedOnInitialResult = deferredExecutionSupport.getNonDeferredFieldNames(fieldNames);
 
-            BiConsumer<List<Object>, Throwable> handleResultsConsumer = buildFieldValueMap(fieldsExecutedOnInitialResult, overallResult,executionContext);
+            BiConsumer<List<Object>, Throwable> handleResultsConsumer = buildFieldValueMap(fieldsExecutedOnInitialResult, overallResult, executionContext);
             if (throwable != null) {
                 handleResultsConsumer.accept(null, throwable);
                 return;
@@ -221,12 +226,14 @@ public abstract class ExecutionStrategy {
             for (FieldValueInfo completeValueInfo : completeValueInfos) {
                 resultFutures.add(completeValueInfo.getFieldValueFuture());
             }
+            dataLoaderDispatcherStrategy.executeObjectOnFieldValuesInfo(completeValueInfos, parameters);
             resolveObjectCtx.onFieldValuesInfo(completeValueInfos);
             resultFutures.await().whenComplete(handleResultsConsumer);
         }).exceptionally((ex) -> {
             // if there are any issues with combining/handling the field results,
             // complete the future at all costs and bubble up any thrown exception so
             // the execution does not hang.
+            dataLoaderDispatcherStrategy.executeObjectOnFieldValuesException(ex, parameters);
             resolveObjectCtx.onFieldValuesException();
             overallResult.completeExceptionally(ex);
             return null;
@@ -415,8 +422,9 @@ public abstract class ExecutionStrategy {
         );
 
         dataFetcher = instrumentation.instrumentDataFetcher(dataFetcher, instrumentationFieldFetchParams, executionContext.getInstrumentationState());
+        dataFetcher = executionContext.getDataLoaderDispatcherStrategy().modifyDataFetcher(dataFetcher);
         CompletableFuture<Object> fetchedValue = invokeDataFetcher(executionContext, parameters, fieldDef, dataFetchingEnvironment, dataFetcher);
-
+        executionContext.getDataLoaderDispatcherStrategy().fieldFetched(executionContext, parameters, dataFetcher, fetchedValue);
         fetchCtx.onDispatched(fetchedValue);
         return fetchedValue
                 .handle((result, exception) -> {

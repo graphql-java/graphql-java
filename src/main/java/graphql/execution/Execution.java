@@ -12,6 +12,8 @@ import graphql.execution.incremental.IncrementalCallState;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationState;
+import graphql.execution.instrumentation.dataloader.FallbackDataLoaderDispatchStrategy;
+import graphql.execution.instrumentation.dataloader.PerLevelDataLoaderDispatchStrategy;
 import graphql.execution.instrumentation.parameters.InstrumentationExecuteOperationParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters;
 import graphql.extensions.ExtensionsBuilder;
@@ -37,6 +39,7 @@ import static graphql.execution.ExecutionContextBuilder.newExecutionContextBuild
 import static graphql.execution.ExecutionStepInfo.newExecutionStepInfo;
 import static graphql.execution.ExecutionStrategyParameters.newParameters;
 import static graphql.execution.instrumentation.SimpleInstrumentationContext.nonNullCtx;
+import static graphql.execution.instrumentation.dataloader.EmptyDataLoaderRegistryInstance.EMPTY_DATALOADER_REGISTRY;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 
 @Internal
@@ -47,13 +50,20 @@ public class Execution {
     private final ExecutionStrategy subscriptionStrategy;
     private final Instrumentation instrumentation;
     private final ValueUnboxer valueUnboxer;
+    private final boolean doNotAutomaticallyDispatchDataLoader;
 
-    public Execution(ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy, ExecutionStrategy subscriptionStrategy, Instrumentation instrumentation, ValueUnboxer valueUnboxer) {
+    public Execution(ExecutionStrategy queryStrategy,
+                     ExecutionStrategy mutationStrategy,
+                     ExecutionStrategy subscriptionStrategy,
+                     Instrumentation instrumentation,
+                     ValueUnboxer valueUnboxer,
+                     boolean doNotAutomaticallyDispatchDataLoader) {
         this.queryStrategy = queryStrategy != null ? queryStrategy : new AsyncExecutionStrategy();
         this.mutationStrategy = mutationStrategy != null ? mutationStrategy : new AsyncSerialExecutionStrategy();
         this.subscriptionStrategy = subscriptionStrategy != null ? subscriptionStrategy : new AsyncExecutionStrategy();
         this.instrumentation = instrumentation;
         this.valueUnboxer = valueUnboxer;
+        this.doNotAutomaticallyDispatchDataLoader = doNotAutomaticallyDispatchDataLoader;
     }
 
     public CompletableFuture<ExecutionResult> execute(Document document, GraphQLSchema graphQLSchema, ExecutionId executionId, ExecutionInput executionInput, InstrumentationState instrumentationState) {
@@ -160,9 +170,12 @@ public class Execution {
                 .path(path)
                 .build();
 
+
         CompletableFuture<ExecutionResult> result;
         try {
             ExecutionStrategy executionStrategy = executionContext.getStrategy(operation);
+            DataLoaderDispatchStrategy dataLoaderDispatchStrategy = createDataLoaderDispatchStrategy(executionContext, executionStrategy);
+            executionContext.setDataLoaderDispatcherStrategy(dataLoaderDispatchStrategy);
             result = executionStrategy.execute(executionContext, parameters);
         } catch (NonNullableFieldWasNullException e) {
             // this means it was non-null types all the way from an offending non-null type
@@ -208,6 +221,18 @@ public class Execution {
             return er;
         });
     }
+
+    private DataLoaderDispatchStrategy createDataLoaderDispatchStrategy(ExecutionContext executionContext, ExecutionStrategy executionStrategy) {
+        if (executionContext.getDataLoaderRegistry() == EMPTY_DATALOADER_REGISTRY || doNotAutomaticallyDispatchDataLoader) {
+            return DataLoaderDispatchStrategy.NO_OP;
+        }
+        if (executionStrategy instanceof AsyncExecutionStrategy) {
+            return new PerLevelDataLoaderDispatchStrategy(executionContext);
+        } else {
+            return new FallbackDataLoaderDispatchStrategy(executionContext);
+        }
+    }
+
 
     private void addExtensionsBuilderNotPresent(GraphQLContext graphQLContext) {
         Object builder = graphQLContext.get(ExtensionsBuilder.class);
