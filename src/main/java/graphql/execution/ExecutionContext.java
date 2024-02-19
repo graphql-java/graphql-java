@@ -6,6 +6,7 @@ import com.google.common.collect.ImmutableMap;
 import graphql.ExecutionInput;
 import graphql.GraphQLContext;
 import graphql.GraphQLError;
+import graphql.Internal;
 import graphql.PublicApi;
 import graphql.collect.ImmutableKit;
 import graphql.execution.incremental.IncrementalCallState;
@@ -58,6 +59,9 @@ public class ExecutionContext {
     private final ValueUnboxer valueUnboxer;
     private final ExecutionInput executionInput;
     private final Supplier<ExecutableNormalizedOperation> queryTree;
+
+    // this is modified after creation so it needs to be volatile to ensure visibility across Threads
+    private volatile DataLoaderDispatchStrategy dataLoaderDispatcherStrategy = DataLoaderDispatchStrategy.NO_OP;
 
     ExecutionContext(ExecutionContextBuilder builder) {
         this.graphQLSchema = builder.graphQLSchema;
@@ -247,7 +251,9 @@ public class ExecutionContext {
         return errors.get();
     }
 
-    public ExecutionStrategy getQueryStrategy() { return queryStrategy; }
+    public ExecutionStrategy getQueryStrategy() {
+        return queryStrategy;
+    }
 
     public ExecutionStrategy getMutationStrategy() {
         return mutationStrategy;
@@ -273,6 +279,16 @@ public class ExecutionContext {
 
     public Supplier<ExecutableNormalizedOperation> getNormalizedQueryTree() {
         return queryTree;
+    }
+
+    @Internal
+    public void setDataLoaderDispatcherStrategy(DataLoaderDispatchStrategy dataLoaderDispatcherStrategy) {
+        this.dataLoaderDispatcherStrategy = dataLoaderDispatcherStrategy;
+    }
+
+    @Internal
+    public DataLoaderDispatchStrategy getDataLoaderDispatcherStrategy() {
+        return dataLoaderDispatcherStrategy;
     }
 
     /**

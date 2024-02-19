@@ -125,7 +125,6 @@ class DataLoaderHangingTest extends Specification {
 
         when:
         def graphql = GraphQL.newGraphQL(schema)
-                .instrumentation(new DataLoaderDispatcherInstrumentation())
                 .build()
 
         then: "execution shouldn't hang"
@@ -353,7 +352,6 @@ class DataLoaderHangingTest extends Specification {
         GraphQL graphQL = GraphQL
                 .newGraphQL(graphQLSchema)
                 .queryExecutionStrategy(new AsyncExecutionStrategy(customExceptionHandlerThatThrows))
-                .instrumentation(new DataLoaderDispatcherInstrumentation())
                 .build()
 
         when:

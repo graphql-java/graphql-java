@@ -376,7 +376,6 @@ class InstrumentationTest extends Specification {
         def graphQL = GraphQL
                 .newGraphQL(StarWarsSchema.starWarsSchema)
                 .instrumentation(instrumentation)
-                .doNotAddDefaultInstrumentations() // important, otherwise a chained one wil be used
                 .build()
 
         when:
@@ -448,7 +447,6 @@ class InstrumentationTest extends Specification {
         def graphQL = GraphQL
                 .newGraphQL(StarWarsSchema.starWarsSchema)
                 .instrumentation(instrumentation1)
-                .doNotAddDefaultInstrumentations() // important, otherwise a chained one wil be used
                 .build()
 
         when:
