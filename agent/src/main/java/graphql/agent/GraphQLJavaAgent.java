@@ -47,8 +47,6 @@ public class GraphQLJavaAgent {
         new AgentBuilder.Default()
                 .type(named("graphql.execution.Execution"))
                 .transform((builder, typeDescription, classLoader, module, protectionDomain) -> {
-                    // ClassInjector.UsingInstrumentation.of()
-                    // System.out.println("transforming " + typeDescription);
                     return builder
                             .visit(Advice.to(ExecutionAdvice.class).on(nameMatches("executeOperation")));
 
@@ -60,19 +58,16 @@ public class GraphQLJavaAgent {
                 })
                 .type(named("org.dataloader.DataLoaderRegistry"))
                 .transform((builder, typeDescription, classLoader, module, protectionDomain) -> {
-                    // System.out.println("transforming " + typeDescription);
                     return builder
                             .visit(Advice.to(DataLoaderRegistryAdvice.class).on(nameMatches("dispatchAll")));
                 })
                 .type(named("org.dataloader.DataLoader"))
                 .transform((builder, typeDescription, classLoader, module, protectionDomain) -> {
-                    // System.out.println("transforming " + typeDescription);
                     return builder
                             .visit(Advice.to(DataLoaderLoadAdvice.class).on(nameMatches("load")));
                 })
                 .type(named("org.dataloader.DataLoaderHelper"))
                 .transform((builder, typeDescription, classLoader, module, protectionDomain) -> {
-                    // System.out.println("transforming " + typeDescription);
                     return builder
                             .visit(Advice.to(DataLoaderHelperDispatchAdvice.class).on(nameMatches("dispatch")))
                             .visit(Advice.to(DataLoaderHelperInvokeBatchLoaderAdvice.class)
@@ -80,7 +75,6 @@ public class GraphQLJavaAgent {
                 })
                 .type(named("graphql.schema.DataFetchingEnvironmentImpl"))
                 .transform((builder, typeDescription, classLoader, module, protectionDomain) -> {
-                    // System.out.println("transforming " + typeDescription);
                     return builder
                             .visit(Advice.to(DataFetchingEnvironmentAdvice.class).on(nameMatches("getDataLoader")));
                 })
@@ -267,11 +261,9 @@ class DataFetchingEnvironmentAdvice {
                                      @Advice.This(typing = Assigner.Typing.DYNAMIC) DataFetchingEnvironment dataFetchingEnvironment,
                                      @Advice.Return(readOnly = false, typing = Assigner.Typing.DYNAMIC) DataLoader dataLoader) {
         ExecutionTrackingResult executionTrackingResult = GraphQLJavaAgent.executionIdToData.get(dataFetchingEnvironment.getExecutionId());
-        // System.out.println("execution data: " + ExecutionTrackingResult);
         ResultPath resultPath = dataFetchingEnvironment.getExecutionStepInfo().getPath();
         executionTrackingResult.resultPathToDataLoaderUsed.put(resultPath, dataLoaderName);
 
-        // System.out.println(dataLoaderName + " > " + dataLoader);
     }
 
 }
@@ -283,7 +275,6 @@ class DataLoaderLoadAdvice {
     public static void load(@Advice.This(typing = Assigner.Typing.DYNAMIC) Object dataLoader) {
         ExecutionId executionId = GraphQLJavaAgent.dataLoaderToExecutionId.get(dataLoader);
         String dataLoaderName = GraphQLJavaAgent.executionIdToData.get(executionId).dataLoaderToName.get(dataLoader);
-        // System.out.println("dataloader " + dataLoaderName + " load for execution " + executionId);
     }
 
 }
