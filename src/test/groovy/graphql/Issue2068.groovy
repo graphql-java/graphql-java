@@ -1,7 +1,6 @@
 package graphql
 
-import graphql.execution.instrumentation.ChainedInstrumentation
-import graphql.execution.instrumentation.dataloader.DataLoaderDispatcherInstrumentation
+
 import graphql.schema.DataFetcher
 import graphql.schema.DataFetchingEnvironment
 import graphql.schema.StaticDataFetcher
@@ -12,7 +11,6 @@ import org.dataloader.DataLoader
 import org.dataloader.DataLoaderOptions
 import org.dataloader.DataLoaderRegistry
 import spock.lang.Specification
-import spock.lang.Timeout
 
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionStage
@@ -21,8 +19,8 @@ import java.util.concurrent.ThreadFactory
 import java.util.concurrent.ThreadPoolExecutor
 import java.util.concurrent.TimeUnit
 
-import static graphql.schema.idl.TypeRuntimeWiring.newTypeWiring
 import static graphql.ExecutionInput.newExecutionInput
+import static graphql.schema.idl.TypeRuntimeWiring.newTypeWiring
 
 class Issue2068 extends Specification {
     def "shouldn't hang on exception in resolveFieldWithInfo"() {
@@ -95,7 +93,6 @@ class Issue2068 extends Specification {
 
         when:
         def graphql = GraphQL.newGraphQL(schema)
-                .instrumentation(new DataLoaderDispatcherInstrumentation())
                 .build()
         DataLoaderRegistry dataLoaderRegistry = mkNewDataLoaderRegistry(executor)
 
@@ -127,9 +124,6 @@ class Issue2068 extends Specification {
 
         when:
         graphql = GraphQL.newGraphQL(schema)
-                .instrumentation(new ChainedInstrumentation(
-                        Collections.singletonList(new DataLoaderDispatcherInstrumentation()))
-                )
                 .build()
 
         graphql.execute(newExecutionInput()

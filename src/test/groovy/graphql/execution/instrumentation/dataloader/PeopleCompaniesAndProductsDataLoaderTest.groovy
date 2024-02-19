@@ -18,7 +18,6 @@ import spock.lang.Specification
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionStage
 import java.util.stream.Collectors
-import java.util.stream.IntStream
 
 import static graphql.schema.idl.RuntimeWiring.newRuntimeWiring
 
@@ -184,7 +183,6 @@ class PeopleCompaniesAndProductsDataLoaderTest extends Specification {
 
         GraphQL graphQL = GraphQL
                 .newGraphQL(graphQLSchema)
-                .instrumentation(new DataLoaderDispatcherInstrumentation())
                 .build()
 
         when:

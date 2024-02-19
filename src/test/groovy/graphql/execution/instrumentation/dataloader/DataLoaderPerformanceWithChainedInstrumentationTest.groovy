@@ -1,11 +1,7 @@
 package graphql.execution.instrumentation.dataloader
 
 import graphql.ExecutionInput
-import graphql.ExperimentalApi
 import graphql.GraphQL
-import graphql.GraphQLContext
-import graphql.execution.instrumentation.ChainedInstrumentation
-import graphql.execution.instrumentation.Instrumentation
 import graphql.incremental.IncrementalExecutionResult
 import org.dataloader.DataLoaderRegistry
 import spock.lang.Ignore
@@ -35,9 +31,7 @@ class DataLoaderPerformanceWithChainedInstrumentationTest extends Specification 
         DataLoaderPerformanceData dataLoaderPerformanceData = new DataLoaderPerformanceData(batchCompareDataFetchers)
 
         dataLoaderRegistry = dataLoaderPerformanceData.setupDataLoaderRegistry()
-        Instrumentation instrumentation = new ChainedInstrumentation(
-                Collections.singletonList(new DataLoaderDispatcherInstrumentation()))
-        graphQL = dataLoaderPerformanceData.setupGraphQL(instrumentation)
+        graphQL = dataLoaderPerformanceData.setupGraphQL()
     }
 
     def "chainedInstrumentation: 760 ensure data loader is performant for lists"() {

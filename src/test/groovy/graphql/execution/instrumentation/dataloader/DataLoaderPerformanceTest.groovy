@@ -1,10 +1,7 @@
 package graphql.execution.instrumentation.dataloader
 
 import graphql.ExecutionInput
-import graphql.ExperimentalApi
 import graphql.GraphQL
-import graphql.GraphQLContext
-import graphql.execution.instrumentation.Instrumentation
 import graphql.incremental.IncrementalExecutionResult
 import org.dataloader.DataLoaderRegistry
 import spock.lang.Ignore
@@ -32,8 +29,7 @@ class DataLoaderPerformanceTest extends Specification {
         batchCompareDataFetchers = new BatchCompareDataFetchers()
         DataLoaderPerformanceData dataLoaderPerformanceData = new DataLoaderPerformanceData(batchCompareDataFetchers)
         dataLoaderRegistry = dataLoaderPerformanceData.setupDataLoaderRegistry()
-        Instrumentation instrumentation = new DataLoaderDispatcherInstrumentation()
-        graphQL = dataLoaderPerformanceData.setupGraphQL(instrumentation)
+        graphQL = dataLoaderPerformanceData.setupGraphQL()
     }
 
     def "760 ensure data loader is performant for lists"() {
@@ -134,7 +130,8 @@ class DataLoaderPerformanceTest extends Specification {
                 .graphQLContext([(ENABLE_INCREMENTAL_SUPPORT): true])
                 .build()
 
-        graphQL.execute(executionInput)
+        def result = graphQL.execute(executionInput)
+        println(result);
 
         then:
         def exception = thrown(UnsupportedOperationException)

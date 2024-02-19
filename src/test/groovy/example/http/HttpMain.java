@@ -4,9 +4,6 @@ import graphql.ExecutionInput;
 import graphql.ExecutionResult;
 import graphql.GraphQL;
 import graphql.StarWarsData;
-import graphql.execution.instrumentation.ChainedInstrumentation;
-import graphql.execution.instrumentation.Instrumentation;
-import graphql.execution.instrumentation.dataloader.DataLoaderDispatcherInstrumentation;
 import graphql.execution.instrumentation.tracing.TracingInstrumentation;
 import graphql.schema.DataFetcher;
 import graphql.schema.GraphQLObjectType;
@@ -42,9 +39,7 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 import static graphql.ExecutionInput.newExecutionInput;
-import static graphql.execution.instrumentation.dataloader.DataLoaderDispatcherInstrumentationOptions.newOptions;
 import static graphql.schema.idl.TypeRuntimeWiring.newTypeWiring;
-import static java.util.Arrays.asList;
 
 /**
  * A very simple example of serving a graphql schema over http.
@@ -140,18 +135,10 @@ public class HttpMain extends AbstractHandler {
         // you need a schema in order to execute queries
         GraphQLSchema schema = buildStarWarsSchema();
 
-        DataLoaderDispatcherInstrumentation dlInstrumentation =
-                new DataLoaderDispatcherInstrumentation(newOptions().includeStatistics(true));
-
-        Instrumentation instrumentation = new ChainedInstrumentation(
-                asList(new TracingInstrumentation(), dlInstrumentation)
-        );
-
         // finally you build a runtime graphql object and execute the query
         GraphQL graphQL = GraphQL
                 .newGraphQL(schema)
-                // instrumentation is pluggable
-                .instrumentation(instrumentation)
+                .instrumentation(new TracingInstrumentation())
                 .build();
         ExecutionResult executionResult = graphQL.execute(executionInput);
 

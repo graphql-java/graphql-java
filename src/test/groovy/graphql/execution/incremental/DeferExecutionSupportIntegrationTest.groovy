@@ -1,5 +1,6 @@
 package graphql.execution.incremental
 
+import com.google.common.collect.Iterables
 import graphql.Directives
 import graphql.ExecutionInput
 import graphql.ExecutionResult
@@ -254,9 +255,9 @@ class DeferExecutionSupportIntegrationTest extends Specification {
                         id2: id
                     }
                 }
-                ... @defer {
+                ... @defer(label: "defer-post3") {
                     post3: postById(id: "3") {
-                        ... @defer {
+                        ... @defer(label: "defer-id3") {
                             id3: id
                         }
                     }
@@ -277,35 +278,35 @@ class DeferExecutionSupportIntegrationTest extends Specification {
         def incrementalResults = getIncrementalResults(initialResult)
 
         then:
-        incrementalResults == [
-                [
-                        hasNext    : true,
-                        incremental: [
-                                [
-                                        path: [],
-                                        data: [post2: [id2: "2"]]
-                                ]
-                        ]
-                ],
-                [
-                        hasNext    : true,
-                        incremental: [
-                                [
-                                        path: [],
-                                        data: [post3: [:]]
-                                ]
-                        ]
-                ],
-                [
-                        hasNext    : false,
-                        incremental: [
-                                [
-                                        path: ["post3"],
-                                        data: [id3: "3"]
-                                ]
-                        ]
-                ]
-        ]
+        // Ordering is non-deterministic, so we assert on the things we know are going to be true.
+
+        incrementalResults.size() == 3
+        // only the last payload has "hasNext=true"
+        incrementalResults[0].hasNext == true
+        incrementalResults[1].hasNext == true
+        incrementalResults[2].hasNext == false
+
+        // every payload has only 1 incremental item
+        incrementalResults.every { it.incremental.size() == 1 }
+
+        incrementalResults.any {
+            it.incremental[0] == [path: [], data: [post2: [id2: "2"]]]
+        }
+
+        // id3 HAS TO be delivered after post3
+        def indexOfPost3 = Iterables.indexOf(incrementalResults, {
+            it.incremental[0] == [path: [], label: "defer-post3", data: [post3: [:]]]
+        })
+
+        def indexOfId3 = Iterables.indexOf(incrementalResults, {
+            it.incremental[0] == [path: ["post3"], label:"defer-id3", data: [id3: "3"]]
+        })
+
+        // Assert that both post3 and id3 are present
+        indexOfPost3 >= 0
+        indexOfId3 >= 0
+        // Assert that id3 is delivered after post3
+        indexOfId3 > indexOfPost3
     }
 
     def "defer on interface field"() {

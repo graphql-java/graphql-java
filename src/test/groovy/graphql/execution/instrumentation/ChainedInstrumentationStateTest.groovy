@@ -333,7 +333,6 @@ class ChainedInstrumentationStateTest extends Specification {
         def graphQL = GraphQL
                 .newGraphQL(StarWarsSchema.starWarsSchema)
                 .instrumentation(new ChainedInstrumentation([instrumentation1, instrumentation2]))
-                .doNotAddDefaultInstrumentations() // important, otherwise a chained one wil be used
                 .build()
 
         when:

@@ -62,7 +62,6 @@ class DataLoaderTypeMismatchTest extends Specification {
         def schema = new SchemaGenerator().makeExecutableSchema(typeDefinitionRegistry, wiring)
 
         def graphql = GraphQL.newGraphQL(schema)
-                .instrumentation(new DataLoaderDispatcherInstrumentation())
                 .build()
 
         when:
