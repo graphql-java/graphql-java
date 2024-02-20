@@ -6,6 +6,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
@@ -23,13 +24,38 @@ public class Async {
 
     public interface CombinedBuilder<T> {
 
+        /**
+         * This adds a {@link CompletableFuture} into the collection of results
+         *
+         * @param completableFuture the CF to add
+         */
         void add(CompletableFuture<T> completableFuture);
 
+        /**
+         * This can be either a materialized value or a {@link CompletableFuture}
+         *
+         * @param objectT the object to add
+         */
+        void addObject(T objectT);
+
+        /**
+         * This will return a {@code CompletableFuture<List<T>>} even if the inputs are all materialized values
+         *
+         * @return a CompletableFuture to a List of values
+         */
         CompletableFuture<List<T>> await();
+
+        /**
+         * This will return a {@code CompletableFuture<List<T>>} if ANY of the input values are async
+         * otherwise it just return a materialised {@code List<T>}
+         *
+         * @return either a CompletableFuture or a materialized list
+         */
+        /* CompletableFuture<List<T>> | List<T> */ Object awaitPolymorphic();
     }
 
     /**
-     * Combines 0 or more CF into one. It is a wrapper around <code>CompletableFuture.allOf</code>.
+     * Combines zero or more CFs into one. It is a wrapper around <code>CompletableFuture.allOf</code>.
      *
      * @param expectedSize how many we expect
      * @param <T>          for two
@@ -55,6 +81,10 @@ public class Async {
             this.ix++;
         }
 
+        @Override
+        public void addObject(T objectT) {
+            this.ix++;
+        }
 
         @Override
         public CompletableFuture<List<T>> await() {
@@ -62,6 +92,11 @@ public class Async {
             return typedEmpty();
         }
 
+        @Override
+        public Object awaitPolymorphic() {
+            Assert.assertTrue(ix == 0, () -> "expected size was " + 0 + " got " + ix);
+            return Collections.emptyList();
+        }
 
         // implementation details: infer the type of Completable<List<T>> from a singleton empty
         private static final CompletableFuture<List<?>> EMPTY = CompletableFuture.completedFuture(Collections.emptyList());
@@ -75,56 +110,138 @@ public class Async {
     private static class Single<T> implements CombinedBuilder<T> {
 
         // avoiding array allocation as there is only 1 CF
-        private CompletableFuture<T> completableFuture;
+        private Object value;
         private int ix;
 
         @Override
         public void add(CompletableFuture<T> completableFuture) {
-            this.completableFuture = completableFuture;
+            this.value = completableFuture;
+            this.ix++;
+        }
+
+        @Override
+        public void addObject(T objectT) {
+            this.value = objectT;
             this.ix++;
         }
 
         @Override
         public CompletableFuture<List<T>> await() {
+            commonSizeAssert();
+            if (value instanceof CompletableFuture) {
+                @SuppressWarnings("unchecked")
+                CompletableFuture<T> cf = (CompletableFuture<T>) value;
+                return cf.thenApply(Collections::singletonList);
+            }
+            //noinspection unchecked
+            return CompletableFuture.completedFuture(Collections.singletonList((T) value));
+        }
+
+        @Override
+        public Object awaitPolymorphic() {
+            commonSizeAssert();
+            if (value instanceof CompletableFuture) {
+                @SuppressWarnings("unchecked")
+                CompletableFuture<T> cf = (CompletableFuture<T>) value;
+                return cf.thenApply(Collections::singletonList);
+            }
+            //noinspection unchecked
+            return Collections.singletonList((T) value);
+        }
+
+        private void commonSizeAssert() {
             Assert.assertTrue(ix == 1, () -> "expected size was " + 1 + " got " + ix);
-            return completableFuture.thenApply(Collections::singletonList);
         }
     }
 
     private static class Many<T> implements CombinedBuilder<T> {
 
-        private final CompletableFuture<T>[] array;
+        private final Object[] array;
         private int ix;
+        private boolean containsCFs;
 
         @SuppressWarnings("unchecked")
         private Many(int size) {
-            this.array = new CompletableFuture[size];
+            this.array = new Object[size];
             this.ix = 0;
+            containsCFs = false;
         }
 
         @Override
         public void add(CompletableFuture<T> completableFuture) {
             array[ix++] = completableFuture;
+            containsCFs = true;
         }
 
         @Override
+        public void addObject(T objectT) {
+            array[ix++] = objectT;
+            if (objectT instanceof CompletableFuture) {
+                containsCFs = true;
+            }
+        }
+
+        @SuppressWarnings("unchecked")
+        @Override
         public CompletableFuture<List<T>> await() {
-            Assert.assertTrue(ix == array.length, () -> "expected size was " + array.length + " got " + ix);
+            commonSizeAssert();
 
             CompletableFuture<List<T>> overallResult = new CompletableFuture<>();
-            CompletableFuture.allOf(array)
-                    .whenComplete((ignored, exception) -> {
-                        if (exception != null) {
-                            overallResult.completeExceptionally(exception);
-                            return;
-                        }
-                        List<T> results = new ArrayList<>(array.length);
-                        for (CompletableFuture<T> future : array) {
-                            results.add(future.join());
-                        }
-                        overallResult.complete(results);
-                    });
+            if (!containsCFs) {
+                overallResult.complete(materialisedList(array));
+            } else {
+                CompletableFuture<?>[] cfsArr = copyOnlyCFsToArray();
+                CompletableFuture.allOf(cfsArr)
+                        .whenComplete((ignored, exception) -> {
+                            if (exception != null) {
+                                overallResult.completeExceptionally(exception);
+                                return;
+                            }
+                            List<T> results = new ArrayList<>(array.length);
+                            for (Object object : array) {
+                                if (object instanceof CompletableFuture) {
+                                    CompletableFuture<T> cf = (CompletableFuture<T>) object;
+                                    // join is safe since they are all completed earlier via CompletableFuture.allOf()
+                                    results.add(cf.join());
+                                } else {
+                                    results.add((T) object);
+                                }
+                            }
+                            overallResult.complete(results);
+                        });
+            }
             return overallResult;
+        }
+
+        @Override
+        public Object awaitPolymorphic() {
+            if (!containsCFs) {
+                commonSizeAssert();
+                return materialisedList(array);
+            } else {
+                return await();
+            }
+        }
+
+        @NotNull
+        private List<T> materialisedList(Object[] array) {
+            List<T> results = new ArrayList<>(array.length);
+            for (Object object : array) {
+                //noinspection unchecked
+                results.add((T) object);
+            }
+            return results;
+        }
+
+        private void commonSizeAssert() {
+            Assert.assertTrue(ix == array.length, () -> "expected size was " + array.length + " got " + ix);
+        }
+
+        @NotNull
+        private CompletableFuture<?>[] copyOnlyCFsToArray() {
+            return Arrays.stream(array)
+                    .filter(obj -> obj instanceof CompletableFuture)
+                    .toArray(CompletableFuture[]::new);
         }
 
     }
