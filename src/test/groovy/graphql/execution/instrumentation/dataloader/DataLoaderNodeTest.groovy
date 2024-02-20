@@ -135,7 +135,7 @@ class DataLoaderNodeTest extends Specification {
         DataLoaderRegistry registry = new DataLoaderRegistry().register(childNodesFieldName, loader)
 
         ExecutionResult result = GraphQL.newGraphQL(schema)
-                .instrumentation(new DataLoaderDispatcherInstrumentation())
+//                .instrumentation(new DataLoaderDispatcherInstrumentation())
                 .build()
                 .execute(ExecutionInput.newExecutionInput().dataLoaderRegistry(registry).query(
                 '''

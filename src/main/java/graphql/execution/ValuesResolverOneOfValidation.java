@@ -75,23 +75,36 @@ final class ValuesResolverOneOfValidation {
     }
 
     private static void validateOneOfInputTypesInternal(GraphQLInputObjectType oneOfInputType, Value<?> argumentValue, Map<String, Object> objectMap, Locale locale) {
-        int mapSize;
-
+        final String fieldName;
         if (argumentValue instanceof ObjectValue) {
-            mapSize = ((ObjectValue) argumentValue).getObjectFields().size();
+            List<ObjectField> objectFields = ((ObjectValue) argumentValue).getObjectFields();
+            if (objectFields.size() != 1) {
+                throwNotOneFieldError(oneOfInputType, locale);
+            }
+
+            fieldName = objectFields.iterator().next().getName();
         } else {
-            mapSize = objectMap.size();
+            if (objectMap.size() != 1) {
+                throwNotOneFieldError(oneOfInputType, locale);
+            }
+
+            fieldName = objectMap.keySet().iterator().next();
         }
-        if (mapSize != 1) {
-            String msg = I18n.i18n(I18n.BundleType.Execution, locale)
-                    .msg("Execution.handleOneOfNotOneFieldError", oneOfInputType.getName());
-            throw new OneOfTooManyKeysException(msg);
-        }
-        String fieldName = objectMap.keySet().iterator().next();
+
         if (objectMap.get(fieldName) == null) {
-            String msg = I18n.i18n(I18n.BundleType.Execution, locale)
-                    .msg("Execution.handleOneOfValueIsNullError", oneOfInputType.getName() + "." + fieldName);
-            throw new OneOfNullValueException(msg);
+            throwValueIsNullError(oneOfInputType, locale, fieldName);
         }
+    }
+
+    private static void throwValueIsNullError(GraphQLInputObjectType oneOfInputType, Locale locale, String fieldName) {
+        String msg = I18n.i18n(I18n.BundleType.Execution, locale)
+                .msg("Execution.handleOneOfValueIsNullError", oneOfInputType.getName() + "." + fieldName);
+        throw new OneOfNullValueException(msg);
+    }
+
+    private static void throwNotOneFieldError(GraphQLInputObjectType oneOfInputType, Locale locale) {
+        String msg = I18n.i18n(I18n.BundleType.Execution, locale)
+                .msg("Execution.handleOneOfNotOneFieldError", oneOfInputType.getName());
+        throw new OneOfTooManyKeysException(msg);
     }
 }

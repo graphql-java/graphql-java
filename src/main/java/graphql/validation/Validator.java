@@ -30,6 +30,7 @@ import graphql.validation.rules.SubscriptionUniqueRootField;
 import graphql.validation.rules.UniqueArgumentNames;
 import graphql.validation.rules.UniqueDirectiveNamesPerLocation;
 import graphql.validation.rules.UniqueFragmentNames;
+import graphql.validation.rules.UniqueObjectFieldName;
 import graphql.validation.rules.UniqueOperationNames;
 import graphql.validation.rules.UniqueVariableNames;
 import graphql.validation.rules.VariableDefaultValuesOfCorrectType;

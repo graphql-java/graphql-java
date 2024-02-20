@@ -2,8 +2,11 @@ package graphql.execution.instrumentation;
 
 import graphql.ExecutionInput;
 import graphql.ExecutionResult;
+import graphql.ExperimentalApi;
 import graphql.PublicSpi;
 import graphql.execution.ExecutionContext;
+import graphql.execution.instrumentation.adapters.ExecutionResultInstrumentationContextAdapter;
+import graphql.execution.instrumentation.adapters.ExecuteObjectInstrumentationContextAdapter;
 import graphql.execution.instrumentation.parameters.InstrumentationCreateStateParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecuteOperationParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters;
@@ -194,7 +197,7 @@ public interface Instrumentation {
 
     /**
      * This is called each time an {@link graphql.execution.ExecutionStrategy} is invoked, which may be multiple times
-     * per query as the engine recursively descends down over the query.
+     * per query as the engine recursively descends over the query.
      *
      * @param parameters the parameters to this step
      *
@@ -210,7 +213,7 @@ public interface Instrumentation {
 
     /**
      * This is called each time an {@link graphql.execution.ExecutionStrategy} is invoked, which may be multiple times
-     * per query as the engine recursively descends down over the query.
+     * per query as the engine recursively descends over the query.
      *
      * @param parameters the parameters to this step
      * @param state      the state created during the call to {@link #createState(InstrumentationCreateStateParameters)}
@@ -222,6 +225,32 @@ public interface Instrumentation {
         return beginExecutionStrategy(parameters.withNewState(state));
     }
 
+    /**
+     * This is called each time an {@link graphql.execution.ExecutionStrategy} object resolution is called, which may be multiple times
+     * per query as the engine recursively descends over the query.
+     *
+     * @param parameters the parameters to this step
+     * @param state      the state created during the call to {@link #createState(InstrumentationCreateStateParameters)}
+     *
+     * @return a nullable {@link ExecutionStrategyInstrumentationContext} object that will be called back when the step ends (assuming it's not null)
+     */
+    @Nullable
+    default ExecuteObjectInstrumentationContext beginExecuteObject(InstrumentationExecutionStrategyParameters parameters, InstrumentationState state) {
+        return ExecuteObjectInstrumentationContext.NOOP;
+    }
+
+    /**
+     * This is called just before a deferred field is resolved into a value.
+     * <p>
+     * This is an EXPERIMENTAL instrumentation callback. The method signature will definitely change.
+     *
+     * @param state      the state created during the call to {@link #createState(InstrumentationCreateStateParameters)}
+     * @return a nullable {@link ExecutionStrategyInstrumentationContext} object that will be called back when the step ends (assuming it's not null)
+     */
+    @ExperimentalApi
+    default InstrumentationContext<Object> beginDeferredField(InstrumentationState state) {
+        return noOp();
+    }
 
     /**
      * This is called each time a subscription field produces a new reactive stream event value and it needs to be mapped over via the graphql field subselection.
@@ -274,9 +303,24 @@ public interface Instrumentation {
      *
      * @return a nullable {@link InstrumentationContext} object that will be called back when the step ends (assuming it's not null)
      */
+    @Deprecated(since="2023-09-11" )
     @Nullable
     default InstrumentationContext<ExecutionResult> beginField(InstrumentationFieldParameters parameters, InstrumentationState state) {
         return beginField(parameters.withNewState(state));
+    }
+
+    /**
+     * This is called just before a field is resolved into a value.
+     *
+     * @param parameters the parameters to this step
+     * @param state      the state created during the call to {@link #createState(InstrumentationCreateStateParameters)}
+     *
+     * @return a nullable {@link InstrumentationContext} object that will be called back when the step ends (assuming it's not null)
+     */
+    @Nullable
+    default InstrumentationContext<Object> beginFieldExecution(InstrumentationFieldParameters parameters, InstrumentationState state) {
+        InstrumentationContext<ExecutionResult> ic = beginField(parameters, state);
+        return ic == null ? null : new ExecutionResultInstrumentationContextAdapter(ic);
     }
 
     /**
@@ -331,9 +375,24 @@ public interface Instrumentation {
      *
      * @return a nullable {@link InstrumentationContext} object that will be called back when the step ends (assuming it's not null)
      */
+    @Deprecated(since = "2023-09-11")
     @Nullable
     default InstrumentationContext<ExecutionResult> beginFieldComplete(InstrumentationFieldCompleteParameters parameters, InstrumentationState state) {
         return beginFieldComplete(parameters.withNewState(state));
+    }
+
+    /**
+     * This is called just before the complete field is started.
+     *
+     * @param parameters the parameters to this step
+     * @param state      the state created during the call to {@link #createState(InstrumentationCreateStateParameters)}
+     *
+     * @return a nullable {@link InstrumentationContext} object that will be called back when the step ends (assuming it's not null)
+     */
+    @Nullable
+    default InstrumentationContext<Object> beginFieldCompletion(InstrumentationFieldCompleteParameters parameters, InstrumentationState state) {
+        InstrumentationContext<ExecutionResult> ic = beginFieldComplete(parameters, state);
+        return ic == null ? null : new ExecutionResultInstrumentationContextAdapter(ic);
     }
 
     /**
@@ -359,9 +418,24 @@ public interface Instrumentation {
      *
      * @return a nullable {@link InstrumentationContext} object that will be called back when the step ends (assuming it's not null)
      */
+    @Deprecated(since = "2023-09-11")
     @Nullable
     default InstrumentationContext<ExecutionResult> beginFieldListComplete(InstrumentationFieldCompleteParameters parameters, InstrumentationState state) {
         return beginFieldListComplete(parameters.withNewState(state));
+    }
+
+    /**
+     * This is called just before the complete field list is started.
+     *
+     * @param parameters the parameters to this step
+     * @param state      the state created during the call to {@link #createState(InstrumentationCreateStateParameters)}
+     *
+     * @return a nullable {@link InstrumentationContext} object that will be called back when the step ends (assuming it's not null)
+     */
+    @Nullable
+    default InstrumentationContext<Object> beginFieldListCompletion(InstrumentationFieldCompleteParameters parameters, InstrumentationState state) {
+        InstrumentationContext<ExecutionResult> ic = beginFieldListComplete(parameters, state);
+        return ic == null ? null : new ExecutionResultInstrumentationContextAdapter(ic);
     }
 
     /**

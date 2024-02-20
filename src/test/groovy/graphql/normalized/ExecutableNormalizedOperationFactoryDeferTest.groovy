@@ -200,16 +200,16 @@ class ExecutableNormalizedOperationFactoryDeferTest extends Specification {
         def nameField = findField(executableNormalizedOperation, "Dog", "name")
         def ageField = findField(executableNormalizedOperation, "Dog", "age")
 
-        nameField.deferExecutions.size() == 1
-        ageField.deferExecutions.size() == 2
+        nameField.deferredExecutions.size() == 1
+        ageField.deferredExecutions.size() == 2
 
         // age field is associated with 2 defer executions, one of then is shared with "name" the other isn't
-        ageField.deferExecutions.any {
-            it == nameField.deferExecutions[0]
+        ageField.deferredExecutions.any {
+            it == nameField.deferredExecutions[0]
         }
 
-        ageField.deferExecutions.any {
-            it != nameField.deferExecutions[0]
+        ageField.deferredExecutions.any {
+            it != nameField.deferredExecutions[0]
         }
 
         printedTree == ['Query.dog',
@@ -440,21 +440,21 @@ class ExecutableNormalizedOperationFactoryDeferTest extends Specification {
         def dogBreedField = findField(executableNormalizedOperation, "Dog", "breed")
         def catBreedField = findField(executableNormalizedOperation, "Cat", "breed")
 
-        nameField.deferExecutions.size() == 3
-        dogBreedField.deferExecutions.size() == 1
-        catBreedField.deferExecutions.size() == 1
+        nameField.deferredExecutions.size() == 3
+        dogBreedField.deferredExecutions.size() == 1
+        catBreedField.deferredExecutions.size() == 1
 
         // nameField should share a defer block with each of the other fields
-        nameField.deferExecutions.any {
-            it == dogBreedField.deferExecutions[0]
+        nameField.deferredExecutions.any {
+            it == dogBreedField.deferredExecutions[0]
         }
-        nameField.deferExecutions.any {
-            it == catBreedField.deferExecutions[0]
+        nameField.deferredExecutions.any {
+            it == catBreedField.deferredExecutions[0]
         }
         // also, nameField should have a defer block that is not shared with any other field
-        nameField.deferExecutions.any {
-            it != dogBreedField.deferExecutions[0] &&
-                    it != catBreedField.deferExecutions[0]
+        nameField.deferredExecutions.any {
+            it != dogBreedField.deferredExecutions[0] &&
+                    it != catBreedField.deferredExecutions[0]
         }
 
         printedTree == ['Query.animal',
@@ -491,11 +491,11 @@ class ExecutableNormalizedOperationFactoryDeferTest extends Specification {
         def nameField = findField(executableNormalizedOperation, "Dog", "name")
         def breedField = findField(executableNormalizedOperation, "Dog", "breed")
 
-        nameField.deferExecutions.size() == 1
-        breedField.deferExecutions.size() == 1
+        nameField.deferredExecutions.size() == 1
+        breedField.deferredExecutions.size() == 1
 
         // different label instances
-        nameField.deferExecutions[0] != breedField.deferExecutions[0]
+        nameField.deferredExecutions[0] != breedField.deferredExecutions[0]
 
         printedTree == ['Query.dog',
                         'Dog.name defer{[label=null;types=[Dog]]}',
@@ -932,7 +932,7 @@ class ExecutableNormalizedOperationFactoryDeferTest extends Specification {
             }
 
             String printDeferExecutionDetails(ExecutableNormalizedField field) {
-                def deferExecutions = field.deferExecutions
+                def deferExecutions = field.deferredExecutions
                 if (deferExecutions == null || deferExecutions.isEmpty()) {
                     return ""
                 }

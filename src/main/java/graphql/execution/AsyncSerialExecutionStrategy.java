@@ -30,6 +30,7 @@ public class AsyncSerialExecutionStrategy extends AbstractAsyncExecutionStrategy
     @Override
     @SuppressWarnings({"TypeParameterUnusedInFormals", "FutureReturnValueIgnored"})
     public CompletableFuture<ExecutionResult> execute(ExecutionContext executionContext, ExecutionStrategyParameters parameters) throws NonNullableFieldWasNullException {
+        executionContext.getDataLoaderDispatcherStrategy().executionStrategy(executionContext, parameters);
 
         Instrumentation instrumentation = executionContext.getInstrumentation();
         InstrumentationExecutionStrategyParameters instrumentationParameters = new InstrumentationExecutionStrategyParameters(executionContext, parameters);
@@ -39,7 +40,7 @@ public class AsyncSerialExecutionStrategy extends AbstractAsyncExecutionStrategy
         MergedSelectionSet fields = parameters.getFields();
         ImmutableList<String> fieldNames = ImmutableList.copyOf(fields.keySet());
 
-        CompletableFuture<List<ExecutionResult>> resultsFuture = Async.eachSequentially(fieldNames, (fieldName, prevResults) -> {
+        CompletableFuture<List<Object>> resultsFuture = Async.eachSequentially(fieldNames, (fieldName, prevResults) -> {
             MergedField currentField = fields.getSubField(fieldName);
             ResultPath fieldPath = parameters.getPath().segment(mkNameForPath(currentField));
             ExecutionStrategyParameters newParameters = parameters

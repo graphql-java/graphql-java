@@ -15,10 +15,10 @@ import graphql.execution.ExecutionStrategyParameters
 import graphql.execution.MissingRootTypeException
 import graphql.execution.SubscriptionExecutionStrategy
 import graphql.execution.ValueUnboxer
-import graphql.execution.instrumentation.ChainedInstrumentation
 import graphql.execution.instrumentation.Instrumentation
+import graphql.execution.instrumentation.InstrumentationState
 import graphql.execution.instrumentation.SimplePerformantInstrumentation
-import graphql.execution.instrumentation.dataloader.DataLoaderDispatcherInstrumentation
+import graphql.execution.instrumentation.parameters.InstrumentationCreateStateParameters
 import graphql.execution.preparsed.NoOpPreparsedDocumentProvider
 import graphql.language.SourceLocation
 import graphql.schema.DataFetcher
@@ -950,8 +950,8 @@ class GraphQLTest extends Specification {
         then:
         result == [hello: 'world']
         queryStrategy.executionId == hello
-        queryStrategy.instrumentation instanceof ChainedInstrumentation
-        (queryStrategy.instrumentation as ChainedInstrumentation).getInstrumentations().contains(instrumentation)
+        queryStrategy.instrumentation instanceof Instrumentation
+        queryStrategy.instrumentation == instrumentation
 
         when:
 
@@ -973,12 +973,11 @@ class GraphQLTest extends Specification {
         then:
         result == [hello: 'world']
         queryStrategy.executionId == goodbye
-        queryStrategy.instrumentation instanceof ChainedInstrumentation
-        (queryStrategy.instrumentation as ChainedInstrumentation).getInstrumentations().contains(newInstrumentation)
-        !(queryStrategy.instrumentation as ChainedInstrumentation).getInstrumentations().contains(instrumentation)
+        queryStrategy.instrumentation instanceof SimplePerformantInstrumentation
+        newGraphQL.instrumentation == newInstrumentation
     }
 
-    def "disabling data loader instrumentation leaves instrumentation as is"() {
+    def "provided instrumentation is unchanged"() {
         given:
         def queryStrategy = new CaptureStrategy()
         def instrumentation = new SimplePerformantInstrumentation()
@@ -988,44 +987,11 @@ class GraphQLTest extends Specification {
 
         when:
         def graphql = builder
-                .doNotAddDefaultInstrumentations()
                 .build()
         graphql.execute('{ hello }')
 
         then:
         queryStrategy.instrumentation == instrumentation
-    }
-
-    def "a single DataLoader instrumentation leaves instrumentation as is"() {
-        given:
-        def queryStrategy = new CaptureStrategy()
-        def instrumentation = new DataLoaderDispatcherInstrumentation()
-        def builder = GraphQL.newGraphQL(simpleSchema())
-                .queryExecutionStrategy(queryStrategy)
-                .instrumentation(instrumentation)
-
-        when:
-        def graphql = builder
-                .build()
-        graphql.execute('{ hello }')
-
-        then:
-        queryStrategy.instrumentation == instrumentation
-    }
-
-    def "DataLoader instrumentation is the default instrumentation"() {
-        given:
-        def queryStrategy = new CaptureStrategy()
-        def builder = GraphQL.newGraphQL(simpleSchema())
-                .queryExecutionStrategy(queryStrategy)
-
-        when:
-        def graphql = builder
-                .build()
-        graphql.execute('{ hello }')
-
-        then:
-        queryStrategy.instrumentation instanceof DataLoaderDispatcherInstrumentation
     }
 
     def "query with triple quoted multi line strings"() {
@@ -1061,6 +1027,27 @@ many lines""") }''')
         result.data == [hello: '''world
 over
 many lines''']
+    }
+
+    def "executionId is set before being passed to instrumentation"() {
+        InstrumentationCreateStateParameters seenParams
+
+        def instrumentation = new Instrumentation() {
+            @Override
+            InstrumentationState createState(InstrumentationCreateStateParameters params) {
+                seenParams = params
+                null
+            }
+        }
+
+        when:
+        GraphQL.newGraphQL(StarWarsSchema.starWarsSchema)
+                .instrumentation(instrumentation)
+                .build()
+                .execute("{ __typename }")
+
+        then:
+        seenParams.executionInput.executionId != null
     }
 
     def "variables map can't be null via ExecutionInput"() {
@@ -1424,7 +1411,7 @@ many lines''']
         graphQL.getIdProvider() == ExecutionIdProvider.DEFAULT_EXECUTION_ID_PROVIDER
         graphQL.getValueUnboxer() == ValueUnboxer.DEFAULT
         graphQL.getPreparsedDocumentProvider() == NoOpPreparsedDocumentProvider.INSTANCE
-        graphQL.getInstrumentation() instanceof ChainedInstrumentation
+        graphQL.getInstrumentation() instanceof Instrumentation
         graphQL.getQueryStrategy() instanceof AsyncExecutionStrategy
         graphQL.getMutationStrategy() instanceof AsyncSerialExecutionStrategy
         graphQL.getSubscriptionStrategy() instanceof SubscriptionExecutionStrategy

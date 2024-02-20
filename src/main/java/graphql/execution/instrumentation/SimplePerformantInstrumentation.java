@@ -113,6 +113,11 @@ public class SimplePerformantInstrumentation implements Instrumentation {
     }
 
     @Override
+    public @Nullable ExecuteObjectInstrumentationContext beginExecuteObject(InstrumentationExecutionStrategyParameters parameters, InstrumentationState state) {
+        return ExecuteObjectInstrumentationContext.NOOP;
+    }
+
+    @Override
     public @NotNull InstrumentationContext<ExecutionResult> beginSubscribedFieldEvent(InstrumentationFieldParameters parameters) {
         return assertShouldNeverHappen("The deprecated " + "beginSubscribedFieldEvent" + " was called");
     }
@@ -129,6 +134,11 @@ public class SimplePerformantInstrumentation implements Instrumentation {
 
     @Override
     public @Nullable InstrumentationContext<ExecutionResult> beginField(InstrumentationFieldParameters parameters, InstrumentationState state) {
+        return noOp();
+    }
+
+    @Override
+    public @Nullable InstrumentationContext<Object> beginFieldExecution(InstrumentationFieldParameters parameters, InstrumentationState state) {
         return noOp();
     }
 
@@ -153,12 +163,22 @@ public class SimplePerformantInstrumentation implements Instrumentation {
     }
 
     @Override
+    public @Nullable InstrumentationContext<Object> beginFieldCompletion(InstrumentationFieldCompleteParameters parameters, InstrumentationState state) {
+        return noOp();
+    }
+
+    @Override
     public @NotNull InstrumentationContext<ExecutionResult> beginFieldListComplete(InstrumentationFieldCompleteParameters parameters) {
         return assertShouldNeverHappen("The deprecated " + "beginFieldListComplete" + " was called");
     }
 
     @Override
     public @Nullable InstrumentationContext<ExecutionResult> beginFieldListComplete(InstrumentationFieldCompleteParameters parameters, InstrumentationState state) {
+        return noOp();
+    }
+
+    @Override
+    public @Nullable InstrumentationContext<Object> beginFieldListCompletion(InstrumentationFieldCompleteParameters parameters, InstrumentationState state) {
         return noOp();
     }
 

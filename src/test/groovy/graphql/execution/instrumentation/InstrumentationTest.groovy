@@ -58,7 +58,7 @@ class InstrumentationTest extends Specification {
                 "onDispatched:fetch-hero",
                 "end:fetch-hero",
                 "start:complete-hero",
-                "start:execution-strategy",
+                "start:execute-object",
                 "start:field-id",
                 "start:fetch-id",
                 "onDispatched:fetch-id",
@@ -68,8 +68,8 @@ class InstrumentationTest extends Specification {
                 "end:complete-id",
                 "onDispatched:field-id",
                 "end:field-id",
-                "onDispatched:execution-strategy",
-                "end:execution-strategy",
+                "onDispatched:execute-object",
+                "end:execute-object",
                 "onDispatched:complete-hero",
                 "end:complete-hero",
                 "onDispatched:field-hero",
@@ -313,7 +313,7 @@ class InstrumentationTest extends Specification {
                 "onDispatched:fetch-hero",
                 "end:fetch-hero",
                 "start:complete-hero",
-                "start:execution-strategy",
+                "start:execute-object",
                 "start:field-id",
                 "start:fetch-id",
                 "onDispatched:fetch-id",
@@ -323,8 +323,8 @@ class InstrumentationTest extends Specification {
                 "end:complete-id",
                 "onDispatched:field-id",
                 "end:field-id",
-                "onDispatched:execution-strategy",
-                "end:execution-strategy",
+                "onDispatched:execute-object",
+                "end:execute-object",
                 "onDispatched:complete-hero",
                 "end:complete-hero",
                 "onDispatched:field-hero",
@@ -375,7 +375,6 @@ class InstrumentationTest extends Specification {
         def graphQL = GraphQL
                 .newGraphQL(StarWarsSchema.starWarsSchema)
                 .instrumentation(instrumentation)
-                .doNotAddDefaultInstrumentations() // important, otherwise a chained one wil be used
                 .build()
 
         when:
@@ -394,7 +393,7 @@ class InstrumentationTest extends Specification {
                 "start:field-human",
                 "start:fetch-human",
                 "start:complete-human",
-                "start:execution-strategy",
+                "start:execute-object",
                 "start:field-id",
                 "start:fetch-id",
                 "start:complete-id",
@@ -447,7 +446,6 @@ class InstrumentationTest extends Specification {
         def graphQL = GraphQL
                 .newGraphQL(StarWarsSchema.starWarsSchema)
                 .instrumentation(instrumentation1)
-                .doNotAddDefaultInstrumentations() // important, otherwise a chained one wil be used
                 .build()
 
         when:

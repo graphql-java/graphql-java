@@ -139,7 +139,7 @@ class ExecutionStrategyTest extends Specification {
         executionStrategy.completeValue(executionContext, parameters)
 
         then:
-        1 * executionContext.queryStrategy.execute(_, _)
+        1 * executionContext.queryStrategy.executeObject(_, _) >> CompletableFuture.completedFuture(null)
         0 * executionContext.mutationStrategy.execute(_, _)
         0 * executionContext.subscriptionStrategy.execute(_, _)
     }
@@ -681,12 +681,13 @@ class ExecutionStrategyTest extends Specification {
             Map<String, FetchedValue> fetchedValues = [:]
 
             @Override
-            InstrumentationContext<ExecutionResult> beginFieldComplete(InstrumentationFieldCompleteParameters parameters, InstrumentationState state) {
+            @Override
+            InstrumentationContext<Object> beginFieldCompletion(InstrumentationFieldCompleteParameters parameters, InstrumentationState state) {
                 if (parameters.fetchedValue instanceof FetchedValue) {
                     FetchedValue value = (FetchedValue) parameters.fetchedValue
                     fetchedValues.put(parameters.field.name, value)
                 }
-                return super.beginFieldComplete(parameters, state)
+                return super.beginFieldCompletion(parameters, state)
             }
         }
         ExecutionContext instrumentedExecutionContext = executionContextBuilder.instrumentation(instrumentation).build()

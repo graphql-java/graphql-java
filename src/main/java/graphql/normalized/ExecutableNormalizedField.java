@@ -10,7 +10,7 @@ import graphql.PublicApi;
 import graphql.collect.ImmutableKit;
 import graphql.introspection.Introspection;
 import graphql.language.Argument;
-import graphql.normalized.incremental.DeferExecution;
+import graphql.normalized.incremental.NormalizedDeferredExecution;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLInterfaceType;
 import graphql.schema.GraphQLNamedOutputType;
@@ -66,7 +66,7 @@ public class ExecutableNormalizedField {
     private final int level;
 
     // Mutable List on purpose: it is modified after creation
-    private final LinkedHashSet<DeferExecution> deferExecutions;
+    private final LinkedHashSet<NormalizedDeferredExecution> deferredExecutions;
 
     private ExecutableNormalizedField(Builder builder) {
         this.alias = builder.alias;
@@ -78,7 +78,7 @@ public class ExecutableNormalizedField {
         this.children = builder.children;
         this.level = builder.level;
         this.parent = builder.parent;
-        this.deferExecutions = builder.deferExecutions;
+        this.deferredExecutions = builder.deferredExecutions;
     }
 
     /**
@@ -262,13 +262,13 @@ public class ExecutableNormalizedField {
     }
 
     @Internal
-    public void setDeferExecutions(Collection<DeferExecution> deferExecutions) {
-        this.deferExecutions.clear();
-        this.deferExecutions.addAll(deferExecutions);
+    public void setDeferredExecutions(Collection<NormalizedDeferredExecution> deferredExecutions) {
+        this.deferredExecutions.clear();
+        this.deferredExecutions.addAll(deferredExecutions);
     }
 
-    public void addDeferExecutions(Collection<DeferExecution> deferExecutions) {
-        this.deferExecutions.addAll(deferExecutions);
+    public void addDeferredExecutions(Collection<NormalizedDeferredExecution> deferredExecutions) {
+        this.deferredExecutions.addAll(deferredExecutions);
     }
 
     /**
@@ -477,12 +477,12 @@ public class ExecutableNormalizedField {
     }
 
     /**
-     * @return the {@link DeferExecution}s associated with this {@link ExecutableNormalizedField}.
-     * @see DeferExecution
+     * @return the {@link NormalizedDeferredExecution}s associated with this {@link ExecutableNormalizedField}.
+     * @see NormalizedDeferredExecution
      */
     @ExperimentalApi
-    public LinkedHashSet<DeferExecution> getDeferExecutions() {
-        return deferExecutions;
+    public LinkedHashSet<NormalizedDeferredExecution> getDeferredExecutions() {
+        return deferredExecutions;
     }
 
     @Internal
@@ -612,7 +612,7 @@ public class ExecutableNormalizedField {
         private LinkedHashMap<String, Object> resolvedArguments = new LinkedHashMap<>();
         private ImmutableList<Argument> astArguments = ImmutableKit.emptyList();
 
-        private LinkedHashSet<DeferExecution> deferExecutions = new LinkedHashSet<>();
+        private LinkedHashSet<NormalizedDeferredExecution> deferredExecutions = new LinkedHashSet<>();
 
         private Builder() {
         }
@@ -627,7 +627,7 @@ public class ExecutableNormalizedField {
             this.children = new ArrayList<>(existing.children);
             this.level = existing.getLevel();
             this.parent = existing.getParent();
-            this.deferExecutions = existing.getDeferExecutions();
+            this.deferredExecutions = existing.getDeferredExecutions();
         }
 
         public Builder clearObjectTypesNames() {
@@ -683,8 +683,8 @@ public class ExecutableNormalizedField {
             return this;
         }
 
-        public Builder deferExecutions(LinkedHashSet<DeferExecution> deferExecutions) {
-            this.deferExecutions = deferExecutions;
+        public Builder deferredExecutions(LinkedHashSet<NormalizedDeferredExecution> deferredExecutions) {
+            this.deferredExecutions = deferredExecutions;
             return this;
         }
 

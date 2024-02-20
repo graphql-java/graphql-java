@@ -55,4 +55,9 @@ public class CapturingSubscriber<T> implements Subscriber<T> {
     public AtomicBoolean isDone() {
         return done;
     }
+
+    public Subscription getSubscription() {
+        return subscription;
+    }
+
 }
