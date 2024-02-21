@@ -475,18 +475,11 @@ public abstract class ExecutionStrategy {
                 // if the field returns nothing then they get the context of their parent field
                 localContext = parameters.getLocalContext();
             }
-            return FetchedValue.newFetchedValue()
-                    .fetchedValue(executionContext.getValueUnboxer().unbox(dataFetcherResult.getData()))
-                    .rawFetchedValue(dataFetcherResult.getData())
-                    .errors(dataFetcherResult.getErrors())
-                    .localContext(localContext)
-                    .build();
+            Object unBoxedValue = executionContext.getValueUnboxer().unbox(dataFetcherResult.getData());
+            return new FetchedValue(unBoxedValue, dataFetcherResult.getErrors(), localContext);
         } else {
-            return FetchedValue.newFetchedValue()
-                    .fetchedValue(executionContext.getValueUnboxer().unbox(result))
-                    .rawFetchedValue(result)
-                    .localContext(parameters.getLocalContext())
-                    .build();
+            Object unBoxedValue = executionContext.getValueUnboxer().unbox(result);
+            return new FetchedValue(unBoxedValue, ImmutableList.of(), parameters.getLocalContext());
         }
     }
 
@@ -608,10 +601,10 @@ public abstract class ExecutionStrategy {
             return completeValueForList(executionContext, parameters, result);
         } else if (isScalar(fieldType)) {
             fieldValue = completeValueForScalar(executionContext, parameters, (GraphQLScalarType) fieldType, result);
-            return FieldValueInfo.newFieldValueInfo(SCALAR).fieldValue(fieldValue).build();
+            return new FieldValueInfo(SCALAR, fieldValue);
         } else if (isEnum(fieldType)) {
             fieldValue = completeValueForEnum(executionContext, parameters, (GraphQLEnumType) fieldType, result);
-            return FieldValueInfo.newFieldValueInfo(ENUM).fieldValue(fieldValue).build();
+            return new FieldValueInfo(ENUM, fieldValue);
         }
 
         // when we are here, we have a complex type: Interface, Union or Object
@@ -628,7 +621,7 @@ public abstract class ExecutionStrategy {
             // complete field as null, validating it is nullable
             return getFieldValueInfoForNull(parameters);
         }
-        return FieldValueInfo.newFieldValueInfo(OBJECT).fieldValue(fieldValue).build();
+        return new FieldValueInfo(OBJECT, fieldValue);
     }
 
     private void handleUnresolvedTypeProblem(ExecutionContext context, ExecutionStrategyParameters parameters, UnresolvedTypeException e) {
@@ -649,7 +642,7 @@ public abstract class ExecutionStrategy {
      */
     private FieldValueInfo getFieldValueInfoForNull(ExecutionStrategyParameters parameters) {
         CompletableFuture<Object> fieldValue = completeValueForNull(parameters);
-        return FieldValueInfo.newFieldValueInfo(NULL).fieldValue(fieldValue).build();
+        return new FieldValueInfo(NULL, fieldValue);
     }
 
     protected CompletableFuture<Object> completeValueForNull(ExecutionStrategyParameters parameters) {
@@ -674,10 +667,10 @@ public abstract class ExecutionStrategy {
         try {
             resultIterable = parameters.getNonNullFieldValidator().validate(parameters.getPath(), resultIterable);
         } catch (NonNullableFieldWasNullException e) {
-            return FieldValueInfo.newFieldValueInfo(LIST).fieldValue(exceptionallyCompletedFuture(e)).build();
+            return new FieldValueInfo(LIST, exceptionallyCompletedFuture(e));
         }
         if (resultIterable == null) {
-            return FieldValueInfo.newFieldValueInfo(LIST).fieldValue(completedFuture(null)).build();
+            return new FieldValueInfo(LIST, completedFuture(null));
         }
         return completeValueForList(executionContext, parameters, resultIterable);
     }
@@ -742,10 +735,7 @@ public abstract class ExecutionStrategy {
             overallResult.complete(completedResults);
         });
 
-        return FieldValueInfo.newFieldValueInfo(LIST)
-                .fieldValue(overallResult)
-                .fieldValueInfos(fieldValueInfos)
-                .build();
+        return new FieldValueInfo(LIST, overallResult, fieldValueInfos);
     }
 
     protected <T> void handleValueException(CompletableFuture<T> overallResult, Throwable e, ExecutionContext executionContext) {
