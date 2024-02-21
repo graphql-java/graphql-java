@@ -90,10 +90,11 @@ public class ChainedInstrumentation implements Instrumentation {
     }
 
     protected <T> ImmutableList<T> chainedMapAndDropNulls(InstrumentationState state, BiFunction<Instrumentation, InstrumentationState, T> mapper) {
+        ChainedInstrumentationState chainedInstrumentationState = (ChainedInstrumentationState) state;
         ImmutableList.Builder<T> result = ImmutableList.builderWithExpectedSize(instrumentations.size());
         for (int i = 0; i < instrumentations.size(); i++) {
             Instrumentation instrumentation = instrumentations.get(i);
-            InstrumentationState specificState = ((ChainedInstrumentationState) state).getState(i);
+            InstrumentationState specificState = chainedInstrumentationState.getState(i);
             T value = mapper.apply(instrumentation, specificState);
             if (value != null) {
                 result.add(value);
@@ -102,10 +103,11 @@ public class ChainedInstrumentation implements Instrumentation {
         return result.build();
     }
 
-    protected <T> void chainedConsume(InstrumentationState state, BiConsumer<Instrumentation, InstrumentationState> stateConsumer) {
+    protected void chainedConsume(InstrumentationState state, BiConsumer<Instrumentation, InstrumentationState> stateConsumer) {
+        ChainedInstrumentationState chainedInstrumentationState = (ChainedInstrumentationState) state;
         for (int i = 0; i < instrumentations.size(); i++) {
             Instrumentation instrumentation = instrumentations.get(i);
-            InstrumentationState specificState = ((ChainedInstrumentationState) state).getState(i);
+            InstrumentationState specificState = chainedInstrumentationState.getState(i);
             stateConsumer.accept(instrumentation, specificState);
         }
     }
@@ -358,7 +360,7 @@ public class ChainedInstrumentation implements Instrumentation {
         CompletableFuture<List<ExecutionResult>> resultsFuture = Async.eachSequentially(entries, (entry, prevResults) -> {
             Instrumentation instrumentation = entry.getKey();
             InstrumentationState specificState = entry.getValue();
-            ExecutionResult lastResult = prevResults.size() > 0 ? prevResults.get(prevResults.size() - 1) : executionResult;
+            ExecutionResult lastResult = !prevResults.isEmpty() ? prevResults.get(prevResults.size() - 1) : executionResult;
             return instrumentation.instrumentExecutionResult(lastResult, parameters, specificState);
         });
         return resultsFuture.thenApply((results) -> results.isEmpty() ? executionResult : results.get(results.size() - 1));
@@ -483,10 +485,8 @@ public class ChainedInstrumentation implements Instrumentation {
     }
 
     @FunctionalInterface
-    private interface ChainedInstrumentationFunction<I, S, A, R> {
-
-        R apply(I t, S u, A v);
-
+    private interface ChainedInstrumentationFunction<I, S, V, R> {
+        R apply(I instrumentation, S state, V value);
     }
 
 

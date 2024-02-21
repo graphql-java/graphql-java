@@ -90,6 +90,8 @@ class ChainedInstrumentationStateTest extends Specification {
 
         then:
 
+        chainedInstrumentation.getInstrumentations().size() == 4
+
         a.executionList == expected
         b.executionList == expected
         c.executionList == expected
