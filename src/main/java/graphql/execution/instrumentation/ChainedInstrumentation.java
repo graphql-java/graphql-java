@@ -43,7 +43,6 @@ import static graphql.Assert.assertNotNull;
  *
  * @see graphql.execution.instrumentation.Instrumentation
  */
-@SuppressWarnings("deprecation")
 @PublicApi
 public class ChainedInstrumentation implements Instrumentation {
 

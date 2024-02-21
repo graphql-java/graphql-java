@@ -57,7 +57,7 @@ public class ChainedInstrumentationBenchmark {
         List<Instrumentation> instrumentations = Collections.nCopies(num, new SimplePerformantInstrumentation());
         chainedInstrumentation = new ChainedInstrumentation(instrumentations);
         instrumentationState = chainedInstrumentation.createStateAsync(createStateParameters).get();
-        parameters = new InstrumentationExecutionParameters(executionInput, schema, instrumentationState);
+        parameters = new InstrumentationExecutionParameters(executionInput, schema);
     }
 
     @Benchmark
