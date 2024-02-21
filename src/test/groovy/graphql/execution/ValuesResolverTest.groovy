@@ -600,6 +600,9 @@ class ValuesResolverTest extends Specification {
                 a: VariableReference.of("var")
         ])                                            | CoercedVariables.of(["var": null])
 
+        '`{ a: $var }`  { }' | buildObjectLiteral([
+                a: VariableReference.of("var")
+        ])                                            | CoercedVariables.emptyVariables()
     }
 
     def "getArgumentValues: invalid oneOf list input because element contains duplicate key - #testCase"() {
