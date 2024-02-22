@@ -1,39 +1,33 @@
 package graphql.validation.rules
 
+import graphql.ExperimentalApi
 import graphql.i18n.I18n
 import graphql.language.Document
 import graphql.parser.Parser
 import graphql.validation.LanguageTraversal
 import graphql.validation.RulesVisitor
 import graphql.validation.SpecValidationSchema
-import graphql.validation.TraversalContext
 import graphql.validation.ValidationContext
-import graphql.validation.ValidationError
 import graphql.validation.ValidationErrorCollector
 import graphql.validation.ValidationErrorType
-import graphql.validation.Validator
 import spock.lang.Specification
 
 class DeferDirectiveOnRootLevelTest extends Specification {
 
-    ValidationContext validationContext = Mock(ValidationContext)
     ValidationErrorCollector errorCollector = new ValidationErrorCollector()
-
-    DeferDirectiveOnRootLevel deferDirectiveOnRootLevel = new DeferDirectiveOnRootLevel(validationContext, errorCollector)
 
     def traverse(String query) {
         Document document = new Parser().parseDocument(query)
-        I18n i18n = I18n.i18n(I18n.BundleType.Validation, Locale.ENGLISH)
-        ValidationContext validationContext = new ValidationContext(SpecValidationSchema.specValidationSchema, document, i18n)
+        ValidationContext validationContext = new ValidationContext(
+                SpecValidationSchema.specValidationSchema,
+                document,
+                I18n.i18n(I18n.BundleType.Validation, Locale.ENGLISH))
+        validationContext.getGraphQLContext().put(ExperimentalApi.ENABLE_INCREMENTAL_SUPPORT, true)
+
         LanguageTraversal languageTraversal = new LanguageTraversal()
         languageTraversal.traverse(document, new RulesVisitor(validationContext, [new DeferDirectiveOnRootLevel(validationContext, errorCollector)]))
     }
 
-    def setup() {
-        def traversalContext = Mock(TraversalContext)
-        validationContext.getSchema() >> SpecValidationSchema.specValidationSchema
-        validationContext.getTraversalContext() >> traversalContext
-    }
 
     def "Not allow defer on subscription root level"() {
         given:
@@ -46,11 +40,9 @@ class DeferDirectiveOnRootLevelTest extends Specification {
                 }             
             }
         """
-        Document document = new Parser().parseDocument(query)
-        LanguageTraversal languageTraversal = new LanguageTraversal()
 
         when:
-        languageTraversal.traverse(document, new RulesVisitor(validationContext, [deferDirectiveOnRootLevel]))
+        traverse(query)
 
         then:
         !errorCollector.errors.isEmpty()
@@ -69,17 +61,16 @@ class DeferDirectiveOnRootLevelTest extends Specification {
                 }
             }
         """
-        Document document = new Parser().parseDocument(query)
-        LanguageTraversal languageTraversal = new LanguageTraversal()
+
 
         when:
-        def validationErrors = validate(query)
+        traverse(query)
 
         then:
-        !validationErrors.isEmpty()
-        validationErrors.size() == 1
-        validationErrors.get(0).getValidationErrorType() == ValidationErrorType.MisplacedDirective
-        validationErrors.get(0).message == "Validation error (MisplacedDirective) : Directive 'defer' is not allowed on root of operation 'mutation'"
+        !errorCollector.errors.isEmpty()
+        errorCollector.errors.size() == 1
+        errorCollector.containsValidationError(ValidationErrorType.MisplacedDirective)
+        errorCollector.errors.get(0).message == "Validation error (MisplacedDirective) : Defer directive cannot be used on root mutation type 'PetMutationType'"
 
     }
 
@@ -95,28 +86,7 @@ class DeferDirectiveOnRootLevelTest extends Specification {
          }
         """
         when:
-        def validationErrors = validate(query)
-
-        then:
-        validationErrors.isEmpty()
-    }
-
-    def "allow defer on  when is not on mutation root level"() {
-        given:
-        def query = """
-            mutation doggo {
-                createDog(id: "1") {
-                    ... @defer {
-                        id
-                    }
-                }
-           }
-        """
-        Document document = new Parser().parseDocument(query)
-        LanguageTraversal languageTraversal = new LanguageTraversal()
-
-        when:
-        languageTraversal.traverse(document, new RulesVisitor(validationContext, [deferDirectiveOnRootLevel]))
+        traverse(query)
 
         then:
         errorCollector.errors.isEmpty()
@@ -125,7 +95,6 @@ class DeferDirectiveOnRootLevelTest extends Specification {
     def "Not allow defer mutation root level on inline fragments "() {
         given:
         def query = """
-            
            mutation doggo {
               ... {
                     ... @defer {
@@ -137,18 +106,14 @@ class DeferDirectiveOnRootLevelTest extends Specification {
                 }       
             }
         """
-        Document document = new Parser().parseDocument(query)
-        LanguageTraversal languageTraversal = new LanguageTraversal()
-
         when:
-        def validationErrors = validate(query)
+        traverse(query)
 
         then:
-        !validationErrors.isEmpty()
-        validationErrors.size() == 1
-        validationErrors.get(0).getValidationErrorType() == ValidationErrorType.MisplacedDirective
-        validationErrors.get(0).message == "Validation error (MisplacedDirective) : Directive 'defer' is not allowed on root of operation 'mutation'"
-
+        !errorCollector.errors.isEmpty()
+        errorCollector.errors.size() == 1
+        errorCollector.containsValidationError(ValidationErrorType.MisplacedDirective)
+        errorCollector.errors.get(0).message == "Validation error (MisplacedDirective) : Defer directive cannot be used on root mutation type 'PetMutationType'"
     }
 
     def "Not allow defer on subscription root level even when is inside multiple inline fragment"() {
@@ -166,15 +131,14 @@ class DeferDirectiveOnRootLevelTest extends Specification {
                }             
             }
         """
-        Document document = new Parser().parseDocument(query)
-        LanguageTraversal languageTraversal = new LanguageTraversal()
-
         when:
-        languageTraversal.traverse(document, new RulesVisitor(validationContext, [deferDirectiveOnRootLevel]))
+        traverse(query)
 
         then:
         !errorCollector.errors.isEmpty()
+        errorCollector.errors.size() == 1
         errorCollector.containsValidationError(ValidationErrorType.MisplacedDirective)
+        errorCollector.errors.get(0).message == "Validation error (MisplacedDirective) : Defer directive cannot be used on root subscription type 'SubscriptionRoot'"
 
     }
 
@@ -200,19 +164,15 @@ class DeferDirectiveOnRootLevelTest extends Specification {
 
             
         """
-        Document document = new Parser().parseDocument(query)
-        LanguageTraversal languageTraversal = new LanguageTraversal()
-
         when:
         traverse(query)
 
         then:
         !errorCollector.errors.isEmpty()
+        errorCollector.errors.size() == 1
         errorCollector.containsValidationError(ValidationErrorType.MisplacedDirective)
-
+        errorCollector.errors.get(0).message == "Validation error (MisplacedDirective@[doggo]) : Defer directive cannot be used on root mutation type 'PetMutationType'"
     }
-
-
 
 
     def "Allows defer on mutation when it is not on root level"() {
@@ -230,7 +190,7 @@ class DeferDirectiveOnRootLevelTest extends Specification {
         LanguageTraversal languageTraversal = new LanguageTraversal()
 
         when:
-        languageTraversal.traverse(document, new RulesVisitor(validationContext, [deferDirectiveOnRootLevel]))
+        traverse(query)
 
         then:
         errorCollector.errors.isEmpty()
@@ -241,24 +201,21 @@ class DeferDirectiveOnRootLevelTest extends Specification {
         def query = """
             mutation doggo {
                 ...{
-                  ...doggoCreate
+                    createDog(id: "1") {
+                        ...doggo
+                    }
                 }
            }
 
-            fragment doggoCreate on PetMutationType {
-                  createDog(id: "1") {
-                        ... @defer {
-                            id
-                        }
-                    }
+            fragment doggo on Dog {
+                ... @defer {
+                    id
+                }
             }
             
         """
-        Document document = new Parser().parseDocument(query)
-        LanguageTraversal languageTraversal = new LanguageTraversal()
-
         when:
-        languageTraversal.traverse(document, new RulesVisitor(validationContext, [deferDirectiveOnRootLevel]))
+        traverse(query)
 
         then:
         errorCollector.errors.isEmpty()
@@ -285,15 +242,11 @@ class DeferDirectiveOnRootLevelTest extends Specification {
             }
             
         """
-        Document document = new Parser().parseDocument(query)
-        LanguageTraversal languageTraversal = new LanguageTraversal()
-
         when:
-        languageTraversal.traverse(document, new RulesVisitor(validationContext, [deferDirectiveOnRootLevel]))
+        traverse(query)
 
         then:
         errorCollector.errors.isEmpty()
-
 
     }
 
@@ -324,7 +277,7 @@ class DeferDirectiveOnRootLevelTest extends Specification {
         LanguageTraversal languageTraversal = new LanguageTraversal()
 
         when:
-        languageTraversal.traverse(document, new RulesVisitor(validationContext, [deferDirectiveOnRootLevel]))
+        traverse(query)
 
         then:
         errorCollector.containsValidationError(ValidationErrorType.MisplacedDirective)
@@ -359,13 +312,13 @@ class DeferDirectiveOnRootLevelTest extends Specification {
         """
 
         when:
-        def validationErrors = validate(query)
+        traverse(query)
 
         then:
-        !validationErrors.isEmpty()
-        validationErrors.size() == 1
-        validationErrors.get(0).getValidationErrorType() == ValidationErrorType.MisplacedDirective
-        validationErrors.get(0).message == "Validation error (MisplacedDirective@[createDoggoRoot/createDoggo]) : Directive 'defer' is not allowed on root of operation 'mutation'"
+        !errorCollector.errors.isEmpty()
+        errorCollector.errors.size() == 1
+        errorCollector.containsValidationError(ValidationErrorType.MisplacedDirective)
+        errorCollector.errors.get(0).message == "Validation error (MisplacedDirective@[createDoggoRoot/createDoggo]) : Defer directive cannot be used on root mutation type 'PetMutationType'"
 
     }
 
@@ -410,19 +363,111 @@ class DeferDirectiveOnRootLevelTest extends Specification {
         """
 
         when:
-        def validationErrors = validate(query)
+        traverse(query)
 
         then:
-        !validationErrors.isEmpty()
-        validationErrors.size() == 1
-        validationErrors.get(0).getValidationErrorType() == ValidationErrorType.MisplacedDirective
-        validationErrors.get(0).message == "Validation error (MisplacedDirective@[createDoggoLevel1/createDoggoLevel2/createDoggo]) : Directive 'defer' is not allowed on root of operation 'mutation'"
+        !errorCollector.errors.isEmpty()
+        errorCollector.errors.size() == 1
+        errorCollector.containsValidationError(ValidationErrorType.MisplacedDirective)
+        errorCollector.errors.get(0).message == "Validation error (MisplacedDirective@[createDoggoLevel1/createDoggoLevel2/createDoggo]) : Defer directive cannot be used on root mutation type 'PetMutationType'"
 
     }
 
-    static List<ValidationError> validate(String query) {
-        def document = new Parser().parseDocument(query)
-        return new Validator().validateDocument(SpecValidationSchema.specValidationSchema, document, Locale.ENGLISH)
+
+    def "Not allow defer on subscription root level even when defer(if == false) "() {
+        given:
+        def query = """
+            subscription pets{
+                ... @defer(if:false) {
+                    dog {
+                
+                        name 
+                    }
+                    nickname
+                }             
+            }
+        """
+        Document document = new Parser().parseDocument(query)
+        LanguageTraversal languageTraversal = new LanguageTraversal()\
+
+        when:
+        traverse(query)
+
+        then:
+        !errorCollector.errors.isEmpty()
+        errorCollector.errors.size() == 1
+        errorCollector.containsValidationError(ValidationErrorType.MisplacedDirective)
+        errorCollector.errors.get(0).message == "Validation error (MisplacedDirective) : Defer directive cannot be used on root subscription type 'SubscriptionRoot'"
+
     }
+
+    def "Not allow defer on subscription root level when defer(if == true) "() {
+        given:
+        def query = """
+            subscription pets{
+                ... @defer(if:true) {
+                    dog {
+                                    
+                        name
+                        }
+                    nickname
+                }             
+            }
+        """
+
+        when:
+        traverse(query)
+
+        then:
+        errorCollector.errors.size() == 1
+        errorCollector.containsValidationError(ValidationErrorType.MisplacedDirective)
+        errorCollector.errors.get(0).message == "Validation error (MisplacedDirective) : Defer directive cannot be used on root subscription type 'SubscriptionRoot'"
+
+    }
+
+    def "Not allow defer on mutation root level even when if is variable that could have false as value "() {
+        given:
+        def query = """
+            mutation pets(\$ifVar:Boolean){
+                ... @defer(if:\$ifVar) {
+                    createDog(input: {id: "1"}) {                                    
+                       name
+                    }
+                }             
+            
+            }
+        """
+
+        when:
+        traverse(query)
+
+        then:
+        errorCollector.errors.size() == 1
+        errorCollector.containsValidationError(ValidationErrorType.MisplacedDirective)
+        errorCollector.errors.get(0).message == "Validation error (MisplacedDirective) : Defer directive cannot be used on root mutation type 'PetMutationType'"
+    }
+
+    def "Not allow defer on mutation root level when defer(if == true) "() {
+        given:
+        def query = """
+            mutation pets{
+                ... @defer(if:true) {
+                    createDog(input: {id: "1"}) {                                    
+                       name
+                    }
+                }             
+            }
+        """
+
+        when:
+        traverse(query)
+
+        then:
+        errorCollector.errors.size() == 1
+        errorCollector.containsValidationError(ValidationErrorType.MisplacedDirective)
+        errorCollector.errors.get(0).message == "Validation error (MisplacedDirective) : Defer directive cannot be used on root mutation type 'PetMutationType'"
+
+    }
+
 }
 

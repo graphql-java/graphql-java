@@ -1,24 +1,34 @@
 package graphql.validation.rules;
 
+import graphql.Directives;
+import graphql.ExperimentalApi;
 import graphql.language.Directive;
-import graphql.language.FragmentDefinition;
-import graphql.language.InlineFragment;
 import graphql.language.Node;
 import graphql.language.OperationDefinition;
-import graphql.language.SelectionSet;
+import graphql.schema.GraphQLCompositeType;
+import graphql.schema.GraphQLObjectType;
 import graphql.validation.AbstractRule;
 import graphql.validation.ValidationContext;
 import graphql.validation.ValidationErrorCollector;
 
-import java.util.ArrayList;
-import java.util.Collections;
+import java.util.Arrays;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import static graphql.validation.ValidationErrorType.MisplacedDirective;
 
+/**
+ * Defer and stream directives are used on valid root field
+ *
+ * A GraphQL document is only valid if defer directives are not used on root mutation or subscription types.
+ *
+ * See proposed spec:<a href="https://github.com/graphql/graphql-spec/pull/742">spec/Section 5 -- Validation.md ### Defer And Stream Directives Are Used On Valid Root Field</a>
+ */
+@ExperimentalApi
 public class DeferDirectiveOnRootLevel extends AbstractRule {
-
+    private Set<OperationDefinition.Operation> invalidOperations = new LinkedHashSet(Arrays.asList(OperationDefinition.Operation.MUTATION, OperationDefinition.Operation.SUBSCRIPTION));
     public DeferDirectiveOnRootLevel(ValidationContext validationContext, ValidationErrorCollector validationErrorCollector) {
         super(validationContext, validationErrorCollector);
         this.setVisitFragmentSpreads(true);
@@ -26,32 +36,24 @@ public class DeferDirectiveOnRootLevel extends AbstractRule {
 
     @Override
     public void checkDirective(Directive directive, List<Node> ancestors) {
-        if (directive.getName().equals("defer")){
-            Optional<Node> fragmentAncestor = getFragmentAncestor(ancestors);
-            if (fragmentAncestor.isPresent() && fragmentAncestor.get() instanceof OperationDefinition){
-                OperationDefinition operationDefinition = (OperationDefinition) fragmentAncestor.get();
-                if (OperationDefinition.Operation.MUTATION.equals(operationDefinition.getOperation()) || OperationDefinition.Operation.SUBSCRIPTION.equals(operationDefinition.getOperation())) {
-                    String message = i18n(MisplacedDirective, "DirectiveMisplaced.notAllowedOperationRootLevel", directive.getName(), operationDefinition.getOperation().name().toLowerCase());
-                    addError(MisplacedDirective, directive.getSourceLocation(), message);
-                }
-            }
+        // ExperimentalApi.ENABLE_INCREMENTAL_SUPPORT must be true
+        if (!isExperimentalApiKeyEnabled(ExperimentalApi.ENABLE_INCREMENTAL_SUPPORT)) {
+            return;
+        }
 
+        if (!Directives.DeferDirective.getName().equals(directive.getName())) {
+            return;
+        }
+        GraphQLObjectType mutationType = getValidationContext().getSchema().getMutationType();
+        GraphQLObjectType subscriptionType = getValidationContext().getSchema().getSubscriptionType();
+        GraphQLCompositeType parentType = getValidationContext().getParentType();
+        if (mutationType != null && parentType != null && parentType.getName().equals(mutationType.getName())){
+            String message = i18n(MisplacedDirective, "DeferDirective.notAllowedOperationRootLevelMutation", parentType.getName());
+            addError(MisplacedDirective, directive.getSourceLocation(), message);
+        } else if (subscriptionType != null && parentType != null && parentType.getName().equals(subscriptionType.getName())) {
+            String message = i18n(MisplacedDirective, "DeferDirective.notAllowedOperationRootLevelSubscription", parentType.getName());
+            addError(MisplacedDirective, directive.getSourceLocation(), message);
         }
     }
 
-    /**
-     * Get the first ancestor that is not InlineFragment, SelectionSet or FragmentDefinition
-     * @param ancestors list of ancestors
-     * @return Optional of Node parent that is not InlineFragment, SelectionSet or FragmentDefinition.
-     */
-    protected Optional<Node> getFragmentAncestor(List<Node> ancestors){
-        List<Node> ancestorsCopy = new ArrayList(ancestors);
-        Collections.reverse(ancestorsCopy);
-        return ancestorsCopy.stream().filter(node ->  !(
-                        node instanceof InlineFragment ||
-                                node instanceof SelectionSet ||
-                                node instanceof FragmentDefinition
-                )
-        ).findFirst();
-    }
 }

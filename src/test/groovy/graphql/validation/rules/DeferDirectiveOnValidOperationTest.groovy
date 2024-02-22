@@ -1,39 +1,68 @@
 package graphql.validation.rules
 
+import graphql.ExperimentalApi
 import graphql.i18n.I18n
 import graphql.language.Document
 import graphql.parser.Parser
 import graphql.validation.LanguageTraversal
 import graphql.validation.RulesVisitor
 import graphql.validation.SpecValidationSchema
-import graphql.validation.TraversalContext
 import graphql.validation.ValidationContext
-import graphql.validation.ValidationError
 import graphql.validation.ValidationErrorCollector
 import graphql.validation.ValidationErrorType
-import graphql.validation.Validator
 import spock.lang.Specification
 
 class DeferDirectiveOnValidOperationTest extends Specification {
-
-    ValidationContext validationContext = Mock(ValidationContext)
     ValidationErrorCollector errorCollector = new ValidationErrorCollector()
 
     def traverse(String query) {
         Document document = new Parser().parseDocument(query)
         I18n i18n = I18n.i18n(I18n.BundleType.Validation, Locale.ENGLISH)
         ValidationContext validationContext = new ValidationContext(SpecValidationSchema.specValidationSchema, document, i18n)
+        validationContext.getGraphQLContext().put(ExperimentalApi.ENABLE_INCREMENTAL_SUPPORT, true)
         LanguageTraversal languageTraversal = new LanguageTraversal()
         languageTraversal.traverse(document, new RulesVisitor(validationContext, [new DeferDirectiveOnValidOperation(validationContext, errorCollector)]))
     }
 
-    def setup() {
-        def traversalContext = Mock(TraversalContext)
-        validationContext.getSchema() >> SpecValidationSchema.specValidationSchema
-        validationContext.getTraversalContext() >> traversalContext
+    def "Allow simple defer on query with fragment definition"() {
+        def query = '''
+            query {
+                dog {
+                    ... DogFields @defer
+                }
+            }
+            
+            fragment DogFields on Dog {
+                name
+            }
+        '''
+
+        when:
+        traverse(query)
+
+        then:
+        errorCollector.errors.isEmpty()
     }
 
+    def "Allow simple defer on mutation with fragment definition"() {
+        def query = '''
+            mutation {
+                createDog(input: {name: "Fido"}) {
+                    ... DogFields @defer
+                }
+            }
+            
+            fragment DogFields on Dog {
+                name
+            }
+        '''
 
+        when:
+        traverse(query)
+
+        then:
+        errorCollector.errors.isEmpty()
+    }
 
     def "Not allow defer on subscription operation"() {
         given:
@@ -81,6 +110,27 @@ class DeferDirectiveOnValidOperationTest extends Specification {
 
     }
 
+    def "Not allow simple defer on subscription with fragment definition"() {
+        def query = '''
+            subscription {
+                dog {
+                    ... DogFields @defer
+                }
+            }
+            
+            fragment DogFields on Dog {
+                name
+            }
+        '''
+
+        when:
+        traverse(query)
+
+        then:
+        !errorCollector.errors.isEmpty()
+        errorCollector.containsValidationError(ValidationErrorType.MisplacedDirective)
+
+    }
 
     def "Not allow defer on fragment when operation is subscription"() {
         given:
@@ -107,8 +157,6 @@ class DeferDirectiveOnValidOperationTest extends Specification {
         """
         when:
         traverse(query)
-
-        then:
 
         then:
         !errorCollector.errors.isEmpty()
@@ -185,13 +233,13 @@ class DeferDirectiveOnValidOperationTest extends Specification {
         """
 
         when:
-        def validationErrors = validate(query)
+        traverse(query)
 
         then:
-        !validationErrors.isEmpty()
-        validationErrors.size() == 1
-        validationErrors.get(0).getValidationErrorType() == ValidationErrorType.MisplacedDirective
-        validationErrors.get(0).message == "Validation error (MisplacedDirective@[doggoSubscription/dog/doggo]) : Directive 'defer' is not allowed on operation 'subscription'"
+        !errorCollector.errors.isEmpty()
+        errorCollector.errors.size() == 1
+        errorCollector.errors.get(0).getValidationErrorType() == ValidationErrorType.MisplacedDirective
+        errorCollector.errors.get(0).message == "Validation error (MisplacedDirective@[doggoSubscription/dog/doggo]) : Directive 'defer' is not allowed to be used on operation subscription"
 
     }
 
@@ -219,13 +267,13 @@ class DeferDirectiveOnValidOperationTest extends Specification {
         """
 
         when:
-        def validationErrors = validate(query)
+        traverse(query)
 
         then:
-        !validationErrors.isEmpty()
-        validationErrors.size() == 1
-        validationErrors.get(0).getValidationErrorType() == ValidationErrorType.MisplacedDirective
-        validationErrors.get(0).message == "Validation error (MisplacedDirective@[dog]) : Directive 'defer' is not allowed on operation 'subscription'"
+        !errorCollector.errors.isEmpty()
+        errorCollector.errors.size() == 1
+        errorCollector.errors.get(0).getValidationErrorType() == ValidationErrorType.MisplacedDirective
+        errorCollector.errors.get(0).message == "Validation error (MisplacedDirective@[dog]) : Directive 'defer' is not allowed to be used on operation subscription"
 
     }
 
@@ -247,9 +295,72 @@ class DeferDirectiveOnValidOperationTest extends Specification {
         errorCollector.errors.isEmpty()
     }
 
-    static List<ValidationError> validate(String query) {
-        def document = new Parser().parseDocument(query)
-        return new Validator().validateDocument(SpecValidationSchema.specValidationSchema, document, Locale.ENGLISH)
-    }
-}
 
+    def "Allow defer on subscription when defer(if == false) "() {
+        given:
+        def query = """
+            subscription pets{
+                dog {
+                    ... @defer(if:false) {                
+                        name 
+                    }
+                    nickname
+                }             
+            }
+        """
+
+        when:
+        traverse(query)
+
+        then:
+        errorCollector.errors.isEmpty()
+
+    }
+
+    def "Not allow defer on subscription when defer(if == true) "() {
+        given:
+        def query = """
+            subscription pets{
+                dog {
+                    ... @defer(if:true) {                
+                        name
+                        }
+                    nickname
+                }             
+            }
+        """
+
+        when:
+        traverse(query)
+
+        then:
+        errorCollector.errors.size() == 1
+        errorCollector.containsValidationError(ValidationErrorType.MisplacedDirective)
+        errorCollector.errors.get(0).message == "Validation error (MisplacedDirective@[dog]) : Directive 'defer' is not allowed to be used on operation subscription"
+
+
+    }
+
+    def "Allow defer when if is variable that could have false as value "() {
+        given:
+        def query = """
+            subscription pets(\$ifVar:Boolean){
+                dog {
+                    ... @defer(if:\$ifVar) {                
+                        name 
+                    }
+                    nickname
+                }             
+            }
+        """
+
+        when:
+        traverse(query)
+
+        then:
+        errorCollector.errors.isEmpty()
+    }
+
+
+
+}
