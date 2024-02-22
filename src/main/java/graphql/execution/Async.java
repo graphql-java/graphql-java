@@ -246,50 +246,79 @@ public class Async {
 
     }
 
-    public static <T, U> CompletableFuture<List<U>> each(Collection<T> list, Function<T, CompletableFuture<U>> cfFactory) {
-        CombinedBuilder<U> futures = ofExpectedSize(list.size());
-        for (T t : list) {
-            CompletableFuture<U> cf;
-            try {
-                cf = cfFactory.apply(t);
-                Assert.assertNotNull(cf, () -> "cfFactory must return a non null value");
-            } catch (Exception e) {
-                cf = new CompletableFuture<>();
-                // Async.each makes sure that it is not a CompletionException inside a CompletionException
-                cf.completeExceptionally(new CompletionException(e));
-            }
-            futures.add(cf);
+    @SuppressWarnings("unchecked")
+    public static <T, U> CompletableFuture<List<U>> each(Collection<T> list, Function<T, Object> cfOrMaterialisedValueFactory) {
+        Object l = eachPolymorphic(list, cfOrMaterialisedValueFactory);
+        if (l instanceof CompletableFuture) {
+            return (CompletableFuture<List<U>>) l;
+        } else {
+            return CompletableFuture.completedFuture((List<U>) l);
         }
-        return futures.await();
     }
 
-    public static <T, U> CompletableFuture<List<U>> eachSequentially(Iterable<T> list, BiFunction<T, List<U>, CompletableFuture<U>> cfFactory) {
+    /**
+     * This will run the value factory for each of the values in the provided list.
+     * <p>
+     * If any of the values provided is a {@link CompletableFuture} it will return a {@link CompletableFuture} result object
+     * that joins on all values otherwise if none of the values are a {@link CompletableFuture} then it will return a materialized list.
+     *
+     * @param list                         the list to work over
+     * @param cfOrMaterialisedValueFactory the value factory to call for each iterm in the list
+     * @param <T>                          for two
+     *
+     * @return a {@link CompletableFuture} to the list of resolved values or the list of values in a materialized fashion
+     */
+    public static <T> /* CompletableFuture<List<U>> | List<U> */ Object eachPolymorphic(Collection<T> list, Function<T, Object> cfOrMaterialisedValueFactory) {
+        CombinedBuilder<Object> futures = ofExpectedSize(list.size());
+        for (T t : list) {
+            try {
+                Object value = cfOrMaterialisedValueFactory.apply(t);
+                Assert.assertNotNull(value, () -> "cfOrMaterialisedValueFactory must return a non null value");
+                futures.addObject(value);
+            } catch (Exception e) {
+                CompletableFuture<Object> cf = new CompletableFuture<>();
+                // Async.each makes sure that it is not a CompletionException inside a CompletionException
+                cf.completeExceptionally(new CompletionException(e));
+                futures.add(cf);
+            }
+        }
+        return futures.awaitPolymorphic();
+    }
+
+    public static <T, U> CompletableFuture<List<U>> eachSequentially(Iterable<T> list, BiFunction<T, List<U>, Object> cfOrMaterialisedValueFactory) {
         CompletableFuture<List<U>> result = new CompletableFuture<>();
-        eachSequentiallyImpl(list.iterator(), cfFactory, new ArrayList<>(), result);
+        eachSequentiallyPolymorphicImpl(list.iterator(), cfOrMaterialisedValueFactory, new ArrayList<>(), result);
         return result;
     }
 
-    private static <T, U> void eachSequentiallyImpl(Iterator<T> iterator, BiFunction<T, List<U>, CompletableFuture<U>> cfFactory, List<U> tmpResult, CompletableFuture<List<U>> overallResult) {
+    @SuppressWarnings("unchecked")
+    private static <T, U> void eachSequentiallyPolymorphicImpl(Iterator<T> iterator, BiFunction<T, List<U>, Object> cfOrMaterialisedValueFactory, List<U> tmpResult, CompletableFuture<List<U>> overallResult) {
         if (!iterator.hasNext()) {
             overallResult.complete(tmpResult);
             return;
         }
-        CompletableFuture<U> cf;
+        Object value;
         try {
-            cf = cfFactory.apply(iterator.next(), tmpResult);
-            Assert.assertNotNull(cf, () -> "cfFactory must return a non null value");
+            value = cfOrMaterialisedValueFactory.apply(iterator.next(), tmpResult);
+            Assert.assertNotNull(value, () -> "cfOrMaterialisedValueFactory must return a non null value");
         } catch (Exception e) {
-            cf = new CompletableFuture<>();
-            cf.completeExceptionally(new CompletionException(e));
+            overallResult.completeExceptionally(new CompletionException(e));
+            return;
         }
-        cf.whenComplete((cfResult, exception) -> {
-            if (exception != null) {
-                overallResult.completeExceptionally(exception);
-                return;
-            }
-            tmpResult.add(cfResult);
-            eachSequentiallyImpl(iterator, cfFactory, tmpResult, overallResult);
-        });
+        if (value instanceof CompletableFuture) {
+            CompletableFuture<U> cf = (CompletableFuture<U>) value;
+            cf.whenComplete((cfResult, exception) -> {
+                if (exception != null) {
+                    overallResult.completeExceptionally(exception);
+                    return;
+                }
+                tmpResult.add(cfResult);
+                eachSequentiallyPolymorphicImpl(iterator, cfOrMaterialisedValueFactory, tmpResult, overallResult);
+            });
+        } else {
+            tmpResult.add((U) value);
+            eachSequentiallyPolymorphicImpl(iterator, cfOrMaterialisedValueFactory, tmpResult, overallResult);
+        }
     }
 
 

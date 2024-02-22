@@ -1,3 +1,4 @@
+//file:noinspection GroovyVariableNotAssigned
 package graphql.execution
 
 import spock.lang.Specification
@@ -35,6 +36,42 @@ class AsyncTest extends Specification {
 
         when:
         cf2.complete('y')
+
+        then:
+        !result.isDone()
+        1 * cfFactory.apply('c', ['x', 'y']) >> cf3
+
+        when:
+        cf3.complete('z')
+
+        then:
+        result.isDone()
+        result.get() == ['x', 'y', 'z']
+    }
+
+    def "eachSequentially polymorphic test"() {
+        given:
+        def input = ['a', 'b', 'c']
+        def cfFactory = Mock(BiFunction)
+        def cf1 = new CompletableFuture()
+        def v2 = 'y'
+        def cf3 = new CompletableFuture()
+
+        when:
+        def result = Async.eachSequentially(input, cfFactory)
+
+        then:
+        !result.isDone()
+        1 * cfFactory.apply('a', []) >> cf1
+
+        when:
+        cf1.complete('x')
+
+        then:
+        !result.isDone()
+        1 * cfFactory.apply('b', ['x']) >> v2
+
+        when:
 
         then:
         !result.isDone()
@@ -107,6 +144,58 @@ class AsyncTest extends Specification {
         then:
         result.isDone()
         result.get() == ['x', 'y', 'z']
+    }
+
+    def "each works for mapping function with polymorphic values"() {
+        given:
+        def input = ['a', 'b', 'c']
+        def cfFactory = Mock(Function)
+        cfFactory.apply('a') >> completedFuture('x')
+        cfFactory.apply('b') >> 'y'
+        cfFactory.apply('c') >> completedFuture('z')
+
+
+        when:
+        def result = Async.each(input, cfFactory)
+
+        then:
+        result.isDone()
+        result.get() == ['x', 'y', 'z']
+    }
+
+    def "eachPolymorphic works for mapping function with polymorphic values"() {
+        given:
+        def input = ['a', 'b', 'c']
+        def cfFactory = Mock(Function)
+        cfFactory.apply('a') >> completedFuture('x')
+        cfFactory.apply('b') >> 'y'
+        cfFactory.apply('c') >> completedFuture('z')
+
+
+        when:
+        def result = Async.eachPolymorphic(input, cfFactory)
+
+        then:
+        result instanceof CompletableFuture
+        (result as CompletableFuture).isDone()
+        (result as CompletableFuture).get() == ['x', 'y', 'z']
+    }
+
+    def "eachPolymorphic works for mapping function with materialised values"() {
+        given:
+        def input = ['a', 'b', 'c']
+        def cfFactory = Mock(Function)
+        cfFactory.apply('a') >> 'x'
+        cfFactory.apply('b') >> 'y'
+        cfFactory.apply('c') >> 'z'
+
+
+        when:
+        def result = Async.eachPolymorphic(input, cfFactory)
+
+        then:
+        result instanceof List
+        result == ['x', 'y', 'z']
     }
 
     def "each with mapping function propagates factory exception"() {
