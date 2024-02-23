@@ -23,7 +23,6 @@ import org.openjdk.jmh.annotations.OutputTimeUnit;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
-import org.openjdk.jmh.annotations.Threads;
 import org.openjdk.jmh.annotations.Warmup;
 
 import java.util.ArrayList;
@@ -31,9 +30,9 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 @State(Scope.Benchmark)
-@BenchmarkMode(Mode.Throughput)
-@Warmup(iterations = 2)
-@Measurement(iterations = 2, timeUnit = TimeUnit.NANOSECONDS)
+@Warmup(iterations = 2, time = 5)
+@Measurement(iterations = 3)
+@Fork(3)
 public class NQBenchmark2 {
 
     @State(Scope.Benchmark)
@@ -58,10 +57,6 @@ public class NQBenchmark2 {
     }
 
     @Benchmark
-    @Warmup(iterations = 2)
-    @Measurement(iterations = 5, time = 10)
-    @Threads(1)
-    @Fork(3)
     @BenchmarkMode(Mode.AverageTime)
     @OutputTimeUnit(TimeUnit.MILLISECONDS)
     public ExecutableNormalizedOperation benchMarkAvgTime(MyState myState) {

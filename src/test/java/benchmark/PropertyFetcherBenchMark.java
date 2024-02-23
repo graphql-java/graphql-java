@@ -5,6 +5,7 @@ import graphql.schema.DataFetchingEnvironmentImpl;
 import graphql.schema.PropertyDataFetcher;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
+import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
@@ -23,8 +24,9 @@ import java.util.concurrent.TimeUnit;
  * <p>
  * Install it and then just hit "Run" on a certain benchmark method
  */
-@Warmup(iterations = 2, time = 5, batchSize = 3)
-@Measurement(iterations = 3, time = 10, batchSize = 4)
+@Warmup(iterations = 2, time = 5)
+@Measurement(iterations = 3)
+@Fork(3)
 public class PropertyFetcherBenchMark {
 
     @Benchmark

@@ -7,6 +7,7 @@ import graphql.execution.ResultPath;
 import graphql.schema.idl.errors.SchemaMissingError;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
+import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.Scope;
@@ -16,6 +17,9 @@ import org.openjdk.jmh.annotations.Warmup;
 import java.util.Collections;
 
 @State(Scope.Benchmark)
+@Warmup(iterations = 2, time = 5)
+@Measurement(iterations = 3)
+@Fork(3)
 public class AddError {
 
     private final ExecutionContext context = new ExecutionContextBuilder()
@@ -35,4 +39,5 @@ public class AddError {
         );
         return context;
     }
+
 }

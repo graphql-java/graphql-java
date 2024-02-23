@@ -1,6 +1,5 @@
 package benchmark;
 
-import com.google.common.io.Files;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.idl.RuntimeWiring;
 import graphql.schema.idl.SchemaGenerator;
@@ -8,15 +7,13 @@ import graphql.schema.idl.SchemaParser;
 import graphql.schema.idl.TypeDefinitionRegistry;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
+import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
 import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
 
-import java.io.File;
-import java.net.URL;
-import java.nio.charset.Charset;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -29,8 +26,9 @@ import java.util.concurrent.TimeUnit;
  * <p>
  * Install it and then just hit "Run" on a certain benchmark method
  */
-@Warmup(iterations = 2, time = 5, batchSize = 3)
-@Measurement(iterations = 3, time = 10, batchSize = 4)
+@Warmup(iterations = 2, time = 5)
+@Measurement(iterations = 3)
+@Fork(3)
 public class SchemaBenchMark {
 
     static String largeSDL = BenchmarkUtils.loadResource("large-schema-3.graphqls");

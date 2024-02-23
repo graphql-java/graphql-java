@@ -14,6 +14,7 @@ import graphql.schema.idl.SchemaParser;
 import graphql.schema.idl.TypeDefinitionRegistry;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
+import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
@@ -25,16 +26,9 @@ import java.util.concurrent.TimeUnit;
 
 import static graphql.schema.idl.TypeRuntimeWiring.newTypeWiring;
 
-/**
- * See <a href="https://github.com/openjdk/jmh/tree/master/jmh-samples/src/main/java/org/openjdk/jmh/samples/">this link</a> for more samples
- * on what you can do with JMH.
- * <p>
- * You MUST have the JMH plugin for IDEA in place for this to work :  <a href="https://github.com/artyushov/idea-jmh-plugin">idea-jmh-plugin</a>
- * <p>
- * Install it and then just hit "Run" on a certain benchmark method
- */
-@Warmup(iterations = 2, time = 5, batchSize = 3)
-@Measurement(iterations = 3, time = 10, batchSize = 4)
+@Warmup(iterations = 2, time = 5)
+@Measurement(iterations = 3)
+@Fork(3)
 public class BenchMark {
 
     private static final int NUMBER_OF_FRIENDS = 10 * 100;

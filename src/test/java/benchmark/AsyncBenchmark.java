@@ -3,6 +3,7 @@ package benchmark;
 import graphql.execution.Async;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
+import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.Level;
 import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Mode;
@@ -25,6 +26,7 @@ import java.util.concurrent.TimeUnit;
 @BenchmarkMode(Mode.Throughput)
 @Warmup(iterations = 2)
 @Measurement(iterations = 2, timeUnit = TimeUnit.NANOSECONDS)
+@Fork(2)
 public class AsyncBenchmark {
 
     @Param({"0", "1", "10"})
@@ -69,7 +71,6 @@ public class AsyncBenchmark {
     public static void main(String[] args) throws Exception {
         Options opt = new OptionsBuilder()
                 .include("benchmark.AsyncBenchmark")
-                .forks(5)
                 .build();
 
         new Runner(opt).run();
