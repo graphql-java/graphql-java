@@ -22,7 +22,7 @@ import static benchmark.BenchmarkUtils.asRTE;
 @Warmup(iterations = 2, time = 5)
 @Measurement(iterations = 3)
 @Fork(3)
-public class TypeDefinitionParserVersusSerializeBenchMark {
+public class TypeDefinitionParserVersusSerializeBenchmark {
 
     static SchemaParser schemaParser = new SchemaParser();
     static String SDL = BenchmarkUtils.loadResource("large-schema-2.graphqls");

@@ -14,18 +14,8 @@ import org.openjdk.jmh.infra.Blackhole;
 
 import java.util.concurrent.TimeUnit;
 
-/**
- * This benchmarks a simple property fetch to help improve the key class PropertyDataFetcher
- * <p>
- * See https://github.com/openjdk/jmh/tree/master/jmh-samples/src/main/java/org/openjdk/jmh/samples/ for more samples
- * on what you can do with JMH
- * <p>
- * You MUST have the JMH plugin for IDEA in place for this to work :  https://github.com/artyushov/idea-jmh-plugin
- * <p>
- * Install it and then just hit "Run" on a certain benchmark method
- */
-@Warmup(iterations = 2, time = 5)
-@Measurement(iterations = 3)
+@Warmup(iterations = 2, time = 5, batchSize = 50)
+@Measurement(iterations = 3, batchSize = 50)
 @Fork(3)
 public class PropertyFetcherBenchMark {
 

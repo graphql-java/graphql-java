@@ -25,7 +25,7 @@ import java.util.concurrent.TimeUnit;
 @Warmup(iterations = 2, time = 5)
 @Measurement(iterations = 3)
 @Fork(3)
-public class NQBenchmark1 {
+public class ENFExtraLargeBenchmark {
 
     @State(Scope.Benchmark)
     public static class MyState {
@@ -36,10 +36,10 @@ public class NQBenchmark1 {
         @Setup
         public void setup() {
             try {
-                String schemaString = BenchmarkUtils.loadResource("large-schema-1.graphqls");
+                String schemaString = BenchmarkUtils.loadResource("extra-large-schema-1.graphqls");
                 schema = SchemaGenerator.createdMockedSchema(schemaString);
 
-                String query = BenchmarkUtils.loadResource("large-schema-1-query.graphql");
+                String query = BenchmarkUtils.loadResource("extra-large-schema-1-query.graphql");
                 document = Parser.parse(query);
             } catch (Exception e) {
                 throw new RuntimeException(e);
@@ -65,6 +65,4 @@ public class NQBenchmark1 {
         ExecutableNormalizedOperation executableNormalizedOperation = ExecutableNormalizedOperationFactory.createExecutableNormalizedOperation(myState.schema, myState.document, null, CoercedVariables.emptyVariables());
         blackhole.consume(executableNormalizedOperation);
     }
-
-
 }

@@ -33,7 +33,6 @@ import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition;
 import static graphql.schema.GraphQLObjectType.newObject;
 
 @State(Scope.Benchmark)
-@BenchmarkMode(Mode.Throughput)
 @Warmup(iterations = 2, time = 5)
 @Measurement(iterations = 3)
 @Fork(3)
@@ -69,6 +68,7 @@ public class ChainedInstrumentationBenchmark {
     }
 
     @Benchmark
+    @BenchmarkMode(Mode.Throughput)
     public GraphQLSchema benchmarkInstrumentSchema() {
         return chainedInstrumentation.instrumentSchema(schema, parameters, instrumentationState);
     }

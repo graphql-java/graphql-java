@@ -29,7 +29,7 @@ import static graphql.schema.idl.TypeRuntimeWiring.newTypeWiring;
 @Warmup(iterations = 2, time = 5)
 @Measurement(iterations = 3)
 @Fork(3)
-public class BenchMark {
+public class SimpleQueryBenchmark {
 
     private static final int NUMBER_OF_FRIENDS = 10 * 100;
     private static final GraphQL GRAPHQL = buildGraphQL();

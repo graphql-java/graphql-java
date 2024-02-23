@@ -11,8 +11,8 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.function.Function;
 
-@Warmup(iterations = 2, time = 5)
-@Measurement(iterations = 3)
+@Warmup(iterations = 2, time = 5, batchSize = 500)
+@Measurement(iterations = 3, batchSize = 500)
 @Fork(3)
 public class GetterAccessBenchmark {
 
