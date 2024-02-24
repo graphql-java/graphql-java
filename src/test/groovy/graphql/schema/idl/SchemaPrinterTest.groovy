@@ -1452,7 +1452,6 @@ directive @deprecated(
   ) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION
 
 directive @directive1 on SCALAR
-directive @schemaDirective on SCHEMA
 
 "Directs the executor to include this field or fragment only when the `if` argument is true"
 directive @include(
@@ -1462,6 +1461,8 @@ directive @include(
 
 "Indicates an Input Object is a OneOf Input Object."
 directive @oneOf on INPUT_OBJECT
+
+directive @schemaDirective on SCHEMA
 
 "Directs the executor to skip this field or fragment when the `if` argument is true."
 directive @skip(
