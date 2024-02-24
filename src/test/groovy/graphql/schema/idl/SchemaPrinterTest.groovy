@@ -1345,6 +1345,9 @@ type Query {
     def "can print a schema as AST elements"() {
         def sdl = '''
             directive @directive1 on SCALAR
+            directive @schemaDirective on SCHEMA
+            extend schema @schemaDirective
+            
             type Query {
                 foo : String
             }
@@ -1449,6 +1452,7 @@ directive @deprecated(
   ) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION
 
 directive @directive1 on SCALAR
+directive @schemaDirective on SCHEMA
 
 "Directs the executor to include this field or fragment only when the `if` argument is true"
 directive @include(
@@ -1534,6 +1538,8 @@ extend input Input {
 extend input Input {
   faz: String
 }
+
+extend schema @schemaDirective
 '''
 
         when:
