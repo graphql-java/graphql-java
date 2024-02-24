@@ -167,7 +167,6 @@ public class Async {
         private int ix;
         private int cfCount;
 
-        @SuppressWarnings("unchecked")
         private Many(int size) {
             this.array = new Object[size];
             this.ix = 0;
