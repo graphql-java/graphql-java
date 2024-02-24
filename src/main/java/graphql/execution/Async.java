@@ -22,6 +22,13 @@ import java.util.function.Supplier;
 @SuppressWarnings("FutureReturnValueIgnored")
 public class Async {
 
+    /**
+     * A builder of materialized objects or {@link CompletableFuture}s than can present a promise to the list of them
+     * <p>
+     * This builder has a strict contract on size whereby if the expectedSize is 5 then there MUST be five elements presented to it.
+     *
+     * @param <T> for two
+     */
     public interface CombinedBuilder<T> {
 
         /**
@@ -158,26 +165,26 @@ public class Async {
 
         private final Object[] array;
         private int ix;
-        private boolean containsCFs;
+        private int cfCount;
 
         @SuppressWarnings("unchecked")
         private Many(int size) {
             this.array = new Object[size];
             this.ix = 0;
-            containsCFs = false;
+            cfCount = 0;
         }
 
         @Override
         public void add(CompletableFuture<T> completableFuture) {
             array[ix++] = completableFuture;
-            containsCFs = true;
+            cfCount++;
         }
 
         @Override
         public void addObject(T objectT) {
             array[ix++] = objectT;
             if (objectT instanceof CompletableFuture) {
-                containsCFs = true;
+                cfCount++;
             }
         }
 
@@ -187,10 +194,10 @@ public class Async {
             commonSizeAssert();
 
             CompletableFuture<List<T>> overallResult = new CompletableFuture<>();
-            if (!containsCFs) {
+            if (cfCount == 0) {
                 overallResult.complete(materialisedList(array));
             } else {
-                CompletableFuture<?>[] cfsArr = copyOnlyCFsToArray();
+                CompletableFuture<T>[] cfsArr = copyOnlyCFsToArray();
                 CompletableFuture.allOf(cfsArr)
                         .whenComplete((ignored, exception) -> {
                             if (exception != null) {
@@ -198,13 +205,21 @@ public class Async {
                                 return;
                             }
                             List<T> results = new ArrayList<>(array.length);
-                            for (Object object : array) {
-                                if (object instanceof CompletableFuture) {
-                                    CompletableFuture<T> cf = (CompletableFuture<T>) object;
-                                    // join is safe since they are all completed earlier via CompletableFuture.allOf()
+                            if (cfsArr.length == array.length) {
+                                // they are all CFs
+                                for (CompletableFuture<T> cf : cfsArr) {
                                     results.add(cf.join());
-                                } else {
-                                    results.add((T) object);
+                                }
+                            } else {
+                                // it's a mixed bag of CFs and materialized objects
+                                for (Object object : array) {
+                                    if (object instanceof CompletableFuture) {
+                                        CompletableFuture<T> cf = (CompletableFuture<T>) object;
+                                        // join is safe since they are all completed earlier via CompletableFuture.allOf()
+                                        results.add(cf.join());
+                                    } else {
+                                        results.add((T) object);
+                                    }
                                 }
                             }
                             overallResult.complete(results);
@@ -213,9 +228,28 @@ public class Async {
             return overallResult;
         }
 
+        @SuppressWarnings("unchecked")
+        @NotNull
+        private CompletableFuture<T>[] copyOnlyCFsToArray() {
+            if (cfCount == array.length) {
+                // if it's all CFs - make a type safe copy via C code
+                return Arrays.copyOf(array, array.length, CompletableFuture[].class);
+            } else {
+                int i = 0;
+                CompletableFuture<T>[] dest = new CompletableFuture[cfCount];
+                for (Object o : array) {
+                    if (o instanceof CompletableFuture) {
+                        dest[i] = (CompletableFuture<T>) o;
+                        i++;
+                    }
+                }
+                return dest;
+            }
+        }
+
         @Override
         public Object awaitPolymorphic() {
-            if (!containsCFs) {
+            if (cfCount == 0) {
                 commonSizeAssert();
                 return materialisedList(array);
             } else {
@@ -235,13 +269,6 @@ public class Async {
 
         private void commonSizeAssert() {
             Assert.assertTrue(ix == array.length, () -> "expected size was " + array.length + " got " + ix);
-        }
-
-        @NotNull
-        private CompletableFuture<?>[] copyOnlyCFsToArray() {
-            return Arrays.stream(array)
-                    .filter(obj -> obj instanceof CompletableFuture)
-                    .toArray(CompletableFuture[]::new);
         }
 
     }
