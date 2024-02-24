@@ -22,7 +22,6 @@ import org.openjdk.jmh.annotations.OutputTimeUnit;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
-import org.openjdk.jmh.annotations.Threads;
 import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
 
@@ -34,12 +33,9 @@ import java.util.concurrent.TimeUnit;
 import static graphql.Assert.assertTrue;
 
 @State(Scope.Benchmark)
-@BenchmarkMode(Mode.AverageTime)
-@Threads(1)
 @Warmup(iterations = 2, time = 5)
-@Measurement(iterations = 3, time = 10)
+@Measurement(iterations = 3)
 @Fork(3)
-@OutputTimeUnit(TimeUnit.MILLISECONDS)
 public class OverlappingFieldValidationBenchmark {
 
     @State(Scope.Benchmark)
@@ -67,12 +63,12 @@ public class OverlappingFieldValidationBenchmark {
     }
 
     @Benchmark
+    @BenchmarkMode(Mode.AverageTime)
     public void overlappingFieldValidationAbgTime(MyState myState, Blackhole blackhole) {
         blackhole.consume(validateQuery(myState.schema, myState.document));
     }
 
     @Benchmark
-    @BenchmarkMode(Mode.Throughput)
     @OutputTimeUnit(TimeUnit.SECONDS)
     public void overlappingFieldValidationThroughput(MyState myState, Blackhole blackhole) {
         blackhole.consume(validateQuery(myState.schema, myState.document));

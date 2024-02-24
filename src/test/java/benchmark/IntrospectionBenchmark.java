@@ -15,6 +15,7 @@ import graphql.schema.idl.SchemaGenerator;
 import org.jetbrains.annotations.NotNull;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
+import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.Scope;
@@ -27,6 +28,9 @@ import java.util.List;
 import java.util.Map;
 
 @State(Scope.Benchmark)
+@Warmup(iterations = 2, time = 5)
+@Measurement(iterations = 3)
+@Fork(3)
 public class IntrospectionBenchmark {
 
     private final GraphQL graphQL;
@@ -116,8 +120,6 @@ public class IntrospectionBenchmark {
 
     @Benchmark
     @BenchmarkMode(Mode.AverageTime)
-    @Warmup(iterations = 2)
-    @Measurement(iterations = 3)
     public ExecutionResult benchMarkIntrospection() {
         return graphQL.execute(IntrospectionQuery.INTROSPECTION_QUERY);
     }

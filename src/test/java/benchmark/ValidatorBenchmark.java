@@ -1,8 +1,12 @@
 package benchmark;
 
-import java.util.Locale;
-import java.util.concurrent.TimeUnit;
-
+import graphql.ExecutionResult;
+import graphql.GraphQL;
+import graphql.language.Document;
+import graphql.parser.Parser;
+import graphql.schema.GraphQLSchema;
+import graphql.schema.idl.SchemaGenerator;
+import graphql.validation.Validator;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -12,26 +16,19 @@ import org.openjdk.jmh.annotations.OutputTimeUnit;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
-import org.openjdk.jmh.annotations.Threads;
 import org.openjdk.jmh.annotations.Warmup;
 
-import graphql.ExecutionResult;
-import graphql.GraphQL;
-import graphql.language.Document;
-import graphql.parser.Parser;
-import graphql.schema.GraphQLSchema;
-import graphql.schema.idl.SchemaGenerator;
-import graphql.validation.Validator;
+import java.util.Locale;
+import java.util.concurrent.TimeUnit;
 
 import static graphql.Assert.assertTrue;
 
 
 @State(Scope.Benchmark)
 @BenchmarkMode(Mode.AverageTime)
-@Threads(1)
-@Warmup(iterations = 5, time = 5)
-@Measurement(iterations = 10, time = 10)
-@Fork(1)
+@Warmup(iterations = 2, time = 5)
+@Measurement(iterations = 3)
+@Fork(3)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 public class ValidatorBenchmark {
 
