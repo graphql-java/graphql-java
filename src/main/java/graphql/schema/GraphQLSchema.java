@@ -71,7 +71,7 @@ public class GraphQLSchema {
     private final ImmutableMap<String, ImmutableList<String>> interfaceNameToObjectTypeNames;
 
     /*
-     * This constructs partial GraphQL schema object which has has the schema (query / mutation / subscription) trees
+     * This constructs partial GraphQL schema object which has the schema (query / mutation / subscription) trees
      * in it but it does not have the collected types, code registry nor the type references replaced
      *
      * But it can be traversed to discover all that and filled out later via another constructor.
@@ -104,7 +104,7 @@ public class GraphQLSchema {
     }
 
     /*
-     * This constructs a full fledged graphql schema object that has not yet had its type references replaced
+     * This constructs a fully fledged graphql schema object that has not yet had its type references replaced
      * but it's otherwise complete
      */
     @Internal
@@ -255,7 +255,7 @@ public class GraphQLSchema {
 
     /**
      * Gets the named type from the schema or null if it's not present.
-     *
+     * <p>
      * Warning - you are inviting class cast errors if the types are not what you expect.
      *
      * @param typeName the name of the type to retrieve
@@ -286,7 +286,7 @@ public class GraphQLSchema {
      *
      * @return a graphql object type or null if there is one
      *
-     * @throws graphql.GraphQLException if the type is NOT a object type
+     * @throws graphql.GraphQLException if the type is NOT an object type
      */
     public GraphQLObjectType getObjectType(String typeName) {
         GraphQLType graphQLType = typeMap.get(typeName);
@@ -433,14 +433,14 @@ public class GraphQLSchema {
     }
 
     /**
-     * @return a map of non repeatable directives by directive name
+     * @return a map of non-repeatable directives by directive name
      */
     public Map<String, GraphQLDirective> getDirectivesByName() {
         return directiveDefinitionsHolder.getDirectivesByName();
     }
 
     /**
-     * Returns a named directive that (for legacy reasons) will be only in the set of non repeatable directives
+     * Returns a named directive that (for legacy reasons) will be only in the set of non-repeatable directives
      *
      * @param directiveName the name of the directive to retrieve
      *
@@ -535,7 +535,7 @@ public class GraphQLSchema {
      * directives for all schema elements, whereas this is just for the schema
      * element itself
      *
-     * @return a map of directives
+     * @return a list of directives
      */
     public List<GraphQLAppliedDirective> getSchemaAppliedDirectives() {
         return schemaAppliedDirectivesHolder.getAppliedDirectives();
@@ -874,8 +874,8 @@ public class GraphQLSchema {
         /**
          * Builds the schema
          *
-         * @param additionalTypes      - please don't use this any more
-         * @param additionalDirectives - please don't use this any more
+         * @param additionalTypes      - please don't use this anymore
+         * @param additionalDirectives - please don't use this anymore
          *
          * @return the built schema
          *

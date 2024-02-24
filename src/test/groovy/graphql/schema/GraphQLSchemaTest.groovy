@@ -134,7 +134,7 @@ class GraphQLSchemaTest extends Specification {
     def "schema builder copies extension definitions"() {
         setup:
         def schemaBuilder = basicSchemaBuilder()
-        def newDirective = Directive.newDirective().name("hello").build()
+        def newDirective = Directive.newDirective().name("pizza").build()
         def extension = SchemaExtensionDefinition.newSchemaExtensionDefinition().directive(newDirective).build()
         def oldSchema = schemaBuilder.extensionDefinitions([extension]).build()
 
@@ -142,9 +142,10 @@ class GraphQLSchemaTest extends Specification {
         def newSchema = GraphQLSchema.newSchema(oldSchema).build()
 
         then:
+        oldSchema.extensionDefinitions.size() == 1
         newSchema.extensionDefinitions.size() == 1
-        ((Directive) newSchema.extensionDefinitions.first().getDirectives().first()).name == "hello"
-
+        ((Directive) oldSchema.extensionDefinitions.first().getDirectives().first()).name == "pizza"
+        ((Directive) newSchema.extensionDefinitions.first().getDirectives().first()).name == "pizza"
     }
 
     def "clear directives works as expected"() {
