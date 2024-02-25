@@ -11,6 +11,8 @@ This is a [GraphQL](https://github.com/graphql/graphql-spec) Java implementation
 
 ### Documentation
 
+The GraphQL Java book, from the maintainers: [GraphQL with Java and Spring](https://leanpub.com/graphql-java/)
+
 See our tutorial for beginners: [Getting started with GraphQL Java and Spring Boot](https://www.graphql-java.com/tutorials/getting-started-with-spring-boot/)
 
 For further details, please see the documentation: https://www.graphql-java.com/documentation/getting-started

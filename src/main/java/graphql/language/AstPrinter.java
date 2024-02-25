@@ -10,6 +10,7 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.StringJoiner;
 
 import static graphql.Assert.assertTrue;
 import static graphql.util.EscapeUtil.escapeJsonString;
@@ -489,7 +490,7 @@ public class AstPrinter {
     }
 
     private boolean isEmpty(String s) {
-        return s == null || s.trim().length() == 0;
+        return s == null || s.isBlank();
     }
 
     private <T> List<T> nvl(List<T> list) {
@@ -525,7 +526,7 @@ public class AstPrinter {
     }
 
     private String description(Node<?> node) {
-        Description description = ((AbstractDescribedNode) node).getDescription();
+        Description description = ((AbstractDescribedNode<?>) node).getDescription();
         if (description == null || description.getContent() == null || compactMode) {
             return "";
         }
@@ -577,21 +578,13 @@ public class AstPrinter {
     }
 
     private <T extends Node> String join(List<T> nodes, String delim, String prefix, String suffix) {
-        StringBuilder joined = new StringBuilder();
-        joined.append(prefix);
+        StringJoiner joiner = new StringJoiner(delim, prefix, suffix);
 
-        boolean first = true;
         for (T node : nodes) {
-            if (first) {
-                first = false;
-            } else {
-                joined.append(delim);
-            }
-            joined.append(this.node(node));
+            joiner.add(node(node));
         }
 
-        joined.append(suffix);
-        return joined.toString();
+        return joiner.toString();
     }
 
     private String spaced(String... args) {
@@ -603,22 +596,15 @@ public class AstPrinter {
     }
 
     private String join(String delim, String... args) {
-        StringBuilder builder = new StringBuilder();
+        StringJoiner joiner = new StringJoiner(delim);
 
-        boolean first = true;
         for (final String arg : args) {
-            if (isEmpty(arg)) {
-                continue;
+            if (!isEmpty(arg)) {
+                joiner.add(arg);
             }
-            if (first) {
-                first = false;
-            } else {
-                builder.append(delim);
-            }
-            builder.append(arg);
         }
 
-        return builder.toString();
+        return joiner.toString();
     }
 
     String wrap(String start, String maybeString, String end) {
@@ -628,7 +614,7 @@ public class AstPrinter {
             }
             return "";
         }
-        return new StringBuilder().append(start).append(maybeString).append(!isEmpty(end) ? end : "").toString();
+        return start + maybeString + (!isEmpty(end) ? end : "");
     }
 
     private <T extends Node> String block(List<T> nodes) {
@@ -637,7 +623,7 @@ public class AstPrinter {
         }
         if (compactMode) {
             String joinedNodes = joinTight(nodes, " ", "", "");
-            return new StringBuilder().append("{").append(joinedNodes).append("}").toString();
+            return "{" + joinedNodes + "}";
         }
         return indent(new StringBuilder().append("{\n").append(join(nodes, "\n")))
                 + "\n}";
@@ -659,7 +645,7 @@ public class AstPrinter {
         if (maybeNode == null) {
             return "";
         }
-        return new StringBuilder().append(start).append(node(maybeNode)).append(isEmpty(end) ? "" : end).toString();
+        return start + node(maybeNode) + (isEmpty(end) ? "" : end);
     }
 
     /**

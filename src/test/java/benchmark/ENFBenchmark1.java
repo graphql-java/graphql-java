@@ -16,17 +16,16 @@ import org.openjdk.jmh.annotations.OutputTimeUnit;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
-import org.openjdk.jmh.annotations.Threads;
 import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
 
 import java.util.concurrent.TimeUnit;
 
 @State(Scope.Benchmark)
-@BenchmarkMode(Mode.Throughput)
-@Warmup(iterations = 2)
-@Measurement(iterations = 2, timeUnit = TimeUnit.NANOSECONDS)
-public class NQExtraLargeBenchmark {
+@Warmup(iterations = 2, time = 5)
+@Measurement(iterations = 3)
+@Fork(3)
+public class ENFBenchmark1 {
 
     @State(Scope.Benchmark)
     public static class MyState {
@@ -37,10 +36,10 @@ public class NQExtraLargeBenchmark {
         @Setup
         public void setup() {
             try {
-                String schemaString = BenchmarkUtils.loadResource("extra-large-schema-1.graphqls");
+                String schemaString = BenchmarkUtils.loadResource("large-schema-1.graphqls");
                 schema = SchemaGenerator.createdMockedSchema(schemaString);
 
-                String query = BenchmarkUtils.loadResource("extra-large-schema-1-query.graphql");
+                String query = BenchmarkUtils.loadResource("large-schema-1-query.graphql");
                 document = Parser.parse(query);
             } catch (Exception e) {
                 throw new RuntimeException(e);
@@ -49,24 +48,16 @@ public class NQExtraLargeBenchmark {
     }
 
     @Benchmark
-    @Warmup(iterations = 2)
-    @Measurement(iterations = 3, time = 10)
-    @Threads(1)
-    @Fork(3)
     @BenchmarkMode(Mode.AverageTime)
     @OutputTimeUnit(TimeUnit.MILLISECONDS)
-    public void benchMarkAvgTime(MyState myState, Blackhole blackhole )  {
+    public void benchMarkAvgTime(MyState myState, Blackhole blackhole) {
         runImpl(myState, blackhole);
     }
 
     @Benchmark
-    @Warmup(iterations = 2)
-    @Measurement(iterations = 3, time = 10)
-    @Threads(1)
-    @Fork(3)
     @BenchmarkMode(Mode.Throughput)
     @OutputTimeUnit(TimeUnit.SECONDS)
-    public void benchMarkThroughput(MyState myState, Blackhole blackhole )  {
+    public void benchMarkThroughput(MyState myState, Blackhole blackhole) {
         runImpl(myState, blackhole);
     }
 
@@ -74,4 +65,6 @@ public class NQExtraLargeBenchmark {
         ExecutableNormalizedOperation executableNormalizedOperation = ExecutableNormalizedOperationFactory.createExecutableNormalizedOperation(myState.schema, myState.document, null, CoercedVariables.emptyVariables());
         blackhole.consume(executableNormalizedOperation);
     }
+
+
 }

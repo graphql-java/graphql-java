@@ -45,7 +45,7 @@ public abstract class PersistedQuerySupport implements PreparsedDocumentProvider
                 Object persistedQueryId = queryIdOption.get();
                 return persistedQueryCache.getPersistedQueryDocument(persistedQueryId, executionInput, (queryText) -> {
                     // we have a miss and they gave us nothing - bah!
-                    if (queryText == null || queryText.trim().length() == 0) {
+                    if (queryText == null || queryText.isBlank()) {
                         throw new PersistedQueryNotFound(persistedQueryId);
                     }
                     // validate the queryText hash before returning to the cache which we assume will set it
