@@ -49,6 +49,8 @@ public class AsyncBenchmark {
 
 
     @Benchmark
+    @Warmup(iterations = 2, batchSize = 100)
+    @Measurement(iterations = 2, batchSize = 100)
     public List<Object> benchmarkAsync() {
         Async.CombinedBuilder<Object> builder = Async.ofExpectedSize(futures.size());
         futures.forEach(builder::add);
