@@ -423,17 +423,17 @@ public abstract class ExecutionStrategy {
 
         dataFetcher = instrumentation.instrumentDataFetcher(dataFetcher, instrumentationFieldFetchParams, executionContext.getInstrumentationState());
         final DataFetcher<?> finalDataFetcher = executionContext.getDataLoaderDispatcherStrategy().modifyDataFetcher(dataFetcher);
-        CompletableFuture<Object> fetchedRawValue = invokeDataFetcher(executionContext, parameters, fieldDef, dataFetchingEnvironment, dataFetcher);
-        executionContext.getDataLoaderDispatcherStrategy().fieldFetched(executionContext, parameters, finalDataFetcher, fetchedRawValue);
-        fetchCtx.onDispatched(fetchedRawValue);
-        return fetchedRawValue
+        CompletableFuture<Object> fetchedValueCF = invokeDataFetcher(executionContext, parameters, fieldDef, dataFetchingEnvironment, finalDataFetcher);
+        executionContext.getDataLoaderDispatcherStrategy().fieldFetched(executionContext, parameters, finalDataFetcher, fetchedValueCF);
+        fetchCtx.onDispatched(fetchedValueCF);
+        return fetchedValueCF
                 .handle((result, exception) -> {
                     fetchCtx.onCompleted(result, exception);
                     if (exception != null) {
                         return handleFetchingException(dataFetchingEnvironment.get(), parameters, exception);
                     } else {
                         // we can simply return the fetched value CF and avoid a allocation
-                        return fetchedRawValue;
+                        return fetchedValueCF;
                     }
                 })
                 .thenCompose(Function.identity())
