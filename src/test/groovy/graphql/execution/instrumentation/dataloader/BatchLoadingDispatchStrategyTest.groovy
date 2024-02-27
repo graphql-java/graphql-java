@@ -200,7 +200,6 @@ class BatchLoadingDispatchStrategyTest extends Specification {
 
     def "test with all fields sync"() {
         given:
-//        result.data == [issue: [name: "Issue 1"], insights: [[issue: [name: "Issue 2"]], null, [issue: [name: "Issue 3"]], null]]
 
         def rootIssueDF = { env ->
             return [name: "Issue 1"]
