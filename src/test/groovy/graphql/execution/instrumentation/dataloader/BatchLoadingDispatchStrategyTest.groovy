@@ -20,7 +20,6 @@ import java.util.function.Function
 class BatchLoadingDispatchStrategyTest extends Specification {
 
 
-    @Ignore
     def "batch loading with trivial DF"() {
         when:
         def rootIssueDf = { env ->

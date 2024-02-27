@@ -1,10 +1,10 @@
 package graphql.execution.instrumentation.dataloader;
 
 import graphql.Internal;
+import graphql.TrivialDataFetcher;
 import graphql.execution.DataLoaderDispatchStrategy;
 import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionStrategyParameters;
-import graphql.execution.FieldValueInfo;
 import graphql.execution.ResultPath;
 import graphql.schema.DataFetcher;
 import graphql.schema.GraphQLFieldDefinition;
@@ -17,7 +17,6 @@ import graphql.util.LockKit;
 import org.dataloader.DataLoaderRegistry;
 
 import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -38,15 +37,33 @@ public class BatchLoadingDispatchStrategy implements DataLoaderDispatchStrategy 
 
     private final AtomicInteger dispatchCounter = new AtomicInteger(0);
 
+    /**
+     * The heart of the tracking:
+     * Every field of type object or list of object (or list of list of object and so on) with non null
+     * results leads to an execute object call. This expectation is tracked in levelToExpectedExecuteObject.
+     * <p>
+     * Every execute object leads to n fetch field calls. This expectation is tracked in levelToExpectedFetchField.
+     * <p>
+     * The fields which are actually finished fetching are tracked in levelToHappenedFetchedFieldDone.
+     * <p>
+     * Execute Strategy is fundamentally the same as execute object, but execute strategy happens
+     * only once in the beginning of the execution and execute object happens every time an object is completed.
+     * Example walk through:
+     * 1. executeStrategy: execute Strategy leads to n expected fetch fields (the root fields of the operation)
+     * 2. fetch field: each fetch field is documented as happened fetch field
+     * 3. fetch field done: each "fetch field done" leads to expected "execute object" calls.
+     * 4. execute object: Each execute object leads to expected fetch fields
+     * <p>
+     * After each fetched field and fetch field done, we check if the level is ready to dispatch.
+     */
 
     private final Map<Integer, Set<ResultPath>> levelToExpectedFetchField = new ConcurrentHashMap<>();
     private final Map<Integer, Set<ResultPath>> levelToHappenedFetchedFields = new ConcurrentHashMap<>();
     private final Map<Integer, Set<ResultPath>> levelToHappenedFetchedFieldDone = new ConcurrentHashMap<>();
     private final Map<Integer, Set<ResultPath>> levelToExpectedExecuteObject = new ConcurrentHashMap<>();
     private final Map<Integer, Set<ResultPath>> levelToHappenedExecuteObject = new ConcurrentHashMap<>();
-
-
-    private final Set<ResultPath> expectedStrategyCalls = new LinkedHashSet<>();
+    private final Map<Integer, Set<ResultPath>> levelToTrivialDataFetchersFetched = new ConcurrentHashMap<>();
+    private final Set<ResultPath> trivialDFs = ConcurrentHashMap.newKeySet();
 
 
     public BatchLoadingDispatchStrategy(ExecutionContext executionContext) {
@@ -69,8 +86,6 @@ public class BatchLoadingDispatchStrategy implements DataLoaderDispatchStrategy 
 
     @Override
     public void executionStrategy(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
-        System.out.println("execution strategy:  " + parameters.getPath());
-        // entry for the strategy: we expect fetches for all root fields
         ResultPath rootPath = parameters.getPath();
         assertTrue(rootPath.getLevel() == 0);
         stateLock.runLocked(() -> {
@@ -85,16 +100,9 @@ public class BatchLoadingDispatchStrategy implements DataLoaderDispatchStrategy 
     }
 
     @Override
-    public void executionStrategyOnFieldValuesInfo(List<FieldValueInfo> fieldValueInfoList, ExecutionStrategyParameters parameters) {
-//        System.out.println("execution strategy on field: " + parameters.getPath());
-//        handleOnFieldValuesInfo(fieldValueInfoList, parameters);
-    }
-
-    @Override
     public void executeObject(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
         ResultPath path = parameters.getPath();
-        int level = path.getLevel() + 1;
-        System.out.println("execute object path:  " + (parameters.getPath().isRootPath() ? "/" : parameters.getPath()) + " at level " + level);
+        int level = getLevelForPath(path) + 1;
         stateLock.runLocked(() -> {
             makeLevelReady(level);
             // the path is the root field of the execute object
@@ -106,35 +114,56 @@ public class BatchLoadingDispatchStrategy implements DataLoaderDispatchStrategy 
         });
     }
 
-    @Override
-    public void executeObjectOnFieldValuesInfo(List<FieldValueInfo> fieldValueInfoList, ExecutionStrategyParameters parameters) {
-//        System.out.println("execute object on field values info path:  " + parameters.getPath());
-//        handleOnFieldValuesInfo(fieldValueInfoList, parameters);
+    private int getLevelForPath(ResultPath resultPath) {
+        int trivialCount = 0;
+        String resultPathString = resultPath.toString();
+        for (ResultPath trivialPath : trivialDFs) {
+            String str = trivialPath.toString();
+            if (resultPathString.startsWith(str)) {
+                trivialCount++;
+            }
+        }
+        return resultPath.getLevel() - trivialCount;
     }
+
 
     @Override
     public void fieldFetched(ExecutionContext executionContext, ExecutionStrategyParameters parameters, DataFetcher<?> dataFetcher, CompletableFuture<Object> fetchedValue) {
         ResultPath path = parameters.getPath();
-        int level = path.getLevel();
-        System.out.println("field fetch: " + path + " at level " + level);
-        boolean dispatchNeeded = stateLock.callLocked(() -> {
-            levelToHappenedFetchedFields.get(level).add(path);
-            return isDispatchReady(level);
-        });
-        if (dispatchNeeded) {
-            dispatch(level);
+        int level = getLevelForPath(path);
+
+        if (dataFetcher instanceof TrivialDataFetcher) {
+//            System.out.println("found trivial DF at " + path);
+            // this means we want to act like this DF didn't really happen,
+            // but we still wait for this level to be ready
+            stateLock.runLocked(() -> {
+                if (!levelToTrivialDataFetchersFetched.containsKey(level)) {
+                    levelToTrivialDataFetchersFetched.put(level, ConcurrentHashMap.newKeySet());
+                }
+                levelToTrivialDataFetchersFetched.get(level).add(path);
+            });
+
+        } else {
+            boolean dispatchNeeded = stateLock.callLocked(() -> {
+                levelToHappenedFetchedFields.get(level).add(path);
+                return isDispatchReady(level);
+            });
+            if (dispatchNeeded) {
+                dispatch(level);
+            }
         }
     }
 
     @Override
     public void fieldFetchedDone(ExecutionContext executionContext, ExecutionStrategyParameters parameters, DataFetcher<?> dataFetcher, Object value, GraphQLObjectType parentType, GraphQLFieldDefinition fieldDefinition) {
         ResultPath path = parameters.getPath();
-        int level = parameters.getPath().getLevel();
+        int level = getLevelForPath(parameters.getPath());
         GraphQLType fieldType = fieldDefinition.getType();
-        System.out.println("field fetched done on " + path);// + " with type " + fieldDefinition);
         GraphQLType unwrappedFieldType = unwrapAll(fieldType);
         boolean dispatchReady;
         makeLevelReady(level + 1);
+
+
         if (value != null && (GraphQLTypeUtil.isObjectType(unwrappedFieldType) || GraphQLTypeUtil.isInterfaceOrUnion(unwrappedFieldType))) {
             // now we know we have a composite type wrapped in n lists (n can be 0)
             makeLevelReady(level + 1);
@@ -145,17 +174,37 @@ public class BatchLoadingDispatchStrategy implements DataLoaderDispatchStrategy 
                 executeObjectPaths.add(path);
             }
             dispatchReady = stateLock.callLocked(() -> {
-                levelToHappenedFetchedFieldDone.get(level).add(path);
-                System.out.println("adding from list: " + executeObjectPaths + " at level " + (level + 1));
-                levelToExpectedExecuteObject.get(level + 1).addAll(executeObjectPaths);
-                return isDispatchReady(level + 1);
+                if (levelToTrivialDataFetchersFetched.containsKey(level) && levelToTrivialDataFetchersFetched.get(level).contains(path)) {
+                    // record the current field as fetched,
+                    // but add the children as expectation to the current level instead of the next
+                    levelToHappenedFetchedFields.get(level).add(path);
+                    levelToHappenedFetchedFieldDone.get(level).add(path);
+                    levelToExpectedExecuteObject.get(level).addAll(executeObjectPaths);
+                    trivialDFs.add(path);
+                    return false;
+                } else {
+                    levelToHappenedFetchedFieldDone.get(level).add(path);
+                    levelToExpectedExecuteObject.get(level + 1).addAll(executeObjectPaths);
+                    return isDispatchReady(level + 1);
+                }
             });
         } else {
             dispatchReady = stateLock.callLocked(() -> {
-                levelToHappenedFetchedFieldDone.get(level).add(path);
+                if (levelToTrivialDataFetchersFetched.containsKey(level) && levelToTrivialDataFetchersFetched.get(level).contains(path)) {
+                    // record the current field as fetched, there
+                    // are no children to wait for. This means either
+                    // the trivial DF returned null or is of type Scalar/Enum
+                    levelToHappenedFetchedFields.get(level).add(path);
+                    levelToHappenedFetchedFieldDone.get(level).add(path);
+                } else {
+                    levelToHappenedFetchedFieldDone.get(level).add(path);
+                }
                 return isDispatchReady(level + 1);
             });
         }
+        // the reason we check for the next level to be ready is
+        // because done fetched fields are only relevant for the next level,
+        // not the current one. See the checks in isDispatchReady
         if (dispatchReady) {
             dispatch(level + 1);
         }
@@ -179,83 +228,36 @@ public class BatchLoadingDispatchStrategy implements DataLoaderDispatchStrategy 
         }
     }
 
-//    private void handleOnFieldValuesInfo(List<FieldValueInfo> fieldValueInfos, ExecutionStrategyParameters parameters) {
-//        int curLevel = parameters.getPath().getLevel() + 1;
-//        boolean dispatch = stateLock.callLocked(() -> {
-//            ResultPath path = parameters.getPath();
-//            System.out.println("happened on field value: " + (path.isRootPath() ? "/" : path) + " at level " + curLevel);
-//            levelToHappenedOnFieldValue.get(curLevel).add(path);
-//            makeLevelReady(curLevel + 1);
-//            Set<ResultPath> expectedExecuteObject = new LinkedHashSet<>();
-//            objectPathsBasedOnFieldValues(parameters.getPath(), fieldValueInfos, parameters.getFields().getKeys(), expectedExecuteObject);
-//            System.out.println("expected execute objects: at level " + (curLevel + 1) + " : " + expectedExecuteObject);
-//            levelToExpectedExecuteObject.get(curLevel + 1).addAll(expectedExecuteObject);
-//            // checking if we are ready to
-//            return isDispatchReady(curLevel + 1);
-//        });
-//        if (dispatch) {
-//            dispatch(curLevel + 1);
-//        }
-//    }
-
-    private void objectPathsBasedOnFieldValues(ResultPath path, List<FieldValueInfo> fieldValueInfos, List<String> fieldKeys, Set<ResultPath> result) {
-        int ix = 0;
-        for (FieldValueInfo fieldValueInfo : fieldValueInfos) {
-            if (fieldValueInfo.getCompleteValueType() == FieldValueInfo.CompleteValueType.OBJECT) {
-                result.add(path.segment(fieldKeys.get(ix)));
-            } else if (fieldValueInfo.getCompleteValueType() == FieldValueInfo.CompleteValueType.LIST) {
-                handeList(path.segment(fieldKeys.get(ix)), fieldValueInfo.getFieldValueInfos(), result);
-            }
-            ix++;
-        }
-    }
-
-    private void handeList(ResultPath path, List<FieldValueInfo> fieldValueInfos, Set<ResultPath> result) {
-        int ix = 0;
-        for (FieldValueInfo fieldValueInfo : fieldValueInfos) {
-            if (fieldValueInfo.getCompleteValueType() == FieldValueInfo.CompleteValueType.OBJECT) {
-                result.add(path.segment(ix));
-            } else if (fieldValueInfo.getCompleteValueType() == FieldValueInfo.CompleteValueType.LIST) {
-                handeList(path.segment(ix), fieldValueInfo.getFieldValueInfos(), result);
-            }
-            ix++;
-        }
-    }
-
 
     private boolean isDispatchReady(int level) {
         if (level == 1) {
             // level 1 is special: there is only one strategy call and that's it
-            return allFetchesHappened(1);
+            return allFetchesHappened(1) && allExecuteObjectHappened(1);
         }
-        if (isDispatchReady(level - 1) && levelToHappenedFetchedFieldDone.get(level - 1).equals(levelToHappenedFetchedFields.get(level - 1))
+        if (isDispatchReady(level - 1) && parentLevelFieldsAreDone(level)
                 && allExecuteObjectHappened(level) && allFetchesHappened(level)) {
 
             return true;
         }
-//        System.out.println("NOT READY: ");
-//        System.out.println("levelToExpectedExecuteObject" + levelToExpectedExecuteObject);
-//        System.out.println("levelToHappenedExecuteObject" + levelToHappenedExecuteObject);
-//        System.out.println("levelToExpectedFetchField" + levelToExpectedFetchField);
-//        System.out.println("levelToHappenedFetchedFields" + levelToHappenedFetchedFields);
-//        System.out.println("levelToHappenedFetchedFieldDone" + levelToHappenedFetchedFieldDone);
         return false;
+    }
+
+
+    private boolean allExecuteObjectHappened(int level) {
+        return levelToExpectedExecuteObject.get(level).equals(levelToHappenedExecuteObject.get(level));
     }
 
     private boolean allFetchesHappened(int level) {
         return levelToExpectedFetchField.get(level).equals(levelToHappenedFetchedFields.get(level));
     }
 
-    private boolean allFetchedDoneHappened(int level) {
-        return levelToHappenedFetchedFields.get(level).equals(levelToExpectedExecuteObject.get(level));
+    private boolean parentLevelFieldsAreDone(int level) {
+        return levelToHappenedFetchedFieldDone.get(level - 1).equals(levelToHappenedFetchedFields.get(level - 1));
     }
 
-    private boolean allExecuteObjectHappened(int level) {
-        return levelToExpectedExecuteObject.get(level).equals(levelToHappenedExecuteObject.get(level));
-    }
 
     void dispatch(int level) {
-        System.out.println("DISPATCH!! level : " + level);
+//        System.out.println("DISPATCH!! level : " + level);
         DataLoaderRegistry dataLoaderRegistry = executionContext.getDataLoaderRegistry();
         dataLoaderRegistry.dispatchAll();
     }
