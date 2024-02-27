@@ -11,7 +11,6 @@ import org.dataloader.BatchLoader
 import org.dataloader.DataLoader
 import org.dataloader.DataLoaderFactory
 import org.dataloader.DataLoaderRegistry
-import spock.lang.Ignore
 import spock.lang.Specification
 
 import java.util.concurrent.CompletableFuture
@@ -352,8 +351,6 @@ class BatchLoadingDispatchStrategyTest extends Specification {
         calledCount == 2
     }
 
-    // failing at the moment .. no dispatch is called
-    @Ignore
     def "default per level batch loading 2"() {
         when:
 
@@ -427,9 +424,8 @@ class BatchLoadingDispatchStrategyTest extends Specification {
         def result = graphQL.execute(executionInput)
 
         then:
-        result.data == [hero: [name: "R2-D2", friends: null]]
-
-        calledCount == 2
+        result.data == [hero: [name: "R2-D2", friends: [[name: "Luke Skywalker", friends: [[name: "Han Solo"], [name: "Leia Organa"], [name: "C-3P0"], [name: "RD-D2"]]], [name: "Han Solo", friends: [[name: "Luke Skywalker"], [name: "Leia Organa"], [name: "R2-D2"]]], [name: "Leia Organa", friends: [[name: "Luke Skywalker"], [name: "Han Solo"], [name: "C-3P0"], [name: "RD-D2"]]]]]]
+        calledCount == 3
     }
 
 
