@@ -2,6 +2,7 @@ package graphql.execution.instrumentation.dataloader;
 
 import graphql.Internal;
 import graphql.TrivialDataFetcher;
+import graphql.execution.Async;
 import graphql.execution.DataLoaderDispatchStrategy;
 import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionStrategyParameters;
@@ -63,6 +64,8 @@ public class BatchLoadingDispatchStrategy implements DataLoaderDispatchStrategy 
     private final Map<Integer, Set<ResultPath>> levelToExpectedExecuteObject = new ConcurrentHashMap<>();
     private final Map<Integer, Set<ResultPath>> levelToHappenedExecuteObject = new ConcurrentHashMap<>();
     private final Map<Integer, Set<ResultPath>> levelToTrivialDataFetchersFetched = new ConcurrentHashMap<>();
+    private final Map<Integer, Set<ChainedDataLoader<?, ?>>> levelToChainedDataLoaders = new ConcurrentHashMap<>();
+    private final Map<ResultPath, CompletableFuture<?>> pathToSecondDataLoaderCalled = new ConcurrentHashMap<>();
     private final Set<ResultPath> trivialDFs = ConcurrentHashMap.newKeySet();
 
 
@@ -80,6 +83,7 @@ public class BatchLoadingDispatchStrategy implements DataLoaderDispatchStrategy 
             levelToExpectedExecuteObject.put(level, ConcurrentHashMap.newKeySet());
             levelToHappenedExecuteObject.put(level, ConcurrentHashMap.newKeySet());
             levelToHappenedFetchedFieldDone.put(level, ConcurrentHashMap.newKeySet());
+            levelToChainedDataLoaders.put(level, ConcurrentHashMap.newKeySet());
         });
     }
 
@@ -132,6 +136,14 @@ public class BatchLoadingDispatchStrategy implements DataLoaderDispatchStrategy 
         ResultPath path = parameters.getPath();
         int level = getLevelForPath(path);
 
+        if (fetchedValue instanceof ChainedDataLoader) {
+            ChainedDataLoader chainedDataLoader = (ChainedDataLoader) fetchedValue;
+            System.out.println("found chained DL at " + path);
+            stateLock.runLocked(() -> {
+                levelToChainedDataLoaders.get(level).add(chainedDataLoader);
+            });
+        }
+
         if (dataFetcher instanceof TrivialDataFetcher) {
 //            System.out.println("found trivial DF at " + path);
             // this means we want to act like this DF didn't really happen,
@@ -142,7 +154,6 @@ public class BatchLoadingDispatchStrategy implements DataLoaderDispatchStrategy 
                 }
                 levelToTrivialDataFetchersFetched.get(level).add(path);
             });
-
         } else {
             boolean dispatchNeeded = stateLock.callLocked(() -> {
                 levelToHappenedFetchedFields.get(level).add(path);
@@ -257,9 +268,20 @@ public class BatchLoadingDispatchStrategy implements DataLoaderDispatchStrategy 
 
 
     void dispatch(int level) {
-//        System.out.println("DISPATCH!! level : " + level);
+        System.out.println("DISPATCH!! level : " + level);
         DataLoaderRegistry dataLoaderRegistry = executionContext.getDataLoaderRegistry();
         dataLoaderRegistry.dispatchAll();
+        // once all first DataLoaders are finished an
+        if (levelToChainedDataLoaders.containsKey(level)) {
+            Set<ChainedDataLoader<?, ?>> chainedDataLoaders = levelToChainedDataLoaders.get(level);
+            Async.CombinedBuilder<Void> futures = Async.ofExpectedSize(chainedDataLoaders.size());
+            for (ChainedDataLoader<?, ?> chainedDataLoader : chainedDataLoaders) {
+                futures.add(chainedDataLoader.getSecondDataLoaderCalled());
+            }
+            futures.await().thenAccept((voids) -> {
+                dataLoaderRegistry.dispatchAll();
+            });
+        }
     }
 
 

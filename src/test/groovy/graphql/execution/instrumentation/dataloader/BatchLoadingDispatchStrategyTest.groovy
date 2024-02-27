@@ -416,18 +416,17 @@ class BatchLoadingDispatchStrategyTest extends Specification {
     }
 
 
-    @spock.lang.Ignore
     def "batch loading chained dataloader"() {
-        when:
+        given:
         def rootIssueDf = { env ->
             return ChainedDataLoader.two(env.getDataLoader("issue").load("1"), { result ->
-                return env.getDataLoader("issueDetails").load("1");
+                return env.getDataLoader("issueDetails").load(result);
             })
         } as DataFetcher;
 
         def insightsIssueDf = { env ->
             return ChainedDataLoader.two(env.getDataLoader("issue").load(env.source["issueId"]), { result ->
-                return env.getDataLoader("issueDetails").load(env.source["issueId"]);
+                return env.getDataLoader("issueDetails").load(result);
             })
         } as DataFetcher;
 
@@ -453,6 +452,7 @@ class BatchLoadingDispatchStrategyTest extends Specification {
             type Issue {
                 id: ID!
                 name: String
+                detail: String
             }
             type Insight {
                 issue: Issue
@@ -464,10 +464,12 @@ class BatchLoadingDispatchStrategyTest extends Specification {
             query {
                 issue {
                     name
+                    detail
                 }
                 insights {
                     issue {
                         name
+                        detail
                     }
                 }
             }
@@ -475,26 +477,34 @@ class BatchLoadingDispatchStrategyTest extends Specification {
         def graphQL = GraphQL.newGraphQL(schema)
                 .build();
 
+        int issueBatchCalledCount = 0;
         BatchLoader<String, List<String>> issueBatchLoader = ids -> {
-            println "batch loader with ids: $ids"
+            println "issue batch loader with ids: $ids"
+            issueBatchCalledCount++;
             return CompletableFuture.completedFuture([[name: "Issue 1"], [name: "Issue 2"], [name: "Issue 3"]])
         };
-        BatchLoader<String, List<String>> issueDetailsBatchLoader = ids -> {
-            println "batch loader with ids: $ids"
-            return CompletableFuture.completedFuture([[name: "Issue 1"], [name: "Issue 2"], [name: "Issue 3"]])
+        int issueDetailsBatchCalledCount = 0;
+        BatchLoader<String, List<String>> issueDetailsBatchLoader = issues -> {
+            println "issue details batch loader with issues: $issues"
+            issueDetailsBatchCalledCount++;
+            return CompletableFuture.completedFuture([[name: "Issue 1", detail: "Detail 1"], [name: "Issue 2", detail: "Detail 2"], [name: "Issue 3", detail: "Detail 3"]])
         }
 
         DataLoader<String, List<String>> issueLoader = DataLoaderFactory.newDataLoader(issueBatchLoader);
-        DataLoader<String, List<String>> issueDetailsLoader = DataLoaderFactory.newDataLoader(issueBatchLoader);
+        DataLoader<String, List<String>> issueDetailsLoader = DataLoaderFactory.newDataLoader(issueDetailsBatchLoader);
 
         DataLoaderRegistry dataLoaderRegistry = new DataLoaderRegistry()
         dataLoaderRegistry.register("issue", issueLoader)
+        dataLoaderRegistry.register("issueDetails", issueDetailsLoader)
 
-        ExecutionInput executionInput = ExecutionInput.newExecutionInput().query(query).dataLoaderRegistry(dataLoaderRegistry).build()
+        def executionInput = createExecutionInput(query, dataLoaderRegistry)
+        when:
         def result = graphQL.execute(executionInput)
 
         then:
-        result.data == [issue: [name: "Issue 1"], insights: [[issue: [name: "Issue 2"]], null, [issue: [name: "Issue 3"]], null]]
+        result.data == [issue: [name: "Issue 1", detail: "Detail 1"], insights: [[issue: [name: "Issue 2", detail: "Detail 2"]], null, [issue: [name: "Issue 3", detail: "Detail 3"]], null]]
+        issueBatchCalledCount == 1
+        issueDetailsBatchCalledCount == 1
     }
 
 
