@@ -49,30 +49,31 @@ import static graphql.schema.idl.TypeRuntimeWiring.newTypeWiring;
 @Fork(1)
 public class ComplexQueryBenchmark {
 
-    @Param({"5", "10", "20"})
-    int howManyThreads = 5;
-    @Param({"10", "50", "100"})
-    int howManyQueries = 10;
     @Param({"5", "20", "100"})
     int howManyItems = 5;
-    @Param({"1", "5", "10"})
-    int howLongToSleep = 1;
+    int howLongToSleep = 5;
+    int howManyQueries = 50;
+    int howManyQueryThreads = 10;
+    int howManyFetcherThreads = 10;
 
-    ExecutorService executorService;
+    ExecutorService queryExecutorService;
+    ExecutorService fetchersExecutorService;
     GraphQL graphQL;
     volatile boolean shutDown;
 
     @Setup(Level.Trial)
     public void setUp() {
         shutDown = false;
-        executorService = Executors.newFixedThreadPool(howManyThreads);
+        queryExecutorService = Executors.newFixedThreadPool(howManyQueryThreads);
+        fetchersExecutorService = Executors.newFixedThreadPool(howManyFetcherThreads);
         graphQL = buildGraphQL();
     }
 
     @TearDown(Level.Trial)
     public void tearDown() {
         shutDown = true;
-        executorService.shutdownNow();
+        queryExecutorService.shutdownNow();
+        fetchersExecutorService.shutdownNow();
     }
 
 
@@ -106,6 +107,7 @@ public class ComplexQueryBenchmark {
         ComplexQueryBenchmark complexQueryBenchmark = new ComplexQueryBenchmark();
         complexQueryBenchmark.setUp();
         do {
+            System.out.print("Running queries....\n");
             complexQueryBenchmark.runManyQueriesToCompletion();
         } while (forever);
         complexQueryBenchmark.tearDown();
@@ -118,7 +120,7 @@ public class ComplexQueryBenchmark {
     private Void runManyQueriesToCompletion() {
         CompletableFuture<?>[] cfs = new CompletableFuture[howManyQueries];
         for (int i = 0; i < howManyQueries; i++) {
-            cfs[i] = CompletableFuture.supplyAsync(() -> executeQuery(howManyItems, howLongToSleep), executorService);
+            cfs[i] = CompletableFuture.supplyAsync(() -> executeQuery(howManyItems, howLongToSleep), queryExecutorService);
         }
         Void result = CompletableFuture.allOf(cfs).join();
         return result;
@@ -166,7 +168,7 @@ public class ComplexQueryBenchmark {
 
     private <T> CompletableFuture<T> supplyAsync(Supplier<T> codeToRun) {
         if (!shutDown) {
-            return CompletableFuture.supplyAsync(codeToRun);
+            return CompletableFuture.supplyAsync(codeToRun, fetchersExecutorService);
         } else {
             // if we have shutdown - get on with it, so we shut down quicker
             return CompletableFuture.completedFuture(codeToRun.get());
