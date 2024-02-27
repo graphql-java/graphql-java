@@ -436,7 +436,7 @@ public abstract class ExecutionStrategy {
                         return fetchedValueCF;
                     }
                 })
-                .thenCompose(Function.identity())
+                .thenCompose(Function.identity()) // this unwraps the CF returned before
                 .thenApply(result -> {
                     FetchedValue fetchedValue = unboxPossibleDataFetcherResult(executionContext, parameters, result);
                     executionContext.getDataLoaderDispatcherStrategy().fieldFetchedDone(executionContext, parameters, finalDataFetcher, fetchedValue.getFetchedValue(), parentType, fieldDef);
