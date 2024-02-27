@@ -18,6 +18,17 @@ import java.util.function.Function
 
 class BatchLoadingDispatchStrategyTest extends Specification {
 
+    ExecutionInput createExecutionInput(String query, DataLoaderRegistry dataLoaderRegistry) {
+        ExecutionInput executionInput = ExecutionInput.newExecutionInput()
+                .query(query)
+                .dataLoaderRegistry(dataLoaderRegistry).build()
+        executionInput.getGraphQLContext().put(DataLoaderDispatchStrategy.CUSTOM_STRATEGY_KEY, { executionContext ->
+            return new BatchLoadingDispatchStrategy(executionContext)
+        } as Function<ExecutionContext, DataLoaderDispatchStrategy>)
+
+        return executionInput
+
+    }
 
     def "batch loading with trivial DF"() {
         when:
@@ -88,13 +99,7 @@ class BatchLoadingDispatchStrategyTest extends Specification {
         dataLoaderRegistry.register("issue", issueLoader)
 
 
-        ExecutionInput executionInput = ExecutionInput.newExecutionInput()
-                .query(query)
-                .dataLoaderRegistry(dataLoaderRegistry).build()
-        executionInput.getGraphQLContext().put(DataLoaderDispatchStrategy.CUSTOM_STRATEGY_KEY, { executionContext ->
-            return new BatchLoadingDispatchStrategy(executionContext)
-        } as Function<ExecutionContext, DataLoaderDispatchStrategy>)
-
+        def executionInput = createExecutionInput(query, dataLoaderRegistry)
         def result = graphQL.execute(executionInput)
 
         then:
@@ -182,13 +187,7 @@ class BatchLoadingDispatchStrategyTest extends Specification {
         dataLoaderRegistry.register("issue", issueLoader)
 
 
-        ExecutionInput executionInput = ExecutionInput.newExecutionInput()
-                .query(query)
-                .dataLoaderRegistry(dataLoaderRegistry).build()
-        executionInput.getGraphQLContext().put(DataLoaderDispatchStrategy.CUSTOM_STRATEGY_KEY, { executionContext ->
-            return new BatchLoadingDispatchStrategy(executionContext)
-        } as Function<ExecutionContext, DataLoaderDispatchStrategy>)
-
+        def executionInput = createExecutionInput(query, dataLoaderRegistry)
         def result = graphQL.execute(executionInput)
 
         then:
@@ -248,13 +247,7 @@ class BatchLoadingDispatchStrategyTest extends Specification {
 
 
 
-        ExecutionInput executionInput = ExecutionInput.newExecutionInput()
-                .query(query)
-                .build()
-        executionInput.getGraphQLContext().put(DataLoaderDispatchStrategy.CUSTOM_STRATEGY_KEY, { executionContext ->
-            return new BatchLoadingDispatchStrategy(executionContext)
-        } as Function<ExecutionContext, DataLoaderDispatchStrategy>)
-
+        def executionInput = createExecutionInput(query, EmptyDataLoaderRegistryInstance.EMPTY_DATALOADER_REGISTRY)
         when:
         def result = graphQL.execute(executionInput)
 
@@ -336,12 +329,7 @@ class BatchLoadingDispatchStrategyTest extends Specification {
         DataLoaderRegistry dataLoaderRegistry = new DataLoaderRegistry()
         dataLoaderRegistry.register("issue", issueLoader)
 
-        ExecutionInput executionInput = ExecutionInput.newExecutionInput()
-                .query(query)
-                .dataLoaderRegistry(dataLoaderRegistry).build()
-        executionInput.getGraphQLContext().put(DataLoaderDispatchStrategy.CUSTOM_STRATEGY_KEY, { executionContext ->
-            return new BatchLoadingDispatchStrategy(executionContext)
-        } as Function<ExecutionContext, DataLoaderDispatchStrategy>)
+        def executionInput = createExecutionInput(query, dataLoaderRegistry)
 
         def result = graphQL.execute(executionInput)
 
@@ -419,7 +407,7 @@ class BatchLoadingDispatchStrategyTest extends Specification {
         DataLoaderRegistry dataLoaderRegistry = new DataLoaderRegistry()
         dataLoaderRegistry.register("character", characterDataLoader)
 
-        ExecutionInput executionInput = ExecutionInput.newExecutionInput().query(query).dataLoaderRegistry(dataLoaderRegistry).build()
+        def executionInput = createExecutionInput(query, dataLoaderRegistry)
         def result = graphQL.execute(executionInput)
 
         then:
@@ -428,88 +416,87 @@ class BatchLoadingDispatchStrategyTest extends Specification {
     }
 
 
-//    def "batch loading chained dataloader"() {
-//        when:
-//        def rootIssueDf = { env ->
-//            return ChainedDataLoader.two(env.getDataLoader("issue").load("1"), { result ->
-//                return env.getDataLoader("issueDetails").load("1");
-//            })
-//        } as DataFetcher;
-//
-//        def insightsIssueDf = { env ->
-//            return ChainedDataLoader.two(env.getDataLoader("issue").load(env.source["issueId"]), { result ->
-//                return env.getDataLoader("issueDetails").load(env.source["issueId"]);
-//            })
-//        } as DataFetcher;
-//
-//        TrivialDataFetcher insightsDf = env -> {
-//            return [[issueId: "2"], null, [issueId: "3"], null]
-//        }
-//        def Map<String, Map<String, DataFetcher>> dataFetchers = [
-//                "Query"  : [
-//                        "issue"   : rootIssueDf,
-//                        "insights": insightsDf
-//                ],
-//                "Insight": [
-//                        "issue": insightsIssueDf
-//                ]
-//        ]
-//
-//        def schema = TestUtil.schema("""
-//            type Query {
-//                issue: Issue
-//                insights: [Insight]
-//            }
-//
-//            type Issue {
-//                id: ID!
-//                name: String
-//            }
-//            type Insight {
-//                issue: Issue
-//            }
-//        """,
-//                dataFetchers)
-//
-//        def query = """
-//            query {
-//                issue {
-//                    name
-//                }
-//                insights {
-//                    issue {
-//                        name
-//                    }
-//                }
-//            }
-//        """
-//        def graphQL = GraphQL.newGraphQL(schema)
-//                .doNotAddDefaultInstrumentations()
-//                .instrumentation(new BatchInstrumentation())
-//                .build();
-//
-//        BatchLoader<String, List<String>> issueBatchLoader = ids -> {
-//            println "batch loader with ids: $ids"
-//            return CompletableFuture.completedFuture([[name: "Issue 1"], [name: "Issue 2"], [name: "Issue 3"]])
-//        };
-//        BatchLoader<String, List<String>> issueDetailsBatchLoader = ids -> {
-//            println "batch loader with ids: $ids"
-//            return CompletableFuture.completedFuture([[name: "Issue 1"], [name: "Issue 2"], [name: "Issue 3"]])
-//
-//            DataLoader<String, List<String>> issueLoader = DataLoaderFactory.newDataLoader(issueBatchLoader);
-//            DataLoader<String, List<String>> issueDetailsLoader = DataLoaderFactory.newDataLoader(issueBatchLoader);
-//
-//            DataLoaderRegistry dataLoaderRegistry = new DataLoaderRegistry()
-//            dataLoaderRegistry.register("issue", issueLoader)
-//
-//            ExecutionInput executionInput = ExecutionInput.newExecutionInput().query(query).dataLoaderRegistry(dataLoaderRegistry).build()
-//            def result = graphQL.execute(executionInput)
-//
-//            then:
-//            result.data == [issue: [name: "Issue 1"], insights: [[issue: [name: "Issue 2"]], null, [issue: [name: "Issue 3"]], null]]
-//        }
-//
-//    }
+    @spock.lang.Ignore
+    def "batch loading chained dataloader"() {
+        when:
+        def rootIssueDf = { env ->
+            return ChainedDataLoader.two(env.getDataLoader("issue").load("1"), { result ->
+                return env.getDataLoader("issueDetails").load("1");
+            })
+        } as DataFetcher;
+
+        def insightsIssueDf = { env ->
+            return ChainedDataLoader.two(env.getDataLoader("issue").load(env.source["issueId"]), { result ->
+                return env.getDataLoader("issueDetails").load(env.source["issueId"]);
+            })
+        } as DataFetcher;
+
+        TrivialDataFetcher insightsDf = env -> {
+            return [[issueId: "2"], null, [issueId: "3"], null]
+        }
+        def Map<String, Map<String, DataFetcher>> dataFetchers = [
+                "Query"  : [
+                        "issue"   : rootIssueDf,
+                        "insights": insightsDf
+                ],
+                "Insight": [
+                        "issue": insightsIssueDf
+                ]
+        ]
+
+        def schema = TestUtil.schema("""
+            type Query {
+                issue: Issue
+                insights: [Insight]
+            }
+
+            type Issue {
+                id: ID!
+                name: String
+            }
+            type Insight {
+                issue: Issue
+            }
+        """,
+                dataFetchers)
+
+        def query = """
+            query {
+                issue {
+                    name
+                }
+                insights {
+                    issue {
+                        name
+                    }
+                }
+            }
+        """
+        def graphQL = GraphQL.newGraphQL(schema)
+                .build();
+
+        BatchLoader<String, List<String>> issueBatchLoader = ids -> {
+            println "batch loader with ids: $ids"
+            return CompletableFuture.completedFuture([[name: "Issue 1"], [name: "Issue 2"], [name: "Issue 3"]])
+        };
+        BatchLoader<String, List<String>> issueDetailsBatchLoader = ids -> {
+            println "batch loader with ids: $ids"
+            return CompletableFuture.completedFuture([[name: "Issue 1"], [name: "Issue 2"], [name: "Issue 3"]])
+        }
+
+        DataLoader<String, List<String>> issueLoader = DataLoaderFactory.newDataLoader(issueBatchLoader);
+        DataLoader<String, List<String>> issueDetailsLoader = DataLoaderFactory.newDataLoader(issueBatchLoader);
+
+        DataLoaderRegistry dataLoaderRegistry = new DataLoaderRegistry()
+        dataLoaderRegistry.register("issue", issueLoader)
+
+        ExecutionInput executionInput = ExecutionInput.newExecutionInput().query(query).dataLoaderRegistry(dataLoaderRegistry).build()
+        def result = graphQL.execute(executionInput)
+
+        then:
+        result.data == [issue: [name: "Issue 1"], insights: [[issue: [name: "Issue 2"]], null, [issue: [name: "Issue 3"]], null]]
+    }
 
 
 }
+
