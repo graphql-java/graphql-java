@@ -2,12 +2,12 @@ package graphql.util
 
 import spock.lang.Specification
 
-class AlternativeJdkIdGeneratorTest extends Specification {
+class IdGeneratorTest extends Specification {
     def "can generate uuids"() {
         when:
         def set = new HashSet()
         for (int i = 0; i < 1000; i++) {
-            set.add(AlternativeJdkIdGenerator.uuid().toString());
+            set.add(IdGenerator.uuid().toString());
         }
 
         then:
