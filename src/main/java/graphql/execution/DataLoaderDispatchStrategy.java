@@ -2,12 +2,17 @@ package graphql.execution;
 
 import graphql.Internal;
 import graphql.schema.DataFetcher;
+import graphql.schema.GraphQLFieldDefinition;
+import graphql.schema.GraphQLObjectType;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 @Internal
 public interface DataLoaderDispatchStrategy {
+
+    String CUSTOM_STRATEGY_KEY = "CUSTOM_STRATEGY_KEY";
+
 
     DataLoaderDispatchStrategy NO_OP = new DataLoaderDispatchStrategy() {
     };
@@ -26,7 +31,7 @@ public interface DataLoaderDispatchStrategy {
     }
 
 
-    default void executeObject(ExecutionContext executionContext, ExecutionStrategyParameters executionStrategyParameters) {
+    default void executeObject(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
 
     }
 
@@ -39,9 +44,19 @@ public interface DataLoaderDispatchStrategy {
     }
 
     default void fieldFetched(ExecutionContext executionContext,
-                              ExecutionStrategyParameters executionStrategyParameters,
+                              ExecutionStrategyParameters parameters,
                               DataFetcher<?> dataFetcher,
                               CompletableFuture<Object> fetchedValue) {
+
+    }
+
+    default void fieldFetchedDone(ExecutionContext executionContext,
+                                  ExecutionStrategyParameters parameters,
+                                  DataFetcher<?> dataFetcher,
+                                  Object value,
+                                  GraphQLObjectType parentType,
+                                  GraphQLFieldDefinition fieldDefinition
+    ) {
 
     }
 

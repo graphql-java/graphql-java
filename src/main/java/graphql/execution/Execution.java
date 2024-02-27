@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Function;
 
 import static graphql.execution.ExecutionContextBuilder.newExecutionContextBuilder;
 import static graphql.execution.ExecutionStepInfo.newExecutionStepInfo;
@@ -223,6 +224,10 @@ public class Execution {
     }
 
     private DataLoaderDispatchStrategy createDataLoaderDispatchStrategy(ExecutionContext executionContext, ExecutionStrategy executionStrategy) {
+        if (executionContext.getGraphQLContext().get(DataLoaderDispatchStrategy.CUSTOM_STRATEGY_KEY) != null) {
+            Function<ExecutionContext, DataLoaderDispatchStrategy> customStrategy = executionContext.getGraphQLContext().get(DataLoaderDispatchStrategy.CUSTOM_STRATEGY_KEY);
+            return customStrategy.apply(executionContext);
+        }
         if (executionContext.getDataLoaderRegistry() == EMPTY_DATALOADER_REGISTRY || doNotAutomaticallyDispatchDataLoader) {
             return DataLoaderDispatchStrategy.NO_OP;
         }
