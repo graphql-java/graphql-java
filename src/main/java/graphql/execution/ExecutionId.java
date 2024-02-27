@@ -2,9 +2,7 @@ package graphql.execution;
 
 import graphql.Assert;
 import graphql.PublicApi;
-import graphql.util.AlternativeJdkIdGenerator;
-
-import java.util.UUID;
+import graphql.util.IdGenerator;
 
 /**
  * This opaque identifier is used to identify a unique query execution
@@ -18,7 +16,7 @@ public class ExecutionId {
      * @return a query execution identifier
      */
     public static ExecutionId generate() {
-        return new ExecutionId(AlternativeJdkIdGenerator.uuid().toString());
+        return new ExecutionId(IdGenerator.uuid().toString());
     }
 
     /**

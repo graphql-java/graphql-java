@@ -21,6 +21,8 @@
  */
 package graphql.util;
 
+import graphql.Internal;
+
 import java.math.BigInteger;
 import java.security.SecureRandom;
 import java.util.Random;
@@ -33,9 +35,10 @@ import java.util.UUID;
  * @author Rossen Stoyanchev
  * @author Rob Winch
  */
-public class AlternativeJdkIdGenerator {
+@Internal
+public class IdGenerator {
 
-    private static AlternativeJdkIdGenerator idGenerator = new AlternativeJdkIdGenerator();
+    private static final IdGenerator idGenerator = new IdGenerator();
 
     public static UUID uuid() {
         return idGenerator.generateId();
@@ -44,7 +47,7 @@ public class AlternativeJdkIdGenerator {
     private final Random random;
 
 
-    public AlternativeJdkIdGenerator() {
+    public IdGenerator() {
         SecureRandom secureRandom = new SecureRandom();
         byte[] seed = new byte[8];
         secureRandom.nextBytes(seed);
