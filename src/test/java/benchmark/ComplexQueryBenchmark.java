@@ -102,7 +102,7 @@ public class ComplexQueryBenchmark {
     @SuppressWarnings({"ConstantValue", "LoopConditionNotUpdatedInsideLoop"})
     private static void runAtStartup() {
         // set this to true if you want to hook in profiler say to a forever running JVM
-        boolean forever = false;
+        boolean forever = Boolean.getBoolean("forever");
 
         long then = System.currentTimeMillis();
         System.out.printf("Running initial code before starting the benchmark in forever=%b mode \n", forever);
