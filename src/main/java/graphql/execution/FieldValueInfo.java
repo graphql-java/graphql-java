@@ -1,5 +1,6 @@
 package graphql.execution;
 
+import com.google.common.collect.ImmutableList;
 import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
 import graphql.PublicApi;
@@ -66,7 +67,7 @@ public class FieldValueInfo {
     public static class Builder {
         private CompleteValueType completeValueType;
         private CompletableFuture<Object> fieldValueFuture;
-        private List<FieldValueInfo> listInfos = new ArrayList<>();
+        private List<FieldValueInfo> listInfos = ImmutableList.of();
 
         public Builder(CompleteValueType completeValueType) {
             this.completeValueType = completeValueType;
