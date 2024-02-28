@@ -186,7 +186,7 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
 
 
     @Override
-    public void fieldFetched(ExecutionContext executionContext, ExecutionStrategyParameters executionStrategyParameters, DataFetcher<?> dataFetcher, CompletableFuture<Object> fetchedValue) {
+    public void fieldFetched(ExecutionContext executionContext, ExecutionStrategyParameters executionStrategyParameters) {
         int level = executionStrategyParameters.getPath().getLevel();
         boolean dispatchNeeded = callStack.lock.callLocked(() -> {
             callStack.increaseFetchCount(level);
