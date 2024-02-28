@@ -424,7 +424,7 @@ public abstract class ExecutionStrategy {
         dataFetcher = instrumentation.instrumentDataFetcher(dataFetcher, instrumentationFieldFetchParams, executionContext.getInstrumentationState());
         dataFetcher = executionContext.getDataLoaderDispatcherStrategy().modifyDataFetcher(dataFetcher);
         CompletableFuture<Object> fetchedValue = invokeDataFetcher(executionContext, parameters, fieldDef, dataFetchingEnvironment, dataFetcher);
-        executionContext.getDataLoaderDispatcherStrategy().fieldFetched(executionContext, parameters);
+        executionContext.getDataLoaderDispatcherStrategy().fieldFetched(executionContext, parameters, dataFetcher, fetchedValue);
         fetchCtx.onDispatched(fetchedValue);
         return fetchedValue
                 .handle((result, exception) -> {
