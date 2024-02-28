@@ -75,8 +75,6 @@ class Issue1178DataLoaderDispatchTest extends Specification {
 
         when:
         def graphql = TestUtil.graphQL(sdl, wiring)
-                .instrumentation(new DataLoaderDispatcherInstrumentation())
-                .instrumentation(new DataLoaderDispatcherInstrumentation())
                 .build()
 
         then: "execution shouldn't error"

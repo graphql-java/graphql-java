@@ -8,7 +8,6 @@ import graphql.execution.instrumentation.InstrumentationState
 import graphql.execution.instrumentation.SimplePerformantInstrumentation
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters
 import graphql.parser.Parser
-import org.jetbrains.annotations.NotNull
 import spock.lang.Specification
 
 import java.util.concurrent.CompletableFuture
@@ -36,7 +35,7 @@ class ExecutionTest extends Specification {
     def subscriptionStrategy = new CountingExecutionStrategy()
     def mutationStrategy = new CountingExecutionStrategy()
     def queryStrategy = new CountingExecutionStrategy()
-    def execution = new Execution(queryStrategy, mutationStrategy, subscriptionStrategy, SimplePerformantInstrumentation.INSTANCE, ValueUnboxer.DEFAULT)
+    def execution = new Execution(queryStrategy, mutationStrategy, subscriptionStrategy, SimplePerformantInstrumentation.INSTANCE, ValueUnboxer.DEFAULT, false)
     def emptyExecutionInput = ExecutionInput.newExecutionInput().query("query").build()
     def instrumentationState = new InstrumentationState() {}
 
@@ -114,18 +113,18 @@ class ExecutionTest extends Specification {
 
         def instrumentation = new SimplePerformantInstrumentation() {
 
-			@Override
+            @Override
             ExecutionContext instrumentExecutionContext(ExecutionContext executionContext,
                                                         InstrumentationExecutionParameters parameters,
                                                         InstrumentationState state) {
-					
-					return ExecutionContextBuilder.newExecutionContextBuilder(executionContext)
-					.queryStrategy(queryStrategyUpdatedToDuringExecutionContextInstrument)
-					.build()
-			}
-		}
 
-        def execution = new Execution(queryStrategy, mutationStrategy, subscriptionStrategy, instrumentation, ValueUnboxer.DEFAULT)
+                return ExecutionContextBuilder.newExecutionContextBuilder(executionContext)
+                        .queryStrategy(queryStrategyUpdatedToDuringExecutionContextInstrument)
+                        .build()
+            }
+        }
+
+        def execution = new Execution(queryStrategy, mutationStrategy, subscriptionStrategy, instrumentation, ValueUnboxer.DEFAULT, false)
 
 
         when:

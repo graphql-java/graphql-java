@@ -49,10 +49,7 @@ public class NoContextChainedInstrumentation extends ChainedInstrumentation {
     }
 
     private <T> T runAll(InstrumentationState state, BiConsumer<Instrumentation, InstrumentationState> stateConsumer) {
-        for (Instrumentation instrumentation : instrumentations) {
-            InstrumentationState specificState = getSpecificState(instrumentation, state);
-            stateConsumer.accept(instrumentation, specificState);
-        }
+        chainedConsume(state, stateConsumer);
         return null;
     }
 

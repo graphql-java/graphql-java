@@ -148,6 +148,7 @@ public interface DeferredExecutionSupport {
 
             Instrumentation instrumentation = executionContext.getInstrumentation();
 
+            executionContext.getDataLoaderDispatcherStrategy().deferredField(executionContext, currentField);
             instrumentation.beginDeferredField(executionContext.getInstrumentationState());
 
             return dfCache.computeIfAbsent(

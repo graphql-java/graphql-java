@@ -3,7 +3,6 @@ package graphql;
 import graphql.collect.ImmutableKit;
 import graphql.execution.ExecutionId;
 import graphql.execution.RawVariables;
-import graphql.execution.instrumentation.dataloader.DataLoaderDispatcherInstrumentationState;
 import org.dataloader.DataLoaderRegistry;
 
 import java.util.Locale;
@@ -12,6 +11,7 @@ import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
 
 import static graphql.Assert.assertNotNull;
+import static graphql.execution.instrumentation.dataloader.EmptyDataLoaderRegistryInstance.EMPTY_DATALOADER_REGISTRY;
 
 /**
  * This represents the series of values that can be input on a graphql query execution
@@ -213,7 +213,7 @@ public class ExecutionInput {
         // this is important - it allows code to later known if we never really set a dataloader and hence it can optimize
         // dataloader field tracking away.
         //
-        private DataLoaderRegistry dataLoaderRegistry = DataLoaderDispatcherInstrumentationState.EMPTY_DATALOADER_REGISTRY;
+        private DataLoaderRegistry dataLoaderRegistry = EMPTY_DATALOADER_REGISTRY;
         private Locale locale = Locale.getDefault();
         private ExecutionId executionId;
 
