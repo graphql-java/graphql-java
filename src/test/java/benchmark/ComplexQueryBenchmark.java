@@ -1,6 +1,7 @@
 package benchmark;
 
 import com.google.common.collect.ImmutableList;
+import graphql.ExecutionInput;
 import graphql.ExecutionResult;
 import graphql.GraphQL;
 import graphql.schema.DataFetcher;
@@ -33,6 +34,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 
 import static graphql.schema.idl.TypeRuntimeWiring.newTypeWiring;
@@ -108,6 +110,7 @@ public class ComplexQueryBenchmark {
         complexQueryBenchmark.setUp();
         do {
             System.out.print("Running queries....\n");
+            complexQueryBenchmark.howManyItems = 100;
             complexQueryBenchmark.runManyQueriesToCompletion();
         } while (forever);
         complexQueryBenchmark.tearDown();
@@ -120,23 +123,21 @@ public class ComplexQueryBenchmark {
     private Void runManyQueriesToCompletion() {
         CompletableFuture<?>[] cfs = new CompletableFuture[howManyQueries];
         for (int i = 0; i < howManyQueries; i++) {
-            cfs[i] = CompletableFuture.supplyAsync(() -> executeQuery(howManyItems, howLongToSleep), queryExecutorService);
+            cfs[i] = CompletableFuture.supplyAsync(() -> executeQuery(howManyItems, howLongToSleep), queryExecutorService).thenCompose(cf -> cf);
         }
         Void result = CompletableFuture.allOf(cfs).join();
         return result;
     }
 
-    @SuppressWarnings("UnnecessaryLocalVariable")
-    public ExecutionResult executeQuery(int howMany, int howLong) {
+    public CompletableFuture<ExecutionResult> executeQuery(int howMany, int howLong) {
         String fields = "id name f1 f2 f3 f4 f5 f6 f7 f8 f9 f10";
         String query = "query q {"
                 + String.format("shops(howMany : %d) { %s departments( howMany : %d) { %s products(howMany : %d) { %s }}}\n"
-                , howMany, fields, howMany, fields, howMany, fields)
+                , howMany, fields, 10, fields, 5, fields)
                 + String.format("expensiveShops(howMany : %d howLong : %d) { %s expensiveDepartments( howMany : %d howLong : %d) { %s expensiveProducts(howMany : %d howLong : %d) { %s }}}\n"
-                , howMany, howLong, fields, howMany, howLong, fields, howMany, howLong, fields)
+                , howMany, howLong, fields, 10, howLong, fields, 5, howLong, fields)
                 + "}";
-        ExecutionResult executionResult = graphQL.execute(query);
-        return executionResult;
+        return graphQL.executeAsync(ExecutionInput.newExecutionInput(query).build());
     }
 
     private GraphQL buildGraphQL() {
@@ -145,9 +146,9 @@ public class ComplexQueryBenchmark {
         DataFetcher<?> shopsDF = env -> mkHowManyThings(env.getArgument("howMany"));
         DataFetcher<?> expensiveShopsDF = env -> supplyAsync(() -> sleepAndReturnThings(env));
         DataFetcher<?> departmentsDF = env -> mkHowManyThings(env.getArgument("howMany"));
-        DataFetcher<?> expensiveDepartmentsDF = env -> supplyAsync(() -> sleepAndReturnThings(env));
+        DataFetcher<?> expensiveDepartmentsDF = env -> supplyAsyncListItems(env, () -> sleepAndReturnThings(env));
         DataFetcher<?> productsDF = env -> mkHowManyThings(env.getArgument("howMany"));
-        DataFetcher<?> expensiveProductsDF = env -> supplyAsync(() -> sleepAndReturnThings(env));
+        DataFetcher<?> expensiveProductsDF = env -> supplyAsyncListItems(env, () -> sleepAndReturnThings(env));
 
         RuntimeWiring runtimeWiring = RuntimeWiring.newRuntimeWiring()
                 .type(newTypeWiring("Query")
@@ -166,8 +167,13 @@ public class ComplexQueryBenchmark {
         return GraphQL.newGraphQL(graphQLSchema).build();
     }
 
+    private <T> CompletableFuture<T> supplyAsyncListItems(DataFetchingEnvironment environment, Supplier<T> codeToRun) {
+        return supplyAsync(codeToRun);
+    }
+
     private <T> CompletableFuture<T> supplyAsync(Supplier<T> codeToRun) {
         if (!shutDown) {
+            //logEvery(100, "async fetcher");
             return CompletableFuture.supplyAsync(codeToRun, fetchersExecutorService);
         } else {
             // if we have shutdown - get on with it, so we shut down quicker
@@ -190,6 +196,14 @@ public class ComplexQueryBenchmark {
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
+        }
+    }
+
+    AtomicInteger logCount = new AtomicInteger();
+    private void logEvery(int every, String s) {
+        int count = logCount.getAndIncrement();
+        if (count == 0 || count % every == 0) {
+            System.out.println("\t" + count + "\t" + s);
         }
     }
 
