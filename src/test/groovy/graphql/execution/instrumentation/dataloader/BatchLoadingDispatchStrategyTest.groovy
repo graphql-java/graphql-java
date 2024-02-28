@@ -416,7 +416,7 @@ class BatchLoadingDispatchStrategyTest extends Specification {
     }
 
 
-    def "batch loading chained dataloader"() {
+    def "batch loading chained dataloader with trivial DF"() {
         given:
         def rootIssueDf = { env ->
             return ChainedDataLoader.two(env.getDataLoader("issue").load("1"), { result ->
@@ -433,6 +433,12 @@ class BatchLoadingDispatchStrategyTest extends Specification {
         TrivialDataFetcher insightsDf = env -> {
             return [[issueId: "2"], null, [issueId: "3"], null]
         }
+
+        def issueNameDF = { env ->
+            println "calling issue name batch loader with " + env.source["name"] + " path: " + env.getExecutionStepInfo().getPath()
+            return env.getDataLoader("issueName").load(env.source["name"])
+        } as DataFetcher;
+
         def Map<String, Map<String, DataFetcher>> dataFetchers = [
                 "Query"  : [
                         "issue"   : rootIssueDf,
@@ -440,6 +446,9 @@ class BatchLoadingDispatchStrategyTest extends Specification {
                 ],
                 "Insight": [
                         "issue": insightsIssueDf
+                ],
+                "Issue"  : [
+                        name: issueNameDF
                 ]
         ]
 
@@ -490,12 +499,19 @@ class BatchLoadingDispatchStrategyTest extends Specification {
             return CompletableFuture.completedFuture([[name: "Issue 1", detail: "Detail 1"], [name: "Issue 2", detail: "Detail 2"], [name: "Issue 3", detail: "Detail 3"]])
         }
 
+        BatchLoader<String, List<String>> issueNameBatchLoader = names -> {
+            println "issue name batch loader with names: $names"
+            return CompletableFuture.completedFuture(names);
+        }
+
         DataLoader<String, List<String>> issueLoader = DataLoaderFactory.newDataLoader(issueBatchLoader);
         DataLoader<String, List<String>> issueDetailsLoader = DataLoaderFactory.newDataLoader(issueDetailsBatchLoader);
+        DataLoader<String, List<String>> issueNameLoader = DataLoaderFactory.newDataLoader(issueNameBatchLoader);
 
         DataLoaderRegistry dataLoaderRegistry = new DataLoaderRegistry()
         dataLoaderRegistry.register("issue", issueLoader)
         dataLoaderRegistry.register("issueDetails", issueDetailsLoader)
+        dataLoaderRegistry.register("issueName", issueNameLoader);
 
         def executionInput = createExecutionInput(query, dataLoaderRegistry)
         when:

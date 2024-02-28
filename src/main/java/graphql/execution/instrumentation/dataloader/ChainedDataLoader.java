@@ -29,7 +29,6 @@ public final class ChainedDataLoader<T, U> extends CompletableFuture<U> {
                 if (finalThrowable != null) {
                     super.completeExceptionally(finalThrowable);
                 } else {
-                    System.out.println("final result of Chained DataLoader: " + finalResult);
                     super.complete(finalResult);
                 }
             });

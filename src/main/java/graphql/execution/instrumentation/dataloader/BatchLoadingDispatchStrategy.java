@@ -135,7 +135,7 @@ public class BatchLoadingDispatchStrategy implements DataLoaderDispatchStrategy 
     public void fieldFetched(ExecutionContext executionContext, ExecutionStrategyParameters parameters, DataFetcher<?> dataFetcher, CompletableFuture<Object> fetchedValue) {
         ResultPath path = parameters.getPath();
         int level = getLevelForPath(path);
-
+        System.out.println("field fetched at " + path);
         if (fetchedValue instanceof ChainedDataLoader) {
             ChainedDataLoader chainedDataLoader = (ChainedDataLoader) fetchedValue;
             System.out.println("found chained DL at " + path);
@@ -145,7 +145,6 @@ public class BatchLoadingDispatchStrategy implements DataLoaderDispatchStrategy 
         }
 
         if (dataFetcher instanceof TrivialDataFetcher) {
-//            System.out.println("found trivial DF at " + path);
             // this means we want to act like this DF didn't really happen,
             // but we still wait for this level to be ready
             stateLock.runLocked(() -> {
@@ -171,7 +170,7 @@ public class BatchLoadingDispatchStrategy implements DataLoaderDispatchStrategy 
         int level = getLevelForPath(parameters.getPath());
         GraphQLType fieldType = fieldDefinition.getType();
         GraphQLType unwrappedFieldType = unwrapAll(fieldType);
-        boolean dispatchReady;
+        Integer levelReadyForDispatch;
         makeLevelReady(level + 1);
 
 
@@ -184,7 +183,7 @@ public class BatchLoadingDispatchStrategy implements DataLoaderDispatchStrategy 
             } else {
                 executeObjectPaths.add(path);
             }
-            dispatchReady = stateLock.callLocked(() -> {
+            levelReadyForDispatch = stateLock.callLocked(() -> {
                 if (levelToTrivialDataFetchersFetched.containsKey(level) && levelToTrivialDataFetchersFetched.get(level).contains(path)) {
                     // record the current field as fetched,
                     // but add the children as expectation to the current level instead of the next
@@ -192,32 +191,39 @@ public class BatchLoadingDispatchStrategy implements DataLoaderDispatchStrategy 
                     levelToHappenedFetchedFieldDone.get(level).add(path);
                     levelToExpectedExecuteObject.get(level).addAll(executeObjectPaths);
                     trivialDFs.add(path);
-                    return false;
+                    return null;
                 } else {
                     levelToHappenedFetchedFieldDone.get(level).add(path);
                     levelToExpectedExecuteObject.get(level + 1).addAll(executeObjectPaths);
-                    return isDispatchReady(level + 1);
+                    return isDispatchReady(level + 1) ? level + 1 : null;
                 }
             });
         } else {
-            dispatchReady = stateLock.callLocked(() -> {
+            levelReadyForDispatch = stateLock.callLocked(() -> {
                 if (levelToTrivialDataFetchersFetched.containsKey(level) && levelToTrivialDataFetchersFetched.get(level).contains(path)) {
                     // record the current field as fetched, there
                     // are no children to wait for. This means either
                     // the trivial DF returned null or is of type Scalar/Enum
                     levelToHappenedFetchedFields.get(level).add(path);
                     levelToHappenedFetchedFieldDone.get(level).add(path);
+                    // when this happens we need to consider the current level to be
+                    // ready additionally to the next level, because in fieldFetched
+                    // we don't register the fetched as happened
+                    if (isDispatchReady(level)) {
+                        return level;
+                    }
+                    return isDispatchReady(level + 1) ? level + 1 : null;
                 } else {
                     levelToHappenedFetchedFieldDone.get(level).add(path);
                 }
-                return isDispatchReady(level + 1);
+                return isDispatchReady(level + 1) ? level + 1 : null;
             });
         }
         // the reason we check for the next level to be ready is
         // because done fetched fields are only relevant for the next level,
         // not the current one. See the checks in isDispatchReady
-        if (dispatchReady) {
-            dispatch(level + 1);
+        if (levelReadyForDispatch != null) {
+            dispatch(levelReadyForDispatch);
         }
 
     }
@@ -250,6 +256,12 @@ public class BatchLoadingDispatchStrategy implements DataLoaderDispatchStrategy 
 
             return true;
         }
+//        System.out.println("NOT READY: " + level);
+//        System.out.println("levelToExpectedExecuteObject" + levelToExpectedExecuteObject);
+//        System.out.println("levelToHappenedExecuteObject" + levelToHappenedExecuteObject);
+//        System.out.println("levelToExpectedFetchField" + levelToExpectedFetchField);
+//        System.out.println("levelToHappenedFetchedFields" + levelToHappenedFetchedFields);
+//        System.out.println("levelToHappenedFetchedFieldDone" + levelToHappenedFetchedFieldDone);
         return false;
     }
 
@@ -279,6 +291,7 @@ public class BatchLoadingDispatchStrategy implements DataLoaderDispatchStrategy 
                 futures.add(chainedDataLoader.getSecondDataLoaderCalled());
             }
             futures.await().thenAccept((voids) -> {
+                System.out.println("CALLING DISPATCH AGAIN!");
                 dataLoaderRegistry.dispatchAll();
             });
         }
