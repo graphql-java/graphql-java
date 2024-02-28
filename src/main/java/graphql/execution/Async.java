@@ -365,6 +365,22 @@ public class Async {
         }
     }
 
+    /**
+     * Turns a= CompletionStage into a CompletableFuture if it's not already, otherwise leaves it alone
+     * as a materialized object
+     *
+     * @param object - the object to check
+     *
+     * @return a CompletableFuture from a CompletionStage or the object itself
+     */
+    public static Object toCompletableFutureOrMaterializedObject(Object object) {
+        if (object instanceof CompletionStage) {
+            return ((CompletionStage<?>) object).toCompletableFuture();
+        } else {
+            return object;
+        }
+    }
+
     public static <T> CompletableFuture<T> tryCatch(Supplier<CompletableFuture<T>> supplier) {
         try {
             return supplier.get();

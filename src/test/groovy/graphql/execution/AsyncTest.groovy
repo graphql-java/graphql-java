@@ -381,6 +381,21 @@ class AsyncTest extends Specification {
         joinOrMaterialized(awaited) == ["A"]
     }
 
+    def "toCompletableFutureOrMaterializedObject tested"() {
+        def x = "x"
+        def cf = completedFuture(x)
+
+        when:
+        def object = Async.toCompletableFutureOrMaterializedObject(x)
+        then:
+        object == x
+
+        when:
+        object = Async.toCompletableFutureOrMaterializedObject(cf)
+        then:
+        object == cf
+    }
+
     Object joinOrMaterialized(Object awaited) {
         if (awaited instanceof CompletableFuture) {
             return ((CompletableFuture) awaited).join()
