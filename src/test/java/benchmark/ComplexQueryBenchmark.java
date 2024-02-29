@@ -29,6 +29,9 @@ import org.openjdk.jmh.runner.Runner;
 import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
@@ -102,21 +105,47 @@ public class ComplexQueryBenchmark {
     @SuppressWarnings({"ConstantValue", "LoopConditionNotUpdatedInsideLoop"})
     private static void runAtStartup() {
         // set this to true if you want to hook in profiler say to a forever running JVM
-        boolean forever = Boolean.getBoolean("forever");
+        int runForMillis = getRunForMillis();
 
-        long then = System.currentTimeMillis();
-        System.out.printf("Running initial code before starting the benchmark in forever=%b mode \n", forever);
+        if (runForMillis <= 0) {
+            return;
+        }
+        long now, then = System.currentTimeMillis();
+        System.out.printf("Running initial code before starting the benchmark - runForMillis=%d  \n", runForMillis);
+        System.out.print("Get your profiler in order and press enter...  \n");
+        readLine();
+        System.out.print("Lets go...\n");
         ComplexQueryBenchmark complexQueryBenchmark = new ComplexQueryBenchmark();
         complexQueryBenchmark.setUp();
         do {
-            System.out.print("Running queries....\n");
+            System.out.printf("Running queries for %d millis....\n", System.currentTimeMillis() - then);
             complexQueryBenchmark.howManyItems = 100;
             complexQueryBenchmark.runManyQueriesToCompletion();
-        } while (forever);
+            now = System.currentTimeMillis();
+        } while ((now - then) < runForMillis);
         complexQueryBenchmark.tearDown();
 
         System.out.printf("This took %d millis\n", System.currentTimeMillis() - then);
+        System.exit(0);
 
+    }
+
+    private static void readLine() {
+        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+        try {
+            br.readLine();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static int getRunForMillis() {
+        String runFor = System.getenv("runForMillis");
+        try {
+            return Integer.parseInt(runFor);
+        } catch (NumberFormatException e) {
+            return -1;
+        }
     }
 
     @SuppressWarnings("UnnecessaryLocalVariable")
@@ -200,6 +229,7 @@ public class ComplexQueryBenchmark {
     }
 
     AtomicInteger logCount = new AtomicInteger();
+
     private void logEvery(int every, String s) {
         int count = logCount.getAndIncrement();
         if (count == 0 || count % every == 0) {
