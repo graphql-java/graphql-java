@@ -48,7 +48,7 @@ import static graphql.schema.idl.TypeRuntimeWiring.newTypeWiring;
 @State(Scope.Benchmark)
 @Warmup(iterations = 2, time = 5)
 @Measurement(iterations = 2)
-@Fork(1)
+@Fork(2)
 public class ComplexQueryBenchmark {
 
     @Param({"5", "20", "100"})
