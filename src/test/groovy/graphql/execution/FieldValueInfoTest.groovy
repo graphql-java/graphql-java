@@ -14,7 +14,7 @@ class FieldValueInfoTest extends Specification{
         fieldValueInfo.fieldValueInfos == [] as List
 
         and: "other fields to be null "
-        fieldValueInfo.fieldValueFuture == null
+        fieldValueInfo.fieldValueFuture.join() == null
         fieldValueInfo.completeValueType == null
     }
 

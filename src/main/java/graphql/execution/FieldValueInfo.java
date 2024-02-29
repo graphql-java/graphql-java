@@ -24,12 +24,14 @@ public class FieldValueInfo {
 
     private final CompleteValueType completeValueType;
     private final CompletableFuture<Object> fieldValue;
+    private final Object /* CompletableFuture<Object> | Object */ fieldValueObject;
     private final List<FieldValueInfo> fieldValueInfos;
 
-    private FieldValueInfo(CompleteValueType completeValueType, CompletableFuture<Object> fieldValue, List<FieldValueInfo> fieldValueInfos) {
+    private FieldValueInfo(CompleteValueType completeValueType, Object fieldValueObject, List<FieldValueInfo> fieldValueInfos) {
         assertNotNull(fieldValueInfos, () -> "fieldValueInfos can't be null");
         this.completeValueType = completeValueType;
-        this.fieldValue = fieldValue;
+        this.fieldValueObject = fieldValueObject;
+        this.fieldValue = Async.toCompletableFuture(fieldValueObject);
         this.fieldValueInfos = fieldValueInfos;
     }
 
@@ -42,6 +44,9 @@ public class FieldValueInfo {
         return fieldValue.thenApply(fv -> ExecutionResultImpl.newExecutionResult().data(fv).build());
     }
     public CompletableFuture<Object> getFieldValueFuture() {
+        return fieldValue;
+    }
+    public Object /* CompletableFuture<Object> | Object */ getFieldValueObject() {
         return fieldValue;
     }
 
@@ -65,7 +70,7 @@ public class FieldValueInfo {
     @SuppressWarnings("unused")
     public static class Builder {
         private CompleteValueType completeValueType;
-        private CompletableFuture<Object> fieldValueFuture;
+        private Object fieldValueObject;
         private List<FieldValueInfo> listInfos = new ArrayList<>();
 
         public Builder(CompleteValueType completeValueType) {
@@ -77,8 +82,15 @@ public class FieldValueInfo {
             return this;
         }
 
-        public Builder fieldValue(CompletableFuture<Object> executionResultFuture) {
-            this.fieldValueFuture = executionResultFuture;
+// KILL for now in the PR - probably want to kill this anyway for reals
+//
+//        public Builder fieldValue(CompletableFuture<Object> executionResultFuture) {
+//            this.fieldValueObject = executionResultFuture;
+//            return this;
+//        }
+
+        public Builder fieldValueObject(Object fieldValueObject) {
+            this.fieldValueObject = fieldValueObject;
             return this;
         }
 
@@ -89,7 +101,7 @@ public class FieldValueInfo {
         }
 
         public FieldValueInfo build() {
-            return new FieldValueInfo(completeValueType, fieldValueFuture, listInfos);
+            return new FieldValueInfo(completeValueType, fieldValueObject, listInfos);
         }
     }
 }
