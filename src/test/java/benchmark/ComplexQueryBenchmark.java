@@ -110,11 +110,12 @@ public class ComplexQueryBenchmark {
         if (runForMillis <= 0) {
             return;
         }
-        long now, then = System.currentTimeMillis();
         System.out.printf("Running initial code before starting the benchmark - runForMillis=%d  \n", runForMillis);
         System.out.print("Get your profiler in order and press enter...  \n");
         readLine();
         System.out.print("Lets go...\n");
+
+        long now, then = System.currentTimeMillis();
         ComplexQueryBenchmark complexQueryBenchmark = new ComplexQueryBenchmark();
         complexQueryBenchmark.setUp();
         do {
