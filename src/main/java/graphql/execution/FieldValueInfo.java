@@ -47,9 +47,12 @@ public class FieldValueInfo {
         return fieldValue;
     }
     public Object /* CompletableFuture<Object> | Object */ getFieldValueObject() {
-        return fieldValue;
+        return fieldValueObject;
     }
 
+    public boolean isFutureValue() {
+        return fieldValueObject instanceof CompletableFuture;
+    }
     public List<FieldValueInfo> getFieldValueInfos() {
         return fieldValueInfos;
     }
