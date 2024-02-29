@@ -51,7 +51,7 @@ class AsyncTest extends Specification {
 
     def "eachSequentially polymorphic test"() {
         given:
-        def input = ['a', 'b', 'c']
+        def input = ['a', 'b', 'c', 'd']
         def cfFactory = Mock(BiFunction)
         def cf1 = new CompletableFuture()
         def v2 = 'y'
@@ -78,11 +78,12 @@ class AsyncTest extends Specification {
         1 * cfFactory.apply('c', ['x', 'y']) >> cf3
 
         when:
-        cf3.complete('z')
+        cf3.complete(null) // null valued CFS are allowed
 
         then:
+        1 * cfFactory.apply('d', ['x', 'y', null]) >> null // nulls are allowed as values
         result.isDone()
-        result.get() == ['x', 'y', 'z']
+        result.get() == ['x', 'y', null, null]
     }
 
     def "eachSequentially propagates exception"() {
@@ -379,6 +380,23 @@ class AsyncTest extends Specification {
         then:
         awaited instanceof CompletableFuture
         joinOrMaterialized(awaited) == ["A"]
+    }
+
+    def "await polymorphic works as expected with nulls"() {
+
+        when:
+        def asyncBuilder = Async.ofExpectedSize(5)
+        asyncBuilder.add(completedFuture("0"))
+        asyncBuilder.add(completedFuture(null))
+        asyncBuilder.addObject("2")
+        asyncBuilder.addObject(null)
+        asyncBuilder.add(completedFuture("4"))
+
+        def awaited = asyncBuilder.awaitPolymorphic()
+
+        then:
+        awaited instanceof CompletableFuture
+        joinOrMaterialized(awaited) == ["0", null, "2", null, "4"]
     }
 
     def "toCompletableFutureOrMaterializedObject tested"() {

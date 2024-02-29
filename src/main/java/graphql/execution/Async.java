@@ -299,7 +299,6 @@ public class Async {
         for (T t : list) {
             try {
                 Object value = cfOrMaterialisedValueFactory.apply(t);
-                Assert.assertNotNull(value, () -> "cfOrMaterialisedValueFactory must return a non null value");
                 futures.addObject(value);
             } catch (Exception e) {
                 CompletableFuture<Object> cf = new CompletableFuture<>();
@@ -326,7 +325,6 @@ public class Async {
         Object value;
         try {
             value = cfOrMaterialisedValueFactory.apply(iterator.next(), tmpResult);
-            Assert.assertNotNull(value, () -> "cfOrMaterialisedValueFactory must return a non null value");
         } catch (Exception e) {
             overallResult.completeExceptionally(new CompletionException(e));
             return;
