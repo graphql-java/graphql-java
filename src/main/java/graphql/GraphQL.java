@@ -420,7 +420,7 @@ public class GraphQL {
                 InstrumentationExecutionParameters inputInstrumentationParameters = new InstrumentationExecutionParameters(executionInputWithId, this.graphQLSchema);
                 ExecutionInput instrumentedExecutionInput = instrumentation.instrumentExecutionInput(executionInputWithId, inputInstrumentationParameters, instrumentationState);
 
-                InstrumentationExecutionParameters instrumentationParameters = new InstrumentationExecutionParameters(instrumentedExecutionInput, this.graphQLSchema, instrumentationState);
+                InstrumentationExecutionParameters instrumentationParameters = new InstrumentationExecutionParameters(instrumentedExecutionInput, this.graphQLSchema);
                 InstrumentationContext<ExecutionResult> executionInstrumentation = nonNullCtx(instrumentation.beginExecution(instrumentationParameters, instrumentationState));
                 executionInstrumentation.onDispatched();
 
@@ -523,7 +523,7 @@ public class GraphQL {
     }
 
     private List<ValidationError> validate(ExecutionInput executionInput, Document document, GraphQLSchema graphQLSchema, InstrumentationState instrumentationState) {
-        InstrumentationContext<List<ValidationError>> validationCtx = nonNullCtx(instrumentation.beginValidation(new InstrumentationValidationParameters(executionInput, document, graphQLSchema, instrumentationState), instrumentationState));
+        InstrumentationContext<List<ValidationError>> validationCtx = nonNullCtx(instrumentation.beginValidation(new InstrumentationValidationParameters(executionInput, document, graphQLSchema), instrumentationState));
         validationCtx.onDispatched();
 
         Predicate<Class<?>> validationRulePredicate = executionInput.getGraphQLContext().getOrDefault(ParseAndValidate.INTERNAL_VALIDATION_PREDICATE_HINT, r -> true);
