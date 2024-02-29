@@ -47,24 +47,8 @@ public class SimplePerformantInstrumentation implements Instrumentation {
     public static final SimplePerformantInstrumentation INSTANCE = new SimplePerformantInstrumentation();
 
     @Override
-    public InstrumentationState createState() {
-        return assertShouldNeverHappen("The deprecated " + "createState" + " was called");
-    }
-
-    @Override
-    public @Nullable InstrumentationState createState(InstrumentationCreateStateParameters parameters) {
-        return null;
-    }
-
-    @Override
     public @Nullable CompletableFuture<InstrumentationState> createStateAsync(InstrumentationCreateStateParameters parameters) {
-        InstrumentationState state = createState(parameters);
-        return state == null ? null : CompletableFuture.completedFuture(state);
-    }
-
-    @Override
-    public @NotNull InstrumentationContext<ExecutionResult> beginExecution(InstrumentationExecutionParameters parameters) {
-        return assertShouldNeverHappen("The deprecated " + "beginExecution" + " was called");
+        return null;
     }
 
     @Override
@@ -73,18 +57,8 @@ public class SimplePerformantInstrumentation implements Instrumentation {
     }
 
     @Override
-    public @NotNull InstrumentationContext<Document> beginParse(InstrumentationExecutionParameters parameters) {
-        return assertShouldNeverHappen("The deprecated " + "beginParse" + " was called");
-    }
-
-    @Override
     public @Nullable InstrumentationContext<Document> beginParse(InstrumentationExecutionParameters parameters, InstrumentationState state) {
         return noOp();
-    }
-
-    @Override
-    public @NotNull InstrumentationContext<List<ValidationError>> beginValidation(InstrumentationValidationParameters parameters) {
-        return assertShouldNeverHappen("The deprecated " + "beginValidation" + " was called");
     }
 
     @Override
@@ -93,18 +67,8 @@ public class SimplePerformantInstrumentation implements Instrumentation {
     }
 
     @Override
-    public @NotNull InstrumentationContext<ExecutionResult> beginExecuteOperation(InstrumentationExecuteOperationParameters parameters) {
-        return assertShouldNeverHappen("The deprecated " + "beginExecuteOperation" + " was called");
-    }
-
-    @Override
     public @Nullable InstrumentationContext<ExecutionResult> beginExecuteOperation(InstrumentationExecuteOperationParameters parameters, InstrumentationState state) {
         return noOp();
-    }
-
-    @Override
-    public @NotNull ExecutionStrategyInstrumentationContext beginExecutionStrategy(InstrumentationExecutionStrategyParameters parameters) {
-        return assertShouldNeverHappen("The deprecated " + "beginExecutionStrategy" + " was called");
     }
 
     @Override
@@ -118,22 +82,7 @@ public class SimplePerformantInstrumentation implements Instrumentation {
     }
 
     @Override
-    public @NotNull InstrumentationContext<ExecutionResult> beginSubscribedFieldEvent(InstrumentationFieldParameters parameters) {
-        return assertShouldNeverHappen("The deprecated " + "beginSubscribedFieldEvent" + " was called");
-    }
-
-    @Override
     public @Nullable InstrumentationContext<ExecutionResult> beginSubscribedFieldEvent(InstrumentationFieldParameters parameters, InstrumentationState state) {
-        return noOp();
-    }
-
-    @Override
-    public @NotNull InstrumentationContext<ExecutionResult> beginField(InstrumentationFieldParameters parameters) {
-        return assertShouldNeverHappen("The deprecated " + "beginField" + " was called");
-    }
-
-    @Override
-    public @Nullable InstrumentationContext<ExecutionResult> beginField(InstrumentationFieldParameters parameters, InstrumentationState state) {
         return noOp();
     }
 
@@ -143,37 +92,13 @@ public class SimplePerformantInstrumentation implements Instrumentation {
     }
 
     @Override
-    public @NotNull InstrumentationContext<Object> beginFieldFetch(InstrumentationFieldFetchParameters parameters) {
-        return assertShouldNeverHappen("The deprecated " + "beginFieldFetch" + " was called");
-    }
-
-    @Override
     public @Nullable InstrumentationContext<Object> beginFieldFetch(InstrumentationFieldFetchParameters parameters, InstrumentationState state) {
         return noOp();
     }
 
-    @Override
-    public @NotNull InstrumentationContext<ExecutionResult> beginFieldComplete(InstrumentationFieldCompleteParameters parameters) {
-        return assertShouldNeverHappen("The deprecated " + "beginFieldComplete" + " was called");
-    }
-
-    @Override
-    public @Nullable InstrumentationContext<ExecutionResult> beginFieldComplete(InstrumentationFieldCompleteParameters parameters, InstrumentationState state) {
-        return noOp();
-    }
 
     @Override
     public @Nullable InstrumentationContext<Object> beginFieldCompletion(InstrumentationFieldCompleteParameters parameters, InstrumentationState state) {
-        return noOp();
-    }
-
-    @Override
-    public @NotNull InstrumentationContext<ExecutionResult> beginFieldListComplete(InstrumentationFieldCompleteParameters parameters) {
-        return assertShouldNeverHappen("The deprecated " + "beginFieldListComplete" + " was called");
-    }
-
-    @Override
-    public @Nullable InstrumentationContext<ExecutionResult> beginFieldListComplete(InstrumentationFieldCompleteParameters parameters, InstrumentationState state) {
         return noOp();
     }
 
@@ -183,18 +108,8 @@ public class SimplePerformantInstrumentation implements Instrumentation {
     }
 
     @Override
-    public @NotNull ExecutionInput instrumentExecutionInput(ExecutionInput executionInput, InstrumentationExecutionParameters parameters) {
-        return assertShouldNeverHappen("The deprecated " + "instrumentExecutionInput" + " was called");
-    }
-
-    @Override
     public @NotNull ExecutionInput instrumentExecutionInput(ExecutionInput executionInput, InstrumentationExecutionParameters parameters, InstrumentationState state) {
         return executionInput;
-    }
-
-    @Override
-    public @NotNull DocumentAndVariables instrumentDocumentAndVariables(DocumentAndVariables documentAndVariables, InstrumentationExecutionParameters parameters) {
-        return assertShouldNeverHappen("The deprecated " + "instrumentDocumentAndVariables" + " was called");
     }
 
     @Override
@@ -203,18 +118,8 @@ public class SimplePerformantInstrumentation implements Instrumentation {
     }
 
     @Override
-    public @NotNull GraphQLSchema instrumentSchema(GraphQLSchema schema, InstrumentationExecutionParameters parameters) {
-        return assertShouldNeverHappen("The deprecated " + "instrumentSchema" + " was called");
-    }
-
-    @Override
     public @NotNull GraphQLSchema instrumentSchema(GraphQLSchema schema, InstrumentationExecutionParameters parameters, InstrumentationState state) {
         return schema;
-    }
-
-    @Override
-    public @NotNull ExecutionContext instrumentExecutionContext(ExecutionContext executionContext, InstrumentationExecutionParameters parameters) {
-        return assertShouldNeverHappen("The deprecated " + "instrumentExecutionContext" + " was called");
     }
 
     @Override
@@ -223,18 +128,8 @@ public class SimplePerformantInstrumentation implements Instrumentation {
     }
 
     @Override
-    public @NotNull DataFetcher<?> instrumentDataFetcher(DataFetcher<?> dataFetcher, InstrumentationFieldFetchParameters parameters) {
-        return assertShouldNeverHappen("The deprecated " + "instrumentDataFetcher" + " was called");
-    }
-
-    @Override
     public @NotNull DataFetcher<?> instrumentDataFetcher(DataFetcher<?> dataFetcher, InstrumentationFieldFetchParameters parameters, InstrumentationState state) {
         return dataFetcher;
-    }
-
-    @Override
-    public @NotNull CompletableFuture<ExecutionResult> instrumentExecutionResult(ExecutionResult executionResult, InstrumentationExecutionParameters parameters) {
-        return assertShouldNeverHappen("The deprecated " + "instrumentExecutionResult" + " was called");
     }
 
     @Override

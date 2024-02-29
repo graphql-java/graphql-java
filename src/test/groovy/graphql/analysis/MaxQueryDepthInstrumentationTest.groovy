@@ -67,7 +67,7 @@ class MaxQueryDepthInstrumentationTest extends Specification {
         ExecutionInput executionInput = Mock(ExecutionInput)
         def executionContext = executionCtx(executionInput, query, schema)
         def executeOperationParameters = new InstrumentationExecuteOperationParameters(executionContext)
-        def state = maximumQueryDepthInstrumentation.createState(null)
+        def state = null // it has not state in implementation
         when:
         maximumQueryDepthInstrumentation.beginExecuteOperation(executeOperationParameters, state)
         then:
