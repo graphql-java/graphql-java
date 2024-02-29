@@ -759,24 +759,31 @@ public abstract class ExecutionStrategy {
             index++;
         }
 
-        CompletableFuture<List<Object>> resultsFuture = Async.each(fieldValueInfos, FieldValueInfo::getFieldValueObject);
+        Object listResults = Async.eachPolymorphic(fieldValueInfos, FieldValueInfo::getFieldValueObject);
+        Object listOrPromiseToList;
+        if (listResults instanceof CompletableFuture) {
+            @SuppressWarnings("unchecked")
+            CompletableFuture<List<Object>> resultsFuture = (CompletableFuture<List<Object>>) listResults;
+            CompletableFuture<Object> overallResult = new CompletableFuture<>();
+            completeListCtx.onDispatched();
+            overallResult.whenComplete(completeListCtx::onCompleted);
 
-        CompletableFuture<Object> overallResult = new CompletableFuture<>();
-        completeListCtx.onDispatched();
-        overallResult.whenComplete(completeListCtx::onCompleted);
-
-        resultsFuture.whenComplete((results, exception) -> {
-            if (exception != null) {
-                handleValueException(overallResult, exception, executionContext);
-                return;
-            }
-            List<Object> completedResults = new ArrayList<>(results.size());
-            completedResults.addAll(results);
-            overallResult.complete(completedResults);
-        });
-
+            resultsFuture.whenComplete((results, exception) -> {
+                if (exception != null) {
+                    handleValueException(overallResult, exception, executionContext);
+                    return;
+                }
+                List<Object> completedResults = new ArrayList<>(results.size());
+                completedResults.addAll(results);
+                overallResult.complete(completedResults);
+            });
+            listOrPromiseToList = overallResult;
+        } else {
+            completeListCtx.onCompleted(listResults, null);
+            listOrPromiseToList = listResults;
+        }
         return FieldValueInfo.newFieldValueInfo(LIST)
-                .fieldValueObject(overallResult)
+                .fieldValueObject(listOrPromiseToList)
                 .fieldValueInfos(fieldValueInfos)
                 .build();
     }
