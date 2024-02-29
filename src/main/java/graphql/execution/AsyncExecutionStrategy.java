@@ -63,7 +63,7 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
 
             Async.CombinedBuilder<Object> fieldValuesFutures = Async.ofExpectedSize(completeValueInfos.size());
             for (FieldValueInfo completeValueInfo : completeValueInfos) {
-                fieldValuesFutures.add(completeValueInfo.getFieldValueFuture());
+                fieldValuesFutures.addObject(completeValueInfo.getFieldValueObject());
             }
             dataLoaderDispatcherStrategy.executionStrategyOnFieldValuesInfo(completeValueInfos, parameters);
             executionStrategyCtx.onFieldValuesInfo(completeValueInfos);
