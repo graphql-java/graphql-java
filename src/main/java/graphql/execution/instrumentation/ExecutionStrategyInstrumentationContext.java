@@ -36,7 +36,7 @@ public interface ExecutionStrategyInstrumentationContext extends Instrumentation
     @Internal
     ExecutionStrategyInstrumentationContext NOOP = new ExecutionStrategyInstrumentationContext() {
         @Override
-        public void onDispatched(CompletableFuture<ExecutionResult> result) {
+        public void onDispatched() {
         }
 
         @Override

@@ -15,7 +15,7 @@ public interface ExecuteObjectInstrumentationContext extends InstrumentationCont
     @Internal
     ExecuteObjectInstrumentationContext NOOP = new ExecuteObjectInstrumentationContext() {
         @Override
-        public void onDispatched(CompletableFuture<Map<String, Object>> result) {
+        public void onDispatched() {
         }
 
         @Override

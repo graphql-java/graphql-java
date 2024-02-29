@@ -287,7 +287,7 @@ abstract class AsyncExecutionStrategyTest extends Specification {
                             }
 
                             @Override
-                            void onDispatched(CompletableFuture<ExecutionResult> result) {
+                            void onDispatched() {
                             }
 
                             @Override
