@@ -91,7 +91,7 @@ class SubscriptionUniqueRootFieldTest extends Specification {
         !validationErrors.empty
         validationErrors.size() == 1
         validationErrors[0].validationErrorType == ValidationErrorType.SubscriptionMultipleRootFields
-        validationErrors[0].message == "Validation error (SubscriptionMultipleRootFields) : Subscription operation 'whoIsAGoodBoy' must have exactly one root field with fragments"
+        validationErrors[0].message == "Validation error (SubscriptionMultipleRootFields) : Subscription operation 'whoIsAGoodBoy' must have exactly one root field"
     }
 
     def "5.2.3.1 document can contain multiple operations with different root fields"() {
@@ -151,9 +151,141 @@ class SubscriptionUniqueRootFieldTest extends Specification {
         !validationErrors.empty
         validationErrors.size() == 1
         validationErrors[0].validationErrorType == ValidationErrorType.SubscriptionIntrospectionRootField
-        validationErrors[0].message == "Validation error (SubscriptionIntrospectionRootField) : Subscription operation 'doggo' fragment root field '__typename' cannot be an introspection field"
+        validationErrors[0].message == "Validation error (SubscriptionIntrospectionRootField) : Subscription operation 'doggo' root field '__typename' cannot be an introspection field"
     }
 
+    def "5.2.3.1 subscription with multiple root fields within inline fragment are not allowed"() {
+        given:
+        def subscriptionOneRootWithFragment = '''
+            subscription doggo {             
+                ... {
+                    dog {
+                        name
+                    }
+                    cat {
+                        name
+                    }
+                }
+            }
+        '''
+
+        when:
+        def validationErrors = validate(subscriptionOneRootWithFragment)
+
+        then:
+        !validationErrors.empty
+        validationErrors.size() == 1
+        validationErrors[0].validationErrorType == ValidationErrorType.SubscriptionMultipleRootFields
+        validationErrors[0].message == "Validation error (SubscriptionMultipleRootFields) : Subscription operation 'doggo' must have exactly one root field"
+    }
+
+
+    def "5.2.3.1 subscription with more than one root field with multiple fragment fails validation"() {
+        given:
+        def subscriptionTwoRootsWithFragment = '''
+            fragment doggoRoot on SubscriptionRoot {
+               ...doggoLevel1
+            }                
+            
+            fragment doggoLevel1 on SubscriptionRoot {
+                ...doggoLevel2
+            }   
+            
+            fragment doggoLevel2 on SubscriptionRoot {
+                dog {
+                    name
+                }
+                cat {
+                    name
+                }
+            }
+            
+            subscription whoIsAGoodBoy {
+              ...doggoRoot
+           }
+        '''
+        when:
+        def validationErrors = validate(subscriptionTwoRootsWithFragment)
+
+        then:
+        !validationErrors.empty
+        validationErrors.size() == 1
+        validationErrors[0].validationErrorType == ValidationErrorType.SubscriptionMultipleRootFields
+        validationErrors[0].message == "Validation error (SubscriptionMultipleRootFields) : Subscription operation 'whoIsAGoodBoy' must have exactly one root field"
+    }
+
+
+    def "5.2.3.1 subscription with more than one root field with multiple fragment with inline fragments fails validation"() {
+        given:
+        def subscriptionTwoRootsWithFragment = '''
+            fragment doggoRoot on SubscriptionRoot {
+               ...doggoLevel1
+            }                
+            
+            fragment doggoLevel1 on SubscriptionRoot {
+                ...{
+                    ...doggoLevel2
+                }
+            }   
+            
+            fragment doggoLevel2 on SubscriptionRoot {
+                ...{
+                    dog {
+                        name
+                    }
+                    cat {
+                        name
+                    }
+                }
+            }
+            
+            subscription whoIsAGoodBoy {
+              ...doggoRoot
+           }
+        '''
+        when:
+        def validationErrors = validate(subscriptionTwoRootsWithFragment)
+
+        then:
+        !validationErrors.empty
+        validationErrors.size() == 1
+        validationErrors[0].validationErrorType == ValidationErrorType.SubscriptionMultipleRootFields
+        validationErrors[0].message == "Validation error (SubscriptionMultipleRootFields) : Subscription operation 'whoIsAGoodBoy' must have exactly one root field"
+    }
+
+
+    def "5.2.3.1 subscription with one root field with multiple fragment with inline fragments does not fail validation"() {
+        given:
+        def subscriptionTwoRootsWithFragment = '''
+            fragment doggoRoot on SubscriptionRoot {
+               ...doggoLevel1
+            }                
+            
+            fragment doggoLevel1 on SubscriptionRoot {
+                ...{
+                    ...doggoLevel2
+                }
+            }   
+            
+            fragment doggoLevel2 on SubscriptionRoot {
+                ...{
+                    dog {
+                        name
+                    }
+                 
+                }
+            }
+            
+            subscription whoIsAGoodBoy {
+              ...doggoRoot
+           }
+        '''
+        when:
+        def validationErrors = validate(subscriptionTwoRootsWithFragment)
+
+        then:
+        validationErrors.empty
+    }
     static List<ValidationError> validate(String query) {
         def document = new Parser().parseDocument(query)
         return new Validator().validateDocument(SpecValidationSchema.specValidationSchema, document, Locale.ENGLISH)
