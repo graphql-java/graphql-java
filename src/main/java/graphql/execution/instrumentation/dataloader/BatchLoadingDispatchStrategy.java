@@ -45,17 +45,6 @@ public class BatchLoadingDispatchStrategy implements DataLoaderDispatchStrategy 
     private final LockKit.ReentrantLock stateLock = new LockKit.ReentrantLock();
 
 
-//    private final Map<Integer, Set<ResultPath>> levelToExpectedFetchField = new ConcurrentHashMap<>();
-//    private final Map<Integer, Set<ResultPath>> levelToHappenedFetchedFields = new ConcurrentHashMap<>();
-//    private final Map<Integer, Set<ResultPath>> levelToHappenedFetchedFieldDone = new ConcurrentHashMap<>();
-//    private final Map<Integer, Set<ResultPath>> levelToExpectedExecuteObject = new ConcurrentHashMap<>();
-//    private final Map<Integer, Set<ResultPath>> levelToHappenedExecuteObject = new ConcurrentHashMap<>();
-//    private final Map<Integer, Set<ResultPath>> levelToTrivialDataFetchersFetched = new ConcurrentHashMap<>();
-//    private final Map<Integer, Set<ChainedDataLoader<?, ?>>> levelToChainedDataLoaders = new ConcurrentHashMap<>();
-//    private final Map<ResultPath, CompletableFuture<?>> pathToSecondDataLoaderCalled = new ConcurrentHashMap<>();
-//    private final Set<ResultPath> trivialDFs = ConcurrentHashMap.newKeySet();
-//
-
     private final Map<ResultPath, ExecutionNode> pathToExecutionNode = new ConcurrentHashMap<>();
     private final Map<String, DispatchPoint> dataLoaderToDispatchPoint = new ConcurrentHashMap<>();
 
@@ -63,6 +52,15 @@ public class BatchLoadingDispatchStrategy implements DataLoaderDispatchStrategy 
         this.executionContext = executionContext;
     }
 
+    /**
+     * A node can go from EXPECT_FETCH_FIELD to HAPPENED_FETCH_FIELD to EXPECT_EXECUTE_OBJECT to HAPPENED_EXECUTE_OBJECT:
+     * this is for fields of type Object, which resolve to non null
+     * OR
+     * A node can go from EXPECT_FETCH_FIELD to HAPPENED_FETCH_FIELD to FETCH_FIELD_DONE
+     * OR
+     * A node can go from EXPECT_EXECUTE_OBJECT to HAPPENED_EXECUTE_OBJECT
+     * this is only for execution nodes which are children of fields of type [Object]
+     */
     public enum ExecutionNodeState {
         EXPECT_FETCH_FIELD,
         HAPPENED_FETCH_FIELD,
@@ -78,10 +76,10 @@ public class BatchLoadingDispatchStrategy implements DataLoaderDispatchStrategy 
 
         public volatile ExecutionNodeState state;
 
-        public ExecutionNode(ResultPath path, ExecutionNode parent) {
+        public ExecutionNode(ResultPath path, ExecutionNode parent, ExecutionNodeState state) {
             this.path = path;
             this.parent = parent;
-            this.state = ExecutionNodeState.EXPECT_EXECUTE_OBJECT;
+            this.state = state;
         }
 
         @Override
@@ -92,20 +90,6 @@ public class BatchLoadingDispatchStrategy implements DataLoaderDispatchStrategy 
                     ", children=" + children +
                     '}';
         }
-    }
-
-    private void makeLevelReady(int level) {
-        stateLock.runLocked(() -> {
-//            if (levelToExpectedFetchField.containsKey(level)) {
-//                return;
-//            }
-//            levelToExpectedFetchField.put(level, ConcurrentHashMap.newKeySet());
-//            levelToHappenedFetchedFields.put(level, ConcurrentHashMap.newKeySet());
-//            levelToExpectedExecuteObject.put(level, ConcurrentHashMap.newKeySet());
-//            levelToHappenedExecuteObject.put(level, ConcurrentHashMap.newKeySet());
-//            levelToHappenedFetchedFieldDone.put(level, ConcurrentHashMap.newKeySet());
-//            levelToChainedDataLoaders.put(level, ConcurrentHashMap.newKeySet());
-        });
     }
 
 
@@ -121,40 +105,15 @@ public class BatchLoadingDispatchStrategy implements DataLoaderDispatchStrategy 
 
         dataLoaderToDispatchPoint.putAll(createDispatchPoints(rootDFs));
 
-//        Map<String, List<DF>> dataLoaderToDF = new LinkedHashMap<>();
-//        for (DFKey dfKey : pathToDF.keySet()) {
-//            DF df = pathToDF.get(dfKey);
-//            if (df.batchLoadersUsed.isEmpty()) {
-//                continue;
-//            }
-//            for (String dataLoaderName : df.batchLoadersUsed) {
-//                if (!dataLoaderToDF.containsKey(dataLoaderName)) {
-//                    dataLoaderToDF.put(dataLoaderName, new ArrayList<>());
-//                }
-//                dataLoaderToDF.get(dataLoaderName).add(df);
-//            }
-//        }
-//        // we wait for the same DFs using the same dataloader and only dispatch then
-//        for (String dataLoader : dataLoaderToDF.keySet()) {
-//            DispatchPointNode dispatchPointNode = new DispatchPointNode();
-//            dispatchPointNode.dataLoaderName = dataLoader;
-//            for (DF df : dataLoaderToDF.get(dataLoader)) {
-//                dispatchPointNode.dfKeys.add(df.dfKey);
-//            }
-//            dispatchPointNodes.add(dispatchPointNode);
-//        }
 
         ResultPath rootPath = parameters.getPath();
         assertTrue(rootPath.getLevel() == 0);
         stateLock.runLocked(() -> {
-            makeLevelReady(1);
-            ExecutionNode rootExecutionNode = new ExecutionNode(rootPath, null);
-            rootExecutionNode.state = ExecutionNodeState.HAPPENED_EXECUTE_OBJECT;
+            ExecutionNode rootExecutionNode = new ExecutionNode(rootPath, null, ExecutionNodeState.HAPPENED_EXECUTE_OBJECT);
             pathToExecutionNode.put(rootPath, rootExecutionNode);
             parameters.getFields().getKeys().forEach(key -> {
-                ExecutionNode executionNode = new ExecutionNode(rootPath.segment(key), rootExecutionNode);
+                ExecutionNode executionNode = new ExecutionNode(rootPath.segment(key), rootExecutionNode, ExecutionNodeState.EXPECT_FETCH_FIELD);
                 rootExecutionNode.children.add(executionNode);
-                executionNode.state = ExecutionNodeState.EXPECT_FETCH_FIELD;
                 pathToExecutionNode.put(rootPath.segment(key), executionNode);
                 checkNewNodeRelevantForDispatchPoint(executionNode);
             });
@@ -266,6 +225,11 @@ public class BatchLoadingDispatchStrategy implements DataLoaderDispatchStrategy 
     }
 
     private boolean isDFKeyChildOrEqualToResultPath(ResultPath parent, DFKey possibleChild) {
+        // it is not  a real child if is the same keys, but a list at the end
+        if (parent.isListSegment() && parent.getKeysOnly().equals(possibleChild.getKeys())) {
+            return false;
+        }
+        parent = parent.getPathWithoutListEnd();
         // the possibleChild is a child if the parent is a "prefix" of the possibleChild
         return startWith(possibleChild.getKeys(), parent.getKeysOnly());
     }
@@ -335,16 +299,14 @@ public class BatchLoadingDispatchStrategy implements DataLoaderDispatchStrategy 
     @Override
     public void executeObject(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
         ResultPath path = parameters.getPath();
-        int level = getLevelForPath(path) + 1;
 //        System.out.println("EXECUTE OBJECT at " + path);
         stateLock.runLocked(() -> {
-            makeLevelReady(level);
             // the path is the root field of the execute object
             // and the leve is one more than the path length
             ExecutionNode currentExecutionNode = pathToExecutionNode.get(path);
             currentExecutionNode.state = ExecutionNodeState.HAPPENED_EXECUTE_OBJECT;
             parameters.getFields().getKeys().forEach(key -> {
-                ExecutionNode executionNode = new ExecutionNode(path.segment(key), currentExecutionNode);
+                ExecutionNode executionNode = new ExecutionNode(path.segment(key), currentExecutionNode, ExecutionNodeState.EXPECT_FETCH_FIELD);
                 currentExecutionNode.children.add(executionNode);
                 executionNode.state = ExecutionNodeState.EXPECT_FETCH_FIELD;
                 pathToExecutionNode.put(path.segment(key), executionNode);
@@ -353,25 +315,12 @@ public class BatchLoadingDispatchStrategy implements DataLoaderDispatchStrategy 
         });
     }
 
-    private int getLevelForPath(ResultPath resultPath) {
-//        int trivialCount = 0;
-//        String resultPathString = resultPath.toString();
-//        for (ResultPath trivialPath : trivialDFs) {
-//            String str = trivialPath.toString();
-//            if (resultPathString.startsWith(str)) {
-//                trivialCount++;
-//            }
-//        }
-//        return resultPath.getLevel() - trivialCount;
-        return resultPath.getLevel();
-    }
 
 
     @Override
     public void fieldFetched(ExecutionContext executionContext, ExecutionStrategyParameters parameters, DataFetcher<?> dataFetcher, Object fetchedValue) {
         ResultPath path = parameters.getPath();
-        int level = getLevelForPath(path);
-//        System.out.println("field fetched at " + path);
+        System.out.println("field fetched at " + path);
         DispatchPoint dispatchNeeded = stateLock.callLocked(() -> {
             pathToExecutionNode.get(path).state = ExecutionNodeState.HAPPENED_FETCH_FIELD;
             return isDispatchReady();
@@ -384,16 +333,13 @@ public class BatchLoadingDispatchStrategy implements DataLoaderDispatchStrategy 
     @Override
     public void fieldFetchedDone(ExecutionContext executionContext, ExecutionStrategyParameters parameters, DataFetcher<?> dataFetcher, Object value, GraphQLObjectType parentType, GraphQLFieldDefinition fieldDefinition) {
         ResultPath path = parameters.getPath();
-        int level = getLevelForPath(parameters.getPath());
         GraphQLType fieldType = fieldDefinition.getType();
         GraphQLType unwrappedFieldType = unwrapAll(fieldType);
         DispatchPoint dispatchReady = null;
-        makeLevelReady(level + 1);
 
 
         if (value != null && (GraphQLTypeUtil.isObjectType(unwrappedFieldType) || GraphQLTypeUtil.isInterfaceOrUnion(unwrappedFieldType))) {
             // now we know we have a composite type wrapped in n lists (n can be 0)
-            makeLevelReady(level + 1);
             Set<ResultPath> executeObjectPaths = new LinkedHashSet<>();
             if (isList(unwrapNonNull(fieldType))) {
                 handeList(value, fieldType, path, executeObjectPaths);
@@ -402,7 +348,7 @@ public class BatchLoadingDispatchStrategy implements DataLoaderDispatchStrategy 
                     currentExecutionNode.state = ExecutionNodeState.FETCH_FIELD_DONE;
                     // executeObjectPath can be empty if the list contains only null values
                     for (ResultPath executeObjectPath : executeObjectPaths) {
-                        ExecutionNode childExecutionNode = new ExecutionNode(executeObjectPath, currentExecutionNode);
+                        ExecutionNode childExecutionNode = new ExecutionNode(executeObjectPath, currentExecutionNode, ExecutionNodeState.EXPECT_EXECUTE_OBJECT);
                         currentExecutionNode.children.add(childExecutionNode);
                         pathToExecutionNode.put(executeObjectPath, childExecutionNode);
                         checkNewNodeRelevantForDispatchPoint(childExecutionNode);
@@ -410,7 +356,7 @@ public class BatchLoadingDispatchStrategy implements DataLoaderDispatchStrategy 
                     return isDispatchReady();
                 });
             } else {
-                // just changing the current node to EXPECT_EXECUTE_OBJECT
+                // just changing the current node to EXPECT_EXECUTE_OBJECT if we don't have list, but just object
                 executeObjectPaths.add(path);
                 stateLock.runLocked(() -> {
                     pathToExecutionNode.get(path).state = ExecutionNodeState.EXPECT_EXECUTE_OBJECT;
@@ -470,8 +416,6 @@ public class BatchLoadingDispatchStrategy implements DataLoaderDispatchStrategy 
                             }
                             currentRelevantNodes.get(dfKey).remove(newNode.parent);
                             currentRelevantNodes.get(dfKey).add(newNode);
-                        } else if (isDFKeyParentOrEqualToResultPath(newNode.path, dfKey)) {
-//                            System.out.println("already progressed execution node" + newNode.path + " vs " + dfKey);
                         }
                     }
                 }
@@ -493,15 +437,16 @@ public class BatchLoadingDispatchStrategy implements DataLoaderDispatchStrategy 
             }
             for (DFKey dfKey : dispatchPoint.relevantExecutionNodes.keySet()) {
                 List<ExecutionNode> executionNodes = dispatchPoint.relevantExecutionNodes.get(dfKey);
-                // all relevant nodes must be either done fetching (if it is a parent of the dfkey)
-                // or the fetched must have happened (meaning the dataloader was invoked, but it is pending)
-                // or the DataLoader already resolved (because of caching) and the execution progressed,
                 for (ExecutionNode executionNode : executionNodes) {
+                    // in
                     if (executionNode.path.getKeysOnly().equals(dfKey.getKeys())) {
-                        if (executionNode.state != ExecutionNodeState.HAPPENED_FETCH_FIELD && executionNode.state != ExecutionNodeState.HAPPENED_EXECUTE_OBJECT) {
+                        // a node matching exactly the dfKey is only not ready if it is not fetched yet
+                        if (executionNode.state == ExecutionNodeState.EXPECT_FETCH_FIELD) {
                             continue outer;
                         }
                     } else {
+                        // a parent node of the dfKey must be fetched and done to be ready
+                        // this means that the field resulted in a null
                         if (executionNode.state != ExecutionNodeState.FETCH_FIELD_DONE) {
                             continue outer;
                         }
