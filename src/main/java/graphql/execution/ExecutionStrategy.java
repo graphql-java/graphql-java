@@ -211,7 +211,7 @@ public abstract class ExecutionStrategy {
         Async.CombinedBuilder<FieldValueInfo> resolvedFieldFutures = getAsyncFieldValueInfo(executionContext, parameters, deferredExecutionSupport);
 
         CompletableFuture<Map<String, Object>> overallResult = new CompletableFuture<>();
-        resolveObjectCtx.onDispatched(overallResult);
+        resolveObjectCtx.onDispatched();
 
         resolvedFieldFutures.await().whenComplete((completeValueInfos, throwable) -> {
             List<String> fieldsExecutedOnInitialResult = deferredExecutionSupport.getNonDeferredFieldNames(fieldNames);
@@ -354,7 +354,7 @@ public abstract class ExecutionStrategy {
 
         CompletableFuture<Object> fieldValueFuture = result.thenCompose(FieldValueInfo::getFieldValueFuture);
 
-        fieldCtx.onDispatched(fieldValueFuture);
+        fieldCtx.onDispatched();
         fieldValueFuture.whenComplete(fieldCtx::onCompleted);
         return result;
     }
@@ -425,7 +425,7 @@ public abstract class ExecutionStrategy {
         dataFetcher = executionContext.getDataLoaderDispatcherStrategy().modifyDataFetcher(dataFetcher);
         CompletableFuture<Object> fetchedValue = invokeDataFetcher(executionContext, parameters, fieldDef, dataFetchingEnvironment, dataFetcher);
         executionContext.getDataLoaderDispatcherStrategy().fieldFetched(executionContext, parameters, dataFetcher, fetchedValue);
-        fetchCtx.onDispatched(fetchedValue);
+        fetchCtx.onDispatched();
         return fetchedValue
                 .handle((result, exception) -> {
                     fetchCtx.onCompleted(result, exception);
@@ -568,7 +568,7 @@ public abstract class ExecutionStrategy {
         FieldValueInfo fieldValueInfo = completeValue(executionContext, newParameters);
 
         CompletableFuture<Object> executionResultFuture = fieldValueInfo.getFieldValueFuture();
-        ctxCompleteField.onDispatched(executionResultFuture);
+        ctxCompleteField.onDispatched();
         executionResultFuture.whenComplete(ctxCompleteField::onCompleted);
         return fieldValueInfo;
     }
@@ -722,7 +722,7 @@ public abstract class ExecutionStrategy {
         CompletableFuture<List<Object>> resultsFuture = Async.each(fieldValueInfos, FieldValueInfo::getFieldValueFuture);
 
         CompletableFuture<Object> overallResult = new CompletableFuture<>();
-        completeListCtx.onDispatched(overallResult);
+        completeListCtx.onDispatched();
         overallResult.whenComplete(completeListCtx::onCompleted);
 
         resultsFuture.whenComplete((results, exception) -> {

@@ -397,8 +397,8 @@ public class ChainedInstrumentation implements Instrumentation {
         }
 
         @Override
-        public void onDispatched(CompletableFuture<T> result) {
-            contexts.forEach(context -> context.onDispatched(result));
+        public void onDispatched() {
+            contexts.forEach(InstrumentationContext::onDispatched);
         }
 
         @Override
@@ -416,8 +416,8 @@ public class ChainedInstrumentation implements Instrumentation {
         }
 
         @Override
-        public void onDispatched(CompletableFuture<ExecutionResult> result) {
-            contexts.forEach(context -> context.onDispatched(result));
+        public void onDispatched() {
+            contexts.forEach(InstrumentationContext::onDispatched);
         }
 
         @Override
@@ -445,8 +445,8 @@ public class ChainedInstrumentation implements Instrumentation {
         }
 
         @Override
-        public void onDispatched(CompletableFuture<Map<String, Object>> result) {
-            contexts.forEach(context -> context.onDispatched(result));
+        public void onDispatched() {
+            contexts.forEach(InstrumentationContext::onDispatched);
         }
 
         @Override
@@ -474,8 +474,8 @@ public class ChainedInstrumentation implements Instrumentation {
         }
 
         @Override
-        public void onDispatched(CompletableFuture<Object> result) {
-            contexts.forEach(context -> context.onDispatched(result));
+        public void onDispatched() {
+            contexts.forEach(InstrumentationContext::onDispatched);
         }
 
         @Override
