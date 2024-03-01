@@ -33,15 +33,34 @@ class BatchLoadingDispatchStrategyTest extends Specification {
 
     }
 
-    def "batch loading with trivial DF"() {
+    def "batch loading at different levels "() {
         when:
-        def rootIssueDf = { env ->
-            return env.getDataLoader("issue").load("1");
-        } as DataFetcher;
+        def rootIssueDf = new BatchLoaderDataFetcher() {
+            @Override
+            List<String> getDataLoaderNames() {
+                return ["issue"]
+            }
 
-        def insightsIssueDf = { env ->
-            return env.getDataLoader("issue").load(env.source["issueId"]);
-        } as DataFetcher;
+            @Override
+            Object get(DataFetchingEnvironment env) throws Exception {
+                return env.getDataLoader("issue").load("1");
+            }
+
+        } as BatchLoaderDataFetcher
+
+        def insightsIssueDf = new BatchLoaderDataFetcher() {
+            @Override
+            List<String> getDataLoaderNames() {
+                return ["issue"]
+            }
+
+            @Override
+            Object get(DataFetchingEnvironment env) throws Exception {
+                return env.getDataLoader("issue").load(env.source["issueId"]);
+            }
+
+        } as BatchLoaderDataFetcher
+
 
         TrivialDataFetcher insightsDf = env -> {
             return [[issueId: "2"], null, [issueId: "3"], null]
@@ -111,15 +130,33 @@ class BatchLoadingDispatchStrategyTest extends Specification {
         idsCount == 3
     }
 
-    def "batch loading with trivial DF nested"() {
+    def "batch loading at different level 2"() {
         when:
-        def rootIssueDf = { env ->
-            return env.getDataLoader("issue").load("1");
-        } as DataFetcher;
+        def rootIssueDf = new BatchLoaderDataFetcher() {
+            @Override
+            List<String> getDataLoaderNames() {
+                return ["issue"]
+            }
 
-        def insightsIssueDf = { env ->
-            return env.getDataLoader("issue").load(env.source["issueId"]);
-        } as DataFetcher;
+            @Override
+            Object get(DataFetchingEnvironment env) throws Exception {
+                return env.getDataLoader("issue").load("1");
+            }
+
+        } as BatchLoaderDataFetcher
+
+        def insightsIssueDf = new BatchLoaderDataFetcher() {
+            @Override
+            List<String> getDataLoaderNames() {
+                return ["issue"]
+            }
+
+            @Override
+            Object get(DataFetchingEnvironment env) throws Exception {
+                return env.getDataLoader("issue").load(env.source["issueId"]);
+            }
+
+        } as BatchLoaderDataFetcher
 
         TrivialDataFetcher insightsDf = env -> {
             return [[issueId: "2"], null, [issueId: "3"], null]
