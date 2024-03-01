@@ -44,7 +44,7 @@ public class GraphQLObjectType implements GraphQLNamedOutputType, GraphQLComposi
     private final String name;
     private final String description;
     private final Comparator<? super GraphQLSchemaElement> interfaceComparator;
-    private final ImmutableMap<String, GraphQLFieldDefinition> fieldDefinitionsByName;
+    private final Map<String, GraphQLFieldDefinition> fieldDefinitionsByName;
     private final ImmutableList<GraphQLNamedOutputType> originalInterfaces;
     private final DirectivesUtil.DirectivesHolder directivesHolder;
     private final ObjectTypeDefinition definition;
@@ -82,9 +82,9 @@ public class GraphQLObjectType implements GraphQLNamedOutputType, GraphQLComposi
         this.replacedInterfaces = ImmutableList.copyOf(sortTypes(interfaceComparator, interfaces));
     }
 
-    private ImmutableMap<String, GraphQLFieldDefinition> buildDefinitionMap(List<GraphQLFieldDefinition> fieldDefinitions) {
-        return ImmutableMap.copyOf(FpKit.getByName(fieldDefinitions, GraphQLFieldDefinition::getName,
-                (fld1, fld2) -> assertShouldNeverHappen("Duplicated definition for field '%s' in type '%s'", fld1.getName(), this.name)));
+    private Map<String, GraphQLFieldDefinition> buildDefinitionMap(List<GraphQLFieldDefinition> fieldDefinitions) {
+        return FpKit.getByName(fieldDefinitions, GraphQLFieldDefinition::getName,
+                (fld1, fld2) -> assertShouldNeverHappen("Duplicated definition for field '%s' in type '%s'", fld1.getName(), this.name));
     }
 
     @Override
