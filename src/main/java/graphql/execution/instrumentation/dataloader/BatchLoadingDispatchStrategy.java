@@ -316,7 +316,6 @@ public class BatchLoadingDispatchStrategy implements DataLoaderDispatchStrategy 
     }
 
 
-
     @Override
     public void fieldFetched(ExecutionContext executionContext, ExecutionStrategyParameters parameters, DataFetcher<?> dataFetcher, Object fetchedValue) {
         ResultPath path = parameters.getPath();
@@ -522,15 +521,5 @@ public class BatchLoadingDispatchStrategy implements DataLoaderDispatchStrategy 
 //            });
 //        }
     }
-
-    public static void main(String[] args) {
-        outer:
-        while (true) {
-            System.out.println("yyoo");
-            break outer;
-        }
-
-    }
-
 
 }
