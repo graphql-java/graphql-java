@@ -7,6 +7,7 @@ import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.Level;
 import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Mode;
+import org.openjdk.jmh.annotations.Param;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
@@ -22,12 +23,13 @@ import java.util.Map;
 import java.util.Random;
 
 @State(Scope.Benchmark)
-@Warmup(iterations = 2, time = 5)
-@Measurement(iterations = 3, batchSize = 1000)
+@Warmup(iterations = 2, time = 1)
+@Measurement(iterations = 3, time = 1, batchSize = 1000)
 @Fork(3)
 public class MapBenchmark {
 
-    int numberEntries = 30;
+    @Param({"10", "50", "300"})
+    int numberEntries = 300;
 
     Map<String, Integer> hashMap;
     Map<String, Integer> linkedHashMap;
