@@ -46,7 +46,7 @@ public interface DataLoaderDispatchStrategy {
     default void fieldFetched(ExecutionContext executionContext,
                               ExecutionStrategyParameters parameters,
                               DataFetcher<?> dataFetcher,
-                              CompletableFuture<Object> fetchedValue) {
+                              Object fetchedValue) {
 
     }
 

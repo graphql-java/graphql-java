@@ -14,7 +14,6 @@ import org.dataloader.DataLoaderRegistry;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
 
 @Internal
 public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStrategy {
@@ -186,7 +185,10 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
 
 
     @Override
-    public void fieldFetched(ExecutionContext executionContext, ExecutionStrategyParameters executionStrategyParameters, DataFetcher<?> dataFetcher, CompletableFuture<Object> fetchedValue) {
+    public void fieldFetched(ExecutionContext executionContext,
+                             ExecutionStrategyParameters executionStrategyParameters,
+                             DataFetcher<?> dataFetcher,
+                             Object fetchedValue) {
         int level = executionStrategyParameters.getPath().getLevel();
         boolean dispatchNeeded = callStack.lock.callLocked(() -> {
             callStack.increaseFetchCount(level);
