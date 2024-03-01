@@ -507,18 +507,11 @@ public abstract class ExecutionStrategy {
                 // if the field returns nothing then they get the context of their parent field
                 localContext = parameters.getLocalContext();
             }
-            return FetchedValue.newFetchedValue()
-                    .fetchedValue(executionContext.getValueUnboxer().unbox(dataFetcherResult.getData()))
-                    .rawFetchedValue(dataFetcherResult.getData())
-                    .errors(dataFetcherResult.getErrors())
-                    .localContext(localContext)
-                    .build();
+            Object unBoxedValue = executionContext.getValueUnboxer().unbox(dataFetcherResult.getData());
+            return new FetchedValue(unBoxedValue, dataFetcherResult.getErrors(), localContext);
         } else {
-            return FetchedValue.newFetchedValue()
-                    .fetchedValue(executionContext.getValueUnboxer().unbox(result))
-                    .rawFetchedValue(result)
-                    .localContext(parameters.getLocalContext())
-                    .build();
+            Object unBoxedValue = executionContext.getValueUnboxer().unbox(result);
+            return new FetchedValue(unBoxedValue, ImmutableList.of(), parameters.getLocalContext());
         }
     }
 

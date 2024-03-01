@@ -1,10 +1,10 @@
 package graphql.execution;
 
+import com.google.common.collect.ImmutableList;
 import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
 import graphql.PublicApi;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
@@ -39,13 +39,15 @@ public class FieldValueInfo {
         return completeValueType;
     }
 
-    @Deprecated(since="2023-09-11" )
+    @Deprecated(since = "2023-09-11")
     public CompletableFuture<ExecutionResult> getFieldValue() {
         return fieldValue.thenApply(fv -> ExecutionResultImpl.newExecutionResult().data(fv).build());
     }
+
     public CompletableFuture<Object> getFieldValueFuture() {
         return fieldValue;
     }
+
     public Object /* CompletableFuture<Object> | Object */ getFieldValueObject() {
         return fieldValueObject;
     }
@@ -57,9 +59,6 @@ public class FieldValueInfo {
         return fieldValueInfos;
     }
 
-    public static Builder newFieldValueInfo(CompleteValueType completeValueType) {
-        return new Builder(completeValueType);
-    }
 
     @Override
     public String toString() {
@@ -70,41 +69,4 @@ public class FieldValueInfo {
                 '}';
     }
 
-    @SuppressWarnings("unused")
-    public static class Builder {
-        private CompleteValueType completeValueType;
-        private Object fieldValueObject;
-        private List<FieldValueInfo> listInfos = new ArrayList<>();
-
-        public Builder(CompleteValueType completeValueType) {
-            this.completeValueType = completeValueType;
-        }
-
-        public Builder completeValueType(CompleteValueType completeValueType) {
-            this.completeValueType = completeValueType;
-            return this;
-        }
-
-// KILL for now in the PR - probably want to kill this anyway for reals
-//
-//        public Builder fieldValue(CompletableFuture<Object> executionResultFuture) {
-//            this.fieldValueObject = executionResultFuture;
-//            return this;
-//        }
-
-        public Builder fieldValueObject(Object fieldValueObject) {
-            this.fieldValueObject = fieldValueObject;
-            return this;
-        }
-
-        public Builder fieldValueInfos(List<FieldValueInfo> listInfos) {
-            assertNotNull(listInfos, () -> "fieldValueInfos can't be null");
-            this.listInfos = listInfos;
-            return this;
-        }
-
-        public FieldValueInfo build() {
-            return new FieldValueInfo(completeValueType, fieldValueObject, listInfos);
-        }
-    }
 }
