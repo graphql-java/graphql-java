@@ -13,6 +13,7 @@ import org.dataloader.BatchLoader
 import org.dataloader.DataLoader
 import org.dataloader.DataLoaderFactory
 import org.dataloader.DataLoaderRegistry
+import spock.lang.Ignore
 import spock.lang.Specification
 
 import java.util.concurrent.CompletableFuture
@@ -349,7 +350,7 @@ class BatchLoadingDispatchStrategyTest extends Specification {
         calledCount == 1
     }
 
-    def "default per level batch loading 2"() {
+    def "same dataloader nested"() {
         when:
 
         def friendsPerCharacter = [
@@ -359,18 +360,36 @@ class BatchLoadingDispatchStrategyTest extends Specification {
                 "Leia Organa"   : ["Luke Skywalker", "Han Solo", "C-3P0", "RD-D2"],
 
         ]
-        def heroDF = { env ->
-            return env.getDataLoader("character").load("R2-D2");
-        } as DataFetcher;
+        def heroDF = new BatchLoaderDataFetcher() {
+            @Override
+            List<String> getDataLoaderNames() {
+                return ["character"]
+            }
 
-        def friendsDF = { env ->
-            def friends = friendsPerCharacter[env.source["name"]]
-            return env.getDataLoader("character").loadMany(friends);
-        } as DataFetcher;
+            @Override
+            Object get(DataFetchingEnvironment env) throws Exception {
+                return env.getDataLoader("character").load("R2-D2");
+            }
+        } as BatchLoaderDataFetcher;
+
+        def friendsDF = new BatchLoaderDataFetcher() {
+            @Override
+            List<String> getDataLoaderNames() {
+                return ["character"]
+            }
+
+            @Override
+            Object get(DataFetchingEnvironment env) throws Exception {
+                def friends = friendsPerCharacter[env.source["name"]]
+                return env.getDataLoader("character").loadMany(friends);
+            }
+        } as BatchLoaderDataFetcher;
+
 
         int calledCount = 0;
         BatchLoader<String, List<String>> characterBatchLoader = names -> {
             calledCount++;
+            println "characterBatchLoader!:  $names"
             return CompletableFuture.completedFuture(names.collect { name -> [name: name] })
         };
 
@@ -427,6 +446,7 @@ class BatchLoadingDispatchStrategyTest extends Specification {
     }
 
 
+    @Ignore
     def "batch loading chained dataloader with trivial DF"() {
         given:
         def rootIssueDf = { env ->

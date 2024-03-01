@@ -271,6 +271,10 @@ public class BatchLoadingDispatchStrategy implements DataLoaderDispatchStrategy 
         return startWith(possibleChild.getKeys(), parent.getKeysOnly());
     }
 
+    private boolean isDFKeyParentOrEqualToResultPath(ResultPath parent, DFKey possibleParent) {
+        // the possibleChild is a child if the parent is a "prefix" of the possibleChild
+        return startWith(parent.getKeysOnly(), possibleParent.getKeys());
+    }
 
     private List<DF> buildDataFetcherTree(ExecutableNormalizedOperation executableNormalizedOperation,
                                           GraphQLSchema graphQLSchema,
@@ -333,7 +337,7 @@ public class BatchLoadingDispatchStrategy implements DataLoaderDispatchStrategy 
     public void executeObject(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
         ResultPath path = parameters.getPath();
         int level = getLevelForPath(path) + 1;
-        System.out.println("EXECUTE OBJECT at " + path);
+//        System.out.println("EXECUTE OBJECT at " + path);
         stateLock.runLocked(() -> {
             makeLevelReady(level);
             // the path is the root field of the execute object
@@ -368,7 +372,7 @@ public class BatchLoadingDispatchStrategy implements DataLoaderDispatchStrategy 
     public void fieldFetched(ExecutionContext executionContext, ExecutionStrategyParameters parameters, DataFetcher<?> dataFetcher, CompletableFuture<Object> fetchedValue) {
         ResultPath path = parameters.getPath();
         int level = getLevelForPath(path);
-        System.out.println("field fetched at " + path);
+//        System.out.println("field fetched at " + path);
         DispatchPoint dispatchNeeded = stateLock.callLocked(() -> {
             pathToExecutionNode.get(path).state = ExecutionNodeState.HAPPENED_FETCH_FIELD;
             return isDispatchReady();
@@ -446,29 +450,33 @@ public class BatchLoadingDispatchStrategy implements DataLoaderDispatchStrategy 
     private void checkNewNodeRelevantForDispatchPoint(ExecutionNode newNode) {
         for (String dataLoader : dataLoaderToDispatchPoint.keySet()) {
             DispatchPoint dispatchPoint = dataLoaderToDispatchPoint.get(dataLoader);
-            Map<DFKey, List<ExecutionNode>> currentRelevantNodes = dispatchPoint.relevantExecutionNodes;
-            if (newNode.path.getLevel() == 1) {
-                for (DFKey dfKey : dispatchPoint.dfKeys) {
-                    if (isDFKeyChildOrEqualToResultPath(newNode.path, dfKey)) {
-                        if (!currentRelevantNodes.containsKey(dfKey)) {
-                            currentRelevantNodes.put(dfKey, new ArrayList<>());
+            while (dispatchPoint != null) {
+                Map<DFKey, List<ExecutionNode>> currentRelevantNodes = dispatchPoint.relevantExecutionNodes;
+                if (newNode.path.getLevel() == 1) {
+                    for (DFKey dfKey : dispatchPoint.dfKeys) {
+                        if (isDFKeyChildOrEqualToResultPath(newNode.path, dfKey)) {
+                            if (!currentRelevantNodes.containsKey(dfKey)) {
+                                currentRelevantNodes.put(dfKey, new ArrayList<>());
+                            }
+                            currentRelevantNodes.get(dfKey).add(newNode);
                         }
-                        currentRelevantNodes.get(dfKey).add(newNode);
+                    }
+                } else {
+                    // non root execution nodes
+                    for (DFKey dfKey : dispatchPoint.dfKeys) {
+                        if (isDFKeyChildOrEqualToResultPath(newNode.path, dfKey)) {
+                            // this means the parent node was relevant and we remove it
+                            if (!currentRelevantNodes.containsKey(dfKey)) {
+                                currentRelevantNodes.put(dfKey, new ArrayList<>());
+                            }
+                            currentRelevantNodes.get(dfKey).remove(newNode.parent);
+                            currentRelevantNodes.get(dfKey).add(newNode);
+                        } else if (isDFKeyParentOrEqualToResultPath(newNode.path, dfKey)) {
+//                            System.out.println("already progressed execution node" + newNode.path + " vs " + dfKey);
+                        }
                     }
                 }
-            } else {
-                // non root execution nodes
-                for (DFKey dfKey : dispatchPoint.dfKeys) {
-                    if (isDFKeyChildOrEqualToResultPath(newNode.path, dfKey)) {
-                        // this means the parent node was relevant and we remove it
-                        if (!currentRelevantNodes.containsKey(dfKey)) {
-                            currentRelevantNodes.put(dfKey, new ArrayList<>());
-                        }
-                        currentRelevantNodes.get(dfKey).remove(newNode.parent);
-                        currentRelevantNodes.get(dfKey).add(newNode);
-                    }
-                }
-
+                dispatchPoint = dispatchPoint.child;
             }
         }
 
@@ -488,9 +496,10 @@ public class BatchLoadingDispatchStrategy implements DataLoaderDispatchStrategy 
                 List<ExecutionNode> executionNodes = dispatchPoint.relevantExecutionNodes.get(dfKey);
                 // all relevant nodes must be either done fetching (if it is a parent of the dfkey)
                 // or the fetched must have happened (meaning the dataloader was invoked, but it is pending)
+                // or the DataLoader already resolved (because of caching) and the execution progressed,
                 for (ExecutionNode executionNode : executionNodes) {
                     if (executionNode.path.getKeysOnly().equals(dfKey.getKeys())) {
-                        if (executionNode.state != ExecutionNodeState.HAPPENED_FETCH_FIELD) {
+                        if (executionNode.state != ExecutionNodeState.HAPPENED_FETCH_FIELD && executionNode.state != ExecutionNodeState.HAPPENED_EXECUTE_OBJECT) {
                             continue outer;
                         }
                     } else {
