@@ -6,7 +6,9 @@ import graphql.TestUtil
 import graphql.TrivialDataFetcher
 import graphql.execution.DataLoaderDispatchStrategy
 import graphql.execution.ExecutionContext
+import graphql.schema.BatchLoaderDataFetcher
 import graphql.schema.DataFetcher
+import graphql.schema.DataFetchingEnvironment
 import org.dataloader.BatchLoader
 import org.dataloader.DataLoader
 import org.dataloader.DataLoaderFactory
@@ -255,19 +257,36 @@ class BatchLoadingDispatchStrategyTest extends Specification {
         result.data == [issue: [name: "Issue 1"], insights: [[issue: [name: "Issue 2"]], null, [issue: [name: "Issue 3"]], null]]
     }
 
-    def "default per level batch loading"() {
+    def "different level same dataloader"() {
         when:
-        def rootIssueDf = { env ->
-            return env.getDataLoader("issue").load("1");
-        } as DataFetcher;
+        def rootIssueDf = new BatchLoaderDataFetcher() {
+            @Override
+            List<String> getDataLoaderNames() {
+                return ["issue"]
+            }
 
-        def insightsIssueDf = { env ->
-            return env.getDataLoader("issue").load(env.source["issueId"]);
-        } as DataFetcher;
+            @Override
+            Object get(DataFetchingEnvironment env) throws Exception {
+                return env.getDataLoader("issue").load("1");
+            }
+
+        } as BatchLoaderDataFetcher
+
+        def insightsIssueDf = new BatchLoaderDataFetcher() {
+            @Override
+            List<String> getDataLoaderNames() {
+                return ["issue"]
+            }
+
+            @Override
+            Object get(DataFetchingEnvironment env) throws Exception {
+                return env.getDataLoader("issue").load(env.source["issueId"]);
+            }
+        } as BatchLoaderDataFetcher;
 
         def insightsDf = { env ->
             return [[issueId: "2"], null, [issueId: "3"], null]
-        } as DataFetcher
+        } as DataFetcher;
 
         def Map<String, Map<String, DataFetcher>> dataFetchers = [
                 "Query"  : [
@@ -312,16 +331,8 @@ class BatchLoadingDispatchStrategyTest extends Specification {
 
         int calledCount = 0;
         BatchLoader<String, List<String>> issueBatchLoader = ids -> {
-            if (calledCount == 0) {
-                calledCount++;
-                return CompletableFuture.completedFuture([[name: "Issue 1"]])
-            }
-            if (calledCount == 1) {
-                calledCount++;
-                return CompletableFuture.completedFuture([[name: "Issue 2"], [name: "Issue 3"]])
-            }
             calledCount++;
-            return CompletableFuture.completedFuture([])
+            return CompletableFuture.completedFuture([[name: "Issue 1"], [name: "Issue 2"], [name: "Issue 3"]])
         };
 
         DataLoader<String, List<String>> issueLoader = DataLoaderFactory.newDataLoader(issueBatchLoader);
@@ -335,7 +346,7 @@ class BatchLoadingDispatchStrategyTest extends Specification {
 
         then:
         result.data == [issue: [name: "Issue 1"], insights: [[issue: [name: "Issue 2"]], null, [issue: [name: "Issue 3"]], null]]
-        calledCount == 2
+        calledCount == 1
     }
 
     def "default per level batch loading 2"() {
