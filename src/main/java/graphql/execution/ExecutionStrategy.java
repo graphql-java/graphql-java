@@ -72,7 +72,6 @@ import static graphql.schema.DataFetchingEnvironmentImpl.newDataFetchingEnvironm
 import static graphql.schema.GraphQLTypeUtil.isEnum;
 import static graphql.schema.GraphQLTypeUtil.isList;
 import static graphql.schema.GraphQLTypeUtil.isScalar;
-import static java.util.concurrent.CompletableFuture.completedFuture;
 
 /**
  * An execution strategy is give a list of fields from the graphql query to execute and find values for using a recursive strategy.
@@ -633,10 +632,10 @@ public abstract class ExecutionStrategy {
             return completeValueForList(executionContext, parameters, result);
         } else if (isScalar(fieldType)) {
             fieldValue = completeValueForScalar(executionContext, parameters, (GraphQLScalarType) fieldType, result);
-            return FieldValueInfo.newFieldValueInfo(SCALAR).fieldValueObject(fieldValue).build();
+            return new FieldValueInfo(SCALAR, fieldValue);
         } else if (isEnum(fieldType)) {
             fieldValue = completeValueForEnum(executionContext, parameters, (GraphQLEnumType) fieldType, result);
-            return FieldValueInfo.newFieldValueInfo(ENUM).fieldValueObject(fieldValue).build();
+            return new FieldValueInfo(ENUM, fieldValue);
         }
 
         // when we are here, we have a complex type: Interface, Union or Object
@@ -653,7 +652,7 @@ public abstract class ExecutionStrategy {
             // complete field as null, validating it is nullable
             return getFieldValueInfoForNull(parameters);
         }
-        return FieldValueInfo.newFieldValueInfo(OBJECT).fieldValueObject(fieldValue).build();
+        return new FieldValueInfo(OBJECT, fieldValue);
     }
 
     private void handleUnresolvedTypeProblem(ExecutionContext context, ExecutionStrategyParameters parameters, UnresolvedTypeException e) {
@@ -674,7 +673,7 @@ public abstract class ExecutionStrategy {
      */
     private FieldValueInfo getFieldValueInfoForNull(ExecutionStrategyParameters parameters) {
         Object fieldValue = completeValueForNull(parameters);
-        return FieldValueInfo.newFieldValueInfo(NULL).fieldValueObject(fieldValue).build();
+        return new FieldValueInfo(NULL, fieldValue);
     }
 
     protected Object /* CompletableFuture<Object> | Object */ completeValueForNull(ExecutionStrategyParameters parameters) {
@@ -700,10 +699,10 @@ public abstract class ExecutionStrategy {
         try {
             resultIterable = parameters.getNonNullFieldValidator().validate(parameters.getPath(), resultIterable);
         } catch (NonNullableFieldWasNullException e) {
-            return FieldValueInfo.newFieldValueInfo(LIST).fieldValueObject(exceptionallyCompletedFuture(e)).build();
+            return new FieldValueInfo(LIST, exceptionallyCompletedFuture(e));
         }
         if (resultIterable == null) {
-            return FieldValueInfo.newFieldValueInfo(LIST).fieldValueObject(completedFuture(null)).build();
+            return new FieldValueInfo(LIST, null);
         }
         return completeValueForList(executionContext, parameters, resultIterable);
     }
@@ -775,10 +774,7 @@ public abstract class ExecutionStrategy {
             completeListCtx.onCompleted(listResults, null);
             listOrPromiseToList = listResults;
         }
-        return FieldValueInfo.newFieldValueInfo(LIST)
-                .fieldValueObject(listOrPromiseToList)
-                .fieldValueInfos(fieldValueInfos)
-                .build();
+        return new FieldValueInfo(LIST, listOrPromiseToList, fieldValueInfos);
     }
 
     protected <T> void handleValueException(CompletableFuture<T> overallResult, Throwable e, ExecutionContext executionContext) {

@@ -27,7 +27,11 @@ public class FieldValueInfo {
     private final Object /* CompletableFuture<Object> | Object */ fieldValueObject;
     private final List<FieldValueInfo> fieldValueInfos;
 
-    private FieldValueInfo(CompleteValueType completeValueType, Object fieldValueObject, List<FieldValueInfo> fieldValueInfos) {
+    public FieldValueInfo(CompleteValueType completeValueType, Object fieldValueObject) {
+        this(completeValueType, fieldValueObject, ImmutableList.of());
+    }
+
+    public FieldValueInfo(CompleteValueType completeValueType, Object fieldValueObject, List<FieldValueInfo> fieldValueInfos) {
         assertNotNull(fieldValueInfos, () -> "fieldValueInfos can't be null");
         this.completeValueType = completeValueType;
         this.fieldValueObject = fieldValueObject;
@@ -55,6 +59,7 @@ public class FieldValueInfo {
     public boolean isFutureValue() {
         return fieldValueObject instanceof CompletableFuture;
     }
+
     public List<FieldValueInfo> getFieldValueInfos() {
         return fieldValueInfos;
     }
