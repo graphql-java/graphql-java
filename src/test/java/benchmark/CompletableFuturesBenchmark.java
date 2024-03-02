@@ -1,7 +1,6 @@
 package benchmark;
 
 import com.google.common.collect.ImmutableList;
-import graphql.execution.Async;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.Fork;
@@ -31,6 +30,7 @@ public class CompletableFuturesBenchmark {
     @Param({"2", "5"})
     public int depth;
     public int howMany = 10;
+
     @Setup(Level.Trial)
     public void setUp() {
     }
