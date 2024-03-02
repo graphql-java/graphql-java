@@ -25,7 +25,7 @@ public class Async {
     /**
      * A builder of materialized objects or {@link CompletableFuture}s than can present a promise to the list of them
      * <p>
-     * This builder has a strict contract on size whereby if the expectedSize is 5 then there MUST be five elements presented to it.
+     * This builder has a strict contract on size whereby if the expectedSize is five, then there MUST be five elements presented to it.
      *
      * @param <T> for two
      */
@@ -39,11 +39,11 @@ public class Async {
         void add(CompletableFuture<T> completableFuture);
 
         /**
-         * This can be either a materialized value or a {@link CompletableFuture}
+         * This adds a new value which can be either a materialized value or a {@link CompletableFuture}
          *
-         * @param objectT the object to add
+         * @param object the object to add
          */
-        void addObject(T objectT);
+        void addObject(Object object);
 
         /**
          * This will return a {@code CompletableFuture<List<T>>} even if the inputs are all materialized values
@@ -89,7 +89,7 @@ public class Async {
         }
 
         @Override
-        public void addObject(T objectT) {
+        public void addObject(Object object) {
             this.ix++;
         }
 
@@ -127,8 +127,8 @@ public class Async {
         }
 
         @Override
-        public void addObject(T objectT) {
-            this.value = objectT;
+        public void addObject(Object object) {
+            this.value = object;
             this.ix++;
         }
 
@@ -180,9 +180,9 @@ public class Async {
         }
 
         @Override
-        public void addObject(T objectT) {
-            array[ix++] = objectT;
-            if (objectT instanceof CompletableFuture) {
+        public void addObject(Object object) {
+            array[ix++] = object;
+            if (object instanceof CompletableFuture) {
                 cfCount++;
             }
         }
@@ -364,12 +364,12 @@ public class Async {
     }
 
     /**
-     * Turns a= CompletionStage into a CompletableFuture if it's not already, otherwise leaves it alone
-     * as a materialized object
+     * Turns a CompletionStage into a CompletableFuture if it's not already, otherwise leaves it alone
+     * as a materialized object.
      *
      * @param object - the object to check
      *
-     * @return a CompletableFuture from a CompletionStage or the object itself
+     * @return a CompletableFuture from a CompletionStage or the materialized object itself
      */
     public static Object toCompletableFutureOrMaterializedObject(Object object) {
         if (object instanceof CompletionStage) {
@@ -396,7 +396,7 @@ public class Async {
     }
 
     /**
-     * If the passed in CompletableFuture is null then it creates a CompletableFuture that resolves to null
+     * If the passed in CompletableFuture is null, then it creates a CompletableFuture that resolves to null
      *
      * @param completableFuture the CF to use
      * @param <T>               for two
