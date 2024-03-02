@@ -100,7 +100,6 @@ public class CompletableFuturesBenchmark {
     public static void main(String[] args) throws Exception {
         Options opt = new OptionsBuilder()
                 .include("benchmark.CompletableFuturesBenchmark")
-                .forks(1)
                 .build();
 
         new Runner(opt).run();
