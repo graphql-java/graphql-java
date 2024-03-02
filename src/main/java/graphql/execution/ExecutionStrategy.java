@@ -194,7 +194,8 @@ public abstract class ExecutionStrategy {
      *
      * @throws NonNullableFieldWasNullException in the future if a non-null field resolves to a null value
      */
-    protected CompletableFuture<Map<String, Object>> executeObject(ExecutionContext executionContext, ExecutionStrategyParameters parameters) throws NonNullableFieldWasNullException {
+    @SuppressWarnings("unchecked")
+    protected Object /* CompletableFuture<Map<String, Object>> | Map<String, Object> */ executeObject(ExecutionContext executionContext, ExecutionStrategyParameters parameters) throws NonNullableFieldWasNullException {
         DataLoaderDispatchStrategy dataLoaderDispatcherStrategy = executionContext.getDataLoaderDispatcherStrategy();
         dataLoaderDispatcherStrategy.executeObject(executionContext, parameters);
         Instrumentation instrumentation = executionContext.getInstrumentation();
@@ -210,36 +211,63 @@ public abstract class ExecutionStrategy {
         Async.CombinedBuilder<FieldValueInfo> resolvedFieldFutures = getAsyncFieldValueInfo(executionContext, parameters, deferredExecutionSupport);
 
         CompletableFuture<Map<String, Object>> overallResult = new CompletableFuture<>();
+        List<String> fieldsExecutedOnInitialResult = deferredExecutionSupport.getNonDeferredFieldNames(fieldNames);
+        BiConsumer<List<Object>, Throwable> handleResultsConsumer = buildFieldValueMap(fieldsExecutedOnInitialResult, overallResult, executionContext);
+
         resolveObjectCtx.onDispatched();
 
-        resolvedFieldFutures.await().whenComplete((completeValueInfos, throwable) -> {
-            List<String> fieldsExecutedOnInitialResult = deferredExecutionSupport.getNonDeferredFieldNames(fieldNames);
+        Object fieldValueInfosResult = resolvedFieldFutures.awaitPolymorphic();
+        if (fieldValueInfosResult instanceof CompletableFuture) {
+            CompletableFuture<List<FieldValueInfo>> fieldValueInfos = (CompletableFuture<List<FieldValueInfo>>) fieldValueInfosResult;
+            fieldValueInfos.whenComplete((completeValueInfos, throwable) -> {
+                if (throwable != null) {
+                    handleResultsConsumer.accept(null, throwable);
+                    return;
+                }
 
-            BiConsumer<List<Object>, Throwable> handleResultsConsumer = buildFieldValueMap(fieldsExecutedOnInitialResult, overallResult, executionContext);
-            if (throwable != null) {
-                handleResultsConsumer.accept(null, throwable);
-                return;
-            }
+                Async.CombinedBuilder<Object> resultFutures = fieldValuesCombinedBuilder(completeValueInfos);
+                dataLoaderDispatcherStrategy.executeObjectOnFieldValuesInfo(completeValueInfos, parameters);
+                resolveObjectCtx.onFieldValuesInfo(completeValueInfos);
+                resultFutures.await().whenComplete(handleResultsConsumer);
+            }).exceptionally((ex) -> {
+                // if there are any issues with combining/handling the field results,
+                // complete the future at all costs and bubble up any thrown exception so
+                // the execution does not hang.
+                dataLoaderDispatcherStrategy.executeObjectOnFieldValuesException(ex, parameters);
+                resolveObjectCtx.onFieldValuesException();
+                overallResult.completeExceptionally(ex);
+                return null;
+            });
+            overallResult.whenComplete(resolveObjectCtx::onCompleted);
+            return overallResult;
+        } else {
+            List<FieldValueInfo> completeValueInfos = (List<FieldValueInfo>) fieldValueInfosResult;
 
-            Async.CombinedBuilder<Object> resultFutures = Async.ofExpectedSize(completeValueInfos.size());
-            for (FieldValueInfo completeValueInfo : completeValueInfos) {
-                resultFutures.add(completeValueInfo.getFieldValueFuture());
-            }
+            Async.CombinedBuilder<Object> resultFutures = fieldValuesCombinedBuilder(completeValueInfos);
             dataLoaderDispatcherStrategy.executeObjectOnFieldValuesInfo(completeValueInfos, parameters);
             resolveObjectCtx.onFieldValuesInfo(completeValueInfos);
-            resultFutures.await().whenComplete(handleResultsConsumer);
-        }).exceptionally((ex) -> {
-            // if there are any issues with combining/handling the field results,
-            // complete the future at all costs and bubble up any thrown exception so
-            // the execution does not hang.
-            dataLoaderDispatcherStrategy.executeObjectOnFieldValuesException(ex, parameters);
-            resolveObjectCtx.onFieldValuesException();
-            overallResult.completeExceptionally(ex);
-            return null;
-        });
 
-        overallResult.whenComplete(resolveObjectCtx::onCompleted);
-        return overallResult;
+            Object completedValuesObject = resultFutures.awaitPolymorphic();
+            if (completedValuesObject instanceof CompletableFuture) {
+                CompletableFuture<List<Object>> completedValues = (CompletableFuture<List<Object>>) completedValuesObject;
+                completedValues.whenComplete(handleResultsConsumer);
+                overallResult.whenComplete(resolveObjectCtx::onCompleted);
+                return overallResult;
+            } else {
+                Map<String, Object> fieldValueMap = buildFieldValueMap(fieldsExecutedOnInitialResult, (List<Object>) completedValuesObject);
+                resolveObjectCtx.onCompleted(fieldValueMap,null);
+                return fieldValueMap;
+            }
+        }
+    }
+
+    @NotNull
+    private static Async.CombinedBuilder<Object> fieldValuesCombinedBuilder(List<FieldValueInfo> completeValueInfos) {
+        Async.CombinedBuilder<Object> resultFutures = Async.ofExpectedSize(completeValueInfos.size());
+        for (FieldValueInfo completeValueInfo : completeValueInfos) {
+            resultFutures.addObject(completeValueInfo.getFieldValueObject());
+        }
+        return resultFutures;
     }
 
     private BiConsumer<List<Object>, Throwable> buildFieldValueMap(List<String> fieldNames, CompletableFuture<Map<String, Object>> overallResult, ExecutionContext executionContext) {
@@ -248,14 +276,20 @@ public abstract class ExecutionStrategy {
                 handleValueException(overallResult, exception, executionContext);
                 return;
             }
-            Map<String, Object> resolvedValuesByField = Maps.newLinkedHashMapWithExpectedSize(fieldNames.size());
-            int ix = 0;
-            for (Object fieldValue : results) {
-                String fieldName = fieldNames.get(ix++);
-                resolvedValuesByField.put(fieldName, fieldValue);
-            }
+            Map<String, Object> resolvedValuesByField = buildFieldValueMap(fieldNames, results);
             overallResult.complete(resolvedValuesByField);
         };
+    }
+
+    @NotNull
+    private static Map<String, Object> buildFieldValueMap(List<String> fieldNames, List<Object> results) {
+        Map<String, Object> resolvedValuesByField = Maps.newLinkedHashMapWithExpectedSize(fieldNames.size());
+        int ix = 0;
+        for (Object fieldValue : results) {
+            String fieldName = fieldNames.get(ix++);
+            resolvedValuesByField.put(fieldName, fieldValue);
+        }
+        return resolvedValuesByField;
     }
 
     DeferredExecutionSupport createDeferredExecutionSupport(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
@@ -644,8 +678,7 @@ public abstract class ExecutionStrategy {
         GraphQLObjectType resolvedObjectType;
         try {
             resolvedObjectType = resolveType(executionContext, parameters, fieldType);
-            CompletableFuture<Map<String, Object>> objectValue = completeValueForObject(executionContext, parameters, resolvedObjectType, result);
-            fieldValue = objectValue.thenApply(map -> map);
+            fieldValue = completeValueForObject(executionContext, parameters, resolvedObjectType, result);
         } catch (UnresolvedTypeException ex) {
             // consider the result to be null and add the error on the context
             handleUnresolvedTypeProblem(executionContext, parameters, ex);
@@ -861,7 +894,7 @@ public abstract class ExecutionStrategy {
      *
      * @return a promise to an {@link ExecutionResult}
      */
-    protected CompletableFuture<Map<String, Object>> completeValueForObject(ExecutionContext executionContext, ExecutionStrategyParameters parameters, GraphQLObjectType resolvedObjectType, Object result) {
+    protected Object /* CompletableFuture<Map<String, Object>> | Map<String, Object> */ completeValueForObject(ExecutionContext executionContext, ExecutionStrategyParameters parameters, GraphQLObjectType resolvedObjectType, Object result) {
         ExecutionStepInfo executionStepInfo = parameters.getExecutionStepInfo();
 
         FieldCollectorParameters collectorParameters = newParameters()
