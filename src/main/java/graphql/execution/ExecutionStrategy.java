@@ -365,10 +365,8 @@ public abstract class ExecutionStrategy {
             CompletableFuture<FieldValueInfo> result = fetchFieldFuture.thenApply((fetchedValue) ->
                     completeField(executionContext, parameters, fetchedValue));
 
-            CompletableFuture<Object> fieldValueFuture = result.thenCompose(FieldValueInfo::getFieldValueFuture);
-
             fieldCtx.onDispatched();
-            fieldValueFuture.whenComplete(fieldCtx::onCompleted);
+            result.whenComplete(fieldCtx::onCompleted);
             return result;
         } else {
             try {
