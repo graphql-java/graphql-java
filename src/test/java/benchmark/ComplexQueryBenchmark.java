@@ -54,10 +54,10 @@ import static graphql.schema.idl.TypeRuntimeWiring.newTypeWiring;
 @Fork(2)
 public class ComplexQueryBenchmark {
 
-    @Param({"5", "20", "100"})
+    @Param({"5", "10", "20"})
     int howManyItems = 5;
     int howLongToSleep = 5;
-    int howManyQueries = 50;
+    int howManyQueries = 10;
     int howManyQueryThreads = 10;
     int howManyFetcherThreads = 10;
 
