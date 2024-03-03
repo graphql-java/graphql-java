@@ -923,7 +923,7 @@ public abstract class ExecutionStrategy {
      * @return a {@link GraphQLFieldDefinition}
      */
     protected GraphQLFieldDefinition getFieldDef(GraphQLSchema schema, GraphQLObjectType parentType, Field field) {
-        return Introspection.getFieldDef(schema, parentType, field.getName());
+        return Introspection.getFieldDefinition(schema, parentType, field.getName());
     }
 
     /**

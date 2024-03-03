@@ -702,6 +702,43 @@ public class Introspection {
      */
     public static GraphQLFieldDefinition getFieldDef(GraphQLSchema schema, GraphQLCompositeType parentType, String fieldName) {
 
+        GraphQLFieldDefinition fieldDefinition = getSystemFieldDef(schema, parentType, fieldName);
+        if (fieldDefinition != null) {
+            return fieldDefinition;
+        }
+
+        assertTrue(parentType instanceof GraphQLFieldsContainer, () -> String.format("should not happen : parent type must be an object or interface %s", parentType));
+        GraphQLFieldsContainer fieldsContainer = (GraphQLFieldsContainer) parentType;
+        fieldDefinition = schema.getCodeRegistry().getFieldVisibility().getFieldDefinition(fieldsContainer, fieldName);
+        assertTrue(fieldDefinition != null, () -> String.format("Unknown field '%s' for type %s", fieldName, fieldsContainer.getName()));
+        return fieldDefinition;
+    }
+
+    /**
+     * This will look up a field definition by name, and understand that fields like __typename and __schema are special
+     * and take precedence in field resolution
+     *
+     * @param schema     the schema to use
+     * @param parentType the type of the parent {@link GraphQLFieldsContainer}
+     * @param fieldName  the field to look up
+     *
+     * @return a field definition otherwise throws an assertion exception if it's null
+     */
+    public static GraphQLFieldDefinition getFieldDefinition(GraphQLSchema schema, GraphQLFieldsContainer parentType, String fieldName) {
+        // this method is optimized to look up the most common case first (type for field) and hence suits the hot path of the execution engine
+        // and as a small benefit does not allocate any assertions unless it completely failed
+        GraphQLFieldDefinition fieldDefinition = schema.getCodeRegistry().getFieldVisibility().getFieldDefinition(parentType, fieldName);
+        if (fieldDefinition == null) {
+            // we look up system fields second because they are less likely to be the field in question
+            fieldDefinition = getSystemFieldDef(schema, parentType, fieldName);
+            if (fieldDefinition == null) {
+                Assert.assertShouldNeverHappen(String.format("Unknown field '%s' for type %s", fieldName, parentType.getName()));
+            }
+        }
+        return fieldDefinition;
+    }
+
+    private static GraphQLFieldDefinition getSystemFieldDef(GraphQLSchema schema, GraphQLCompositeType parentType, String fieldName) {
         if (schema.getQueryType() == parentType) {
             if (fieldName.equals(schema.getIntrospectionSchemaFieldDefinition().getName())) {
                 return schema.getIntrospectionSchemaFieldDefinition();
@@ -713,11 +750,6 @@ public class Introspection {
         if (fieldName.equals(schema.getIntrospectionTypenameFieldDefinition().getName())) {
             return schema.getIntrospectionTypenameFieldDefinition();
         }
-
-        assertTrue(parentType instanceof GraphQLFieldsContainer, () -> String.format("should not happen : parent type must be an object or interface %s", parentType));
-        GraphQLFieldsContainer fieldsContainer = (GraphQLFieldsContainer) parentType;
-        GraphQLFieldDefinition fieldDefinition = schema.getCodeRegistry().getFieldVisibility().getFieldDefinition(fieldsContainer, fieldName);
-        assertTrue(fieldDefinition != null, () -> String.format("Unknown field '%s' for type %s", fieldName, fieldsContainer.getName()));
-        return fieldDefinition;
+        return null;
     }
 }
