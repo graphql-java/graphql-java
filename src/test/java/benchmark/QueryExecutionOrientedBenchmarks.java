@@ -6,7 +6,8 @@ import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 
 /**
- * A runner of benchmarks that are whole query runners
+ * A runner of benchmarks that are whole query runners and they do
+ * so from the top of the stack all the way in
  */
 public class QueryExecutionOrientedBenchmarks {
 
