@@ -330,12 +330,7 @@ public abstract class ExecutionStrategy {
 
             if (!deferredExecutionSupport.isDeferredField(currentField)) {
                 Object fieldValueInfo = resolveFieldWithInfo(executionContext, newParameters);
-                if (fieldValueInfo instanceof CompletableFuture) {
-                    //noinspection unchecked
-                    futures.add((CompletableFuture<FieldValueInfo>) fieldValueInfo);
-                } else {
-                    futures.addObject((FieldValueInfo) fieldValueInfo);
-                }
+                futures.addObject(fieldValueInfo);
             }
         }
         return futures;
