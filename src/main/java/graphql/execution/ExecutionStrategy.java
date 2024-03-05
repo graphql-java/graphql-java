@@ -366,7 +366,7 @@ public abstract class ExecutionStrategy {
         } else {
             try {
                 FetchedValue fetchedValue = (FetchedValue) fetchedValueObj;
-                FieldValueInfo fieldValueInfo = completeField(executionContext, parameters, fetchedValue);
+                FieldValueInfo fieldValueInfo = completeField(fieldDef,executionContext, parameters, fetchedValue);
                 fieldCtx.onDispatched();
                 fieldCtx.onCompleted(fetchedValue.getFetchedValue(), null);
                 return fieldValueInfo;
@@ -397,7 +397,7 @@ public abstract class ExecutionStrategy {
         return fetchField(fieldDef, executionContext, parameters);
     }
 
-    private CompletableFuture<FetchedValue> fetchField(GraphQLFieldDefinition fieldDef, ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
+    private Object /*CompletableFuture<FetchedValue> | FetchedValue>*/ fetchField(GraphQLFieldDefinition fieldDef, ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
         MergedField field = parameters.getField();
         GraphQLObjectType parentType = (GraphQLObjectType) parameters.getExecutionStepInfo().getUnwrappedNonNullType();
 
