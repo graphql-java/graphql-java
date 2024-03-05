@@ -5,6 +5,8 @@ import graphql.ExecutionResultImpl;
 import graphql.Internal;
 import graphql.execution.instrumentation.InstrumentationContext;
 
+import java.util.concurrent.CompletableFuture;
+
 /**
  * A class to help adapt old {@link ExecutionResult} based InstrumentationContext
  * from the newer {@link Object} based ones.
@@ -19,16 +21,15 @@ public class ExecutionResultInstrumentationContextAdapter implements Instrumenta
     }
 
     @Override
-    public void onDispatched() {
-        delegate.onDispatched();
+    public void onDispatched(CompletableFuture<Object> result) {
+        CompletableFuture<ExecutionResult> future = result.thenApply(obj -> ExecutionResultImpl.newExecutionResult().data(obj).build());
+        delegate.onDispatched(future);
+        //
+        // when the mapped future is completed, then call onCompleted on the delegate
+        future.whenComplete(delegate::onCompleted);
     }
 
     @Override
     public void onCompleted(Object result, Throwable t) {
-        if (t != null) {
-            delegate.onCompleted(null, t);
-        } else {
-            delegate.onCompleted(ExecutionResultImpl.newExecutionResult().data(result).build(), null);
-        }
     }
 }

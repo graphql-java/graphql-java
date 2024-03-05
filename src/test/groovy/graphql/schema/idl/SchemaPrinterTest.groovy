@@ -1556,7 +1556,7 @@ extend type Query {
 '''
     }
 
-    def "@deprecated directives are NOT always printed - they used to be"() {
+    def "@deprecated directives are always printed"() {
         given:
         def idl = """
 
@@ -1588,7 +1588,7 @@ extend type Query {
 
         then:
         result == '''type Field {
-  deprecated: Enum
+  deprecated: Enum @deprecated(reason : "No longer supported")
 }
 
 type Query {
@@ -1596,11 +1596,11 @@ type Query {
 }
 
 enum Enum {
-  enumVal
+  enumVal @deprecated(reason : "No longer supported")
 }
 
 input Input {
-  deprecated: String
+  deprecated: String @deprecated(reason : "custom reason")
 }
 '''
     }
@@ -1641,7 +1641,7 @@ type Query {
 '''
     }
 
-    def "@deprecated directive are NOT always printed regardless of options"() {
+    def "@deprecated directive are always printed regardless of options"() {
         given:
         def idl = '''
 
@@ -1660,37 +1660,6 @@ type Query {
 
         then:
         result == '''type Query {
-  fieldX: String
-}
-'''
-    }
-
-    def "@deprecated directive are printed respecting options"() {
-        given:
-        def idl = '''
-
-            type Query {
-              fieldX : String @deprecated
-            }
-            
-        '''
-        def registry = new SchemaParser().parse(idl)
-        def runtimeWiring = newRuntimeWiring().build()
-        def options = SchemaGenerator.Options.defaultOptions()
-        def schema = new SchemaGenerator().makeExecutableSchema(options, registry, runtimeWiring)
-
-        when:
-        def printOptions = defaultOptions().includeDirectives({ dName -> (dName == "deprecated") })
-        def result = new SchemaPrinter(printOptions).print(schema)
-
-        then:
-        result == '''"Marks the field, argument, input field or enum value as deprecated"
-directive @deprecated(
-    "The reason for the deprecation"
-    reason: String = "No longer supported"
-  ) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION
-
-type Query {
   fieldX: String @deprecated(reason : "No longer supported")
 }
 '''
@@ -2709,10 +2678,7 @@ input Gun {
                 .query(queryType)
                 .build()
         when:
-
-        def printOptions = defaultOptions().includeDirectiveDefinitions(false).includeDirectives({ d -> true })
-
-        def result = "\n" + new SchemaPrinter(printOptions).print(schema)
+        def result = "\n" + new SchemaPrinter(noDirectivesOption).print(schema)
         println(result)
 
         then:
@@ -2734,49 +2700,4 @@ input Input {
 }
 """
     }
-
-    def "can use predicate for directive definitions"() {
-
-        def schema = TestUtil.schema("""
-            type Query {
-                field: String @deprecated
-            }
-        """)
-
-
-        def options = defaultOptions()
-                .includeDirectiveDefinitions(true)
-                .includeDirectiveDefinition({ it != "skip" })
-        def result = new SchemaPrinter(options).print(schema)
-
-        expect: "has no skip definition"
-
-        result == """"Marks the field, argument, input field or enum value as deprecated"
-directive @deprecated(
-    "The reason for the deprecation"
-    reason: String = "No longer supported"
-  ) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION
-
-"Directs the executor to include this field or fragment only when the `if` argument is true"
-directive @include(
-    "Included when true."
-    if: Boolean!
-  ) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
-
-"Indicates an Input Object is a OneOf Input Object."
-directive @oneOf on INPUT_OBJECT
-
-"Exposes a URL that specifies the behaviour of this scalar."
-directive @specifiedBy(
-    "The URL that specifies the behaviour of this scalar."
-    url: String!
-  ) on SCALAR
-
-type Query {
-  field: String @deprecated(reason : "No longer supported")
 }
-"""
-    }
-}
-
-

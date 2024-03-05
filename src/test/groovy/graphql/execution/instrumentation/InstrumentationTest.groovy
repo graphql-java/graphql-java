@@ -171,7 +171,7 @@ class InstrumentationTest extends Specification {
             return new ExecutionStrategyInstrumentationContext() {
 
                 @Override
-                void onDispatched() {
+                void onDispatched(CompletableFuture<ExecutionResult> result) {
                     System.out.println(String.format("t%s setting go signal on", Thread.currentThread().getId()))
                     goSignal.set(true)
                 }

@@ -3,26 +3,26 @@ package graphql.execution
 import graphql.AssertException
 import spock.lang.Specification
 
-import java.util.concurrent.CompletableFuture
 
-import static graphql.execution.FieldValueInfo.CompleteValueType.SCALAR
-
-
-class FieldValueInfoTest extends Specification {
+class FieldValueInfoTest extends Specification{
 
     def "simple constructor test"() {
         when:
-        def fieldValueInfo = new FieldValueInfo(SCALAR, CompletableFuture.completedFuture("A"))
+        def fieldValueInfo = FieldValueInfo.newFieldValueInfo().build()
 
         then: "fieldValueInfos to be empty list"
         fieldValueInfo.fieldValueInfos == [] as List
-        fieldValueInfo.fieldValueFuture.join() == "A"
-        fieldValueInfo.completeValueType == SCALAR
+
+        and: "other fields to be null "
+        fieldValueInfo.fieldValueFuture == null
+        fieldValueInfo.completeValueType == null
     }
 
     def "negative constructor test"() {
         when:
-        new FieldValueInfo(SCALAR, CompletableFuture.completedFuture("A"), null)
+        FieldValueInfo.newFieldValueInfo()
+                .fieldValueInfos(null)
+                .build()
         then:
         def assEx = thrown(AssertException)
         assEx.message.contains("fieldValueInfos")

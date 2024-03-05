@@ -51,6 +51,7 @@ public class GraphQLInterfaceType implements GraphQLNamedType, GraphQLCompositeT
     private final Comparator<? super GraphQLSchemaElement> interfaceComparator;
     private ImmutableList<GraphQLNamedOutputType> replacedInterfaces;
 
+
     public static final String CHILD_FIELD_DEFINITIONS = "fieldDefinitions";
     public static final String CHILD_INTERFACES = "interfaces";
 
@@ -94,6 +95,7 @@ public class GraphQLInterfaceType implements GraphQLNamedType, GraphQLCompositeT
     public GraphQLFieldDefinition getFieldDefinition(String name) {
         return fieldDefinitionsByName.get(name);
     }
+
 
     @Override
     public List<GraphQLFieldDefinition> getFieldDefinitions() {
@@ -227,9 +229,9 @@ public class GraphQLInterfaceType implements GraphQLNamedType, GraphQLCompositeT
     @Override
     public List<GraphQLNamedOutputType> getInterfaces() {
         if (replacedInterfaces != null) {
-            return replacedInterfaces;
+            return ImmutableList.copyOf(replacedInterfaces);
         }
-        return originalInterfaces;
+        return ImmutableList.copyOf(originalInterfaces);
     }
 
     void replaceInterfaces(List<GraphQLNamedOutputType> interfaces) {

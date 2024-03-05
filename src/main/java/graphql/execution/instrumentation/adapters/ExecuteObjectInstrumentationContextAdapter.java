@@ -4,11 +4,12 @@ import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
 import graphql.Internal;
 import graphql.execution.FieldValueInfo;
-import graphql.execution.instrumentation.ExecuteObjectInstrumentationContext;
 import graphql.execution.instrumentation.ExecutionStrategyInstrumentationContext;
+import graphql.execution.instrumentation.ExecuteObjectInstrumentationContext;
 
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * A class to help adapt old {@link ExecutionResult} based ExecutionStrategyInstrumentationContext
@@ -24,17 +25,16 @@ public class ExecuteObjectInstrumentationContextAdapter implements ExecuteObject
     }
 
     @Override
-    public void onDispatched() {
-        delegate.onDispatched();
+    public void onDispatched(CompletableFuture<Map<String, Object>> result) {
+        CompletableFuture<ExecutionResult> future = result.thenApply(r -> ExecutionResultImpl.newExecutionResult().data(r).build());
+        delegate.onDispatched(future);
+        //
+        // when the mapped future is completed, then call onCompleted on the delegate
+        future.whenComplete(delegate::onCompleted);
     }
 
     @Override
     public void onCompleted(Map<String, Object> result, Throwable t) {
-        if (t != null) {
-            delegate.onCompleted(null, t);
-        } else {
-            delegate.onCompleted(ExecutionResultImpl.newExecutionResult().data(result).build(), null);
-        }
     }
 
     @Override

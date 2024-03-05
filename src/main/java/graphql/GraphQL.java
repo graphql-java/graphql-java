@@ -420,16 +420,17 @@ public class GraphQL {
                 InstrumentationExecutionParameters inputInstrumentationParameters = new InstrumentationExecutionParameters(executionInputWithId, this.graphQLSchema, instrumentationState);
                 ExecutionInput instrumentedExecutionInput = instrumentation.instrumentExecutionInput(executionInputWithId, inputInstrumentationParameters, instrumentationState);
 
+                CompletableFuture<ExecutionResult> beginExecutionCF = new CompletableFuture<>();
                 InstrumentationExecutionParameters instrumentationParameters = new InstrumentationExecutionParameters(instrumentedExecutionInput, this.graphQLSchema, instrumentationState);
                 InstrumentationContext<ExecutionResult> executionInstrumentation = nonNullCtx(instrumentation.beginExecution(instrumentationParameters, instrumentationState));
-                executionInstrumentation.onDispatched();
+                executionInstrumentation.onDispatched(beginExecutionCF);
 
                 GraphQLSchema graphQLSchema = instrumentation.instrumentSchema(this.graphQLSchema, instrumentationParameters, instrumentationState);
 
                 CompletableFuture<ExecutionResult> executionResult = parseValidateAndExecute(instrumentedExecutionInput, graphQLSchema, instrumentationState);
                 //
                 // finish up instrumentation
-                executionResult = executionResult.whenComplete(completeInstrumentationCtxCF(executionInstrumentation));
+                executionResult = executionResult.whenComplete(completeInstrumentationCtxCF(executionInstrumentation, beginExecutionCF));
                 //
                 // allow instrumentation to tweak the result
                 executionResult = executionResult.thenCompose(result -> instrumentation.instrumentExecutionResult(result, instrumentationParameters, instrumentationState));
@@ -506,13 +507,15 @@ public class GraphQL {
     private ParseAndValidateResult parse(ExecutionInput executionInput, GraphQLSchema graphQLSchema, InstrumentationState instrumentationState) {
         InstrumentationExecutionParameters parameters = new InstrumentationExecutionParameters(executionInput, graphQLSchema, instrumentationState);
         InstrumentationContext<Document> parseInstrumentationCtx = nonNullCtx(instrumentation.beginParse(parameters, instrumentationState));
-        parseInstrumentationCtx.onDispatched();
+        CompletableFuture<Document> documentCF = new CompletableFuture<>();
+        parseInstrumentationCtx.onDispatched(documentCF);
 
         ParseAndValidateResult parseResult = ParseAndValidate.parse(executionInput);
         if (parseResult.isFailure()) {
             parseInstrumentationCtx.onCompleted(null, parseResult.getSyntaxException());
             return parseResult;
         } else {
+            documentCF.complete(parseResult.getDocument());
             parseInstrumentationCtx.onCompleted(parseResult.getDocument(), null);
 
             DocumentAndVariables documentAndVariables = parseResult.getDocumentAndVariables();
@@ -524,13 +527,15 @@ public class GraphQL {
 
     private List<ValidationError> validate(ExecutionInput executionInput, Document document, GraphQLSchema graphQLSchema, InstrumentationState instrumentationState) {
         InstrumentationContext<List<ValidationError>> validationCtx = nonNullCtx(instrumentation.beginValidation(new InstrumentationValidationParameters(executionInput, document, graphQLSchema, instrumentationState), instrumentationState));
-        validationCtx.onDispatched();
+        CompletableFuture<List<ValidationError>> cf = new CompletableFuture<>();
+        validationCtx.onDispatched(cf);
 
         Predicate<Class<?>> validationRulePredicate = executionInput.getGraphQLContext().getOrDefault(ParseAndValidate.INTERNAL_VALIDATION_PREDICATE_HINT, r -> true);
         Locale locale = executionInput.getLocale() != null ? executionInput.getLocale() : Locale.getDefault();
         List<ValidationError> validationErrors = ParseAndValidate.validate(graphQLSchema, document, validationRulePredicate, locale);
 
         validationCtx.onCompleted(validationErrors, null);
+        cf.complete(validationErrors);
         return validationErrors;
     }
 

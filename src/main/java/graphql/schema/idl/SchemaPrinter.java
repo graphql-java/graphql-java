@@ -98,8 +98,6 @@ public class SchemaPrinter {
 
         private final boolean descriptionsAsHashComments;
 
-        private final Predicate<String> includeDirectiveDefinition;
-
         private final Predicate<String> includeDirective;
 
         private final Predicate<GraphQLSchemaElement> includeSchemaElement;
@@ -112,7 +110,6 @@ public class SchemaPrinter {
                         boolean includeScalars,
                         boolean includeSchemaDefinition,
                         boolean includeDirectiveDefinitions,
-                        Predicate<String> includeDirectiveDefinition,
                         boolean useAstDefinitions,
                         boolean descriptionsAsHashComments,
                         Predicate<String> includeDirective,
@@ -123,7 +120,6 @@ public class SchemaPrinter {
             this.includeScalars = includeScalars;
             this.includeSchemaDefinition = includeSchemaDefinition;
             this.includeDirectiveDefinitions = includeDirectiveDefinitions;
-            this.includeDirectiveDefinition = includeDirectiveDefinition;
             this.includeDirective = includeDirective;
             this.useAstDefinitions = useAstDefinitions;
             this.descriptionsAsHashComments = descriptionsAsHashComments;
@@ -148,10 +144,6 @@ public class SchemaPrinter {
             return includeDirectiveDefinitions;
         }
 
-        public Predicate<String> getIncludeDirectiveDefinition() {
-            return includeDirectiveDefinition;
-        }
-
         public Predicate<String> getIncludeDirective() {
             return includeDirective;
         }
@@ -172,16 +164,14 @@ public class SchemaPrinter {
             return useAstDefinitions;
         }
 
-        public boolean isIncludeAstDefinitionComments() {
-            return includeAstDefinitionComments;
-        }
+        public boolean isIncludeAstDefinitionComments() { return includeAstDefinitionComments; }
 
         public static Options defaultOptions() {
             return new Options(false,
                     true,
                     false,
                     true,
-                    directive -> true, false,
+                    false,
                     false,
                     directive -> true,
                     element -> true,
@@ -201,7 +191,7 @@ public class SchemaPrinter {
                     this.includeScalars,
                     this.includeSchemaDefinition,
                     this.includeDirectiveDefinitions,
-                    this.includeDirectiveDefinition, this.useAstDefinitions,
+                    this.useAstDefinitions,
                     this.descriptionsAsHashComments,
                     this.includeDirective,
                     this.includeSchemaElement,
@@ -221,7 +211,7 @@ public class SchemaPrinter {
                     flag,
                     this.includeSchemaDefinition,
                     this.includeDirectiveDefinitions,
-                    this.includeDirectiveDefinition, this.useAstDefinitions,
+                    this.useAstDefinitions,
                     this.descriptionsAsHashComments,
                     this.includeDirective,
                     this.includeSchemaElement,
@@ -244,7 +234,6 @@ public class SchemaPrinter {
                     this.includeScalars,
                     flag,
                     this.includeDirectiveDefinitions,
-                    this.includeDirectiveDefinition,
                     this.useAstDefinitions,
                     this.descriptionsAsHashComments,
                     this.includeDirective,
@@ -270,29 +259,6 @@ public class SchemaPrinter {
                     this.includeScalars,
                     this.includeSchemaDefinition,
                     flag,
-                    directive -> flag,
-                    this.useAstDefinitions,
-                    this.descriptionsAsHashComments,
-                    this.includeDirective,
-                    this.includeSchemaElement,
-                    this.comparatorRegistry,
-                    this.includeAstDefinitionComments);
-        }
-
-
-        /**
-         * This is a Predicate that decides whether a directive definition is printed.
-         *
-         * @param includeDirectiveDefinition the predicate to decide of a directive defintion is printed
-         *
-         * @return new instance of options
-         */
-        public Options includeDirectiveDefinition(Predicate<String> includeDirectiveDefinition) {
-            return new Options(this.includeIntrospectionTypes,
-                    this.includeScalars,
-                    this.includeSchemaDefinition,
-                    this.includeDirectiveDefinitions,
-                    includeDirectiveDefinition,
                     this.useAstDefinitions,
                     this.descriptionsAsHashComments,
                     this.includeDirective,
@@ -314,7 +280,6 @@ public class SchemaPrinter {
                     this.includeScalars,
                     this.includeSchemaDefinition,
                     this.includeDirectiveDefinitions,
-                    this.includeDirectiveDefinition,
                     this.useAstDefinitions,
                     this.descriptionsAsHashComments,
                     directive -> flag,
@@ -335,7 +300,6 @@ public class SchemaPrinter {
                     this.includeScalars,
                     this.includeSchemaDefinition,
                     this.includeDirectiveDefinitions,
-                    this.includeDirectiveDefinition,
                     this.useAstDefinitions,
                     this.descriptionsAsHashComments,
                     includeDirective,
@@ -343,7 +307,6 @@ public class SchemaPrinter {
                     this.comparatorRegistry,
                     this.includeAstDefinitionComments);
         }
-
 
         /**
          * This is a general purpose Predicate that decides whether a schema element is printed ever.
@@ -358,7 +321,6 @@ public class SchemaPrinter {
                     this.includeScalars,
                     this.includeSchemaDefinition,
                     this.includeDirectiveDefinitions,
-                    this.includeDirectiveDefinition,
                     this.useAstDefinitions,
                     this.descriptionsAsHashComments,
                     this.includeDirective,
@@ -380,7 +342,6 @@ public class SchemaPrinter {
                     this.includeScalars,
                     this.includeSchemaDefinition,
                     this.includeDirectiveDefinitions,
-                    this.includeDirectiveDefinition,
                     flag,
                     this.descriptionsAsHashComments,
                     this.includeDirective,
@@ -404,7 +365,6 @@ public class SchemaPrinter {
                     this.includeScalars,
                     this.includeSchemaDefinition,
                     this.includeDirectiveDefinitions,
-                    this.includeDirectiveDefinition,
                     this.useAstDefinitions,
                     flag,
                     this.includeDirective,
@@ -427,7 +387,6 @@ public class SchemaPrinter {
                     this.includeScalars,
                     this.includeSchemaDefinition,
                     this.includeDirectiveDefinitions,
-                    this.includeDirectiveDefinition,
                     this.useAstDefinitions,
                     this.descriptionsAsHashComments,
                     this.includeDirective,
@@ -450,7 +409,6 @@ public class SchemaPrinter {
                     this.includeScalars,
                     this.includeSchemaDefinition,
                     this.includeDirectiveDefinitions,
-                    this.includeDirectiveDefinition,
                     this.useAstDefinitions,
                     this.descriptionsAsHashComments,
                     this.includeDirective,
@@ -680,9 +638,7 @@ public class SchemaPrinter {
 
     private SchemaElementPrinter<GraphQLDirective> directivePrinter() {
         return (out, directive, visibility) -> {
-            boolean isOnEver = options.isIncludeDirectiveDefinitions();
-            boolean specificTest = options.getIncludeDirectiveDefinition().test(directive.getName());
-            if (isOnEver && specificTest) {
+            if (options.isIncludeDirectiveDefinitions()) {
                 String s = directiveDefinition(directive);
                 out.format("%s", s);
                 out.print("\n\n");
@@ -920,7 +876,7 @@ public class SchemaPrinter {
     private String directivesString(Class<? extends GraphQLSchemaElement> parentType, List<GraphQLAppliedDirective> directives) {
         directives = directives.stream()
                 // @deprecated is special - we always print it if something is deprecated
-                .filter(directive -> options.getIncludeDirective().test(directive.getName()))
+                .filter(directive -> options.getIncludeDirective().test(directive.getName()) || isDeprecatedDirective(directive))
                 .filter(options.getIncludeSchemaElement())
                 .collect(toList());
 
@@ -953,7 +909,10 @@ public class SchemaPrinter {
             return "";
         }
         if (!options.getIncludeDirective().test(directive.getName())) {
-            return "";
+            // @deprecated is special - we always print it if something is deprecated
+            if (!isDeprecatedDirective(directive)) {
+                return "";
+            }
         }
 
         StringBuilder sb = new StringBuilder();
@@ -989,13 +948,6 @@ public class SchemaPrinter {
         return sb.toString();
     }
 
-    private boolean isDeprecatedDirectiveAllowed() {
-        // we ask if the special deprecated directive,
-        // which can be programmatically on a type without an applied directive,
-        // should be printed or not
-        return options.getIncludeDirective().test(DeprecatedDirective.getName());
-    }
-
     private boolean isDeprecatedDirective(GraphQLAppliedDirective directive) {
         return directive.getName().equals(DeprecatedDirective.getName());
     }
@@ -1008,14 +960,14 @@ public class SchemaPrinter {
 
     private List<GraphQLAppliedDirective> addDeprecatedDirectiveIfNeeded(GraphQLDirectiveContainer directiveContainer) {
         List<GraphQLAppliedDirective> directives = DirectivesUtil.toAppliedDirectives(directiveContainer);
-        if (!hasDeprecatedDirective(directives) && isDeprecatedDirectiveAllowed()) {
+        if (!hasDeprecatedDirective(directives)) {
             directives = new ArrayList<>(directives);
-            String reason = getDeprecationReason(directiveContainer);
-            GraphQLAppliedDirectiveArgument arg = GraphQLAppliedDirectiveArgument.newArgument()
-                    .name("reason")
-                    .valueProgrammatic(reason)
-                    .type(GraphQLString)
-                    .build();
+                    String reason = getDeprecationReason(directiveContainer);
+                    GraphQLAppliedDirectiveArgument arg = GraphQLAppliedDirectiveArgument.newArgument()
+                            .name("reason")
+                            .valueProgrammatic(reason)
+                            .type(GraphQLString)
+                            .build();
             GraphQLAppliedDirective directive = GraphQLAppliedDirective.newDirective()
                     .name("deprecated")
                     .argument(arg)
@@ -1152,7 +1104,7 @@ public class SchemaPrinter {
         if (options.isIncludeAstDefinitionComments()) {
             String commentsText = getAstDefinitionComments(graphQLType);
             if (!isNullOrEmpty(commentsText)) {
-                List<String> lines = Arrays.asList(commentsText.split("\n"));
+                List<String> lines = Arrays.asList(commentsText.split("\n") );
                 if (!lines.isEmpty()) {
                     printMultiLineHashDescription(out, prefix, lines);
                 }
@@ -1227,7 +1179,7 @@ public class SchemaPrinter {
     }
 
     private String comments(List<Comment> comments) {
-        if (comments == null || comments.isEmpty()) {
+        if ( comments == null || comments.isEmpty() ) {
             return null;
         }
         String s = comments.stream().map(c -> c.getContent()).collect(joining("\n", "", "\n"));
