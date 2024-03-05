@@ -10,7 +10,7 @@ import java.util.Objects;
 import java.util.function.UnaryOperator;
 
 import static graphql.Assert.assertNotNull;
-import static graphql.schema.GraphQLTypeUtil.unwrapAll;
+import static graphql.schema.GraphQLTypeUtil.unwrapAllAs;
 import static graphql.schema.GraphqlTypeComparatorEnvironment.newEnvironment;
 
 /**
@@ -33,6 +33,7 @@ public class DefaultGraphqlTypeComparatorRegistry implements GraphqlTypeComparat
 
     /**
      * This orders the schema into a sensible grouped order
+     *
      * @return a comparator that allows for sensible grouped order
      */
     public static Comparator<GraphQLSchemaElement> sensibleGroupedOrder() {
@@ -51,7 +52,11 @@ public class DefaultGraphqlTypeComparatorRegistry implements GraphqlTypeComparat
 
     private static GraphQLSchemaElement unwrapElement(GraphQLSchemaElement element) {
         if (element instanceof GraphQLType) {
-            element = unwrapAll((GraphQLType) element);
+            GraphQLType castElement = (GraphQLType) element;
+            // We need to unwrap as GraphQLType to support GraphQLTypeReferences which is not an GraphQLUnmodifiedType
+            // as returned by unwrapAll.
+            castElement = unwrapAllAs(castElement);
+            element = castElement;
         }
         return element;
     }
@@ -59,7 +64,7 @@ public class DefaultGraphqlTypeComparatorRegistry implements GraphqlTypeComparat
     private static int compareByName(GraphQLSchemaElement o1, GraphQLSchemaElement o2) {
         return Comparator.comparing(element -> {
             if (element instanceof GraphQLType) {
-                element = unwrapAll((GraphQLType) element);
+                element = unwrapElement((GraphQLType) element);
             }
             if (element instanceof GraphQLNamedSchemaElement) {
                 return ((GraphQLNamedSchemaElement) element).getName();
