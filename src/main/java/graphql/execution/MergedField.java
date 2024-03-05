@@ -73,6 +73,10 @@ public class MergedField {
         this.deferredExecutions = deferredExecutions;
     }
 
+    private MergedField(Field field, DeferredExecution deferredExecution) {
+        this(ImmutableList.of(field), deferredExecution == null ? ImmutableList.of() : ImmutableList.of(deferredExecution));
+    }
+
     /**
      * All merged fields have the same name.
      *
@@ -131,10 +135,9 @@ public class MergedField {
      * @return all defer executions.
      */
     @ExperimentalApi
-    public ImmutableList<DeferredExecution> getDeferredExecutions() {
+    public List<DeferredExecution> getDeferredExecutions() {
         return deferredExecutions;
     }
-
 
     public static Builder newMergedField() {
         return new Builder();
@@ -146,6 +149,10 @@ public class MergedField {
 
     public static Builder newMergedField(List<Field> fields) {
         return new Builder().fields(fields);
+    }
+
+    static MergedField newSingletonMergedField(Field field, DeferredExecution deferredExecution) {
+        return new MergedField(field, deferredExecution);
     }
 
     public MergedField transform(Consumer<Builder> builderConsumer) {
