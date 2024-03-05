@@ -9,9 +9,17 @@ import graphql.execution.instrumentation.parameters.InstrumentationCreateStatePa
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
-import org.jetbrains.annotations.NotNull;
-import org.openjdk.jmh.annotations.*;
-import org.openjdk.jmh.infra.Blackhole;
+import org.openjdk.jmh.annotations.Benchmark;
+import org.openjdk.jmh.annotations.BenchmarkMode;
+import org.openjdk.jmh.annotations.Fork;
+import org.openjdk.jmh.annotations.Level;
+import org.openjdk.jmh.annotations.Measurement;
+import org.openjdk.jmh.annotations.Mode;
+import org.openjdk.jmh.annotations.Param;
+import org.openjdk.jmh.annotations.Scope;
+import org.openjdk.jmh.annotations.Setup;
+import org.openjdk.jmh.annotations.State;
+import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.runner.Runner;
 import org.openjdk.jmh.runner.options.Options;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
@@ -19,16 +27,15 @@ import org.openjdk.jmh.runner.options.OptionsBuilder;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
 
 import static graphql.Scalars.GraphQLString;
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition;
 import static graphql.schema.GraphQLObjectType.newObject;
 
 @State(Scope.Benchmark)
-@BenchmarkMode(Mode.Throughput)
-@Warmup(iterations = 2)
-@Measurement(iterations = 2, timeUnit = TimeUnit.NANOSECONDS)
+@Warmup(iterations = 2, time = 5)
+@Measurement(iterations = 3)
+@Fork(3)
 public class ChainedInstrumentationBenchmark {
 
     @Param({"0", "1", "10"})
@@ -61,6 +68,7 @@ public class ChainedInstrumentationBenchmark {
     }
 
     @Benchmark
+    @BenchmarkMode(Mode.Throughput)
     public GraphQLSchema benchmarkInstrumentSchema() {
         return chainedInstrumentation.instrumentSchema(schema, parameters, instrumentationState);
     }

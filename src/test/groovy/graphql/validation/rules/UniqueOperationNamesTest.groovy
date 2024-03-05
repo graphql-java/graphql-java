@@ -46,8 +46,8 @@ class UniqueOperationNamesTest extends Specification {
         }
 
         mutation dogOperation {
-            mutateDog {
-                id
+            createDog(input: {id: "1"}) {
+                name
             }
         }
         """.stripIndent()

@@ -1,7 +1,5 @@
 package benchmark;
 
-import com.google.common.base.Charsets;
-import com.google.common.io.Resources;
 import graphql.schema.GraphQLDirective;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLObjectType;
@@ -22,20 +20,14 @@ import org.openjdk.jmh.annotations.OutputTimeUnit;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
-import org.openjdk.jmh.annotations.Threads;
 import org.openjdk.jmh.annotations.Warmup;
 
-import java.io.IOException;
-import java.net.URL;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import static com.google.common.io.Resources.getResource;
-
 @State(Scope.Benchmark)
 @BenchmarkMode(Mode.AverageTime)
-@Threads(1)
 @Warmup(iterations = 2, time = 5)
 @Measurement(iterations = 3, time = 10)
 @Fork(3)
@@ -55,7 +47,7 @@ public class SchemaTransformerBenchmark {
             @Override
             public TraversalControl visitGraphQLFieldDefinition(GraphQLFieldDefinition node, TraverserContext<GraphQLSchemaElement> context) {
                 // add directive
-                GraphQLFieldDefinition changedNode = node.transform( builder -> {
+                GraphQLFieldDefinition changedNode = node.transform(builder -> {
                     builder.withDirective(infoDirective);
                 });
                 return changeNode(context, changedNode);
@@ -64,7 +56,7 @@ public class SchemaTransformerBenchmark {
             @Override
             public TraversalControl visitGraphQLObjectType(GraphQLObjectType node, TraverserContext<GraphQLSchemaElement> context) {
                 // add directive info
-                GraphQLObjectType changedNode = node.transform( builder -> {
+                GraphQLObjectType changedNode = node.transform(builder -> {
                     builder.withDirective(infoDirective);
                 });
                 return changeNode(context, changedNode);
@@ -78,7 +70,7 @@ public class SchemaTransformerBenchmark {
                         .filter(d -> !d.getName().equals(infoDirective.getName()))
                         .collect(Collectors.toList());
                 // remove directive info
-                GraphQLFieldDefinition changedNode = node.transform( builder -> {
+                GraphQLFieldDefinition changedNode = node.transform(builder -> {
                     builder.replaceDirectives(filteredDirectives);
                 });
                 return changeNode(context, changedNode);
@@ -90,7 +82,7 @@ public class SchemaTransformerBenchmark {
                         .filter(d -> !d.getName().equals(infoDirective.getName()))
                         .collect(Collectors.toList());
                 // remove directive info
-                GraphQLObjectType changedNode = node.transform( builder -> {
+                GraphQLObjectType changedNode = node.transform(builder -> {
                     builder.replaceDirectives(filteredDirectives);
                 });
                 return changeNode(context, changedNode);
