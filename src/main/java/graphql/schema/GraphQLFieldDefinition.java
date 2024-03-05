@@ -6,6 +6,7 @@ import graphql.DirectivesUtil;
 import graphql.Internal;
 import graphql.PublicApi;
 import graphql.language.FieldDefinition;
+import graphql.util.FieldNameInterner;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
@@ -61,7 +62,7 @@ public class GraphQLFieldDefinition implements GraphQLNamedSchemaElement, GraphQ
         assertValidName(name);
         assertNotNull(type, () -> "type can't be null");
         assertNotNull(arguments, () -> "arguments can't be null");
-        this.name = name;
+        this.name = FieldNameInterner.intern(name);
         this.description = description;
         this.originalType = type;
         this.dataFetcherFactory = dataFetcherFactory;

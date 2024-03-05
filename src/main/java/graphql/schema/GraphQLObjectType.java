@@ -40,7 +40,6 @@ import static graphql.util.FpKit.valuesToList;
 @PublicApi
 public class GraphQLObjectType implements GraphQLNamedOutputType, GraphQLCompositeType, GraphQLUnmodifiedType, GraphQLNullableType, GraphQLDirectiveContainer, GraphQLImplementingType {
 
-
     private final String name;
     private final String description;
     private final Comparator<? super GraphQLSchemaElement> interfaceComparator;
@@ -131,7 +130,6 @@ public class GraphQLObjectType implements GraphQLNamedOutputType, GraphQLComposi
     public List<GraphQLFieldDefinition> getFieldDefinitions() {
         return ImmutableList.copyOf(fieldDefinitionsByName.values());
     }
-
 
     @Override
     public List<GraphQLNamedOutputType> getInterfaces() {
