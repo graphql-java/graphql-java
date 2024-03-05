@@ -1,6 +1,7 @@
 package graphql.validation;
 
 
+import graphql.ExperimentalApi;
 import graphql.Internal;
 import graphql.i18n.I18nMsg;
 import graphql.language.Argument;
@@ -90,6 +91,17 @@ public class AbstractRule {
         return validationContext.getQueryPath();
     }
 
+    /**
+     * Verifies if the experimental API key is enabled
+     * @param key to be checked
+     * @return if the experimental API key is enabled
+     */
+    protected Boolean isExperimentalApiKeyEnabled(String key) {
+        return (getValidationContext() != null &&
+                getValidationContext().getGraphQLContext() != null ||
+                getValidationContext().getGraphQLContext().get(key) != null ||
+                ((Boolean) getValidationContext().getGraphQLContext().get(key)));
+    }
     /**
      * Creates an I18n message using the {@link graphql.i18n.I18nMsg}
      *

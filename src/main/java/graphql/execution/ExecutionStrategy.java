@@ -358,7 +358,7 @@ public abstract class ExecutionStrategy {
         if (fetchedValueObj instanceof CompletableFuture) {
             CompletableFuture<FetchedValue> fetchFieldFuture = (CompletableFuture<FetchedValue>) fetchedValueObj;
             CompletableFuture<FieldValueInfo> result = fetchFieldFuture.thenApply((fetchedValue) ->
-                    completeField(executionContext, parameters, fetchedValue));
+                    completeField(fieldDef,executionContext, parameters, fetchedValue));
 
             fieldCtx.onDispatched();
             result.whenComplete(fieldCtx::onCompleted);
@@ -394,7 +394,12 @@ public abstract class ExecutionStrategy {
         MergedField field = parameters.getField();
         GraphQLObjectType parentType = (GraphQLObjectType) parameters.getExecutionStepInfo().getUnwrappedNonNullType();
         GraphQLFieldDefinition fieldDef = getFieldDef(executionContext.getGraphQLSchema(), parentType, field.getSingleField());
-        GraphQLCodeRegistry codeRegistry = executionContext.getGraphQLSchema().getCodeRegistry();
+        return fetchField(fieldDef, executionContext, parameters);
+    }
+
+    private CompletableFuture<FetchedValue> fetchField(GraphQLFieldDefinition fieldDef, ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
+        MergedField field = parameters.getField();
+        GraphQLObjectType parentType = (GraphQLObjectType) parameters.getExecutionStepInfo().getUnwrappedNonNullType();
 
         // if the DF (like PropertyDataFetcher) does not use the arguments or execution step info then dont build any
 
@@ -429,6 +434,8 @@ public abstract class ExecutionStrategy {
                     .queryDirectives(queryDirectives)
                     .build();
         });
+
+        GraphQLCodeRegistry codeRegistry = executionContext.getGraphQLSchema().getCodeRegistry();
         DataFetcher<?> dataFetcher = codeRegistry.getDataFetcher(parentType, fieldDef);
 
         Instrumentation instrumentation = executionContext.getInstrumentation();
@@ -572,6 +579,11 @@ public abstract class ExecutionStrategy {
         Field field = parameters.getField().getSingleField();
         GraphQLObjectType parentType = (GraphQLObjectType) parameters.getExecutionStepInfo().getUnwrappedNonNullType();
         GraphQLFieldDefinition fieldDef = getFieldDef(executionContext.getGraphQLSchema(), parentType, field);
+        return completeField(fieldDef, executionContext, parameters, fetchedValue);
+    }
+
+    private FieldValueInfo completeField(GraphQLFieldDefinition fieldDef, ExecutionContext executionContext, ExecutionStrategyParameters parameters, FetchedValue fetchedValue) {
+        GraphQLObjectType parentType = (GraphQLObjectType) parameters.getExecutionStepInfo().getUnwrappedNonNullType();
         ExecutionStepInfo executionStepInfo = createExecutionStepInfo(executionContext, parameters, fieldDef, parentType);
 
         Instrumentation instrumentation = executionContext.getInstrumentation();
