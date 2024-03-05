@@ -47,7 +47,13 @@ public class TwitterBenchmark {
     @Benchmark
     @BenchmarkMode(Mode.Throughput)
     @OutputTimeUnit(TimeUnit.SECONDS)
-    public void execute(Blackhole bh) {
+    public void benchmarkThroughput(Blackhole bh) {
+        bh.consume(execute());
+    }
+
+    @Benchmark
+    @BenchmarkMode(Mode.AverageTime)
+    public void benchmarkAvgTime(Blackhole bh) {
         bh.consume(execute());
     }
 
@@ -135,9 +141,6 @@ public class TwitterBenchmark {
     public static void main(String[] args) throws RunnerException {
         Options opt = new OptionsBuilder()
                 .include("benchmark.TwitterBenchmark")
-                .forks(1)
-                .warmupIterations(5)
-                .measurementIterations(10)
                 .build();
 
         new Runner(opt).run();

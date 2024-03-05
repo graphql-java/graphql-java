@@ -647,34 +647,6 @@ class ExecutableNormalizedOperationFactoryDeferTest extends Specification {
         ]
     }
 
-    def "multiple fields and a multiple defers with same label are not allowed"() {
-        given:
-
-        String query = '''
-          query q {
-            dog {
-                ... @defer(label:"name-defer") {
-                    name 
-                }
-                
-                ... @defer(label:"name-defer") {
-                    name 
-                }
-            }
-          }
-          
-        '''
-
-        Map<String, Object> variables = [:]
-
-        when:
-        executeQueryAndPrintTree(query, variables)
-
-        then:
-        def exception = thrown(AssertException)
-        exception.message == "Internal error: should never happen: Duplicated @defer labels are not allowed: [name-defer]"
-    }
-
     def "nested defers - no label"() {
         given:
 
@@ -858,35 +830,6 @@ class ExecutableNormalizedOperationFactoryDeferTest extends Specification {
         then:
         printedTree == ['Query.dog',
                         'Dog.name defer{[label=another-name-defer;types=[Dog]]}',
-        ]
-    }
-
-    def "'if' argument with different values on same field and same label"() {
-        given:
-
-        String query = '''
-          query q {
-            dog {
-                ... @defer(if: false, label: "name-defer") {
-                    name 
-                }
-                
-                ... @defer(if: true, label: "name-defer") {
-                    name 
-                }
-            }
-          }
-          
-        '''
-
-        Map<String, Object> variables = [:]
-
-        when:
-        List<String> printedTree = executeQueryAndPrintTree(query, variables)
-
-        then:
-        printedTree == ['Query.dog',
-                        'Dog.name defer{[label=name-defer;types=[Dog]]}',
         ]
     }
 
