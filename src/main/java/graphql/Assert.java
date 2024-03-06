@@ -31,6 +31,22 @@ public class Assert {
         throw new AssertException("Object required to be not null");
     }
 
+    /**
+     * If you use this method, make sure that the message is a constant string
+     *
+     * @param object      the object to check for null
+     * @param constantMsg make sure this is a constant message
+     * @param <T>         for two
+     *
+     * @return the object
+     */
+    public static <T> T assertNotNull(T object, String constantMsg) {
+        if (object != null) {
+            return object;
+        }
+        throw new AssertException(constantMsg);
+    }
+
     public static <T> void assertNull(T object, Supplier<String> msg) {
         if (object == null) {
             return;
@@ -85,6 +101,19 @@ public class Assert {
         throw new AssertException("condition expected to be true");
     }
 
+    /**
+     * If you use this method, make sure that the message is a constant string
+     *
+     * @param condition   the condition that must be true
+     * @param constantMsg make sure this is a constant message
+     */
+    public static void assertTrue(boolean condition, String constantMsg) {
+        if (condition) {
+            return;
+        }
+        throw new AssertException(constantMsg);
+    }
+
     public static void assertFalse(boolean condition, Supplier<String> msg) {
         if (!condition) {
             return;
@@ -97,6 +126,19 @@ public class Assert {
             return;
         }
         throw new AssertException("condition expected to be false");
+    }
+
+    /**
+     * If you use this method, make sure that the message is a constant string
+     *
+     * @param condition   the condition that must be false
+     * @param constantMsg make sure this is a constant message
+     */
+    public static void assertFalse(boolean condition, String constantMsg) {
+        if (!condition) {
+            return;
+        }
+        throw new AssertException(constantMsg);
     }
 
     private static final String invalidNameErrorMessage = "Name must be non-null, non-empty and match [_A-Za-z][_0-9A-Za-z]* - was '%s'";

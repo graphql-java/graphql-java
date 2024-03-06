@@ -1,5 +1,6 @@
 package graphql.schema;
 
+import graphql.Assert;
 import graphql.PublicApi;
 import graphql.language.Value;
 import org.jetbrains.annotations.NotNull;
@@ -45,7 +46,7 @@ public class InputValueWithState {
     public static final InputValueWithState NOT_SET = new InputValueWithState(State.NOT_SET, null);
 
     public static InputValueWithState newLiteralValue(@NotNull Value value) {
-        assertNotNull(value, () -> "value literal can't be null");
+        Assert.assertNotNull(value, "value literal can't be null");
         return new InputValueWithState(State.LITERAL, value);
     }
 

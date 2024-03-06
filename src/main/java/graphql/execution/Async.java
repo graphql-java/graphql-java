@@ -58,7 +58,7 @@ public class Async {
 
         @Override
         public CompletableFuture<List<T>> await() {
-            Assert.assertTrue(ix == 0, () -> "expected size was " + 0 + " got " + ix);
+            Assert.assertTrue(ix == 0, "expected size was 0");
             return typedEmpty();
         }
 
@@ -109,7 +109,7 @@ public class Async {
 
         @Override
         public CompletableFuture<List<T>> await() {
-            Assert.assertTrue(ix == array.length, () -> "expected size was " + array.length + " got " + ix);
+            Assert.assertTrue(ix == array.length, "expected size was less than the array length");
 
             CompletableFuture<List<T>> overallResult = new CompletableFuture<>();
             CompletableFuture.allOf(array)
@@ -135,7 +135,7 @@ public class Async {
             CompletableFuture<U> cf;
             try {
                 cf = cfFactory.apply(t);
-                Assert.assertNotNull(cf, () -> "cfFactory must return a non null value");
+                Assert.assertNotNull(cf, "cfFactory must return a non null value");
             } catch (Exception e) {
                 cf = new CompletableFuture<>();
                 // Async.each makes sure that it is not a CompletionException inside a CompletionException
@@ -160,7 +160,7 @@ public class Async {
         CompletableFuture<U> cf;
         try {
             cf = cfFactory.apply(iterator.next(), tmpResult);
-            Assert.assertNotNull(cf, () -> "cfFactory must return a non null value");
+            Assert.assertNotNull(cf,"cfFactory must return a non null value");
         } catch (Exception e) {
             cf = new CompletableFuture<>();
             cf.completeExceptionally(new CompletionException(e));

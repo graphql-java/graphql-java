@@ -1,5 +1,6 @@
 package graphql.schema;
 
+import graphql.Assert;
 import graphql.PublicApi;
 
 import java.util.concurrent.CompletableFuture;
@@ -67,8 +68,8 @@ public class AsyncDataFetcher<T> implements DataFetcher<CompletableFuture<T>> {
     }
 
     public AsyncDataFetcher(DataFetcher<T> wrappedDataFetcher, Executor executor) {
-        this.wrappedDataFetcher = assertNotNull(wrappedDataFetcher, () -> "wrappedDataFetcher can't be null");
-        this.executor = assertNotNull(executor, () -> "executor can't be null");
+        this.wrappedDataFetcher = Assert.assertNotNull(wrappedDataFetcher, "wrappedDataFetcher can't be null");
+        this.executor = Assert.assertNotNull(executor, "executor can't be null");
     }
 
     @Override

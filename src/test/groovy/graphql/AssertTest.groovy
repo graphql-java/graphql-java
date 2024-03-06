@@ -3,7 +3,7 @@ package graphql
 import spock.lang.Specification
 
 class AssertTest extends Specification {
-    def "assertNull should not throw on none null value"() {
+    def "assertNotNull should not throw on none null value"() {
         when:
         Assert.assertNotNull("some object")
 
@@ -11,7 +11,7 @@ class AssertTest extends Specification {
         noExceptionThrown()
     }
 
-    def "assertNull should throw on null value"() {
+    def "assertNotNull should throw on null value"() {
         when:
         Assert.assertNotNull(null)
 
@@ -19,15 +19,24 @@ class AssertTest extends Specification {
         thrown(AssertException)
     }
 
-    def "assertNull with error message should not throw on none null value"() {
+    def "assertNotNull constant message should throw on null value"() {
         when:
-        Assert.assertNotNull("some object", { -> "error message"})
+        Assert.assertNotNull(null, "constant message")
+
+        then:
+        def error = thrown(AssertException)
+        error.message == "constant message"
+    }
+
+    def "assertNotNull with error message should not throw on none null value"() {
+        when:
+        Assert.assertNotNull("some object", { -> "error message" })
 
         then:
         noExceptionThrown()
     }
 
-    def "assertNull with error message should throw on null value with formatted message"() {
+    def "assertNotNull with error message should throw on null value with formatted message"() {
         when:
         Assert.assertNotNull(value, { -> String.format(format, arg) })
 
@@ -91,7 +100,7 @@ class AssertTest extends Specification {
 
     def "assertNotEmpty should not throw on none empty collection"() {
         when:
-        Assert.assertNotEmpty(["some object"], { -> "error message"})
+        Assert.assertNotEmpty(["some object"], { -> "error message" })
 
         then:
         noExceptionThrown()
@@ -99,7 +108,7 @@ class AssertTest extends Specification {
 
     def "assertTrue should not throw on true value"() {
         when:
-        Assert.assertTrue(true, { ->"error message"})
+        Assert.assertTrue(true, { -> "error message" })
 
         then:
         noExceptionThrown()
@@ -108,6 +117,47 @@ class AssertTest extends Specification {
     def "assertTrue with error message should throw on false value with formatted message"() {
         when:
         Assert.assertTrue(false, { -> String.format(format, arg) })
+
+        then:
+        def error = thrown(AssertException)
+        error.message == expectedMessage
+
+        where:
+        format     | arg   || expectedMessage
+        "error %s" | "msg" || "error msg"
+        "code %d"  | 1     || "code 1"
+        "code"     | null  || "code"
+    }
+
+    def "assertTrue constant message should throw with message"() {
+        when:
+        Assert.assertTrue(false, "constant message")
+
+        then:
+        def error = thrown(AssertException)
+        error.message == "constant message"
+    }
+
+    def "assertFalse should throw"() {
+        when:
+        Assert.assertFalse(true)
+
+        then:
+        thrown(AssertException)
+    }
+
+    def "assertFalse constant message should throw with message"() {
+        when:
+        Assert.assertFalse(true, "constant message")
+
+        then:
+        def error = thrown(AssertException)
+        error.message == "constant message"
+    }
+
+    def "assertFalse with error message should throw on false value with formatted message"() {
+        when:
+        Assert.assertFalse(true, { -> String.format(format, arg) })
 
         then:
         def error = thrown(AssertException)

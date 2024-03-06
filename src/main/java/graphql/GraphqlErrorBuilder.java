@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 
 import static graphql.Assert.assertNotNull;
+import static graphql.Assert.assertNotNull;
 
 /**
  * This helps you build {@link graphql.GraphQLError}s and also has a quick way to make a  {@link graphql.execution.DataFetcherResult}s
@@ -128,7 +129,7 @@ public class GraphqlErrorBuilder<B extends GraphqlErrorBuilder<B>> implements Gr
      * @return a newly built GraphqlError
      */
     public GraphQLError build() {
-        assertNotNull(message, () -> "You must provide error message");
+        Assert.assertNotNull(message,"You must provide error message");
         return new GraphqlErrorImpl(message, locations, errorType, path, extensions);
     }
 

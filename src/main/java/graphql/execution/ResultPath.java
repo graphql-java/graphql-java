@@ -13,6 +13,7 @@ import java.util.Objects;
 import java.util.StringTokenizer;
 
 import static graphql.Assert.assertNotNull;
+import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertTrue;
 import static java.lang.String.format;
 
@@ -46,12 +47,12 @@ public class ResultPath {
     }
 
     private ResultPath(ResultPath parent, String segment) {
-        this.parent = assertNotNull(parent, () -> "Must provide a parent path");
-        this.segment = assertNotNull(segment, () -> "Must provide a sub path");
+        this.parent = Assert.assertNotNull(parent, "Must provide a parent path");
+        this.segment = Assert.assertNotNull(segment, "Must provide a sub path");
     }
 
     private ResultPath(ResultPath parent, int segment) {
-        this.parent = assertNotNull(parent, () -> "Must provide a parent path");
+        this.parent = Assert.assertNotNull(parent, "Must provide a parent path");
         this.segment = segment;
     }
 
@@ -199,7 +200,7 @@ public class ResultPath {
      * @return a new path with the last segment replaced
      */
     public ResultPath replaceSegment(int segment) {
-        Assert.assertTrue(!ROOT_PATH.equals(this), () -> "You MUST not call this with the root path");
+        Assert.assertTrue(!ROOT_PATH.equals(this), "You MUST not call this with the root path");
         return new ResultPath(parent, segment);
     }
 
@@ -211,7 +212,7 @@ public class ResultPath {
      * @return a new path with the last segment replaced
      */
     public ResultPath replaceSegment(String segment) {
-        Assert.assertTrue(!ROOT_PATH.equals(this), () -> "You MUST not call this with the root path");
+        Assert.assertTrue(!ROOT_PATH.equals(this), "You MUST not call this with the root path");
         return new ResultPath(parent, segment);
     }
 
@@ -237,12 +238,12 @@ public class ResultPath {
 
 
     public ResultPath sibling(String siblingField) {
-        Assert.assertTrue(!ROOT_PATH.equals(this), () -> "You MUST not call this with the root path");
+        Assert.assertTrue(!ROOT_PATH.equals(this), "You MUST not call this with the root path");
         return new ResultPath(this.parent, siblingField);
     }
 
     public ResultPath sibling(int siblingField) {
-        Assert.assertTrue(!ROOT_PATH.equals(this), () -> "You MUST not call this with the root path");
+        Assert.assertTrue(!ROOT_PATH.equals(this), "You MUST not call this with the root path");
         return new ResultPath(this.parent, siblingField);
     }
 

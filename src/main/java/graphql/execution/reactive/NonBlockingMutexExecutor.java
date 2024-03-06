@@ -1,6 +1,7 @@
 package graphql.execution.reactive;
 
 
+import graphql.Assert;
 import graphql.Internal;
 
 import java.util.concurrent.Executor;
@@ -37,7 +38,7 @@ class NonBlockingMutexExecutor implements Executor {
 
     @Override
     public void execute(final Runnable command) {
-        final RunNode newNode = new RunNode(assertNotNull(command, () -> "Runnable must not be null"));
+        final RunNode newNode = new RunNode(Assert.assertNotNull(command, "Runnable must not be null"));
         final RunNode prevLast = last.getAndSet(newNode);
         if (prevLast != null)
             prevLast.lazySet(newNode);

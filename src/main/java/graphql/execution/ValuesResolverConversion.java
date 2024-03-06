@@ -1,6 +1,7 @@
 package graphql.execution;
 
 import com.google.common.collect.ImmutableList;
+import graphql.Assert;
 import graphql.GraphQLContext;
 import graphql.Internal;
 import graphql.execution.values.InputInterceptor;
@@ -37,6 +38,7 @@ import java.util.Locale;
 import java.util.Map;
 
 import static graphql.Assert.assertShouldNeverHappen;
+import static graphql.Assert.assertTrue;
 import static graphql.Assert.assertTrue;
 import static graphql.collect.ImmutableKit.emptyList;
 import static graphql.collect.ImmutableKit.map;
@@ -281,7 +283,7 @@ class ValuesResolverConversion {
             GraphQLContext graphqlContext,
             Locale locale
     ) {
-        assertTrue(inputValue instanceof Map, () -> "Expect Map as input");
+        Assert.assertTrue(inputValue instanceof Map, "Expect Map as input");
         Map<String, Object> inputMap = (Map<String, Object>) inputValue;
         List<GraphQLInputObjectField> fieldDefinitions = fieldVisibility.getFieldDefinitions(inputObjectType);
 

@@ -1,6 +1,7 @@
 package graphql.extensions;
 
 import com.google.common.collect.ImmutableMap;
+import graphql.Assert;
 import graphql.ExecutionResult;
 import graphql.PublicApi;
 import org.jetbrains.annotations.NotNull;
@@ -12,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertNotNull;
 
 /**
@@ -106,7 +108,7 @@ public class ExtensionsBuilder {
         Map<Object, Object> outMap = new LinkedHashMap<>(firstChange);
         for (int i = 1; i < changes.size(); i++) {
             Map<Object, Object> newMap = extensionsMerger.merge(outMap, changes.get(i));
-            assertNotNull(outMap, () -> "You MUST provide a non null Map from ExtensionsMerger.merge()");
+            Assert.assertNotNull(outMap, "You MUST provide a non null Map from ExtensionsMerger.merge()");
             outMap = newMap;
         }
         return outMap;
