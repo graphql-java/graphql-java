@@ -12,7 +12,7 @@ import graphql.SerializationError;
 import graphql.TrivialDataFetcher;
 import graphql.TypeMismatchError;
 import graphql.UnresolvedTypeError;
-import graphql.collect.ImmutableKit;
+import graphql.collect.ImmutableMapWithNullValues;
 import graphql.execution.directives.QueryDirectives;
 import graphql.execution.directives.QueryDirectivesImpl;
 import graphql.execution.incremental.DeferredExecutionSupport;
@@ -997,20 +997,12 @@ public abstract class ExecutionStrategy {
         ExecutionStepInfo parentStepInfo = parameters.getExecutionStepInfo();
         GraphQLOutputType fieldType = fieldDefinition.getType();
         List<GraphQLArgument> fieldArgDefs = fieldDefinition.getArguments();
-        Supplier<Map<String, Object>> argumentValues = ImmutableKit::emptyMap;
+        Supplier<ImmutableMapWithNullValues<String, Object>> argumentValues = ImmutableMapWithNullValues::emptyMap;
         //
         // no need to create args at all if there are none on the field def
         //
         if (!fieldArgDefs.isEmpty()) {
-            List<Argument> fieldArgs = field.getArguments();
-            GraphQLCodeRegistry codeRegistry = executionContext.getGraphQLSchema().getCodeRegistry();
-            Supplier<Map<String, Object>> argValuesSupplier = () -> ValuesResolver.getArgumentValues(codeRegistry,
-                    fieldArgDefs,
-                    fieldArgs,
-                    executionContext.getCoercedVariables(),
-                    executionContext.getGraphQLContext(),
-                    executionContext.getLocale());
-            argumentValues = FpKit.intraThreadMemoize(argValuesSupplier);
+            argumentValues = getArgumentValues(executionContext, fieldArgDefs, field.getArguments());
         }
 
 
@@ -1024,4 +1016,25 @@ public abstract class ExecutionStrategy {
                 .arguments(argumentValues)
                 .build();
     }
+
+    @NotNull
+    private static Supplier<ImmutableMapWithNullValues<String, Object>> getArgumentValues(ExecutionContext executionContext,
+                                                                                          List<GraphQLArgument> fieldArgDefs,
+                                                                                          List<Argument> fieldArgs) {
+        Supplier<ImmutableMapWithNullValues<String, Object>> argumentValues;
+        GraphQLCodeRegistry codeRegistry = executionContext.getGraphQLSchema().getCodeRegistry();
+        Supplier<ImmutableMapWithNullValues<String, Object>> argValuesSupplier = () -> {
+            Map<String, Object> resolvedValues = ValuesResolver.getArgumentValues(codeRegistry,
+                    fieldArgDefs,
+                    fieldArgs,
+                    executionContext.getCoercedVariables(),
+                    executionContext.getGraphQLContext(),
+                    executionContext.getLocale());
+
+            return ImmutableMapWithNullValues.copyOf(resolvedValues);
+        };
+        argumentValues = FpKit.intraThreadMemoize(argValuesSupplier);
+        return argumentValues;
+    }
+
 }
