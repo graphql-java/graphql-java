@@ -2,10 +2,12 @@ package graphql
 
 import spock.lang.Specification
 
+import static graphql.Assert.*
+
 class AssertTest extends Specification {
     def "assertNotNull should not throw on none null value"() {
         when:
-        Assert.assertNotNull("some object")
+        assertNotNull("some object")
 
         then:
         noExceptionThrown()
@@ -13,7 +15,7 @@ class AssertTest extends Specification {
 
     def "assertNotNull should throw on null value"() {
         when:
-        Assert.assertNotNull(null)
+        assertNotNull(null)
 
         then:
         thrown(AssertException)
@@ -21,7 +23,7 @@ class AssertTest extends Specification {
 
     def "assertNotNull constant message should throw on null value"() {
         when:
-        Assert.assertNotNull(null, "constant message")
+        assertNotNull(null, "constant message")
 
         then:
         def error = thrown(AssertException)
@@ -30,7 +32,7 @@ class AssertTest extends Specification {
 
     def "assertNotNull with error message should not throw on none null value"() {
         when:
-        Assert.assertNotNull("some object", { -> "error message" })
+        assertNotNull("some object", { -> "error message" })
 
         then:
         noExceptionThrown()
@@ -38,7 +40,7 @@ class AssertTest extends Specification {
 
     def "assertNotNull with error message should throw on null value with formatted message"() {
         when:
-        Assert.assertNotNull(value, { -> String.format(format, arg) })
+        assertNotNull(value, { -> String.format(format, arg) })
 
         then:
         def error = thrown(AssertException)
@@ -61,9 +63,9 @@ class AssertTest extends Specification {
 
         where:
         toRun                                                                              | expectedMessage
-        runnable({ Assert.assertNotNull(null, "error %s", "arg1") })                       | "error arg1"
-        runnable({ Assert.assertNotNull(null, "error %s %s", "arg1", "arg2") })            | "error arg1 arg2"
-        runnable({ Assert.assertNotNull(null, "error %s %s %s", "arg1", "arg2", "arg3") }) | "error arg1 arg2 arg3"
+        runnable({ assertNotNull(null, "error %s", "arg1") })                       | "error arg1"
+        runnable({ assertNotNull(null, "error %s %s", "arg1", "arg2") })            | "error arg1 arg2"
+        runnable({ assertNotNull(null, "error %s %s %s", "arg1", "arg2", "arg3") }) | "error arg1 arg2 arg3"
     }
 
     def "assertNotNull with different number of error args with non null does not throw assertions"() {
@@ -75,14 +77,14 @@ class AssertTest extends Specification {
 
         where:
         toRun                                                                             | expectedMessage
-        runnable({ Assert.assertNotNull("x", "error %s", "arg1") })                       | "error arg1"
-        runnable({ Assert.assertNotNull("x", "error %s %s", "arg1", "arg2") })            | "error arg1 arg2"
-        runnable({ Assert.assertNotNull("x", "error %s %s %s", "arg1", "arg2", "arg3") }) | "error arg1 arg2 arg3"
+        runnable({ assertNotNull("x", "error %s", "arg1") })                       | "error arg1"
+        runnable({ assertNotNull("x", "error %s %s", "arg1", "arg2") })            | "error arg1 arg2"
+        runnable({ assertNotNull("x", "error %s %s %s", "arg1", "arg2", "arg3") }) | "error arg1 arg2 arg3"
     }
 
     def "assertNeverCalled should always throw"() {
         when:
-        Assert.assertNeverCalled()
+        assertNeverCalled()
 
         then:
         def e = thrown(AssertException)
@@ -91,7 +93,7 @@ class AssertTest extends Specification {
 
     def "assertShouldNeverHappen should always throw"() {
         when:
-        Assert.assertShouldNeverHappen()
+        assertShouldNeverHappen()
 
         then:
         def e = thrown(AssertException)
@@ -100,7 +102,7 @@ class AssertTest extends Specification {
 
     def "assertShouldNeverHappen should always throw with formatted message"() {
         when:
-        Assert.assertShouldNeverHappen(format, arg)
+        assertShouldNeverHappen(format, arg)
 
         then:
         def error = thrown(AssertException)
@@ -115,7 +117,7 @@ class AssertTest extends Specification {
 
     def "assertNotEmpty collection should throw on null or empty"() {
         when:
-        Assert.assertNotEmpty(value, { -> String.format(format, arg) })
+        assertNotEmpty(value, { -> String.format(format, arg) })
 
         then:
         def error = thrown(AssertException)
@@ -129,7 +131,7 @@ class AssertTest extends Specification {
 
     def "assertNotEmpty should not throw on none empty collection"() {
         when:
-        Assert.assertNotEmpty(["some object"], { -> "error message" })
+        assertNotEmpty(["some object"], { -> "error message" })
 
         then:
         noExceptionThrown()
@@ -137,7 +139,7 @@ class AssertTest extends Specification {
 
     def "assertTrue should not throw on true value"() {
         when:
-        Assert.assertTrue(true, { -> "error message" })
+        assertTrue(true, { -> "error message" })
 
         then:
         noExceptionThrown()
@@ -145,7 +147,7 @@ class AssertTest extends Specification {
 
     def "assertTrue with error message should throw on false value with formatted message"() {
         when:
-        Assert.assertTrue(false, { -> String.format(format, arg) })
+        assertTrue(false, { -> String.format(format, arg) })
 
         then:
         def error = thrown(AssertException)
@@ -160,7 +162,7 @@ class AssertTest extends Specification {
 
     def "assertTrue constant message should throw with message"() {
         when:
-        Assert.assertTrue(false, "constant message")
+        assertTrue(false, "constant message")
 
         then:
         def error = thrown(AssertException)
@@ -177,9 +179,9 @@ class AssertTest extends Specification {
 
         where:
         toRun                                                                            | expectedMessage
-        runnable({ Assert.assertTrue(false, "error %s", "arg1") })                       | "error arg1"
-        runnable({ Assert.assertTrue(false, "error %s %s", "arg1", "arg2") })            | "error arg1 arg2"
-        runnable({ Assert.assertTrue(false, "error %s %s %s", "arg1", "arg2", "arg3") }) | "error arg1 arg2 arg3"
+        runnable({ assertTrue(false, "error %s", "arg1") })                       | "error arg1"
+        runnable({ assertTrue(false, "error %s %s", "arg1", "arg2") })            | "error arg1 arg2"
+        runnable({ assertTrue(false, "error %s %s %s", "arg1", "arg2", "arg3") }) | "error arg1 arg2 arg3"
     }
 
     def "assertTrue with different number of error args but false does not throw assertions"() {
@@ -191,14 +193,14 @@ class AssertTest extends Specification {
 
         where:
         toRun                                                                           | expectedMessage
-        runnable({ Assert.assertTrue(true, "error %s", "arg1") })                       | "error arg1"
-        runnable({ Assert.assertTrue(true, "error %s %s", "arg1", "arg2") })            | "error arg1 arg2"
-        runnable({ Assert.assertTrue(true, "error %s %s %s", "arg1", "arg2", "arg3") }) | "error arg1 arg2 arg3"
+        runnable({ assertTrue(true, "error %s", "arg1") })                       | "error arg1"
+        runnable({ assertTrue(true, "error %s %s", "arg1", "arg2") })            | "error arg1 arg2"
+        runnable({ assertTrue(true, "error %s %s %s", "arg1", "arg2", "arg3") }) | "error arg1 arg2 arg3"
     }
 
     def "assertFalse should throw"() {
         when:
-        Assert.assertFalse(true)
+        assertFalse(true)
 
         then:
         thrown(AssertException)
@@ -206,7 +208,7 @@ class AssertTest extends Specification {
 
     def "assertFalse constant message should throw with message"() {
         when:
-        Assert.assertFalse(true, "constant message")
+        assertFalse(true, "constant message")
 
         then:
         def error = thrown(AssertException)
@@ -215,7 +217,7 @@ class AssertTest extends Specification {
 
     def "assertFalse with error message should throw on false value with formatted message"() {
         when:
-        Assert.assertFalse(true, { -> String.format(format, arg) })
+        assertFalse(true, { -> String.format(format, arg) })
 
         then:
         def error = thrown(AssertException)
@@ -238,9 +240,9 @@ class AssertTest extends Specification {
 
         where:
         toRun                                                                            | expectedMessage
-        runnable({ Assert.assertFalse(true, "error %s", "arg1") })                       | "error arg1"
-        runnable({ Assert.assertFalse(true, "error %s %s", "arg1", "arg2") })            | "error arg1 arg2"
-        runnable({ Assert.assertFalse(true, "error %s %s %s", "arg1", "arg2", "arg3") }) | "error arg1 arg2 arg3"
+        runnable({ assertFalse(true, "error %s", "arg1") })                       | "error arg1"
+        runnable({ assertFalse(true, "error %s %s", "arg1", "arg2") })            | "error arg1 arg2"
+        runnable({ assertFalse(true, "error %s %s %s", "arg1", "arg2", "arg3") }) | "error arg1 arg2 arg3"
     }
 
     def "assertFalse with different number of error args but false does not throw assertions"() {
@@ -252,14 +254,14 @@ class AssertTest extends Specification {
 
         where:
         toRun                                                                             | expectedMessage
-        runnable({ Assert.assertFalse(false, "error %s", "arg1") })                       | "error arg1"
-        runnable({ Assert.assertFalse(false, "error %s %s", "arg1", "arg2") })            | "error arg1 arg2"
-        runnable({ Assert.assertFalse(false, "error %s %s %s", "arg1", "arg2", "arg3") }) | "error arg1 arg2 arg3"
+        runnable({ assertFalse(false, "error %s", "arg1") })                       | "error arg1"
+        runnable({ assertFalse(false, "error %s %s", "arg1", "arg2") })            | "error arg1 arg2"
+        runnable({ assertFalse(false, "error %s %s %s", "arg1", "arg2", "arg3") }) | "error arg1 arg2 arg3"
     }
 
     def "assertValidName should not throw on valid names"() {
         when:
-        Assert.assertValidName(name)
+        assertValidName(name)
 
         then:
         noExceptionThrown()
@@ -275,7 +277,7 @@ class AssertTest extends Specification {
 
     def "assertValidName should throw on invalid names"() {
         when:
-        Assert.assertValidName(name)
+        assertValidName(name)
 
         then:
         def error = thrown(AssertException)
