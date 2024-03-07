@@ -1,7 +1,6 @@
 package graphql.execution;
 
 import com.google.common.collect.ImmutableList;
-import graphql.Assert;
 import graphql.GraphQLContext;
 import graphql.Internal;
 import graphql.execution.values.InputInterceptor;
@@ -38,7 +37,6 @@ import java.util.Locale;
 import java.util.Map;
 
 import static graphql.Assert.assertShouldNeverHappen;
-import static graphql.Assert.assertTrue;
 import static graphql.Assert.assertTrue;
 import static graphql.collect.ImmutableKit.emptyList;
 import static graphql.collect.ImmutableKit.map;
@@ -106,6 +104,7 @@ class ValuesResolverConversion {
      * @param type            the type of input value
      * @param graphqlContext  the GraphqlContext to use
      * @param locale          the Locale to use
+     *
      * @return a value converted to an internal value
      */
     static Object externalValueToInternalValue(GraphqlFieldVisibility fieldVisibility,
@@ -283,7 +282,7 @@ class ValuesResolverConversion {
             GraphQLContext graphqlContext,
             Locale locale
     ) {
-        Assert.assertTrue(inputValue instanceof Map, () -> "Expect Map as input");
+        assertTrue(inputValue instanceof Map, () -> "Expect Map as input");
         Map<String, Object> inputMap = (Map<String, Object>) inputValue;
         List<GraphQLInputObjectField> fieldDefinitions = fieldVisibility.getFieldDefinitions(inputObjectType);
 
@@ -597,6 +596,7 @@ class ValuesResolverConversion {
      * @param coercedVariables the coerced variable values
      * @param graphqlContext   the GraphqlContext to use
      * @param locale           the Locale to use
+     *
      * @return literal converted to an internal value
      */
     static Object literalToInternalValue(

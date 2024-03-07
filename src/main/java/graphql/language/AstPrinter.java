@@ -1,7 +1,5 @@
 package graphql.language;
 
-import graphql.Assert;
-import graphql.AssertException;
 import graphql.PublicApi;
 import graphql.collect.ImmutableKit;
 
@@ -457,7 +455,7 @@ public class AstPrinter {
 
     private String node(Node node, Class startClass) {
         if (startClass != null) {
-            Assert.assertTrue(startClass.isInstance(node), () -> "The starting class must be in the inherit tree");
+            assertTrue(startClass.isInstance(node), () -> "The starting class must be in the inherit tree");
         }
         StringBuilder builder = new StringBuilder();
         NodePrinter<Node> printer = _findPrinter(node, startClass);
@@ -543,7 +541,7 @@ public class AstPrinter {
     }
 
     private String directives(List<Directive> directives) {
-        return join(nvl(directives), compactMode? "" : " ");
+        return join(nvl(directives), compactMode ? "" : " ");
     }
 
     private <T extends Node> String join(List<T> nodes, String delim) {
@@ -566,7 +564,7 @@ public class AstPrinter {
                 first = false;
             } else {
                 boolean canButtTogether = lastNodeText.endsWith("}");
-                if (! canButtTogether) {
+                if (!canButtTogether) {
                     joined.append(delim);
                 }
             }
@@ -706,7 +704,8 @@ public class AstPrinter {
 
     /**
      * Allow subclasses to replace a printer for a specific {@link Node}
-     * @param nodeClass the class of the {@link Node}
+     *
+     * @param nodeClass   the class of the {@link Node}
      * @param nodePrinter the custom {@link NodePrinter}
      */
     void replacePrinter(Class<? extends Node> nodeClass, NodePrinter<? extends Node> nodePrinter) {

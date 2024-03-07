@@ -1,7 +1,6 @@
 package graphql.execution;
 
 import com.google.common.collect.ImmutableList;
-import graphql.Assert;
 import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
 import graphql.PublicApi;
@@ -32,7 +31,7 @@ public class FieldValueInfo {
     }
 
     FieldValueInfo(CompleteValueType completeValueType, CompletableFuture<Object> fieldValue, List<FieldValueInfo> fieldValueInfos) {
-        Assert.assertNotNull(fieldValueInfos, () -> "fieldValueInfos can't be null");
+        assertNotNull(fieldValueInfos, () -> "fieldValueInfos can't be null");
         this.completeValueType = completeValueType;
         this.fieldValue = fieldValue;
         this.fieldValueInfos = fieldValueInfos;

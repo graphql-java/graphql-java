@@ -17,6 +17,8 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import static graphql.Assert.assertTrue;
+
 @Internal
 @SuppressWarnings("FutureReturnValueIgnored")
 public class Async {
@@ -58,7 +60,7 @@ public class Async {
 
         @Override
         public CompletableFuture<List<T>> await() {
-            Assert.assertTrue(ix == 0, () -> "expected size was 0");
+            assertTrue(ix == 0, "expected size was 0 got %d", ix);
             return typedEmpty();
         }
 
@@ -86,7 +88,7 @@ public class Async {
 
         @Override
         public CompletableFuture<List<T>> await() {
-            Assert.assertTrue(ix == 1, "expected size was 1 got %d", ix);
+            assertTrue(ix == 1, "expected size was 1 got %d", ix);
             return completableFuture.thenApply(Collections::singletonList);
         }
     }
@@ -109,7 +111,7 @@ public class Async {
 
         @Override
         public CompletableFuture<List<T>> await() {
-            Assert.assertTrue(ix == array.length, "expected size was %d got %d", array.length, ix);
+            assertTrue(ix == array.length, "expected size was %d got %d", array.length, ix);
 
             CompletableFuture<List<T>> overallResult = new CompletableFuture<>();
             CompletableFuture.allOf(array)

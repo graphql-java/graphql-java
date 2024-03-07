@@ -1,7 +1,6 @@
 package graphql.schema;
 
 import com.google.common.collect.ImmutableMap;
-import graphql.Assert;
 import graphql.PublicApi;
 
 import java.util.Comparator;
@@ -10,7 +9,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.UnaryOperator;
 
-import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertNotNull;
 import static graphql.schema.GraphQLTypeUtil.unwrapAll;
 import static graphql.schema.GraphqlTypeComparatorEnvironment.newEnvironment;
@@ -127,9 +125,9 @@ public class DefaultGraphqlTypeComparatorRegistry implements GraphqlTypeComparat
          * @return The {@code Builder} instance to allow chaining.
          */
         public <T extends GraphQLType> Builder addComparator(GraphqlTypeComparatorEnvironment environment, Class<T> comparatorClass, Comparator<? super T> comparator) {
-            Assert.assertNotNull(environment, () -> "environment can't be null");
-            Assert.assertNotNull(comparatorClass, () -> "comparatorClass can't be null");
-            Assert.assertNotNull(comparator, () -> "comparator can't be null");
+            assertNotNull(environment, () -> "environment can't be null");
+            assertNotNull(comparatorClass, () -> "comparatorClass can't be null");
+            assertNotNull(comparator, () -> "comparator can't be null");
             registry.put(environment, comparator);
             return this;
         }

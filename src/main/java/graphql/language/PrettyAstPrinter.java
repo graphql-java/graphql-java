@@ -1,6 +1,5 @@
 package graphql.language;
 
-import graphql.Assert;
 import graphql.ExperimentalApi;
 import graphql.collect.ImmutableKit;
 import graphql.parser.CommentParser;
@@ -221,7 +220,7 @@ public class PrettyAstPrinter extends AstPrinter {
 
     private String node(Node node, Class startClass) {
         if (startClass != null) {
-            Assert.assertTrue(startClass.isInstance(node), () -> "The starting class must be in the inherit tree");
+            assertTrue(startClass.isInstance(node), () -> "The starting class must be in the inherit tree");
         }
         StringBuilder builder = new StringBuilder();
 
@@ -409,10 +408,10 @@ public class PrettyAstPrinter extends AstPrinter {
         private static final PrettyPrinterOptions defaultOptions = new PrettyPrinterOptions(IndentType.SPACE, 2);
 
         private PrettyPrinterOptions(IndentType indentType, int indentWidth) {
-            this.indentText =  String.join("", Collections.nCopies(indentWidth, indentType.character));
+            this.indentText = String.join("", Collections.nCopies(indentWidth, indentType.character));
         }
 
-        public static PrettyPrinterOptions defaultOptions()  {
+        public static PrettyPrinterOptions defaultOptions() {
             return defaultOptions;
         }
 

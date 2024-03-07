@@ -1,6 +1,5 @@
 package graphql.execution;
 
-import graphql.Assert;
 import graphql.PublicApi;
 import graphql.collect.ImmutableMapWithNullValues;
 import graphql.schema.GraphQLFieldDefinition;
@@ -14,6 +13,8 @@ import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
+import static graphql.Assert.assertNotNull;
+import static graphql.Assert.assertTrue;
 import static graphql.schema.GraphQLTypeUtil.isList;
 
 /**
@@ -71,7 +72,7 @@ public class ExecutionStepInfo {
         this.field = builder.field;
         this.path = builder.path;
         this.parent = builder.parentInfo;
-        this.type = Assert.assertNotNull(builder.type, () -> "you must provide a graphql type");
+        this.type = assertNotNull(builder.type, () -> "you must provide a graphql type");
         this.arguments = builder.arguments;
         this.fieldContainer = builder.fieldContainer;
     }
@@ -201,7 +202,7 @@ public class ExecutionStepInfo {
      * @return a new type info with the same
      */
     public ExecutionStepInfo changeTypeWithPreservedNonNull(GraphQLOutputType newType) {
-        Assert.assertTrue(!GraphQLTypeUtil.isNonNull(newType), () -> "newType can't be non null");
+        assertTrue(!GraphQLTypeUtil.isNonNull(newType), () -> "newType can't be non null");
         if (isNonNullType()) {
             return newExecutionStepInfo(this).type(GraphQLNonNull.nonNull(newType)).build();
         } else {
