@@ -457,7 +457,7 @@ public class AstPrinter {
 
     private String node(Node node, Class startClass) {
         if (startClass != null) {
-            Assert.assertTrue(startClass.isInstance(node), "The starting class must be in the inherit tree");
+            Assert.assertTrue(startClass.isInstance(node), () -> "The starting class must be in the inherit tree");
         }
         StringBuilder builder = new StringBuilder();
         NodePrinter<Node> printer = _findPrinter(node, startClass);

@@ -283,7 +283,7 @@ class ValuesResolverConversion {
             GraphQLContext graphqlContext,
             Locale locale
     ) {
-        Assert.assertTrue(inputValue instanceof Map, "Expect Map as input");
+        Assert.assertTrue(inputValue instanceof Map, () -> "Expect Map as input");
         Map<String, Object> inputMap = (Map<String, Object>) inputValue;
         List<GraphQLInputObjectField> fieldDefinitions = fieldVisibility.getFieldDefinitions(inputObjectType);
 

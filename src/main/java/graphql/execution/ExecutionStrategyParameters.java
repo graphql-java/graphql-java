@@ -33,9 +33,9 @@ public class ExecutionStrategyParameters {
                                         ExecutionStrategyParameters parent,
                                         DeferredCallContext deferredCallContext) {
 
-        this.executionStepInfo = Assert.assertNotNull(executionStepInfo, "executionStepInfo is null");
+        this.executionStepInfo = Assert.assertNotNull(executionStepInfo, () -> "executionStepInfo is null");
         this.localContext = localContext;
-        this.fields = Assert.assertNotNull(fields, "fields is null");
+        this.fields = Assert.assertNotNull(fields, () -> "fields is null");
         this.source = source;
         this.nonNullableFieldValidator = nonNullableFieldValidator;
         this.path = path;
@@ -168,7 +168,7 @@ public class ExecutionStrategyParameters {
         }
 
         public Builder nonNullFieldValidator(NonNullableFieldValidator nonNullableFieldValidator) {
-            this.nonNullableFieldValidator = Assert.assertNotNull(nonNullableFieldValidator, "requires a NonNullValidator");
+            this.nonNullableFieldValidator = Assert.assertNotNull(nonNullableFieldValidator, () -> "requires a NonNullValidator");
             return this;
         }
 

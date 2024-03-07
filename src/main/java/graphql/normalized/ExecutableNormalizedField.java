@@ -184,7 +184,7 @@ public class ExecutableNormalizedField {
     public GraphQLOutputType getType(GraphQLSchema schema) {
         List<GraphQLFieldDefinition> fieldDefinitions = getFieldDefinitions(schema);
         Set<String> fieldTypes = fieldDefinitions.stream().map(fd -> simplePrint(fd.getType())).collect(toSet());
-        Assert.assertTrue(fieldTypes.size() == 1, "More than one type ... use getTypes");
+        Assert.assertTrue(fieldTypes.size() == 1, () -> "More than one type ... use getTypes");
         return fieldDefinitions.get(0).getType();
     }
 
@@ -438,7 +438,7 @@ public class ExecutableNormalizedField {
 
     public List<ExecutableNormalizedField> getChildren(int includingRelativeLevel) {
         List<ExecutableNormalizedField> result = new ArrayList<>();
-        Assert.assertTrue(includingRelativeLevel >= 1, "relative level must be >= 1");
+        Assert.assertTrue(includingRelativeLevel >= 1, () -> "relative level must be >= 1");
 
         this.getChildren().forEach(child -> {
             traverseImpl(child, result::add, 1, includingRelativeLevel);

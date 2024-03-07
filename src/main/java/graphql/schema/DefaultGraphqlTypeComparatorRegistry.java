@@ -127,9 +127,9 @@ public class DefaultGraphqlTypeComparatorRegistry implements GraphqlTypeComparat
          * @return The {@code Builder} instance to allow chaining.
          */
         public <T extends GraphQLType> Builder addComparator(GraphqlTypeComparatorEnvironment environment, Class<T> comparatorClass, Comparator<? super T> comparator) {
-            Assert.assertNotNull(environment, "environment can't be null");
-            Assert.assertNotNull(comparatorClass, "comparatorClass can't be null");
-            Assert.assertNotNull(comparator, "comparator can't be null");
+            Assert.assertNotNull(environment, () -> "environment can't be null");
+            Assert.assertNotNull(comparatorClass, () -> "comparatorClass can't be null");
+            Assert.assertNotNull(comparator, () -> "comparator can't be null");
             registry.put(environment, comparator);
             return this;
         }
