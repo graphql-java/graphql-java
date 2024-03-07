@@ -107,8 +107,8 @@ public class NormalizedInputValue {
         }
         if (isListOnly(typeName)) {
             // nominally this will never be true - but better to be safe than sorry
-            assertTrue(typeName.startsWith("["), () -> String.format("We have a unbalanced list type string '%s'", typeName));
-            assertTrue(typeName.endsWith("]"), () -> String.format("We have a unbalanced list type string '%s'", typeName));
+            assertTrue(typeName.startsWith("["), "We have a unbalanced list type string '%s'", typeName);
+            assertTrue(typeName.endsWith("]"), "We have a unbalanced list type string '%s'", typeName);
 
             return typeName.substring(1, typeName.length() - 1);
         }

@@ -51,6 +51,35 @@ class AssertTest extends Specification {
         null  | "code"     | null  || "code"
     }
 
+    def "assertNotNull with different number of  error args throws assertions"() {
+        when:
+        toRun.run()
+
+        then:
+        def error = thrown(AssertException)
+        error.message == expectedMessage
+
+        where:
+        toRun                                                                              | expectedMessage
+        runnable({ Assert.assertNotNull(null, "error %s", "arg1") })                       | "error arg1"
+        runnable({ Assert.assertNotNull(null, "error %s %s", "arg1", "arg2") })            | "error arg1 arg2"
+        runnable({ Assert.assertNotNull(null, "error %s %s %s", "arg1", "arg2", "arg3") }) | "error arg1 arg2 arg3"
+    }
+
+    def "assertNotNull with different number of error args with non null does not throw assertions"() {
+        when:
+        toRun.run()
+
+        then:
+        noExceptionThrown()
+
+        where:
+        toRun                                                                             | expectedMessage
+        runnable({ Assert.assertNotNull("x", "error %s", "arg1") })                       | "error arg1"
+        runnable({ Assert.assertNotNull("x", "error %s %s", "arg1", "arg2") })            | "error arg1 arg2"
+        runnable({ Assert.assertNotNull("x", "error %s %s %s", "arg1", "arg2", "arg3") }) | "error arg1 arg2 arg3"
+    }
+
     def "assertNeverCalled should always throw"() {
         when:
         Assert.assertNeverCalled()
@@ -138,6 +167,35 @@ class AssertTest extends Specification {
         error.message == "constant message"
     }
 
+    def "assertTrue with different number of error args throws assertions"() {
+        when:
+        toRun.run()
+
+        then:
+        def error = thrown(AssertException)
+        error.message == expectedMessage
+
+        where:
+        toRun                                                                            | expectedMessage
+        runnable({ Assert.assertTrue(false, "error %s", "arg1") })                       | "error arg1"
+        runnable({ Assert.assertTrue(false, "error %s %s", "arg1", "arg2") })            | "error arg1 arg2"
+        runnable({ Assert.assertTrue(false, "error %s %s %s", "arg1", "arg2", "arg3") }) | "error arg1 arg2 arg3"
+    }
+
+    def "assertTrue with different number of error args but false does not throw assertions"() {
+        when:
+        toRun.run()
+
+        then:
+        noExceptionThrown()
+
+        where:
+        toRun                                                                           | expectedMessage
+        runnable({ Assert.assertTrue(true, "error %s", "arg1") })                       | "error arg1"
+        runnable({ Assert.assertTrue(true, "error %s %s", "arg1", "arg2") })            | "error arg1 arg2"
+        runnable({ Assert.assertTrue(true, "error %s %s %s", "arg1", "arg2", "arg3") }) | "error arg1 arg2 arg3"
+    }
+
     def "assertFalse should throw"() {
         when:
         Assert.assertFalse(true)
@@ -170,6 +228,35 @@ class AssertTest extends Specification {
         "code"     | null  || "code"
     }
 
+    def "assertFalse with different number of error args throws assertions"() {
+        when:
+        toRun.run()
+
+        then:
+        def error = thrown(AssertException)
+        error.message == expectedMessage
+
+        where:
+        toRun                                                                            | expectedMessage
+        runnable({ Assert.assertFalse(true, "error %s", "arg1") })                       | "error arg1"
+        runnable({ Assert.assertFalse(true, "error %s %s", "arg1", "arg2") })            | "error arg1 arg2"
+        runnable({ Assert.assertFalse(true, "error %s %s %s", "arg1", "arg2", "arg3") }) | "error arg1 arg2 arg3"
+    }
+
+    def "assertFalse with different number of error args but false does not throw assertions"() {
+        when:
+        toRun.run()
+
+        then:
+        noExceptionThrown()
+
+        where:
+        toRun                                                                             | expectedMessage
+        runnable({ Assert.assertFalse(false, "error %s", "arg1") })                       | "error arg1"
+        runnable({ Assert.assertFalse(false, "error %s %s", "arg1", "arg2") })            | "error arg1 arg2"
+        runnable({ Assert.assertFalse(false, "error %s %s %s", "arg1", "arg2", "arg3") }) | "error arg1 arg2 arg3"
+    }
+
     def "assertValidName should not throw on valid names"() {
         when:
         Assert.assertValidName(name)
@@ -200,4 +287,10 @@ class AssertTest extends Specification {
         "���"  | _
         "_()"  | _
     }
+
+    // Spock data tables cant cope with { x } syntax but it cna do this
+    Runnable runnable(Runnable r) {
+        return r
+    }
+
 }

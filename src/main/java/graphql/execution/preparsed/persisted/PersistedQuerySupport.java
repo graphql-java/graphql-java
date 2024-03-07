@@ -38,7 +38,7 @@ public abstract class PersistedQuerySupport implements PreparsedDocumentProvider
     @Override
     public PreparsedDocumentEntry getDocument(ExecutionInput executionInput, Function<ExecutionInput, PreparsedDocumentEntry> parseAndValidateFunction) {
         Optional<Object> queryIdOption = getPersistedQueryId(executionInput);
-        assertNotNull(queryIdOption, () -> String.format("The class %s MUST return a non null optional query id", this.getClass().getName()));
+        assertNotNull(queryIdOption, "The class %s MUST return a non null optional query id", this.getClass().getName());
 
         try {
             if (queryIdOption.isPresent()) {

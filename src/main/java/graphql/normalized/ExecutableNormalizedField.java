@@ -201,7 +201,7 @@ public class ExecutableNormalizedField {
 
         for (String objectTypeName : objectTypeNames) {
             GraphQLObjectType type = (GraphQLObjectType) assertNotNull(schema.getType(objectTypeName));
-            consumer.accept(assertNotNull(type.getField(fieldName), () -> String.format("No field %s found for type %s", fieldName, objectTypeName)));
+            consumer.accept(assertNotNull(type.getField(fieldName), "No field %s found for type %s", fieldName, objectTypeName));
         }
     }
 
@@ -224,7 +224,7 @@ public class ExecutableNormalizedField {
 
         String objectTypeName = objectTypeNames.iterator().next();
         GraphQLObjectType type = (GraphQLObjectType) assertNotNull(schema.getType(objectTypeName));
-        return assertNotNull(type.getField(fieldName), () -> String.format("No field %s found for type %s", fieldName, objectTypeName));
+        return assertNotNull(type.getField(fieldName), "No field %s found for type %s", fieldName, objectTypeName);
     }
 
     private static GraphQLFieldDefinition resolveIntrospectionField(GraphQLSchema schema, Set<String> objectTypeNames, String fieldName) {

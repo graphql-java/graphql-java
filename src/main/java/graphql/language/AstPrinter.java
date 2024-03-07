@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.StringJoiner;
 
+import static graphql.Assert.assertShouldNeverHappen;
 import static graphql.Assert.assertTrue;
 import static graphql.util.EscapeUtil.escapeJsonString;
 import static java.lang.String.valueOf;
@@ -483,7 +484,7 @@ public class AstPrinter {
             }
             clazz = clazz.getSuperclass();
         }
-        throw new AssertException(String.format("We have a missing printer implementation for %s : report a bug!", clazz));
+        return assertShouldNeverHappen("We have a missing printer implementation for %s : report a bug!", clazz);
     }
 
     private <T> boolean isEmpty(List<T> list) {

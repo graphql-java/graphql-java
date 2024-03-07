@@ -86,7 +86,7 @@ public class Async {
 
         @Override
         public CompletableFuture<List<T>> await() {
-            Assert.assertTrue(ix == 1, () -> "expected size was " + 1 + " got " + ix);
+            Assert.assertTrue(ix == 1, "expected size was 1 got %d", ix);
             return completableFuture.thenApply(Collections::singletonList);
         }
     }
@@ -109,7 +109,7 @@ public class Async {
 
         @Override
         public CompletableFuture<List<T>> await() {
-            Assert.assertTrue(ix == array.length, "expected size was less than the array length");
+            Assert.assertTrue(ix == array.length, "expected size was %d got %d", array.length, ix);
 
             CompletableFuture<List<T>> overallResult = new CompletableFuture<>();
             CompletableFuture.allOf(array)
@@ -160,7 +160,7 @@ public class Async {
         CompletableFuture<U> cf;
         try {
             cf = cfFactory.apply(iterator.next(), tmpResult);
-            Assert.assertNotNull(cf,"cfFactory must return a non null value");
+            Assert.assertNotNull(cf, "cfFactory must return a non null value");
         } catch (Exception e) {
             cf = new CompletableFuture<>();
             cf.completeExceptionally(new CompletionException(e));

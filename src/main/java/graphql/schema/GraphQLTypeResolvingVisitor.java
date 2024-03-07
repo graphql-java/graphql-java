@@ -46,7 +46,7 @@ public class GraphQLTypeResolvingVisitor extends GraphQLTypeVisitorStub {
 
     public TraversalControl handleTypeReference(GraphQLTypeReference node, TraverserContext<GraphQLSchemaElement> context) {
         final GraphQLType resolvedType = typeMap.get(node.getName());
-        assertNotNull(resolvedType, () -> String.format("type %s not found in schema", node.getName()));
+        assertNotNull(resolvedType, "type %s not found in schema", node.getName());
         context.getParentContext().thisNode().accept(context, new TypeRefResolvingVisitor(resolvedType));
         return CONTINUE;
     }
