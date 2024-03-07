@@ -22,7 +22,7 @@ import java.util.concurrent.TimeUnit;
 public class AssertBenchmark {
 
     private static final int LOOPS = 100;
-    private static final Random random = new Random();
+    private static final boolean BOOL = new Random().nextBoolean();
 
     @Benchmark
     @BenchmarkMode(Mode.Throughput)
@@ -62,9 +62,9 @@ public class AssertBenchmark {
     }
 
     private boolean jitTrue() {
-        int i = random.nextInt();
         // can you jit this away, Mr JIT??
-        return i % 10 < -1 || i * 2 + 1 < -2;
+        //noinspection ConstantValue,SimplifiableConditionalExpression
+        return BOOL ? BOOL : !BOOL;
     }
 
     public static void main(String[] args) throws RunnerException {
