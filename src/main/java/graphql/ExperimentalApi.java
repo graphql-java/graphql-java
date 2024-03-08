@@ -25,7 +25,7 @@ public @interface ExperimentalApi {
      */
     String ENABLE_INCREMENTAL_SUPPORT = "ENABLE_INCREMENTAL_SUPPORT";
     /**
-     * For using a custom DataLoaderDispatchStrategy. The value should be a of type Function<ExecutionContext,ExecDataLoaderDispatchStrategy>
+     * For using a custom DataLoaderDispatchStrategy. The value should be a of type Function taking ExecutionContext and returning ExecDataLoaderDispatchStrategy
      */
     String CUSTOM_DATALOADER_DISPATCH_STRATEGY_FACTORY = "CUSTOM_DATALOADER_DISPATCH_STRATEGY_FACTORY";
 
