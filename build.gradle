@@ -37,6 +37,7 @@ def getDevelopmentVersion() {
         return makeDevelopmentVersion(["0.0.0", dateTime, "no-git"])
     }
 
+    // a default Github Action env variable set to 'true'
     def isCi = Boolean.parseBoolean(System.env.CI)
     if (isCi) {
         def gitHashOutput = new StringBuilder()
