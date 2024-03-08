@@ -1,0 +1,124 @@
+plugins {
+    id 'java'
+    id 'java-library'
+    id 'maven-publish'
+    id "com.github.johnrengelman.shadow" version "8.1.1"
+}
+
+dependencies {
+    implementation("net.bytebuddy:byte-buddy:1.14.11")
+    // graphql-java itself
+    implementation(rootProject)
+}
+
+repositories {
+    mavenCentral()
+    mavenLocal()
+}
+
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(11)
+    }
+}
+
+shadowJar {
+    minimize()
+    archiveClassifier.set('')
+    configurations = [project.configurations.compileClasspath]
+    dependencies {
+        exclude(dependency(rootProject))
+    }
+    manifest {
+        attributes(
+                'Agent-Class': 'graphql.agent.GraphQLJavaAgent',
+                'Premain-Class': 'graphql.agent.GraphQLJavaAgent',
+                'Can-Redefine-Classes': 'true',
+                'Can-Retransform-Classes': 'true',
+        )
+    }
+}
+
+task sourcesJar(type: Jar) {
+    dependsOn classes
+    archiveClassifier = 'sources'
+    from sourceSets.main.allSource
+}
+
+task javadocJar(type: Jar, dependsOn: javadoc) {
+    archiveClassifier = 'javadoc'
+    from javadoc.destinationDir
+}
+
+publishing {
+
+    publications {
+
+        agent(MavenPublication) {
+            version rootProject.version
+            group rootProject.group
+            artifactId 'graphql-java-agent'
+            from components.java
+
+            artifact sourcesJar {
+                archiveClassifier = "sources"
+            }
+            artifact javadocJar {
+                archiveClassifier = "javadoc"
+            }
+            pom.withXml {
+                // removing the shaded dependencies from the pom
+                def pomNode = asNode()
+                pomNode.dependencies.'*'.findAll() {
+                    it.artifactId.text() == 'graphql-java' || it.artifactId.text() == 'byte-buddy'
+                }.each() {
+                    it.parent().remove(it)
+                }
+                pomNode.children().last() + {
+                    resolveStrategy = Closure.DELEGATE_FIRST
+                    name 'graphql-java-agent'
+                    description 'GraphqL Java Agent'
+                    url "https://github.com/graphql-java/graphql-java"
+                    scm {
+                        url "https://github.com/graphql-java/graphql-java"
+                        connection "https://github.com/graphql-java/graphql-java"
+                        developerConnection "https://github.com/graphql-java/graphql-java"
+                    }
+                    licenses {
+                        license {
+                            name 'MIT'
+                            url 'https://github.com/graphql-java/graphql-java/blob/master/LICENSE.md'
+                            distribution 'repo'
+                        }
+                    }
+                    developers {
+                        developer {
+                            id 'andimarek'
+                            name 'Andreas Marek'
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+signing {
+    required { !project.hasProperty('publishToMavenLocal') }
+    def signingKey = System.env.MAVEN_CENTRAL_PGP_KEY
+    useInMemoryPgpKeys(signingKey, "")
+    sign publishing.publications
+}
+
+
+// all publish tasks depend on the build task
+tasks.withType(PublishToMavenRepository) {
+    dependsOn build
+}
+
+// Only publish Maven POM, disable default Gradle modules file
+tasks.withType(GenerateModuleMetadata) {
+    enabled = false
+}
+
