@@ -6,12 +6,10 @@ import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLObjectType;
 
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 
 @Internal
 public interface DataLoaderDispatchStrategy {
 
-    String CUSTOM_STRATEGY_KEY = "CUSTOM_STRATEGY_KEY";
 
 
     DataLoaderDispatchStrategy NO_OP = new DataLoaderDispatchStrategy() {

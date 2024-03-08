@@ -30,6 +30,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 import static graphql.Assert.assertTrue;
@@ -39,6 +40,9 @@ import static graphql.schema.GraphQLTypeUtil.unwrapNonNull;
 
 @Internal
 public class BatchLoadingDispatchStrategy implements DataLoaderDispatchStrategy {
+
+
+    public static final Function<ExecutionContext, DataLoaderDispatchStrategy> BATCH_LOADING_DISPATCH_STRATEGY_FACTORY = BatchLoadingDispatchStrategy::new;
 
     private final ExecutionContext executionContext;
 

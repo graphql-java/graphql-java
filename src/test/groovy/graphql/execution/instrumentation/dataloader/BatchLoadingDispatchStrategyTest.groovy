@@ -1,11 +1,10 @@
 package graphql.execution.instrumentation.dataloader
 
 import graphql.ExecutionInput
+import graphql.ExperimentalApi
 import graphql.GraphQL
 import graphql.TestUtil
 import graphql.TrivialDataFetcher
-import graphql.execution.DataLoaderDispatchStrategy
-import graphql.execution.ExecutionContext
 import graphql.schema.BatchLoaderDataFetcher
 import graphql.schema.DataFetcher
 import graphql.schema.DataFetchingEnvironment
@@ -17,7 +16,6 @@ import spock.lang.Ignore
 import spock.lang.Specification
 
 import java.util.concurrent.CompletableFuture
-import java.util.function.Function
 
 class BatchLoadingDispatchStrategyTest extends Specification {
 
@@ -25,12 +23,9 @@ class BatchLoadingDispatchStrategyTest extends Specification {
         ExecutionInput executionInput = ExecutionInput.newExecutionInput()
                 .query(query)
                 .dataLoaderRegistry(dataLoaderRegistry).build()
-        executionInput.getGraphQLContext().put(DataLoaderDispatchStrategy.CUSTOM_STRATEGY_KEY, { executionContext ->
-            return new BatchLoadingDispatchStrategy(executionContext)
-        } as Function<ExecutionContext, DataLoaderDispatchStrategy>)
+        executionInput.getGraphQLContext().put(ExperimentalApi.CUSTOM_DATALOADER_DISPATCH_STRATEGY_FACTORY, BatchLoadingDispatchStrategy.BATCH_LOADING_DISPATCH_STRATEGY_FACTORY)
 
         return executionInput
-
     }
 
     def "batch loading at different levels "() {

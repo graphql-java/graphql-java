@@ -36,6 +36,7 @@ import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 
+import static graphql.ExperimentalApi.CUSTOM_DATALOADER_DISPATCH_STRATEGY_FACTORY;
 import static graphql.execution.ExecutionContextBuilder.newExecutionContextBuilder;
 import static graphql.execution.ExecutionStepInfo.newExecutionStepInfo;
 import static graphql.execution.ExecutionStrategyParameters.newParameters;
@@ -224,11 +225,14 @@ public class Execution {
     }
 
     private DataLoaderDispatchStrategy createDataLoaderDispatchStrategy(ExecutionContext executionContext, ExecutionStrategy executionStrategy) {
-        if (executionContext.getGraphQLContext().get(DataLoaderDispatchStrategy.CUSTOM_STRATEGY_KEY) != null) {
-            Function<ExecutionContext, DataLoaderDispatchStrategy> customStrategy = executionContext.getGraphQLContext().get(DataLoaderDispatchStrategy.CUSTOM_STRATEGY_KEY);
+        if (executionContext.getDataLoaderRegistry() == EMPTY_DATALOADER_REGISTRY) {
+            return DataLoaderDispatchStrategy.NO_OP;
+        }
+        if (executionContext.getGraphQLContext().get(CUSTOM_DATALOADER_DISPATCH_STRATEGY_FACTORY) != null) {
+            Function<ExecutionContext, DataLoaderDispatchStrategy> customStrategy = executionContext.getGraphQLContext().get(CUSTOM_DATALOADER_DISPATCH_STRATEGY_FACTORY);
             return customStrategy.apply(executionContext);
         }
-        if (executionContext.getDataLoaderRegistry() == EMPTY_DATALOADER_REGISTRY || doNotAutomaticallyDispatchDataLoader) {
+        if (doNotAutomaticallyDispatchDataLoader) {
             return DataLoaderDispatchStrategy.NO_OP;
         }
         if (executionStrategy instanceof AsyncExecutionStrategy) {

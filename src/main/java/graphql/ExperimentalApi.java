@@ -23,5 +23,10 @@ public @interface ExperimentalApi {
     /**
      * The key that should be associated with a boolean value which indicates whether @defer and @stream behaviour is enabled for this execution.
      */
-    String ENABLE_INCREMENTAL_SUPPORT  = "ENABLE_INCREMENTAL_SUPPORT";
+    String ENABLE_INCREMENTAL_SUPPORT = "ENABLE_INCREMENTAL_SUPPORT";
+    /**
+     * For using a custom DataLoaderDispatchStrategy. The value should be a of type Function<ExecutionContext,ExecDataLoaderDispatchStrategy>
+     */
+    String CUSTOM_DATALOADER_DISPATCH_STRATEGY_FACTORY = "CUSTOM_DATALOADER_DISPATCH_STRATEGY_FACTORY";
+
 }
