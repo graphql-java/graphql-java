@@ -7,6 +7,7 @@ import graphql.execution.preparsed.PreparsedDocumentEntry;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -27,8 +28,8 @@ public class InMemoryPersistedQueryCache implements PersistedQueryCache {
     }
 
     @Override
-    public PreparsedDocumentEntry getPersistedQueryDocument(Object persistedQueryId, ExecutionInput executionInput, PersistedQueryCacheMiss onCacheMiss) throws PersistedQueryNotFound {
-        return cache.compute(persistedQueryId, (k, v) -> {
+    public CompletableFuture<PreparsedDocumentEntry> getPersistedQueryDocumentAsync(Object persistedQueryId, ExecutionInput executionInput, PersistedQueryCacheMiss onCacheMiss) throws PersistedQueryNotFound {
+        PreparsedDocumentEntry documentEntry = cache.compute(persistedQueryId, (k, v) -> {
             if (v != null) {
                 return v;
             }
@@ -45,6 +46,7 @@ public class InMemoryPersistedQueryCache implements PersistedQueryCache {
             }
             return onCacheMiss.apply(queryText);
         });
+        return CompletableFuture.completedFuture(documentEntry);
     }
 
     public static Builder newInMemoryPersistedQueryCache() {
