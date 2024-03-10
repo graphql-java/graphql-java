@@ -1,11 +1,15 @@
 package graphql.validation.rules;
 
 import graphql.Internal;
-import graphql.language.Field;
-import graphql.language.FragmentDefinition;
-import graphql.language.FragmentSpread;
+import graphql.execution.CoercedVariables;
+import graphql.execution.FieldCollector;
+import graphql.execution.FieldCollectorParameters;
+import graphql.execution.MergedField;
+import graphql.execution.MergedSelectionSet;
+import graphql.language.NodeUtil;
 import graphql.language.OperationDefinition;
 import graphql.language.Selection;
+import graphql.schema.GraphQLObjectType;
 import graphql.validation.AbstractRule;
 import graphql.validation.ValidationContext;
 import graphql.validation.ValidationErrorCollector;
@@ -24,6 +28,7 @@ import static graphql.validation.ValidationErrorType.SubscriptionMultipleRootFie
  */
 @Internal
 public class SubscriptionUniqueRootField extends AbstractRule {
+    private final FieldCollector fieldCollector = new FieldCollector();
     public SubscriptionUniqueRootField(ValidationContext validationContext, ValidationErrorCollector validationErrorCollector) {
         super(validationContext, validationErrorCollector);
     }
@@ -31,36 +36,37 @@ public class SubscriptionUniqueRootField extends AbstractRule {
     @Override
     public void checkOperationDefinition(OperationDefinition operationDef) {
         if (operationDef.getOperation() == SUBSCRIPTION) {
+
+            GraphQLObjectType subscriptionType = getValidationContext().getSchema().getSubscriptionType();
+
+            FieldCollectorParameters collectorParameters = FieldCollectorParameters.newParameters()
+                    .schema(getValidationContext().getSchema())
+                    .fragments(NodeUtil.getFragmentsByName(getValidationContext().getDocument()))
+                    .variables(CoercedVariables.emptyVariables().toMap())
+                    .objectType(subscriptionType)
+                    .graphQLContext(getValidationContext().getGraphQLContext())
+                    .build();
+
+            MergedSelectionSet fields = fieldCollector.collectFields(collectorParameters, operationDef.getSelectionSet());
             List<Selection> subscriptionSelections = operationDef.getSelectionSet().getSelections();
 
-            if (subscriptionSelections.size() > 1) {
+            if (fields.size() > 1) {
                 String message = i18n(SubscriptionMultipleRootFields, "SubscriptionUniqueRootField.multipleRootFields", operationDef.getName());
                 addError(SubscriptionMultipleRootFields, operationDef.getSourceLocation(), message);
             } else { // Only one item in selection set, size == 1
-                Selection rootSelection = subscriptionSelections.get(0);
 
-                if (isIntrospectionField(rootSelection)) {
-                    String message = i18n(SubscriptionIntrospectionRootField, "SubscriptionIntrospectionRootField.introspectionRootField", operationDef.getName(), ((Field) rootSelection).getName());
-                    addError(SubscriptionIntrospectionRootField, rootSelection.getSourceLocation(), message);
-                } else if (rootSelection instanceof FragmentSpread) {
-                    // If the only item in selection set is a fragment, inspect the fragment.
-                    String fragmentName = ((FragmentSpread) rootSelection).getName();
-                    FragmentDefinition fragmentDef = getValidationContext().getFragment(fragmentName);
-                    List<Selection> fragmentSelections = fragmentDef.getSelectionSet().getSelections();
+                MergedField mergedField  = fields.getSubFieldsList().get(0);
 
-                    if (fragmentSelections.size() > 1) {
-                        String message = i18n(SubscriptionMultipleRootFields, "SubscriptionUniqueRootField.multipleRootFieldsWithFragment", operationDef.getName());
-                        addError(SubscriptionMultipleRootFields, rootSelection.getSourceLocation(), message);
-                    } else if (isIntrospectionField(fragmentSelections.get(0))) {
-                        String message = i18n(SubscriptionIntrospectionRootField, "SubscriptionIntrospectionRootField.introspectionRootFieldWithFragment", operationDef.getName(), ((Field) fragmentSelections.get(0)).getName());
-                        addError(SubscriptionIntrospectionRootField, rootSelection.getSourceLocation(), message);
-                    }
+
+                if (isIntrospectionField(mergedField)) {
+                    String message = i18n(SubscriptionIntrospectionRootField, "SubscriptionIntrospectionRootField.introspectionRootField", operationDef.getName(), mergedField.getName());
+                    addError(SubscriptionIntrospectionRootField, mergedField.getSingleField().getSourceLocation(), message);
                 }
             }
         }
     }
 
-    private boolean isIntrospectionField(Selection selection) {
-        return selection instanceof Field && ((Field) selection).getName().startsWith("__");
+    private boolean isIntrospectionField(MergedField field) {
+           return field.getName().startsWith("__");
     }
 }
