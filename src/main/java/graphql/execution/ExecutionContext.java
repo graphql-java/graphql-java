@@ -120,16 +120,6 @@ public class ExecutionContext {
         return operationDefinition;
     }
 
-    /**
-     * @return map of coerced variables
-     *
-     * @deprecated use {@link #getCoercedVariables()} instead
-     */
-    @Deprecated(since = "2022-05-24")
-    public Map<String, Object> getVariables() {
-        return coercedVariables.toMap();
-    }
-
     public CoercedVariables getCoercedVariables() {
         return coercedVariables;
     }

@@ -94,7 +94,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
                 .locale(executionContext.getLocale())
                 .document(executionContext.getDocument())
                 .operationDefinition(executionContext.getOperationDefinition())
-                .variables(executionContext.getVariables())
+                .variables(executionContext.getCoercedVariables().toMap())
                 .executionId(executionContext.getExecutionId());
     }
 
