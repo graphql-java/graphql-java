@@ -20,7 +20,7 @@ public class HelloWorld {
                 .field(newFieldDefinition()
                         .type(GraphQLString)
                         .name("hello")
-                        .staticValue("world"))
+                )
                 .build();
 
         GraphQLSchema schema = GraphQLSchema.newSchema()
@@ -29,7 +29,10 @@ public class HelloWorld {
 
         GraphQL graphQL = GraphQL.newGraphQL(schema).build();
 
-        Map<String, Object> result = graphQL.execute("{hello}").getData();
+
+        Map<String, String> rootObject = Map.of("hello", "world");
+        ExecutionInput executionInput = ExecutionInput.newExecutionInput().query("{hello}").root(rootObject).build();
+        Map<String, Object> result = graphQL.execute(executionInput).getData();
         System.out.println(result);
         // Prints: {hello=world}
     }
@@ -41,14 +44,17 @@ public class HelloWorld {
                 .field(newFieldDefinition()
                         .type(GraphQLString)
                         .name("hello")
-                        .staticValue("world"))
+                )
                 .build();
 
         GraphQLSchema schema = GraphQLSchema.newSchema()
                 .query(queryType)
                 .build();
         GraphQL graphQL = GraphQL.newGraphQL(schema).build();
-        Map<String, Object> result = graphQL.execute("{hello}").getData();
+        Map<String, String> rootObject = Map.of("hello", "world");
+        ExecutionInput executionInput = ExecutionInput.newExecutionInput().query("{hello}").root(rootObject).build();
+
+        Map<String, Object> result = graphQL.execute(executionInput).getData();
         assertEquals("world", result.get("hello"));
     }
 }

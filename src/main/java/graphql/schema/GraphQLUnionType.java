@@ -40,7 +40,6 @@ public class GraphQLUnionType implements GraphQLNamedOutputType, GraphQLComposit
     private final String name;
     private final String description;
     private final ImmutableList<GraphQLNamedOutputType> originalTypes;
-    private final TypeResolver typeResolver;
     private final UnionTypeDefinition definition;
     private final ImmutableList<UnionTypeExtensionDefinition> extensionDefinitions;
     private final DirectivesUtil.DirectivesHolder directives;
@@ -53,7 +52,6 @@ public class GraphQLUnionType implements GraphQLNamedOutputType, GraphQLComposit
     private GraphQLUnionType(String name,
                              String description,
                              List<GraphQLNamedOutputType> types,
-                             TypeResolver typeResolver,
                              List<GraphQLDirective> directives,
                              List<GraphQLAppliedDirective> appliedDirectives,
                              UnionTypeDefinition definition,
@@ -66,7 +64,6 @@ public class GraphQLUnionType implements GraphQLNamedOutputType, GraphQLComposit
         this.name = name;
         this.description = description;
         this.originalTypes = ImmutableList.copyOf(types);
-        this.typeResolver = typeResolver;
         this.definition = definition;
         this.extensionDefinitions = ImmutableList.copyOf(extensionDefinitions);
         this.directives = new DirectivesUtil.DirectivesHolder(directives, appliedDirectives);
@@ -97,13 +94,6 @@ public class GraphQLUnionType implements GraphQLNamedOutputType, GraphQLComposit
      */
     public boolean isPossibleType(GraphQLObjectType graphQLObjectType) {
         return getTypes().stream().anyMatch(nt -> nt.getName().equals(graphQLObjectType.getName()));
-    }
-
-    // to be removed in a future version when all code is in the code registry
-    @Internal
-    @Deprecated(since = "2018-12-03")
-    TypeResolver getTypeResolver() {
-        return typeResolver;
     }
 
     @Override
@@ -245,7 +235,6 @@ public class GraphQLUnionType implements GraphQLNamedOutputType, GraphQLComposit
 
     @PublicApi
     public static class Builder extends GraphqlDirectivesContainerTypeBuilder<Builder, Builder> {
-        private TypeResolver typeResolver;
         private UnionTypeDefinition definition;
         private List<UnionTypeExtensionDefinition> extensionDefinitions = emptyList();
         private final Map<String, GraphQLNamedOutputType> types = new LinkedHashMap<>();
@@ -256,7 +245,6 @@ public class GraphQLUnionType implements GraphQLNamedOutputType, GraphQLComposit
         public Builder(GraphQLUnionType existing) {
             this.name = existing.getName();
             this.description = existing.getDescription();
-            this.typeResolver = existing.getTypeResolver();
             this.definition = existing.getDefinition();
             this.extensionDefinitions = existing.getExtensionDefinitions();
             this.types.putAll(getByName(existing.originalTypes, GraphQLNamedType::getName));
@@ -270,19 +258,6 @@ public class GraphQLUnionType implements GraphQLNamedOutputType, GraphQLComposit
 
         public Builder extensionDefinitions(List<UnionTypeExtensionDefinition> extensionDefinitions) {
             this.extensionDefinitions = extensionDefinitions;
-            return this;
-        }
-
-        /**
-         * @param typeResolver the type resolver
-         *
-         * @return this builder
-         *
-         * @deprecated use {@link graphql.schema.GraphQLCodeRegistry.Builder#typeResolver(GraphQLUnionType, TypeResolver)} instead
-         */
-        @Deprecated(since = "2018-12-03")
-        public Builder typeResolver(TypeResolver typeResolver) {
-            this.typeResolver = typeResolver;
             return this;
         }
 
@@ -382,7 +357,6 @@ public class GraphQLUnionType implements GraphQLNamedOutputType, GraphQLComposit
                     name,
                     description,
                     sort(types, GraphQLUnionType.class, GraphQLOutputType.class),
-                    typeResolver,
                     sort(directives, GraphQLUnionType.class, GraphQLDirective.class),
                     sort(appliedDirectives, GraphQLUnionType.class, GraphQLAppliedDirective.class),
                     definition,

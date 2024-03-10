@@ -1,5 +1,6 @@
 package graphql
 
+import graphql.schema.GraphQLCodeRegistry
 import spock.lang.Specification
 
 class RelaySchemaTest extends Specification {

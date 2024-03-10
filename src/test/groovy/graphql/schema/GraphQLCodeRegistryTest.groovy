@@ -227,11 +227,8 @@ class GraphQLCodeRegistryTest extends Specification {
     def "integration test that code registry gets asked for data fetchers"() {
 
         def queryType = newObject().name("Query")
-                .field(newFieldDefinition().name("codeRegistryField").type(Scalars.GraphQLString))
-                .field(newFieldDefinition().name("nonCodeRegistryField").type(Scalars.GraphQLString)
-                // df comes from the field itself here
-                        .dataFetcher(new NamedDF("nonCodeRegistryFieldValue"))) // Retain to test Field Definition DataFetcher
-                .field(newFieldDefinition().name("neitherSpecified").type(Scalars.GraphQLString))
+                .field(newFieldDefinition().name("codeRegistryField").type(GraphQLString))
+                .field(newFieldDefinition().name("neitherSpecified").type(GraphQLString))
                 .build()
 
         // here we wire in a specific data fetcher via the code registry
@@ -244,12 +241,12 @@ class GraphQLCodeRegistryTest extends Specification {
         when:
         def er = graphQL.execute(ExecutionInput.newExecutionInput().query('''
             query {
-                codeRegistryField, nonCodeRegistryField,neitherSpecified
+                codeRegistryField, neitherSpecified
             }
             ''').root([neitherSpecified: "neitherSpecifiedValue"]).build())
         then:
         er.errors.isEmpty()
-        er.data == [codeRegistryField: "codeRegistryFieldValue", nonCodeRegistryField: "nonCodeRegistryFieldValue", neitherSpecified: "neitherSpecifiedValue"]
+        er.data == [codeRegistryField: "codeRegistryFieldValue", neitherSpecified: "neitherSpecifiedValue"]
 
         // when nothing is specified then its a plain old PropertyDataFetcher
         schema.getCodeRegistry().getDataFetcher(queryType, queryType.getFieldDefinition("neitherSpecified")) instanceof PropertyDataFetcher

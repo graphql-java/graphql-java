@@ -32,7 +32,7 @@ import static graphql.schema.GraphQLTypeReference.typeRef;
 /**
  * This can be used to compose graphql runtime types that implement
  * that Relay specification.
- *
+ * <p>
  * See <a href="https://facebook.github.io/relay/graphql/connections.htm">https://facebook.github.io/relay/graphql/connections.htm</a>
  */
 @PublicApi
@@ -61,11 +61,10 @@ public class Relay {
                     .description("When paginating forwards, the cursor to continue."))
             .build();
 
-    public GraphQLInterfaceType nodeInterface(TypeResolver typeResolver) {
+    public GraphQLInterfaceType nodeInterface() {
         return newInterface()
                 .name(NODE)
                 .description("An object with an ID")
-                .typeResolver(typeResolver)
                 .field(newFieldDefinition()
                         .name("id")
                         .description("The ID of an object")
@@ -73,12 +72,11 @@ public class Relay {
                 .build();
     }
 
-    public GraphQLFieldDefinition nodeField(GraphQLInterfaceType nodeInterface, DataFetcher nodeDataFetcher) {
+    public GraphQLFieldDefinition nodeField(GraphQLInterfaceType nodeInterface) {
         return newFieldDefinition()
                 .name("node")
                 .description("Fetches an object given its ID")
                 .type(nodeInterface)
-                .dataFetcher(nodeDataFetcher)
                 .argument(newArgument()
                         .name("id")
                         .description("The ID of an object")
@@ -175,8 +173,8 @@ public class Relay {
 
     public GraphQLFieldDefinition mutationWithClientMutationId(String name, String fieldName,
                                                                List<GraphQLInputObjectField> inputFields,
-                                                               List<GraphQLFieldDefinition> outputFields,
-                                                               DataFetcher dataFetcher) {
+                                                               List<GraphQLFieldDefinition> outputFields
+                                                               ) {
         GraphQLInputObjectField clientMutationIdInputField = newInputObjectField()
                 .name("clientMutationId")
                 .type(GraphQLString)
@@ -187,7 +185,7 @@ public class Relay {
                 .build();
 
         return mutation(name, fieldName, addElementToList(inputFields, clientMutationIdInputField),
-                addElementToList(outputFields, clientMutationIdPayloadField), dataFetcher);
+                addElementToList(outputFields, clientMutationIdPayloadField));
     }
 
     private static <T> List<T> addElementToList(List<T> list, T element) {
@@ -198,8 +196,7 @@ public class Relay {
 
     public GraphQLFieldDefinition mutation(String name, String fieldName,
                                            List<GraphQLInputObjectField> inputFields,
-                                           List<GraphQLFieldDefinition> outputFields,
-                                           DataFetcher dataFetcher) {
+                                           List<GraphQLFieldDefinition> outputFields) {
         GraphQLInputObjectType inputObjectType = newInputObject()
                 .name(name + "Input")
                 .fields(inputFields)
@@ -215,7 +212,6 @@ public class Relay {
                 .argument(newArgument()
                         .name("input")
                         .type(nonNull(inputObjectType)))
-                .dataFetcher(dataFetcher)
                 .build();
     }
 

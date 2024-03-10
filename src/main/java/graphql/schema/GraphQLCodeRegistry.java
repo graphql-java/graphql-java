@@ -154,18 +154,12 @@ public class GraphQLCodeRegistry {
     private static TypeResolver getTypeResolverForInterface(GraphQLInterfaceType parentType, Map<String, TypeResolver> typeResolverMap) {
         assertNotNull(parentType);
         TypeResolver typeResolver = typeResolverMap.get(parentType.getName());
-        if (typeResolver == null) {
-            typeResolver = parentType.getTypeResolver();
-        }
         return assertNotNull(typeResolver, () -> "There must be a type resolver for interface " + parentType.getName());
     }
 
     private static TypeResolver getTypeResolverForUnion(GraphQLUnionType parentType, Map<String, TypeResolver> typeResolverMap) {
         assertNotNull(parentType);
         TypeResolver typeResolver = typeResolverMap.get(parentType.getName());
-        if (typeResolver == null) {
-            typeResolver = parentType.getTypeResolver();
-        }
         return assertNotNull(typeResolver, () -> "There must be a type resolver for union " + parentType.getName());
     }
 

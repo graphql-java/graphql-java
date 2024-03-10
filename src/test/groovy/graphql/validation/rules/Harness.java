@@ -1,5 +1,6 @@
 package graphql.validation.rules;
 
+import graphql.schema.GraphQLCodeRegistry;
 import graphql.schema.GraphQLEnumType;
 import graphql.schema.GraphQLInputObjectType;
 import graphql.schema.GraphQLInterfaceType;
@@ -33,7 +34,6 @@ public class Harness {
             .field(newFieldDefinition()
                     .name("name")
                     .type(GraphQLString))
-            .typeResolver(dummyTypeResolve)
             .build();
 
     public static GraphQLInterfaceType Pet = newInterface()
@@ -41,7 +41,6 @@ public class Harness {
             .field(newFieldDefinition()
                     .name("name")
                     .type(GraphQLString))
-            .typeResolver(dummyTypeResolve)
             .build();
 
     public static GraphQLEnumType DogCommand = newEnum()
@@ -123,7 +122,6 @@ public class Harness {
     public static GraphQLUnionType CatOrDog = newUnionType()
             .name("CatOrDog")
             .possibleTypes(Dog, Cat)
-            .typeResolver(env -> null)
             .build();
 
     public static GraphQLInterfaceType Intelligent = newInterface()
@@ -131,7 +129,6 @@ public class Harness {
             .field(newFieldDefinition()
                     .name("iq")
                     .type(GraphQLInt))
-            .typeResolver(dummyTypeResolve)
             .build();
 
     public static GraphQLObjectType Human = newObject()
@@ -168,13 +165,11 @@ public class Harness {
     public static GraphQLUnionType DogOrHuman = newUnionType()
             .name("DogOrHuman")
             .possibleTypes(Dog, Human)
-            .typeResolver(dummyTypeResolve)
             .build();
 
     public static GraphQLUnionType HumanOrAlien = newUnionType()
             .name("HumanOrAlien")
             .possibleTypes(Alien, Human)
-            .typeResolver(dummyTypeResolve)
             .build();
 
     public static GraphQLInputObjectType Leash = GraphQLInputObjectType.newInputObject()
@@ -216,8 +211,19 @@ public class Harness {
                     .type(HumanOrAlien))
             .build();
 
+    private static final GraphQLCodeRegistry codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
+            .typeResolver("Being", dummyTypeResolve)
+            .typeResolver("Pet", dummyTypeResolve)
+            .typeResolver("CatOrDog", dummyTypeResolve)
+            .typeResolver("Intelligent", dummyTypeResolve)
+            .typeResolver("DogOrHuman", dummyTypeResolve)
+            .typeResolver("HumanOrAlien", dummyTypeResolve)
+            .build();
+
+
     public static GraphQLSchema Schema = newSchema()
             .query(QueryRoot)
+            .codeRegistry(codeRegistry)
             .build();
 }
 

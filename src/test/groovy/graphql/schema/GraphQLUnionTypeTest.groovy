@@ -63,13 +63,4 @@ class GraphQLUnionTypeTest extends Specification {
         transformedUnion.isPossibleType(objType3)
     }
 
-    def "deprecated typeResolver builder works"() {
-        when:
-        newUnionType()
-                .name("TestUnionType")
-                .typeResolver(new TypeResolverProxy()) // Retain for test coverage
-                .build()
-        then:
-        thrown(AssertException)
-    }
 }

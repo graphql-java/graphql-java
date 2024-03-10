@@ -114,7 +114,6 @@ class GraphQLInterfaceTypeTest extends Specification {
                         newFieldDefinition().name("NAME").type(GraphQLString).build(),
                         newFieldDefinition().name("NAME").type(GraphQLInt).build()
                 ])
-                .typeResolver(new TypeResolverProxy()) // Retain for test coverage
                 .build()
         then:
         interfaceType.getName() == "TestInterfaceType"

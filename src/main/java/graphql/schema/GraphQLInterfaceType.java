@@ -42,7 +42,6 @@ public class GraphQLInterfaceType implements GraphQLNamedType, GraphQLCompositeT
     private final String name;
     private final String description;
     private final Map<String, GraphQLFieldDefinition> fieldDefinitionsByName;
-    private final TypeResolver typeResolver;
     private final InterfaceTypeDefinition definition;
     private final ImmutableList<InterfaceTypeExtensionDefinition> extensionDefinitions;
     private final DirectivesUtil.DirectivesHolder directivesHolder;
@@ -59,7 +58,6 @@ public class GraphQLInterfaceType implements GraphQLNamedType, GraphQLCompositeT
     private GraphQLInterfaceType(String name,
                                  String description,
                                  List<GraphQLFieldDefinition> fieldDefinitions,
-                                 TypeResolver typeResolver,
                                  List<GraphQLDirective> directives,
                                  List<GraphQLAppliedDirective> appliedDirectives,
                                  InterfaceTypeDefinition definition,
@@ -72,7 +70,6 @@ public class GraphQLInterfaceType implements GraphQLNamedType, GraphQLCompositeT
 
         this.name = name;
         this.description = description;
-        this.typeResolver = typeResolver;
         this.definition = definition;
         this.interfaceComparator = interfaceComparator;
         this.originalInterfaces = ImmutableList.copyOf(sortTypes(interfaceComparator, interfaces));
@@ -104,13 +101,6 @@ public class GraphQLInterfaceType implements GraphQLNamedType, GraphQLCompositeT
 
     public String getDescription() {
         return description;
-    }
-
-    // to be removed in a future version when all code is in the code registry
-    @Internal
-    @Deprecated(since = "2018-12-03")
-    TypeResolver getTypeResolver() {
-        return typeResolver;
     }
 
     public InterfaceTypeDefinition getDefinition() {
@@ -162,7 +152,6 @@ public class GraphQLInterfaceType implements GraphQLNamedType, GraphQLCompositeT
                 "name='" + name + '\'' +
                 ", description='" + description + '\'' +
                 ", fieldDefinitionsByName=" + fieldDefinitionsByName.keySet() +
-                ", typeResolver=" + typeResolver +
                 '}';
     }
 
@@ -261,7 +250,6 @@ public class GraphQLInterfaceType implements GraphQLNamedType, GraphQLCompositeT
 
     @PublicApi
     public static class Builder extends GraphqlDirectivesContainerTypeBuilder<Builder, Builder> {
-        private TypeResolver typeResolver;
         private InterfaceTypeDefinition definition;
         private List<InterfaceTypeExtensionDefinition> extensionDefinitions = emptyList();
         private final Map<String, GraphQLFieldDefinition> fields = new LinkedHashMap<>();
@@ -273,7 +261,6 @@ public class GraphQLInterfaceType implements GraphQLNamedType, GraphQLCompositeT
         public Builder(GraphQLInterfaceType existing) {
             this.name = existing.getName();
             this.description = existing.getDescription();
-            this.typeResolver = existing.getTypeResolver();
             this.definition = existing.getDefinition();
             this.extensionDefinitions = existing.getExtensionDefinitions();
             this.fields.putAll(getByName(existing.getFieldDefinitions(), GraphQLFieldDefinition::getName));
@@ -353,19 +340,6 @@ public class GraphQLInterfaceType implements GraphQLNamedType, GraphQLCompositeT
          */
         public Builder clearFields() {
             fields.clear();
-            return this;
-        }
-
-        /**
-         * @param typeResolver the type resolver
-         *
-         * @return this builder
-         *
-         * @deprecated use {@link graphql.schema.GraphQLCodeRegistry.Builder#typeResolver(GraphQLInterfaceType, TypeResolver)} instead
-         */
-        @Deprecated(since = "2018-12-03")
-        public Builder typeResolver(TypeResolver typeResolver) {
-            this.typeResolver = typeResolver;
             return this;
         }
 
@@ -455,7 +429,6 @@ public class GraphQLInterfaceType implements GraphQLNamedType, GraphQLCompositeT
                     name,
                     description,
                     sort(fields, GraphQLInterfaceType.class, GraphQLFieldDefinition.class),
-                    typeResolver,
                     sort(directives, GraphQLInterfaceType.class, GraphQLDirective.class),
                     sort(appliedDirectives, GraphQLScalarType.class, GraphQLAppliedDirective.class),
                     definition,

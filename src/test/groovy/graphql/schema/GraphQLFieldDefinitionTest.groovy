@@ -18,14 +18,6 @@ import static graphql.schema.idl.SchemaPrinter.Options.defaultOptions
 
 class GraphQLFieldDefinitionTest extends Specification {
 
-    def "dataFetcher can't be null"() {
-        when:
-        newFieldDefinition().dataFetcher(null) // Retain for test coverage
-        then:
-        def exception = thrown(AssertException)
-        exception.getMessage().contains("dataFetcher")
-    }
-
     def "object can be transformed"() {
         given:
         def startingField = newFieldDefinition()
@@ -83,18 +75,4 @@ class GraphQLFieldDefinitionTest extends Specification {
         transformedField.getDirective("directive3") != null
     }
 
-    def "test deprecated argument builder for list"() {
-        given:
-        def field = newFieldDefinition().name("field").type(GraphQLInt).argument(mockArguments("a", "bb")).build() // Retain for test coverage
-
-        when:
-        def registry = newComparators()
-                .addComparator({ it.parentType(GraphQLFieldDefinition.class).elementType(GraphQLArgument.class) }, GraphQLArgument.class, TestUtil.byGreatestLength)
-                .build()
-        def options = defaultOptions().setComparators(registry)
-        def printer = new SchemaPrinter(options)
-
-        then:
-        printer.argsString(GraphQLFieldDefinition.class, field.arguments) == '''(bb: Int, a: Int)'''
-    }
 }

@@ -27,11 +27,7 @@ public class RelaySchema {
             )
             .build();
 
-    public static GraphQLInterfaceType NodeInterface = relay.nodeInterface(env -> {
-        Relay.ResolvedGlobalId resolvedGlobalId = relay.fromGlobalId((String) env.getObject());
-        //TODO: implement
-        return null;
-    });
+    public static GraphQLInterfaceType NodeInterface = relay.nodeInterface();
 
     public static GraphQLObjectType StuffEdgeType = relay.edgeType("Stuff", StuffType, NodeInterface, new ArrayList<>());
 
@@ -50,10 +46,7 @@ public class RelaySchema {
 
     public static GraphQLObjectType RelayQueryType = newObject()
             .name("RelayQuery")
-            .field(relay.nodeField(NodeInterface, environment -> {
-                //TODO: implement
-                return null;
-            }))
+            .field(relay.nodeField(NodeInterface))
             .field(newFieldDefinition()
                     .name("thing")
                     .type(ThingType)
@@ -68,6 +61,7 @@ public class RelaySchema {
 
     public static GraphQLCodeRegistry codeRegistry = GraphQLCodeRegistry.newCodeRegistry()
             .dataFetcher(thingCoordinates, thingDataFetcher)
+            .typeResolver("Node", env -> null)
             .build();
 
     public static GraphQLSchema Schema = GraphQLSchema.newSchema()
