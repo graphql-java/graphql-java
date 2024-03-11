@@ -9,6 +9,7 @@ import graphql.schema.GraphQLDirectiveContainer;
 import graphql.util.FpKit;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -125,7 +126,7 @@ public class DirectivesUtil {
      * A holder class that breaks a list of directives into maps to be more easily accessible in using classes
      */
     public static class DirectivesHolder {
-        private static final DirectivesHolder EMPTY_HOLDER = new DirectivesHolder();
+        private static final DirectivesHolder EMPTY_HOLDER = new DirectivesHolder(Collections.emptyList(), Collections.emptyList());
 
         private final ImmutableMap<String, List<GraphQLDirective>> allDirectivesByName;
         private final ImmutableMap<String, GraphQLDirective> nonRepeatableDirectivesByName;
