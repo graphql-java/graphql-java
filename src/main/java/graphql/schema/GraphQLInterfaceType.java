@@ -77,7 +77,7 @@ public class GraphQLInterfaceType implements GraphQLNamedType, GraphQLCompositeT
         this.interfaceComparator = interfaceComparator;
         this.originalInterfaces = ImmutableList.copyOf(sortTypes(interfaceComparator, interfaces));
         this.extensionDefinitions = ImmutableList.copyOf(extensionDefinitions);
-        this.directivesHolder = new DirectivesUtil.DirectivesHolder(directives, appliedDirectives);
+        this.directivesHolder = DirectivesUtil.DirectivesHolder.create(directives, appliedDirectives);
         this.fieldDefinitionsByName = buildDefinitionMap(fieldDefinitions);
     }
 
