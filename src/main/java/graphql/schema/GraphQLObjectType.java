@@ -74,7 +74,7 @@ public class GraphQLObjectType implements GraphQLNamedOutputType, GraphQLComposi
         this.originalInterfaces = ImmutableList.copyOf(sortTypes(interfaceComparator, interfaces));
         this.definition = definition;
         this.extensionDefinitions = ImmutableList.copyOf(extensionDefinitions);
-        this.directivesHolder = new DirectivesUtil.DirectivesHolder(directives, appliedDirectives);
+        this.directivesHolder = DirectivesUtil.DirectivesHolder.create(directives, appliedDirectives);
         this.fieldDefinitionsByName = buildDefinitionMap(fieldDefinitions);
     }
 

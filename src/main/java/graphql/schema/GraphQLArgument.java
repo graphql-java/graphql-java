@@ -82,7 +82,7 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
         this.value = value;
         this.definition = definition;
         this.deprecationReason = deprecationReason;
-        this.directivesHolder = new DirectivesUtil.DirectivesHolder(directives, appliedDirectives);
+        this.directivesHolder = DirectivesUtil.DirectivesHolder.create(directives, appliedDirectives);
     }
 
 
