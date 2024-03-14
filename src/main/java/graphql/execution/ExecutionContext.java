@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -59,6 +60,7 @@ public class ExecutionContext {
     private final ValueUnboxer valueUnboxer;
     private final ExecutionInput executionInput;
     private final Supplier<ExecutableNormalizedOperation> queryTree;
+    private final AtomicLong resultNodesCount = new AtomicLong();
 
     // this is modified after creation so it needs to be volatile to ensure visibility across Threads
     private volatile DataLoaderDispatchStrategy dataLoaderDispatcherStrategy = DataLoaderDispatchStrategy.NO_OP;
@@ -303,5 +305,9 @@ public class ExecutionContext {
         ExecutionContextBuilder builder = ExecutionContextBuilder.newExecutionContextBuilder(this);
         builderConsumer.accept(builder);
         return builder.build();
+    }
+
+    public AtomicLong getResultNodesCount() {
+        return resultNodesCount;
     }
 }

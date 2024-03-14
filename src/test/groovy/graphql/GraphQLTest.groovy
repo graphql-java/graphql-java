@@ -11,6 +11,7 @@ import graphql.execution.DataFetcherResult
 import graphql.execution.ExecutionContext
 import graphql.execution.ExecutionId
 import graphql.execution.ExecutionIdProvider
+import graphql.execution.ExecutionStrategy
 import graphql.execution.ExecutionStrategyParameters
 import graphql.execution.MissingRootTypeException
 import graphql.execution.SubscriptionExecutionStrategy
@@ -1427,4 +1428,133 @@ many lines''']
         then:
         !er.errors.isEmpty()
     }
+
+    def "max result nodes not breached"() {
+        given:
+        def sdl = '''
+
+        type Query {
+          hello: String
+        }
+        '''
+        def df = { env -> "world" } as DataFetcher
+        def fetchers = ["Query": ["hello": df]]
+        def schema = TestUtil.schema(sdl, fetchers)
+        def graphQL = GraphQL.newGraphQL(schema).build()
+
+        def query = "{ hello h1: hello h2: hello h3: hello } "
+        def ei = newExecutionInput(query).build()
+        ei.getGraphQLContext().put(ExecutionStrategy.MAX_RESULT_NODES, 4L);
+
+        when:
+        def er = graphQL.execute(ei)
+        then:
+        ei.getGraphQLContext().get(ExecutionStrategy.MAX_RESULT_NODES_BREACHED) == null
+        er.data == [hello: "world", h1: "world", h2: "world", h3: "world"]
+    }
+
+    def "max result nodes breached"() {
+        given:
+        def sdl = '''
+
+        type Query {
+          hello: String
+        }
+        '''
+        def df = { env -> "world" } as DataFetcher
+        def fetchers = ["Query": ["hello": df]]
+        def schema = TestUtil.schema(sdl, fetchers)
+        def graphQL = GraphQL.newGraphQL(schema).build()
+
+        def query = "{ hello h1: hello h2: hello h3: hello } "
+        def ei = newExecutionInput(query).build()
+        ei.getGraphQLContext().put(ExecutionStrategy.MAX_RESULT_NODES, 3L);
+
+        when:
+        def er = graphQL.execute(ei)
+        then:
+        ei.getGraphQLContext().get(ExecutionStrategy.MAX_RESULT_NODES_BREACHED) == true
+        er.data == [hello: "world", h1: "world", h2: "world", h3: null]
+    }
+
+    def "max result nodes breached with list"() {
+        given:
+        def sdl = '''
+
+        type Query {
+          hello: [String]
+        }
+        '''
+        def df = { env -> ["w1", "w2", "w3"] } as DataFetcher
+        def fetchers = ["Query": ["hello": df]]
+        def schema = TestUtil.schema(sdl, fetchers)
+        def graphQL = GraphQL.newGraphQL(schema).build()
+
+        def query = "{ hello}"
+        def ei = newExecutionInput(query).build()
+        ei.getGraphQLContext().put(ExecutionStrategy.MAX_RESULT_NODES, 3L);
+
+        when:
+        def er = graphQL.execute(ei)
+        then:
+        ei.getGraphQLContext().get(ExecutionStrategy.MAX_RESULT_NODES_BREACHED) == true
+        er.data == [hello: null]
+    }
+
+    def "max result nodes breached with list 2"() {
+        given:
+        def sdl = '''
+
+        type Query {
+          hello: [Foo]
+        }
+        type Foo {
+            name: String
+        }
+        '''
+        def df = { env -> [[name: "w1"], [name: "w2"], [name: "w3"]] } as DataFetcher
+        def fetchers = ["Query": ["hello": df]]
+        def schema = TestUtil.schema(sdl, fetchers)
+        def graphQL = GraphQL.newGraphQL(schema).build()
+
+        def query = "{ hello {name}}"
+        def ei = newExecutionInput(query).build()
+        // we have 7 result nodes overall
+        ei.getGraphQLContext().put(ExecutionStrategy.MAX_RESULT_NODES, 6L);
+
+        when:
+        def er = graphQL.execute(ei)
+        then:
+        ei.getGraphQLContext().get(ExecutionStrategy.MAX_RESULT_NODES_BREACHED) == true
+        er.data == [hello: [[name: "w1"], [name: "w2"], [name: null]]]
+    }
+
+    def "max result nodes not breached with list"() {
+        given:
+        def sdl = '''
+
+        type Query {
+          hello: [Foo]
+        }
+        type Foo {
+            name: String
+        }
+        '''
+        def df = { env -> [[name: "w1"], [name: "w2"], [name: "w3"]] } as DataFetcher
+        def fetchers = ["Query": ["hello": df]]
+        def schema = TestUtil.schema(sdl, fetchers)
+        def graphQL = GraphQL.newGraphQL(schema).build()
+
+        def query = "{ hello {name}}"
+        def ei = newExecutionInput(query).build()
+        // we have 7 result nodes overall
+        ei.getGraphQLContext().put(ExecutionStrategy.MAX_RESULT_NODES, 7L);
+
+        when:
+        def er = graphQL.execute(ei)
+        then:
+        ei.getGraphQLContext().get(ExecutionStrategy.MAX_RESULT_NODES_BREACHED) == null
+        er.data == [hello: [[name: "w1"], [name: "w2"], [name: "w3"]]]
+    }
+
 }
