@@ -1444,7 +1444,7 @@ many lines''']
 
         def query = "{ hello h1: hello h2: hello h3: hello } "
         def ei = newExecutionInput(query).build()
-        ei.getGraphQLContext().put(ExecutionStrategy.MAX_RESULT_NODES, 4L);
+        ei.getGraphQLContext().put(ExecutionStrategy.MAX_RESULT_NODES, 4);
 
         when:
         def er = graphQL.execute(ei)
@@ -1468,7 +1468,7 @@ many lines''']
 
         def query = "{ hello h1: hello h2: hello h3: hello } "
         def ei = newExecutionInput(query).build()
-        ei.getGraphQLContext().put(ExecutionStrategy.MAX_RESULT_NODES, 3L);
+        ei.getGraphQLContext().put(ExecutionStrategy.MAX_RESULT_NODES, 3);
 
         when:
         def er = graphQL.execute(ei)
@@ -1492,7 +1492,7 @@ many lines''']
 
         def query = "{ hello}"
         def ei = newExecutionInput(query).build()
-        ei.getGraphQLContext().put(ExecutionStrategy.MAX_RESULT_NODES, 3L);
+        ei.getGraphQLContext().put(ExecutionStrategy.MAX_RESULT_NODES, 3);
 
         when:
         def er = graphQL.execute(ei)
@@ -1520,7 +1520,7 @@ many lines''']
         def query = "{ hello {name}}"
         def ei = newExecutionInput(query).build()
         // we have 7 result nodes overall
-        ei.getGraphQLContext().put(ExecutionStrategy.MAX_RESULT_NODES, 6L);
+        ei.getGraphQLContext().put(ExecutionStrategy.MAX_RESULT_NODES, 6);
 
         when:
         def er = graphQL.execute(ei)
@@ -1548,7 +1548,7 @@ many lines''']
         def query = "{ hello {name}}"
         def ei = newExecutionInput(query).build()
         // we have 7 result nodes overall
-        ei.getGraphQLContext().put(ExecutionStrategy.MAX_RESULT_NODES, 7L);
+        ei.getGraphQLContext().put(ExecutionStrategy.MAX_RESULT_NODES, 7);
 
         when:
         def er = graphQL.execute(ei)

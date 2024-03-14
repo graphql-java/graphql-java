@@ -386,8 +386,8 @@ public abstract class ExecutionStrategy {
 
     private CompletableFuture<FetchedValue> fetchField(GraphQLFieldDefinition fieldDef, ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
 
-        long resultNodesCount = executionContext.getResultNodesCount().incrementAndGet();
-        Long maxNodes = null;
+        int resultNodesCount = executionContext.getResultNodesCount().incrementAndGet();
+        Integer maxNodes;
         if ((maxNodes = executionContext.getGraphQLContext().get(MAX_RESULT_NODES)) != null) {
             if (resultNodesCount > maxNodes) {
                 executionContext.getGraphQLContext().put(MAX_RESULT_NODES_BREACHED, true);
@@ -726,8 +726,8 @@ public abstract class ExecutionStrategy {
         List<FieldValueInfo> fieldValueInfos = new ArrayList<>(size.orElse(1));
         int index = 0;
         for (Object item : iterableValues) {
-            long resultNodesCount = executionContext.getResultNodesCount().incrementAndGet();
-            Long maxNodes;
+            int resultNodesCount = executionContext.getResultNodesCount().incrementAndGet();
+            Integer maxNodes;
             if ((maxNodes = executionContext.getGraphQLContext().get(MAX_RESULT_NODES)) != null) {
                 if (resultNodesCount > maxNodes) {
                     executionContext.getGraphQLContext().put(MAX_RESULT_NODES_BREACHED, true);
