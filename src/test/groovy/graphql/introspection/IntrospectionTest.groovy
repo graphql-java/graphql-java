@@ -1,6 +1,7 @@
 package graphql.introspection
 
-
+import graphql.ErrorType
+import graphql.ExecutionInput
 import graphql.TestUtil
 import graphql.schema.DataFetcher
 import graphql.schema.FieldCoordinates
@@ -688,4 +689,58 @@ class IntrospectionTest extends Specification {
         queryType["isOneOf"] == null
     }
 
+    def "jvm wide enablement"() {
+        def graphQL = TestUtil.graphQL("type Query { f : String } ").build()
+
+        when:
+        def er = graphQL.execute(IntrospectionQuery.INTROSPECTION_QUERY)
+
+        then:
+        er.errors.isEmpty()
+
+        when:
+        Introspection.enabledJvmWide(false)
+        er = graphQL.execute(IntrospectionQuery.INTROSPECTION_QUERY)
+
+        then:
+        er.errors[0] instanceof IntrospectionDisabledError
+        er.errors[0].getErrorType() == ErrorType.IntrospectionDisabled
+
+        when:
+        Introspection.enabledJvmWide(true)
+        er = graphQL.execute(IntrospectionQuery.INTROSPECTION_QUERY)
+
+        then:
+        er.errors.isEmpty()
+    }
+
+    def "per request enablement"() {
+        def graphQL = TestUtil.graphQL("type Query { f : String } ").build()
+
+        when:
+        // null context
+        def ei = ExecutionInput.newExecutionInput(IntrospectionQuery.INTROSPECTION_QUERY)
+                .build()
+        def er = graphQL.execute(ei)
+
+        then:
+        er.errors.isEmpty()
+
+        when:
+        ei = ExecutionInput.newExecutionInput(IntrospectionQuery.INTROSPECTION_QUERY)
+                .graphQLContext(Map.of(Introspection.INTROSPECTION_DISABLED, false)).build()
+        er = graphQL.execute(ei)
+
+        then:
+        er.errors.isEmpty()
+
+        when:
+        ei = ExecutionInput.newExecutionInput(IntrospectionQuery.INTROSPECTION_QUERY)
+                .graphQLContext(Map.of(Introspection.INTROSPECTION_DISABLED, true)).build()
+        er = graphQL.execute(ei)
+
+        then:
+        er.errors[0] instanceof IntrospectionDisabledError
+        er.errors[0].getErrorType() == ErrorType.IntrospectionDisabled
+    }
 }

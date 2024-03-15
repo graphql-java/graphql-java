@@ -6,8 +6,10 @@ import graphql.Assert;
 import graphql.GraphQLContext;
 import graphql.Internal;
 import graphql.PublicApi;
+import graphql.execution.DataFetcherResult;
 import graphql.execution.ValuesResolver;
 import graphql.language.AstPrinter;
+import graphql.language.Field;
 import graphql.schema.FieldCoordinates;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLCodeRegistry;
@@ -40,6 +42,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -58,8 +61,55 @@ import static graphql.schema.GraphQLTypeUtil.simplePrint;
 import static graphql.schema.GraphQLTypeUtil.unwrapAllAs;
 import static graphql.schema.GraphQLTypeUtil.unwrapOne;
 
+/**
+ * GraphQl has a unique capability called <a href="https://spec.graphql.org/October2021/#sec-Introspection">Introspection</a> that allow
+ * consumers to inspect the system and discover the fields and types available and makes the system self documented.
+ * <p>
+ * Some security recommendations such as <a href="https://owasp.org/www-chapter-vancouver/assets/presentations/2020-06_GraphQL_Security.pdf">OWASP</a>
+ * recommend that introspection be disabled in production.  The {@link Introspection#enabledJvmWide(boolean)} method can be used to disable
+ * introspection for the whole JVM or you can place {@link Introspection#INTROSPECTION_DISABLED} into the {@link GraphQLContext} of a request
+ * to disable introspection for that request.
+ */
 @PublicApi
 public class Introspection {
+
+
+    /**
+     * Placing a boolean value under this key in the per request {@link GraphQLContext} will enable
+     * or disable Introspection on that request.
+     */
+    public static final String INTROSPECTION_DISABLED = "INTROSPECTION_DISABLED";
+    private static final AtomicBoolean INTROSPECTION_ENABLED_STATE = new AtomicBoolean(true);
+
+    /**
+     * This static method will enable / disable Introspection at a JVM wide level.
+     *
+     * @param enabled the flag indicating the desired enabled state
+     *
+     * @return the previous state of enablement
+     */
+    public static boolean enabledJvmWide(boolean enabled) {
+        return INTROSPECTION_ENABLED_STATE.getAndSet(enabled);
+    }
+
+    /**
+     * @return true if Introspection is enabled at a JVM wide level or false otherwise
+     */
+    public static boolean isEnabledJvmWide() {
+        return INTROSPECTION_ENABLED_STATE.get();
+    }
+
+    private static boolean isIntrospectionEnabled(GraphQLContext graphQlContext) {
+        if (!isEnabledJvmWide()) {
+            return false;
+        }
+        return ! graphQlContext.getOrDefault(INTROSPECTION_DISABLED, false);
+    }
+
+    private static Object introspectionDisabledError(Field field) {
+        return DataFetcherResult.newResult().data(null).error(new IntrospectionDisabledError(field.getSourceLocation())).build();
+    }
+
     private static final Map<FieldCoordinates, IntrospectionDataFetcher<?>> introspectionDataFetchers = new LinkedHashMap<>();
 
     private static void register(GraphQLFieldsContainer parentType, String fieldName, IntrospectionDataFetcher<?> introspectionDataFetcher) {
@@ -629,13 +679,25 @@ public class Introspection {
             Introspection.TypeNameMetaFieldDef.getName()
     );
 
-    public static final IntrospectionDataFetcher<?> SchemaMetaFieldDefDataFetcher = IntrospectionDataFetchingEnvironment::getGraphQLSchema;
-
-    public static final IntrospectionDataFetcher<?> TypeMetaFieldDefDataFetcher = environment -> {
-        String name = environment.getArgument("name");
-        return environment.getGraphQLSchema().getType(name);
+    public static final IntrospectionDataFetcher<?> SchemaMetaFieldDefDataFetcher = environment -> {
+        if (isIntrospectionEnabled(environment.getGraphQlContext())) {
+            return environment.getGraphQLSchema();
+        } else {
+            return introspectionDisabledError(environment.getField());
+        }
     };
 
+
+    public static final IntrospectionDataFetcher<?> TypeMetaFieldDefDataFetcher = environment -> {
+        if (isIntrospectionEnabled(environment.getGraphQlContext())) {
+            String name = environment.getArgument("name");
+            return environment.getGraphQLSchema().getType(name);
+        } else {
+            return introspectionDisabledError(environment.getField());
+        }
+    };
+
+    // __typename is always available
     public static final IntrospectionDataFetcher<?> TypeNameMetaFieldDefDataFetcher = environment -> simplePrint(environment.getParentType());
 
     @Internal
