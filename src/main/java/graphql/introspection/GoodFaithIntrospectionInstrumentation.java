@@ -14,6 +14,7 @@ import graphql.normalized.ExecutableNormalizedOperation;
 import graphql.schema.FieldCoordinates;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -45,6 +46,15 @@ public class GoodFaithIntrospectionInstrumentation extends SimplePerformantInstr
             , coordinates("__Type", "interfaces"), 1
             , coordinates("__Type", "possibleTypes"), 1
     );
+    private final Map<FieldCoordinates, Integer> allowFieldInstances;
+
+    public GoodFaithIntrospectionInstrumentation() {
+        this(ALLOWED_FIELD_INSTANCES);
+    }
+
+    private GoodFaithIntrospectionInstrumentation(Map<FieldCoordinates, Integer> allowFieldInstances) {
+        this.allowFieldInstances = allowFieldInstances;
+    }
 
     @Override
     public @Nullable ExecutionStrategyInstrumentationContext beginExecutionStrategy(InstrumentationExecutionStrategyParameters parameters, InstrumentationState state) {
@@ -68,7 +78,7 @@ public class GoodFaithIntrospectionInstrumentation extends SimplePerformantInstr
     private void ensureTheyAreInGoodFaith(ExecutionContext executionContext) {
         ExecutableNormalizedOperation operation = executionContext.getNormalizedQueryTree().get();
         ImmutableListMultimap<FieldCoordinates, ExecutableNormalizedField> coordinatesToENFs = operation.getCoordinatesToNormalizedFields();
-        for (Map.Entry<FieldCoordinates, Integer> entry : ALLOWED_FIELD_INSTANCES.entrySet()) {
+        for (Map.Entry<FieldCoordinates, Integer> entry : allowFieldInstances.entrySet()) {
             FieldCoordinates coordinates = entry.getKey();
             Integer allowSize = entry.getValue();
             ImmutableList<ExecutableNormalizedField> normalizedFields = coordinatesToENFs.get(coordinates);
@@ -82,6 +92,57 @@ public class GoodFaithIntrospectionInstrumentation extends SimplePerformantInstr
     public static class BadFaithIntrospectionAbortExecutionException extends AbortExecutionException {
         public BadFaithIntrospectionAbortExecutionException(String qualifiedField) {
             super(String.format("This request is not asking for introspection in good faith - %s is present too often!", qualifiedField));
+        }
+    }
+
+    public static Builder newGoodFaithIntrospection() {
+        return new Builder();
+    }
+
+    public static class Builder {
+
+
+        private final Map<FieldCoordinates, Integer> allowFieldInstances = new LinkedHashMap<>(ALLOWED_FIELD_INSTANCES);
+
+        /**
+         * This allows you to set how many <code>__type(name : "x)</code>  field instances are allowed in an introspection query
+         *
+         * @param maxInstances the number allowed
+         *
+         * @return this builder
+         */
+        public Builder maximumUnderscoreTypeInstances(int maxInstances) {
+            allowFieldInstances.put(coordinates("Query", "__type"), maxInstances);
+            return this;
+        }
+
+        /**
+         * This allows you to set how many <code>__schema</code> field instances are allowed in an introspection query
+         *
+         * @param maxInstances the number allowed
+         *
+         * @return this builder
+         */
+        public Builder maximumUnderscoreSchemaInstances(int maxInstances) {
+            allowFieldInstances.put(coordinates("Query", "__schema"), maxInstances);
+            return this;
+        }
+
+        /**
+         * This allows you to set how many qualified field instances are allowed in an introspection query
+         *
+         * @param coordinates  - the qualified field name
+         * @param maxInstances the number allowed
+         *
+         * @return this builder
+         */
+        public Builder maximumFieldInstances(FieldCoordinates coordinates, int maxInstances) {
+            allowFieldInstances.put(coordinates, maxInstances);
+            return this;
+        }
+
+        public GoodFaithIntrospectionInstrumentation build() {
+            return new GoodFaithIntrospectionInstrumentation(allowFieldInstances);
         }
     }
 }

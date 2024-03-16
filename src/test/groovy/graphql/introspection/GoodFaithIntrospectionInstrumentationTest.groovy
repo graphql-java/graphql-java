@@ -2,6 +2,7 @@ package graphql.introspection
 
 import graphql.ExecutionResult
 import graphql.TestUtil
+import graphql.schema.FieldCoordinates
 import spock.lang.Specification
 
 class GoodFaithIntrospectionInstrumentationTest extends Specification {
@@ -67,5 +68,85 @@ class GoodFaithIntrospectionInstrumentationTest extends Specification {
                 alias1 : __schema { types { name} }
             }
         """                                                                                           | _
+    }
+
+    def "test builder"() {
+        GoodFaithIntrospectionInstrumentation goodFaithIntrospectionInstrumentation = GoodFaithIntrospectionInstrumentation.newGoodFaithIntrospection()
+                .maximumUnderscoreSchemaInstances(2)
+                .maximumUnderscoreTypeInstances(3)
+                .maximumFieldInstances(FieldCoordinates.coordinates("__Type", "fields"), 2)
+                .build()
+
+        def graphql = TestUtil.graphQL("type Query { f : String }").instrumentation(goodFaithIntrospectionInstrumentation).build()
+
+        when:
+        def er = graphql.execute(IntrospectionQuery.INTROSPECTION_QUERY)
+        then:
+        er.errors.isEmpty()
+
+        when:
+        er = graphql.execute("""
+            query ok { 
+                __schema { types { name } }
+                alias1: __schema { types { name } }
+            }
+        """)
+        then:
+        er.errors.isEmpty()
+
+        when:
+        er = graphql.execute("""
+            query ok { 
+                __schema { types { name } }
+                alias1: __schema { types { name } }
+                alias2: __schema { types { name } }
+            }
+        """)
+        then:
+        !er.errors.isEmpty()
+        er.errors[0] instanceof GoodFaithIntrospectionInstrumentation.BadFaithIntrospectionAbortExecutionException
+
+        when:
+        er = graphql.execute("""
+            query ok { 
+                __type(name : "Query") { name }
+                alias1 : __type(name : "Query") { name }
+                alias2 : __type(name : "Query") { name }
+            }
+        """)
+        then:
+        er.errors.isEmpty()
+
+        when:
+        er = graphql.execute("""
+            query ok { 
+                __type(name : "Query") { name }
+                alias1 : __type(name : "Query") { name }
+                alias2 : __type(name : "Query") { name }
+                alias3 : __type(name : "Query") { name }
+            }
+        """)
+        then:
+        !er.errors.isEmpty()
+        er.errors[0] instanceof GoodFaithIntrospectionInstrumentation.BadFaithIntrospectionAbortExecutionException
+
+        when:
+        er = graphql.execute("""
+            query ok { 
+                __schema { types { fields { type { fields { name }}}}}
+            }
+        """)
+        then:
+        er.errors.isEmpty()
+
+        when:
+        er = graphql.execute("""
+            query ok { 
+                __schema { types { fields { type { fields { type { fields { name }}}}}}}
+            }
+        """)
+        then:
+        !er.errors.isEmpty()
+        er.errors[0] instanceof GoodFaithIntrospectionInstrumentation.BadFaithIntrospectionAbortExecutionException
     }
 }
