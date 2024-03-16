@@ -25,43 +25,47 @@ class GoodFaithIntrospectionInstrumentationTest extends Specification {
         er.errors[0] instanceof GoodFaithIntrospectionInstrumentation.BadFaithIntrospectionAbortExecutionException
 
         where:
-        query                                                                                            | _
+        query                                                                                                    | _
+        // long attack
+        """
+        query badActor{__schema{types{fields{type{fields{type{fields{type{fields{type{name}}}}}}}}}}}
+        """                                                                                           | _
         // a case for __Type interfaces
         """ query badActor {
                 __schema { types { interfaces { fields { type { interfaces { name } } } } } }
             }
-        """                                                                                   | _
+        """                                                                                           | _
         // a case for __Type inputFields
         """ query badActor {
                 __schema { types { inputFields { type { inputFields { name }}}}}
             }
-        """                                                                                   | _
+        """                                                                                           | _
         // a case for __Type possibleTypes
         """ query badActor {
                 __schema { types { inputFields { type { inputFields { name }}}}}
             }
-        """                                                                                   | _
+        """                                                                                           | _
         // a case leading from __InputValue
         """ query badActor {
                 __schema { types { fields { args { type { name fields { name }}}}}}
             }
-        """                                                                                   | _
+        """                                                                                           | _
         // a case leading from __Field
         """ query badActor {
                 __schema { types { fields { type { name fields { name }}}}}
             }
-        """                                                                                   | _
+        """                                                                                           | _
         // a case for __type
         """ query badActor {
                 __type(name : "t") { name }
                 alias1 :  __type(name : "t1") { name }
             }
-        """                                                                                   | _
+        """                                                                                           | _
         // a case for schema repeated - dont ask twice
         """ query badActor {
                 __schema { types { name} }
                 alias1 : __schema { types { name} }
             }
-        """                                                                                   | _
+        """                                                                                           | _
     }
 }
