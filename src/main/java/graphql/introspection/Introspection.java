@@ -3,13 +3,14 @@ package graphql.introspection;
 
 import com.google.common.collect.ImmutableSet;
 import graphql.Assert;
+import graphql.ExecutionResult;
 import graphql.GraphQLContext;
 import graphql.Internal;
 import graphql.PublicApi;
-import graphql.execution.DataFetcherResult;
+import graphql.execution.MergedField;
+import graphql.execution.MergedSelectionSet;
 import graphql.execution.ValuesResolver;
 import graphql.language.AstPrinter;
-import graphql.language.Field;
 import graphql.schema.FieldCoordinates;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLCodeRegistry;
@@ -34,6 +35,7 @@ import graphql.schema.GraphQLScalarType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLUnionType;
 import graphql.schema.InputValueWithState;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -41,6 +43,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
@@ -99,15 +102,43 @@ public class Introspection {
         return INTROSPECTION_ENABLED_STATE.get();
     }
 
+    /**
+     * This will look in to the field selection set and see if there are introspection fields,
+     * and if there is,it checks if introspection should run, and if not it will return an errored {@link ExecutionResult}
+     * that can be returned to the user.
+     *
+     * @param mergedSelectionSet the fields to be executed
+     *
+     * @return an optional error result
+     */
+    public static Optional<ExecutionResult> isIntrospectionSensible(GraphQLContext graphQLContext, MergedSelectionSet mergedSelectionSet) {
+        MergedField schemaField = mergedSelectionSet.getSubField(SchemaMetaFieldDef.getName());
+        if (schemaField != null) {
+            if (!isIntrospectionEnabled(graphQLContext)) {
+                return mkDisabledError(schemaField);
+            }
+        }
+        MergedField typeField = mergedSelectionSet.getSubField(TypeMetaFieldDef.getName());
+        if (typeField != null) {
+            if (!isIntrospectionEnabled(graphQLContext)) {
+                return mkDisabledError(typeField);
+            }
+        }
+        // later we can put a good faith check code here to check the fields make sense
+        return Optional.empty();
+    }
+
+    @NotNull
+    private static Optional<ExecutionResult> mkDisabledError(MergedField schemaField) {
+        IntrospectionDisabledError error = new IntrospectionDisabledError(schemaField.getSingleField().getSourceLocation());
+        return Optional.of(ExecutionResult.newExecutionResult().addError(error).build());
+    }
+
     private static boolean isIntrospectionEnabled(GraphQLContext graphQlContext) {
         if (!isEnabledJvmWide()) {
             return false;
         }
-        return ! graphQlContext.getOrDefault(INTROSPECTION_DISABLED, false);
-    }
-
-    private static Object introspectionDisabledError(Field field) {
-        return DataFetcherResult.newResult().data(null).error(new IntrospectionDisabledError(field.getSourceLocation())).build();
+        return !graphQlContext.getOrDefault(INTROSPECTION_DISABLED, false);
     }
 
     private static final Map<FieldCoordinates, IntrospectionDataFetcher<?>> introspectionDataFetchers = new LinkedHashMap<>();
@@ -679,22 +710,11 @@ public class Introspection {
             Introspection.TypeNameMetaFieldDef.getName()
     );
 
-    public static final IntrospectionDataFetcher<?> SchemaMetaFieldDefDataFetcher = environment -> {
-        if (isIntrospectionEnabled(environment.getGraphQlContext())) {
-            return environment.getGraphQLSchema();
-        } else {
-            return introspectionDisabledError(environment.getField());
-        }
-    };
-
+    public static final IntrospectionDataFetcher<?> SchemaMetaFieldDefDataFetcher = IntrospectionDataFetchingEnvironment::getGraphQLSchema;
 
     public static final IntrospectionDataFetcher<?> TypeMetaFieldDefDataFetcher = environment -> {
-        if (isIntrospectionEnabled(environment.getGraphQlContext())) {
-            String name = environment.getArgument("name");
-            return environment.getGraphQLSchema().getType(name);
-        } else {
-            return introspectionDisabledError(environment.getField());
-        }
+        String name = environment.getArgument("name");
+        return environment.getGraphQLSchema().getType(name);
     };
 
     // __typename is always available
