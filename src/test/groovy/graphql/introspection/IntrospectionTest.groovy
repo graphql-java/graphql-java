@@ -3,6 +3,7 @@ package graphql.introspection
 import graphql.ErrorType
 import graphql.ExecutionInput
 import graphql.TestUtil
+import graphql.execution.AsyncSerialExecutionStrategy
 import graphql.schema.DataFetcher
 import graphql.schema.FieldCoordinates
 import graphql.schema.GraphQLCodeRegistry
@@ -548,7 +549,7 @@ class IntrospectionTest extends Specification {
 
         then:
         def oldQuery = oldIntrospectionQuery.replaceAll("\\s+", "")
-        def newQuery = newIntrospectionQuery.replaceAll("\\s+","")
+        def newQuery = newIntrospectionQuery.replaceAll("\\s+", "")
         oldQuery == newQuery
     }
 
@@ -743,4 +744,31 @@ class IntrospectionTest extends Specification {
         er.errors[0] instanceof IntrospectionDisabledError
         er.errors[0].getErrorType() == ErrorType.IntrospectionDisabled
     }
+
+    def "AsyncSerialExecutionStrategy with jvm wide enablement"() {
+        def graphQL = TestUtil.graphQL("type Query { f : String } ")
+                .queryExecutionStrategy(new AsyncSerialExecutionStrategy()).build()
+
+        when:
+        def er = graphQL.execute(IntrospectionQuery.INTROSPECTION_QUERY)
+
+        then:
+        er.errors.isEmpty()
+
+        when:
+        Introspection.enabledJvmWide(false)
+        er = graphQL.execute(IntrospectionQuery.INTROSPECTION_QUERY)
+
+        then:
+        er.errors[0] instanceof IntrospectionDisabledError
+        er.errors[0].getErrorType() == ErrorType.IntrospectionDisabled
+
+        when:
+        Introspection.enabledJvmWide(true)
+        er = graphQL.execute(IntrospectionQuery.INTROSPECTION_QUERY)
+
+        then:
+        er.errors.isEmpty()
+    }
+
 }
