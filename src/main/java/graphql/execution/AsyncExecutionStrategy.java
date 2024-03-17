@@ -48,9 +48,9 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
         MergedSelectionSet fields = parameters.getFields();
         List<String> fieldNames = fields.getKeys();
 
-        Optional<ExecutionResult> isDisabled = Introspection.isIntrospectionSensible(executionContext.getGraphQLContext(),fields);
-        if (isDisabled.isPresent()) {
-            return CompletableFuture.completedFuture(isDisabled.get());
+        Optional<ExecutionResult> isNotSensible = Introspection.isIntrospectionSensible(executionContext.getGraphQLContext(),fields);
+        if (isNotSensible.isPresent()) {
+            return CompletableFuture.completedFuture(isNotSensible.get());
         }
 
         DeferredExecutionSupport deferredExecutionSupport = createDeferredExecutionSupport(executionContext, parameters);
