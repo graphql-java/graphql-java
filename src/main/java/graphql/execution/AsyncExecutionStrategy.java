@@ -49,7 +49,7 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
         MergedSelectionSet fields = parameters.getFields();
         Set<String> fieldNames = fields.keySet();
 
-        Optional<ExecutionResult> isNotSensible = Introspection.isIntrospectionSensible(executionContext.getGraphQLContext(),fields);
+        Optional<ExecutionResult> isNotSensible = Introspection.isIntrospectionSensible(fields, executionContext);
         if (isNotSensible.isPresent()) {
             return CompletableFuture.completedFuture(isNotSensible.get());
         }
