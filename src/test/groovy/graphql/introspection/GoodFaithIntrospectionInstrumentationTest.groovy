@@ -1,13 +1,17 @@
 package graphql.introspection
 
+import graphql.ExecutionInput
 import graphql.ExecutionResult
 import graphql.TestUtil
-import graphql.schema.FieldCoordinates
 import spock.lang.Specification
 
 class GoodFaithIntrospectionInstrumentationTest extends Specification {
 
-    def graphql = TestUtil.graphQL("type Query { f : String }").instrumentation(new GoodFaithIntrospectionInstrumentation()).build()
+    def graphql = TestUtil.graphQL("type Query { normalField : String }").build()
+
+    def cleanup() {
+        GoodFaithIntrospection.enabledJvmWide(true)
+    }
 
     def "test asking for introspection in good faith"() {
 
@@ -23,7 +27,7 @@ class GoodFaithIntrospectionInstrumentationTest extends Specification {
         ExecutionResult er = graphql.execute(query)
         then:
         !er.errors.isEmpty()
-        er.errors[0] instanceof GoodFaithIntrospectionInstrumentation.BadFaithIntrospectionAbortExecutionException
+        er.errors[0] instanceof GoodFaithIntrospection.BadFaithIntrospectionError
 
         where:
         query                                                                                                    | _
@@ -70,83 +74,60 @@ class GoodFaithIntrospectionInstrumentationTest extends Specification {
         """                                                                                           | _
     }
 
-    def "test builder"() {
-        GoodFaithIntrospectionInstrumentation goodFaithIntrospectionInstrumentation = GoodFaithIntrospectionInstrumentation.newGoodFaithIntrospection()
-                .maximumUnderscoreSchemaInstances(2)
-                .maximumUnderscoreTypeInstances(3)
-                .maximumFieldInstances(FieldCoordinates.coordinates("__Type", "fields"), 2)
-                .build()
-
-        def graphql = TestUtil.graphQL("type Query { f : String }").instrumentation(goodFaithIntrospectionInstrumentation).build()
-
-        when:
-        def er = graphql.execute(IntrospectionQuery.INTROSPECTION_QUERY)
-        then:
-        er.errors.isEmpty()
-
-        when:
-        er = graphql.execute("""
-            query ok { 
-                __schema { types { name } }
-                alias1: __schema { types { name } }
+    def "mixed general queries and introspections will be stopped anyway"() {
+        def query = """
+            query goodAndBad {
+                normalField
+                __schema{types{fields{type{fields{type{fields{type{fields{type{name}}}}}}}}}}
             }
-        """)
-        then:
-        er.errors.isEmpty()
+        """
 
         when:
-        er = graphql.execute("""
-            query ok { 
-                __schema { types { name } }
-                alias1: __schema { types { name } }
-                alias2: __schema { types { name } }
-            }
-        """)
+        ExecutionResult er = graphql.execute(query)
         then:
         !er.errors.isEmpty()
-        er.errors[0] instanceof GoodFaithIntrospectionInstrumentation.BadFaithIntrospectionAbortExecutionException
+        er.errors[0] instanceof GoodFaithIntrospection.BadFaithIntrospectionError
+        er.data == null // it stopped hard - it did not continue to normal business
+    }
+
+    def "can be disabled"() {
+        when:
+        def currentState = GoodFaithIntrospection.isEnabledJvmWide()
+
+        then:
+        currentState
 
         when:
-        er = graphql.execute("""
-            query ok { 
-                __type(name : "Query") { name }
-                alias1 : __type(name : "Query") { name }
-                alias2 : __type(name : "Query") { name }
-            }
-        """)
+        def prevState = GoodFaithIntrospection.enabledJvmWide(false)
+
+        then:
+        prevState
+
+        when:
+        ExecutionResult er = graphql.execute("query badActor{__schema{types{fields{type{fields{type{fields{type{fields{type{name}}}}}}}}}}}")
+
+        then:
+        er.errors.isEmpty()
+    }
+
+    def "can be disabled per request"() {
+        when:
+        def context = [(GoodFaithIntrospection.GOOD_FAITH_INTROSPECTION_DISABLED): true]
+        ExecutionInput executionInput = ExecutionInput.newExecutionInput("query badActor{__schema{types{fields{type{fields{type{fields{type{fields{type{name}}}}}}}}}}}")
+                .graphQLContext(context).build()
+        ExecutionResult er = graphql.execute(executionInput)
+
         then:
         er.errors.isEmpty()
 
         when:
-        er = graphql.execute("""
-            query ok { 
-                __type(name : "Query") { name }
-                alias1 : __type(name : "Query") { name }
-                alias2 : __type(name : "Query") { name }
-                alias3 : __type(name : "Query") { name }
-            }
-        """)
+        context = [(GoodFaithIntrospection.GOOD_FAITH_INTROSPECTION_DISABLED): false]
+        executionInput = ExecutionInput.newExecutionInput("query badActor{__schema{types{fields{type{fields{type{fields{type{fields{type{name}}}}}}}}}}}")
+                .graphQLContext(context).build()
+        er = graphql.execute(executionInput)
+
         then:
         !er.errors.isEmpty()
-        er.errors[0] instanceof GoodFaithIntrospectionInstrumentation.BadFaithIntrospectionAbortExecutionException
-
-        when:
-        er = graphql.execute("""
-            query ok { 
-                __schema { types { fields { type { fields { name }}}}}
-            }
-        """)
-        then:
-        er.errors.isEmpty()
-
-        when:
-        er = graphql.execute("""
-            query ok { 
-                __schema { types { fields { type { fields { type { fields { name }}}}}}}
-            }
-        """)
-        then:
-        !er.errors.isEmpty()
-        er.errors[0] instanceof GoodFaithIntrospectionInstrumentation.BadFaithIntrospectionAbortExecutionException
+        er.errors[0] instanceof GoodFaithIntrospection.BadFaithIntrospectionError
     }
 }
