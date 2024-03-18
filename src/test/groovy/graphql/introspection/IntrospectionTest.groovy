@@ -1,6 +1,5 @@
 package graphql.introspection
 
-import graphql.ErrorType
 import graphql.ExecutionInput
 import graphql.TestUtil
 import graphql.execution.AsyncSerialExecutionStrategy
@@ -23,6 +22,14 @@ import static graphql.schema.GraphQLObjectType.newObject
 import static graphql.schema.GraphQLSchema.newSchema
 
 class IntrospectionTest extends Specification {
+
+    def setup() {
+        Introspection.enabledJvmWide(true)
+    }
+
+    def cleanup() {
+        Introspection.enabledJvmWide(true)
+    }
 
     def "bug 1186 - introspection depth check"() {
         def spec = '''
@@ -705,7 +712,7 @@ class IntrospectionTest extends Specification {
 
         then:
         er.errors[0] instanceof IntrospectionDisabledError
-        er.errors[0].getErrorType() == ErrorType.IntrospectionDisabled
+        er.errors[0].getErrorType().toString() == "IntrospectionDisabled"
 
         when:
         Introspection.enabledJvmWide(true)
@@ -742,7 +749,7 @@ class IntrospectionTest extends Specification {
 
         then:
         er.errors[0] instanceof IntrospectionDisabledError
-        er.errors[0].getErrorType() == ErrorType.IntrospectionDisabled
+        er.errors[0].getErrorType().toString() == "IntrospectionDisabled"
     }
 
     def "mixed schema and other fields stop early"() {
@@ -767,7 +774,7 @@ class IntrospectionTest extends Specification {
 
         then:
         er.errors[0] instanceof IntrospectionDisabledError
-        er.errors[0].getErrorType() == ErrorType.IntrospectionDisabled
+        er.errors[0].getErrorType().toString() == "IntrospectionDisabled"
         er.data == null // stops hard
     }
 
@@ -787,7 +794,7 @@ class IntrospectionTest extends Specification {
 
         then:
         er.errors[0] instanceof IntrospectionDisabledError
-        er.errors[0].getErrorType() == ErrorType.IntrospectionDisabled
+        er.errors[0].getErrorType().toString() == "IntrospectionDisabled"
 
         when:
         Introspection.enabledJvmWide(true)
