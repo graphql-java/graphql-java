@@ -9,6 +9,9 @@ class GoodFaithIntrospectionInstrumentationTest extends Specification {
 
     def graphql = TestUtil.graphQL("type Query { normalField : String }").build()
 
+    def setup() {
+        GoodFaithIntrospection.enabledJvmWide(true)
+    }
     def cleanup() {
         GoodFaithIntrospection.enabledJvmWide(true)
     }
