@@ -17,10 +17,10 @@ import static graphql.schema.visibility.BlockedFields.newBlock;
  * can be used instead
  */
 @PublicApi
-@Deprecated(since = "2024-03-16")
+@Deprecated // Deprecated since 2024-03-16
 public class NoIntrospectionGraphqlFieldVisibility implements GraphqlFieldVisibility {
 
-    @Deprecated(since = "2024-03-16")
+    @Deprecated // Deprecated since 2024-03-16
     public static NoIntrospectionGraphqlFieldVisibility NO_INTROSPECTION_FIELD_VISIBILITY = new NoIntrospectionGraphqlFieldVisibility();
 
 

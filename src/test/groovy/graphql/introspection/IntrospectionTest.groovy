@@ -694,7 +694,7 @@ class IntrospectionTest extends Specification {
 
         when:
         ei = ExecutionInput.newExecutionInput(IntrospectionQuery.INTROSPECTION_QUERY)
-                .graphQLContext(Map.of(Introspection.INTROSPECTION_DISABLED, false)).build()
+                .graphQLContext(["INTROSPECTION_DISABLED": false]).build()
         er = graphQL.execute(ei)
 
         then:
@@ -702,7 +702,7 @@ class IntrospectionTest extends Specification {
 
         when:
         ei = ExecutionInput.newExecutionInput(IntrospectionQuery.INTROSPECTION_QUERY)
-                .graphQLContext(Map.of(Introspection.INTROSPECTION_DISABLED, true)).build()
+                .graphQLContext(["INTROSPECTION_DISABLED": true]).build()
         er = graphQL.execute(ei)
 
         then:
