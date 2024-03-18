@@ -11,9 +11,9 @@ import graphql.execution.DataFetcherResult
 import graphql.execution.ExecutionContext
 import graphql.execution.ExecutionId
 import graphql.execution.ExecutionIdProvider
-import graphql.execution.ExecutionStrategy
 import graphql.execution.ExecutionStrategyParameters
 import graphql.execution.MissingRootTypeException
+import graphql.execution.ResultNodesInfo
 import graphql.execution.SubscriptionExecutionStrategy
 import graphql.execution.ValueUnboxer
 import graphql.execution.instrumentation.Instrumentation
@@ -50,6 +50,7 @@ import static graphql.ExecutionInput.Builder
 import static graphql.ExecutionInput.newExecutionInput
 import static graphql.Scalars.GraphQLInt
 import static graphql.Scalars.GraphQLString
+import static graphql.execution.ResultNodesInfo.MAX_RESULT_NODES
 import static graphql.schema.GraphQLArgument.newArgument
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition
 import static graphql.schema.GraphQLInputObjectField.newInputObjectField
@@ -1444,12 +1445,14 @@ many lines''']
 
         def query = "{ hello h1: hello h2: hello h3: hello } "
         def ei = newExecutionInput(query).build()
-        ei.getGraphQLContext().put(ExecutionStrategy.MAX_RESULT_NODES, 4);
+        ei.getGraphQLContext().put(MAX_RESULT_NODES, 4);
 
         when:
         def er = graphQL.execute(ei)
+        def rni = ei.getGraphQLContext().get(ResultNodesInfo.RESULT_NODES_INFO) as ResultNodesInfo
         then:
-        ei.getGraphQLContext().get(ExecutionStrategy.MAX_RESULT_NODES_BREACHED) == null
+        !rni.maxResultNodesExceeded
+        rni.resultNodesCount == 4
         er.data == [hello: "world", h1: "world", h2: "world", h3: "world"]
     }
 
@@ -1468,12 +1471,14 @@ many lines''']
 
         def query = "{ hello h1: hello h2: hello h3: hello } "
         def ei = newExecutionInput(query).build()
-        ei.getGraphQLContext().put(ExecutionStrategy.MAX_RESULT_NODES, 3);
+        ei.getGraphQLContext().put(MAX_RESULT_NODES, 3);
 
         when:
         def er = graphQL.execute(ei)
+        def rni = ei.getGraphQLContext().get(ResultNodesInfo.RESULT_NODES_INFO) as ResultNodesInfo
         then:
-        ei.getGraphQLContext().get(ExecutionStrategy.MAX_RESULT_NODES_BREACHED) == true
+        rni.maxResultNodesExceeded
+        rni.resultNodesCount == 4
         er.data == [hello: "world", h1: "world", h2: "world", h3: null]
     }
 
@@ -1492,12 +1497,14 @@ many lines''']
 
         def query = "{ hello}"
         def ei = newExecutionInput(query).build()
-        ei.getGraphQLContext().put(ExecutionStrategy.MAX_RESULT_NODES, 3);
+        ei.getGraphQLContext().put(MAX_RESULT_NODES, 3);
 
         when:
         def er = graphQL.execute(ei)
+        def rni = ei.getGraphQLContext().get(ResultNodesInfo.RESULT_NODES_INFO) as ResultNodesInfo
         then:
-        ei.getGraphQLContext().get(ExecutionStrategy.MAX_RESULT_NODES_BREACHED) == true
+        rni.maxResultNodesExceeded
+        rni.resultNodesCount == 4
         er.data == [hello: null]
     }
 
@@ -1520,12 +1527,14 @@ many lines''']
         def query = "{ hello {name}}"
         def ei = newExecutionInput(query).build()
         // we have 7 result nodes overall
-        ei.getGraphQLContext().put(ExecutionStrategy.MAX_RESULT_NODES, 6);
+        ei.getGraphQLContext().put(MAX_RESULT_NODES, 6);
 
         when:
         def er = graphQL.execute(ei)
+        def rni = ei.getGraphQLContext().get(ResultNodesInfo.RESULT_NODES_INFO) as ResultNodesInfo
         then:
-        ei.getGraphQLContext().get(ExecutionStrategy.MAX_RESULT_NODES_BREACHED) == true
+        rni.resultNodesCount == 7
+        rni.maxResultNodesExceeded
         er.data == [hello: [[name: "w1"], [name: "w2"], [name: null]]]
     }
 
@@ -1548,12 +1557,14 @@ many lines''']
         def query = "{ hello {name}}"
         def ei = newExecutionInput(query).build()
         // we have 7 result nodes overall
-        ei.getGraphQLContext().put(ExecutionStrategy.MAX_RESULT_NODES, 7);
+        ei.getGraphQLContext().put(MAX_RESULT_NODES, 7);
 
         when:
         def er = graphQL.execute(ei)
+        def rni = ei.getGraphQLContext().get(ResultNodesInfo.RESULT_NODES_INFO) as ResultNodesInfo
         then:
-        ei.getGraphQLContext().get(ExecutionStrategy.MAX_RESULT_NODES_BREACHED) == null
+        !rni.maxResultNodesExceeded
+        rni.resultNodesCount == 7
         er.data == [hello: [[name: "w1"], [name: "w2"], [name: "w3"]]]
     }
 

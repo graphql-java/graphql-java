@@ -67,6 +67,7 @@ import static graphql.execution.FieldValueInfo.CompleteValueType.LIST;
 import static graphql.execution.FieldValueInfo.CompleteValueType.NULL;
 import static graphql.execution.FieldValueInfo.CompleteValueType.OBJECT;
 import static graphql.execution.FieldValueInfo.CompleteValueType.SCALAR;
+import static graphql.execution.ResultNodesInfo.MAX_RESULT_NODES;
 import static graphql.execution.instrumentation.SimpleInstrumentationContext.nonNullCtx;
 import static graphql.schema.DataFetchingEnvironmentImpl.newDataFetchingEnvironment;
 import static graphql.schema.GraphQLTypeUtil.isEnum;
@@ -131,10 +132,6 @@ import static java.util.concurrent.CompletableFuture.completedFuture;
 @SuppressWarnings("FutureReturnValueIgnored")
 public abstract class ExecutionStrategy {
 
-    @Internal
-    public static final String MAX_RESULT_NODES = "__MAX_RESULT_NODES";
-    @Internal
-    public static final String MAX_RESULT_NODES_BREACHED = "__MAX_RESULT_NODES_BREACHED";
     protected final FieldCollector fieldCollector = new FieldCollector();
     protected final ExecutionStepInfoFactory executionStepInfoFactory = new ExecutionStepInfoFactory();
     protected final DataFetcherExceptionHandler dataFetcherExceptionHandler;
@@ -386,11 +383,12 @@ public abstract class ExecutionStrategy {
 
     private CompletableFuture<FetchedValue> fetchField(GraphQLFieldDefinition fieldDef, ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
 
-        int resultNodesCount = executionContext.getResultNodesCount().incrementAndGet();
+        int resultNodesCount = executionContext.getResultNodesInfo().incrementAndGetResultNodesCount();
+
         Integer maxNodes;
         if ((maxNodes = executionContext.getGraphQLContext().get(MAX_RESULT_NODES)) != null) {
             if (resultNodesCount > maxNodes) {
-                executionContext.getGraphQLContext().put(MAX_RESULT_NODES_BREACHED, true);
+                executionContext.getResultNodesInfo().maxResultNodesExceeded();
                 return CompletableFuture.completedFuture(new FetchedValue(null, Collections.emptyList(), null));
             }
         }
@@ -726,11 +724,11 @@ public abstract class ExecutionStrategy {
         List<FieldValueInfo> fieldValueInfos = new ArrayList<>(size.orElse(1));
         int index = 0;
         for (Object item : iterableValues) {
-            int resultNodesCount = executionContext.getResultNodesCount().incrementAndGet();
+            int resultNodesCount = executionContext.getResultNodesInfo().incrementAndGetResultNodesCount();
             Integer maxNodes;
             if ((maxNodes = executionContext.getGraphQLContext().get(MAX_RESULT_NODES)) != null) {
                 if (resultNodesCount > maxNodes) {
-                    executionContext.getGraphQLContext().put(MAX_RESULT_NODES_BREACHED, true);
+                    executionContext.getResultNodesInfo().maxResultNodesExceeded();
                     return new FieldValueInfo(NULL, completedFuture(null), fieldValueInfos);
                 }
             }
