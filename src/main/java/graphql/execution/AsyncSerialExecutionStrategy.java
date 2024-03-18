@@ -43,7 +43,7 @@ public class AsyncSerialExecutionStrategy extends AbstractAsyncExecutionStrategy
 
         // this is highly unlikely since Mutations cant do introspection BUT in theory someone could make the query strategy this code
         // so belts and braces
-        Optional<ExecutionResult> isNotSensible = Introspection.isIntrospectionSensible(executionContext.getGraphQLContext(), fields);
+        Optional<ExecutionResult> isNotSensible = Introspection.isIntrospectionSensible(fields, executionContext);
         if (isNotSensible.isPresent()) {
             return CompletableFuture.completedFuture(isNotSensible.get());
         }
