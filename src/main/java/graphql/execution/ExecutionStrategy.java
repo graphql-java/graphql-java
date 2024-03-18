@@ -67,6 +67,7 @@ import static graphql.execution.FieldValueInfo.CompleteValueType.LIST;
 import static graphql.execution.FieldValueInfo.CompleteValueType.NULL;
 import static graphql.execution.FieldValueInfo.CompleteValueType.OBJECT;
 import static graphql.execution.FieldValueInfo.CompleteValueType.SCALAR;
+import static graphql.execution.ResultNodesInfo.MAX_RESULT_NODES;
 import static graphql.execution.instrumentation.SimpleInstrumentationContext.nonNullCtx;
 import static graphql.schema.DataFetchingEnvironmentImpl.newDataFetchingEnvironment;
 import static graphql.schema.GraphQLTypeUtil.isEnum;
@@ -381,6 +382,17 @@ public abstract class ExecutionStrategy {
     }
 
     private CompletableFuture<FetchedValue> fetchField(GraphQLFieldDefinition fieldDef, ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
+
+        int resultNodesCount = executionContext.getResultNodesInfo().incrementAndGetResultNodesCount();
+
+        Integer maxNodes;
+        if ((maxNodes = executionContext.getGraphQLContext().get(MAX_RESULT_NODES)) != null) {
+            if (resultNodesCount > maxNodes) {
+                executionContext.getResultNodesInfo().maxResultNodesExceeded();
+                return CompletableFuture.completedFuture(new FetchedValue(null, Collections.emptyList(), null));
+            }
+        }
+
         MergedField field = parameters.getField();
         GraphQLObjectType parentType = (GraphQLObjectType) parameters.getExecutionStepInfo().getUnwrappedNonNullType();
 
@@ -712,6 +724,15 @@ public abstract class ExecutionStrategy {
         List<FieldValueInfo> fieldValueInfos = new ArrayList<>(size.orElse(1));
         int index = 0;
         for (Object item : iterableValues) {
+            int resultNodesCount = executionContext.getResultNodesInfo().incrementAndGetResultNodesCount();
+            Integer maxNodes;
+            if ((maxNodes = executionContext.getGraphQLContext().get(MAX_RESULT_NODES)) != null) {
+                if (resultNodesCount > maxNodes) {
+                    executionContext.getResultNodesInfo().maxResultNodesExceeded();
+                    return new FieldValueInfo(NULL, completedFuture(null), fieldValueInfos);
+                }
+            }
+
             ResultPath indexedPath = parameters.getPath().segment(index);
 
             ExecutionStepInfo stepInfoForListElement = executionStepInfoFactory.newExecutionStepInfoForListElement(executionStepInfo, indexedPath);
