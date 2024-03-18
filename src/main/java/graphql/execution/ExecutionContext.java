@@ -63,6 +63,8 @@ public class ExecutionContext {
     // this is modified after creation so it needs to be volatile to ensure visibility across Threads
     private volatile DataLoaderDispatchStrategy dataLoaderDispatcherStrategy = DataLoaderDispatchStrategy.NO_OP;
 
+    private final ResultNodesInfo resultNodesInfo = new ResultNodesInfo();
+
     ExecutionContext(ExecutionContextBuilder builder) {
         this.graphQLSchema = builder.graphQLSchema;
         this.executionId = builder.executionId;
@@ -303,5 +305,9 @@ public class ExecutionContext {
         ExecutionContextBuilder builder = ExecutionContextBuilder.newExecutionContextBuilder(this);
         builderConsumer.accept(builder);
         return builder.build();
+    }
+
+    public ResultNodesInfo getResultNodesInfo() {
+        return resultNodesInfo;
     }
 }
