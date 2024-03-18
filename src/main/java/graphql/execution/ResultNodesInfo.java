@@ -10,7 +10,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * After each execution the GraphQLContext contains a ResultNodeInfo object under the key {@link ResultNodesInfo#RESULT_NODES_INFO}
  * <p>
  * The number of result can be limited (and should be for security reasons) by setting the maximum number of result nodes
- * in the GraphQLContext under the key {@link ResultNodesInfo#MAX_RESULT_NODES} of type Integer.
+ * in the GraphQLContext under the key {@link ResultNodesInfo#MAX_RESULT_NODES} to an Integer
  * </p>
  */
 @PublicApi
