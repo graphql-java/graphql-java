@@ -745,6 +745,32 @@ class IntrospectionTest extends Specification {
         er.errors[0].getErrorType() == ErrorType.IntrospectionDisabled
     }
 
+    def "mixed schema and other fields stop early"() {
+        def graphQL = TestUtil.graphQL("type Query { normalField : String } ").build()
+
+        def query = """
+            query goodAndBad {
+                normalField
+                __schema{ types{ fields { name }}}
+            }
+        """
+
+        when:
+        def er = graphQL.execute(query)
+
+        then:
+        er.errors.isEmpty()
+
+        when:
+        Introspection.enabledJvmWide(false)
+        er = graphQL.execute(query)
+
+        then:
+        er.errors[0] instanceof IntrospectionDisabledError
+        er.errors[0].getErrorType() == ErrorType.IntrospectionDisabled
+        er.data == null // stops hard
+    }
+
     def "AsyncSerialExecutionStrategy with jvm wide enablement"() {
         def graphQL = TestUtil.graphQL("type Query { f : String } ")
                 .queryExecutionStrategy(new AsyncSerialExecutionStrategy()).build()
