@@ -8,9 +8,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * This class is used to track the number of result nodes that have been created during execution.
  * After each execution the GraphQLContext contains a ResultNodeInfo object under the key {@link ResultNodesInfo#RESULT_NODES_INFO}
- * <p/>
+ * <p>
  * The number of result can be limited (and should be for security reasons) by setting the maximum number of result nodes
  * in the GraphQLContext under the key {@link ResultNodesInfo#MAX_RESULT_NODES}
+ * </p>
  */
 @PublicApi
 public class ResultNodesInfo {
@@ -37,7 +38,7 @@ public class ResultNodesInfo {
      * a each node that exceeds the number of max nodes is set to null,
      * but still is a result node (which value null)
      *
-     * @return
+     * @return number of result nodes created
      */
     public int getResultNodesCount() {
         return resultNodesCount.get();
@@ -46,7 +47,7 @@ public class ResultNodesInfo {
     /**
      * If the number of result nodes has exceeded the maximum allowed numbers.
      *
-     * @return
+     * @return true if the number of result nodes has exceeded the maximum allowed numbers
      */
     public boolean isMaxResultNodesExceeded() {
         return maxResultNodesExceeded;
