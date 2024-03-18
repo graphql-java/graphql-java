@@ -133,6 +133,9 @@ public class SchemaGraph {
         return result;
     }
 
+    public List<Edge> getAdjacentEdges(Vertex from) {
+        return getAdjacentEdges(from, x -> true);
+    }
     public List<Edge> getAdjacentEdges(Vertex from, Predicate<Vertex> predicate) {
         List<Edge> result = new ArrayList<>();
         for (Edge edge : edgesByDirection.row(from).values()) {
@@ -295,4 +298,7 @@ public class SchemaGraph {
         return result;
     }
 
+    public boolean containsEdge(Vertex from, Vertex to) {
+        return this.edges.stream().anyMatch(edge -> edge.getFrom().equals(from) && edge.getTo().equals(to));
+    }
 }

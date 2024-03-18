@@ -772,6 +772,10 @@ public class Introspection {
         return introspectionTypes.contains(type.getName());
     }
 
+    public static boolean isIntrospectionTypes(String typeName) {
+        return introspectionTypes.contains(typeName);
+    }
+
     /**
      * This will look up a field definition by name, and understand that fields like __typename and __schema are special
      * and take precedence in field resolution

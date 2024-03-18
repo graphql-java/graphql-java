@@ -23,7 +23,7 @@ class CyclicSchemaAnalyzerTest extends Specification {
 
         then:
         cycles.size() == 1
-        cycles[0].toString() == "Foo/0 -> foo/0"
+        cycles[0].toString() == "[Foo.foo, Foo]"
 
     }
 
@@ -49,9 +49,9 @@ class CyclicSchemaAnalyzerTest extends Specification {
 
         then:
         cycles.size() == 3
-        cycles[0].toString() == "Bar/0 -> bar/0 -> [Bar]!/0 -> [Bar]/0"
-        cycles[1].toString() == "Foo/0 -> bar/0 -> Bar/1 -> foo/0"
-        cycles[2].toString() == "Foo/1 -> foo/0"
+        cycles[0].toString() == "[Foo.bar, Bar, Bar.foo, Foo]"
+        cycles[1].toString() == "[Foo.foo, Foo]"
+        cycles[2].toString() == "[Bar.bar, Bar]"
 
     }
 
@@ -79,7 +79,7 @@ class CyclicSchemaAnalyzerTest extends Specification {
 
         then:
         cycles.size() == 1
-        cycles[0].toString() == "Foo/0 -> bar/0 -> Bar/0 -> subBar/0 -> SubBar/0 -> foo/0"
+        cycles[0].toString() == "[Foo.bar, Bar, Bar.subBar, SubBar, SubBar.foo, Foo]"
 
     }
 
