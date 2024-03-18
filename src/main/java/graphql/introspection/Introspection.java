@@ -7,6 +7,7 @@ import graphql.ExecutionResult;
 import graphql.GraphQLContext;
 import graphql.Internal;
 import graphql.PublicApi;
+import graphql.execution.ExecutionContext;
 import graphql.execution.MergedField;
 import graphql.execution.MergedSelectionSet;
 import graphql.execution.ValuesResolver;
@@ -108,10 +109,12 @@ public class Introspection {
      * that can be returned to the user.
      *
      * @param mergedSelectionSet the fields to be executed
+     * @param executionContext   the execution context in play
      *
      * @return an optional error result
      */
-    public static Optional<ExecutionResult> isIntrospectionSensible(GraphQLContext graphQLContext, MergedSelectionSet mergedSelectionSet) {
+    public static Optional<ExecutionResult> isIntrospectionSensible(MergedSelectionSet mergedSelectionSet, ExecutionContext executionContext) {
+        GraphQLContext graphQLContext = executionContext.getGraphQLContext();
         MergedField schemaField = mergedSelectionSet.getSubField(SchemaMetaFieldDef.getName());
         if (schemaField != null) {
             if (!isIntrospectionEnabled(graphQLContext)) {
@@ -124,7 +127,10 @@ public class Introspection {
                 return mkDisabledError(typeField);
             }
         }
-        // later we can put a good faith check code here to check the fields make sense
+        if (schemaField != null || typeField != null)
+        {
+            return GoodFaithIntrospection.checkIntrospection(executionContext);
+        }
         return Optional.empty();
     }
 
