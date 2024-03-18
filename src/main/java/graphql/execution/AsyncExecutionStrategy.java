@@ -5,8 +5,10 @@ import graphql.PublicApi;
 import graphql.execution.instrumentation.ExecutionStrategyInstrumentationContext;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters;
+import graphql.introspection.Introspection;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
 
@@ -44,6 +46,12 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
 
         MergedSelectionSet fields = parameters.getFields();
         List<String> fieldNames = fields.getKeys();
+
+        Optional<ExecutionResult> isNotSensible = Introspection.isIntrospectionSensible(executionContext.getGraphQLContext(),fields);
+        if (isNotSensible.isPresent()) {
+            return CompletableFuture.completedFuture(isNotSensible.get());
+        }
+
         Async.CombinedBuilder<FieldValueInfo> futures = Async.ofExpectedSize(fields.size());
         for (String fieldName : fieldNames) {
             MergedField currentField = fields.getSubField(fieldName);

@@ -6,8 +6,10 @@ import graphql.PublicApi;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters;
+import graphql.introspection.Introspection;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 import static graphql.execution.instrumentation.SimpleInstrumentationContext.nonNullCtx;
@@ -38,6 +40,13 @@ public class AsyncSerialExecutionStrategy extends AbstractAsyncExecutionStrategy
         );
         MergedSelectionSet fields = parameters.getFields();
         ImmutableList<String> fieldNames = ImmutableList.copyOf(fields.keySet());
+
+        // this is highly unlikely since Mutations cant do introspection BUT in theory someone could make the query strategy this code
+        // so belts and braces
+        Optional<ExecutionResult> isNotSensible = Introspection.isIntrospectionSensible(executionContext.getGraphQLContext(), fields);
+        if (isNotSensible.isPresent()) {
+            return CompletableFuture.completedFuture(isNotSensible.get());
+        }
 
         CompletableFuture<List<ExecutionResult>> resultsFuture = Async.eachSequentially(fieldNames, (fieldName, index, prevResults) -> {
             MergedField currentField = fields.getSubField(fieldName);
