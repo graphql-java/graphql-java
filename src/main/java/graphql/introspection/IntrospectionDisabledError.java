@@ -30,6 +30,6 @@ public class IntrospectionDisabledError implements GraphQLError {
 
     @Override
     public ErrorClassification getErrorType() {
-        return ErrorType.IntrospectionDisabled;
+        return ErrorClassification.errorClassification("IntrospectionDisabled");
     }
 }

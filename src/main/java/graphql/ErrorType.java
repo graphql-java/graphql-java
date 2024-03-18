@@ -11,6 +11,5 @@ public enum ErrorType implements ErrorClassification {
     DataFetchingException,
     NullValueInNonNullableField,
     OperationNotSupported,
-    IntrospectionDisabled,
     ExecutionAborted
 }
