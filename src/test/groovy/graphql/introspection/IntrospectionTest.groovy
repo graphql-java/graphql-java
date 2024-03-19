@@ -1,7 +1,8 @@
 package graphql.introspection
 
-
+import graphql.ExecutionInput
 import graphql.TestUtil
+import graphql.execution.AsyncSerialExecutionStrategy
 import graphql.schema.DataFetcher
 import graphql.schema.FieldCoordinates
 import graphql.schema.GraphQLCodeRegistry
@@ -19,6 +20,14 @@ import static graphql.schema.GraphQLObjectType.newObject
 import static graphql.schema.GraphQLSchema.newSchema
 
 class IntrospectionTest extends Specification {
+
+    def setup() {
+        Introspection.enabledJvmWide(true)
+    }
+
+    def cleanup() {
+        Introspection.enabledJvmWide(true)
+    }
 
     def "bug 1186 - introspection depth check"() {
         def spec = '''
@@ -381,4 +390,112 @@ class IntrospectionTest extends Specification {
         arg['name'] == "arg"
         arg['defaultValue'] == "null" // printed AST
     }
+
+    def "jvm wide enablement"() {
+        def graphQL = TestUtil.graphQL("type Query { f : String } ").build()
+
+        when:
+        def er = graphQL.execute(IntrospectionQuery.INTROSPECTION_QUERY)
+
+        then:
+        er.errors.isEmpty()
+
+        when:
+        Introspection.enabledJvmWide(false)
+        er = graphQL.execute(IntrospectionQuery.INTROSPECTION_QUERY)
+
+        then:
+        er.errors[0] instanceof IntrospectionDisabledError
+        er.errors[0].getErrorType().toString() == "IntrospectionDisabled"
+
+        when:
+        Introspection.enabledJvmWide(true)
+        er = graphQL.execute(IntrospectionQuery.INTROSPECTION_QUERY)
+
+        then:
+        er.errors.isEmpty()
+    }
+
+    def "per request enablement"() {
+        def graphQL = TestUtil.graphQL("type Query { f : String } ").build()
+
+        when:
+        // null context
+        def ei = ExecutionInput.newExecutionInput(IntrospectionQuery.INTROSPECTION_QUERY)
+                .build()
+        def er = graphQL.execute(ei)
+
+        then:
+        er.errors.isEmpty()
+
+        when:
+        ei = ExecutionInput.newExecutionInput(IntrospectionQuery.INTROSPECTION_QUERY)
+                .graphQLContext(["INTROSPECTION_DISABLED": false]).build()
+        er = graphQL.execute(ei)
+
+        then:
+        er.errors.isEmpty()
+
+        when:
+        ei = ExecutionInput.newExecutionInput(IntrospectionQuery.INTROSPECTION_QUERY)
+                .graphQLContext(["INTROSPECTION_DISABLED": true]).build()
+        er = graphQL.execute(ei)
+
+        then:
+        er.errors[0] instanceof IntrospectionDisabledError
+        er.errors[0].getErrorType().toString() == "IntrospectionDisabled"
+    }
+
+    def "mixed schema and other fields stop early"() {
+        def graphQL = TestUtil.graphQL("type Query { normalField : String } ").build()
+
+        def query = """
+            query goodAndBad {
+                normalField
+                __schema{ types{ fields { name }}}
+            }
+        """
+
+        when:
+        def er = graphQL.execute(query)
+
+        then:
+        er.errors.isEmpty()
+
+        when:
+        Introspection.enabledJvmWide(false)
+        er = graphQL.execute(query)
+
+        then:
+        er.errors[0] instanceof IntrospectionDisabledError
+        er.errors[0].getErrorType().toString() == "IntrospectionDisabled"
+        er.data == null // stops hard
+    }
+
+    def "AsyncSerialExecutionStrategy with jvm wide enablement"() {
+        def graphQL = TestUtil.graphQL("type Query { f : String } ")
+                .queryExecutionStrategy(new AsyncSerialExecutionStrategy()).build()
+
+        when:
+        def er = graphQL.execute(IntrospectionQuery.INTROSPECTION_QUERY)
+
+        then:
+        er.errors.isEmpty()
+
+        when:
+        Introspection.enabledJvmWide(false)
+        er = graphQL.execute(IntrospectionQuery.INTROSPECTION_QUERY)
+
+        then:
+        er.errors[0] instanceof IntrospectionDisabledError
+        er.errors[0].getErrorType().toString() == "IntrospectionDisabled"
+
+        when:
+        Introspection.enabledJvmWide(true)
+        er = graphQL.execute(IntrospectionQuery.INTROSPECTION_QUERY)
+
+        then:
+        er.errors.isEmpty()
+    }
+
 }
