@@ -26,19 +26,19 @@ import java.util.stream.Collectors;
 public class CyclicSchemaAnalyzer {
 
     public static class SchemaCycle {
-        private final List<String> cyle;
+        private final List<String> cycle;
 
-        public SchemaCycle(List<String> cyle) {
-            this.cyle = cyle;
+        public SchemaCycle(List<String> cycle) {
+            this.cycle = cycle;
         }
 
         public int size() {
-            return cyle.size();
+            return cycle.size();
         }
 
         @Override
         public String toString() {
-            return cyle.toString();
+            return cycle.toString();
         }
     }
 
