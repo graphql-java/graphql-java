@@ -1,6 +1,11 @@
 package graphql.schema.usage
 
 import graphql.TestUtil
+import graphql.schema.GraphQLAppliedDirective
+import graphql.schema.GraphQLFieldDefinition
+import graphql.schema.SchemaTransformer
+import graphql.schema.visitor.GraphQLSchemaTraversalControl
+import graphql.schema.visitor.GraphQLSchemaVisitor
 import spock.lang.Specification
 
 class SchemaUsageSupportTest extends Specification {
@@ -193,10 +198,10 @@ class SchemaUsageSupportTest extends Specification {
         !schemaUsage.isStronglyReferenced(schema, "UnRefInputTypeDirective")
         !schemaUsage.isStronglyReferenced(schema, "UnRefDirectiveInputType")
 
-        schemaUsage.getUnReferencedElements(schema).collect {it.name}.sort() ==
+        schemaUsage.getUnReferencedElements(schema).collect { it.name }.sort() ==
                 ["UnIRef1", "UnRef1", "UnRefDirectiveInputType", "UnRefEnum1",
                  "UnRefHangingInputType", "UnRefHangingInputType2", "UnRefHangingInputType3",
-                 "UnRefHangingType","UnRefHangingType2", "UnRefInput1",
+                 "UnRefHangingType", "UnRefHangingType2", "UnRefInput1",
                  "UnRefFieldDirective", "UnRefInputTypeDirective", "UnRefHangingArgDirective"].sort()
     }
 
@@ -233,17 +238,43 @@ class SchemaUsageSupportTest extends Specification {
         def schemaUsage = SchemaUsageSupport.getSchemaUsage(schema)
 
         then:
-        ! schemaUsage.isStronglyReferenced(schema, "UnRefHangingType")
-        ! schemaUsage.isStronglyReferenced(schema, "UnRefHangingType2")
-        ! schemaUsage.isStronglyReferenced(schema, "UnRefHangingType3")
-        ! schemaUsage.isStronglyReferenced(schema, "UnRefHangingInputType")
-        ! schemaUsage.isStronglyReferenced(schema, "UnRefHangingInputType2")
-        ! schemaUsage.isStronglyReferenced(schema, "UnRefHangingInputType3")
-        ! schemaUsage.isStronglyReferenced(schema, "UnRefHangingArgDirective")
+        !schemaUsage.isStronglyReferenced(schema, "UnRefHangingType")
+        !schemaUsage.isStronglyReferenced(schema, "UnRefHangingType2")
+        !schemaUsage.isStronglyReferenced(schema, "UnRefHangingType3")
+        !schemaUsage.isStronglyReferenced(schema, "UnRefHangingInputType")
+        !schemaUsage.isStronglyReferenced(schema, "UnRefHangingInputType2")
+        !schemaUsage.isStronglyReferenced(schema, "UnRefHangingInputType3")
+        !schemaUsage.isStronglyReferenced(schema, "UnRefHangingArgDirective")
 
-        schemaUsage.getDirectiveReferenceCounts()["UnRefHangingArgDirective"] == 1
+        // 2 because of the dual nature of directives and applied directives
+        schemaUsage.getDirectiveReferenceCounts()["UnRefHangingArgDirective"] == 2
         schemaUsage.getArgumentReferenceCounts()["UnRefHangingInputType"] == 1
         schemaUsage.getFieldReferenceCounts()["UnRefHangingType2"] == 2
-        schemaUsage.getArgumentReferenceCounts()["UnRefHangingInputType3"] == 2
+        schemaUsage.getArgumentReferenceCounts()["UnRefHangingInputType3"] == 3
+    }
+
+    def "can handle cleared directives"() {
+        // https://github.com/graphql-java/graphql-java/issues/3267
+
+
+        def schema = TestUtil.schema(sdl)
+        schema = new SchemaTransformer().transform(schema, new GraphQLSchemaVisitor() {
+
+            @Override
+            GraphQLSchemaTraversalControl visitFieldDefinition(GraphQLFieldDefinition fieldDef, GraphQLSchemaVisitor.FieldDefinitionVisitorEnvironment env) {
+                if (fieldDef.getAppliedDirective("RefFieldDirective") != null) {
+                    List<GraphQLAppliedDirective> directives = fieldDef.getAppliedDirectives();
+                    fieldDef = fieldDef.transform(
+                            f -> f.clearDirectives().replaceAppliedDirectives(directives)
+                    )
+                }
+                return env.changeNode(fieldDef)
+            }
+        }.toTypeVisitor())
+
+        when:
+        def schemaUsage = SchemaUsageSupport.getSchemaUsage(schema)
+        then:
+        schemaUsage.isStronglyReferenced(schema, "RefFieldDirective")
     }
 }

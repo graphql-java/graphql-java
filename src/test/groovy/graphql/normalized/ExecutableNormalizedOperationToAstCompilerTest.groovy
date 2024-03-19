@@ -4,10 +4,13 @@ import graphql.GraphQL
 import graphql.TestUtil
 import graphql.execution.RawVariables
 import graphql.language.AstPrinter
+import graphql.language.Field
+import graphql.language.OperationDefinition
 import graphql.language.AstSorter
 import graphql.language.Document
 import graphql.language.IntValue
 import graphql.language.StringValue
+import graphql.parser.Parser
 import graphql.schema.GraphQLSchema
 import graphql.schema.idl.RuntimeWiring
 import graphql.schema.idl.TestLiveMockedWiringFactory
@@ -1234,6 +1237,62 @@ class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
         then:
         documentPrinted == '''subscription {
   foo1(arg: {arg1 : "Subscription"})
+}
+'''
+    }
+
+
+
+    def "test query directive"() {
+        def sdl = '''
+        type Query {
+            foo1(arg: I): String
+            
+        }
+        type Subscription {
+            foo1(arg: I): DevOps
+             
+        }
+        input I {
+            arg1: String
+        }
+        
+        type DevOps{
+            name: String
+        }
+        
+        directive @optIn(to : [String!]!) repeatable on FIELD
+        '''
+        def query = '''subscription {
+            foo1 (arg: {
+             arg1: "Subscription"
+            }) @optIn(to: "foo") {
+              name @optIn(to: "devOps")
+            }
+            
+
+        }
+        '''
+        GraphQLSchema schema = mkSchema(sdl)
+        Document document = new Parser().parse(query)
+        ExecutableNormalizedOperation eno = ExecutableNormalizedOperationFactory.createExecutableNormalizedOperationWithRawVariables(schema,document, null,RawVariables.emptyVariables())
+
+
+        when:
+        def result = compileToDocument(schema, SUBSCRIPTION, null, eno.topLevelFields, eno.normalizedFieldToQueryDirectives, noVariables)
+        OperationDefinition operationDefinition = result.document.getDefinitionsOfType(OperationDefinition.class)[0]
+        def fooField = (Field)operationDefinition.selectionSet.children[0]
+        def nameField = (Field)fooField.selectionSet.children[0]
+        def documentPrinted = AstPrinter.printAst(new AstSorter().sort(result.document))
+
+        then:
+
+        fooField.directives.size() == 1
+        nameField.directives.size() == 1
+        documentPrinted == '''subscription {
+  foo1(arg: {arg1 : "Subscription"}) @optIn(to: "foo") {
+    name @optIn(to: "devOps")
+  }
 }
 '''
     }

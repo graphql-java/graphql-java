@@ -180,7 +180,7 @@ scalar TestScalar @a(a : 0, bb : 0) @bb(a : 0, bb : 0)
 
         when:
         def options = defaultOptions()
-        def result = new SchemaPrinter(options).directivesString(null, false, directives)
+        def result = new SchemaPrinter(options).directivesString(null, directives)
 
         then:
         result == ''' @a(a : 0, bb : 0) @bb(a : 0, bb : 0)'''

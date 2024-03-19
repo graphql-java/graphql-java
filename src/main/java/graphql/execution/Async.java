@@ -2,6 +2,8 @@ package graphql.execution;
 
 import graphql.Assert;
 import graphql.Internal;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -207,4 +209,15 @@ public class Async {
         return result;
     }
 
+    /**
+     * If the passed in CompletableFuture is null then it creates a CompletableFuture that resolves to null
+     *
+     * @param completableFuture the CF to use
+     * @param <T>               for two
+     *
+     * @return the completableFuture if it's not null or one that always resoles to null
+     */
+    public static <T> @NotNull CompletableFuture<T> orNullCompletedFuture(@Nullable CompletableFuture<T> completableFuture) {
+        return completableFuture != null ? completableFuture : CompletableFuture.completedFuture(null);
+    }
 }

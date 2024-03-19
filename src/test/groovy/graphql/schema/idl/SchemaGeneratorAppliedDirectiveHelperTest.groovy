@@ -58,6 +58,7 @@ class SchemaGeneratorAppliedDirectiveHelperTest extends Specification {
                 "deprecated",
                 "foo",
                 "include",
+                "oneOf",
                 "skip",
                 "specifiedBy",
         ]
@@ -107,6 +108,7 @@ class SchemaGeneratorAppliedDirectiveHelperTest extends Specification {
                 "deprecated",
                 "foo",
                 "include",
+                "oneOf",
                 "skip",
                 "specifiedBy",
         ]

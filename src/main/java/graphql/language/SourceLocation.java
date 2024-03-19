@@ -2,6 +2,11 @@ package graphql.language;
 
 
 import graphql.PublicApi;
+import graphql.schema.GraphQLModifiedType;
+import graphql.schema.GraphQLNamedSchemaElement;
+import graphql.schema.GraphQLSchemaElement;
+import graphql.schema.GraphQLTypeUtil;
+import graphql.schema.idl.SchemaGenerator;
 
 import java.io.Serializable;
 import java.util.Objects;
@@ -74,4 +79,27 @@ public class SourceLocation implements Serializable {
                 (sourceName != null ? ", sourceName=" + sourceName : "") +
                 '}';
     }
+
+
+    /**
+     * This method can return {@link SourceLocation} that help create the given schema element.  If the
+     * schema is created from input files and {@link SchemaGenerator.Options#isCaptureAstDefinitions()}
+     * is set to true then schema elements contain a reference to the {@link SourceLocation} that helped
+     * create that runtime schema element.
+     *
+     * @param schemaElement the schema element
+     *
+     * @return the source location if available or null if it's not.
+     */
+    public static SourceLocation getLocation(GraphQLSchemaElement schemaElement) {
+        if (schemaElement instanceof GraphQLModifiedType) {
+            schemaElement = GraphQLTypeUtil.unwrapAllAs((GraphQLModifiedType) schemaElement);
+        }
+        if (schemaElement instanceof GraphQLNamedSchemaElement) {
+            Node<?> node = ((GraphQLNamedSchemaElement) schemaElement).getDefinition();
+            return node != null ? node.getSourceLocation() : null;
+        }
+        return null;
+    }
+
 }

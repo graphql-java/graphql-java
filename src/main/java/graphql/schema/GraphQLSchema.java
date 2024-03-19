@@ -917,6 +917,9 @@ public class GraphQLSchema {
             if (additionalDirectives.stream().noneMatch(d -> d.getName().equals(Directives.SpecifiedByDirective.getName()))) {
                 additionalDirectives.add(Directives.SpecifiedByDirective);
             }
+            if (additionalDirectives.stream().noneMatch(d -> d.getName().equals(Directives.OneOfDirective.getName()))) {
+                additionalDirectives.add(Directives.OneOfDirective);
+            }
 
             // quick build - no traversing
             final GraphQLSchema partiallyBuiltSchema = new GraphQLSchema(this);

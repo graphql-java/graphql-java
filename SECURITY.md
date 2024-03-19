@@ -2,13 +2,7 @@
 
 ## Supported Versions
 
-We support the latest release with security updates.
-
-We retain the discretion to backport security updates, this is decided on a case-by-case basis.
-
-| Version | Supported          |
-| ------- | ------------------ |
-| v20.x   | :white_check_mark: |
+As stated in our [Release Policy](https://www.graphql-java.com/blog/release-policy/), we will backport critical bugfixes and security fixes for versions dating back 18 months. These fixes will be backported depending on severity and demand.
 
 ## Reporting a Vulnerability
 
