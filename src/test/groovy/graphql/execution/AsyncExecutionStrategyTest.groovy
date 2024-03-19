@@ -2,6 +2,7 @@ package graphql.execution
 
 import graphql.ErrorType
 import graphql.ExecutionResult
+import graphql.GraphQLContext
 import graphql.execution.instrumentation.ExecutionStrategyInstrumentationContext
 import graphql.execution.instrumentation.SimpleInstrumentation
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters
@@ -27,6 +28,8 @@ import static graphql.schema.GraphQLSchema.newSchema
 import static org.awaitility.Awaitility.await
 
 class AsyncExecutionStrategyTest extends Specification {
+
+    def graphqlContextMock = Mock(GraphQLContext)
 
     GraphQLSchema schema(DataFetcher dataFetcher1, DataFetcher dataFetcher2) {
         GraphQLFieldDefinition.Builder fieldDefinition = newFieldDefinition()
@@ -82,6 +85,7 @@ class AsyncExecutionStrategyTest extends Specification {
                 .operationDefinition(operation)
                 .instrumentation(SimpleInstrumentation.INSTANCE)
                 .valueUnboxer(ValueUnboxer.DEFAULT)
+                .graphQLContext(graphqlContextMock)
                 .build()
         ExecutionStrategyParameters executionStrategyParameters = ExecutionStrategyParameters
                 .newParameters()
@@ -121,6 +125,7 @@ class AsyncExecutionStrategyTest extends Specification {
                 .operationDefinition(operation)
                 .valueUnboxer(ValueUnboxer.DEFAULT)
                 .instrumentation(SimpleInstrumentation.INSTANCE)
+                .graphQLContext(graphqlContextMock)
                 .build()
         ExecutionStrategyParameters executionStrategyParameters = ExecutionStrategyParameters
                 .newParameters()
@@ -162,6 +167,7 @@ class AsyncExecutionStrategyTest extends Specification {
                 .operationDefinition(operation)
                 .valueUnboxer(ValueUnboxer.DEFAULT)
                 .instrumentation(SimpleInstrumentation.INSTANCE)
+                .graphQLContext(graphqlContextMock)
                 .build()
         ExecutionStrategyParameters executionStrategyParameters = ExecutionStrategyParameters
                 .newParameters()
@@ -202,6 +208,7 @@ class AsyncExecutionStrategyTest extends Specification {
                 .operationDefinition(operation)
                 .instrumentation(SimpleInstrumentation.INSTANCE)
                 .valueUnboxer(ValueUnboxer.DEFAULT)
+                .graphQLContext(graphqlContextMock)
                 .build()
         ExecutionStrategyParameters executionStrategyParameters = ExecutionStrategyParameters
                 .newParameters()
@@ -262,6 +269,7 @@ class AsyncExecutionStrategyTest extends Specification {
                         }
                     }
                 })
+                .graphQLContext(graphqlContextMock)
                 .build()
         ExecutionStrategyParameters executionStrategyParameters = ExecutionStrategyParameters
                 .newParameters()
