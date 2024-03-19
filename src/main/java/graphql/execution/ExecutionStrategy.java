@@ -251,7 +251,7 @@ public abstract class ExecutionStrategy {
         if ((maxNodes = executionContext.getGraphQLContext().get(MAX_RESULT_NODES)) != null) {
             if (resultNodesCount > maxNodes) {
                 executionContext.getResultNodesInfo().maxResultNodesExceeded();
-                return CompletableFuture.completedFuture(new FetchedValue(null, Collections.emptyList(), null, null));
+                return CompletableFuture.completedFuture(new FetchedValue(null, null, ImmutableKit.emptyList(), null));
             }
         }
 
