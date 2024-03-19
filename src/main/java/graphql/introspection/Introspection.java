@@ -3,9 +3,13 @@ package graphql.introspection;
 
 import com.google.common.collect.ImmutableSet;
 import graphql.Assert;
+import graphql.ExecutionResult;
 import graphql.GraphQLContext;
 import graphql.Internal;
 import graphql.PublicApi;
+import graphql.execution.ExecutionContext;
+import graphql.execution.MergedField;
+import graphql.execution.MergedSelectionSet;
 import graphql.execution.ValuesResolver;
 import graphql.language.AstPrinter;
 import graphql.schema.FieldCoordinates;
@@ -32,6 +36,7 @@ import graphql.schema.GraphQLScalarType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLUnionType;
 import graphql.schema.InputValueWithState;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -39,7 +44,9 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -58,8 +65,88 @@ import static graphql.schema.GraphQLTypeUtil.simplePrint;
 import static graphql.schema.GraphQLTypeUtil.unwrapAllAs;
 import static graphql.schema.GraphQLTypeUtil.unwrapOne;
 
+/**
+ * GraphQl has a unique capability called <a href="https://spec.graphql.org/October2021/#sec-Introspection">Introspection</a> that allow
+ * consumers to inspect the system and discover the fields and types available and makes the system self documented.
+ * <p>
+ * Some security recommendations such as <a href="https://owasp.org/www-chapter-vancouver/assets/presentations/2020-06_GraphQL_Security.pdf">OWASP</a>
+ * recommend that introspection be disabled in production.  The {@link Introspection#enabledJvmWide(boolean)} method can be used to disable
+ * introspection for the whole JVM or you can place {@link Introspection#INTROSPECTION_DISABLED} into the {@link GraphQLContext} of a request
+ * to disable introspection for that request.
+ */
 @PublicApi
 public class Introspection {
+
+
+    /**
+     * Placing a boolean value under this key in the per request {@link GraphQLContext} will enable
+     * or disable Introspection on that request.
+     */
+    public static final String INTROSPECTION_DISABLED = "INTROSPECTION_DISABLED";
+    private static final AtomicBoolean INTROSPECTION_ENABLED_STATE = new AtomicBoolean(true);
+
+    /**
+     * This static method will enable / disable Introspection at a JVM wide level.
+     *
+     * @param enabled the flag indicating the desired enabled state
+     *
+     * @return the previous state of enablement
+     */
+    public static boolean enabledJvmWide(boolean enabled) {
+        return INTROSPECTION_ENABLED_STATE.getAndSet(enabled);
+    }
+
+    /**
+     * @return true if Introspection is enabled at a JVM wide level or false otherwise
+     */
+    public static boolean isEnabledJvmWide() {
+        return INTROSPECTION_ENABLED_STATE.get();
+    }
+
+    /**
+     * This will look in to the field selection set and see if there are introspection fields,
+     * and if there is,it checks if introspection should run, and if not it will return an errored {@link ExecutionResult}
+     * that can be returned to the user.
+     *
+     * @param mergedSelectionSet the fields to be executed
+     * @param executionContext   the execution context in play
+     *
+     * @return an optional error result
+     */
+    public static Optional<ExecutionResult> isIntrospectionSensible(MergedSelectionSet mergedSelectionSet, ExecutionContext executionContext) {
+        GraphQLContext graphQLContext = executionContext.getGraphQLContext();
+        MergedField schemaField = mergedSelectionSet.getSubField(SchemaMetaFieldDef.getName());
+        if (schemaField != null) {
+            if (!isIntrospectionEnabled(graphQLContext)) {
+                return mkDisabledError(schemaField);
+            }
+        }
+        MergedField typeField = mergedSelectionSet.getSubField(TypeMetaFieldDef.getName());
+        if (typeField != null) {
+            if (!isIntrospectionEnabled(graphQLContext)) {
+                return mkDisabledError(typeField);
+            }
+        }
+        if (schemaField != null || typeField != null)
+        {
+            return GoodFaithIntrospection.checkIntrospection(executionContext);
+        }
+        return Optional.empty();
+    }
+
+    @NotNull
+    private static Optional<ExecutionResult> mkDisabledError(MergedField schemaField) {
+        IntrospectionDisabledError error = new IntrospectionDisabledError(schemaField.getSingleField().getSourceLocation());
+        return Optional.of(ExecutionResult.newExecutionResult().addError(error).build());
+    }
+
+    private static boolean isIntrospectionEnabled(GraphQLContext graphQlContext) {
+        if (!isEnabledJvmWide()) {
+            return false;
+        }
+        return !graphQlContext.getOrDefault(INTROSPECTION_DISABLED, false);
+    }
+
     private static final Map<FieldCoordinates, IntrospectionDataFetcher<?>> introspectionDataFetchers = new LinkedHashMap<>();
 
     private static void register(GraphQLFieldsContainer parentType, String fieldName, IntrospectionDataFetcher<?> introspectionDataFetcher) {
@@ -623,6 +710,7 @@ public class Introspection {
         return environment.getGraphQLSchema().getType(name);
     };
 
+    // __typename is always available
     public static final IntrospectionDataFetcher<?> TypeNameMetaFieldDefDataFetcher = environment -> simplePrint(environment.getParentType());
 
     @Internal
