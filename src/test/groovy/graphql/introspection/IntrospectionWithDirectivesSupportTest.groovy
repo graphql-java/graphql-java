@@ -89,7 +89,10 @@ class IntrospectionWithDirectivesSupportTest extends Specification {
 
         def schemaType = er.data["__schema"]
 
-        schemaType["directives"] == [[name: "include"], [name: "skip"], [name: "example"], [name: "secret"], [name: "noDefault"], [name: "deprecated"], [name: "specifiedBy"]]
+        schemaType["directives"] == [
+                [name: "include"], [name: "skip"], [name: "example"], [name: "secret"],
+                [name: "noDefault"], [name: "deprecated"], [name: "specifiedBy"], [name: "oneOf"]
+        ]
 
         schemaType["appliedDirectives"] == [[name: "example", args: [[name: "argName", value: '"onSchema"']]]]
 
@@ -170,7 +173,7 @@ class IntrospectionWithDirectivesSupportTest extends Specification {
 
         def definedDirectives = er.data["__schema"]["directives"]
         // secret is filter out
-        definedDirectives == [[name: "include"], [name: "skip"], [name: "example"], [name: "deprecated"], [name: "specifiedBy"]]
+        definedDirectives == [[name: "include"], [name: "skip"], [name: "example"], [name: "deprecated"], [name: "specifiedBy"], [name: "oneOf"]]
     }
 
     def "can set prefixes onto the Applied types"() {

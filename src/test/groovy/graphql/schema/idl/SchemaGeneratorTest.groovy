@@ -2052,11 +2052,13 @@ class SchemaGeneratorTest extends Specification {
         directives = schema.getDirectives()
 
         then:
-        directives.size() == 7 // built in ones :  include / skip and deprecated
+        directives.size() == 8 // built in ones :  include / skip and deprecated
         def directiveNames = directives.collect { it.name }
         directiveNames.contains("include")
         directiveNames.contains("skip")
         directiveNames.contains("deprecated")
+        directiveNames.contains("specifiedBy")
+        directiveNames.contains("oneOf")
         directiveNames.contains("sd1")
         directiveNames.contains("sd2")
         directiveNames.contains("sd3")
@@ -2065,10 +2067,11 @@ class SchemaGeneratorTest extends Specification {
         directivesMap = schema.getDirectivesByName()
 
         then:
-        directivesMap.size() == 7 // built in ones
+        directivesMap.size() == 8 // built in ones
         directivesMap.containsKey("include")
         directivesMap.containsKey("skip")
         directivesMap.containsKey("deprecated")
+        directivesMap.containsKey("oneOf")
         directivesMap.containsKey("sd1")
         directivesMap.containsKey("sd2")
         directivesMap.containsKey("sd3")
@@ -2535,5 +2538,27 @@ class SchemaGeneratorTest extends Specification {
         then:
         newSchema.getDirectives().findAll { it.name == "skip" }.size() == 1
         newSchema.getDirectives().findAll { it.name == "include" }.size() == 1
+    }
+
+    def "oneOf directive is available implicitly"() {
+        def sdl = '''
+            type Query {
+                f(arg : OneOfInputType) : String
+            }
+            
+            input OneOfInputType @oneOf {
+                a : String
+                b : String
+            }
+        '''
+
+        when:
+        def schema = TestUtil.schema(sdl)
+        then:
+        schema.getDirectives().findAll { it.name == "oneOf" }.size() == 1
+
+        GraphQLInputObjectType inputObjectType = schema.getTypeAs("OneOfInputType")
+        inputObjectType.isOneOf()
+        inputObjectType.hasAppliedDirective("oneOf")
     }
 }

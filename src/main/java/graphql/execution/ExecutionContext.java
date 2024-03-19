@@ -18,6 +18,7 @@ import graphql.normalized.ExecutableNormalizedOperation;
 import graphql.normalized.ExecutableNormalizedOperationFactory;
 import graphql.schema.GraphQLSchema;
 import graphql.util.FpKit;
+import graphql.util.LockKit;
 import org.dataloader.DataLoaderRegistry;
 
 import java.util.HashSet;
@@ -49,6 +50,7 @@ public class ExecutionContext {
     private final Object localContext;
     private final Instrumentation instrumentation;
     private final AtomicReference<ImmutableList<GraphQLError>> errors = new AtomicReference<>(ImmutableKit.emptyList());
+    private final LockKit.ReentrantLock errorsLock = new LockKit.ReentrantLock();
     private final Set<ResultPath> errorPaths = new HashSet<>();
     private final DataLoaderRegistry dataLoaderRegistry;
     private final Locale locale;
@@ -131,6 +133,7 @@ public class ExecutionContext {
 
     /**
      * @param <T> for two
+     *
      * @return the legacy context
      *
      * @deprecated use {@link #getGraphQLContext()} instead
@@ -179,7 +182,7 @@ public class ExecutionContext {
      * @param fieldPath the field path to put it under
      */
     public void addError(GraphQLError error, ResultPath fieldPath) {
-        synchronized (this) {
+        errorsLock.runLocked(() -> {
             //
             // see https://spec.graphql.org/October2021/#sec-Handling-Field-Errors about how per
             // field errors should be handled - ie only once per field if it's already there for nullability
@@ -189,7 +192,7 @@ public class ExecutionContext {
                 return;
             }
             this.errors.set(ImmutableKit.addToList(this.errors.get(), error));
-        }
+        });
     }
 
     /**
@@ -199,7 +202,7 @@ public class ExecutionContext {
      * @param error the error to add
      */
     public void addError(GraphQLError error) {
-        synchronized (this) {
+        errorsLock.runLocked(() -> {
             // see https://github.com/graphql-java/graphql-java/issues/888 on how the spec is unclear
             // on how exactly multiple errors should be handled - ie only once per field or not outside the nullability
             // aspect.
@@ -208,7 +211,7 @@ public class ExecutionContext {
                 this.errorPaths.add(path);
             }
             this.errors.set(ImmutableKit.addToList(this.errors.get(), error));
-        }
+        });
     }
 
     /**
@@ -221,9 +224,9 @@ public class ExecutionContext {
         if (errors.isEmpty()) {
             return;
         }
-        // we are synchronised because we set two fields at once - but we only ever read one of them later
+        // we are locked because we set two fields at once - but we only ever read one of them later
         // in getErrors so no need for synchronised there.
-        synchronized (this) {
+        errorsLock.runLocked(() -> {
             Set<ResultPath> newErrorPaths = new HashSet<>();
             for (GraphQLError error : errors) {
                 // see https://github.com/graphql-java/graphql-java/issues/888 on how the spec is unclear
@@ -236,7 +239,7 @@ public class ExecutionContext {
             }
             this.errorPaths.addAll(newErrorPaths);
             this.errors.set(ImmutableKit.concatLists(this.errors.get(), errors));
-        }
+        });
     }
 
     /**

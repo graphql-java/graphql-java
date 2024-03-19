@@ -1,6 +1,8 @@
 package graphql.schema.usage;
 
 import graphql.PublicApi;
+import graphql.schema.GraphQLAppliedDirective;
+import graphql.schema.GraphQLAppliedDirectiveArgument;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLDirective;
 import graphql.schema.GraphQLFieldDefinition;
@@ -20,6 +22,7 @@ import graphql.schema.GraphQLUnionType;
 import graphql.schema.SchemaTraverser;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.HashSet;
 import java.util.List;
@@ -59,6 +62,10 @@ public class SchemaUsageSupport {
                     String typeName = ((GraphQLDirective) referencingElement).getName();
                     builder.elementBackReferences.computeIfAbsent(referencedElementName, k -> new HashSet<>()).add(typeName);
                 }
+                if (referencingElement instanceof GraphQLAppliedDirective) {
+                    String typeName = ((GraphQLAppliedDirective) referencingElement).getName();
+                    builder.elementBackReferences.computeIfAbsent(referencedElementName, k -> new HashSet<>()).add(typeName);
+                }
             }
 
             private void memberInterfaces(GraphQLNamedType containingType, List<GraphQLNamedOutputType> members) {
@@ -78,6 +85,19 @@ public class SchemaUsageSupport {
 
                 GraphQLSchemaElement parentElement = context.getParentNode();
                 if (parentElement instanceof GraphQLFieldDefinition) {
+                    parentElement = context.getParentContext().getParentNode();
+                }
+                recordBackReference(inputType, parentElement);
+                return CONTINUE;
+            }
+
+            @Override
+            public TraversalControl visitGraphQLAppliedDirectiveArgument(GraphQLAppliedDirectiveArgument node, TraverserContext<GraphQLSchemaElement> context) {
+                GraphQLNamedType inputType = GraphQLTypeUtil.unwrapAll(node.getType());
+                builder.argReferenceCount.compute(inputType.getName(), incCount());
+
+                GraphQLSchemaElement parentElement = context.getParentNode();
+                if (parentElement instanceof GraphQLAppliedDirective) {
                     parentElement = context.getParentContext().getParentNode();
                 }
                 recordBackReference(inputType, parentElement);
@@ -108,11 +128,24 @@ public class SchemaUsageSupport {
 
             @Override
             public TraversalControl visitGraphQLDirective(GraphQLDirective directive, TraverserContext<GraphQLSchemaElement> context) {
+                GraphQLSchemaElement parentElement = visitDirectiveLike(context, directive.getName());
+                recordBackReference(directive, parentElement);
+                return CONTINUE;
+            }
+
+            @Override
+            public TraversalControl visitGraphQLAppliedDirective(GraphQLAppliedDirective appliedDirective, TraverserContext<GraphQLSchemaElement> context) {
+                GraphQLSchemaElement parentElement = visitDirectiveLike(context, appliedDirective.getName());
+                recordBackReference(appliedDirective, parentElement);
+                return CONTINUE;
+            }
+
+            private GraphQLSchemaElement visitDirectiveLike(TraverserContext<GraphQLSchemaElement> context, String directiveName) {
                 GraphQLSchemaElement parentElement = context.getParentNode();
                 if (parentElement != null) {
                     // a null parent is a directive definition
                     // we record a count if the directive is applied to something - not just defined
-                    builder.directiveReferenceCount.compute(directive.getName(), incCount());
+                    builder.directiveReferenceCount.compute(directiveName, incCount());
                 }
                 if (parentElement instanceof GraphQLArgument) {
                     context = context.getParentContext();
@@ -126,8 +159,7 @@ public class SchemaUsageSupport {
                     context = context.getParentContext();
                     parentElement = context.getParentNode();
                 }
-                recordBackReference(directive, parentElement);
-                return CONTINUE;
+                return parentElement;
             }
 
             @Override

@@ -91,6 +91,10 @@ public class VariableReference extends AbstractNode<VariableReference> implement
         return visitor.visitVariableReference(this, context);
     }
 
+    public static VariableReference of(String name) {
+        return newVariableReference().name(name).build();
+    }
+
     public static Builder newVariableReference() {
         return new Builder();
     }

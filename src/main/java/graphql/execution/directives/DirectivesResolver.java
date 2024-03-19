@@ -11,6 +11,7 @@ import graphql.schema.GraphQLCodeRegistry;
 import graphql.schema.GraphQLDirective;
 import graphql.schema.GraphQLSchema;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -25,14 +26,14 @@ public class DirectivesResolver {
     public DirectivesResolver() {
     }
 
-    public Map<String, GraphQLDirective> resolveDirectives(List<Directive> directives, GraphQLSchema schema, Map<String, Object> variables, GraphQLContext graphQLContext, Locale locale) {
+    public Map<String, List<GraphQLDirective>> resolveDirectives(List<Directive> directives, GraphQLSchema schema, Map<String, Object> variables, GraphQLContext graphQLContext, Locale locale) {
         GraphQLCodeRegistry codeRegistry = schema.getCodeRegistry();
-        Map<String, GraphQLDirective> directiveMap = new LinkedHashMap<>();
+        Map<String, List<GraphQLDirective>> directiveMap = new LinkedHashMap<>();
         directives.forEach(directive -> {
             GraphQLDirective protoType = schema.getDirective(directive.getName());
             if (protoType != null) {
                 GraphQLDirective newDirective = protoType.transform(builder -> buildArguments(builder, codeRegistry, protoType, directive, variables, graphQLContext, locale));
-                directiveMap.put(newDirective.getName(), newDirective);
+                directiveMap.computeIfAbsent(newDirective.getName(), k -> new ArrayList<>()).add(newDirective);
             }
         });
         return ImmutableMap.copyOf(directiveMap);

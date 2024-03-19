@@ -23,7 +23,7 @@ public class FieldCollectorNormalizedQueryParams {
     private final GraphQLContext graphQLContext;
     private final Locale locale;
 
-    public List<PossibleMerger> possibleMergerList = new ArrayList<>();
+    private final List<PossibleMerger> possibleMergerList = new ArrayList<>();
 
     public static class PossibleMerger {
         ExecutableNormalizedField parent;
@@ -37,6 +37,10 @@ public class FieldCollectorNormalizedQueryParams {
 
     public void addPossibleMergers(ExecutableNormalizedField parent, String resultKey) {
         possibleMergerList.add(new PossibleMerger(parent, resultKey));
+    }
+
+    public List<PossibleMerger> getPossibleMergerList() {
+        return possibleMergerList;
     }
 
     public GraphQLSchema getGraphQLSchema() {

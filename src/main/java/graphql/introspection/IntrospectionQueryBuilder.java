@@ -33,6 +33,7 @@ public class IntrospectionQueryBuilder {
         private final boolean descriptions;
 
         private final boolean specifiedByUrl;
+        private final boolean isOneOf;
 
         private final boolean directiveIsRepeatable;
 
@@ -44,12 +45,14 @@ public class IntrospectionQueryBuilder {
 
         private Options(boolean descriptions,
                         boolean specifiedByUrl,
+                        boolean isOneOf,
                         boolean directiveIsRepeatable,
                         boolean schemaDescription,
                         boolean inputValueDeprecation,
                         int typeRefFragmentDepth) {
             this.descriptions = descriptions;
             this.specifiedByUrl = specifiedByUrl;
+            this.isOneOf = isOneOf;
             this.directiveIsRepeatable = directiveIsRepeatable;
             this.schemaDescription = schemaDescription;
             this.inputValueDeprecation = inputValueDeprecation;
@@ -62,6 +65,10 @@ public class IntrospectionQueryBuilder {
 
         public boolean isSpecifiedByUrl() {
             return specifiedByUrl;
+        }
+
+        public boolean isOneOf() {
+            return isOneOf;
         }
 
         public boolean isDirectiveIsRepeatable() {
@@ -85,6 +92,7 @@ public class IntrospectionQueryBuilder {
                     true,
                     false,
                     true,
+                    true,
                     false,
                     true,
                     7
@@ -101,6 +109,7 @@ public class IntrospectionQueryBuilder {
         public Options descriptions(boolean flag) {
             return new Options(flag,
                     this.specifiedByUrl,
+                    this.isOneOf,
                     this.directiveIsRepeatable,
                     this.schemaDescription,
                     this.inputValueDeprecation,
@@ -117,12 +126,32 @@ public class IntrospectionQueryBuilder {
         public Options specifiedByUrl(boolean flag) {
             return new Options(this.descriptions,
                     flag,
+                    this.isOneOf,
                     this.directiveIsRepeatable,
                     this.schemaDescription,
                     this.inputValueDeprecation,
                     this.typeRefFragmentDepth);
         }
 
+        /**
+         * This will allow you to include the `isOneOf` field for one of input types in the introspection query.
+         * <p>
+         * This option is only needed while `@oneOf` input types are new and in time the reason for this
+         * option will go away.
+         *
+         * @param flag whether to include them
+         *
+         * @return options
+         */
+        public Options isOneOf(boolean flag) {
+            return new Options(this.descriptions,
+                    this.specifiedByUrl,
+                    flag,
+                    this.directiveIsRepeatable,
+                    this.schemaDescription,
+                    this.inputValueDeprecation,
+                    this.typeRefFragmentDepth);
+        }
         /**
          * This will allow you to include the `isRepeatable` field for directives in the introspection query.
          *
@@ -133,6 +162,7 @@ public class IntrospectionQueryBuilder {
         public Options directiveIsRepeatable(boolean flag) {
             return new Options(this.descriptions,
                     this.specifiedByUrl,
+                    this.isOneOf,
                     flag,
                     this.schemaDescription,
                     this.inputValueDeprecation,
@@ -149,6 +179,7 @@ public class IntrospectionQueryBuilder {
         public Options schemaDescription(boolean flag) {
             return new Options(this.descriptions,
                     this.specifiedByUrl,
+                    this.isOneOf,
                     this.directiveIsRepeatable,
                     flag,
                     this.inputValueDeprecation,
@@ -165,6 +196,7 @@ public class IntrospectionQueryBuilder {
         public Options inputValueDeprecation(boolean flag) {
             return new Options(this.descriptions,
                     this.specifiedByUrl,
+                    this.isOneOf,
                     this.directiveIsRepeatable,
                     this.schemaDescription,
                     flag,
@@ -181,6 +213,7 @@ public class IntrospectionQueryBuilder {
         public Options typeRefFragmentDepth(int typeRefFragmentDepth) {
             return new Options(this.descriptions,
                     this.specifiedByUrl,
+                    this.isOneOf,
                     this.directiveIsRepeatable,
                     this.schemaDescription,
                     this.inputValueDeprecation,
@@ -249,6 +282,7 @@ public class IntrospectionQueryBuilder {
                 newField("name").build(),
                 options.descriptions ? newField("description").build() : null,
                 options.specifiedByUrl ? newField("specifiedByURL").build() : null,
+                options.isOneOf ? newField("isOneOf").build() : null,
                 newField("fields")
                         .arguments(ImmutableList.of(
                                 newArgument("includeDeprecated", BooleanValue.of(true)).build()
