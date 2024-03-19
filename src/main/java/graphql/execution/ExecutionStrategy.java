@@ -246,8 +246,7 @@ public abstract class ExecutionStrategy {
         int resultNodesCount = executionContext.getResultNodesInfo().incrementAndGetResultNodesCount();
 
         Integer maxNodes;
-        if ((executionContext.getGraphQLContext() != null) &&
-                (maxNodes = executionContext.getGraphQLContext().get(MAX_RESULT_NODES)) != null) {
+        if ((maxNodes = executionContext.getGraphQLContext().get(MAX_RESULT_NODES)) != null) {
             if (resultNodesCount > maxNodes) {
                 executionContext.getResultNodesInfo().maxResultNodesExceeded();
                 return CompletableFuture.completedFuture(new FetchedValue(null, null, ImmutableKit.emptyList(), null));
@@ -547,8 +546,7 @@ public abstract class ExecutionStrategy {
         for (Object item : iterableValues) {
             int resultNodesCount = executionContext.getResultNodesInfo().incrementAndGetResultNodesCount();
             Integer maxNodes;
-            if (executionContext.getGraphQLContext() != null &&
-                    (maxNodes = executionContext.getGraphQLContext().get(MAX_RESULT_NODES)) != null) {
+            if ((maxNodes = executionContext.getGraphQLContext().get(MAX_RESULT_NODES)) != null) {
                 if (resultNodesCount > maxNodes) {
                     executionContext.getResultNodesInfo().maxResultNodesExceeded();
                     return new FieldValueInfo(NULL, completedFuture(ExecutionResultImpl.newExecutionResult().build()), fieldValueInfos);
