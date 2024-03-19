@@ -36,6 +36,10 @@ public class CyclicSchemaAnalyzer {
             return cycle.size();
         }
 
+        public List<String> getCycle() {
+            return cycle;
+        }
+
         @Override
         public String toString() {
             return cycle.toString();
@@ -43,22 +47,28 @@ public class CyclicSchemaAnalyzer {
     }
 
     public static List<SchemaCycle> findCycles(GraphQLSchema schema) {
+        return findCycles(schema, true);
+    }
+
+    public static List<SchemaCycle> findCycles(GraphQLSchema schema, boolean filterOutIntrospectionCycles) {
         FindCyclesImpl findCyclesImpl = new FindCyclesImpl(schema);
         findCyclesImpl.findAllSimpleCyclesImpl();
         List<List<Vertex>> vertexCycles = findCyclesImpl.foundCycles;
-        vertexCycles = vertexCycles.stream().filter(vertices -> {
-            for (Vertex vertex : vertices) {
-                if (Introspection.isIntrospectionTypes(vertex.getName())) {
-                    return false;
+        if (filterOutIntrospectionCycles) {
+            vertexCycles = vertexCycles.stream().filter(vertices -> {
+                for (Vertex vertex : vertices) {
+                    if (Introspection.isIntrospectionTypes(vertex.getName())) {
+                        return false;
+                    }
                 }
-            }
-            return true;
-        }).collect(Collectors.toList());
+                return true;
+            }).collect(Collectors.toList());
+        }
         List<SchemaCycle> result = new ArrayList<>();
         for (List<Vertex> vertexCycle : vertexCycles) {
             List<String> stringCycle = new ArrayList<>();
             for (Vertex vertex : vertexCycle) {
-                if (vertex.isOfType(SchemaGraph.OBJECT) || vertex.isOfType(SchemaGraph.INTERFACE)) {
+                if (vertex.isOfType(SchemaGraph.OBJECT) || vertex.isOfType(SchemaGraph.INTERFACE) || vertex.isOfType(SchemaGraph.UNION)) {
                     stringCycle.add(vertex.getName());
                 } else if (vertex.isOfType(SchemaGraph.FIELD)) {
                     String fieldsContainerName = findCyclesImpl.graph.getFieldsContainerForField(vertex).getName();

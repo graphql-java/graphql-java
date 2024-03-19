@@ -261,4 +261,51 @@ class CyclicSchemaAnalyzerTest extends Specification {
         cycles[1].toString() == "[Foo.issues, IssueConnection, IssueConnection.edges, Edge, Edge.node, Foo]"
 
     }
+
+    def "cycle with Union"() {
+        given:
+        def sdl = '''
+       type Query {
+            foo: Foo
+       } 
+       union Foo = Bar | Baz
+       type Bar {
+            bar: Foo
+       }
+       type Baz {
+            bar: Foo
+       }
+       '''
+        def schema = TestUtil.schema(sdl)
+        when:
+        def cycles = CyclicSchemaAnalyzer.findCycles(schema)
+
+        then:
+        cycles.size() == 2
+        cycles[0].toString() == "[Foo, Baz, Baz.bar]"
+        cycles[1].toString() == "[Foo, Bar, Bar.bar]"
+
+    }
+
+    def "introspection cycles "() {
+        given:
+        def sdl = '''
+       type Query {
+            hello: String
+       } 
+       '''
+        def schema = TestUtil.schema(sdl)
+        when:
+        def cycles = CyclicSchemaAnalyzer.findCycles(schema, false)
+
+        then:
+        cycles.size() == 6
+        cycles[0].toString() == "[__Type.fields, __Field, __Field.type, __Type]"
+        cycles[1].toString() == "[__Type.fields, __Field, __Field.args, __InputValue, __InputValue.type, __Type]"
+        cycles[2].toString() == "[__Type.interfaces, __Type]"
+        cycles[3].toString() == "[__Type.possibleTypes, __Type]"
+        cycles[4].toString() == "[__Type.inputFields, __InputValue, __InputValue.type, __Type]"
+        cycles[5].toString() == "[__Type.ofType, __Type]"
+
+    }
 }
