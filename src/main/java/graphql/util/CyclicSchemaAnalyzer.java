@@ -1,5 +1,6 @@
 package graphql.util;
 
+import graphql.Assert;
 import graphql.ExperimentalApi;
 import graphql.introspection.Introspection;
 import graphql.schema.GraphQLSchema;
@@ -10,8 +11,8 @@ import graphql.schema.diffing.Vertex;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -55,16 +56,23 @@ public class CyclicSchemaAnalyzer {
         }).collect(Collectors.toList());
         List<SchemaCycle> result = new ArrayList<>();
         for (List<Vertex> vertexCycle : vertexCycles) {
-            List<String> outputCycle = new ArrayList<>();
+            List<String> stringCycle = new ArrayList<>();
             for (Vertex vertex : vertexCycle) {
                 if (vertex.isOfType(SchemaGraph.OBJECT) || vertex.isOfType(SchemaGraph.INTERFACE)) {
-                    outputCycle.add(vertex.getName());
+                    stringCycle.add(vertex.getName());
                 } else if (vertex.isOfType(SchemaGraph.FIELD)) {
                     String fieldsContainerName = findCyclesImpl.graph.getFieldsContainerForField(vertex).getName();
-                    outputCycle.add(fieldsContainerName + "." + vertex.getName());
+                    stringCycle.add(fieldsContainerName + "." + vertex.getName());
+                } else if (vertex.isOfType(SchemaGraph.INPUT_OBJECT)) {
+                    stringCycle.add(vertex.getName());
+                } else if (vertex.isOfType(SchemaGraph.INPUT_FIELD)) {
+                    String inputFieldsContainerName = findCyclesImpl.graph.getFieldsContainerForField(vertex).getName();
+                    stringCycle.add(inputFieldsContainerName + "." + vertex.getName());
+                } else {
+                    Assert.assertShouldNeverHappen("unexpected vertex in cycle found: " + vertex);
                 }
             }
-            result.add(new SchemaCycle(outputCycle));
+            result.add(new SchemaCycle(stringCycle));
         }
         return result;
     }
@@ -124,9 +132,9 @@ public class CyclicSchemaAnalyzer {
             SchemaGraphFactory schemaGraphFactory = new SchemaGraphFactory();
             this.graph = schemaGraphFactory.createGraph(schema);
             iToV = (Vertex[]) graph.getVertices().toArray(new Vertex[0]);
-            vToI = new HashMap<>();
-            blocked = new HashSet<>();
-            bSets = new HashMap<>();
+            vToI = new LinkedHashMap<>();
+            blocked = new LinkedHashSet<>();
+            bSets = new LinkedHashMap<>();
             stack = new ArrayDeque<>();
 
             for (int i = 0; i < iToV.length; i++) {
@@ -251,7 +259,7 @@ public class CyclicSchemaAnalyzer {
                 }
             }
             if (vLowlink.get(vertex).equals(vIndex.get(vertex))) {
-                Set<Vertex> result = new HashSet<>();
+                Set<Vertex> result = new LinkedHashSet<>();
                 Vertex temp;
                 do {
                     temp = path.pop();
@@ -320,10 +328,10 @@ public class CyclicSchemaAnalyzer {
         private void initMinSCGState() {
             index = 0;
             foundSCCs = new ArrayList<>();
-            vIndex = new HashMap<>();
-            vLowlink = new HashMap<>();
+            vIndex = new LinkedHashMap<>();
+            vLowlink = new LinkedHashMap<>();
             path = new ArrayDeque<>();
-            pathSet = new HashSet<>();
+            pathSet = new LinkedHashSet<>();
         }
 
         private void clearMinSCCState() {
@@ -346,7 +354,7 @@ public class CyclicSchemaAnalyzer {
         private Set<Vertex> getBSet(Vertex v) {
             // B sets typically not all needed,
             // so instantiate lazily.
-            return bSets.computeIfAbsent(v, k -> new HashSet<>());
+            return bSets.computeIfAbsent(v, k -> new LinkedHashSet<>());
         }
 
 

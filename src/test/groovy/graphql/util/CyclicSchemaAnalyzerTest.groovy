@@ -27,6 +27,50 @@ class CyclicSchemaAnalyzerTest extends Specification {
 
     }
 
+    def "simple cycle with interfaces"() {
+        given:
+        def sdl = '''
+
+        type Query {
+          hello: [Foo]
+        }
+        interface Foo {
+            foo: Foo 
+        }
+        type Impl implements Foo {
+            foo: Foo
+        }
+        '''
+        def schema = TestUtil.schema(sdl)
+        when:
+        def cycles = CyclicSchemaAnalyzer.findCycles(schema)
+
+        then:
+        cycles.size() == 1
+        cycles[0].toString() == "[Foo.foo, Foo]"
+
+    }
+
+    def "input field cycle"() {
+        given:
+        def sdl = '''
+        type Query {
+          hello(i: I): String
+        }
+        input I {
+            foo: I  
+        }
+        '''
+        def schema = TestUtil.schema(sdl)
+        when:
+        def cycles = CyclicSchemaAnalyzer.findCycles(schema)
+
+        then:
+        cycles.size() == 1
+        cycles[0].toString() == "[I.foo, I]"
+
+    }
+
     def "multiple cycles"() {
         given:
         def sdl = '''
@@ -107,6 +151,114 @@ class CyclicSchemaAnalyzerTest extends Specification {
 
         then:
         cycles.size() == 0
+
+    }
+
+    def "cycle test"() {
+        given:
+        def sdl = '''
+        type Query {
+            foo: Foo
+        }
+        type Foo {
+            f1: Foo
+            f2: Foo
+        }
+        '''
+        def schema = TestUtil.schema(sdl)
+        when:
+        def cycles = CyclicSchemaAnalyzer.findCycles(schema)
+
+        then:
+        cycles.size() == 2
+        cycles[0].toString() == "[Foo.f1, Foo]"
+        cycles[1].toString() == "[Foo.f2, Foo]"
+
+
+    }
+
+    def "cycle test 2"() {
+        given:
+        def sdl = '''
+        type Query {
+            foo: Foo
+        }
+        type Foo {
+            f1: Foo
+            f2: Bar
+        }
+        type Bar {
+            foo: Foo
+        }
+        '''
+        def schema = TestUtil.schema(sdl)
+        when:
+        def cycles = CyclicSchemaAnalyzer.findCycles(schema)
+
+        then:
+        cycles.size() == 2
+        cycles[0].toString() == "[Foo.f1, Foo]"
+        cycles[1].toString() == "[Foo.f2, Bar, Bar.foo, Foo]"
+
+    }
+
+    def "cycle test 3"() {
+        given:
+        def sdl = '''
+       type Query {
+            foo: Foo
+       } 
+       type Foo {
+        issues: [IssueConnection]
+       }
+       type IssueConnection {
+       edges: [Edge]
+       nodes: [Issue]
+       }
+       type Edge {
+         node: Issue
+       }
+       type Issue {
+           foo: Foo
+       } 
+       '''
+        def schema = TestUtil.schema(sdl)
+        when:
+        def cycles = CyclicSchemaAnalyzer.findCycles(schema)
+
+        then:
+        //TODO: should be 2
+        cycles.size() == 2
+        cycles[0].toString() == "[Foo.issues, IssueConnection, IssueConnection.nodes, Issue, Issue.foo, Foo]"
+        cycles[1].toString() == "[Foo.issues, IssueConnection, IssueConnection.edges, Edge, Edge.node, Issue, Issue.foo, Foo]"
+
+    }
+
+    def "cycle test 4"() {
+        given:
+        def sdl = '''
+       type Query {
+            foo: Foo
+       } 
+       type Foo {
+        issues: [IssueConnection]
+       }
+       type IssueConnection {
+         edges: [Edge]
+           nodes: [Foo]
+       }
+       type Edge {
+         node: Foo
+       }
+       '''
+        def schema = TestUtil.schema(sdl)
+        when:
+        def cycles = CyclicSchemaAnalyzer.findCycles(schema)
+
+        then:
+        cycles.size() == 2
+        cycles[0].toString() == "[Foo.issues, IssueConnection, IssueConnection.nodes, Foo]"
+        cycles[1].toString() == "[Foo.issues, IssueConnection, IssueConnection.edges, Edge, Edge.node, Foo]"
 
     }
 }
