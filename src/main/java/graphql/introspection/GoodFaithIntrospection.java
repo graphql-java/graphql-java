@@ -49,7 +49,7 @@ public class GoodFaithIntrospection {
     /**
      * This is the maximum number of executable fields that can be in a good faith introspection query
      */
-    public static final int GOOD_FAITH_MAX_FIELDS_COUNT = 100;
+    public static final int GOOD_FAITH_MAX_FIELDS_COUNT = 500;
     /**
      * This is the maximum depth a good faith introspection query can be
      */
