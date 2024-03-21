@@ -64,6 +64,7 @@ import static graphql.schema.GraphQLTypeUtil.unwrapAll;
 import static graphql.util.FpKit.filterSet;
 import static graphql.util.FpKit.groupingBy;
 import static graphql.util.FpKit.intersection;
+import static java.util.Collections.max;
 import static java.util.Collections.singleton;
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toCollection;
@@ -286,13 +287,36 @@ public class ExecutableNormalizedOperationFactory {
                                                                                     OperationDefinition operationDefinition,
                                                                                     Map<String, FragmentDefinition> fragments,
                                                                                     CoercedVariables coercedVariableValues) {
+        return createExecutableNormalizedOperation(graphQLSchema,
+                operationDefinition,
+                fragments,
+                coercedVariableValues,
+                Options.defaultOptions());
+    }
+
+    /**
+     * This will create a runtime representation of the graphql operation that would be executed
+     * in a runtime sense.
+     *
+     * @param graphQLSchema         the schema to be used
+     * @param operationDefinition   the operation to be executed
+     * @param fragments             a set of fragments associated with the operation
+     * @param coercedVariableValues the coerced variables to use
+     *
+     * @return a runtime representation of the graphql operation.
+     */
+    public static ExecutableNormalizedOperation createExecutableNormalizedOperation(GraphQLSchema graphQLSchema,
+                                                                                    OperationDefinition operationDefinition,
+                                                                                    Map<String, FragmentDefinition> fragments,
+                                                                                    CoercedVariables coercedVariableValues,
+                                                                                    Options options) {
         return new ExecutableNormalizedOperationFactoryImpl(
                 graphQLSchema,
                 operationDefinition,
                 fragments,
                 coercedVariableValues,
                 null,
-                Options.defaultOptions()
+                options
         ).createNormalizedQueryImpl();
     }
 
@@ -432,6 +456,7 @@ public class ExecutableNormalizedOperationFactory {
 
             CollectNFResult collectFromOperationResult = collectFromOperation(rootType);
 
+            int maxDepthSeen = 0;
             for (ExecutableNormalizedField topLevel : collectFromOperationResult.children) {
                 ImmutableList<FieldAndAstParent> fieldAndAstParents = collectFromOperationResult.normalizedFieldToAstFields.get(topLevel);
                 MergedField mergedField = newMergedField(fieldAndAstParents);
@@ -441,10 +466,11 @@ public class ExecutableNormalizedOperationFactory {
                 updateFieldToNFMap(topLevel, fieldAndAstParents);
                 updateCoordinatedToNFMap(topLevel);
 
-                buildFieldWithChildren(
+                int depthSeen = buildFieldWithChildren(
                         topLevel,
                         fieldAndAstParents,
                         1);
+                maxDepthSeen = Math.max(maxDepthSeen,depthSeen);
             }
             // getPossibleMergerList
             for (PossibleMerger possibleMerger : possibleMergerList) {
@@ -458,7 +484,8 @@ public class ExecutableNormalizedOperationFactory {
                     fieldToNormalizedField.build(),
                     normalizedFieldToMergedField.build(),
                     normalizedFieldToQueryDirectives.build(),
-                    coordinatesToNormalizedFields.build()
+                    coordinatesToNormalizedFields.build(),
+                    maxDepthSeen
             );
         }
 
@@ -469,15 +496,16 @@ public class ExecutableNormalizedOperationFactory {
             normalizedFieldToMergedField.put(enf, mergedFld);
         }
 
-        private void buildFieldWithChildren(ExecutableNormalizedField executableNormalizedField,
+        private int buildFieldWithChildren(ExecutableNormalizedField executableNormalizedField,
                                             ImmutableList<FieldAndAstParent> fieldAndAstParents,
                                             int curLevel) {
             if (curLevel > this.options.getMaxChildrenDepth()) {
-                throw new AbortExecutionException("Maximum query depth exceeded " + curLevel + " > " + this.options.getMaxChildrenDepth());
+                throw new AbortExecutionException("Maximum query depth exceeded. " + curLevel + " > " + this.options.getMaxChildrenDepth());
             }
 
             CollectNFResult nextLevel = collectFromMergedField(executableNormalizedField, fieldAndAstParents, curLevel + 1);
 
+            int maxDepthSeen = curLevel;
             for (ExecutableNormalizedField childENF : nextLevel.children) {
                 executableNormalizedField.addChild(childENF);
                 ImmutableList<FieldAndAstParent> childFieldAndAstParents = nextLevel.normalizedFieldToAstFields.get(childENF);
@@ -488,10 +516,12 @@ public class ExecutableNormalizedOperationFactory {
                 updateFieldToNFMap(childENF, childFieldAndAstParents);
                 updateCoordinatedToNFMap(childENF);
 
-                buildFieldWithChildren(childENF,
+                int depthSeen = buildFieldWithChildren(childENF,
                         childFieldAndAstParents,
                         curLevel + 1);
+                maxDepthSeen = Math.max(maxDepthSeen,depthSeen);
             }
+            return maxDepthSeen;
         }
 
         private static MergedField newMergedField(ImmutableList<FieldAndAstParent> fieldAndAstParents) {
@@ -613,7 +643,7 @@ public class ExecutableNormalizedOperationFactory {
             ImmutableList<String> objectTypeNames = map(objectTypes, GraphQLObjectType::getName);
             this.fieldCount++;
             if (this.fieldCount > this.options.getMaxFieldsCount()) {
-                throw new AbortExecutionException("Maximum ENF count exceeded " + this.fieldCount + " > " + this.options.getMaxFieldsCount());
+                throw new AbortExecutionException("Maximum field count exceeded. " + this.fieldCount + " > " + this.options.getMaxFieldsCount());
             }
             return ExecutableNormalizedField.newNormalizedField()
                     .alias(field.getAlias())

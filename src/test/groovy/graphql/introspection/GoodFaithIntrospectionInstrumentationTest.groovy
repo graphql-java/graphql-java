@@ -3,6 +3,9 @@ package graphql.introspection
 import graphql.ExecutionInput
 import graphql.ExecutionResult
 import graphql.TestUtil
+import graphql.execution.CoercedVariables
+import graphql.language.Document
+import graphql.normalized.ExecutableNormalizedOperationFactory
 import spock.lang.Specification
 
 class GoodFaithIntrospectionInstrumentationTest extends Specification {
@@ -14,6 +17,18 @@ class GoodFaithIntrospectionInstrumentationTest extends Specification {
     }
     def cleanup() {
         GoodFaithIntrospection.enabledJvmWide(true)
+    }
+
+    def "standard introspection query is inside limits just in general"() {
+
+        when:
+        Document document = TestUtil.toDocument(IntrospectionQuery.INTROSPECTION_QUERY)
+        def eno = ExecutableNormalizedOperationFactory.createExecutableNormalizedOperation(graphql.getGraphQLSchema(),document,
+        "IntrospectionQuery", CoercedVariables.emptyVariables())
+
+        then:
+        eno.getOperationFieldCount() < GoodFaithIntrospection.GOOD_FAITH_MAX_FIELDS_COUNT  // currently 62
+        eno.getOperationDepth() < GoodFaithIntrospection.GOOD_FAITH_MAX_DEPTH_COUNT  // currently 13
     }
 
     def "test asking for introspection in good faith"() {

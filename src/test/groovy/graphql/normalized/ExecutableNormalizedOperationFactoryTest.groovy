@@ -2973,7 +2973,7 @@ fragment personName on Person {
 
         then:
         def e = thrown(AbortExecutionException)
-        e.message == "Maximum ENF count exceeded 2014 > 2013"
+        e.message == "Maximum field count exceeded. 2014 > 2013"
     }
 
     def "small query exceeding fields count"() {
@@ -3001,7 +3001,7 @@ fragment personName on Person {
 
         then:
         def e = thrown(AbortExecutionException)
-        e.message == "Maximum ENF count exceeded 2 > 1"
+        e.message == "Maximum field count exceeded. 2 > 1"
 
 
     }
@@ -3065,9 +3065,46 @@ fragment personName on Person {
 
         then:
         def e = thrown(AbortExecutionException)
-        e.message == "Maximum ENF count exceeded 189 > 188"
+        e.message == "Maximum field count exceeded. 189 > 188"
     }
 
+    def "can capture depth and field count"() {
+        String schema = """
+        type Query {
+            foo: Foo
+        }
+        
+        type Foo {
+            stop : String
+            bar : Bar
+        }
+        
+        type Bar {
+            stop : String
+            foo : Foo
+        }
+        """
+
+        GraphQLSchema graphQLSchema = TestUtil.schema(schema)
+
+        String query = "{ foo { bar { foo { bar { foo { stop bar { stop }}}}}}}"
+
+        assertValidQuery(graphQLSchema, query)
+
+        Document document = TestUtil.parseQuery(query)
+
+        when:
+        def result = ExecutableNormalizedOperationFactory.createExecutableNormalizedOperationWithRawVariables(
+                graphQLSchema,
+                document,
+                null,
+                RawVariables.emptyVariables()
+                )
+
+        then:
+        result.getOperationDepth() == 7
+        result.getOperationFieldCount() == 8
+    }
 
     private static ExecutableNormalizedOperation localCreateExecutableNormalizedOperation(
             GraphQLSchema graphQLSchema,
