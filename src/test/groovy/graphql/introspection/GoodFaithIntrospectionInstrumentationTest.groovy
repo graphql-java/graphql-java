@@ -69,12 +69,25 @@ class GoodFaithIntrospectionInstrumentationTest extends Specification {
                 alias1 :  __type(name : "t1") { name }
             }
         """                                                                                           | _
+        // a case for __type with aliases
+        """ query badActor {
+                a1: __type(name : "t") { name }
+                a2 :  __type(name : "t1") { name }
+            }
+        """                                                | _
         // a case for schema repeated - dont ask twice
         """ query badActor {
                 __schema { types { name} }
                 alias1 : __schema { types { name} }
             }
         """                                                                                           | _
+        // a case for used aliases
+        """ query badActor {
+                a1: __schema { types { name} }
+                a2 : __schema { types { name} }
+            }
+        """                                     | _
+
     }
 
     def "mixed general queries and introspections will be stopped anyway"() {
