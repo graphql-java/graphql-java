@@ -80,23 +80,27 @@ public class ExecutableNormalizedOperationFactory {
         private final GraphQLContext graphQLContext;
         private final Locale locale;
         private final int maxChildrenDepth;
+        private final int maxFieldsCount;
 
         private final boolean deferSupport;
 
         private Options(GraphQLContext graphQLContext,
                         Locale locale,
                         int maxChildrenDepth,
+                        int maxFieldsCount,
                         boolean deferSupport) {
             this.graphQLContext = graphQLContext;
             this.locale = locale;
             this.maxChildrenDepth = maxChildrenDepth;
             this.deferSupport = deferSupport;
+            this.maxFieldsCount = maxFieldsCount;
         }
 
         public static Options defaultOptions() {
             return new Options(
                     GraphQLContext.getDefault(),
                     Locale.getDefault(),
+                    Integer.MAX_VALUE,
                     Integer.MAX_VALUE,
                     false);
         }
@@ -111,7 +115,7 @@ public class ExecutableNormalizedOperationFactory {
          * @return new options object to use
          */
         public Options locale(Locale locale) {
-            return new Options(this.graphQLContext, locale, this.maxChildrenDepth, this.deferSupport);
+            return new Options(this.graphQLContext, locale, this.maxChildrenDepth, this.maxFieldsCount, this.deferSupport);
         }
 
         /**
@@ -124,7 +128,7 @@ public class ExecutableNormalizedOperationFactory {
          * @return new options object to use
          */
         public Options graphQLContext(GraphQLContext graphQLContext) {
-            return new Options(graphQLContext, this.locale, this.maxChildrenDepth, this.deferSupport);
+            return new Options(graphQLContext, this.locale, this.maxChildrenDepth, this.maxFieldsCount, this.deferSupport);
         }
 
         /**
@@ -136,7 +140,19 @@ public class ExecutableNormalizedOperationFactory {
          * @return new options object to use
          */
         public Options maxChildrenDepth(int maxChildrenDepth) {
-            return new Options(this.graphQLContext, this.locale, maxChildrenDepth, this.deferSupport);
+            return new Options(this.graphQLContext, this.locale, maxChildrenDepth, this.maxFieldsCount, this.deferSupport);
+        }
+
+        /**
+         * Controls the maximum number of ENFs created. Can be used to prevent
+         * against malicious operations.
+         *
+         * @param maxFieldsCount the max number of ENFs created
+         *
+         * @return new options object to use
+         */
+        public Options maxFieldsCount(int maxFieldsCount) {
+            return new Options(this.graphQLContext, this.locale, maxChildrenDepth, maxFieldsCount, this.deferSupport);
         }
 
         /**
@@ -148,7 +164,7 @@ public class ExecutableNormalizedOperationFactory {
          */
         @ExperimentalApi
         public Options deferSupport(boolean deferSupport) {
-            return new Options(this.graphQLContext, this.locale, this.maxChildrenDepth, deferSupport);
+            return new Options(this.graphQLContext, this.locale, this.maxChildrenDepth, this.maxFieldsCount, deferSupport);
         }
 
         /**
@@ -176,6 +192,10 @@ public class ExecutableNormalizedOperationFactory {
          */
         public int getMaxChildrenDepth() {
             return maxChildrenDepth;
+        }
+
+        public int getMaxFieldsCount() {
+            return maxFieldsCount;
         }
 
         /**
@@ -386,6 +406,7 @@ public class ExecutableNormalizedOperationFactory {
         private final ImmutableMap.Builder<ExecutableNormalizedField, MergedField> normalizedFieldToMergedField = ImmutableMap.builder();
         private final ImmutableMap.Builder<ExecutableNormalizedField, QueryDirectives> normalizedFieldToQueryDirectives = ImmutableMap.builder();
         private final ImmutableListMultimap.Builder<FieldCoordinates, ExecutableNormalizedField> coordinatesToNormalizedFields = ImmutableListMultimap.builder();
+        private int fieldCount = 0;
 
         private ExecutableNormalizedOperationFactoryImpl(
                 GraphQLSchema graphQLSchema,
@@ -590,7 +611,10 @@ public class ExecutableNormalizedOperationFactory {
                 normalizedArgumentValues = ValuesResolver.getNormalizedArgumentValues(fieldDefinition.getArguments(), field.getArguments(), this.normalizedVariableValues);
             }
             ImmutableList<String> objectTypeNames = map(objectTypes, GraphQLObjectType::getName);
-
+            this.fieldCount++;
+            if (this.fieldCount > this.options.getMaxFieldsCount()) {
+                throw new AbortExecutionException("Maximum ENF count exceeded " + this.fieldCount + " > " + this.options.getMaxFieldsCount());
+            }
             return ExecutableNormalizedField.newNormalizedField()
                     .alias(field.getAlias())
                     .resolvedArguments(argumentValues)
@@ -763,8 +787,8 @@ public class ExecutableNormalizedOperationFactory {
 
         private NormalizedDeferredExecution buildDeferredExecution(
                 List<Directive> directives,
-                Set<GraphQLObjectType> newPossibleObjects)  {
-            if(!options.deferSupport) {
+                Set<GraphQLObjectType> newPossibleObjects) {
+            if (!options.deferSupport) {
                 return null;
             }
 
