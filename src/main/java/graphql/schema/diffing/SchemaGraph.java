@@ -233,31 +233,31 @@ public class SchemaGraph {
 
     public Vertex getFieldOrDirectiveForArgument(Vertex argument) {
         List<Vertex> adjacentVertices = getAdjacentVerticesInverse(argument);
-        assertTrue(adjacentVertices.size() == 1, () -> format("No field or directive found for %s", argument));
+        assertTrue(adjacentVertices.size() == 1, "No field or directive found for %s", argument);
         return adjacentVertices.get(0);
     }
 
     public Vertex getFieldsContainerForField(Vertex field) {
         List<Vertex> adjacentVertices = getAdjacentVerticesInverse(field);
-        assertTrue(adjacentVertices.size() == 1, () -> format("No fields container found for %s", field));
+        assertTrue(adjacentVertices.size() == 1, "No fields container found for %s", field);
         return adjacentVertices.get(0);
     }
 
     public Vertex getInputObjectForInputField(Vertex inputField) {
         List<Vertex> adjacentVertices = this.getAdjacentVerticesInverse(inputField);
-        assertTrue(adjacentVertices.size() == 1, () -> format("No input object found for %s", inputField));
+        assertTrue(adjacentVertices.size() == 1, "No input object found for %s", inputField);
         return adjacentVertices.get(0);
     }
 
     public Vertex getAppliedDirectiveForAppliedArgument(Vertex appliedArgument) {
         List<Vertex> adjacentVertices = this.getAdjacentVerticesInverse(appliedArgument);
-        assertTrue(adjacentVertices.size() == 1, () -> format("No applied directive found for %s", appliedArgument));
+        assertTrue(adjacentVertices.size() == 1, "No applied directive found for %s", appliedArgument);
         return adjacentVertices.get(0);
     }
 
     public Vertex getAppliedDirectiveContainerForAppliedDirective(Vertex appliedDirective) {
         List<Vertex> adjacentVertices = this.getAdjacentVerticesInverse(appliedDirective);
-        assertTrue(adjacentVertices.size() == 1, () -> format("No applied directive container found for %s", appliedDirective));
+        assertTrue(adjacentVertices.size() == 1, "No applied directive container found for %s", appliedDirective);
         return adjacentVertices.get(0);
     }
 
@@ -269,19 +269,19 @@ public class SchemaGraph {
      */
     public Vertex getSingleAdjacentInverseVertex(Vertex input) {
         Collection<Edge> adjacentVertices = this.getAdjacentEdgesInverseNonCopy(input);
-        assertTrue(adjacentVertices.size() == 1, () -> format("No parent found for %s", input));
+        assertTrue(adjacentVertices.size() == 1, "No parent found for %s", input);
         return adjacentVertices.iterator().next().getFrom();
     }
 
     public int getAppliedDirectiveIndex(Vertex appliedDirective) {
         List<Edge> adjacentEdges = this.getAdjacentEdgesInverseCopied(appliedDirective);
-        assertTrue(adjacentEdges.size() == 1, () -> format("No applied directive container found for %s", appliedDirective));
+        assertTrue(adjacentEdges.size() == 1, "No applied directive container found for %s", appliedDirective);
         return Integer.parseInt(adjacentEdges.get(0).getLabel());
     }
 
     public Vertex getEnumForEnumValue(Vertex enumValue) {
         List<Vertex> adjacentVertices = this.getAdjacentVerticesInverse(enumValue);
-        assertTrue(adjacentVertices.size() == 1, () -> format("No enum found for %s", enumValue));
+        assertTrue(adjacentVertices.size() == 1, "No enum found for %s", enumValue);
         return adjacentVertices.get(0);
     }
 

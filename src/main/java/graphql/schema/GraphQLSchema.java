@@ -248,7 +248,7 @@ public class GraphQLSchema {
     public <T extends GraphQLType> List<T> getTypes(Collection<String> typeNames) {
         ImmutableList.Builder<T> builder = ImmutableList.builder();
         for (String typeName : typeNames) {
-            builder.add((T) assertNotNull(typeMap.get(typeName), () -> String.format("No type found for name %s", typeName)));
+            builder.add((T) assertNotNull(typeMap.get(typeName), "No type found for name %s", typeName));
         }
         return builder.build();
     }
@@ -292,7 +292,7 @@ public class GraphQLSchema {
         GraphQLType graphQLType = typeMap.get(typeName);
         if (graphQLType != null) {
             assertTrue(graphQLType instanceof GraphQLObjectType,
-                    () -> String.format("You have asked for named object type '%s' but it's not an object type but rather a '%s'", typeName, graphQLType.getClass().getName()));
+                    "You have asked for named object type '%s' but it's not an object type but rather a '%s'", typeName, graphQLType.getClass().getName());
         }
         return (GraphQLObjectType) graphQLType;
     }
@@ -323,7 +323,7 @@ public class GraphQLSchema {
         GraphQLType graphQLType = getType(typeName);
         if (graphQLType != null) {
             assertTrue(graphQLType instanceof GraphQLFieldsContainer,
-                    () -> String.format("You have asked for named type '%s' but it's not GraphQLFieldsContainer but rather a '%s'", typeName, graphQLType.getClass().getName()));
+                    "You have asked for named type '%s' but it's not GraphQLFieldsContainer but rather a '%s'", typeName, graphQLType.getClass().getName());
             return ((GraphQLFieldsContainer) graphQLType).getFieldDefinition(fieldName);
         }
         return null;

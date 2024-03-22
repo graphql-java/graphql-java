@@ -49,7 +49,7 @@ class ValuesResolverLegacy {
      */
     @VisibleForTesting
     static Value<?> valueToLiteralLegacy(Object value, GraphQLType type, GraphQLContext graphqlContext, Locale locale) {
-        assertTrue(!(value instanceof Value), () -> "Unexpected literal " + value);
+        assertTrue(!(value instanceof Value), "Unexpected literal %s", value);
         if (value == null) {
             return null;
         }

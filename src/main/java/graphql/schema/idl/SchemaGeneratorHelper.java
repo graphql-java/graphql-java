@@ -401,7 +401,7 @@ public class SchemaGeneratorHelper {
         if (enumValuesProvider != null) {
             value = enumValuesProvider.getValue(evd.getName());
             assertNotNull(value,
-                    () -> format("EnumValuesProvider for %s returned null for %s", typeDefinition.getName(), evd.getName()));
+                    "EnumValuesProvider for %s returned null for %s", typeDefinition.getName(), evd.getName());
         } else {
             value = evd.getName();
         }
