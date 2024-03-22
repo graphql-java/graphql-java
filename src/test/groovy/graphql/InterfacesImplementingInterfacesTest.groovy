@@ -893,8 +893,10 @@ class InterfacesImplementingInterfacesTest extends Specification {
         given:
         def graphQLSchema = createComplexSchema()
 
+        GraphQL graphQL = GraphQL.newGraphQL(graphQLSchema).build()
+
         when:
-        def result = GraphQL.newGraphQL(graphQLSchema).build().execute("""
+        String query = """
             { 
                 nodeType: __type(name: "Node") {
                     possibleTypes {
@@ -902,7 +904,20 @@ class InterfacesImplementingInterfacesTest extends Specification {
                         name
                     }
                 }
-                resourceType: __type(name: "Resource") {
+            }
+        """
+        def result = graphQL.execute(query)
+
+        then:
+        !result.errors
+        result.data == [
+                nodeType: [possibleTypes: [[kind: 'OBJECT', name: 'File'], [kind: 'OBJECT', name: 'Image']]],
+        ]
+
+        when:
+        query = """         
+        {       
+            resourceType: __type(name: "Resource") {
                     possibleTypes {
                         kind
                         name
@@ -911,22 +926,35 @@ class InterfacesImplementingInterfacesTest extends Specification {
                         kind
                         name
                     }
-                } 
-                imageType: __type(name: "Image") {
+                }
+        } 
+        """
+        result = graphQL.execute(query)
+
+        then:
+        !result.errors
+        result.data == [
+                resourceType: [possibleTypes: [[kind: 'OBJECT', name: 'File'], [kind: 'OBJECT', name: 'Image']], interfaces: [[kind: 'INTERFACE', name: 'Node']]]
+        ]
+
+        when:
+
+        query = """   
+        {             
+            imageType: __type(name: "Image") {
                     interfaces {
                         kind
                         name
                     }
                 }
-            }
-        """)
+        }
+        """
+        result = graphQL.execute(query)
 
         then:
         !result.errors
         result.data == [
-                nodeType    : [possibleTypes: [[kind: 'OBJECT', name: 'File'], [kind: 'OBJECT', name: 'Image']]],
                 imageType   : [interfaces: [[kind: 'INTERFACE', name: 'Resource'], [kind: 'INTERFACE', name: 'Node']]],
-                resourceType: [possibleTypes: [[kind: 'OBJECT', name: 'File'], [kind: 'OBJECT', name: 'Image']], interfaces: [[kind: 'INTERFACE', name: 'Node']]]
         ]
     }
 
