@@ -431,6 +431,7 @@ public class ExecutableNormalizedOperationFactory {
         private final ImmutableMap.Builder<ExecutableNormalizedField, QueryDirectives> normalizedFieldToQueryDirectives = ImmutableMap.builder();
         private final ImmutableListMultimap.Builder<FieldCoordinates, ExecutableNormalizedField> coordinatesToNormalizedFields = ImmutableListMultimap.builder();
         private int fieldCount = 0;
+        private int maxDepthSeen = 0;
 
         private ExecutableNormalizedOperationFactoryImpl(
                 GraphQLSchema graphQLSchema,
@@ -456,7 +457,6 @@ public class ExecutableNormalizedOperationFactory {
 
             CollectNFResult collectFromOperationResult = collectFromOperation(rootType);
 
-            int maxDepthSeen = 0;
             for (ExecutableNormalizedField topLevel : collectFromOperationResult.children) {
                 ImmutableList<FieldAndAstParent> fieldAndAstParents = collectFromOperationResult.normalizedFieldToAstFields.get(topLevel);
                 MergedField mergedField = newMergedField(fieldAndAstParents);
@@ -485,6 +485,7 @@ public class ExecutableNormalizedOperationFactory {
                     normalizedFieldToMergedField.build(),
                     normalizedFieldToQueryDirectives.build(),
                     coordinatesToNormalizedFields.build(),
+                    fieldCount,
                     maxDepthSeen
             );
         }
@@ -629,6 +630,11 @@ public class ExecutableNormalizedOperationFactory {
         private ExecutableNormalizedField createNF(CollectedFieldGroup collectedFieldGroup,
                                                    int level,
                                                    ExecutableNormalizedField parent) {
+
+            this.fieldCount++;
+            if (this.fieldCount > this.options.getMaxFieldsCount()) {
+                throw new AbortExecutionException("Maximum field count exceeded. " + this.fieldCount + " > " + this.options.getMaxFieldsCount());
+            }
             Field field;
             Set<GraphQLObjectType> objectTypes = collectedFieldGroup.objectTypes;
             field = collectedFieldGroup.fields.iterator().next().field;
@@ -641,10 +647,6 @@ public class ExecutableNormalizedOperationFactory {
                 normalizedArgumentValues = ValuesResolver.getNormalizedArgumentValues(fieldDefinition.getArguments(), field.getArguments(), this.normalizedVariableValues);
             }
             ImmutableList<String> objectTypeNames = map(objectTypes, GraphQLObjectType::getName);
-            this.fieldCount++;
-            if (this.fieldCount > this.options.getMaxFieldsCount()) {
-                throw new AbortExecutionException("Maximum field count exceeded. " + this.fieldCount + " > " + this.options.getMaxFieldsCount());
-            }
             return ExecutableNormalizedField.newNormalizedField()
                     .alias(field.getAlias())
                     .resolvedArguments(argumentValues)

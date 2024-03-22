@@ -42,6 +42,7 @@ public class ExecutableNormalizedOperation {
             Map<ExecutableNormalizedField, MergedField> normalizedFieldToMergedField,
             Map<ExecutableNormalizedField, QueryDirectives> normalizedFieldToQueryDirectives,
             ImmutableListMultimap<FieldCoordinates, ExecutableNormalizedField> coordinatesToNormalizedFields,
+            int operationFieldCount,
             int operationDepth) {
         this.operation = operation;
         this.operationName = operationName;
@@ -50,7 +51,7 @@ public class ExecutableNormalizedOperation {
         this.normalizedFieldToMergedField = normalizedFieldToMergedField;
         this.normalizedFieldToQueryDirectives = normalizedFieldToQueryDirectives;
         this.coordinatesToNormalizedFields = coordinatesToNormalizedFields;
-        this.operationFieldCount = fieldToNormalizedField.keySet().size();
+        this.operationFieldCount = operationFieldCount;
         this.operationDepth = operationDepth;
     }
 
