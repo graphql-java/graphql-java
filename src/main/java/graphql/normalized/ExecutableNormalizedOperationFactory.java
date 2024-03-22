@@ -500,9 +500,7 @@ public class ExecutableNormalizedOperationFactory {
         private int buildFieldWithChildren(ExecutableNormalizedField executableNormalizedField,
                                             ImmutableList<FieldAndAstParent> fieldAndAstParents,
                                             int curLevel) {
-            if (curLevel > this.options.getMaxChildrenDepth()) {
-                throw new AbortExecutionException("Maximum query depth exceeded. " + curLevel + " > " + this.options.getMaxChildrenDepth());
-            }
+            checkMaxDepthExceeded(curLevel);
 
             CollectNFResult nextLevel = collectFromMergedField(executableNormalizedField, fieldAndAstParents, curLevel + 1);
 
@@ -521,8 +519,16 @@ public class ExecutableNormalizedOperationFactory {
                         childFieldAndAstParents,
                         curLevel + 1);
                 maxDepthSeen = Math.max(maxDepthSeen,depthSeen);
+
+                checkMaxDepthExceeded(maxDepthSeen);
             }
             return maxDepthSeen;
+        }
+
+        private void checkMaxDepthExceeded(int depthSeen) {
+            if (depthSeen > this.options.getMaxChildrenDepth()) {
+                throw new AbortExecutionException("Maximum query depth exceeded. " + depthSeen + " > " + this.options.getMaxChildrenDepth());
+            }
         }
 
         private static MergedField newMergedField(ImmutableList<FieldAndAstParent> fieldAndAstParents) {
