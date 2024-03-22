@@ -3,6 +3,10 @@ package graphql.introspection
 import graphql.ExecutionInput
 import graphql.ExecutionResult
 import graphql.TestUtil
+import graphql.execution.AbortExecutionException
+import graphql.execution.CoercedVariables
+import graphql.language.Document
+import graphql.normalized.ExecutableNormalizedOperationFactory
 import spock.lang.Specification
 
 class GoodFaithIntrospectionInstrumentationTest extends Specification {
@@ -12,8 +16,21 @@ class GoodFaithIntrospectionInstrumentationTest extends Specification {
     def setup() {
         GoodFaithIntrospection.enabledJvmWide(true)
     }
+
     def cleanup() {
         GoodFaithIntrospection.enabledJvmWide(true)
+    }
+
+    def "standard introspection query is inside limits just in general"() {
+
+        when:
+        Document document = TestUtil.toDocument(IntrospectionQuery.INTROSPECTION_QUERY)
+        def eno = ExecutableNormalizedOperationFactory.createExecutableNormalizedOperation(graphql.getGraphQLSchema(), document,
+                "IntrospectionQuery", CoercedVariables.emptyVariables())
+
+        then:
+        eno.getOperationFieldCount() < GoodFaithIntrospection.GOOD_FAITH_MAX_FIELDS_COUNT  // currently 189
+        eno.getOperationDepth() < GoodFaithIntrospection.GOOD_FAITH_MAX_DEPTH_COUNT  // currently 13
     }
 
     def "test asking for introspection in good faith"() {
@@ -69,12 +86,25 @@ class GoodFaithIntrospectionInstrumentationTest extends Specification {
                 alias1 :  __type(name : "t1") { name }
             }
         """                                                                                           | _
+        // a case for __type with aliases
+        """ query badActor {
+                a1: __type(name : "t") { name }
+                a2 :  __type(name : "t1") { name }
+            }
+        """                                                                                           | _
         // a case for schema repeated - dont ask twice
         """ query badActor {
                 __schema { types { name} }
                 alias1 : __schema { types { name} }
             }
         """                                                                                           | _
+        // a case for used aliases
+        """ query badActor {
+                a1: __schema { types { name} }
+                a2 : __schema { types { name} }
+            }
+        """                                                                                           | _
+
     }
 
     def "mixed general queries and introspections will be stopped anyway"() {
@@ -132,5 +162,71 @@ class GoodFaithIntrospectionInstrumentationTest extends Specification {
         then:
         !er.errors.isEmpty()
         er.errors[0] instanceof GoodFaithIntrospection.BadFaithIntrospectionError
+    }
+
+    def "can stop deep queries"() {
+
+        when:
+        def query = createDeepQuery(depth)
+        def then = System.currentTimeMillis()
+        ExecutionResult er = graphql.execute(query)
+        def ms = System.currentTimeMillis()-then
+
+        then:
+        !er.errors.isEmpty()
+        er.errors[0].class == targetError
+        er.data == null // it stopped hard - it did not continue to normal business
+        println "Took " + ms + "ms"
+
+        where:
+        depth | targetError
+        2     | GoodFaithIntrospection.BadFaithIntrospectionError.class
+        10    | AbortExecutionException.class
+        15    | AbortExecutionException.class
+        20    | AbortExecutionException.class
+        25    | AbortExecutionException.class
+        50    | AbortExecutionException.class
+        100    | AbortExecutionException.class
+    }
+
+    String createDeepQuery(int depth = 25) {
+        def result = """
+query test {
+  __schema {
+    types {
+      ...F1
+    }
+  }
+}
+"""
+        for (int i = 1; i < depth; i++) {
+            result += """
+        fragment F$i on __Type {
+          fields {
+            type {
+              ...F${i + 1}
+            }
+          }
+
+  ofType {
+    ...F${i + 1}
+  }
+}
+
+
+"""
+        }
+        result += """
+        fragment F$depth on __Type {
+          fields {
+            type {
+name
+            }
+          }
+}
+
+
+"""
+        return result
     }
 }
