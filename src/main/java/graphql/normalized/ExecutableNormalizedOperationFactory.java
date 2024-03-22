@@ -70,17 +70,13 @@ public class ExecutableNormalizedOperationFactory {
         private final int maxChildrenDepth;
         private final int maxFieldsCount;
 
-        private final boolean deferSupport;
-
         private Options(GraphQLContext graphQLContext,
                         Locale locale,
                         int maxChildrenDepth,
-                        int maxFieldsCount,
-                        boolean deferSupport) {
+                        int maxFieldsCount) {
             this.graphQLContext = graphQLContext;
             this.locale = locale;
             this.maxChildrenDepth = maxChildrenDepth;
-            this.deferSupport = deferSupport;
             this.maxFieldsCount = maxFieldsCount;
         }
 
@@ -89,8 +85,7 @@ public class ExecutableNormalizedOperationFactory {
                     GraphQLContext.getDefault(),
                     Locale.getDefault(),
                     Integer.MAX_VALUE,
-                    Integer.MAX_VALUE,
-                    false);
+                    Integer.MAX_VALUE);
         }
 
         /**
@@ -103,7 +98,7 @@ public class ExecutableNormalizedOperationFactory {
          * @return new options object to use
          */
         public Options locale(Locale locale) {
-            return new Options(this.graphQLContext, locale, this.maxChildrenDepth, this.maxFieldsCount, this.deferSupport);
+            return new Options(this.graphQLContext, locale, this.maxChildrenDepth, this.maxFieldsCount);
         }
 
         /**
@@ -116,7 +111,7 @@ public class ExecutableNormalizedOperationFactory {
          * @return new options object to use
          */
         public Options graphQLContext(GraphQLContext graphQLContext) {
-            return new Options(graphQLContext, this.locale, this.maxChildrenDepth, this.maxFieldsCount, this.deferSupport);
+            return new Options(graphQLContext, this.locale, this.maxChildrenDepth, this.maxFieldsCount);
         }
 
         /**
@@ -128,7 +123,7 @@ public class ExecutableNormalizedOperationFactory {
          * @return new options object to use
          */
         public Options maxChildrenDepth(int maxChildrenDepth) {
-            return new Options(this.graphQLContext, this.locale, maxChildrenDepth, this.maxFieldsCount, this.deferSupport);
+            return new Options(this.graphQLContext, this.locale, maxChildrenDepth, this.maxFieldsCount);
         }
 
         /**
@@ -140,7 +135,7 @@ public class ExecutableNormalizedOperationFactory {
          * @return new options object to use
          */
         public Options maxFieldsCount(int maxFieldsCount) {
-            return new Options(this.graphQLContext, this.locale, maxChildrenDepth, maxFieldsCount, this.deferSupport);
+            return new Options(this.graphQLContext, this.locale, maxChildrenDepth, maxFieldsCount);
         }
 
         /**
