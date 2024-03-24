@@ -85,6 +85,20 @@ public class Assert {
         throw new AssertException("condition expected to be true");
     }
 
+    public static void assertTrue(boolean condition, String constantMsg) {
+        if (condition) {
+            return;
+        }
+        throwAssert(constantMsg);
+    }
+
+    public static void assertTrue(boolean condition, String msgFmt, Object arg1) {
+        if (condition) {
+            return;
+        }
+        throwAssert(msgFmt, arg1);
+    }
+
     public static void assertFalse(boolean condition, Supplier<String> msg) {
         if (!condition) {
             return;
@@ -117,4 +131,7 @@ public class Assert {
         throw new AssertException(String.format(invalidNameErrorMessage, name));
     }
 
+    private static <T> T throwAssert(String format, Object... args) {
+        throw new AssertException(format(format, args));
+    }
 }
