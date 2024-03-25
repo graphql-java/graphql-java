@@ -26,6 +26,7 @@ public class ConditionalNodes {
                                  GraphQLContext graphQLContext
     ) {
         return shouldInclude(variables, element.getDirectives());
+        // this was backported and additional code which allowed for custom Should include code was removed
     }
 
 
