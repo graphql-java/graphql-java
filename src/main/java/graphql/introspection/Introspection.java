@@ -115,20 +115,20 @@ public class Introspection {
      */
     public static Optional<ExecutionResult> isIntrospectionSensible(MergedSelectionSet mergedSelectionSet, ExecutionContext executionContext) {
         GraphQLContext graphQLContext = executionContext.getGraphQLContext();
-        MergedField schemaField = mergedSelectionSet.getSubField(SchemaMetaFieldDef.getName());
-        if (schemaField != null) {
-            if (!isIntrospectionEnabled(graphQLContext)) {
-                return mkDisabledError(schemaField);
+
+        boolean isIntrospection = false;
+        for (String key : mergedSelectionSet.getKeys()) {
+            String fieldName = mergedSelectionSet.getSubField(key).getName();
+            if (fieldName.equals(SchemaMetaFieldDef.getName())
+                    || fieldName.equals(TypeMetaFieldDef.getName())) {
+                if (!isIntrospectionEnabled(graphQLContext)) {
+                    return mkDisabledError(mergedSelectionSet.getSubField(key));
+                }
+                isIntrospection = true;
+                break;
             }
         }
-        MergedField typeField = mergedSelectionSet.getSubField(TypeMetaFieldDef.getName());
-        if (typeField != null) {
-            if (!isIntrospectionEnabled(graphQLContext)) {
-                return mkDisabledError(typeField);
-            }
-        }
-        if (schemaField != null || typeField != null)
-        {
+        if (isIntrospection) {
             return GoodFaithIntrospection.checkIntrospection(executionContext);
         }
         return Optional.empty();
