@@ -3059,12 +3059,14 @@ fragment personName on Person {
                 null,
                 RawVariables.emptyVariables(),
                 // This limit is set to 188 in version 21+
+                // The new built-in directive @oneOf adds one node to introspection in version 21+
                 ExecutableNormalizedOperationFactory.Options.defaultOptions().maxFieldsCount(187))
         println result.normalizedFieldToMergedField.size()
 
         then:
         def e = thrown(AbortExecutionException)
         // This line is different in version 21+, it is "Maximum field count exceeded. 189 > 188"
+        // The new built-in directive @oneOf adds one node to introspection in version 21+
         e.message == "Maximum field count exceeded. 188 > 187"
     }
 
