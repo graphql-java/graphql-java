@@ -11,7 +11,6 @@ import graphql.language.NodeUtil;
 import graphql.schema.GraphQLSchema;
 
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 
 import static graphql.Directives.IncludeDirective;
@@ -26,56 +25,11 @@ public class ConditionalNodes {
                                  GraphQLSchema graphQLSchema,
                                  GraphQLContext graphQLContext
     ) {
-        //
-        // call the base @include / @skip first
-        if (!shouldInclude(variables, element.getDirectives())) {
-            return false;
-        }
-        //
-        // if they have declared a decision callback, then we will use it but we expect this to be mostly
-        // empty and hence the cost is a map lookup.
-        if (graphQLContext != null) {
-            ConditionalNodeDecision conditionalDecision = graphQLContext.get(ConditionalNodeDecision.class);
-            if (conditionalDecision != null) {
-                return customShouldInclude(variables, element, graphQLSchema, graphQLContext, conditionalDecision);
-            }
-        }
-        // if no one says otherwise, the node is considered included
-        return true;
-    }
-
-    private boolean customShouldInclude(Map<String, Object> variables,
-                                        DirectivesContainer<?> element,
-                                        GraphQLSchema graphQLSchema,
-                                        GraphQLContext graphQLContext,
-                                        ConditionalNodeDecision conditionalDecision
-    ) {
-        CoercedVariables coercedVariables = CoercedVariables.of(variables);
-        return conditionalDecision.shouldInclude(new ConditionalNodeDecisionEnvironment() {
-            @Override
-            public DirectivesContainer<?> getDirectivesContainer() {
-                return element;
-            }
-
-            @Override
-            public CoercedVariables getVariables() {
-                return coercedVariables;
-            }
-
-            @Override
-            public GraphQLSchema getGraphQlSchema() {
-                return graphQLSchema;
-            }
-
-            @Override
-            public GraphQLContext getGraphQLContext() {
-                return graphQLContext;
-            }
-        });
+        return shouldInclude(variables, element.getDirectives());
     }
 
 
-    private boolean shouldInclude(Map<String, Object> variables, List<Directive> directives) {
+    public boolean shouldInclude(Map<String, Object> variables, List<Directive> directives) {
         // shortcut on no directives
         if (directives.isEmpty()) {
             return true;
@@ -88,7 +42,8 @@ public class ConditionalNodes {
         return getDirectiveResult(variables, directives, IncludeDirective.getName(), true);
     }
 
-    private boolean getDirectiveResult(Map<String, Object> variables, List<Directive> directives, String directiveName, boolean defaultValue) {
+    private boolean getDirectiveResult(Map<String, Object> variables, List<Directive> directives, String
+            directiveName, boolean defaultValue) {
         Directive foundDirective = NodeUtil.findNodeByName(directives, directiveName);
         if (foundDirective != null) {
             Map<String, Object> argumentValues = ValuesResolver.getArgumentValues(SkipDirective.getArguments(), foundDirective.getArguments(), CoercedVariables.of(variables));
