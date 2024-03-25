@@ -26,54 +26,9 @@ public class ConditionalNodes {
                                  GraphQLSchema graphQLSchema,
                                  GraphQLContext graphQLContext
     ) {
-        //
-        // call the base @include / @skip first
-        if (!shouldInclude(variables, element.getDirectives())) {
-            return false;
-        }
-        //
-        // if they have declared a decision callback, then we will use it but we expect this to be mostly
-        // empty and hence the cost is a map lookup.
-        if (graphQLContext != null) {
-            ConditionalNodeDecision conditionalDecision = graphQLContext.get(ConditionalNodeDecision.class);
-            if (conditionalDecision != null) {
-                return customShouldInclude(variables, element, graphQLSchema, graphQLContext, conditionalDecision);
-            }
-        }
-        // if no one says otherwise, the node is considered included
-        return true;
+        return shouldInclude(variables, element.getDirectives());
+        // this was backported and additional code which allowed for custom Should include code was removed
     }
-
-    private boolean customShouldInclude(Map<String, Object> variables,
-                                        DirectivesContainer<?> element,
-                                        GraphQLSchema graphQLSchema,
-                                        GraphQLContext graphQLContext,
-                                        ConditionalNodeDecision conditionalDecision
-    ) {
-        CoercedVariables coercedVariables = CoercedVariables.of(variables);
-        return conditionalDecision.shouldInclude(new ConditionalNodeDecisionEnvironment() {
-            @Override
-            public DirectivesContainer<?> getDirectivesContainer() {
-                return element;
-            }
-
-            @Override
-            public CoercedVariables getVariables() {
-                return coercedVariables;
-            }
-
-            @Override
-            public GraphQLSchema getGraphQlSchema() {
-                return graphQLSchema;
-            }
-
-            @Override
-            public GraphQLContext getGraphQLContext() {
-                return graphQLContext;
-            }
-        });
-    }
-
 
     private boolean shouldInclude(Map<String, Object> variables, List<Directive> directives) {
         // shortcut on no directives
