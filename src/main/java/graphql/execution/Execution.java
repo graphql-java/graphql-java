@@ -110,7 +110,7 @@ public class Execution {
         executionContext.getGraphQLContext().put(ResultNodesInfo.RESULT_NODES_INFO, executionContext.getResultNodesInfo());
 
         InstrumentationExecutionParameters parameters = new InstrumentationExecutionParameters(
-                executionInput, graphQLSchema, instrumentationState
+                executionInput, graphQLSchema
         );
         executionContext = instrumentation.instrumentExecutionContext(executionContext, parameters, instrumentationState);
         return executeOperation(executionContext, executionInput.getRoot(), executionContext.getOperationDefinition());

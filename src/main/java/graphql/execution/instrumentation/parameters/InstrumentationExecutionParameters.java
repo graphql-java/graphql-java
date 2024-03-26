@@ -21,33 +21,18 @@ public class InstrumentationExecutionParameters {
     private final Object context;
     private final GraphQLContext graphQLContext;
     private final Map<String, Object> variables;
-    private final InstrumentationState instrumentationState;
     private final GraphQLSchema schema;
 
-    public InstrumentationExecutionParameters(ExecutionInput executionInput, GraphQLSchema schema, InstrumentationState instrumentationState) {
+    public InstrumentationExecutionParameters(ExecutionInput executionInput, GraphQLSchema schema) {
         this.executionInput = executionInput;
         this.query = executionInput.getQuery();
         this.operation = executionInput.getOperationName();
         this.context = executionInput.getContext();
         this.graphQLContext = executionInput.getGraphQLContext();
         this.variables = executionInput.getVariables() != null ? executionInput.getVariables() : ImmutableKit.emptyMap();
-        this.instrumentationState = instrumentationState;
         this.schema = schema;
     }
 
-    /**
-     * Returns a cloned parameters object with the new state
-     *
-     * @param instrumentationState the new state for this parameters object
-     *
-     * @return a new parameters object with the new state
-     *
-     * @deprecated state is now passed in direct to instrumentation methods
-     */
-    @Deprecated(since = "2022-07-26")
-    public InstrumentationExecutionParameters withNewState(InstrumentationState instrumentationState) {
-        return new InstrumentationExecutionParameters(this.getExecutionInput(), this.schema, instrumentationState);
-    }
 
     public ExecutionInput getExecutionInput() {
         return executionInput;
@@ -82,22 +67,6 @@ public class InstrumentationExecutionParameters {
         return variables;
     }
 
-    /**
-     * Previously the instrumentation parameters had access to the state created via {@link Instrumentation#createState(InstrumentationCreateStateParameters)} but now
-     * to save object allocations, the state is passed directly into instrumentation methods
-     *
-     * @param <T> for two
-     *
-     * @return the state created previously during a call to {@link Instrumentation#createState(InstrumentationCreateStateParameters)}
-     *
-     * @deprecated state is now passed in direct to instrumentation methods
-     */
-    @Deprecated(since = "2022-07-26")
-    @SuppressWarnings("TypeParameterUnusedInFormals")
-    public <T extends InstrumentationState> T getInstrumentationState() {
-        //noinspection unchecked
-        return (T) instrumentationState;
-    }
 
     public GraphQLSchema getSchema() {
         return this.schema;
