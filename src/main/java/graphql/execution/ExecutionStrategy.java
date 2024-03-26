@@ -754,7 +754,7 @@ public abstract class ExecutionStrategy {
             if ((maxNodes = executionContext.getGraphQLContext().get(MAX_RESULT_NODES)) != null) {
                 if (resultNodesCount > maxNodes) {
                     executionContext.getResultNodesInfo().maxResultNodesExceeded();
-                    return new FieldValueInfo(NULL, completedFuture(null), fieldValueInfos);
+                    return new FieldValueInfo(NULL, null, fieldValueInfos);
                 }
             }
 
