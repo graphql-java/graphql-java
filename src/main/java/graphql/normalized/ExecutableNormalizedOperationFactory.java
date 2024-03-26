@@ -77,12 +77,26 @@ import static java.util.stream.Collectors.toSet;
 public class ExecutableNormalizedOperationFactory {
 
     public static class Options {
+
+
         private final GraphQLContext graphQLContext;
         private final Locale locale;
         private final int maxChildrenDepth;
         private final int maxFieldsCount;
 
         private final boolean deferSupport;
+
+        /**
+         * The default max fields count is 100,000.
+         * This is big enough for even very large queries, but
+         * can be changed via {#setDefaultOptions
+         */
+        public static final int DEFAULT_MAX_FIELDS_COUNT = 100_000;
+        private static Options defaultOptions = new Options(GraphQLContext.getDefault(),
+                Locale.getDefault(),
+                Integer.MAX_VALUE,
+                DEFAULT_MAX_FIELDS_COUNT,
+                false);
 
         private Options(GraphQLContext graphQLContext,
                         Locale locale,
@@ -96,13 +110,23 @@ public class ExecutableNormalizedOperationFactory {
             this.maxFieldsCount = maxFieldsCount;
         }
 
+        /**
+         * Sets new default Options used when creating instances of {@link ExecutableNormalizedOperation}.
+         *
+         * @param options new default options
+         */
+        public static void setDefaultOptions(Options options) {
+            defaultOptions = Assert.assertNotNull(options);
+        }
+
+
+        /**
+         * Returns the default options used when creating instances of {@link ExecutableNormalizedOperation}.
+         *
+         * @return the default options
+         */
         public static Options defaultOptions() {
-            return new Options(
-                    GraphQLContext.getDefault(),
-                    Locale.getDefault(),
-                    Integer.MAX_VALUE,
-                    100_000,
-                    false);
+            return defaultOptions;
         }
 
         /**

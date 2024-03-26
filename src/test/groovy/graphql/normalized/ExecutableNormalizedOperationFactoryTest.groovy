@@ -3152,6 +3152,41 @@ fragment personName on Person {
         e.message == "Maximum field count exceeded. 100001 > 100000"
     }
 
+    def "default max fields can be changed "() {
+        String schema = """
+        type Query {
+            foo: Foo
+        }
+        type Foo {
+            foo: Foo
+            name: String
+        }
+        """
+
+        GraphQLSchema graphQLSchema = TestUtil.schema(schema)
+
+        String query = "{ foo { foo{ name}}} "
+
+        assertValidQuery(graphQLSchema, query)
+
+        Document document = TestUtil.parseQuery(query)
+        ExecutableNormalizedOperationFactory.Options.setDefaultOptions(ExecutableNormalizedOperationFactory.Options.defaultOptions().maxFieldsCount(2))
+
+        when:
+        def result = ExecutableNormalizedOperationFactory.createExecutableNormalizedOperationWithRawVariables(
+                graphQLSchema,
+                document,
+                null,
+                RawVariables.emptyVariables()
+        )
+        then:
+        def e = thrown(AbortExecutionException)
+        e.message == "Maximum field count exceeded. 3 > 2"
+        cleanup:
+        ExecutableNormalizedOperationFactory.Options.setDefaultOptions(ExecutableNormalizedOperationFactory.Options.defaultOptions().maxFieldsCount(ExecutableNormalizedOperationFactory.Options.DEFAULT_MAX_FIELDS_COUNT))
+    }
+
+
     private static ExecutableNormalizedOperation localCreateExecutableNormalizedOperation(
             GraphQLSchema graphQLSchema,
             Document document,
