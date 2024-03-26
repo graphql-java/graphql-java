@@ -563,7 +563,7 @@ public class ExecutableNormalizedOperationFactory {
                 if (fieldAndAstParent.field.getSelectionSet() == null) {
                     continue;
                 }
-                GraphQLFieldDefinition fieldDefinition = Introspection.getFieldDefinition(graphQLSchema, (GraphQLFieldsContainer) fieldAndAstParent.astParentType, fieldAndAstParent.field.getName());
+                GraphQLFieldDefinition fieldDefinition = Introspection.getFieldDef(graphQLSchema, fieldAndAstParent.astParentType, fieldAndAstParent.field.getName());
                 GraphQLUnmodifiedType astParentType = unwrapAll(fieldDefinition.getType());
                 this.collectFromSelectionSet(fieldAndAstParent.field.getSelectionSet(),
                         collectedFields,
