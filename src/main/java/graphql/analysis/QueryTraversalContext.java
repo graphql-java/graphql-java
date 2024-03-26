@@ -1,5 +1,6 @@
 package graphql.analysis;
 
+import graphql.GraphQLContext;
 import graphql.Internal;
 import graphql.language.SelectionSetContainer;
 import graphql.schema.GraphQLCompositeType;
@@ -16,14 +17,17 @@ class QueryTraversalContext {
     // never used for scalars/enums, always a possibly wrapped composite type
     private final GraphQLOutputType outputType;
     private final QueryVisitorFieldEnvironment environment;
-    private final SelectionSetContainer selectionSetContainer;
+    private final SelectionSetContainer<?> selectionSetContainer;
+    private final GraphQLContext graphQLContext;
 
     QueryTraversalContext(GraphQLOutputType outputType,
                           QueryVisitorFieldEnvironment environment,
-                          SelectionSetContainer selectionSetContainer) {
+                          SelectionSetContainer<?> selectionSetContainer,
+                          GraphQLContext graphQLContext) {
         this.outputType = outputType;
         this.environment = environment;
         this.selectionSetContainer = selectionSetContainer;
+        this.graphQLContext = graphQLContext;
     }
 
     public GraphQLOutputType getOutputType() {
@@ -34,13 +38,15 @@ class QueryTraversalContext {
         return (GraphQLCompositeType) GraphQLTypeUtil.unwrapAll(outputType);
     }
 
-
     public QueryVisitorFieldEnvironment getEnvironment() {
         return environment;
     }
 
-    public SelectionSetContainer getSelectionSetContainer() {
-
+    public SelectionSetContainer<?> getSelectionSetContainer() {
         return selectionSetContainer;
+    }
+
+    public GraphQLContext getGraphQLContext() {
+        return graphQLContext;
     }
 }

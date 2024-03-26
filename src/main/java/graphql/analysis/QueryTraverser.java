@@ -177,7 +177,7 @@ public class QueryTraverser {
 
     private Object visitImpl(QueryVisitor visitFieldCallback, Boolean preOrder) {
         Map<Class<?>, Object> rootVars = new LinkedHashMap<>();
-        rootVars.put(QueryTraversalContext.class, new QueryTraversalContext(rootParentType, null, null));
+        rootVars.put(QueryTraversalContext.class, new QueryTraversalContext(rootParentType, null, null, GraphQLContext.getDefault()));
 
         QueryVisitor preOrderCallback;
         QueryVisitor postOrderCallback;

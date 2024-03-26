@@ -19,6 +19,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static graphql.normalized.ExecutableNormalizedOperationFactory.Options;
+import static graphql.normalized.ExecutableNormalizedOperationFactory.createExecutableNormalizedOperation;
 import static graphql.schema.FieldCoordinates.coordinates;
 
 /**
@@ -45,6 +47,14 @@ public class GoodFaithIntrospection {
     public static final String GOOD_FAITH_INTROSPECTION_DISABLED = "GOOD_FAITH_INTROSPECTION_DISABLED";
 
     private static final AtomicBoolean ENABLED_STATE = new AtomicBoolean(true);
+    /**
+     * This is the maximum number of executable fields that can be in a good faith introspection query
+     */
+    public static final int GOOD_FAITH_MAX_FIELDS_COUNT = 500;
+    /**
+     * This is the maximum depth a good faith introspection query can be
+     */
+    public static final int GOOD_FAITH_MAX_DEPTH_COUNT = 20;
 
     /**
      * @return true if good faith introspection is enabled
@@ -77,7 +87,7 @@ public class GoodFaithIntrospection {
 
     public static Optional<ExecutionResult> checkIntrospection(ExecutionContext executionContext) {
         if (isIntrospectionEnabled(executionContext.getGraphQLContext())) {
-            ExecutableNormalizedOperation operation = executionContext.getNormalizedQueryTree().get();
+            ExecutableNormalizedOperation operation = mkOperation(executionContext);
             ImmutableListMultimap<FieldCoordinates, ExecutableNormalizedField> coordinatesToENFs = operation.getCoordinatesToNormalizedFields();
             for (Map.Entry<FieldCoordinates, Integer> entry : ALLOWED_FIELD_INSTANCES.entrySet()) {
                 FieldCoordinates coordinates = entry.getKey();
@@ -90,6 +100,29 @@ public class GoodFaithIntrospection {
             }
         }
         return Optional.empty();
+    }
+
+    /**
+     * This makes an executable operation limited in size then which suits a good faith introspection query.  This helps guard
+     * against malicious queries.
+     *
+     * @param executionContext the execution context
+     *
+     * @return an executable operation
+     */
+    private static ExecutableNormalizedOperation mkOperation(ExecutionContext executionContext) {
+        Options options = Options.defaultOptions()
+                .maxFieldsCount(GOOD_FAITH_MAX_FIELDS_COUNT)
+                .maxChildrenDepth(GOOD_FAITH_MAX_DEPTH_COUNT)
+                .locale(executionContext.getLocale())
+                .graphQLContext(executionContext.getGraphQLContext());
+
+        return createExecutableNormalizedOperation(executionContext.getGraphQLSchema(),
+                executionContext.getOperationDefinition(),
+                executionContext.getFragmentsByName(),
+                executionContext.getCoercedVariables(),
+                options);
+
     }
 
     private static boolean isIntrospectionEnabled(GraphQLContext graphQlContext) {
