@@ -148,10 +148,7 @@ public class FieldCollector {
                     .addDeferredExecution(deferredExecution))
             );
         } else {
-            fields.put(name, MergedField
-                    .newMergedField(field)
-                    .addDeferredExecution(deferredExecution).build()
-            );
+            fields.put(name, MergedField.newSingletonMergedField(field, deferredExecution));
         }
     }
 

@@ -299,11 +299,8 @@ public class ExecutionStepInfo {
             return this;
         }
 
-        public Builder arguments(Supplier<Map<String, Object>> arguments) {
-            this.arguments = () -> {
-                Map<String, Object> map = arguments.get();
-                return map == null ? ImmutableMapWithNullValues.emptyMap() : ImmutableMapWithNullValues.copyOf(map);
-            };
+        public Builder arguments(Supplier<ImmutableMapWithNullValues<String, Object>> arguments) {
+            this.arguments = arguments;
             return this;
         }
 

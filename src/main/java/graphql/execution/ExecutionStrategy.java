@@ -12,7 +12,7 @@ import graphql.SerializationError;
 import graphql.TrivialDataFetcher;
 import graphql.TypeMismatchError;
 import graphql.UnresolvedTypeError;
-import graphql.collect.ImmutableKit;
+import graphql.collect.ImmutableMapWithNullValues;
 import graphql.execution.directives.QueryDirectives;
 import graphql.execution.directives.QueryDirectivesImpl;
 import graphql.execution.incremental.DeferredExecutionSupport;
@@ -67,6 +67,7 @@ import static graphql.execution.FieldValueInfo.CompleteValueType.LIST;
 import static graphql.execution.FieldValueInfo.CompleteValueType.NULL;
 import static graphql.execution.FieldValueInfo.CompleteValueType.OBJECT;
 import static graphql.execution.FieldValueInfo.CompleteValueType.SCALAR;
+import static graphql.execution.ResultNodesInfo.MAX_RESULT_NODES;
 import static graphql.execution.instrumentation.SimpleInstrumentationContext.nonNullCtx;
 import static graphql.schema.DataFetchingEnvironmentImpl.newDataFetchingEnvironment;
 import static graphql.schema.GraphQLTypeUtil.isEnum;
@@ -348,9 +349,9 @@ public abstract class ExecutionStrategy {
                 new InstrumentationFieldParameters(executionContext, executionStepInfo), executionContext.getInstrumentationState()
         ));
 
-        CompletableFuture<FetchedValue> fetchFieldFuture = fetchField(executionContext, parameters);
+        CompletableFuture<FetchedValue> fetchFieldFuture = fetchField(fieldDef, executionContext, parameters);
         CompletableFuture<FieldValueInfo> result = fetchFieldFuture.thenApply((fetchedValue) ->
-                completeField(executionContext, parameters, fetchedValue));
+                completeField(fieldDef, executionContext, parameters, fetchedValue));
 
         CompletableFuture<Object> fieldValueFuture = result.thenCompose(FieldValueInfo::getFieldValueFuture);
 
@@ -377,7 +378,23 @@ public abstract class ExecutionStrategy {
         MergedField field = parameters.getField();
         GraphQLObjectType parentType = (GraphQLObjectType) parameters.getExecutionStepInfo().getUnwrappedNonNullType();
         GraphQLFieldDefinition fieldDef = getFieldDef(executionContext.getGraphQLSchema(), parentType, field.getSingleField());
-        GraphQLCodeRegistry codeRegistry = executionContext.getGraphQLSchema().getCodeRegistry();
+        return fetchField(fieldDef, executionContext, parameters);
+    }
+
+    private CompletableFuture<FetchedValue> fetchField(GraphQLFieldDefinition fieldDef, ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
+
+        int resultNodesCount = executionContext.getResultNodesInfo().incrementAndGetResultNodesCount();
+
+        Integer maxNodes;
+        if ((maxNodes = executionContext.getGraphQLContext().get(MAX_RESULT_NODES)) != null) {
+            if (resultNodesCount > maxNodes) {
+                executionContext.getResultNodesInfo().maxResultNodesExceeded();
+                return CompletableFuture.completedFuture(new FetchedValue(null, Collections.emptyList(), null));
+            }
+        }
+
+        MergedField field = parameters.getField();
+        GraphQLObjectType parentType = (GraphQLObjectType) parameters.getExecutionStepInfo().getUnwrappedNonNullType();
 
         // if the DF (like PropertyDataFetcher) does not use the arguments or execution step info then dont build any
 
@@ -412,6 +429,8 @@ public abstract class ExecutionStrategy {
                     .queryDirectives(queryDirectives)
                     .build();
         });
+
+        GraphQLCodeRegistry codeRegistry = executionContext.getGraphQLSchema().getCodeRegistry();
         DataFetcher<?> dataFetcher = codeRegistry.getDataFetcher(parentType, fieldDef);
 
         Instrumentation instrumentation = executionContext.getInstrumentation();
@@ -548,6 +567,11 @@ public abstract class ExecutionStrategy {
         Field field = parameters.getField().getSingleField();
         GraphQLObjectType parentType = (GraphQLObjectType) parameters.getExecutionStepInfo().getUnwrappedNonNullType();
         GraphQLFieldDefinition fieldDef = getFieldDef(executionContext.getGraphQLSchema(), parentType, field);
+        return completeField(fieldDef, executionContext, parameters, fetchedValue);
+    }
+
+    private FieldValueInfo completeField(GraphQLFieldDefinition fieldDef, ExecutionContext executionContext, ExecutionStrategyParameters parameters, FetchedValue fetchedValue) {
+        GraphQLObjectType parentType = (GraphQLObjectType) parameters.getExecutionStepInfo().getUnwrappedNonNullType();
         ExecutionStepInfo executionStepInfo = createExecutionStepInfo(executionContext, parameters, fieldDef, parentType);
 
         Instrumentation instrumentation = executionContext.getInstrumentation();
@@ -700,6 +724,15 @@ public abstract class ExecutionStrategy {
         List<FieldValueInfo> fieldValueInfos = new ArrayList<>(size.orElse(1));
         int index = 0;
         for (Object item : iterableValues) {
+            int resultNodesCount = executionContext.getResultNodesInfo().incrementAndGetResultNodesCount();
+            Integer maxNodes;
+            if ((maxNodes = executionContext.getGraphQLContext().get(MAX_RESULT_NODES)) != null) {
+                if (resultNodesCount > maxNodes) {
+                    executionContext.getResultNodesInfo().maxResultNodesExceeded();
+                    return new FieldValueInfo(NULL, completedFuture(null), fieldValueInfos);
+                }
+            }
+
             ResultPath indexedPath = parameters.getPath().segment(index);
 
             ExecutionStepInfo stepInfoForListElement = executionStepInfoFactory.newExecutionStepInfoForListElement(executionStepInfo, indexedPath);
@@ -913,7 +946,7 @@ public abstract class ExecutionStrategy {
      * @return a {@link GraphQLFieldDefinition}
      */
     protected GraphQLFieldDefinition getFieldDef(GraphQLSchema schema, GraphQLObjectType parentType, Field field) {
-        return Introspection.getFieldDef(schema, parentType, field.getName());
+        return Introspection.getFieldDefinition(schema, parentType, field.getName());
     }
 
     /**
@@ -985,20 +1018,12 @@ public abstract class ExecutionStrategy {
         ExecutionStepInfo parentStepInfo = parameters.getExecutionStepInfo();
         GraphQLOutputType fieldType = fieldDefinition.getType();
         List<GraphQLArgument> fieldArgDefs = fieldDefinition.getArguments();
-        Supplier<Map<String, Object>> argumentValues = ImmutableKit::emptyMap;
+        Supplier<ImmutableMapWithNullValues<String, Object>> argumentValues = ImmutableMapWithNullValues::emptyMap;
         //
         // no need to create args at all if there are none on the field def
         //
         if (!fieldArgDefs.isEmpty()) {
-            List<Argument> fieldArgs = field.getArguments();
-            GraphQLCodeRegistry codeRegistry = executionContext.getGraphQLSchema().getCodeRegistry();
-            Supplier<Map<String, Object>> argValuesSupplier = () -> ValuesResolver.getArgumentValues(codeRegistry,
-                    fieldArgDefs,
-                    fieldArgs,
-                    executionContext.getCoercedVariables(),
-                    executionContext.getGraphQLContext(),
-                    executionContext.getLocale());
-            argumentValues = FpKit.intraThreadMemoize(argValuesSupplier);
+            argumentValues = getArgumentValues(executionContext, fieldArgDefs, field.getArguments());
         }
 
 
@@ -1012,4 +1037,25 @@ public abstract class ExecutionStrategy {
                 .arguments(argumentValues)
                 .build();
     }
+
+    @NotNull
+    private static Supplier<ImmutableMapWithNullValues<String, Object>> getArgumentValues(ExecutionContext executionContext,
+                                                                                          List<GraphQLArgument> fieldArgDefs,
+                                                                                          List<Argument> fieldArgs) {
+        Supplier<ImmutableMapWithNullValues<String, Object>> argumentValues;
+        GraphQLCodeRegistry codeRegistry = executionContext.getGraphQLSchema().getCodeRegistry();
+        Supplier<ImmutableMapWithNullValues<String, Object>> argValuesSupplier = () -> {
+            Map<String, Object> resolvedValues = ValuesResolver.getArgumentValues(codeRegistry,
+                    fieldArgDefs,
+                    fieldArgs,
+                    executionContext.getCoercedVariables(),
+                    executionContext.getGraphQLContext(),
+                    executionContext.getLocale());
+
+            return ImmutableMapWithNullValues.copyOf(resolvedValues);
+        };
+        argumentValues = FpKit.intraThreadMemoize(argValuesSupplier);
+        return argumentValues;
+    }
+
 }

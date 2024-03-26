@@ -278,38 +278,7 @@ public class ExecutionInput {
             return this;
         }
 
-        /**
-         * The legacy context object
-         *
-         * @param contextBuilder the context builder object to use
-         *
-         * @return this builder
-         *
-         * @deprecated - the {@link ExecutionInput#getGraphQLContext()} is a fixed mutable instance now
-         */
-        @Deprecated(since = "2021-07-05")
-        public Builder context(GraphQLContext.Builder contextBuilder) {
-            this.context = contextBuilder.build();
-            return this;
-        }
-
-        /**
-         * The legacy context object
-         *
-         * @param contextBuilderFunction the context builder function to use
-         *
-         * @return this builder
-         *
-         * @deprecated - the {@link ExecutionInput#getGraphQLContext()} is a fixed mutable instance now
-         */
-        @Deprecated(since = "2021-07-05")
-        public Builder context(UnaryOperator<GraphQLContext.Builder> contextBuilderFunction) {
-            GraphQLContext.Builder builder = GraphQLContext.newContext();
-            builder = contextBuilderFunction.apply(builder);
-            return context(builder.build());
-        }
-
-        /**
+         /**
          * This will give you a builder of {@link GraphQLContext} and any values you set will be copied
          * into the underlying {@link GraphQLContext} of this execution input
          *

@@ -63,6 +63,8 @@ public class ExecutionContext {
     // this is modified after creation so it needs to be volatile to ensure visibility across Threads
     private volatile DataLoaderDispatchStrategy dataLoaderDispatcherStrategy = DataLoaderDispatchStrategy.NO_OP;
 
+    private final ResultNodesInfo resultNodesInfo = new ResultNodesInfo();
+
     ExecutionContext(ExecutionContextBuilder builder) {
         this.graphQLSchema = builder.graphQLSchema;
         this.executionId = builder.executionId;
@@ -84,7 +86,7 @@ public class ExecutionContext {
         this.errors.set(builder.errors);
         this.localContext = builder.localContext;
         this.executionInput = builder.executionInput;
-        queryTree = FpKit.interThreadMemoize(() -> ExecutableNormalizedOperationFactory.createExecutableNormalizedOperation(graphQLSchema, operationDefinition, fragmentsByName, coercedVariables));
+        this.queryTree = FpKit.interThreadMemoize(() -> ExecutableNormalizedOperationFactory.createExecutableNormalizedOperation(graphQLSchema, operationDefinition, fragmentsByName, coercedVariables));
     }
 
 
@@ -118,16 +120,6 @@ public class ExecutionContext {
 
     public OperationDefinition getOperationDefinition() {
         return operationDefinition;
-    }
-
-    /**
-     * @return map of coerced variables
-     *
-     * @deprecated use {@link #getCoercedVariables()} instead
-     */
-    @Deprecated(since = "2022-05-24")
-    public Map<String, Object> getVariables() {
-        return coercedVariables.toMap();
     }
 
     public CoercedVariables getCoercedVariables() {
@@ -303,5 +295,9 @@ public class ExecutionContext {
         ExecutionContextBuilder builder = ExecutionContextBuilder.newExecutionContextBuilder(this);
         builderConsumer.accept(builder);
         return builder.build();
+    }
+
+    public ResultNodesInfo getResultNodesInfo() {
+        return resultNodesInfo;
     }
 }

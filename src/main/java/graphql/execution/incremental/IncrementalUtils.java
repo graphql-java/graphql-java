@@ -17,7 +17,8 @@ import static graphql.Directives.DeferDirective;
 
 @Internal
 public class IncrementalUtils {
-    private IncrementalUtils() {}
+    private IncrementalUtils() {
+    }
 
     public static <T> T createDeferredExecution(
             Map<String, Object> variables,
@@ -30,7 +31,7 @@ public class IncrementalUtils {
             Map<String, Object> argumentValues = ValuesResolver.getArgumentValues(DeferDirective.getArguments(), deferDirective.getArguments(), CoercedVariables.of(variables), GraphQLContext.getDefault(), Locale.getDefault());
 
             Object flag = argumentValues.get("if");
-            Assert.assertTrue(flag instanceof Boolean, () -> String.format("The '%s' directive MUST have a value for the 'if' argument", DeferDirective.getName()));
+            Assert.assertTrue(flag instanceof Boolean, "The '%s' directive MUST have a value for the 'if' argument", DeferDirective.getName());
 
             if (!((Boolean) flag)) {
                 return null;
@@ -42,7 +43,7 @@ public class IncrementalUtils {
                 return builderFunction.apply(null);
             }
 
-            Assert.assertTrue(label instanceof String, () -> String.format("The 'label' argument from the '%s' directive MUST contain a String value", DeferDirective.getName()));
+            Assert.assertTrue(label instanceof String, "The 'label' argument from the '%s' directive MUST contain a String value", DeferDirective.getName());
 
             return builderFunction.apply((String) label);
         }

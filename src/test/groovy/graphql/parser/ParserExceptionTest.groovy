@@ -79,10 +79,12 @@ fragment X on SomeType {
             }
         '''
         when:
-        new Parser().parseDocument(sdl, "namedSource")
+        Reader reader = MultiSourceReader.newMultiSourceReader()
+                .string(sdl, "namedSource")
+                .build()
+        new Parser().parseDocument(reader)
         then:
         def e = thrown(InvalidSyntaxException)
-        print e
 
         e.location.line == 2
         e.location.column == 13

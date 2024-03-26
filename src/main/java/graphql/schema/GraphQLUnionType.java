@@ -69,7 +69,7 @@ public class GraphQLUnionType implements GraphQLNamedOutputType, GraphQLComposit
         this.typeResolver = typeResolver;
         this.definition = definition;
         this.extensionDefinitions = ImmutableList.copyOf(extensionDefinitions);
-        this.directives = new DirectivesUtil.DirectivesHolder(directives, appliedDirectives);
+        this.directives = DirectivesUtil.DirectivesHolder.create(directives, appliedDirectives);
     }
 
     void replaceTypes(List<GraphQLNamedOutputType> types) {

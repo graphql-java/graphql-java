@@ -16,7 +16,7 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Locale;
 
-import static graphql.Assert.assertNotNull;
+import static graphql.Assert.assertShouldNeverHappen;
 import static graphql.scalar.CoercingUtil.i18nMsg;
 import static graphql.scalar.CoercingUtil.isNumberIsh;
 import static graphql.scalar.CoercingUtil.typeName;
@@ -91,7 +91,10 @@ public class GraphqlIntCoercing implements Coercing<Integer, Integer> {
     }
 
     private IntValue valueToLiteralImpl(Object input, @NotNull Locale locale) {
-        Integer result = assertNotNull(convertImpl(input),() -> i18nMsg(locale, "Int.notInt", typeName(input)));
+        Integer result = convertImpl(input);
+        if (result == null) {
+            assertShouldNeverHappen(i18nMsg(locale, "Int.notInt", typeName(input)));
+        }
         return IntValue.newIntValue(BigInteger.valueOf(result)).build();
     }
 
