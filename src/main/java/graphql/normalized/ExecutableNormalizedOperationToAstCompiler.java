@@ -26,7 +26,6 @@ import graphql.language.Value;
 import graphql.normalized.incremental.NormalizedDeferredExecution;
 import graphql.schema.GraphQLCompositeType;
 import graphql.schema.GraphQLFieldDefinition;
-import graphql.schema.GraphQLFieldsContainer;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLUnmodifiedType;
