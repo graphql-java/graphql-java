@@ -1345,6 +1345,9 @@ type Query {
     def "can print a schema as AST elements"() {
         def sdl = '''
             directive @directive1 on SCALAR
+            directive @schemaDirective on SCHEMA
+            extend schema @schemaDirective
+            
             type Query {
                 foo : String
             }
@@ -1459,6 +1462,8 @@ directive @include(
 "Indicates an Input Object is a OneOf Input Object."
 directive @oneOf on INPUT_OBJECT
 
+directive @schemaDirective on SCHEMA
+
 "Directs the executor to skip this field or fragment when the `if` argument is true."
 directive @skip(
     "Skipped when true."
@@ -1534,6 +1539,8 @@ extend input Input {
 extend input Input {
   faz: String
 }
+
+extend schema @schemaDirective
 '''
 
         when:
