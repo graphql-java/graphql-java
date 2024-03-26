@@ -80,7 +80,7 @@ public class ExecutionContext {
         this.errors.set(builder.errors);
         this.localContext = builder.localContext;
         this.executionInput = builder.executionInput;
-        queryTree = FpKit.interThreadMemoize(() -> ExecutableNormalizedOperationFactory.createExecutableNormalizedOperation(graphQLSchema, operationDefinition, fragmentsByName, coercedVariables));
+        this.queryTree = FpKit.interThreadMemoize(() -> ExecutableNormalizedOperationFactory.createExecutableNormalizedOperation(graphQLSchema, operationDefinition, fragmentsByName, coercedVariables));
     }
 
 
