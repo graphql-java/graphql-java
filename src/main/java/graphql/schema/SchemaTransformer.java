@@ -322,7 +322,7 @@ public class SchemaTransformer {
 
 
             List<List<Breadcrumb<GraphQLSchemaElement>>> currentBreadcrumbs = breadcrumbsByZipper.get(currentZipper);
-            assertNotNull(currentBreadcrumbs, () -> format("No breadcrumbs found for zipper %s", currentZipper));
+            assertNotNull(currentBreadcrumbs, "No breadcrumbs found for zipper %s", currentZipper);
             for (List<Breadcrumb<GraphQLSchemaElement>> breadcrumbs : currentBreadcrumbs) {
                 GraphQLSchemaElement parent = breadcrumbs.get(0).getNode();
                 zipperByParent.remove(parent, currentZipper);
@@ -392,7 +392,7 @@ public class SchemaTransformer {
                 }
 
                 NodeZipper<GraphQLSchemaElement> curZipperForElement = nodeToZipper.get(element);
-                assertNotNull(curZipperForElement, () -> format("curZipperForElement is null for parentNode %s", element));
+                assertNotNull(curZipperForElement, "curZipperForElement is null for parentNode %s", element);
                 relevantZippers.updateZipper(curZipperForElement, newZipper);
 
             }

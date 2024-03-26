@@ -10,13 +10,6 @@ import static java.lang.String.format;
 @Internal
 public class Assert {
 
-    public static <T> T assertNotNull(T object, Supplier<String> msg) {
-        if (object != null) {
-            return object;
-        }
-        throw new AssertException(msg.get());
-    }
-
     public static <T> T assertNotNullWithNPE(T object, Supplier<String> msg) {
         if (object != null) {
             return object;
@@ -28,45 +21,81 @@ public class Assert {
         if (object != null) {
             return object;
         }
-        throw new AssertException("Object required to be not null");
+        return throwAssert("Object required to be not null");
     }
+
+    public static <T> T assertNotNull(T object, Supplier<String> msg) {
+        if (object != null) {
+            return object;
+        }
+        return throwAssert(msg.get());
+    }
+
+    public static <T> T assertNotNull(T object, String constantMsg) {
+        if (object != null) {
+            return object;
+        }
+        return throwAssert(constantMsg);
+    }
+
+    public static <T> T assertNotNull(T object, String msgFmt, Object arg1) {
+        if (object != null) {
+            return object;
+        }
+        return throwAssert(msgFmt, arg1);
+    }
+
+    public static <T> T assertNotNull(T object, String msgFmt, Object arg1, Object arg2) {
+        if (object != null) {
+            return object;
+        }
+        return throwAssert(msgFmt, arg1, arg2);
+    }
+
+    public static <T> T assertNotNull(T object, String msgFmt, Object arg1, Object arg2, Object arg3) {
+        if (object != null) {
+            return object;
+        }
+        return throwAssert(msgFmt, arg1, arg2, arg3);
+    }
+
 
     public static <T> void assertNull(T object, Supplier<String> msg) {
         if (object == null) {
             return;
         }
-        throw new AssertException(msg.get());
+        throwAssert(msg.get());
     }
 
     public static <T> void assertNull(T object) {
         if (object == null) {
             return;
         }
-        throw new AssertException("Object required to be null");
+        throwAssert("Object required to be null");
     }
 
     public static <T> T assertNeverCalled() {
-        throw new AssertException("Should never been called");
+        return throwAssert("Should never been called");
     }
 
     public static <T> T assertShouldNeverHappen(String format, Object... args) {
-        throw new AssertException("Internal error: should never happen: " + format(format, args));
+        return throwAssert("Internal error: should never happen: %s", format(format, args));
     }
 
     public static <T> T assertShouldNeverHappen() {
-        throw new AssertException("Internal error: should never happen");
+        return throwAssert("Internal error: should never happen");
     }
 
     public static <T> Collection<T> assertNotEmpty(Collection<T> collection) {
         if (collection == null || collection.isEmpty()) {
-            throw new AssertException("collection must be not null and not empty");
+            throwAssert("collection must be not null and not empty");
         }
         return collection;
     }
 
     public static <T> Collection<T> assertNotEmpty(Collection<T> collection, Supplier<String> msg) {
         if (collection == null || collection.isEmpty()) {
-            throw new AssertException(msg.get());
+            throwAssert(msg.get());
         }
         return collection;
     }
@@ -75,28 +104,84 @@ public class Assert {
         if (condition) {
             return;
         }
-        throw new AssertException(msg.get());
+        throwAssert(msg.get());
     }
 
     public static void assertTrue(boolean condition) {
         if (condition) {
             return;
         }
-        throw new AssertException("condition expected to be true");
+        throwAssert("condition expected to be true");
+    }
+
+    public static void assertTrue(boolean condition, String constantMsg) {
+        if (condition) {
+            return;
+        }
+        throwAssert(constantMsg);
+    }
+
+    public static void assertTrue(boolean condition, String msgFmt, Object arg1) {
+        if (condition) {
+            return;
+        }
+        throwAssert(msgFmt, arg1);
+    }
+
+    public static void assertTrue(boolean condition, String msgFmt, Object arg1, Object arg2) {
+        if (condition) {
+            return;
+        }
+        throwAssert(msgFmt, arg1, arg2);
+    }
+
+    public static void assertTrue(boolean condition, String msgFmt, Object arg1, Object arg2, Object arg3) {
+        if (condition) {
+            return;
+        }
+        throwAssert(msgFmt, arg1, arg2, arg3);
     }
 
     public static void assertFalse(boolean condition, Supplier<String> msg) {
         if (!condition) {
             return;
         }
-        throw new AssertException(msg.get());
+        throwAssert(msg.get());
     }
 
     public static void assertFalse(boolean condition) {
         if (!condition) {
             return;
         }
-        throw new AssertException("condition expected to be false");
+        throwAssert("condition expected to be false");
+    }
+
+    public static void assertFalse(boolean condition, String constantMsg) {
+        if (!condition) {
+            return;
+        }
+        throwAssert(constantMsg);
+    }
+
+    public static void assertFalse(boolean condition, String msgFmt, Object arg1) {
+        if (!condition) {
+            return;
+        }
+        throwAssert(msgFmt, arg1);
+    }
+
+    public static void assertFalse(boolean condition, String msgFmt, Object arg1, Object arg2) {
+        if (!condition) {
+            return;
+        }
+        throwAssert(msgFmt, arg1, arg2);
+    }
+
+    public static void assertFalse(boolean condition, String msgFmt, Object arg1, Object arg2, Object arg3) {
+        if (!condition) {
+            return;
+        }
+        throwAssert(msgFmt, arg1, arg2, arg3);
     }
 
     private static final String invalidNameErrorMessage = "Name must be non-null, non-empty and match [_A-Za-z][_0-9A-Za-z]* - was '%s'";
@@ -108,13 +193,17 @@ public class Assert {
      * currently non null, non empty,
      *
      * @param name - the name to be validated.
+     *
      * @return the name if valid, or AssertException if invalid.
      */
     public static String assertValidName(String name) {
         if (name != null && !name.isEmpty() && validNamePattern.matcher(name).matches()) {
             return name;
         }
-        throw new AssertException(String.format(invalidNameErrorMessage, name));
+        return throwAssert(invalidNameErrorMessage, name);
     }
 
+    private static <T> T throwAssert(String format, Object... args) {
+        throw new AssertException(format(format, args));
+    }
 }

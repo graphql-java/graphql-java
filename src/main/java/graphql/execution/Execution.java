@@ -107,6 +107,7 @@ public class Execution {
                 .executionInput(executionInput)
                 .build();
 
+        executionContext.getGraphQLContext().put(ResultNodesInfo.RESULT_NODES_INFO, executionContext.getResultNodesInfo());
 
         InstrumentationExecutionParameters parameters = new InstrumentationExecutionParameters(
                 executionInput, graphQLSchema

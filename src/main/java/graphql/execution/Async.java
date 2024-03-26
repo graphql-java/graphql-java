@@ -18,6 +18,8 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import static graphql.Assert.assertTrue;
+
 @Internal
 @SuppressWarnings("FutureReturnValueIgnored")
 public class Async {
@@ -95,7 +97,7 @@ public class Async {
 
         @Override
         public CompletableFuture<List<T>> await() {
-            Assert.assertTrue(ix == 0, () -> "expected size was " + 0 + " got " + ix);
+            assertTrue(ix == 0, "expected size was 0 got %d", ix);
             return typedEmpty();
         }
 
