@@ -64,7 +64,6 @@ import static graphql.schema.GraphQLTypeUtil.unwrapAll;
 import static graphql.util.FpKit.filterSet;
 import static graphql.util.FpKit.groupingBy;
 import static graphql.util.FpKit.intersection;
-import static java.util.Collections.max;
 import static java.util.Collections.singleton;
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toCollection;
@@ -153,7 +152,7 @@ public class ExecutableNormalizedOperationFactory {
          * @return new options object to use
          */
         public Options maxFieldsCount(int maxFieldsCount) {
-            return new Options(this.graphQLContext, this.locale, maxChildrenDepth, maxFieldsCount, this.deferSupport);
+            return new Options(this.graphQLContext, this.locale, this.maxChildrenDepth, maxFieldsCount, this.deferSupport);
         }
 
         /**
