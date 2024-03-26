@@ -442,21 +442,26 @@ public abstract class ExecutionStrategy {
 
         dataFetcher = instrumentation.instrumentDataFetcher(dataFetcher, instrumentationFieldFetchParams, executionContext.getInstrumentationState());
         dataFetcher = executionContext.getDataLoaderDispatcherStrategy().modifyDataFetcher(dataFetcher);
-        CompletableFuture<Object> fetchedValue = invokeDataFetcher(executionContext, parameters, fieldDef, dataFetchingEnvironment, dataFetcher);
-        executionContext.getDataLoaderDispatcherStrategy().fieldFetched(executionContext, parameters, dataFetcher, fetchedValue);
+        CompletableFuture<Object> fetchedValueCF = invokeDataFetcher(executionContext, parameters, fieldDef, dataFetchingEnvironment, dataFetcher);
+        executionContext.getDataLoaderDispatcherStrategy().fieldFetched(executionContext, parameters, dataFetcher, fetchedValueCF);
         fetchCtx.onDispatched();
-        return fetchedValue
+        final DataFetcher<?> finalDataFetcher = dataFetcher;
+        return fetchedValueCF
                 .handle((result, exception) -> {
                     fetchCtx.onCompleted(result, exception);
                     if (exception != null) {
                         return handleFetchingException(dataFetchingEnvironment.get(), parameters, exception);
                     } else {
                         // we can simply return the fetched value CF and avoid a allocation
-                        return fetchedValue;
+                        return fetchedValueCF;
                     }
                 })
-                .thenCompose(Function.identity())
-                .thenApply(result -> unboxPossibleDataFetcherResult(executionContext, parameters, result));
+                .thenCompose(Function.identity()) // this unwraps the CF returned before
+                .thenApply(result -> {
+                    FetchedValue fetchedValue = unboxPossibleDataFetcherResult(executionContext, parameters, result);
+                    executionContext.getDataLoaderDispatcherStrategy().fieldFetchedDone(executionContext, parameters, finalDataFetcher, fetchedValue.getFetchedValue(), parentType, fieldDef);
+                    return fetchedValue;
+                });
     }
 
     private CompletableFuture<Object> invokeDataFetcher(ExecutionContext executionContext, ExecutionStrategyParameters parameters, GraphQLFieldDefinition fieldDef, Supplier<DataFetchingEnvironment> dataFetchingEnvironment, DataFetcher<?> dataFetcher) {
