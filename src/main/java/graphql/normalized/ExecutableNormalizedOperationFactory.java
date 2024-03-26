@@ -64,7 +64,6 @@ import static graphql.schema.GraphQLTypeUtil.unwrapAll;
 import static graphql.util.FpKit.filterSet;
 import static graphql.util.FpKit.groupingBy;
 import static graphql.util.FpKit.intersection;
-import static java.util.Collections.max;
 import static java.util.Collections.singleton;
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toCollection;
@@ -102,7 +101,7 @@ public class ExecutableNormalizedOperationFactory {
                     GraphQLContext.getDefault(),
                     Locale.getDefault(),
                     Integer.MAX_VALUE,
-                    Integer.MAX_VALUE,
+                    100_000,
                     false);
         }
 
@@ -470,7 +469,7 @@ public class ExecutableNormalizedOperationFactory {
                         topLevel,
                         fieldAndAstParents,
                         1);
-                maxDepthSeen = Math.max(maxDepthSeen,depthSeen);
+                maxDepthSeen = Math.max(maxDepthSeen, depthSeen);
             }
             // getPossibleMergerList
             for (PossibleMerger possibleMerger : possibleMergerList) {
@@ -498,8 +497,8 @@ public class ExecutableNormalizedOperationFactory {
         }
 
         private int buildFieldWithChildren(ExecutableNormalizedField executableNormalizedField,
-                                            ImmutableList<FieldAndAstParent> fieldAndAstParents,
-                                            int curLevel) {
+                                           ImmutableList<FieldAndAstParent> fieldAndAstParents,
+                                           int curLevel) {
             checkMaxDepthExceeded(curLevel);
 
             CollectNFResult nextLevel = collectFromMergedField(executableNormalizedField, fieldAndAstParents, curLevel + 1);
@@ -518,7 +517,7 @@ public class ExecutableNormalizedOperationFactory {
                 int depthSeen = buildFieldWithChildren(childENF,
                         childFieldAndAstParents,
                         curLevel + 1);
-                maxDepthSeen = Math.max(maxDepthSeen,depthSeen);
+                maxDepthSeen = Math.max(maxDepthSeen, depthSeen);
 
                 checkMaxDepthExceeded(maxDepthSeen);
             }
