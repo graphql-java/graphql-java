@@ -24,6 +24,7 @@ import graphql.language.StringValue;
 import graphql.language.TypeName;
 import graphql.language.Value;
 import graphql.normalized.incremental.NormalizedDeferredExecution;
+import graphql.schema.GraphQLCompositeType;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLFieldsContainer;
 import graphql.schema.GraphQLObjectType;
@@ -465,7 +466,7 @@ public class ExecutableNormalizedOperationToAstCompiler {
     private static GraphQLFieldDefinition getFieldDefinition(GraphQLSchema schema,
                                                              String parentType,
                                                              ExecutableNormalizedField nf) {
-        return Introspection.getFieldDefinition(schema, (GraphQLFieldsContainer) schema.getType(parentType), nf.getName());
+        return Introspection.getFieldDef(schema, (GraphQLCompositeType) schema.getType(parentType), nf.getName());
     }
 
 
