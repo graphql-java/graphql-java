@@ -64,7 +64,7 @@ GraphQLScalarType implements GraphQLNamedInputType, GraphQLNamedOutputType, Grap
         this.description = description;
         this.coercing = coercing;
         this.definition = definition;
-        this.directivesHolder = new DirectivesUtil.DirectivesHolder(directives, appliedDirectives);
+        this.directivesHolder = DirectivesUtil.DirectivesHolder.create(directives, appliedDirectives);
         this.extensionDefinitions = ImmutableList.copyOf(extensionDefinitions);
         this.specifiedByUrl = specifiedByUrl;
     }

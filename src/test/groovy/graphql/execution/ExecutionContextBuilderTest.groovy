@@ -54,7 +54,7 @@ class ExecutionContextBuilderTest extends Specification {
         executionContext.root == root
         executionContext.context == context // Retain deprecated method for test coverage
         executionContext.graphQLContext == graphQLContext
-        executionContext.variables == [var: 'value'] // Retain deprecated method for test coverage
+        executionContext.getCoercedVariables().toMap() == [var: 'value']
         executionContext.getFragmentsByName() == [MyFragment: fragment]
         executionContext.operationDefinition == operation
         executionContext.dataLoaderRegistry == dataLoaderRegistry

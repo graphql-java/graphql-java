@@ -100,7 +100,6 @@ import static graphql.schema.GraphQLTypeUtil.unwrapOneAs;
 import static graphql.schema.idl.SchemaGenerator.createdMockedSchema;
 import static graphql.util.TraversalControl.CONTINUE;
 import static graphql.util.TreeTransformerUtil.changeNode;
-import static java.lang.String.format;
 
 /**
  * Util class which converts schemas and optionally queries
@@ -735,14 +734,14 @@ public class Anonymizer {
                 List<Directive> directives = field.getDirectives();
                 for (Directive directive : directives) {
                     // this is a directive definition
-                    GraphQLDirective directiveDefinition = assertNotNull(schema.getDirective(directive.getName()), () -> format("%s directive definition not found ", directive.getName()));
+                    GraphQLDirective directiveDefinition = assertNotNull(schema.getDirective(directive.getName()), "%s directive definition not found ", directive.getName());
                     String directiveName = directiveDefinition.getName();
-                    String newDirectiveName = assertNotNull(newNames.get(directiveDefinition), () -> format("No new name found for directive %s", directiveName));
+                    String newDirectiveName = assertNotNull(newNames.get(directiveDefinition), "No new name found for directive %s", directiveName);
                     astNodeToNewName.put(directive, newDirectiveName);
 
                     for (Argument argument : directive.getArguments()) {
                         GraphQLArgument argumentDefinition = directiveDefinition.getArgument(argument.getName());
-                        String newArgumentName = assertNotNull(newNames.get(argumentDefinition), () -> format("No new name found for directive %s argument %s", directiveName, argument.getName()));
+                        String newArgumentName = assertNotNull(newNames.get(argumentDefinition), "No new name found for directive %s argument %s", directiveName, argument.getName());
                         astNodeToNewName.put(argument, newArgumentName);
                         visitDirectiveArgumentValues(directive, argument.getValue());
                     }
@@ -865,7 +864,7 @@ public class Anonymizer {
 
             @Override
             public TraversalControl visitVariableReference(VariableReference node, TraverserContext<Node> context) {
-                String newName = assertNotNull(variableNames.get(node.getName()), () -> format("No new variable name found for %s", node.getName()));
+                String newName = assertNotNull(variableNames.get(node.getName()), "No new variable name found for %s", node.getName());
                 return changeNode(context, node.transform(builder -> builder.name(newName)));
             }
 
@@ -916,7 +915,7 @@ public class Anonymizer {
         if (type instanceof TypeName) {
             String typeName = ((TypeName) type).getName();
             GraphQLType graphQLType = schema.getType(typeName);
-            graphql.Assert.assertNotNull(graphQLType, () -> "Schema must contain type " + typeName);
+            graphql.Assert.assertNotNull(graphQLType, "Schema must contain type %s", typeName);
             return graphQLType;
         } else if (type instanceof NonNullType) {
             return GraphQLNonNull.nonNull(fromTypeToGraphQLType(TypeUtil.unwrapOne(type), schema));

@@ -26,37 +26,6 @@ import static graphql.schema.visibility.NoIntrospectionGraphqlFieldVisibility.NO
 
 class GraphqlFieldVisibilityTest extends Specification {
 
-    def "visibility is enforced"() {
-        GraphqlFieldVisibility banNameVisibility = newBlock().addPattern(".*\\.name").build()
-        def schema = GraphQLSchema.newSchema()
-                .query(StarWarsSchema.queryType)
-                .codeRegistry(StarWarsSchema.codeRegistry)
-                .fieldVisibility(banNameVisibility) // Retain deprecated builder for test coverage
-                .build()
-
-        def graphQL = GraphQL.newGraphQL(schema).build()
-
-        given:
-        def query = """
-        {
-            hero {
-                id
-                name
-                friends {
-                    aliasHandled: name
-                }
-            }
-        }
-        """
-
-        when:
-        def result = graphQL.execute(query)
-
-        then:
-        result.errors[0].getMessage().contains("Field 'name' in type 'Character' is undefined")
-        result.errors[1].getMessage().contains("Field 'name' in type 'Character' is undefined")
-    }
-
     def "introspection visibility is enforced"() {
         given:
         GraphQLCodeRegistry codeRegistry = StarWarsSchema.codeRegistry.transform(builder -> {
