@@ -152,7 +152,7 @@ public class NodeVisitorWithTypeTracking extends NodeVisitorStub {
         QueryTraversalContext parentEnv = context.getVarFromParents(QueryTraversalContext.class);
         GraphQLContext graphQLContext = parentEnv.getGraphQLContext();
 
-        GraphQLFieldDefinition fieldDefinition = Introspection.getFieldDef(schema, (GraphQLCompositeType) unwrapAll(parentEnv.getOutputType()), field.getName());
+        GraphQLFieldDefinition fieldDefinition = Introspection.getFieldDefinition(schema, (GraphQLFieldsContainer) unwrapAll(parentEnv.getOutputType()), field.getName());
         boolean isTypeNameIntrospectionField = fieldDefinition == schema.getIntrospectionTypenameFieldDefinition();
         GraphQLFieldsContainer fieldsContainer = !isTypeNameIntrospectionField ? (GraphQLFieldsContainer) unwrapAll(parentEnv.getOutputType()) : null;
         GraphQLCodeRegistry codeRegistry = schema.getCodeRegistry();
@@ -203,7 +203,7 @@ public class NodeVisitorWithTypeTracking extends NodeVisitorStub {
         QueryVisitorFieldEnvironment fieldEnv = fieldCtx.getEnvironment();
         GraphQLFieldsContainer fieldsContainer = fieldEnv.getFieldsContainer();
 
-        GraphQLFieldDefinition fieldDefinition = Introspection.getFieldDef(schema, fieldsContainer, field.getName());
+        GraphQLFieldDefinition fieldDefinition = Introspection.getFieldDefinition(schema, fieldsContainer, field.getName());
         GraphQLArgument graphQLArgument = fieldDefinition.getArgument(argument.getName());
         String argumentName = graphQLArgument.getName();
 

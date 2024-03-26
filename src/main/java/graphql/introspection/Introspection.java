@@ -792,6 +792,7 @@ public class Introspection {
      *
      * @return a field definition otherwise throws an assertion exception if it's null
      */
+    @Deprecated(since = "2024-03-24", forRemoval = true)
     public static GraphQLFieldDefinition getFieldDef(GraphQLSchema schema, GraphQLCompositeType parentType, String fieldName) {
 
         GraphQLFieldDefinition fieldDefinition = getSystemFieldDef(schema, parentType, fieldName);
@@ -800,6 +801,7 @@ public class Introspection {
         }
 
         assertTrue(parentType instanceof GraphQLFieldsContainer, () -> String.format("should not happen : parent type must be an object or interface %s", parentType));
+        @SuppressWarnings("DataFlowIssue")
         GraphQLFieldsContainer fieldsContainer = (GraphQLFieldsContainer) parentType;
         fieldDefinition = schema.getCodeRegistry().getFieldVisibility().getFieldDefinition(fieldsContainer, fieldName);
         assertTrue(fieldDefinition != null, () -> String.format("Unknown field '%s' for type %s", fieldName, fieldsContainer.getName()));
