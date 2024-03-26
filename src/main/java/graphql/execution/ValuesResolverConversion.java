@@ -104,6 +104,7 @@ class ValuesResolverConversion {
      * @param type            the type of input value
      * @param graphqlContext  the GraphqlContext to use
      * @param locale          the Locale to use
+     *
      * @return a value converted to an internal value
      */
     static Object externalValueToInternalValue(GraphqlFieldVisibility fieldVisibility,
@@ -595,6 +596,7 @@ class ValuesResolverConversion {
      * @param coercedVariables the coerced variable values
      * @param graphqlContext   the GraphqlContext to use
      * @param locale           the Locale to use
+     *
      * @return literal converted to an internal value
      */
     static Object literalToInternalValue(

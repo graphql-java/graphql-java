@@ -157,7 +157,7 @@ public class GraphQLCodeRegistry {
         if (typeResolver == null) {
             typeResolver = parentType.getTypeResolver();
         }
-        return assertNotNull(typeResolver, () -> "There must be a type resolver for interface " + parentType.getName());
+        return assertNotNull(typeResolver, "There must be a type resolver for interface %s", parentType.getName());
     }
 
     private static TypeResolver getTypeResolverForUnion(GraphQLUnionType parentType, Map<String, TypeResolver> typeResolverMap) {
@@ -166,7 +166,7 @@ public class GraphQLCodeRegistry {
         if (typeResolver == null) {
             typeResolver = parentType.getTypeResolver();
         }
-        return assertNotNull(typeResolver, () -> "There must be a type resolver for union " + parentType.getName());
+        return assertNotNull(typeResolver, "There must be a type resolver for union %s",parentType.getName());
     }
 
     /**

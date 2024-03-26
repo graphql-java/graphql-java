@@ -1820,32 +1820,6 @@ class SchemaGeneratorTest extends Specification {
         assert schema != null
     }
 
-    def "transformers get called once the schema is built"() {
-        def spec = """
-          type Query {
-              hello: String
-          }
-      """
-
-        def types = new SchemaParser().parse(spec)
-
-        def extraDirective = (GraphQLDirective.newDirective()).name("extra")
-                .argument(GraphQLArgument.newArgument().name("value").type(GraphQLString)).build()
-        def transformer = new SchemaGeneratorPostProcessing() {  // Retained to show deprecated code is still run
-            @Override
-            GraphQLSchema process(GraphQLSchema originalSchema) {
-                originalSchema.transform({ builder -> builder.additionalDirective(extraDirective) })
-            }
-        }
-        def wiring = RuntimeWiring.newRuntimeWiring()
-                .transformer(transformer) // Retained to show deprecated code is still run
-                .build()
-        GraphQLSchema schema = new SchemaGenerator().makeExecutableSchema(types, wiring)
-        expect:
-        assert schema != null
-        schema.getDirective("extra") != null
-    }
-
     def "enum object default values are handled"() {
         def spec = '''
             enum EnumValue {

@@ -54,10 +54,10 @@ import static graphql.schema.idl.TypeRuntimeWiring.newTypeWiring;
 @Fork(2)
 public class ComplexQueryBenchmark {
 
-    @Param({"5", "20", "100"})
+    @Param({"5", "10", "20"})
     int howManyItems = 5;
     int howLongToSleep = 5;
-    int howManyQueries = 50;
+    int howManyQueries = 10;
     int howManyQueryThreads = 10;
     int howManyFetcherThreads = 10;
 
@@ -104,50 +104,20 @@ public class ComplexQueryBenchmark {
 
     @SuppressWarnings({"ConstantValue", "LoopConditionNotUpdatedInsideLoop"})
     private static void runAtStartup() {
-        // set this to true if you want to hook in profiler say to a forever running JVM
-        int runForMillis = getRunForMillis();
 
-        if (runForMillis <= 0) {
-            return;
-        }
-        System.out.printf("Running initial code before starting the benchmark - runForMillis=%d  \n", runForMillis);
-        System.out.print("Get your profiler in order and press enter...  \n");
-        readLine();
-        System.out.print("Lets go...\n");
-
-        long now, then = System.currentTimeMillis();
         ComplexQueryBenchmark complexQueryBenchmark = new ComplexQueryBenchmark();
-        complexQueryBenchmark.setUp();
-        do {
-            System.out.printf("Running queries for %d millis....\n", System.currentTimeMillis() - then);
-            complexQueryBenchmark.howManyItems = 100;
-            complexQueryBenchmark.runManyQueriesToCompletion();
-            now = System.currentTimeMillis();
-        } while ((now - then) < runForMillis);
-        complexQueryBenchmark.tearDown();
+        complexQueryBenchmark.howManyQueries = 5;
+        complexQueryBenchmark.howManyItems = 10;
 
-        System.out.printf("This took %d millis\n", System.currentTimeMillis() - then);
-        System.exit(0);
+        BenchmarkUtils.runInToolingForSomeTimeThenExit(
+                complexQueryBenchmark::setUp,
+                complexQueryBenchmark::runManyQueriesToCompletion,
+                complexQueryBenchmark::tearDown
 
+        );
     }
 
-    private static void readLine() {
-        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
-        try {
-            br.readLine();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
 
-    private static int getRunForMillis() {
-        String runFor = System.getenv("runForMillis");
-        try {
-            return Integer.parseInt(runFor);
-        } catch (NumberFormatException e) {
-            return -1;
-        }
-    }
 
     @SuppressWarnings("UnnecessaryLocalVariable")
     private Void runManyQueriesToCompletion() {

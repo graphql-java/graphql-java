@@ -21,6 +21,10 @@ import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
 import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
+import org.openjdk.jmh.runner.Runner;
+import org.openjdk.jmh.runner.RunnerException;
+import org.openjdk.jmh.runner.options.Options;
+import org.openjdk.jmh.runner.options.OptionsBuilder;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -43,7 +47,13 @@ public class TwitterBenchmark {
     @Benchmark
     @BenchmarkMode(Mode.Throughput)
     @OutputTimeUnit(TimeUnit.SECONDS)
-    public void execute(Blackhole bh) {
+    public void benchmarkThroughput(Blackhole bh) {
+        bh.consume(execute());
+    }
+
+    @Benchmark
+    @BenchmarkMode(Mode.AverageTime)
+    public void benchmarkAvgTime(Blackhole bh) {
         bh.consume(execute());
     }
 
@@ -128,8 +138,11 @@ public class TwitterBenchmark {
         }
     }
 
-    public static void main(String[] args) {
-        ExecutionResult result = execute();
-        System.out.println(result);
+    public static void main(String[] args) throws RunnerException {
+        Options opt = new OptionsBuilder()
+                .include("benchmark.TwitterBenchmark")
+                .build();
+
+        new Runner(opt).run();
     }
 }

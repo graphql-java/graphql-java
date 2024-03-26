@@ -31,6 +31,8 @@ public class ExecutableNormalizedOperation {
     private final Map<ExecutableNormalizedField, MergedField> normalizedFieldToMergedField;
     private final Map<ExecutableNormalizedField, QueryDirectives> normalizedFieldToQueryDirectives;
     private final ImmutableListMultimap<FieldCoordinates, ExecutableNormalizedField> coordinatesToNormalizedFields;
+    private final int operationFieldCount;
+    private final int operationDepth;
 
     public ExecutableNormalizedOperation(
             OperationDefinition.Operation operation,
@@ -39,8 +41,9 @@ public class ExecutableNormalizedOperation {
             ImmutableListMultimap<Field, ExecutableNormalizedField> fieldToNormalizedField,
             Map<ExecutableNormalizedField, MergedField> normalizedFieldToMergedField,
             Map<ExecutableNormalizedField, QueryDirectives> normalizedFieldToQueryDirectives,
-            ImmutableListMultimap<FieldCoordinates, ExecutableNormalizedField> coordinatesToNormalizedFields
-    ) {
+            ImmutableListMultimap<FieldCoordinates, ExecutableNormalizedField> coordinatesToNormalizedFields,
+            int operationFieldCount,
+            int operationDepth) {
         this.operation = operation;
         this.operationName = operationName;
         this.topLevelFields = topLevelFields;
@@ -48,6 +51,8 @@ public class ExecutableNormalizedOperation {
         this.normalizedFieldToMergedField = normalizedFieldToMergedField;
         this.normalizedFieldToQueryDirectives = normalizedFieldToQueryDirectives;
         this.coordinatesToNormalizedFields = coordinatesToNormalizedFields;
+        this.operationFieldCount = operationFieldCount;
+        this.operationDepth = operationDepth;
     }
 
     /**
@@ -62,6 +67,20 @@ public class ExecutableNormalizedOperation {
      */
     public String getOperationName() {
         return operationName;
+    }
+
+    /**
+     * @return This returns how many {@link ExecutableNormalizedField}s are in the operation.
+     */
+    public int getOperationFieldCount() {
+        return operationFieldCount;
+    }
+
+    /**
+     * @return This returns the depth of the operation
+     */
+    public int getOperationDepth() {
+        return operationDepth;
     }
 
     /**

@@ -18,7 +18,6 @@ import graphql.schema.impl.SchemaUtil;
 import graphql.schema.validation.InvalidSchemaException;
 import graphql.schema.validation.SchemaValidationError;
 import graphql.schema.validation.SchemaValidator;
-import graphql.schema.visibility.GraphqlFieldVisibility;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -248,7 +247,7 @@ public class GraphQLSchema {
     public <T extends GraphQLType> List<T> getTypes(Collection<String> typeNames) {
         ImmutableList.Builder<T> builder = ImmutableList.builder();
         for (String typeName : typeNames) {
-            builder.add((T) assertNotNull(typeMap.get(typeName), () -> String.format("No type found for name %s", typeName)));
+            builder.add((T) assertNotNull(typeMap.get(typeName), "No type found for name %s", typeName));
         }
         return builder.build();
     }
@@ -292,7 +291,7 @@ public class GraphQLSchema {
         GraphQLType graphQLType = typeMap.get(typeName);
         if (graphQLType != null) {
             assertTrue(graphQLType instanceof GraphQLObjectType,
-                    () -> String.format("You have asked for named object type '%s' but it's not an object type but rather a '%s'", typeName, graphQLType.getClass().getName()));
+                    "You have asked for named object type '%s' but it's not an object type but rather a '%s'", typeName, graphQLType.getClass().getName());
         }
         return (GraphQLObjectType) graphQLType;
     }
@@ -323,7 +322,7 @@ public class GraphQLSchema {
         GraphQLType graphQLType = getType(typeName);
         if (graphQLType != null) {
             assertTrue(graphQLType instanceof GraphQLFieldsContainer,
-                    () -> String.format("You have asked for named type '%s' but it's not GraphQLFieldsContainer but rather a '%s'", typeName, graphQLType.getClass().getName()));
+                    "You have asked for named type '%s' but it's not GraphQLFieldsContainer but rather a '%s'", typeName, graphQLType.getClass().getName());
             return ((GraphQLFieldsContainer) graphQLType).getFieldDefinition(fieldName);
         }
         return null;
@@ -413,16 +412,6 @@ public class GraphQLSchema {
     }
 
     /**
-     * @return the field visibility
-     *
-     * @deprecated use {@link GraphQLCodeRegistry#getFieldVisibility()} instead
-     */
-    @Deprecated(since = "2018-12-03")
-    public GraphqlFieldVisibility getFieldVisibility() {
-        return codeRegistry.getFieldVisibility();
-    }
-
-    /**
      * This returns the list of directives definitions that are associated with this schema object including
      * built in ones.
      *
@@ -449,7 +438,6 @@ public class GraphQLSchema {
     public GraphQLDirective getDirective(String directiveName) {
         return directiveDefinitionsHolder.getDirective(directiveName);
     }
-
 
 
     /**
@@ -729,19 +717,6 @@ public class GraphQLSchema {
             return this;
         }
 
-        /**
-         * @param fieldVisibility the field visibility
-         *
-         * @return this builder
-         *
-         * @deprecated use {@link graphql.schema.GraphQLCodeRegistry.Builder#fieldVisibility(graphql.schema.visibility.GraphqlFieldVisibility)} instead
-         */
-        @Deprecated(since = "2018-12-03")
-        public Builder fieldVisibility(GraphqlFieldVisibility fieldVisibility) {
-            this.codeRegistry = this.codeRegistry.transform(builder -> builder.fieldVisibility(fieldVisibility));
-            return this;
-        }
-
         public Builder codeRegistry(GraphQLCodeRegistry codeRegistry) {
             this.codeRegistry = codeRegistry;
             return this;
@@ -860,35 +835,6 @@ public class GraphQLSchema {
         /**
          * Builds the schema
          *
-         * @param additionalTypes - please don't use this anymore
-         *
-         * @return the built schema
-         *
-         * @deprecated - Use the {@link #additionalType(GraphQLType)} methods
-         */
-        @Deprecated(since = "2018-07-30")
-        public GraphQLSchema build(Set<GraphQLType> additionalTypes) {
-            return additionalTypes(additionalTypes).build();
-        }
-
-        /**
-         * Builds the schema
-         *
-         * @param additionalTypes      - please don't use this anymore
-         * @param additionalDirectives - please don't use this anymore
-         *
-         * @return the built schema
-         *
-         * @deprecated - Use the {@link #additionalType(GraphQLType)} and {@link #additionalDirective(GraphQLDirective)} methods
-         */
-        @Deprecated(since = "2018-07-30")
-        public GraphQLSchema build(Set<GraphQLType> additionalTypes, Set<GraphQLDirective> additionalDirectives) {
-            return additionalTypes(additionalTypes).additionalDirectives(additionalDirectives).build();
-        }
-
-        /**
-         * Builds the schema
-         *
          * @return the built schema
          */
         public GraphQLSchema build() {
@@ -935,7 +881,7 @@ public class GraphQLSchema {
 
         private GraphQLSchema validateSchema(GraphQLSchema graphQLSchema) {
             Collection<SchemaValidationError> errors = new SchemaValidator().validateSchema(graphQLSchema);
-            if (errors.size() > 0) {
+            if (!errors.isEmpty()) {
                 throw new InvalidSchemaException(errors);
             }
             return graphQLSchema;

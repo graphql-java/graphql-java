@@ -184,6 +184,7 @@ public class GraphQLTypeUtil {
 
     /**
      * Unwraps all layers of the type or just returns the type again if it's not a wrapped type
+     * NOTE: This method does not support GraphQLTypeReference as input and will lead to a ClassCastException
      *
      * @param type the type to unwrapOne
      *

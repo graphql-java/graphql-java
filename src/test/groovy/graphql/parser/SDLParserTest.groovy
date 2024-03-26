@@ -800,13 +800,15 @@ input Gun {
 
         when:
         def defaultDoc = new Parser().parseDocument(input)
-        def namedDocNull = new Parser().parseDocument(input, (String) null)
-        def namedDoc = new Parser().parseDocument(input, sourceName)
+        Reader reader = MultiSourceReader.newMultiSourceReader()
+                .string(input, sourceName)
+                .build();
+
+        def namedDoc = new Parser().parseDocument(reader)
 
         then:
 
         defaultDoc.definitions[0].sourceLocation.sourceName == null
-        namedDocNull.definitions[0].sourceLocation.sourceName == null
         namedDoc.definitions[0].sourceLocation.sourceName == sourceName
 
     }

@@ -127,8 +127,9 @@ class InstrumentationTest extends Specification {
         """
 
         def instrumentation = new LegacyTestingInstrumentation() {
+
             @Override
-            DataFetcher<?> instrumentDataFetcher(DataFetcher<?> dataFetcher, InstrumentationFieldFetchParameters parameters) {
+            DataFetcher<?> instrumentDataFetcher(DataFetcher<?> dataFetcher, InstrumentationFieldFetchParameters parameters, InstrumentationState state) {
                 return new DataFetcher<Object>() {
                     @Override
                     Object get(DataFetchingEnvironment environment) {
@@ -171,7 +172,7 @@ class InstrumentationTest extends Specification {
             return new ExecutionStrategyInstrumentationContext() {
 
                 @Override
-                void onDispatched(CompletableFuture<ExecutionResult> result) {
+                void onDispatched() {
                     System.out.println(String.format("t%s setting go signal on", Thread.currentThread().getId()))
                     goSignal.set(true)
                 }

@@ -43,7 +43,6 @@ import static graphql.Assert.assertNotNull;
  *
  * @see graphql.execution.instrumentation.Instrumentation
  */
-@SuppressWarnings("deprecation")
 @PublicApi
 public class ChainedInstrumentation implements Instrumentation {
 
@@ -113,26 +112,8 @@ public class ChainedInstrumentation implements Instrumentation {
     }
 
     @Override
-    public InstrumentationState createState() {
-        return Assert.assertShouldNeverHappen("createStateAsync should only ever be used");
-    }
-
-    @Override
-    public @Nullable InstrumentationState createState(InstrumentationCreateStateParameters parameters) {
-        return Assert.assertShouldNeverHappen("createStateAsync should only ever be used");
-    }
-
-    @Override
     public @NotNull CompletableFuture<InstrumentationState> createStateAsync(InstrumentationCreateStateParameters parameters) {
         return ChainedInstrumentationState.combineAll(instrumentations, parameters);
-    }
-
-    @Override
-    @NotNull
-    public InstrumentationContext<ExecutionResult> beginExecution(InstrumentationExecutionParameters parameters) {
-        // these assert methods have been left in so that we truly never call these methods, either in production nor in tests
-        // later when the deprecated methods are removed, this will disappear.
-        return Assert.assertShouldNeverHappen("The deprecated " + "beginExecution" + " was called");
     }
 
     @Override
@@ -140,22 +121,12 @@ public class ChainedInstrumentation implements Instrumentation {
         return chainedCtx(state, (instrumentation, specificState) -> instrumentation.beginExecution(parameters, specificState));
     }
 
-    @Override
-    @NotNull
-    public InstrumentationContext<Document> beginParse(InstrumentationExecutionParameters parameters) {
-        return Assert.assertShouldNeverHappen("The deprecated " + "beginParse" + " was called");
-    }
 
     @Override
     public InstrumentationContext<Document> beginParse(InstrumentationExecutionParameters parameters, InstrumentationState state) {
         return chainedCtx(state, (instrumentation, specificState) -> instrumentation.beginParse(parameters, specificState));
     }
 
-    @Override
-    @NotNull
-    public InstrumentationContext<List<ValidationError>> beginValidation(InstrumentationValidationParameters parameters) {
-        return Assert.assertShouldNeverHappen("The deprecated " + "beginValidation" + " was called");
-    }
 
     @Override
     public InstrumentationContext<List<ValidationError>> beginValidation(InstrumentationValidationParameters parameters, InstrumentationState state) {
@@ -163,21 +134,10 @@ public class ChainedInstrumentation implements Instrumentation {
     }
 
     @Override
-    @NotNull
-    public InstrumentationContext<ExecutionResult> beginExecuteOperation(InstrumentationExecuteOperationParameters parameters) {
-        return Assert.assertShouldNeverHappen("The deprecated " + "beginExecuteOperation" + " was called");
-    }
-
-    @Override
     public InstrumentationContext<ExecutionResult> beginExecuteOperation(InstrumentationExecuteOperationParameters parameters, InstrumentationState state) {
         return chainedCtx(state, (instrumentation, specificState) -> instrumentation.beginExecuteOperation(parameters, specificState));
     }
 
-    @Override
-    @NotNull
-    public ExecutionStrategyInstrumentationContext beginExecutionStrategy(InstrumentationExecutionStrategyParameters parameters) {
-        return Assert.assertShouldNeverHappen("The deprecated " + "beginExecutionStrategy" + " was called");
-    }
 
     @Override
     public ExecutionStrategyInstrumentationContext beginExecutionStrategy(InstrumentationExecutionStrategyParameters parameters, InstrumentationState state) {
@@ -211,26 +171,10 @@ public class ChainedInstrumentation implements Instrumentation {
         return new ChainedDeferredExecutionStrategyInstrumentationContext(chainedMapAndDropNulls(instrumentationState, Instrumentation::beginDeferredField));
     }
 
-    @Override
-    @NotNull
-    public InstrumentationContext<ExecutionResult> beginSubscribedFieldEvent(InstrumentationFieldParameters parameters) {
-        return Assert.assertShouldNeverHappen("The deprecated " + "beginSubscribedFieldEvent" + " was called");
-    }
 
     @Override
     public InstrumentationContext<ExecutionResult> beginSubscribedFieldEvent(InstrumentationFieldParameters parameters, InstrumentationState state) {
         return chainedCtx(state, (instrumentation, specificState) -> instrumentation.beginSubscribedFieldEvent(parameters, specificState));
-    }
-
-    @Override
-    @NotNull
-    public InstrumentationContext<ExecutionResult> beginField(InstrumentationFieldParameters parameters) {
-        return Assert.assertShouldNeverHappen("The deprecated " + "beginField" + " was called");
-    }
-
-    @Override
-    public InstrumentationContext<ExecutionResult> beginField(InstrumentationFieldParameters parameters, InstrumentationState state) {
-        return Assert.assertShouldNeverHappen("The deprecated " + "beginField" + " was called");
     }
 
     @Override
@@ -239,26 +183,8 @@ public class ChainedInstrumentation implements Instrumentation {
     }
 
     @Override
-    @NotNull
-    public InstrumentationContext<Object> beginFieldFetch(InstrumentationFieldFetchParameters parameters) {
-        return Assert.assertShouldNeverHappen("The deprecated " + "beginFieldFetch" + " was called");
-    }
-
-    @Override
     public InstrumentationContext<Object> beginFieldFetch(InstrumentationFieldFetchParameters parameters, InstrumentationState state) {
         return chainedCtx(state, (instrumentation, specificState) -> instrumentation.beginFieldFetch(parameters, specificState));
-    }
-
-
-    @Override
-    @NotNull
-    public InstrumentationContext<ExecutionResult> beginFieldComplete(InstrumentationFieldCompleteParameters parameters) {
-        return Assert.assertShouldNeverHappen("The deprecated " + "beginFieldComplete" + " was called");
-    }
-
-    @Override
-    public InstrumentationContext<ExecutionResult> beginFieldComplete(InstrumentationFieldCompleteParameters parameters, InstrumentationState state) {
-        return Assert.assertShouldNeverHappen("The deprecated " + "beginFieldComplete" + " was called");
     }
 
     @Override
@@ -268,37 +194,14 @@ public class ChainedInstrumentation implements Instrumentation {
 
 
     @Override
-    @NotNull
-    public InstrumentationContext<ExecutionResult> beginFieldListComplete(InstrumentationFieldCompleteParameters parameters) {
-        return Assert.assertShouldNeverHappen("The deprecated " + "beginFieldListComplete" + " was called");
-    }
-
-    @Override
-    public InstrumentationContext<ExecutionResult> beginFieldListComplete(InstrumentationFieldCompleteParameters parameters, InstrumentationState state) {
-        return chainedCtx(state, (instrumentation, specificState) -> instrumentation.beginFieldListComplete(parameters, specificState));
-    }
-
-    @Override
     public @Nullable InstrumentationContext<Object> beginFieldListCompletion(InstrumentationFieldCompleteParameters parameters, InstrumentationState state) {
         return chainedCtx(state, (instrumentation, specificState) -> instrumentation.beginFieldListCompletion(parameters, specificState));
-    }
-
-    @Override
-    @NotNull
-    public ExecutionInput instrumentExecutionInput(ExecutionInput executionInput, InstrumentationExecutionParameters parameters) {
-        return Assert.assertShouldNeverHappen("The deprecated " + "instrumentExecutionInput" + " was called");
     }
 
     @NotNull
     @Override
     public ExecutionInput instrumentExecutionInput(ExecutionInput executionInput, InstrumentationExecutionParameters parameters, InstrumentationState state) {
         return chainedInstrument(state, executionInput, (instrumentation, specificState, accumulator) -> instrumentation.instrumentExecutionInput(accumulator, parameters, specificState));
-    }
-
-    @Override
-    @NotNull
-    public DocumentAndVariables instrumentDocumentAndVariables(DocumentAndVariables documentAndVariables, InstrumentationExecutionParameters parameters) {
-        return Assert.assertShouldNeverHappen("The deprecated " + "instrumentDocumentAndVariables" + " was called");
     }
 
     @NotNull
@@ -308,23 +211,11 @@ public class ChainedInstrumentation implements Instrumentation {
                 instrumentation.instrumentDocumentAndVariables(accumulator, parameters, specificState));
     }
 
-    @Override
-    @NotNull
-    public GraphQLSchema instrumentSchema(GraphQLSchema schema, InstrumentationExecutionParameters parameters) {
-        return Assert.assertShouldNeverHappen("The deprecated " + "instrumentSchema" + " was called");
-    }
-
     @NotNull
     @Override
     public GraphQLSchema instrumentSchema(GraphQLSchema schema, InstrumentationExecutionParameters parameters, InstrumentationState state) {
         return chainedInstrument(state, schema, (instrumentation, specificState, accumulator) ->
                 instrumentation.instrumentSchema(accumulator, parameters, specificState));
-    }
-
-    @Override
-    @NotNull
-    public ExecutionContext instrumentExecutionContext(ExecutionContext executionContext, InstrumentationExecutionParameters parameters) {
-        return Assert.assertShouldNeverHappen("The deprecated " + "instrumentExecutionContext" + " was called");
     }
 
     @NotNull
@@ -334,23 +225,11 @@ public class ChainedInstrumentation implements Instrumentation {
                 instrumentation.instrumentExecutionContext(accumulator, parameters, specificState));
     }
 
-    @Override
-    @NotNull
-    public DataFetcher<?> instrumentDataFetcher(DataFetcher<?> dataFetcher, InstrumentationFieldFetchParameters parameters) {
-        return Assert.assertShouldNeverHappen("The deprecated " + "instrumentDataFetcher" + " was called");
-    }
-
     @NotNull
     @Override
     public DataFetcher<?> instrumentDataFetcher(DataFetcher<?> dataFetcher, InstrumentationFieldFetchParameters parameters, InstrumentationState state) {
         return chainedInstrument(state, dataFetcher, (Instrumentation instrumentation, InstrumentationState specificState, DataFetcher<?> accumulator) ->
                 instrumentation.instrumentDataFetcher(accumulator, parameters, specificState));
-    }
-
-    @Override
-    @NotNull
-    public CompletableFuture<ExecutionResult> instrumentExecutionResult(ExecutionResult executionResult, InstrumentationExecutionParameters parameters) {
-        return Assert.assertShouldNeverHappen("The deprecated " + "instrumentExecutionResult" + " was called");
     }
 
     @NotNull
@@ -397,8 +276,8 @@ public class ChainedInstrumentation implements Instrumentation {
         }
 
         @Override
-        public void onDispatched(CompletableFuture<T> result) {
-            contexts.forEach(context -> context.onDispatched(result));
+        public void onDispatched() {
+            contexts.forEach(InstrumentationContext::onDispatched);
         }
 
         @Override
@@ -416,8 +295,8 @@ public class ChainedInstrumentation implements Instrumentation {
         }
 
         @Override
-        public void onDispatched(CompletableFuture<ExecutionResult> result) {
-            contexts.forEach(context -> context.onDispatched(result));
+        public void onDispatched() {
+            contexts.forEach(InstrumentationContext::onDispatched);
         }
 
         @Override
@@ -445,8 +324,8 @@ public class ChainedInstrumentation implements Instrumentation {
         }
 
         @Override
-        public void onDispatched(CompletableFuture<Map<String, Object>> result) {
-            contexts.forEach(context -> context.onDispatched(result));
+        public void onDispatched() {
+            contexts.forEach(InstrumentationContext::onDispatched);
         }
 
         @Override
@@ -474,8 +353,8 @@ public class ChainedInstrumentation implements Instrumentation {
         }
 
         @Override
-        public void onDispatched(CompletableFuture<Object> result) {
-            contexts.forEach(context -> context.onDispatched(result));
+        public void onDispatched() {
+            contexts.forEach(InstrumentationContext::onDispatched);
         }
 
         @Override
