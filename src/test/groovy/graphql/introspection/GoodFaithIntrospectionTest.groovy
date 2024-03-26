@@ -3,13 +3,12 @@ package graphql.introspection
 import graphql.ExecutionInput
 import graphql.ExecutionResult
 import graphql.TestUtil
-import graphql.execution.AbortExecutionException
 import graphql.execution.CoercedVariables
 import graphql.language.Document
 import graphql.normalized.ExecutableNormalizedOperationFactory
 import spock.lang.Specification
 
-class GoodFaithIntrospectionInstrumentationTest extends Specification {
+class GoodFaithIntrospectionTest extends Specification {
 
     def graphql = TestUtil.graphQL("type Query { normalField : String }").build()
 
@@ -170,7 +169,7 @@ class GoodFaithIntrospectionInstrumentationTest extends Specification {
         def query = createDeepQuery(depth)
         def then = System.currentTimeMillis()
         ExecutionResult er = graphql.execute(query)
-        def ms = System.currentTimeMillis()-then
+        def ms = System.currentTimeMillis() - then
 
         then:
         !er.errors.isEmpty()
@@ -181,12 +180,12 @@ class GoodFaithIntrospectionInstrumentationTest extends Specification {
         where:
         depth | targetError
         2     | GoodFaithIntrospection.BadFaithIntrospectionError.class
-        10    | AbortExecutionException.class
-        15    | AbortExecutionException.class
-        20    | AbortExecutionException.class
-        25    | AbortExecutionException.class
-        50    | AbortExecutionException.class
-        100    | AbortExecutionException.class
+        10  | GoodFaithIntrospection.BadFaithIntrospectionError.class
+        15  | GoodFaithIntrospection.BadFaithIntrospectionError.class
+        20  | GoodFaithIntrospection.BadFaithIntrospectionError.class
+        25  | GoodFaithIntrospection.BadFaithIntrospectionError.class
+        50  | GoodFaithIntrospection.BadFaithIntrospectionError.class
+        100 | GoodFaithIntrospection.BadFaithIntrospectionError.class
     }
 
     String createDeepQuery(int depth = 25) {

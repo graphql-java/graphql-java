@@ -7,6 +7,7 @@ import graphql.ExecutionResult;
 import graphql.GraphQLContext;
 import graphql.GraphQLError;
 import graphql.PublicApi;
+import graphql.execution.AbortExecutionException;
 import graphql.execution.ExecutionContext;
 import graphql.language.SourceLocation;
 import graphql.normalized.ExecutableNormalizedField;
@@ -85,14 +86,20 @@ public class GoodFaithIntrospection {
 
     public static Optional<ExecutionResult> checkIntrospection(ExecutionContext executionContext) {
         if (isIntrospectionEnabled(executionContext.getGraphQLContext())) {
-            ExecutableNormalizedOperation operation = mkOperation(executionContext);
+            ExecutableNormalizedOperation operation;
+            try {
+                operation = mkOperation(executionContext);
+            } catch (AbortExecutionException e) {
+                BadFaithIntrospectionError error = BadFaithIntrospectionError.tooBigOperation(e.getMessage());
+                return Optional.of(ExecutionResult.newExecutionResult().addError(error).build());
+            }
             ImmutableListMultimap<FieldCoordinates, ExecutableNormalizedField> coordinatesToENFs = operation.getCoordinatesToNormalizedFields();
             for (Map.Entry<FieldCoordinates, Integer> entry : ALLOWED_FIELD_INSTANCES.entrySet()) {
                 FieldCoordinates coordinates = entry.getKey();
                 Integer allowSize = entry.getValue();
                 ImmutableList<ExecutableNormalizedField> normalizedFields = coordinatesToENFs.get(coordinates);
                 if (normalizedFields.size() > allowSize) {
-                    BadFaithIntrospectionError error = new BadFaithIntrospectionError(coordinates.toString());
+                    BadFaithIntrospectionError error = BadFaithIntrospectionError.tooManyFields(coordinates.toString());
                     return Optional.of(ExecutionResult.newExecutionResult().addError(error).build());
                 }
             }
@@ -108,7 +115,7 @@ public class GoodFaithIntrospection {
      *
      * @return an executable operation
      */
-    private static ExecutableNormalizedOperation mkOperation(ExecutionContext executionContext) {
+    private static ExecutableNormalizedOperation mkOperation(ExecutionContext executionContext) throws AbortExecutionException {
         Options options = Options.defaultOptions()
                 .maxFieldsCount(GOOD_FAITH_MAX_FIELDS_COUNT)
                 .maxChildrenDepth(GOOD_FAITH_MAX_DEPTH_COUNT)
@@ -133,8 +140,16 @@ public class GoodFaithIntrospection {
     public static class BadFaithIntrospectionError implements GraphQLError {
         private final String message;
 
-        public BadFaithIntrospectionError(String qualifiedField) {
-            this.message = String.format("This request is not asking for introspection in good faith - %s is present too often!", qualifiedField);
+        public static BadFaithIntrospectionError tooManyFields(String fieldCoordinate) {
+            return new BadFaithIntrospectionError(String.format("This request is not asking for introspection in good faith - %s is present too often!", fieldCoordinate));
+        }
+
+        public static BadFaithIntrospectionError tooBigOperation(String message) {
+            return new BadFaithIntrospectionError(String.format("This request is not asking for introspection in good faith - the query is too big: %s", message));
+        }
+
+        private BadFaithIntrospectionError(String message) {
+            this.message = message;
         }
 
         @Override
@@ -150,6 +165,13 @@ public class GoodFaithIntrospection {
         @Override
         public List<SourceLocation> getLocations() {
             return null;
+        }
+
+        @Override
+        public String toString() {
+            return "BadFaithIntrospectionError{" +
+                    "message='" + message + '\'' +
+                    '}';
         }
     }
 }
