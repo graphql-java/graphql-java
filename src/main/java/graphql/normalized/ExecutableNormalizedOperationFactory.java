@@ -130,7 +130,7 @@ public class ExecutableNormalizedOperationFactory {
          * @return new options object to use
          */
         public Options maxFieldsCount(int maxFieldsCount) {
-            return new Options(this.graphQLContext, this.locale, maxChildrenDepth, maxFieldsCount);
+            return new Options(this.graphQLContext, this.locale, this.maxChildrenDepth, maxFieldsCount);
         }
 
         /**
