@@ -203,7 +203,7 @@ public class NodeVisitorWithTypeTracking extends NodeVisitorStub {
         QueryVisitorFieldEnvironment fieldEnv = fieldCtx.getEnvironment();
         GraphQLFieldsContainer fieldsContainer = fieldEnv.getFieldsContainer();
 
-        GraphQLFieldDefinition fieldDefinition = Introspection.getFieldDef(schema, fieldsContainer, field.getName());
+        GraphQLFieldDefinition fieldDefinition = Introspection.getFieldDefinition(schema, fieldsContainer, field.getName());
         GraphQLArgument graphQLArgument = fieldDefinition.getArgument(argument.getName());
         String argumentName = graphQLArgument.getName();
 

@@ -34,6 +34,7 @@ import graphql.normalized.incremental.NormalizedDeferredExecution;
 import graphql.schema.FieldCoordinates;
 import graphql.schema.GraphQLCompositeType;
 import graphql.schema.GraphQLFieldDefinition;
+import graphql.schema.GraphQLFieldsContainer;
 import graphql.schema.GraphQLInterfaceType;
 import graphql.schema.GraphQLNamedOutputType;
 import graphql.schema.GraphQLObjectType;
@@ -644,7 +645,7 @@ public class ExecutableNormalizedOperationFactory {
             Set<GraphQLObjectType> objectTypes = collectedFieldGroup.objectTypes;
             field = collectedFieldGroup.fields.iterator().next().field;
             String fieldName = field.getName();
-            GraphQLFieldDefinition fieldDefinition = Introspection.getFieldDef(graphQLSchema, objectTypes.iterator().next(), fieldName);
+            GraphQLFieldDefinition fieldDefinition = Introspection.getFieldDefinition(graphQLSchema, objectTypes.iterator().next(), fieldName);
 
             Map<String, Object> argumentValues = ValuesResolver.getArgumentValues(fieldDefinition.getArguments(), field.getArguments(), CoercedVariables.of(this.coercedVariableValues.toMap()), this.options.graphQLContext, this.options.locale);
             Map<String, NormalizedInputValue> normalizedArgumentValues = null;
