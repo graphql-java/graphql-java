@@ -1387,17 +1387,10 @@ abstract class ExecutableNormalizedOperationToAstCompilerTest extends Specificat
 '''
     }
 
-    def "introspection query can be printed"() {
+    def "introspection query can be printed __schema"() {
         def sdl = '''
         type Query {
-            foo1: Foo 
-        }
-        interface Foo {
-            test: String
-        }
-        type AFoo implements Foo {
-            test: String
-            aFoo: String
+            f: String 
         }
         '''
         def query = '''
@@ -1409,14 +1402,7 @@ abstract class ExecutableNormalizedOperationToAstCompilerTest extends Specificat
                     }
                 }
             }
-        
-            __type(name: "World") {
-                name
-                fields {
-                    name
-                }
-            }
-        }
+         }
         '''
 
         GraphQLSchema schema = mkSchema(sdl)
@@ -1433,6 +1419,34 @@ abstract class ExecutableNormalizedOperationToAstCompilerTest extends Specificat
       }
     }
   }
+}
+'''
+    }
+
+    def "introspection query can be printed __type"() {
+        def sdl = '''
+        type Query {
+            f: String 
+        }
+        '''
+        def query = '''
+        query introspection_query {
+            __type(name: "World") {
+                name
+                fields {
+                    name
+                }
+            }
+        }
+        '''
+
+        GraphQLSchema schema = mkSchema(sdl)
+        def fields = createNormalizedFields(schema, query)
+        when:
+        def result = localCompileToDocument(schema, QUERY, null, fields, noVariables)
+        def documentPrinted = AstPrinter.printAst(new AstSorter().sort(result.document))
+        then:
+        documentPrinted == '''{
   __type(name: "World") {
     fields {
       name

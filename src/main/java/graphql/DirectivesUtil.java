@@ -9,6 +9,7 @@ import graphql.schema.GraphQLDirectiveContainer;
 import graphql.util.FpKit;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -91,7 +92,6 @@ public class DirectivesUtil {
      * directives collection takes precedence.
      *
      * @param directiveContainer the schema element holding applied directives
-     *
      * @return a combined list unique by name
      */
     public static List<GraphQLAppliedDirective> toAppliedDirectives(GraphQLDirectiveContainer directiveContainer) {
@@ -104,7 +104,6 @@ public class DirectivesUtil {
      *
      * @param appliedDirectives the applied directives to use
      * @param directives        the legacy directives to use
-     *
      * @return a combined list unique by name
      */
     public static List<GraphQLAppliedDirective> toAppliedDirectives(Collection<GraphQLAppliedDirective> appliedDirectives, Collection<GraphQLDirective> directives) {
@@ -127,6 +126,7 @@ public class DirectivesUtil {
      * A holder class that breaks a list of directives into maps to be more easily accessible in using classes
      */
     public static class DirectivesHolder {
+        private static final DirectivesHolder EMPTY_HOLDER = new DirectivesHolder(Collections.emptyList(), Collections.emptyList());
 
         private final ImmutableMap<String, List<GraphQLDirective>> allDirectivesByName;
         private final ImmutableMap<String, GraphQLDirective> nonRepeatableDirectivesByName;
@@ -145,7 +145,14 @@ public class DirectivesUtil {
 
             this.allAppliedDirectives = ImmutableList.copyOf(allAppliedDirectives);
             this.allAppliedDirectivesByName = ImmutableMap.copyOf(FpKit.groupingBy(allAppliedDirectives, GraphQLAppliedDirective::getName));
+        }
 
+        public static DirectivesHolder create(List<GraphQLDirective> directives, List<GraphQLAppliedDirective> appliedDirectives) {
+            if (directives.isEmpty() && appliedDirectives.isEmpty()) {
+                return EMPTY_HOLDER;
+            }
+
+            return new DirectivesHolder(directives, appliedDirectives);
         }
 
         public ImmutableMap<String, List<GraphQLDirective>> getAllDirectivesByName() {

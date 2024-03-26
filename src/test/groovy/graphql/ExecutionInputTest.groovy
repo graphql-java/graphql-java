@@ -45,23 +45,6 @@ class ExecutionInputTest extends Specification {
         executionInput.graphQLContext.get("a") == "b"
     }
 
-    def "legacy context methods work"() {
-        // Retaining deprecated method tests for coverage
-        when:
-        def executionInput = ExecutionInput.newExecutionInput().query(query)
-                .context({ builder -> builder.of("k1", "v1") } as UnaryOperator) // Retain deprecated for test coverage
-                .build()
-        then:
-        (executionInput.context as GraphQLContext).get("k1") == "v1" // Retain deprecated for test coverage
-
-        when:
-        executionInput = ExecutionInput.newExecutionInput().query(query)
-                .context(GraphQLContext.newContext().of("k2", "v2")) // Retain deprecated for test coverage
-                .build()
-        then:
-        (executionInput.context as GraphQLContext).get("k2") == "v2" // Retain deprecated for test coverage
-    }
-
     def "legacy context is defaulted"() {
         // Retaining deprecated method tests for coverage
         when:

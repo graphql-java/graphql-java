@@ -6,6 +6,7 @@ import com.google.common.collect.ImmutableMap;
 import graphql.Internal;
 import graphql.PublicApi;
 import graphql.collect.ImmutableKit;
+import graphql.util.Interning;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
@@ -50,7 +51,7 @@ public class Field extends AbstractNode<Field> implements Selection<Field>, Sele
                     IgnoredChars ignoredChars,
                     Map<String, String> additionalData) {
         super(sourceLocation, comments, ignoredChars, additionalData);
-        this.name = name;
+        this.name = name == null ? null : Interning.intern(name);
         this.alias = alias;
         this.arguments = ImmutableList.copyOf(arguments);
         this.directives = ImmutableList.copyOf(directives);

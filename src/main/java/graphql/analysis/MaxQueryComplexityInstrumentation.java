@@ -14,6 +14,7 @@ import graphql.validation.ValidationError;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 
@@ -78,10 +79,9 @@ public class MaxQueryComplexityInstrumentation extends SimplePerformantInstrumen
     }
 
     @Override
-    public InstrumentationState createState(InstrumentationCreateStateParameters parameters) {
-        return new State();
+    public @Nullable CompletableFuture<InstrumentationState> createStateAsync(InstrumentationCreateStateParameters parameters) {
+        return CompletableFuture.completedFuture(new State());
     }
-
 
     @Override
     public @Nullable InstrumentationContext<List<ValidationError>> beginValidation(InstrumentationValidationParameters parameters, InstrumentationState rawState) {

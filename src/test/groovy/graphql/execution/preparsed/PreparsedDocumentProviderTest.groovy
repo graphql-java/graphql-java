@@ -11,9 +11,9 @@ import graphql.execution.instrumentation.LegacyTestingInstrumentation
 import graphql.execution.instrumentation.SimplePerformantInstrumentation
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters
 import graphql.language.Document
-import graphql.parser.Parser
 import spock.lang.Specification
 
+import java.util.concurrent.CompletableFuture
 import java.util.function.Function
 
 import static graphql.ExecutionInput.newExecutionInput
@@ -193,13 +193,13 @@ class PreparsedDocumentProviderTest extends Specification {
         def documentProvider = new PreparsedDocumentProvider() {
 
             @Override
-            PreparsedDocumentEntry getDocument(ExecutionInput executionInput, Function<ExecutionInput, PreparsedDocumentEntry> parseAndValidateFunction) {
+            CompletableFuture<PreparsedDocumentEntry> getDocumentAsync(ExecutionInput executionInput, Function<ExecutionInput, PreparsedDocumentEntry> parseAndValidateFunction) {
                 if (executionInput.getQuery() == "#A") {
                     executionInput = executionInput.transform({ it.query(queryA) })
                 } else {
                     executionInput = executionInput.transform({ it.query(queryB) })
                 }
-                return parseAndValidateFunction.apply(executionInput)
+                return CompletableFuture.completedFuture(parseAndValidateFunction.apply(executionInput))
             }
         }
 
@@ -224,29 +224,5 @@ class PreparsedDocumentProviderTest extends Specification {
 
         resultB.data == [hero: [name: "R2-D2"]]
         instrumentationB.capturedInput.getQuery() == queryB
-    }
-
-    def "sync method and async method result is same"() {
-        given:
-        def provider = new TestingPreparsedDocumentProvider()
-        def queryA = """
-              query A {
-                  hero {
-                      id
-                  }
-              }
-              """
-        def engineParser = {
-            ExecutionInput ei ->
-                def doc = new Parser().parseDocument(ei.getQuery())
-                return new PreparsedDocumentEntry(doc)
-        }
-        when:
-        def syncMethod = provider.getDocument(newExecutionInput(queryA).build(), engineParser)
-        def asyncMethod = provider.getDocumentAsync(newExecutionInput(queryA).build(), engineParser)
-
-        then:
-        asyncMethod != null
-        asyncMethod.get().equals(syncMethod)
     }
 }

@@ -154,13 +154,6 @@ public class SchemaGenerator {
                     buildCtx.getCodeRegistry());
             graphQLSchema = directiveWiringProcessing.process(graphQLSchema);
         }
-
-        //
-        // SchemaGeneratorPostProcessing is deprecated but for now we continue to run them
-        //
-        for (SchemaGeneratorPostProcessing postProcessing : buildCtx.getWiring().getSchemaGeneratorPostProcessings()) {
-            graphQLSchema = postProcessing.process(graphQLSchema);
-        }
         return graphQLSchema;
     }
 

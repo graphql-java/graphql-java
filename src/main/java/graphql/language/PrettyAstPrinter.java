@@ -408,10 +408,10 @@ public class PrettyAstPrinter extends AstPrinter {
         private static final PrettyPrinterOptions defaultOptions = new PrettyPrinterOptions(IndentType.SPACE, 2);
 
         private PrettyPrinterOptions(IndentType indentType, int indentWidth) {
-            this.indentText =  String.join("", Collections.nCopies(indentWidth, indentType.character));
+            this.indentText = String.join("", Collections.nCopies(indentWidth, indentType.character));
         }
 
-        public static PrettyPrinterOptions defaultOptions()  {
+        public static PrettyPrinterOptions defaultOptions() {
             return defaultOptions;
         }
 

@@ -42,7 +42,7 @@ final class ValuesResolverOneOfValidation {
         }
 
         if (unwrappedNonNullType instanceof GraphQLInputObjectType && !ValuesResolverConversion.isNullValue(inputValue)) {
-            Assert.assertTrue(inputValue instanceof Map, () -> String.format("The coerced argument %s GraphQLInputObjectType is unexpectedly not a map", argumentName));
+            Assert.assertTrue(inputValue instanceof Map, "The coerced argument %s GraphQLInputObjectType is unexpectedly not a map", argumentName);
             Map<String, Object> objectMap = (Map<String, Object>) inputValue;
 
             GraphQLInputObjectType inputObjectType = (GraphQLInputObjectType) unwrappedNonNullType;
@@ -63,7 +63,7 @@ final class ValuesResolverOneOfValidation {
                             .collect(Collectors.toList());
 
                     if (values.size() > 1) {
-                        Assert.assertShouldNeverHappen(String.format("argument %s has %s object fields with the same name: '%s'. A maximum of 1 is expected", argumentName, values.size(), childFieldName));
+                        Assert.assertShouldNeverHappen("argument %s has %s object fields with the same name: '%s'. A maximum of 1 is expected", argumentName, values.size(), childFieldName);
                     } else if (!values.isEmpty()) {
                         validateOneOfInputTypes(childFieldType, childFieldInputValue, values.get(0), argumentName, locale);
                     }
