@@ -152,7 +152,7 @@ public class NodeVisitorWithTypeTracking extends NodeVisitorStub {
         QueryTraversalContext parentEnv = context.getVarFromParents(QueryTraversalContext.class);
         GraphQLContext graphQLContext = parentEnv.getGraphQLContext();
 
-        GraphQLFieldDefinition fieldDefinition = Introspection.getFieldDefinition(schema, (GraphQLFieldsContainer) unwrapAll(parentEnv.getOutputType()), field.getName());
+        GraphQLFieldDefinition fieldDefinition = Introspection.getFieldDef(schema, (GraphQLCompositeType) unwrapAll(parentEnv.getOutputType()), field.getName());
         boolean isTypeNameIntrospectionField = fieldDefinition == schema.getIntrospectionTypenameFieldDefinition();
         GraphQLFieldsContainer fieldsContainer = !isTypeNameIntrospectionField ? (GraphQLFieldsContainer) unwrapAll(parentEnv.getOutputType()) : null;
         GraphQLCodeRegistry codeRegistry = schema.getCodeRegistry();

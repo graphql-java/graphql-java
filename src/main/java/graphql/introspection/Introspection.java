@@ -784,7 +784,8 @@ public class Introspection {
 
     /**
      * This will look up a field definition by name, and understand that fields like __typename and __schema are special
-     * and take precedence in field resolution
+     * and take precedence in field resolution.  If the parent type is a union type, then the only field allowed
+     * is `__typename`.
      *
      * @param schema     the schema to use
      * @param parentType the type of the parent object
@@ -792,7 +793,6 @@ public class Introspection {
      *
      * @return a field definition otherwise throws an assertion exception if it's null
      */
-    @Deprecated(since = "2024-03-24", forRemoval = true)
     public static GraphQLFieldDefinition getFieldDef(GraphQLSchema schema, GraphQLCompositeType parentType, String fieldName) {
 
         GraphQLFieldDefinition fieldDefinition = getSystemFieldDef(schema, parentType, fieldName);
@@ -800,11 +800,10 @@ public class Introspection {
             return fieldDefinition;
         }
 
-        assertTrue(parentType instanceof GraphQLFieldsContainer, () -> String.format("should not happen : parent type must be an object or interface %s", parentType));
-        @SuppressWarnings("DataFlowIssue")
+        assertTrue(parentType instanceof GraphQLFieldsContainer, "should not happen : parent type must be an object or interface %s", parentType);
         GraphQLFieldsContainer fieldsContainer = (GraphQLFieldsContainer) parentType;
         fieldDefinition = schema.getCodeRegistry().getFieldVisibility().getFieldDefinition(fieldsContainer, fieldName);
-        assertTrue(fieldDefinition != null, () -> String.format("Unknown field '%s' for type %s", fieldName, fieldsContainer.getName()));
+        assertTrue(fieldDefinition != null, "Unknown field '%s' for type %s", fieldName, fieldsContainer.getName());
         return fieldDefinition;
     }
 
