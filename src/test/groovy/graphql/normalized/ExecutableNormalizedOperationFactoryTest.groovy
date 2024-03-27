@@ -3165,7 +3165,7 @@ fragment personName on Person {
 
         GraphQLSchema graphQLSchema = TestUtil.schema(schema)
 
-        String query = "{ foo { foo{ name}}} "
+        String query = "{foo{foo{name}}} "
 
         assertValidQuery(graphQLSchema, query)
 
