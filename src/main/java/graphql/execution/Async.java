@@ -356,12 +356,12 @@ public class Async {
      *
      * @return a CompletableFuture
      */
-    public static <T> CompletableFuture<T> toCompletableFuture(T t) {
+    @SuppressWarnings("unchecked")
+    public static <T> CompletableFuture<T> toCompletableFuture(Object t) {
         if (t instanceof CompletionStage) {
-            //noinspection unchecked
             return ((CompletionStage<T>) t).toCompletableFuture();
         } else {
-            return CompletableFuture.completedFuture(t);
+            return CompletableFuture.completedFuture((T) t);
         }
     }
 

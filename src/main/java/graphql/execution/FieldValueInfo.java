@@ -23,17 +23,17 @@ public class FieldValueInfo {
     }
 
     private final CompleteValueType completeValueType;
-    private final CompletableFuture<Object> fieldValue;
+    private final Object /* CompletableFuture<Object> | Object */ fieldValueObject;
     private final List<FieldValueInfo> fieldValueInfos;
 
-    FieldValueInfo(CompleteValueType completeValueType, CompletableFuture<Object> fieldValue) {
-        this(completeValueType, fieldValue, ImmutableList.of());
+    public FieldValueInfo(CompleteValueType completeValueType, Object fieldValueObject) {
+        this(completeValueType, fieldValueObject, ImmutableList.of());
     }
 
-    FieldValueInfo(CompleteValueType completeValueType, CompletableFuture<Object> fieldValue, List<FieldValueInfo> fieldValueInfos) {
+    public FieldValueInfo(CompleteValueType completeValueType, Object fieldValueObject, List<FieldValueInfo> fieldValueInfos) {
         assertNotNull(fieldValueInfos, () -> "fieldValueInfos can't be null");
         this.completeValueType = completeValueType;
-        this.fieldValue = fieldValue;
+        this.fieldValueObject = fieldValueObject;
         this.fieldValueInfos = fieldValueInfos;
     }
 
@@ -43,11 +43,19 @@ public class FieldValueInfo {
 
     @Deprecated(since = "2023-09-11")
     public CompletableFuture<ExecutionResult> getFieldValue() {
-        return fieldValue.thenApply(fv -> ExecutionResultImpl.newExecutionResult().data(fv).build());
+        return getFieldValueFuture().thenApply(fv -> ExecutionResultImpl.newExecutionResult().data(fv).build());
     }
 
     public CompletableFuture<Object> getFieldValueFuture() {
-        return fieldValue;
+        return Async.toCompletableFuture(fieldValueObject);
+    }
+
+    public Object /* CompletableFuture<Object> | Object */ getFieldValueObject() {
+        return fieldValueObject;
+    }
+
+    public boolean isFutureValue() {
+        return fieldValueObject instanceof CompletableFuture;
     }
 
     public List<FieldValueInfo> getFieldValueInfos() {
@@ -59,7 +67,7 @@ public class FieldValueInfo {
     public String toString() {
         return "FieldValueInfo{" +
                 "completeValueType=" + completeValueType +
-                ", fieldValue=" + fieldValue +
+                ", fieldValueObject=" + fieldValueObject +
                 ", fieldValueInfos=" + fieldValueInfos +
                 '}';
     }
