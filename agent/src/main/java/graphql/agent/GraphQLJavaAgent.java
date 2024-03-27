@@ -170,26 +170,33 @@ public class GraphQLJavaAgent {
         @Advice.OnMethodExit
         public static void invokeDataFetcherExit(@Advice.Argument(0) ExecutionContext executionContext,
                                                  @Advice.Argument(1) ExecutionStrategyParameters parameters,
-                                                 @Advice.Return(readOnly = false) CompletableFuture<Object> result) {
+                                                 @Advice.Return(readOnly = false) Object cfOrObject) {
             // ExecutionTrackingResult executionTrackingResult = executionContext.getGraphQLContext().get(EXECUTION_TRACKING_KEY);
             ExecutionTrackingResult executionTrackingResult = GraphQLJavaAgent.executionIdToData.get(executionContext.getExecutionId());
             ResultPath path = parameters.getPath();
             long startTime = executionTrackingResult.timePerPath.get(path);
             executionTrackingResult.end(path, System.nanoTime());
-            if (result.isDone()) {
-                if (result.isCancelled()) {
-                    executionTrackingResult.setDfResultTypes(path, DONE_CANCELLED);
-                } else if (result.isCompletedExceptionally()) {
-                    executionTrackingResult.setDfResultTypes(path, DONE_EXCEPTIONALLY);
+            if (cfOrObject instanceof CompletableFuture) {
+                CompletableFuture<Object> result = (CompletableFuture<Object>) cfOrObject;
+                if (result.isDone()) {
+                    if (result.isCancelled()) {
+                        executionTrackingResult.setDfResultTypes(path, DONE_CANCELLED);
+                    } else if (result.isCompletedExceptionally()) {
+                        executionTrackingResult.setDfResultTypes(path, DONE_EXCEPTIONALLY);
+                    } else {
+                        executionTrackingResult.setDfResultTypes(path, DONE_OK);
+                    }
                 } else {
-                    executionTrackingResult.setDfResultTypes(path, DONE_OK);
+                    executionTrackingResult.setDfResultTypes(path, PENDING);
                 }
+                // overriding the result to make sure the finished handler is called first when the DF is finished
+                // otherwise it is a completion tree instead of chain
+                cfOrObject = result.whenComplete(new DataFetcherFinishedHandler(executionContext, parameters, startTime));
             } else {
-                executionTrackingResult.setDfResultTypes(path, PENDING);
+                // materialized value - not a CF
+                executionTrackingResult.setDfResultTypes(path, DONE_OK);
+                new DataFetcherFinishedHandler(executionContext, parameters, startTime).accept(cfOrObject, null);
             }
-            // overriding the result to make sure the finished handler is called first when the DF is finished
-            // otherwise it is a completion tree instead of chain
-            result = result.whenComplete(new DataFetcherFinishedHandler(executionContext, parameters, startTime));
         }
 
     }
