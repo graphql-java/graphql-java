@@ -493,7 +493,7 @@ public abstract class ExecutionStrategy {
 
         dataFetcher = instrumentation.instrumentDataFetcher(dataFetcher, instrumentationFieldFetchParams, executionContext.getInstrumentationState());
         dataFetcher = executionContext.getDataLoaderDispatcherStrategy().modifyDataFetcher(dataFetcher);
-        Object fetchedObject = invokeDataFetcher(parameters, fieldDef, dataFetchingEnvironment, dataFetcher);
+        Object fetchedObject = invokeDataFetcher(executionContext, parameters, fieldDef, dataFetchingEnvironment, dataFetcher);
         executionContext.getDataLoaderDispatcherStrategy().fieldFetched(executionContext, parameters, dataFetcher, fetchedObject);
         fetchCtx.onDispatched();
         if (fetchedObject instanceof CompletableFuture) {
@@ -517,7 +517,11 @@ public abstract class ExecutionStrategy {
         }
     }
 
-    private Object invokeDataFetcher(ExecutionStrategyParameters parameters, GraphQLFieldDefinition fieldDef, Supplier<DataFetchingEnvironment> dataFetchingEnvironment, DataFetcher<?> dataFetcher) {
+    /*
+     * ExecutionContext is not used in the method, but the java agent uses it, so it needs to be present
+     */
+    @SuppressWarnings("unused")
+    private Object invokeDataFetcher(ExecutionContext executionContext, ExecutionStrategyParameters parameters, GraphQLFieldDefinition fieldDef, Supplier<DataFetchingEnvironment> dataFetchingEnvironment, DataFetcher<?> dataFetcher) {
         Object fetchedValue;
         try {
             Object fetchedValueRaw;
