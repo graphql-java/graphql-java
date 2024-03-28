@@ -34,7 +34,6 @@ import graphql.normalized.incremental.NormalizedDeferredExecution;
 import graphql.schema.FieldCoordinates;
 import graphql.schema.GraphQLCompositeType;
 import graphql.schema.GraphQLFieldDefinition;
-import graphql.schema.GraphQLFieldsContainer;
 import graphql.schema.GraphQLInterfaceType;
 import graphql.schema.GraphQLNamedOutputType;
 import graphql.schema.GraphQLObjectType;
@@ -326,6 +325,7 @@ public class ExecutableNormalizedOperationFactory {
      * @param operationDefinition   the operation to be executed
      * @param fragments             a set of fragments associated with the operation
      * @param coercedVariableValues the coerced variables to use
+     * @param options               the options to use
      *
      * @return a runtime representation of the graphql operation.
      */

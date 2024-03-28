@@ -10,6 +10,16 @@ import java.util.concurrent.CompletableFuture;
 
 import static graphql.Assert.assertNotNull;
 
+/**
+ * The {@link FieldValueInfo} holds the type of field that was fetched and completed along with the completed value.
+ * <p>
+ * A field value is considered when its is both fetch via a {@link graphql.schema.DataFetcher} to a raw value, and then
+ * it is serialized into scalar or enum or if it's an object type, it is completed as an object given its field sub selection
+ * <p>
+ * The {@link #getFieldValueObject()} method returns either a materialized value or a {@link CompletableFuture}
+ * promise to a materialized value.  Simple in-memory values will tend to be materialized, while complicated
+ * values might need a call to a database or other systems will tend to be {@link CompletableFuture} promises.
+ */
 @PublicApi
 public class FieldValueInfo {
 
@@ -19,7 +29,6 @@ public class FieldValueInfo {
         NULL,
         SCALAR,
         ENUM
-
     }
 
     private final CompleteValueType completeValueType;
@@ -31,33 +40,64 @@ public class FieldValueInfo {
     }
 
     public FieldValueInfo(CompleteValueType completeValueType, Object fieldValueObject, List<FieldValueInfo> fieldValueInfos) {
-        assertNotNull(fieldValueInfos, () -> "fieldValueInfos can't be null");
+        assertNotNull(fieldValueInfos, "fieldValueInfos can't be null");
         this.completeValueType = completeValueType;
         this.fieldValueObject = fieldValueObject;
         this.fieldValueInfos = fieldValueInfos;
     }
 
+    /**
+     * This is an enum that represents the type of field value that was completed for a field
+     *
+     * @return the type of field value
+     */
     public CompleteValueType getCompleteValueType() {
         return completeValueType;
     }
 
+    /**
+     * This value can be either an object that is materialized or a {@link CompletableFuture} promise to a value
+     *
+     * @return either an object that is materialized or a {@link CompletableFuture} promise to a value
+     */
+    public Object /* CompletableFuture<Object> | Object */ getFieldValueObject() {
+        return fieldValueObject;
+    }
+
+    /**
+     * This returns the value in {@link CompletableFuture} form.  If it is already a {@link CompletableFuture} it is returned
+     * directly, otherwise the materialized value is wrapped in a {@link CompletableFuture} and returned
+     *
+     * @return a {@link CompletableFuture} promise to the value
+     */
+    public CompletableFuture<Object> getFieldValueFuture() {
+        return Async.toCompletableFuture(fieldValueObject);
+    }
+
+    /**
+     * Kept for legacy reasons - this method is no longer sensible and is no longer used by the graphql-java engine
+     * and is kept only for backwards compatible API reasons.
+     *
+     * @return a promise to the {@link ExecutionResult} that wraps the field value.
+     */
     @Deprecated(since = "2023-09-11")
     public CompletableFuture<ExecutionResult> getFieldValue() {
         return getFieldValueFuture().thenApply(fv -> ExecutionResultImpl.newExecutionResult().data(fv).build());
     }
 
-    public CompletableFuture<Object> getFieldValueFuture() {
-        return Async.toCompletableFuture(fieldValueObject);
-    }
-
-    public Object /* CompletableFuture<Object> | Object */ getFieldValueObject() {
-        return fieldValueObject;
-    }
-
+    /**
+     * @return true if the value is a {@link CompletableFuture} promise to a value
+     */
     public boolean isFutureValue() {
         return fieldValueObject instanceof CompletableFuture;
     }
 
+    /**
+     * When the {@link #getCompleteValueType()} is {@link CompleteValueType#LIST} this holds the list
+     * of completed values inside that list object.
+     *
+     * @return the list of completed field values inside a list
+     */
     public List<FieldValueInfo> getFieldValueInfos() {
         return fieldValueInfos;
     }
