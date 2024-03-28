@@ -66,6 +66,8 @@ class MaterialisedAndPromisedObjectsTest extends Specification {
 
 
         when: "always materialised - no promises"
+
+        cfPromisesOnFieldRegex = ~"neverMatchesAlwaysMaterialised"
         ExecutionResult er = graphQL.execute(newExecutionInput(query).root(source))
 
 
@@ -84,6 +86,7 @@ class MaterialisedAndPromisedObjectsTest extends Specification {
 
 
         when: "only foo fields are CF promises so a mix of materialised and promised values"
+
         cfPromisesOnFieldRegex = ~"foo"
         er = graphQL.execute(newExecutionInput(query).root(source))
 
