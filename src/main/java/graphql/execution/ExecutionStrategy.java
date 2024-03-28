@@ -191,9 +191,9 @@ public abstract class ExecutionStrategy {
      * @param executionContext contains the top level execution parameters
      * @param parameters       contains the parameters holding the fields to be executed and source object
      *
-     * @return a promise to a map of object field values
+     * @return a {@link CompletableFuture} promise to a map of object field values or a materialized map of object field values
      *
-     * @throws NonNullableFieldWasNullException in the future if a non-null field resolves to a null value
+     * @throws NonNullableFieldWasNullException in the {@link CompletableFuture} if a non-null field resolved to a null value
      */
     @SuppressWarnings("unchecked")
     protected Object /* CompletableFuture<Map<String, Object>> | Map<String, Object> */ executeObject(ExecutionContext executionContext, ExecutionStrategyParameters parameters) throws NonNullableFieldWasNullException {
@@ -256,7 +256,7 @@ public abstract class ExecutionStrategy {
                 return overallResult;
             } else {
                 Map<String, Object> fieldValueMap = buildFieldValueMap(fieldsExecutedOnInitialResult, (List<Object>) completedValuesObject);
-                resolveObjectCtx.onCompleted(fieldValueMap,null);
+                resolveObjectCtx.onCompleted(fieldValueMap, null);
                 return fieldValueMap;
             }
         }
@@ -349,9 +349,9 @@ public abstract class ExecutionStrategy {
      * @param executionContext contains the top level execution parameters
      * @param parameters       contains the parameters holding the fields to be executed and source object
      *
-     * @return a promise to an {@link Object}
+     * @return a {@link CompletableFuture} promise to an {@link Object} or the materialized {@link Object}
      *
-     * @throws NonNullableFieldWasNullException in the future if a non null field resolves to a null value
+     * @throws NonNullableFieldWasNullException in the future if a non-null field resolved to a null value
      */
     @SuppressWarnings("unchecked")
     protected Object /* CompletableFuture<Object> | Object */ resolveField(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
@@ -375,9 +375,10 @@ public abstract class ExecutionStrategy {
      * @param executionContext contains the top level execution parameters
      * @param parameters       contains the parameters holding the fields to be executed and source object
      *
-     * @return a promise to a {@link FieldValueInfo}
+     * @return a {@link CompletableFuture} promise to a {@link FieldValueInfo} or a materialised {@link FieldValueInfo}
      *
-     * @throws NonNullableFieldWasNullException in the {@link FieldValueInfo#getFieldValue()} future if a non null field resolves to a null value
+     * @throws NonNullableFieldWasNullException in the {@link FieldValueInfo#getFieldValueFuture()} future
+     *                                          if a nonnull field resolves to a null value
      */
     @SuppressWarnings("unchecked")
     protected Object /* CompletableFuture<FieldValueInfo> | FieldValueInfo */ resolveFieldWithInfo(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
@@ -393,7 +394,7 @@ public abstract class ExecutionStrategy {
         if (fetchedValueObj instanceof CompletableFuture) {
             CompletableFuture<FetchedValue> fetchFieldFuture = (CompletableFuture<FetchedValue>) fetchedValueObj;
             CompletableFuture<FieldValueInfo> result = fetchFieldFuture.thenApply((fetchedValue) ->
-                    completeField(fieldDef,executionContext, parameters, fetchedValue));
+                    completeField(fieldDef, executionContext, parameters, fetchedValue));
 
             fieldCtx.onDispatched();
             result.whenComplete(fieldCtx::onCompleted);
@@ -401,7 +402,7 @@ public abstract class ExecutionStrategy {
         } else {
             try {
                 FetchedValue fetchedValue = (FetchedValue) fetchedValueObj;
-                FieldValueInfo fieldValueInfo = completeField(fieldDef,executionContext, parameters, fetchedValue);
+                FieldValueInfo fieldValueInfo = completeField(fieldDef, executionContext, parameters, fetchedValue);
                 fieldCtx.onDispatched();
                 fieldCtx.onCompleted(fetchedValue.getFetchedValue(), null);
                 return fieldValueInfo;
@@ -493,7 +494,7 @@ public abstract class ExecutionStrategy {
 
         dataFetcher = instrumentation.instrumentDataFetcher(dataFetcher, instrumentationFieldFetchParams, executionContext.getInstrumentationState());
         dataFetcher = executionContext.getDataLoaderDispatcherStrategy().modifyDataFetcher(dataFetcher);
-        Object fetchedObject = invokeDataFetcher(executionContext, parameters, fieldDef, dataFetchingEnvironment, dataFetcher);
+        Object fetchedObject = invokeDataFetcher(parameters, fieldDef, dataFetchingEnvironment, dataFetcher);
         executionContext.getDataLoaderDispatcherStrategy().fieldFetched(executionContext, parameters, dataFetcher, fetchedObject);
         fetchCtx.onDispatched();
         if (fetchedObject instanceof CompletableFuture) {
@@ -517,7 +518,7 @@ public abstract class ExecutionStrategy {
         }
     }
 
-    private Object invokeDataFetcher(ExecutionContext executionContext, ExecutionStrategyParameters parameters, GraphQLFieldDefinition fieldDef, Supplier<DataFetchingEnvironment> dataFetchingEnvironment, DataFetcher<?> dataFetcher) {
+    private Object invokeDataFetcher(ExecutionStrategyParameters parameters, GraphQLFieldDefinition fieldDef, Supplier<DataFetchingEnvironment> dataFetchingEnvironment, DataFetcher<?> dataFetcher) {
         Object fetchedValue;
         try {
             Object fetchedValueRaw;
@@ -619,7 +620,8 @@ public abstract class ExecutionStrategy {
      *
      * @return a {@link FieldValueInfo}
      *
-     * @throws NonNullableFieldWasNullException in the {@link FieldValueInfo#getFieldValue()} future if a non null field resolves to a null value
+     * @throws NonNullableFieldWasNullException in the {@link FieldValueInfo#getFieldValueFuture()} future
+     *                                          if a nonnull field resolves to a null value
      */
     protected FieldValueInfo completeField(ExecutionContext executionContext, ExecutionStrategyParameters parameters, FetchedValue fetchedValue) {
         Field field = parameters.getField().getSingleField();
@@ -719,13 +721,22 @@ public abstract class ExecutionStrategy {
      *
      * @return a {@link FieldValueInfo}
      *
-     * @throws NonNullableFieldWasNullException if a non null field resolves to a null value
+     * @throws NonNullableFieldWasNullException inside a {@link CompletableFuture} if a non null field resolves to a null value
      */
     private FieldValueInfo getFieldValueInfoForNull(ExecutionStrategyParameters parameters) {
         Object fieldValue = completeValueForNull(parameters);
         return new FieldValueInfo(NULL, fieldValue);
     }
 
+    /**
+     * Called to complete a null value.
+     *
+     * @param parameters contains the parameters holding the fields to be executed and source object
+     *
+     * @return a null value or a {@link CompletableFuture} exceptionally completed
+     *
+     * @throws NonNullableFieldWasNullException inside the {@link CompletableFuture} if a non-null field resolves to a null value
+     */
     protected Object /* CompletableFuture<Object> | Object */ completeValueForNull(ExecutionStrategyParameters parameters) {
         try {
             return parameters.getNonNullFieldValidator().validate(parameters.getPath(), null);
@@ -918,7 +929,7 @@ public abstract class ExecutionStrategy {
      * @param resolvedObjectType the resolved object type
      * @param result             the result to be coerced
      *
-     * @return a promise to an {@link ExecutionResult}
+     * @return a {@link CompletableFuture} promise to a map of object field values or a materialized map of object field values
      */
     protected Object /* CompletableFuture<Map<String, Object>> | Map<String, Object> */ completeValueForObject(ExecutionContext executionContext, ExecutionStrategyParameters parameters, GraphQLObjectType resolvedObjectType, Object result) {
         ExecutionStepInfo executionStepInfo = parameters.getExecutionStepInfo();

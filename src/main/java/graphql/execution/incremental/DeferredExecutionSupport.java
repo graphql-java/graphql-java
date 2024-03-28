@@ -4,6 +4,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableListMultimap;
 import com.google.common.collect.ImmutableSet;
 import graphql.ExecutionResult;
+import graphql.ExecutionResultImpl;
 import graphql.Internal;
 import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionStrategyParameters;
@@ -162,7 +163,10 @@ public interface DeferredExecutionSupport {
                                 // Create a reference to the CompletableFuture that resolves an ExecutionResult
                                 // so we can pass it to the Instrumentation "onDispatched" callback.
                                 CompletableFuture<ExecutionResult> executionResultCF = fieldValueResult
-                                        .thenCompose(FieldValueInfo::getFieldValue);
+                                        .thenCompose(fvi -> fvi
+                                                .getFieldValueFuture()
+                                                .thenApply(fv -> ExecutionResultImpl.newExecutionResult().data(fv).build())
+                                        );
 
                                 return executionResultCF
                                         .thenApply(executionResult ->
