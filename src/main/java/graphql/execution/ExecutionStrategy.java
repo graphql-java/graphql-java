@@ -196,7 +196,8 @@ public abstract class ExecutionStrategy {
      * @throws NonNullableFieldWasNullException in the {@link CompletableFuture} if a non-null field resolved to a null value
      */
     @SuppressWarnings("unchecked")
-    protected Object /* CompletableFuture<Map<String, Object>> | Map<String, Object> */ executeObject(ExecutionContext executionContext, ExecutionStrategyParameters parameters) throws NonNullableFieldWasNullException {
+    protected Object /* CompletableFuture<Map<String, Object>> | Map<String, Object> */
+    executeObject(ExecutionContext executionContext, ExecutionStrategyParameters parameters) throws NonNullableFieldWasNullException {
         DataLoaderDispatchStrategy dataLoaderDispatcherStrategy = executionContext.getDataLoaderDispatcherStrategy();
         dataLoaderDispatcherStrategy.executeObject(executionContext, parameters);
         Instrumentation instrumentation = executionContext.getInstrumentation();
@@ -354,7 +355,8 @@ public abstract class ExecutionStrategy {
      * @throws NonNullableFieldWasNullException in the future if a non-null field resolved to a null value
      */
     @SuppressWarnings("unchecked")
-    protected Object /* CompletableFuture<Object> | Object */ resolveField(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
+    protected Object /* CompletableFuture<Object> | Object */
+    resolveField(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
         Object fieldWithInfo = resolveFieldWithInfo(executionContext, parameters);
         if (fieldWithInfo instanceof CompletableFuture) {
             return ((CompletableFuture<FieldValueInfo>) fieldWithInfo).thenCompose(FieldValueInfo::getFieldValueFuture);
@@ -381,7 +383,8 @@ public abstract class ExecutionStrategy {
      *                                          if a nonnull field resolves to a null value
      */
     @SuppressWarnings("unchecked")
-    protected Object /* CompletableFuture<FieldValueInfo> | FieldValueInfo */ resolveFieldWithInfo(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
+    protected Object /* CompletableFuture<FieldValueInfo> | FieldValueInfo */
+    resolveFieldWithInfo(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
         GraphQLFieldDefinition fieldDef = getFieldDef(executionContext, parameters, parameters.getField().getSingleField());
         Supplier<ExecutionStepInfo> executionStepInfo = FpKit.intraThreadMemoize(() -> createExecutionStepInfo(executionContext, parameters, fieldDef, null));
 
@@ -426,23 +429,19 @@ public abstract class ExecutionStrategy {
      *
      * @throws NonNullableFieldWasNullException in the future if a non null field resolves to a null value
      */
-    protected Object /*CompletableFuture<FetchedValue> | FetchedValue>*/ fetchField(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
+    protected Object /*CompletableFuture<FetchedValue> | FetchedValue>*/
+    fetchField(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
         MergedField field = parameters.getField();
         GraphQLObjectType parentType = (GraphQLObjectType) parameters.getExecutionStepInfo().getUnwrappedNonNullType();
         GraphQLFieldDefinition fieldDef = getFieldDef(executionContext.getGraphQLSchema(), parentType, field.getSingleField());
         return fetchField(fieldDef, executionContext, parameters);
     }
 
-    private Object /*CompletableFuture<FetchedValue> | FetchedValue>*/ fetchField(GraphQLFieldDefinition fieldDef, ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
+    private Object /*CompletableFuture<FetchedValue> | FetchedValue>*/
+    fetchField(GraphQLFieldDefinition fieldDef, ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
 
-        int resultNodesCount = executionContext.getResultNodesInfo().incrementAndGetResultNodesCount();
-
-        Integer maxNodes;
-        if ((maxNodes = executionContext.getGraphQLContext().get(MAX_RESULT_NODES)) != null) {
-            if (resultNodesCount > maxNodes) {
-                executionContext.getResultNodesInfo().maxResultNodesExceeded();
-                return CompletableFuture.completedFuture(new FetchedValue(null, Collections.emptyList(), null));
-            }
+        if (incrementAndCheckMaxNodesExceeded(executionContext)) {
+            return new FetchedValue(null, Collections.emptyList(), null);
         }
 
         MergedField field = parameters.getField();
@@ -737,7 +736,8 @@ public abstract class ExecutionStrategy {
      *
      * @throws NonNullableFieldWasNullException inside the {@link CompletableFuture} if a non-null field resolves to a null value
      */
-    protected Object /* CompletableFuture<Object> | Object */ completeValueForNull(ExecutionStrategyParameters parameters) {
+    protected Object /* CompletableFuture<Object> | Object */
+    completeValueForNull(ExecutionStrategyParameters parameters) {
         try {
             return parameters.getNonNullFieldValidator().validate(parameters.getPath(), null);
         } catch (Exception e) {
@@ -793,13 +793,8 @@ public abstract class ExecutionStrategy {
         List<FieldValueInfo> fieldValueInfos = new ArrayList<>(size.orElse(1));
         int index = 0;
         for (Object item : iterableValues) {
-            int resultNodesCount = executionContext.getResultNodesInfo().incrementAndGetResultNodesCount();
-            Integer maxNodes;
-            if ((maxNodes = executionContext.getGraphQLContext().get(MAX_RESULT_NODES)) != null) {
-                if (resultNodesCount > maxNodes) {
-                    executionContext.getResultNodesInfo().maxResultNodesExceeded();
-                    return new FieldValueInfo(NULL, null, fieldValueInfos);
-                }
+            if (incrementAndCheckMaxNodesExceeded(executionContext)) {
+                return new FieldValueInfo(NULL, null, fieldValueInfos);
             }
 
             ResultPath indexedPath = parameters.getPath().segment(index);
@@ -880,7 +875,8 @@ public abstract class ExecutionStrategy {
      *
      * @return a materialized scalar value or exceptionally completed {@link CompletableFuture} if there is a problem
      */
-    protected Object /* CompletableFuture<Object> | Object */ completeValueForScalar(ExecutionContext executionContext, ExecutionStrategyParameters parameters, GraphQLScalarType scalarType, Object result) {
+    protected Object /* CompletableFuture<Object> | Object */
+    completeValueForScalar(ExecutionContext executionContext, ExecutionStrategyParameters parameters, GraphQLScalarType scalarType, Object result) {
         Object serialized;
         try {
             serialized = scalarType.getCoercing().serialize(result, executionContext.getGraphQLContext(), executionContext.getLocale());
@@ -906,7 +902,8 @@ public abstract class ExecutionStrategy {
      *
      * @return a materialized enum value or exceptionally completed {@link CompletableFuture} if there is a problem
      */
-    protected Object /* CompletableFuture<Object> | Object */ completeValueForEnum(ExecutionContext executionContext, ExecutionStrategyParameters parameters, GraphQLEnumType enumType, Object result) {
+    protected Object /* CompletableFuture<Object> | Object */
+    completeValueForEnum(ExecutionContext executionContext, ExecutionStrategyParameters parameters, GraphQLEnumType enumType, Object result) {
         Object serialized;
         try {
             serialized = enumType.serialize(result, executionContext.getGraphQLContext(), executionContext.getLocale());
@@ -931,7 +928,8 @@ public abstract class ExecutionStrategy {
      *
      * @return a {@link CompletableFuture} promise to a map of object field values or a materialized map of object field values
      */
-    protected Object /* CompletableFuture<Map<String, Object>> | Map<String, Object> */ completeValueForObject(ExecutionContext executionContext, ExecutionStrategyParameters parameters, GraphQLObjectType resolvedObjectType, Object result) {
+    protected Object /* CompletableFuture<Map<String, Object>> | Map<String, Object> */
+    completeValueForObject(ExecutionContext executionContext, ExecutionStrategyParameters parameters, GraphQLObjectType resolvedObjectType, Object result) {
         ExecutionStepInfo executionStepInfo = parameters.getExecutionStepInfo();
 
         FieldCollectorParameters collectorParameters = newParameters()
@@ -987,15 +985,35 @@ public abstract class ExecutionStrategy {
             return FpKit.toIterable(result);
         }
 
-        handleTypeMismatchProblem(context, parameters, result);
+        handleTypeMismatchProblem(context, parameters);
         return null;
     }
 
-    private void handleTypeMismatchProblem(ExecutionContext context, ExecutionStrategyParameters parameters, Object result) {
+    private void handleTypeMismatchProblem(ExecutionContext context, ExecutionStrategyParameters parameters) {
         TypeMismatchError error = new TypeMismatchError(parameters.getPath(), parameters.getExecutionStepInfo().getUnwrappedNonNullType());
         context.addError(error);
 
         parameters.getDeferredCallContext().onError(error);
+    }
+
+    /**
+     * This has a side effect of incrementing the number of nodes returned and also checks
+     * if max nodes were exceeded for this request.
+     *
+     * @param executionContext the execution context in play
+     *
+     * @return true if max nodes were exceeded
+     */
+    private boolean incrementAndCheckMaxNodesExceeded(ExecutionContext executionContext) {
+        int resultNodesCount = executionContext.getResultNodesInfo().incrementAndGetResultNodesCount();
+        Integer maxNodes;
+        if ((maxNodes = executionContext.getGraphQLContext().get(MAX_RESULT_NODES)) != null) {
+            if (resultNodesCount > maxNodes) {
+                executionContext.getResultNodesInfo().maxResultNodesExceeded();
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
