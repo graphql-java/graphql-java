@@ -3099,12 +3099,93 @@ fragment personName on Person {
                 document,
                 null,
                 RawVariables.emptyVariables()
-                )
+        )
 
         then:
         result.getOperationDepth() == 7
         result.getOperationFieldCount() == 8
     }
+
+    def "factory has a default max node count"() {
+        String schema = """
+        type Query {
+            foo: Foo
+        }
+        type Foo {
+            foo: Foo
+            name: String
+        }
+        """
+
+        GraphQLSchema graphQLSchema = TestUtil.schema(schema)
+
+        String query = "{ foo { ...F1}} "
+        int fragmentCount = 12
+        for (int i = 1; i < fragmentCount; i++) {
+            query += """
+             fragment F$i on Foo {
+                foo { ...F${i + 1} }
+                a: foo{ ...F${i + 1} }
+                b: foo{ ...F${i + 1} }
+             }
+            """
+        }
+        query += """
+        fragment F$fragmentCount on Foo{
+            name
+        }
+        """
+
+        assertValidQuery(graphQLSchema, query)
+
+        Document document = TestUtil.parseQuery(query)
+
+        when:
+        def result = ExecutableNormalizedOperationFactory.createExecutableNormalizedOperationWithRawVariables(
+                graphQLSchema,
+                document,
+                null,
+                RawVariables.emptyVariables()
+        )
+        then:
+        def e = thrown(AbortExecutionException)
+        e.message == "Maximum field count exceeded. 100001 > 100000"
+    }
+
+    def "default max fields can be changed "() {
+        String schema = """
+        type Query {
+            foo: Foo
+        }
+        type Foo {
+            foo: Foo
+            name: String
+        }
+        """
+
+        GraphQLSchema graphQLSchema = TestUtil.schema(schema)
+
+        String query = "{foo{foo{name}}} "
+
+        assertValidQuery(graphQLSchema, query)
+
+        Document document = TestUtil.parseQuery(query)
+        ExecutableNormalizedOperationFactory.Options.setDefaultOptions(ExecutableNormalizedOperationFactory.Options.defaultOptions().maxFieldsCount(2))
+
+        when:
+        def result = ExecutableNormalizedOperationFactory.createExecutableNormalizedOperationWithRawVariables(
+                graphQLSchema,
+                document,
+                null,
+                RawVariables.emptyVariables()
+        )
+        then:
+        def e = thrown(AbortExecutionException)
+        e.message == "Maximum field count exceeded. 3 > 2"
+        cleanup:
+        ExecutableNormalizedOperationFactory.Options.setDefaultOptions(ExecutableNormalizedOperationFactory.Options.defaultOptions().maxFieldsCount(ExecutableNormalizedOperationFactory.Options.DEFAULT_MAX_FIELDS_COUNT))
+    }
+
 
     private static ExecutableNormalizedOperation localCreateExecutableNormalizedOperation(
             GraphQLSchema graphQLSchema,
