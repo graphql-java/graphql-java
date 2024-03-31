@@ -1,5 +1,6 @@
 package graphql.validation.rules
 
+import graphql.introspection.Introspection
 import graphql.language.Argument
 import graphql.language.BooleanValue
 import graphql.language.StringValue
@@ -52,7 +53,9 @@ class KnownArgumentNamesTest extends Specification {
         given:
         Argument argument = Argument.newArgument("unknownArg", BooleanValue.newBooleanValue(true).build()).build()
         def fieldDefinition = GraphQLFieldDefinition.newFieldDefinition().name("field").type(GraphQLString).build()
-        def directiveDefinition = GraphQLDirective.newDirective().name("directive")
+        def directiveDefinition = GraphQLDirective.newDirective()
+                .name("directive")
+                .validLocation(Introspection.DirectiveLocation.FIELD_DEFINITION)
                 .argument(GraphQLArgument.newArgument().name("knownArg").type(GraphQLBoolean).build()).build()
         validationContext.getFieldDef() >> fieldDefinition
         validationContext.getDirective() >> directiveDefinition
@@ -66,7 +69,9 @@ class KnownArgumentNamesTest extends Specification {
         given:
         Argument argument = Argument.newArgument("knownArg", BooleanValue.newBooleanValue(true).build()).build()
         def fieldDefinition = GraphQLFieldDefinition.newFieldDefinition().name("field").type(GraphQLString).build()
-        def directiveDefinition = GraphQLDirective.newDirective().name("directive")
+        def directiveDefinition = GraphQLDirective.newDirective()
+                .name("directive")
+                .validLocation(Introspection.DirectiveLocation.FIELD_DEFINITION)
                 .argument(GraphQLArgument.newArgument().name("knownArg").type(GraphQLBoolean).build()).build()
         validationContext.getFieldDef() >> fieldDefinition
         validationContext.getDirective() >> directiveDefinition
@@ -81,7 +86,9 @@ class KnownArgumentNamesTest extends Specification {
         Argument argument = Argument.newArgument("unknownArg", BooleanValue.newBooleanValue(true).build()).build()
         def fieldDefinition = GraphQLFieldDefinition.newFieldDefinition().name("field").type(GraphQLString)
                 .argument(GraphQLArgument.newArgument().name("unknownArg").type(GraphQLString).build()).build()
-        def directiveDefinition = GraphQLDirective.newDirective().name("directive")
+        def directiveDefinition = GraphQLDirective.newDirective()
+                .name("directive")
+                .validLocation(Introspection.DirectiveLocation.FIELD_DEFINITION)
                 .argument(GraphQLArgument.newArgument().name("knownArg").type(GraphQLBoolean).build()).build()
         validationContext.getFieldDef() >> fieldDefinition
         validationContext.getDirective() >> directiveDefinition

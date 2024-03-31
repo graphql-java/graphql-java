@@ -15,8 +15,7 @@ import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
 
-import static graphql.Assert.assertNotNull;
-import static graphql.Assert.assertValidName;
+import static graphql.Assert.*;
 import static graphql.introspection.Introspection.DirectiveLocation;
 import static graphql.util.FpKit.getByName;
 
@@ -52,6 +51,7 @@ public class GraphQLDirective implements GraphQLNamedSchemaElement {
                              DirectiveDefinition definition) {
         assertValidName(name);
         assertNotNull(arguments, () -> "arguments can't be null");
+        assertNotEmpty(locations, () -> "locations can't be empty");
         this.name = name;
         this.description = description;
         this.repeatable = repeatable;

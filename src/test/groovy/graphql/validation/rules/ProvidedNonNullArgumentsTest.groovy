@@ -1,5 +1,6 @@
 package graphql.validation.rules
 
+import graphql.introspection.Introspection
 import graphql.language.Argument
 import graphql.language.Directive
 import graphql.language.Field
@@ -111,6 +112,7 @@ class ProvidedNonNullArgumentsTest extends Specification {
                 .name("arg").type(GraphQLNonNull.nonNull(GraphQLString))
         def graphQLDirective = GraphQLDirective.newDirective()
                 .name("directive")
+                .validLocation(Introspection.DirectiveLocation.SCALAR)
                 .argument(directiveArg)
                 .build()
         validationContext.getDirective() >> graphQLDirective
@@ -149,6 +151,7 @@ class ProvidedNonNullArgumentsTest extends Specification {
                 .defaultValueProgrammatic("defaultVal")
         def graphQLDirective = GraphQLDirective.newDirective()
                 .name("directive")
+                .validLocation(Introspection.DirectiveLocation.SCALAR)
                 .argument(directiveArg)
                 .build()
         validationContext.getDirective() >> graphQLDirective
@@ -167,6 +170,7 @@ class ProvidedNonNullArgumentsTest extends Specification {
         def directiveArg = GraphQLArgument.newArgument().name("arg").type(GraphQLNonNull.nonNull(GraphQLString))
         def graphQLDirective = GraphQLDirective.newDirective()
                 .name("directive")
+                .validLocation(Introspection.DirectiveLocation.SCALAR)
                 .argument(directiveArg)
                 .build()
         validationContext.getDirective() >> graphQLDirective

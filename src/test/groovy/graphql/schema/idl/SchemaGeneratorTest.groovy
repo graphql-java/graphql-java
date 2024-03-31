@@ -1,6 +1,5 @@
 package graphql.schema.idl
 
-
 import graphql.TestUtil
 import graphql.introspection.Introspection
 import graphql.language.Node
@@ -11,7 +10,6 @@ import graphql.schema.DataFetchingEnvironment
 import graphql.schema.GraphQLAppliedDirective
 import graphql.schema.GraphQLArgument
 import graphql.schema.GraphQLCodeRegistry
-import graphql.schema.GraphQLDirective
 import graphql.schema.GraphQLDirectiveContainer
 import graphql.schema.GraphQLEnumType
 import graphql.schema.GraphQLFieldDefinition
@@ -44,6 +42,7 @@ import static graphql.language.AstPrinter.printAst
 import static graphql.schema.GraphQLCodeRegistry.newCodeRegistry
 import static graphql.schema.idl.SchemaGenerator.Options.defaultOptions
 import static graphql.schema.idl.TypeRuntimeWiring.newTypeWiring
+import static graphql.TestUtil.mockDirective
 
 class SchemaGeneratorTest extends Specification {
 

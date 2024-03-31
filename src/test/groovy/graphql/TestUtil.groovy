@@ -2,32 +2,11 @@ package graphql
 
 import graphql.execution.MergedField
 import graphql.execution.MergedSelectionSet
-import graphql.language.Document
-import graphql.language.Field
-import graphql.language.NullValue
-import graphql.language.ObjectTypeDefinition
-import graphql.language.OperationDefinition
-import graphql.language.ScalarTypeDefinition
-import graphql.language.Type
+import graphql.introspection.Introspection.DirectiveLocation
+import graphql.language.*
 import graphql.parser.Parser
-import graphql.schema.Coercing
-import graphql.schema.DataFetcher
-import graphql.schema.GraphQLAppliedDirectiveArgument
-import graphql.schema.GraphQLAppliedDirective
-import graphql.schema.GraphQLArgument
-import graphql.schema.GraphQLDirective
-import graphql.schema.GraphQLInputType
-import graphql.schema.GraphQLObjectType
-import graphql.schema.GraphQLScalarType
-import graphql.schema.GraphQLSchema
-import graphql.schema.GraphQLType
-import graphql.schema.TypeResolver
-import graphql.schema.idl.RuntimeWiring
-import graphql.schema.idl.SchemaGenerator
-import graphql.schema.idl.SchemaParser
-import graphql.schema.idl.TestMockedWiringFactory
-import graphql.schema.idl.TypeRuntimeWiring
-import graphql.schema.idl.WiringFactory
+import graphql.schema.*
+import graphql.schema.idl.*
 import graphql.schema.idl.errors.SchemaProblem
 import groovy.json.JsonOutput
 
@@ -194,13 +173,19 @@ class TestUtil {
                 .name(definition.getName())
                 .description(definition.getDescription() == null ? null : definition.getDescription().getContent())
                 .coercing(mockCoercing())
-                .replaceDirectives(definition.getDirectives().stream().map({ mockDirective(it.getName()) }).collect(Collectors.toList()))
+                .replaceDirectives(
+                        definition.getDirectives()
+                                .stream()
+                                .map({ mockDirective(it.getName(), DirectiveLocation.SCALAR) })
+                                .collect(Collectors.toList()))
                 .definition(definition)
                 .build()
     }
 
-    static GraphQLDirective mockDirective(String name) {
-        newDirective().name(name).description(name).build()
+    static GraphQLDirective mockDirective(String name, DirectiveLocation location, GraphQLArgument arg = null) {
+        def b = newDirective().name(name).description(name).validLocation(location)
+        if (arg != null) b.argument(arg)
+        b.build()
     }
 
     static TypeRuntimeWiring mockTypeRuntimeWiring(String typeName, boolean withResolver) {
