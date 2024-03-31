@@ -195,23 +195,53 @@ class GraphQLArgumentTest extends Specification {
         resolvedDefaultValue == null
     }
 
-    def "Applied schema directives arguments are validated for programmatic schemas"() {
+    def "schema directive arguments are validated for programmatic schemas"() {
         given:
         def arg = newArgument().name("arg").type(GraphQLInt).valueProgrammatic(ImmutableKit.emptyMap()).build() // Retain for test coverage
-        def directive = GraphQLDirective.newDirective().name("cached").argument(arg).build()
+        def directive = newDirective().name("cached").argument(arg).build()
         def field = newFieldDefinition()
-                .name("hello")
-                .type(GraphQLString)
-                .argument(arg)
-                .withDirective(directive)
-                .build()
+            .name("hello")
+            .type(GraphQLString)
+            .argument(arg)
+            .withDirective(directive)
+            .build()
         when:
-        newSchema().query(
+        newSchema()
+            .query(
                 newObject()
-                        .name("Query")
-                        .field(field)
-                        .build())
+                    .name("Query")
+                    .field(field)
+                    .build()
+            )
+            .additionalDirective(directive)
+            .build()
+        then:
+        def e = thrown(InvalidSchemaException)
+        e.message.contains("Invalid argument 'arg' for applied directive of name 'cached'")
+    }
+
+    def "applied directive arguments are validated for programmatic schemas"() {
+        given:
+        def arg = newArgument()
+                .name("arg")
+                .type(GraphQLNonNull.nonNull(GraphQLInt))
                 .build()
+        def directive = newDirective().name("cached").argument(arg).build()
+        def field = newFieldDefinition()
+            .name("hello")
+            .type(GraphQLString)
+            .withAppliedDirective(directive.toAppliedDirective())
+            .build()
+        when:
+        newSchema()
+            .query(
+                newObject()
+                    .name("Query")
+                    .field(field)
+                    .build()
+            )
+            .additionalDirective(directive)
+            .build()
         then:
         def e = thrown(InvalidSchemaException)
         e.message.contains("Invalid argument 'arg' for applied directive of name 'cached'")
