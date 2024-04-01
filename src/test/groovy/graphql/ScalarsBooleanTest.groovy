@@ -55,19 +55,19 @@ class ScalarsBooleanTest extends Specification {
         Scalars.GraphQLBoolean.getCoercing().serialize(value, GraphQLContext.default, Locale.default) == result
 
         where:
-        value                        | result
-        true                         | true
-        "false"                      | false
-        "true"                       | true
-        "True"                       | true
-        0                            | false
-        1                            | true
-        -1                           | true
-        new Long(42345784398534785l) | true
-        new Double(42.3)             | true
-        new Float(42.3)              | true
-        Integer.MAX_VALUE + 1l       | true
-        Integer.MIN_VALUE - 1l       | true
+        value                            | result
+        true                             | true
+        "false"                          | false
+        "true"                           | true
+        "True"                           | true
+        0                                | false
+        1                                | true
+        -1                               | true
+        Long.valueOf(42345784398534785l) | true
+        Double.valueOf(42.3)             | true
+        Float.valueOf(42.3)              | true
+        Integer.MAX_VALUE + 1l           | true
+        Integer.MIN_VALUE - 1l           | true
     }
 
     @Unroll
@@ -76,19 +76,19 @@ class ScalarsBooleanTest extends Specification {
         Scalars.GraphQLBoolean.getCoercing().serialize(value) == result // Retain deprecated method for test coverage
 
         where:
-        value                        | result
-        true                         | true
-        "false"                      | false
-        "true"                       | true
-        "True"                       | true
-        0                            | false
-        1                            | true
-        -1                           | true
-        new Long(42345784398534785l) | true
-        new Double(42.3)             | true
-        new Float(42.3)              | true
-        Integer.MAX_VALUE + 1l       | true
-        Integer.MIN_VALUE - 1l       | true
+        value                            | result
+        true                             | true
+        "false"                          | false
+        "true"                           | true
+        "True"                           | true
+        0                                | false
+        1                                | true
+        -1                               | true
+        Long.valueOf(42345784398534785l) | true
+        Double.valueOf(42.3)             | true
+        Float.valueOf(42.3)              | true
+        Integer.MAX_VALUE + 1l           | true
+        Integer.MIN_VALUE - 1l           | true
     }
 
     @Unroll
@@ -139,19 +139,19 @@ class ScalarsBooleanTest extends Specification {
         thrown(CoercingParseValueException)
 
         where:
-        value                        | _
-        new Object()                 | _
-        "false"                      | _
-        "true"                       | _
-        "True"                       | _
-        0                            | _
-        1                            | _
-        -1                           | _
-        new Long(42345784398534785l) | _
-        new Double(42.3)             | _
-        new Float(42.3)              | _
-        Integer.MAX_VALUE + 1l       | _
-        Integer.MIN_VALUE - 1l       | _
+        value                            | _
+        new Object()                     | _
+        "false"                          | _
+        "true"                           | _
+        "True"                           | _
+        0                                | _
+        1                                | _
+        -1                               | _
+        Long.valueOf(42345784398534785l) | _
+        Double.valueOf(42.3)             | _
+        Float.valueOf(42.3)              | _
+        Integer.MAX_VALUE + 1l           | _
+        Integer.MIN_VALUE - 1l           | _
     }
 
 }
