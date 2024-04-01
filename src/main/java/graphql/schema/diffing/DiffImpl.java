@@ -114,6 +114,7 @@ public class DiffImpl {
 
     OptimalEdit diffImpl(Mapping startMapping, List<Vertex> allSources, List<Vertex> allTargets, AtomicInteger algoIterationCount) throws Exception {
         int graphSize = allSources.size();
+        System.out.println("graphSize: " + graphSize);
 
         int fixedEditorialCost = baseEditorialCostForMapping(startMapping, completeSourceGraph, completeTargetGraph);
         int level = startMapping.size();
@@ -138,6 +139,7 @@ public class DiffImpl {
 
 
         while (!queue.isEmpty()) {
+            System.out.println("queue size: " + queue.size());
             MappingEntry mappingEntry = queue.poll();
             algoIterationCount.incrementAndGet();
 
@@ -440,36 +442,96 @@ public class DiffImpl {
 
         boolean equalNodes = v.getType().equals(u.getType()) && v.getProperties().equals(u.getProperties());
 
-        Collection<Edge> adjacentEdgesV = completeSourceGraph.getAdjacentEdgesNonCopy(v);
+        int anchoredVerticesCost = 0;
         Multiset<String> multisetLabelsV = HashMultiset.create();
+        Multiset<String> multisetLabelsU = HashMultiset.create();
 
-        for (Edge edge : adjacentEdgesV) {
-            // test if this is an inner edge (meaning it not part of the subgraph induced by the partial mapping)
-            // we know that v is not part of the mapped vertices, therefore we only need to test the "to" vertex
-            if (!partialMapping.containsSource(edge.getTo())) {
-                multisetLabelsV.add(edge.getLabel());
+        Collection<Edge> adjacentEdgesV = completeSourceGraph.getAdjacentEdgesNonCopy(v);
+        Collection<Edge> adjacentEdgesU = completeTargetGraph.getAdjacentEdgesNonCopy(u);
+
+        Collection<Edge> adjacentEdgesInverseV = completeSourceGraph.getAdjacentEdgesInverseNonCopy(v);
+        Collection<Edge> adjacentEdgesInverseU = completeTargetGraph.getAdjacentEdgesInverseNonCopy(u);
+
+        Set<Edge> matchedTargetEdges = new LinkedHashSet<>();
+        Set<Edge> matchedTargetEdgesInverse = new LinkedHashSet<>();
+
+        for (Edge edgeV : adjacentEdgesV) {
+
+            Vertex targetTo = partialMapping.getTarget(edgeV.getTo());
+            if (targetTo == null) {
+                // meaning it is an inner edge(not part of the subgraph induced by the partial mapping)
+                multisetLabelsV.add(edgeV.getLabel());
+                continue;
+            }
+            /* question is if the edge from v is mapped onto an edge from u
+              (also edge are not mapped directly, but the vertices are)
+              and if the adjacent edge is mapped onto an adjacent edge,
+              we need to check the labels of the edges
+             */
+            Edge matchedTargetEdge = completeTargetGraph.getEdge(u, targetTo);
+            if (matchedTargetEdge != null) {
+                matchedTargetEdges.add(matchedTargetEdge);
+                if (!Objects.equals(edgeV.getLabel(), matchedTargetEdge.getLabel())) {
+                    anchoredVerticesCost++;
+                }
+            } else {
+//            // no matching adjacent edge from u found means there is no
+//            // edge from edgeV.getTo() to mapped(edgeV.getTo())
+//            // and we need to increase the costs
+                anchoredVerticesCost++;
+            }
+
+        }
+
+        for (Edge edgeV : adjacentEdgesInverseV) {
+
+            Vertex targetFrom = partialMapping.getTarget(edgeV.getFrom());
+            // we are only interested in edges from anchored vertices
+            if (targetFrom == null) {
+                continue;
+            }
+            Edge matachedTargetEdge = completeTargetGraph.getEdge(targetFrom, u);
+            if (matachedTargetEdge != null) {
+                matchedTargetEdgesInverse.add(matachedTargetEdge);
+                if (!Objects.equals(edgeV.getLabel(), matachedTargetEdge.getLabel())) {
+                    anchoredVerticesCost++;
+                }
+            } else {
+                anchoredVerticesCost++;
             }
         }
 
-        Collection<Edge> adjacentEdgesU = completeTargetGraph.getAdjacentEdgesNonCopy(u);
-        Multiset<String> multisetLabelsU = HashMultiset.create();
-        for (Edge edge : adjacentEdgesU) {
+        for (Edge edgeU : adjacentEdgesU) {
             // test if this is an inner edge (meaning it not part of the subgraph induced by the partial mapping)
             // we know that u is not part of the mapped vertices, therefore we only need to test the "to" vertex
-            if (!partialMapping.containsTarget(edge.getTo())) {
-                multisetLabelsU.add(edge.getLabel());
+            if (!partialMapping.containsTarget(edgeU.getTo())) {
+                multisetLabelsU.add(edgeU.getLabel());
+                continue;
             }
+            if (matchedTargetEdges.contains(edgeU)) {
+                continue;
+            }
+            anchoredVerticesCost++;
+
+        }
+        for (Edge edgeU : adjacentEdgesInverseU) {
+            // we are only interested in edges from anchored vertices
+            if (!partialMapping.containsTarget(edgeU.getFrom()) || matchedTargetEdgesInverse.contains(edgeU)) {
+                continue;
+            }
+            anchoredVerticesCost++;
         }
 
-        int anchoredVerticesCost = calcAnchoredVerticesCost(v, u, partialMapping);
 
         Multiset<String> intersection = Multisets.intersection(multisetLabelsV, multisetLabelsU);
         int multiSetEditDistance = Math.max(multisetLabelsV.size(), multisetLabelsU.size()) - intersection.size();
 
-        double result = (equalNodes ? 0 : 1) + multiSetEditDistance + anchoredVerticesCost;
+        int result = (equalNodes ? 0 : 1) + multiSetEditDistance + anchoredVerticesCost;
+//        if (multiSetEditDistance > 3 && v.isOfType(SchemaGraph.FIELD)) {
+//            System.out.println(v.getType() + " multisetEditDistance " + multiSetEditDistance + " anchored cost: " + anchoredVerticesCost);
+//        }
         return result;
     }
-
 
     private int calcAnchoredVerticesCost(Vertex v,
                                          Vertex u,
@@ -526,6 +588,87 @@ public class DiffImpl {
             }
             anchoredVerticesCost++;
 
+        }
+
+        /**
+         * what is missing now is all edges from u (and inverse), which have not been matched.
+         */
+        for (Edge edgeU : adjacentEdgesU) {
+            // we are only interested in edges from anchored vertices
+            if (!partialMapping.containsTarget(edgeU.getTo()) || matchedTargetEdges.contains(edgeU)) {
+                continue;
+            }
+            anchoredVerticesCost++;
+
+        }
+        for (Edge edgeU : adjacentEdgesInverseU) {
+            // we are only interested in edges from anchored vertices
+            if (!partialMapping.containsTarget(edgeU.getFrom()) || matchedTargetEdgesInverse.contains(edgeU)) {
+                continue;
+            }
+            anchoredVerticesCost++;
+        }
+
+        return anchoredVerticesCost;
+    }
+
+    private int calcAnchoredVerticesCostNew(Vertex v,
+                                            Vertex u,
+                                            Mapping partialMapping) {
+        int anchoredVerticesCost = 0;
+
+        Collection<Edge> adjacentEdgesV = completeSourceGraph.getAdjacentEdgesNonCopy(v);
+        Collection<Edge> adjacentEdgesU = completeTargetGraph.getAdjacentEdgesNonCopy(u);
+
+        Collection<Edge> adjacentEdgesInverseV = completeSourceGraph.getAdjacentEdgesInverseNonCopy(v);
+        Collection<Edge> adjacentEdgesInverseU = completeTargetGraph.getAdjacentEdgesInverseNonCopy(u);
+
+        Set<Edge> matchedTargetEdges = new LinkedHashSet<>();
+        Set<Edge> matchedTargetEdgesInverse = new LinkedHashSet<>();
+
+        outer:
+        for (Edge edgeV : adjacentEdgesV) {
+            Vertex targetTo = partialMapping.getTarget(edgeV.getTo());
+            // we are only interested in edges from anchored vertices
+            if (targetTo == null) {
+                continue;
+            }
+            /* question is if the edge from v is mapped onto an edge from u
+              (also edge are not mapped directly, but the vertices are)
+              and if the adjacent edge is mapped onto an adjacent edge,
+              we need to check the labels of the edges
+             */
+            Edge matchedTargetEdge = completeTargetGraph.getEdge(u, targetTo);
+            if (matchedTargetEdge != null) {
+                matchedTargetEdges.add(matchedTargetEdge);
+                if (!Objects.equals(edgeV.getLabel(), matchedTargetEdge.getLabel())) {
+                    anchoredVerticesCost++;
+                }
+            } else {
+//            // no matching adjacent edge from u found means there is no
+//            // edge from edgeV.getTo() to mapped(edgeV.getTo())
+//            // and we need to increase the costs
+                anchoredVerticesCost++;
+            }
+
+        }
+
+        outer:
+        for (Edge edgeV : adjacentEdgesInverseV) {
+            Vertex targetFrom = partialMapping.getTarget(edgeV.getFrom());
+            // we are only interested in edges from anchored vertices
+            if (targetFrom == null) {
+                continue;
+            }
+            Edge matachedTargetEdge = completeTargetGraph.getEdge(targetFrom, u);
+            if (matachedTargetEdge != null) {
+                matchedTargetEdgesInverse.add(matachedTargetEdge);
+                if (!Objects.equals(edgeV.getLabel(), matachedTargetEdge.getLabel())) {
+                    anchoredVerticesCost++;
+                }
+            } else {
+                anchoredVerticesCost++;
+            }
         }
 
         /**
