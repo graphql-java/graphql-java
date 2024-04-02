@@ -65,6 +65,12 @@ public class GraphqlFloatCoercing implements Coercing<Double, Double> {
 
     @NotNull
     private Double parseValueImpl(@NotNull Object input, @NotNull Locale locale) {
+        if (!(input instanceof Number)) {
+            throw new CoercingParseValueException(
+                    i18nMsg(locale, "Float.unexpectedRawValueType", typeName(input))
+            );
+        }
+
         Double result = convertImpl(input);
         if (result == null) {
             throw new CoercingParseValueException(

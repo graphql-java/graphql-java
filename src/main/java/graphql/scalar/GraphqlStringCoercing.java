@@ -28,6 +28,15 @@ public class GraphqlStringCoercing implements Coercing<String, String> {
         return String.valueOf(input);
     }
 
+    private String parseValueImpl(@NotNull Object input, @NotNull Locale locale) {
+        if (!(input instanceof String)) {
+            throw new CoercingParseValueException(
+                    i18nMsg(locale, "String.unexpectedRawValueType", typeName(input))
+            );
+        }
+        return (String) input;
+    }
+
     private String parseLiteralImpl(@NotNull Object input, Locale locale) {
         if (!(input instanceof StringValue)) {
             throw new CoercingParseLiteralException(
@@ -55,12 +64,12 @@ public class GraphqlStringCoercing implements Coercing<String, String> {
     @Override
     @Deprecated
     public String parseValue(@NotNull Object input) {
-        return toStringImpl(input);
+        return parseValueImpl(input, Locale.getDefault());
     }
 
     @Override
     public String parseValue(@NotNull Object input, @NotNull GraphQLContext graphQLContext, @NotNull Locale locale) throws CoercingParseValueException {
-        return toStringImpl(input);
+        return parseValueImpl(input, locale);
     }
 
     @Override
@@ -76,7 +85,7 @@ public class GraphqlStringCoercing implements Coercing<String, String> {
 
     @Override
     @Deprecated
-    public Value valueToLiteral(@NotNull Object input) {
+    public @NotNull Value<?> valueToLiteral(@NotNull Object input) {
         return valueToLiteralImpl(input);
     }
 

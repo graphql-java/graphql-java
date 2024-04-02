@@ -66,14 +66,14 @@ class ScalarsIntTest extends Specification {
         "42"                  | 42
         "42.0000"             | 42
         42.0000d              | 42
-        new Integer(42)       | 42
+        Integer.valueOf(42)   | 42
         "-1"                  | -1
         new BigInteger("42")  | 42
         new BigDecimal("42")  | 42
         42.0f                 | 42
         42.0d                 | 42
-        new Byte("42")        | 42
-        new Short("42")       | 42
+        Byte.valueOf("42")    | 42
+        Short.valueOf("42")   | 42
         1234567l              | 1234567
         new AtomicInteger(42) | 42
         Integer.MAX_VALUE     | Integer.MAX_VALUE
@@ -90,14 +90,14 @@ class ScalarsIntTest extends Specification {
         "42"                  | 42
         "42.0000"             | 42
         42.0000d              | 42
-        new Integer(42)       | 42
+        Integer.valueOf(42)   | 42
         "-1"                  | -1
         new BigInteger("42")  | 42
         new BigDecimal("42")  | 42
         42.0f                 | 42
         42.0d                 | 42
-        new Byte("42")        | 42
-        new Short("42")       | 42
+        Byte.valueOf("42")    | 42
+        Short.valueOf("42")   | 42
         1234567l              | 1234567
         new AtomicInteger(42) | 42
         Integer.MAX_VALUE     | Integer.MAX_VALUE
@@ -112,16 +112,16 @@ class ScalarsIntTest extends Specification {
         thrown(CoercingSerializeException)
 
         where:
-        value                        | _
-        ""                           | _
-        "not a number "              | _
-        "42.3"                       | _
-        new Long(42345784398534785l) | _
-        new Double(42.3)             | _
-        new Float(42.3)              | _
-        Integer.MAX_VALUE + 1l       | _
-        Integer.MIN_VALUE - 1l       | _
-        new Object()                 | _
+        value                            | _
+        ""                               | _
+        "not a number "                  | _
+        "42.3"                           | _
+        Long.valueOf(42345784398534785l) | _
+        Double.valueOf(42.3)             | _
+        Float.valueOf(42.3)              | _
+        Integer.MAX_VALUE + 1l           | _
+        Integer.MIN_VALUE - 1l           | _
+        new Object()                     | _
     }
 
     @Unroll
@@ -131,10 +131,10 @@ class ScalarsIntTest extends Specification {
 
         where:
         value                 | result
-        new Integer(42)       | 42
+        Integer.valueOf(42)   | 42
         new BigInteger("42")  | 42
-        new Byte("42")        | 42
-        new Short("42")       | 42
+        Byte.valueOf("42")    | 42
+        Short.valueOf("42")   | 42
         1234567l              | 1234567
         new AtomicInteger(42) | 42
         42.0000d              | 42
@@ -143,9 +143,6 @@ class ScalarsIntTest extends Specification {
         42.0d                 | 42
         Integer.MAX_VALUE     | Integer.MAX_VALUE
         Integer.MIN_VALUE     | Integer.MIN_VALUE
-        "42"                  | 42
-        "42.0000"             | 42
-        "-1"                  | -1
     }
 
     @Unroll
@@ -155,10 +152,10 @@ class ScalarsIntTest extends Specification {
 
         where:
         value                 | result
-        new Integer(42)       | 42
+        Integer.valueOf(42)   | 42
         new BigInteger("42")  | 42
-        new Byte("42")        | 42
-        new Short("42")       | 42
+        Byte.valueOf("42")    | 42
+        Short.valueOf("42")   | 42
         1234567l              | 1234567
         new AtomicInteger(42) | 42
         42.0000d              | 42
@@ -167,9 +164,6 @@ class ScalarsIntTest extends Specification {
         42.0d                 | 42
         Integer.MAX_VALUE     | Integer.MAX_VALUE
         Integer.MIN_VALUE     | Integer.MIN_VALUE
-        "42"                  | 42
-        "42.0000"             | 42
-        "-1"                  | -1
     }
 
     @Unroll
@@ -180,16 +174,19 @@ class ScalarsIntTest extends Specification {
         thrown(CoercingParseValueException)
 
         where:
-        value                        | _
-        ""                           | _
-        "not a number "              | _
-        "42.3"                       | _
-        new Long(42345784398534785l) | _
-        new Double(42.3)             | _
-        new Float(42.3)              | _
-        Integer.MAX_VALUE + 1l       | _
-        Integer.MIN_VALUE - 1l       | _
-        new Object()                 | _
+        value                            | _
+        ""                               | _
+        "not a number "                  | _
+        "42.3"                           | _
+        Long.valueOf(42345784398534785l) | _
+        Double.valueOf(42.3)             | _
+        Float.valueOf(42.3)              | _
+        Integer.MAX_VALUE + 1l           | _
+        Integer.MIN_VALUE - 1l           | _
+        new Object()                     | _
+        "42"                             | _
+        "42.0000"                        | _
+        "-1"                             | _
     }
 
 }
