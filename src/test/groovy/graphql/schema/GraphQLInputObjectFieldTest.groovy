@@ -1,12 +1,13 @@
 package graphql.schema
 
+import graphql.introspection.Introspection
 import graphql.language.FloatValue
 import spock.lang.Specification
 
 import static graphql.Scalars.GraphQLFloat
 import static graphql.Scalars.GraphQLInt
-import static graphql.schema.GraphQLDirective.newDirective
 import static graphql.schema.GraphQLInputObjectField.newInputObjectField
+import static graphql.TestUtil.mkDirective
 
 class GraphQLInputObjectFieldTest extends Specification {
 
@@ -16,8 +17,8 @@ class GraphQLInputObjectFieldTest extends Specification {
                 .name("F1")
                 .type(GraphQLFloat)
                 .description("F1_description")
-                .withDirective(newDirective().name("directive1"))
-                .withDirective(newDirective().name("directive2"))
+                .withDirective(mkDirective("directive1", Introspection.DirectiveLocation.INPUT_FIELD_DEFINITION))
+                .withDirective(mkDirective("directive2", Introspection.DirectiveLocation.INPUT_FIELD_DEFINITION))
                 .deprecate("No longer useful")
                 .build()
 
@@ -26,13 +27,10 @@ class GraphQLInputObjectFieldTest extends Specification {
             builder.name("F2")
                     .type(GraphQLInt)
                     .deprecate(null)
-                    .withDirective(newDirective().name("directive3"))
-
+                    .withDirective(mkDirective("directive3", Introspection.DirectiveLocation.INPUT_FIELD_DEFINITION))
         })
 
-
         then:
-
         startingField.name == "F1"
         startingField.type == GraphQLFloat
         startingField.description == "F1_description"

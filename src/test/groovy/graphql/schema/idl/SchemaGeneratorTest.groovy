@@ -1,6 +1,5 @@
 package graphql.schema.idl
 
-
 import graphql.TestUtil
 import graphql.introspection.Introspection
 import graphql.language.Node
@@ -9,9 +8,7 @@ import graphql.schema.DataFetcherFactory
 import graphql.schema.DataFetcherFactoryEnvironment
 import graphql.schema.DataFetchingEnvironment
 import graphql.schema.GraphQLAppliedDirective
-import graphql.schema.GraphQLArgument
 import graphql.schema.GraphQLCodeRegistry
-import graphql.schema.GraphQLDirective
 import graphql.schema.GraphQLDirectiveContainer
 import graphql.schema.GraphQLEnumType
 import graphql.schema.GraphQLFieldDefinition

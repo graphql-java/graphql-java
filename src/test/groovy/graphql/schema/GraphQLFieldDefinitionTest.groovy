@@ -2,6 +2,7 @@ package graphql.schema
 
 import graphql.AssertException
 import graphql.TestUtil
+import graphql.introspection.Introspection
 import graphql.schema.idl.SchemaPrinter
 import spock.lang.Specification
 
@@ -10,9 +11,9 @@ import static graphql.Scalars.GraphQLFloat
 import static graphql.Scalars.GraphQLInt
 import static graphql.Scalars.GraphQLString
 import static graphql.TestUtil.mockArguments
+import static graphql.TestUtil.mkDirective
 import static graphql.schema.DefaultGraphqlTypeComparatorRegistry.newComparators
 import static graphql.schema.GraphQLArgument.newArgument
-import static graphql.schema.GraphQLDirective.newDirective
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition
 import static graphql.schema.idl.SchemaPrinter.Options.defaultOptions
 
@@ -35,8 +36,8 @@ class GraphQLFieldDefinitionTest extends Specification {
                 .deprecate("F1_deprecated")
                 .argument(newArgument().name("argStr").type(GraphQLString))
                 .argument(newArgument().name("argInt").type(GraphQLInt))
-                .withDirective(newDirective().name("directive1"))
-                .withDirective(newDirective().name("directive2"))
+                .withDirective(mkDirective("directive1", Introspection.DirectiveLocation.FIELD_DEFINITION))
+                .withDirective(mkDirective("directive2", Introspection.DirectiveLocation.FIELD_DEFINITION))
                 .build()
 
         when:
@@ -47,13 +48,10 @@ class GraphQLFieldDefinitionTest extends Specification {
                     .argument(newArgument().name("argStr").type(GraphQLString))
                     .argument(newArgument().name("argInt").type(GraphQLBoolean))
                     .argument(newArgument().name("argIntAdded").type(GraphQLInt))
-                    .withDirective(newDirective().name("directive3"))
-
+                    .withDirective(mkDirective("directive3", Introspection.DirectiveLocation.FIELD_DEFINITION))
         })
 
-
         then:
-
         startingField.name == "F1"
         startingField.type == GraphQLFloat
         startingField.description == "F1_description"
