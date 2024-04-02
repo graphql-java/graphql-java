@@ -1,6 +1,8 @@
 package graphql.schema
 
+import graphql.AssertException
 import graphql.TestUtil
+import graphql.introspection.Introspection
 import graphql.language.Node
 import spock.lang.Specification
 
@@ -168,8 +170,37 @@ class GraphQLDirectiveTest extends Specification {
 
         then:
         assertDirectiveContainer(scalarType)
-
     }
+
+    def "throws an error on missing required properties"() {
+        given:
+        def validDirective = GraphQLDirective.newDirective()
+                .name("dir")
+                .validLocation(Introspection.DirectiveLocation.SCALAR)
+                .build()
+
+        when:
+        validDirective.transform { it.name(null) }
+
+        then:
+        def e = thrown(AssertException)
+        e.message.contains("Name must be non-null, non-empty")
+
+        when:
+        validDirective.transform { it.replaceArguments(null) }
+
+        then:
+        def e2 = thrown(AssertException)
+        e2.message.contains("arguments must not be null")
+
+        when:
+        validDirective.transform { it.clearValidLocations() }
+
+        then:
+        def e3 = thrown(AssertException)
+        e3.message.contains("locations can't be empty")
+    }
+
 
     static boolean assertDirectiveContainer(GraphQLDirectiveContainer container) {
         assert container.hasDirective("d1") // Retain for test coverage
