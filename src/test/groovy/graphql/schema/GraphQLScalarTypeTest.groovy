@@ -3,7 +3,7 @@ package graphql.schema
 import graphql.introspection.Introspection
 import spock.lang.Specification
 
-import static graphql.TestUtil.mockDirective
+import static graphql.TestUtil.mkDirective
 
 class GraphQLScalarTypeTest extends Specification {
     Coercing<String, String> coercing = new Coercing<String, String>() {
@@ -29,14 +29,14 @@ class GraphQLScalarTypeTest extends Specification {
                 .name("S1")
                 .description("S1_description")
                 .coercing(coercing)
-                .withDirective(mockDirective("directive1", Introspection.DirectiveLocation.SCALAR))
-                .withDirective(mockDirective("directive2", Introspection.DirectiveLocation.SCALAR))
+                .withDirective(mkDirective("directive1", Introspection.DirectiveLocation.SCALAR))
+                .withDirective(mkDirective("directive2", Introspection.DirectiveLocation.SCALAR))
                 .build()
         when:
         def transformedScalar = startingScalar.transform({ builder ->
             builder.name("S2")
                     .description("S2_description")
-                    .withDirective(mockDirective("directive3", Introspection.DirectiveLocation.SCALAR))
+                    .withDirective(mkDirective("directive3", Introspection.DirectiveLocation.SCALAR))
         })
 
         then:

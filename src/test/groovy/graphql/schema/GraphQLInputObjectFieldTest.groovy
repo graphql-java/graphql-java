@@ -7,7 +7,7 @@ import spock.lang.Specification
 import static graphql.Scalars.GraphQLFloat
 import static graphql.Scalars.GraphQLInt
 import static graphql.schema.GraphQLInputObjectField.newInputObjectField
-import static graphql.TestUtil.mockDirective
+import static graphql.TestUtil.mkDirective
 
 class GraphQLInputObjectFieldTest extends Specification {
 
@@ -17,8 +17,8 @@ class GraphQLInputObjectFieldTest extends Specification {
                 .name("F1")
                 .type(GraphQLFloat)
                 .description("F1_description")
-                .withDirective(mockDirective("directive1", Introspection.DirectiveLocation.INPUT_FIELD_DEFINITION))
-                .withDirective(mockDirective("directive2", Introspection.DirectiveLocation.INPUT_FIELD_DEFINITION))
+                .withDirective(mkDirective("directive1", Introspection.DirectiveLocation.INPUT_FIELD_DEFINITION))
+                .withDirective(mkDirective("directive2", Introspection.DirectiveLocation.INPUT_FIELD_DEFINITION))
                 .deprecate("No longer useful")
                 .build()
 
@@ -27,7 +27,7 @@ class GraphQLInputObjectFieldTest extends Specification {
             builder.name("F2")
                     .type(GraphQLInt)
                     .deprecate(null)
-                    .withDirective(mockDirective("directive3", Introspection.DirectiveLocation.INPUT_FIELD_DEFINITION))
+                    .withDirective(mkDirective("directive3", Introspection.DirectiveLocation.INPUT_FIELD_DEFINITION))
         })
 
         then:

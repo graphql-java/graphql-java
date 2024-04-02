@@ -13,7 +13,7 @@ import static graphql.schema.GraphQLArgument.newArgument
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition
 import static graphql.schema.GraphQLObjectType.newObject
 import static graphql.schema.GraphQLSchema.newSchema
-import static graphql.TestUtil.mockDirective
+import static graphql.TestUtil.mkDirective
 
 class GraphQLArgumentTest extends Specification {
 
@@ -23,7 +23,7 @@ class GraphQLArgumentTest extends Specification {
                 .description("A1_description")
                 .type(GraphQLInt)
                 .deprecate("custom reason")
-                .withDirective(mockDirective("directive1", ARGUMENT_DEFINITION))
+                .withDirective(mkDirective("directive1", ARGUMENT_DEFINITION))
                 .build()
         when:
         def transformedArgument = startingArgument.transform({
@@ -31,7 +31,7 @@ class GraphQLArgumentTest extends Specification {
                     .name("A2")
                     .description("A2_description")
                     .type(GraphQLString)
-                    .withDirective(mockDirective("directive3", ARGUMENT_DEFINITION))
+                    .withDirective(mkDirective("directive3", ARGUMENT_DEFINITION))
                     .value("VALUE") // Retain deprecated for test coverage
                     .deprecate(null)
                     .defaultValue("DEFAULT") // Retain deprecated for test coverage
@@ -82,7 +82,7 @@ class GraphQLArgumentTest extends Specification {
         given:
         def builder = newArgument().name("A1")
                 .type(GraphQLInt)
-                .withDirective(mockDirective("directive1", ARGUMENT_DEFINITION))
+                .withDirective(mkDirective("directive1", ARGUMENT_DEFINITION))
 
         when:
         argument = builder.build()
@@ -97,8 +97,8 @@ class GraphQLArgumentTest extends Specification {
         when:
         argument = builder
                 .clearDirectives()
-                .withDirective(mockDirective("directive2", ARGUMENT_DEFINITION))
-                .withDirective(mockDirective("directive3", ARGUMENT_DEFINITION))
+                .withDirective(mkDirective("directive2", ARGUMENT_DEFINITION))
+                .withDirective(mkDirective("directive3", ARGUMENT_DEFINITION))
                 .build()
 
         then:
@@ -110,9 +110,9 @@ class GraphQLArgumentTest extends Specification {
         when:
         argument = builder
                 .replaceDirectives([
-                        mockDirective("directive1", ARGUMENT_DEFINITION),
-                        mockDirective("directive2", ARGUMENT_DEFINITION),
-                        mockDirective("directive3", ARGUMENT_DEFINITION)]) // overwrite
+                        mkDirective("directive1", ARGUMENT_DEFINITION),
+                        mkDirective("directive2", ARGUMENT_DEFINITION),
+                        mkDirective("directive3", ARGUMENT_DEFINITION)]) // overwrite
                 .build()
 
         then:
@@ -199,7 +199,7 @@ class GraphQLArgumentTest extends Specification {
     def "Applied schema directives arguments are validated for programmatic schemas"() {
         given:
         def arg = newArgument().name("arg").type(GraphQLInt).valueProgrammatic(ImmutableKit.emptyMap()).build() // Retain for test coverage
-        def directive = mockDirective("cached", ARGUMENT_DEFINITION, arg)
+        def directive = mkDirective("cached", ARGUMENT_DEFINITION, arg)
         def field = newFieldDefinition()
                 .name("hello")
                 .type(GraphQLString)

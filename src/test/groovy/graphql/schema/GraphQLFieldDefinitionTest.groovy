@@ -11,7 +11,7 @@ import static graphql.Scalars.GraphQLFloat
 import static graphql.Scalars.GraphQLInt
 import static graphql.Scalars.GraphQLString
 import static graphql.TestUtil.mockArguments
-import static graphql.TestUtil.mockDirective
+import static graphql.TestUtil.mkDirective
 import static graphql.schema.DefaultGraphqlTypeComparatorRegistry.newComparators
 import static graphql.schema.GraphQLArgument.newArgument
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition
@@ -36,8 +36,8 @@ class GraphQLFieldDefinitionTest extends Specification {
                 .deprecate("F1_deprecated")
                 .argument(newArgument().name("argStr").type(GraphQLString))
                 .argument(newArgument().name("argInt").type(GraphQLInt))
-                .withDirective(mockDirective("directive1", Introspection.DirectiveLocation.FIELD_DEFINITION))
-                .withDirective(mockDirective("directive2", Introspection.DirectiveLocation.FIELD_DEFINITION))
+                .withDirective(mkDirective("directive1", Introspection.DirectiveLocation.FIELD_DEFINITION))
+                .withDirective(mkDirective("directive2", Introspection.DirectiveLocation.FIELD_DEFINITION))
                 .build()
 
         when:
@@ -48,7 +48,7 @@ class GraphQLFieldDefinitionTest extends Specification {
                     .argument(newArgument().name("argStr").type(GraphQLString))
                     .argument(newArgument().name("argInt").type(GraphQLBoolean))
                     .argument(newArgument().name("argIntAdded").type(GraphQLInt))
-                    .withDirective(mockDirective("directive3", Introspection.DirectiveLocation.FIELD_DEFINITION))
+                    .withDirective(mkDirective("directive3", Introspection.DirectiveLocation.FIELD_DEFINITION))
         })
 
         then:

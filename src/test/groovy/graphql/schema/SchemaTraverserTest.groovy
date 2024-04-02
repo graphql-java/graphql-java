@@ -10,7 +10,7 @@ import static graphql.introspection.Introspection.DirectiveLocation
 import static graphql.schema.GraphQLArgument.newArgument
 import static graphql.schema.GraphQLTypeReference.typeRef
 import static graphql.schema.GraphqlTypeComparatorRegistry.BY_NAME_REGISTRY
-import static graphql.TestUtil.mockDirective
+import static graphql.TestUtil.mkDirective
 
 class SchemaTraverserTest extends Specification {
 
@@ -202,7 +202,7 @@ class SchemaTraverserTest extends Specification {
         def scalarType = GraphQLScalarType.newScalar()
                 .name("foo")
                 .coercing(coercing)
-                .withDirective(mockDirective("bar", DirectiveLocation.SCALAR))
+                .withDirective(mkDirective("bar", DirectiveLocation.SCALAR))
                 .withAppliedDirective(GraphQLAppliedDirective.newDirective()
                         .name("barApplied"))
                 .build()
@@ -218,7 +218,7 @@ class SchemaTraverserTest extends Specification {
         def visitor = new GraphQLTestingVisitor()
         def objectType = GraphQLObjectType.newObject()
                 .name("foo")
-                .withDirective(mockDirective("bar", DirectiveLocation.OBJECT))
+                .withDirective(mkDirective("bar", DirectiveLocation.OBJECT))
                 .withAppliedDirective(GraphQLAppliedDirective.newDirective()
                         .name("barApplied"))
                 .build()
@@ -235,7 +235,7 @@ class SchemaTraverserTest extends Specification {
         def fieldDefinition = GraphQLFieldDefinition.newFieldDefinition()
                 .name("foo")
                 .type(Scalars.GraphQLString)
-                .withDirective(mockDirective("bar", DirectiveLocation.FIELD_DEFINITION))
+                .withDirective(mkDirective("bar", DirectiveLocation.FIELD_DEFINITION))
                 .withAppliedDirective(GraphQLAppliedDirective.newDirective()
                         .name("barApplied"))
                 .build()
@@ -252,7 +252,7 @@ class SchemaTraverserTest extends Specification {
         def argument = newArgument()
                 .name("foo")
                 .type(Scalars.GraphQLString)
-                .withDirective(mockDirective("bar", DirectiveLocation.ARGUMENT_DEFINITION))
+                .withDirective(mkDirective("bar", DirectiveLocation.ARGUMENT_DEFINITION))
                 .withAppliedDirective(GraphQLAppliedDirective.newDirective()
                         .name("barApplied"))
                 .build()
@@ -268,7 +268,7 @@ class SchemaTraverserTest extends Specification {
         def visitor = new GraphQLTestingVisitor()
         def interfaceType = GraphQLInterfaceType.newInterface()
                 .name("foo")
-                .withDirective(mockDirective("bar", DirectiveLocation.INTERFACE))
+                .withDirective(mkDirective("bar", DirectiveLocation.INTERFACE))
                 .withAppliedDirective(GraphQLAppliedDirective.newDirective()
                         .name("barApplied"))
                 .build()
@@ -285,7 +285,7 @@ class SchemaTraverserTest extends Specification {
         def unionType = GraphQLUnionType.newUnionType()
                 .name("foo")
                 .possibleType(GraphQLObjectType.newObject().name("dummy").build())
-                .withDirective(mockDirective("bar", DirectiveLocation.UNION))
+                .withDirective(mkDirective("bar", DirectiveLocation.UNION))
                 .build()
         new SchemaTraverser().depthFirst(visitor, unionType)
         then:
@@ -298,7 +298,7 @@ class SchemaTraverserTest extends Specification {
         def enumType = GraphQLEnumType.newEnum()
                 .name("foo")
                 .value("dummy")
-                .withDirective(mockDirective("bar", DirectiveLocation.ENUM))
+                .withDirective(mkDirective("bar", DirectiveLocation.ENUM))
                 .build()
         new SchemaTraverser().depthFirst(visitor, enumType)
         then:
@@ -310,7 +310,7 @@ class SchemaTraverserTest extends Specification {
         def visitor = new GraphQLTestingVisitor()
         def enumValue = GraphQLEnumValueDefinition.newEnumValueDefinition()
                 .name("foo")
-                .withDirective(mockDirective("bar", DirectiveLocation.ENUM_VALUE))
+                .withDirective(mkDirective("bar", DirectiveLocation.ENUM_VALUE))
                 .build()
         new SchemaTraverser().depthFirst(visitor, enumValue)
         then:
@@ -322,7 +322,7 @@ class SchemaTraverserTest extends Specification {
         def visitor = new GraphQLTestingVisitor()
         def inputObjectType = GraphQLInputObjectType.newInputObject()
                 .name("foo")
-                .withDirective(mockDirective("bar", DirectiveLocation.INPUT_OBJECT))
+                .withDirective(mkDirective("bar", DirectiveLocation.INPUT_OBJECT))
                 .build()
         new SchemaTraverser().depthFirst(visitor, inputObjectType)
         then:
@@ -335,7 +335,7 @@ class SchemaTraverserTest extends Specification {
         def inputField = GraphQLInputObjectField.newInputObjectField()
                 .name("foo")
                 .type(Scalars.GraphQLString)
-                .withDirective(mockDirective("bar", DirectiveLocation.INPUT_FIELD_DEFINITION))
+                .withDirective(mkDirective("bar", DirectiveLocation.INPUT_FIELD_DEFINITION))
                 .build()
         new SchemaTraverser().depthFirst(visitor, inputField)
         then:

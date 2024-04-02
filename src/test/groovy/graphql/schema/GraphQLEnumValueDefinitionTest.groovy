@@ -4,7 +4,7 @@ import static graphql.introspection.Introspection.DirectiveLocation
 import spock.lang.Specification
 
 import static graphql.schema.GraphQLEnumValueDefinition.newEnumValueDefinition
-import static graphql.TestUtil.mockDirective
+import static graphql.TestUtil.mkDirective
 
 class GraphQLEnumValueDefinitionTest extends Specification {
     def "object can be transformed"() {
@@ -12,14 +12,14 @@ class GraphQLEnumValueDefinitionTest extends Specification {
         def startEnumValue = newEnumValueDefinition().name("EV1")
                 .description("EV1_description")
                 .value("A")
-                .withDirective(mockDirective("directive1", DirectiveLocation.ENUM_VALUE))
+                .withDirective(mkDirective("directive1", DirectiveLocation.ENUM_VALUE))
                 .build()
         when:
         def transformedEnumValue = startEnumValue.transform({
             it
                     .name("EV2")
                     .value("X")
-                    .withDirective(mockDirective("directive2", DirectiveLocation.ENUM_VALUE))
+                    .withDirective(mkDirective("directive2", DirectiveLocation.ENUM_VALUE))
         })
 
         then:
