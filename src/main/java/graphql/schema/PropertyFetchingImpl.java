@@ -138,7 +138,18 @@ public class PropertyFetchingImpl {
         //
         // try by public getters name -  object.getPropertyName()
         try {
-            MethodFinder methodFinder = (rootClass, methodName) -> findPubliclyAccessibleMethod(cacheKey, rootClass, methodName, dfeInUse);
+            MethodFinder methodFinder = (rootClass, methodName) -> findPubliclyAccessibleMethod(cacheKey, rootClass, methodName, dfeInUse, false);
+            return getPropertyViaGetterMethod(object, propertyName, graphQLType, methodFinder, singleArgumentValue);
+        } catch (NoSuchMethodException ignored) {
+        }
+        //
+        // try by public getters name -  object.getPropertyName() where its static
+        try {
+            // we allow static getXXX() methods because we always have.  It's strange in retrospect but
+            // in order to not break things we allow statics to be used.  In theory this double code check is not needed
+            // because you CANT have a `static getFoo()` and a `getFoo()` in the same class hierarchy but to make the code read clearer
+            // I have repeated the lookup.  Since we cache methods, this happens only once and does not slow us down
+            MethodFinder methodFinder = (rootClass, methodName) -> findPubliclyAccessibleMethod(cacheKey, rootClass, methodName, dfeInUse, true);
             return getPropertyViaGetterMethod(object, propertyName, graphQLType, methodFinder, singleArgumentValue);
         } catch (NoSuchMethodException ignored) {
         }
@@ -215,7 +226,7 @@ public class PropertyFetchingImpl {
      * which have abstract public interfaces implemented by package-protected
      * (generated) subclasses.
      */
-    private Method findPubliclyAccessibleMethod(CacheKey cacheKey, Class<?> rootClass, String methodName, boolean dfeInUse) throws NoSuchMethodException {
+    private Method findPubliclyAccessibleMethod(CacheKey cacheKey, Class<?> rootClass, String methodName, boolean dfeInUse, boolean allowStaticMethods) throws NoSuchMethodException {
         Class<?> currentClass = rootClass;
         while (currentClass != null) {
             if (Modifier.isPublic(currentClass.getModifiers())) {
@@ -224,7 +235,7 @@ public class PropertyFetchingImpl {
                     // try a getter that takes singleArgumentType first (if we have one)
                     try {
                         Method method = currentClass.getMethod(methodName, singleArgumentType);
-                        if (Modifier.isPublic(method.getModifiers())) {
+                        if (isSuitablePublicMethod(method, allowStaticMethods)) {
                             METHOD_CACHE.putIfAbsent(cacheKey, new CachedMethod(method));
                             return method;
                         }
@@ -233,7 +244,7 @@ public class PropertyFetchingImpl {
                     }
                 }
                 Method method = currentClass.getMethod(methodName);
-                if (Modifier.isPublic(method.getModifiers())) {
+                if (isSuitablePublicMethod(method, allowStaticMethods)) {
                     METHOD_CACHE.putIfAbsent(cacheKey, new CachedMethod(method));
                     return method;
                 }
@@ -242,6 +253,18 @@ public class PropertyFetchingImpl {
         }
         assert rootClass != null;
         return rootClass.getMethod(methodName);
+    }
+
+    private boolean isSuitablePublicMethod(Method method, boolean allowStaticMethods) {
+        int methodModifiers = method.getModifiers();
+        if (Modifier.isPublic(methodModifiers)) {
+            //noinspection RedundantIfStatement
+            if (Modifier.isStatic(methodModifiers) && !allowStaticMethods) {
+                return false;
+            }
+            return true;
+        }
+        return false;
     }
 
     /*
@@ -253,9 +276,11 @@ public class PropertyFetchingImpl {
 
        However, we won't just restrict ourselves strictly to true records.  We will find methods that are record like
        and fetch them - e.g. `object.propertyName()`
+
+       We won't allow static methods for record like methods however
      */
     private Method findRecordMethod(CacheKey cacheKey, Class<?> rootClass, String methodName) throws NoSuchMethodException {
-        return findPubliclyAccessibleMethod(cacheKey, rootClass, methodName, false);
+        return findPubliclyAccessibleMethod(cacheKey, rootClass, methodName, false, false);
     }
 
     private Method findViaSetAccessible(CacheKey cacheKey, Class<?> aClass, String methodName, boolean dfeInUse) throws NoSuchMethodException {
