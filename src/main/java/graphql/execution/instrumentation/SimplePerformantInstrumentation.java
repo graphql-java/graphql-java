@@ -48,6 +48,12 @@ public class SimplePerformantInstrumentation implements Instrumentation {
 
     @Override
     public @Nullable CompletableFuture<InstrumentationState> createStateAsync(InstrumentationCreateStateParameters parameters) {
+        InstrumentationState state = createState(parameters);
+        return state == null ? null : CompletableFuture.completedFuture(state);
+    }
+
+    @Override
+    public @Nullable InstrumentationState createState(InstrumentationCreateStateParameters parameters) {
         return null;
     }
 

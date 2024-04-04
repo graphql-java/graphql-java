@@ -456,4 +456,46 @@ class InstrumentationTest extends Specification {
         then:
         er.extensions == [i1: "I1"]
     }
+
+    def "can have an backwards compatibility createState() in play"() {
+
+
+        given:
+
+        def query = '''query Q($var: String!) {
+                                  human(id: $var) {
+                                    id
+                                    name
+                                  }
+                                }
+                            '''
+
+
+        def instrumentation1 = new SimplePerformantInstrumentation() {
+
+            @Override
+            InstrumentationState createState(InstrumentationCreateStateParameters parameters) {
+                return new StringInstrumentationState("I1")
+            }
+
+            @Override
+            CompletableFuture<ExecutionResult> instrumentExecutionResult(ExecutionResult executionResult, InstrumentationExecutionParameters parameters, InstrumentationState state) {
+                return CompletableFuture.completedFuture(
+                        executionResult.transform { it.addExtension("i1", ((StringInstrumentationState) state).value) }
+                )
+            }
+        }
+
+        def graphQL = GraphQL
+                .newGraphQL(StarWarsSchema.starWarsSchema)
+                .instrumentation(instrumentation1)
+                .build()
+
+        when:
+        def variables = [var: "1001"]
+        def er = graphQL.execute(ExecutionInput.newExecutionInput().query(query).variables(variables)) // Luke
+
+        then:
+        er.extensions == [i1: "I1"]
+    }
 }

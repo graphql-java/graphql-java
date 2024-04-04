@@ -50,9 +50,22 @@ public interface Instrumentation {
      */
     @Nullable
     default CompletableFuture<InstrumentationState> createStateAsync(InstrumentationCreateStateParameters parameters) {
-        return null;
+        return CompletableFuture.completedFuture(createState(parameters));
     }
 
+    /**
+     * This method is retained for backwards compatibility reasons so that previous {@link Instrumentation} implementations
+     * continue to work.  The graphql-java code only called {@link #createStateAsync(InstrumentationCreateStateParameters)}
+     * but the default implementation calls back to this method.
+     *
+     * @param parameters the parameters to this step
+     *
+     * @return a state object that is passed to each method
+     */
+    @Nullable
+    default InstrumentationState createState(InstrumentationCreateStateParameters parameters) {
+        return null;
+    }
 
     /**
      * This is called right at the start of query execution, and it's the first step in the instrumentation chain.
