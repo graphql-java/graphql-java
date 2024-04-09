@@ -399,10 +399,10 @@ public class DiffImpl {
      * The vertices v and u are by definition not mapped.
      */
     private int calcLowerBoundMappingCost(Vertex v,
-                                             Vertex u,
-                                             Mapping partialMapping,
+                                          Vertex u,
+                                          Mapping partialMapping,
                                           Map<Vertex, Integer> isolatedVerticesCache,
-                                             Map<Vertex, Vertex> nonFixedParentRestrictions) {
+                                          Map<Vertex, Vertex> nonFixedParentRestrictions) {
         if (nonFixedParentRestrictions.containsKey(v) || partialMapping.hasFixedParentRestriction(v)) {
             if (!u.isIsolated()) { // Always allow mapping to isolated nodes
                 Vertex uParentRestriction = nonFixedParentRestrictions.get(v);
@@ -426,16 +426,18 @@ public class DiffImpl {
             return Integer.MAX_VALUE;
         }
         if (u.isOfType(SchemaGraph.ISOLATED)) {
-            if (isolatedVerticesCache.containsKey(v)) {
-                return isolatedVerticesCache.get(v);
+            Integer cached;
+            if ((cached = isolatedVerticesCache.get(v)) != null) {
+                return cached;
             }
             int result = calcLowerBoundMappingCostForIsolated(v, partialMapping, true);
             isolatedVerticesCache.put(v, result);
             return result;
         }
         if (v.isOfType(SchemaGraph.ISOLATED)) {
-            if (isolatedVerticesCache.containsKey(u)) {
-                return isolatedVerticesCache.get(u);
+            Integer cached;
+            if ((cached = isolatedVerticesCache.get(v)) != null) {
+                return cached;
             }
             int result = calcLowerBoundMappingCostForIsolated(u, partialMapping, false);
             isolatedVerticesCache.put(u, result);
@@ -536,8 +538,8 @@ public class DiffImpl {
      * Simplified lower bound calc if the source/target vertex is isolated
      */
     private int calcLowerBoundMappingCostForIsolated(Vertex vertex,
-                                                        Mapping partialMapping,
-                                                        boolean sourceOrTarget
+                                                     Mapping partialMapping,
+                                                     boolean sourceOrTarget
     ) {
         SchemaGraph schemaGraph = sourceOrTarget ? completeSourceGraph : completeTargetGraph;
 
