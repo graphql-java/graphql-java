@@ -24,7 +24,7 @@ public class SchemaGraph {
 
     public static final String SCHEMA = "Schema";
 
-    /**
+    /*
      * An object has the following edges:
      * - 1...n fields with label empty
      * - 0...n interfaces with the label "implement <InterfaceName>"
@@ -32,20 +32,20 @@ public class SchemaGraph {
      */
     public static final String OBJECT = "Object";
 
-    /**
+    /*
      * An Interface has the following edges:
      * - 1...n fields with label empty
      * - 0...n interfaces with the label "implement <InterfaceName>"
      * - 0...n applied directives with the label denoting the index of the applied directive
      */
     public static final String INTERFACE = "Interface";
-    /**
+    /*
      * A union has the following edges:
      * - 1...n members of the union with empty label (the members are of type Object)
      * - 0...n applied directives with the label denoting the index of the applied directive
      */
     public static final String UNION = "Union";
-    /**
+    /*
      * A field has the following edges:
      * - one container referencing the field
      * - one type with the label denoting the exact type
@@ -57,7 +57,8 @@ public class SchemaGraph {
     public static final String SCALAR = "Scalar";
     public static final String ENUM = "Enum";
     public static final String ENUM_VALUE = "EnumValue";
-    /**
+
+    /*
      * An InputObject has the following edges:
      * - 0...n Arguments referencing the InputObject with the label denoting the type and optional defaultValue
      * - 0...n InputFields referencing the InputObject with the label denoting the type and an optional defaultValue
@@ -66,7 +67,7 @@ public class SchemaGraph {
      */
     public static final String INPUT_OBJECT = "InputObject";
 
-    /**
+    /*
      * An InputField has the following edges:
      * - one InputObject referencing the InputField
      * - one type with the label denoting the exact type and an optional defaultValue
