@@ -881,12 +881,12 @@ public class PossibleMappingsCalculator {
                 return;
             }
 
-            System.out.println("multiple mappings for context" + contextId + " overall size: " + (sourceVertices.size() + newIsolatedSource.size()));
-            if (newIsolatedSource.size() > 0) {
-                System.out.println("with isolated source: " + newIsolatedSource.size());
-            } else {
-                System.out.println("with isolated target " + newIsolatedTarget.size());
-            }
+//            System.out.println("multiple mappings for context" + contextId + " overall size: " + (sourceVertices.size() + newIsolatedSource.size()));
+//            if (newIsolatedSource.size() > 0) {
+//                System.out.println("with isolated source: " + newIsolatedSource.size());
+//            } else {
+//                System.out.println("with isolated target " + newIsolatedTarget.size());
+//            }
 //            List<VertexContextSegment> vertexContextSegments = typeContexts.get(typeName);
 //            System.out.println("source ids: " + sourceVertices.size());
 //            for (Vertex sourceVertex : sourceVertices) {
