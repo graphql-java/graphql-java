@@ -1,10 +1,15 @@
 package graphql.schema.diffing;
 
+import com.google.common.collect.HashMultiset;
+import com.google.common.collect.Multiset;
+import com.google.common.collect.Multisets;
 import graphql.Internal;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
@@ -147,6 +152,7 @@ public class EditorialCostForMapping {
                 }
 
                 // only edges relevant to the subgraph
+
                 if (!mapping.containsSource(sourceEdge.getFrom()) || !mapping.containsSource(sourceEdge.getTo())) {
                     continue;
                 }
@@ -183,5 +189,125 @@ public class EditorialCostForMapping {
         });
 
         return cost.get();
+    }
+
+    public static Map<Vertex, Integer> edcPerVertexBasedOnWholeMapping(
+            Mapping fullMapping,
+            Mapping partialBaseMapping,
+            SchemaGraph sourceGraph, // the whole graph
+            SchemaGraph targetGraph // the whole graph
+    ) {
+
+
+        Map<Vertex, Integer> result = new LinkedHashMap<>();
+        for (Vertex v : sourceGraph.getVertices()) {
+
+            if (partialBaseMapping.containsSource(v)) {
+                continue;
+            }
+            Vertex u = fullMapping.getTarget(v);
+            boolean equalNodes = v.getType().equals(u.getType()) && v.getProperties().equals(u.getProperties());
+            result.put(v, equalNodes ? 0 : 1);
+
+            Set<Edge> seenTargetEdges = new LinkedHashSet<>();
+            for (Edge edge : sourceGraph.getAdjacentEdgesNonCopy(v)) {
+                Vertex to = edge.getTo();
+                Edge targetEdge = targetGraph.getEdge(u, fullMapping.getTarget(to));
+                if (targetEdge == null) {
+                    result.put(v, result.get(v) + 1);
+                } else {
+                    if (!edge.getLabel().equals(targetEdge.getLabel())) {
+                        result.put(v, result.get(v) + 1);
+                    }
+                    seenTargetEdges.add(targetEdge);
+                }
+            }
+
+            for (Edge edge : sourceGraph.getAdjacentEdgesInverseNonCopy(v)) {
+                Vertex from = edge.getFrom();
+                // we ignore inner inverse edges
+                if (!partialBaseMapping.containsSource(from)) {
+                    continue;
+                }
+                Edge targetEdge = targetGraph.getEdge(fullMapping.getTarget(from), u);
+                if (targetEdge == null) {
+                    result.put(v, result.get(v) + 1);
+                } else {
+                    if (!edge.getLabel().equals(targetEdge.getLabel())) {
+                        result.put(v, result.get(v) + 1);
+                    }
+                    seenTargetEdges.add(targetEdge);
+                }
+            }
+            for (Edge edge : targetGraph.getAdjacentEdgesNonCopy(u)) {
+                if (!seenTargetEdges.contains(edge)) {
+                    result.put(v, result.get(v) + 1);
+                    continue;
+                }
+            }
+            for (Edge edge : targetGraph.getAdjacentEdgesInverseNonCopy(u)) {
+                // we ignore inner inverse edges
+                if (!partialBaseMapping.containsTarget(edge.getFrom())) {
+                    continue;
+                }
+                if (!seenTargetEdges.contains(edge)) {
+                    result.put(v, result.get(v) + 1);
+                }
+            }
+        }
+
+        return result;
+    }
+
+    public static int realInnerEdgeCosts(Vertex v, Vertex u, Mapping partialMapping, Mapping fullMapping, SchemaGraph sourceGraph, SchemaGraph targetGraph) {
+
+        // we only want inner and direct (not inverse) edges
+        int result = 0;
+        Set<Edge> seenTargetEdges = new LinkedHashSet<>();
+        for (Edge edge : sourceGraph.getAdjacentEdgesNonCopy(v)) {
+            if (partialMapping.containsSource(edge.getTo())) {
+                continue;
+            }
+            Vertex to = edge.getTo();
+            Edge targetEdge = targetGraph.getEdge(u, fullMapping.getTarget(to));
+            if (targetEdge == null) {
+                result++;
+            } else {
+                seenTargetEdges.add(targetEdge);
+                if (!edge.getLabel().equals(targetEdge.getLabel())) {
+                    result++;
+                }
+            }
+        }
+        for (Edge edge : targetGraph.getAdjacentEdgesNonCopy(u)) {
+            if (partialMapping.containsTarget(edge.getTo())) {
+                continue;
+            }
+            if (seenTargetEdges.contains(edge)) {
+                continue;
+            }
+            result++;
+        }
+        return result;
+    }
+
+    public static int lbcInnerEdgeCost(Vertex v, Vertex u, Mapping partialMapping, SchemaGraph sourceGraph, SchemaGraph targetGraph) {
+        Multiset<String> multisetInnerEdgeLabelsV = HashMultiset.create();
+        Multiset<String> multisetInnerEdgeLabelsU = HashMultiset.create();
+        for (Edge edgeV : v.getAdjacentEdges()) {
+
+            if (!partialMapping.containsSource(edgeV.getTo())) {
+                multisetInnerEdgeLabelsV.add(edgeV.getLabel());
+            }
+
+        }
+        for (Edge edgeU : u.getAdjacentEdges()) {
+            // test if this is an inner edge (meaning it not part of the subgraph induced by the partial mapping)
+            if (!partialMapping.containsTarget(edgeU.getTo())) {
+                multisetInnerEdgeLabelsU.add(edgeU.getLabel());
+            }
+        }
+        Multiset<String> intersection = HashMultiset.create(Multisets.intersection(multisetInnerEdgeLabelsV, multisetInnerEdgeLabelsU));
+        return Math.max(multisetInnerEdgeLabelsV.size(), multisetInnerEdgeLabelsU.size()) - intersection.size();
     }
 }
