@@ -75,8 +75,8 @@ public class DelayedIncrementalPartialResultImpl implements DelayedIncrementalPa
             return this;
         }
 
-        public Builder extensions(boolean hasNext) {
-            this.hasNext = hasNext;
+        public Builder extensions(Map<Object, Object> extensions) {
+            this.extensions = extensions;
             return this;
         }
 
