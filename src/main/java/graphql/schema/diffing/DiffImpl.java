@@ -139,9 +139,11 @@ public class DiffImpl {
 
 
         while (!queue.isEmpty()) {
-            System.out.println("queue size: " + queue.size());
             MappingEntry mappingEntry = queue.poll();
             algoIterationCount.incrementAndGet();
+            // keep for debugging
+//            System.out.println("qed: " + optimalEdit.ged + " lb: " + mappingEntry.lowerBoundCost + " relative level: " + (mappingEntry.level -startMapping.size()) + " queueSize: " + queue.size() + " algoIterationCount: " + algoIterationCount.get());
+
 
             if (mappingEntry.lowerBoundCost >= optimalEdit.ged) {
                 // once the lowest lowerBoundCost is not lower than the optimal edit, we are done
@@ -202,17 +204,17 @@ public class DiffImpl {
         int costMatrixSize = allSources.size() - parentLevel;
 
         // costMatrix gets modified by the hungarian algorithm ... therefore we create two of them
-        double[][] costMatrixForHungarianAlgo = new double[costMatrixSize][costMatrixSize];
-        double[][] costMatrix = new double[costMatrixSize][costMatrixSize];
+        int[][] costMatrixForHungarianAlgo = new int[costMatrixSize][costMatrixSize];
+        int[][] costMatrix = new int[costMatrixSize][costMatrixSize];
 
-        Map<Vertex, Double> isolatedVerticesCache = new LinkedHashMap<>();
+        Map<Vertex, Integer> isolatedVerticesCache = new LinkedHashMap<>();
         Map<Vertex, Vertex> nonFixedParentRestrictions = possibleMappingsCalculator.getNonFixedParentRestrictions(completeSourceGraph, completeTargetGraph, parentPartialMapping);
 
         for (int i = parentLevel; i < allSources.size(); i++) {
             Vertex v = allSources.get(i);
             int j = 0;
             for (Vertex u : availableTargetVertices) {
-                double cost = calcLowerBoundMappingCost(v, u, parentPartialMapping, isolatedVerticesCache, nonFixedParentRestrictions);
+                int cost = calcLowerBoundMappingCost(v, u, parentPartialMapping, isolatedVerticesCache, nonFixedParentRestrictions);
                 costMatrixForHungarianAlgo[i - parentLevel][j] = cost;
                 costMatrix[i - parentLevel][j] = cost;
                 j++;
@@ -223,8 +225,8 @@ public class DiffImpl {
         HungarianAlgorithm hungarianAlgorithm = new HungarianAlgorithm(costMatrixForHungarianAlgo);
         int[] assignments = hungarianAlgorithm.execute();
         int editorialCostForMapping = editorialCostForMapping(fixedEditorialCost, parentPartialMapping, completeSourceGraph, completeTargetGraph);
-        double costMatrixSum = getCostMatrixSum(costMatrix, assignments);
-        double lowerBoundForPartialMapping = editorialCostForMapping + costMatrixSum;
+        int costMatrixSum = getCostMatrixSum(costMatrix, assignments);
+        int lowerBoundForPartialMapping = editorialCostForMapping + costMatrixSum;
 
         Mapping newMapping = parentPartialMapping.extendMapping(v_i, availableTargetVertices.get(assignments[0]));
 
@@ -270,7 +272,7 @@ public class DiffImpl {
     // generate all children mappings and save in MappingEntry.sibling
     private void calculateRestOfChildren(List<Vertex> availableTargetVertices,
                                          HungarianAlgorithm hungarianAlgorithm,
-                                         double[][] costMatrixCopy,
+                                         int[][] costMatrixCopy,
                                          double editorialCostForMapping,
                                          Mapping partialMapping,
                                          Vertex v_i,
@@ -359,8 +361,8 @@ public class DiffImpl {
     }
 
 
-    private double getCostMatrixSum(double[][] costMatrix, int[] assignments) {
-        double costMatrixSum = 0;
+    private int getCostMatrixSum(int[][] costMatrix, int[] assignments) {
+        int costMatrixSum = 0;
         for (int i = 0; i < assignments.length; i++) {
             costMatrixSum += costMatrix[i][assignments[i]];
         }
@@ -396,10 +398,10 @@ public class DiffImpl {
      * An inner edge is an edge between two vertices that are both not anchored (mapped).
      * The vertices v and u are by definition not mapped.
      */
-    private double calcLowerBoundMappingCost(Vertex v,
+    private int calcLowerBoundMappingCost(Vertex v,
                                              Vertex u,
                                              Mapping partialMapping,
-                                             Map<Vertex, Double> isolatedVerticesCache,
+                                          Map<Vertex, Integer> isolatedVerticesCache,
                                              Map<Vertex, Vertex> nonFixedParentRestrictions) {
         if (nonFixedParentRestrictions.containsKey(v) || partialMapping.hasFixedParentRestriction(v)) {
             if (!u.isIsolated()) { // Always allow mapping to isolated nodes
@@ -427,7 +429,7 @@ public class DiffImpl {
             if (isolatedVerticesCache.containsKey(v)) {
                 return isolatedVerticesCache.get(v);
             }
-            double result = calcLowerBoundMappingCostForIsolated(v, partialMapping, true);
+            int result = calcLowerBoundMappingCostForIsolated(v, partialMapping, true);
             isolatedVerticesCache.put(v, result);
             return result;
         }
@@ -435,7 +437,7 @@ public class DiffImpl {
             if (isolatedVerticesCache.containsKey(u)) {
                 return isolatedVerticesCache.get(u);
             }
-            double result = calcLowerBoundMappingCostForIsolated(u, partialMapping, false);
+            int result = calcLowerBoundMappingCostForIsolated(u, partialMapping, false);
             isolatedVerticesCache.put(u, result);
             return result;
         }
@@ -533,7 +535,7 @@ public class DiffImpl {
     /**
      * Simplified lower bound calc if the source/target vertex is isolated
      */
-    private double calcLowerBoundMappingCostForIsolated(Vertex vertex,
+    private int calcLowerBoundMappingCostForIsolated(Vertex vertex,
                                                         Mapping partialMapping,
                                                         boolean sourceOrTarget
     ) {

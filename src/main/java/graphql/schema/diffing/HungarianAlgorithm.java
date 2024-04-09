@@ -50,7 +50,7 @@ import java.util.Arrays;
 @Internal
 public class HungarianAlgorithm {
     // changed by reduce
-    public final double[][] costMatrix;
+    public final int[][] costMatrix;
 
     // constant always
     private final int rows;
@@ -82,7 +82,7 @@ public class HungarianAlgorithm {
      *                   irregular in the sense that all rows must be the same length; in
      *                   addition, all entries must be non-infinite numbers.
      */
-    public HungarianAlgorithm(double[][] costMatrix) {
+    public HungarianAlgorithm(int[][] costMatrix) {
         this.dim = Math.max(costMatrix.length, costMatrix[0].length);
         this.rows = costMatrix.length;
         this.cols = costMatrix[0].length;
@@ -313,7 +313,7 @@ public class HungarianAlgorithm {
      */
     protected void reduce() {
         for (int w = 0; w < dim; w++) {
-            double min = Double.POSITIVE_INFINITY;
+            int min = Integer.MAX_VALUE;
             for (int j = 0; j < dim; j++) {
                 if (costMatrix[w][j] < min) {
                     min = costMatrix[w][j];
@@ -323,9 +323,9 @@ public class HungarianAlgorithm {
                 costMatrix[w][j] = costMatrix[w][j] - min;
             }
         }
-        double[] min = new double[dim];
+        int[] min = new int[dim];
         for (int j = 0; j < dim; j++) {
-            min[j] = Double.POSITIVE_INFINITY;
+            min[j] = Integer.MAX_VALUE;
         }
         for (int w = 0; w < dim; w++) {
             for (int j = 0; j < dim; j++) {
@@ -374,5 +374,9 @@ public class HungarianAlgorithm {
         executePhase();
         int[] result = Arrays.copyOf(matchJobByWorker, rows);
         return result;
+    }
+
+    public static void main(String[] args) {
+        System.out.println(Integer.MAX_VALUE < Double.POSITIVE_INFINITY);
     }
 }
