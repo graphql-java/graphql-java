@@ -401,11 +401,11 @@ public class DiffImpl {
                                              Mapping partialMapping,
                                              Map<Vertex, Double> isolatedVerticesCache,
                                              Map<Vertex, Vertex> nonFixedParentRestrictions) {
-        if (nonFixedParentRestrictions.containsKey(v) || partialMapping.hasParentRestriction(v)) {
+        if (nonFixedParentRestrictions.containsKey(v) || partialMapping.hasFixedParentRestriction(v)) {
             if (!u.isIsolated()) { // Always allow mapping to isolated nodes
                 Vertex uParentRestriction = nonFixedParentRestrictions.get(v);
                 if (uParentRestriction == null) {
-                    uParentRestriction = partialMapping.getParentRestriction(v);
+                    uParentRestriction = partialMapping.getFixedParentRestriction(v);
                 }
 
                 Collection<Edge> parentEdges = completeTargetGraph.getAdjacentEdgesInverseNonCopy(u);
