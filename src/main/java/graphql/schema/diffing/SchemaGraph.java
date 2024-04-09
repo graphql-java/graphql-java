@@ -18,21 +18,60 @@ import java.util.Optional;
 import java.util.function.Predicate;
 
 import static graphql.Assert.assertTrue;
-import static java.lang.String.format;
 
 @ExperimentalApi
 public class SchemaGraph {
 
     public static final String SCHEMA = "Schema";
+
+    /**
+     * An object has the following edges:
+     * - 1...n fields with label empty
+     * - 0...n interfaces with the label "implement <InterfaceName>"
+     * - 0...n applied directives with the label denoting the index of the applied directive
+     */
     public static final String OBJECT = "Object";
+
+    /**
+     * An Interface has the following edges:
+     * - 1...n fields with label empty
+     * - 0...n interfaces with the label "implement <InterfaceName>"
+     * - 0...n applied directives with the label denoting the index of the applied directive
+     */
     public static final String INTERFACE = "Interface";
+    /**
+     * A union has the following edges:
+     * - 1...n members of the union with empty label (the members are of type Object)
+     * - 0...n applied directives with the label denoting the index of the applied directive
+     */
     public static final String UNION = "Union";
+    /**
+     * A field has the following edges:
+     * - one container referencing the field
+     * - one type with the label denoting the exact type
+     * - 0...n arguments
+     * - 0...n applied directives with the label denoting the index of the applied directive
+     */
     public static final String FIELD = "Field";
     public static final String ARGUMENT = "Argument";
     public static final String SCALAR = "Scalar";
     public static final String ENUM = "Enum";
     public static final String ENUM_VALUE = "EnumValue";
+    /**
+     * An InputObject has the following edges:
+     * - 0...n Arguments referencing the InputObject with the label denoting the type and optional defaultValue
+     * - 0...n InputFields referencing the InputObject with the label denoting the type and an optional defaultValue
+     * - 1...n InputFields with an empty label
+     * - 0...n applied directives with the label denoting the index of the applied directive
+     */
     public static final String INPUT_OBJECT = "InputObject";
+
+    /**
+     * An InputField has the following edges:
+     * - one InputObject referencing the InputField
+     * - one type with the label denoting the exact type and an optional defaultValue
+     * - 0...n applied directives with the label denoting the index of the applied directive
+     */
     public static final String INPUT_FIELD = "InputField";
     public static final String DIRECTIVE = "Directive";
     public static final String APPLIED_DIRECTIVE = "AppliedDirective";
@@ -103,6 +142,10 @@ public class SchemaGraph {
         return edgesByInverseDirection.row(fromAndTo).size() + edgesByDirection.row(fromAndTo).size();
     }
 
+    public int adjacentEdgesCount(Vertex fromAndTo) {
+        return edgesByInverseDirection.row(fromAndTo).size();
+    }
+
     public List<Vertex> getAdjacentVertices(Vertex from) {
         return getAdjacentVertices(from, x -> true);
     }
@@ -136,6 +179,7 @@ public class SchemaGraph {
     public List<Edge> getAdjacentEdges(Vertex from) {
         return getAdjacentEdges(from, x -> true);
     }
+
     public List<Edge> getAdjacentEdges(Vertex from, Predicate<Vertex> predicate) {
         List<Edge> result = new ArrayList<>();
         for (Edge edge : edgesByDirection.row(from).values()) {
@@ -221,10 +265,10 @@ public class SchemaGraph {
         return vertices.size();
     }
 
-    public List<Vertex> addIsolatedVertices(int count, String debugPrefix) {
+    public List<Vertex> addIsolatedVertices(int count, String debugPrefix, String graphqlType) {
         List<Vertex> result = new ArrayList<>();
         for (int i = 0; i < count; i++) {
-            Vertex isolatedVertex = Vertex.newIsolatedNode(debugPrefix + i);
+            Vertex isolatedVertex = Vertex.newIsolatedNode(debugPrefix + i, graphqlType);
             vertices.add(isolatedVertex);
             result.add(isolatedVertex);
         }
@@ -264,7 +308,8 @@ public class SchemaGraph {
     /**
      * Gets the one inverse adjacent edge to the input and gets the other vertex.
      *
-     * @param input  the vertex input
+     * @param input the vertex input
+     *
      * @return a vertex
      */
     public Vertex getSingleAdjacentInverseVertex(Vertex input) {

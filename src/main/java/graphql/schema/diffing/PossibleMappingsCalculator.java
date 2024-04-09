@@ -834,14 +834,14 @@ public class PossibleMappingsCalculator {
 
             if (APPLIED_DIRECTIVE.equals(typeName) || APPLIED_ARGUMENT.equals(typeName)) {
                 for (Vertex sourceVertex : sourceVertices) {
-                    Vertex isolatedTarget = Vertex.newIsolatedNode("target-isolated-" + typeName);
+                    Vertex isolatedTarget = Vertex.newIsolatedNode("target-isolated-" + typeName, typeName);
                     allIsolatedTarget.add(isolatedTarget);
                     fixedOneToOneMappings.put(sourceVertex, isolatedTarget);
                     fixedOneToOneSources.add(sourceVertex);
                     fixedOneToOneTargets.add(isolatedTarget);
                 }
                 for (Vertex targetVertex : targetVertices) {
-                    Vertex isolatedSource = Vertex.newIsolatedNode("source-isolated-" + typeName);
+                    Vertex isolatedSource = Vertex.newIsolatedNode("source-isolated-" + typeName, typeName);
                     allIsolatedSource.add(isolatedSource);
                     fixedOneToOneMappings.put(isolatedSource, targetVertex);
                     fixedOneToOneSources.add(isolatedSource);
@@ -853,9 +853,9 @@ public class PossibleMappingsCalculator {
             Set<Vertex> newIsolatedSource = Collections.emptySet();
             Set<Vertex> newIsolatedTarget = Collections.emptySet();
             if (sourceVertices.size() > targetVertices.size()) {
-                newIsolatedTarget = Vertex.newIsolatedNodes(sourceVertices.size() - targetVertices.size(), "target-isolated-" + typeName + "-");
+                newIsolatedTarget = Vertex.newIsolatedNodes(sourceVertices.size() - targetVertices.size(), "target-isolated-" + typeName + "-", typeName);
             } else if (targetVertices.size() > sourceVertices.size()) {
-                newIsolatedSource = Vertex.newIsolatedNodes(targetVertices.size() - sourceVertices.size(), "source-isolated-" + typeName + "-");
+                newIsolatedSource = Vertex.newIsolatedNodes(targetVertices.size() - sourceVertices.size(), "source-isolated-" + typeName + "-", typeName);
             }
             this.allIsolatedSource.addAll(newIsolatedSource);
             this.allIsolatedTarget.addAll(newIsolatedTarget);
@@ -881,7 +881,12 @@ public class PossibleMappingsCalculator {
                 return;
             }
 
-//            System.out.println("multiple mappings for context" + contextId + " overall size: " + (sourceVertices.size() + newIsolatedSource.size()));
+            System.out.println("multiple mappings for context" + contextId + " overall size: " + (sourceVertices.size() + newIsolatedSource.size()));
+            if (newIsolatedSource.size() > 0) {
+                System.out.println("with isolated source: " + newIsolatedSource.size());
+            } else {
+                System.out.println("with isolated target " + newIsolatedTarget.size());
+            }
 //            List<VertexContextSegment> vertexContextSegments = typeContexts.get(typeName);
 //            System.out.println("source ids: " + sourceVertices.size());
 //            for (Vertex sourceVertex : sourceVertices) {
@@ -951,7 +956,7 @@ public class PossibleMappingsCalculator {
             Set<Vertex> usedSourceVertices,
             Set<Vertex> usedTargetVertices,
             String typeNameForDebug) {
-        runningCheck.check();
+//        runningCheck.check();
 
         VertexContextSegment finalCurrentContext = contexts.get(contextIx);
         Map<String, ImmutableList<Vertex>> sourceGroups = FpKit.filterAndGroupingBy(currentSourceVertices,
@@ -1044,7 +1049,7 @@ public class PossibleMappingsCalculator {
      * If a {@link Vertex} is present in the output {@link Map} then the value is the parent the
      * vertex MUST map to.
      * <p>
-     * e.g. for an output {collar: Dog} then the collar vertex must be a child of Dog in the mapping.
+     * e.g. for an output type Dog {collar: String } then the collar vertex must be a child of Dog in the mapping.
      *
      * @return Map where key is any vertex, and the value is the parent that vertex must map to
      */
@@ -1091,9 +1096,10 @@ public class PossibleMappingsCalculator {
      * <p>
      * e.g. for an output {collar: Dog} then the collar vertex must be a child of Dog in the mapping.
      *
-     * @param mapping the mapping to get non-fixed parent restrictions for
+     * @param mapping     the mapping to get non-fixed parent restrictions for
      * @param sourceGraph the source graph
      * @param targetGraph the target graph
+     *
      * @return Map where key is any vertex, and the value is the parent that vertex must map to
      */
     public Map<Vertex, Vertex> getNonFixedParentRestrictions(SchemaGraph sourceGraph,

@@ -5,7 +5,25 @@ import graphql.Internal;
 import graphql.execution.ValuesResolver;
 import graphql.introspection.Introspection;
 import graphql.language.AstPrinter;
-import graphql.schema.*;
+import graphql.schema.GraphQLArgument;
+import graphql.schema.GraphQLDirective;
+import graphql.schema.GraphQLEnumType;
+import graphql.schema.GraphQLEnumValueDefinition;
+import graphql.schema.GraphQLFieldDefinition;
+import graphql.schema.GraphQLInputObjectField;
+import graphql.schema.GraphQLInputObjectType;
+import graphql.schema.GraphQLInputType;
+import graphql.schema.GraphQLInterfaceType;
+import graphql.schema.GraphQLNamedOutputType;
+import graphql.schema.GraphQLNamedType;
+import graphql.schema.GraphQLObjectType;
+import graphql.schema.GraphQLOutputType;
+import graphql.schema.GraphQLScalarType;
+import graphql.schema.GraphQLSchema;
+import graphql.schema.GraphQLSchemaElement;
+import graphql.schema.GraphQLTypeUtil;
+import graphql.schema.GraphQLUnionType;
+import graphql.schema.GraphQLUnmodifiedType;
 import graphql.schema.idl.DirectiveInfo;
 import graphql.schema.idl.ScalarInfo;
 import graphql.util.TraversalControl;
@@ -118,6 +136,10 @@ public class SchemaGraphFactory {
             if (SchemaGraph.DIRECTIVE.equals(vertex.getType())) {
                 handleDirective(vertex, schemaGraph, schema);
             }
+        }
+        for (Vertex vertex : schemaGraph.getVertices()) {
+            vertex.setAdjacentEdges(schemaGraph.getAdjacentEdgesNonCopy(vertex));
+            vertex.setAdjacentEdgesInverse(schemaGraph.getAdjacentEdgesInverseNonCopy(vertex));
         }
         return schemaGraph;
     }

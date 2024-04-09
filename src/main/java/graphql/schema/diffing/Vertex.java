@@ -3,6 +3,8 @@ package graphql.schema.diffing;
 import graphql.Assert;
 import graphql.Internal;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
@@ -16,21 +18,27 @@ public class Vertex {
     private Map<String, Object> properties = new LinkedHashMap<>();
     private String debugName;
     private boolean isolated;
+    private String graphqlTypeForIsolatedVertex;
 
 
     private boolean builtInType;
 
-    public static Vertex newIsolatedNode(String debugName) {
+    private Collection<Edge> adjacentEdges = Collections.emptyList();
+    private Collection<Edge> adjacentEdgesInverse = Collections.emptyList();
+
+    public static Vertex newIsolatedNode(String debugName, String graphqlType) {
         Vertex vertex = new Vertex(SchemaGraph.ISOLATED, debugName);
         vertex.isolated = true;
+        vertex.graphqlTypeForIsolatedVertex = graphqlType;
         return vertex;
     }
 
-    public static Set<Vertex> newIsolatedNodes(int count, String debugName) {
+    public static Set<Vertex> newIsolatedNodes(int count, String debugName, String graphqlType) {
         Set<Vertex> result = new LinkedHashSet<>();
         for (int i = 1; i <= count; i++) {
             Vertex vertex = new Vertex(SchemaGraph.ISOLATED, debugName + i);
             vertex.isolated = true;
+            vertex.graphqlTypeForIsolatedVertex = graphqlType;
             result.add(vertex);
         }
         return result;
@@ -43,6 +51,10 @@ public class Vertex {
 
     public boolean isIsolated() {
         return isolated;
+    }
+
+    public String getGraphqlTypeForIsolatedVertex() {
+        return graphqlTypeForIsolatedVertex;
     }
 
     public void add(String propName, Object propValue) {
@@ -90,6 +102,23 @@ public class Vertex {
     public void setBuiltInType(boolean builtInType) {
         this.builtInType = builtInType;
     }
+
+    public Collection<Edge> getAdjacentEdges() {
+        return adjacentEdges;
+    }
+
+    public void setAdjacentEdges(Collection<Edge> adjacentEdges) {
+        this.adjacentEdges = adjacentEdges;
+    }
+
+    public Collection<Edge> getAdjacentEdgesInverse() {
+        return adjacentEdgesInverse;
+    }
+
+    public void setAdjacentEdgesInverse(Collection<Edge> adjacentEdgesInverse) {
+        this.adjacentEdgesInverse = adjacentEdgesInverse;
+    }
+
 
     @Override
     public String toString() {
