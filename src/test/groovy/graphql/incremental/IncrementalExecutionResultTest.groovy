@@ -40,6 +40,7 @@ class IncrementalExecutionResultTest extends Specification {
                 ])
                 .hasNext(true)
                 .incremental([defer1, stream1, stream2])
+                .extensions([some: "map"])
                 .build()
 
         def toSpec = result.toSpecification()
@@ -47,6 +48,7 @@ class IncrementalExecutionResultTest extends Specification {
         then:
         toSpec == [
                 data       : [person: [name: "Luke Skywalker", films: [[title: "A New Hope"]]]],
+                extensions: [some: "map"],
                 hasNext    : true,
                 incremental: [
                         [path: ["person"], label: "homeWorldDefer", data: [homeWorld: "Tatooine"]],
