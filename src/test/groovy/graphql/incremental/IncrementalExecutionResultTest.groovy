@@ -9,7 +9,7 @@ import static graphql.incremental.StreamPayload.newStreamedItem
 
 class IncrementalExecutionResultTest extends Specification {
 
-    def "sanity test to check IncrementalExecutionResultImpl and item builders work"() {
+    def "sanity test to check IncrementalExecutionResultImpl builder and item builders work"() {
         when:
         def defer1 = newDeferredItem()
                 .label("homeWorldDefer")
