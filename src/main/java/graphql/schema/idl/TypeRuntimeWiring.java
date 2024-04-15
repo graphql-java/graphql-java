@@ -143,8 +143,8 @@ public class TypeRuntimeWiring {
         public Builder dataFetcher(String fieldName, DataFetcher dataFetcher) {
             assertNotNull(dataFetcher, () -> "you must provide a data fetcher");
             assertNotNull(fieldName, () -> "you must tell us what field");
-            if (strictMode && fieldDataFetchers.containsKey(fieldName)) {
-                throw new StrictModeWiringException(format("The field %s already has a data fetcher defined", fieldName));
+            if (strictMode) {
+                assertFieldStrictly(fieldName);
             }
             fieldDataFetchers.put(fieldName, dataFetcher);
             return this;
@@ -161,13 +161,17 @@ public class TypeRuntimeWiring {
             assertNotNull(dataFetchersMap, () -> "you must provide a data fetchers map");
             if (strictMode) {
                 dataFetchersMap.forEach((fieldName, df) -> {
-                    if (fieldDataFetchers.containsKey(fieldName)) {
-                        throw new StrictModeWiringException(format("The field %s already has a data fetcher defined", fieldName));
-                    }
+                    assertFieldStrictly(fieldName);
                 });
             }
             fieldDataFetchers.putAll(dataFetchersMap);
             return this;
+        }
+
+        private void assertFieldStrictly(String fieldName) {
+            if (fieldDataFetchers.containsKey(fieldName)) {
+                throw new StrictModeWiringException(format("The field %s already has a data fetcher defined", fieldName));
+            }
         }
 
         /**

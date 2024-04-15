@@ -35,7 +35,20 @@ class TypeRuntimeWiringTest extends Specification {
                 .dataFetcher("foo", DF2)
                 .build()
         then:
-        thrown(StrictModeWiringException)
+        def e = thrown(StrictModeWiringException)
+        e.message == "The field foo already has a data fetcher defined"
+    }
+
+    def "strict mode can be turned on for maps of fields"() {
+        when:
+        TypeRuntimeWiring.newTypeWiring("Foo")
+                .strictMode()
+                .dataFetcher("foo", DF1)
+                .dataFetchers(["foo": DF2])
+                .build()
+        then:
+        def e = thrown(StrictModeWiringException)
+        e.message == "The field foo already has a data fetcher defined"
     }
 
     def "strict mode can be turned on JVM wide"() {
@@ -57,7 +70,8 @@ class TypeRuntimeWiringTest extends Specification {
                 .build()
         then:
         inStrictMode
-        thrown(StrictModeWiringException)
+        def e = thrown(StrictModeWiringException)
+        e.message == "The field foo already has a data fetcher defined"
 
         when:
         TypeRuntimeWiring.setStrictModeJvmWide(false)
