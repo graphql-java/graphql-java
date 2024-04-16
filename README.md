@@ -7,7 +7,7 @@ This is a [GraphQL](https://github.com/graphql/graphql-spec) Java implementation
 Latest build in Maven central: https://repo1.maven.org/maven2/com/graphql-java/graphql-java/
 
 [![Build](https://github.com/graphql-java/graphql-java/actions/workflows/master.yml/badge.svg)](https://github.com/graphql-java/graphql-java/actions/workflows/master.yml)
-[![Latest Release](https://img.shields.io/maven-central/v/com.graphql-java/graphql-java?versionPrefix=21.)](https://maven-badges.herokuapp.com/maven-central/com.graphql-java/graphql-java/)
+[![Latest Release](https://img.shields.io/maven-central/v/com.graphql-java/graphql-java?versionPrefix=22.)](https://maven-badges.herokuapp.com/maven-central/com.graphql-java/graphql-java/)
 [![Latest Snapshot](https://img.shields.io/maven-central/v/com.graphql-java/graphql-java?label=maven-central%20snapshot&versionPrefix=0)](https://maven-badges.herokuapp.com/maven-central/com.graphql-java/graphql-java/)
 [![MIT licensed](https://img.shields.io/badge/license-MIT-green)](https://github.com/graphql-java/graphql-java/blob/master/LICENSE.md)
 
