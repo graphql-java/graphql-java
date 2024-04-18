@@ -4,6 +4,8 @@ import graphql.Internal;
 
 import java.util.Arrays;
 
+import static graphql.Assert.assertTrue;
+
 /* Copyright (c) 2012 Kevin L. Stern
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -53,8 +55,6 @@ public class HungarianAlgorithm {
     public final int[][] costMatrix;
 
     // constant always
-    private final int rows;
-    private final int cols;
     private final int dim;
 
     // the assigned workers,jobs for the result
@@ -63,15 +63,15 @@ public class HungarianAlgorithm {
 
     // reset for each execute
     private final int[] minSlackWorkerByJob;
-    private final double[] minSlackValueByJob;
+    private final int[] minSlackValueByJob;
     private final int[] parentWorkerByCommittedJob;
     // reset for worker
     private final boolean[] committedWorkers;
 
 
     // labels for both sides of the bipartite graph
-    private final double[] labelByWorker;
-    private final double[] labelByJob;
+    private final int[] labelByWorker;
+    private final int[] labelByJob;
 
 
     /**
@@ -83,32 +83,14 @@ public class HungarianAlgorithm {
      *                   addition, all entries must be non-infinite numbers.
      */
     public HungarianAlgorithm(int[][] costMatrix) {
+        assertTrue(costMatrix.length == costMatrix[0].length);
         this.dim = Math.max(costMatrix.length, costMatrix[0].length);
-        this.rows = costMatrix.length;
-        this.cols = costMatrix[0].length;
+        // dim must be larger than 0, because otherwise costMatrix[0] is array out of bounds
         this.costMatrix = costMatrix;
-//        for (int w = 0; w < this.dim; w++) {
-//            if (w < costMatrix.length) {
-//                if (costMatrix[w].length() != this.cols) {
-//                    throw new IllegalArgumentException("Irregular cost matrix");
-//                }
-////                for (int j = 0; j < this.cols; j++) {
-////                    if (Double.isInfinite(costMatrix[w].get(j))) {
-////                        throw new IllegalArgumentException("Infinite cost");
-////                    }
-////                    if (Double.isNaN(costMatrix[w].get(j))) {
-////                        throw new IllegalArgumentException("NaN cost");
-////                    }
-////                }
-//                this.costMatrix[w] = costMatrix(costMatrix[w], this.dim);
-//            } else {
-//                this.costMatrix[w] = new double[this.dim];
-//            }
-//        }
-        labelByWorker = new double[this.dim];
-        labelByJob = new double[this.dim];
+        labelByWorker = new int[this.dim];
+        labelByJob = new int[this.dim];
         minSlackWorkerByJob = new int[this.dim];
-        minSlackValueByJob = new double[this.dim];
+        minSlackValueByJob = new int[this.dim];
         committedWorkers = new boolean[this.dim];
         parentWorkerByCommittedJob = new int[this.dim];
         matchJobByWorker = new int[this.dim];
@@ -124,7 +106,7 @@ public class HungarianAlgorithm {
      */
     protected void computeInitialFeasibleSolution() {
         for (int j = 0; j < dim; j++) {
-            labelByJob[j] = Double.POSITIVE_INFINITY;
+            labelByJob[j] = Integer.MAX_VALUE;
         }
         for (int w = 0; w < dim; w++) {
             for (int j = 0; j < dim; j++) {
@@ -158,13 +140,7 @@ public class HungarianAlgorithm {
             executePhase();
             w = fetchUnmatchedWorker();
         }
-        int[] result = Arrays.copyOf(matchJobByWorker, rows);
-        for (w = 0; w < result.length; w++) {
-            if (result[w] >= cols) {
-                result[w] = -1;
-            }
-        }
-        return result;
+        return matchJobByWorker;
     }
 
     /**
@@ -189,13 +165,15 @@ public class HungarianAlgorithm {
             // the last worker we found
             int minSlackWorker = -1;
             int minSlackJob = -1;
-            double minSlackValue = Double.POSITIVE_INFINITY;
+            int minSlackValue = -1;
+            boolean firstRun = true;
             for (int j = 0; j < dim; j++) {
                 if (parentWorkerByCommittedJob[j] == -1) {
-                    if (minSlackValueByJob[j] < minSlackValue) {
+                    if (firstRun || minSlackValueByJob[j] < minSlackValue) {
                         minSlackValue = minSlackValueByJob[j];
                         minSlackWorker = minSlackWorkerByJob[j];
                         minSlackJob = j;
+                        firstRun = false;
                     }
                 }
             }
@@ -237,7 +215,7 @@ public class HungarianAlgorithm {
                 committedWorkers[worker] = true;
                 for (int j = 0; j < dim; j++) {
                     if (parentWorkerByCommittedJob[j] == -1) {
-                        double slack = costMatrix[worker][j] - labelByWorker[worker]
+                        int slack = costMatrix[worker][j] - labelByWorker[worker]
                                 - labelByJob[j];
                         if (minSlackValueByJob[j] > slack) {
                             minSlackValueByJob[j] = slack;
@@ -253,13 +231,12 @@ public class HungarianAlgorithm {
      * @return the first unmatched worker or {@link #dim} if none.
      */
     protected int fetchUnmatchedWorker() {
-        int w;
-        for (w = 0; w < dim; w++) {
+        for (int w = 0; w < dim; w++) {
             if (matchJobByWorker[w] == -1) {
-                break;
+                return w;
             }
         }
-        return w;
+        return dim;
     }
 
     /**
@@ -348,7 +325,7 @@ public class HungarianAlgorithm {
      *
      * @param slack the specified slack
      */
-    protected void updateLabeling(double slack) {
+    protected void updateLabeling(int slack) {
         for (int w = 0; w < dim; w++) {
             if (committedWorkers[w]) {
                 labelByWorker[w] += slack;
@@ -363,20 +340,19 @@ public class HungarianAlgorithm {
         }
     }
 
+
     public int[] nextChild() {
         int currentJobAssigned = matchJobByWorker[0];
         // we want to make currentJobAssigned not allowed,meaning we set the size to Infinity
+        // increasing the cost doesn't affect the feasibility of the labeling as the sum
+        // of the two labels must be smaller than the cost, hence increasing the cost is fine.
         costMatrix[0][currentJobAssigned] = Integer.MAX_VALUE;
         matchWorkerByJob[currentJobAssigned] = -1;
         matchJobByWorker[0] = -1;
-        minSlackValueByJob[currentJobAssigned] = Integer.MAX_VALUE;
         initializePhase(0);
         executePhase();
-        int[] result = Arrays.copyOf(matchJobByWorker, rows);
-        return result;
-    }
-
-    public static void main(String[] args) {
-        System.out.println(Integer.MAX_VALUE < Double.POSITIVE_INFINITY);
+        int unmatchedWorkers = fetchUnmatchedWorker();
+        assertTrue(unmatchedWorkers == dim);
+        return matchJobByWorker;
     }
 }
