@@ -1,7 +1,6 @@
 package graphql.execution.instrumentation;
 
 import com.google.common.collect.ImmutableList;
-import graphql.Assert;
 import graphql.ExecutionInput;
 import graphql.ExecutionResult;
 import graphql.ExperimentalApi;
@@ -159,7 +158,7 @@ public class ChainedInstrumentation implements Instrumentation {
         }
         BiFunction<Instrumentation, InstrumentationState, ExecuteObjectInstrumentationContext> mapper = (instrumentation, specificState) -> instrumentation.beginExecuteObject(parameters, specificState);
         ChainedInstrumentationState chainedInstrumentationState = (ChainedInstrumentationState) state;
-         if (instrumentations.size() == 1) {
+        if (instrumentations.size() == 1) {
             return mapper.apply(instrumentations.get(0), chainedInstrumentationState.getState(0));
         }
         return new ChainedExecuteObjectInstrumentationContext(chainedMapAndDropNulls(chainedInstrumentationState, mapper));
@@ -182,9 +181,24 @@ public class ChainedInstrumentation implements Instrumentation {
         return chainedCtx(state, (instrumentation, specificState) -> instrumentation.beginFieldExecution(parameters, specificState));
     }
 
+    @SuppressWarnings("deprecation")
     @Override
     public InstrumentationContext<Object> beginFieldFetch(InstrumentationFieldFetchParameters parameters, InstrumentationState state) {
         return chainedCtx(state, (instrumentation, specificState) -> instrumentation.beginFieldFetch(parameters, specificState));
+    }
+
+    @Override
+    public FieldFetchingInstrumentationContext beginFieldFetching(InstrumentationFieldFetchParameters parameters, InstrumentationState state) {
+        if (instrumentations.isEmpty()) {
+            return FieldFetchingInstrumentationContext.NOOP;
+        }
+        BiFunction<Instrumentation, InstrumentationState, FieldFetchingInstrumentationContext> mapper = (instrumentation, specificState) -> instrumentation.beginFieldFetching(parameters, specificState);
+        ChainedInstrumentationState chainedInstrumentationState = (ChainedInstrumentationState) state;
+        if (instrumentations.size() == 1) {
+            return mapper.apply(instrumentations.get(0), chainedInstrumentationState.getState(0));
+        }
+        ImmutableList<FieldFetchingInstrumentationContext> objects = chainedMapAndDropNulls(chainedInstrumentationState, mapper);
+        return new ChainedFieldFetchingInstrumentationContext(objects);
     }
 
     @Override
@@ -344,7 +358,32 @@ public class ChainedInstrumentation implements Instrumentation {
         }
     }
 
+    private static class ChainedFieldFetchingInstrumentationContext implements FieldFetchingInstrumentationContext {
+
+        private final ImmutableList<FieldFetchingInstrumentationContext> contexts;
+
+        ChainedFieldFetchingInstrumentationContext(ImmutableList<FieldFetchingInstrumentationContext> contexts) {
+            this.contexts = contexts;
+        }
+
+        @Override
+        public void onDispatched() {
+            contexts.forEach(FieldFetchingInstrumentationContext::onDispatched);
+        }
+
+        @Override
+        public void onFetchedValue(Object fetchedValue) {
+            contexts.forEach(context -> context.onFetchedValue(fetchedValue));
+        }
+
+        @Override
+        public void onCompleted(Object result, Throwable t) {
+            contexts.forEach(context -> context.onCompleted(result, t));
+        }
+    }
+
     private static class ChainedDeferredExecutionStrategyInstrumentationContext implements InstrumentationContext<Object> {
+
 
         private final List<InstrumentationContext<Object>> contexts;
 

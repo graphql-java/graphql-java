@@ -102,7 +102,6 @@ public class SimplePerformantInstrumentation implements Instrumentation {
         return noOp();
     }
 
-
     @Override
     public @Nullable InstrumentationContext<Object> beginFieldCompletion(InstrumentationFieldCompleteParameters parameters, InstrumentationState state) {
         return noOp();
