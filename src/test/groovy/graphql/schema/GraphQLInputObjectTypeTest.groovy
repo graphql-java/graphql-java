@@ -180,4 +180,23 @@ class GraphQLInputObjectTypeTest extends Specification {
 
         // lots more covered in unit tests
     }
+
+    def "rejects invalid OneOf values before invoking data fetchers"() {
+        def sdl = '''
+            type Query {
+                f(arg: OneOf): Boolean
+            }
+            
+            input OneOf @oneOf { a: Int b: Int }
+        '''
+
+        def graphQLSchema = TestUtil.schema(sdl)
+        def graphQL = GraphQL.newGraphQL(graphQLSchema).build()
+
+        when:
+        def er = graphQL.execute('{ f(arg : {a: 0, b: 0}) }')
+        then:
+        !er.errors.isEmpty()
+        er.errors[0].message == "Exception while fetching data (/f) : Exactly one key must be specified for OneOf type 'OneOf'."
+    }
 }
