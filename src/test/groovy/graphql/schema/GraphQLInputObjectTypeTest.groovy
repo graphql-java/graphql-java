@@ -181,6 +181,10 @@ class GraphQLInputObjectTypeTest extends Specification {
         // lots more covered in unit tests
     }
 
+    /**
+     * This test fails because OneOf validators are never invoked.
+     * Validators are never invoked because arguments are never accessed by a data fetcher
+     */
     def "rejects invalid OneOf values before invoking data fetchers"() {
         def sdl = '''
             type Query {
