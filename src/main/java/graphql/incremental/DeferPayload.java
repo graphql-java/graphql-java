@@ -22,12 +22,12 @@ public class DeferPayload extends IncrementalPayload {
     }
 
     /**
-     * @return the resolved data
      * @param <T> the type to cast the result to
+     * @return the resolved data
      */
     @Nullable
     public <T> T getData() {
-        //noinspection unchecked
+        // noinspection unchecked
         return (T) this.data;
     }
 
@@ -37,11 +37,7 @@ public class DeferPayload extends IncrementalPayload {
     @Override
     public Map<String, Object> toSpecification() {
         Map<String, Object> map = new LinkedHashMap<>(super.toSpecification());
-
-        if (data != null) {
-            map.put("data", data);
-        }
-
+        map.put("data", data);
         return map;
     }
 
