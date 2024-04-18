@@ -63,15 +63,15 @@ public class HungarianAlgorithm {
 
     // reset for each execute
     private final int[] minSlackWorkerByJob;
-    private final int[] minSlackValueByJob;
+    private final double[] minSlackValueByJob;
     private final int[] parentWorkerByCommittedJob;
     // reset for worker
     private final boolean[] committedWorkers;
 
 
     // labels for both sides of the bipartite graph
-    private final int[] labelByWorker;
-    private final int[] labelByJob;
+    private final double[] labelByWorker;
+    private final double[] labelByJob;
 
 
     /**
@@ -83,14 +83,13 @@ public class HungarianAlgorithm {
      *                   addition, all entries must be non-infinite numbers.
      */
     public HungarianAlgorithm(int[][] costMatrix) {
-        assertTrue(costMatrix.length == costMatrix[0].length);
         this.dim = Math.max(costMatrix.length, costMatrix[0].length);
         // dim must be larger than 0, because otherwise costMatrix[0] is array out of bounds
         this.costMatrix = costMatrix;
-        labelByWorker = new int[this.dim];
-        labelByJob = new int[this.dim];
+        labelByWorker = new double[this.dim];
+        labelByJob = new double[this.dim];
         minSlackWorkerByJob = new int[this.dim];
-        minSlackValueByJob = new int[this.dim];
+        minSlackValueByJob = new double[this.dim];
         committedWorkers = new boolean[this.dim];
         parentWorkerByCommittedJob = new int[this.dim];
         matchJobByWorker = new int[this.dim];
@@ -165,7 +164,7 @@ public class HungarianAlgorithm {
             // the last worker we found
             int minSlackWorker = -1;
             int minSlackJob = -1;
-            int minSlackValue = -1;
+            double minSlackValue = -1;
             boolean firstRun = true;
             for (int j = 0; j < dim; j++) {
                 if (parentWorkerByCommittedJob[j] == -1) {
@@ -215,7 +214,7 @@ public class HungarianAlgorithm {
                 committedWorkers[worker] = true;
                 for (int j = 0; j < dim; j++) {
                     if (parentWorkerByCommittedJob[j] == -1) {
-                        int slack = costMatrix[worker][j] - labelByWorker[worker]
+                        double slack = costMatrix[worker][j] - labelByWorker[worker]
                                 - labelByJob[j];
                         if (minSlackValueByJob[j] > slack) {
                             minSlackValueByJob[j] = slack;
@@ -325,7 +324,7 @@ public class HungarianAlgorithm {
      *
      * @param slack the specified slack
      */
-    protected void updateLabeling(int slack) {
+    protected void updateLabeling(double slack) {
         for (int w = 0; w < dim; w++) {
             if (committedWorkers[w]) {
                 labelByWorker[w] += slack;
@@ -340,12 +339,9 @@ public class HungarianAlgorithm {
         }
     }
 
-
     public int[] nextChild() {
         int currentJobAssigned = matchJobByWorker[0];
         // we want to make currentJobAssigned not allowed,meaning we set the size to Infinity
-        // increasing the cost doesn't affect the feasibility of the labeling as the sum
-        // of the two labels must be smaller than the cost, hence increasing the cost is fine.
         costMatrix[0][currentJobAssigned] = Integer.MAX_VALUE;
         matchWorkerByJob[currentJobAssigned] = -1;
         matchJobByWorker[0] = -1;
@@ -355,4 +351,5 @@ public class HungarianAlgorithm {
         assertTrue(unmatchedWorkers == dim);
         return matchJobByWorker;
     }
+
 }
