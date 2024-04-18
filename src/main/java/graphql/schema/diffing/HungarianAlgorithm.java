@@ -174,6 +174,10 @@ public class HungarianAlgorithm {
                         minSlackWorker = minSlackWorkerByJob[j];
                         minSlackJob = j;
                         firstRun = false;
+                        // we can stop once we found a job with minSlackValue zero
+                        if (minSlackValue == 0) {
+                            break;
+                        }
                     }
                 }
             }
