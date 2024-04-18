@@ -294,7 +294,7 @@ public abstract class ExecutionStrategy {
         return resolvedValuesByField;
     }
 
-    DeferredExecutionSupport createDeferredExecutionSupport(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
+    protected DeferredExecutionSupport createDeferredExecutionSupport(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
         MergedSelectionSet fields = parameters.getFields();
 
         return Optional.ofNullable(executionContext.getGraphQLContext())
@@ -310,7 +310,7 @@ public abstract class ExecutionStrategy {
     }
 
     @NotNull
-    Async.CombinedBuilder<FieldValueInfo> getAsyncFieldValueInfo(
+    protected Async.CombinedBuilder<FieldValueInfo> getAsyncFieldValueInfo(
             ExecutionContext executionContext,
             ExecutionStrategyParameters parameters,
             DeferredExecutionSupport deferredExecutionSupport
