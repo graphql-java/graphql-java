@@ -161,26 +161,32 @@ public class HungarianAlgorithm {
      * completes, the matching will have increased in size.
      */
     protected void executePhase() {
-        while (true) {
-            // the last worker we found
-            int minSlackWorker = -1;
-            int minSlackJob = -1;
-            int minSlackValue = -1;
-            boolean firstRun = true;
-            for (int j = 0; j < dim; j++) {
-                if (parentWorkerByCommittedJob[j] == -1) {
-                    if (firstRun || minSlackValueByJob[j] < minSlackValue) {
-                        minSlackValue = minSlackValueByJob[j];
-                        minSlackWorker = minSlackWorkerByJob[j];
-                        minSlackJob = j;
-                        firstRun = false;
-                        // we can stop once we found a job with minSlackValue zero
-                        if (minSlackValue == 0) {
-                            break;
-                        }
+        int minSlackWorker = -1;
+        int minSlackJob = -1;
+        int minSlackValue = -1;
+        boolean firstRun;
+        firstRun = true;
+        for (int j = 0; j < dim; j++) {
+            if (parentWorkerByCommittedJob[j] == -1) {
+                if (firstRun || minSlackValueByJob[j] < minSlackValue) {
+                    minSlackValue = minSlackValueByJob[j];
+                    minSlackWorker = minSlackWorkerByJob[j];
+                    minSlackJob = j;
+                    firstRun = false;
+                    // we can stop once we found a job with minSlackValue zero
+                    if (minSlackValue == 0) {
+                        break;
                     }
                 }
             }
+        }
+        while (true) {
+
+            // a minSlackValue > 0 means there was no job with minSlackValue = 0
+            // meaning there is no worker -> job edge we can choose from
+            // we then update the labeling so that the minSlackValue for
+            // minSlackJob is = 0, therefore we can choose (minSlackWorker, minSlackJob)
+            // as next edge of our path
             if (minSlackValue > 0) {
                 updateLabeling(minSlackValue);
             }
@@ -212,19 +218,35 @@ public class HungarianAlgorithm {
                 /*
                  * Update slack values since we increased the size of the committed
                  * workers set.
+                 * The minSlackValues are calculated for all non-committed workers and jobs
+                 * hence we need to update it after we increase the committed workers
                  */
                 // we checked above that minSlackJob is indeed assigned
                 int worker = matchWorkerByJob[minSlackJob];
                 // committedWorkers is used when slack is updated
                 committedWorkers[worker] = true;
+
+
+                firstRun = true;
                 for (int j = 0; j < dim; j++) {
                     if (parentWorkerByCommittedJob[j] == -1) {
                         // costMatrix - labels can become > Integer.MAX_VALUE, we want that
                         // so we cast the double to int to convert it to MAX_VALUE instead of overflowing
                         int slack = (int) ((double) costMatrix[worker][j] - labelByWorker[worker] - labelByJob[j]);
+                        if (firstRun) {
+                            minSlackWorker = worker;
+                            minSlackJob = j;
+                            minSlackValue = slack;
+                            firstRun = false;
+                        }
                         if (minSlackValueByJob[j] > slack) {
                             minSlackValueByJob[j] = slack;
                             minSlackWorkerByJob[j] = worker;
+                        }
+                        if (minSlackValueByJob[j] < minSlackValue) {
+                            minSlackValue = minSlackValueByJob[j];
+                            minSlackWorker = minSlackWorkerByJob[j];
+                            minSlackJob = j;
                         }
                     }
                 }
