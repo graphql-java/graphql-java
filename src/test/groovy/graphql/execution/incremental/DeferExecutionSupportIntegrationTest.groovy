@@ -90,9 +90,10 @@ class DeferExecutionSupportIntegrationTest extends Specification {
     private static DataFetcher resolve(Object value, Integer sleepMs, boolean allowMultipleCalls) {
         return new DataFetcher() {
             boolean executed = false
+
             @Override
             Object get(DataFetchingEnvironment environment) throws Exception {
-                if(executed && !allowMultipleCalls) {
+                if (executed && !allowMultipleCalls) {
                     throw new IllegalStateException("This data fetcher can run only once")
                 }
                 executed = true
@@ -298,7 +299,7 @@ class DeferExecutionSupportIntegrationTest extends Specification {
         })
 
         def indexOfId3 = Iterables.indexOf(incrementalResults, {
-            it.incremental[0] == [path: ["post3"], label:"defer-id3", data: [id3: "3"]]
+            it.incremental[0] == [path: ["post3"], label: "defer-id3", data: [id3: "3"]]
         })
 
         // Assert that both post3 and id3 are present
@@ -349,7 +350,7 @@ class DeferExecutionSupportIntegrationTest extends Specification {
         def incrementalResults = getIncrementalResults(initialResult)
 
         then:
-        if(type == "Post") {
+        if (type == "Post") {
             assert incrementalResults == [
                     [
                             hasNext    : false,
@@ -481,8 +482,8 @@ class DeferExecutionSupportIntegrationTest extends Specification {
                         hasNext    : false,
                         incremental: [
                                 [
-                                        path : ["post"],
-                                        data : [summary: "A summary"]
+                                        path: ["post"],
+                                        data: [summary: "A summary"]
                                 ]
                         ]
                 ]
@@ -519,8 +520,8 @@ class DeferExecutionSupportIntegrationTest extends Specification {
                         hasNext    : false,
                         incremental: [
                                 [
-                                        path : ["post"],
-                                        data : [resolvesToNull: null]
+                                        path: ["post"],
+                                        data: [resolvesToNull: null]
                                 ]
                         ]
                 ]
@@ -560,8 +561,8 @@ class DeferExecutionSupportIntegrationTest extends Specification {
                         hasNext    : false,
                         incremental: [
                                 [
-                                        path : ["post"],
-                                        data : [summary: "A summary", text: "The full text"]
+                                        path: ["post"],
+                                        data: [summary: "A summary", text: "The full text"]
                                 ]
                         ]
                 ]
@@ -739,8 +740,8 @@ class DeferExecutionSupportIntegrationTest extends Specification {
                         incremental: [
                                 [
                                         label: "summary-defer",
-                                        path: ["post"],
-                                        data: [summary: "A summary"]
+                                        path : ["post"],
+                                        data : [summary: "A summary"]
                                 ]
                         ]
                 ],
@@ -749,8 +750,8 @@ class DeferExecutionSupportIntegrationTest extends Specification {
                         incremental: [
                                 [
                                         label: "text-defer",
-                                        path: ["post"],
-                                        data: [text: "The full text"]
+                                        path : ["post"],
+                                        data : [text: "The full text"]
                                 ]
                         ]
                 ]
@@ -1211,8 +1212,8 @@ class DeferExecutionSupportIntegrationTest extends Specification {
                         hasNext    : false,
                         incremental: [
                                 [
-                                        path  : ["post"],
-                                        data  : [text: "The full text"],
+                                        path: ["post"],
+                                        data: [text: "The full text"],
                                 ]
                         ]
                 ]
@@ -1270,8 +1271,8 @@ class DeferExecutionSupportIntegrationTest extends Specification {
                         hasNext    : false,
                         incremental: [
                                 [
-                                        path  : ["post"],
-                                        data  : [text: "The full text"],
+                                        path: ["post"],
+                                        data: [text: "The full text"],
                                 ]
                         ]
                 ]
@@ -1329,8 +1330,8 @@ class DeferExecutionSupportIntegrationTest extends Specification {
                         hasNext    : false,
                         incremental: [
                                 [
-                                        path  : ["post"],
-                                        data  : [text: "The full text"],
+                                        path: ["post"],
+                                        data: [text: "The full text"],
                                 ]
                         ]
                 ]
@@ -1371,6 +1372,7 @@ class DeferExecutionSupportIntegrationTest extends Specification {
                         hasNext    : true,
                         incremental: [
                                 [
+                                        data  : null,
                                         path  : ["post"],
                                         errors: [
                                                 [
@@ -1388,8 +1390,8 @@ class DeferExecutionSupportIntegrationTest extends Specification {
                         hasNext    : false,
                         incremental: [
                                 [
-                                        path  : ["post"],
-                                        data  : [text: "The full text"],
+                                        path: ["post"],
+                                        data: [text: "The full text"],
                                 ]
                         ]
                 ]
