@@ -86,9 +86,9 @@ class ModernTestingInstrumentation implements Instrumentation {
     }
 
     @Override
-    InstrumentationContext<Object> beginFieldFetch(InstrumentationFieldFetchParameters parameters, InstrumentationState state) {
+    FieldFetchingInstrumentationContext beginFieldFetching(InstrumentationFieldFetchParameters parameters, InstrumentationState state) {
         assert state == instrumentationState
-        return new TestingInstrumentContext("fetch-$parameters.field.name", executionList, throwableList, useOnDispatch)
+        return new TestingFieldFetchingInstrumentationContext("fetch-$parameters.field.name", executionList, throwableList, useOnDispatch)
     }
 
     @Override
