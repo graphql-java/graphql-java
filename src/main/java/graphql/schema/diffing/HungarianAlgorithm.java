@@ -2,7 +2,9 @@ package graphql.schema.diffing;
 
 import graphql.Internal;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 import static graphql.Assert.assertTrue;
 
@@ -61,6 +63,7 @@ public class HungarianAlgorithm {
     public final int[] matchJobByWorker;
     private final int[] matchWorkerByJob;
 
+
     // reset for each execute
     private final int[] minSlackWorkerByJob;
     private final int[] minSlackValueByJob;
@@ -73,6 +76,8 @@ public class HungarianAlgorithm {
     private final int[] labelByWorker;
     private final int[] labelByJob;
 
+    private boolean recordAsNewMatch;
+    private List<NewMatch> newMatches;
 
     /**
      * Construct an instance of the algorithm.
@@ -305,6 +310,9 @@ public class HungarianAlgorithm {
      * @param j the job
      */
     protected void match(int w, int j) {
+        if (recordAsNewMatch) {
+            newMatches.add(new NewMatch(w, j));
+        }
         matchJobByWorker[w] = j;
         matchWorkerByJob[j] = w;
     }
@@ -367,6 +375,16 @@ public class HungarianAlgorithm {
         }
     }
 
+    public static class NewMatch {
+        public final int sourceIndex;
+        public final int targetIndex;
+
+        public NewMatch(int sourceIndex, int targetIndex) {
+            this.sourceIndex = sourceIndex;
+            this.targetIndex = targetIndex;
+        }
+    }
+
 
     public int[] nextChild() {
         int currentJobAssigned = matchJobByWorker[0];
@@ -377,9 +395,16 @@ public class HungarianAlgorithm {
         matchWorkerByJob[currentJobAssigned] = -1;
         matchJobByWorker[0] = -1;
         initializePhase(0);
+
+        recordAsNewMatch = true;
+        newMatches = new ArrayList<>();
         executePhase();
         int unmatchedWorkers = fetchUnmatchedWorker();
         assertTrue(unmatchedWorkers == dim);
         return matchJobByWorker;
+    }
+
+    public List<NewMatch> getNewMatches() {
+        return newMatches;
     }
 }

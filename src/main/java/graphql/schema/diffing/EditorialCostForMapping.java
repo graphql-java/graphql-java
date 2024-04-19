@@ -10,6 +10,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
@@ -289,6 +290,63 @@ public class EditorialCostForMapping {
             result++;
         }
         return result;
+    }
+
+    public static int anchoredCost(Vertex v, Vertex u, Mapping partialMapping, SchemaGraph completeSourceGraph, SchemaGraph completeTargetGraph) {
+        boolean equalNodes = v.getType().equals(u.getType()) && v.getProperties().equals(u.getProperties());
+        int anchoredVerticesCost = 0;
+        Set<Edge> matchedTargetEdges = new LinkedHashSet<>();
+        Set<Edge> matchedTargetEdgesInverse = new LinkedHashSet<>();
+
+        for (Edge edgeV : v.getAdjacentEdges()) {
+
+            Vertex targetTo = partialMapping.getTarget(edgeV.getTo());
+            if (targetTo == null) {
+                continue;
+            }
+            Edge matchedTargetEdge = completeTargetGraph.getEdge(u, targetTo);
+            if (matchedTargetEdge != null) {
+                matchedTargetEdges.add(matchedTargetEdge);
+                if (!Objects.equals(edgeV.getLabel(), matchedTargetEdge.getLabel())) {
+                    anchoredVerticesCost++;
+                }
+            } else {
+                anchoredVerticesCost++;
+            }
+
+        }
+
+        for (Edge edgeV : v.getAdjacentEdgesInverse()) {
+            Vertex targetFrom = partialMapping.getTarget(edgeV.getFrom());
+            if (targetFrom == null) {
+                continue;
+            }
+            Edge matachedTargetEdge = completeTargetGraph.getEdge(targetFrom, u);
+            if (matachedTargetEdge != null) {
+                matchedTargetEdgesInverse.add(matachedTargetEdge);
+                if (!Objects.equals(edgeV.getLabel(), matachedTargetEdge.getLabel())) {
+                    anchoredVerticesCost++;
+                }
+            } else {
+                anchoredVerticesCost++;
+            }
+        }
+
+        for (Edge edgeU : u.getAdjacentEdges()) {
+            if (!partialMapping.containsTarget(edgeU.getTo()) || matchedTargetEdges.contains(edgeU)) {
+                continue;
+            }
+            anchoredVerticesCost++;
+
+        }
+        for (Edge edgeU : u.getAdjacentEdgesInverse()) {
+            if (!partialMapping.containsTarget(edgeU.getFrom()) || matchedTargetEdgesInverse.contains(edgeU)) {
+                continue;
+            }
+            anchoredVerticesCost++;
+        }
+
+        return (equalNodes ? 0 : 1) + anchoredVerticesCost;
     }
 
     public static int lbcInnerEdgeCost(Vertex v, Vertex u, Mapping partialMapping, SchemaGraph sourceGraph, SchemaGraph targetGraph) {
