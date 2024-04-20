@@ -79,6 +79,8 @@ public class HungarianAlgorithm {
     private boolean recordAsNewMatch;
     private List<NewMatch> newMatches;
 
+    private int oldAssignedJob;
+
     /**
      * Construct an instance of the algorithm.
      *
@@ -145,7 +147,8 @@ public class HungarianAlgorithm {
             executePhase();
             w = fetchUnmatchedWorker();
         }
-        return matchJobByWorker;
+        int[] result = Arrays.copyOf(matchJobByWorker, dim);
+        return result;
     }
 
     /**
@@ -311,7 +314,12 @@ public class HungarianAlgorithm {
      */
     protected void match(int w, int j) {
         if (recordAsNewMatch) {
-            newMatches.add(new NewMatch(w, j));
+            if (w == 0) {
+                newMatches.add(new NewMatch(w, oldAssignedJob, j));
+
+            } else {
+                newMatches.add(new NewMatch(w, matchJobByWorker[w], j));
+            }
         }
         matchJobByWorker[w] = j;
         matchWorkerByJob[j] = w;
@@ -377,17 +385,20 @@ public class HungarianAlgorithm {
 
     public static class NewMatch {
         public final int sourceIndex;
-        public final int targetIndex;
+        public final int oldTargetIndex;
+        public final int newTargetIndex;
 
-        public NewMatch(int sourceIndex, int targetIndex) {
+        public NewMatch(int sourceIndex, int oldTargetIndex, int newTargetIndex) {
             this.sourceIndex = sourceIndex;
-            this.targetIndex = targetIndex;
+            this.oldTargetIndex = oldTargetIndex;
+            this.newTargetIndex = newTargetIndex;
         }
     }
 
 
     public int[] nextChild() {
         int currentJobAssigned = matchJobByWorker[0];
+        oldAssignedJob = currentJobAssigned;
         // we want to make currentJobAssigned not allowed,meaning we set the size to Infinity
         // increasing the cost doesn't affect the feasibility of the labeling as the sum
         // of the two labels must be smaller than the cost, hence increasing the cost is fine.
@@ -401,7 +412,8 @@ public class HungarianAlgorithm {
         executePhase();
         int unmatchedWorkers = fetchUnmatchedWorker();
         assertTrue(unmatchedWorkers == dim);
-        return matchJobByWorker;
+        int[] result = Arrays.copyOf(matchJobByWorker, dim);
+        return result;
     }
 
     public List<NewMatch> getNewMatches() {

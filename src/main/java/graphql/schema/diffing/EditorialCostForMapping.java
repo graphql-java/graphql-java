@@ -260,6 +260,42 @@ public class EditorialCostForMapping {
         return result;
     }
 
+    public static int realInnerEdgeMatches(Vertex v, Vertex u, Mapping partialMapping, Mapping fullMapping, SchemaGraph sourceGraph, SchemaGraph targetGraph) {
+        int match = 0;
+        for (Edge edge : sourceGraph.getAdjacentEdgesNonCopy(v)) {
+            if (partialMapping.containsSource(edge.getTo())) {
+                continue;
+            }
+            Vertex to = edge.getTo();
+            Edge targetEdge = targetGraph.getEdge(u, fullMapping.getTarget(to));
+            if (targetEdge == null) {
+                continue;
+            }
+            if (edge.getLabel().equals(targetEdge.getLabel())) {
+                match++;
+            }
+        }
+        return match;
+    }
+
+    public static int calcMinimumInnerEdgeCost(Vertex v, Vertex u, Mapping partialMapping, SchemaGraph sourceGraph, SchemaGraph targetGraph) {
+        Multiset<String> multisetInnerEdgeLabelsV = HashMultiset.create();
+        Multiset<String> multisetInnerEdgeLabelsU = HashMultiset.create();
+        for (Edge edge : sourceGraph.getAdjacentEdgesNonCopy(v)) {
+            if (!partialMapping.containsSource(edge.getTo())) {
+                multisetInnerEdgeLabelsV.add(edge.getLabel());
+            }
+        }
+        for (Edge edge : targetGraph.getAdjacentEdgesNonCopy(u)) {
+            if (!partialMapping.containsTarget(edge.getTo())) {
+                multisetInnerEdgeLabelsU.add(edge.getLabel());
+            }
+        }
+        Multiset<String> intersection = Multisets.intersection(multisetInnerEdgeLabelsV, multisetInnerEdgeLabelsU);
+        int multiSetEditDistance = Math.max(multisetInnerEdgeLabelsV.size(), multisetInnerEdgeLabelsU.size()) - intersection.size();
+        return multiSetEditDistance;
+    }
+
     public static int realInnerEdgeCosts(Vertex v, Vertex u, Mapping partialMapping, Mapping fullMapping, SchemaGraph sourceGraph, SchemaGraph targetGraph) {
 
         // we only want inner and direct (not inverse) edges

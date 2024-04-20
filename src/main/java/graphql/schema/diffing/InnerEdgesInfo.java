@@ -48,19 +48,32 @@ public class InnerEdgesInfo {
         for (String label : intersection.elementSet()) {
             minimumCostConditions.add(new SetsMapping(new LinkedHashSet<>(innerEdgeLabelToHeadV.get(label)), new LinkedHashSet<>(innerEdgeLabelToHeadU.get(label)), true));
         }
+
+
         HashMultiset<String> uniqueVLabels = HashMultiset.create(innerEdgeLabelToHeadV.keys());
-        Multisets.removeOccurrences(uniqueVLabels, intersection);
+        for (String label : intersection.elementSet()) {
+            uniqueVLabels.remove(label, Integer.MAX_VALUE);
+        }
+        if (uniqueVLabels.size() == 0) {
+            return;
+        }
         Set<Vertex> vs = new LinkedHashSet<>();
         for (String label : uniqueVLabels) {
             vs.addAll(innerEdgeLabelToHeadV.get(label));
         }
 
         HashMultiset<String> uniqueULabels = HashMultiset.create(innerEdgeLabelToHeadU.keys());
-        Multisets.removeOccurrences(uniqueULabels, intersection);
+        for (String label : intersection.elementSet()) {
+            uniqueULabels.remove(label, Integer.MAX_VALUE);
+        }
+        if (uniqueVLabels.size() == 0) {
+            return;
+        }
         Set<Vertex> us = new LinkedHashSet<>();
         for (String label : uniqueULabels) {
             us.addAll(innerEdgeLabelToHeadU.get(label));
         }
+
 
         SetsMapping nonMatchingLabelHeads = new SetsMapping(vs, us, false);
         minimumCostConditions.add(nonMatchingLabelHeads);
