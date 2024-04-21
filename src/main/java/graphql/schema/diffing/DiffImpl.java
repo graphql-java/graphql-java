@@ -58,10 +58,14 @@ public class DiffImpl {
          */
         public List<Vertex> availableTargetVertices;
 
+
+        // the editorial cost of the partial mapping is >= lowerBoundCost
         Mapping partialMapping;
-        int level; // = partialMapping.size
-        // this is the minimum costs for all mappings extended from the partial mapping
+        // lowerBoundCost is the minimum cost of all sibling mappings after partialMapping
+        // including the partialMapping itself
         int lowerBoundCost;
+        int level; // = partialMapping.size
+
         Map<SingleMapping, InnerEdgesInfo> singleMappingToInnerEdgesInfo;
         public Map<Set<SingleMapping>, Integer> reducedValuesByPairOfMappings;
 
@@ -152,7 +156,7 @@ public class DiffImpl {
             MappingEntry mappingEntry = queue.poll();
             algoIterationCount.incrementAndGet();
             // keep for debugging
-            System.out.println("qed: " + optimalEdit.ged + " lb: " + mappingEntry.lowerBoundCost + " relative level: " + (mappingEntry.level - startMapping.size()) + " queueSize: " + queue.size() + " algoIterationCount: " + algoIterationCount.get());
+//            System.out.println("ged: " + optimalEdit.ged + " lb: " + mappingEntry.lowerBoundCost + " relative level: " + (mappingEntry.level - startMapping.size()) + " queueSize: " + queue.size() + " algoIterationCount: " + algoIterationCount.get());
 
 
             if (mappingEntry.lowerBoundCost >= optimalEdit.ged) {
@@ -242,6 +246,7 @@ public class DiffImpl {
                 this.singleMapping = singleMapping;
             }
         }
+        // calc lowerbound per single mapping
         Multimap<SingleMapping, SetsMappingWithMapping> singleMappingToRelevantSetsMapping = HashMultimap.create();
         for (int i = parentLevel; i < allSources.size(); i++) {
             Vertex v = allSources.get(i);
@@ -267,10 +272,11 @@ public class DiffImpl {
             runningCheck.check();
         }
 
+
+        // calc reduced amount by pair of single mapping
         Map<Set<SingleMapping>, Integer> reducedValuesByPairOfMappings = new LinkedHashMap<>();
         Set<SingleMapping> relevantSingleMappings = new LinkedHashSet<>();
         Multimap<Vertex, Set<SingleMapping>> sourceVertexToRelevantMappingPairs = HashMultimap.create();
-        int maxReducedValue = 0;
         for (int i = parentLevel; i < allSources.size(); i++) {
             Vertex v = allSources.get(i);
             int j = 0;
@@ -283,9 +289,6 @@ public class DiffImpl {
                         Set<SingleMapping> singleMappingsPair = Set.of(singleMapping, setsMappingWithMapping.singleMapping);
                         int reducedValue = setsMappingWithMapping.setsMapping.sameLabels ? 2 : 1;
                         reducedValuesByPairOfMappings.put(singleMappingsPair, reducedValue);
-                        if (maxReducedValue < reducedValue) {
-                            maxReducedValue = reducedValue;
-                        }
                         relevantSingleMappings.add(setsMappingWithMapping.singleMapping);
                         sourceVertexToRelevantMappingPairs.put(v, singleMappingsPair);
                         sourceVertexToRelevantMappingPairs.put(setsMappingWithMapping.singleMapping.getFrom(), singleMappingsPair);
@@ -295,36 +298,22 @@ public class DiffImpl {
             }
         }
 
+
         HungarianAlgorithm hungarianAlgorithm = new HungarianAlgorithm(costMatrixForHungarianAlgo);
         int[] assignments = hungarianAlgorithm.execute();
 
-
-        int editorialCostForMapping = editorialCostForMapping(fixedEditorialCost, parentPartialMapping, completeSourceGraph, completeTargetGraph);
+        int editorialCostForParentMapping = editorialCostForMapping(fixedEditorialCost, parentPartialMapping, completeSourceGraph, completeTargetGraph);
         int costMatrixSum = getCostMatrixSum(costMatrix, assignments);
-        int lowerBoundForPartialMapping = editorialCostForMapping + costMatrixSum;
+        // this is the lower bound for all children of parentPartialMapping
+        int lowerBoundForNextLevel = editorialCostForParentMapping + costMatrixSum;
 
-        Mapping mappingCopy = parentPartialMapping.copy();
-        for (int i = 0; i < assignments.length; i++) {
-            Vertex v = allSources.get(parentLevel + i);
-            Vertex u = availableTargetVertices.get(assignments[i]);
-            mappingCopy.add(v, u);
-        }
-
-        int reducedCostSum = 0;
-        int diffToWorstCase = 0;
-//        System.out.println("diffToWorstCase" + diffToWorstCase);
-//        System.out.println("reduced cost sum: " + reducedCostSum);
-
-
-        // whole edc is 5024, span is 67, minimum is 4972: 4972 + 67 - 15 = 5024
-
-
-        if (lowerBoundForPartialMapping >= optimalEdit.ged) {
+        if (lowerBoundForNextLevel >= optimalEdit.ged) {
             return;
         }
 
+
         Mapping newMapping = parentPartialMapping.extendMapping(v_i, availableTargetVertices.get(assignments[0]));
-        MappingEntry newMappingEntry = new MappingEntry(newMapping, level, lowerBoundForPartialMapping);
+        MappingEntry newMappingEntry = new MappingEntry(newMapping, level, lowerBoundForNextLevel);
         LinkedBlockingQueue<MappingEntry> siblings = new LinkedBlockingQueue<>();
         newMappingEntry.mappingEntriesSiblings = siblings;
         newMappingEntry.assignments = assignments;
@@ -340,20 +329,20 @@ public class DiffImpl {
                 parentPartialMapping.copy(),
                 assignments,
                 availableTargetVertices,
-                lowerBoundForPartialMapping,
+                lowerBoundForNextLevel,
                 singleMappingToInnerEdgesInfo,
                 reducedValuesByPairOfMappings
         );
 
-        calculateRestOfChildren(
+        calculateRestOfSiblings(
                 availableTargetVertices,
                 hungarianAlgorithm,
                 costMatrix,
                 costMatrixSum,
-                editorialCostForMapping,
+                editorialCostForParentMapping,
                 parentPartialMapping,
                 v_i,
-                optimalEdit.ged,
+                optimalEdit,
                 level,
                 siblings,
                 singleMappingToInnerEdgesInfo,
@@ -389,34 +378,39 @@ public class DiffImpl {
         }
     }
 
-    // generate all children mappings and save in MappingEntry.sibling
-    private void calculateRestOfChildren(List<Vertex> availableTargetVertices,
+    private void calculateRestOfSiblings(List<Vertex> availableTargetVertices,
                                          HungarianAlgorithm hungarianAlgorithm,
                                          int[][] costMatrixCopy,
                                          int costMatrixSum,
-                                         int editorialCostForMapping,
-                                         Mapping partialMapping,
+                                         int editorialCostForParentMapping,
+                                         Mapping parentPartialMapping,
                                          Vertex v_i,
-                                         int upperBound,
+                                         OptimalEdit optimalEdit,
                                          int level,
                                          LinkedBlockingQueue<MappingEntry> siblings,
                                          Map<SingleMapping, InnerEdgesInfo> singleMappingToInnerEdgesInfo,
                                          Map<Set<SingleMapping>, Integer> reducedValuesByPairOfMappings
     ) {
+        // generate all siblings, which map v_i and is child of parentPartialMapping
         // starting from 1 as we already generated the first one
         for (int child = 1; child < availableTargetVertices.size(); child++) {
             int[] assignments = hungarianAlgorithm.nextChild();
-            if (costMatrixCopy[0][assignments[0]] == Integer.MAX_VALUE) {
+            // either the original cost matrix is set to MAX_VALUE or during nextChild the modified hungarianAlgorithm.costMatrix was
+            // because the target vertex was used before
+            if (hungarianAlgorithm.costMatrix[0][assignments[0]] == Integer.MAX_VALUE || costMatrixCopy[0][assignments[0]] == Integer.MAX_VALUE) {
+                // this means solution contains not allowed mappings, therefore we are finished
                 break;
             }
+
             int costMatrixSumSibling = getCostMatrixSum(costMatrixCopy, assignments);
-            int lowerBoundForPartialMappingSibling = editorialCostForMapping + costMatrixSumSibling;
-
-            if (lowerBoundForPartialMappingSibling >= upperBound) {
+            int lowerBoundForPartialMappingSibling = editorialCostForParentMapping + costMatrixSumSibling;
+            if (lowerBoundForPartialMappingSibling >= optimalEdit.ged) {
+                // this means we can't find a better solution than the current one, hence we are finished
                 break;
             }
 
-            Mapping newMappingSibling = partialMapping.extendMapping(v_i, availableTargetVertices.get(assignments[0]));
+            Mapping newMappingSibling = parentPartialMapping.extendMapping(v_i, availableTargetVertices.get(assignments[0]));
+            // the edc of newMappingSibling is >= lowerBoundForPartialMappingSibling
             MappingEntry sibling = new MappingEntry(newMappingSibling, level, lowerBoundForPartialMappingSibling);
             sibling.mappingEntriesSiblings = siblings;
             sibling.assignments = assignments;
@@ -478,39 +472,44 @@ public class DiffImpl {
                                                       Map<SingleMapping, InnerEdgesInfo> singleMappingToInnerEdgesInfo,
                                                       Map<Set<SingleMapping>, Integer> reducedValuesByPairOfMappings
     ) {
+        int partialMappingEdc = editorialCostForMapping(fixedEditorialCost, toExpand, completeSourceGraph, completeTargetGraph);
         for (int i = 0; i < assignments.length; i++) {
             toExpand.add(allSources.get(level - 1 + i), availableTargetVertices.get(assignments[i]));
         }
         assertTrue(toExpand.size() == this.completeSourceGraph.size());
         int costForFullMapping = editorialCostForMapping(fixedEditorialCost, toExpand, completeSourceGraph, completeTargetGraph);
-        assertTrue(lowerBoundCost <= costForFullMapping);
-        if (costForFullMapping < optimalEdit.ged) {
-
-            int reducedCostSum = 0;
-            int diffToWorstCase = 0;
-            for (int i = 0; i < assignments.length; i++) {
-                Vertex v1 = allSources.get(level - 1 + i);
-                Vertex u1 = availableTargetVertices.get(assignments[i]);
-                SingleMapping sm1 = new SingleMapping(v1, u1);
-                for (int j = i + 1; j < assignments.length; j++) {
-                    Vertex v2 = allSources.get(level - 1 + j);
-                    Vertex u2 = availableTargetVertices.get(assignments[j]);
-                    SingleMapping sm2 = new SingleMapping(v2, u2);
-                    Set<SingleMapping> newPair = Set.of(sm1, sm2);
-                    Integer reducedCost = reducedValuesByPairOfMappings.get(newPair);
-                    if (reducedCost != null) {
-                        reducedCostSum += reducedCost;
-                    }
-                }
-                InnerEdgesInfo innerEdgesInfo = singleMappingToInnerEdgesInfo.get(new SingleMapping(v1, u1));
-                if (innerEdgesInfo != null) {
-                    int maxCosts = innerEdgesInfo.maxCosts();
-                    diffToWorstCase += (maxCosts - innerEdgesInfo.minimumCosts());
+//        assertTrue(lowerBoundCost <= costForFullMapping);
+        int reducedCostSum = 0;
+        int diffToWorstCase = 0;
+        int reducedCostCount = 0;
+        for (int i = 0; i < assignments.length; i++) {
+            Vertex v1 = allSources.get(level - 1 + i);
+            Vertex u1 = availableTargetVertices.get(assignments[i]);
+            SingleMapping sm1 = new SingleMapping(v1, u1);
+            for (int j = i + 1; j < assignments.length; j++) {
+                Vertex v2 = allSources.get(level - 1 + j);
+                Vertex u2 = availableTargetVertices.get(assignments[j]);
+                SingleMapping sm2 = new SingleMapping(v2, u2);
+                Set<SingleMapping> newPair = Set.of(sm1, sm2);
+                Integer reducedCost = reducedValuesByPairOfMappings.get(newPair);
+                if (reducedCost != null) {
+                    reducedCostSum += reducedCost;
+                    reducedCostCount++;
                 }
             }
-            int calculatedEdc = lowerBoundCost + diffToWorstCase - reducedCostSum;
-            System.out.println("lowerbound " + lowerBoundCost + " + diffToWorstCase " + diffToWorstCase + " - reducedCostSum " + reducedCostSum + " = " + calculatedEdc);
-            assertTrue(calculatedEdc == costForFullMapping);
+            InnerEdgesInfo innerEdgesInfo = singleMappingToInnerEdgesInfo.get(new SingleMapping(v1, u1));
+            if (innerEdgesInfo != null) {
+                int maxCosts = innerEdgesInfo.maxCosts();
+                diffToWorstCase += (maxCosts - innerEdgesInfo.minimumCosts());
+            }
+        }
+        // lowerbound is edc of partial mapping +  anchored + min inner edge costs of unmapped
+        int calculatedEdc = lowerBoundCost + diffToWorstCase - reducedCostSum;
+        System.out.println("partial mapping edc " + partialMappingEdc + " assignment sum " + (lowerBoundCost - partialMappingEdc) + " + diffToWorstCase " + diffToWorstCase + " - reducedCostSum " + reducedCostSum + " = " + calculatedEdc + " level : " + (level - startLevel) + " reduced cunter: " + reducedCostCount);
+        assertTrue(calculatedEdc == costForFullMapping);
+
+        if (costForFullMapping < optimalEdit.ged) {
+            System.out.println("UPDATE!!!!!!!");
             updateOptimalEdit(optimalEdit, costForFullMapping, toExpand);
         }
     }
