@@ -11,6 +11,8 @@ import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 import javax.annotation.Nonnull;
 import java.util.Map;
@@ -39,6 +41,7 @@ public class SubscriptionReproduction {
                 "  searchVideo {\n" +
                 "    id\n" +
                 "    name\n" +
+                "    lastEpisode\n" +
                 "    isFavorite\n" +
                 "  }\n" +
                 "}";
@@ -57,6 +60,7 @@ public class SubscriptionReproduction {
                 "type VideoSearch {" +
                 "       id : ID" +
                 "       name : String" +
+                "       lastEpisode : String" +
                 "       isFavorite : Boolean" +
                 "}";
         RuntimeWiring runtimeWiring = newRuntimeWiring()
@@ -66,6 +70,7 @@ public class SubscriptionReproduction {
                 .type(newTypeWiring("VideoSearch")
                         .dataFetcher("name", this::nameDF)
                         .dataFetcher("isFavorite", this::isFavoriteDF)
+                        .dataFetcher("lastEpisode", this::lastEpisode)
                 )
                 .build();
 
@@ -93,6 +98,16 @@ public class SubscriptionReproduction {
             Integer counter = getCounter(env.getSource());
             return counter % 2 == 0;
         });
+    }
+
+    private Object lastEpisode(DataFetchingEnvironment env) {
+        // Mono-based async property that uses CF as the interface
+        return Mono.fromCallable(() -> {
+                    Integer counter = getCounter(env.getSource());
+                    return "episode-" + Thread.currentThread().getName() + "for" + counter;
+                })
+                .publishOn(Schedulers.boundedElastic())
+                .toFuture();
     }
 
     private Object nameDF(DataFetchingEnvironment env) {
