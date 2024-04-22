@@ -8,11 +8,15 @@ import org.reactivestreams.Subscription;
 
 import java.util.ArrayDeque;
 import java.util.Queue;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
+
+import static graphql.Assert.assertNotNullWithNPE;
 
 /**
  * A reactive Publisher that bridges over another Publisher of `D` and maps the results
@@ -40,6 +44,7 @@ public class CompletionStageMappingPublisher<D, U> implements Publisher<D> {
 
     @Override
     public void subscribe(Subscriber<? super D> downstreamSubscriber) {
+        assertNotNullWithNPE(downstreamSubscriber, () -> "Subscriber passed to subscribe must not be null");
         upstreamPublisher.subscribe(new CompletionStageSubscriber(downstreamSubscriber));
     }
 
@@ -85,23 +90,28 @@ public class CompletionStageMappingPublisher<D, U> implements Publisher<D> {
             try {
                 CompletionStage<D> completionStage = mapper.apply(u);
                 offerToInFlightQ(completionStage);
-                completionStage.whenComplete(whenNextFinished(completionStage));
+                completionStage.whenComplete(whenNextFinished());
             } catch (RuntimeException throwable) {
                 handleThrowable(throwable);
             }
         }
 
-        private BiConsumer<D, Throwable> whenNextFinished(CompletionStage<D> completionStage) {
+        private BiConsumer<D, Throwable> whenNextFinished() {
             return (d, throwable) -> {
                 try {
                     if (throwable != null) {
                         handleThrowable(throwable);
                     } else {
-                        downstreamSubscriber.onNext(d);
+                        emptyInFlightQueueIfWeCan();
                     }
                 } finally {
                     Runnable runOnCompleteOrErrorRun = onCompleteOrErrorRun.get();
-                    boolean empty = removeFromInFlightQAndCheckIfEmpty(completionStage);
+                    boolean empty = inFlightQIsEmpty();
+                    //
+                    // if the runOnCompleteOrErrorRun runnable is set, the upstream has
+                    // called onError() or onComplete() already, but the CFs have not all completed
+                    // yet, so we have to check whenever a CF completes
+                    //
                     if (empty && runOnCompleteOrErrorRun != null) {
                         onCompleteOrErrorRun.set(null);
                         runOnCompleteOrErrorRun.run();
@@ -110,13 +120,51 @@ public class CompletionStageMappingPublisher<D, U> implements Publisher<D> {
             };
         }
 
+        private void emptyInFlightQueueIfWeCan() {
+            // done inside a memory lock, so we cant offer new CFs to the queue
+            // until we have processed any completed ones from the start of
+            // the queue.
+            lock.runLocked(() -> {
+                //
+                // from the top of the in flight queue, take all the CFs that have
+                // completed... but stop if they are not done
+                while (!inFlightDataQ.isEmpty()) {
+                    CompletionStage<?> cs = inFlightDataQ.peek();
+                    if (cs != null) {
+                        //
+                        CompletableFuture<?> cf = cs.toCompletableFuture();
+                        if (cf.isDone()) {
+                            // take it off the queue
+                            inFlightDataQ.poll();
+                            D value;
+                            try {
+                                //noinspection unchecked
+                                value = (D) cf.join();
+                            } catch (RuntimeException rte) {
+                                //
+                                // if we get an exception while joining on a value, we
+                                // send it into the exception handling and break out
+                                handleThrowable(cfExceptionUnwrap(rte));
+                                break;
+                            }
+                            downstreamSubscriber.onNext(value);
+                        } else {
+                            // if the CF is not done, then we have to stop processing
+                            // to keep the results in order inside the inFlightQueue
+                            break;
+                        }
+                    }
+                }
+            });
+        }
+
         private void handleThrowable(Throwable throwable) {
             downstreamSubscriber.onError(throwable);
             //
-            // reactive semantics say that IF an exception happens on a publisher
+            // Reactive semantics say that IF an exception happens on a publisher,
             // then onError is called and no more messages flow.  But since the exception happened
-            // during the mapping, the upstream publisher does not no about this.
-            // so we cancel to bring the semantics back together, that is as soon as an exception
+            // during the mapping, the upstream publisher does not know about this.
+            // So we cancel to bring the semantics back together, that is as soon as an exception
             // has happened, no more messages flow
             //
             delegatingSubscription.cancel();
@@ -162,16 +210,15 @@ public class CompletionStageMappingPublisher<D, U> implements Publisher<D> {
             );
         }
 
-        private boolean removeFromInFlightQAndCheckIfEmpty(CompletionStage<?> completionStage) {
-            // uncontested locks in java are cheap - we don't expect much contention here
-            return lock.callLocked(() -> {
-                inFlightDataQ.remove(completionStage);
-                return inFlightDataQ.isEmpty();
-            });
-        }
-
         private boolean inFlightQIsEmpty() {
             return lock.callLocked(inFlightDataQ::isEmpty);
+        }
+
+        private Throwable cfExceptionUnwrap(Throwable throwable) {
+            if (throwable instanceof CompletionException  & throwable.getCause() != null) {
+                return throwable.getCause();
+            }
+            return throwable;
         }
     }
 }

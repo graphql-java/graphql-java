@@ -19,6 +19,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Supplier;
 
 import static graphql.schema.idl.RuntimeWiring.newRuntimeWiring;
 import static graphql.schema.idl.TypeRuntimeWiring.newTypeWiring;
@@ -82,14 +83,15 @@ public class SubscriptionReproduction {
 
     private CompletableFuture<Flux<Object>> mkFluxDF(DataFetchingEnvironment env) {
         // async deliver of the publisher with random snoozing between values
-        return CompletableFuture.supplyAsync(() -> Flux.generate(() -> 0, (counter, sink) -> {
+        Supplier<Flux<Object>> fluxSupplier = () -> Flux.generate(() -> 0, (counter, sink) -> {
             sink.next(mkValue(counter));
             snooze(rand(10, 100));
             if (counter == 10) {
                 sink.complete();
             }
             return counter + 1;
-        }));
+        });
+        return CompletableFuture.supplyAsync(fluxSupplier);
     }
 
     private Object isFavoriteDF(DataFetchingEnvironment env) {
@@ -159,7 +161,7 @@ public class SubscriptionReproduction {
         public void onSubscribe(Subscription subscription) {
             this.subscription = subscription;
             System.out.println("onSubscribe");
-            subscription.request(1);
+            subscription.request(10);
         }
 
         @Override
