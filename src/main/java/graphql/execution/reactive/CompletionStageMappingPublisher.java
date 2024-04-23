@@ -66,14 +66,14 @@ public class CompletionStageMappingPublisher<D, U> implements Publisher<D> {
         final LockKit.ReentrantLock lock = new LockKit.ReentrantLock();
         final AtomicReference<Runnable> onCompleteOrErrorRun;
         final AtomicBoolean onCompleteOrErrorRunCalled;
-        final AtomicBoolean upstreamCancelled;
+        final AtomicBoolean subscriptionCancelled;
 
         public CompletionStageSubscriber(Subscriber<? super D> downstreamSubscriber) {
             this.downstreamSubscriber = downstreamSubscriber;
             inFlightDataQ = new ArrayDeque<>();
             onCompleteOrErrorRun = new AtomicReference<>();
             onCompleteOrErrorRunCalled = new AtomicBoolean(false);
-            upstreamCancelled = new AtomicBoolean(false);
+            subscriptionCancelled = new AtomicBoolean(false);
         }
 
 
@@ -123,6 +123,9 @@ public class CompletionStageMappingPublisher<D, U> implements Publisher<D> {
         }
 
         private void emptyInFlightQueueIfWeCan() {
+            if (subscriptionCancelled.get()) {
+                return;
+            }
             // done inside a memory lock, so we cant offer new CFs to the queue
             // until we have processed any completed ones from the start of
             // the queue.
@@ -162,7 +165,7 @@ public class CompletionStageMappingPublisher<D, U> implements Publisher<D> {
 
         private void handleThrowable(Throwable throwable) {
             // only do this once
-            if (upstreamCancelled.compareAndSet(false,true)) {
+            if (subscriptionCancelled.compareAndSet(false,true)) {
                 downstreamSubscriber.onError(throwable);
                 //
                 // Reactive semantics say that IF an exception happens on a publisher,

@@ -10,8 +10,6 @@ import spock.lang.Specification
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionException
 import java.util.concurrent.CompletionStage
-import java.util.concurrent.CountDownLatch
-import java.util.concurrent.TimeUnit
 import java.util.function.Function
 
 class CompletionStageMappingPublisherTest extends Specification {
@@ -132,30 +130,29 @@ class CompletionStageMappingPublisherTest extends Specification {
         when:
         Publisher<Integer> rxIntegers = Flowable.range(0, 10)
 
-        CountDownLatch latch = new CountDownLatch(5)
-        CountDownLatch exceptionLatch = new CountDownLatch(1)
+        List<Runnable> completions = []
+
         def mapper = new Function<Integer, CompletionStage<String>>() {
             @Override
             CompletionStage<String> apply(Integer integer) {
 
-                if (integer == 5) {
-                    return CompletableFuture.supplyAsync {
-                        exceptionLatch.await(10_000, TimeUnit.SECONDS)
-                        sleep(100)
-                        throw new RuntimeException("Bang")
-                    }
+                if (integer < 5) {
+                    def cf = new CompletableFuture<String>()
+                    completions.add({ cf.complete(String.valueOf(integer)) })
+                    return cf
+                } else if (integer == 5) {
+                    def cf = new CompletableFuture<String>()
+                    completions.add({ cf.completeExceptionally(new RuntimeException("Bang")) })
+                    return cf
                 } else if (integer == 6) {
-                    return CompletableFuture.supplyAsync {
-                        latch.countDown()
-                        exceptionLatch.countDown() // number 5 is now alive
-                        return String.valueOf(integer)
+                    // complete 5,4,3,2,1 so we have to queue
+                    def reverse = completions.reverse()
+                    for (Runnable r : (reverse)) {
+                        r.run()
                     }
+                    return CompletableFuture.completedFuture(String.valueOf(integer))
                 } else {
-                    return CompletableFuture.supplyAsync {
-                        latch.countDown()
-                        latch.await(10_000, TimeUnit.SECONDS)
-                        return String.valueOf(integer)
-                    }
+                    return CompletableFuture.completedFuture(String.valueOf(integer))
                 }
             }
         }
