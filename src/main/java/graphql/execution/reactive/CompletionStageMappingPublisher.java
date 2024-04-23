@@ -66,12 +66,14 @@ public class CompletionStageMappingPublisher<D, U> implements Publisher<D> {
         final LockKit.ReentrantLock lock = new LockKit.ReentrantLock();
         final AtomicReference<Runnable> onCompleteOrErrorRun;
         final AtomicBoolean onCompleteOrErrorRunCalled;
+        final AtomicBoolean upstreamCancelled;
 
         public CompletionStageSubscriber(Subscriber<? super D> downstreamSubscriber) {
             this.downstreamSubscriber = downstreamSubscriber;
             inFlightDataQ = new ArrayDeque<>();
             onCompleteOrErrorRun = new AtomicReference<>();
             onCompleteOrErrorRunCalled = new AtomicBoolean(false);
+            upstreamCancelled = new AtomicBoolean(false);
         }
 
 
@@ -159,15 +161,18 @@ public class CompletionStageMappingPublisher<D, U> implements Publisher<D> {
         }
 
         private void handleThrowable(Throwable throwable) {
-            downstreamSubscriber.onError(throwable);
-            //
-            // Reactive semantics say that IF an exception happens on a publisher,
-            // then onError is called and no more messages flow.  But since the exception happened
-            // during the mapping, the upstream publisher does not know about this.
-            // So we cancel to bring the semantics back together, that is as soon as an exception
-            // has happened, no more messages flow
-            //
-            delegatingSubscription.cancel();
+            // only do this once
+            if (upstreamCancelled.compareAndSet(false,true)) {
+                downstreamSubscriber.onError(throwable);
+                //
+                // Reactive semantics say that IF an exception happens on a publisher,
+                // then onError is called and no more messages flow.  But since the exception happened
+                // during the mapping, the upstream publisher does not know about this.
+                // So we cancel to bring the semantics back together, that is as soon as an exception
+                // has happened, no more messages flow
+                //
+                delegatingSubscription.cancel();
+            }
         }
 
         @Override

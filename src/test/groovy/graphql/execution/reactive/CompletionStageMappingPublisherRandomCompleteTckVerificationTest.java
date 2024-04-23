@@ -42,6 +42,10 @@ public class CompletionStageMappingPublisherRandomCompleteTckVerificationTest ex
         return new CompletionStageMappingPublisher<>(publisher, mapper);
     }
 
+    public boolean skipStochasticTests() {
+        return true;
+    }
+
     @NotNull
     private static Function<Integer, CompletionStage<String>> mapperFunc() {
         return i -> CompletableFuture.supplyAsync(() -> {

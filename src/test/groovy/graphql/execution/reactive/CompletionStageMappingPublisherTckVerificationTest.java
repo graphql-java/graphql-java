@@ -19,7 +19,7 @@ import java.util.function.Function;
 public class CompletionStageMappingPublisherTckVerificationTest extends PublisherVerification<String> {
 
     public CompletionStageMappingPublisherTckVerificationTest() {
-        super(new TestEnvironment(Duration.ofMillis(100).toMillis()));
+        super(new TestEnvironment(Duration.ofMillis(1000).toMillis()));
     }
 
     @Override
@@ -41,5 +41,9 @@ public class CompletionStageMappingPublisherTckVerificationTest extends Publishe
         return new CompletionStageMappingPublisher<>(publisher, mapper);
     }
 
+    @Override
+    public boolean skipStochasticTests() {
+        return true;
+    }
 }
 

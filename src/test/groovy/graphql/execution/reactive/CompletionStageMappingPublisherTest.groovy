@@ -113,7 +113,7 @@ class CompletionStageMappingPublisherTest extends Specification {
                         throw new RuntimeException("Bang")
                     }
                 } else {
-                    return asyncValueAfterDelay(100, integer)
+                    return asyncValueAfterDelay(10, integer)
                 }
             }
         }
@@ -226,7 +226,7 @@ class CompletionStageMappingPublisherTest extends Specification {
         when:
         Publisher<Integer> rxIntegers = Flowable.range(0, 10)
 
-        Function<Integer, CompletionStage<String>> mapper = mapperThatRandomlyDelaysFor(20, 50)
+        Function<Integer, CompletionStage<String>> mapper = mapperThatRandomlyDelaysFor(5, 15)
         Publisher<String> rxStrings = new CompletionStageMappingPublisher<String, Integer>(rxIntegers, mapper)
 
         // ask for 10 at a time to create some forward pressure
