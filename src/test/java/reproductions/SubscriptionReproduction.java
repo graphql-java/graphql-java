@@ -1,7 +1,9 @@
 package reproductions;
 
+import graphql.ExecutionInput;
 import graphql.ExecutionResult;
 import graphql.GraphQL;
+import graphql.execution.SubscriptionExecutionStrategy;
 import graphql.schema.DataFetchingEnvironment;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.idl.RuntimeWiring;
@@ -32,10 +34,12 @@ import static graphql.schema.idl.TypeRuntimeWiring.newTypeWiring;
  */
 public class SubscriptionReproduction {
     public static void main(String[] args) {
-        new SubscriptionReproduction().run();
+        new SubscriptionReproduction().run(args);
     }
 
-    private void run() {
+    private void run(String[] args) {
+
+        boolean ordered = args.length > 0 && "ordered".equals(args[0]);
 
         GraphQL graphQL = mkGraphQl();
         String query = "subscription MySubscription {\n" +
@@ -46,7 +50,11 @@ public class SubscriptionReproduction {
                 "    isFavorite\n" +
                 "  }\n" +
                 "}";
-        ExecutionResult executionResult = graphQL.execute(query);
+
+        ExecutionInput executionInput = ExecutionInput.newExecutionInput().query(query).graphQLContext(
+                b -> b.put(SubscriptionExecutionStrategy.KEEP_SUBSCRIPTION_EVENTS_ORDERED, ordered)
+        ).build();
+        ExecutionResult executionResult = graphQL.execute(executionInput);
         Publisher<Map<String, Object>> publisher = executionResult.getData();
 
         DeathEater eater = new DeathEater();

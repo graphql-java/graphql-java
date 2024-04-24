@@ -8,6 +8,8 @@ import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionStage
 import java.util.function.Function
 
+import static graphql.execution.reactive.CompletionStageSubscriberTest.mapperThatDoesNotComplete
+
 class CompletionStageOrderedSubscriberTest extends Specification {
 
     def "basic test of mapping"() {
@@ -140,6 +142,32 @@ class CompletionStageOrderedSubscriberTest extends Specification {
         capturingSubscriber.events == []
     }
 
+    def "if onError is called, then futures are cancelled"() {
+        def capturingSubscriber = new CapturingSubscriber<>()
+        def subscription = new CapturingSubscription()
+        List<CompletableFuture> promises = []
+        Function<Integer, CompletionStage<String>> mapper = mapperThatDoesNotComplete([], promises)
+        def completionStageSubscriber = new CompletionStageSubscriber<Integer, String>(mapper, capturingSubscriber)
+
+        when:
+        completionStageSubscriber.onSubscribe(subscription)
+        completionStageSubscriber.onNext(0)
+        completionStageSubscriber.onNext(1)
+        completionStageSubscriber.onNext(2)
+        completionStageSubscriber.onNext(3)
+        completionStageSubscriber.onError(new RuntimeException("Bang"))
+
+        then:
+        !capturingSubscriber.isCompleted()
+        capturingSubscriber.isCompletedExceptionally()
+        capturingSubscriber.events == []
+
+        promises.size() == 4
+        for (CompletableFuture<?> cf : promises) {
+            assert cf.isCancelled(), "The CF was not cancelled?"
+        }
+    }
+
     def "emits values in the order they arrive not the order they complete"() {
         def capturingSubscriber = new CapturingSubscriber<>()
         def subscription = new CapturingSubscription()
@@ -166,19 +194,8 @@ class CompletionStageOrderedSubscriberTest extends Specification {
         then:
         !subscription.isCancelled()
         capturingSubscriber.isCompleted()
-        capturingSubscriber.events == ["0","1","2","3"]
+        capturingSubscriber.events == ["0", "1", "2", "3"]
     }
 
-    private static Function<Integer, CompletionStage<String>> mapperThatDoesNotComplete(List<Runnable> promises) {
-        def mapper = new Function<Integer, CompletionStage<String>>() {
-            @Override
-            CompletionStage<String> apply(Integer integer) {
-                def cf = new CompletableFuture<String>()
-                promises.add({ cf.complete(String.valueOf(integer)) })
-                return cf
-            }
-        }
-        mapper
-    }
 
 }

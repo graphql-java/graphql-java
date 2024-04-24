@@ -125,6 +125,8 @@ public class CompletionStageSubscriber<U, D> implements Subscriber<U> {
             // has happened, no more messages flow
             //
             delegatingSubscription.cancel();
+
+            cancelInFlightFutures();
         }
     }
 
@@ -133,6 +135,7 @@ public class CompletionStageSubscriber<U, D> implements Subscriber<U> {
         // we immediately terminate - we don't wait for any promises to complete
         if (isTerminal.compareAndSet(false, true)) {
             downstreamSubscriber.onError(t);
+            cancelInFlightFutures();
         }
     }
 
@@ -165,6 +168,21 @@ public class CompletionStageSubscriber<U, D> implements Subscriber<U> {
         return lock.callLocked(() -> {
             inFlightDataQ.remove(completionStage);
             return inFlightDataQ.isEmpty();
+        });
+    }
+
+    /**
+     * If the promise is backed by frameworks such as Reactor, then the cancel()
+     * can cause them to propagate the cancel back into the reactive chain
+     */
+    private void cancelInFlightFutures() {
+        lock.runLocked(() -> {
+            while (!inFlightDataQ.isEmpty()) {
+                CompletionStage<?> cs = inFlightDataQ.poll();
+                if (cs != null) {
+                    cs.toCompletableFuture().cancel(false);
+                }
+            }
         });
     }
 

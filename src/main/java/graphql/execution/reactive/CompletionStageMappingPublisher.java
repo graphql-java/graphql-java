@@ -1,11 +1,14 @@
 package graphql.execution.reactive;
 
 import graphql.Internal;
+import org.jetbrains.annotations.NotNull;
 import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
 
 import java.util.concurrent.CompletionStage;
 import java.util.function.Function;
+
+import static graphql.Assert.assertNotNullWithNPE;
 
 /**
  * A reactive Publisher that bridges over another Publisher of `D` and maps the results
@@ -16,8 +19,8 @@ import java.util.function.Function;
  */
 @Internal
 public class CompletionStageMappingPublisher<D, U> implements Publisher<D> {
-    private final Publisher<U> upstreamPublisher;
-    private final Function<U, CompletionStage<D>> mapper;
+    protected final Publisher<U> upstreamPublisher;
+    protected final Function<U, CompletionStage<D>> mapper;
 
     /**
      * You need the following :
@@ -32,8 +35,15 @@ public class CompletionStageMappingPublisher<D, U> implements Publisher<D> {
 
     @Override
     public void subscribe(Subscriber<? super D> downstreamSubscriber) {
-        upstreamPublisher.subscribe(new CompletionStageSubscriber<>(mapper, downstreamSubscriber));
+        assertNotNullWithNPE(downstreamSubscriber, () -> "Subscriber passed to subscribe must not be null");
+        upstreamPublisher.subscribe(createSubscriber(downstreamSubscriber));
     }
+
+    @NotNull
+    protected Subscriber<? super U> createSubscriber(Subscriber<? super D> downstreamSubscriber) {
+        return new CompletionStageSubscriber<>(mapper, downstreamSubscriber);
+    }
+
 
     /**
      * Get instance of an upstreamPublisher
