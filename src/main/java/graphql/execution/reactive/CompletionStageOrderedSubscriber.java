@@ -6,7 +6,6 @@ import org.reactivestreams.Subscriber;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
-import java.util.function.BiConsumer;
 import java.util.function.Function;
 
 /**
@@ -19,30 +18,26 @@ import java.util.function.Function;
  */
 @Internal
 public class CompletionStageOrderedSubscriber<U, D> extends CompletionStageSubscriber<U, D> implements Subscriber<U> {
+
     public CompletionStageOrderedSubscriber(Function<U, CompletionStage<D>> mapper, Subscriber<? super D> downstreamSubscriber) {
         super(mapper, downstreamSubscriber);
     }
 
     @Override
-    protected BiConsumer<D, Throwable> whenNextFinished(CompletionStage<D> completionStage) {
-        return (d, throwable) -> {
-            try {
-                if (throwable != null) {
-                    handleThrowable(throwable);
-                } else {
-                    emptyInFlightQueueIfWeCan();
-                }
-            } finally {
-                boolean empty = inFlightQIsEmpty();
-                finallyAfterEachPromisesFinishes(empty);
+    protected void whenNextFinished(CompletionStage<D> completionStage, D d, Throwable throwable) {
+        try {
+            if (throwable != null) {
+                handleThrowableDuringMapping(throwable);
+            } else {
+                emptyInFlightQueueIfWeCan();
             }
-        };
+        } finally {
+            boolean empty = inFlightQIsEmpty();
+            finallyAfterEachPromisesFinishes(empty);
+        }
     }
 
     private void emptyInFlightQueueIfWeCan() {
-        if (isTerminated()) {
-            return;
-        }
         // done inside a memory lock, so we cant offer new CFs to the queue
         // until we have processed any completed ones from the start of
         // the queue.
@@ -66,7 +61,7 @@ public class CompletionStageOrderedSubscriber<U, D> extends CompletionStageSubsc
                             //
                             // if we get an exception while joining on a value, we
                             // send it into the exception handling and break out
-                            handleThrowable(cfExceptionUnwrap(rte));
+                            handleThrowableDuringMapping(cfExceptionUnwrap(rte));
                             break;
                         }
                         downstreamSubscriber.onNext(value);

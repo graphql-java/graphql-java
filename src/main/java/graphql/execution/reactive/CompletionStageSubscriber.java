@@ -2,6 +2,7 @@ package graphql.execution.reactive;
 
 import graphql.Internal;
 import graphql.util.LockKit;
+import org.jetbrains.annotations.NotNull;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 
@@ -27,17 +28,25 @@ public class CompletionStageSubscriber<U, D> implements Subscriber<U> {
     protected Subscription delegatingSubscription;
     protected final Queue<CompletionStage<?>> inFlightDataQ;
     protected final LockKit.ReentrantLock lock = new LockKit.ReentrantLock();
-    protected final AtomicReference<Runnable> onCompleteOrErrorRun;
-    protected final AtomicBoolean isTerminated;
+    protected final AtomicReference<Runnable> onCompleteRun;
+    protected final AtomicBoolean isTerminal;
 
     public CompletionStageSubscriber(Function<U, CompletionStage<D>> mapper, Subscriber<? super D> downstreamSubscriber) {
         this.mapper = mapper;
         this.downstreamSubscriber = downstreamSubscriber;
         inFlightDataQ = new ArrayDeque<>();
-        onCompleteOrErrorRun = new AtomicReference<>();
-        isTerminated = new AtomicBoolean(false);
+        onCompleteRun = new AtomicReference<>();
+        isTerminal = new AtomicBoolean(false);
     }
 
+    /**
+     * Get instance of downstream subscriber
+     *
+     * @return {@link Subscriber}
+     */
+    public Subscriber<? super D> getDownstreamSubscriber() {
+        return downstreamSubscriber;
+    }
 
     @Override
     public void onSubscribe(Subscription subscription) {
@@ -48,16 +57,26 @@ public class CompletionStageSubscriber<U, D> implements Subscriber<U> {
     @Override
     public void onNext(U u) {
         // for safety - no more data after we have called done/error - we should not get this BUT belts and braces
-        if (isTerminated()) {
+        if (isTerminal()) {
             return;
         }
         try {
             CompletionStage<D> completionStage = mapper.apply(u);
             offerToInFlightQ(completionStage);
-            completionStage.whenComplete(whenNextFinished(completionStage));
+            completionStage.whenComplete(whenComplete(completionStage));
         } catch (RuntimeException throwable) {
-            handleThrowable(throwable);
+            handleThrowableDuringMapping(throwable);
         }
+    }
+
+    @NotNull
+    private BiConsumer<D, Throwable> whenComplete(CompletionStage<D> completionStage) {
+        return (d, throwable) -> {
+            if (isTerminal()) {
+                return;
+            }
+            whenNextFinished(completionStage, d, throwable);
+        };
     }
 
     /**
@@ -65,40 +84,38 @@ public class CompletionStageSubscriber<U, D> implements Subscriber<U> {
      * a value or exception
      *
      * @param completionStage the completion stage that has completed
-     *
-     * @return a handle function for {@link CompletionStage#whenComplete(BiConsumer)}
+     * @param d               the value completed
+     * @param throwable       or the throwable that happened during completion
      */
-    protected BiConsumer<D, Throwable> whenNextFinished(CompletionStage<D> completionStage) {
-        return (d, throwable) -> {
-            try {
-                if (throwable != null) {
-                    handleThrowable(throwable);
-                } else {
-                    downstreamSubscriber.onNext(d);
-                }
-            } finally {
-                boolean empty = removeFromInFlightQAndCheckIfEmpty(completionStage);
-                finallyAfterEachPromisesFinishes(empty);
+    protected void whenNextFinished(CompletionStage<D> completionStage, D d, Throwable throwable) {
+        try {
+            if (throwable != null) {
+                handleThrowableDuringMapping(throwable);
+            } else {
+                downstreamSubscriber.onNext(d);
             }
-        };
+        } finally {
+            boolean empty = removeFromInFlightQAndCheckIfEmpty(completionStage);
+            finallyAfterEachPromisesFinishes(empty);
+        }
     }
 
     protected void finallyAfterEachPromisesFinishes(boolean isInFlightEmpty) {
         //
         // if the runOnCompleteOrErrorRun runnable is set, the upstream has
-        // called onError() or onComplete() already, but the CFs have not all completed
+        // called onComplete() already, but the CFs have not all completed
         // yet, so we have to check whenever a CF completes
         //
-        Runnable runOnCompleteOrErrorRun = onCompleteOrErrorRun.get();
+        Runnable runOnCompleteOrErrorRun = onCompleteRun.get();
         if (isInFlightEmpty && runOnCompleteOrErrorRun != null) {
-            onCompleteOrErrorRun.set(null);
+            onCompleteRun.set(null);
             runOnCompleteOrErrorRun.run();
         }
     }
 
-    protected void handleThrowable(Throwable throwable) {
+    protected void handleThrowableDuringMapping(Throwable throwable) {
         // only do this once
-        if (isTerminated.compareAndSet(false, true)) {
+        if (isTerminal.compareAndSet(false, true)) {
             downstreamSubscriber.onError(throwable);
             //
             // Reactive semantics say that IF an exception happens on a publisher,
@@ -113,35 +130,27 @@ public class CompletionStageSubscriber<U, D> implements Subscriber<U> {
 
     @Override
     public void onError(Throwable t) {
-        onCompleteOrError(() -> {
-            isTerminated.set(true);
+        // we immediately terminate - we don't wait for any promises to complete
+        if (isTerminal.compareAndSet(false, true)) {
             downstreamSubscriber.onError(t);
-        });
+        }
     }
 
     @Override
     public void onComplete() {
-        onCompleteOrError(() -> {
-            isTerminated.set(true);
-            downstreamSubscriber.onComplete();
+        onComplete(() -> {
+            if (isTerminal.compareAndSet(false, true)) {
+                downstreamSubscriber.onComplete();
+            }
         });
     }
 
-    /**
-     * Get instance of downstream subscriber
-     *
-     * @return {@link Subscriber}
-     */
-    public Subscriber<? super D> getDownstreamSubscriber() {
-        return downstreamSubscriber;
-    }
-
-    private void onCompleteOrError(Runnable doneCodeToRun) {
+    private void onComplete(Runnable doneCodeToRun) {
         if (inFlightQIsEmpty()) {
             // run right now
             doneCodeToRun.run();
         } else {
-            onCompleteOrErrorRun.set(doneCodeToRun);
+            onCompleteRun.set(doneCodeToRun);
         }
     }
 
@@ -163,7 +172,12 @@ public class CompletionStageSubscriber<U, D> implements Subscriber<U> {
         return lock.callLocked(inFlightDataQ::isEmpty);
     }
 
-    protected boolean isTerminated() {
-        return isTerminated.get();
+    /**
+     * The two terminal states are onComplete or onError
+     *
+     * @return true if it's in a terminal state
+     */
+    protected boolean isTerminal() {
+        return isTerminal.get();
     }
 }

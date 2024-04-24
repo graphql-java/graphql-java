@@ -74,6 +74,13 @@ public class CapturingSubscriber<T> implements Subscriber<T> {
         return done;
     }
 
+    public boolean isCompleted() {
+        return done.get() && throwable == null;
+    }
+    public boolean isCompletedExceptionally() {
+        return done.get() && throwable != null;
+    }
+
     public Subscription getSubscription() {
         return subscription;
     }
