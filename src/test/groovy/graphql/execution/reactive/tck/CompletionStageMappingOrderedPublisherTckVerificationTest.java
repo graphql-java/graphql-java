@@ -1,5 +1,6 @@
-package graphql.execution.reactive;
+package graphql.execution.reactive.tck;
 
+import graphql.execution.reactive.CompletionStageMappingOrderedPublisher;
 import io.reactivex.Flowable;
 import org.reactivestreams.Publisher;
 import org.reactivestreams.tck.PublisherVerification;
@@ -16,9 +17,9 @@ import java.util.function.Function;
  * when it's got CFs that complete off thread
  */
 @Test
-public class CompletionStageMappingPublisherTckVerificationTest extends PublisherVerification<String> {
+public class CompletionStageMappingOrderedPublisherTckVerificationTest extends PublisherVerification<String> {
 
-    public CompletionStageMappingPublisherTckVerificationTest() {
+    public CompletionStageMappingOrderedPublisherTckVerificationTest() {
         super(new TestEnvironment(Duration.ofMillis(1000).toMillis()));
     }
 
@@ -31,14 +32,14 @@ public class CompletionStageMappingPublisherTckVerificationTest extends Publishe
     public Publisher<String> createPublisher(long elements) {
         Publisher<Integer> publisher = Flowable.range(0, (int) elements);
         Function<Integer, CompletionStage<String>> mapper = i -> CompletableFuture.supplyAsync(() -> i + "!");
-        return new CompletionStageMappingPublisher<>(publisher, mapper);
+        return new CompletionStageMappingOrderedPublisher<>(publisher, mapper);
     }
 
     @Override
     public Publisher<String> createFailedPublisher() {
         Publisher<Integer> publisher = Flowable.error(() -> new RuntimeException("Bang"));
         Function<Integer, CompletionStage<String>> mapper = i -> CompletableFuture.supplyAsync(() -> i + "!");
-        return new CompletionStageMappingPublisher<>(publisher, mapper);
+        return new CompletionStageMappingOrderedPublisher<>(publisher, mapper);
     }
 
     @Override

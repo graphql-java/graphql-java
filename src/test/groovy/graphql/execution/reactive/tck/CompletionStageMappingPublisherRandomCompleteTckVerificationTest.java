@@ -1,5 +1,6 @@
-package graphql.execution.reactive;
+package graphql.execution.reactive.tck;
 
+import graphql.execution.reactive.CompletionStageMappingPublisher;
 import io.reactivex.Flowable;
 import org.jetbrains.annotations.NotNull;
 import org.reactivestreams.Publisher;
