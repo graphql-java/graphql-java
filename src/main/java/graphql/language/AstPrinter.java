@@ -1,6 +1,5 @@
 package graphql.language;
 
-import graphql.AssertException;
 import graphql.PublicApi;
 import graphql.collect.ImmutableKit;
 
@@ -12,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.StringJoiner;
 
+import static graphql.Assert.assertShouldNeverHappen;
 import static graphql.Assert.assertTrue;
 import static graphql.util.EscapeUtil.escapeJsonString;
 import static java.lang.String.valueOf;
@@ -482,7 +482,7 @@ public class AstPrinter {
             }
             clazz = clazz.getSuperclass();
         }
-        throw new AssertException(String.format("We have a missing printer implementation for %s : report a bug!", clazz));
+        return assertShouldNeverHappen("We have a missing printer implementation for %s : report a bug!", clazz);
     }
 
     private <T> boolean isEmpty(List<T> list) {
@@ -541,7 +541,7 @@ public class AstPrinter {
     }
 
     private String directives(List<Directive> directives) {
-        return join(nvl(directives), compactMode? "" : " ");
+        return join(nvl(directives), compactMode ? "" : " ");
     }
 
     private <T extends Node> String join(List<T> nodes, String delim) {
@@ -564,7 +564,7 @@ public class AstPrinter {
                 first = false;
             } else {
                 boolean canButtTogether = lastNodeText.endsWith("}");
-                if (! canButtTogether) {
+                if (!canButtTogether) {
                     joined.append(delim);
                 }
             }
@@ -704,7 +704,8 @@ public class AstPrinter {
 
     /**
      * Allow subclasses to replace a printer for a specific {@link Node}
-     * @param nodeClass the class of the {@link Node}
+     *
+     * @param nodeClass   the class of the {@link Node}
      * @param nodePrinter the custom {@link NodePrinter}
      */
     void replacePrinter(Class<? extends Node> nodeClass, NodePrinter<? extends Node> nodePrinter) {

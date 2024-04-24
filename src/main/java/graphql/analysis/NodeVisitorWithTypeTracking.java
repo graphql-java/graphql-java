@@ -36,7 +36,6 @@ import java.util.Map;
 import static graphql.Assert.assertNotNull;
 import static graphql.schema.GraphQLTypeUtil.unwrapAll;
 import static graphql.util.TraverserContext.Phase.LEAVE;
-import static java.lang.String.format;
 
 /**
  * Internally used node visitor which delegates to a {@link QueryVisitor} with type
@@ -142,8 +141,8 @@ public class NodeVisitorWithTypeTracking extends NodeVisitorStub {
 
         GraphQLCompositeType typeCondition = (GraphQLCompositeType) schema.getType(fragmentDefinition.getTypeCondition().getName());
         assertNotNull(typeCondition,
-                () -> format("Invalid type condition '%s' in fragment '%s'", fragmentDefinition.getTypeCondition().getName(),
-                        fragmentDefinition.getName()));
+                "Invalid type condition '%s' in fragment '%s'", fragmentDefinition.getTypeCondition().getName(),
+                fragmentDefinition.getName());
         context.setVar(QueryTraversalContext.class, new QueryTraversalContext(typeCondition, parentEnv.getEnvironment(), fragmentDefinition, graphQLContext));
         return TraversalControl.CONTINUE;
     }
@@ -204,7 +203,7 @@ public class NodeVisitorWithTypeTracking extends NodeVisitorStub {
         QueryVisitorFieldEnvironment fieldEnv = fieldCtx.getEnvironment();
         GraphQLFieldsContainer fieldsContainer = fieldEnv.getFieldsContainer();
 
-        GraphQLFieldDefinition fieldDefinition = Introspection.getFieldDef(schema, fieldsContainer, field.getName());
+        GraphQLFieldDefinition fieldDefinition = Introspection.getFieldDefinition(schema, fieldsContainer, field.getName());
         GraphQLArgument graphQLArgument = fieldDefinition.getArgument(argument.getName());
         String argumentName = graphQLArgument.getName();
 

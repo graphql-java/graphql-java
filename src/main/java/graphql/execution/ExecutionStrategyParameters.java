@@ -1,6 +1,5 @@
 package graphql.execution;
 
-import graphql.Assert;
 import graphql.PublicApi;
 import graphql.execution.incremental.DeferredCallContext;
 
@@ -114,7 +113,7 @@ public class ExecutionStrategyParameters {
         ResultPath path = ResultPath.rootPath();
         MergedField currentField;
         ExecutionStrategyParameters parent;
-        DeferredCallContext deferredCallContext = new DeferredCallContext();
+        DeferredCallContext deferredCallContext;
 
         /**
          * @see ExecutionStrategyParameters#newParameters()
@@ -168,7 +167,7 @@ public class ExecutionStrategyParameters {
         }
 
         public Builder nonNullFieldValidator(NonNullableFieldValidator nonNullableFieldValidator) {
-            this.nonNullableFieldValidator = Assert.assertNotNull(nonNullableFieldValidator, () -> "requires a NonNullValidator");
+            this.nonNullableFieldValidator = assertNotNull(nonNullableFieldValidator, () -> "requires a NonNullValidator");
             return this;
         }
 
@@ -188,6 +187,9 @@ public class ExecutionStrategyParameters {
         }
 
         public ExecutionStrategyParameters build() {
+            if (deferredCallContext == null) {
+                deferredCallContext = new DeferredCallContext();
+            }
             return new ExecutionStrategyParameters(executionStepInfo, source, localContext, fields, nonNullableFieldValidator, path, currentField, parent, deferredCallContext);
         }
     }

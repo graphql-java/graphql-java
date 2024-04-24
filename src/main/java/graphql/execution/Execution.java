@@ -107,9 +107,10 @@ public class Execution {
                 .executionInput(executionInput)
                 .build();
 
+        executionContext.getGraphQLContext().put(ResultNodesInfo.RESULT_NODES_INFO, executionContext.getResultNodesInfo());
 
         InstrumentationExecutionParameters parameters = new InstrumentationExecutionParameters(
-                executionInput, graphQLSchema, instrumentationState
+                executionInput, graphQLSchema
         );
         executionContext = instrumentation.instrumentExecutionContext(executionContext, parameters, instrumentationState);
         return executeOperation(executionContext, executionInput.getRoot(), executionContext.getOperationDefinition());
@@ -134,7 +135,7 @@ public class Execution {
                 ExecutionResult executionResult = new ExecutionResultImpl(Collections.singletonList((GraphQLError) rte));
                 CompletableFuture<ExecutionResult> resultCompletableFuture = completedFuture(executionResult);
 
-                executeOperationCtx.onDispatched(resultCompletableFuture);
+                executeOperationCtx.onDispatched();
                 executeOperationCtx.onCompleted(executionResult, rte);
                 return resultCompletableFuture;
             }
@@ -189,7 +190,7 @@ public class Execution {
         }
 
         // note this happens NOW - not when the result completes
-        executeOperationCtx.onDispatched(result);
+        executeOperationCtx.onDispatched();
 
         // fill out extensions if we have them
         result = result.thenApply(er -> mergeExtensionsBuilderIfPresent(er, graphQLContext));

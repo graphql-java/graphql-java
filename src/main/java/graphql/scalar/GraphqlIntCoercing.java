@@ -16,7 +16,7 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Locale;
 
-import static graphql.Assert.assertNotNull;
+import static graphql.Assert.assertShouldNeverHappen;
 import static graphql.scalar.CoercingUtil.i18nMsg;
 import static graphql.scalar.CoercingUtil.isNumberIsh;
 import static graphql.scalar.CoercingUtil.typeName;
@@ -64,15 +64,44 @@ public class GraphqlIntCoercing implements Coercing<Integer, Integer> {
 
     @NotNull
     private Integer parseValueImpl(@NotNull Object input, @NotNull Locale locale) {
-        Integer result = convertImpl(input);
-
-        if (result == null) {
+        if (!(input instanceof Number)) {
             throw new CoercingParseValueException(
                     i18nMsg(locale, "Int.notInt", typeName(input))
             );
         }
 
-        return result;
+        if (input instanceof Integer) {
+            return (Integer) input;
+        }
+
+        BigInteger result = convertParseValueImpl(input);
+        if (result == null) {
+            throw new CoercingParseValueException(
+                    i18nMsg(locale, "Int.notInt", typeName(input))
+            );
+        }
+        if (result.compareTo(INT_MIN) < 0 || result.compareTo(INT_MAX) > 0) {
+            throw new CoercingParseValueException(
+                    i18nMsg(locale, "Int.outsideRange", result.toString())
+            );
+        }
+        return result.intValueExact();
+    }
+
+    private BigInteger convertParseValueImpl(Object input) {
+        BigDecimal value;
+        try {
+            value = new BigDecimal(input.toString());
+        } catch (NumberFormatException e) {
+            return null;
+        }
+
+        try {
+            return value.toBigIntegerExact();
+        } catch (ArithmeticException e) {
+            // Exception if number has non-zero fractional part
+            return null;
+        }
     }
 
     private static int parseLiteralImpl(Object input, @NotNull Locale locale) {
@@ -91,7 +120,10 @@ public class GraphqlIntCoercing implements Coercing<Integer, Integer> {
     }
 
     private IntValue valueToLiteralImpl(Object input, @NotNull Locale locale) {
-        Integer result = assertNotNull(convertImpl(input),() -> i18nMsg(locale, "Int.notInt", typeName(input)));
+        Integer result = convertImpl(input);
+        if (result == null) {
+            assertShouldNeverHappen(i18nMsg(locale, "Int.notInt", typeName(input)));
+        }
         return IntValue.newIntValue(BigInteger.valueOf(result)).build();
     }
 
@@ -131,7 +163,7 @@ public class GraphqlIntCoercing implements Coercing<Integer, Integer> {
 
     @Override
     @Deprecated
-    public Value valueToLiteral(@NotNull Object input) {
+    public @NotNull Value<?> valueToLiteral(@NotNull Object input) {
         return valueToLiteralImpl(input, Locale.getDefault());
     }
 

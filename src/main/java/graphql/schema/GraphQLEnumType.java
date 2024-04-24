@@ -66,7 +66,7 @@ public class GraphQLEnumType implements GraphQLNamedInputType, GraphQLNamedOutpu
         this.description = description;
         this.definition = definition;
         this.extensionDefinitions = ImmutableList.copyOf(extensionDefinitions);
-        this.directivesHolder = new DirectivesUtil.DirectivesHolder(directives, appliedDirectives);
+        this.directivesHolder = DirectivesUtil.DirectivesHolder.create(directives, appliedDirectives);
         this.valueDefinitionMap = buildMap(values);
     }
 
@@ -130,7 +130,9 @@ public class GraphQLEnumType implements GraphQLNamedInputType, GraphQLNamedOutpu
     @Internal
     public Value<?> valueToLiteral(Object input, GraphQLContext graphQLContext, Locale locale) {
         GraphQLEnumValueDefinition enumValueDefinition = valueDefinitionMap.get(input.toString());
-        assertNotNull(enumValueDefinition, () -> i18nMsg(locale, "Enum.badName", name, input.toString()));
+        if (enumValueDefinition == null) {
+            assertShouldNeverHappen(i18nMsg(locale, "Enum.badName", name, input.toString()));
+        };
         return EnumValue.newEnumValue(enumValueDefinition.getName()).build();
 
     }

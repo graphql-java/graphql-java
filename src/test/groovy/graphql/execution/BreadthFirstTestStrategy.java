@@ -41,7 +41,7 @@ public class BreadthFirstTestStrategy extends ExecutionStrategy {
         for (String fieldName : fields.keySet()) {
             ExecutionStrategyParameters newParameters = newParameters(parameters, fields, fieldName);
 
-            CompletableFuture<FetchedValue> fetchFuture = fetchField(executionContext, newParameters);
+            CompletableFuture<FetchedValue> fetchFuture = Async.toCompletableFuture(fetchField(executionContext, newParameters));
             fetchFutures.put(fieldName, fetchFuture);
         }
 

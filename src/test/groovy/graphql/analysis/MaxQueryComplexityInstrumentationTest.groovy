@@ -167,7 +167,7 @@ class MaxQueryComplexityInstrumentationTest extends Specification {
 
     private InstrumentationExecuteOperationParameters createExecuteOperationParameters(MaxQueryComplexityInstrumentation queryComplexityInstrumentation, ExecutionInput executionInput, Document query, GraphQLSchema schema, InstrumentationState state) {
         // we need to run N steps to create instrumentation state
-        def validationParameters = new InstrumentationValidationParameters(executionInput, query, schema, state)
+        def validationParameters = new InstrumentationValidationParameters(executionInput, query, schema)
         queryComplexityInstrumentation.beginValidation(validationParameters, state)
         def executionContext = executionCtx(executionInput, query, schema)
         def executeOperationParameters = new InstrumentationExecuteOperationParameters(executionContext)
@@ -175,7 +175,7 @@ class MaxQueryComplexityInstrumentationTest extends Specification {
     }
 
     def createInstrumentationState(MaxQueryComplexityInstrumentation queryComplexityInstrumentation) {
-        queryComplexityInstrumentation.createState(null)
+        queryComplexityInstrumentation.createStateAsync(null).join()
     }
 
 

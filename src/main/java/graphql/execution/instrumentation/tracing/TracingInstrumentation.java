@@ -72,8 +72,8 @@ public class TracingInstrumentation extends SimplePerformantInstrumentation {
     private final Options options;
 
     @Override
-    public @Nullable InstrumentationState createState(InstrumentationCreateStateParameters parameters) {
-        return new TracingSupport(options.includeTrivialDataFetchers);
+    public @Nullable CompletableFuture<InstrumentationState> createStateAsync(InstrumentationCreateStateParameters parameters) {
+        return CompletableFuture.completedFuture(new TracingSupport(options.includeTrivialDataFetchers));
     }
 
     @Override

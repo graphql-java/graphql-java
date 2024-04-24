@@ -7,10 +7,10 @@ import graphql.schema.GraphQLScalarType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphqlTypeComparatorRegistry;
 import graphql.schema.TypeResolver;
+import graphql.schema.idl.errors.StrictModeWiringException;
 import graphql.schema.visibility.GraphqlFieldVisibility;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -19,6 +19,7 @@ import java.util.function.UnaryOperator;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.schema.visibility.DefaultGraphqlFieldVisibility.DEFAULT_FIELD_VISIBILITY;
+import static java.lang.String.format;
 
 /**
  * A runtime wiring is a specification of data fetchers, type resolvers and custom scalars that are needed
@@ -35,7 +36,6 @@ public class RuntimeWiring {
     private final List<SchemaDirectiveWiring> directiveWiring;
     private final WiringFactory wiringFactory;
     private final Map<String, EnumValuesProvider> enumValuesProviders;
-    private final Collection<SchemaGeneratorPostProcessing> schemaGeneratorPostProcessings;
     private final GraphqlFieldVisibility fieldVisibility;
     private final GraphQLCodeRegistry codeRegistry;
     private final GraphqlTypeComparatorRegistry comparatorRegistry;
@@ -57,7 +57,6 @@ public class RuntimeWiring {
         this.directiveWiring = builder.directiveWiring;
         this.wiringFactory = builder.wiringFactory;
         this.enumValuesProviders = builder.enumValuesProviders;
-        this.schemaGeneratorPostProcessings = builder.schemaGeneratorPostProcessings;
         this.fieldVisibility = builder.fieldVisibility;
         this.codeRegistry = builder.codeRegistry;
         this.comparatorRegistry = builder.comparatorRegistry;
@@ -85,7 +84,6 @@ public class RuntimeWiring {
         builder.directiveWiring.addAll(originalRuntimeWiring.directiveWiring);
         builder.wiringFactory = originalRuntimeWiring.wiringFactory;
         builder.enumValuesProviders.putAll(originalRuntimeWiring.enumValuesProviders);
-        builder.schemaGeneratorPostProcessings.addAll(originalRuntimeWiring.schemaGeneratorPostProcessings);
         builder.fieldVisibility = originalRuntimeWiring.fieldVisibility;
         builder.codeRegistry = originalRuntimeWiring.codeRegistry;
         builder.comparatorRegistry = originalRuntimeWiring.comparatorRegistry;
@@ -150,10 +148,6 @@ public class RuntimeWiring {
         return directiveWiring;
     }
 
-    public Collection<SchemaGeneratorPostProcessing> getSchemaGeneratorPostProcessings() {
-        return schemaGeneratorPostProcessings;
-    }
-
     public GraphqlTypeComparatorRegistry getComparatorRegistry() {
         return comparatorRegistry;
     }
@@ -167,14 +161,24 @@ public class RuntimeWiring {
         private final Map<String, EnumValuesProvider> enumValuesProviders = new LinkedHashMap<>();
         private final Map<String, SchemaDirectiveWiring> registeredDirectiveWiring = new LinkedHashMap<>();
         private final List<SchemaDirectiveWiring> directiveWiring = new ArrayList<>();
-        private final Collection<SchemaGeneratorPostProcessing> schemaGeneratorPostProcessings = new ArrayList<>();
         private WiringFactory wiringFactory = new NoopWiringFactory();
+        private boolean strictMode = false;
         private GraphqlFieldVisibility fieldVisibility = DEFAULT_FIELD_VISIBILITY;
         private GraphQLCodeRegistry codeRegistry = GraphQLCodeRegistry.newCodeRegistry().build();
         private GraphqlTypeComparatorRegistry comparatorRegistry = GraphqlTypeComparatorRegistry.AS_IS_REGISTRY;
 
         private Builder() {
             ScalarInfo.GRAPHQL_SPECIFICATION_SCALARS.forEach(this::scalar);
+        }
+
+        /**
+         * This puts the builder into strict mode, so if things get defined twice, for example, it will throw a {@link StrictModeWiringException}.
+         *
+         * @return this builder
+         */
+        public Builder strictMode() {
+            this.strictMode = true;
+            return this;
         }
 
         /**
@@ -222,6 +226,9 @@ public class RuntimeWiring {
          * @return the runtime wiring builder
          */
         public Builder scalar(GraphQLScalarType scalarType) {
+            if (strictMode && scalars.containsKey(scalarType.getName())) {
+                throw new StrictModeWiringException(format("The scalar %s is already defined", scalarType.getName()));
+            }
             scalars.put(scalarType.getName(), scalarType);
             return this;
         }
@@ -272,17 +279,26 @@ public class RuntimeWiring {
         public Builder type(TypeRuntimeWiring typeRuntimeWiring) {
             String typeName = typeRuntimeWiring.getTypeName();
             Map<String, DataFetcher> typeDataFetchers = dataFetchers.computeIfAbsent(typeName, k -> new LinkedHashMap<>());
-            typeRuntimeWiring.getFieldDataFetchers().forEach(typeDataFetchers::put);
+            if (strictMode && !typeDataFetchers.isEmpty()) {
+                throw new StrictModeWiringException(format("The type %s has already been defined", typeName));
+            }
+            typeDataFetchers.putAll(typeRuntimeWiring.getFieldDataFetchers());
 
             defaultDataFetchers.put(typeName, typeRuntimeWiring.getDefaultDataFetcher());
 
             TypeResolver typeResolver = typeRuntimeWiring.getTypeResolver();
             if (typeResolver != null) {
+                if (strictMode && this.typeResolvers.containsKey(typeName)) {
+                    throw new StrictModeWiringException(format("The type %s already has a type resolver defined", typeName));
+                }
                 this.typeResolvers.put(typeName, typeResolver);
             }
 
             EnumValuesProvider enumValuesProvider = typeRuntimeWiring.getEnumValuesProvider();
             if (enumValuesProvider != null) {
+                if (strictMode && this.enumValuesProviders.containsKey(typeName)) {
+                    throw new StrictModeWiringException(format("The type %s already has a enum provider defined", typeName));
+                }
                 this.enumValuesProviders.put(typeName, enumValuesProvider);
             }
             return this;
@@ -346,20 +362,6 @@ public class RuntimeWiring {
             return this;
         }
 
-        /**
-         * Adds a schema transformer into the mix
-         *
-         * @param schemaGeneratorPostProcessing the non null schema transformer to add
-         *
-         * @return the runtime wiring builder
-         * @deprecated This mechanism can be achieved in a better way via {@link graphql.schema.SchemaTransformer}
-         * after the schema is built
-         */
-        @Deprecated(since = "2022-10-29")
-        public Builder transformer(SchemaGeneratorPostProcessing schemaGeneratorPostProcessing) {
-            this.schemaGeneratorPostProcessings.add(assertNotNull(schemaGeneratorPostProcessing));
-            return this;
-        }
 
         /**
          * @return the built runtime wiring

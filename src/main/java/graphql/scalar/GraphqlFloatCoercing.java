@@ -16,7 +16,7 @@ import org.jetbrains.annotations.Nullable;
 import java.math.BigDecimal;
 import java.util.Locale;
 
-import static graphql.Assert.assertNotNull;
+import static graphql.Assert.assertShouldNeverHappen;
 import static graphql.scalar.CoercingUtil.i18nMsg;
 import static graphql.scalar.CoercingUtil.isNumberIsh;
 import static graphql.scalar.CoercingUtil.typeName;
@@ -65,6 +65,12 @@ public class GraphqlFloatCoercing implements Coercing<Double, Double> {
 
     @NotNull
     private Double parseValueImpl(@NotNull Object input, @NotNull Locale locale) {
+        if (!(input instanceof Number)) {
+            throw new CoercingParseValueException(
+                    i18nMsg(locale, "Float.unexpectedRawValueType", typeName(input))
+            );
+        }
+
         Double result = convertImpl(input);
         if (result == null) {
             throw new CoercingParseValueException(
@@ -89,7 +95,10 @@ public class GraphqlFloatCoercing implements Coercing<Double, Double> {
 
     @NotNull
     private FloatValue valueToLiteralImpl(Object input, @NotNull Locale locale) {
-        Double result = assertNotNull(convertImpl(input), () -> i18nMsg(locale, "Float.notFloat", typeName(input)));
+        Double result = convertImpl(input);
+        if (result == null) {
+            assertShouldNeverHappen(i18nMsg(locale, "Float.notFloat", typeName(input)));
+        }
         return FloatValue.newFloatValue(BigDecimal.valueOf(result)).build();
     }
 

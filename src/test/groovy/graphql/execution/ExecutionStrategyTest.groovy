@@ -165,10 +165,10 @@ class ExecutionStrategyTest extends Specification {
                 .build()
 
         when:
-        def executionResult = executionStrategy.completeValue(executionContext, parameters).fieldValue.join()
+        def executionResult = executionStrategy.completeValue(executionContext, parameters).fieldValueFuture.join()
 
         then:
-        executionResult.data == result
+        executionResult == result
     }
 
     def "completes value for java.util.Optional"() {
@@ -186,10 +186,10 @@ class ExecutionStrategyTest extends Specification {
                 .build()
 
         when:
-        def executionResult = executionStrategy.completeValue(executionContext, parameters).fieldValue.join()
+        def executionResult = executionStrategy.completeValue(executionContext, parameters).fieldValueFuture.join()
 
         then:
-        executionResult.data == expected
+        executionResult == expected
 
         where:
         result                    || expected
@@ -212,7 +212,7 @@ class ExecutionStrategyTest extends Specification {
                 .build()
 
         when:
-        executionStrategy.completeValue(executionContext, parameters).fieldValue.join()
+        executionStrategy.completeValue(executionContext, parameters).fieldValueFuture.join()
 
         then:
         def e = thrown(CompletionException)
@@ -234,10 +234,10 @@ class ExecutionStrategyTest extends Specification {
                 .build()
 
         when:
-        def executionResult = executionStrategy.completeValue(executionContext, parameters).fieldValue.join()
+        def executionResult = executionStrategy.completeValue(executionContext, parameters).fieldValueFuture.join()
 
         then:
-        executionResult.data == expected
+        executionResult == expected
 
         where:
         result              || expected
@@ -260,7 +260,7 @@ class ExecutionStrategyTest extends Specification {
                 .build()
 
         when:
-        executionStrategy.completeValue(executionContext, parameters).fieldValue.join()
+        executionStrategy.completeValue(executionContext, parameters).fieldValueFuture.join()
 
         then:
         def e = thrown(CompletionException)
@@ -282,10 +282,10 @@ class ExecutionStrategyTest extends Specification {
                 .build()
 
         when:
-        def executionResult = executionStrategy.completeValue(executionContext, parameters).fieldValue.join()
+        def executionResult = executionStrategy.completeValue(executionContext, parameters).fieldValueFuture.join()
 
         then:
-        executionResult.data == expected
+        executionResult == expected
 
         where:
         result                 || expected
@@ -308,7 +308,7 @@ class ExecutionStrategyTest extends Specification {
                 .build()
 
         when:
-        executionStrategy.completeValue(executionContext, parameters).fieldValue.join()
+        executionStrategy.completeValue(executionContext, parameters).fieldValueFuture.join()
 
         then:
         def e = thrown(CompletionException)
@@ -330,10 +330,10 @@ class ExecutionStrategyTest extends Specification {
                 .build()
 
         when:
-        def executionResult = executionStrategy.completeValue(executionContext, parameters).fieldValue.join()
+        def executionResult = executionStrategy.completeValue(executionContext, parameters).fieldValueFuture.join()
 
         then:
-        executionResult.data == expected
+        executionResult == expected
 
         where:
         result               || expected
@@ -356,7 +356,7 @@ class ExecutionStrategyTest extends Specification {
                 .build()
 
         when:
-        executionStrategy.completeValue(executionContext, parameters).fieldValue.join()
+        executionStrategy.completeValue(executionContext, parameters).fieldValueFuture.join()
 
         then:
         def e = thrown(CompletionException)
@@ -380,10 +380,10 @@ class ExecutionStrategyTest extends Specification {
                 .build()
 
         when:
-        def executionResult = executionStrategy.completeValue(executionContext, parameters).fieldValue.join()
+        def executionResult = executionStrategy.completeValue(executionContext, parameters).fieldValueFuture.join()
 
         then:
-        executionResult.data == result
+        executionResult == result
     }
 
     def "completing value with serializing throwing exception"() {
@@ -402,10 +402,10 @@ class ExecutionStrategyTest extends Specification {
                 .build()
 
         when:
-        def executionResult = executionStrategy.completeValue(executionContext, parameters).fieldValue.join()
+        def executionResult = executionStrategy.completeValue(executionContext, parameters).fieldValueFuture.join()
 
         then:
-        executionResult.data == null
+        executionResult == null
         executionContext.errors.size() == 1
         executionContext.errors[0] instanceof SerializationError
 
@@ -427,10 +427,10 @@ class ExecutionStrategyTest extends Specification {
                 .build()
 
         when:
-        def executionResult = executionStrategy.completeValue(executionContext, parameters).fieldValue.join()
+        def executionResult = executionStrategy.completeValue(executionContext, parameters).fieldValueFuture.join()
 
         then:
-        executionResult.data == null
+        executionResult == null
         executionContext.errors.size() == 1
         executionContext.errors[0] instanceof SerializationError
 
@@ -787,10 +787,10 @@ class ExecutionStrategyTest extends Specification {
                 .build()
 
         when:
-        def executionResult = executionStrategy.completeValue(executionContext, parameters).fieldValue
+        def executionResult = executionStrategy.completeValue(executionContext, parameters).fieldValueFuture.join()
 
         then:
-        executionResult.get().data == [1, 2, 3]
+        executionResult == [1, 2, 3]
     }
 
     def "#842 completes value for java.util.Stream"() {
@@ -811,10 +811,10 @@ class ExecutionStrategyTest extends Specification {
                 .build()
 
         when:
-        def executionResult = executionStrategy.completeValue(executionContext, parameters).fieldValue
+        def executionResult = executionStrategy.completeValue(executionContext, parameters).fieldValueFuture.join()
 
         then:
-        executionResult.get().data == [1, 2, 3]
+        executionResult == [1, 2, 3]
     }
 
     def "#842 completes value for java.util.Iterator"() {
@@ -835,10 +835,10 @@ class ExecutionStrategyTest extends Specification {
                 .build()
 
         when:
-        def executionResult = executionStrategy.completeValue(executionContext, parameters).fieldValue
+        def executionResult = executionStrategy.completeValue(executionContext, parameters).fieldValueFuture.join()
 
         then:
-        executionResult.get().data == [1, 2, 3]
+        executionResult == [1, 2, 3]
     }
 
 
@@ -941,10 +941,10 @@ class ExecutionStrategyTest extends Specification {
                 .build()
 
         when:
-        def executionResult = executionStrategy.completeValue(executionContext, parameters).fieldValue
+        def executionResult = executionStrategy.completeValue(executionContext, parameters).fieldValueFuture.join()
 
         then:
-        executionResult.get().data == [1L, 2L, 3L]
+        executionResult == [1L, 2L, 3L]
     }
 
     def "when completeValue expects GraphQLList and non iterable or non array is passed then it should yield a TypeMismatch error"() {
@@ -965,10 +965,10 @@ class ExecutionStrategyTest extends Specification {
                 .build()
 
         when:
-        def executionResult = executionStrategy.completeValue(executionContext, parameters).fieldValue.join()
+        def executionResult = executionStrategy.completeValue(executionContext, parameters).fieldValueFuture.join()
 
         then:
-        executionResult.data == null
+        executionResult == null
         executionContext.errors.size() == 1
         executionContext.errors[0] instanceof TypeMismatchError
     }

@@ -2,7 +2,6 @@ package graphql.normalized;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import graphql.Assert;
 import graphql.ExperimentalApi;
 import graphql.Internal;
 import graphql.Mutable;
@@ -184,7 +183,7 @@ public class ExecutableNormalizedField {
     public GraphQLOutputType getType(GraphQLSchema schema) {
         List<GraphQLFieldDefinition> fieldDefinitions = getFieldDefinitions(schema);
         Set<String> fieldTypes = fieldDefinitions.stream().map(fd -> simplePrint(fd.getType())).collect(toSet());
-        Assert.assertTrue(fieldTypes.size() == 1, () -> "More than one type ... use getTypes");
+        assertTrue(fieldTypes.size() == 1, () -> "More than one type ... use getTypes");
         return fieldDefinitions.get(0).getType();
     }
 
@@ -201,7 +200,7 @@ public class ExecutableNormalizedField {
 
         for (String objectTypeName : objectTypeNames) {
             GraphQLObjectType type = (GraphQLObjectType) assertNotNull(schema.getType(objectTypeName));
-            consumer.accept(assertNotNull(type.getField(fieldName), () -> String.format("No field %s found for type %s", fieldName, objectTypeName)));
+            consumer.accept(assertNotNull(type.getField(fieldName), "No field %s found for type %s", fieldName, objectTypeName));
         }
     }
 
@@ -224,7 +223,7 @@ public class ExecutableNormalizedField {
 
         String objectTypeName = objectTypeNames.iterator().next();
         GraphQLObjectType type = (GraphQLObjectType) assertNotNull(schema.getType(objectTypeName));
-        return assertNotNull(type.getField(fieldName), () -> String.format("No field %s found for type %s", fieldName, objectTypeName));
+        return assertNotNull(type.getField(fieldName), "No field %s found for type %s", fieldName, objectTypeName);
     }
 
     private static GraphQLFieldDefinition resolveIntrospectionField(GraphQLSchema schema, Set<String> objectTypeNames, String fieldName) {
@@ -478,6 +477,7 @@ public class ExecutableNormalizedField {
 
     /**
      * @return the {@link NormalizedDeferredExecution}s associated with this {@link ExecutableNormalizedField}.
+     *
      * @see NormalizedDeferredExecution
      */
     @ExperimentalApi

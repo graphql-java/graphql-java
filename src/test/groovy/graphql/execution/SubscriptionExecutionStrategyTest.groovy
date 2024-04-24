@@ -8,6 +8,7 @@ import graphql.GraphQLError
 import graphql.GraphqlErrorBuilder
 import graphql.TestUtil
 import graphql.TypeMismatchError
+import graphql.execution.instrumentation.InstrumentationState
 import graphql.execution.instrumentation.LegacyTestingInstrumentation
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters
 import graphql.execution.pubsub.CapturingSubscriber
@@ -579,7 +580,7 @@ class SubscriptionExecutionStrategyTest extends Specification {
         def instrumentResultCalls = []
         LegacyTestingInstrumentation instrumentation = new LegacyTestingInstrumentation() {
             @Override
-            CompletableFuture<ExecutionResult> instrumentExecutionResult(ExecutionResult executionResult, InstrumentationExecutionParameters parameters) {
+            CompletableFuture<ExecutionResult> instrumentExecutionResult(ExecutionResult executionResult, InstrumentationExecutionParameters parameters, InstrumentationState state) {
                 instrumentResultCalls.add("instrumentExecutionResult")
                 return CompletableFuture.completedFuture(executionResult)
             }

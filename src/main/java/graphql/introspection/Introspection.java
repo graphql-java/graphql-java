@@ -3,9 +3,13 @@ package graphql.introspection;
 
 import com.google.common.collect.ImmutableSet;
 import graphql.Assert;
+import graphql.ExecutionResult;
 import graphql.GraphQLContext;
 import graphql.Internal;
 import graphql.PublicApi;
+import graphql.execution.ExecutionContext;
+import graphql.execution.MergedField;
+import graphql.execution.MergedSelectionSet;
 import graphql.execution.ValuesResolver;
 import graphql.language.AstPrinter;
 import graphql.schema.FieldCoordinates;
@@ -32,6 +36,7 @@ import graphql.schema.GraphQLScalarType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLUnionType;
 import graphql.schema.InputValueWithState;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -39,7 +44,9 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -58,8 +65,88 @@ import static graphql.schema.GraphQLTypeUtil.simplePrint;
 import static graphql.schema.GraphQLTypeUtil.unwrapAllAs;
 import static graphql.schema.GraphQLTypeUtil.unwrapOne;
 
+/**
+ * GraphQl has a unique capability called <a href="https://spec.graphql.org/October2021/#sec-Introspection">Introspection</a> that allow
+ * consumers to inspect the system and discover the fields and types available and makes the system self documented.
+ * <p>
+ * Some security recommendations such as <a href="https://owasp.org/www-chapter-vancouver/assets/presentations/2020-06_GraphQL_Security.pdf">OWASP</a>
+ * recommend that introspection be disabled in production.  The {@link Introspection#enabledJvmWide(boolean)} method can be used to disable
+ * introspection for the whole JVM or you can place {@link Introspection#INTROSPECTION_DISABLED} into the {@link GraphQLContext} of a request
+ * to disable introspection for that request.
+ */
 @PublicApi
 public class Introspection {
+
+
+    /**
+     * Placing a boolean value under this key in the per request {@link GraphQLContext} will enable
+     * or disable Introspection on that request.
+     */
+    public static final String INTROSPECTION_DISABLED = "INTROSPECTION_DISABLED";
+    private static final AtomicBoolean INTROSPECTION_ENABLED_STATE = new AtomicBoolean(true);
+
+    /**
+     * This static method will enable / disable Introspection at a JVM wide level.
+     *
+     * @param enabled the flag indicating the desired enabled state
+     *
+     * @return the previous state of enablement
+     */
+    public static boolean enabledJvmWide(boolean enabled) {
+        return INTROSPECTION_ENABLED_STATE.getAndSet(enabled);
+    }
+
+    /**
+     * @return true if Introspection is enabled at a JVM wide level or false otherwise
+     */
+    public static boolean isEnabledJvmWide() {
+        return INTROSPECTION_ENABLED_STATE.get();
+    }
+
+    /**
+     * This will look in to the field selection set and see if there are introspection fields,
+     * and if there is,it checks if introspection should run, and if not it will return an errored {@link ExecutionResult}
+     * that can be returned to the user.
+     *
+     * @param mergedSelectionSet the fields to be executed
+     * @param executionContext   the execution context in play
+     *
+     * @return an optional error result
+     */
+    public static Optional<ExecutionResult> isIntrospectionSensible(MergedSelectionSet mergedSelectionSet, ExecutionContext executionContext) {
+        GraphQLContext graphQLContext = executionContext.getGraphQLContext();
+
+        boolean isIntrospection = false;
+        for (String key : mergedSelectionSet.getKeys()) {
+            String fieldName = mergedSelectionSet.getSubField(key).getName();
+            if (fieldName.equals(SchemaMetaFieldDef.getName())
+                    || fieldName.equals(TypeMetaFieldDef.getName())) {
+                if (!isIntrospectionEnabled(graphQLContext)) {
+                    return mkDisabledError(mergedSelectionSet.getSubField(key));
+                }
+                isIntrospection = true;
+                break;
+            }
+        }
+        if (isIntrospection) {
+            return GoodFaithIntrospection.checkIntrospection(executionContext);
+        }
+        return Optional.empty();
+    }
+
+    @NotNull
+    private static Optional<ExecutionResult> mkDisabledError(MergedField schemaField) {
+        IntrospectionDisabledError error = new IntrospectionDisabledError(schemaField.getSingleField().getSourceLocation());
+        return Optional.of(ExecutionResult.newExecutionResult().addError(error).build());
+    }
+
+    private static boolean isIntrospectionEnabled(GraphQLContext graphQlContext) {
+        if (!isEnabledJvmWide()) {
+            return false;
+        }
+        return !graphQlContext.getOrDefault(INTROSPECTION_DISABLED, false);
+    }
+
     private static final Map<FieldCoordinates, IntrospectionDataFetcher<?>> introspectionDataFetchers = new LinkedHashMap<>();
 
     private static void register(GraphQLFieldsContainer parentType, String fieldName, IntrospectionDataFetcher<?> introspectionDataFetcher) {
@@ -636,6 +723,7 @@ public class Introspection {
         return environment.getGraphQLSchema().getType(name);
     };
 
+    // __typename is always available
     public static final IntrospectionDataFetcher<?> TypeNameMetaFieldDefDataFetcher = environment -> simplePrint(environment.getParentType());
 
     @Internal
@@ -690,9 +778,14 @@ public class Introspection {
         return introspectionTypes.contains(type.getName());
     }
 
+    public static boolean isIntrospectionTypes(String typeName) {
+        return introspectionTypes.contains(typeName);
+    }
+
     /**
      * This will look up a field definition by name, and understand that fields like __typename and __schema are special
-     * and take precedence in field resolution
+     * and take precedence in field resolution.  If the parent type is a union type, then the only field allowed
+     * is `__typename`.
      *
      * @param schema     the schema to use
      * @param parentType the type of the parent object
@@ -702,6 +795,43 @@ public class Introspection {
      */
     public static GraphQLFieldDefinition getFieldDef(GraphQLSchema schema, GraphQLCompositeType parentType, String fieldName) {
 
+        GraphQLFieldDefinition fieldDefinition = getSystemFieldDef(schema, parentType, fieldName);
+        if (fieldDefinition != null) {
+            return fieldDefinition;
+        }
+
+        assertTrue(parentType instanceof GraphQLFieldsContainer, "should not happen : parent type must be an object or interface %s", parentType);
+        GraphQLFieldsContainer fieldsContainer = (GraphQLFieldsContainer) parentType;
+        fieldDefinition = schema.getCodeRegistry().getFieldVisibility().getFieldDefinition(fieldsContainer, fieldName);
+        assertTrue(fieldDefinition != null, "Unknown field '%s' for type %s", fieldName, fieldsContainer.getName());
+        return fieldDefinition;
+    }
+
+    /**
+     * This will look up a field definition by name, and understand that fields like __typename and __schema are special
+     * and take precedence in field resolution
+     *
+     * @param schema     the schema to use
+     * @param parentType the type of the parent {@link GraphQLFieldsContainer}
+     * @param fieldName  the field to look up
+     *
+     * @return a field definition otherwise throws an assertion exception if it's null
+     */
+    public static GraphQLFieldDefinition getFieldDefinition(GraphQLSchema schema, GraphQLFieldsContainer parentType, String fieldName) {
+        // this method is optimized to look up the most common case first (type for field) and hence suits the hot path of the execution engine
+        // and as a small benefit does not allocate any assertions unless it completely failed
+        GraphQLFieldDefinition fieldDefinition = schema.getCodeRegistry().getFieldVisibility().getFieldDefinition(parentType, fieldName);
+        if (fieldDefinition == null) {
+            // we look up system fields second because they are less likely to be the field in question
+            fieldDefinition = getSystemFieldDef(schema, parentType, fieldName);
+            if (fieldDefinition == null) {
+                Assert.assertShouldNeverHappen(String.format("Unknown field '%s' for type %s", fieldName, parentType.getName()));
+            }
+        }
+        return fieldDefinition;
+    }
+
+    private static GraphQLFieldDefinition getSystemFieldDef(GraphQLSchema schema, GraphQLCompositeType parentType, String fieldName) {
         if (schema.getQueryType() == parentType) {
             if (fieldName.equals(schema.getIntrospectionSchemaFieldDefinition().getName())) {
                 return schema.getIntrospectionSchemaFieldDefinition();
@@ -713,11 +843,6 @@ public class Introspection {
         if (fieldName.equals(schema.getIntrospectionTypenameFieldDefinition().getName())) {
             return schema.getIntrospectionTypenameFieldDefinition();
         }
-
-        assertTrue(parentType instanceof GraphQLFieldsContainer, () -> String.format("should not happen : parent type must be an object or interface %s", parentType));
-        GraphQLFieldsContainer fieldsContainer = (GraphQLFieldsContainer) parentType;
-        GraphQLFieldDefinition fieldDefinition = schema.getCodeRegistry().getFieldVisibility().getFieldDefinition(fieldsContainer, fieldName);
-        assertTrue(fieldDefinition != null, () -> String.format("Unknown field '%s' for type %s", fieldName, fieldsContainer.getName()));
-        return fieldDefinition;
+        return null;
     }
 }

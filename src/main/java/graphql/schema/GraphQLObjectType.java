@@ -40,11 +40,10 @@ import static graphql.util.FpKit.valuesToList;
 @PublicApi
 public class GraphQLObjectType implements GraphQLNamedOutputType, GraphQLCompositeType, GraphQLUnmodifiedType, GraphQLNullableType, GraphQLDirectiveContainer, GraphQLImplementingType {
 
-
     private final String name;
     private final String description;
     private final Comparator<? super GraphQLSchemaElement> interfaceComparator;
-    private final ImmutableMap<String, GraphQLFieldDefinition> fieldDefinitionsByName;
+    private final Map<String, GraphQLFieldDefinition> fieldDefinitionsByName;
     private final ImmutableList<GraphQLNamedOutputType> originalInterfaces;
     private final DirectivesUtil.DirectivesHolder directivesHolder;
     private final ObjectTypeDefinition definition;
@@ -74,7 +73,7 @@ public class GraphQLObjectType implements GraphQLNamedOutputType, GraphQLComposi
         this.originalInterfaces = ImmutableList.copyOf(sortTypes(interfaceComparator, interfaces));
         this.definition = definition;
         this.extensionDefinitions = ImmutableList.copyOf(extensionDefinitions);
-        this.directivesHolder = new DirectivesUtil.DirectivesHolder(directives, appliedDirectives);
+        this.directivesHolder = DirectivesUtil.DirectivesHolder.create(directives, appliedDirectives);
         this.fieldDefinitionsByName = buildDefinitionMap(fieldDefinitions);
     }
 
@@ -82,9 +81,9 @@ public class GraphQLObjectType implements GraphQLNamedOutputType, GraphQLComposi
         this.replacedInterfaces = ImmutableList.copyOf(sortTypes(interfaceComparator, interfaces));
     }
 
-    private ImmutableMap<String, GraphQLFieldDefinition> buildDefinitionMap(List<GraphQLFieldDefinition> fieldDefinitions) {
-        return ImmutableMap.copyOf(FpKit.getByName(fieldDefinitions, GraphQLFieldDefinition::getName,
-                (fld1, fld2) -> assertShouldNeverHappen("Duplicated definition for field '%s' in type '%s'", fld1.getName(), this.name)));
+    private Map<String, GraphQLFieldDefinition> buildDefinitionMap(List<GraphQLFieldDefinition> fieldDefinitions) {
+        return FpKit.getByName(fieldDefinitions, GraphQLFieldDefinition::getName,
+                (fld1, fld2) -> assertShouldNeverHappen("Duplicated definition for field '%s' in type '%s'", fld1.getName(), this.name));
     }
 
     @Override
@@ -131,7 +130,6 @@ public class GraphQLObjectType implements GraphQLNamedOutputType, GraphQLComposi
     public List<GraphQLFieldDefinition> getFieldDefinitions() {
         return ImmutableList.copyOf(fieldDefinitionsByName.values());
     }
-
 
     @Override
     public List<GraphQLNamedOutputType> getInterfaces() {

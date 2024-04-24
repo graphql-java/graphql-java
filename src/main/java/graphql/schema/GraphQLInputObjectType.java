@@ -61,7 +61,7 @@ public class GraphQLInputObjectType implements GraphQLNamedInputType, GraphQLUnm
         this.description = description;
         this.definition = definition;
         this.extensionDefinitions = ImmutableList.copyOf(extensionDefinitions);
-        this.directives = new DirectivesUtil.DirectivesHolder(directives, appliedDirectives);
+        this.directives = DirectivesUtil.DirectivesHolder.create(directives, appliedDirectives);
         this.fieldMap = buildDefinitionMap(fields);
         this.isOneOf = hasOneOf(directives, appliedDirectives);
     }
