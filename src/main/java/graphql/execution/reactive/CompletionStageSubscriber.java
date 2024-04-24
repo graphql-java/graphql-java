@@ -96,11 +96,11 @@ public class CompletionStageSubscriber<U, D> implements Subscriber<U> {
             }
         } finally {
             boolean empty = removeFromInFlightQAndCheckIfEmpty(completionStage);
-            finallyAfterEachPromisesFinishes(empty);
+            finallyAfterEachPromiseFinishes(empty);
         }
     }
 
-    protected void finallyAfterEachPromisesFinishes(boolean isInFlightEmpty) {
+    protected void finallyAfterEachPromiseFinishes(boolean isInFlightEmpty) {
         //
         // if the runOnCompleteOrErrorRun runnable is set, the upstream has
         // called onComplete() already, but the CFs have not all completed
