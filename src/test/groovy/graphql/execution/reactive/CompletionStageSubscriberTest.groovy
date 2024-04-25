@@ -2,13 +2,28 @@ package graphql.execution.reactive
 
 import graphql.execution.pubsub.CapturingSubscriber
 import graphql.execution.pubsub.CapturingSubscription
+import org.reactivestreams.Subscriber
 import spock.lang.Specification
 
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionStage
 import java.util.function.Function
 
+/**
+ * This can be used to test the CompletionStageSubscriber and CompletionStageOrderedSubscriber
+ * since they share so much common code.  There are protected helpers to create the subscribers
+ * and set expectations
+ */
 class CompletionStageSubscriberTest extends Specification {
+
+    protected Subscriber<Integer> createSubscriber(Function<Integer, CompletionStage<String>> mapper, CapturingSubscriber<Object> capturingSubscriber) {
+        def completionStageSubscriber = new CompletionStageSubscriber<Integer, String>(mapper, capturingSubscriber)
+        completionStageSubscriber
+    }
+
+    protected ArrayList<String> expectedOrderingOfAsyncCompletion() {
+        ["3", "2", "1", "0"]
+    }
 
     def "basic test of mapping"() {
         def capturingSubscriber = new CapturingSubscriber<>()
@@ -19,7 +34,7 @@ class CompletionStageSubscriberTest extends Specification {
                 return CompletableFuture.completedFuture(String.valueOf(integer))
             }
         }
-        def completionStageSubscriber = new CompletionStageSubscriber<Integer, String>(mapper, capturingSubscriber)
+        Subscriber<Integer> completionStageSubscriber = createSubscriber(mapper, capturingSubscriber)
 
         when:
         completionStageSubscriber.onSubscribe(subscription)
@@ -52,7 +67,7 @@ class CompletionStageSubscriberTest extends Specification {
         def subscription = new CapturingSubscription()
         List<Runnable> promises = []
         Function<Integer, CompletionStage<String>> mapper = mapperThatDoesNotComplete(promises)
-        def completionStageSubscriber = new CompletionStageSubscriber<Integer, String>(mapper, capturingSubscriber)
+        Subscriber<Integer> completionStageSubscriber = createSubscriber(mapper, capturingSubscriber)
 
         when:
         completionStageSubscriber.onSubscribe(subscription)
@@ -93,7 +108,8 @@ class CompletionStageSubscriberTest extends Specification {
         def subscription = new CapturingSubscription()
         List<Runnable> promises = []
         Function<Integer, CompletionStage<String>> mapper = mapperThatDoesNotComplete(promises)
-        def completionStageSubscriber = new CompletionStageSubscriber<Integer, String>(mapper, capturingSubscriber)
+
+        Subscriber<Integer> completionStageSubscriber = createSubscriber(mapper, capturingSubscriber)
 
         when:
         completionStageSubscriber.onSubscribe(subscription)
@@ -140,7 +156,8 @@ class CompletionStageSubscriberTest extends Specification {
         def subscription = new CapturingSubscription()
         List<CompletableFuture> promises = []
         Function<Integer, CompletionStage<String>> mapper = mapperThatDoesNotComplete([], promises)
-        def completionStageSubscriber = new CompletionStageSubscriber<Integer, String>(mapper, capturingSubscriber)
+
+        Subscriber<Integer> completionStageSubscriber = createSubscriber(mapper, capturingSubscriber)
 
         when:
         completionStageSubscriber.onSubscribe(subscription)
@@ -162,12 +179,13 @@ class CompletionStageSubscriberTest extends Specification {
     }
 
 
-    def "emits values in the order they complete not how arrive"() {
+    def "ordering test - depends on implementation"() {
         def capturingSubscriber = new CapturingSubscriber<>()
         def subscription = new CapturingSubscription()
         List<Runnable> promises = []
         Function<Integer, CompletionStage<String>> mapper = mapperThatDoesNotComplete(promises)
-        def completionStageSubscriber = new CompletionStageSubscriber<Integer, String>(mapper, capturingSubscriber)
+
+        Subscriber<Integer> completionStageSubscriber = createSubscriber(mapper, capturingSubscriber)
 
         when:
         completionStageSubscriber.onSubscribe(subscription)
@@ -188,8 +206,9 @@ class CompletionStageSubscriberTest extends Specification {
         then:
         !subscription.isCancelled()
         capturingSubscriber.isCompleted()
-        capturingSubscriber.events == ["3","2","1","0"]
+        capturingSubscriber.events == expectedOrderingOfAsyncCompletion()
     }
+
 
     static Function<Integer, CompletionStage<String>> mapperThatDoesNotComplete(List<Runnable> runToComplete, List<CompletableFuture> promises = []) {
         def mapper = new Function<Integer, CompletionStage<String>>() {
