@@ -162,7 +162,8 @@ class GraphQLInputObjectTypeTest extends Specification {
         er = graphQL.execute('query q { f( arg : {a : "abc", b : 123}) { key value }}')
         then:
         !er.errors.isEmpty()
-        er.errors[0].message == "Exception while fetching data (/f) : Exactly one key must be specified for OneOf type 'OneOf'."
+        // caught during early validation
+        er.errors[0].message == "Validation error (WrongType@[f]) : Exactly one key must be specified for OneOf type 'OneOf'."
 
         when:
         def ei = ExecutionInput.newExecutionInput('query q($var : OneOf)  { f( arg : $var) { key value }}').variables([var: [a: "abc", b: 123]]).build()

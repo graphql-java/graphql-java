@@ -342,7 +342,7 @@ class ArgumentsOfCorrectTypeTest extends Specification {
         then:
         validationErrors.size() == 1
         validationErrors.get(0).getValidationErrorType() == ValidationErrorType.WrongType
-        validationErrors.get(0).message == "Validation error (WrongType@[oneOfField]) : Exactly one key must be specified for argument 'oneOfArg' of @oneOf input type 'oneOfInputType'"
+        validationErrors.get(0).message == "Validation error (WrongType@[oneOfField]) : Exactly one key must be specified for OneOf type 'oneOfInputType'."
 
         where:
         why              | query                                             | _
