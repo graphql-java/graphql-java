@@ -144,7 +144,7 @@ public class Introspection {
         if (!isEnabledJvmWide()) {
             return false;
         }
-        return !graphQlContext.getOrDefault(INTROSPECTION_DISABLED, false);
+        return !graphQlContext.getBoolean(INTROSPECTION_DISABLED, false);
     }
 
     private static final Map<FieldCoordinates, IntrospectionDataFetcher<?>> introspectionDataFetchers = new LinkedHashMap<>();

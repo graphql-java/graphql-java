@@ -298,7 +298,7 @@ public abstract class ExecutionStrategy {
         MergedSelectionSet fields = parameters.getFields();
 
         return Optional.ofNullable(executionContext.getGraphQLContext())
-                .map(graphqlContext -> (Boolean) graphqlContext.get(ExperimentalApi.ENABLE_INCREMENTAL_SUPPORT))
+                .map(graphqlContext -> graphqlContext.getBoolean(ExperimentalApi.ENABLE_INCREMENTAL_SUPPORT))
                 .orElse(false) ?
                 new DeferredExecutionSupport.DeferredExecutionSupportImpl(
                         fields,
@@ -948,7 +948,7 @@ public abstract class ExecutionStrategy {
                 collectorParameters,
                 parameters.getField(),
                 Optional.ofNullable(executionContext.getGraphQLContext())
-                        .map(graphqlContext -> (Boolean) graphqlContext.get(ExperimentalApi.ENABLE_INCREMENTAL_SUPPORT))
+                        .map(graphqlContext -> graphqlContext.getBoolean(ExperimentalApi.ENABLE_INCREMENTAL_SUPPORT))
                         .orElse(false)
         );
 

@@ -134,7 +134,7 @@ public class GoodFaithIntrospection {
         if (!isEnabledJvmWide()) {
             return false;
         }
-        return !graphQlContext.getOrDefault(GOOD_FAITH_INTROSPECTION_DISABLED, false);
+        return !graphQlContext.getBoolean(GOOD_FAITH_INTROSPECTION_DISABLED, false);
     }
 
     public static class BadFaithIntrospectionError implements GraphQLError {

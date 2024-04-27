@@ -97,6 +97,33 @@ public class GraphQLContext {
     }
 
     /**
+     * This returns true if the value at the specified key is equal to
+     * {@link Boolean#TRUE}
+     *
+     * @param key the key to look up
+     *
+     * @return true if the value is equal to {@link Boolean#TRUE}
+     */
+    public Boolean getBoolean(Object key) {
+        Object val = map.get(assertNotNull(key));
+        return Boolean.TRUE.equals(val);
+    }
+
+    /**
+     * This returns true if the value at the specified key is equal to
+     * {@link Boolean#TRUE} or the default value if the key is missing
+     *
+     * @param key          the key to look up
+     * @param defaultValue the value to use if the key is not present
+     *
+     * @return true if the value is equal to {@link Boolean#TRUE}
+     */
+    public Boolean getBoolean(Object key, Boolean defaultValue) {
+        Object val = map.getOrDefault(assertNotNull(key), defaultValue);
+        return Boolean.TRUE.equals(val);
+    }
+
+    /**
      * Returns true if the context contains a value for that key
      *
      * @param key the key to lookup
@@ -177,11 +204,11 @@ public class GraphQLContext {
      * Attempts to compute a mapping for the specified key and its
      * current mapped value (or null if there is no current mapping).
      *
-     * @param key key with which the specified value is to be associated
+     * @param key               key with which the specified value is to be associated
      * @param remappingFunction the function to compute a value
+     * @param <T>               for two
      *
      * @return the new value associated with the specified key, or null if none
-     * @param <T> for two
      */
     public <T> T compute(Object key, BiFunction<Object, ? super T, ? extends T> remappingFunction) {
         assertNotNull(remappingFunction);
@@ -192,11 +219,11 @@ public class GraphQLContext {
      * If the specified key is not already associated with a value (or is mapped to null),
      * attempts to compute its value using the given mapping function and enters it into this map unless null.
      *
-     * @param key key with which the specified value is to be associated
+     * @param key             key with which the specified value is to be associated
      * @param mappingFunction the function to compute a value
+     * @param <T>             for two
      *
      * @return the current (existing or computed) value associated with the specified key, or null if the computed value is null
-     * @param <T> for two
      */
 
     public <T> T computeIfAbsent(Object key, Function<Object, ? extends T> mappingFunction) {
@@ -207,11 +234,11 @@ public class GraphQLContext {
      * If the value for the specified key is present and non-null,
      * attempts to compute a new mapping given the key and its current mapped value.
      *
-     * @param key key with which the specified value is to be associated
+     * @param key               key with which the specified value is to be associated
      * @param remappingFunction the function to compute a value
+     * @param <T>               for two
      *
      * @return the new value associated with the specified key, or null if none
-     * @param <T> for two
      */
 
     public <T> T computeIfPresent(Object key, BiFunction<Object, ? super T, ? extends T> remappingFunction) {
