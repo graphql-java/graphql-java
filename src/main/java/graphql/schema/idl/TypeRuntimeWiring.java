@@ -184,6 +184,9 @@ public class TypeRuntimeWiring {
          */
         public Builder defaultDataFetcher(DataFetcher dataFetcher) {
             assertNotNull(dataFetcher);
+            if (strictMode && defaultDataFetcher != null) {
+                throw new StrictModeWiringException(format("The type %s has already has a default data fetcher defined", typeName));
+            }
             defaultDataFetcher = dataFetcher;
             return this;
         }

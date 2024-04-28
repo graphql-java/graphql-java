@@ -116,7 +116,28 @@ public class RuntimeWiring {
         return dataFetchers;
     }
 
+    /**
+     * This is deprecated because the name has the wrong plural case.
+     *
+     * @param typeName the type for fetch a map of per field data fetchers for
+     *
+     * @return a map of field data fetchers for a type
+     *
+     * @deprecated See {@link #getDataFetchersForType(String)}
+     */
+    @Deprecated(since = "2024-04-28")
     public Map<String, DataFetcher> getDataFetcherForType(String typeName) {
+        return dataFetchers.computeIfAbsent(typeName, k -> new LinkedHashMap<>());
+    }
+
+    /**
+     * This returns a map of the data fetchers per field on that named type.
+     *
+     * @param typeName the type for fetch a map of per field data fetchers for
+     *
+     * @return a map of field data fetchers for a type
+     */
+    public Map<String, DataFetcher> getDataFetchersForType(String typeName) {
         return dataFetchers.computeIfAbsent(typeName, k -> new LinkedHashMap<>());
     }
 
@@ -284,7 +305,10 @@ public class RuntimeWiring {
             }
             typeDataFetchers.putAll(typeRuntimeWiring.getFieldDataFetchers());
 
-            defaultDataFetchers.put(typeName, typeRuntimeWiring.getDefaultDataFetcher());
+            DataFetcher<?> defaultDataFetcher = typeRuntimeWiring.getDefaultDataFetcher();
+            if (defaultDataFetcher != null) {
+                defaultDataFetchers.put(typeName, defaultDataFetcher);
+            }
 
             TypeResolver typeResolver = typeRuntimeWiring.getTypeResolver();
             if (typeResolver != null) {
