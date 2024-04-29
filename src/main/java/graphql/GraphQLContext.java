@@ -104,7 +104,7 @@ public class GraphQLContext {
      *
      * @return true if the value is equal to {@link Boolean#TRUE}
      */
-    public Boolean getBoolean(Object key) {
+    public boolean getBoolean(Object key) {
         Object val = map.get(assertNotNull(key));
         return Boolean.TRUE.equals(val);
     }
@@ -118,7 +118,7 @@ public class GraphQLContext {
      *
      * @return true if the value is equal to {@link Boolean#TRUE}
      */
-    public Boolean getBoolean(Object key, Boolean defaultValue) {
+    public boolean getBoolean(Object key, Boolean defaultValue) {
         Object val = map.getOrDefault(assertNotNull(key), defaultValue);
         return Boolean.TRUE.equals(val);
     }
