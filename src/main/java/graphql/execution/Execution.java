@@ -154,7 +154,7 @@ public class Execution {
                 collectorParameters,
                 operationDefinition.getSelectionSet(),
                 Optional.ofNullable(executionContext.getGraphQLContext())
-                        .map(graphqlContext -> (Boolean) graphqlContext.get(ExperimentalApi.ENABLE_INCREMENTAL_SUPPORT))
+                        .map(graphqlContext -> graphqlContext.getBoolean(ExperimentalApi.ENABLE_INCREMENTAL_SUPPORT))
                         .orElse(false)
         );
 
