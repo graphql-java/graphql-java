@@ -248,7 +248,7 @@ class RuntimeWiringTest extends Specification {
         e5.message == "The type Foo has already has a default data fetcher defined"
     }
 
-    def "dont over default data fetchers if they are null"() {
+    def "overwrite default data fetchers if they are null"() {
 
         DataFetcher DF1 = env -> "x"
         DataFetcher DF2 = env -> "x"
