@@ -19,6 +19,7 @@ import graphql.language.InterfaceTypeDefinition;
 import graphql.language.ObjectTypeDefinition;
 import graphql.language.ScalarTypeDefinition;
 import graphql.language.SchemaDefinition;
+import graphql.language.SchemaExtensionDefinition;
 import graphql.language.TypeDefinition;
 import graphql.language.UnionTypeDefinition;
 import graphql.schema.DefaultGraphqlTypeComparatorRegistry;
@@ -283,7 +284,7 @@ public class SchemaPrinter {
         /**
          * This is a Predicate that decides whether a directive definition is printed.
          *
-         * @param includeDirectiveDefinition the predicate to decide of a directive defintion is printed
+         * @param includeDirectiveDefinition the predicate to decide of a directive definition is printed
          *
          * @return new instance of options
          */
@@ -482,7 +483,7 @@ public class SchemaPrinter {
 
     /**
      * This can print an in memory GraphQL IDL document back to a logical schema definition.
-     * If you want to turn a Introspection query result into a Document (and then into a printed
+     * If you want to turn an Introspection query result into a Document (and then into a printed
      * schema) then use {@link graphql.introspection.IntrospectionResultToSchema#createSchemaDefinition(java.util.Map)}
      * first to get the {@link graphql.language.Document} and then print that.
      *
@@ -774,6 +775,17 @@ public class SchemaPrinter {
     }
 
     /**
+     * This will return true if the options say to use the AST and we have an AST element
+     *
+     * @param definition the AST schema definition
+     *
+     * @return true if we should print using AST nodes
+     */
+    private boolean shouldPrintAsAst(SchemaDefinition definition) {
+        return options.isUseAstDefinitions() && definition != null;
+    }
+
+    /**
      * This will print out a runtime graphql schema element using its contained AST type definition.  This
      * must be guarded by a called to {@link #shouldPrintAsAst(TypeDefinition)}
      *
@@ -792,6 +804,25 @@ public class SchemaPrinter {
         out.print('\n');
     }
 
+    /**
+     * This will print out a runtime graphql schema block using its AST definition.  This
+     * must be guarded by a called to {@link #shouldPrintAsAst(SchemaDefinition)}
+     *
+     * @param out        the output writer
+     * @param definition the AST schema definition
+     * @param extensions a list of schema definition extensions
+     */
+    private void printAsAst(PrintWriter out, SchemaDefinition definition, List<SchemaExtensionDefinition> extensions) {
+        out.printf("%s\n", AstPrinter.printAst(definition));
+        if (extensions != null) {
+            for (SchemaExtensionDefinition extension : extensions) {
+                out.printf("\n%s\n", AstPrinter.printAst(extension));
+            }
+        }
+        out.print('\n');
+    }
+
+
     private static String printAst(InputValueWithState value, GraphQLInputType type) {
         return AstPrinter.printAst(ValuesResolver.valueToLiteral(value, type, GraphQLContext.getDefault(), Locale.getDefault()));
     }
@@ -803,7 +834,7 @@ public class SchemaPrinter {
             GraphQLObjectType subscriptionType = schema.getSubscriptionType();
 
             // when serializing a GraphQL schema using the type system language, a
-            // schema definition should be omitted if only uses the default root type names.
+            // schema definition should be omitted only if it uses the default root type names.
             boolean needsSchemaPrinted = options.isIncludeSchemaDefinition();
 
             if (!needsSchemaPrinted) {
@@ -819,21 +850,25 @@ public class SchemaPrinter {
             }
 
             if (needsSchemaPrinted) {
-                if (hasAstDefinitionComments(schema) || hasDescription(schema)) {
-                    out.print(printComments(schema, ""));
+                if (shouldPrintAsAst(schema.getDefinition())) {
+                    printAsAst(out, schema.getDefinition(), schema.getExtensionDefinitions());
+                } else {
+                    if (hasAstDefinitionComments(schema) || hasDescription(schema)) {
+                        out.print(printComments(schema, ""));
+                    }
+                    List<GraphQLAppliedDirective> directives = DirectivesUtil.toAppliedDirectives(schema.getSchemaAppliedDirectives(), schema.getSchemaDirectives());
+                    out.format("schema %s{\n", directivesString(GraphQLSchemaElement.class, directives));
+                    if (queryType != null) {
+                        out.format("  query: %s\n", queryType.getName());
+                    }
+                    if (mutationType != null) {
+                        out.format("  mutation: %s\n", mutationType.getName());
+                    }
+                    if (subscriptionType != null) {
+                        out.format("  subscription: %s\n", subscriptionType.getName());
+                    }
+                    out.format("}\n\n");
                 }
-                List<GraphQLAppliedDirective> directives = DirectivesUtil.toAppliedDirectives(schema.getSchemaAppliedDirectives(), schema.getSchemaDirectives());
-                out.format("schema %s{\n", directivesString(GraphQLSchemaElement.class, directives));
-                if (queryType != null) {
-                    out.format("  query: %s\n", queryType.getName());
-                }
-                if (mutationType != null) {
-                    out.format("  mutation: %s\n", mutationType.getName());
-                }
-                if (subscriptionType != null) {
-                    out.format("  subscription: %s\n", subscriptionType.getName());
-                }
-                out.format("}\n\n");
             }
         };
     }
