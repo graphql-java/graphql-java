@@ -9,7 +9,6 @@ import graphql.Internal;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -156,7 +155,7 @@ public class DiffImpl {
             MappingEntry mappingEntry = queue.poll();
             algoIterationCount.incrementAndGet();
             // keep for debugging
-//            System.out.println("ged: " + optimalEdit.ged + " lb: " + mappingEntry.lowerBoundCost + " relative level: " + (mappingEntry.level - startMapping.size()) + " queueSize: " + queue.size() + " algoIterationCount: " + algoIterationCount.get());
+            System.out.println("ged: " + optimalEdit.ged + " lb: " + mappingEntry.lowerBoundCost + " relative level: " + (mappingEntry.level - startMapping.size()) + " queueSize: " + queue.size() + " algoIterationCount: " + algoIterationCount.get());
 
 
             if (mappingEntry.lowerBoundCost >= optimalEdit.ged) {
@@ -164,17 +163,17 @@ public class DiffImpl {
                 break;
             }
 
-            if (mappingEntry.level > 0 && !mappingEntry.mappingEntriesSiblings.isEmpty()) {
-                addSiblingToQueue(
-                        fixedEditorialCost,
-                        mappingEntry.level,
-                        queue,
-                        optimalEdit,
-                        allSources,
-                        allTargets,
-                        mappingEntry);
-            }
-            if (mappingEntry.level < graphSize) {
+//            if (mappingEntry.level > 0 && !mappingEntry.mappingEntriesSiblings.isEmpty()) {
+//                addSiblingToQueue(
+//                        fixedEditorialCost,
+//                        mappingEntry.level,
+//                        queue,
+//                        optimalEdit,
+//                        allSources,
+//                        allTargets,
+//                        mappingEntry);
+//            }
+//            if (mappingEntry.level < graphSize) {
                 addChildToQueue(
                         fixedEditorialCost,
                         mappingEntry,
@@ -183,9 +182,10 @@ public class DiffImpl {
                         allSources,
                         allTargets
                 );
-            }
+            break;
+//            }
 
-            runningCheck.check();
+//            runningCheck.check();
         }
 
         return optimalEdit;
@@ -276,7 +276,6 @@ public class DiffImpl {
         // calc reduced amount by pair of single mapping
         Map<Set<SingleMapping>, Integer> reducedValuesByPairOfMappings = new LinkedHashMap<>();
         Set<SingleMapping> relevantSingleMappings = new LinkedHashSet<>();
-        Multimap<Vertex, Set<SingleMapping>> sourceVertexToRelevantMappingPairs = HashMultimap.create();
         for (int i = parentLevel; i < allSources.size(); i++) {
             Vertex v = allSources.get(i);
             int j = 0;
@@ -290,8 +289,6 @@ public class DiffImpl {
                         int reducedValue = setsMappingWithMapping.setsMapping.sameLabels ? 2 : 1;
                         reducedValuesByPairOfMappings.put(singleMappingsPair, reducedValue);
                         relevantSingleMappings.add(setsMappingWithMapping.singleMapping);
-                        sourceVertexToRelevantMappingPairs.put(v, singleMappingsPair);
-                        sourceVertexToRelevantMappingPairs.put(setsMappingWithMapping.singleMapping.getFrom(), singleMappingsPair);
                     }
                 }
                 j++;
@@ -307,47 +304,64 @@ public class DiffImpl {
         // this is the lower bound for all children of parentPartialMapping
         int lowerBoundForNextLevel = editorialCostForParentMapping + costMatrixSum;
 
-        if (lowerBoundForNextLevel >= optimalEdit.ged) {
-            return;
-        }
 
-
-        Mapping newMapping = parentPartialMapping.extendMapping(v_i, availableTargetVertices.get(assignments[0]));
-        MappingEntry newMappingEntry = new MappingEntry(newMapping, level, lowerBoundForNextLevel);
-        LinkedBlockingQueue<MappingEntry> siblings = new LinkedBlockingQueue<>();
-        newMappingEntry.mappingEntriesSiblings = siblings;
-        newMappingEntry.assignments = assignments;
-        newMappingEntry.availableTargetVertices = availableTargetVertices;
-        newMappingEntry.singleMappingToInnerEdgesInfo = singleMappingToInnerEdgesInfo;
-
-        queue.add(newMappingEntry);
-
-        expandMappingAndUpdateOptimalMapping(fixedEditorialCost,
-                level,
-                optimalEdit,
+        ReducerBasedMapping reducerBasedMapping = new ReducerBasedMapping();
+        Mapping result = reducerBasedMapping.init(assignments,
                 allSources,
-                parentPartialMapping.copy(),
-                assignments,
                 availableTargetVertices,
-                lowerBoundForNextLevel,
-                singleMappingToInnerEdgesInfo,
-                reducedValuesByPairOfMappings
-        );
-
-        calculateRestOfSiblings(
-                availableTargetVertices,
-                hungarianAlgorithm,
-                costMatrix,
-                costMatrixSum,
-                editorialCostForParentMapping,
+                parentLevel,
                 parentPartialMapping,
-                v_i,
-                optimalEdit,
-                level,
-                siblings,
+                completeSourceGraph,
+                completeTargetGraph,
                 singleMappingToInnerEdgesInfo,
-                reducedValuesByPairOfMappings
-        );
+                reducedValuesByPairOfMappings,
+                fixedEditorialCost);
+        optimalEdit.ged = EditorialCostForMapping.editorialCostForMapping(fixedEditorialCost, result, completeSourceGraph, completeTargetGraph);
+        ;
+        optimalEdit.mapping = result;
+
+
+//        if (lowerBoundForNextLevel >= optimalEdit.ged) {
+//            return;
+//        }
+//
+//
+//        Mapping newMapping = parentPartialMapping.extendMapping(v_i, availableTargetVertices.get(assignments[0]));
+//        MappingEntry newMappingEntry = new MappingEntry(newMapping, level, lowerBoundForNextLevel);
+//        LinkedBlockingQueue<MappingEntry> siblings = new LinkedBlockingQueue<>();
+//        newMappingEntry.mappingEntriesSiblings = siblings;
+//        newMappingEntry.assignments = assignments;
+//        newMappingEntry.availableTargetVertices = availableTargetVertices;
+//        newMappingEntry.singleMappingToInnerEdgesInfo = singleMappingToInnerEdgesInfo;
+//
+//        queue.add(newMappingEntry);
+//
+//        expandMappingAndUpdateOptimalMapping(fixedEditorialCost,
+//                level,
+//                optimalEdit,
+//                allSources,
+//                parentPartialMapping.copy(),
+//                assignments,
+//                availableTargetVertices,
+//                lowerBoundForNextLevel,
+//                singleMappingToInnerEdgesInfo,
+//                reducedValuesByPairOfMappings
+//        );
+//
+//        calculateRestOfSiblings(
+//                availableTargetVertices,
+//                hungarianAlgorithm,
+//                costMatrix,
+//                costMatrixSum,
+//                editorialCostForParentMapping,
+//                parentPartialMapping,
+//                v_i,
+//                optimalEdit,
+//                level,
+//                siblings,
+//                singleMappingToInnerEdgesInfo,
+//                reducedValuesByPairOfMappings
+//        );
     }
 
 
@@ -357,26 +371,6 @@ public class DiffImpl {
         optimalEdit.mapping = mapping;
     }
 
-    private void compareMappings(Mapping oldMapping, Mapping newMapping) {
-        System.out.println("start comparing mappings: ");
-        for (int i = startLevel; i < allSources.size(); i++) {
-            Vertex v = allSources.get(i);
-            Vertex oldU = oldMapping.getTarget(v);
-            Vertex newU = newMapping.getTarget(v);
-            if (v.isIsolated()) {
-                if (!newMapping.getSource(oldU).isIsolated()) {
-                    System.out.println(v.getDebugName() + " -> " + oldU.getDebugName() + " is now -> " + newU.getDebugName());
-                }
-                continue;
-            }
-            if (oldU != newU) {
-                if (oldU.isIsolated() && newU.isIsolated()) {
-                    continue;
-                }
-                System.out.println(v.getDebugName() + " -> " + oldU.getDebugName() + " is now -> " + newU.getDebugName());
-            }
-        }
-    }
 
     private void calculateRestOfSiblings(List<Vertex> availableTargetVertices,
                                          HungarianAlgorithm hungarianAlgorithm,
@@ -505,11 +499,11 @@ public class DiffImpl {
         }
         // lowerbound is edc of partial mapping +  anchored + min inner edge costs of unmapped
         int calculatedEdc = lowerBoundCost + diffToWorstCase - reducedCostSum;
-        System.out.println("partial mapping edc " + partialMappingEdc + " assignment sum " + (lowerBoundCost - partialMappingEdc) + " + diffToWorstCase " + diffToWorstCase + " - reducedCostSum " + reducedCostSum + " = " + calculatedEdc + " level : " + (level - startLevel) + " reduced cunter: " + reducedCostCount);
+//        System.out.println("partial mapping edc " + partialMappingEdc + " assignment sum " + (lowerBoundCost - partialMappingEdc) + " + diffToWorstCase " + diffToWorstCase + " - reducedCostSum " + reducedCostSum + " = " + calculatedEdc + " level : " + (level - startLevel) + " reduced cunter: " + reducedCostCount);
         assertTrue(calculatedEdc == costForFullMapping);
 
         if (costForFullMapping < optimalEdit.ged) {
-            System.out.println("UPDATE!!!!!!!");
+//            System.out.println("UPDATE!!!!!!!");
             updateOptimalEdit(optimalEdit, costForFullMapping, toExpand);
         }
     }
@@ -731,42 +725,5 @@ public class DiffImpl {
         }
     }
 
-    private void findMaxReducedCost(Map<Set<SingleMapping>, Integer> reducedValuesByPairOfMappings) {
-        List<Set<SingleMapping>> allPairs = new ArrayList<>(reducedValuesByPairOfMappings.keySet());
-        ArrayList<Set<SingleMapping>> selectedPairs = new ArrayList<>();
-        findImpl(reducedValuesByPairOfMappings, new LinkedHashSet<>(), new LinkedHashSet<>(), 0, allPairs, selectedPairs, 0);
-    }
-
-    private void findImpl(Map<Set<SingleMapping>, Integer> reducedValuesByPairOfMappings,
-                          Set<Vertex> usedSourcedVertices,
-                          Set<Vertex> usedTargetVertices,
-                          int currentSum,
-                          List<Set<SingleMapping>> allPairs,
-                          List<Set<SingleMapping>> selectedPairs,
-                          int curIndex) {
-        for (int i = curIndex; i < allPairs.size(); i++) {
-            Set<SingleMapping> pair = allPairs.get(i);
-            Iterator<SingleMapping> iterator = pair.iterator();
-            SingleMapping sm1 = iterator.next();
-            SingleMapping sm2 = iterator.next();
-            if (usedSourcedVertices.contains(sm1.getFrom()) || usedSourcedVertices.contains(sm2.getFrom()) ||
-                    usedTargetVertices.contains(sm1.getTo()) || usedSourcedVertices.contains(sm2.getTo())) {
-                continue;
-            }
-            Set<Vertex> newUsedSourcedVertices = new LinkedHashSet<>(usedSourcedVertices);
-            Set<Vertex> newUsedTargetVertices = new LinkedHashSet<>(usedTargetVertices);
-            newUsedSourcedVertices.add(sm1.getFrom());
-            newUsedSourcedVertices.add(sm2.getFrom());
-            newUsedTargetVertices.add(sm1.getTo());
-            newUsedTargetVertices.add(sm2.getTo());
-            selectedPairs = new ArrayList<>(selectedPairs);
-            selectedPairs.add(pair);
-            int newSum = currentSum + reducedValuesByPairOfMappings.get(pair);
-            System.out.println("newSum " + newSum + " at index " + curIndex + " with selected pairs " + selectedPairs.size());
-            findImpl(reducedValuesByPairOfMappings, newUsedSourcedVertices, newUsedTargetVertices, newSum, allPairs, selectedPairs, i + 1);
-            break;
-        }
-
-    }
 
 }

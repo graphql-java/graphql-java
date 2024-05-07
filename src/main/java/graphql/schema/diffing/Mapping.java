@@ -195,4 +195,10 @@ public class Mapping {
         }
         return new Mapping(fixedParentRestrictions, invertedFixedMappings, fixedTargetList, fixedSourceList, invertedMap, targetList, sourceList);
     }
+
+    public void remove(Vertex sourceVertex) {
+        Vertex targetToRemove = map.remove(sourceVertex);
+        sourceList.remove(sourceVertex);
+        targetList.remove(targetToRemove);
+    }
 }
