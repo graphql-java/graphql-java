@@ -21,5 +21,8 @@ public enum SchemaValidationErrorType implements SchemaValidationErrorClassifica
     OutputTypeUsedInInputTypeContext,
     InputTypeUsedInOutputTypeContext,
     OneOfDefaultValueOnField,
-    OneOfNonNullableField
+    OneOfNonNullableField,
+    RequiredInputFieldCannotBeDeprecated,
+    RequiredFieldArgumentCannotBeDeprecated,
+    RequiredDirectiveArgumentCannotBeDeprecated
 }
