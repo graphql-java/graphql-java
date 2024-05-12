@@ -211,7 +211,7 @@ class DeprecatedInputObjectAndArgumentsAreValidTest extends Specification {
             directive @pizzaDirective(name: String!, likesPineapples: Boolean! @deprecated(reason: "Don't need this directive argument")) on FIELD_DEFINITION
 
             type Query {
-              pizza(name: String!): String @pizzaDirective(name: "Stefano", likesPineapples: true)
+              pizza(name: String!): String @pizzaDirective(name: "Stefano", likesPineapples: false)
             }
 
             type Mutation {
@@ -233,7 +233,7 @@ class DeprecatedInputObjectAndArgumentsAreValidTest extends Specification {
             directive @pizzaDirective(name: String! @deprecated, likesPineapples: Boolean! @deprecated(reason: "Don't need this directive argument")) on FIELD_DEFINITION
 
             type Query {
-              pizza(name: String!): String @pizzaDirective(name: "Stefano", likesPineapples: true)
+              pizza(name: String!): String @pizzaDirective(name: "Stefano", likesPineapples: false)
             }
 
             type Mutation {
@@ -256,7 +256,7 @@ class DeprecatedInputObjectAndArgumentsAreValidTest extends Specification {
             directive @pizzaDirective(name: String!, likesPineapples: Boolean @deprecated(reason: "Don't need this directive argument")) on FIELD_DEFINITION
 
             type Query {
-              pizza(name: String!): String @pizzaDirective(name: "Stefano", likesPineapples: true)
+              pizza(name: String!): String @pizzaDirective(name: "Stefano", likesPineapples: false)
             }
 
             type Mutation {
@@ -277,7 +277,7 @@ class DeprecatedInputObjectAndArgumentsAreValidTest extends Specification {
             directive @pizzaDirective(name: String!, likesPineapples: Boolean! = false @deprecated(reason: "Don't need this directive argument")) on FIELD_DEFINITION
 
             type Query {
-              pizza(name: String!): String @pizzaDirective(name: "Stefano", likesPineapples: true)
+              pizza(name: String!): String @pizzaDirective(name: "Stefano", likesPineapples: false)
             }
 
             type Mutation {
