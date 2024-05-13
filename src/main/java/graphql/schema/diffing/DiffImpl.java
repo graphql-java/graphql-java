@@ -174,14 +174,14 @@ public class DiffImpl {
 //                        mappingEntry);
 //            }
 //            if (mappingEntry.level < graphSize) {
-                addChildToQueue(
-                        fixedEditorialCost,
-                        mappingEntry,
-                        queue,
-                        optimalEdit,
-                        allSources,
-                        allTargets
-                );
+            addChildToQueue(
+                    fixedEditorialCost,
+                    mappingEntry,
+                    queue,
+                    optimalEdit,
+                    allSources,
+                    allTargets
+            );
             break;
 //            }
 
@@ -281,6 +281,9 @@ public class DiffImpl {
             int j = 0;
             for (Vertex u : availableTargetVertices) {
                 SingleMapping singleMapping = new SingleMapping(v, u);
+                if (!possibleMappings.mappingPossible(v, u, nonFixedParentRestrictions, parentPartialMapping, completeTargetGraph)) {
+                    continue;
+                }
                 if (singleMappingToRelevantSetsMapping.containsKey(singleMapping)) {
                     relevantSingleMappings.add(singleMapping);
                     Collection<SetsMappingWithMapping> relevantSetsMappingWithMapping = singleMappingToRelevantSetsMapping.get(singleMapping);
@@ -294,6 +297,7 @@ public class DiffImpl {
                 j++;
             }
         }
+        System.out.println("total available reducer: " + reducedValuesByPairOfMappings.size());
 
 
         HungarianAlgorithm hungarianAlgorithm = new HungarianAlgorithm(costMatrixForHungarianAlgo);
@@ -315,9 +319,12 @@ public class DiffImpl {
                 completeTargetGraph,
                 singleMappingToInnerEdgesInfo,
                 reducedValuesByPairOfMappings,
-                fixedEditorialCost);
+                fixedEditorialCost,
+                possibleMappings,
+                nonFixedParentRestrictions,
+                hungarianAlgorithm,
+                costMatrix);
         optimalEdit.ged = EditorialCostForMapping.editorialCostForMapping(fixedEditorialCost, result, completeSourceGraph, completeTargetGraph);
-        ;
         optimalEdit.mapping = result;
 
 
@@ -681,8 +688,11 @@ public class DiffImpl {
 
         Multiset<String> intersection = Multisets.intersection(multisetInnerEdgeLabelsV, multisetInnerEdgeLabelsU);
         int multiSetEditDistance = Math.max(multisetInnerEdgeLabelsV.size(), multisetInnerEdgeLabelsU.size()) - intersection.size();
+//        multiSetEditDistance =  multisetInnerEdgeLabelsU.size() + multisetInnerEdgeLabelsV.size();
+        multiSetEditDistance = 0;
 
         int result = (equalNodes ? 0 : 1) + multiSetEditDistance + anchoredVerticesCost;
+//        result = multiSetEditDistance  ;
         return result;
     }
 

@@ -928,6 +928,33 @@ public class PossibleMappingsCalculator {
         public boolean mappingPossible(Vertex sourceVertex, Vertex targetVertex) {
             return possibleMappings.containsEntry(sourceVertex, targetVertex);
         }
+
+        public boolean mappingPossible(Vertex v,
+                                       Vertex u,
+                                       Map<Vertex, Vertex> nonFixedParentRestrictions,
+                                       Mapping partialMapping,
+                                       SchemaGraph completeTargetGraph) {
+            if (nonFixedParentRestrictions.containsKey(v) || partialMapping.hasFixedParentRestriction(v)) {
+                if (!u.isIsolated()) { // Always allow mapping to isolated nodes
+                    Vertex uParentRestriction = nonFixedParentRestrictions.get(v);
+                    if (uParentRestriction == null) {
+                        uParentRestriction = partialMapping.getFixedParentRestriction(v);
+                    }
+
+                    Collection<Edge> parentEdges = completeTargetGraph.getAdjacentEdgesInverseNonCopy(u);
+                    if (parentEdges.size() != 1) {
+                        return false;
+                    }
+
+                    Vertex uParent = parentEdges.iterator().next().getFrom();
+                    if (uParent != uParentRestriction) {
+                        return false;
+                    }
+                }
+
+            }
+            return possibleMappings.containsEntry(v, u);
+        }
     }
 
 

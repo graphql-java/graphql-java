@@ -79,7 +79,6 @@ public class HungarianAlgorithm {
     private boolean recordAsNewMatch;
     private List<NewMatch> newMatches;
 
-    private int oldAssignedJob;
 
     /**
      * Construct an instance of the algorithm.
@@ -313,14 +312,6 @@ public class HungarianAlgorithm {
      * @param j the job
      */
     protected void match(int w, int j) {
-        if (recordAsNewMatch) {
-            if (w == 0) {
-                newMatches.add(new NewMatch(w, oldAssignedJob, j));
-
-            } else {
-                newMatches.add(new NewMatch(w, matchJobByWorker[w], j));
-            }
-        }
         matchJobByWorker[w] = j;
         matchWorkerByJob[j] = w;
     }
@@ -398,7 +389,6 @@ public class HungarianAlgorithm {
 
     public int[] nextChild() {
         int currentJobAssigned = matchJobByWorker[0];
-        oldAssignedJob = currentJobAssigned;
         // we want to make currentJobAssigned not allowed,meaning we set the size to Infinity
         // increasing the cost doesn't affect the feasibility of the labeling as the sum
         // of the two labels must be smaller than the cost, hence increasing the cost is fine.
@@ -415,6 +405,36 @@ public class HungarianAlgorithm {
         int[] result = Arrays.copyOf(matchJobByWorker, dim);
         return result;
     }
+
+    public int[] nextBestSolution() {
+        int smallestCost = Integer.MAX_VALUE;
+        int workerWithSmallestCost = -1;
+        for (int w = 0; w < dim; w++) {
+            if (costMatrix[w][matchJobByWorker[w]] < smallestCost) {
+                workerWithSmallestCost = w;
+                smallestCost = costMatrix[w][matchJobByWorker[w]];
+            }
+            smallestCost = Math.min(costMatrix[w][matchJobByWorker[w]], smallestCost);
+        }
+        int currentJobAssigned = matchJobByWorker[workerWithSmallestCost];
+        // we want to make currentJobAssigned not allowed,meaning we set the size to Infinity
+        // increasing the cost doesn't affect the feasibility of the labeling as the sum
+        // of the two labels must be smaller than the cost, hence increasing the cost is fine.
+        costMatrix[workerWithSmallestCost][currentJobAssigned] = Integer.MAX_VALUE;
+        matchWorkerByJob[currentJobAssigned] = -1;
+        matchJobByWorker[workerWithSmallestCost] = -1;
+        initializePhase(workerWithSmallestCost);
+
+        recordAsNewMatch = true;
+        newMatches = new ArrayList<>();
+        executePhase();
+        int unmatchedWorkers = fetchUnmatchedWorker();
+        assertTrue(unmatchedWorkers == dim);
+        int[] result = Arrays.copyOf(matchJobByWorker, dim);
+        return result;
+    }
+
+
 
     public List<NewMatch> getNewMatches() {
         return newMatches;
