@@ -12,7 +12,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicReference;
 
 public class ReducerBasedMapping {
 
@@ -28,10 +27,10 @@ public class ReducerBasedMapping {
     private Map<Set<SingleMapping>, Integer> reducedValuesByPairOfMappings;
     private int fixedEditorialCost;
     Mapping wholeMapping;
-    List<SingleMapping> mappingsToIntroduce = new ArrayList<>();
-    List<Integer> edcLists = new ArrayList<>();
+    //    List<SingleMapping> mappingsToIntroduce = new ArrayList<>();
+//    List<Integer> edcLists = new ArrayList<>();
     int wholeMappingEdc;
-    EdcCalculation wholeMappingEdcCalculation;
+    //    EdcCalculation wholeMappingEdcCalculation;
     private PossibleMappingsCalculator.PossibleMappings possibleMappings;
     private Map<Vertex, Vertex> nonFixedParentRestrictions;
 
@@ -65,11 +64,11 @@ public class ReducerBasedMapping {
         List<SingleMapping> diagonal = new ArrayList<>();
         Multimap<SingleMapping, Map<SingleMapping, Integer>> crossingsOnTop = LinkedHashMultimap.create();
 
-//        int originalSum = 0;
-//        for (int i = 0; i < assignments.length; i++) {
-//            originalSum += costMatrix[i][assignments[i]];
-//        }
-//        System.out.println("original sum: " + originalSum);
+        int originalSum = 0;
+        for (int i = 0; i < assignments.length; i++) {
+            originalSum += costMatrix[i][assignments[i]];
+        }
+        System.out.println("original sum: " + originalSum);
 
 
         int counter = 0;
@@ -90,104 +89,49 @@ public class ReducerBasedMapping {
                 }
                 wholeMapping.add(allSources.get(parentLevel + i), availableTargetVertices.get(assignments[i]));
             }
+            System.out.println(counter + " sum: " + sum);
             Mapping originalStartMapping = wholeMapping.copy();
 
             wholeMappingEdc = EditorialCostForMapping.editorialCostForMapping(fixedEditorialCost, wholeMapping, completeSourceGraph, completeTargetGraph);
-            int originalStartEdc = wholeMappingEdc;
-            wholeMappingEdcCalculation = reducerBasedEdc(wholeMapping);
+//            wholeMappingEdcCalculation = reducerBasedEdc(wholeMapping);
             System.out.println("start wholeMapping edc: " + wholeMappingEdc + " with rows available for reduction: " + rowsAvailableForReduction);
-            System.out.println((counter) + ": sum: " + sum);
-            counter++;
 
-//        int diagonalSum = diagonalCosts.values().stream().mapToInt(value -> value).sum();
-//        System.out.println("total diagonal: " + diagonalCosts.size() + " with sum: " + diagonalSum);
-//        System.out.println("total crossingsToRight: " + crossingsToRight.size());
-//
-//        int reducedFromRight = 0;
-//        for (Map<SingleMapping, Integer> singleMappingAndReducedCost : crossingsToRight.values()) {
-//            reducedFromRight += singleMappingAndReducedCost.values().iterator().next();
-//        }
-//        System.out.println("reducedFromRight from right: " + reducedFromRight);
-//        int reducedOnTop = 0;
-//        for (Map<SingleMapping, Integer> singleMappingAndReducedCost : crossingsOnTop.values()) {
-//            reducedOnTop += singleMappingAndReducedCost.values().iterator().next();
-//        }
-//        System.out.println("reducedOnTop from top: " + reducedOnTop);
-//
-//        System.out.println("edc: " + (fixedEditorialCost + (diagonalSum - reducedFromRight)));
-
-//        EdcAndMapping overallBestEdcAndMapping = new EdcAndMapping(wholeMapping, wholeMappingEdc);
-            improveWholeMapping(reducedValuesByPairOfMappings, crossingsOnTop);
-
+            boolean changed = improveWholeMapping(reducedValuesByPairOfMappings, crossingsOnTop);
+            if (!changed) {
+                break;
+            }
             System.out.println("end with: " + wholeMappingEdc);
-            break;
-//            System.out.println("changes: " + mappingsToIntroduce.size());
-//            System.out.println("edcList: " + edcLists);
-
-//        Collection<List<SingleMapping>> permutations = Collections2.permutations(mappingsToIntroduce);
-//        int counter = 0;
-//        Map<SingleMapping, Set<Integer>> singleMappingToHowMuchEdcDecreased = new LinkedHashMap<>();
-//        for (List<SingleMapping> permutation : permutations) {
-//            Mapping mapping = originalStartMapping.copy();
-//            List<Integer> edcList = new ArrayList<>();
-//            int oldEdc = originalStartEdc;
-//            for (SingleMapping mappingToAdd : permutation) {
-//                MappingChange mappingChange = calcChangeToIntroduceNewSingleMapping(mapping, mappingToAdd, false);
-////                EdcCalculation oldEdcCalculation = reducerBasedEdc(mapping);
-//                mapping.remove(mappingChange.mappingToRemove1.getFrom());
-//                mapping.remove(mappingChange.mappingToRemove2.getFrom());
-//                mapping.add(mappingChange.mappingToAdd1.getFrom(), mappingChange.mappingToAdd1.getTo());
-//                mapping.add(mappingChange.mappingToAdd2.getFrom(), mappingChange.mappingToAdd2.getTo());
-////                EdcCalculation newEdcCalculation = reducerBasedEdc(mapping);
-//                int edc = EditorialCostForMapping.editorialCostForMapping(fixedEditorialCost, mapping, completeSourceGraph, completeTargetGraph);
-//
-////                int edcDifference = mappingChange.addDiagonalCost1 + mappingChange.addDiagonalCost2 - mappingChange.removedDiagonalCost1 - mappingChange.removedDiagonalCost2;
-////                edcDifference -= mappingChange.addedReducer1.stream().mapToInt(value -> value).sum();
-////                edcDifference -= mappingChange.addedReducer2.stream().mapToInt(value -> value).sum();
-////                edcDifference += mappingChange.removedReducer1.stream().mapToInt(value -> value).sum();
-////                edcDifference += mappingChange.removedReducer2.stream().mapToInt(value -> value).sum();
-////                Assert.assertTrue((edc - oldEdc) == edcDifference);
-////
-//
-//                edcList.add(edc);
-//                singleMappingToHowMuchEdcDecreased.computeIfAbsent(mappingToAdd, k -> new LinkedHashSet<>()).add(oldEdc - edc);
-//                oldEdc = edc;
-//            }
-////            System.out.println(edcList);
-//            if (counter % 100 == 0) {
-//                System.out.println(singleMappingToHowMuchEdcDecreased.values());
-//            }
-//            counter++;
-//        }
+            counter++;
         }
 
-        return null;
+        return wholeMapping;
     }
 
 
     private boolean improveWholeMapping(Map<Set<SingleMapping>, Integer> reducedValuesByPairOfMappings, Multimap<SingleMapping, Map<SingleMapping, Integer>> crossingsOnTop) {
         boolean improved = false;
         while (true) {
-            Multimap<SingleMapping, Map<SingleMapping, Integer>> crossingsToRight = calcCrossingsRight(wholeMapping);
             EdcAndMapping bestEdcAndMappingForThisRound = null;
             for (Set<SingleMapping> pair : reducedValuesByPairOfMappings.keySet()) {
                 SingleMapping one = getFirst(pair);
                 SingleMapping two = getSecond(pair);
-                SingleMapping newSingleMappingToIntroduce = null;
-                if (wholeMapping.getTarget(one.getFrom()) == one.getTo()) {
-                    newSingleMappingToIntroduce = two;
-
-                } else if (wholeMapping.getTarget(two.getFrom()) == two.getTo()) {
-                    newSingleMappingToIntroduce = one;
-                }
-                if (newSingleMappingToIntroduce == null) {
+                EdcAndMapping edcAndMapping;
+                if (wholeMapping.getTarget(one.getFrom()) != one.getTo() && wholeMapping.getTarget(two.getFrom()) != two.getTo()) {
+//                    edcAndMapping = tryChanging(one);
+//                    edcAndMapping = tryChanging(two);
+//                    System.out.println("try changing both with edc: " + edcAndMapping.edc);
+                    continue;
+//                    if (bestEdcAndMappingForThisRound != null && edcAndMapping.edc < bestEdcAndMappingForThisRound.edc) {
+////                        System.out.println("success in both changing with edc: " + edcAndMapping.edc);
+//                    }
+                } else if (wholeMapping.getTarget(one.getFrom()) != one.getTo()) {
+                    edcAndMapping = tryChanging(one);
+                } else if (wholeMapping.getTarget(two.getFrom()) != two.getTo()) {
+                    edcAndMapping = tryChanging(two);
+                } else {
                     continue;
                 }
-                if (wholeMapping.getTarget(newSingleMappingToIntroduce.getFrom()) == newSingleMappingToIntroduce.getTo()) {
-                    continue;
-                }
-                AtomicReference<MappingChange> mappingChangeAtomicReference = new AtomicReference<>();
-                EdcAndMapping edcAndMapping = tryChanging(newSingleMappingToIntroduce, crossingsToRight, crossingsOnTop, mappingChangeAtomicReference);
+//                System.out.println("try changing one with edc: " + edcAndMapping.edc);
                 if (bestEdcAndMappingForThisRound == null || edcAndMapping.edc < bestEdcAndMappingForThisRound.edc) {
                     bestEdcAndMappingForThisRound = edcAndMapping;
                     EdcCalculation edcCalculation = reducerBasedEdc(bestEdcAndMappingForThisRound.mapping);
@@ -201,11 +145,11 @@ public class ReducerBasedMapping {
                 break;
             }
             EdcCalculation edcCalculation = reducerBasedEdc(bestEdcAndMappingForThisRound.mapping);
-            System.out.println("new best mapping with edc: " + edcCalculation);
+//            System.out.println("new best mapping with edc: " + edcCalculation);
             wholeMapping = bestEdcAndMappingForThisRound.mapping;
-            mappingsToIntroduce.add(bestEdcAndMappingForThisRound.mappingToAdd);
+//            mappingsToIntroduce.add(bestEdcAndMappingForThisRound.mappingToAdd);
             wholeMappingEdc = bestEdcAndMappingForThisRound.edc;
-            edcLists.add(wholeMappingEdc);
+//            edcLists.add(wholeMappingEdc);
             improved = true;
         }
         return improved;
@@ -260,15 +204,15 @@ public class ReducerBasedMapping {
         return iterator.next();
     }
 
-    static class SingleMappingAndReducedCost {
-        final SingleMapping singleMapping;
-        final Integer reducedCost;
-
-        public SingleMappingAndReducedCost(SingleMapping singleMapping, Integer reducedCost) {
-            this.singleMapping = singleMapping;
-            this.reducedCost = reducedCost;
-        }
-    }
+//    static class SingleMappingAndReducedCost {
+//        final SingleMapping singleMapping;
+//        final Integer reducedCost;
+//
+//        public SingleMappingAndReducedCost(SingleMapping singleMapping, Integer reducedCost) {
+//            this.singleMapping = singleMapping;
+//            this.reducedCost = reducedCost;
+//        }
+//    }
 
     class EdcAndMapping {
         Mapping mapping;
@@ -282,11 +226,7 @@ public class ReducerBasedMapping {
         }
     }
 
-    private EdcAndMapping tryChanging(SingleMapping newMappingToIntroduce,
-                                      Multimap<SingleMapping, Map<SingleMapping, Integer>> crossingsToRight,
-                                      Multimap<SingleMapping, Map<SingleMapping, Integer>> crossingsOnTop,
-                                      AtomicReference<MappingChange> mappingChangeRef
-    ) {
+    private EdcAndMapping tryChanging(SingleMapping newMappingToIntroduce) {
 
         MappingChange mappingChange = calcChangeToIntroduceNewSingleMapping(wholeMapping, newMappingToIntroduce, false);
 //        System.out.println("adding 1 " + mappingChange.mappingToAdd1);

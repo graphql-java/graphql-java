@@ -272,6 +272,14 @@ public class DiffImpl {
             runningCheck.check();
         }
 
+        HungarianAlgorithm hungarianAlgorithm = new HungarianAlgorithm(costMatrixForHungarianAlgo);
+        int[] assignments = hungarianAlgorithm.execute();
+        int sum = 0;
+        for (int i = 0; i < assignments.length; i++) {
+            sum += costMatrix[i][assignments[i]];
+        }
+        System.out.println("sum: " + sum);
+
 
         // calc reduced amount by pair of single mapping
         Map<Set<SingleMapping>, Integer> reducedValuesByPairOfMappings = new LinkedHashMap<>();
@@ -299,9 +307,6 @@ public class DiffImpl {
         }
         System.out.println("total available reducer: " + reducedValuesByPairOfMappings.size());
 
-
-        HungarianAlgorithm hungarianAlgorithm = new HungarianAlgorithm(costMatrixForHungarianAlgo);
-        int[] assignments = hungarianAlgorithm.execute();
 
         int editorialCostForParentMapping = editorialCostForMapping(fixedEditorialCost, parentPartialMapping, completeSourceGraph, completeTargetGraph);
         int costMatrixSum = getCostMatrixSum(costMatrix, assignments);

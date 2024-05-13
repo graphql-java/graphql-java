@@ -2,9 +2,7 @@ package graphql.schema.diffing;
 
 import graphql.Internal;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 
 import static graphql.Assert.assertTrue;
 
@@ -57,27 +55,25 @@ public class HungarianAlgorithm {
     public final int[][] costMatrix;
 
     // constant always
+    private final int rows;
+    private final int cols;
     private final int dim;
 
     // the assigned workers,jobs for the result
     public final int[] matchJobByWorker;
     private final int[] matchWorkerByJob;
 
-
     // reset for each execute
     private final int[] minSlackWorkerByJob;
-    private final int[] minSlackValueByJob;
+    private final double[] minSlackValueByJob;
     private final int[] parentWorkerByCommittedJob;
     // reset for worker
     private final boolean[] committedWorkers;
 
 
     // labels for both sides of the bipartite graph
-    private final int[] labelByWorker;
-    private final int[] labelByJob;
-
-    private boolean recordAsNewMatch;
-    private List<NewMatch> newMatches;
+    private final double[] labelByWorker;
+    private final double[] labelByJob;
 
 
     /**
@@ -89,14 +85,14 @@ public class HungarianAlgorithm {
      *                   addition, all entries must be non-infinite numbers.
      */
     public HungarianAlgorithm(int[][] costMatrix) {
-        assertTrue(costMatrix.length == costMatrix[0].length);
         this.dim = Math.max(costMatrix.length, costMatrix[0].length);
-        // dim must be larger than 0, because otherwise costMatrix[0] is array out of bounds
+        this.rows = costMatrix.length;
+        this.cols = costMatrix[0].length;
         this.costMatrix = costMatrix;
-        labelByWorker = new int[this.dim];
-        labelByJob = new int[this.dim];
+        labelByWorker = new double[this.dim];
+        labelByJob = new double[this.dim];
         minSlackWorkerByJob = new int[this.dim];
-        minSlackValueByJob = new int[this.dim];
+        minSlackValueByJob = new double[this.dim];
         committedWorkers = new boolean[this.dim];
         parentWorkerByCommittedJob = new int[this.dim];
         matchJobByWorker = new int[this.dim];
@@ -112,7 +108,7 @@ public class HungarianAlgorithm {
      */
     protected void computeInitialFeasibleSolution() {
         for (int j = 0; j < dim; j++) {
-            labelByJob[j] = Integer.MAX_VALUE;
+            labelByJob[j] = Double.POSITIVE_INFINITY;
         }
         for (int w = 0; w < dim; w++) {
             for (int j = 0; j < dim; j++) {
@@ -146,7 +142,7 @@ public class HungarianAlgorithm {
             executePhase();
             w = fetchUnmatchedWorker();
         }
-        int[] result = Arrays.copyOf(matchJobByWorker, dim);
+        int[] result = Arrays.copyOf(matchJobByWorker, rows);
         return result;
     }
 
@@ -168,32 +164,20 @@ public class HungarianAlgorithm {
      * completes, the matching will have increased in size.
      */
     protected void executePhase() {
-        int minSlackWorker = -1;
-        int minSlackJob = -1;
-        int minSlackValue = -1;
-        boolean firstRun;
-        firstRun = true;
-        for (int j = 0; j < dim; j++) {
-            if (parentWorkerByCommittedJob[j] == -1) {
-                if (firstRun || minSlackValueByJob[j] < minSlackValue) {
-                    minSlackValue = minSlackValueByJob[j];
-                    minSlackWorker = minSlackWorkerByJob[j];
-                    minSlackJob = j;
-                    firstRun = false;
-                    // we can stop once we found a job with minSlackValue zero
-                    if (minSlackValue == 0) {
-                        break;
+        while (true) {
+            // the last worker we found
+            int minSlackWorker = -1;
+            int minSlackJob = -1;
+            double minSlackValue = Double.POSITIVE_INFINITY;
+            for (int j = 0; j < dim; j++) {
+                if (parentWorkerByCommittedJob[j] == -1) {
+                    if (minSlackValueByJob[j] < minSlackValue) {
+                        minSlackValue = minSlackValueByJob[j];
+                        minSlackWorker = minSlackWorkerByJob[j];
+                        minSlackJob = j;
                     }
                 }
             }
-        }
-        while (true) {
-
-            // a minSlackValue > 0 means there was no job with minSlackValue = 0
-            // meaning there is no worker -> job edge we can choose from
-            // we then update the labeling so that the minSlackValue for
-            // minSlackJob is = 0, therefore we can choose (minSlackWorker, minSlackJob)
-            // as next edge of our path
             if (minSlackValue > 0) {
                 updateLabeling(minSlackValue);
             }
@@ -225,35 +209,18 @@ public class HungarianAlgorithm {
                 /*
                  * Update slack values since we increased the size of the committed
                  * workers set.
-                 * The minSlackValues are calculated for all non-committed workers and jobs
-                 * hence we need to update it after we increase the committed workers
                  */
                 // we checked above that minSlackJob is indeed assigned
                 int worker = matchWorkerByJob[minSlackJob];
                 // committedWorkers is used when slack is updated
                 committedWorkers[worker] = true;
-
-
-                firstRun = true;
                 for (int j = 0; j < dim; j++) {
                     if (parentWorkerByCommittedJob[j] == -1) {
-                        // costMatrix - labels can become > Integer.MAX_VALUE, we want that
-                        // so we cast the double to int to convert it to MAX_VALUE instead of overflowing
-                        int slack = (int) ((double) costMatrix[worker][j] - labelByWorker[worker] - labelByJob[j]);
-                        if (firstRun) {
-                            minSlackWorker = worker;
-                            minSlackJob = j;
-                            minSlackValue = slack;
-                            firstRun = false;
-                        }
+                        double slack = costMatrix[worker][j] - labelByWorker[worker]
+                                - labelByJob[j];
                         if (minSlackValueByJob[j] > slack) {
                             minSlackValueByJob[j] = slack;
                             minSlackWorkerByJob[j] = worker;
-                        }
-                        if (minSlackValueByJob[j] < minSlackValue) {
-                            minSlackValue = minSlackValueByJob[j];
-                            minSlackWorker = minSlackWorkerByJob[j];
-                            minSlackJob = j;
                         }
                     }
                 }
@@ -265,12 +232,13 @@ public class HungarianAlgorithm {
      * @return the first unmatched worker or {@link #dim} if none.
      */
     protected int fetchUnmatchedWorker() {
-        for (int w = 0; w < dim; w++) {
+        int w;
+        for (w = 0; w < dim; w++) {
             if (matchJobByWorker[w] == -1) {
-                return w;
+                break;
             }
         }
-        return dim;
+        return w;
     }
 
     /**
@@ -359,7 +327,7 @@ public class HungarianAlgorithm {
      *
      * @param slack the specified slack
      */
-    protected void updateLabeling(int slack) {
+    protected void updateLabeling(double slack) {
         for (int w = 0; w < dim; w++) {
             if (committedWorkers[w]) {
                 labelByWorker[w] += slack;
@@ -374,35 +342,16 @@ public class HungarianAlgorithm {
         }
     }
 
-    public static class NewMatch {
-        public final int sourceIndex;
-        public final int oldTargetIndex;
-        public final int newTargetIndex;
-
-        public NewMatch(int sourceIndex, int oldTargetIndex, int newTargetIndex) {
-            this.sourceIndex = sourceIndex;
-            this.oldTargetIndex = oldTargetIndex;
-            this.newTargetIndex = newTargetIndex;
-        }
-    }
-
-
     public int[] nextChild() {
         int currentJobAssigned = matchJobByWorker[0];
         // we want to make currentJobAssigned not allowed,meaning we set the size to Infinity
-        // increasing the cost doesn't affect the feasibility of the labeling as the sum
-        // of the two labels must be smaller than the cost, hence increasing the cost is fine.
         costMatrix[0][currentJobAssigned] = Integer.MAX_VALUE;
         matchWorkerByJob[currentJobAssigned] = -1;
         matchJobByWorker[0] = -1;
+        minSlackValueByJob[currentJobAssigned] = Integer.MAX_VALUE;
         initializePhase(0);
-
-        recordAsNewMatch = true;
-        newMatches = new ArrayList<>();
         executePhase();
-        int unmatchedWorkers = fetchUnmatchedWorker();
-        assertTrue(unmatchedWorkers == dim);
-        int[] result = Arrays.copyOf(matchJobByWorker, dim);
+        int[] result = Arrays.copyOf(matchJobByWorker, rows);
         return result;
     }
 
@@ -417,16 +366,10 @@ public class HungarianAlgorithm {
             smallestCost = Math.min(costMatrix[w][matchJobByWorker[w]], smallestCost);
         }
         int currentJobAssigned = matchJobByWorker[workerWithSmallestCost];
-        // we want to make currentJobAssigned not allowed,meaning we set the size to Infinity
-        // increasing the cost doesn't affect the feasibility of the labeling as the sum
-        // of the two labels must be smaller than the cost, hence increasing the cost is fine.
         costMatrix[workerWithSmallestCost][currentJobAssigned] = Integer.MAX_VALUE;
         matchWorkerByJob[currentJobAssigned] = -1;
         matchJobByWorker[workerWithSmallestCost] = -1;
         initializePhase(workerWithSmallestCost);
-
-        recordAsNewMatch = true;
-        newMatches = new ArrayList<>();
         executePhase();
         int unmatchedWorkers = fetchUnmatchedWorker();
         assertTrue(unmatchedWorkers == dim);
@@ -434,9 +377,4 @@ public class HungarianAlgorithm {
         return result;
     }
 
-
-
-    public List<NewMatch> getNewMatches() {
-        return newMatches;
-    }
 }
