@@ -11,7 +11,7 @@ class SchemaValidatorTest extends Specification {
         def validator = new SchemaValidator()
         def rules = validator.rules
         then:
-        rules.size() == 8
+        rules.size() == 9
         rules[0] instanceof NoUnbrokenInputCycles
         rules[1] instanceof TypesImplementInterfaces
         rules[2] instanceof TypeAndFieldRule
@@ -20,5 +20,6 @@ class SchemaValidatorTest extends Specification {
         rules[5] instanceof AppliedDirectiveArgumentsAreValid
         rules[6] instanceof InputAndOutputTypesUsedAppropriately
         rules[7] instanceof OneOfInputObjectRules
+        rules[8] instanceof DeprecatedInputObjectAndArgumentsAreValid
     }
 }
