@@ -21,12 +21,12 @@ public class StreamPayload extends IncrementalPayload {
     }
 
     /**
-     * @return the resolved list of items
      * @param <T> the type to cast the result to
+     * @return the resolved list of items
      */
     @Nullable
     public <T> List<T> getItems() {
-        //noinspection unchecked
+        // noinspection unchecked
         return (List<T>) this.items;
     }
 
@@ -36,11 +36,7 @@ public class StreamPayload extends IncrementalPayload {
     @Override
     public Map<String, Object> toSpecification() {
         Map<String, Object> map = new LinkedHashMap<>(super.toSpecification());
-
-        if (items != null) {
-            map.put("items", items);
-        }
-
+        map.put("items", items);
         return map;
     }
 

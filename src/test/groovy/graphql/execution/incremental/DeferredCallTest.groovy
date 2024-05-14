@@ -69,6 +69,7 @@ class DeferredCallTest extends Specification {
 
         then:
         deferPayload.toSpecification() == [
+                data  : null,
                 path  : ["path"],
                 label : "my-label",
                 errors: [
