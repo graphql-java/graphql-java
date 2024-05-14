@@ -1,5 +1,6 @@
 package graphql.schema.validation;
 
+import graphql.Directives;
 import graphql.Internal;
 import graphql.schema.GraphQLAppliedDirective;
 import graphql.schema.GraphQLArgument;
@@ -26,7 +27,7 @@ public class DeprecatedInputObjectAndArgumentsAreValid extends GraphQLTypeVisito
     @Override
     public TraversalControl visitGraphQLInputObjectField(GraphQLInputObjectField inputObjectField, TraverserContext<GraphQLSchemaElement> context) {
         // There can only be at most one @deprecated, because it is not a repeatable directive
-        GraphQLAppliedDirective deprecatedDirective = inputObjectField.getAppliedDirective("deprecated");
+        GraphQLAppliedDirective deprecatedDirective = inputObjectField.getAppliedDirective(Directives.DEPRECATED_DIRECTIVE_DEFINITION.getName());
 
         if (deprecatedDirective != null && GraphQLTypeUtil.isNonNull(inputObjectField.getType()) && !inputObjectField.hasSetDefaultValue()) {
             GraphQLInputObjectType inputObjectType = (GraphQLInputObjectType) context.getParentNode();
@@ -42,7 +43,7 @@ public class DeprecatedInputObjectAndArgumentsAreValid extends GraphQLTypeVisito
     @Override
     public TraversalControl visitGraphQLArgument(GraphQLArgument argument, TraverserContext<GraphQLSchemaElement> context) {
         // There can only be at most one @deprecated, because it is not a repeatable directive
-        GraphQLAppliedDirective deprecatedDirective = argument.getAppliedDirective("deprecated");
+        GraphQLAppliedDirective deprecatedDirective = argument.getAppliedDirective(Directives.DEPRECATED_DIRECTIVE_DEFINITION.getName());
 
         if (deprecatedDirective != null && GraphQLTypeUtil.isNonNull(argument.getType()) && !argument.hasSetDefaultValue()) {
             if (context.getParentNode() instanceof GraphQLFieldDefinition) {
