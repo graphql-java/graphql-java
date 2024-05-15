@@ -1,6 +1,9 @@
 package graphql.incremental
 
 import graphql.execution.ResultPath
+import groovy.json.JsonOutput
+import io.reactivex.Flowable
+import org.reactivestreams.Publisher
 import spock.lang.Specification
 
 import static graphql.incremental.DeferPayload.newDeferredItem
@@ -80,6 +83,41 @@ class IncrementalExecutionResultTest extends Specification {
                 extensions: [some: "map"],
                 hasNext    : false,
         ]
+    }
 
+    def "sanity test to check Builder.from works"() {
+
+        when:
+        def defer1 = newDeferredItem()
+                .label("homeWorldDefer")
+                .path(ResultPath.parse("/person"))
+                .data([homeWorld: "Tatooine"])
+                .build()
+
+
+        def incrementalExecutionResult = new IncrementalExecutionResultImpl.Builder()
+                .data([
+                        person: [
+                                name : "Luke Skywalker",
+                                films: [
+                                        [title: "A New Hope"]
+                                ]
+                        ]
+                ])
+                .incrementalItemPublisher { Flowable.range(1,10)}
+                .hasNext(true)
+                .incremental([defer1])
+                .extensions([some: "map"])
+                .build()
+
+        def newIncrementalExecutionResult = new IncrementalExecutionResultImpl.Builder().from(incrementalExecutionResult).build()
+
+        then:
+        newIncrementalExecutionResult.incremental == incrementalExecutionResult.incremental
+        newIncrementalExecutionResult.extensions == incrementalExecutionResult.extensions
+        newIncrementalExecutionResult.errors == incrementalExecutionResult.errors
+        newIncrementalExecutionResult.incrementalItemPublisher == incrementalExecutionResult.incrementalItemPublisher
+        newIncrementalExecutionResult.hasNext() == incrementalExecutionResult.hasNext()
+        newIncrementalExecutionResult.toSpecification() == newIncrementalExecutionResult.toSpecification()
     }
 }
