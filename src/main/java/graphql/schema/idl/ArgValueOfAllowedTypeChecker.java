@@ -31,6 +31,7 @@ import graphql.schema.CoercingParseLiteralException;
 import graphql.schema.GraphQLScalarType;
 import graphql.schema.idl.errors.DirectiveIllegalArgumentTypeError;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -41,7 +42,6 @@ import static graphql.Assert.assertShouldNeverHappen;
 import static graphql.collect.ImmutableKit.emptyList;
 import static graphql.schema.idl.errors.DirectiveIllegalArgumentTypeError.DUPLICATED_KEYS_MESSAGE;
 import static graphql.schema.idl.errors.DirectiveIllegalArgumentTypeError.EXPECTED_ENUM_MESSAGE;
-import static graphql.schema.idl.errors.DirectiveIllegalArgumentTypeError.EXPECTED_LIST_MESSAGE;
 import static graphql.schema.idl.errors.DirectiveIllegalArgumentTypeError.EXPECTED_NON_NULL_MESSAGE;
 import static graphql.schema.idl.errors.DirectiveIllegalArgumentTypeError.EXPECTED_OBJECT_MESSAGE;
 import static graphql.schema.idl.errors.DirectiveIllegalArgumentTypeError.MISSING_REQUIRED_FIELD_MESSAGE;
@@ -259,25 +259,24 @@ class ArgValueOfAllowedTypeChecker {
     }
 
     private void checkArgValueMatchesAllowedListType(List<GraphQLError> errors, Value<?> instanceValue, ListType allowedArgType) {
-        if (instanceValue instanceof NullValue) {
+        // From the spec, on input coercion:
+        //   If the value passed as an input to a list type is not a list and not the null value,
+        //   then the result of input coercion is a list of size one where the single item value
+        //   is the result of input coercion for the list’s item type on the provided value
+        //   (note this may apply recursively for nested lists).
+
+        Value<?> coercedInstanceValue = instanceValue;
+        if (!(instanceValue instanceof ArrayValue) && !(instanceValue instanceof NullValue)) {
+            coercedInstanceValue = new ArrayValue(Collections.singletonList(instanceValue));
+        }
+
+        if (coercedInstanceValue instanceof NullValue) {
             return;
         }
 
         Type<?> unwrappedAllowedType = allowedArgType.getType();
-        if (!(instanceValue instanceof ArrayValue)) {
-            checkArgValueMatchesAllowedType(errors, instanceValue, unwrappedAllowedType);
-            return;
-        }
-
-        ArrayValue arrayValue = ((ArrayValue) instanceValue);
-        boolean isUnwrappedList = unwrappedAllowedType instanceof ListType;
-
-        // validate each instance value in the list, all instances must match for the list to match
+        ArrayValue arrayValue = ((ArrayValue) coercedInstanceValue);
         arrayValue.getValues().forEach(value -> {
-            // restrictive check for sub-arrays
-            if (isUnwrappedList && !(value instanceof ArrayValue)) {
-                addValidationError(errors, EXPECTED_LIST_MESSAGE, value.getClass().getSimpleName());
-            }
             checkArgValueMatchesAllowedType(errors, value, unwrappedAllowedType);
         });
     }
