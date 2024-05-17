@@ -196,10 +196,29 @@ public interface Instrumentation {
      * @param state      the state created during the call to {@link #createStateAsync(InstrumentationCreateStateParameters)}
      *
      * @return a nullable {@link InstrumentationContext} object that will be called back when the step ends (assuming it's not null)
+     *
+     * @deprecated use {@link #beginFieldFetching(InstrumentationFieldFetchParameters, InstrumentationState)} instead
      */
+    @Deprecated(since = "2024-04-18")
     @Nullable
     default InstrumentationContext<Object> beginFieldFetch(InstrumentationFieldFetchParameters parameters, InstrumentationState state) {
         return noOp();
+    }
+
+    /**
+     * This is called just before a field {@link DataFetcher} is invoked. The {@link FieldFetchingInstrumentationContext#onFetchedValue(Object)}
+     * callback will be invoked once a value is returned by a {@link DataFetcher} but perhaps before
+     * its value is completed if it's a {@link CompletableFuture} value.
+     *
+     * @param parameters the parameters to this step
+     * @param state      the state created during the call to {@link #createStateAsync(InstrumentationCreateStateParameters)}
+     *
+     * @return a nullable {@link InstrumentationContext} object that will be called back when the step ends (assuming it's not null)
+     */
+    @Nullable
+    default FieldFetchingInstrumentationContext beginFieldFetching(InstrumentationFieldFetchParameters parameters, InstrumentationState state) {
+        InstrumentationContext<Object> ctx = beginFieldFetch(parameters, state);
+        return FieldFetchingInstrumentationContext.adapter(ctx);
     }
 
     /**

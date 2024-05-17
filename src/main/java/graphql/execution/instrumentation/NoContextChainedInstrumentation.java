@@ -99,6 +99,11 @@ public class NoContextChainedInstrumentation extends ChainedInstrumentation {
     }
 
     @Override
+    public FieldFetchingInstrumentationContext beginFieldFetching(InstrumentationFieldFetchParameters parameters, InstrumentationState state) {
+        return runAll(state, (instrumentation, specificState) -> instrumentation.beginFieldFetching(parameters, specificState));
+    }
+
+    @Override
     public @Nullable InstrumentationContext<Object> beginFieldCompletion(InstrumentationFieldCompleteParameters parameters, InstrumentationState state) {
         return runAll(state, (instrumentation, specificState) -> instrumentation.beginFieldCompletion(parameters, specificState));
     }
