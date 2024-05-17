@@ -1511,6 +1511,7 @@ class SchemaTypeCheckerTest extends Specification {
 
         allowedArgType | argValue                                                                               | detailedMessage
         "ACustomDate"  | '"AFailingDate"'                                                                       | format(NOT_A_VALID_SCALAR_LITERAL_MESSAGE, "ACustomDate")
+        "[String]"     | 123                                                                                    | format(NOT_A_VALID_SCALAR_LITERAL_MESSAGE, "String")
         "[String!]"    | '["str", null]'                                                                        | format(EXPECTED_NON_NULL_MESSAGE)
         "[[String!]!]" | '[["str"], ["str2", null]]'                                                            | format(EXPECTED_NON_NULL_MESSAGE)
         "[[String!]!]" | '[["str"], ["str2", "str3"], null]'                                                    | format(EXPECTED_NON_NULL_MESSAGE)
@@ -1567,8 +1568,10 @@ class SchemaTypeCheckerTest extends Specification {
         "ACustomDate"  | '2002'
         "[String]"     | '["str", null]'
         "[String]"     | 'null'
+        "[String]"     | '"str"'          // see #2001
         "[String!]!"   | '["str"]'
         "[[String!]!]" | '[["str"], ["str2", "str3"]]'
+        "[[String]]"   | '[["str"], ["str2", null], null]'
         "[[String!]]"  | '[["str"], ["str2", "str3"], null]'
         "WEEKDAY"      | 'MONDAY'
         "UserInput"    | '{ fieldNonNull: "str" }'
