@@ -1342,9 +1342,195 @@ type Query {
 '''
     }
 
+    def "can print extend schema block when AST printing enabled"() {
+        def sdl = '''
+            directive @schemaDirective on SCHEMA
+            
+            """
+            My schema block description
+            """
+            schema {
+                mutation: MyMutation
+            }
+            
+            extend schema @schemaDirective {
+                query: MyQuery
+            }
+            
+            extend schema {
+                subscription: MySubscription
+            }
+            
+            type MyQuery {
+                foo: String
+            }
+            
+            type MyMutation {
+                pizza: String
+            }
+            
+            type MySubscription {
+                chippies: String
+            }
+        '''
+
+        when:
+        def runtimeWiring = newRuntimeWiring().build()
+
+        def options = SchemaGenerator.Options.defaultOptions()
+        def types = new SchemaParser().parse(sdl)
+        GraphQLSchema schema = new SchemaGenerator().makeExecutableSchema(options, types, runtimeWiring)
+
+        def printOptions = defaultOptions()
+                .useAstDefinitions(true)
+                .includeSchemaDefinition(true)
+        def result = new SchemaPrinter(printOptions).print(schema)
+
+        then:
+        result == '''"""
+My schema block description
+"""
+schema {
+  mutation: MyMutation
+}
+
+extend schema @schemaDirective {
+  query: MyQuery
+}
+
+extend schema {
+  subscription: MySubscription
+}
+
+"Marks the field, argument, input field or enum value as deprecated"
+directive @deprecated(
+    "The reason for the deprecation"
+    reason: String = "No longer supported"
+  ) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION
+
+"Directs the executor to include this field or fragment only when the `if` argument is true"
+directive @include(
+    "Included when true."
+    if: Boolean!
+  ) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
+
+"Indicates an Input Object is a OneOf Input Object."
+directive @oneOf on INPUT_OBJECT
+
+directive @schemaDirective on SCHEMA
+
+"Directs the executor to skip this field or fragment when the `if` argument is true."
+directive @skip(
+    "Skipped when true."
+    if: Boolean!
+  ) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
+
+"Exposes a URL that specifies the behaviour of this scalar."
+directive @specifiedBy(
+    "The URL that specifies the behaviour of this scalar."
+    url: String!
+  ) on SCALAR
+
+type MyMutation {
+  pizza: String
+}
+
+type MyQuery {
+  foo: String
+}
+
+type MySubscription {
+  chippies: String
+}
+'''
+    }
+
+    def "will not print extend schema block when AST printing not enabled"() {
+        def sdl = '''
+            directive @schemaDirective on SCHEMA
+            
+            """
+            My schema block description
+            """
+            schema {
+                mutation: MyMutation
+            }
+            
+            extend schema @schemaDirective {
+                query: MyQuery
+            }
+            
+            type MyQuery {
+                foo: String
+            }
+            
+            type MyMutation {
+                pizza: String
+            }
+        '''
+
+        when:
+        def runtimeWiring = newRuntimeWiring().build()
+
+        def options = SchemaGenerator.Options.defaultOptions()
+        def types = new SchemaParser().parse(sdl)
+        GraphQLSchema schema = new SchemaGenerator().makeExecutableSchema(options, types, runtimeWiring)
+
+        def printOptions = defaultOptions()
+                .useAstDefinitions(false)
+                .includeSchemaDefinition(true)
+        def result = new SchemaPrinter(printOptions).print(schema)
+
+        then:
+        result == '''"My schema block description"
+schema @schemaDirective{
+  query: MyQuery
+  mutation: MyMutation
+}
+
+"Marks the field, argument, input field or enum value as deprecated"
+directive @deprecated(
+    "The reason for the deprecation"
+    reason: String = "No longer supported"
+  ) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION
+
+"Directs the executor to include this field or fragment only when the `if` argument is true"
+directive @include(
+    "Included when true."
+    if: Boolean!
+  ) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
+
+"Indicates an Input Object is a OneOf Input Object."
+directive @oneOf on INPUT_OBJECT
+
+directive @schemaDirective on SCHEMA
+
+"Directs the executor to skip this field or fragment when the `if` argument is true."
+directive @skip(
+    "Skipped when true."
+    if: Boolean!
+  ) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
+
+"Exposes a URL that specifies the behaviour of this scalar."
+directive @specifiedBy(
+    "The URL that specifies the behaviour of this scalar."
+    url: String!
+  ) on SCALAR
+
+type MyMutation {
+  pizza: String
+}
+
+type MyQuery {
+  foo: String
+}
+'''
+    }
+
     def "can print a schema as AST elements"() {
         def sdl = '''
             directive @directive1 on SCALAR
+            
             type Query {
                 foo : String
             }
