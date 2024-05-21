@@ -17,6 +17,8 @@ import graphql.language.FragmentDefinition;
 import graphql.language.OperationDefinition;
 import org.dataloader.DataLoader;
 import org.dataloader.DataLoaderRegistry;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.Locale;
@@ -129,12 +131,12 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
     }
 
     @Override
-    public GraphQLContext getGraphQlContext() {
+    public @NotNull GraphQLContext getGraphQlContext() {
         return graphQLContext;
     }
 
     @Override
-    public <T> T getLocalContext() {
+    public <T> @Nullable T getLocalContext() {
         return (T) localContext;
     }
 
@@ -204,7 +206,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
     }
 
     @Override
-    public <K, V> DataLoader<K, V> getDataLoader(String dataLoaderName) {
+    public <K, V> @Nullable DataLoader<K, V> getDataLoader(String dataLoaderName) {
         return dataLoaderRegistry.getDataLoader(dataLoaderName);
     }
 

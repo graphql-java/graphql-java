@@ -13,6 +13,8 @@ import graphql.language.FragmentDefinition;
 import graphql.language.OperationDefinition;
 import org.dataloader.DataLoader;
 import org.dataloader.DataLoaderRegistry;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.Locale;
@@ -37,6 +39,7 @@ public interface DataFetchingEnvironment extends IntrospectionDataFetchingEnviro
      *
      * @return can be null for the root query, otherwise it is never null
      */
+    @Nullable
     <T> T getSource();
 
     /**
@@ -61,6 +64,7 @@ public interface DataFetchingEnvironment extends IntrospectionDataFetchingEnviro
      *
      * @return the named argument or null if it's not present
      */
+    @Nullable
     <T> T getArgument(String name);
 
     /**
@@ -97,6 +101,7 @@ public interface DataFetchingEnvironment extends IntrospectionDataFetchingEnviro
      *
      * @return can NOT be null
      */
+    @NotNull
     GraphQLContext getGraphQlContext();
 
     /**
@@ -114,6 +119,7 @@ public interface DataFetchingEnvironment extends IntrospectionDataFetchingEnviro
      *
      * @return can be null if no field context objects are passed back by previous parent fields
      */
+    @Nullable
     <T> T getLocalContext();
 
     /**
@@ -228,6 +234,7 @@ public interface DataFetchingEnvironment extends IntrospectionDataFetchingEnviro
      *
      * @see org.dataloader.DataLoaderRegistry#getDataLoader(String)
      */
+    @Nullable
     <K, V> DataLoader<K, V> getDataLoader(String dataLoaderName);
 
     /**
