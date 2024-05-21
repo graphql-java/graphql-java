@@ -839,7 +839,7 @@ public class SchemaGeneratorHelper {
                 dataFetcher = wiringFactory.getDataFetcher(wiringEnvironment);
                 assertNotNull(dataFetcher, () -> "The WiringFactory indicated it provides a data fetcher but then returned null");
             } else {
-                dataFetcher = runtimeWiring.getDataFetcherForType(parentTypeName).get(fieldName);
+                dataFetcher = runtimeWiring.getDataFetchersForType(parentTypeName).get(fieldName);
                 if (dataFetcher == null) {
                     dataFetcher = runtimeWiring.getDefaultDataFetcherForType(parentTypeName);
                     if (dataFetcher == null) {

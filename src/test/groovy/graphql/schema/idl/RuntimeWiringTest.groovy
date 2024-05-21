@@ -195,6 +195,7 @@ class RuntimeWiringTest extends Specification {
 
     def "strict mode can stop certain redefinitions"() {
         DataFetcher DF1 = env -> "x"
+        DataFetcher DF2 = env -> "x"
         TypeResolver TR1 = env -> null
         EnumValuesProvider EVP1 = name -> null
 
@@ -235,6 +236,46 @@ class RuntimeWiringTest extends Specification {
         then:
         def e4 = thrown(StrictModeWiringException)
         e4.message == "The scalar String is already defined"
+
+        when:
+        TypeRuntimeWiring.newTypeWiring("Foo")
+                .strictMode()
+                .defaultDataFetcher(DF1)
+                .defaultDataFetcher(DF2)
+
+        then:
+        def e5 = thrown(StrictModeWiringException)
+        e5.message == "The type Foo has already has a default data fetcher defined"
+    }
+
+    def "overwrite default data fetchers if they are null"() {
+
+        DataFetcher DF1 = env -> "x"
+        DataFetcher DF2 = env -> "x"
+        DataFetcher DEFAULT_DF = env -> null
+        DataFetcher DEFAULT_DF2 = env -> null
+
+        when:
+        def runtimeWiring = RuntimeWiring.newRuntimeWiring()
+                .type(TypeRuntimeWiring.newTypeWiring("Foo").defaultDataFetcher(DEFAULT_DF))
+                .type(TypeRuntimeWiring.newTypeWiring("Foo").dataFetcher("foo", DF1))
+                .type(TypeRuntimeWiring.newTypeWiring("Foo").dataFetcher("bar", DF2))
+                .build()
+
+        then:
+        runtimeWiring.getDefaultDataFetcherForType("Foo") == DEFAULT_DF
+
+        when:
+        runtimeWiring = RuntimeWiring.newRuntimeWiring()
+                .type(TypeRuntimeWiring.newTypeWiring("Foo").defaultDataFetcher(DEFAULT_DF))
+                .type(TypeRuntimeWiring.newTypeWiring("Foo").dataFetcher("foo", DF1))
+                .type(TypeRuntimeWiring.newTypeWiring("Foo").dataFetcher("bar", DF2))
+                // we can specifically overwrite it later
+                .type(TypeRuntimeWiring.newTypeWiring("Foo").defaultDataFetcher(DEFAULT_DF2))
+                .build()
+
+        then:
+        runtimeWiring.getDefaultDataFetcherForType("Foo") == DEFAULT_DF2
 
     }
 }
