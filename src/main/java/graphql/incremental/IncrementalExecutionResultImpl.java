@@ -91,6 +91,8 @@ public class IncrementalExecutionResultImpl extends ExecutionResultImpl implemen
         public Builder from(IncrementalExecutionResult incrementalExecutionResult) {
             super.from(incrementalExecutionResult);
             this.hasNext = incrementalExecutionResult.hasNext();
+            this.incremental = incrementalExecutionResult.getIncremental();
+            this.incrementalItemPublisher = incrementalExecutionResult.getIncrementalItemPublisher();
             return this;
         }
 
