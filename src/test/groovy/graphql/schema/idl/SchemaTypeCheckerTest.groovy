@@ -21,7 +21,6 @@ import spock.lang.Unroll
 import static graphql.schema.GraphQLScalarType.newScalar
 import static graphql.schema.idl.errors.DirectiveIllegalArgumentTypeError.DUPLICATED_KEYS_MESSAGE
 import static graphql.schema.idl.errors.DirectiveIllegalArgumentTypeError.EXPECTED_ENUM_MESSAGE
-import static graphql.schema.idl.errors.DirectiveIllegalArgumentTypeError.EXPECTED_LIST_MESSAGE
 import static graphql.schema.idl.errors.DirectiveIllegalArgumentTypeError.EXPECTED_NON_NULL_MESSAGE
 import static graphql.schema.idl.errors.DirectiveIllegalArgumentTypeError.EXPECTED_OBJECT_MESSAGE
 import static graphql.schema.idl.errors.DirectiveIllegalArgumentTypeError.MISSING_REQUIRED_FIELD_MESSAGE
@@ -1512,13 +1511,14 @@ class SchemaTypeCheckerTest extends Specification {
 
         allowedArgType | argValue                                                                               | detailedMessage
         "ACustomDate"  | '"AFailingDate"'                                                                       | format(NOT_A_VALID_SCALAR_LITERAL_MESSAGE, "ACustomDate")
+        "[String]"     | 123                                                                                    | format(NOT_A_VALID_SCALAR_LITERAL_MESSAGE, "String")
         "[String!]"    | '["str", null]'                                                                        | format(EXPECTED_NON_NULL_MESSAGE)
         "[[String!]!]" | '[["str"], ["str2", null]]'                                                            | format(EXPECTED_NON_NULL_MESSAGE)
+        "[[String!]!]" | '[["str"], ["str2", "str3"], null]'                                                    | format(EXPECTED_NON_NULL_MESSAGE)
         "WEEKDAY"      | '"somestr"'                                                                            | format(EXPECTED_ENUM_MESSAGE, "StringValue")
         "WEEKDAY"      | 'SATURDAY'                                                                             | format(MUST_BE_VALID_ENUM_VALUE_MESSAGE, "SATURDAY", "MONDAY,TUESDAY")
         "UserInput"    | '{ fieldNonNull: "str", fieldNonNull: "dupeKey" }'                                     | format(DUPLICATED_KEYS_MESSAGE, "fieldNonNull")
         "UserInput"    | '{ fieldNonNull: "str", unknown: "field" }'                                            | format(UNKNOWN_FIELDS_MESSAGE, "unknown", "UserInput")
-        "UserInput"    | '{ fieldNonNull: "str", fieldArrayOfArray: ["ArrayInsteadOfArrayOfArray"] }'           | format(EXPECTED_LIST_MESSAGE, "StringValue")
         "UserInput"    | '{ fieldNonNull: "str", fieldNestedInput: "strInsteadOfObject" }'                      | format(EXPECTED_OBJECT_MESSAGE, "StringValue")
         "UserInput"    | '{ field: "missing the `fieldNonNull` entry"}'                                         | format(MISSING_REQUIRED_FIELD_MESSAGE, "fieldNonNull")
     }
@@ -1568,8 +1568,11 @@ class SchemaTypeCheckerTest extends Specification {
         "ACustomDate"  | '2002'
         "[String]"     | '["str", null]'
         "[String]"     | 'null'
+        "[String]"     | '"str"'          // see #2001
         "[String!]!"   | '["str"]'
         "[[String!]!]" | '[["str"], ["str2", "str3"]]'
+        "[[String]]"   | '[["str"], ["str2", null], null]'
+        "[[String!]]"  | '[["str"], ["str2", "str3"], null]'
         "WEEKDAY"      | 'MONDAY'
         "UserInput"    | '{ fieldNonNull: "str" }'
         "UserInput"    | '{ fieldNonNull: "str", fieldString: "Hey" }'

@@ -16,7 +16,6 @@ public class DirectiveIllegalArgumentTypeError extends BaseError {
     public static final String NOT_A_VALID_SCALAR_LITERAL_MESSAGE = "Argument value is not a valid value of scalar '%s'.";
     public static final String MISSING_REQUIRED_FIELD_MESSAGE = "Missing required field '%s'.";
     public static final String EXPECTED_NON_NULL_MESSAGE = "Argument value is 'null', expected a non-null value.";
-    public static final String EXPECTED_LIST_MESSAGE = "Argument value is '%s', expected a list value.";
     public static final String EXPECTED_OBJECT_MESSAGE = "Argument value is of type '%s', expected an Object value.";
 
     public DirectiveIllegalArgumentTypeError(Node element, String elementName, String directiveName, String argumentName, String detailedMessaged) {
