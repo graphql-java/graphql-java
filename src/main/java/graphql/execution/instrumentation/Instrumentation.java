@@ -209,6 +209,11 @@ public interface Instrumentation {
      * This is called just before a field {@link DataFetcher} is invoked. The {@link FieldFetchingInstrumentationContext#onFetchedValue(Object)}
      * callback will be invoked once a value is returned by a {@link DataFetcher} but perhaps before
      * its value is completed if it's a {@link CompletableFuture} value.
+     * <p>
+     * This method is the replacement method for the now deprecated {@link #beginFieldFetch(InstrumentationFieldFetchParameters, InstrumentationState)}
+     * method, and it should be implemented in new {@link Instrumentation} classes.  This default version of this
+     * method calls back to the deprecated  {@link #beginFieldFetch(InstrumentationFieldFetchParameters, InstrumentationState)} method
+     * so that older implementations continue to work.
      *
      * @param parameters the parameters to this step
      * @param state      the state created during the call to {@link #createStateAsync(InstrumentationCreateStateParameters)}
