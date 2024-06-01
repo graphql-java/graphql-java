@@ -118,6 +118,6 @@ class IncrementalExecutionResultTest extends Specification {
         newIncrementalExecutionResult.errors == incrementalExecutionResult.errors
         newIncrementalExecutionResult.incrementalItemPublisher == incrementalExecutionResult.incrementalItemPublisher
         newIncrementalExecutionResult.hasNext() == incrementalExecutionResult.hasNext()
-        newIncrementalExecutionResult.toSpecification() == newIncrementalExecutionResult.toSpecification()
+        newIncrementalExecutionResult.toSpecification() == incrementalExecutionResult.toSpecification()
     }
 }
