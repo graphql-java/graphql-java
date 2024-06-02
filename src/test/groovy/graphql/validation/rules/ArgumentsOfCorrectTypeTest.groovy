@@ -335,6 +335,37 @@ class ArgumentsOfCorrectTypeTest extends Specification {
         validationErrors.get(0).message == "Validation error (WrongType@[dog/doesKnowCommand]) : argument 'dogCommand' with value 'EnumValue{name='PRETTY'}' is not a valid 'DogCommand' - Literal value not in allowable values for enum 'DogCommand' - 'EnumValue{name='PRETTY'}'"
     }
 
+    def "invalid @oneOf argument - has more than 1 key - case #why"() {
+        when:
+        def validationErrors = validate(query)
+
+        then:
+        validationErrors.size() == 1
+        validationErrors.get(0).getValidationErrorType() == ValidationErrorType.WrongType
+        validationErrors.get(0).message == "Validation error (WrongType@[oneOfField]) : Exactly one key must be specified for OneOf type 'oneOfInputType'."
+
+        where:
+        why              | query                                             | _
+        'some variables' |
+                '''
+            query q($v1 : String) {
+              oneOfField(oneOfArg : { a : $v1, b : "y" })
+            }
+        '''                                               | _
+        'all variables'  |
+                '''
+            query q($v1 : String, $v2 : String) {
+              oneOfField(oneOfArg : { a : $v1, b : $v2 })
+            }
+        '''                                               | _
+        'all literals'   |
+                '''
+            query q {
+              oneOfField(oneOfArg : { a : "x", b : "y" })
+            }
+        '''                                               | _
+    }
+
     static List<ValidationError> validate(String query) {
         def document = new Parser().parseDocument(query)
         return new Validator().validateDocument(SpecValidationSchema.specValidationSchema, document, Locale.ENGLISH)
