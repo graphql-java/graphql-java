@@ -161,7 +161,7 @@ public class ValidationUtil {
 
         }
         if (type.hasAppliedDirective(Directives.OneOfDirective.getName())) {
-            if (objectFieldMap.keySet() .size() != 1) {
+            if (objectFieldMap.keySet().size() != 1) {
                 handleExtraOneOfFieldsError(type,value);
                 return false;
             }
