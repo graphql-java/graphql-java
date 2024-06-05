@@ -1188,4 +1188,70 @@ triple3 : """edge cases \\""" "" " \\"" \\" edge cases"""
         "\"\t\" scalar A"   | _
     }
 
+    def "can redact tokens in InvalidSyntax parser error message"() {
+        given:
+        def input = '''""" scalar ComputerSaysNo'''
+
+        when: // Default options do not redact error messages
+        Parser.parse(input)
+
+        then:
+        InvalidSyntaxException e = thrown(InvalidSyntaxException)
+        e.message == '''Invalid syntax with ANTLR error 'token recognition error at: '""" scalar ComputerSaysNo'' at line 1 column 1'''
+
+        when: // Enable redacted parser error messages
+        def redactParserErrorMessages = ParserOptions.newParserOptions().redactTokenParserErrorMessages(true).build()
+        def parserEnvironment = newParserEnvironment().document(input).parserOptions(redactParserErrorMessages).build()
+        new Parser().parseDocument(parserEnvironment)
+
+        then:
+        InvalidSyntaxException redactedError = thrown(InvalidSyntaxException)
+        redactedError.message == "Invalid syntax at line 1 column 1"
+    }
+
+    def "can redact tokens in InvalidSyntaxBail parser error message"() {
+        given:
+        def input = '''
+            query {
+              computer says no!!!!!!
+        '''
+
+        when: // Default options do not redact error messages
+        Parser.parse(input)
+
+        then:
+        InvalidSyntaxException e = thrown(InvalidSyntaxException)
+        e.message == "Invalid syntax with offending token '!' at line 3 column 31"
+
+        when: // Enable redacted parser error messages
+        def redactParserErrorMessages = ParserOptions.newParserOptions().redactTokenParserErrorMessages(true).build()
+        def parserEnvironment = newParserEnvironment().document(input).parserOptions(redactParserErrorMessages).build()
+        new Parser().parseDocument(parserEnvironment)
+
+        then:
+        InvalidSyntaxException redactedError = thrown(InvalidSyntaxException)
+        redactedError.message == "Invalid syntax at line 3 column 31"
+    }
+
+    def "can redact tokens in InvalidSyntaxMoreTokens parser error message"() {
+        given:
+        def input = "{profile(id:117) {computer, says, no}}}"
+
+
+        when: // Default options do not redact error messages
+        Parser.parse(input)
+
+        then:
+        InvalidSyntaxException e = thrown(InvalidSyntaxException)
+        e.message == "Invalid syntax encountered. There are extra tokens in the text that have not been consumed. Offending token '}' at line 1 column 39"
+
+        when: // Enable redacted parser error messages
+        def redactParserErrorMessages = ParserOptions.newParserOptions().redactTokenParserErrorMessages(true).build()
+        def parserEnvironment = newParserEnvironment().document(input).parserOptions(redactParserErrorMessages).build()
+        new Parser().parseDocument(parserEnvironment)
+
+        then:
+        InvalidSyntaxException redactedError = thrown(InvalidSyntaxException)
+        redactedError.message == "Invalid syntax encountered. There are extra tokens in the text that have not been consumed. Offending token at line 1 column 39"
+    }
 }
