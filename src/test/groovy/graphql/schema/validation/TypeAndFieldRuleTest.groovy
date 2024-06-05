@@ -14,7 +14,7 @@ class TypeAndFieldRuleTest extends Specification {
     def "type must define one or more fields."() {
         when:
         def sdl = '''
-        type Query {}
+        type Query
         '''
 
         TestUtil.schema(sdl)
@@ -29,7 +29,7 @@ class TypeAndFieldRuleTest extends Specification {
         type Query {
             enumValue: EnumType
         }
-        enum EnumType {}
+        enum EnumType
         '''
 
         TestUtil.schema(sdl)
@@ -44,7 +44,7 @@ class TypeAndFieldRuleTest extends Specification {
         type Query {
             field: String
         }
-        input InputType {}
+        input InputType
         
         '''
 
@@ -83,7 +83,7 @@ class TypeAndFieldRuleTest extends Specification {
         when:
         def sdl = '''
         type Query { field: Int }
-        interface Interface {}
+        interface Interface
         '''
 
         TestUtil.schema(sdl)

@@ -9,7 +9,7 @@ class Issue2114 extends Specification {
 
     def "allow use of repeatable directives on extensions"() {
         given:
-        def spec = "type Query {}" +
+        def spec = "type Query " +
                 "directive @IamRepeatable repeatable on FIELD_DEFINITION" +
                 " extend type Query { " +
                 "   test: String" +

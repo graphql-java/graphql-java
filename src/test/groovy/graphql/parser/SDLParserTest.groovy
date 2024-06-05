@@ -534,30 +534,6 @@ input Gun {
         extTypeDef.getFieldDefinitions().size() == 1
     }
 
-    def "empty type definition with body"() {
-
-        def input = """
-        type EmptyType {
-        
-        }
-        
-        extend type EmptyType {
-            hero : String
-        }
-"""
-        when:
-        def document = new Parser().parseDocument(input)
-
-        then:
-        ObjectTypeDefinition typeDef = document.definitions[0] as ObjectTypeDefinition
-        typeDef.getName() == 'EmptyType'
-        typeDef.getFieldDefinitions().isEmpty()
-
-        ObjectTypeExtensionDefinition extTypeDef = document.definitions[1] as ObjectTypeExtensionDefinition
-        extTypeDef.getName() == 'EmptyType'
-        extTypeDef.getFieldDefinitions().size() == 1
-    }
-
     def "type implements can have & character for extra names"() {
 
         def input = """
@@ -1067,6 +1043,147 @@ directive @myDirective on
         e.location.line == 5
         e.location.column == 1
         e.offendingToken == "<EOF>"
+    }
+
+    def "empty object type with braces fails"() {
+        given:
+        def input = """
+type Query {}
+"""
+
+        when:
+        new Parser().parseDocument(input)
+
+        then:
+        def e = thrown(InvalidSyntaxException)
+
+        e.location.line == 2
+        e.location.column == 13
+        e.offendingToken == "}"
+    }
+
+    def "empty interface type with braces fails"() {
+        given:
+        def input = """
+interface Node {}
+"""
+
+        when:
+        new Parser().parseDocument(input)
+
+        then:
+        def e = thrown(InvalidSyntaxException)
+
+        e.location.line == 2
+        e.location.column == 17
+        e.offendingToken == "}"
+    }
+
+    def "empty input object type with braces fails"() {
+        given:
+        def input = """
+input MyInput {}
+"""
+
+        when:
+        new Parser().parseDocument(input)
+
+        then:
+        def e = thrown(InvalidSyntaxException)
+
+        e.location.line == 2
+        e.location.column == 16
+        e.offendingToken == "}"
+    }
+
+    def "empty enum type with braces fails"() {
+        given:
+        def input = """
+enum MyEnum {}
+"""
+
+        when:
+        new Parser().parseDocument(input)
+
+        then:
+        def e = thrown(InvalidSyntaxException)
+
+        e.location.line == 2
+        e.location.column == 14
+        e.offendingToken == "}"
+    }
+
+
+    def "empty object type extension with braces fails"() {
+        given:
+        def input = """
+type Query { foo : String}
+extend type Query @deprecated {}
+"""
+
+        when:
+        new Parser().parseDocument(input)
+
+        then:
+        def e = thrown(InvalidSyntaxException)
+
+        e.location.line == 3
+        e.location.column == 32
+        e.offendingToken == "}"
+    }
+
+    def "empty interface type extension with braces fails"() {
+        given:
+        def input = """
+interface Node { foo: String }
+extend interface Node @deprecated {}
+"""
+
+        when:
+        new Parser().parseDocument(input)
+
+        then:
+        def e = thrown(InvalidSyntaxException)
+
+        e.location.line == 3
+        e.location.column == 36
+        e.offendingToken == "}"
+    }
+
+    def "empty input object type extension with braces fails"() {
+        given:
+        def input = """
+input MyInput { foo: String }
+extend input MyInput @deprecated {}
+"""
+
+        when:
+        new Parser().parseDocument(input)
+
+        then:
+        def e = thrown(InvalidSyntaxException)
+
+        e.location.line == 3
+        e.location.column == 35
+        e.offendingToken == "}"
+    }
+
+    def "empty enum type extension with braces fails"() {
+        given:
+        def input = """
+enum MyEnum { FOO }
+extend enum MyEnum @deprecated {}
+"""
+
+        when:
+        new Parser().parseDocument(input)
+
+        then:
+        def e = thrown(InvalidSyntaxException)
+
+        e.location.line == 3
+        e.location.column == 33
+        e.offendingToken == "}"
     }
 }
 

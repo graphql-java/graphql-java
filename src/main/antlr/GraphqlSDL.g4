@@ -53,8 +53,8 @@ scalarTypeExtensionDefinition : EXTEND SCALAR name directives;
 objectTypeDefinition : description? TYPE name implementsInterfaces? directives? fieldsDefinition?;
 
 objectTypeExtensionDefinition :
-    EXTEND TYPE name implementsInterfaces? directives? extensionFieldsDefinition |
-    EXTEND TYPE name implementsInterfaces? directives emptyParentheses? |
+    EXTEND TYPE name implementsInterfaces? directives? extensionFieldsDefinition? |
+    EXTEND TYPE name implementsInterfaces? directives |
     EXTEND TYPE name implementsInterfaces
 ;
 
@@ -62,7 +62,7 @@ implementsInterfaces :
     IMPLEMENTS '&'? typeName |
     implementsInterfaces '&' typeName ;
 
-fieldsDefinition : '{' fieldDefinition* '}';
+fieldsDefinition : '{' fieldDefinition+ '}';
 
 extensionFieldsDefinition : '{' fieldDefinition+ '}';
 
@@ -76,7 +76,7 @@ interfaceTypeDefinition : description? INTERFACE name implementsInterfaces? dire
 
 interfaceTypeExtensionDefinition :
     EXTEND INTERFACE name implementsInterfaces? directives? extensionFieldsDefinition |
-    EXTEND INTERFACE name implementsInterfaces? directives emptyParentheses? |
+    EXTEND INTERFACE name implementsInterfaces? directives |
     EXTEND INTERFACE name implementsInterfaces
 ;
 
@@ -99,10 +99,10 @@ enumTypeDefinition : description? ENUM name directives? enumValueDefinitions?;
 
 enumTypeExtensionDefinition :
     EXTEND ENUM name directives? extensionEnumValueDefinitions |
-    EXTEND ENUM name directives emptyParentheses?
+    EXTEND ENUM name directives
 ;
 
-enumValueDefinitions : '{' enumValueDefinition* '}';
+enumValueDefinitions : '{' enumValueDefinition+ '}';
 
 extensionEnumValueDefinitions : '{' enumValueDefinition+ '}';
 
@@ -113,10 +113,10 @@ inputObjectTypeDefinition : description? INPUT name directives? inputObjectValue
 
 inputObjectTypeExtensionDefinition :
     EXTEND INPUT name directives? extensionInputObjectValueDefinitions |
-    EXTEND INPUT name directives emptyParentheses?
+    EXTEND INPUT name directives
 ;
 
-inputObjectValueDefinitions : '{' inputValueDefinition* '}';
+inputObjectValueDefinitions : '{' inputValueDefinition+ '}';
 
 extensionInputObjectValueDefinitions : '{' inputValueDefinition+ '}';
 
