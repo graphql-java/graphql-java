@@ -170,14 +170,14 @@ class GraphQLInputObjectTypeTest extends Specification {
         er = graphQL.execute(ei)
         then:
         !er.errors.isEmpty()
-        er.errors[0].message == "Exception while fetching data (/f) : Exactly one key must be specified for OneOf type 'OneOf'."
+        er.errors[0].message == "Exactly one key must be specified for OneOf type 'OneOf'."
 
         when:
         ei = ExecutionInput.newExecutionInput('query q($var : OneOf)  { f( arg : $var) { key value }}').variables([var: [a: null]]).build()
         er = graphQL.execute(ei)
         then:
         !er.errors.isEmpty()
-        er.errors[0].message == "Exception while fetching data (/f) : OneOf type field 'OneOf.a' must be non-null."
+        er.errors[0].message == "OneOf type field 'OneOf.a' must be non-null."
 
         // lots more covered in unit tests
     }
