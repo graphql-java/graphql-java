@@ -16,4 +16,9 @@ public class StreamedCall implements IncrementalCall<StreamPayload> {
     public CompletableFuture<StreamPayload> invoke() {
         throw new UnsupportedOperationException("Not implemented yet.");
     }
+
+    @Override
+    public int level() {
+        throw new UnsupportedOperationException("Not implemented yet.");
+    }
 }

@@ -11,4 +11,6 @@ import java.util.concurrent.CompletableFuture;
  */
 public interface IncrementalCall<T extends IncrementalPayload> {
     CompletableFuture<T> invoke();
+
+    int level();
 }

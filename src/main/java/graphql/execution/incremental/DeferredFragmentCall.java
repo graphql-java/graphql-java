@@ -45,13 +45,13 @@ public class DeferredFragmentCall implements IncrementalCall<DeferPayload> {
     }
 
     private final ResultPath path;
-    private final List<Supplier<CompletableFuture<FieldWithExecutionResult>>> calls;
+    private final List<CompletableFuture<FieldWithExecutionResult>> calls;
     private final DeferredCallContext deferredCallContext;
 
     public DeferredFragmentCall(
             String label,
             ResultPath path,
-            List<Supplier<CompletableFuture<FieldWithExecutionResult>>> calls,
+            List<CompletableFuture<FieldWithExecutionResult>> calls,
             DeferredCallContext deferredCallContext
     ) {
         this.label = label;
@@ -64,14 +64,16 @@ public class DeferredFragmentCall implements IncrementalCall<DeferPayload> {
     public CompletableFuture<DeferPayload> invoke() {
         Async.CombinedBuilder<FieldWithExecutionResult> futures = Async.ofExpectedSize(calls.size());
 
-        calls.forEach(call -> {
-            CompletableFuture<FieldWithExecutionResult> cf = call.get();
-            futures.add(cf);
-        });
+        calls.forEach(futures::add);
 
         return futures.await()
                 .thenApply(this::transformToDeferredPayload)
                 .handle(this::handleNonNullableFieldError);
+    }
+
+    @Override
+    public int level() {
+        return this.path.getLevel();
     }
 
     /**

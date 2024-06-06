@@ -13,7 +13,6 @@ import graphql.execution.MergedField;
 import graphql.execution.MergedSelectionSet;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.incremental.IncrementalPayload;
-import graphql.util.FpKit;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -23,7 +22,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiFunction;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
@@ -58,7 +56,7 @@ public interface DeferredExecutionSupport {
         private final ExecutionStrategyParameters parameters;
         private final ExecutionContext executionContext;
         private final BiFunction<ExecutionContext, ExecutionStrategyParameters, CompletableFuture<FieldValueInfo>> resolveFieldWithInfoFn;
-        private final Map<String, Supplier<CompletableFuture<DeferredFragmentCall.FieldWithExecutionResult>>> dfCache = new HashMap<>();
+        private final Map<String, CompletableFuture<DeferredFragmentCall.FieldWithExecutionResult>> dfCache = new HashMap<>();
 
         public DeferredExecutionSupportImpl(
                 MergedSelectionSet mergedSelectionSet,
@@ -116,7 +114,7 @@ public interface DeferredExecutionSupport {
 
             List<MergedField> mergedFields = deferredExecutionToFields.get(deferredExecution);
 
-            List<Supplier<CompletableFuture<DeferredFragmentCall.FieldWithExecutionResult>>> calls = mergedFields.stream()
+            List<CompletableFuture<DeferredFragmentCall.FieldWithExecutionResult>> calls = mergedFields.stream()
                     .map(currentField -> this.createResultSupplier(currentField, deferredCallContext))
                     .collect(Collectors.toList());
 
@@ -128,7 +126,7 @@ public interface DeferredExecutionSupport {
             );
         }
 
-        private Supplier<CompletableFuture<DeferredFragmentCall.FieldWithExecutionResult>> createResultSupplier(
+        private CompletableFuture<DeferredFragmentCall.FieldWithExecutionResult> createResultSupplier(
                 MergedField currentField,
                 DeferredCallContext deferredCallContext
         ) {
@@ -155,25 +153,24 @@ public interface DeferredExecutionSupport {
             return dfCache.computeIfAbsent(
                     currentField.getResultKey(),
                     // The same field can be associated with multiple defer executions, so
-                    // we memoize the field resolution to avoid multiple calls to the same data fetcher
-                    key -> FpKit.interThreadMemoize(() -> {
-                                CompletableFuture<FieldValueInfo> fieldValueResult = resolveFieldWithInfoFn
-                                        .apply(executionContext, callParameters);
+                    // we cache the field resolution to avoid multiple calls to the same data fetcher
+                    key -> {
+                        CompletableFuture<FieldValueInfo> fieldValueResult = resolveFieldWithInfoFn
+                                .apply(executionContext, callParameters);
 
-                                // Create a reference to the CompletableFuture that resolves an ExecutionResult
-                                // so we can pass it to the Instrumentation "onDispatched" callback.
-                                CompletableFuture<ExecutionResult> executionResultCF = fieldValueResult
-                                        .thenCompose(fvi -> fvi
-                                                .getFieldValueFuture()
-                                                .thenApply(fv -> ExecutionResultImpl.newExecutionResult().data(fv).build())
-                                        );
+                        // Create a reference to the CompletableFuture that resolves an ExecutionResult
+                        // so we can pass it to the Instrumentation "onDispatched" callback.
+                        CompletableFuture<ExecutionResult> executionResultCF = fieldValueResult
+                                .thenCompose(fvi -> fvi
+                                        .getFieldValueFuture()
+                                        .thenApply(fv -> ExecutionResultImpl.newExecutionResult().data(fv).build())
+                                );
 
-                                return executionResultCF
-                                        .thenApply(executionResult ->
-                                                new DeferredFragmentCall.FieldWithExecutionResult(currentField.getResultKey(), executionResult)
-                                        );
-                            }
-                    )
+                        return executionResultCF
+                                .thenApply(executionResult ->
+                                        new DeferredFragmentCall.FieldWithExecutionResult(currentField.getResultKey(), executionResult)
+                                );
+                    }
             );
         }
     }

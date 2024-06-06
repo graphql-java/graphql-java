@@ -9,8 +9,11 @@ import org.reactivestreams.Publisher;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Deque;
+import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -23,7 +26,14 @@ import static graphql.incremental.DelayedIncrementalPartialResultImpl.newIncreme
 @Internal
 public class IncrementalCallState {
     private final AtomicBoolean incrementalCallsDetected = new AtomicBoolean(false);
-    private final Deque<IncrementalCall<? extends IncrementalPayload>> incrementalCalls = new ConcurrentLinkedDeque<>();
+
+    // PriorityBlockingQueue doesn't have a constructor that accepts just the comparator and
+    // uses the default initial capacity. 11 is the value used in the implementation I'm looking at,
+    // and it seems reasonable for our use case.
+    private static final int QUEUE_INITIAL_CAPACITY = 11;
+    private final Queue<IncrementalCall<? extends IncrementalPayload>> incrementalCalls =
+            new PriorityBlockingQueue<>(QUEUE_INITIAL_CAPACITY, Comparator.comparingInt(IncrementalCall::level));
+
     private final SingleSubscriberPublisher<DelayedIncrementalPartialResult> publisher = new SingleSubscriberPublisher<>();
     private final AtomicInteger pendingCalls = new AtomicInteger();
     private final LockKit.ReentrantLock publisherLock = new LockKit.ReentrantLock();
