@@ -23,13 +23,12 @@ public class DeferredCallContext {
 
     private final List<GraphQLError> errors = new CopyOnWriteArrayList<>();
 
-    public void onFetchingException(ResultPath path, SourceLocation sourceLocation, Throwable throwable) {
-        ExceptionWhileDataFetching error = new ExceptionWhileDataFetching(path, throwable, sourceLocation);
-        onError(error);
+    public void addError(GraphQLError graphqlError) {
+        errors.add(graphqlError);
     }
 
-    public void onError(GraphQLError graphqlError) {
-        errors.add(graphqlError);
+    public void addErrors(List<GraphQLError> errors) {
+        this.errors.addAll(errors);
     }
 
     /**

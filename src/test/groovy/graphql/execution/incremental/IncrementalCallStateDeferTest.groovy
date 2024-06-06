@@ -1,14 +1,13 @@
 package graphql.execution.incremental
 
-
 import graphql.ExecutionResultImpl
 import graphql.execution.ResultPath
+import graphql.execution.pubsub.CapturingSubscriber
 import graphql.incremental.DelayedIncrementalPartialResult
 import org.awaitility.Awaitility
 import spock.lang.Specification
 
 import java.util.concurrent.CompletableFuture
-import java.util.function.Supplier
 
 class IncrementalCallStateDeferTest extends Specification {
 
@@ -57,7 +56,7 @@ class IncrementalCallStateDeferTest extends Specification {
         incrementalCallState.enqueue(offThread("C", 10, "/field/path"))
 
         when:
-        def subscriber = new graphql.execution.pubsub.CapturingSubscriber<DelayedIncrementalPartialResult>() {
+        def subscriber = new CapturingSubscriber<DelayedIncrementalPartialResult>() {
             @Override
             void onComplete() {
                 assert false, "This should not be called!"
@@ -83,7 +82,7 @@ class IncrementalCallStateDeferTest extends Specification {
         incrementalCallState.enqueue(offThread("C", 10, "/field/path")) // <-- will finish first
 
         when:
-        def subscriber = new graphql.execution.pubsub.CapturingSubscriber<DelayedIncrementalPartialResult>() {
+        def subscriber = new CapturingSubscriber<DelayedIncrementalPartialResult>() {
             @Override
             void onNext(DelayedIncrementalPartialResult executionResult) {
                 this.getEvents().add(executionResult)
@@ -112,8 +111,8 @@ class IncrementalCallStateDeferTest extends Specification {
         incrementalCallState.enqueue(offThread("C", 10, "/field/path")) // <-- will finish first
 
         when:
-        def subscriber1 = new graphql.execution.pubsub.CapturingSubscriber<DelayedIncrementalPartialResult>()
-        def subscriber2 = new graphql.execution.pubsub.CapturingSubscriber<DelayedIncrementalPartialResult>()
+        def subscriber1 = new CapturingSubscriber<DelayedIncrementalPartialResult>()
+        def subscriber2 = new CapturingSubscriber<DelayedIncrementalPartialResult>()
         incrementalCallState.startDeferredCalls().subscribe(subscriber1)
         incrementalCallState.startDeferredCalls().subscribe(subscriber2)
 
@@ -142,25 +141,15 @@ class IncrementalCallStateDeferTest extends Specification {
 
     def "multiple fields are part of the same call"() {
         given: "a DeferredCall that contains resolution of multiple fields"
-        def call1 = new Supplier<CompletableFuture<DeferredFragmentCall.FieldWithExecutionResult>>() {
-            @Override
-            CompletableFuture<DeferredFragmentCall.FieldWithExecutionResult> get() {
-                return CompletableFuture.supplyAsync({
-                    Thread.sleep(10)
-                    new DeferredFragmentCall.FieldWithExecutionResult("call1", new ExecutionResultImpl("Call 1", []))
-                })
-            }
-        }
+        def call1 = CompletableFuture.supplyAsync({
+            Thread.sleep(10)
+            new DeferredFragmentCall.FieldWithExecutionResult("call1", new ExecutionResultImpl("Call 1", []))
+        })
 
-        def call2 = new Supplier<CompletableFuture<DeferredFragmentCall.FieldWithExecutionResult>>() {
-            @Override
-            CompletableFuture<DeferredFragmentCall.FieldWithExecutionResult> get() {
-                return CompletableFuture.supplyAsync({
-                    Thread.sleep(100)
-                    new DeferredFragmentCall.FieldWithExecutionResult("call2", new ExecutionResultImpl("Call 2", []))
-                })
-            }
-        }
+        def call2 = CompletableFuture.supplyAsync({
+            Thread.sleep(100)
+            new DeferredFragmentCall.FieldWithExecutionResult("call2", new ExecutionResultImpl("Call 2", []))
+        })
 
         def deferredCall = new DeferredFragmentCall(null, ResultPath.parse("/field/path"), [call1, call2], new DeferredCallContext())
 
@@ -196,33 +185,24 @@ class IncrementalCallStateDeferTest extends Specification {
     }
 
     private static DeferredFragmentCall offThread(String data, int sleepTime, String path) {
-        def callSupplier = new Supplier<CompletableFuture<DeferredFragmentCall.FieldWithExecutionResult>>() {
-            @Override
-            CompletableFuture<DeferredFragmentCall.FieldWithExecutionResult> get() {
-                return CompletableFuture.supplyAsync({
+        def callSupplier = CompletableFuture.supplyAsync({
                     Thread.sleep(sleepTime)
                     if (data == "Bang") {
                         throw new RuntimeException(data)
                     }
                     new DeferredFragmentCall.FieldWithExecutionResult(data.toLowerCase(), new ExecutionResultImpl(data, []))
                 })
-            }
-        }
 
         return new DeferredFragmentCall(null, ResultPath.parse(path), [callSupplier], new DeferredCallContext())
     }
 
     private static DeferredFragmentCall offThreadCallWithinCall(IncrementalCallState incrementalCallState, String dataParent, String dataChild, int sleepTime, String path) {
-        def callSupplier = new Supplier<CompletableFuture<DeferredFragmentCall.FieldWithExecutionResult>>() {
-            @Override
-            CompletableFuture<DeferredFragmentCall.FieldWithExecutionResult> get() {
-                CompletableFuture.supplyAsync({
+        def callSupplier = CompletableFuture.supplyAsync({
                     Thread.sleep(sleepTime)
                     incrementalCallState.enqueue(offThread(dataChild, sleepTime, path))
                     new DeferredFragmentCall.FieldWithExecutionResult(dataParent.toLowerCase(), new ExecutionResultImpl(dataParent, []))
                 })
-            }
-        }
+
         return new DeferredFragmentCall(null, ResultPath.parse("/field/path"), [callSupplier], new DeferredCallContext())
     }
 
@@ -239,7 +219,7 @@ class IncrementalCallStateDeferTest extends Specification {
     }
 
     private static List<DelayedIncrementalPartialResult> startAndWaitCalls(IncrementalCallState incrementalCallState) {
-        def subscriber = new graphql.execution.pubsub.CapturingSubscriber<DelayedIncrementalPartialResult>()
+        def subscriber = new CapturingSubscriber<DelayedIncrementalPartialResult>()
 
         incrementalCallState.startDeferredCalls().subscribe(subscriber)
 

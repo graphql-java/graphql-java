@@ -145,6 +145,7 @@ class DeferExecutionSupportIntegrationTest extends Specification {
                 )
                 .type(newTypeWiring("Post").dataFetcher("summary", resolve("A summary", 10)))
                 .type(newTypeWiring("Post").dataFetcher("text", resolve("The full text", 100)))
+                // the dataFetcher for wordCount is allowed to be called multiple times as it is queried as part of a list
                 .type(newTypeWiring("Post").dataFetcher("wordCount", resolve(45999, 10, true)))
                 .type(newTypeWiring("Post").dataFetcher("latestComment", resolve([title: "Comment title"], 10)))
                 .type(newTypeWiring("Post").dataFetcher("dataFetcherError", resolveWithException()))

@@ -7,7 +7,6 @@ import graphql.execution.ResultPath
 import spock.lang.Specification
 
 import java.util.concurrent.CompletableFuture
-import java.util.function.Supplier
 
 import static graphql.execution.ResultPath.parse
 import static java.util.concurrent.CompletableFuture.completedFuture
@@ -82,38 +81,28 @@ class DeferredCallTest extends Specification {
         ]
     }
 
-    private static Supplier<CompletableFuture<DeferredFragmentCall.FieldWithExecutionResult>> createResolvedFieldCall(
+    private static CompletableFuture<DeferredFragmentCall.FieldWithExecutionResult> createResolvedFieldCall(
             String fieldName,
             Object data
     ) {
         return createResolvedFieldCall(fieldName, data, Collections.emptyList())
     }
 
-    private static Supplier<CompletableFuture<DeferredFragmentCall.FieldWithExecutionResult>> createResolvedFieldCall(
+    private static CompletableFuture<DeferredFragmentCall.FieldWithExecutionResult> createResolvedFieldCall(
             String fieldName,
             Object data,
             List<GraphQLError> errors
     ) {
-        return new Supplier<CompletableFuture<DeferredFragmentCall.FieldWithExecutionResult>>() {
-            @Override
-            CompletableFuture<DeferredFragmentCall.FieldWithExecutionResult> get() {
-                return completedFuture(
+        return completedFuture(
                         new DeferredFragmentCall.FieldWithExecutionResult(fieldName,
                                 new ExecutionResultImpl(data, errors)
                         )
-                )
-            }
-        }
+        )
     }
 
-    private static Supplier<CompletableFuture<DeferredFragmentCall.FieldWithExecutionResult>> createFieldCallThatThrowsException(
+    private static CompletableFuture<DeferredFragmentCall.FieldWithExecutionResult> createFieldCallThatThrowsException(
             Throwable exception
     ) {
-        return new Supplier<CompletableFuture<DeferredFragmentCall.FieldWithExecutionResult>>() {
-            @Override
-            CompletableFuture<DeferredFragmentCall.FieldWithExecutionResult> get() {
-                return CompletableFuture.failedFuture(exception)
-            }
-        }
+        return CompletableFuture.failedFuture(exception)
     }
 }

@@ -115,7 +115,7 @@ public interface DeferredExecutionSupport {
             List<MergedField> mergedFields = deferredExecutionToFields.get(deferredExecution);
 
             List<CompletableFuture<DeferredFragmentCall.FieldWithExecutionResult>> calls = mergedFields.stream()
-                    .map(currentField -> this.createResultSupplier(currentField, deferredCallContext))
+                    .map(currentField -> this.createResultFuture(currentField, deferredCallContext))
                     .collect(Collectors.toList());
 
             return new DeferredFragmentCall(
@@ -126,7 +126,7 @@ public interface DeferredExecutionSupport {
             );
         }
 
-        private CompletableFuture<DeferredFragmentCall.FieldWithExecutionResult> createResultSupplier(
+        private CompletableFuture<DeferredFragmentCall.FieldWithExecutionResult> createResultFuture(
                 MergedField currentField,
                 DeferredCallContext deferredCallContext
         ) {

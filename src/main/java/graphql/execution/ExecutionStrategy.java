@@ -550,7 +550,14 @@ public abstract class ExecutionStrategy {
 
         if (result instanceof DataFetcherResult) {
             DataFetcherResult<?> dataFetcherResult = (DataFetcherResult<?>) result;
-            executionContext.addErrors(dataFetcherResult.getErrors());
+
+            if (parameters.getField().isDeferred()) {
+                parameters.getDeferredCallContext().addErrors(dataFetcherResult.getErrors());
+            } else {
+                // Errors from a deferred field are handled in the deferred execution strategy
+                executionContext.addErrors(dataFetcherResult.getErrors());
+            }
+
             addExtensionsIfPresent(executionContext, dataFetcherResult);
 
             Object localContext = dataFetcherResult.getLocalContext();
@@ -585,12 +592,6 @@ public abstract class ExecutionStrategy {
                 .dataFetchingEnvironment(environment)
                 .exception(e)
                 .build();
-
-        parameters.getDeferredCallContext().onFetchingException(
-                parameters.getPath(),
-                parameters.getField().getSingleField().getSourceLocation(),
-                e
-        );
 
         try {
             return asyncHandleException(dataFetcherExceptionHandler, handlerParameters);
@@ -714,9 +715,12 @@ public abstract class ExecutionStrategy {
 
     private void handleUnresolvedTypeProblem(ExecutionContext context, ExecutionStrategyParameters parameters, UnresolvedTypeException e) {
         UnresolvedTypeError error = new UnresolvedTypeError(parameters.getPath(), parameters.getExecutionStepInfo(), e);
-        context.addError(error);
 
-        parameters.getDeferredCallContext().onError(error);
+        if (parameters.getField().isDeferred()) {
+            parameters.getDeferredCallContext().addError(error);
+        } else {
+            context.addError(error);
+        }
     }
 
     /**
@@ -973,7 +977,7 @@ public abstract class ExecutionStrategy {
         SerializationError error = new SerializationError(parameters.getPath(), e);
         context.addError(error);
 
-        parameters.getDeferredCallContext().onError(error);
+        parameters.getDeferredCallContext().addError(error);
 
         return null;
     }
@@ -999,7 +1003,7 @@ public abstract class ExecutionStrategy {
         TypeMismatchError error = new TypeMismatchError(parameters.getPath(), parameters.getExecutionStepInfo().getUnwrappedNonNullType());
         context.addError(error);
 
-        parameters.getDeferredCallContext().onError(error);
+        parameters.getDeferredCallContext().addError(error);
     }
 
     /**
