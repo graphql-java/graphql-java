@@ -50,7 +50,7 @@ public class NonNullableFieldValidator {
                 //
                 NonNullableFieldWasNullException nonNullException = new NonNullableFieldWasNullException(executionStepInfo, path);
                 final GraphQLError error = new NonNullableFieldWasNullError(nonNullException);
-                if(parameters.getField().isDeferred()) {
+                if(parameters.getField() != null && parameters.getField().isDeferred()) {
                     parameters.getDeferredCallContext().addError(error);
                 } else {
                     executionContext.addError(error, path);

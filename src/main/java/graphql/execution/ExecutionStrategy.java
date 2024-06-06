@@ -551,12 +551,7 @@ public abstract class ExecutionStrategy {
         if (result instanceof DataFetcherResult) {
             DataFetcherResult<?> dataFetcherResult = (DataFetcherResult<?>) result;
 
-            if (parameters.getField().isDeferred()) {
-                parameters.getDeferredCallContext().addErrors(dataFetcherResult.getErrors());
-            } else {
-                // Errors from a deferred field are handled in the deferred execution strategy
-                executionContext.addErrors(dataFetcherResult.getErrors());
-            }
+            addErrorsToRightContext(dataFetcherResult.getErrors(), parameters, executionContext);
 
             addExtensionsIfPresent(executionContext, dataFetcherResult);
 
@@ -716,11 +711,7 @@ public abstract class ExecutionStrategy {
     private void handleUnresolvedTypeProblem(ExecutionContext context, ExecutionStrategyParameters parameters, UnresolvedTypeException e) {
         UnresolvedTypeError error = new UnresolvedTypeError(parameters.getPath(), parameters.getExecutionStepInfo(), e);
 
-        if (parameters.getField().isDeferred()) {
-            parameters.getDeferredCallContext().addError(error);
-        } else {
-            context.addError(error);
-        }
+        addErrorToRightContext(error, parameters, context);
     }
 
     /**
@@ -975,9 +966,8 @@ public abstract class ExecutionStrategy {
     @SuppressWarnings("SameReturnValue")
     private Object handleCoercionProblem(ExecutionContext context, ExecutionStrategyParameters parameters, CoercingSerializeException e) {
         SerializationError error = new SerializationError(parameters.getPath(), e);
-        context.addError(error);
 
-        parameters.getDeferredCallContext().addError(error);
+        addErrorToRightContext(error, parameters, context);
 
         return null;
     }
@@ -1001,9 +991,25 @@ public abstract class ExecutionStrategy {
 
     private void handleTypeMismatchProblem(ExecutionContext context, ExecutionStrategyParameters parameters) {
         TypeMismatchError error = new TypeMismatchError(parameters.getPath(), parameters.getExecutionStepInfo().getUnwrappedNonNullType());
-        context.addError(error);
 
-        parameters.getDeferredCallContext().addError(error);
+        addErrorToRightContext(error, parameters, context);
+    }
+
+    // Errors from a deferred field are handled in the deferred execution strategy
+    private static void addErrorToRightContext(GraphQLError error, ExecutionStrategyParameters parameters, ExecutionContext executionContext) {
+        if (parameters.getField() != null && parameters.getField().isDeferred()) {
+            parameters.getDeferredCallContext().addError(error);
+        } else {
+            executionContext.addError(error);
+        }
+    }
+
+    private static void addErrorsToRightContext(List<GraphQLError> errors, ExecutionStrategyParameters parameters, ExecutionContext executionContext) {
+        if (parameters.getField() != null && parameters.getField().isDeferred()) {
+            parameters.getDeferredCallContext().addErrors(errors);
+        } else {
+            executionContext.addErrors(errors);
+        }
     }
 
     /**

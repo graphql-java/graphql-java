@@ -3,6 +3,7 @@ package graphql.execution;
 import graphql.PublicApi;
 import graphql.execution.incremental.DeferredCallContext;
 
+import javax.annotation.Nullable;
 import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotNull;
