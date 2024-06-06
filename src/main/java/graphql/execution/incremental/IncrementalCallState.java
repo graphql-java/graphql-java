@@ -20,15 +20,16 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static graphql.incremental.DelayedIncrementalPartialResultImpl.newIncrementalExecutionResult;
 
 /**
- * This provides support for @defer directives on fields that mean that results will be sent AFTER
- * the main result is sent via a Publisher stream.
+ * Manages the state of incremental calls (for fields that have been @defer'red or @stream'ed), which will result
+ * in data that is sent back to the client AFTER the initial response,
+ * via a {@link Publisher} of {@link DelayedIncrementalPartialResult}.
  */
 @Internal
 public class IncrementalCallState {
     private final AtomicBoolean incrementalCallsDetected = new AtomicBoolean(false);
 
     // PriorityBlockingQueue doesn't have a constructor that accepts just the comparator and
-    // uses the default initial capacity. 11 is the value used in the implementation I'm looking at,
+    // uses the default initial capacity. 11 is the default value used in the implementation I'm looking at,
     // and it seems reasonable for our use case.
     private static final int QUEUE_INITIAL_CAPACITY = 11;
     private final Queue<IncrementalCall<? extends IncrementalPayload>> incrementalCalls =
