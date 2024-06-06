@@ -749,7 +749,7 @@ public abstract class ExecutionStrategy {
     protected Object /* CompletableFuture<Object> | Object */
     completeValueForNull(ExecutionStrategyParameters parameters) {
         try {
-            return parameters.getNonNullFieldValidator().validate(parameters.getPath(), null);
+            return parameters.getNonNullFieldValidator().validate(parameters, null);
         } catch (Exception e) {
             return Async.exceptionallyCompletedFuture(e);
         }
@@ -768,7 +768,7 @@ public abstract class ExecutionStrategy {
     protected FieldValueInfo completeValueForList(ExecutionContext executionContext, ExecutionStrategyParameters parameters, Object result) {
         Iterable<Object> resultIterable = toIterable(executionContext, parameters, result);
         try {
-            resultIterable = parameters.getNonNullFieldValidator().validate(parameters.getPath(), resultIterable);
+            resultIterable = parameters.getNonNullFieldValidator().validate(parameters, resultIterable);
         } catch (NonNullableFieldWasNullException e) {
             return new FieldValueInfo(LIST, exceptionallyCompletedFuture(e));
         }
@@ -895,7 +895,7 @@ public abstract class ExecutionStrategy {
         }
 
         try {
-            serialized = parameters.getNonNullFieldValidator().validate(parameters.getPath(), serialized);
+            serialized = parameters.getNonNullFieldValidator().validate(parameters, serialized);
         } catch (NonNullableFieldWasNullException e) {
             return exceptionallyCompletedFuture(e);
         }
@@ -921,7 +921,7 @@ public abstract class ExecutionStrategy {
             serialized = handleCoercionProblem(executionContext, parameters, e);
         }
         try {
-            serialized = parameters.getNonNullFieldValidator().validate(parameters.getPath(), serialized);
+            serialized = parameters.getNonNullFieldValidator().validate(parameters, serialized);
         } catch (NonNullableFieldWasNullException e) {
             return exceptionallyCompletedFuture(e);
         }
