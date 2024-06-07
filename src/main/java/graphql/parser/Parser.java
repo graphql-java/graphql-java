@@ -301,7 +301,7 @@ public class Parser {
                 String preview = AntlrHelper.createPreview(multiSourceReader, line);
                 String msgKey;
                 List<Object> args;
-                if (antlerMsg == null) {
+                if (antlerMsg == null || environment.getParserOptions().isRedactTokenParserErrorMessages()) {
                     msgKey = "InvalidSyntax.noMessage";
                     args = ImmutableList.of(sourceLocation.getLine(), sourceLocation.getColumn());
                 } else {

@@ -14,4 +14,11 @@ public class MoreTokensSyntaxException extends InvalidSyntaxException {
         super(i18N.msg("InvalidSyntaxMoreTokens.full", offendingToken, sourceLocation.getLine(), sourceLocation.getColumn()),
                 sourceLocation, offendingToken, sourcePreview, null);
     }
+
+    @Internal
+    public MoreTokensSyntaxException(@NotNull I18n i18N, @NotNull SourceLocation sourceLocation) {
+        super(i18N.msg("InvalidSyntaxMoreTokens.noMessage", sourceLocation.getLine(), sourceLocation.getColumn()),
+                sourceLocation, null, null, null);
+    }
+
 }
