@@ -141,7 +141,6 @@ class DataLoaderPerformanceWithChainedInstrumentationTest extends Specification 
         exception.message == "Data Loaders cannot be used to resolve deferred fields"
     }
 
-    @Ignore("Resolution of deferred fields via Data loaders is not yet supported")
     def "chainedInstrumentation: data loader will work with deferred queries"() {
 
         when:
@@ -161,7 +160,24 @@ class DataLoaderPerformanceWithChainedInstrumentationTest extends Specification 
         def incrementalResults = getIncrementalResults(result)
 
         then:
-        incrementalResults == expectedListOfDeferredData
+
+        println(incrementalResults)
+        // Ordering is non-deterministic, so we assert on the things we know are going to be true.
+
+        incrementalResults.size() == 3
+        // only the last payload has "hasNext=true"
+        incrementalResults[0].hasNext == true
+        incrementalResults[1].hasNext == true
+        incrementalResults[2].hasNext == false
+
+        // every payload has only 1 incremental item, and the data is the same for all of them
+        incrementalResults.every { it.incremental.size() == 1 }
+        incrementalResults.every { it.incremental[0].data == [wordCount: 45999] }
+
+        // path is different for every payload
+        incrementalResults.any { it.incremental[0].path == ["posts", 0] }
+        incrementalResults.any { it.incremental[0].path == ["posts", 1] }
+        incrementalResults.any { it.incremental[0].path == ["posts", 2] }
 
         //  With deferred results, we don't achieve the same efficiency.
         batchCompareDataFetchers.departmentsForShopsBatchLoaderCounter.get() == 3
