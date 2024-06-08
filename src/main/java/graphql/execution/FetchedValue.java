@@ -17,7 +17,7 @@ public class FetchedValue {
     private final Object localContext;
     private final ImmutableList<GraphQLError> errors;
 
-    FetchedValue(Object fetchedValue, List<GraphQLError> errors, Object localContext) {
+    public FetchedValue(Object fetchedValue, List<GraphQLError> errors, Object localContext) {
         this.fetchedValue = fetchedValue;
         this.errors = ImmutableList.copyOf(errors);
         this.localContext = localContext;
