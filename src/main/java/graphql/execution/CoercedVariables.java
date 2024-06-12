@@ -36,4 +36,9 @@ public class CoercedVariables {
     public static CoercedVariables of(Map<String, Object> coercedVariables) {
         return new CoercedVariables(coercedVariables);
     }
+
+    @Override
+    public String toString() {
+        return coercedVariables.toString();
+    }
 }
