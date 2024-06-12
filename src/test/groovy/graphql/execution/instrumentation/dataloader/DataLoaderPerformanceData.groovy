@@ -61,18 +61,23 @@ class DataLoaderPerformanceData {
                                    [id: "department-9", name: "Department 9", products: [[id: "product-9", name: "Product 9"]]]]
                     ]]
     ]
+    static String getQuery() {
+        return getQuery(false, false)
+    }
 
-    static String getQuery(boolean enableDeferred) {
+    static String getQuery(boolean deferDepartments, boolean deferProducts) {
         return """
             query { 
                 shops { 
                     id name 
-                    ... @defer(if: $enableDeferred) {
+                    ... @defer(if: $deferDepartments) {
                         departments { 
                             id name 
-                            products { 
-                                id name 
-                            } 
+                            ... @defer(if: $deferProducts) {
+                                products { 
+                                    id name 
+                                } 
+                            }
                         } 
                     }
                 } 
@@ -197,7 +202,7 @@ class DataLoaderPerformanceData {
                         } 
                     }
                 } 
-                ... @defer(if: $deferredEnabled) {
+                ... @defer(if: false) {
                     expensiveShops { 
                         name 
                         departments { 

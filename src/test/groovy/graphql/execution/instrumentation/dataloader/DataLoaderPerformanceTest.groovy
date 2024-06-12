@@ -27,7 +27,7 @@ class DataLoaderPerformanceTest extends Specification {
     def "760 ensure data loader is performant for lists"() {
         when:
         ExecutionInput executionInput = ExecutionInput.newExecutionInput()
-                .query(getQuery(false))
+                .query(getQuery())
                 .dataLoaderRegistry(dataLoaderRegistry)
                 .graphQLContext([(ENABLE_INCREMENTAL_SUPPORT): incrementalSupport])
                 .build()
@@ -72,7 +72,7 @@ class DataLoaderPerformanceTest extends Specification {
         batchCompareDataFetchers.useAsyncBatchLoading(true)
 
         ExecutionInput executionInput = ExecutionInput.newExecutionInput()
-                .query(getQuery(false))
+                .query(getQuery())
                 .dataLoaderRegistry(dataLoaderRegistry)
                 .graphQLContext([(ENABLE_INCREMENTAL_SUPPORT): incrementalSupport])
                 .build()
