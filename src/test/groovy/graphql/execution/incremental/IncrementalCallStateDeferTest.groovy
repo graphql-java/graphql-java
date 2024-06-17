@@ -6,6 +6,7 @@ import graphql.execution.ResultPath
 import graphql.execution.pubsub.CapturingSubscriber
 import graphql.incremental.DelayedIncrementalPartialResult
 import org.awaitility.Awaitility
+import org.reactivestreams.Publisher
 import spock.lang.Specification
 
 import java.util.concurrent.CompletableFuture
@@ -58,7 +59,7 @@ class IncrementalCallStateDeferTest extends Specification {
         incrementalCallState.enqueue(offThread("C", 10, "/field/path"))
 
         when:
-        def subscriber = new graphql.execution.pubsub.CapturingSubscriber<DelayedIncrementalPartialResult>() {
+        def subscriber = new CapturingSubscriber<DelayedIncrementalPartialResult>() {
             @Override
             void onComplete() {
                 assert false, "This should not be called!"
@@ -84,7 +85,7 @@ class IncrementalCallStateDeferTest extends Specification {
         incrementalCallState.enqueue(offThread("C", 10, "/field/path")) // <-- will finish first
 
         when:
-        def subscriber = new graphql.execution.pubsub.CapturingSubscriber<DelayedIncrementalPartialResult>() {
+        def subscriber = new CapturingSubscriber<DelayedIncrementalPartialResult>() {
             @Override
             void onNext(DelayedIncrementalPartialResult executionResult) {
                 this.getEvents().add(executionResult)
@@ -113,8 +114,8 @@ class IncrementalCallStateDeferTest extends Specification {
         incrementalCallState.enqueue(offThread("C", 10, "/field/path")) // <-- will finish first
 
         when:
-        def subscriber1 = new graphql.execution.pubsub.CapturingSubscriber<DelayedIncrementalPartialResult>()
-        def subscriber2 = new graphql.execution.pubsub.CapturingSubscriber<DelayedIncrementalPartialResult>()
+        def subscriber1 = new CapturingSubscriber<DelayedIncrementalPartialResult>()
+        def subscriber2 = new CapturingSubscriber<DelayedIncrementalPartialResult>()
         incrementalCallState.startDeferredCalls().subscribe(subscriber1)
         incrementalCallState.startDeferredCalls().subscribe(subscriber2)
 
@@ -196,7 +197,38 @@ class IncrementalCallStateDeferTest extends Specification {
         results.any { it.incremental[0].data["c"] == "C" }
     }
 
+    def "nothing happens until the publisher is subscribed to"() {
+
+        def startingValue = "*"
+        given:
+        def incrementalCallState = new IncrementalCallState()
+        incrementalCallState.enqueue(offThread({ -> startingValue + "A"}, 100, "/field/path")) // <-- will finish last
+        incrementalCallState.enqueue(offThread({ -> startingValue + "B"}, 50, "/field/path")) // <-- will finish second
+        incrementalCallState.enqueue(offThread({ -> startingValue + "C"}, 10, "/field/path")) // <-- will finish first
+
+        when:
+
+        // get the publisher but not work has been done here
+        def publisher = incrementalCallState.startDeferredCalls()
+        // we are changing a side effect after the publisher is created
+        startingValue = "_"
+
+        // subscription wll case the queue publisher to start draining the queue
+        List<DelayedIncrementalPartialResult> results = subscribeAndWaitCalls(publisher)
+
+        then:
+        assertResultsSizeAndHasNextRule(3, results)
+        results[0].incremental[0].data["_c"] == "_C"
+        results[1].incremental[0].data["_b"] == "_B"
+        results[2].incremental[0].data["_a"] == "_A"
+    }
+
+
     private static DeferredFragmentCall offThread(String data, int sleepTime, String path) {
+        offThread(() -> data, sleepTime, path)
+    }
+
+    private static DeferredFragmentCall offThread(Supplier<String> dataSupplier, int sleepTime, String path) {
         def callSupplier = new Supplier<CompletableFuture<DeferredFragmentCall.FieldWithExecutionResult>>() {
             @Override
             CompletableFuture<DeferredFragmentCall.FieldWithExecutionResult> get() {
@@ -205,6 +237,7 @@ class IncrementalCallStateDeferTest extends Specification {
                     if (data == "Bang") {
                         throw new RuntimeException(data)
                     }
+                    String data = dataSupplier.get()
                     new DeferredFragmentCall.FieldWithExecutionResult(data.toLowerCase(), new ExecutionResultImpl(data, []))
                 })
             }
@@ -240,10 +273,13 @@ class IncrementalCallStateDeferTest extends Specification {
     }
 
     private static List<DelayedIncrementalPartialResult> startAndWaitCalls(IncrementalCallState incrementalCallState) {
+        def publisher = incrementalCallState.startDeferredCalls()
+        return subscribeAndWaitCalls(publisher)
+    }
+
+    private static List<DelayedIncrementalPartialResult> subscribeAndWaitCalls(Publisher<DelayedIncrementalPartialResult> publisher) {
         def subscriber = new CapturingSubscriber<DelayedIncrementalPartialResult>()
-
-        incrementalCallState.startDeferredCalls().subscribe(subscriber)
-
+        publisher.subscribe(subscriber)
         Awaitility.await().untilTrue(subscriber.isDone())
         return subscriber.getEvents()
     }
