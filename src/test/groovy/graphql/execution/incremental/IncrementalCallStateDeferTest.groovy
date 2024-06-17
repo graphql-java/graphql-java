@@ -3,6 +3,7 @@ package graphql.execution.incremental
 
 import graphql.ExecutionResultImpl
 import graphql.execution.ResultPath
+import graphql.execution.pubsub.CapturingSubscriber
 import graphql.incremental.DelayedIncrementalPartialResult
 import org.awaitility.Awaitility
 import spock.lang.Specification
@@ -239,7 +240,7 @@ class IncrementalCallStateDeferTest extends Specification {
     }
 
     private static List<DelayedIncrementalPartialResult> startAndWaitCalls(IncrementalCallState incrementalCallState) {
-        def subscriber = new graphql.execution.pubsub.CapturingSubscriber<DelayedIncrementalPartialResult>()
+        def subscriber = new CapturingSubscriber<DelayedIncrementalPartialResult>()
 
         incrementalCallState.startDeferredCalls().subscribe(subscriber)
 

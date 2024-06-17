@@ -4,6 +4,7 @@ import graphql.Internal;
 import graphql.execution.reactive.SingleSubscriberPublisher;
 import graphql.incremental.DelayedIncrementalPartialResult;
 import graphql.incremental.IncrementalPayload;
+import graphql.util.InterThreadMemoizedSupplier;
 import graphql.util.LockKit;
 import org.reactivestreams.Publisher;
 
@@ -13,6 +14,7 @@ import java.util.Deque;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
 
 import static graphql.incremental.DelayedIncrementalPartialResultImpl.newIncrementalExecutionResult;
 
@@ -24,7 +26,7 @@ import static graphql.incremental.DelayedIncrementalPartialResultImpl.newIncreme
 public class IncrementalCallState {
     private final AtomicBoolean incrementalCallsDetected = new AtomicBoolean(false);
     private final Deque<IncrementalCall<? extends IncrementalPayload>> incrementalCalls = new ConcurrentLinkedDeque<>();
-    private final SingleSubscriberPublisher<DelayedIncrementalPartialResult> publisher = new SingleSubscriberPublisher<>();
+    private final Supplier<SingleSubscriberPublisher<DelayedIncrementalPartialResult>> publisher = createPublisher();
     private final AtomicInteger pendingCalls = new AtomicInteger();
     private final LockKit.ReentrantLock publisherLock = new LockKit.ReentrantLock();
 
@@ -36,7 +38,7 @@ public class IncrementalCallState {
             incrementalCall.invoke()
                     .whenComplete((payload, exception) -> {
                         if (exception != null) {
-                            publisher.offerError(exception);
+                            publisher.get().offerError(exception);
                             return;
                         }
 
@@ -53,13 +55,13 @@ public class IncrementalCallState {
                                     .hasNext(remainingCalls != 0)
                                     .build();
 
-                            publisher.offer(executionResult);
+                            publisher.get().offer(executionResult);
                         } finally {
                             publisherLock.unlock();
                         }
 
                         if (remainingCalls == 0) {
-                            publisher.noMoreData();
+                            publisher.get().noMoreData();
                         } else {
                             // Nested calls were added, let's try to drain the queue again.
                             drainIncrementalCalls();
@@ -85,13 +87,19 @@ public class IncrementalCallState {
         return incrementalCallsDetected.get();
     }
 
+    private Supplier<SingleSubscriberPublisher<DelayedIncrementalPartialResult>> createPublisher() {
+        // this will be created once and once only - any extra calls to .get() will return the previously created
+        // singleton object
+        return new InterThreadMemoizedSupplier<>(() -> new SingleSubscriberPublisher<>(this::drainIncrementalCalls));
+    }
+
     /**
-     * When this is called the deferred execution will begin
+     * When this is called the deferred execution will begin once the {@link Publisher} is subscribed
+     * to.
      *
      * @return the publisher of deferred results
      */
     public Publisher<DelayedIncrementalPartialResult> startDeferredCalls() {
-        drainIncrementalCalls();
-        return publisher;
+        return publisher.get();
     }
 }
