@@ -44,7 +44,7 @@ public interface DeferredExecutionSupport {
 
     List<String> getNonDeferredFieldNames(List<String> allFieldNames);
 
-    Set<IncrementalCall<? extends IncrementalPayload>> createCalls();
+    Set<IncrementalCall<? extends IncrementalPayload>> createCalls(ExecutionStrategyParameters executionStrategyParameters);
 
     DeferredExecutionSupport NOOP = new DeferredExecutionSupport.NoOp();
 
@@ -105,19 +105,19 @@ public interface DeferredExecutionSupport {
         }
 
         @Override
-        public Set<IncrementalCall<? extends IncrementalPayload>> createCalls() {
+        public Set<IncrementalCall<? extends IncrementalPayload>> createCalls(ExecutionStrategyParameters executionStrategyParameters) {
             return deferredExecutionToFields.keySet().stream()
-                    .map(this::createDeferredFragmentCall)
+                    .map(deferredExecution -> this.createDeferredFragmentCall(deferredExecution, executionStrategyParameters))
                     .collect(Collectors.toSet());
         }
 
-        private DeferredFragmentCall createDeferredFragmentCall(DeferredExecution deferredExecution) {
+        private DeferredFragmentCall createDeferredFragmentCall(DeferredExecution deferredExecution, ExecutionStrategyParameters executionStrategyParameters) {
             DeferredCallContext deferredCallContext = new DeferredCallContext();
 
             List<MergedField> mergedFields = deferredExecutionToFields.get(deferredExecution);
 
             List<Supplier<CompletableFuture<DeferredFragmentCall.FieldWithExecutionResult>>> calls = mergedFields.stream()
-                    .map(currentField -> this.createResultSupplier(currentField, deferredCallContext))
+                    .map(currentField -> this.createResultSupplier(currentField, deferredCallContext, executionStrategyParameters))
                     .collect(Collectors.toList());
 
             return new DeferredFragmentCall(
@@ -130,7 +130,8 @@ public interface DeferredExecutionSupport {
 
         private Supplier<CompletableFuture<DeferredFragmentCall.FieldWithExecutionResult>> createResultSupplier(
                 MergedField currentField,
-                DeferredCallContext deferredCallContext
+                DeferredCallContext deferredCallContext,
+                ExecutionStrategyParameters executionStrategyParameters
         ) {
             Map<String, MergedField> fields = new LinkedHashMap<>();
             fields.put(currentField.getResultKey(), currentField);
@@ -149,7 +150,6 @@ public interface DeferredExecutionSupport {
 
             Instrumentation instrumentation = executionContext.getInstrumentation();
 
-            executionContext.getDataLoaderDispatcherStrategy().deferredField(executionContext, currentField);
             instrumentation.beginDeferredField(executionContext.getInstrumentationState());
 
             return dfCache.computeIfAbsent(
@@ -160,12 +160,14 @@ public interface DeferredExecutionSupport {
                                 CompletableFuture<FieldValueInfo> fieldValueResult = resolveFieldWithInfoFn
                                         .apply(executionContext, callParameters);
 
-                                // Create a reference to the CompletableFuture that resolves an ExecutionResult
-                                // so we can pass it to the Instrumentation "onDispatched" callback.
                                 CompletableFuture<ExecutionResult> executionResultCF = fieldValueResult
-                                        .thenCompose(fvi -> fvi
-                                                .getFieldValueFuture()
-                                                .thenApply(fv -> ExecutionResultImpl.newExecutionResult().data(fv).build())
+                                        .thenCompose(fvi -> {
+                                                    executionContext.getDataLoaderDispatcherStrategy().deferredField(fvi, executionStrategyParameters);
+
+                                                    return fvi
+                                                            .getFieldValueFuture()
+                                                            .thenApply(fv -> ExecutionResultImpl.newExecutionResult().data(fv).build());
+                                                }
                                         );
 
                                 return executionResultCF
@@ -199,7 +201,7 @@ public interface DeferredExecutionSupport {
         }
 
         @Override
-        public Set<IncrementalCall<? extends IncrementalPayload>> createCalls() {
+        public Set<IncrementalCall<? extends IncrementalPayload>> createCalls(ExecutionStrategyParameters executionStrategyParameters) {
             return Collections.emptySet();
         }
     }

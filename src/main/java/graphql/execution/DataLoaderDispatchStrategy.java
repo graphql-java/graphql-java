@@ -50,7 +50,7 @@ public interface DataLoaderDispatchStrategy {
         return dataFetcher;
     }
 
-    default void deferredField(ExecutionContext executionContext, MergedField currentField) {
+    default void deferredField(FieldValueInfo fieldValueInfo, ExecutionStrategyParameters executionStrategyParameters) {
 
     }
 }

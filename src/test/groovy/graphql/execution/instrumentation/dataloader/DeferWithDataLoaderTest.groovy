@@ -1,6 +1,7 @@
 package graphql.execution.instrumentation.dataloader
 
 import graphql.ExecutionInput
+import graphql.ExecutionResult
 import graphql.GraphQL
 import graphql.incremental.IncrementalExecutionResult
 import org.dataloader.DataLoaderRegistry
@@ -75,7 +76,7 @@ class DeferWithDataLoaderTest extends Specification {
 
         then:
 
-        assertIncrementalResults(incrementalResults, [["shops", 0], ["shops", 1], ["shops", 3]])
+        assertIncrementalResults(incrementalResults, [["shops", 0], ["shops", 1], ["shops", 2]])
 
         when:
         def combined = combineExecutionResults(result.toSpecification(), incrementalResults)
@@ -106,7 +107,10 @@ class DeferWithDataLoaderTest extends Specification {
                 .graphQLContext([(ENABLE_INCREMENTAL_SUPPORT): true])
                 .build()
 
-        IncrementalExecutionResult result = graphQL.execute(executionInput)
+        ExecutionResult result = graphQL.execute(executionInput)
+
+        println "dept for shops dl: " + batchCompareDataFetchers.departmentsForShopsBatchLoaderCounter.get()
+        println "prod for depts dl: " + batchCompareDataFetchers.productsForDepartmentsBatchLoaderCounter.get()
 
         then:
         result.toSpecification() == expectedInitialData
@@ -137,11 +141,11 @@ class DeferWithDataLoaderTest extends Specification {
         def query = """
             query { 
                 shops { 
-                    expensiveDepartments {
+                    departments {
                         name
                     }
                 } 
-                ... @defer {
+                ... @defer(if: true) {
                     expensiveShops {
                         name 
                     }
@@ -151,10 +155,9 @@ class DeferWithDataLoaderTest extends Specification {
 
         def expectedInitialData = [
                 data   : [
-                        shops: [
-                                [id: "shop-1", name: "Shop 1"],
-                                [id: "shop-2", name: "Shop 2"],
-                                [id: "shop-3", name: "Shop 3"],
+                        shops: [[departments: [[name: "Department 1"], [name: "Department 2"], [name: "Department 3"]]],
+                                [departments: [[name: "Department 4"], [name: "Department 5"], [name: "Department 6"]]],
+                                [departments: [[name: "Department 7"], [name: "Department 8"], [name: "Department 9"]]],
                         ]
                 ],
                 hasNext: true
@@ -187,23 +190,30 @@ class DeferWithDataLoaderTest extends Specification {
         def combined = combineExecutionResults(result.toSpecification(), incrementalResults)
         then:
         combined.errors == null
-        combined.data == expectedData
+        combined.data == [shops         : [[departments: [[name: "Department 1"], [name: "Department 2"], [name: "Department 3"]]],
+                                           [departments: [[name: "Department 4"], [name: "Department 5"], [name: "Department 6"]]],
+                                           [departments: [[name: "Department 7"], [name: "Department 8"], [name: "Department 9"]]]],
+                          expensiveShops: [[name: "ExShop 1"], [name: "ExShop 2"], [name: "ExShop 3"]]]
     }
 
     def "query with multiple deferred fields"() {
         given:
         def query = getExpensiveQuery(true)
 
-        def expectedInitialData = [
-                data   : [
-                        shops: [
-                                [id: "shop-1", name: "Shop 1"],
-                                [id: "shop-2", name: "Shop 2"],
-                                [id: "shop-3", name: "Shop 3"],
-                        ]
-                ],
-                hasNext: true
-        ]
+        def expectedInitialData =
+                [data   : [shops         : [[name       : "Shop 1",
+                                             departments: [[name: "Department 1", products: [[name: "Product 1"]]], [name: "Department 2", products: [[name: "Product 2"]]], [name: "Department 3", products: [[name: "Product 3"]]]]],
+                                            [name       : "Shop 2",
+                                             departments: [[name: "Department 4", products: [[name: "Product 4"]]], [name: "Department 5", products: [[name: "Product 5"]]], [name: "Department 6", products: [[name: "Product 6"]]]]],
+                                            [name       : "Shop 3",
+                                             departments: [[name: "Department 7", products: [[name: "Product 7"]]], [name: "Department 8", products: [[name: "Product 8"]]], [name: "Department 9", products: [[name: "Product 9"]]]]]],
+                           expensiveShops: [[name       : "ExShop 1",
+                                             departments: [[name: "Department 1", products: [[name: "Product 1"]]], [name: "Department 2", products: [[name: "Product 2"]]], [name: "Department 3", products: [[name: "Product 3"]]]]],
+                                            [name       : "ExShop 2",
+                                             departments: [[name: "Department 4", products: [[name: "Product 4"]]], [name: "Department 5", products: [[name: "Product 5"]]], [name: "Department 6", products: [[name: "Product 6"]]]]],
+                                            [name       : "ExShop 3",
+                                             departments: [[name: "Department 7", products: [[name: "Product 7"]]], [name: "Department 8", products: [[name: "Product 8"]]], [name: "Department 9", products: [[name: "Product 9"]]]]]]],
+                 hasNext: true]
 
         when:
         ExecutionInput executionInput = ExecutionInput.newExecutionInput()
@@ -223,19 +233,15 @@ class DeferWithDataLoaderTest extends Specification {
         then:
         // Ordering is non-deterministic, so we assert on the things we know are going to be true.
 
-        incrementalResults.size() == 3
-        // only the last payload has "hasNext=true"
-        incrementalResults[0].hasNext == true
-        incrementalResults[1].hasNext == true
-        incrementalResults[2].hasNext == false
-
-        // every payload has only 1 incremental item
-        incrementalResults.every { it.incremental.size() == 1 }
-
-        // path is different for every payload
-        incrementalResults.any { it.incremental[0].path == ["shops", 0] }
-        incrementalResults.any { it.incremental[0].path == ["shops", 1] }
-        incrementalResults.any { it.incremental[0].path == ["shops", 2] }
+        assertIncrementalResults(incrementalResults,
+                [
+                        ["expensiveShops", 0], ["expensiveShops", 1], ["expensiveShops", 2],
+                        ["shops", 0], ["shops", 1], ["shops", 2],
+                        ["shops", 2, "departments", 0], ["shops", 1, "departments", 2],["shops", 1, "departments", 1], ["shops", 1, "departments", 0],["shops", 0, "departments", 2], ["shops", 0, "departments", 1], ["shops", 0, "departments", 0],["shops", 2, "departments", 2],["shops", 2, "departments", 1],
+                        ["shops", 1, "expensiveDepartments", 2], ["shops", 1, "expensiveDepartments", 1], ["shops", 1, "expensiveDepartments", 0], ["shops", 0, "expensiveDepartments", 2], ["shops", 0, "expensiveDepartments", 1], ["shops", 0, "expensiveDepartments", 0], ["shops", 2, "expensiveDepartments", 1], ["shops", 2, "expensiveDepartments", 2],
+                        ["expensiveShops", 2, "expensiveDepartments", 2], ["expensiveShops", 2, "expensiveDepartments", 1], ["expensiveShops", 2, "expensiveDepartments", 0], ["expensiveShops", 2, "departments", 2], ["expensiveShops", 1, "expensiveDepartments", 2], ["expensiveShops", 1, "expensiveDepartments", 1], ["expensiveShops", 1, "expensiveDepartments", 0], ["expensiveShops", 0, "expensiveDepartments", 2], ["expensiveShops", 0, "expensiveDepartments", 1], ["expensiveShops", 0, "expensiveDepartments", 0],
+                        ["expensiveShops", 2, "departments", 1], ["expensiveShops", 2, "departments", 0], ["expensiveShops", 1, "departments", 2], ["expensiveShops", 1, "departments", 1], ["expensiveShops", 1, "departments", 0], ["expensiveShops", 0, "departments", 2], ["expensiveShops", 0, "departments", 1], ["expensiveShops", 0, "departments", 0], ["shops", 2, "expensiveDepartments", 0]]
+        )
 
         when:
         def combined = combineExecutionResults(result.toSpecification(), incrementalResults)

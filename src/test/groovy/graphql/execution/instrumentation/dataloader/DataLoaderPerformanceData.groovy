@@ -243,6 +243,10 @@ class DataLoaderPerformanceData {
         deferredResultStream.subscribe(subscriber)
         Awaitility.await().untilTrue(subscriber.isDone())
 
+        if(subscriber.getThrowable() != null) {
+            throw subscriber.getThrowable()
+        }
+
         return subscriber.getEvents()
                 .collect { it.toSpecification() }
     }
