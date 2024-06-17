@@ -6,10 +6,14 @@ import graphql.execution.ResultPath
 import graphql.execution.pubsub.CapturingSubscriber
 import graphql.incremental.DelayedIncrementalPartialResult
 import org.awaitility.Awaitility
+import org.jetbrains.annotations.NotNull
 import org.reactivestreams.Publisher
 import spock.lang.Specification
 
+import java.util.concurrent.Callable
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.Executors
+import java.util.concurrent.ThreadFactory
 import java.util.function.Supplier
 
 class IncrementalCallStateDeferTest extends Specification {
@@ -202,9 +206,9 @@ class IncrementalCallStateDeferTest extends Specification {
         def startingValue = "*"
         given:
         def incrementalCallState = new IncrementalCallState()
-        incrementalCallState.enqueue(offThread({ -> startingValue + "A"}, 100, "/field/path")) // <-- will finish last
-        incrementalCallState.enqueue(offThread({ -> startingValue + "B"}, 50, "/field/path")) // <-- will finish second
-        incrementalCallState.enqueue(offThread({ -> startingValue + "C"}, 10, "/field/path")) // <-- will finish first
+        incrementalCallState.enqueue(offThread({ -> startingValue + "A" }, 100, "/field/path")) // <-- will finish last
+        incrementalCallState.enqueue(offThread({ -> startingValue + "B" }, 50, "/field/path")) // <-- will finish second
+        incrementalCallState.enqueue(offThread({ -> startingValue + "C" }, 10, "/field/path")) // <-- will finish first
 
         when:
 
@@ -223,6 +227,51 @@ class IncrementalCallStateDeferTest extends Specification {
         results[2].incremental[0].data["_a"] == "_A"
     }
 
+    def "can swap threads on subscribe"() {
+
+        given:
+        def incrementalCallState = new IncrementalCallState()
+        incrementalCallState.enqueue(offThread({ -> "A" }, 100, "/field/path")) // <-- will finish last
+        incrementalCallState.enqueue(offThread({ -> "B" }, 50, "/field/path")) // <-- will finish second
+        incrementalCallState.enqueue(offThread({ -> "C" }, 10, "/field/path")) // <-- will finish first
+
+        when:
+
+        // get the publisher but not work has been done here
+        def publisher = incrementalCallState.startDeferredCalls()
+
+        def threadFactory = new ThreadFactory() {
+            @Override
+            Thread newThread(@NotNull Runnable r) {
+                return new Thread(r, "SubscriberThread")
+            }
+        }
+        def executor = Executors.newSingleThreadExecutor(threadFactory)
+
+        def subscribeThreadName = ""
+        Callable<?> callable = new Callable<Object>() {
+            @Override
+            Object call() throws Exception {
+                subscribeThreadName = Thread.currentThread().getName()
+                def listOfResults = subscribeAndWaitCalls(publisher)
+                return listOfResults
+            }
+        }
+        def future = executor.submit(callable)
+
+        Awaitility.await().until { future.isDone() }
+
+        then:
+        def results = future.get()
+
+        // we subscribed on our other thread
+        subscribeThreadName == "SubscriberThread"
+
+        assertResultsSizeAndHasNextRule(3, results)
+        results[0].incremental[0].data["c"] == "C"
+        results[1].incremental[0].data["b"] == "B"
+        results[2].incremental[0].data["a"] == "A"
+    }
 
     private static DeferredFragmentCall offThread(String data, int sleepTime, String path) {
         offThread(() -> data, sleepTime, path)
