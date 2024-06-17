@@ -234,10 +234,10 @@ class IncrementalCallStateDeferTest extends Specification {
             CompletableFuture<DeferredFragmentCall.FieldWithExecutionResult> get() {
                 return CompletableFuture.supplyAsync({
                     Thread.sleep(sleepTime)
+                    String data = dataSupplier.get()
                     if (data == "Bang") {
                         throw new RuntimeException(data)
                     }
-                    String data = dataSupplier.get()
                     new DeferredFragmentCall.FieldWithExecutionResult(data.toLowerCase(), new ExecutionResultImpl(data, []))
                 })
             }
@@ -281,6 +281,9 @@ class IncrementalCallStateDeferTest extends Specification {
         def subscriber = new CapturingSubscriber<DelayedIncrementalPartialResult>()
         publisher.subscribe(subscriber)
         Awaitility.await().untilTrue(subscriber.isDone())
+        if (subscriber.throwable != null) {
+            throw new RuntimeException(subscriber.throwable)
+        }
         return subscriber.getEvents()
     }
 }
