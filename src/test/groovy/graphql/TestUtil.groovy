@@ -316,4 +316,11 @@ class TestUtil {
         return JsonOutput.prettyPrint(JsonOutput.toJson(obj))
 
     }
+
+    static Random rn = new Random()
+
+    static int rand(int min, int max) {
+        return rn.nextInt(max - min + 1) + min
+    }
+
 }
