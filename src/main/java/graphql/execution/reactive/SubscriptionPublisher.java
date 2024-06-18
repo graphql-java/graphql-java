@@ -31,10 +31,15 @@ public class SubscriptionPublisher implements Publisher<ExecutionResult> {
      *
      * @param upstreamPublisher the original publisher of objects that then have a graphql selection set applied to them
      * @param mapper            a mapper that turns object into promises to execution results which are then published on this stream
+     * @param keepOrdered       this indicates that the order of results should be kep in the same order as the source events arrive
      */
     @Internal
-    public  SubscriptionPublisher(Publisher<Object> upstreamPublisher, Function<Object, CompletionStage<ExecutionResult>> mapper) {
-        mappingPublisher = new CompletionStageMappingPublisher<>(upstreamPublisher, mapper);
+    public SubscriptionPublisher(Publisher<Object> upstreamPublisher, Function<Object, CompletionStage<ExecutionResult>> mapper, boolean keepOrdered) {
+        if (keepOrdered) {
+            mappingPublisher = new CompletionStageMappingOrderedPublisher<>(upstreamPublisher, mapper);
+        } else {
+            mappingPublisher = new CompletionStageMappingPublisher<>(upstreamPublisher, mapper);
+        }
     }
 
     /**

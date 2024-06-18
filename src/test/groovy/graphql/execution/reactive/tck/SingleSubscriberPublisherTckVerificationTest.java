@@ -1,5 +1,6 @@
-package graphql.execution.reactive;
+package graphql.execution.reactive.tck;
 
+import graphql.execution.reactive.SingleSubscriberPublisher;
 import org.reactivestreams.Publisher;
 import org.reactivestreams.tck.PublisherVerification;
 import org.reactivestreams.tck.TestEnvironment;
