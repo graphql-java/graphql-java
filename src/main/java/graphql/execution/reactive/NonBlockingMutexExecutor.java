@@ -76,9 +76,9 @@ class NonBlockingMutexExecutor implements Executor {
                 if (last.compareAndSet(current, null)) {
                     return; // end-of-queue: we're done.
                 } else {
-                    //noinspection StatementWithEmptyBody
                     while ((next = current.get()) == null) {
-                        // Thread.onSpinWait(); in Java 9
+                        // hint to the CPU we are actively waiting
+                        Thread.onSpinWait();
                     }
                 }
             }
