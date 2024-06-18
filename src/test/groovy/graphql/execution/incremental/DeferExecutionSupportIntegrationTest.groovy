@@ -1512,7 +1512,9 @@ class DeferExecutionSupportIntegrationTest extends Specification {
         deferredResultStream.subscribe(subscriber)
 
         Awaitility.await().untilTrue(subscriber.isDone())
-
+        if (subscriber.throwable != null) {
+            throw new RuntimeException(subscriber.throwable)
+        }
         return subscriber.getEvents()
                 .collect { it.toSpecification() }
     }
