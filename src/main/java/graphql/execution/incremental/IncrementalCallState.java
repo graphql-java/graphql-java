@@ -94,8 +94,9 @@ public class IncrementalCallState {
     }
 
     /**
-     * When this is called the deferred execution will begin once the {@link Publisher} is subscribed
-     * to.
+     * This method will return a {@link Publisher} of deferred results.  No field processing will be done
+     * until a {@link org.reactivestreams.Subscriber} is attached to this publisher.  Once a {@link org.reactivestreams.Subscriber}
+     * is attached the deferred field result processing will be started and published as a series of events.
      *
      * @return the publisher of deferred results
      */
