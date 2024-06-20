@@ -47,20 +47,6 @@ class DeferWithDataLoaderTest extends Specification {
     def "query with single deferred field"() {
         given:
         def query = getQuery(true, false)
-//        def defer = true
-//        def query = """
-//            query {
-//                shops {
-//                    name
-//                    ... @defer(if: $defer) {
-//                        departments {
-//                            name
-//                        }
-//                    }
-//                }
-//            }
-//
-// """
 
         def expectedInitialData = [
                 data   : [
@@ -97,6 +83,82 @@ class DeferWithDataLoaderTest extends Specification {
         then:
         combined.errors == null
         combined.data == expectedData
+
+        //  With deferred results, we don't achieve the same efficiency.
+//        batchCompareDataFetchers.departmentsForShopsBatchLoaderCounter.get() == 3
+//        batchCompareDataFetchers.productsForDepartmentsBatchLoaderCounter.get() == 3
+    }
+
+    def "multiple fields on same defer block"() {
+        given:
+        def defer = true
+        def query = """
+            query {
+                shops {
+                    id
+                    ... @defer(if: $defer) {
+                        name
+                        departments {
+                            name
+                        }
+                    }
+                }
+            }
+
+ """
+
+        def expectedInitialData = [
+                data   : [
+                        shops: [
+                                [id: "shop-1"],
+                                [id: "shop-2"],
+                                [id: "shop-3"],
+                        ]
+                ],
+                hasNext: true
+        ]
+
+        when:
+        ExecutionInput executionInput = ExecutionInput.newExecutionInput()
+                .query(query)
+                .dataLoaderRegistry(dataLoaderRegistry)
+                .graphQLContext([(ENABLE_INCREMENTAL_SUPPORT): true])
+                .build()
+
+        IncrementalExecutionResult result = graphQL.execute(executionInput)
+
+        then:
+        result.toSpecification() == expectedInitialData
+
+        when:
+        def incrementalResults = getIncrementalResults(result)
+
+        then:
+
+        assertIncrementalResults(incrementalResults, [["shops", 0], ["shops", 1], ["shops", 2]])
+
+        when:
+        def combined = combineExecutionResults(result.toSpecification(), incrementalResults)
+        then:
+        combined.errors == null
+        combined.data == [
+                shops: [
+                        [id         : "shop-1", name: "Shop 1",
+                         departments: [[name: "Department 1"],
+                                       [name: "Department 2"],
+                                       [name: "Department 3"]
+                         ]],
+                        [id         : "shop-2", name: "Shop 2",
+                         departments: [[name: "Department 4"],
+                                       [name: "Department 5"],
+                                       [name: "Department 6"]
+                         ]],
+                        [id         : "shop-3", name: "Shop 3",
+                         departments: [[name: "Department 7"],
+                                       [name: "Department 8"],
+                                       [name: "Department 9"]]
+                        ]]
+        ]
     }
 
     def "query with nested deferred fields"() {

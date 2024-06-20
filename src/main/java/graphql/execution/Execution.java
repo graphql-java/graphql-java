@@ -14,6 +14,7 @@ import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationState;
 import graphql.execution.instrumentation.dataloader.FallbackDataLoaderDispatchStrategy;
 import graphql.execution.instrumentation.dataloader.PerLevelDataLoaderDispatchStrategy;
+import graphql.execution.instrumentation.dataloader.PerLevelDataLoaderDispatchStrategyWithDefer;
 import graphql.execution.instrumentation.parameters.InstrumentationExecuteOperationParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters;
 import graphql.extensions.ExtensionsBuilder;
@@ -228,7 +229,14 @@ public class Execution {
             return DataLoaderDispatchStrategy.NO_OP;
         }
         if (executionStrategy instanceof AsyncExecutionStrategy) {
-            return new PerLevelDataLoaderDispatchStrategy(executionContext);
+            boolean deferEnabled = Optional.ofNullable(executionContext.getGraphQLContext())
+                    .map(graphqlContext -> graphqlContext.getBoolean(ExperimentalApi.ENABLE_INCREMENTAL_SUPPORT))
+                    .orElse(false);
+
+            // Dedicated strategy for defer support, for safety purposes.
+            return deferEnabled ?
+                    new PerLevelDataLoaderDispatchStrategyWithDefer(executionContext) :
+                    new PerLevelDataLoaderDispatchStrategy(executionContext);
         } else {
             return new FallbackDataLoaderDispatchStrategy(executionContext);
         }

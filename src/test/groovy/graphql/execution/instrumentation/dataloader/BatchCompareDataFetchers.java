@@ -51,11 +51,11 @@ public class BatchCompareDataFetchers {
     }
 
 
-    public DataFetcher<CompletableFuture<List<Shop>>> shopsDataFetcher = environment ->
-            supplyAsyncWithSleep(() -> new ArrayList<>(shops.values()), new Random().nextInt(100));
+    public DataFetcher<CompletableFuture<List<Shop>>> shopsDataFetcher =
+            environment -> supplyAsyncWithSleep(() -> new ArrayList<>(shops.values()));
 
     public DataFetcher<CompletableFuture<List<Shop>>> expensiveShopsDataFetcher = environment ->
-            supplyAsyncWithSleep(() -> new ArrayList<>(expensiveShops.values()), new Random().nextInt(100));
+            supplyAsyncWithSleep(() -> new ArrayList<>(expensiveShops.values()));
 
     // Departments
     private static Map<String, Department> departments = new LinkedHashMap<>();
@@ -142,23 +142,22 @@ public class BatchCompareDataFetchers {
 
     private <T> CompletableFuture<T> maybeAsyncWithSleep(Supplier<CompletableFuture<T>> supplier) {
         if (useAsyncBatchLoading.get()) {
-            return supplyAsyncWithSleep(supplier, 100)
+            return supplyAsyncWithSleep(supplier)
                     .thenCompose(cf -> cf);
         } else {
             return supplier.get();
         }
     }
 
-    private static <T> CompletableFuture<T> supplyAsyncWithSleep(Supplier<T> supplier, long time) {
-        Supplier<T> sleepSome = sleepSome(supplier, time);
+    private static <T> CompletableFuture<T> supplyAsyncWithSleep(Supplier<T> supplier) {
+        Supplier<T> sleepSome = sleepSome(supplier);
         return CompletableFuture.supplyAsync(sleepSome);
     }
 
-    private static <T> Supplier<T> sleepSome(Supplier<T> supplier, long time) {
+    private static <T> Supplier<T> sleepSome(Supplier<T> supplier) {
         return () -> {
             try {
-//                Thread.sleep(new Random().nextInt(100));
-                Thread.sleep(time);
+                Thread.sleep(new Random().nextInt(100));
                 return supplier.get();
             } catch (Exception e) {
                 throw new RuntimeException(e);
