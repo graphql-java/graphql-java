@@ -139,6 +139,15 @@ public class MergedField {
         return deferredExecutions;
     }
 
+    /**
+     * TODO Javadoc
+     * @return
+     */
+    @ExperimentalApi
+    public boolean isDeferred() {
+        return !deferredExecutions.isEmpty();
+    }
+
     public static Builder newMergedField() {
         return new Builder();
     }

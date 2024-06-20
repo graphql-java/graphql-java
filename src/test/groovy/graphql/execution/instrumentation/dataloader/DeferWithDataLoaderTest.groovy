@@ -47,6 +47,20 @@ class DeferWithDataLoaderTest extends Specification {
     def "query with single deferred field"() {
         given:
         def query = getQuery(true, false)
+//        def defer = true
+//        def query = """
+//            query {
+//                shops {
+//                    name
+//                    ... @defer(if: $defer) {
+//                        departments {
+//                            name
+//                        }
+//                    }
+//                }
+//            }
+//
+// """
 
         def expectedInitialData = [
                 data   : [
