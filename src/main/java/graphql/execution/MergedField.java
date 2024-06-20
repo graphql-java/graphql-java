@@ -140,8 +140,8 @@ public class MergedField {
     }
 
     /**
-     * TODO Javadoc
-     * @return
+     * Returns true if this field is part of a deferred execution
+     * @return true if this field is part of a deferred execution
      */
     @ExperimentalApi
     public boolean isDeferred() {

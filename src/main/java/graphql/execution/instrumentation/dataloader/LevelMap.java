@@ -11,7 +11,7 @@ import java.util.Arrays;
 public class LevelMap {
 
     // A reasonable default that guarantees no additional allocations for most use cases.
-    private static final int DEFAULT_INITIAL_SIZE = 8;
+    private static final int DEFAULT_INITIAL_SIZE = 16;
 
     // this array is mutable in both size and contents.
     private int[] countsByLevel;
@@ -54,14 +54,13 @@ public class LevelMap {
 
     @Override
     public String toString() {
-        return Arrays.toString(this.countsByLevel);
-//        StringBuilder result = new StringBuilder();
-//        result.append("IntMap[");
-//        for (int i = 0; i < countsByLevel.length; i++) {
-//            result.append("level=").append(i).append(",count=").append(countsByLevel[i]).append(" ");
-//        }
-//        result.append("]");
-//        return result.toString();
+        StringBuilder result = new StringBuilder();
+        result.append("IntMap[");
+        for (int i = 0; i < countsByLevel.length; i++) {
+            result.append("level=").append(i).append(",count=").append(countsByLevel[i]).append(" ");
+        }
+        result.append("]");
+        return result.toString();
     }
 
     public String toString(int level) {

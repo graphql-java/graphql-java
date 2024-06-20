@@ -83,10 +83,6 @@ class DeferWithDataLoaderTest extends Specification {
         then:
         combined.errors == null
         combined.data == expectedData
-
-        //  With deferred results, we don't achieve the same efficiency.
-//        batchCompareDataFetchers.departmentsForShopsBatchLoaderCounter.get() == 3
-//        batchCompareDataFetchers.productsForDepartmentsBatchLoaderCounter.get() == 3
     }
 
     def "multiple fields on same defer block"() {
