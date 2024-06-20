@@ -98,7 +98,7 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
     }
 
     @Override
-    public void deferredField(FieldValueInfo fieldValueInfo, ExecutionStrategyParameters executionStrategyParameters) {
+    public void executeDeferredOnFieldValueInfo(FieldValueInfo fieldValueInfo, ExecutionStrategyParameters executionStrategyParameters) {
         throw new UnsupportedOperationException("Data Loaders cannot be used to resolve deferred fields");
     }
 

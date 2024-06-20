@@ -4,7 +4,6 @@ import graphql.Internal;
 import graphql.schema.DataFetcher;
 
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 
 @Internal
 public interface DataLoaderDispatchStrategy {
@@ -50,7 +49,7 @@ public interface DataLoaderDispatchStrategy {
         return dataFetcher;
     }
 
-    default void deferredField(FieldValueInfo fieldValueInfo, ExecutionStrategyParameters executionStrategyParameters) {
+    default void executeDeferredOnFieldValueInfo(FieldValueInfo fieldValueInfo, ExecutionStrategyParameters executionStrategyParameters) {
 
     }
 }

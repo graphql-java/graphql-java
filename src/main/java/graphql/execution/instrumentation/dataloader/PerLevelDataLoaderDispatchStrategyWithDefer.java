@@ -117,7 +117,7 @@ public class PerLevelDataLoaderDispatchStrategyWithDefer implements DataLoaderDi
     }
 
     @Override
-    public void deferredField(FieldValueInfo fieldValueInfo, ExecutionStrategyParameters parameters) {
+    public void executeDeferredOnFieldValueInfo(FieldValueInfo fieldValueInfo, ExecutionStrategyParameters parameters) {
         int curLevel = parameters.getExecutionStepInfo().getPath().getLevel() + 1;
 
         onFieldValuesInfoDispatchIfNeeded(Collections.singletonList(fieldValueInfo), curLevel, true);
@@ -163,6 +163,25 @@ public class PerLevelDataLoaderDispatchStrategyWithDefer implements DataLoaderDi
         callStack.lock.runLocked(() ->
                 callStack.increaseHappenedOnFieldValueCalls(curLevel)
         );
+    }
+
+    @Override
+    public void fieldFetched(ExecutionContext executionContext,
+                             ExecutionStrategyParameters parameters,
+                             DataFetcher<?> dataFetcher,
+                             Object fetchedValue) {
+        int level = parameters.getPath().getLevel();
+        boolean isDeferred = parameters.getField().isDeferred();
+        boolean dispatchNeeded = callStack.lock.callLocked(() -> {
+            if (!isDeferred) {
+                callStack.increaseFetchCount(level);
+            }
+            return dispatchIfNeeded(level);
+        });
+        if (dispatchNeeded) {
+            dispatch();
+        }
+
     }
 
 
@@ -217,26 +236,6 @@ public class PerLevelDataLoaderDispatchStrategyWithDefer implements DataLoaderDi
             }
         }
         return result;
-    }
-
-
-    @Override
-    public void fieldFetched(ExecutionContext executionContext,
-                             ExecutionStrategyParameters parameters,
-                             DataFetcher<?> dataFetcher,
-                             Object fetchedValue) {
-        int level = parameters.getPath().getLevel();
-        boolean isDeferred = parameters.getField().isDeferred();
-        boolean dispatchNeeded = callStack.lock.callLocked(() -> {
-            if (!isDeferred) {
-                callStack.increaseFetchCount(level);
-            }
-            return dispatchIfNeeded(level);
-        });
-        if (dispatchNeeded) {
-            dispatch();
-        }
-
     }
 
 

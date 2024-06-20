@@ -162,7 +162,7 @@ public interface DeferredExecutionSupport {
 
                                 CompletableFuture<ExecutionResult> executionResultCF = fieldValueResult
                                         .thenCompose(fvi -> {
-                                                    executionContext.getDataLoaderDispatcherStrategy().deferredField(fvi, executionStrategyParameters);
+                                                    executionContext.getDataLoaderDispatcherStrategy().executeDeferredOnFieldValueInfo(fvi, executionStrategyParameters);
 
                                                     return fvi
                                                             .getFieldValueFuture()
