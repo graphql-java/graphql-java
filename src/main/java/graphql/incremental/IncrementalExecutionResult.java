@@ -86,6 +86,7 @@ import java.util.List;
 public interface IncrementalExecutionResult extends ExecutionResult {
     /**
      * Indicates whether there are pending incremental data.
+     *
      * @return "true" if there are incremental data, "false" otherwise.
      */
     boolean hasNext();
@@ -103,7 +104,11 @@ public interface IncrementalExecutionResult extends ExecutionResult {
     List<IncrementalPayload> getIncremental();
 
     /**
-     * This {@link Publisher} will asynchronously emit events containing defer and/or stream payloads.
+     * This method will return a {@link Publisher} of deferred results.  No field processing will be done
+     * until a {@link org.reactivestreams.Subscriber} is attached to this publisher.
+     * <p>
+     * Once a {@link org.reactivestreams.Subscriber} is attached the deferred field result processing will be
+     * started and published as a series of events.
      *
      * @return a {@link Publisher} that clients can subscribe to receive incremental payloads.
      */
