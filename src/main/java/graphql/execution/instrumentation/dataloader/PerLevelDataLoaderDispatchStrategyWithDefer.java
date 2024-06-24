@@ -18,18 +18,31 @@ import java.util.Set;
 
 @Internal
 public class PerLevelDataLoaderDispatchStrategyWithDefer implements DataLoaderDispatchStrategy {
+    // ITERATIONS:
+    // 1 - all defer fields should be ignored.
+    // 2 - new call stacks for every defer block.
 
     private final CallStack callStack;
     private final ExecutionContext executionContext;
 
+    // data fetchers state: 1) not called 2) called but not returned 3) called and resolve
+
+    // TODO: add test for only a scalar being deferred
 
     private static class CallStack {
 
         private final LockKit.ReentrantLock lock = new LockKit.ReentrantLock();
+
+        // expected data fetchers method invocations
         private final LevelMap expectedFetchCountPerLevel = new LevelMap();
+        // actual data fetchers that were invoked and returned
         private final LevelMap fetchCountPerLevel = new LevelMap();
+
+        // object stuff
         private final LevelMap expectedStrategyCallsPerLevel = new LevelMap();
         private final LevelMap happenedStrategyCallsPerLevel = new LevelMap();
+
+        // data fetchers methods have returned (returned an actual value, which we can inspect - it is list, non-null, object, etc....)
         private final LevelMap happenedOnFieldValueCallsPerLevel = new LevelMap();
 
         private final LevelMap expectedDeferredStrategyCallsPerLevel = new LevelMap();

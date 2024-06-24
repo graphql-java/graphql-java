@@ -217,9 +217,11 @@ class DeferWithDataLoaderTest extends Specification {
                         name
                     }
                 } 
-                ... @defer(if: true) {
+                ... @defer {
                     expensiveShops {
-                        name 
+                        departments {
+                            name 
+                        }
                     }
                 }
             }
