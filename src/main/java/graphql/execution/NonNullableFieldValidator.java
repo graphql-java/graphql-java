@@ -1,6 +1,7 @@
 package graphql.execution;
 
 
+import graphql.GraphQLError;
 import graphql.Internal;
 
 /**
@@ -23,7 +24,7 @@ public class NonNullableFieldValidator {
     /**
      * Called to check that a value is non null if the type requires it to be non null
      *
-     * @param path   the path to this place
+     * @param parameters the execution strategy parameters
      * @param result the result to check
      * @param <T>    the type of the result
      *
@@ -31,7 +32,7 @@ public class NonNullableFieldValidator {
      *
      * @throws NonNullableFieldWasNullException if the value is null but the type requires it to be non null
      */
-    public <T> T validate(ResultPath path, T result) throws NonNullableFieldWasNullException {
+    public <T> T validate(ExecutionStrategyParameters parameters, T result) throws NonNullableFieldWasNullException {
         if (result == null) {
             if (executionStepInfo.isNonNullType()) {
                 // see https://spec.graphql.org/October2021/#sec-Errors-and-Non-Nullability
@@ -46,8 +47,15 @@ public class NonNullableFieldValidator {
                 //
                 // We will do this until the spec makes this more explicit.
                 //
+                final ResultPath path = parameters.getPath();
+
                 NonNullableFieldWasNullException nonNullException = new NonNullableFieldWasNullException(executionStepInfo, path);
-                executionContext.addError(new NonNullableFieldWasNullError(nonNullException), path);
+                final GraphQLError error = new NonNullableFieldWasNullError(nonNullException);
+                if(parameters.getField() != null && parameters.getField().isDeferred()) {
+                    parameters.getDeferredCallContext().addError(error);
+                } else {
+                    executionContext.addError(error, path);
+                }
                 throw nonNullException;
             }
         }

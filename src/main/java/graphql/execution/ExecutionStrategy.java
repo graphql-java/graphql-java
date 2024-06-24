@@ -550,7 +550,9 @@ public abstract class ExecutionStrategy {
 
         if (result instanceof DataFetcherResult) {
             DataFetcherResult<?> dataFetcherResult = (DataFetcherResult<?>) result;
-            executionContext.addErrors(dataFetcherResult.getErrors());
+
+            addErrorsToRightContext(dataFetcherResult.getErrors(), parameters, executionContext);
+
             addExtensionsIfPresent(executionContext, dataFetcherResult);
 
             Object localContext = dataFetcherResult.getLocalContext();
@@ -585,12 +587,6 @@ public abstract class ExecutionStrategy {
                 .dataFetchingEnvironment(environment)
                 .exception(e)
                 .build();
-
-        parameters.getDeferredCallContext().onFetchingException(
-                parameters.getPath(),
-                parameters.getField().getSingleField().getSourceLocation(),
-                e
-        );
 
         try {
             return asyncHandleException(dataFetcherExceptionHandler, handlerParameters);
@@ -714,9 +710,8 @@ public abstract class ExecutionStrategy {
 
     private void handleUnresolvedTypeProblem(ExecutionContext context, ExecutionStrategyParameters parameters, UnresolvedTypeException e) {
         UnresolvedTypeError error = new UnresolvedTypeError(parameters.getPath(), parameters.getExecutionStepInfo(), e);
-        context.addError(error);
 
-        parameters.getDeferredCallContext().onError(error);
+        addErrorToRightContext(error, parameters, context);
     }
 
     /**
@@ -745,7 +740,7 @@ public abstract class ExecutionStrategy {
     protected Object /* CompletableFuture<Object> | Object */
     completeValueForNull(ExecutionStrategyParameters parameters) {
         try {
-            return parameters.getNonNullFieldValidator().validate(parameters.getPath(), null);
+            return parameters.getNonNullFieldValidator().validate(parameters, null);
         } catch (Exception e) {
             return Async.exceptionallyCompletedFuture(e);
         }
@@ -764,7 +759,7 @@ public abstract class ExecutionStrategy {
     protected FieldValueInfo completeValueForList(ExecutionContext executionContext, ExecutionStrategyParameters parameters, Object result) {
         Iterable<Object> resultIterable = toIterable(executionContext, parameters, result);
         try {
-            resultIterable = parameters.getNonNullFieldValidator().validate(parameters.getPath(), resultIterable);
+            resultIterable = parameters.getNonNullFieldValidator().validate(parameters, resultIterable);
         } catch (NonNullableFieldWasNullException e) {
             return new FieldValueInfo(LIST, exceptionallyCompletedFuture(e));
         }
@@ -891,7 +886,7 @@ public abstract class ExecutionStrategy {
         }
 
         try {
-            serialized = parameters.getNonNullFieldValidator().validate(parameters.getPath(), serialized);
+            serialized = parameters.getNonNullFieldValidator().validate(parameters, serialized);
         } catch (NonNullableFieldWasNullException e) {
             return exceptionallyCompletedFuture(e);
         }
@@ -917,7 +912,7 @@ public abstract class ExecutionStrategy {
             serialized = handleCoercionProblem(executionContext, parameters, e);
         }
         try {
-            serialized = parameters.getNonNullFieldValidator().validate(parameters.getPath(), serialized);
+            serialized = parameters.getNonNullFieldValidator().validate(parameters, serialized);
         } catch (NonNullableFieldWasNullException e) {
             return exceptionallyCompletedFuture(e);
         }
@@ -971,9 +966,8 @@ public abstract class ExecutionStrategy {
     @SuppressWarnings("SameReturnValue")
     private Object handleCoercionProblem(ExecutionContext context, ExecutionStrategyParameters parameters, CoercingSerializeException e) {
         SerializationError error = new SerializationError(parameters.getPath(), e);
-        context.addError(error);
 
-        parameters.getDeferredCallContext().onError(error);
+        addErrorToRightContext(error, parameters, context);
 
         return null;
     }
@@ -997,9 +991,8 @@ public abstract class ExecutionStrategy {
 
     private void handleTypeMismatchProblem(ExecutionContext context, ExecutionStrategyParameters parameters) {
         TypeMismatchError error = new TypeMismatchError(parameters.getPath(), parameters.getExecutionStepInfo().getUnwrappedNonNullType());
-        context.addError(error);
 
-        parameters.getDeferredCallContext().onError(error);
+        addErrorToRightContext(error, parameters, context);
     }
 
     /**
@@ -1158,4 +1151,20 @@ public abstract class ExecutionStrategy {
         return argumentValues;
     }
 
+    // Errors that result from the execution of deferred fields are kept in the deferred context only.
+    private static void addErrorToRightContext(GraphQLError error, ExecutionStrategyParameters parameters, ExecutionContext executionContext) {
+        if (parameters.getField() != null && parameters.getField().isDeferred()) {
+            parameters.getDeferredCallContext().addError(error);
+        } else {
+            executionContext.addError(error);
+        }
+    }
+
+    private static void addErrorsToRightContext(List<GraphQLError> errors, ExecutionStrategyParameters parameters, ExecutionContext executionContext) {
+        if (parameters.getField() != null && parameters.getField().isDeferred()) {
+            parameters.getDeferredCallContext().addErrors(errors);
+        } else {
+            executionContext.addErrors(errors);
+        }
+    }
 }
