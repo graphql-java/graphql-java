@@ -1178,6 +1178,49 @@ class DeferExecutionSupportIntegrationTest extends Specification {
         ]
     }
 
+    def "can handle data fetcher that returns both data and error on nested field"() {
+        def query = '''
+            query {
+                hello
+                ... @defer {
+                    post {
+                        dataAndError
+                    }
+                }               
+            }
+        '''
+
+        when:
+        def initialResult = executeQuery(query)
+
+        then:
+        initialResult.toSpecification() == [
+                data   : [hello: "world"],
+                hasNext: true
+        ]
+
+        when:
+        def incrementalResults = getIncrementalResults(initialResult)
+
+        then:
+        incrementalResults == [
+                [
+                        hasNext    : false,
+                        incremental: [
+                                [
+                                        path  : [],
+                                        data  : [post: [dataAndError: "data"]],
+                                        errors: [[
+                                                         message   : "Bang!",
+                                                         locations : [],
+                                                         extensions: [classification: "DataFetchingException"]
+                                                 ]],
+                                ],
+                        ]
+                ],
+        ]
+    }
+
     def "can handle data fetcher that returns both data and error"() {
         def query = '''
             query {

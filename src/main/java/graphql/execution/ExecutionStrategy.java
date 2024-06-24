@@ -1153,7 +1153,7 @@ public abstract class ExecutionStrategy {
 
     // Errors that result from the execution of deferred fields are kept in the deferred context only.
     private static void addErrorToRightContext(GraphQLError error, ExecutionStrategyParameters parameters, ExecutionContext executionContext) {
-        if (parameters.getField() != null && parameters.getField().isDeferred()) {
+        if (parameters.getDeferredCallContext() != null) {
             parameters.getDeferredCallContext().addError(error);
         } else {
             executionContext.addError(error);
@@ -1161,7 +1161,7 @@ public abstract class ExecutionStrategy {
     }
 
     private static void addErrorsToRightContext(List<GraphQLError> errors, ExecutionStrategyParameters parameters, ExecutionContext executionContext) {
-        if (parameters.getField() != null && parameters.getField().isDeferred()) {
+        if (parameters.getDeferredCallContext() != null) {
             parameters.getDeferredCallContext().addErrors(errors);
         } else {
             executionContext.addErrors(errors);
