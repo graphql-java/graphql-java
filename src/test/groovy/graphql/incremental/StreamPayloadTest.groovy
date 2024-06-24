@@ -17,8 +17,9 @@ class StreamPayloadTest extends Specification {
         spec == [
                 items: null,
                 path : null,
-                ]
+        ]
     }
+
     def "can construct an instance using builder"() {
         def payload = StreamPayload.newStreamedItem()
                 .items(["twow is that a bee"])
