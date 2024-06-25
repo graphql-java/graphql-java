@@ -9,6 +9,7 @@ import graphql.schema.GraphQLSchema;
 import graphql.schema.idl.RuntimeWiring;
 import graphql.schema.idl.SchemaGenerator;
 import graphql.schema.idl.SchemaParser;
+import org.jetbrains.annotations.NotNull;
 import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
@@ -16,7 +17,6 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
-import javax.annotation.Nonnull;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.CompletableFuture;
@@ -134,7 +134,7 @@ public class SubscriptionReproduction {
         return counter;
     }
 
-    private @Nonnull Object mkValue(Integer counter) {
+    private @NotNull Object mkValue(Integer counter) {
         // name and isFavorite are future values via DFs
         return Map.of(
                 "counter", counter,

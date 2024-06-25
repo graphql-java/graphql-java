@@ -2,9 +2,9 @@ package graphql.incremental;
 
 import graphql.ExecutionResult;
 import graphql.ExperimentalApi;
+import org.jetbrains.annotations.Nullable;
 import org.reactivestreams.Publisher;
 
-import javax.annotation.Nullable;
 import java.util.List;
 
 /**

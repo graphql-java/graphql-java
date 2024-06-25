@@ -3,9 +3,9 @@ package graphql.incremental;
 import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
 import graphql.ExperimentalApi;
+import org.jetbrains.annotations.Nullable;
 import org.reactivestreams.Publisher;
 
-import javax.annotation.Nullable;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;

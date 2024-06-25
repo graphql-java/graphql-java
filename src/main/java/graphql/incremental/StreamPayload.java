@@ -2,8 +2,8 @@ package graphql.incremental;
 
 import graphql.ExperimentalApi;
 import graphql.GraphQLError;
+import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nullable;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
