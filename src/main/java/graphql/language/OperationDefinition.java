@@ -21,7 +21,7 @@ import static graphql.collect.ImmutableKit.emptyMap;
 import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
 
 @PublicApi
-public class OperationDefinition extends AbstractNode<OperationDefinition> implements Definition<OperationDefinition>, SelectionSetContainer<OperationDefinition>, DirectivesContainer<OperationDefinition> {
+public class OperationDefinition extends AbstractNode<OperationDefinition> implements Definition<OperationDefinition>, SelectionSetContainer<OperationDefinition>, DirectivesContainer<OperationDefinition>, NamedNode<OperationDefinition> {
 
     public enum Operation {
         QUERY, MUTATION, SUBSCRIPTION
