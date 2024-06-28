@@ -139,6 +139,16 @@ public class MergedField {
         return deferredExecutions;
     }
 
+    /**
+     * Returns true if this field is part of a deferred execution
+     *
+     * @return true if this field is part of a deferred execution
+     */
+    @ExperimentalApi
+    public boolean isDeferred() {
+        return !deferredExecutions.isEmpty();
+    }
+
     public static Builder newMergedField() {
         return new Builder();
     }

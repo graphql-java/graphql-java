@@ -6,7 +6,9 @@ import graphql.ExecutionInput
 import graphql.ExecutionResult
 import graphql.ExperimentalApi
 import graphql.GraphQL
+import graphql.GraphqlErrorBuilder
 import graphql.TestUtil
+import graphql.execution.DataFetcherResult
 import graphql.execution.pubsub.CapturingSubscriber
 import graphql.incremental.DelayedIncrementalPartialResult
 import graphql.incremental.IncrementalExecutionResult
@@ -55,6 +57,7 @@ class DeferExecutionSupportIntegrationTest extends Specification {
                 comments: [Comment]
                 resolvesToNull: String
                 dataFetcherError: String
+                dataAndError: String
                 coercionError: Int 
                 typeMismatchError: [String]
                 nonNullableError: String!
@@ -128,6 +131,22 @@ class DeferExecutionSupportIntegrationTest extends Specification {
         }
     }
 
+    private static DataFetcher resolveWithDataAndError(Object data) {
+        return new DataFetcher() {
+            @Override
+            Object get(DataFetchingEnvironment environment) throws Exception {
+                return DataFetcherResult.newResult()
+                        .data(data)
+                        .error(
+                                GraphqlErrorBuilder.newError()
+                                        .message("Bang!")
+                                        .build()
+                        )
+                        .build()
+            }
+        }
+    }
+
     void setup() {
         def runtimeWiring = RuntimeWiring.newRuntimeWiring()
                 .type(newTypeWiring("Query")
@@ -148,6 +167,7 @@ class DeferExecutionSupportIntegrationTest extends Specification {
                 .type(newTypeWiring("Post").dataFetcher("wordCount", resolve(45999, 10, true)))
                 .type(newTypeWiring("Post").dataFetcher("latestComment", resolve([title: "Comment title"], 10)))
                 .type(newTypeWiring("Post").dataFetcher("dataFetcherError", resolveWithException()))
+                .type(newTypeWiring("Post").dataFetcher("dataAndError", resolveWithDataAndError("data")))
                 .type(newTypeWiring("Post").dataFetcher("coercionError", resolve("Not a number", 10)))
                 .type(newTypeWiring("Post").dataFetcher("typeMismatchError", resolve([a: "A Map instead of a List"], 10)))
                 .type(newTypeWiring("Post").dataFetcher("nonNullableError", resolve(null)))
@@ -1141,6 +1161,104 @@ class DeferExecutionSupportIntegrationTest extends Specification {
                                                          message   : "Exception while fetching data (/post/dataFetcherError) : Bang!!!",
                                                          locations : [[line: 6, column: 25]],
                                                          path      : ["post", "dataFetcherError"],
+                                                         extensions: [classification: "DataFetchingException"]
+                                                 ]],
+                                ],
+                        ]
+                ],
+                [
+                        hasNext    : false,
+                        incremental: [
+                                [
+                                        path: ["post"],
+                                        data: [text: "The full text"],
+                                ]
+                        ]
+                ]
+        ]
+    }
+
+    def "can handle data fetcher that returns both data and error on nested field"() {
+        def query = '''
+            query {
+                hello
+                ... @defer {
+                    post {
+                        dataAndError
+                    }
+                }               
+            }
+        '''
+
+        when:
+        def initialResult = executeQuery(query)
+
+        then:
+        initialResult.toSpecification() == [
+                data   : [hello: "world"],
+                hasNext: true
+        ]
+
+        when:
+        def incrementalResults = getIncrementalResults(initialResult)
+
+        then:
+        incrementalResults == [
+                [
+                        hasNext    : false,
+                        incremental: [
+                                [
+                                        path  : [],
+                                        data  : [post: [dataAndError: "data"]],
+                                        errors: [[
+                                                         message   : "Bang!",
+                                                         locations : [],
+                                                         extensions: [classification: "DataFetchingException"]
+                                                 ]],
+                                ],
+                        ]
+                ],
+        ]
+    }
+
+    def "can handle data fetcher that returns both data and error"() {
+        def query = '''
+            query {
+                post {
+                    id
+                    ... @defer {
+                        dataAndError
+                    }
+                    ... @defer {
+                        text
+                    }
+                }
+            }
+        '''
+
+        when:
+        def initialResult = executeQuery(query)
+
+        then:
+        initialResult.toSpecification() == [
+                data   : [post: [id: "1001"]],
+                hasNext: true
+        ]
+
+        when:
+        def incrementalResults = getIncrementalResults(initialResult)
+
+        then:
+        incrementalResults == [
+                [
+                        hasNext    : true,
+                        incremental: [
+                                [
+                                        path  : ["post"],
+                                        data  : [dataAndError: "data"],
+                                        errors: [[
+                                                         message   : "Bang!",
+                                                         locations : [],
                                                          extensions: [classification: "DataFetchingException"]
                                                  ]],
                                 ],
