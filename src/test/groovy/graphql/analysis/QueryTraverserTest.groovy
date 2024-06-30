@@ -1907,4 +1907,59 @@ class QueryTraverserTest extends Specification {
         then: "it should not be visited"
         0 * visitor.visitField(_)
     }
+
+    def "can coerce field arguments or not"() {
+        def sdl = """
+            input Test{   x: String!} 
+            type Query{   testInput(input: Test!): String}
+            type Mutation{   testInput(input: Test!): String}
+            """
+
+        def schema = TestUtil.schema(sdl)
+
+        def query = createQuery('''
+        mutation a($test: Test!) {
+            testInput(input: $test)
+        }''')
+
+
+        def fieldArgMap = [:]
+        def queryVisitorStub = new QueryVisitorStub() {
+            @Override
+            void visitField(QueryVisitorFieldEnvironment queryVisitorFieldEnvironment) {
+                super.visitField(queryVisitorFieldEnvironment)
+                fieldArgMap = queryVisitorFieldEnvironment.getArguments()
+            }
+        }
+
+        when:
+        QueryTraverser.newQueryTraverser()
+                .schema(schema)
+                .document(query)
+                .coercedVariables(CoercedVariables.of([test: [x: "X"]]))
+                .build()
+                .visitPreOrder(queryVisitorStub)
+
+        then:
+
+        fieldArgMap == [input: [x:"X"]]
+
+        when:
+        fieldArgMap = null
+
+
+        def options = QueryTraversalOptions.defaultOptions()
+                .coerceFieldArguments(false)
+        QueryTraverser.newQueryTraverser()
+                .schema(schema)
+                .document(query)
+                .coercedVariables(CoercedVariables.of([test: [x: "X"]]))
+                .options(options)
+                .build()
+                .visitPreOrder(queryVisitorStub)
+
+
+        then:
+        fieldArgMap == [:] // empty map
+    }
 }

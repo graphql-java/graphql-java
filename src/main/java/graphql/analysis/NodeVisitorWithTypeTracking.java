@@ -30,6 +30,7 @@ import graphql.schema.GraphQLUnmodifiedType;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
+import java.util.Collections;
 import java.util.Locale;
 import java.util.Map;
 
@@ -50,13 +51,20 @@ public class NodeVisitorWithTypeTracking extends NodeVisitorStub {
     private final GraphQLSchema schema;
     private final Map<String, FragmentDefinition> fragmentsByName;
     private final ConditionalNodes conditionalNodes = new ConditionalNodes();
+    private final QueryTraversalOptions options;
 
-    public NodeVisitorWithTypeTracking(QueryVisitor preOrderCallback, QueryVisitor postOrderCallback, Map<String, Object> variables, GraphQLSchema schema, Map<String, FragmentDefinition> fragmentsByName) {
+    public NodeVisitorWithTypeTracking(QueryVisitor preOrderCallback,
+                                       QueryVisitor postOrderCallback,
+                                       Map<String, Object> variables,
+                                       GraphQLSchema schema,
+                                       Map<String, FragmentDefinition> fragmentsByName,
+                                       QueryTraversalOptions options) {
         this.preOrderCallback = preOrderCallback;
         this.postOrderCallback = postOrderCallback;
         this.variables = variables;
         this.schema = schema;
         this.fragmentsByName = fragmentsByName;
+        this.options = options;
     }
 
     @Override
@@ -156,12 +164,17 @@ public class NodeVisitorWithTypeTracking extends NodeVisitorStub {
         boolean isTypeNameIntrospectionField = fieldDefinition == schema.getIntrospectionTypenameFieldDefinition();
         GraphQLFieldsContainer fieldsContainer = !isTypeNameIntrospectionField ? (GraphQLFieldsContainer) unwrapAll(parentEnv.getOutputType()) : null;
         GraphQLCodeRegistry codeRegistry = schema.getCodeRegistry();
-        Map<String, Object> argumentValues = ValuesResolver.getArgumentValues(codeRegistry,
-                fieldDefinition.getArguments(),
-                field.getArguments(),
-                CoercedVariables.of(variables),
-                GraphQLContext.getDefault(),
-                Locale.getDefault());
+        Map<String, Object> argumentValues;
+        if (options.isCoerceFieldArguments()) {
+            argumentValues = ValuesResolver.getArgumentValues(codeRegistry,
+                    fieldDefinition.getArguments(),
+                    field.getArguments(),
+                    CoercedVariables.of(variables),
+                    GraphQLContext.getDefault(),
+                    Locale.getDefault());
+        } else {
+            argumentValues = Collections.emptyMap();
+        }
         QueryVisitorFieldEnvironment environment = new QueryVisitorFieldEnvironmentImpl(isTypeNameIntrospectionField,
                 field,
                 fieldDefinition,

@@ -1,6 +1,7 @@
 package graphql.analysis
 
 import graphql.TestUtil
+import graphql.execution.CoercedVariables
 import graphql.language.Document
 import graphql.language.Field
 import graphql.language.NodeUtil
@@ -448,4 +449,60 @@ class QueryTransformerTest extends Specification {
         printAstCompact(newNode) == "{__typename ...on A{aX}...on B{b}}"
 
     }
+
+    def "can coerce field arguments or not"() {
+        def sdl = """
+            input Test{   x: String!} 
+            type Query{   testInput(input: Test!): String}
+            type Mutation{   testInput(input: Test!): String}
+            """
+
+        def schema = TestUtil.schema(sdl)
+
+        def query = createQuery('''
+        mutation a($test: Test!) {
+            testInput(input: $test)
+        }''')
+
+
+        def fieldArgMap = [:]
+        def queryVisitorStub = new QueryVisitorStub() {
+            @Override
+            void visitField(QueryVisitorFieldEnvironment queryVisitorFieldEnvironment) {
+                super.visitField(queryVisitorFieldEnvironment)
+                fieldArgMap = queryVisitorFieldEnvironment.getArguments()
+            }
+        }
+
+        when:
+        QueryTraverser.newQueryTraverser()
+                .schema(schema)
+                .document(query)
+                .coercedVariables(CoercedVariables.of([test: [x: "X"]]))
+                .build()
+                .visitPreOrder(queryVisitorStub)
+
+        then:
+
+        fieldArgMap == [input: [x:"X"]]
+
+        when:
+        fieldArgMap = null
+
+
+        def options = QueryTraversalOptions.defaultOptions()
+                .coerceFieldArguments(false)
+        QueryTraverser.newQueryTraverser()
+                .schema(schema)
+                .document(query)
+                .coercedVariables(CoercedVariables.of([test: [x: "X"]]))
+                .options(options)
+                .build()
+                .visitPreOrder(queryVisitorStub)
+
+
+        then:
+        fieldArgMap == [:] // empty map
+    }
+
 }
