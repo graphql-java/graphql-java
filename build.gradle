@@ -107,8 +107,8 @@ dependencies {
     implementation 'com.google.guava:guava:' + guavaVersion
     testImplementation group: 'junit', name: 'junit', version: '4.13.2'
     testImplementation 'org.spockframework:spock-core:2.0-groovy-3.0'
-    testImplementation 'org.codehaus.groovy:groovy:3.0.21'
-    testImplementation 'org.codehaus.groovy:groovy-json:3.0.21'
+    testImplementation 'org.codehaus.groovy:groovy:3.0.22'
+    testImplementation 'org.codehaus.groovy:groovy-json:3.0.22'
     testImplementation 'com.google.code.gson:gson:2.11.0'
     testImplementation 'org.eclipse.jetty:jetty-server:11.0.21'
     testImplementation 'com.fasterxml.jackson.core:jackson-databind:2.17.1'
