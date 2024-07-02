@@ -57,14 +57,13 @@ public class SchemaDiffing {
         PossibleMappingsCalculator possibleMappingsCalculator = new PossibleMappingsCalculator(sourceGraph, targetGraph, runningCheck);
         PossibleMappingsCalculator.PossibleMappings possibleMappings = possibleMappingsCalculator.calculate();
 
-        Mapping startMapping = Mapping.newMapping(
-                possibleMappingsCalculator.getFixedParentRestrictions(),
-                possibleMappings.fixedOneToOneMappings,
-                possibleMappings.fixedOneToOneSources,
-                possibleMappings.fixedOneToOneTargets);
-
         assertTrue(sourceGraph.size() == targetGraph.size());
         if (possibleMappings.fixedOneToOneMappings.size() == sourceGraph.size()) {
+            Mapping startMapping = Mapping.newMapping(
+                    possibleMappingsCalculator.getFixedParentRestrictions(),
+                    possibleMappings.fixedOneToOneMappings,
+                    possibleMappings.fixedOneToOneSources,
+                    possibleMappings.fixedOneToOneTargets);
             return new DiffImpl.OptimalEdit(sourceGraph, targetGraph, startMapping, baseEditorialCostForMapping(startMapping, sourceGraph, targetGraph));
         }
 
@@ -100,17 +99,24 @@ public class SchemaDiffing {
             sourceVertices.addAll(possibleMappings.fixedOneToOneSources);
             sourceVertices.addAll(nonMappedSource);
 
+            sortVertices(nonMappedTarget, targetGraph, possibleMappings);
+
             List<Vertex> targetVertices = new ArrayList<>();
             targetVertices.addAll(possibleMappings.fixedOneToOneTargets);
             targetVertices.addAll(nonMappedTarget);
 
-            sortVertices(nonMappedTarget, targetGraph, possibleMappings);
 
             DiffImpl diffImpl = new DiffImpl(possibleMappingsCalculator, targetGraph, sourceGraph, possibleMappings, runningCheck);
             DiffImpl.OptimalEdit optimalEdit = diffImpl.diffImpl(startMappingInverted, targetVertices, sourceVertices, algoIterationCount);
             DiffImpl.OptimalEdit invertedBackOptimalEdit = new DiffImpl.OptimalEdit(sourceGraph, targetGraph, optimalEdit.mapping.invert(), optimalEdit.ged);
             return invertedBackOptimalEdit;
         } else {
+            Mapping startMapping = Mapping.newMapping(
+                    possibleMappingsCalculator.getFixedParentRestrictions(),
+                    possibleMappings.fixedOneToOneMappings,
+                    possibleMappings.fixedOneToOneSources,
+                    possibleMappings.fixedOneToOneTargets);
+
             sortVertices(nonMappedSource, sourceGraph, possibleMappings);
 
             List<Vertex> sourceVertices = new ArrayList<>();

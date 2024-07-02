@@ -60,11 +60,11 @@ public class Mapping {
                 Collections.emptyList());
     }
 
-    public boolean hasParentRestriction(Vertex v) {
+    public boolean hasFixedParentRestriction(Vertex v) {
         return fixedParentRestrictions.containsKey(v);
     }
 
-    public Vertex getParentRestriction(Vertex v) {
+    public Vertex getFixedParentRestriction(Vertex v) {
         return fixedParentRestrictions.get(v);
     }
 
@@ -178,6 +178,10 @@ public class Mapping {
         map.forEach(consumer);
     }
 
+    public BiMap<Vertex, Vertex> getMap() {
+        return map;
+    }
+
     public Mapping invert() {
         BiMap<Vertex, Vertex> invertedFixedMappings = HashBiMap.create();
         for (Vertex s : fixedMappings.keySet()) {
@@ -190,5 +194,11 @@ public class Mapping {
             invertedMap.put(t, s);
         }
         return new Mapping(fixedParentRestrictions, invertedFixedMappings, fixedTargetList, fixedSourceList, invertedMap, targetList, sourceList);
+    }
+
+    public void remove(Vertex sourceVertex) {
+        Vertex targetToRemove = map.remove(sourceVertex);
+        sourceList.remove(sourceVertex);
+        targetList.remove(targetToRemove);
     }
 }
