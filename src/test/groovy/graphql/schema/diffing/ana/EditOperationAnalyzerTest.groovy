@@ -2914,7 +2914,7 @@ class EditOperationAnalyzerTest extends Specification {
         newField.add("name", "fried")
         def insertNewFieldVertex = EditOperation.insertVertex(
                 "Insert new field",
-                Vertex.newIsolatedNode("source-isolated-Field-1"),
+                Vertex.newIsolatedNode("source-isolated-Field-1", "Field"),
                 newField,
         )
 
@@ -2922,7 +2922,7 @@ class EditOperationAnalyzerTest extends Specification {
         newArgument.add("name", "alone")
         def insertNewArgumentVertex = EditOperation.insertVertex(
                 "Insert argument",
-                Vertex.newIsolatedNode("source-isolated-Argument-1"),
+                Vertex.newIsolatedNode("source-isolated-Argument-1", "Argument"),
                 newArgument,
         )
 
