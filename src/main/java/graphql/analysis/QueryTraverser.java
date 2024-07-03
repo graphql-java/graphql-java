@@ -49,23 +49,29 @@ public class QueryTraverser {
     private CoercedVariables coercedVariables;
 
     private final GraphQLCompositeType rootParentType;
+    private final QueryTraversalOptions options;
 
     private QueryTraverser(GraphQLSchema schema,
                            Document document,
                            String operation,
-                           CoercedVariables coercedVariables) {
+                           CoercedVariables coercedVariables,
+                           QueryTraversalOptions options
+                           ) {
         this.schema = schema;
         NodeUtil.GetOperationResult getOperationResult = NodeUtil.getOperation(document, operation);
         this.fragmentsByName = getOperationResult.fragmentsByName;
         this.roots = singletonList(getOperationResult.operationDefinition);
         this.rootParentType = getRootTypeFromOperation(getOperationResult.operationDefinition);
         this.coercedVariables = coercedVariables;
+        this.options = options;
     }
 
     private QueryTraverser(GraphQLSchema schema,
                            Document document,
                            String operation,
-                           RawVariables rawVariables) {
+                           RawVariables rawVariables,
+                           QueryTraversalOptions options
+    ) {
         this.schema = schema;
         NodeUtil.GetOperationResult getOperationResult = NodeUtil.getOperation(document, operation);
         List<VariableDefinition> variableDefinitions = getOperationResult.operationDefinition.getVariableDefinitions();
@@ -73,18 +79,22 @@ public class QueryTraverser {
         this.roots = singletonList(getOperationResult.operationDefinition);
         this.rootParentType = getRootTypeFromOperation(getOperationResult.operationDefinition);
         this.coercedVariables = ValuesResolver.coerceVariableValues(schema, variableDefinitions, rawVariables, GraphQLContext.getDefault(), Locale.getDefault());
+        this.options = options;
     }
 
     private QueryTraverser(GraphQLSchema schema,
                            Node root,
                            GraphQLCompositeType rootParentType,
                            Map<String, FragmentDefinition> fragmentsByName,
-                           CoercedVariables coercedVariables) {
+                           CoercedVariables coercedVariables,
+                           QueryTraversalOptions options
+    ) {
         this.schema = schema;
         this.roots = Collections.singleton(root);
         this.rootParentType = rootParentType;
         this.fragmentsByName = fragmentsByName;
         this.coercedVariables = coercedVariables;
+        this.options = options;
     }
 
     public Object visitDepthFirst(QueryVisitor queryVisitor) {
@@ -191,7 +201,12 @@ public class QueryTraverser {
         }
 
         NodeTraverser nodeTraverser = new NodeTraverser(rootVars, this::childrenOf);
-        NodeVisitorWithTypeTracking nodeVisitorWithTypeTracking = new NodeVisitorWithTypeTracking(preOrderCallback, postOrderCallback, coercedVariables.toMap(), schema, fragmentsByName);
+        NodeVisitorWithTypeTracking nodeVisitorWithTypeTracking = new NodeVisitorWithTypeTracking(preOrderCallback,
+                postOrderCallback,
+                coercedVariables.toMap(),
+                schema,
+                fragmentsByName,
+                options);
         return nodeTraverser.depthFirst(nodeVisitorWithTypeTracking, roots);
     }
 
@@ -210,6 +225,7 @@ public class QueryTraverser {
         private Node root;
         private GraphQLCompositeType rootParentType;
         private Map<String, FragmentDefinition> fragmentsByName;
+        private QueryTraversalOptions options = QueryTraversalOptions.defaultOptions();
 
 
         /**
@@ -314,23 +330,52 @@ public class QueryTraverser {
         }
 
         /**
+         * Sets the options to use while traversing
+         *
+         * @param options the options to use
+         * @return this builder
+         */
+        public Builder options(QueryTraversalOptions options) {
+            this.options = assertNotNull(options, () -> "options can't be null");
+            return this;
+        }
+
+        /**
          * @return a built {@link QueryTraverser} object
          */
         public QueryTraverser build() {
             checkState();
             if (document != null) {
                 if (rawVariables != null) {
-                    return new QueryTraverser(schema, document, operation, rawVariables);
+                    return new QueryTraverser(schema,
+                            document,
+                            operation,
+                            rawVariables,
+                            options);
                 }
-                return new QueryTraverser(schema, document, operation, coercedVariables);
+                return new QueryTraverser(schema,
+                        document,
+                        operation,
+                        coercedVariables,
+                        options);
             } else {
                 if (rawVariables != null) {
                     // When traversing with an arbitrary root, there is no variable definition context available
                     // Thus, the variables must have already been coerced
                     // Retaining this builder for backwards compatibility
-                    return new QueryTraverser(schema, root, rootParentType, fragmentsByName, CoercedVariables.of(rawVariables.toMap()));
+                    return new QueryTraverser(schema,
+                            root,
+                            rootParentType,
+                            fragmentsByName,
+                            CoercedVariables.of(rawVariables.toMap()),
+                            options);
                 }
-                return new QueryTraverser(schema, root, rootParentType, fragmentsByName, coercedVariables);
+                return new QueryTraverser(schema,
+                        root,
+                        rootParentType,
+                        fragmentsByName,
+                        coercedVariables,
+                        options);
             }
         }
 
