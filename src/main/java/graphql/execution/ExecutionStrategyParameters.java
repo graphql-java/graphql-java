@@ -2,6 +2,7 @@ package graphql.execution;
 
 import graphql.PublicApi;
 import graphql.execution.incremental.DeferredCallContext;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.function.Consumer;
 
@@ -71,8 +72,38 @@ public class ExecutionStrategyParameters {
         return parent;
     }
 
+    /**
+     * Returns the deferred call context if we're in the scope of a deferred call.
+     * A new DeferredCallContext is created for each @defer block, and is passed down to all fields within the deferred call.
+     *
+     * <pre>
+     *     query {
+     *        ... @defer {
+     *            field1 {        # new DeferredCallContext created here
+     *                field1a     # DeferredCallContext passed down to this field
+     *            }
+     *        }
+     *
+     *        ... @defer {
+     *            field2          # new DeferredCallContext created here
+     *        }
+     *     }
+     * </pre>
+     *
+     * @return the deferred call context or null if we're not in the scope of a deferred call
+     */
+    @Nullable
     public DeferredCallContext getDeferredCallContext() {
         return deferredCallContext;
+    }
+
+    /**
+     * Returns true if we're in the scope of a deferred call.
+     *
+     * @return true if we're in the scope of a deferred call
+     */
+    public boolean isInDeferredContext() {
+        return deferredCallContext != null;
     }
 
     /**
@@ -187,9 +218,6 @@ public class ExecutionStrategyParameters {
         }
 
         public ExecutionStrategyParameters build() {
-            if (deferredCallContext == null) {
-                deferredCallContext = new DeferredCallContext();
-            }
             return new ExecutionStrategyParameters(executionStepInfo, source, localContext, fields, nonNullableFieldValidator, path, currentField, parent, deferredCallContext);
         }
     }
