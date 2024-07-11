@@ -60,11 +60,11 @@ public class Mapping {
                 Collections.emptyList());
     }
 
-    public boolean hasParentRestriction(Vertex v) {
+    public boolean hasFixedParentRestriction(Vertex v) {
         return fixedParentRestrictions.containsKey(v);
     }
 
-    public Vertex getParentRestriction(Vertex v) {
+    public Vertex getFixedParentRestriction(Vertex v) {
         return fixedParentRestrictions.get(v);
     }
 
@@ -176,6 +176,10 @@ public class Mapping {
 
     public void forEachNonFixedSourceAndTarget(BiConsumer<? super Vertex, ? super Vertex> consumer) {
         map.forEach(consumer);
+    }
+
+    public BiMap<Vertex, Vertex> getMap() {
+        return map;
     }
 
     public Mapping invert() {

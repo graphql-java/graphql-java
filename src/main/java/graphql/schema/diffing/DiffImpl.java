@@ -114,6 +114,7 @@ public class DiffImpl {
 
     OptimalEdit diffImpl(Mapping startMapping, List<Vertex> allSources, List<Vertex> allTargets, AtomicInteger algoIterationCount) throws Exception {
         int graphSize = allSources.size();
+        System.out.println("graphSize: " + graphSize);
 
         int fixedEditorialCost = baseEditorialCostForMapping(startMapping, completeSourceGraph, completeTargetGraph);
         int level = startMapping.size();
@@ -140,6 +141,9 @@ public class DiffImpl {
         while (!queue.isEmpty()) {
             MappingEntry mappingEntry = queue.poll();
             algoIterationCount.incrementAndGet();
+            // keep for debugging
+//            System.out.println("qed: " + optimalEdit.ged + " lb: " + mappingEntry.lowerBoundCost + " relative level: " + (mappingEntry.level -startMapping.size()) + " queueSize: " + queue.size() + " algoIterationCount: " + algoIterationCount.get());
+
 
             if (mappingEntry.lowerBoundCost >= optimalEdit.ged) {
                 // once the lowest lowerBoundCost is not lower than the optimal edit, we are done
@@ -200,17 +204,17 @@ public class DiffImpl {
         int costMatrixSize = allSources.size() - parentLevel;
 
         // costMatrix gets modified by the hungarian algorithm ... therefore we create two of them
-        double[][] costMatrixForHungarianAlgo = new double[costMatrixSize][costMatrixSize];
-        double[][] costMatrix = new double[costMatrixSize][costMatrixSize];
+        int[][] costMatrixForHungarianAlgo = new int[costMatrixSize][costMatrixSize];
+        int[][] costMatrix = new int[costMatrixSize][costMatrixSize];
 
-        Map<Vertex, Double> isolatedVerticesCache = new LinkedHashMap<>();
+        Map<Vertex, Integer> isolatedVerticesCache = new LinkedHashMap<>();
         Map<Vertex, Vertex> nonFixedParentRestrictions = possibleMappingsCalculator.getNonFixedParentRestrictions(completeSourceGraph, completeTargetGraph, parentPartialMapping);
 
         for (int i = parentLevel; i < allSources.size(); i++) {
             Vertex v = allSources.get(i);
             int j = 0;
             for (Vertex u : availableTargetVertices) {
-                double cost = calcLowerBoundMappingCost(v, u, parentPartialMapping, isolatedVerticesCache, nonFixedParentRestrictions);
+                int cost = calcLowerBoundMappingCost(v, u, parentPartialMapping, isolatedVerticesCache, nonFixedParentRestrictions);
                 costMatrixForHungarianAlgo[i - parentLevel][j] = cost;
                 costMatrix[i - parentLevel][j] = cost;
                 j++;
@@ -221,8 +225,8 @@ public class DiffImpl {
         HungarianAlgorithm hungarianAlgorithm = new HungarianAlgorithm(costMatrixForHungarianAlgo);
         int[] assignments = hungarianAlgorithm.execute();
         int editorialCostForMapping = editorialCostForMapping(fixedEditorialCost, parentPartialMapping, completeSourceGraph, completeTargetGraph);
-        double costMatrixSum = getCostMatrixSum(costMatrix, assignments);
-        double lowerBoundForPartialMapping = editorialCostForMapping + costMatrixSum;
+        int costMatrixSum = getCostMatrixSum(costMatrix, assignments);
+        int lowerBoundForPartialMapping = editorialCostForMapping + costMatrixSum;
 
         Mapping newMapping = parentPartialMapping.extendMapping(v_i, availableTargetVertices.get(assignments[0]));
 
@@ -272,7 +276,7 @@ public class DiffImpl {
     // generate all children mappings and save in MappingEntry.sibling
     private void calculateRestOfChildren(List<Vertex> availableTargetVertices,
                                          HungarianAlgorithm hungarianAlgorithm,
-                                         double[][] costMatrixCopy,
+                                         int[][] costMatrixCopy,
                                          double editorialCostForMapping,
                                          Mapping partialMapping,
                                          Vertex v_i,
@@ -361,8 +365,8 @@ public class DiffImpl {
     }
 
 
-    private double getCostMatrixSum(double[][] costMatrix, int[] assignments) {
-        double costMatrixSum = 0;
+    private int getCostMatrixSum(int[][] costMatrix, int[] assignments) {
+        int costMatrixSum = 0;
         for (int i = 0; i < assignments.length; i++) {
             costMatrixSum += costMatrix[i][assignments[i]];
         }
@@ -398,16 +402,16 @@ public class DiffImpl {
      * An inner edge is an edge between two vertices that are both not anchored (mapped).
      * The vertices v and u are by definition not mapped.
      */
-    private double calcLowerBoundMappingCost(Vertex v,
-                                             Vertex u,
-                                             Mapping partialMapping,
-                                             Map<Vertex, Double> isolatedVerticesCache,
-                                             Map<Vertex, Vertex> nonFixedParentRestrictions) {
-        if (nonFixedParentRestrictions.containsKey(v) || partialMapping.hasParentRestriction(v)) {
+    private int calcLowerBoundMappingCost(Vertex v,
+                                          Vertex u,
+                                          Mapping partialMapping,
+                                          Map<Vertex, Integer> isolatedVerticesCache,
+                                          Map<Vertex, Vertex> nonFixedParentRestrictions) {
+        if (nonFixedParentRestrictions.containsKey(v) || partialMapping.hasFixedParentRestriction(v)) {
             if (!u.isIsolated()) { // Always allow mapping to isolated nodes
                 Vertex uParentRestriction = nonFixedParentRestrictions.get(v);
                 if (uParentRestriction == null) {
-                    uParentRestriction = partialMapping.getParentRestriction(v);
+                    uParentRestriction = partialMapping.getFixedParentRestriction(v);
                 }
 
                 Collection<Edge> parentEdges = completeTargetGraph.getAdjacentEdgesInverseNonCopy(u);
@@ -426,59 +430,29 @@ public class DiffImpl {
             return Integer.MAX_VALUE;
         }
         if (u.isOfType(SchemaGraph.ISOLATED)) {
-            if (isolatedVerticesCache.containsKey(v)) {
-                return isolatedVerticesCache.get(v);
+            Integer cached;
+            if ((cached = isolatedVerticesCache.get(v)) != null) {
+                return cached;
             }
-            double result = calcLowerBoundMappingCostForIsolated(v, partialMapping, true);
+            int result = calcLowerBoundMappingCostForIsolated(v, partialMapping, true);
             isolatedVerticesCache.put(v, result);
             return result;
         }
         if (v.isOfType(SchemaGraph.ISOLATED)) {
-            if (isolatedVerticesCache.containsKey(u)) {
-                return isolatedVerticesCache.get(u);
+            Integer cached;
+            if ((cached = isolatedVerticesCache.get(v)) != null) {
+                return cached;
             }
-            double result = calcLowerBoundMappingCostForIsolated(u, partialMapping, false);
+            int result = calcLowerBoundMappingCostForIsolated(u, partialMapping, false);
             isolatedVerticesCache.put(u, result);
             return result;
         }
 
         boolean equalNodes = v.getType().equals(u.getType()) && v.getProperties().equals(u.getProperties());
 
-        Collection<Edge> adjacentEdgesV = completeSourceGraph.getAdjacentEdgesNonCopy(v);
-        Multiset<String> multisetLabelsV = HashMultiset.create();
-
-        for (Edge edge : adjacentEdgesV) {
-            // test if this is an inner edge (meaning it not part of the subgraph induced by the partial mapping)
-            // we know that v is not part of the mapped vertices, therefore we only need to test the "to" vertex
-            if (!partialMapping.containsSource(edge.getTo())) {
-                multisetLabelsV.add(edge.getLabel());
-            }
-        }
-
-        Collection<Edge> adjacentEdgesU = completeTargetGraph.getAdjacentEdgesNonCopy(u);
-        Multiset<String> multisetLabelsU = HashMultiset.create();
-        for (Edge edge : adjacentEdgesU) {
-            // test if this is an inner edge (meaning it not part of the subgraph induced by the partial mapping)
-            // we know that u is not part of the mapped vertices, therefore we only need to test the "to" vertex
-            if (!partialMapping.containsTarget(edge.getTo())) {
-                multisetLabelsU.add(edge.getLabel());
-            }
-        }
-
-        int anchoredVerticesCost = calcAnchoredVerticesCost(v, u, partialMapping);
-
-        Multiset<String> intersection = Multisets.intersection(multisetLabelsV, multisetLabelsU);
-        int multiSetEditDistance = Math.max(multisetLabelsV.size(), multisetLabelsU.size()) - intersection.size();
-
-        double result = (equalNodes ? 0 : 1) + multiSetEditDistance + anchoredVerticesCost;
-        return result;
-    }
-
-
-    private int calcAnchoredVerticesCost(Vertex v,
-                                         Vertex u,
-                                         Mapping partialMapping) {
         int anchoredVerticesCost = 0;
+        Multiset<String> multisetLabelsV = HashMultiset.create();
+        Multiset<String> multisetLabelsU = HashMultiset.create();
 
         Collection<Edge> adjacentEdgesV = completeSourceGraph.getAdjacentEdgesNonCopy(v);
         Collection<Edge> adjacentEdgesU = completeTargetGraph.getAdjacentEdgesNonCopy(u);
@@ -489,55 +463,60 @@ public class DiffImpl {
         Set<Edge> matchedTargetEdges = new LinkedHashSet<>();
         Set<Edge> matchedTargetEdgesInverse = new LinkedHashSet<>();
 
-        outer:
         for (Edge edgeV : adjacentEdgesV) {
-            // we are only interested in edges from anchored vertices
-            if (!partialMapping.containsSource(edgeV.getTo())) {
+
+            Vertex targetTo = partialMapping.getTarget(edgeV.getTo());
+            if (targetTo == null) {
+                // meaning it is an inner edge(not part of the subgraph induced by the partial mapping)
+                multisetLabelsV.add(edgeV.getLabel());
                 continue;
             }
-            for (Edge edgeU : adjacentEdgesU) {
-                // looking for an adjacent edge from u matching it
-                if (partialMapping.getTarget(edgeV.getTo()) == edgeU.getTo()) {
-                    matchedTargetEdges.add(edgeU);
-                    // found two adjacent edges, comparing the labels
-                    if (!Objects.equals(edgeV.getLabel(), edgeU.getLabel())) {
-                        anchoredVerticesCost++;
-                    }
-                    continue outer;
+            /* question is if the edge from v is mapped onto an edge from u
+              (also edge are not mapped directly, but the vertices are)
+              and if the adjacent edge is mapped onto an adjacent edge,
+              we need to check the labels of the edges
+             */
+            Edge matchedTargetEdge = completeTargetGraph.getEdge(u, targetTo);
+            if (matchedTargetEdge != null) {
+                matchedTargetEdges.add(matchedTargetEdge);
+                if (!Objects.equals(edgeV.getLabel(), matchedTargetEdge.getLabel())) {
+                    anchoredVerticesCost++;
                 }
+            } else {
+//            // no matching adjacent edge from u found means there is no
+//            // edge from edgeV.getTo() to mapped(edgeV.getTo())
+//            // and we need to increase the costs
+                anchoredVerticesCost++;
             }
-            // no matching adjacent edge from u found means there is no
-            // edge from edgeV.getTo() to mapped(edgeV.getTo())
-            // and we need to increase the costs
-            anchoredVerticesCost++;
 
         }
 
-        outer:
         for (Edge edgeV : adjacentEdgesInverseV) {
+
+            Vertex targetFrom = partialMapping.getTarget(edgeV.getFrom());
             // we are only interested in edges from anchored vertices
-            if (!partialMapping.containsSource(edgeV.getFrom())) {
+            if (targetFrom == null) {
                 continue;
             }
-            for (Edge edgeU : adjacentEdgesInverseU) {
-                if (partialMapping.getTarget(edgeV.getFrom()) == edgeU.getFrom()) {
-                    matchedTargetEdgesInverse.add(edgeU);
-                    if (!Objects.equals(edgeV.getLabel(), edgeU.getLabel())) {
-                        anchoredVerticesCost++;
-                    }
-                    continue outer;
+            Edge matachedTargetEdge = completeTargetGraph.getEdge(targetFrom, u);
+            if (matachedTargetEdge != null) {
+                matchedTargetEdgesInverse.add(matachedTargetEdge);
+                if (!Objects.equals(edgeV.getLabel(), matachedTargetEdge.getLabel())) {
+                    anchoredVerticesCost++;
                 }
+            } else {
+                anchoredVerticesCost++;
             }
-            anchoredVerticesCost++;
-
         }
 
-        /**
-         * what is missing now is all edges from u (and inverse), which have not been matched.
-         */
         for (Edge edgeU : adjacentEdgesU) {
-            // we are only interested in edges from anchored vertices
-            if (!partialMapping.containsTarget(edgeU.getTo()) || matchedTargetEdges.contains(edgeU)) {
+            // test if this is an inner edge (meaning it not part of the subgraph induced by the partial mapping)
+            // we know that u is not part of the mapped vertices, therefore we only need to test the "to" vertex
+            if (!partialMapping.containsTarget(edgeU.getTo())) {
+                multisetLabelsU.add(edgeU.getLabel());
+                continue;
+            }
+            if (matchedTargetEdges.contains(edgeU)) {
                 continue;
             }
             anchoredVerticesCost++;
@@ -551,16 +530,20 @@ public class DiffImpl {
             anchoredVerticesCost++;
         }
 
-        return anchoredVerticesCost;
-    }
 
+        Multiset<String> intersection = Multisets.intersection(multisetLabelsV, multisetLabelsU);
+        int multiSetEditDistance = Math.max(multisetLabelsV.size(), multisetLabelsU.size()) - intersection.size();
+
+        int result = (equalNodes ? 0 : 1) + multiSetEditDistance + anchoredVerticesCost;
+        return result;
+    }
 
     /**
      * Simplified lower bound calc if the source/target vertex is isolated
      */
-    private double calcLowerBoundMappingCostForIsolated(Vertex vertex,
-                                                        Mapping partialMapping,
-                                                        boolean sourceOrTarget
+    private int calcLowerBoundMappingCostForIsolated(Vertex vertex,
+                                                     Mapping partialMapping,
+                                                     boolean sourceOrTarget
     ) {
         SchemaGraph schemaGraph = sourceOrTarget ? completeSourceGraph : completeTargetGraph;
 
