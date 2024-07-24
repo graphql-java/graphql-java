@@ -35,6 +35,10 @@ public class MultiSourceReader extends Reader {
     private final LockKit.ReentrantLock readerLock = new LockKit.ReentrantLock();
 
     static {
+        LINE_NUMBER_READER_EOS_IS_TERMINATOR = lineNumberReaderEOSIsTerminator();
+    }
+
+    private static boolean lineNumberReaderEOSIsTerminator() {
         LineNumberReader reader = new LineNumberReader(new StringReader("a"));
         try {
             reader.read();
@@ -42,7 +46,7 @@ public class MultiSourceReader extends Reader {
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
-        LINE_NUMBER_READER_EOS_IS_TERMINATOR = reader.getLineNumber() > 0;
+        return reader.getLineNumber() > 0;
     }
 
 
