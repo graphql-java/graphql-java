@@ -45,6 +45,7 @@ public class ExecutionContextBuilder {
     ValueUnboxer valueUnboxer;
     Object localContext;
     ExecutionInput executionInput;
+    DataLoaderDispatchStrategy dataLoaderDispatcherStrategy = DataLoaderDispatchStrategy.NO_OP;
 
     /**
      * @return a new builder of {@link graphql.execution.ExecutionContext}s
@@ -90,6 +91,7 @@ public class ExecutionContextBuilder {
         errors = ImmutableList.copyOf(other.getErrors());
         valueUnboxer = other.getValueUnboxer();
         executionInput = other.getExecutionInput();
+        dataLoaderDispatcherStrategy = other.getDataLoaderDispatcherStrategy();
     }
 
     public ExecutionContextBuilder instrumentation(Instrumentation instrumentation) {
@@ -200,6 +202,12 @@ public class ExecutionContextBuilder {
 
     public ExecutionContextBuilder executionInput(ExecutionInput executionInput) {
         this.executionInput = executionInput;
+        return this;
+    }
+
+    @Internal
+    public ExecutionContextBuilder dataLoaderDispatcherStrategy(DataLoaderDispatchStrategy dataLoaderDispatcherStrategy) {
+        this.dataLoaderDispatcherStrategy = dataLoaderDispatcherStrategy;
         return this;
     }
 
