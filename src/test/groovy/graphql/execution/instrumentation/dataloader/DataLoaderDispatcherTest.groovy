@@ -1,6 +1,7 @@
 package graphql.execution.instrumentation.dataloader
 
 import graphql.ExecutionInput
+import graphql.ExecutionResult
 import graphql.GraphQL
 import graphql.TestUtil
 import graphql.execution.AsyncSerialExecutionStrategy
@@ -8,11 +9,16 @@ import graphql.execution.instrumentation.ChainedInstrumentation
 import graphql.execution.instrumentation.InstrumentationState
 import graphql.execution.instrumentation.SimplePerformantInstrumentation
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters
+import graphql.execution.pubsub.CapturingSubscriber
 import graphql.schema.DataFetcher
+import graphql.schema.DataFetchingEnvironment
+import org.awaitility.Awaitility
 import org.dataloader.BatchLoader
 import org.dataloader.DataLoaderFactory
 import org.dataloader.DataLoaderRegistry
 import org.jetbrains.annotations.NotNull
+import org.reactivestreams.Publisher
+import reactor.core.publisher.Mono
 import spock.lang.Specification
 import spock.lang.Unroll
 
@@ -274,5 +280,82 @@ class DataLoaderDispatcherTest extends Specification {
         then:
         er.errors.isEmpty()
         er.data == support.buildResponse(depth)
+    }
+
+    def "issue 3662 - dataloader dispatching can work with subscriptions"() {
+
+        def sdl = '''
+            type Query {
+                field : String
+            }
+            
+            type Subscription {
+                onSub : OnSub
+            }
+            
+            type OnSub {
+                x : String
+                y : String
+            }
+        '''
+
+        // the dispatching is ALWAYS so not really batching but it completes
+        BatchLoader batchLoader = { keys ->
+            CompletableFuture.supplyAsync {
+                Thread.sleep(50) // some delay
+                keys
+            }
+        }
+
+        DataFetcher dlDF = { DataFetchingEnvironment env ->
+            def dataLoader = env.getDataLoaderRegistry().getDataLoader("dl")
+            return dataLoader.load("working as expected")
+        }
+        DataFetcher dlSub = { DataFetchingEnvironment env ->
+            return Mono.just([x: "X", y: "Y"])
+        }
+        def runtimeWiring = newRuntimeWiring()
+                .type(newTypeWiring("OnSub")
+                        .dataFetcher("x", dlDF)
+                        .dataFetcher("y", dlDF)
+                        .build()
+                )
+                .type(newTypeWiring("Subscription")
+                        .dataFetcher("onSub", dlSub)
+                        .build()
+                )
+                .build()
+
+        def graphql = TestUtil.graphQL(sdl, runtimeWiring).build()
+
+        DataLoaderRegistry dataLoaderRegistry = new DataLoaderRegistry()
+        dataLoaderRegistry.register("dl", DataLoaderFactory.newDataLoader(batchLoader))
+
+        when:
+        def query = """
+        subscription s {
+            onSub {
+                x, y
+            }
+        }
+        """
+        def executionInput = newExecutionInput()
+                .dataLoaderRegistry(dataLoaderRegistry)
+                .query(query)
+                .build()
+        def er = graphql.execute(executionInput)
+
+        then:
+        er.errors.isEmpty()
+        def subscriber = new CapturingSubscriber()
+        Publisher pub = er.data
+        pub.subscribe(subscriber)
+
+        Awaitility.await().untilTrue(subscriber.isDone())
+
+        subscriber.getEvents().size() == 1
+
+        def msgER = subscriber.getEvents()[0] as ExecutionResult
+        msgER.data == [onSub: [x: "working as expected", y: "working as expected"]]
     }
 }
