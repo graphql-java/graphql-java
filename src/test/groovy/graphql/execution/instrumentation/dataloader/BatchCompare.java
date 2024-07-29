@@ -23,6 +23,7 @@ public class BatchCompare {
                 .type(TypeRuntimeWiring.newTypeWiring("Query")
                         .dataFetcher("shops", batchCompareDataFetchers.shopsDataFetcher)
                         .dataFetcher("expensiveShops", batchCompareDataFetchers.expensiveShopsDataFetcher)
+                        .dataFetcher("suburb", batchCompareDataFetchers.suburbDataFetcher)
                 )
                 .type(TypeRuntimeWiring.newTypeWiring("Shop")
                         .dataFetcher("departments", batchCompareDataFetchers.departmentsForShopDataLoaderDataFetcher)
@@ -31,6 +32,9 @@ public class BatchCompare {
                 .type(TypeRuntimeWiring.newTypeWiring("Department")
                         .dataFetcher("products", batchCompareDataFetchers.productsForDepartmentDataLoaderDataFetcher)
                         .dataFetcher("expensiveProducts", batchCompareDataFetchers.productsForDepartmentDataLoaderDataFetcher)
+                )
+                .type(TypeRuntimeWiring.newTypeWiring("Suburb")
+                        .dataFetcher("shops", batchCompareDataFetchers.shopsForSuburbDataFetcher)
                 )
                 .build();
 

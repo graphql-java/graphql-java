@@ -3,6 +3,7 @@ package graphql.execution.instrumentation.dataloader;
 import graphql.execution.instrumentation.dataloader.models.Department;
 import graphql.execution.instrumentation.dataloader.models.Product;
 import graphql.execution.instrumentation.dataloader.models.Shop;
+import graphql.execution.instrumentation.dataloader.models.Suburb;
 import graphql.schema.DataFetcher;
 import org.dataloader.BatchLoader;
 import org.dataloader.DataLoader;
@@ -10,6 +11,7 @@ import org.dataloader.DataLoaderFactory;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -36,9 +38,11 @@ public class BatchCompareDataFetchers {
         useAsyncBatchLoading.set(flag);
     }
 
-    // Shops
+
     private static final Map<String, Shop> shops = new LinkedHashMap<>();
     private static final Map<String, Shop> expensiveShops = new LinkedHashMap<>();
+    private static final Map<String, Suburb> suburbs = new LinkedHashMap<>();
+
 
     static {
         shops.put("shop-1", new Shop("shop-1", "Shop 1", Arrays.asList("department-1", "department-2", "department-3")));
@@ -48,6 +52,8 @@ public class BatchCompareDataFetchers {
         expensiveShops.put("exshop-1", new Shop("exshop-1", "ExShop 1", Arrays.asList("department-1", "department-2", "department-3")));
         expensiveShops.put("exshop-2", new Shop("exshop-2", "ExShop 2", Arrays.asList("department-4", "department-5", "department-6")));
         expensiveShops.put("exshop-3", new Shop("exshop-3", "ExShop 3", Arrays.asList("department-7", "department-8", "department-9")));
+
+        suburbs.put("suburb-1", new Suburb("suburb-1", "Suburb 1"));
     }
 
 
@@ -56,6 +62,12 @@ public class BatchCompareDataFetchers {
 
     public DataFetcher<CompletableFuture<List<Shop>>> expensiveShopsDataFetcher = environment ->
             supplyAsyncWithSleep(() -> new ArrayList<>(expensiveShops.values()));
+
+    public DataFetcher<CompletableFuture<Suburb>> suburbDataFetcher = environment ->
+            supplyAsyncWithSleep(() -> suburbs.values().stream()
+                    .filter(suburb -> suburb.getId().equals(environment.getArgument("id")))
+                    .findFirst()
+                    .orElse(null));
 
     // Departments
     private static Map<String, Department> departments = new LinkedHashMap<>();
@@ -139,6 +151,8 @@ public class BatchCompareDataFetchers {
         Department department = environment.getSource();
         return productsForDepartmentDataLoader.load(department.getId());
     };
+
+    public DataFetcher<Collection<Shop>> shopsForSuburbDataFetcher = environment -> shops.values();
 
     private <T> CompletableFuture<T> maybeAsyncWithSleep(Supplier<CompletableFuture<T>> supplier) {
         if (useAsyncBatchLoading.get()) {

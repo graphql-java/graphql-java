@@ -43,6 +43,70 @@ class DeferWithDataLoaderTest extends Specification {
         }
     }
 
+    def "Field with data loader is not directly under @defer block"() {
+        given:
+        def query = """
+                query {
+                    shops {
+                        name
+                    }
+                    ... @defer(if: true) {
+                        suburb(id: "suburb-1") {
+                            name
+                            shops {
+                                name
+                            }
+                        }
+                    }
+                }
+                """
+        def expectedInitialData = [
+                data   : [
+                        shops: [
+                                [name: "Shop 1"],
+                                [name: "Shop 2"],
+                                [name: "Shop 3"],
+                        ]
+                ],
+                hasNext: true
+        ]
+
+        when:
+        ExecutionInput executionInput = ExecutionInput.newExecutionInput()
+                .query(query)
+                .dataLoaderRegistry(dataLoaderRegistry)
+                .graphQLContext([(ENABLE_INCREMENTAL_SUPPORT): true])
+                .build()
+
+        IncrementalExecutionResult result = graphQL.execute(executionInput)
+
+        then:
+        result.toSpecification() == expectedInitialData
+
+        when:
+        def incrementalResults = getIncrementalResults(result)
+
+        def expectedIncrementalResults = [[
+                hasNext: false,
+                incremental: [[
+                        path: [],
+                        data: [
+                                suburb: [
+                                        name : "Suburb 1",
+                                        shops: [
+                                                [name: "Shop 1"],
+                                                [name: "Shop 2"],
+                                                [name: "Shop 3"]
+                                        ]
+                                ]
+                        ]
+
+                ]]
+        ]]
+
+        then:
+        incrementalResults == expectedIncrementalResults
+    }
 
     def "query with single deferred field"() {
         given:
@@ -219,9 +283,7 @@ class DeferWithDataLoaderTest extends Specification {
                 } 
                 ... @defer {
                     expensiveShops {
-                        departments {
-                            name 
-                        }
+                        name
                     }
                 }
             }

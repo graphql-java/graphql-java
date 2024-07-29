@@ -6,6 +6,13 @@ schema {
 type Query {
     shops(howMany : Int = 5): [Shop]
     expensiveShops(howMany : Int = 5, howLong : Int = 0): [Shop]
+    suburb(id: ID!): Suburb
+}
+
+type Suburb {
+    id: ID!
+    name: String
+    shops: [Shop]
 }
 
 type Shop {
