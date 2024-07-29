@@ -202,35 +202,33 @@ class DataLoaderPerformanceData {
                         } 
                     }
                 } 
-                ... @defer(if: false) {
-                    expensiveShops { 
+                expensiveShops { 
+                    name 
+                    departments { 
                         name 
-                        departments { 
+                        products { 
+                            name 
+                        } 
+                        ... @defer(if: $deferredEnabled) {
+                            expensiveProducts { 
+                                name 
+                            } 
+                        }
+                    } 
+                    ... @defer(if: $deferredEnabled) {
+                        expensiveDepartments { 
                             name 
                             products { 
                                 name 
                             } 
-                            ... @defer(if: $deferredEnabled) {
+                            ...  @defer(if: $deferredEnabled) {
                                 expensiveProducts { 
                                     name 
                                 } 
                             }
                         } 
-                        ... @defer(if: $deferredEnabled) {
-                            expensiveDepartments { 
-                                name 
-                                products { 
-                                    name 
-                                } 
-                                ...  @defer(if: $deferredEnabled) {
-                                    expensiveProducts { 
-                                        name 
-                                    } 
-                                }
-                            } 
-                        }
-                    } 
-                }
+                    }
+                } 
             }
 """
 

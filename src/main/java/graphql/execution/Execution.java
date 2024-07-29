@@ -14,7 +14,7 @@ import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationState;
 import graphql.execution.instrumentation.dataloader.FallbackDataLoaderDispatchStrategy;
 import graphql.execution.instrumentation.dataloader.PerLevelDataLoaderDispatchStrategy;
-import graphql.execution.instrumentation.dataloader.PerLevelDataLoaderDispatchStrategyWithDefer;
+import graphql.execution.instrumentation.dataloader.PerLevelDataLoaderDispatchStrategyWithDeferAlwaysDispatch;
 import graphql.execution.instrumentation.parameters.InstrumentationExecuteOperationParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters;
 import graphql.extensions.ExtensionsBuilder;
@@ -235,7 +235,7 @@ public class Execution {
 
             // Dedicated strategy for defer support, for safety purposes.
             return deferEnabled ?
-                    new PerLevelDataLoaderDispatchStrategyWithDefer(executionContext) :
+                    new PerLevelDataLoaderDispatchStrategyWithDeferAlwaysDispatch(executionContext) :
                     new PerLevelDataLoaderDispatchStrategy(executionContext);
         } else {
             return new FallbackDataLoaderDispatchStrategy(executionContext);

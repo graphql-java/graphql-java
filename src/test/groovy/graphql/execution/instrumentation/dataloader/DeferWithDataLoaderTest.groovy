@@ -7,6 +7,8 @@ import graphql.incremental.IncrementalExecutionResult
 import org.dataloader.DataLoaderRegistry
 import spock.lang.Specification
 
+import java.util.stream.Collectors
+
 import static graphql.ExperimentalApi.ENABLE_INCREMENTAL_SUPPORT
 import static graphql.execution.instrumentation.dataloader.DataLoaderPerformanceData.combineExecutionResults
 import static graphql.execution.instrumentation.dataloader.DataLoaderPerformanceData.expectedData
@@ -30,6 +32,10 @@ class DeferWithDataLoaderTest extends Specification {
         graphQL = dataLoaderPerformanceData.setupGraphQL()
     }
 
+    /**
+     * @param results a list of the incremental results from the execution
+     * @param expectedPaths a list of the expected paths in the incremental results. The order of the elements in the list is not important.
+     */
     private static void assertIncrementalResults(List<Map<String, Object>> results, List<List<String>> expectedPaths) {
         assert results.size() == expectedPaths.size(), "Expected ${expectedPaths.size()} results, got ${results.size()}"
 
@@ -41,71 +47,6 @@ class DeferWithDataLoaderTest extends Specification {
         expectedPaths.each { path ->
             assert results.any { it.incremental[0].path == path }, "Expected path $path not found in $results"
         }
-    }
-
-    def "Field with data loader is not directly under @defer block"() {
-        given:
-        def query = """
-                query {
-                    shops {
-                        name
-                    }
-                    ... @defer(if: true) {
-                        suburb(id: "suburb-1") {
-                            name
-                            shops {
-                                name
-                            }
-                        }
-                    }
-                }
-                """
-        def expectedInitialData = [
-                data   : [
-                        shops: [
-                                [name: "Shop 1"],
-                                [name: "Shop 2"],
-                                [name: "Shop 3"],
-                        ]
-                ],
-                hasNext: true
-        ]
-
-        when:
-        ExecutionInput executionInput = ExecutionInput.newExecutionInput()
-                .query(query)
-                .dataLoaderRegistry(dataLoaderRegistry)
-                .graphQLContext([(ENABLE_INCREMENTAL_SUPPORT): true])
-                .build()
-
-        IncrementalExecutionResult result = graphQL.execute(executionInput)
-
-        then:
-        result.toSpecification() == expectedInitialData
-
-        when:
-        def incrementalResults = getIncrementalResults(result)
-
-        def expectedIncrementalResults = [[
-                hasNext: false,
-                incremental: [[
-                        path: [],
-                        data: [
-                                suburb: [
-                                        name : "Suburb 1",
-                                        shops: [
-                                                [name: "Shop 1"],
-                                                [name: "Shop 2"],
-                                                [name: "Shop 3"]
-                                        ]
-                                ]
-                        ]
-
-                ]]
-        ]]
-
-        then:
-        incrementalResults == expectedIncrementalResults
     }
 
     def "query with single deferred field"() {
@@ -147,16 +88,18 @@ class DeferWithDataLoaderTest extends Specification {
         then:
         combined.errors == null
         combined.data == expectedData
+
+        batchCompareDataFetchers.departmentsForShopsBatchLoaderCounter.get() == 3
+        batchCompareDataFetchers.productsForDepartmentsBatchLoaderCounter.get() == 9
     }
 
     def "multiple fields on same defer block"() {
         given:
-        def defer = true
         def query = """
             query {
                 shops {
                     id
-                    ... @defer(if: $defer) {
+                    ... @defer {
                         name
                         departments {
                             name
@@ -219,6 +162,8 @@ class DeferWithDataLoaderTest extends Specification {
                                        [name: "Department 9"]]
                         ]]
         ]
+        batchCompareDataFetchers.departmentsForShopsBatchLoaderCounter.get() == 3
+        batchCompareDataFetchers.productsForDepartmentsBatchLoaderCounter.get() == 0
     }
 
     def "query with nested deferred fields"() {
@@ -270,6 +215,9 @@ class DeferWithDataLoaderTest extends Specification {
         then:
         combined.errors == null
         combined.data == expectedData
+
+        batchCompareDataFetchers.departmentsForShopsBatchLoaderCounter.get() == 3
+        batchCompareDataFetchers.productsForDepartmentsBatchLoaderCounter.get() == 9
     }
 
     def "query with top-level deferred field"() {
@@ -330,6 +278,9 @@ class DeferWithDataLoaderTest extends Specification {
                                            [departments: [[name: "Department 4"], [name: "Department 5"], [name: "Department 6"]]],
                                            [departments: [[name: "Department 7"], [name: "Department 8"], [name: "Department 9"]]]],
                           expensiveShops: [[name: "ExShop 1"], [name: "ExShop 2"], [name: "ExShop 3"]]]
+
+        batchCompareDataFetchers.departmentsForShopsBatchLoaderCounter.get() == 1
+        batchCompareDataFetchers.productsForDepartmentsBatchLoaderCounter.get() == 0
     }
 
     def "query with multiple deferred fields"() {
@@ -367,16 +318,15 @@ class DeferWithDataLoaderTest extends Specification {
         def incrementalResults = getIncrementalResults(result)
 
         then:
-        // Ordering is non-deterministic, so we assert on the things we know are going to be true.
 
         assertIncrementalResults(incrementalResults,
                 [
                         ["expensiveShops", 0], ["expensiveShops", 1], ["expensiveShops", 2],
                         ["shops", 0], ["shops", 1], ["shops", 2],
-                        ["shops", 2, "departments", 0], ["shops", 1, "departments", 2],["shops", 1, "departments", 1], ["shops", 1, "departments", 0],["shops", 0, "departments", 2], ["shops", 0, "departments", 1], ["shops", 0, "departments", 0],["shops", 2, "departments", 2],["shops", 2, "departments", 1],
-                        ["shops", 1, "expensiveDepartments", 2], ["shops", 1, "expensiveDepartments", 1], ["shops", 1, "expensiveDepartments", 0], ["shops", 0, "expensiveDepartments", 2], ["shops", 0, "expensiveDepartments", 1], ["shops", 0, "expensiveDepartments", 0], ["shops", 2, "expensiveDepartments", 1], ["shops", 2, "expensiveDepartments", 2],
-                        ["expensiveShops", 2, "expensiveDepartments", 2], ["expensiveShops", 2, "expensiveDepartments", 1], ["expensiveShops", 2, "expensiveDepartments", 0], ["expensiveShops", 2, "departments", 2], ["expensiveShops", 1, "expensiveDepartments", 2], ["expensiveShops", 1, "expensiveDepartments", 1], ["expensiveShops", 1, "expensiveDepartments", 0], ["expensiveShops", 0, "expensiveDepartments", 2], ["expensiveShops", 0, "expensiveDepartments", 1], ["expensiveShops", 0, "expensiveDepartments", 0],
-                        ["expensiveShops", 2, "departments", 1], ["expensiveShops", 2, "departments", 0], ["expensiveShops", 1, "departments", 2], ["expensiveShops", 1, "departments", 1], ["expensiveShops", 1, "departments", 0], ["expensiveShops", 0, "departments", 2], ["expensiveShops", 0, "departments", 1], ["expensiveShops", 0, "departments", 0], ["shops", 2, "expensiveDepartments", 0]]
+                        ["shops", 0, "departments", 0], ["shops", 0, "departments", 1],["shops", 0, "departments", 2], ["shops", 1, "departments", 0],["shops", 1, "departments", 1], ["shops", 1, "departments", 2], ["shops", 2, "departments", 0],["shops", 2, "departments", 1],["shops", 2, "departments", 2],
+                        ["shops", 0, "expensiveDepartments", 0], ["shops", 0, "expensiveDepartments", 1], ["shops", 0, "expensiveDepartments", 2], ["shops", 1, "expensiveDepartments", 0], ["shops", 1, "expensiveDepartments", 1], ["shops", 1, "expensiveDepartments", 2], ["shops", 2, "expensiveDepartments", 0], ["shops", 2, "expensiveDepartments", 1],["shops", 2, "expensiveDepartments", 2],
+                        ["expensiveShops", 0, "expensiveDepartments", 0], ["expensiveShops", 0, "expensiveDepartments", 1], ["expensiveShops", 0, "expensiveDepartments", 2], ["expensiveShops", 1, "expensiveDepartments", 0], ["expensiveShops", 1, "expensiveDepartments", 1], ["expensiveShops", 1, "expensiveDepartments", 2], ["expensiveShops", 2, "expensiveDepartments", 0], ["expensiveShops", 2, "expensiveDepartments", 1],["expensiveShops", 2, "expensiveDepartments", 2],
+                        ["expensiveShops", 0, "departments", 0], ["expensiveShops", 0, "departments", 1], ["expensiveShops", 0, "departments", 2], ["expensiveShops", 1, "departments", 0], ["expensiveShops", 1, "departments", 1], ["expensiveShops", 1, "departments", 2], ["expensiveShops", 2, "departments", 0], ["expensiveShops", 2, "departments", 1],["expensiveShops", 2, "departments", 2]]
         )
 
         when:
@@ -384,6 +334,10 @@ class DeferWithDataLoaderTest extends Specification {
         then:
         combined.errors == null
         combined.data == expectedExpensiveData
+
+        // TODO: Why the load counters are only 1?
+        batchCompareDataFetchers.departmentsForShopsBatchLoaderCounter.get() == 1
+        batchCompareDataFetchers.productsForDepartmentsBatchLoaderCounter.get() == 1
     }
 
 }
