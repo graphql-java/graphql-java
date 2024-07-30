@@ -31,16 +31,25 @@ import static graphql.schema.GraphQLNonNull.nonNull;
 @PublicApi
 public class Directives {
 
-    private static final String SPECIFIED_BY = "specifiedBy";
     private static final String DEPRECATED = "deprecated";
+    private static final String INCLUDE = "include";
+    private static final String SKIP = "skip";
+    private static final String SPECIFIED_BY = "specifiedBy";
     private static final String ONE_OF = "oneOf";
     private static final String DEFER = "defer";
 
-    public static final String NO_LONGER_SUPPORTED = "No longer supported";
     public static final DirectiveDefinition DEPRECATED_DIRECTIVE_DEFINITION;
+    public static final DirectiveDefinition INCLUDE_DIRECTIVE_DEFINITION;
+    public static final DirectiveDefinition SKIP_DIRECTIVE_DEFINITION;
     public static final DirectiveDefinition SPECIFIED_BY_DIRECTIVE_DEFINITION;
     @ExperimentalApi
     public static final DirectiveDefinition ONE_OF_DIRECTIVE_DEFINITION;
+    @ExperimentalApi
+    public static final DirectiveDefinition DEFER_DIRECTIVE_DEFINITION;
+
+    public static final String BOOLEAN = "Boolean";
+    public static final String STRING = "String";
+    public static final String NO_LONGER_SUPPORTED = "No longer supported";
 
     static {
         DEPRECATED_DIRECTIVE_DEFINITION = DirectiveDefinition.newDirectiveDefinition()
@@ -54,8 +63,36 @@ public class Directives {
                         newInputValueDefinition()
                                 .name("reason")
                                 .description(createDescription("The reason for the deprecation"))
-                                .type(newTypeName().name("String").build())
+                                .type(newTypeName().name(STRING).build())
                                 .defaultValue(StringValue.newStringValue().value(NO_LONGER_SUPPORTED).build())
+                                .build())
+                .build();
+
+        INCLUDE_DIRECTIVE_DEFINITION = DirectiveDefinition.newDirectiveDefinition()
+                .name(INCLUDE)
+                .directiveLocation(newDirectiveLocation().name(FRAGMENT_SPREAD.name()).build())
+                .directiveLocation(newDirectiveLocation().name(INLINE_FRAGMENT.name()).build())
+                .directiveLocation(newDirectiveLocation().name(FIELD.name()).build())
+                .description(createDescription("Directs the executor to include this field or fragment only when the `if` argument is true"))
+                .inputValueDefinition(
+                        newInputValueDefinition()
+                                .name("if")
+                                .description(createDescription("Included when true."))
+                                .type(newNonNullType(newTypeName().name(BOOLEAN).build()).build())
+                                .build())
+                .build();
+
+        SKIP_DIRECTIVE_DEFINITION = DirectiveDefinition.newDirectiveDefinition()
+                .name(SKIP)
+                .directiveLocation(newDirectiveLocation().name(FRAGMENT_SPREAD.name()).build())
+                .directiveLocation(newDirectiveLocation().name(INLINE_FRAGMENT.name()).build())
+                .directiveLocation(newDirectiveLocation().name(FIELD.name()).build())
+                .description(createDescription("Directs the executor to skip this field or fragment when the `if` argument is true."))
+                .inputValueDefinition(
+                        newInputValueDefinition()
+                                .name("if")
+                                .description(createDescription("Skipped when true."))
+                                .type(newNonNullType(newTypeName().name(BOOLEAN).build()).build())
                                 .build())
                 .build();
 
@@ -67,7 +104,7 @@ public class Directives {
                         newInputValueDefinition()
                                 .name("url")
                                 .description(createDescription("The URL that specifies the behaviour of this scalar."))
-                                .type(newNonNullType(newTypeName().name("String").build()).build())
+                                .type(newNonNullType(newTypeName().name(STRING).build()).build())
                                 .build())
                 .build();
 
@@ -75,6 +112,26 @@ public class Directives {
                 .name(ONE_OF)
                 .directiveLocation(newDirectiveLocation().name(INPUT_OBJECT.name()).build())
                 .description(createDescription("Indicates an Input Object is a OneOf Input Object."))
+                .build();
+
+        DEFER_DIRECTIVE_DEFINITION = DirectiveDefinition.newDirectiveDefinition()
+                .name(DEFER)
+                .directiveLocation(newDirectiveLocation().name(FRAGMENT_SPREAD.name()).build())
+                .directiveLocation(newDirectiveLocation().name(INLINE_FRAGMENT.name()).build())
+                .description(createDescription("This directive allows results to be deferred during execution"))
+                .inputValueDefinition(
+                        newInputValueDefinition()
+                                .name("if")
+                                .description(createDescription("Deferred behaviour is controlled by this argument"))
+                                .type(newNonNullType(newTypeName().name(BOOLEAN).build()).build())
+                                .defaultValue(BooleanValue.newBooleanValue(true).build())
+                                .build())
+                .inputValueDefinition(
+                        newInputValueDefinition()
+                                .name("label")
+                                .description(createDescription("A unique label that represents the fragment being deferred"))
+                                .type(newTypeName().name(STRING).build())
+                                .build())
                 .build();
     }
 
@@ -104,33 +161,36 @@ public class Directives {
                     .type(GraphQLString)
                     .description("A unique label that represents the fragment being deferred")
             )
+            .definition(DEFER_DIRECTIVE_DEFINITION)
             .build();
 
     public static final GraphQLDirective IncludeDirective = GraphQLDirective.newDirective()
-            .name("include")
+            .name(INCLUDE)
             .description("Directs the executor to include this field or fragment only when the `if` argument is true")
             .argument(newArgument()
                     .name("if")
                     .type(nonNull(GraphQLBoolean))
                     .description("Included when true."))
             .validLocations(FRAGMENT_SPREAD, INLINE_FRAGMENT, FIELD)
+            .definition(INCLUDE_DIRECTIVE_DEFINITION)
             .build();
 
     public static final GraphQLDirective SkipDirective = GraphQLDirective.newDirective()
-            .name("skip")
+            .name(SKIP)
             .description("Directs the executor to skip this field or fragment when the `if` argument is true.")
             .argument(newArgument()
                     .name("if")
                     .type(nonNull(GraphQLBoolean))
                     .description("Skipped when true."))
             .validLocations(FRAGMENT_SPREAD, INLINE_FRAGMENT, FIELD)
+            .definition(SKIP_DIRECTIVE_DEFINITION)
             .build();
 
 
     /**
      * The "deprecated" directive is special and is always available in a graphql schema
      * <p>
-     * See https://graphql.github.io/graphql-spec/June2018/#sec--deprecated
+     * See <a href="https://spec.graphql.org/draft/#sec--deprecated">the GraphQL specification for @deprecated</a>
      */
     public static final GraphQLDirective DeprecatedDirective = GraphQLDirective.newDirective()
             .name(DEPRECATED)
