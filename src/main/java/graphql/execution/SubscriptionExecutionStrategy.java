@@ -2,6 +2,7 @@ package graphql.execution;
 
 import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
+import graphql.GraphQLContext;
 import graphql.PublicApi;
 import graphql.execution.instrumentation.ExecutionStrategyInstrumentationContext;
 import graphql.execution.instrumentation.Instrumentation;
@@ -37,6 +38,14 @@ import static java.util.Collections.singletonMap;
 @PublicApi
 public class SubscriptionExecutionStrategy extends ExecutionStrategy {
 
+    /**
+     * If a boolean value is placed into the {@link GraphQLContext} with this key then the order
+     * of the subscription events can be controlled.   By default, subscription events are published
+     * as the graphql subselection calls complete, and not in the order they originally arrived from the
+     * source publisher.  But this can be changed to {@link Boolean#TRUE} to keep them in order.
+     */
+    public static final String KEEP_SUBSCRIPTION_EVENTS_ORDERED = "KEEP_SUBSCRIPTION_EVENTS_ORDERED";
+
     public SubscriptionExecutionStrategy() {
         super();
     }
@@ -64,7 +73,8 @@ public class SubscriptionExecutionStrategy extends ExecutionStrategy {
                 return new ExecutionResultImpl(null, executionContext.getErrors());
             }
             Function<Object, CompletionStage<ExecutionResult>> mapperFunction = eventPayload -> executeSubscriptionEvent(executionContext, parameters, eventPayload);
-            SubscriptionPublisher mapSourceToResponse = new SubscriptionPublisher(publisher, mapperFunction);
+            boolean keepOrdered = keepOrdered(executionContext.getGraphQLContext());
+            SubscriptionPublisher mapSourceToResponse = new SubscriptionPublisher(publisher, mapperFunction, keepOrdered);
             return new ExecutionResultImpl(mapSourceToResponse, executionContext.getErrors());
         });
 
@@ -73,6 +83,10 @@ public class SubscriptionExecutionStrategy extends ExecutionStrategy {
         overallResult.whenComplete(executionStrategyCtx::onCompleted);
 
         return overallResult;
+    }
+
+    private boolean keepOrdered(GraphQLContext graphQLContext) {
+        return graphQLContext.getOrDefault(KEEP_SUBSCRIPTION_EVENTS_ORDERED, false);
     }
 
 
@@ -99,7 +113,7 @@ public class SubscriptionExecutionStrategy extends ExecutionStrategy {
             if (publisher != null) {
                 assertTrue(publisher instanceof Publisher, () -> "Your data fetcher must return a Publisher of events when using graphql subscriptions");
             }
-            //noinspection unchecked
+            //noinspection unchecked,DataFlowIssue
             return (Publisher<Object>) publisher;
         });
     }

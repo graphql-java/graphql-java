@@ -226,6 +226,10 @@ public class DiffImpl {
 
         Mapping newMapping = parentPartialMapping.extendMapping(v_i, availableTargetVertices.get(assignments[0]));
 
+        if (costMatrixSum >= Integer.MAX_VALUE && optimalEdit.mapping == null) {
+            throw new RuntimeException("bug: could not find any allowed mapping");
+        }
+
         if (lowerBoundForPartialMapping >= optimalEdit.ged) {
             return;
         }

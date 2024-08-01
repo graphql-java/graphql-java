@@ -36,4 +36,9 @@ public class RawVariables {
     public static RawVariables of(Map<String, Object> rawVariables) {
         return new RawVariables(rawVariables);
     }
+
+    @Override
+    public String toString() {
+        return rawVariables.toString();
+    }
 }

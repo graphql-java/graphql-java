@@ -1554,6 +1554,43 @@ class SchemaDiffingTest extends Specification {
         operations.size() == 1
     }
 
+
+    /*
+     * The schema can't be mapped at the moment because
+     * the arguments mapping doesn't work.
+     * The PossibleMappingCalculator finds two context: "Object.Query" (with one argument vertex) which is deleted
+     * and "Object.Foo" (with two argument vertices) which is added. Therefore one isolated vertex is added in the source
+     * to align both context.
+     *
+     * But the parent restrictions dictate that the target parent of i1 must be Query.foo, because Query.echo is fixed mapped
+     * to Query.foo. But that would mean i1 is deleted, but there is no isolated argument vertex for the target because of
+     * the contexts. So there is no possible mapping and the exception is thrown.
+     */
+
+    def "bug produced well known exception"() {
+        given:
+        def schema1 = schema('''
+    type Query {
+      echo(i1: String): String
+    }
+    ''')
+        def schema2 = schema('''
+    type Query {
+      foo: Foo
+    }
+    type Foo {
+      a(i2: String): String
+      b(i3: String): String
+    }
+''')
+
+        when:
+        def diff = new SchemaDiffing().diffGraphQLSchema(schema1, schema2)
+        then:
+        def e = thrown(RuntimeException)
+        e.message.contains("bug: ")
+    }
+
 }
 
 

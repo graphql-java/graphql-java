@@ -1,11 +1,10 @@
 package graphql.incremental;
 
-import graphql.ExecutionResult;
 import graphql.ExperimentalApi;
 import graphql.GraphQLError;
 import graphql.execution.ResultPath;
+import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -61,7 +60,7 @@ public abstract class IncrementalPayload {
         return this.extensions;
     }
 
-    protected Map<String, Object> toSpecification() {
+    public Map<String, Object> toSpecification() {
         Map<String, Object> result = new LinkedHashMap<>();
 
         result.put("path", path);
@@ -122,25 +121,25 @@ public abstract class IncrementalPayload {
             return (T) this;
         }
 
-        public Builder<T> addErrors(List<GraphQLError> errors) {
+        public T addErrors(List<GraphQLError> errors) {
             this.errors.addAll(errors);
-            return this;
+            return (T) this;
         }
 
-        public Builder<T> addError(GraphQLError error) {
+        public T addError(GraphQLError error) {
             this.errors.add(error);
-            return this;
+            return (T) this;
         }
 
-        public Builder<T> extensions(Map<Object, Object> extensions) {
+        public T extensions(Map<Object, Object> extensions) {
             this.extensions = extensions;
-            return this;
+            return (T) this;
         }
 
-        public Builder<T> addExtension(String key, Object value) {
+        public T addExtension(String key, Object value) {
             this.extensions = (this.extensions == null ? new LinkedHashMap<>() : this.extensions);
             this.extensions.put(key, value);
-            return this;
+            return (T) this;
         }
     }
 }

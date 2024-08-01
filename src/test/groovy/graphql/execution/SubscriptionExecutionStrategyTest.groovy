@@ -628,4 +628,97 @@ class SubscriptionExecutionStrategyTest extends Specification {
         instrumentResultCalls.size() == 11 // one for the initial execution and then one for each stream event
     }
 
+    def "emits results in the order they complete"() {
+        List<Runnable> promises = []
+        Publisher<Object> publisher = new RxJavaMessagePublisher(10)
+
+        DataFetcher newMessageDF = { env -> return publisher }
+        DataFetcher senderDF = dfThatDoesNotComplete("sender", promises)
+        DataFetcher textDF = PropertyDataFetcher.fetching("text")
+
+        GraphQL graphQL = buildSubscriptionQL(newMessageDF, senderDF, textDF)
+
+        def executionInput = ExecutionInput.newExecutionInput().query("""
+            subscription NewMessages {
+              newMessage(roomId: 123) {
+                sender
+                text
+              }
+            }
+        """).build()
+
+        def executionResult = graphQL.execute(executionInput)
+
+        when:
+        Publisher<ExecutionResult> msgStream = executionResult.getData()
+        def capturingSubscriber = new CapturingSubscriber<ExecutionResult>(100)
+        msgStream.subscribe(capturingSubscriber)
+
+        // make them all complete but in reverse order
+        promises.reverse().forEach { it.run() }
+
+        then:
+        Awaitility.await().untilTrue(capturingSubscriber.isDone())
+
+        // in order they completed - which was reversed
+        def messages = capturingSubscriber.events
+        messages.size() == 10
+        for (int i = 0, j = messages.size() - 1; i < messages.size(); i++, j--) {
+            def message = messages[i].data
+            assert message == ["newMessage": [sender: "sender" + j, text: "text" + j]]
+        }
+    }
+
+    def "emits results in the order they where emitted by source"() {
+        List<Runnable> promises = []
+        Publisher<Object> publisher = new RxJavaMessagePublisher(10)
+
+        DataFetcher newMessageDF = { env -> return publisher }
+        DataFetcher senderDF = dfThatDoesNotComplete("sender", promises)
+        DataFetcher textDF = PropertyDataFetcher.fetching("text")
+
+        GraphQL graphQL = buildSubscriptionQL(newMessageDF, senderDF, textDF)
+
+        def executionInput = ExecutionInput.newExecutionInput().query("""
+            subscription NewMessages {
+              newMessage(roomId: 123) {
+                sender
+                text
+              }
+            }
+        """).graphQLContext([(SubscriptionExecutionStrategy.KEEP_SUBSCRIPTION_EVENTS_ORDERED): true]).build()
+
+        def executionResult = graphQL.execute(executionInput)
+
+        when:
+        Publisher<ExecutionResult> msgStream = executionResult.getData()
+        def capturingSubscriber = new CapturingSubscriber<ExecutionResult>(100)
+        msgStream.subscribe(capturingSubscriber)
+
+        // make them all complete but in reverse order
+        promises.reverse().forEach { it.run() }
+
+        then:
+        Awaitility.await().untilTrue(capturingSubscriber.isDone())
+
+        // in order they were emitted originally - they have been buffered
+        def messages = capturingSubscriber.events
+        messages.size() == 10
+        for (int i = 0; i < messages.size(); i++) {
+            def message = messages[i].data
+            assert message == ["newMessage": [sender: "sender" + i, text: "text" + i]]
+        }
+    }
+
+    private static DataFetcher<?> dfThatDoesNotComplete(String propertyName, List<Runnable> promises) {
+        { env ->
+            def df = PropertyDataFetcher.fetching(propertyName)
+            def value = df.get(env)
+
+            def cf = new CompletableFuture()
+            promises.add({ cf.complete(value) })
+            return cf
+        }
+    }
+
 }

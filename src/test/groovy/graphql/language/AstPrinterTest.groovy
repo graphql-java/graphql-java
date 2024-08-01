@@ -696,7 +696,7 @@ extend input Input @directive {
         def result = AstPrinter.printAstCompact(interfaceType)
 
         then:
-        result == "interface Resource implements Node & Extra {}"
+        result == "interface Resource implements Node & Extra"
 
     }
 
@@ -713,7 +713,7 @@ extend input Input @directive {
         def result = AstPrinter.printAstCompact(interfaceType)
 
         then:
-        result == "extend interface Resource implements Node & Extra {}"
+        result == "extend interface Resource implements Node & Extra"
 
     }
 
@@ -746,5 +746,27 @@ extend input Input @directive {
         then:
         result == "directive @d2 on FIELD | ENUM"
 
+    }
+
+    def "empty type does not include braces"() {
+        def sdl = "type Query"
+        def document = parse(sdl)
+
+        when:
+        String output = printAst(document)
+        then:
+        output == "type Query\n"
+    }
+
+    def "empty selection set does not include braces"() {
+        // technically below is not valid graphql and will never be parsed as is
+        def field_with_empty_selection_set = Field.newField("foo")
+                .selectionSet(SelectionSet.newSelectionSet().build())
+                .build()
+
+        when:
+        String output = printAst(field_with_empty_selection_set)
+        then:
+        output == "foo"
     }
 }

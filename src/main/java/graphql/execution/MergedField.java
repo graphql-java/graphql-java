@@ -6,8 +6,8 @@ import graphql.PublicApi;
 import graphql.execution.incremental.DeferredExecution;
 import graphql.language.Argument;
 import graphql.language.Field;
+import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nullable;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Consumer;
@@ -141,6 +141,7 @@ public class MergedField {
 
     /**
      * Returns true if this field is part of a deferred execution
+     *
      * @return true if this field is part of a deferred execution
      */
     @ExperimentalApi
