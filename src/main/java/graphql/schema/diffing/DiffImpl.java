@@ -18,6 +18,8 @@ import java.util.PriorityQueue;
 import java.util.Set;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static graphql.Assert.assertFalse;
 import static graphql.Assert.assertTrue;
@@ -271,6 +273,10 @@ public class DiffImpl {
             }
             runningCheck.check();
         }
+        System.out.println(equals.stream().collect(Collectors.groupingBy(Function.identity(), Collectors.counting())));
+        System.out.println(anchored.stream().collect(Collectors.groupingBy(Function.identity(), Collectors.counting())));
+        System.out.println(sum.stream().collect(Collectors.groupingBy(Function.identity(), Collectors.counting())));
+        System.out.println(minCosts.stream().collect(Collectors.groupingBy(Function.identity(), Collectors.counting())));
 
         HungarianAlgorithm hungarianAlgorithm = new HungarianAlgorithm(costMatrixForHungarianAlgo);
         int[] assignments = hungarianAlgorithm.execute();
@@ -696,10 +702,18 @@ public class DiffImpl {
 //        multiSetEditDistance =  multisetInnerEdgeLabelsU.size() + multisetInnerEdgeLabelsV.size();
         multiSetEditDistance = 0;
 
+        equals.add((equalNodes ? 0 : 1));
+        anchored.add(anchoredVerticesCost);
         int result = (equalNodes ? 0 : 1) + multiSetEditDistance + anchoredVerticesCost;
-//        result = multiSetEditDistance  ;
+        sum.add(result);
+        minCosts.add(result + Math.max(multisetInnerEdgeLabelsV.size(), multisetInnerEdgeLabelsU.size()) - intersection.size());
         return result;
     }
+
+    List<Integer> equals = new ArrayList<>();
+    List<Integer> anchored = new ArrayList<>();
+    List<Integer> sum = new ArrayList<>();
+    List<Integer> minCosts = new ArrayList<>();
 
     /**
      * Simplified lower bound calc if the source/target vertex is isolated
