@@ -1,5 +1,6 @@
 package graphql.parser
 
+import graphql.schema.idl.SchemaParser
 import spock.lang.Specification
 
 class MultiSourceReaderTest extends Specification {
@@ -108,6 +109,25 @@ type C {
 
     }
 
+    def "can read sdl types when newlines are missing"() {
+        def a = "type A { field: String }"
+        def b = "type B { field: String }"
+
+        when:
+        multiSource = MultiSourceReader.newMultiSourceReader()
+                .reader(new StringReader(a), "a")
+                .reader(new StringReader(b), "b")
+                .build()
+        def tdr = new SchemaParser().parse(multiSource)
+
+        then:
+        def typeA = tdr.getType("A").get()
+        typeA.sourceLocation.sourceName == "a"
+        typeA.sourceLocation.line == 1
+        def typeB = tdr.getType("B").get()
+        typeB.sourceLocation.sourceName == "b"
+        typeB.sourceLocation.line == 1
+    }
 
     def "does not track data if told too"() {
         when:
