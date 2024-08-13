@@ -50,7 +50,7 @@ jobs:
 
       - id: 'auth'
         name: 'Authenticate to Google Cloud'
-        uses: google-github-actions/auth@v2.1.3
+        uses: google-github-actions/auth@v2.1.4
         with:
           credentials_json: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}
 
