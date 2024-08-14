@@ -1,12 +1,6 @@
 package graphql.schema.diffing;
 
-import com.google.common.collect.BiMap;
-import com.google.common.collect.HashBasedTable;
-import com.google.common.collect.HashBiMap;
-import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Multimap;
-import com.google.common.collect.Table;
 import graphql.Assert;
 import graphql.Internal;
 import graphql.util.FpKit;
@@ -49,7 +43,7 @@ import static java.util.Collections.singletonList;
  * <p>
  *
  * We restrict the algo by calculating which mappings are possible for given vertex. This is later used in
- * {@link DiffImpl#calcLowerBoundMappingCost}.
+ * calcLowerBoundMappingCost
  * While doing this we need to also ensure that there are the same amount of vertices in the same "context":
  * for example if the source graph has 3 Objects, the target graph needs to have 3 Objects. We achieve this by
  * adding "isolated vertices" as needed.
@@ -791,6 +785,37 @@ public class PossibleMappingsCalculator {
         return possibleMappings;
     }
 
+    private void calcForArguments() {
+        Collection<Vertex> argumentsSource = sourceGraph.getVerticesByType(ARGUMENT);
+        Collection<Vertex> argumentsTargets = targetGraph.getVerticesByType(ARGUMENT);
+        Set<Vertex> newIsolatedSource;
+        Set<Vertex> newIsolatedTarget;
+
+        newIsolatedTarget = Vertex.newIsolatedNodes(argumentsSource.size(), "target-isolated-" + ARGUMENT + "-");
+        newIsolatedSource = Vertex.newIsolatedNodes(argumentsTargets.size(), "source-isolated-" + ARGUMENT + "-");
+
+        possibleMappings.allIsolatedTarget.addAll(newIsolatedTarget);
+        possibleMappings.allIsolatedSource.addAll(newIsolatedSource);
+        Iterator<Vertex> iterator = newIsolatedSource.iterator();
+        for (Vertex targetVertex : argumentsTargets) {
+            Vertex isolatedSourceVertex = iterator.next();
+            possibleMappings.fixedOneToOneMappings.put(isolatedSourceVertex, targetVertex);
+            possibleMappings.fixedOneToOneSources.add(isolatedSourceVertex);
+            possibleMappings.fixedOneToOneTargets.add(targetVertex);
+        }
+
+        iterator = newIsolatedTarget.iterator();
+        for (Vertex sourceVertex : argumentsSource) {
+            Vertex isolatedTargetVertex = iterator.next();
+            possibleMappings.fixedOneToOneMappings.put(sourceVertex, isolatedTargetVertex);
+            possibleMappings.fixedOneToOneSources.add(sourceVertex);
+            possibleMappings.fixedOneToOneTargets.add(isolatedTargetVertex);
+        }
+
+
+    }
+
+
     public abstract static class VertexContextSegment {
         public VertexContextSegment() {
         }
@@ -799,129 +824,6 @@ public class PossibleMappingsCalculator {
 
         public boolean filter(Vertex vertex, SchemaGraph schemaGraph) {
             return true;
-        }
-    }
-
-    public class PossibleMappings {
-
-        public Set<Vertex> allIsolatedSource = new LinkedHashSet<>();
-        public Set<Vertex> allIsolatedTarget = new LinkedHashSet<>();
-
-        public Table<List<String>, Set<Vertex>, Set<Vertex>> contexts = HashBasedTable.create();
-
-        public Multimap<Vertex, Vertex> possibleMappings = HashMultimap.create();
-
-        public BiMap<Vertex, Vertex> fixedOneToOneMappings = HashBiMap.create();
-        public List<Vertex> fixedOneToOneSources = new ArrayList<>();
-        public List<Vertex> fixedOneToOneTargets = new ArrayList<>();
-
-        public void putPossibleMappings(List<String> contextId,
-                                        Collection<Vertex> sourceVertices,
-                                        Collection<Vertex> targetVertices,
-                                        String typeName) {
-            if (sourceVertices.isEmpty() && targetVertices.isEmpty()) {
-                return;
-            }
-
-            if (sourceVertices.size() == 1 && targetVertices.size() == 1) {
-                Vertex sourceVertex = sourceVertices.iterator().next();
-                Vertex targetVertex = targetVertices.iterator().next();
-                fixedOneToOneMappings.put(sourceVertex, targetVertex);
-                fixedOneToOneSources.add(sourceVertex);
-                fixedOneToOneTargets.add(targetVertex);
-                return;
-            }
-
-            if (APPLIED_DIRECTIVE.equals(typeName) || APPLIED_ARGUMENT.equals(typeName)) {
-                for (Vertex sourceVertex : sourceVertices) {
-                    Vertex isolatedTarget = Vertex.newIsolatedNode("target-isolated-" + typeName);
-                    allIsolatedTarget.add(isolatedTarget);
-                    fixedOneToOneMappings.put(sourceVertex, isolatedTarget);
-                    fixedOneToOneSources.add(sourceVertex);
-                    fixedOneToOneTargets.add(isolatedTarget);
-                }
-                for (Vertex targetVertex : targetVertices) {
-                    Vertex isolatedSource = Vertex.newIsolatedNode("source-isolated-" + typeName);
-                    allIsolatedSource.add(isolatedSource);
-                    fixedOneToOneMappings.put(isolatedSource, targetVertex);
-                    fixedOneToOneSources.add(isolatedSource);
-                    fixedOneToOneTargets.add(targetVertex);
-                }
-                return;
-            }
-
-            Set<Vertex> newIsolatedSource = Collections.emptySet();
-            Set<Vertex> newIsolatedTarget = Collections.emptySet();
-            if (sourceVertices.size() > targetVertices.size()) {
-                newIsolatedTarget = Vertex.newIsolatedNodes(sourceVertices.size() - targetVertices.size(), "target-isolated-" + typeName + "-");
-            } else if (targetVertices.size() > sourceVertices.size()) {
-                newIsolatedSource = Vertex.newIsolatedNodes(targetVertices.size() - sourceVertices.size(), "source-isolated-" + typeName + "-");
-            }
-            this.allIsolatedSource.addAll(newIsolatedSource);
-            this.allIsolatedTarget.addAll(newIsolatedTarget);
-
-            if (sourceVertices.size() == 0) {
-                Iterator<Vertex> iterator = newIsolatedSource.iterator();
-                for (Vertex targetVertex : targetVertices) {
-                    Vertex isolatedSourceVertex = iterator.next();
-                    fixedOneToOneMappings.put(isolatedSourceVertex, targetVertex);
-                    fixedOneToOneSources.add(isolatedSourceVertex);
-                    fixedOneToOneTargets.add(targetVertex);
-                }
-                return;
-            }
-            if (targetVertices.size() == 0) {
-                Iterator<Vertex> iterator = newIsolatedTarget.iterator();
-                for (Vertex sourceVertex : sourceVertices) {
-                    Vertex isolatedTargetVertex = iterator.next();
-                    fixedOneToOneMappings.put(sourceVertex, isolatedTargetVertex);
-                    fixedOneToOneSources.add(sourceVertex);
-                    fixedOneToOneTargets.add(isolatedTargetVertex);
-                }
-                return;
-            }
-
-//            System.out.println("multiple mappings for context" + contextId + " overall size: " + (sourceVertices.size() + newIsolatedSource.size()));
-//            List<VertexContextSegment> vertexContextSegments = typeContexts.get(typeName);
-//            System.out.println("source ids: " + sourceVertices.size());
-//            for (Vertex sourceVertex : sourceVertices) {
-//                List<String> id = vertexContextSegments.stream().map(vertexContextSegment -> vertexContextSegment.idForVertex(sourceVertex, sourceGraph))
-//                        .collect(Collectors.toList());
-//                System.out.println("id: " + id);
-//            }
-//            System.out.println("target ids ==================: " + targetVertices.size());
-//            for (Vertex targetVertex : targetVertices) {
-//                List<String> id = vertexContextSegments.stream().map(vertexContextSegment -> vertexContextSegment.idForVertex(targetVertex, targetGraph))
-//                        .collect(Collectors.toList());
-//                System.out.println("id: " + id);
-//            }
-//            System.out.println("-------------------");
-//            System.out.println("-------------------");
-
-            Assert.assertFalse(contexts.containsRow(contextId));
-
-            Set<Vertex> allSource = new LinkedHashSet<>();
-            allSource.addAll(sourceVertices);
-            allSource.addAll(newIsolatedSource);
-            Set<Vertex> allTarget = new LinkedHashSet<>();
-            allTarget.addAll(targetVertices);
-            allTarget.addAll(newIsolatedTarget);
-            contexts.put(contextId, allSource, allTarget);
-            for (Vertex sourceVertex : sourceVertices) {
-                possibleMappings.putAll(sourceVertex, targetVertices);
-                possibleMappings.putAll(sourceVertex, newIsolatedTarget);
-            }
-            for (Vertex sourceIsolatedVertex : newIsolatedSource) {
-                possibleMappings.putAll(sourceIsolatedVertex, targetVertices);
-                possibleMappings.putAll(sourceIsolatedVertex, newIsolatedTarget);
-            }
-
-
-        }
-
-        //
-        public boolean mappingPossible(Vertex sourceVertex, Vertex targetVertex) {
-            return possibleMappings.containsEntry(sourceVertex, targetVertex);
         }
     }
 
@@ -999,9 +901,9 @@ public class PossibleMappingsCalculator {
             for (Vertex sourceVertex : vertices) {
                 if (!usedSourceVertices.contains(sourceVertex)) {
                     possibleSourceVertices.add(sourceVertex);
+                    usedSourceVertices.add(sourceVertex);
                 }
             }
-            usedSourceVertices.addAll(vertices);
         }
 
         Set<Vertex> possibleTargetVertices = new LinkedHashSet<>();
@@ -1010,30 +912,33 @@ public class PossibleMappingsCalculator {
             for (Vertex targetVertex : vertices) {
                 if (!usedTargetVertices.contains(targetVertex)) {
                     possibleTargetVertices.add(targetVertex);
+                    usedTargetVertices.add(targetVertex);
                 }
             }
-            usedTargetVertices.addAll(vertices);
         }
         if (contextId.size() == 0) {
             contextId = singletonList(typeNameForDebug);
         }
+        // all vertices that are not used in the current context
         possibleMappings.putPossibleMappings(contextId, possibleSourceVertices, possibleTargetVertices, typeNameForDebug);
     }
 
     public Map<Vertex, Vertex> getFixedParentRestrictions() {
-        return getFixedParentRestrictions(
-                sourceGraph,
-                possibleMappings.fixedOneToOneSources,
-                possibleMappings.fixedOneToOneMappings
-        );
+//        return getFixedParentRestrictions(
+//                sourceGraph,
+//                possibleMappings.fixedOneToOneSources,
+//                possibleMappings.fixedOneToOneMappings
+//        );
+        return Collections.emptyMap();
     }
 
     public Map<Vertex, Vertex> getFixedParentRestrictionsInverse(Map<Vertex, Vertex> fixedOneToOneMappingsInverted) {
-        return getFixedParentRestrictions(
-                targetGraph,
-                possibleMappings.fixedOneToOneTargets,
-                fixedOneToOneMappingsInverted
-        );
+//        return getFixedParentRestrictions(
+//                targetGraph,
+//                possibleMappings.fixedOneToOneTargets,
+//                fixedOneToOneMappingsInverted
+//        );
+        return Collections.emptyMap();
     }
 
     /**
@@ -1091,9 +996,10 @@ public class PossibleMappingsCalculator {
      * <p>
      * e.g. for an output {collar: Dog} then the collar vertex must be a child of Dog in the mapping.
      *
-     * @param mapping the mapping to get non-fixed parent restrictions for
+     * @param mapping     the mapping to get non-fixed parent restrictions for
      * @param sourceGraph the source graph
      * @param targetGraph the target graph
+     *
      * @return Map where key is any vertex, and the value is the parent that vertex must map to
      */
     public Map<Vertex, Vertex> getNonFixedParentRestrictions(SchemaGraph sourceGraph,

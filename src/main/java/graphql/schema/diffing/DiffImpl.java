@@ -40,7 +40,7 @@ public class DiffImpl {
     private final PossibleMappingsCalculator possibleMappingsCalculator;
     private final SchemaGraph completeSourceGraph;
     private final SchemaGraph completeTargetGraph;
-    private final PossibleMappingsCalculator.PossibleMappings possibleMappings;
+    private final PossibleMappings possibleMappings;
     private final SchemaDiffingRunningCheck runningCheck;
 
     private static class MappingEntry {
@@ -104,7 +104,7 @@ public class DiffImpl {
         }
     }
 
-    public DiffImpl(PossibleMappingsCalculator possibleMappingsCalculator, SchemaGraph completeSourceGraph, SchemaGraph completeTargetGraph, PossibleMappingsCalculator.PossibleMappings possibleMappings, SchemaDiffingRunningCheck runningCheck) {
+    public DiffImpl(PossibleMappingsCalculator possibleMappingsCalculator, SchemaGraph completeSourceGraph, SchemaGraph completeTargetGraph, PossibleMappings possibleMappings, SchemaDiffingRunningCheck runningCheck) {
         this.possibleMappingsCalculator = possibleMappingsCalculator;
         this.completeSourceGraph = completeSourceGraph;
         this.completeTargetGraph = completeTargetGraph;
@@ -140,6 +140,8 @@ public class DiffImpl {
         while (!queue.isEmpty()) {
             MappingEntry mappingEntry = queue.poll();
             algoIterationCount.incrementAndGet();
+
+            System.out.println("entry with lbc " + mappingEntry.lowerBoundCost + " optimal ged " + optimalEdit.ged);
 
             if (mappingEntry.lowerBoundCost >= optimalEdit.ged) {
                 // once the lowest lowerBoundCost is not lower than the optimal edit, we are done
@@ -241,7 +243,7 @@ public class DiffImpl {
 
         queue.add(newMappingEntry);
 
-        expandMappingAndUpdateOptimalMapping(fixedEditorialCost,
+        expandMappingAndMaybeUpdateOptimalMapping(fixedEditorialCost,
                 level,
                 optimalEdit,
                 allSources,
@@ -325,7 +327,7 @@ public class DiffImpl {
             // we need to start here from the parent mapping, this is why we remove the last element
             Mapping toExpand = sibling.partialMapping.copyMappingWithLastElementRemoved();
 
-            expandMappingAndUpdateOptimalMapping(fixedEditorialCost,
+            expandMappingAndMaybeUpdateOptimalMapping(fixedEditorialCost,
                     level,
                     optimalEdit,
                     allSources,
@@ -341,19 +343,20 @@ public class DiffImpl {
      * matching (hungarian algo result) and update the optimal edit if we
      * found a better one.
      */
-    private void expandMappingAndUpdateOptimalMapping(int fixedEditorialCost,
-                                                      int level,
-                                                      OptimalEdit optimalEdit,
-                                                      List<Vertex> allSources,
-                                                      Mapping toExpand,
-                                                      int[] assignments,
-                                                      List<Vertex> availableTargetVertices,
-                                                      double lowerBoundCost) {
+    private void expandMappingAndMaybeUpdateOptimalMapping(int fixedEditorialCost,
+                                                           int level,
+                                                           OptimalEdit optimalEdit,
+                                                           List<Vertex> allSources,
+                                                           Mapping toExpand,
+                                                           int[] assignments,
+                                                           List<Vertex> availableTargetVertices,
+                                                           double lowerBoundCost) {
         for (int i = 0; i < assignments.length; i++) {
             toExpand.add(allSources.get(level - 1 + i), availableTargetVertices.get(assignments[i]));
         }
         assertTrue(toExpand.size() == this.completeSourceGraph.size());
         int costForFullMapping = editorialCostForMapping(fixedEditorialCost, toExpand, completeSourceGraph, completeTargetGraph);
+//        System.out.println("cost for full mapping " + costForFullMapping + " with anchoredCostSum: " + anchoredCostSum);
         assertTrue(lowerBoundCost <= costForFullMapping);
         if (costForFullMapping < optimalEdit.ged) {
             updateOptimalEdit(optimalEdit, costForFullMapping, toExpand);
@@ -425,7 +428,10 @@ public class DiffImpl {
         if (!possibleMappings.mappingPossible(v, u)) {
             return Integer.MAX_VALUE;
         }
-        if (u.isOfType(SchemaGraph.ISOLATED)) {
+        if (u.isIsolated() && v.isIsolated()) {
+            return 0;
+        }
+        if (u.isIsolated()) {
             if (isolatedVerticesCache.containsKey(v)) {
                 return isolatedVerticesCache.get(v);
             }
@@ -433,7 +439,7 @@ public class DiffImpl {
             isolatedVerticesCache.put(v, result);
             return result;
         }
-        if (v.isOfType(SchemaGraph.ISOLATED)) {
+        if (v.isIsolated()) {
             if (isolatedVerticesCache.containsKey(u)) {
                 return isolatedVerticesCache.get(u);
             }

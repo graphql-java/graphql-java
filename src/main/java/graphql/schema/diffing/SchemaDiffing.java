@@ -55,7 +55,7 @@ public class SchemaDiffing {
 
     private DiffImpl.OptimalEdit diffImpl(SchemaGraph sourceGraph, SchemaGraph targetGraph, AtomicInteger algoIterationCount) throws Exception {
         PossibleMappingsCalculator possibleMappingsCalculator = new PossibleMappingsCalculator(sourceGraph, targetGraph, runningCheck);
-        PossibleMappingsCalculator.PossibleMappings possibleMappings = possibleMappingsCalculator.calculate();
+        PossibleMappings possibleMappings = possibleMappingsCalculator.calculate();
 
         Mapping startMapping = Mapping.newMapping(
                 possibleMappingsCalculator.getFixedParentRestrictions(),
@@ -130,7 +130,7 @@ public class SchemaDiffing {
     }
 
 
-    private void sortVertices(List<Vertex> vertices, SchemaGraph schemaGraph, PossibleMappingsCalculator.PossibleMappings possibleMappings) {
+    private void sortVertices(List<Vertex> vertices, SchemaGraph schemaGraph, PossibleMappings possibleMappings) {
         Comparator<Vertex> vertexComparator = Comparator.comparing(schemaGraph::adjacentEdgesAndInverseCount).reversed();
         vertices.sort(vertexComparator);
     }
