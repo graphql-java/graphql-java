@@ -1,6 +1,8 @@
 package graphql.schema.diffing;
 
+import com.google.common.collect.BiMap;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Multimap;
 import graphql.Assert;
 import graphql.Internal;
 import graphql.util.FpKit;
@@ -9,7 +11,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -752,7 +753,7 @@ public class PossibleMappingsCalculator {
         this.possibleMappings = new PossibleMappings();
     }
 
-    public PossibleMappings calculate() {
+    public PossibleMappings calculateInitialMapping() {
         calcPossibleMappings(typeContexts.get(SCHEMA), SCHEMA);
         calcPossibleMappings(typeContexts.get(FIELD), FIELD);
         calcPossibleMappings(typeContexts.get(ARGUMENT), ARGUMENT);
@@ -774,45 +775,85 @@ public class PossibleMappingsCalculator {
 
         Assert.assertTrue(sourceGraph.size() == targetGraph.size());
         Set<Vertex> vertices = possibleMappings.possibleMappings.keySet();
-        for (Vertex vertex : vertices) {
-            if (possibleMappings.possibleMappings.get(vertex).size() > 1) {
-//                System.out.println("vertex with possible mappings: " + possibleMappings.possibleMappings.get(vertex).size());
-//                System.out.println("vertex " + vertex);
-//                System.out.println("-------------");
+
+        // some vertices have additional restrictions based on the one to one mappings
+        // e.g. object Foo -> Bar means that all fields of Foo must be mapped to fields of Bar
+        for (Vertex field : sourceGraph.getVerticesByType(FIELD)) {
+            if (possibleMappings.fixedOneToOneMappings.containsKey(field)) {
+                Vertex targetField = possibleMappings.fixedOneToOneMappings.get(field);
+                List<Vertex> sourceArguments = sourceGraph.getArgumentsForField(field);
+                List<Vertex> targetArguments = targetGraph.getArgumentsForField(targetField);
+                for (Vertex sourceArgument : sourceArguments) {
+                    Collection<Vertex> possibleTargets = possibleMappings.possibleMappings.get(sourceArgument);
+                    possibleTargets.removeIf(vertex -> !vertex.isIsolated() && !targetArguments.contains(vertex));
+                }
             }
         }
+        Assert.assertTrue(possibleMappings.possibleMappings.keySet().size() +
+                possibleMappings.fixedOneToOneMappings.size() == sourceGraph.size());
 
         return possibleMappings;
     }
 
-    private void calcForArguments() {
-        Collection<Vertex> argumentsSource = sourceGraph.getVerticesByType(ARGUMENT);
-        Collection<Vertex> argumentsTargets = targetGraph.getVerticesByType(ARGUMENT);
-        Set<Vertex> newIsolatedSource;
-        Set<Vertex> newIsolatedTarget;
+    public static boolean extendMapping(BiMap<Vertex, Vertex> currentMappings,
+                                        Multimap<Vertex, Vertex> possibleMappings,
+                                        Vertex newSource,
+                                        Vertex newTarget,
+                                        SchemaGraph sourceGraph,
+                                        SchemaGraph targetGraph) {
 
-        newIsolatedTarget = Vertex.newIsolatedNodes(argumentsSource.size(), "target-isolated-" + ARGUMENT + "-");
-        newIsolatedSource = Vertex.newIsolatedNodes(argumentsTargets.size(), "source-isolated-" + ARGUMENT + "-");
+        if (!possibleMappings.get(newSource).contains(newTarget)) {
+            return false;
+        }
+        // deleting an object means deleting all the children?
 
-        possibleMappings.allIsolatedTarget.addAll(newIsolatedTarget);
-        possibleMappings.allIsolatedSource.addAll(newIsolatedSource);
-        Iterator<Vertex> iterator = newIsolatedSource.iterator();
-        for (Vertex targetVertex : argumentsTargets) {
-            Vertex isolatedSourceVertex = iterator.next();
-            possibleMappings.fixedOneToOneMappings.put(isolatedSourceVertex, targetVertex);
-            possibleMappings.fixedOneToOneSources.add(isolatedSourceVertex);
-            possibleMappings.fixedOneToOneTargets.add(targetVertex);
+//        if (newSource.isIsolated() ||newTarget.isIsolated()){
+//            possibleMappings.removeAll(newSource);
+//            return true;
+//        }
+        // fix arguments
+        if (newSource.isOfType(FIELD)) {
+
+        }
+        // fix fields and arguments
+        if (newSource.isOfType(OBJECT)) {
+
+        }
+        // fix fields and arguments
+        if (newSource.isOfType(INTERFACE)) {
+
+        }
+        // fix input fields
+        if (newSource.isOfType(INPUT_OBJECT)) {
+
+
+        }
+        // fix enum values
+        if (newSource.isOfType(ENUM)) {
+            List<Vertex> enumValues = sourceGraph.getEnumValues(newSource);
+            List<Vertex> targetEnumValues = targetGraph.getEnumValues(newTarget);
+            for (Vertex enumValue : enumValues) {
+                // if the enumValue is already mapped, we check if it was mapped correctly
+                if (currentMappings.containsKey(enumValue)) {
+                    if (!targetEnumValues.contains(currentMappings.get(enumValue))) {
+                        return false;
+                    }
+                } else {
+                    Collection<Vertex> possibleTargets = possibleMappings.get(enumValue);
+                    possibleTargets.removeIf(vertex -> !vertex.isIsolated() && !targetEnumValues.contains(vertex));
+                }
+            }
+
         }
 
-        iterator = newIsolatedTarget.iterator();
-        for (Vertex sourceVertex : argumentsSource) {
-            Vertex isolatedTargetVertex = iterator.next();
-            possibleMappings.fixedOneToOneMappings.put(sourceVertex, isolatedTargetVertex);
-            possibleMappings.fixedOneToOneSources.add(sourceVertex);
-            possibleMappings.fixedOneToOneTargets.add(isolatedTargetVertex);
+        if (newSource.isOfType(FIELD)) {
+            // if
+
         }
-
-
+        // example: deleting a field means the possible parent
+        // if we map a field
+        possibleMappings.removeAll(newSource);
+        return true;
     }
 
 
@@ -923,126 +964,126 @@ public class PossibleMappingsCalculator {
         possibleMappings.putPossibleMappings(contextId, possibleSourceVertices, possibleTargetVertices, typeNameForDebug);
     }
 
-    public Map<Vertex, Vertex> getFixedParentRestrictions() {
-//        return getFixedParentRestrictions(
-//                sourceGraph,
-//                possibleMappings.fixedOneToOneSources,
-//                possibleMappings.fixedOneToOneMappings
-//        );
-        return Collections.emptyMap();
-    }
+//    public Map<Vertex, Vertex> getFixedParentRestrictions() {
+////        return getFixedParentRestrictions(
+////                sourceGraph,
+////                possibleMappings.fixedOneToOneSources,
+////                possibleMappings.fixedOneToOneMappings
+////        );
+//        return Collections.emptyMap();
+//    }
+//
+//    public Map<Vertex, Vertex> getFixedParentRestrictionsInverse(Map<Vertex, Vertex> fixedOneToOneMappingsInverted) {
+////        return getFixedParentRestrictions(
+////                targetGraph,
+////                possibleMappings.fixedOneToOneTargets,
+////                fixedOneToOneMappingsInverted
+////        );
+//        return Collections.emptyMap();
+//    }
 
-    public Map<Vertex, Vertex> getFixedParentRestrictionsInverse(Map<Vertex, Vertex> fixedOneToOneMappingsInverted) {
-//        return getFixedParentRestrictions(
-//                targetGraph,
-//                possibleMappings.fixedOneToOneTargets,
-//                fixedOneToOneMappingsInverted
-//        );
-        return Collections.emptyMap();
-    }
+//    /**
+//     * This computes the initial set of parent restrictions based on the fixed portion of the mapping.
+//     * <p>
+//     * See {@link Mapping} for definition of fixed vs non-fixed.
+//     * <p>
+//     * If a {@link Vertex} is present in the output {@link Map} then the value is the parent the
+//     * vertex MUST map to.
+//     * <p>
+//     * e.g. for an output {collar: Dog} then the collar vertex must be a child of Dog in the mapping.
+//     *
+//     * @return Map where key is any vertex, and the value is the parent that vertex must map to
+//     */
+//    private Map<Vertex, Vertex> getFixedParentRestrictions(SchemaGraph sourceGraph,
+//                                                           List<Vertex> fixedSourceVertices,
+//                                                           Map<Vertex, Vertex> fixedOneToOneMappings) {
+//        Assert.assertFalse(fixedOneToOneMappings.isEmpty());
+//
+//        List<Vertex> needsFixing = new ArrayList<>(sourceGraph.getVertices());
+//        needsFixing.removeAll(fixedSourceVertices);
+//
+//        Map<Vertex, Vertex> restrictions = new LinkedHashMap<>();
+//
+//        for (Vertex vertex : needsFixing) {
+//            if (hasParentRestrictions(vertex)) {
+//                Vertex sourceParent = sourceGraph.getSingleAdjacentInverseVertex(vertex);
+//                Vertex fixedTargetParent = fixedOneToOneMappings.get(sourceParent);
+//
+//                if (fixedTargetParent != null) {
+//                    for (Edge edge : sourceGraph.getAdjacentEdgesNonCopy(sourceParent)) {
+//                        Vertex sibling = edge.getTo();
+//
+//                        if (hasParentRestrictions(sibling)) {
+//                            restrictions.put(sibling, fixedTargetParent);
+//                        }
+//                    }
+//                }
+//            }
+//        }
+//
+//        return restrictions;
+//    }
 
     /**
-     * This computes the initial set of parent restrictions based on the fixed portion of the mapping.
-     * <p>
-     * See {@link Mapping} for definition of fixed vs non-fixed.
-     * <p>
-     * If a {@link Vertex} is present in the output {@link Map} then the value is the parent the
-     * vertex MUST map to.
-     * <p>
-     * e.g. for an output {collar: Dog} then the collar vertex must be a child of Dog in the mapping.
-     *
-     * @return Map where key is any vertex, and the value is the parent that vertex must map to
-     */
-    private Map<Vertex, Vertex> getFixedParentRestrictions(SchemaGraph sourceGraph,
-                                                           List<Vertex> fixedSourceVertices,
-                                                           Map<Vertex, Vertex> fixedOneToOneMappings) {
-        Assert.assertFalse(fixedOneToOneMappings.isEmpty());
+     //     * This computes the initial set of parent restrictions based on the given non-fixed mapping.
+     //     * <p>
+     //     * i.e. this introduces restrictions as the {@link Mapping} is being built, as decisions
+     //     * can have knock on effects on other vertices' possible mappings.
+     //     * <p>
+     //     * See {@link Mapping} for definition of fixed vs non-fixed.
+     //     * <p>
+     //     * If a {@link Vertex} is present in the output {@link Map} then the value is the parent the
+     //     * vertex MUST map to.
+     //     * <p>
+     //     * e.g. for an output {collar: Dog} then the collar vertex must be a child of Dog in the mapping.
+     //     *
+     //     * @param mapping     the mapping to get non-fixed parent restrictions for
+     //     * @param sourceGraph the source graph
+     //     * @param targetGraph the target graph
+     //     *
+     //     * @return Map where key is any vertex, and the value is the parent that vertex must map to
+     //     */
+//    public Map<Vertex, Vertex> getNonFixedParentRestrictions(SchemaGraph sourceGraph,
+//                                                             SchemaGraph targetGraph,
+//                                                             Mapping mapping) {
+//        Map<Vertex, Vertex> restrictions = new LinkedHashMap<>();
+//
+//        mapping.forEachNonFixedSourceAndTarget((source, target) -> {
+//            if (hasChildrenRestrictions(source) && hasChildrenRestrictions(target)) {
+//                for (Edge edge : sourceGraph.getAdjacentEdgesNonCopy(source)) {
+//                    Vertex child = edge.getTo();
+//
+//                    if (hasParentRestrictions(child)) {
+//                        restrictions.put(child, target);
+//                    }
+//                }
+//            } else if (hasParentRestrictions(source) && hasParentRestrictions(target)) {
+//                Vertex sourceParent = sourceGraph.getSingleAdjacentInverseVertex(source);
+//                Vertex targetParent = targetGraph.getSingleAdjacentInverseVertex(target);
+//
+//                for (Edge edge : sourceGraph.getAdjacentEdgesNonCopy(sourceParent)) {
+//                    Vertex sibling = edge.getTo();
+//
+//                    if (hasParentRestrictions(sibling)) {
+//                        restrictions.put(sibling, targetParent);
+//                    }
+//                }
+//            }
+//        });
+//
+//        return restrictions;
+//    }
 
-        List<Vertex> needsFixing = new ArrayList<>(sourceGraph.getVertices());
-        needsFixing.removeAll(fixedSourceVertices);
-
-        Map<Vertex, Vertex> restrictions = new LinkedHashMap<>();
-
-        for (Vertex vertex : needsFixing) {
-            if (hasParentRestrictions(vertex)) {
-                Vertex sourceParent = sourceGraph.getSingleAdjacentInverseVertex(vertex);
-                Vertex fixedTargetParent = fixedOneToOneMappings.get(sourceParent);
-
-                if (fixedTargetParent != null) {
-                    for (Edge edge : sourceGraph.getAdjacentEdgesNonCopy(sourceParent)) {
-                        Vertex sibling = edge.getTo();
-
-                        if (hasParentRestrictions(sibling)) {
-                            restrictions.put(sibling, fixedTargetParent);
-                        }
-                    }
-                }
-            }
-        }
-
-        return restrictions;
-    }
-
-    /**
-     * This computes the initial set of parent restrictions based on the given non-fixed mapping.
-     * <p>
-     * i.e. this introduces restrictions as the {@link Mapping} is being built, as decisions
-     * can have knock on effects on other vertices' possible mappings.
-     * <p>
-     * See {@link Mapping} for definition of fixed vs non-fixed.
-     * <p>
-     * If a {@link Vertex} is present in the output {@link Map} then the value is the parent the
-     * vertex MUST map to.
-     * <p>
-     * e.g. for an output {collar: Dog} then the collar vertex must be a child of Dog in the mapping.
-     *
-     * @param mapping     the mapping to get non-fixed parent restrictions for
-     * @param sourceGraph the source graph
-     * @param targetGraph the target graph
-     *
-     * @return Map where key is any vertex, and the value is the parent that vertex must map to
-     */
-    public Map<Vertex, Vertex> getNonFixedParentRestrictions(SchemaGraph sourceGraph,
-                                                             SchemaGraph targetGraph,
-                                                             Mapping mapping) {
-        Map<Vertex, Vertex> restrictions = new LinkedHashMap<>();
-
-        mapping.forEachNonFixedSourceAndTarget((source, target) -> {
-            if (hasChildrenRestrictions(source) && hasChildrenRestrictions(target)) {
-                for (Edge edge : sourceGraph.getAdjacentEdgesNonCopy(source)) {
-                    Vertex child = edge.getTo();
-
-                    if (hasParentRestrictions(child)) {
-                        restrictions.put(child, target);
-                    }
-                }
-            } else if (hasParentRestrictions(source) && hasParentRestrictions(target)) {
-                Vertex sourceParent = sourceGraph.getSingleAdjacentInverseVertex(source);
-                Vertex targetParent = targetGraph.getSingleAdjacentInverseVertex(target);
-
-                for (Edge edge : sourceGraph.getAdjacentEdgesNonCopy(sourceParent)) {
-                    Vertex sibling = edge.getTo();
-
-                    if (hasParentRestrictions(sibling)) {
-                        restrictions.put(sibling, targetParent);
-                    }
-                }
-            }
-        });
-
-        return restrictions;
-    }
-
-    public static boolean hasParentRestrictions(Vertex vertex) {
-        return vertex.isOfType(SchemaGraph.FIELD)
-                || vertex.isOfType(SchemaGraph.INPUT_FIELD)
-                || vertex.isOfType(SchemaGraph.ENUM_VALUE)
-                || vertex.isOfType(SchemaGraph.ARGUMENT);
-    }
-
-    public static boolean hasChildrenRestrictions(Vertex vertex) {
-        return vertex.isOfType(SchemaGraph.INPUT_OBJECT)
-                || vertex.isOfType(SchemaGraph.OBJECT)
-                || vertex.isOfType(SchemaGraph.ENUM);
-    }
+//    public static boolean hasParentRestrictions(Vertex vertex) {
+//        return vertex.isOfType(SchemaGraph.FIELD)
+//                || vertex.isOfType(SchemaGraph.INPUT_FIELD)
+//                || vertex.isOfType(SchemaGraph.ENUM_VALUE)
+//                || vertex.isOfType(SchemaGraph.ARGUMENT);
+//    }
+//
+//    public static boolean hasChildrenRestrictions(Vertex vertex) {
+//        return vertex.isOfType(SchemaGraph.INPUT_OBJECT)
+//                || vertex.isOfType(SchemaGraph.OBJECT)
+//                || vertex.isOfType(SchemaGraph.ENUM);
+//    }
 }

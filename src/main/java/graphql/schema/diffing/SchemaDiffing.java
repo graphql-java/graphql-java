@@ -55,10 +55,10 @@ public class SchemaDiffing {
 
     private DiffImpl.OptimalEdit diffImpl(SchemaGraph sourceGraph, SchemaGraph targetGraph, AtomicInteger algoIterationCount) throws Exception {
         PossibleMappingsCalculator possibleMappingsCalculator = new PossibleMappingsCalculator(sourceGraph, targetGraph, runningCheck);
-        PossibleMappings possibleMappings = possibleMappingsCalculator.calculate();
+        PossibleMappings possibleMappings = possibleMappingsCalculator.calculateInitialMapping();
 
         Mapping startMapping = Mapping.newMapping(
-                possibleMappingsCalculator.getFixedParentRestrictions(),
+                possibleMappings.possibleMappings,
                 possibleMappings.fixedOneToOneMappings,
                 possibleMappings.fixedOneToOneSources,
                 possibleMappings.fixedOneToOneTargets);
@@ -86,15 +86,16 @@ public class SchemaDiffing {
                 Vertex t = possibleMappings.fixedOneToOneMappings.get(s);
                 fixedOneToOneInverted.put(t, s);
             }
+            HashMultimap<Vertex, Vertex> invertedPossibleOnes = HashMultimap.create();
+            Multimaps.invertFrom(possibleMappings.possibleMappings, invertedPossibleOnes);
+            possibleMappings.possibleMappings = invertedPossibleOnes;
+
             Mapping startMappingInverted = Mapping.newMapping(
-                    possibleMappingsCalculator.getFixedParentRestrictionsInverse(fixedOneToOneInverted),
+                    invertedPossibleOnes,
                     fixedOneToOneInverted,
                     possibleMappings.fixedOneToOneTargets,
                     possibleMappings.fixedOneToOneSources
             );
-            HashMultimap<Vertex, Vertex> invertedPossibleOnes = HashMultimap.create();
-            Multimaps.invertFrom(possibleMappings.possibleMappings, invertedPossibleOnes);
-            possibleMappings.possibleMappings = invertedPossibleOnes;
 
             sortVertices(nonMappedTarget, targetGraph, possibleMappings);
 

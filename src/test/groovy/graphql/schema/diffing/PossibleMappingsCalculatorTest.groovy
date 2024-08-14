@@ -23,7 +23,7 @@ class PossibleMappingsCalculatorTest extends Specification {
         def calculator = createCalculator(sourceGraph, targetGraph)
 
         when:
-        def mappings = calculator.calculate()
+        def mappings = calculator.calculateInitialMapping()
 
         then:
         mappings.fixedOneToOneMappings.size() == sourceGraph.size()
@@ -49,7 +49,7 @@ class PossibleMappingsCalculatorTest extends Specification {
         def helloField = sourceGraph.getVerticesByType(SchemaGraph.FIELD).find { it.name == "hello" }
 
         when:
-        def mappings = calculator.calculate()
+        def mappings = calculator.calculateInitialMapping()
         def isolatedFieldVertex = sourceGraph.getVerticesByType(SchemaGraph.ISOLATED).find { it.debugName.startsWith("source-isolated-Field-") }
 
         then:
@@ -60,6 +60,35 @@ class PossibleMappingsCalculatorTest extends Specification {
         mappings.possibleTargets(isolatedFieldVertex).size() == 3
         mappings.possibleTargets(isolatedFieldVertex).findAll { it.isOfType(SchemaGraph.FIELD) }.size() == 1
         mappings.possibleTargets(isolatedFieldVertex).findAll { it.isIsolated() }.size() == 2
+
+    }
+
+    def "initial field one to one mapping"() {
+        given:
+        def sourceGraph = sourceGraph('''   
+    type Query {
+      foo(arg: String): String
+    }
+''')
+        def targetGraph = targetGraph('''
+    type Query {
+        fooRenamed: Foo
+    }
+    type Foo {
+        a(arg2: String): String
+        b(arg3: String): String
+    }
+''')
+        def calculator = createCalculator(sourceGraph, targetGraph)
+        def fooField = sourceGraph.getVertices().find { it.name == "foo" }
+        def argArgument = sourceGraph.getArgumentsForField(fooField)[0]
+        when:
+        def mappings = calculator.calculateInitialMapping()
+
+        then:
+        // only one possible mapping for the argument: isolated
+        mappings.possibleMappings.get(argArgument).size() == 1
+        mappings.possibleMappings.get(argArgument).findAll { it.isolated }.size() == 1
 
     }
 

@@ -2,42 +2,46 @@ package graphql.schema.diffing;
 
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Multimap;
+import com.google.common.collect.Multimaps;
 import graphql.Internal;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 /**
- * A mapping (in the math sense) from a list of vertices to another list of
- * vertices.
- * A mapping can semantically mean a change, but doesn't have to: a vertex
- * can be mapped to the same vertex (semantically the same, Java object wise they are different).
+ * A partial mapping between source and target vertices.
  */
 @Internal
 public class Mapping {
 
 
-    private final Map<Vertex, Vertex> fixedParentRestrictions;
+    // the fixed mappings
     private final BiMap<Vertex, Vertex> fixedMappings;
     private final List<Vertex> fixedSourceList;
     private final List<Vertex> fixedTargetList;
 
+    // partial mappings that are not fixed
     private final BiMap<Vertex, Vertex> map;
     private final List<Vertex> sourceList;
     private final List<Vertex> targetList;
+    private final Multimap<Vertex, Vertex> possibleMappings;
 
-    private Mapping(Map<Vertex, Vertex> fixedParentRestrictions,
+    // each possible target vertices per source vertex that is not mapped yet
+//    private final Multimap<Vertex,Vertex> possibleMappings;
+
+    private Mapping(Multimap<Vertex, Vertex> possibleMappings,
                     BiMap<Vertex, Vertex> fixedMappings,
                     List<Vertex> fixedSourceList,
                     List<Vertex> fixedTargetList,
                     BiMap<Vertex, Vertex> map,
                     List<Vertex> sourceList,
                     List<Vertex> targetList) {
-        this.fixedParentRestrictions = fixedParentRestrictions;
+        this.possibleMappings = possibleMappings;
         this.fixedMappings = fixedMappings;
         this.fixedSourceList = fixedSourceList;
         this.fixedTargetList = fixedTargetList;
@@ -46,12 +50,12 @@ public class Mapping {
         this.targetList = targetList;
     }
 
-    public static Mapping newMapping(Map<Vertex, Vertex> fixedParentRestrictions,
+    public static Mapping newMapping(Multimap<Vertex, Vertex> possibleMappings,
                                      BiMap<Vertex, Vertex> fixedMappings,
                                      List<Vertex> fixedSourceList,
                                      List<Vertex> fixedTargetList) {
         return new Mapping(
-                fixedParentRestrictions,
+                possibleMappings,
                 fixedMappings,
                 fixedSourceList,
                 fixedTargetList,
@@ -60,13 +64,6 @@ public class Mapping {
                 Collections.emptyList());
     }
 
-    public boolean hasParentRestriction(Vertex v) {
-        return fixedParentRestrictions.containsKey(v);
-    }
-
-    public Vertex getParentRestriction(Vertex v) {
-        return fixedParentRestrictions.get(v);
-    }
 
     public Vertex getSource(Vertex target) {
         if (fixedMappings.containsValue(target)) {
@@ -128,36 +125,23 @@ public class Mapping {
         return map.size();
     }
 
-    public void add(Vertex source, Vertex target) {
+    public boolean extendMapping(Vertex source, Vertex target, SchemaGraph sourceGraph, SchemaGraph targetGraph) {
         this.map.put(source, target);
         this.sourceList.add(source);
         this.targetList.add(target);
+        return PossibleMappingsCalculator.extendMapping(map, possibleMappings, source, target, sourceGraph, targetGraph);
     }
 
-    public Mapping copyMappingWithLastElementRemoved() {
-        HashBiMap<Vertex, Vertex> newMap = HashBiMap.create(map);
-        newMap.remove(this.sourceList.get(this.sourceList.size() - 1));
-        List<Vertex> newSourceList = new ArrayList<>(this.sourceList.subList(0, this.sourceList.size() - 1));
-        List<Vertex> newTargetList = new ArrayList<>(this.targetList.subList(0, this.targetList.size() - 1));
-        return new Mapping(fixedParentRestrictions, fixedMappings, fixedSourceList, fixedTargetList, newMap, newSourceList, newTargetList);
-    }
+
 
     public Mapping copy() {
         HashBiMap<Vertex, Vertex> newMap = HashBiMap.create(map);
         List<Vertex> newSourceList = new ArrayList<>(this.sourceList);
         List<Vertex> newTargetList = new ArrayList<>(this.targetList);
-        return new Mapping(fixedParentRestrictions, fixedMappings, fixedSourceList, fixedTargetList, newMap, newSourceList, newTargetList);
+        Multimap<Vertex, Vertex> possibleMappings = HashMultimap.create(this.possibleMappings);
+        return new Mapping(possibleMappings, fixedMappings, fixedSourceList, fixedTargetList, newMap, newSourceList, newTargetList);
     }
 
-    public Mapping extendMapping(Vertex source, Vertex target) {
-        HashBiMap<Vertex, Vertex> newMap = HashBiMap.create(map);
-        newMap.put(source, target);
-        List<Vertex> newSourceList = new ArrayList<>(this.sourceList);
-        newSourceList.add(source);
-        List<Vertex> newTargetList = new ArrayList<>(this.targetList);
-        newTargetList.add(target);
-        return new Mapping(fixedParentRestrictions, fixedMappings, fixedSourceList, fixedTargetList, newMap, newSourceList, newTargetList);
-    }
 
     public void forEachTarget(Consumer<? super Vertex> action) {
         for (Vertex t : fixedTargetList) {
@@ -189,6 +173,8 @@ public class Mapping {
             Vertex t = map.get(s);
             invertedMap.put(t, s);
         }
-        return new Mapping(fixedParentRestrictions, invertedFixedMappings, fixedTargetList, fixedSourceList, invertedMap, targetList, sourceList);
+        Multimap<Vertex, Vertex> invertedPossibleMappings = HashMultimap.create();
+        Multimaps.invertFrom(possibleMappings, invertedPossibleMappings);
+        return new Mapping(invertedPossibleMappings, invertedFixedMappings, fixedTargetList, fixedSourceList, invertedMap, targetList, sourceList);
     }
 }
