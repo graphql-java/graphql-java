@@ -96,15 +96,17 @@ public class SchemaDiffing {
             Multimaps.invertFrom(possibleMappings.possibleMappings, invertedPossibleOnes);
             possibleMappings.possibleMappings = invertedPossibleOnes;
 
+            sortVertices(nonMappedTarget, targetGraph, possibleMappings);
+
             List<Vertex> sourceVertices = new ArrayList<>();
             sourceVertices.addAll(possibleMappings.fixedOneToOneSources);
             sourceVertices.addAll(nonMappedSource);
+
 
             List<Vertex> targetVertices = new ArrayList<>();
             targetVertices.addAll(possibleMappings.fixedOneToOneTargets);
             targetVertices.addAll(nonMappedTarget);
 
-            sortVertices(nonMappedTarget, targetGraph, possibleMappings);
 
             DiffImpl diffImpl = new DiffImpl(possibleMappingsCalculator, targetGraph, sourceGraph, possibleMappings, runningCheck);
             DiffImpl.OptimalEdit optimalEdit = diffImpl.diffImpl(startMappingInverted, targetVertices, sourceVertices, algoIterationCount);
