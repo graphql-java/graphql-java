@@ -121,10 +121,15 @@ class IncrementalExecutionResultTest extends Specification {
 
     def "transform returns IncrementalExecutionResult"() {
         when:
-        def initial = newIncrementalExecutionResult().build()
+        def initial = newIncrementalExecutionResult().hasNext(true).build()
 
         then:
-        def transformed = initial.transform { }
+        def transformed = initial.transform { b ->
+            b.addExtension("ext-key", "ext-value")
+            b.hasNext(false)
+        }
         transformed instanceof IncrementalExecutionResult
+        transformed.extensions == ["ext-key": "ext-value"]
+        transformed.hasNext == false
     }
 }
