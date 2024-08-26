@@ -1,9 +1,7 @@
 package graphql.incremental
 
 import graphql.execution.ResultPath
-import groovy.json.JsonOutput
 import io.reactivex.Flowable
-import org.reactivestreams.Publisher
 import spock.lang.Specification
 
 import static graphql.incremental.DeferPayload.newDeferredItem
@@ -119,5 +117,19 @@ class IncrementalExecutionResultTest extends Specification {
         newIncrementalExecutionResult.incrementalItemPublisher == incrementalExecutionResult.incrementalItemPublisher
         newIncrementalExecutionResult.hasNext() == incrementalExecutionResult.hasNext()
         newIncrementalExecutionResult.toSpecification() == incrementalExecutionResult.toSpecification()
+    }
+
+    def "transform returns IncrementalExecutionResult"() {
+        when:
+        def initial = newIncrementalExecutionResult().hasNext(true).build()
+
+        then:
+        def transformed = initial.transform { b ->
+            b.addExtension("ext-key", "ext-value")
+            b.hasNext(false)
+        }
+        transformed instanceof IncrementalExecutionResult
+        transformed.extensions == ["ext-key": "ext-value"]
+        transformed.hasNext == false
     }
 }

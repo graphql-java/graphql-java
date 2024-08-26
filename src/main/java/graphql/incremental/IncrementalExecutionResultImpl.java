@@ -10,6 +10,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 @ExperimentalApi
@@ -50,6 +51,13 @@ public class IncrementalExecutionResultImpl extends ExecutionResultImpl implemen
 
     public static Builder fromExecutionResult(ExecutionResult executionResult) {
         return new Builder().from(executionResult);
+    }
+
+    @Override
+    public IncrementalExecutionResult transform(Consumer<ExecutionResult.Builder<?>> builderConsumer) {
+        var builder = fromExecutionResult(this);
+        builderConsumer.accept(builder);
+        return builder.build();
     }
 
     @Override
