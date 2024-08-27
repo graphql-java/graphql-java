@@ -249,7 +249,14 @@ class DataLoaderPerformanceData {
                 .collect { it.toSpecification() }
     }
 
-
+    /**
+     * Combines the initial result with the incremental results into a single result that has the same shape as a
+     * "normal" execution result.
+     *
+     * @param initialResult the data from the initial execution
+     * @param incrementalResults the data from the incremental executions
+     * @return a single result that combines the initial and incremental results
+     */
     static Map<String, Object> combineExecutionResults(Map<String, Object> initialResult, List<Map<String, Object>> incrementalResults) {
         Map<String, Object> combinedResult = deepClone(initialResult, Map.class)
 
@@ -275,6 +282,7 @@ class DataLoaderPerformanceData {
                     }
                 }
 
+        // Remove the "hasNext" to make the result look like a normal execution result
         combinedResult.remove("hasNext")
 
         combinedResult

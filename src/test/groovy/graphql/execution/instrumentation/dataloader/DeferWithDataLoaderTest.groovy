@@ -190,9 +190,6 @@ class DeferWithDataLoaderTest extends Specification {
 
         ExecutionResult result = graphQL.execute(executionInput)
 
-        println "dept for shops dl: " + batchCompareDataFetchers.departmentsForShopsBatchLoaderCounter.get()
-        println "prod for depts dl: " + batchCompareDataFetchers.productsForDepartmentsBatchLoaderCounter.get()
-
         then:
         result.toSpecification() == expectedInitialData
 

@@ -31,11 +31,11 @@ public class PerLevelDataLoaderDispatchStrategyWithDeferAlwaysDispatch implement
     private final ExecutionContext executionContext;
 
     /**
-     * This flag is used to determine if we are in a deferred context or not.
+     * This flag is used to determine if we have started the deferred execution.
      * The value of this flag is set to true as soon as we identified that a deferred field is being executed, and then
      * the flag stays on that state for the remainder of the execution.
      */
-    private final AtomicBoolean enteredDeferredContext = new AtomicBoolean(false);
+    private final AtomicBoolean startedDeferredExecution = new AtomicBoolean(false);
 
 
     private static class CallStack {
@@ -115,12 +115,12 @@ public class PerLevelDataLoaderDispatchStrategyWithDeferAlwaysDispatch implement
 
     @Override
     public void executeDeferredOnFieldValueInfo(FieldValueInfo fieldValueInfo, ExecutionStrategyParameters executionStrategyParameters) {
-        this.enteredDeferredContext.set(true);
+        this.startedDeferredExecution.set(true);
     }
 
     @Override
     public void executionStrategy(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
-        if (this.enteredDeferredContext.get()) {
+        if (this.startedDeferredExecution.get()) {
             return;
         }
         int curLevel = parameters.getExecutionStepInfo().getPath().getLevel() + 1;
@@ -129,7 +129,7 @@ public class PerLevelDataLoaderDispatchStrategyWithDeferAlwaysDispatch implement
 
     @Override
     public void executeObject(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
-        if (this.enteredDeferredContext.get()) {
+        if (this.startedDeferredExecution.get()) {
             return;
         }
         int curLevel = parameters.getExecutionStepInfo().getPath().getLevel() + 1;
@@ -138,7 +138,7 @@ public class PerLevelDataLoaderDispatchStrategyWithDeferAlwaysDispatch implement
 
     @Override
     public void executionStrategyOnFieldValuesInfo(List<FieldValueInfo> fieldValueInfoList, ExecutionStrategyParameters parameters) {
-        if (this.enteredDeferredContext.get()) {
+        if (this.startedDeferredExecution.get()) {
             this.dispatch();
         }
         int curLevel = parameters.getPath().getLevel() + 1;
@@ -155,7 +155,7 @@ public class PerLevelDataLoaderDispatchStrategyWithDeferAlwaysDispatch implement
 
     @Override
     public void executeObjectOnFieldValuesInfo(List<FieldValueInfo> fieldValueInfoList, ExecutionStrategyParameters parameters) {
-        if (this.enteredDeferredContext.get()) {
+        if (this.startedDeferredExecution.get()) {
             this.dispatch();
         }
         int curLevel = parameters.getPath().getLevel() + 1;
@@ -179,8 +179,8 @@ public class PerLevelDataLoaderDispatchStrategyWithDeferAlwaysDispatch implement
 
         final boolean dispatchNeeded;
 
-        if (parameters.getField().isDeferred() || this.enteredDeferredContext.get()) {
-            this.enteredDeferredContext.compareAndSet(false, true);
+        if (parameters.getField().isDeferred() || this.startedDeferredExecution.get()) {
+            this.startedDeferredExecution.set(true);
             dispatchNeeded = true;
         } else {
             int level = parameters.getPath().getLevel();
