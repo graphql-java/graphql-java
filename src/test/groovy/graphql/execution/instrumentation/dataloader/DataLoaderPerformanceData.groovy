@@ -1,5 +1,6 @@
 package graphql.execution.instrumentation.dataloader
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import graphql.Directives
 import graphql.GraphQL
 import graphql.execution.instrumentation.Instrumentation
@@ -60,20 +61,29 @@ class DataLoaderPerformanceData {
                                    [id: "department-9", name: "Department 9", products: [[id: "product-9", name: "Product 9"]]]]
                     ]]
     ]
+    static String getQuery() {
+        return getQuery(false, false)
+    }
 
-    static def query = """
+    static String getQuery(boolean deferDepartments, boolean deferProducts) {
+        return """
             query { 
                 shops { 
                     id name 
-                    departments { 
-                        id name 
-                        products { 
+                    ... @defer(if: $deferDepartments) {
+                        departments { 
                             id name 
+                            ... @defer(if: $deferProducts) {
+                                products { 
+                                    id name 
+                                } 
+                            }
                         } 
-                    } 
+                    }
                 } 
             }
             """
+    }
 
     static def expectedExpensiveData = [
             shops         : [[name                : "Shop 1",
@@ -162,7 +172,8 @@ class DataLoaderPerformanceData {
         assert incrementalResultsItems.any { it == [path: [], data: [expensiveShops: [[id: "exshop-1", name: "ExShop 1"], [id: "exshop-2", name: "ExShop 2"], [id: "exshop-3", name: "ExShop 3"]]]] }
     }
 
-    static def expensiveQuery = """
+    static String getExpensiveQuery(boolean deferredEnabled) {
+        return """
             query { 
                 shops { 
                     name 
@@ -171,19 +182,25 @@ class DataLoaderPerformanceData {
                         products { 
                             name 
                         } 
-                        expensiveProducts { 
-                            name 
-                        } 
+                        ... @defer(if: $deferredEnabled) {
+                            expensiveProducts { 
+                                name 
+                            } 
+                        }
                     } 
-                    expensiveDepartments { 
-                        name 
-                        products { 
+                    ... @defer(if: $deferredEnabled) {
+                        expensiveDepartments { 
                             name 
+                            products { 
+                                name 
+                            } 
+                            ... @defer(if: $deferredEnabled) {
+                                expensiveProducts { 
+                                    name 
+                                } 
+                            }
                         } 
-                        expensiveProducts { 
-                            name 
-                        } 
-                    } 
+                    }
                 } 
                 expensiveShops { 
                     name 
@@ -192,159 +209,30 @@ class DataLoaderPerformanceData {
                         products { 
                             name 
                         } 
-                        expensiveProducts { 
-                            name 
-                        } 
-                    } 
-                    expensiveDepartments { 
-                        name 
-                        products { 
-                            name 
-                        } 
-                        expensiveProducts { 
-                            name 
-                        } 
-                    } 
-                } 
-            }
-            """
-
-    static def expectedInitialDeferredData = [
-            data   : [
-                    shops: [
-                            [id: "shop-1", name: "Shop 1"],
-                            [id: "shop-2", name: "Shop 2"],
-                            [id: "shop-3", name: "Shop 3"],
-                    ]
-            ],
-            hasNext: true
-    ]
-
-    static def expectedListOfDeferredData = [
-            [
-                    hasNext    : true,
-                    incremental: [[
-                                          path: ["shops", 0],
-                                          data: [
-                                                  departments: [
-                                                          [id: "department-1", name: "Department 1", products: [[id: "product-1", name: "Product 1"]]],
-                                                          [id: "department-2", name: "Department 2", products: [[id: "product-2", name: "Product 2"]]],
-                                                          [id: "department-3", name: "Department 3", products: [[id: "product-3", name: "Product 3"]]]
-                                                  ]
-                                          ]
-                                  ]],
-            ],
-            [
-                    hasNext    : true,
-                    incremental: [[
-                                          path: ["shops", 1],
-                                          data: [
-                                                  departments: [
-                                                          [id: "department-4", name: "Department 4", products: [[id: "product-4", name: "Product 4"]]],
-                                                          [id: "department-5", name: "Department 5", products: [[id: "product-5", name: "Product 5"]]],
-                                                          [id: "department-6", name: "Department 6", products: [[id: "product-6", name: "Product 6"]]]
-                                                  ]
-                                          ],
-                                  ]],
-            ],
-            [
-                    hasNext    : false,
-                    incremental: [[
-                                          path: ["shops", 2],
-                                          data: [
-                                                  departments: [
-                                                          [id: "department-7", name: "Department 7", products: [[id: "product-7", name: "Product 7"]]],
-                                                          [id: "department-8", name: "Department 8", products: [[id: "product-8", name: "Product 8"]]],
-                                                          [id: "department-9", name: "Department 9", products: [[id: "product-9", name: "Product 9"]]]
-                                                  ]
-                                          ]
-                                  ]],
-            ]
-    ]
-
-
-    static def deferredQuery = """
-            query { 
-                shops { 
-                    id name 
-                    ... @defer {
-                        departments { 
-                            id name 
-                            products { 
-                                id name 
+                        ... @defer(if: $deferredEnabled) {
+                            expensiveProducts { 
+                                name 
                             } 
-                        } 
-                    }
-                } 
-            }
-            """
-
-    static def expensiveDeferredQuery = """
-            query { 
-                shops { 
-                    id name 
-                    ... @defer {
-                        departments { 
+                        }
+                    } 
+                    ... @defer(if: $deferredEnabled) {
+                        expensiveDepartments { 
                             name 
-                            ... @defer {
-                                products { 
-                                    name 
-                                } 
-                            }
-                            ... @defer {
+                            products { 
+                                name 
+                            } 
+                            ...  @defer(if: $deferredEnabled) {
                                 expensiveProducts { 
                                     name 
                                 } 
                             }
                         } 
                     }
-                    ... @defer {
-                        expensiveDepartments { 
-                            name 
-                            products { 
-                                name 
-                            } 
-                            expensiveProducts { 
-                                name 
-                            } 
-                        } 
-                    }
                 } 
-                ... @defer {
-                    expensiveShops { 
-                        id name
-                    } 
-                }
             }
-            """
+"""
 
-    static def expectedExpensiveDeferredData = [
-            [[id: "exshop-1", name: "ExShop 1"], [id: "exshop-2", name: "ExShop 2"], [id: "exshop-3", name: "ExShop 3"]],
-            [[name: "Department 1",products:null, expensiveProducts:null], [name: "Department 2",products:null, expensiveProducts:null], [name: "Department 3",products:null, expensiveProducts:null]],
-            [[name: "Department 1", products: [[name: "Product 1"]], expensiveProducts: [[name: "Product 1"]]], [name: "Department 2", products: [[name: "Product 2"]], expensiveProducts: [[name: "Product 2"]]], [name: "Department 3", products: [[name: "Product 3"]], expensiveProducts: [[name: "Product 3"]]]],
-            [[name: "Department 4",products:null, expensiveProducts:null], [name: "Department 5",products:null, expensiveProducts:null], [name: "Department 6",products:null, expensiveProducts:null]],
-            [[name: "Department 4", products: [[name: "Product 4"]], expensiveProducts: [[name: "Product 4"]]], [name: "Department 5", products: [[name: "Product 5"]], expensiveProducts: [[name: "Product 5"]]], [name: "Department 6", products: [[name: "Product 6"]], expensiveProducts: [[name: "Product 6"]]]],
-            [[name: "Department 7",products:null, expensiveProducts:null], [name: "Department 8",products:null, expensiveProducts:null], [name: "Department 9",products:null, expensiveProducts:null]],
-            [[name: "Department 7", products: [[name: "Product 7"]], expensiveProducts: [[name: "Product 7"]]], [name: "Department 8", products: [[name: "Product 8"]], expensiveProducts: [[name: "Product 8"]]], [name: "Department 9", products: [[name: "Product 9"]], expensiveProducts: [[name: "Product 9"]]]],
-            [[name: "Product 1"]],
-            [[name: "Product 1"]],
-            [[name: "Product 2"]],
-            [[name: "Product 2"]],
-            [[name: "Product 3"]],
-            [[name: "Product 3"]],
-            [[name: "Product 4"]],
-            [[name: "Product 4"]],
-            [[name: "Product 5"]],
-            [[name: "Product 5"]],
-            [[name: "Product 6"]],
-            [[name: "Product 6"]],
-            [[name: "Product 7"]],
-            [[name: "Product 7"]],
-            [[name: "Product 8"]],
-            [[name: "Product 8"]],
-            [[name: "Product 9"]],
-            [[name: "Product 9"]],
-    ]
+    }
 
     static List<Map<String, Object>> getIncrementalResults(IncrementalExecutionResult initialResult) {
         Publisher<DelayedIncrementalPartialResult> deferredResultStream = initialResult.incrementalItemPublisher
@@ -353,7 +241,63 @@ class DataLoaderPerformanceData {
         deferredResultStream.subscribe(subscriber)
         Awaitility.await().untilTrue(subscriber.isDone())
 
+        if(subscriber.getThrowable() != null) {
+            throw subscriber.getThrowable()
+        }
+
         return subscriber.getEvents()
                 .collect { it.toSpecification() }
+    }
+
+    /**
+     * Combines the initial result with the incremental results into a single result that has the same shape as a
+     * "normal" execution result.
+     *
+     * @param initialResult the data from the initial execution
+     * @param incrementalResults the data from the incremental executions
+     * @return a single result that combines the initial and incremental results
+     */
+    static Map<String, Object> combineExecutionResults(Map<String, Object> initialResult, List<Map<String, Object>> incrementalResults) {
+        Map<String, Object> combinedResult = deepClone(initialResult, Map.class)
+
+        incrementalResults
+                // groovy's flatMap
+                .collectMany { (List) it.incremental }
+                .each { result ->
+                    def parent = findByPath((Map) combinedResult.data, (List) result.path)
+                    if (parent instanceof Map) {
+                        parent.putAll((Map) result.data)
+                    } else if (parent instanceof List) {
+                        parent.addAll(result.data)
+                    } else {
+                        throw new RuntimeException("Unexpected parent type: ${parent.getClass()}")
+                    }
+
+                    if(combinedResult.errors != null && !result.errors.isEmpty()) {
+                        if(combinedResult.errors == null) {
+                            combinedResult.errors = []
+                        }
+
+                        combinedResult.errors.addAll(result.errors)
+                    }
+                }
+
+        // Remove the "hasNext" to make the result look like a normal execution result
+        combinedResult.remove("hasNext")
+
+        combinedResult
+    }
+
+    private static ObjectMapper objectMapper = new ObjectMapper()
+    private static <T> T deepClone(Object obj, Class<T> clazz) {
+        return objectMapper.readValue(objectMapper.writeValueAsString(obj), clazz)
+    }
+
+    private static Object findByPath(Map<String, Object> data, List<Object> path) {
+        def current = data
+        path.each { key ->
+            current = current[key]
+        }
+        current
     }
 }

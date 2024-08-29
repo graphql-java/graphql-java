@@ -6,7 +6,6 @@ import graphql.execution.DataLoaderDispatchStrategy;
 import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionStrategyParameters;
 import graphql.execution.FieldValueInfo;
-import graphql.execution.MergedField;
 import graphql.schema.DataFetcher;
 import graphql.util.LockKit;
 import org.dataloader.DataLoaderRegistry;
@@ -14,12 +13,29 @@ import org.dataloader.DataLoaderRegistry;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 
+/**
+ * The execution of a query can be divided into 2 phases: first, the non-deferred fields are executed and only once
+ * they are completely resolved, we start to execute the deferred fields.
+ * The behavior of this Data Loader strategy is quite different during those 2 phases. During the execution of the
+ * deferred fields the Data Loader will not attempt to dispatch in a optimal way. It will essentially dispatch for
+ * every field fetched, which is quite ineffective.
+ * This is the first iteration of the Data Loader strategy with support for @defer, and it will be improved in the
+ * future.
+ */
 @Internal
-public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStrategy {
+public class PerLevelDataLoaderDispatchStrategyWithDeferAlwaysDispatch implements DataLoaderDispatchStrategy {
 
     private final CallStack callStack;
     private final ExecutionContext executionContext;
+
+    /**
+     * This flag is used to determine if we have started the deferred execution.
+     * The value of this flag is set to true as soon as we identified that a deferred field is being executed, and then
+     * the flag stays on that state for the remainder of the execution.
+     */
+    private final AtomicBoolean startedDeferredExecution = new AtomicBoolean(false);
 
 
     private static class CallStack {
@@ -92,28 +108,44 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
         }
     }
 
-    public PerLevelDataLoaderDispatchStrategy(ExecutionContext executionContext) {
+    public PerLevelDataLoaderDispatchStrategyWithDeferAlwaysDispatch(ExecutionContext executionContext) {
         this.callStack = new CallStack();
         this.executionContext = executionContext;
     }
 
     @Override
     public void executeDeferredOnFieldValueInfo(FieldValueInfo fieldValueInfo, ExecutionStrategyParameters executionStrategyParameters) {
-        throw new UnsupportedOperationException("Data Loaders cannot be used to resolve deferred fields");
+        this.startedDeferredExecution.set(true);
     }
 
     @Override
     public void executionStrategy(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
+        if (this.startedDeferredExecution.get()) {
+            return;
+        }
+        int curLevel = parameters.getExecutionStepInfo().getPath().getLevel() + 1;
+        increaseCallCounts(curLevel, parameters);
+    }
+
+    @Override
+    public void executeObject(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
+        if (this.startedDeferredExecution.get()) {
+            return;
+        }
         int curLevel = parameters.getExecutionStepInfo().getPath().getLevel() + 1;
         increaseCallCounts(curLevel, parameters);
     }
 
     @Override
     public void executionStrategyOnFieldValuesInfo(List<FieldValueInfo> fieldValueInfoList, ExecutionStrategyParameters parameters) {
+        if (this.startedDeferredExecution.get()) {
+            this.dispatch();
+        }
         int curLevel = parameters.getPath().getLevel() + 1;
         onFieldValuesInfoDispatchIfNeeded(fieldValueInfoList, curLevel, parameters);
     }
 
+    @Override
     public void executionStrategyOnFieldValuesException(Throwable t, ExecutionStrategyParameters executionStrategyParameters) {
         int curLevel = executionStrategyParameters.getPath().getLevel() + 1;
         callStack.lock.runLocked(() ->
@@ -121,15 +153,11 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
         );
     }
 
-
-    @Override
-    public void executeObject(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
-        int curLevel = parameters.getExecutionStepInfo().getPath().getLevel() + 1;
-        increaseCallCounts(curLevel, parameters);
-    }
-
     @Override
     public void executeObjectOnFieldValuesInfo(List<FieldValueInfo> fieldValueInfoList, ExecutionStrategyParameters parameters) {
+        if (this.startedDeferredExecution.get()) {
+            this.dispatch();
+        }
         int curLevel = parameters.getPath().getLevel() + 1;
         onFieldValuesInfoDispatchIfNeeded(fieldValueInfoList, curLevel, parameters);
     }
@@ -143,11 +171,38 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
         );
     }
 
+    @Override
+    public void fieldFetched(ExecutionContext executionContext,
+                             ExecutionStrategyParameters parameters,
+                             DataFetcher<?> dataFetcher,
+                             Object fetchedValue) {
 
-    private void increaseCallCounts(int curLevel, ExecutionStrategyParameters executionStrategyParameters) {
-        int fieldCount = executionStrategyParameters.getFields().size();
+        final boolean dispatchNeeded;
+
+        if (parameters.getField().isDeferred() || this.startedDeferredExecution.get()) {
+            this.startedDeferredExecution.set(true);
+            dispatchNeeded = true;
+        } else {
+            int level = parameters.getPath().getLevel();
+            dispatchNeeded = callStack.lock.callLocked(() -> {
+                callStack.increaseFetchCount(level);
+                return dispatchIfNeeded(level);
+            });
+        }
+
+        if (dispatchNeeded) {
+            dispatch();
+        }
+
+    }
+
+    private void increaseCallCounts(int curLevel, ExecutionStrategyParameters parameters) {
+        int nonDeferredFieldCount = (int) parameters.getFields().getSubFieldsList().stream()
+                .filter(field -> !field.isDeferred())
+                .count();
+
         callStack.lock.runLocked(() -> {
-            callStack.increaseExpectedFetchCount(curLevel, fieldCount);
+            callStack.increaseExpectedFetchCount(curLevel, nonDeferredFieldCount);
             callStack.increaseHappenedStrategyCalls(curLevel);
         });
     }
@@ -157,13 +212,13 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
                 handleOnFieldValuesInfo(fieldValueInfoList, curLevel)
         );
         if (dispatchNeeded) {
-            dispatch(curLevel);
+            dispatch();
         }
     }
 
     //
-// thread safety: called with callStack.lock
-//
+    // thread safety: called with callStack.lock
+    //
     private boolean handleOnFieldValuesInfo(List<FieldValueInfo> fieldValueInfos, int curLevel) {
         callStack.increaseHappenedOnFieldValueCalls(curLevel);
         int expectedStrategyCalls = getCountForList(fieldValueInfos);
@@ -183,27 +238,9 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
         return result;
     }
 
-
-    @Override
-    public void fieldFetched(ExecutionContext executionContext,
-                             ExecutionStrategyParameters executionStrategyParameters,
-                             DataFetcher<?> dataFetcher,
-                             Object fetchedValue) {
-        int level = executionStrategyParameters.getPath().getLevel();
-        boolean dispatchNeeded = callStack.lock.callLocked(() -> {
-            callStack.increaseFetchCount(level);
-            return dispatchIfNeeded(level);
-        });
-        if (dispatchNeeded) {
-            dispatch(level);
-        }
-
-    }
-
-
     //
-// thread safety : called with callStack.lock
-//
+    // thread safety : called with callStack.lock
+    //
     private boolean dispatchIfNeeded(int level) {
         boolean ready = levelReady(level);
         if (ready) {
@@ -213,8 +250,8 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
     }
 
     //
-// thread safety: called with callStack.lock
-//
+    // thread safety: called with callStack.lock
+    //
     private boolean levelReady(int level) {
         if (level == 1) {
             // level 1 is special: there is only one strategy call and that's it
@@ -228,7 +265,7 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
         return false;
     }
 
-    void dispatch(int level) {
+    void dispatch() {
         DataLoaderRegistry dataLoaderRegistry = executionContext.getDataLoaderRegistry();
         dataLoaderRegistry.dispatchAll();
     }
