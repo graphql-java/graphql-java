@@ -4,7 +4,7 @@ plugins {
 
 dependencies {
     implementation(rootProject)
-    implementation("net.bytebuddy:byte-buddy-agent:1.14.18")
+    implementation("net.bytebuddy:byte-buddy-agent:1.15.1")
 
     testImplementation 'org.junit.jupiter:junit-jupiter:5.10.3'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
