@@ -23,6 +23,11 @@ class DefaultValuesTest extends Specification {
                 myField2: df]]
         ).build()
 
+        //
+        // The variable is present in the variables map and its explicitly null
+        //
+        // https://spec.graphql.org/October2021/#sec-Coercing-Variable-Values
+        //
         when:
         def ei = newExecutionInput('''
             query myQuery($deleted: Boolean = false) {
@@ -35,6 +40,11 @@ class DefaultValuesTest extends Specification {
         er.errors.isEmpty()
         er.data == [myField: "dataFetcherArg=null"]
 
+        //
+        // The variable is present in the variables map and its explicitly a value
+        //
+        // https://spec.graphql.org/October2021/#sec-Coercing-Variable-Values
+        //
         when:
         ei = newExecutionInput('''
             query myQuery($deleted: Boolean = false) {
@@ -47,6 +57,12 @@ class DefaultValuesTest extends Specification {
         er.errors.isEmpty()
         er.data == [myField: "dataFetcherArg=true"]
 
+        //
+        // The variable is NOT present in the variables map it should use a default
+        // value from the variable declaration
+        //
+        // https://spec.graphql.org/October2021/#sec-Coercing-Variable-Values
+        //
         when:
         ei = newExecutionInput('''
             query myQuery($deleted: Boolean = false) {
@@ -59,6 +75,11 @@ class DefaultValuesTest extends Specification {
         er.errors.isEmpty()
         er.data == [myField: "dataFetcherArg=false"]
 
+        //
+        // The variable is NOT present in the variables map and a variable is NOT used
+        // it should use a default value from the field declaration
+        //
+        //
         when:
         ei = newExecutionInput('''
             query myQuery($deleted: Boolean = false) {
@@ -73,6 +94,11 @@ class DefaultValuesTest extends Specification {
         er.data == [myField : "dataFetcherArg=true",
                     myField2: "dataFetcherArg=false"]
 
+        //
+        // If there are no variables on the query operation
+        // it should use a default value from the field declaration
+        // or literals provided
+        //
         when:
         ei = newExecutionInput('''
             query myQuery {
