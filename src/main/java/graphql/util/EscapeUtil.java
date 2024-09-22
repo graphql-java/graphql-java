@@ -16,37 +16,41 @@ public final class EscapeUtil {
      * @return the encoded string
      */
     public static String escapeJsonString(String stringValue) {
+        StringBuilder sb = new StringBuilder(stringValue.length());
+        escapeJsonStringTo(sb, stringValue);
+        return sb.toString();
+    }
+
+    public static void escapeJsonStringTo(StringBuilder output, String stringValue) {
         int len = stringValue.length();
-        StringBuilder sb = new StringBuilder(len);
         for (int i = 0; i < len; i++) {
             char ch = stringValue.charAt(i);
             switch (ch) {
                 case '"':
-                    sb.append("\\\"");
+                    output.append("\\\"");
                     break;
                 case '\\':
-                    sb.append("\\\\");
+                    output.append("\\\\");
                     break;
                 case '\b':
-                    sb.append("\\b");
+                    output.append("\\b");
                     break;
                 case '\f':
-                    sb.append("\\f");
+                    output.append("\\f");
                     break;
                 case '\n':
-                    sb.append("\\n");
+                    output.append("\\n");
                     break;
                 case '\r':
-                    sb.append("\\r");
+                    output.append("\\r");
                     break;
                 case '\t':
-                    sb.append("\\t");
+                    output.append("\\t");
                     break;
                 default:
-                    sb.append(ch);
+                    output.append(ch);
             }
         }
-        return sb.toString();
     }
 
 }
