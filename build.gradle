@@ -99,7 +99,7 @@ jar {
 }
 
 dependencies {
-    compileOnly 'org.jetbrains:annotations:24.1.0'
+    compileOnly 'org.jetbrains:annotations:25.0.0'
     implementation 'org.antlr:antlr4-runtime:' + antlrVersion
     api 'com.graphql-java:java-dataloader:3.3.0'
     api 'org.reactivestreams:reactive-streams:' + reactiveStreamsVersion
