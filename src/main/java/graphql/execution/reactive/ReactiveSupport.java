@@ -54,54 +54,62 @@ public class ReactiveSupport {
 
         private final AtomicReference<S> subscriptionRef = new AtomicReference<>();
 
-        abstract void subscriptionCancel(S s);
+        abstract void doSubscriptionCancel(S s);
 
         @SuppressWarnings("SameParameterValue")
-        abstract void subscriptionRequest(S s, long howMany);
+        abstract void doSubscriptionRequest(S s, long n);
 
+        private boolean validateSubscription(S current, S next) {
+            Objects.requireNonNull(next, "Subscription cannot be null");
+            if (current != null) {
+                doSubscriptionCancel(next);
+                return false;
+            }
+            return true;
+        }
+
+        /**
+         * This overrides the {@link CompletableFuture#cancel(boolean)} method
+         * such that subscription is also cancelled.
+         *
+         * @param mayInterruptIfRunning this value has no effect in this
+         *                              implementation because interrupts are not used to control
+         *                              processing.
+         * @return a boolean if it was cancelled
+         */
         @Override
         public boolean cancel(boolean mayInterruptIfRunning) {
             boolean cancelled = super.cancel(mayInterruptIfRunning);
             if (cancelled) {
                 S s = subscriptionRef.getAndSet(null);
                 if (s != null) {
-                    subscriptionCancel(s);
+                    doSubscriptionCancel(s);
                 }
             }
             return cancelled;
         }
 
-        private boolean validateSubscription(S current, S next) {
-            Objects.requireNonNull(next, "Subscription cannot be null");
-            if (current != null) {
-                subscriptionCancel(next);
-                return false;
-            }
-            return true;
-        }
-
-
-        public void onSubscribeImpl(S s) {
+        void onSubscribeImpl(S s) {
             if (validateSubscription(subscriptionRef.getAndSet(s), s)) {
-                subscriptionRequest(s, Long.MAX_VALUE);
+                doSubscriptionRequest(s, Long.MAX_VALUE);
             }
         }
 
-        public void onNextImpl(T t) {
+        void onNextImpl(T t) {
             S s = subscriptionRef.getAndSet(null);
             if (s != null) {
                 complete(t);
-                subscriptionCancel(s);
+                doSubscriptionCancel(s);
             }
         }
 
-        public void onErrorImpl(Throwable t) {
+        void onErrorImpl(Throwable t) {
             if (subscriptionRef.getAndSet(null) != null) {
                 completeExceptionally(t);
             }
         }
 
-        public void onCompleteImpl() {
+        void onCompleteImpl() {
             if (subscriptionRef.getAndSet(null) != null) {
                 complete(null);
             }
@@ -111,13 +119,13 @@ public class ReactiveSupport {
     private static class ReactivePublisherToCompletableFuture<T> extends PublisherToCompletableFuture<T, Subscription> implements Subscriber<T> {
 
         @Override
-        void subscriptionCancel(Subscription subscription) {
+        void doSubscriptionCancel(Subscription subscription) {
             subscription.cancel();
         }
 
         @Override
-        void subscriptionRequest(Subscription subscription, long howMany) {
-            subscription.request(howMany);
+        void doSubscriptionRequest(Subscription subscription, long n) {
+            subscription.request(n);
         }
 
         @Override
@@ -144,13 +152,13 @@ public class ReactiveSupport {
     private static class FlowPublisherToCompletableFuture<T> extends PublisherToCompletableFuture<T, Flow.Subscription> implements Flow.Subscriber<T> {
 
         @Override
-        void subscriptionCancel(Flow.Subscription subscription) {
+        void doSubscriptionCancel(Flow.Subscription subscription) {
             subscription.cancel();
         }
 
         @Override
-        void subscriptionRequest(Flow.Subscription subscription, long howMany) {
-            subscription.request(howMany);
+        void doSubscriptionRequest(Flow.Subscription subscription, long n) {
+            subscription.request(n);
         }
 
         @Override
