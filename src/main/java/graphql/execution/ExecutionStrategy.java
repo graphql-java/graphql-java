@@ -30,6 +30,7 @@ import graphql.extensions.ExtensionsBuilder;
 import graphql.introspection.Introspection;
 import graphql.language.Argument;
 import graphql.language.Field;
+import graphql.language.OperationDefinition;
 import graphql.normalized.ExecutableNormalizedField;
 import graphql.normalized.ExecutableNormalizedOperation;
 import graphql.schema.CoercingSerializeException;
@@ -500,8 +501,11 @@ public abstract class ExecutionStrategy {
         executionContext.getDataLoaderDispatcherStrategy().fieldFetched(executionContext, parameters, dataFetcher, fetchedObject);
         fetchCtx.onDispatched();
         fetchCtx.onFetchedValue(fetchedObject);
-        // possible convert reactive objects into CompletableFutures
-        fetchedObject = ReactiveSupport.fetchedObject(fetchedObject);
+        // if it's a subscription, leave any reactive objects alone
+        if (!isSubscription(executionContext)) {
+            // possible convert reactive objects into CompletableFutures
+            fetchedObject = ReactiveSupport.fetchedObject(fetchedObject);
+        }
         if (fetchedObject instanceof CompletableFuture) {
             @SuppressWarnings("unchecked")
             CompletableFuture<Object> fetchedValue = (CompletableFuture<Object>) fetchedObject;
@@ -1170,5 +1174,9 @@ public abstract class ExecutionStrategy {
         } else {
             executionContext.addErrors(errors);
         }
+    }
+
+    private static boolean isSubscription(ExecutionContext executionContext) {
+        return executionContext.getOperationDefinition().getOperation().equals(OperationDefinition.Operation.SUBSCRIPTION);
     }
 }
