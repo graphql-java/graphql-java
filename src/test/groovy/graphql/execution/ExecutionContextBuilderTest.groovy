@@ -236,4 +236,33 @@ class ExecutionContextBuilderTest extends Specification {
         then:
         executionContext.getDataLoaderDispatcherStrategy() == mockDataLoaderDispatcherStrategy
     }
+
+    def "can detect operation type"() {
+        when:
+        def executionContext = new ExecutionContextBuilder()
+                .instrumentation(instrumentation)
+                .queryStrategy(queryStrategy)
+                .mutationStrategy(mutationStrategy)
+                .subscriptionStrategy(subscriptionStrategy)
+                .graphQLSchema(schema)
+                .executionId(executionId)
+                .graphQLContext(graphQLContext)
+                .root(root)
+                .operationDefinition(operation)
+                .fragmentsByName([MyFragment: fragment])
+                .dataLoaderRegistry(dataLoaderRegistry)
+                .operationDefinition(OperationDefinition.newOperationDefinition().operation(opType).build())
+                .build()
+
+        then:
+        executionContext.isQueryOperation() == isQuery
+        executionContext.isMutationOperation() == isMutation
+        executionContext.isSubscriptionOperation() == isSubscription
+
+        where:
+        opType                                     | isQuery | isMutation | isSubscription
+        OperationDefinition.Operation.QUERY        | true    | false      | false
+        OperationDefinition.Operation.MUTATION     | false   | true       | false
+        OperationDefinition.Operation.SUBSCRIPTION | false   | false      | true
+    }
 }

@@ -30,7 +30,6 @@ import graphql.extensions.ExtensionsBuilder;
 import graphql.introspection.Introspection;
 import graphql.language.Argument;
 import graphql.language.Field;
-import graphql.language.OperationDefinition;
 import graphql.normalized.ExecutableNormalizedField;
 import graphql.normalized.ExecutableNormalizedOperation;
 import graphql.schema.CoercingSerializeException;
@@ -502,7 +501,7 @@ public abstract class ExecutionStrategy {
         fetchCtx.onDispatched();
         fetchCtx.onFetchedValue(fetchedObject);
         // if it's a subscription, leave any reactive objects alone
-        if (!isSubscription(executionContext)) {
+        if (!executionContext.isSubscriptionOperation()) {
             // possible convert reactive objects into CompletableFutures
             fetchedObject = ReactiveSupport.fetchedObject(fetchedObject);
         }
@@ -1008,7 +1007,6 @@ public abstract class ExecutionStrategy {
      * if max nodes were exceeded for this request.
      *
      * @param executionContext the execution context in play
-     *
      * @return true if max nodes were exceeded
      */
     private boolean incrementAndCheckMaxNodesExceeded(ExecutionContext executionContext) {
@@ -1061,7 +1059,6 @@ public abstract class ExecutionStrategy {
      *
      * @param e this indicates that a null value was returned for a non null field, which needs to cause the parent field
      *          to become null OR continue on as an exception
-     *
      * @throws NonNullableFieldWasNullException if a non null field resolves to a null value
      */
     protected void assertNonNullFieldPrecondition(NonNullableFieldWasNullException e) throws NonNullableFieldWasNullException {
@@ -1176,7 +1173,5 @@ public abstract class ExecutionStrategy {
         }
     }
 
-    private static boolean isSubscription(ExecutionContext executionContext) {
-        return executionContext.getOperationDefinition().getOperation().equals(OperationDefinition.Operation.SUBSCRIPTION);
-    }
+
 }
