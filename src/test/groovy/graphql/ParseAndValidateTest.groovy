@@ -1,6 +1,12 @@
 package graphql
 
+import graphql.language.Document
 import graphql.parser.InvalidSyntaxException
+import graphql.parser.Parser
+import graphql.schema.GraphQLSchema
+import graphql.schema.idl.SchemaParser
+import graphql.schema.idl.TypeDefinitionRegistry
+import graphql.schema.idl.UnExecutableSchemaGenerator
 import graphql.validation.ValidationError
 import graphql.validation.ValidationErrorType
 import graphql.validation.rules.NoUnusedFragments
@@ -154,5 +160,31 @@ class ParseAndValidateTest extends Specification {
 
         then:
         !rs.errors.isEmpty() // all rules apply - we have errors
+    }
+
+    def "issue 2740 - evidence of not working"() {
+        def sdl = '''
+        type Query {
+            myquery : String!
+        }
+        '''
+
+        def registry = new SchemaParser().parse(sdl)
+        def schema = UnExecutableSchemaGenerator.makeUnExecutableSchema(registry)
+        def graphQL = GraphQL.newGraphQL(schema).build()
+
+        String request = "mutation MyMutation { mymutation }"
+
+        when:
+        def er = graphQL.execute(request)
+        then:
+        er.errors.size() == 1
+
+        when:
+        Document inputDocument = new Parser().parseDocument(request)
+        List<ValidationError> errors = ParseAndValidate.validate(schema, inputDocument)
+
+        then:
+        errors.size() == 1
     }
 }
