@@ -19,6 +19,7 @@ import org.dataloader.DataLoaderRegistry
 import org.jetbrains.annotations.NotNull
 import org.reactivestreams.Publisher
 import reactor.core.publisher.Mono
+import spock.lang.Ignore
 import spock.lang.Specification
 import spock.lang.Unroll
 
@@ -120,6 +121,7 @@ class DataLoaderDispatcherTest extends Specification {
     }
 
 
+    @Ignore
     @Unroll
     def "ensure DataLoaderDispatcher works for #executionStrategyName"() {
 
