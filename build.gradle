@@ -99,7 +99,7 @@ jar {
 }
 
 dependencies {
-    compileOnly 'org.jetbrains:annotations:24.1.0'
+    compileOnly 'org.jetbrains:annotations:26.0.1'
     implementation 'org.antlr:antlr4-runtime:' + antlrVersion
     api 'com.graphql-java:java-dataloader:3.3.0'
     api 'org.reactivestreams:reactive-streams:' + reactiveStreamsVersion
@@ -111,13 +111,13 @@ dependencies {
     testImplementation 'org.codehaus.groovy:groovy-json:3.0.22'
     testImplementation 'com.google.code.gson:gson:2.11.0'
     testImplementation 'org.eclipse.jetty:jetty-server:11.0.24'
-    testImplementation 'com.fasterxml.jackson.core:jackson-databind:2.17.2'
+    testImplementation 'com.fasterxml.jackson.core:jackson-databind:2.18.1'
     testImplementation 'org.awaitility:awaitility-groovy:4.2.0'
     testImplementation 'com.github.javafaker:javafaker:1.0.2'
 
     testImplementation 'org.reactivestreams:reactive-streams-tck:' + reactiveStreamsVersion
     testImplementation "io.reactivex.rxjava2:rxjava:2.2.21"
-    testImplementation "io.projectreactor:reactor-core:3.6.9"
+    testImplementation "io.projectreactor:reactor-core:3.6.11"
 
     testImplementation 'org.testng:testng:7.10.2' // use for reactive streams test inheritance
 
