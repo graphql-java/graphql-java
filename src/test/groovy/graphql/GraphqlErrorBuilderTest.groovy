@@ -152,4 +152,50 @@ class GraphqlErrorBuilderTest extends Specification {
         error.path == null
 
     }
+
+    def "implements equals correctly"() {
+        when:
+        def error1 = GraphQLError.newError().message("msg")
+                .locations(null)
+                .extensions([x : "y"])
+                .path(null)
+                .build()
+        def error2 = GraphQLError.newError().message("msg")
+                .locations(null)
+                .extensions([x : "y"])
+                .path(null)
+                .build()
+        def error3 = GraphQLError.newError().message("msg3")
+                .locations(null)
+                .extensions([x : "y"])
+                .path(null)
+                .build()
+        then:
+        error1 == error2
+        error1 != error3
+        error2 != error3
+    }
+
+    def "implements hashCode correctly"() {
+        when:
+        def error1 = GraphQLError.newError().message("msg")
+                .locations(null)
+                .extensions([x : "y"])
+                .path(null)
+                .build()
+        def error2 = GraphQLError.newError().message("msg")
+                .locations(null)
+                .extensions([x : "y"])
+                .path(null)
+                .build()
+        def error3 = GraphQLError.newError().message("msg3")
+                .locations(null)
+                .extensions([x : "y"])
+                .path(null)
+                .build()
+        def errors = [error1, error2, error3] as Set
+        then:
+        errors == [error1, error3] as Set
+        errors == [error2, error3] as Set
+    }
 }
