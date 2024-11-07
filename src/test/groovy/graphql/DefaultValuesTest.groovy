@@ -61,7 +61,7 @@ class DefaultValuesTest extends Specification {
         // The variable is NOT present in the variables map it should use a default
         // value from the variable declaration
         //
-        // https://spec.graphql.org/October2021/#sec-Coercing-Variable-Values
+        // https://spec.graphql.org/draft/#sec-Coercing-Variable-Values
         //
         when:
         ei = newExecutionInput('''
