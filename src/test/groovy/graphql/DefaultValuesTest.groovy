@@ -26,7 +26,7 @@ class DefaultValuesTest extends Specification {
         //
         // The variable is present in the variables map and its explicitly null
         //
-        // https://spec.graphql.org/October2021/#sec-Coercing-Variable-Values
+        // https://spec.graphql.org/draft/#sec-Coercing-Variable-Values
         //
         when:
         def ei = newExecutionInput('''
