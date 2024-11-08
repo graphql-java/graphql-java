@@ -7,7 +7,7 @@ import graphql.schema.DataFetcher;
 
 
 /**
- * Used when the execution strategy is not an AsyncExecutionStrategy: simply dispatch always after each DF.
+ * Used when we cant guarantee the fields will be counted right: simply dispatch always after each DF.
  */
 @Internal
 public class FallbackDataLoaderDispatchStrategy implements DataLoaderDispatchStrategy {

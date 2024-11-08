@@ -171,6 +171,34 @@ public class ExecutionContext {
     }
 
     /**
+     * @return true if the current operation is a Query
+     */
+    public boolean isQueryOperation() {
+        return isOpType(OperationDefinition.Operation.QUERY);
+    }
+
+    /**
+     * @return true if the current operation is a Mutation
+     */
+    public boolean isMutationOperation() {
+        return isOpType(OperationDefinition.Operation.MUTATION);
+    }
+
+    /**
+     * @return true if the current operation is a Subscription
+     */
+    public boolean isSubscriptionOperation() {
+        return isOpType(OperationDefinition.Operation.SUBSCRIPTION);
+    }
+
+    private boolean isOpType(OperationDefinition.Operation operation) {
+        if (operationDefinition != null) {
+            return operation.equals(operationDefinition.getOperation());
+        }
+        return false;
+    }
+
+    /**
      * This method will only put one error per field path.
      *
      * @param error     the error to add
