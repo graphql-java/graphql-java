@@ -33,7 +33,6 @@ public class AsyncSerialExecutionStrategy extends AbstractAsyncExecutionStrategy
     @SuppressWarnings({"TypeParameterUnusedInFormals", "FutureReturnValueIgnored"})
     public CompletableFuture<ExecutionResult> execute(ExecutionContext executionContext, ExecutionStrategyParameters parameters) throws NonNullableFieldWasNullException {
         DataLoaderDispatchStrategy dataLoaderDispatcherStrategy = executionContext.getDataLoaderDispatcherStrategy();
-        dataLoaderDispatcherStrategy.executionStrategy(executionContext, parameters);
 
         Instrumentation instrumentation = executionContext.getInstrumentation();
         InstrumentationExecutionStrategyParameters instrumentationParameters = new InstrumentationExecutionStrategyParameters(executionContext, parameters);
@@ -56,6 +55,9 @@ public class AsyncSerialExecutionStrategy extends AbstractAsyncExecutionStrategy
             ExecutionStrategyParameters newParameters = parameters
                     .transform(builder -> builder.field(currentField).path(fieldPath));
             //return resolveField(executionContext, newParameters);
+
+            dataLoaderDispatcherStrategy.executionSerialStrategy(executionContext, newParameters);
+
             Object fieldWithInfo = resolveFieldWithInfo(executionContext, newParameters);
             if (fieldWithInfo instanceof CompletableFuture) {
                 //noinspection unchecked

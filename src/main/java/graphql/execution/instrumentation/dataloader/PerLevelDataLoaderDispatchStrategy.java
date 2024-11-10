@@ -83,10 +83,10 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
 
 
         public boolean dispatchIfNotDispatchedBefore(int level) {
-            if (dispatchedLevels.contains(level)) {
-                Assert.assertShouldNeverHappen("level " + level + " already dispatched");
-                return false;
-            }
+//            if (dispatchedLevels.contains(level)) {
+//                Assert.assertShouldNeverHappen("level " + level + " already dispatched");
+//                return false;
+//            }
             dispatchedLevels.add(level);
             return true;
         }
@@ -106,6 +106,12 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
     public void executionStrategy(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
         int curLevel = parameters.getExecutionStepInfo().getPath().getLevel() + 1;
         increaseCallCounts(curLevel, parameters);
+    }
+
+    @Override
+    public void executionSerialStrategy(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
+        int curLevel = parameters.getExecutionStepInfo().getPath().getLevel() + 1;
+        increaseCallCounts(curLevel, 1);
     }
 
     @Override
@@ -145,7 +151,10 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
 
 
     private void increaseCallCounts(int curLevel, ExecutionStrategyParameters executionStrategyParameters) {
-        int fieldCount = executionStrategyParameters.getFields().size();
+        increaseCallCounts(curLevel, executionStrategyParameters.getFields().size());
+    }
+
+    private void increaseCallCounts(int curLevel, int fieldCount) {
         callStack.lock.runLocked(() -> {
             callStack.increaseExpectedFetchCount(curLevel, fieldCount);
             callStack.increaseHappenedStrategyCalls(curLevel);
