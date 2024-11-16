@@ -24,3 +24,10 @@ jobs:
           distribution: 'corretto'
       - name: build and test
         run: ./gradlew assemble && ./gradlew check --info --stacktrace
+      - name: test report
+        uses: dorny/test-reporter@v1
+        if: success() || failure()
+        with:
+          name: junit tests
+          path: '**/build/test-results/test/TEST-*.xml'
+          reporter: java-junit
