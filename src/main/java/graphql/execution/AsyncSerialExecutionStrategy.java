@@ -54,22 +54,8 @@ public class AsyncSerialExecutionStrategy extends AbstractAsyncExecutionStrategy
             ResultPath fieldPath = parameters.getPath().segment(mkNameForPath(currentField));
             ExecutionStrategyParameters newParameters = parameters
                     .transform(builder -> builder.field(currentField).path(fieldPath));
-            //return resolveField(executionContext, newParameters);
 
-            dataLoaderDispatcherStrategy.executionSerialStrategy(executionContext, newParameters);
-
-            Object fieldWithInfo = resolveFieldWithInfo(executionContext, newParameters);
-            if (fieldWithInfo instanceof CompletableFuture) {
-                //noinspection unchecked
-                return ((CompletableFuture<FieldValueInfo>) fieldWithInfo).thenCompose( fvi -> {
-                    dataLoaderDispatcherStrategy.executionStrategyOnFieldValuesInfo(List.of(fvi));
-                    return fvi.getFieldValueFuture();
-                });
-            } else {
-                FieldValueInfo fvi = (FieldValueInfo) fieldWithInfo;
-                dataLoaderDispatcherStrategy.executionStrategyOnFieldValuesInfo(List.of(fvi));
-                return fvi.getFieldValueObject();
-            }
+            return resolveSerialField(executionContext, dataLoaderDispatcherStrategy, newParameters);
         });
 
         CompletableFuture<ExecutionResult> overallResult = new CompletableFuture<>();
@@ -80,4 +66,22 @@ public class AsyncSerialExecutionStrategy extends AbstractAsyncExecutionStrategy
         return overallResult;
     }
 
+    private Object resolveSerialField(ExecutionContext executionContext,
+                                      DataLoaderDispatchStrategy dataLoaderDispatcherStrategy,
+                                      ExecutionStrategyParameters newParameters) {
+        dataLoaderDispatcherStrategy.executionSerialStrategy(executionContext, newParameters);
+
+        Object fieldWithInfo = resolveFieldWithInfo(executionContext, newParameters);
+        if (fieldWithInfo instanceof CompletableFuture) {
+            //noinspection unchecked
+            return ((CompletableFuture<FieldValueInfo>) fieldWithInfo).thenCompose(fvi -> {
+                dataLoaderDispatcherStrategy.executionStrategyOnFieldValuesInfo(List.of(fvi));
+                return fvi.getFieldValueFuture();
+            });
+        } else {
+            FieldValueInfo fvi = (FieldValueInfo) fieldWithInfo;
+            dataLoaderDispatcherStrategy.executionStrategyOnFieldValuesInfo(List.of(fvi));
+            return fvi.getFieldValueObject();
+        }
+    }
 }
