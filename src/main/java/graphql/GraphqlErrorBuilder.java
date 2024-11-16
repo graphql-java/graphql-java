@@ -137,8 +137,13 @@ public class GraphqlErrorBuilder<B extends GraphqlErrorBuilder<B>> implements Gr
      * A simple implementation of a {@link GraphQLError}.
      * <p>
      * This provides {@link #hashCode()} and {@link #equals(Object)} methods that afford comparison with other
-     * {@link GraphQLError} implementations. However, the values in the {@link #getExtensions()} {@link Map} <b>must</b>
-     * in turn implement {@code hashCode()} and {@link #equals(Object)} for this to function correctly.
+     * {@link GraphQLError} implementations. However, the values provided in the following fields <b>must</b>
+     * in turn implement {@link #hashCode()} and {@link #equals(Object)} for this to function correctly:
+     * <ul>
+     *   <li>the values in the {@link #getPath()} {@link List}.
+     *   <li>the {@link #getErrorType()} {@link ErrorClassification}.
+     *   <li>the values in the {@link #getExtensions()} {@link Map}.
+     * </ul>
      */
     private static class GraphqlErrorImpl implements GraphQLError {
         private final String message;
