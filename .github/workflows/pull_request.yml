@@ -25,7 +25,7 @@ jobs:
       - name: build and test
         run: ./gradlew assemble && ./gradlew check --info --stacktrace
       - name: test report
-        uses: dorny/test-reporter@v1
+        uses: dorny/test-reporter@v1.9.1
         if: success() || failure()
         with:
           name: junit tests
