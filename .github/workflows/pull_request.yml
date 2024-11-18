@@ -11,7 +11,9 @@ on:
       - 21.x
       - 20.x
       - 19.x
-permissions:
+permissions: # needed for test-reporter
+  contents: read
+  actions: read
   checks: write
 jobs:
   buildAndTest:
