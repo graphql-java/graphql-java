@@ -12,7 +12,13 @@ class DataFetcherFactoriesTest extends Specification {
 
     def "testing the GitHub Action on failing tests"() {
         // TODO: I will remove this test before merging the PR. This is only to generate a test failure message.
-        false
+        def fetcherFactory = DataFetcherFactories.useDataFetcher(pojoDF)
+
+        when:
+        def value = fetcherFactory.get(null).get(null)
+
+        then:
+        value != "goodbye"
     }
 
     def "delegation happens as expected"() {
