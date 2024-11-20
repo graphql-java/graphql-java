@@ -11,7 +11,7 @@ on:
       - 21.x
       - 20.x
       - 19.x
-permissions:
+permissions: # For test comment bot
   checks: write
   pull-requests: write
 jobs:

@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - master
-permissions:
+permissions: # For test summary bot
   checks: write
 jobs:
   buildAndPublish:
