@@ -10,6 +10,11 @@ class DataFetcherFactoriesTest extends Specification {
     def cfDF = new StaticDataFetcher(CompletableFuture.completedFuture("hello"))
     def pojoDF = new StaticDataFetcher("goodbye")
 
+    def "testing the GitHub Action on failing tests"() {
+        // TODO: I will remove this test before merging the PR. This is only to generate a test failure message.
+        false
+    }
+
     def "delegation happens as expected"() {
         given:
 
