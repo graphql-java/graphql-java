@@ -95,9 +95,15 @@ public class GraphQLCodeRegistry {
                 dataFetcherFactory = defaultDataFetcherFactory;
             }
         }
-        return dataFetcherFactory.get(newDataFetchingFactoryEnvironment()
-                .fieldDefinition(fieldDefinition)
-                .build());
+        // call direct from the field - cheaper to not make a new environment object
+        DataFetcher<?> dataFetcher = dataFetcherFactory.getViaField(fieldDefinition);
+        if (dataFetcher == null) {
+            DataFetcherFactoryEnvironment factoryEnvironment = newDataFetchingFactoryEnvironment()
+                    .fieldDefinition(fieldDefinition)
+                    .build();
+            dataFetcher = dataFetcherFactory.get(factoryEnvironment);
+        }
+        return dataFetcher;
     }
 
     private static boolean hasDataFetcherImpl(FieldCoordinates coords, Map<FieldCoordinates, DataFetcherFactory<?>> dataFetcherMap, Map<String, DataFetcherFactory<?>> systemDataFetcherMap) {

@@ -22,4 +22,17 @@ public interface DataFetcherFactory<T> {
      */
     DataFetcher<T> get(DataFetcherFactoryEnvironment environment);
 
+    /**
+     * Returns a {@link graphql.schema.DataFetcher} given the field definition
+     * which is cheaper in object allocation terms.
+     *
+     * @param fieldDefinition the field that needs the data fetcher
+     *
+     * @return a data fetcher
+     */
+
+    default DataFetcher<T> getViaField(GraphQLFieldDefinition fieldDefinition) {
+        return null;
+    }
+
 }
