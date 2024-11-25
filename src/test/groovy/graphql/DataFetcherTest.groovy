@@ -1,6 +1,7 @@
 package graphql
 
 
+import graphql.schema.GraphQLFieldDefinition
 import graphql.schema.GraphQLOutputType
 import graphql.schema.PropertyDataFetcher
 import spock.lang.Specification
@@ -55,43 +56,64 @@ class DataFetcherTest extends Specification {
 
     }
 
-    def env(GraphQLOutputType type) {
-        newDataFetchingEnvironment().source(dataHolder).fieldType(type).build()
+    def mkDFE(String propertyName, GraphQLOutputType type) {
+        def fieldDefinition = GraphQLFieldDefinition.newFieldDefinition().name(propertyName).type(type).build()
+        newDataFetchingEnvironment().source(dataHolder).fieldType(type).fieldDefinition(fieldDefinition).build()
     }
 
     def "get property value"() {
         given:
-        def environment = env(GraphQLString)
+        def environment = mkDFE("property", GraphQLString)
         when:
-        def result = new PropertyDataFetcher("property").get(environment)
+        def result = fetcher.get(environment)
         then:
         result == "propertyValue"
+
+        where:
+        fetcher                             | _
+        new PropertyDataFetcher("property") | _
+        PropertyDataFetcher.singleton()     | _
     }
 
     def "get Boolean property value"() {
         given:
-        def environment = env(GraphQLBoolean)
+        def environment = mkDFE("booleanField", GraphQLBoolean)
         when:
-        def result = new PropertyDataFetcher("booleanField").get(environment)
+        def result = fetcher.get(environment)
         then:
         result == true
+
+        where:
+        fetcher                                 | _
+        new PropertyDataFetcher("booleanField") | _
+        PropertyDataFetcher.singleton()         | _
     }
 
     def "get Boolean property value with get"() {
         given:
-        def environment = env(GraphQLBoolean)
+        def environment = mkDFE("booleanFieldWithGet", GraphQLBoolean)
         when:
-        def result = new PropertyDataFetcher("booleanFieldWithGet").get(environment)
+        def result = fetcher.get(environment)
         then:
         result == false
+
+        where:
+        fetcher                                        | _
+        new PropertyDataFetcher("booleanFieldWithGet") | _
+        PropertyDataFetcher.singleton()                | _
     }
 
     def "get public field value as property"() {
         given:
-        def environment = env(GraphQLString)
+        def environment = mkDFE("publicField", GraphQLString)
         when:
-        def result = new PropertyDataFetcher("publicField").get(environment)
+        def result = fetcher.get(environment)
         then:
         result == "publicValue"
+
+        where:
+        fetcher                                | _
+        new PropertyDataFetcher("publicField") | _
+        PropertyDataFetcher.singleton()        | _
     }
 }

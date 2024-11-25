@@ -99,7 +99,7 @@ class InstrumentationTest extends Specification {
 
         instrumentation.dfClasses.size() == 2
         instrumentation.dfClasses[0] == StaticDataFetcher.class
-        instrumentation.dfClasses[1] == PropertyDataFetcher.class
+        PropertyDataFetcher.isAssignableFrom(instrumentation.dfClasses[1])
 
         instrumentation.dfInvocations.size() == 2
 

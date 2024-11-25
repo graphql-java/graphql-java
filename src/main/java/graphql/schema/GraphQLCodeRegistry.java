@@ -189,7 +189,7 @@ public class GraphQLCodeRegistry {
         private final Map<String, DataFetcherFactory<?>> systemDataFetcherMap = new LinkedHashMap<>();
         private final Map<String, TypeResolver> typeResolverMap = new HashMap<>();
         private GraphqlFieldVisibility fieldVisibility = DEFAULT_FIELD_VISIBILITY;
-        private DataFetcherFactory<?> defaultDataFetcherFactory = env -> PropertyDataFetcher.fetching(env.getFieldDefinition().getName());
+        private DataFetcherFactory<?> defaultDataFetcherFactory = PropertyDataFetcher.singletonFactory();
         private boolean changed = false;
 
         private Builder() {
