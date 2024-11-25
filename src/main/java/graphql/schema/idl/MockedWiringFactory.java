@@ -44,7 +44,7 @@ public class MockedWiringFactory implements WiringFactory {
 
     @Override
     public DataFetcher getDataFetcher(FieldWiringEnvironment environment) {
-        return new PropertyDataFetcher(environment.getFieldDefinition().getName());
+        return PropertyDataFetcher.singleton();
     }
 
     @Override

@@ -74,7 +74,7 @@ class TestLiveMockedWiringFactory implements WiringFactory {
 
     @Override
     DataFetcher getDataFetcher(FieldWiringEnvironment environment) {
-        return new PropertyDataFetcher(environment.getFieldDefinition().getName())
+        return PropertyDataFetcher.singleton()
     }
 
     @Override
