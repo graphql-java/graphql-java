@@ -849,7 +849,7 @@ public class SchemaGeneratorHelper {
                             if (codeRegistryDFF != null) {
                                 return codeRegistryDFF;
                             }
-                            dataFetcher = dataFetcherOfLastResort(wiringEnvironment);
+                            dataFetcher = dataFetcherOfLastResort();
                         }
                     }
                 }
@@ -1087,9 +1087,8 @@ public class SchemaGeneratorHelper {
         return Optional.ofNullable(operationTypeDefs.get(name));
     }
 
-    private DataFetcher<?> dataFetcherOfLastResort(FieldWiringEnvironment environment) {
-        String fieldName = environment.getFieldDefinition().getName();
-        return new PropertyDataFetcher(fieldName);
+    private DataFetcher<?> dataFetcherOfLastResort() {
+        return PropertyDataFetcher.singleton();
     }
 
     private List<Directive> directivesOf(List<? extends TypeDefinition<?>> typeDefinitions) {
