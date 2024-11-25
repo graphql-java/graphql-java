@@ -37,4 +37,14 @@ class DataFetcherFactoriesTest extends Specification {
         then:
         value == "goodbye"
     }
+
+    def "will use given df via field"() {
+        def fetcherFactory = DataFetcherFactories.useDataFetcher(pojoDF)
+
+        when:
+        def value = fetcherFactory.getViaField(null).get(null)
+
+        then:
+        value == "goodbye"
+    }
 }

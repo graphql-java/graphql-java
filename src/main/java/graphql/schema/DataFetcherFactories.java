@@ -20,7 +20,17 @@ public class DataFetcherFactories {
      * @return a data fetcher factory that always returns the provided data fetcher
      */
     public static <T> DataFetcherFactory<T> useDataFetcher(DataFetcher<T> dataFetcher) {
-        return fieldDefinition -> dataFetcher;
+        return new DataFetcherFactory<T>() {
+            @Override
+            public DataFetcher<T> get(DataFetcherFactoryEnvironment environment) {
+                return dataFetcher;
+            }
+
+            @Override
+            public DataFetcher<T> getViaField(GraphQLFieldDefinition fieldDefinition) {
+                return dataFetcher;
+            }
+        };
     }
 
     /**
