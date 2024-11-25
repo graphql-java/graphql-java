@@ -56,14 +56,14 @@ class DataFetcherTest extends Specification {
 
     }
 
-    def mkDFE(String propertyName, GraphQLOutputType type) {
+    def env(String propertyName, GraphQLOutputType type) {
         def fieldDefinition = GraphQLFieldDefinition.newFieldDefinition().name(propertyName).type(type).build()
         newDataFetchingEnvironment().source(dataHolder).fieldType(type).fieldDefinition(fieldDefinition).build()
     }
 
     def "get property value"() {
         given:
-        def environment = mkDFE("property", GraphQLString)
+        def environment = env("property", GraphQLString)
         when:
         def result = fetcher.get(environment)
         then:
@@ -77,7 +77,7 @@ class DataFetcherTest extends Specification {
 
     def "get Boolean property value"() {
         given:
-        def environment = mkDFE("booleanField", GraphQLBoolean)
+        def environment = env("booleanField", GraphQLBoolean)
         when:
         def result = fetcher.get(environment)
         then:
@@ -91,7 +91,7 @@ class DataFetcherTest extends Specification {
 
     def "get Boolean property value with get"() {
         given:
-        def environment = mkDFE("booleanFieldWithGet", GraphQLBoolean)
+        def environment = env("booleanFieldWithGet", GraphQLBoolean)
         when:
         def result = fetcher.get(environment)
         then:
@@ -105,7 +105,7 @@ class DataFetcherTest extends Specification {
 
     def "get public field value as property"() {
         given:
-        def environment = mkDFE("publicField", GraphQLString)
+        def environment = env("publicField", GraphQLString)
         when:
         def result = fetcher.get(environment)
         then:

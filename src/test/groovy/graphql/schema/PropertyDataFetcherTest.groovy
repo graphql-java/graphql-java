@@ -35,7 +35,7 @@ class PropertyDataFetcherTest extends Specification {
         PropertyDataFetcherHelper.setUseLambdaFactory(true)
     }
 
-    def mkDFE(String propertyName, Object obj) {
+    def env(String propertyName, Object obj) {
         def fieldDefinition = GraphQLFieldDefinition.newFieldDefinition().name(propertyName).type(Scalars.GraphQLString).build()
         newDataFetchingEnvironment()
                 .source(obj)
@@ -50,7 +50,7 @@ class PropertyDataFetcherTest extends Specification {
 
     def "null source is always null"() {
         given:
-        def environment = mkDFE("someProperty", null)
+        def environment = env("someProperty", null)
 
         expect:
         fetcher.get(environment) == null
@@ -62,7 +62,7 @@ class PropertyDataFetcherTest extends Specification {
     }
 
     def "function based fetcher works with non null source"() {
-        def environment = mkDFE("notused", new SomeObject(value: "aValue"))
+        def environment = env("notused", new SomeObject(value: "aValue"))
         Function<Object, String> f = { obj -> obj['value'] }
         def fetcher = PropertyDataFetcher.fetching(f)
         expect:
@@ -70,7 +70,7 @@ class PropertyDataFetcherTest extends Specification {
     }
 
     def "function based fetcher works with null source"() {
-        def environment = mkDFE("notused", null)
+        def environment = env("notused", null)
         Function<Object, String> f = { obj -> obj['value'] }
         def fetcher = PropertyDataFetcher.fetching(f)
         expect:
@@ -79,7 +79,7 @@ class PropertyDataFetcherTest extends Specification {
 
     def "fetch via map lookup"() {
         given:
-        def environment = mkDFE("mapProperty", ["mapProperty": "aValue"])
+        def environment = env("mapProperty", ["mapProperty": "aValue"])
 
         expect:
         fetcher.get(environment) == "aValue"
@@ -92,7 +92,7 @@ class PropertyDataFetcherTest extends Specification {
 
     def "fetch via public getter with private subclass"() {
         given:
-        def environment = mkDFE("packageProtectedProperty", TestClass.createPackageProtectedImpl("aValue"))
+        def environment = env("packageProtectedProperty", TestClass.createPackageProtectedImpl("aValue"))
 
         expect:
         fetcher.get(environment) == "aValue"
@@ -105,7 +105,7 @@ class PropertyDataFetcherTest extends Specification {
 
     def "fetch via method that isn't present"() {
         given:
-        def environment = mkDFE("valueNotPresent", new TestClass())
+        def environment = env("valueNotPresent", new TestClass())
 
         when:
         def result = fetcher.get(environment)
@@ -122,7 +122,7 @@ class PropertyDataFetcherTest extends Specification {
 
     def "fetch via method that is private"() {
         given:
-        def environment = mkDFE("privateProperty", new TestClass())
+        def environment = env("privateProperty", new TestClass())
 
         when:
         def result = fetcher.get(environment)
@@ -140,7 +140,7 @@ class PropertyDataFetcherTest extends Specification {
     def "fetch via method that is private with setAccessible OFF"() {
         given:
         PropertyDataFetcher.setUseSetAccessible(false)
-        def environment = mkDFE("privateProperty", new TestClass())
+        def environment = env("privateProperty", new TestClass())
 
         when:
         def result = fetcher.get(environment)
@@ -157,7 +157,7 @@ class PropertyDataFetcherTest extends Specification {
 
     def "fetch via record method"() {
         given:
-        def environment = mkDFE("recordProperty", new RecordLikeClass())
+        def environment = env("recordProperty", new RecordLikeClass())
 
         when:
         def fetcher = new PropertyDataFetcher("recordProperty")
@@ -204,7 +204,7 @@ class PropertyDataFetcherTest extends Specification {
 
     def "fetch via record method with singleton fetcher"() {
         given:
-        def environment = mkDFE("recordProperty", new RecordLikeClass())
+        def environment = env("recordProperty", new RecordLikeClass())
 
         when:
         def fetcher = PropertyDataFetcher.singleton()
@@ -215,7 +215,7 @@ class PropertyDataFetcherTest extends Specification {
 
     def "can fetch record like methods that are public and on super classes"() {
         given:
-        def environment = mkDFE("recordProperty", new RecordLikeTwoClassesDown())
+        def environment = env("recordProperty", new RecordLikeTwoClassesDown())
 
         when:
         def result = fetcher.get(environment)
@@ -235,7 +235,7 @@ class PropertyDataFetcherTest extends Specification {
         PropertyDataFetcherHelper.clearReflectionCache()
 
         when:
-        def environment = mkDFE("recordProperty", new RecordLikeClass())
+        def environment = env("recordProperty", new RecordLikeClass())
         def fetcher = new PropertyDataFetcher("recordProperty")
         def result = fetcher.get(environment)
 
@@ -243,7 +243,7 @@ class PropertyDataFetcherTest extends Specification {
         result == "recordProperty"
 
         when:
-        environment = mkDFE("recordProperty", new RecordLikeTwoClassesDown())
+        environment = env("recordProperty", new RecordLikeTwoClassesDown())
         fetcher = new PropertyDataFetcher("recordProperty")
         result = fetcher.get(environment)
 
@@ -257,7 +257,7 @@ class PropertyDataFetcherTest extends Specification {
         PropertyDataFetcherHelper.clearReflectionCache()
 
         when:
-        def environment = mkDFE("recordLike", new ConfusedPojo())
+        def environment = env("recordLike", new ConfusedPojo())
         def result = fetcher.get(environment)
 
         then:
@@ -271,7 +271,7 @@ class PropertyDataFetcherTest extends Specification {
 
     def "fetch via public method"() {
         given:
-        def environment = mkDFE("publicProperty", new TestClass())
+        def environment = env("publicProperty", new TestClass())
 
         when:
         def result = fetcher.get(environment)
@@ -288,7 +288,7 @@ class PropertyDataFetcherTest extends Specification {
 
     def "fetch via public method declared two classes up"() {
         given:
-        def environment = mkDFE("publicProperty", new TwoClassesDown("aValue"))
+        def environment = env("publicProperty", new TwoClassesDown("aValue"))
         def fetcher = new PropertyDataFetcher("publicProperty")
 
         when:
@@ -305,7 +305,7 @@ class PropertyDataFetcherTest extends Specification {
 
     def "fetch via property only defined on package protected impl"() {
         given:
-        def environment = mkDFE("propertyOnlyDefinedOnPackageProtectedImpl", TestClass.createPackageProtectedImpl("aValue"))
+        def environment = env("propertyOnlyDefinedOnPackageProtectedImpl", TestClass.createPackageProtectedImpl("aValue"))
 
         when:
         def result = fetcher.get(environment)
@@ -323,7 +323,7 @@ class PropertyDataFetcherTest extends Specification {
     def "fetch via public field"() {
         given:
 
-        def environment = mkDFE("publicField", new TestClass())
+        def environment = env("publicField", new TestClass())
         def result = fetcher.get(environment)
 
         expect:
@@ -337,7 +337,7 @@ class PropertyDataFetcherTest extends Specification {
 
     def "fetch via private field"() {
         given:
-        def environment = mkDFE("privateField", new TestClass())
+        def environment = env("privateField", new TestClass())
         def result = fetcher.get(environment)
 
         expect:
@@ -352,7 +352,7 @@ class PropertyDataFetcherTest extends Specification {
     def "fetch via private field when setAccessible OFF"() {
         given:
         PropertyDataFetcher.setUseSetAccessible(false)
-        def environment = mkDFE("privateField", new TestClass())
+        def environment = env("privateField", new TestClass())
         def result = fetcher.get(environment)
 
         expect:
@@ -366,7 +366,7 @@ class PropertyDataFetcherTest extends Specification {
 
     def "fetch when caching is in place has no bad effects"() {
 
-        def environment = mkDFE("publicProperty", new TestClass())
+        def environment = env("publicProperty", new TestClass())
         def fetcher = new PropertyDataFetcher("publicProperty")
         when:
         def result = fetcher.get(environment)
@@ -441,7 +441,7 @@ class PropertyDataFetcherTest extends Specification {
 
     def "support for DFE on methods"() {
         given:
-        def environment = mkDFE("methodWithDFE", new ClassWithDFEMethods())
+        def environment = env("methodWithDFE", new ClassWithDFEMethods())
         def fetcher = new PropertyDataFetcher("methodWithDFE")
 
         when:
@@ -495,7 +495,7 @@ class PropertyDataFetcherTest extends Specification {
 
     def "finds interface methods"() {
         when:
-        def environment = mkDFE("methodYouMustImplement", new ClassWithInterfaces())
+        def environment = env("methodYouMustImplement", new ClassWithInterfaces())
         def fetcher = new PropertyDataFetcher("methodYouMustImplement")
         def result = fetcher.get(environment)
         then:
@@ -522,7 +522,7 @@ class PropertyDataFetcherTest extends Specification {
     }
 
     def "finds interface methods with inheritance"() {
-        def environment = mkDFE("methodYouMustImplement", new ClassWithInteritanceAndInterfaces.StartingClass())
+        def environment = env("methodYouMustImplement", new ClassWithInteritanceAndInterfaces.StartingClass())
 
         when:
         def fetcher = new PropertyDataFetcher("methodYouMustImplement")
@@ -536,7 +536,7 @@ class PropertyDataFetcherTest extends Specification {
         then:
         result == "methodThatIsADefault"
 
-        def environment2 = mkDFE("methodYouMustImplement", new ClassWithInteritanceAndInterfaces.InheritedClass())
+        def environment2 = env("methodYouMustImplement", new ClassWithInteritanceAndInterfaces.InheritedClass())
 
         when:
         fetcher = new PropertyDataFetcher("methodYouMustImplement")
@@ -565,7 +565,7 @@ class PropertyDataFetcherTest extends Specification {
 
     def "ensure DFE is passed to method"() {
 
-        def environment = mkDFE("methodUsesDataFetchingEnvironment", new ClassWithDFEMethods())
+        def environment = env("methodUsesDataFetchingEnvironment", new ClassWithDFEMethods())
         def fetcher = new PropertyDataFetcher("methodUsesDataFetchingEnvironment")
         when:
         def result = fetcher.get(environment)
@@ -580,7 +580,7 @@ class PropertyDataFetcherTest extends Specification {
     }
 
     def "negative caching works as expected"() {
-        def environment = mkDFE("doesNotExist", new ClassWithDFEMethods())
+        def environment = env("doesNotExist", new ClassWithDFEMethods())
         def fetcher = new PropertyDataFetcher("doesNotExist")
         when:
         def result = fetcher.get(environment)
@@ -671,7 +671,7 @@ class PropertyDataFetcherTest extends Specification {
     def "search for private getter in class hierarchy"() {
         given:
         Bar bar = new Baz()
-        def dfe = mkDFE("something", bar)
+        def dfe = env("something", bar)
 
         when:
         def result = fetcher.get(dfe)
@@ -695,7 +695,7 @@ class PropertyDataFetcherTest extends Specification {
     def "issue 3247 - record like statics should not be used"() {
         given:
         def payload = new UpdateOrganizerSubscriptionPayload(true, new OrganizerSubscriptionError())
-        def dfe = mkDFE("success", payload)
+        def dfe = env("success", payload)
 
         when:
         def result = fetcher.get(dfe)
@@ -719,7 +719,7 @@ class PropertyDataFetcherTest extends Specification {
     def "issue 3247 - record like statics should not be found"() {
         given:
         def errorShape = new OrganizerSubscriptionError()
-        def dfe = mkDFE("message", errorShape)
+        def dfe = env("message", errorShape)
 
         when:
         def result = fetcher.get(dfe)
@@ -743,7 +743,7 @@ class PropertyDataFetcherTest extends Specification {
     def "issue 3247 - getter statics should be found"() {
         given:
         def objectInQuestion = new BarClassWithStaticProperties()
-        def dfe = mkDFE("foo", objectInQuestion)
+        def dfe = env("foo", objectInQuestion)
         PropertyDataFetcher propertyDataFetcher = new PropertyDataFetcher("foo")
 
         when:
@@ -794,7 +794,7 @@ class PropertyDataFetcherTest extends Specification {
         Locale oldLocale = Locale.getDefault()
         Locale.setDefault(new Locale("tr", "TR"))
 
-        def environment = mkDFE("id", new OtherObject(id: "aValue"))
+        def environment = env("id", new OtherObject(id: "aValue"))
 
         when:
         def fetcher = PropertyDataFetcher.fetching("id")
