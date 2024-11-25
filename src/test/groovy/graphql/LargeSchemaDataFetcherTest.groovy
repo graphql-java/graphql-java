@@ -21,15 +21,15 @@ class LargeSchemaDataFetcherTest extends Specification {
         def schema = TestUtil.schema(sdl)
         def codeRegistry = schema.getCodeRegistry()
 
+        def singletonDF = PropertyDataFetcher.singleton()
+
         then:
 
         for (int i = 0; i < howManyFields; i++) {
             def fieldName = "f$i"
             def fieldDef = GraphQLFieldDefinition.newFieldDefinition().name(fieldName).type(Scalars.GraphQLString).build()
             def df = codeRegistry.getDataFetcher(FieldCoordinates.coordinates("Query", fieldName), fieldDef)
-
-            // in the future we hope to make this the same DF instance
-            assert df instanceof PropertyDataFetcher
+            assert df == singletonDF
         }
     }
 
