@@ -33,45 +33,6 @@ import java.util.function.Supplier;
 @PublicApi
 public class PropertyDataFetcher<T> implements LightDataFetcher<T> {
 
-    private static final PropertyDataFetcher<Object> SINGLETON_FETCHER = new PropertyDataFetcher<>() {
-        @Override
-        Object fetchImpl(String propertyName, Object source, GraphQLFieldDefinition fieldDefinition, Supplier<DataFetchingEnvironment> environmentSupplier) {
-            return super.fetchImpl(fieldDefinition.getName(), source, fieldDefinition, environmentSupplier);
-        }
-    };
-
-    private static final DataFetcherFactory<?> SINGLETON_FETCHER_FACTORY = new DataFetcherFactory<Object>() {
-        @Override
-        public DataFetcher<Object> get(DataFetcherFactoryEnvironment environment) {
-            return SINGLETON_FETCHER;
-        }
-
-        @Override
-        public DataFetcher<Object> getViaField(GraphQLFieldDefinition fieldDefinition) {
-            return SINGLETON_FETCHER;
-        }
-    };
-
-    /**
-     * This returns the same singleton {@link PropertyDataFetcher} that fetches property values
-     * based on the name of the field that iis passed into it.
-     *
-     * @return a singleton property data fetcher
-     */
-    public static PropertyDataFetcher<?> singleton() {
-        return SINGLETON_FETCHER;
-    }
-
-    /**
-     * This returns the same singleton {@link DataFetcherFactory} that returns the value of {@link #singleton()}
-     *
-     * @return a singleton data fetcher factory
-     */
-    public static DataFetcherFactory<?> singletonFactory() {
-        return SINGLETON_FETCHER_FACTORY;
-    }
-
-
     private final String propertyName;
     private final Function<Object, Object> function;
 
@@ -89,11 +50,6 @@ public class PropertyDataFetcher<T> implements LightDataFetcher<T> {
     @SuppressWarnings("unchecked")
     private <O> PropertyDataFetcher(Function<O, T> function) {
         this.function = (Function<Object, Object>) Assert.assertNotNull(function);
-        this.propertyName = null;
-    }
-
-    private PropertyDataFetcher() {
-        this.function = null;
         this.propertyName = null;
     }
 
@@ -153,26 +109,17 @@ public class PropertyDataFetcher<T> implements LightDataFetcher<T> {
 
     @Override
     public T get(GraphQLFieldDefinition fieldDefinition, Object source, Supplier<DataFetchingEnvironment> environmentSupplier) throws Exception {
-        return fetchImpl(propertyName, source, fieldDefinition, environmentSupplier);
+        return getImpl(source, fieldDefinition.getType(), environmentSupplier);
     }
 
     @Override
     public T get(DataFetchingEnvironment environment) {
-        return fetchImpl(propertyName, environment.getSource(), environment.getFieldDefinition(), () -> environment);
+        Object source = environment.getSource();
+        return getImpl(source, environment.getFieldType(), () -> environment);
     }
 
-    /**
-     * This is our implementation of property fetching
-     *
-     * @param propertyName        the name of the property to fetch in the source object
-     * @param source              the source object to fetch from
-     * @param fieldDefinition     the field definition of the field being fetched for
-     * @param environmentSupplier a supplied of thee {@link DataFetchingEnvironment}
-     *
-     * @return a value of type T
-     */
     @SuppressWarnings("unchecked")
-    T fetchImpl(String propertyName, Object source, GraphQLFieldDefinition fieldDefinition, Supplier<DataFetchingEnvironment> environmentSupplier) {
+    private T getImpl(Object source, GraphQLOutputType fieldDefinition, Supplier<DataFetchingEnvironment> environmentSupplier) {
         if (source == null) {
             return null;
         }
@@ -181,7 +128,7 @@ public class PropertyDataFetcher<T> implements LightDataFetcher<T> {
             return (T) function.apply(source);
         }
 
-        return (T) PropertyDataFetcherHelper.getPropertyValue(propertyName, source, fieldDefinition.getType(), environmentSupplier);
+        return (T) PropertyDataFetcherHelper.getPropertyValue(propertyName, source, fieldDefinition, environmentSupplier);
     }
 
     /**
