@@ -1,4 +1,4 @@
-name: Publish Commit for performance testing
+name: Publish Commit SHA for performance testing
 on:
   push:
     branches:
@@ -14,4 +14,4 @@ jobs:
         with:
           role-to-assume: arn:aws:iam::637423498965:role/GitHubActionGrahQLJava
           aws-region: "ap-southeast-2"
-      - run: aws sns publish  --topic-arn "arn:aws:sns:ap-southeast-2:637423498965:graphql-java-commits.fifo" --message $GITHUB_SHA
+      - run: aws sns publish  --topic-arn "arn:aws:sns:ap-southeast-2:637423498965:graphql-java-commits.fifo" --message $GITHUB_SHA --message-group-id "graphql-java-commits"
