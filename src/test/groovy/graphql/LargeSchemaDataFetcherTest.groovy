@@ -4,13 +4,14 @@ package graphql
 import graphql.schema.FieldCoordinates
 import graphql.schema.GraphQLFieldDefinition
 import graphql.schema.PropertyDataFetcher
+import graphql.schema.SingletonPropertyDataFetcher
 import spock.lang.Specification
 
 class LargeSchemaDataFetcherTest extends Specification {
 
     def howManyFields = 100_000
 
-    def "large schema with lots of fields has a property data fetcher by default"() {
+    def "large schema with lots of fields has the same property data fetcher by default"() {
         def sdl = """
             type Query {
                 ${mkFields()}
@@ -20,8 +21,7 @@ class LargeSchemaDataFetcherTest extends Specification {
         when:
         def schema = TestUtil.schema(sdl)
         def codeRegistry = schema.getCodeRegistry()
-
-        def singletonDF = PropertyDataFetcher.singleton()
+        def singletonDF = SingletonPropertyDataFetcher.singleton()
 
         then:
 

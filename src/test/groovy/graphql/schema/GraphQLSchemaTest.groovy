@@ -508,7 +508,7 @@ class GraphQLSchemaTest extends Specification {
 
         def newDF = newRegistry.getDataFetcher(dogType, dogType.getField("name"))
         newDF !== nameDF
-        newDF instanceof PropertyDataFetcher // defaulted in
+        newDF instanceof LightDataFetcher // defaulted in
     }
 
     def "can get by field co-ordinate"() {

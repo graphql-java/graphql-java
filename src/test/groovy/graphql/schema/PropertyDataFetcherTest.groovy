@@ -18,7 +18,7 @@ import java.util.function.Function
 import static graphql.schema.DataFetchingEnvironmentImpl.newDataFetchingEnvironment
 
 /**
- * Note : That `new PropertyDataFetcher("someProperty")` and `PropertyDataFetcher.singleton()`
+ * Note : That `new PropertyDataFetcher("someProperty")` and `SingletonPropertyDataFetcher.singleton()`
  * should really be the equivalent since they both go via `PropertyDataFetcherHelper.getPropertyValue`
  * under the covers.
  *
@@ -56,9 +56,9 @@ class PropertyDataFetcherTest extends Specification {
         fetcher.get(environment) == null
 
         where:
-        fetcher                                 | _
-        new PropertyDataFetcher("someProperty") | _
-        PropertyDataFetcher.singleton()         | _
+        fetcher                                  | _
+        new PropertyDataFetcher("someProperty")  | _
+        SingletonPropertyDataFetcher.singleton() | _
     }
 
     def "function based fetcher works with non null source"() {
@@ -87,7 +87,7 @@ class PropertyDataFetcherTest extends Specification {
         where:
         fetcher                                     | _
         PropertyDataFetcher.fetching("mapProperty") | _
-        PropertyDataFetcher.singleton()             | _
+        SingletonPropertyDataFetcher.singleton()    | _
     }
 
     def "fetch via public getter with private subclass"() {
@@ -100,7 +100,7 @@ class PropertyDataFetcherTest extends Specification {
         where:
         fetcher                                             | _
         new PropertyDataFetcher("packageProtectedProperty") | _
-        PropertyDataFetcher.singleton()                     | _
+        SingletonPropertyDataFetcher.singleton()            | _
     }
 
     def "fetch via method that isn't present"() {
@@ -116,7 +116,7 @@ class PropertyDataFetcherTest extends Specification {
         where:
         fetcher                                    | _
         new PropertyDataFetcher("valueNotPresent") | _
-        PropertyDataFetcher.singleton()            | _
+        SingletonPropertyDataFetcher.singleton()   | _
 
     }
 
@@ -133,7 +133,7 @@ class PropertyDataFetcherTest extends Specification {
         where:
         fetcher                                    | _
         new PropertyDataFetcher("privateProperty") | _
-        PropertyDataFetcher.singleton()            | _
+        SingletonPropertyDataFetcher.singleton()   | _
 
     }
 
@@ -151,7 +151,7 @@ class PropertyDataFetcherTest extends Specification {
         where:
         fetcher                                    | _
         new PropertyDataFetcher("privateProperty") | _
-        PropertyDataFetcher.singleton()            | _
+        SingletonPropertyDataFetcher.singleton()   | _
 
     }
 
@@ -207,7 +207,7 @@ class PropertyDataFetcherTest extends Specification {
         def environment = env("recordProperty", new RecordLikeClass())
 
         when:
-        def fetcher = PropertyDataFetcher.singleton()
+        def fetcher = SingletonPropertyDataFetcher.singleton()
         def result = fetcher.get(environment)
         then:
         result == "recordProperty"
@@ -226,7 +226,7 @@ class PropertyDataFetcherTest extends Specification {
         where:
         fetcher                                   | _
         new PropertyDataFetcher("recordProperty") | _
-        PropertyDataFetcher.singleton()           | _
+        SingletonPropertyDataFetcher.singleton()  | _
     }
 
     def "fetch via record method without lambda support"() {
@@ -264,9 +264,9 @@ class PropertyDataFetcherTest extends Specification {
         result == "recordLike"
 
         where:
-        fetcher                               | _
-        new PropertyDataFetcher("recordLike") | _
-        PropertyDataFetcher.singleton()       | _
+        fetcher                                  | _
+        new PropertyDataFetcher("recordLike")    | _
+        SingletonPropertyDataFetcher.singleton() | _
     }
 
     def "fetch via public method"() {
@@ -282,7 +282,7 @@ class PropertyDataFetcherTest extends Specification {
         where:
         fetcher                                   | _
         new PropertyDataFetcher("publicProperty") | _
-        PropertyDataFetcher.singleton()           | _
+        SingletonPropertyDataFetcher.singleton()  | _
 
     }
 
@@ -316,7 +316,7 @@ class PropertyDataFetcherTest extends Specification {
         where:
         fetcher                                                              | _
         new PropertyDataFetcher("propertyOnlyDefinedOnPackageProtectedImpl") | _
-        PropertyDataFetcher.singleton()                                      | _
+        SingletonPropertyDataFetcher.singleton()                             | _
     }
 
 
@@ -330,9 +330,9 @@ class PropertyDataFetcherTest extends Specification {
         result == "publicFieldValue"
 
         where:
-        fetcher                                | _
-        new PropertyDataFetcher("publicField") | _
-        PropertyDataFetcher.singleton()        | _
+        fetcher                                  | _
+        new PropertyDataFetcher("publicField")   | _
+        SingletonPropertyDataFetcher.singleton() | _
     }
 
     def "fetch via private field"() {
@@ -344,9 +344,9 @@ class PropertyDataFetcherTest extends Specification {
         result == "privateFieldValue"
 
         where:
-        fetcher                                 | _
-        new PropertyDataFetcher("privateField") | _
-        PropertyDataFetcher.singleton()         | _
+        fetcher                                  | _
+        new PropertyDataFetcher("privateField")  | _
+        SingletonPropertyDataFetcher.singleton() | _
     }
 
     def "fetch via private field when setAccessible OFF"() {
@@ -359,9 +359,9 @@ class PropertyDataFetcherTest extends Specification {
         result == null
 
         where:
-        fetcher                                 | _
-        new PropertyDataFetcher("privateField") | _
-        PropertyDataFetcher.singleton()         | _
+        fetcher                                  | _
+        new PropertyDataFetcher("privateField")  | _
+        SingletonPropertyDataFetcher.singleton() | _
     }
 
     def "fetch when caching is in place has no bad effects"() {
@@ -687,9 +687,9 @@ class PropertyDataFetcherTest extends Specification {
         result == "bar"
 
         where:
-        fetcher                              | _
-        new PropertyDataFetcher("something") | _
-        PropertyDataFetcher.singleton()      | _
+        fetcher                                  | _
+        new PropertyDataFetcher("something")     | _
+        SingletonPropertyDataFetcher.singleton() | _
     }
 
     def "issue 3247 - record like statics should not be used"() {
@@ -711,9 +711,9 @@ class PropertyDataFetcherTest extends Specification {
         result == true
 
         where:
-        fetcher                            | _
-        new PropertyDataFetcher("success") | _
-        PropertyDataFetcher.singleton()    | _
+        fetcher                                  | _
+        new PropertyDataFetcher("success")       | _
+        SingletonPropertyDataFetcher.singleton() | _
     }
 
     def "issue 3247 - record like statics should not be found"() {
@@ -735,9 +735,9 @@ class PropertyDataFetcherTest extends Specification {
         result == null
 
         where:
-        fetcher                            | _
-        new PropertyDataFetcher("message") | _
-        PropertyDataFetcher.singleton()    | _
+        fetcher                                  | _
+        new PropertyDataFetcher("message")       | _
+        SingletonPropertyDataFetcher.singleton() | _
     }
 
     def "issue 3247 - getter statics should be found"() {
@@ -804,7 +804,7 @@ class PropertyDataFetcherTest extends Specification {
         propValue == 'aValue'
 
         when:
-        fetcher = PropertyDataFetcher.singleton()
+        fetcher = SingletonPropertyDataFetcher.singleton()
         propValue = fetcher.get(environment)
 
         then:

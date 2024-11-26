@@ -13,6 +13,7 @@ import graphql.language.AstPrinter
 import graphql.parser.Parser
 import graphql.schema.DataFetcher
 import graphql.schema.DataFetchingEnvironment
+import graphql.schema.LightDataFetcher
 import graphql.schema.PropertyDataFetcher
 import graphql.schema.StaticDataFetcher
 import org.awaitility.Awaitility
@@ -99,7 +100,7 @@ class InstrumentationTest extends Specification {
 
         instrumentation.dfClasses.size() == 2
         instrumentation.dfClasses[0] == StaticDataFetcher.class
-        PropertyDataFetcher.isAssignableFrom(instrumentation.dfClasses[1])
+        LightDataFetcher.class.isAssignableFrom(instrumentation.dfClasses[1])
 
         instrumentation.dfInvocations.size() == 2
 

@@ -57,6 +57,7 @@ import graphql.schema.GraphQLTypeReference;
 import graphql.schema.GraphQLUnionType;
 import graphql.schema.GraphqlTypeComparatorRegistry;
 import graphql.schema.PropertyDataFetcher;
+import graphql.schema.SingletonPropertyDataFetcher;
 import graphql.schema.TypeResolver;
 import graphql.schema.TypeResolverProxy;
 import graphql.schema.idl.errors.NotAnInputTypeError;
@@ -1088,7 +1089,7 @@ public class SchemaGeneratorHelper {
     }
 
     private DataFetcher<?> dataFetcherOfLastResort() {
-        return PropertyDataFetcher.singleton();
+        return SingletonPropertyDataFetcher.singleton();
     }
 
     private List<Directive> directivesOf(List<? extends TypeDefinition<?>> typeDefinitions) {

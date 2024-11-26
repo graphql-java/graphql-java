@@ -149,7 +149,7 @@ public class GraphQLCodeRegistry {
         if (typeResolver == null) {
             typeResolver = parentType.getTypeResolver();
         }
-        return assertNotNull(typeResolver, "There must be a type resolver for union %s",parentType.getName());
+        return assertNotNull(typeResolver, "There must be a type resolver for union %s", parentType.getName());
     }
 
     /**
@@ -189,7 +189,7 @@ public class GraphQLCodeRegistry {
         private final Map<String, DataFetcherFactory<?>> systemDataFetcherMap = new LinkedHashMap<>();
         private final Map<String, TypeResolver> typeResolverMap = new HashMap<>();
         private GraphqlFieldVisibility fieldVisibility = DEFAULT_FIELD_VISIBILITY;
-        private DataFetcherFactory<?> defaultDataFetcherFactory = PropertyDataFetcher.singletonFactory();
+        private DataFetcherFactory<?> defaultDataFetcherFactory = SingletonPropertyDataFetcher.singletonFactory();
         private boolean changed = false;
 
         private Builder() {
