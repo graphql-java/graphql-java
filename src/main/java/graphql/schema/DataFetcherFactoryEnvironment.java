@@ -5,8 +5,12 @@ import graphql.PublicApi;
 /**
  * This is passed to a {@link graphql.schema.DataFetcherFactory} when it is invoked to
  * get a {@link graphql.schema.DataFetcher}
+ *
+ * @deprecated This class will go away at some point in the future since its pointless wrapper
+ * of a {@link GraphQLFieldDefinition}
  */
 @PublicApi
+@Deprecated(since = "2024-11-26")
 public class DataFetcherFactoryEnvironment {
     private final GraphQLFieldDefinition fieldDefinition;
 

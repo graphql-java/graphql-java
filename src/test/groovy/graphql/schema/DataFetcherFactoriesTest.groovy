@@ -32,7 +32,7 @@ class DataFetcherFactoriesTest extends Specification {
         def fetcherFactory = DataFetcherFactories.useDataFetcher(pojoDF)
 
         when:
-        def value = fetcherFactory.get(null).get(null)
+        def value = fetcherFactory.get((GraphQLFieldDefinition)null).get(null)
 
         then:
         value == "goodbye"
@@ -42,7 +42,7 @@ class DataFetcherFactoriesTest extends Specification {
         def fetcherFactory = DataFetcherFactories.useDataFetcher(pojoDF)
 
         when:
-        def value = fetcherFactory.getViaField(null).get(null)
+        def value = fetcherFactory.get((GraphQLFieldDefinition) null).get(null)
 
         then:
         value == "goodbye"

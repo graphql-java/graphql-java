@@ -84,6 +84,7 @@ public class GraphQLCodeRegistry {
         return hasDataFetcherImpl(coordinates, dataFetcherMap, systemDataFetcherMap);
     }
 
+    @SuppressWarnings("deprecation")
     private static DataFetcher<?> getDataFetcherImpl(FieldCoordinates coordinates, GraphQLFieldDefinition fieldDefinition, Map<FieldCoordinates, DataFetcherFactory<?>> dataFetcherMap, Map<String, DataFetcherFactory<?>> systemDataFetcherMap, DataFetcherFactory<?> defaultDataFetcherFactory) {
         assertNotNull(coordinates);
         assertNotNull(fieldDefinition);
@@ -96,7 +97,7 @@ public class GraphQLCodeRegistry {
             }
         }
         // call direct from the field - cheaper to not make a new environment object
-        DataFetcher<?> dataFetcher = dataFetcherFactory.getViaField(fieldDefinition);
+        DataFetcher<?> dataFetcher = dataFetcherFactory.get(fieldDefinition);
         if (dataFetcher == null) {
             DataFetcherFactoryEnvironment factoryEnvironment = newDataFetchingFactoryEnvironment()
                     .fieldDefinition(fieldDefinition)

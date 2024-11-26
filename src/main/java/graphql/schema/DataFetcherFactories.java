@@ -20,14 +20,15 @@ public class DataFetcherFactories {
      * @return a data fetcher factory that always returns the provided data fetcher
      */
     public static <T> DataFetcherFactory<T> useDataFetcher(DataFetcher<T> dataFetcher) {
-        return new DataFetcherFactory<T>() {
+        //noinspection deprecation
+        return new DataFetcherFactory<>() {
             @Override
             public DataFetcher<T> get(DataFetcherFactoryEnvironment environment) {
                 return dataFetcher;
             }
 
             @Override
-            public DataFetcher<T> getViaField(GraphQLFieldDefinition fieldDefinition) {
+            public DataFetcher<T> get(GraphQLFieldDefinition fieldDefinition) {
                 return dataFetcher;
             }
         };
@@ -42,7 +43,7 @@ public class DataFetcherFactories {
      *
      * @return a new data fetcher that wraps the provided data fetcher
      */
-    public static DataFetcher wrapDataFetcher(DataFetcher delegateDataFetcher, BiFunction<DataFetchingEnvironment, Object, Object> mapFunction) {
+    public static DataFetcher<?> wrapDataFetcher(DataFetcher<?> delegateDataFetcher, BiFunction<DataFetchingEnvironment, Object, Object> mapFunction) {
         return environment -> {
             Object value = delegateDataFetcher.get(environment);
             if (value instanceof CompletionStage) {

@@ -19,7 +19,10 @@ public interface DataFetcherFactory<T> {
      * @param environment the environment that needs the data fetcher
      *
      * @return a data fetcher
+     *
+     * @deprecated This method will go away at some point and {@link DataFetcherFactory#get(GraphQLFieldDefinition)} will be used
      */
+    @Deprecated(since = "2024-11-26")
     DataFetcher<T> get(DataFetcherFactoryEnvironment environment);
 
     /**
@@ -31,7 +34,7 @@ public interface DataFetcherFactory<T> {
      * @return a data fetcher
      */
 
-    default DataFetcher<T> getViaField(GraphQLFieldDefinition fieldDefinition) {
+    default DataFetcher<T> get(GraphQLFieldDefinition fieldDefinition) {
         return null;
     }
 
