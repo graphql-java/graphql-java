@@ -288,7 +288,7 @@ class GraphQLCodeRegistryTest extends Specification {
 
         // when nothing is specified then its a plain old PropertyDataFetcher
         def queryType = schema.getObjectType("Query")
-        schema.getCodeRegistry().getDataFetcher(queryType, queryType.getFieldDefinition("neitherSpecified")) instanceof LightDataFetcher
+        schema.getCodeRegistry().getDataFetcher(queryType, queryType.getFieldDefinition("neitherSpecified")) instanceof SingletonPropertyDataFetcher
     }
 
     def "will detect system versus user data fetchers"() {
