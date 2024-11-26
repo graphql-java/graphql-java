@@ -84,6 +84,7 @@ public class GraphQLCodeRegistry {
         return hasDataFetcherImpl(coordinates, dataFetcherMap, systemDataFetcherMap);
     }
 
+    @SuppressWarnings("deprecation")
     private static DataFetcher<?> getDataFetcherImpl(FieldCoordinates coordinates, GraphQLFieldDefinition fieldDefinition, Map<FieldCoordinates, DataFetcherFactory<?>> dataFetcherMap, Map<String, DataFetcherFactory<?>> systemDataFetcherMap, DataFetcherFactory<?> defaultDataFetcherFactory) {
         assertNotNull(coordinates);
         assertNotNull(fieldDefinition);
@@ -95,9 +96,15 @@ public class GraphQLCodeRegistry {
                 dataFetcherFactory = defaultDataFetcherFactory;
             }
         }
-        return dataFetcherFactory.get(newDataFetchingFactoryEnvironment()
-                .fieldDefinition(fieldDefinition)
-                .build());
+        // call direct from the field - cheaper to not make a new environment object
+        DataFetcher<?> dataFetcher = dataFetcherFactory.get(fieldDefinition);
+        if (dataFetcher == null) {
+            DataFetcherFactoryEnvironment factoryEnvironment = newDataFetchingFactoryEnvironment()
+                    .fieldDefinition(fieldDefinition)
+                    .build();
+            dataFetcher = dataFetcherFactory.get(factoryEnvironment);
+        }
+        return dataFetcher;
     }
 
     private static boolean hasDataFetcherImpl(FieldCoordinates coords, Map<FieldCoordinates, DataFetcherFactory<?>> dataFetcherMap, Map<String, DataFetcherFactory<?>> systemDataFetcherMap) {
@@ -149,7 +156,7 @@ public class GraphQLCodeRegistry {
         if (typeResolver == null) {
             typeResolver = parentType.getTypeResolver();
         }
-        return assertNotNull(typeResolver, "There must be a type resolver for union %s",parentType.getName());
+        return assertNotNull(typeResolver, "There must be a type resolver for union %s", parentType.getName());
     }
 
     /**
@@ -189,7 +196,7 @@ public class GraphQLCodeRegistry {
         private final Map<String, DataFetcherFactory<?>> systemDataFetcherMap = new LinkedHashMap<>();
         private final Map<String, TypeResolver> typeResolverMap = new HashMap<>();
         private GraphqlFieldVisibility fieldVisibility = DEFAULT_FIELD_VISIBILITY;
-        private DataFetcherFactory<?> defaultDataFetcherFactory = env -> PropertyDataFetcher.fetching(env.getFieldDefinition().getName());
+        private DataFetcherFactory<?> defaultDataFetcherFactory = SingletonPropertyDataFetcher.singletonFactory();
         private boolean changed = false;
 
         private Builder() {

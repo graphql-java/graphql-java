@@ -2282,6 +2282,11 @@ class SchemaGeneratorTest extends Specification {
             DataFetcher get(DataFetcherFactoryEnvironment environment) {
                 return df
             }
+
+            @Override
+            DataFetcher get(GraphQLFieldDefinition fieldDefinition) {
+                return df
+            }
         }
 
         GraphQLCodeRegistry codeRegistry = newCodeRegistry()

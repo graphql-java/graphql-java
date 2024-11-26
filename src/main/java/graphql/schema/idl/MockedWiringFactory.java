@@ -8,6 +8,7 @@ import graphql.schema.CoercingSerializeException;
 import graphql.schema.DataFetcher;
 import graphql.schema.GraphQLScalarType;
 import graphql.schema.PropertyDataFetcher;
+import graphql.schema.SingletonPropertyDataFetcher;
 import graphql.schema.TypeResolver;
 
 @PublicApi
@@ -44,7 +45,7 @@ public class MockedWiringFactory implements WiringFactory {
 
     @Override
     public DataFetcher getDataFetcher(FieldWiringEnvironment environment) {
-        return new PropertyDataFetcher(environment.getFieldDefinition().getName());
+        return SingletonPropertyDataFetcher.singleton();
     }
 
     @Override

@@ -13,7 +13,9 @@ import graphql.language.AstPrinter
 import graphql.parser.Parser
 import graphql.schema.DataFetcher
 import graphql.schema.DataFetchingEnvironment
+import graphql.schema.LightDataFetcher
 import graphql.schema.PropertyDataFetcher
+import graphql.schema.SingletonPropertyDataFetcher
 import graphql.schema.StaticDataFetcher
 import org.awaitility.Awaitility
 import org.jetbrains.annotations.NotNull
@@ -99,7 +101,7 @@ class InstrumentationTest extends Specification {
 
         instrumentation.dfClasses.size() == 2
         instrumentation.dfClasses[0] == StaticDataFetcher.class
-        instrumentation.dfClasses[1] == PropertyDataFetcher.class
+        instrumentation.dfClasses[1] == SingletonPropertyDataFetcher.class
 
         instrumentation.dfInvocations.size() == 2
 

@@ -57,6 +57,7 @@ import graphql.schema.GraphQLTypeReference;
 import graphql.schema.GraphQLUnionType;
 import graphql.schema.GraphqlTypeComparatorRegistry;
 import graphql.schema.PropertyDataFetcher;
+import graphql.schema.SingletonPropertyDataFetcher;
 import graphql.schema.TypeResolver;
 import graphql.schema.TypeResolverProxy;
 import graphql.schema.idl.errors.NotAnInputTypeError;
@@ -801,23 +802,27 @@ public class SchemaGeneratorHelper {
         // if they have already wired in a fetcher - then leave it alone
         FieldCoordinates coordinates = FieldCoordinates.coordinates(parentType.getName(), fieldDefinition.getName());
         if (!buildCtx.getCodeRegistry().hasDataFetcher(coordinates)) {
-            DataFetcherFactory<?> dataFetcherFactory = buildDataFetcherFactory(buildCtx,
+            Optional<DataFetcherFactory<?>> dataFetcherFactory = buildDataFetcherFactory(buildCtx,
                     parentType,
                     fieldDef,
                     fieldType,
                     appliedDirectives.first,
                     appliedDirectives.second);
-            buildCtx.getCodeRegistry().dataFetcher(coordinates, dataFetcherFactory);
+
+            // if the dataFetcherFactory is empty, then it must have been the code registry default one
+            // and hence we don't need to make a "map entry" in the code registry since it will be defaulted
+            // anyway
+            dataFetcherFactory.ifPresent(fetcherFactory -> buildCtx.getCodeRegistry().dataFetcher(coordinates, fetcherFactory));
         }
         return directivesObserve(buildCtx, fieldDefinition);
     }
 
-    private DataFetcherFactory<?> buildDataFetcherFactory(BuildContext buildCtx,
-                                                          TypeDefinition<?> parentType,
-                                                          FieldDefinition fieldDef,
-                                                          GraphQLOutputType fieldType,
-                                                          List<GraphQLDirective> directives,
-                                                          List<GraphQLAppliedDirective> appliedDirectives) {
+    private Optional<DataFetcherFactory<?>> buildDataFetcherFactory(BuildContext buildCtx,
+                                                                    TypeDefinition<?> parentType,
+                                                                    FieldDefinition fieldDef,
+                                                                    GraphQLOutputType fieldType,
+                                                                    List<GraphQLDirective> directives,
+                                                                    List<GraphQLAppliedDirective> appliedDirectives) {
         String fieldName = fieldDef.getName();
         String parentTypeName = parentType.getName();
         TypeDefinitionRegistry typeRegistry = buildCtx.getTypeRegistry();
@@ -847,16 +852,18 @@ public class SchemaGeneratorHelper {
                         if (dataFetcher == null) {
                             DataFetcherFactory<?> codeRegistryDFF = codeRegistry.getDefaultDataFetcherFactory();
                             if (codeRegistryDFF != null) {
-                                return codeRegistryDFF;
+                                // this will use the default of the code registry when its
+                                // asked for at runtime
+                                return Optional.empty();
                             }
-                            dataFetcher = dataFetcherOfLastResort(wiringEnvironment);
+                            dataFetcher = dataFetcherOfLastResort();
                         }
                     }
                 }
             }
             dataFetcherFactory = DataFetcherFactories.useDataFetcher(dataFetcher);
         }
-        return dataFetcherFactory;
+        return Optional.of(dataFetcherFactory);
     }
 
     GraphQLArgument buildArgument(BuildContext buildCtx, InputValueDefinition valueDefinition) {
@@ -1087,9 +1094,8 @@ public class SchemaGeneratorHelper {
         return Optional.ofNullable(operationTypeDefs.get(name));
     }
 
-    private DataFetcher<?> dataFetcherOfLastResort(FieldWiringEnvironment environment) {
-        String fieldName = environment.getFieldDefinition().getName();
-        return new PropertyDataFetcher(fieldName);
+    private DataFetcher<?> dataFetcherOfLastResort() {
+        return SingletonPropertyDataFetcher.singleton();
     }
 
     private List<Directive> directivesOf(List<? extends TypeDefinition<?>> typeDefinitions) {
