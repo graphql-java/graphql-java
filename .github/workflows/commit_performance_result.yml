@@ -1,0 +1,30 @@
+name: Copy performance results from S3
+on:
+  workflow_dispatch:
+    inputs:
+      sha:
+        description: 'the commit sha which was performance tested'
+        required: true
+
+permissions:
+  id-token: write # This is required for requesting the JWT
+  contents: write  # This is required for pushing changes back to the repo
+jobs:
+  publishCommit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::637423498965:role/GitHubActionGrahQLJava
+          aws-region: "ap-southeast-2"
+      - uses: actions/checkout@v4
+      - run: |
+          aws s3 cp s3://graphql-java-jmh-output/${{ github.event.inputs.sha }}-jdk17.json ./performance-results
+          git add performance-results/${{ github.event.inputs.sha }}-jdk17.json
+          if [ -z "$(git status --porcelain)" ]; then
+            echo "Performance results already present"
+            exit 0
+          fi
+          git commit -m "Add performance results for commit ${{ github.event.inputs.sha }}"
+          git push
+          
