@@ -20,6 +20,8 @@ jobs:
       - uses: actions/checkout@v4
       - run: |
           aws s3 cp s3://graphql-java-jmh-output/${{ github.event.inputs.sha }}-jdk17.json ./performance-results
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add performance-results/${{ github.event.inputs.sha }}-jdk17.json
           if [ -z "$(git status --porcelain)" ]; then
             echo "Performance results already present"
