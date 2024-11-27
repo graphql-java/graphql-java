@@ -1,4 +1,4 @@
-name: Copy performance results from S3
+name: Commit performance results into repo
 on:
   workflow_dispatch:
     inputs:
@@ -10,7 +10,7 @@ permissions:
   id-token: write # This is required for requesting the JWT
   contents: write  # This is required for pushing changes back to the repo
 jobs:
-  publishCommit:
+  commitPerformanceResults:
     runs-on: ubuntu-latest
     steps:
       - uses: aws-actions/configure-aws-credentials@v4
