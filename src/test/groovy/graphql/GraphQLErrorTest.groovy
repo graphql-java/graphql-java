@@ -31,7 +31,7 @@ class GraphQLErrorTest extends Specification {
                 .description("Test ValidationError")
                 .build()                                                                               |
                 [
-                        locations: [[line: 666, column: 999], [line: 333, column: 0]],
+                        locations: [[line: 666, column: 999], [line: 333, column: 1]],
                         message  : "Test ValidationError",
                         extensions:[classification:"ValidationError"],
                 ]
@@ -44,7 +44,7 @@ class GraphQLErrorTest extends Specification {
 
         new InvalidSyntaxError(mkLocations(), "Not good syntax m'kay")                                 |
                 [
-                        locations: [[line: 666, column: 999], [line: 333, column: 0]],
+                        locations: [[line: 666, column: 999], [line: 333, column: 1]],
                         message  : "Not good syntax m'kay",
                         extensions:[classification:"InvalidSyntax"],
                 ]
@@ -70,6 +70,28 @@ class GraphQLErrorTest extends Specification {
                  extensions:[classification:"DataFetchingException"],
                 ]
 
+    }
+
+    def "toSpecification filters out error locations with line and column not starting at 1, as required in spec"() {
+        // See specification wording: https://spec.graphql.org/draft/#sec-Errors.Error-Result-Format
+
+        given:
+        def error = ValidationError.newValidationError()
+                .validationErrorType(ValidationErrorType.UnknownType)
+                .sourceLocations([mkLocation(-1, -1), mkLocation(333, 1)])
+                .description("Test ValidationError")
+                .build()
+
+        def expectedMap = [
+                locations: [
+                        [line: 333, column: 1]
+                ],
+                message: "Test ValidationError",
+                extensions: [classification:"ValidationError"]
+        ]
+
+        expect:
+        error.toSpecification() == expectedMap
     }
 
     class CustomException extends RuntimeException implements GraphQLError {
@@ -110,7 +132,7 @@ class GraphQLErrorTest extends Specification {
     }
 
     List<SourceLocation> mkLocations() {
-        return [mkLocation(666, 999), mkLocation(333, 0)]
+        return [mkLocation(666, 999), mkLocation(333, 1)]
     }
 
     SourceLocation mkLocation(int line, int column) {
