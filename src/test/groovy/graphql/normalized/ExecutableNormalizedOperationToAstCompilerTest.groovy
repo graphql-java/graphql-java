@@ -2068,7 +2068,7 @@ abstract class ExecutableNormalizedOperationToAstCompilerTest extends Specificat
     }
 
 
-    def "test a combination of plain objects and interfaces will be all variables"() {
+    def "test a combination of plain objects and interfaces with all variables and no variables"() {
         def sdl = '''
         type Query {
             listField1(arg: [Int]): String
@@ -2153,6 +2153,46 @@ abstract class ExecutableNormalizedOperationToAstCompilerTest extends Specificat
                  v3: [arg1: "barFragArg"],
                  v4: [arg1: "barArg"],
                  v5: [arg1: "fooArg"]]
+
+        //
+        // Test the opposite - when we use no variables predicate everything should be inlined
+        //
+        when: "it has no variables"
+
+        fields = createNormalizedFields(schema, query, [v0: [1, 2, 3],
+                                                        v1: [[arg1: "v1", arg2: [[arg1: "v1.1"]]], [arg1: "v2"], [arg1: "v3"]],
+                                                        v2: [[arg1: "fooNonNullArg1"], [arg1: "fooNonNullArg2"]],
+                                                        v3: [arg1: "barFragArg"],
+                                                        v4: [arg1: "barArg"],
+                                                        v5: [arg1: "fooArg"]])
+
+        result = localCompileToDocument(schema, QUERY, "named", fields, noVariables)
+        document = result.document
+        vars = result.variables
+        ast = AstPrinter.printAst(new AstSorter().sort(document))
+
+        then: "they should be inlined as values"
+
+        // no vars created
+        vars == [:]
+
+        // everything inlined
+        ast == '''query named {
+  foo(arg: {arg1 : "fooArg"}) {
+    bar(arg: {arg1 : "barArg"}) {
+      baz {
+        ... on ABaz {
+          a
+          boo(arg: {arg1 : "barFragArg"})
+        }
+      }
+    }
+  }
+  fooNonNull(arg: [{arg1 : "fooNonNullArg1"}, {arg1 : "fooNonNullArg2"}])
+  listField1(arg: [1, 2, 3])
+  listField2(arg: [{arg1 : "v1", arg2 : [{arg1 : "v1.1"}]}, {arg1 : "v2"}, {arg1 : "v3"}])
+}
+'''
     }
 
     private ExecutableNormalizedOperation createNormalizedTree(GraphQLSchema schema, String query, Map<String, Object> variables = [:]) {
@@ -2186,7 +2226,7 @@ abstract class ExecutableNormalizedOperationToAstCompilerTest extends Specificat
             List<ExecutableNormalizedField> topLevelFields,
             VariablePredicate variablePredicate
     ) {
-        return localCompileToDocument(schema, operationKind, operationName, topLevelFields,Map.of(), variablePredicate);
+        return localCompileToDocument(schema, operationKind, operationName, topLevelFields, Map.of(), variablePredicate);
     }
 
     private static ExecutableNormalizedOperationToAstCompiler.CompilerResult localCompileToDocument(
