@@ -34,4 +34,3 @@ take the time to read it.
 Copyright (c) 2015, Andreas Marek and [Contributors](https://github.com/graphql-java/graphql-java/graphs/contributors)
 
 ### Supported by
-
