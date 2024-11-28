@@ -2,6 +2,7 @@ package graphql.execution;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
+import graphql.DuckTyped;
 import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
 import graphql.ExperimentalApi;
@@ -24,6 +25,7 @@ import graphql.execution.instrumentation.parameters.InstrumentationExecutionStra
 import graphql.execution.instrumentation.parameters.InstrumentationFieldCompleteParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldParameters;
+import graphql.execution.reactive.ReactiveSupport;
 import graphql.extensions.ExtensionsBuilder;
 import graphql.introspection.Introspection;
 import graphql.language.Argument;
@@ -197,8 +199,8 @@ public abstract class ExecutionStrategy {
      * @throws NonNullableFieldWasNullException in the {@link CompletableFuture} if a non-null field resolved to a null value
      */
     @SuppressWarnings("unchecked")
-    protected Object /* CompletableFuture<Map<String, Object>> | Map<String, Object> */
-    executeObject(ExecutionContext executionContext, ExecutionStrategyParameters parameters) throws NonNullableFieldWasNullException {
+    @DuckTyped(shape = "CompletableFuture<Map<String, Object>> | Map<String, Object>")
+    protected Object executeObject(ExecutionContext executionContext, ExecutionStrategyParameters parameters) throws NonNullableFieldWasNullException {
         DataLoaderDispatchStrategy dataLoaderDispatcherStrategy = executionContext.getDataLoaderDispatcherStrategy();
         dataLoaderDispatcherStrategy.executeObject(executionContext, parameters);
         Instrumentation instrumentation = executionContext.getInstrumentation();
@@ -356,8 +358,8 @@ public abstract class ExecutionStrategy {
      * @throws NonNullableFieldWasNullException in the future if a non-null field resolved to a null value
      */
     @SuppressWarnings("unchecked")
-    protected Object /* CompletableFuture<Object> | Object */
-    resolveField(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
+    @DuckTyped(shape = " CompletableFuture<Object> | Object")
+    protected Object resolveField(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
         Object fieldWithInfo = resolveFieldWithInfo(executionContext, parameters);
         if (fieldWithInfo instanceof CompletableFuture) {
             return ((CompletableFuture<FieldValueInfo>) fieldWithInfo).thenCompose(FieldValueInfo::getFieldValueFuture);
@@ -384,8 +386,8 @@ public abstract class ExecutionStrategy {
      *                                          if a nonnull field resolves to a null value
      */
     @SuppressWarnings("unchecked")
-    protected Object /* CompletableFuture<FieldValueInfo> | FieldValueInfo */
-    resolveFieldWithInfo(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
+    @DuckTyped(shape = "CompletableFuture<FieldValueInfo> | FieldValueInfo")
+    protected Object resolveFieldWithInfo(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
         GraphQLFieldDefinition fieldDef = getFieldDef(executionContext, parameters, parameters.getField().getSingleField());
         Supplier<ExecutionStepInfo> executionStepInfo = FpKit.intraThreadMemoize(() -> createExecutionStepInfo(executionContext, parameters, fieldDef, null));
 
@@ -430,16 +432,16 @@ public abstract class ExecutionStrategy {
      *
      * @throws NonNullableFieldWasNullException in the future if a non null field resolves to a null value
      */
-    protected Object /*CompletableFuture<FetchedValue> | FetchedValue>*/
-    fetchField(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
+    @DuckTyped(shape = "CompletableFuture<FetchedValue> | FetchedValue")
+    protected Object fetchField(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
         MergedField field = parameters.getField();
         GraphQLObjectType parentType = (GraphQLObjectType) parameters.getExecutionStepInfo().getUnwrappedNonNullType();
         GraphQLFieldDefinition fieldDef = getFieldDef(executionContext.getGraphQLSchema(), parentType, field.getSingleField());
         return fetchField(fieldDef, executionContext, parameters);
     }
 
-    private Object /*CompletableFuture<FetchedValue> | FetchedValue>*/
-    fetchField(GraphQLFieldDefinition fieldDef, ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
+    @DuckTyped(shape = "CompletableFuture<FetchedValue> | FetchedValue")
+    private Object fetchField(GraphQLFieldDefinition fieldDef, ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
 
         if (incrementAndCheckMaxNodesExceeded(executionContext)) {
             return new FetchedValue(null, Collections.emptyList(), null);
@@ -498,6 +500,11 @@ public abstract class ExecutionStrategy {
         executionContext.getDataLoaderDispatcherStrategy().fieldFetched(executionContext, parameters, dataFetcher, fetchedObject);
         fetchCtx.onDispatched();
         fetchCtx.onFetchedValue(fetchedObject);
+        // if it's a subscription, leave any reactive objects alone
+        if (!executionContext.isSubscriptionOperation()) {
+            // possible convert reactive objects into CompletableFutures
+            fetchedObject = ReactiveSupport.fetchedObject(fetchedObject);
+        }
         if (fetchedObject instanceof CompletableFuture) {
             @SuppressWarnings("unchecked")
             CompletableFuture<Object> fetchedValue = (CompletableFuture<Object>) fetchedObject;
@@ -737,8 +744,8 @@ public abstract class ExecutionStrategy {
      *
      * @throws NonNullableFieldWasNullException inside the {@link CompletableFuture} if a non-null field resolves to a null value
      */
-    protected Object /* CompletableFuture<Object> | Object */
-    completeValueForNull(ExecutionStrategyParameters parameters) {
+    @DuckTyped(shape = "CompletableFuture<Object> | Object")
+    protected Object completeValueForNull(ExecutionStrategyParameters parameters) {
         try {
             return parameters.getNonNullFieldValidator().validate(parameters, null);
         } catch (Exception e) {
@@ -876,8 +883,8 @@ public abstract class ExecutionStrategy {
      *
      * @return a materialized scalar value or exceptionally completed {@link CompletableFuture} if there is a problem
      */
-    protected Object /* CompletableFuture<Object> | Object */
-    completeValueForScalar(ExecutionContext executionContext, ExecutionStrategyParameters parameters, GraphQLScalarType scalarType, Object result) {
+    @DuckTyped(shape = "CompletableFuture<Object> | Object")
+    protected Object completeValueForScalar(ExecutionContext executionContext, ExecutionStrategyParameters parameters, GraphQLScalarType scalarType, Object result) {
         Object serialized;
         try {
             serialized = scalarType.getCoercing().serialize(result, executionContext.getGraphQLContext(), executionContext.getLocale());
@@ -903,8 +910,8 @@ public abstract class ExecutionStrategy {
      *
      * @return a materialized enum value or exceptionally completed {@link CompletableFuture} if there is a problem
      */
-    protected Object /* CompletableFuture<Object> | Object */
-    completeValueForEnum(ExecutionContext executionContext, ExecutionStrategyParameters parameters, GraphQLEnumType enumType, Object result) {
+    @DuckTyped(shape = "CompletableFuture<Object> | Object")
+    protected Object completeValueForEnum(ExecutionContext executionContext, ExecutionStrategyParameters parameters, GraphQLEnumType enumType, Object result) {
         Object serialized;
         try {
             serialized = enumType.serialize(result, executionContext.getGraphQLContext(), executionContext.getLocale());
@@ -929,8 +936,8 @@ public abstract class ExecutionStrategy {
      *
      * @return a {@link CompletableFuture} promise to a map of object field values or a materialized map of object field values
      */
-    protected Object /* CompletableFuture<Map<String, Object>> | Map<String, Object> */
-    completeValueForObject(ExecutionContext executionContext, ExecutionStrategyParameters parameters, GraphQLObjectType resolvedObjectType, Object result) {
+    @DuckTyped(shape = "CompletableFuture<Map<String, Object>> | Map<String, Object>")
+    protected Object completeValueForObject(ExecutionContext executionContext, ExecutionStrategyParameters parameters, GraphQLObjectType resolvedObjectType, Object result) {
         ExecutionStepInfo executionStepInfo = parameters.getExecutionStepInfo();
 
         FieldCollectorParameters collectorParameters = newParameters()
@@ -1000,7 +1007,6 @@ public abstract class ExecutionStrategy {
      * if max nodes were exceeded for this request.
      *
      * @param executionContext the execution context in play
-     *
      * @return true if max nodes were exceeded
      */
     private boolean incrementAndCheckMaxNodesExceeded(ExecutionContext executionContext) {
@@ -1053,7 +1059,6 @@ public abstract class ExecutionStrategy {
      *
      * @param e this indicates that a null value was returned for a non null field, which needs to cause the parent field
      *          to become null OR continue on as an exception
-     *
      * @throws NonNullableFieldWasNullException if a non null field resolves to a null value
      */
     protected void assertNonNullFieldPrecondition(NonNullableFieldWasNullException e) throws NonNullableFieldWasNullException {
@@ -1167,4 +1172,6 @@ public abstract class ExecutionStrategy {
             executionContext.addErrors(errors);
         }
     }
+
+
 }
