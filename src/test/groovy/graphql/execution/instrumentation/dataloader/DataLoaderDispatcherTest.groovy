@@ -20,8 +20,8 @@ import org.jetbrains.annotations.NotNull
 import org.reactivestreams.Publisher
 import reactor.core.publisher.Mono
 import spock.lang.Specification
-import spock.lang.Unroll
 
+import java.time.Duration
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionStage
 
@@ -120,10 +120,10 @@ class DataLoaderDispatcherTest extends Specification {
     }
 
 
-    @Unroll
-    def "ensure DataLoaderDispatcher works for #executionStrategyName"() {
+    def "ensure DataLoaderDispatcher works for async serial execution strategy"() {
 
         given:
+        def executionStrategy = new AsyncSerialExecutionStrategy()
         def starWarsWiring = new StarWarsDataLoaderWiring()
         def dlRegistry = starWarsWiring.newDataLoaderRegistry()
 
@@ -136,15 +136,12 @@ class DataLoaderDispatcherTest extends Specification {
 
         def asyncResult = graphql.executeAsync(newExecutionInput().query(query).dataLoaderRegistry(dlRegistry))
 
+        Awaitility.await().atMost(Duration.ofMillis(200)).until { -> asyncResult.isDone() }
         def er = asyncResult.join()
 
         then:
         er.data == expectedQueryData
 
-        where:
-        executionStrategyName          | executionStrategy                  || _
-        "AsyncExecutionStrategy"       | new AsyncSerialExecutionStrategy() || _
-        "AsyncSerialExecutionStrategy" | new AsyncSerialExecutionStrategy() || _
     }
 
     def "basic batch loading is possible"() {

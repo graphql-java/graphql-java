@@ -228,7 +228,7 @@ public class Execution {
         if (executionContext.getDataLoaderRegistry() == EMPTY_DATALOADER_REGISTRY || doNotAutomaticallyDispatchDataLoader) {
             return DataLoaderDispatchStrategy.NO_OP;
         }
-        if (executionStrategy instanceof AsyncExecutionStrategy) {
+        if (! executionContext.isSubscriptionOperation()) {
             boolean deferEnabled = Optional.ofNullable(executionContext.getGraphQLContext())
                     .map(graphqlContext -> graphqlContext.getBoolean(ExperimentalApi.ENABLE_INCREMENTAL_SUPPORT))
                     .orElse(false);

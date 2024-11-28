@@ -137,19 +137,17 @@ public class PerLevelDataLoaderDispatchStrategyWithDeferAlwaysDispatch implement
     }
 
     @Override
-    public void executionStrategyOnFieldValuesInfo(List<FieldValueInfo> fieldValueInfoList, ExecutionStrategyParameters parameters) {
+    public void executionStrategyOnFieldValuesInfo(List<FieldValueInfo> fieldValueInfoList) {
         if (this.startedDeferredExecution.get()) {
             this.dispatch();
         }
-        int curLevel = parameters.getPath().getLevel() + 1;
-        onFieldValuesInfoDispatchIfNeeded(fieldValueInfoList, curLevel, parameters);
+        onFieldValuesInfoDispatchIfNeeded(fieldValueInfoList, 1);
     }
 
     @Override
-    public void executionStrategyOnFieldValuesException(Throwable t, ExecutionStrategyParameters executionStrategyParameters) {
-        int curLevel = executionStrategyParameters.getPath().getLevel() + 1;
+    public void executionStrategyOnFieldValuesException(Throwable t) {
         callStack.lock.runLocked(() ->
-                callStack.increaseHappenedOnFieldValueCalls(curLevel)
+                callStack.increaseHappenedOnFieldValueCalls(1)
         );
     }
 
@@ -159,7 +157,7 @@ public class PerLevelDataLoaderDispatchStrategyWithDeferAlwaysDispatch implement
             this.dispatch();
         }
         int curLevel = parameters.getPath().getLevel() + 1;
-        onFieldValuesInfoDispatchIfNeeded(fieldValueInfoList, curLevel, parameters);
+        onFieldValuesInfoDispatchIfNeeded(fieldValueInfoList, curLevel);
     }
 
 
@@ -207,7 +205,7 @@ public class PerLevelDataLoaderDispatchStrategyWithDeferAlwaysDispatch implement
         });
     }
 
-    private void onFieldValuesInfoDispatchIfNeeded(List<FieldValueInfo> fieldValueInfoList, int curLevel, ExecutionStrategyParameters parameters) {
+    private void onFieldValuesInfoDispatchIfNeeded(List<FieldValueInfo> fieldValueInfoList, int curLevel) {
         boolean dispatchNeeded = callStack.lock.callLocked(() ->
                 handleOnFieldValuesInfo(fieldValueInfoList, curLevel)
         );
