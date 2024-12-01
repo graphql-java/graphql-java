@@ -70,6 +70,7 @@ import graphql.schema.GraphQLTypeReference;
 import graphql.schema.GraphQLTypeVisitor;
 import graphql.schema.GraphQLTypeVisitorStub;
 import graphql.schema.GraphQLUnionType;
+import graphql.schema.InputValueWithState;
 import graphql.schema.SchemaTransformer;
 import graphql.schema.TypeResolver;
 import graphql.schema.idl.DirectiveInfo;
@@ -94,6 +95,7 @@ import java.util.function.Consumer;
 import static graphql.Assert.assertNotNull;
 import static graphql.parser.ParserEnvironment.newParserEnvironment;
 import static graphql.schema.GraphQLArgument.newArgument;
+import static graphql.schema.GraphQLNonNull.nonNull;
 import static graphql.schema.GraphQLTypeUtil.unwrapNonNull;
 import static graphql.schema.GraphQLTypeUtil.unwrapNonNullAs;
 import static graphql.schema.GraphQLTypeUtil.unwrapOneAs;
@@ -260,16 +262,6 @@ public class Anonymizer {
 
             @Override
             public TraversalControl visitGraphQLDirective(GraphQLDirective graphQLDirective, TraverserContext<GraphQLSchemaElement> context) {
-                if (Directives.DEPRECATED_DIRECTIVE_DEFINITION.getName().equals(graphQLDirective.getName())) {
-                    GraphQLArgument reason = newArgument().name("reason")
-                            .type(Scalars.GraphQLString)
-                            .clearValue().build();
-                    GraphQLDirective newElement = graphQLDirective.transform(builder -> {
-                        builder.description(null).argument(reason);
-                    });
-                    changeNode(context, newElement);
-                    return TraversalControl.ABORT;
-                }
                 if (DirectiveInfo.isGraphqlSpecifiedDirective(graphQLDirective.getName())) {
                     return TraversalControl.ABORT;
                 }
@@ -285,7 +277,8 @@ public class Anonymizer {
                 if (Directives.DEPRECATED_DIRECTIVE_DEFINITION.getName().equals(graphQLDirective.getName())) {
                     GraphQLAppliedDirectiveArgument reason = GraphQLAppliedDirectiveArgument.newArgument().name("reason")
                             .type(Scalars.GraphQLString)
-                            .clearValue().build();
+                            .clearValue()
+                            .build();
                     GraphQLAppliedDirective newElement = graphQLDirective.transform(builder -> {
                         builder.description(null).argument(reason);
                     });
@@ -918,7 +911,7 @@ public class Anonymizer {
             graphql.Assert.assertNotNull(graphQLType, "Schema must contain type %s", typeName);
             return graphQLType;
         } else if (type instanceof NonNullType) {
-            return GraphQLNonNull.nonNull(fromTypeToGraphQLType(TypeUtil.unwrapOne(type), schema));
+            return nonNull(fromTypeToGraphQLType(TypeUtil.unwrapOne(type), schema));
         } else if (type instanceof ListType) {
             return GraphQLList.list(fromTypeToGraphQLType(TypeUtil.unwrapOne(type), schema));
         } else {
