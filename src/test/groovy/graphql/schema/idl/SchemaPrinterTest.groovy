@@ -968,7 +968,7 @@ type Query {
 "Marks the field, argument, input field or enum value as deprecated"
 directive @deprecated(
     "The reason for the deprecation"
-    reason: String = "No longer supported"
+    reason: String! = "No longer supported"
   ) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION
 
 directive @enumTypeDirective on ENUM
@@ -1144,7 +1144,7 @@ input SomeInput {
         result == '''"Marks the field, argument, input field or enum value as deprecated"
 directive @deprecated(
     "The reason for the deprecation"
-    reason: String = "No longer supported"
+    reason: String! = "No longer supported"
   ) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION
 
 "Directs the executor to include this field or fragment only when the `if` argument is true"
@@ -1240,7 +1240,7 @@ type Query {
         resultWithDirectives == '''"Marks the field, argument, input field or enum value as deprecated"
 directive @deprecated(
     "The reason for the deprecation"
-    reason: String = "No longer supported"
+    reason: String! = "No longer supported"
   ) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION
 
 directive @example on FIELD_DEFINITION
@@ -1308,7 +1308,7 @@ type Query {
         resultWithDirectiveDefinitions == '''"Marks the field, argument, input field or enum value as deprecated"
 directive @deprecated(
     "The reason for the deprecation"
-    reason: String = "No longer supported"
+    reason: String! = "No longer supported"
   ) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION
 
 directive @example on FIELD_DEFINITION
@@ -1405,7 +1405,7 @@ extend schema {
 "Marks the field, argument, input field or enum value as deprecated"
 directive @deprecated(
     "The reason for the deprecation"
-    reason: String = "No longer supported"
+    reason: String! = "No longer supported"
   ) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION
 
 "Directs the executor to include this field or fragment only when the `if` argument is true"
@@ -1491,7 +1491,7 @@ schema @schemaDirective{
 "Marks the field, argument, input field or enum value as deprecated"
 directive @deprecated(
     "The reason for the deprecation"
-    reason: String = "No longer supported"
+    reason: String! = "No longer supported"
   ) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION
 
 "Directs the executor to include this field or fragment only when the `if` argument is true"
@@ -1631,7 +1631,7 @@ type MyQuery {
         result == '''"Marks the field, argument, input field or enum value as deprecated"
 directive @deprecated(
     "The reason for the deprecation"
-    reason: String = "No longer supported"
+    reason: String! = "No longer supported"
   ) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION
 
 directive @directive1 on SCALAR
@@ -1873,7 +1873,7 @@ type Query {
         result == '''"Marks the field, argument, input field or enum value as deprecated"
 directive @deprecated(
     "The reason for the deprecation"
-    reason: String = "No longer supported"
+    reason: String! = "No longer supported"
   ) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION
 
 type Query {
@@ -2167,7 +2167,7 @@ type PrintMeType {
 "Marks the field, argument, input field or enum value as deprecated"
 directive @deprecated(
     "The reason for the deprecation"
-    reason: String = "No longer supported"
+    reason: String! = "No longer supported"
   ) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION
 
 directive @foo on SCHEMA
@@ -2399,7 +2399,7 @@ directive @include(
 "Marks the field, argument, input field or enum value as deprecated"
 directive @deprecated(
     "The reason for the deprecation"
-    reason: String = "No longer supported"
+    reason: String! = "No longer supported"
   ) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION
 
 union ZUnion = XQuery | Query
@@ -2515,7 +2515,7 @@ schema {
 "Marks the field, argument, input field or enum value as deprecated"
 directive @deprecated(
     "The reason for the deprecation"
-    reason: String = "No longer supported"
+    reason: String! = "No longer supported"
   ) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION
 
 " custom directive 'example' description 1"
@@ -2752,7 +2752,7 @@ schema {
 "Marks the field, argument, input field or enum value as deprecated"
 directive @deprecated(
     "The reason for the deprecation"
-    reason: String = "No longer supported"
+    reason: String! = "No longer supported"
   ) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION
 
 " custom directive 'example' description 1"
@@ -2940,7 +2940,7 @@ input Input {
         result == """"Marks the field, argument, input field or enum value as deprecated"
 directive @deprecated(
     "The reason for the deprecation"
-    reason: String = "No longer supported"
+    reason: String! = "No longer supported"
   ) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION
 
 "Directs the executor to include this field or fragment only when the `if` argument is true"

@@ -15,7 +15,7 @@ directive @skip(
     if: Boolean!
 ) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
 
-directive @deprecated(reason: String) on FIELD_DEFINITION | ENUM_VALUE
+directive @deprecated(reason: String!) on FIELD_DEFINITION | ENUM_VALUE
 
 "Exposes a URL that specifies the behaviour of this scalar."
 directive @specifiedBy(

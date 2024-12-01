@@ -25,7 +25,7 @@ directive @Directive8(argument7: Enum3!) on FIELD_DEFINITION
 
 directive @Directive9(argument8: String!) on OBJECT
 
-directive @deprecated(reason: String) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION
+directive @deprecated(reason: String!) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION
 
 "Directs the executor to include this field or fragment only when the `if` argument is true"
 directive @include(

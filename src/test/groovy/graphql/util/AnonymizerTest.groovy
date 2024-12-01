@@ -729,7 +729,7 @@ type Object1 {
             
             directive @Directive1(argument1: String! = "stringValue4") repeatable on SCHEMA | SCALAR | OBJECT | FIELD_DEFINITION | ARGUMENT_DEFINITION | INTERFACE | UNION | ENUM | ENUM_VALUE | INPUT_OBJECT | INPUT_FIELD_DEFINITION
             
-            directive @deprecated(reason: String) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION
+            directive @deprecated(reason: String!) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION
 
             interface Interface1 @Directive1(argument1 : "stringValue12") {
               field2: String
