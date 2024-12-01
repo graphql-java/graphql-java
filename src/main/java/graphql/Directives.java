@@ -63,7 +63,7 @@ public class Directives {
                         newInputValueDefinition()
                                 .name("reason")
                                 .description(createDescription("The reason for the deprecation"))
-                                .type(newTypeName().name(STRING).build())
+                                .type(newNonNullType(newTypeName().name(STRING).build()).build())
                                 .defaultValue(StringValue.newStringValue().value(NO_LONGER_SUPPORTED).build())
                                 .build())
                 .build();
@@ -197,7 +197,7 @@ public class Directives {
             .description("Marks the field, argument, input field or enum value as deprecated")
             .argument(newArgument()
                     .name("reason")
-                    .type(GraphQLString)
+                    .type(nonNull(GraphQLString))
                     .defaultValueProgrammatic(NO_LONGER_SUPPORTED)
                     .description("The reason for the deprecation"))
             .validLocations(FIELD_DEFINITION, ENUM_VALUE, ARGUMENT_DEFINITION, INPUT_FIELD_DEFINITION)
