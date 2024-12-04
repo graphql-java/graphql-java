@@ -16,6 +16,7 @@ import graphql.schema.GraphQLDirective;
 import graphql.schema.GraphQLSchema;
 import graphql.util.FpKit;
 import graphql.util.LockKit;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -37,6 +38,7 @@ public class QueryDirectivesImpl implements QueryDirectives {
     private final MergedField mergedField;
     private final GraphQLSchema schema;
     private final Map<String, Object> coercedVariables;
+    @Nullable
     private final Map<String, NormalizedInputValue> normalizedVariableValues;
     private final GraphQLContext graphQLContext;
     private final Locale locale;
@@ -68,22 +70,26 @@ public class QueryDirectivesImpl implements QueryDirectives {
             BiMap<QueryAppliedDirective, GraphQLDirective> gqlDirectiveCounterPartsInverse = gqlDirectiveCounterParts.inverse();
             mergedField.getFields().forEach(field -> {
                 List<Directive> directives = field.getDirectives();
-                ImmutableList<GraphQLDirective> resolvedDirectives = ImmutableList.copyOf(FpKit.flatList(
-                        directivesResolver
-                                .resolveDirectives(directives, schema, coercedVariables, graphQLContext, locale)
-                                .values()
-                ));
-                for (int i = 0; i < directives.size(); i++) {
-                    Directive directive = directives.get(i);
+                Map<String, Directive> astDirectivesByName = FpKit.getByName(directives, Directive::getName);
+                Map<String, List<GraphQLDirective>> directivesMap = directivesResolver
+                        .resolveDirectives(directives, schema, coercedVariables, graphQLContext, locale);
+                ImmutableList<GraphQLDirective> resolvedDirectives = ImmutableList.copyOf(
+                        FpKit.flatList(directivesMap.values()));
+
+                // build a counterpart map of GraphQLDirective to AST directive
+                for (int i = 0; i < resolvedDirectives.size(); i++) {
                     GraphQLDirective graphQLDirective = resolvedDirectives.get(i);
-                    directiveCounterParts.put(graphQLDirective, directive);
+                    Directive astDirective = astDirectivesByName.get(graphQLDirective.getName());
+                    if (astDirective != null) {
+                        directiveCounterParts.put(graphQLDirective, astDirective);
+                    }
                 }
 
                 ImmutableList.Builder<QueryAppliedDirective> appliedDirectiveBuilder = ImmutableList.builder();
                 for (GraphQLDirective resolvedDirective : resolvedDirectives) {
                     QueryAppliedDirective appliedDirective = toAppliedDirective(resolvedDirective);
-                    gqlDirectiveCounterParts.put(resolvedDirective, appliedDirective);
                     appliedDirectiveBuilder.add(appliedDirective);
+                    gqlDirectiveCounterParts.put(resolvedDirective, appliedDirective);
                 }
                 byField.put(field, resolvedDirectives);
                 // at some point we will only use applied
@@ -106,10 +112,12 @@ public class QueryDirectivesImpl implements QueryDirectives {
                 byNameApplied.values().forEach(directiveList -> {
                     for (QueryAppliedDirective queryAppliedDirective : directiveList) {
                         GraphQLDirective graphQLDirective = gqlDirectiveCounterPartsInverse.get(queryAppliedDirective);
+                        // we need this counterpart because the ValuesResolver needs the runtime and AST element
                         Directive directive = directiveCounterParts.get(graphQLDirective);
-
-                        Map<String, NormalizedInputValue> normalizedArgumentValues = ValuesResolver.getNormalizedArgumentValues(graphQLDirective.getArguments(), directive.getArguments(), this.normalizedVariableValues);
-                        normalizedValuesByAppliedDirective.put(queryAppliedDirective, normalizedArgumentValues);
+                        if (directive != null) {
+                            Map<String, NormalizedInputValue> normalizedArgumentValues = ValuesResolver.getNormalizedArgumentValues(graphQLDirective.getArguments(), directive.getArguments(), this.normalizedVariableValues);
+                            normalizedValuesByAppliedDirective.put(queryAppliedDirective, normalizedArgumentValues);
+                        }
                     }
                 });
             }
