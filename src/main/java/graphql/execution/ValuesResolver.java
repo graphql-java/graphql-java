@@ -101,7 +101,7 @@ public class ValuesResolver {
      *
      * @return a map of the normalised values
      */
-    public static Map<String, NormalizedInputValue> getNormalizedVariableValues(
+    public static NormalizedVariables getNormalizedVariableValues(
             GraphQLSchema schema,
             List<VariableDefinition> variableDefinitions,
             RawVariables rawVariables,
@@ -131,9 +131,7 @@ public class ValuesResolver {
                 }
             }
         }
-
-        return result;
-
+        return NormalizedVariables.of(result);
     }
 
 

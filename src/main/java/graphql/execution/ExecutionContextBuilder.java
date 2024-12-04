@@ -38,6 +38,7 @@ public class ExecutionContextBuilder {
     Document document;
     OperationDefinition operationDefinition;
     CoercedVariables coercedVariables = CoercedVariables.emptyVariables();
+    NormalizedVariables normalizedVariables = NormalizedVariables.emptyVariables();
     ImmutableMap<String, FragmentDefinition> fragmentsByName = ImmutableKit.emptyMap();
     DataLoaderRegistry dataLoaderRegistry;
     Locale locale;
@@ -167,6 +168,11 @@ public class ExecutionContextBuilder {
 
     public ExecutionContextBuilder coercedVariables(CoercedVariables coercedVariables) {
         this.coercedVariables = coercedVariables;
+        return this;
+    }
+
+    public ExecutionContextBuilder normalizedVariableValues(NormalizedVariables normalizedVariables) {
+        this.normalizedVariables = normalizedVariables;
         return this;
     }
 

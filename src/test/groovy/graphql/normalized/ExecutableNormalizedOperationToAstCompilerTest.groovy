@@ -1294,8 +1294,8 @@ abstract class ExecutableNormalizedOperationToAstCompilerTest extends Specificat
         fooField.directives.size() == 1
         nameField.directives.size() == 1
         documentPrinted == '''subscription {
-  foo1(arg: {arg1 : "Subscription"}) @optIn(to: "foo") {
-    name @optIn(to: "devOps")
+  foo1(arg: {arg1 : "Subscription"}) @optIn(to: ["foo"]) {
+    name @optIn(to: ["devOps"])
   }
 }
 '''

@@ -1,8 +1,14 @@
 package graphql.execution.directives
 
+import com.google.common.collect.ImmutableList
 import graphql.GraphQL
 import graphql.TestUtil
+import graphql.execution.CoercedVariables
+import graphql.execution.RawVariables
+import graphql.normalized.ExecutableNormalizedField
+import graphql.normalized.ExecutableNormalizedOperationFactory
 import graphql.schema.DataFetcher
+import graphql.schema.FieldCoordinates
 import spock.lang.Specification
 
 /**
@@ -134,4 +140,21 @@ class QueryDirectivesIntegrationTest extends Specification {
         joinArgs(immediate) == "cached(forMillis:10)"
     }
 
+    def "can capture directive argument values inside ENO path"() {
+        def query = TestUtil.parseQuery(pathologicalQuery)
+        when:
+        def eno = ExecutableNormalizedOperationFactory.createExecutableNormalizedOperationWithRawVariables(
+                schema, query, "Books", RawVariables.emptyVariables())
+
+
+        then:
+        def booksENF = eno.getTopLevelFields()[0]
+        booksENF != null
+        def bookQueryDirectives = eno.getQueryDirectives(booksENF)
+        bookQueryDirectives.immediateAppliedDirectivesByName.isEmpty()
+
+        def reviewField = eno.getCoordinatesToNormalizedFields().get(FieldCoordinates.coordinates("Book", "review"))
+        def reviewQueryDirectives = eno.getQueryDirectives(reviewField[0])
+        !reviewQueryDirectives.immediateAppliedDirectivesByName.isEmpty()
+    }
 }

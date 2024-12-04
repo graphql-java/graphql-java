@@ -77,8 +77,14 @@ public class Execution {
         List<VariableDefinition> variableDefinitions = operationDefinition.getVariableDefinitions();
 
         CoercedVariables coercedVariables;
+        NormalizedVariables normalizedVariableValues;
         try {
             coercedVariables = ValuesResolver.coerceVariableValues(graphQLSchema, variableDefinitions, inputVariables, executionInput.getGraphQLContext(), executionInput.getLocale());
+
+            normalizedVariableValues = ValuesResolver.getNormalizedVariableValues(graphQLSchema,
+                    variableDefinitions,
+                    inputVariables,
+                    executionInput.getGraphQLContext(), executionInput.getLocale());
         } catch (RuntimeException rte) {
             if (rte instanceof GraphQLError) {
                 return completedFuture(new ExecutionResultImpl((GraphQLError) rte));
@@ -100,6 +106,7 @@ public class Execution {
                 .root(executionInput.getRoot())
                 .fragmentsByName(fragmentsByName)
                 .coercedVariables(coercedVariables)
+                .normalizedVariableValues(normalizedVariableValues)
                 .document(document)
                 .operationDefinition(operationDefinition)
                 .dataLoaderRegistry(executionInput.getDataLoaderRegistry())

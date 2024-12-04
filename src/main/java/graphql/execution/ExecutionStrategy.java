@@ -464,6 +464,7 @@ public abstract class ExecutionStrategy {
             QueryDirectives queryDirectives = new QueryDirectivesImpl(field,
                     executionContext.getGraphQLSchema(),
                     executionContext.getCoercedVariables().toMap(),
+                    executionContext.getNormalizedVariables().toMap(),
                     executionContext.getGraphQLContext(),
                     executionContext.getLocale());
 

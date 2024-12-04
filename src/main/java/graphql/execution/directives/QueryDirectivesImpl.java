@@ -1,13 +1,16 @@
 package graphql.execution.directives;
 
+import com.google.common.collect.BiMap;
+import com.google.common.collect.HashBiMap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import graphql.GraphQLContext;
 import graphql.Internal;
-import graphql.collect.ImmutableKit;
 import graphql.execution.MergedField;
+import graphql.execution.ValuesResolver;
 import graphql.language.Directive;
 import graphql.language.Field;
+import graphql.normalized.NormalizedInputValue;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLDirective;
 import graphql.schema.GraphQLSchema;
@@ -33,7 +36,8 @@ public class QueryDirectivesImpl implements QueryDirectives {
     private final DirectivesResolver directivesResolver = new DirectivesResolver();
     private final MergedField mergedField;
     private final GraphQLSchema schema;
-    private final Map<String, Object> variables;
+    private final Map<String, Object> coercedVariables;
+    private final Map<String, NormalizedInputValue> normalizedVariableValues;
     private final GraphQLContext graphQLContext;
     private final Locale locale;
 
@@ -42,11 +46,13 @@ public class QueryDirectivesImpl implements QueryDirectives {
     private volatile ImmutableMap<String, List<GraphQLDirective>> fieldDirectivesByName;
     private volatile ImmutableMap<Field, List<QueryAppliedDirective>> fieldAppliedDirectivesByField;
     private volatile ImmutableMap<String, List<QueryAppliedDirective>> fieldAppliedDirectivesByName;
+    private volatile ImmutableMap<QueryAppliedDirective, Map<String, NormalizedInputValue>> normalizedValuesByAppliedDirective;
 
-    public QueryDirectivesImpl(MergedField mergedField, GraphQLSchema schema, Map<String, Object> variables, GraphQLContext graphQLContext, Locale locale) {
+    public QueryDirectivesImpl(MergedField mergedField, GraphQLSchema schema, Map<String, Object> coercedVariables, Map<String, NormalizedInputValue> normalizedVariableValues, GraphQLContext graphQLContext, Locale locale) {
         this.mergedField = mergedField;
         this.schema = schema;
-        this.variables = variables;
+        this.coercedVariables = coercedVariables;
+        this.normalizedVariableValues = normalizedVariableValues;
         this.graphQLContext = graphQLContext;
         this.locale = locale;
     }
@@ -56,16 +62,32 @@ public class QueryDirectivesImpl implements QueryDirectives {
 
             final Map<Field, List<GraphQLDirective>> byField = new LinkedHashMap<>();
             final Map<Field, List<QueryAppliedDirective>> byFieldApplied = new LinkedHashMap<>();
+
+            BiMap<GraphQLDirective, Directive> directiveCounterParts = HashBiMap.create();
+            BiMap<GraphQLDirective, QueryAppliedDirective> gqlDirectiveCounterParts = HashBiMap.create();
+            BiMap<QueryAppliedDirective, GraphQLDirective> gqlDirectiveCounterPartsInverse = gqlDirectiveCounterParts.inverse();
             mergedField.getFields().forEach(field -> {
                 List<Directive> directives = field.getDirectives();
                 ImmutableList<GraphQLDirective> resolvedDirectives = ImmutableList.copyOf(FpKit.flatList(
                         directivesResolver
-                                .resolveDirectives(directives, schema, variables, graphQLContext, locale)
+                                .resolveDirectives(directives, schema, coercedVariables, graphQLContext, locale)
                                 .values()
                 ));
+                for (int i = 0; i < directives.size(); i++) {
+                    Directive directive = directives.get(i);
+                    GraphQLDirective graphQLDirective = resolvedDirectives.get(i);
+                    directiveCounterParts.put(graphQLDirective, directive);
+                }
+
+                ImmutableList.Builder<QueryAppliedDirective> appliedDirectiveBuilder = ImmutableList.builder();
+                for (GraphQLDirective resolvedDirective : resolvedDirectives) {
+                    QueryAppliedDirective appliedDirective = toAppliedDirective(resolvedDirective);
+                    gqlDirectiveCounterParts.put(resolvedDirective, appliedDirective);
+                    appliedDirectiveBuilder.add(appliedDirective);
+                }
                 byField.put(field, resolvedDirectives);
                 // at some point we will only use applied
-                byFieldApplied.put(field, ImmutableKit.map(resolvedDirectives, this::toAppliedDirective));
+                byFieldApplied.put(field, appliedDirectiveBuilder.build());
             });
 
             Map<String, List<GraphQLDirective>> byName = new LinkedHashMap<>();
@@ -74,13 +96,29 @@ public class QueryDirectivesImpl implements QueryDirectives {
                 String name = directive.getName();
                 byName.computeIfAbsent(name, k -> new ArrayList<>()).add(directive);
                 // at some point we will only use applied
-                byNameApplied.computeIfAbsent(name, k -> new ArrayList<>()).add(toAppliedDirective(directive));
+                QueryAppliedDirective appliedDirective = gqlDirectiveCounterParts.get(directive);
+                byNameApplied.computeIfAbsent(name, k -> new ArrayList<>()).add(appliedDirective);
             }));
+
+            // create NormalizedInputValue values for directive arguments
+            Map<QueryAppliedDirective, Map<String, NormalizedInputValue>> normalizedValuesByAppliedDirective = new LinkedHashMap<>();
+            if (this.normalizedVariableValues != null) {
+                byNameApplied.values().forEach(directiveList -> {
+                    for (QueryAppliedDirective queryAppliedDirective : directiveList) {
+                        GraphQLDirective graphQLDirective = gqlDirectiveCounterPartsInverse.get(queryAppliedDirective);
+                        Directive directive = directiveCounterParts.get(graphQLDirective);
+
+                        Map<String, NormalizedInputValue> normalizedArgumentValues = ValuesResolver.getNormalizedArgumentValues(graphQLDirective.getArguments(), directive.getArguments(), this.normalizedVariableValues);
+                        normalizedValuesByAppliedDirective.put(queryAppliedDirective, normalizedArgumentValues);
+                    }
+                });
+            }
 
             this.fieldDirectivesByName = ImmutableMap.copyOf(byName);
             this.fieldDirectivesByField = ImmutableMap.copyOf(byField);
             this.fieldAppliedDirectivesByName = ImmutableMap.copyOf(byNameApplied);
             this.fieldAppliedDirectivesByField = ImmutableMap.copyOf(byFieldApplied);
+            this.normalizedValuesByAppliedDirective = ImmutableMap.copyOf(normalizedValuesByAppliedDirective);
         });
     }
 
@@ -112,6 +150,12 @@ public class QueryDirectivesImpl implements QueryDirectives {
     public Map<Field, List<QueryAppliedDirective>> getImmediateAppliedDirectivesByField() {
         computeValuesLazily();
         return fieldAppliedDirectivesByField;
+    }
+
+    @Override
+    public Map<QueryAppliedDirective, Map<String, NormalizedInputValue>> getNormalizedInputValueByImmediateAppliedDirectives() {
+        computeValuesLazily();
+        return normalizedValuesByAppliedDirective;
     }
 
     @Override
