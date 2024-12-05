@@ -1770,7 +1770,8 @@ class SchemaGeneratorTest extends Specification {
 
         def appliedDirective = f1.getAppliedDirective("deprecated")
         appliedDirective.name == "deprecated"
-        appliedDirective.getArgument("reason").type == GraphQLString
+        appliedDirective.getArgument("reason").type instanceof GraphQLNonNull
+        (appliedDirective.getArgument("reason").type as GraphQLNonNull).wrappedType == GraphQLString
         printAst(appliedDirective.getArgument("reason").argumentValue.value as Node) == '"No longer supported"'
 
         when:
@@ -1781,7 +1782,8 @@ class SchemaGeneratorTest extends Specification {
 
         def appliedDirective2 = f2.getAppliedDirective("deprecated")
         appliedDirective2.name == "deprecated"
-        appliedDirective2.getArgument("reason").type == GraphQLString
+        appliedDirective2.getArgument("reason").type instanceof GraphQLNonNull
+        (appliedDirective2.getArgument("reason").type as GraphQLNonNull).wrappedType == GraphQLString
         printAst(appliedDirective2.getArgument("reason").argumentValue.value as Node) == '"Just because"'
         def directive2 = f2.getDirective("deprecated")
         printAst(directive2.getArgument("reason").argumentDefaultValue.value as Node) == '"No longer supported"'
