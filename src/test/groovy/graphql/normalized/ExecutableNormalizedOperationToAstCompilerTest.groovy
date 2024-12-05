@@ -3,6 +3,7 @@ package graphql.normalized
 import graphql.GraphQL
 import graphql.TestUtil
 import graphql.execution.RawVariables
+import graphql.execution.directives.QueryAppliedDirective
 import graphql.execution.directives.QueryDirectives
 import graphql.language.AstPrinter
 import graphql.language.AstSorter
@@ -25,11 +26,16 @@ import static graphql.language.OperationDefinition.Operation.SUBSCRIPTION
 import static graphql.normalized.ExecutableNormalizedOperationToAstCompiler.compileToDocument
 import static graphql.normalized.ExecutableNormalizedOperationToAstCompiler.compileToDocumentWithDeferSupport
 
-abstract class ExecutableNormalizedOperationToAstCompilerTest extends Specification {
+abstract class ENOToAstCompilerTestBase extends Specification {
     static boolean deferSupport
 
-
     VariablePredicate noVariables = new VariablePredicate() {
+
+        @Override
+        boolean shouldMakeVariable(ExecutableNormalizedField executableNormalizedField, QueryAppliedDirective queryAppliedDirective, String argName, NormalizedInputValue normalizedInputValue) {
+            return false
+        }
+
         @Override
         boolean shouldMakeVariable(ExecutableNormalizedField executableNormalizedField, String argName, NormalizedInputValue normalizedInputValue) {
             return false
@@ -41,6 +47,11 @@ abstract class ExecutableNormalizedOperationToAstCompilerTest extends Specificat
         boolean shouldMakeVariable(ExecutableNormalizedField executableNormalizedField, String argName, NormalizedInputValue normalizedInputValue) {
             "JSON" == normalizedInputValue.unwrappedTypeName && normalizedInputValue.value != null
         }
+
+        @Override
+        boolean shouldMakeVariable(ExecutableNormalizedField executableNormalizedField, QueryAppliedDirective queryAppliedDirective, String argName, NormalizedInputValue normalizedInputValue) {
+            "JSON" == normalizedInputValue.unwrappedTypeName && normalizedInputValue.value != null
+        }
     }
 
     VariablePredicate allVariables = new VariablePredicate() {
@@ -48,7 +59,75 @@ abstract class ExecutableNormalizedOperationToAstCompilerTest extends Specificat
         boolean shouldMakeVariable(ExecutableNormalizedField executableNormalizedField, String argName, NormalizedInputValue normalizedInputValue) {
             return true
         }
+
+        @Override
+        boolean shouldMakeVariable(ExecutableNormalizedField executableNormalizedField, QueryAppliedDirective queryAppliedDirective, String argName, NormalizedInputValue normalizedInputValue) {
+            return true
+        }
     }
+
+
+    static ExecutableNormalizedOperation createNormalizedTree(GraphQLSchema schema, String query, Map<String, Object> variables = [:]) {
+        assertValidQuery(schema, query, variables)
+        Document originalDocument = TestUtil.parseQuery(query)
+
+        def options = ExecutableNormalizedOperationFactory.Options.defaultOptions().deferSupport(deferSupport)
+        return ExecutableNormalizedOperationFactory.createExecutableNormalizedOperationWithRawVariables(schema, originalDocument, null, RawVariables.of(variables), options)
+    }
+
+    static List<ExecutableNormalizedField> createNormalizedFields(GraphQLSchema schema, String query, Map<String, Object> variables = [:]) {
+        return createNormalizedTree(schema, query, variables).getTopLevelFields()
+    }
+
+    static void assertValidQuery(GraphQLSchema graphQLSchema, String query, Map variables = [:]) {
+        GraphQL graphQL = GraphQL.newGraphQL(graphQLSchema).build()
+        assert graphQL.execute(newExecutionInput().query(query).variables(variables)).errors.isEmpty()
+    }
+
+    static GraphQLSchema mkSchema(String sdl) {
+        def wiringFactory = new TestLiveMockedWiringFactory([JsonScalar.JSON_SCALAR])
+        def runtimeWiring = RuntimeWiring.newRuntimeWiring()
+                .wiringFactory(wiringFactory).build()
+        TestUtil.schema(sdl, runtimeWiring)
+    }
+
+    static ExecutableNormalizedOperationToAstCompiler.CompilerResult localCompileToDocument(
+            GraphQLSchema schema,
+            OperationDefinition.Operation operationKind,
+            String operationName,
+            List<ExecutableNormalizedField> topLevelFields,
+            VariablePredicate variablePredicate
+    ) {
+        return localCompileToDocument(schema, operationKind, operationName, topLevelFields, Map.of(), variablePredicate);
+    }
+
+    static ExecutableNormalizedOperationToAstCompiler.CompilerResult localCompileToDocument(
+            GraphQLSchema schema,
+            OperationDefinition.Operation operationKind,
+            String operationName,
+            List<ExecutableNormalizedField> topLevelFields,
+            Map<ExecutableNormalizedField, QueryDirectives> normalizedFieldToQueryDirectives,
+            VariablePredicate variablePredicate
+    ) {
+        if (deferSupport) {
+            return compileToDocumentWithDeferSupport(schema, operationKind, operationName, topLevelFields, normalizedFieldToQueryDirectives, variablePredicate)
+        }
+        return compileToDocument(schema, operationKind, operationName, topLevelFields, normalizedFieldToQueryDirectives, variablePredicate)
+    }
+
+    static Document sortDoc(Document doc) {
+        return new AstSorter().sort(doc)
+    }
+
+    static printDoc(Document doc) {
+        return AstPrinter.printAst(sortDoc(doc))
+    }
+}
+
+/**
+ * Test code in here - helps in the base class
+ */
+abstract class ExecutableNormalizedOperationToAstCompilerTest extends ENOToAstCompilerTestBase {
 
     def "test pet interfaces"() {
         String sdl = """
@@ -2194,128 +2273,6 @@ abstract class ExecutableNormalizedOperationToAstCompilerTest extends Specificat
 }
 '''
     }
-
-    def "can extract variables or inline values for directives on the query"() {
-        def sdl = '''
-            type Query {
-                foo(fooArg : String) : Foo
-            }
-            
-            type Foo {
-                bar(barArg : String) : String
-            }
-            
-            directive @optIn(to : [String!]!) repeatable on FIELD
-        '''
-
-        def query = '''
-            query named($fooArgVar : String, $barArgVar : String,  $skipVar : Boolean!, $optVar : [String!]!) {
-                foo(fooArg : $fooArgVar) @skip(if : $skipVar) {
-                    bar(barArg : $barArgVar) @optIn(to : ["optToX"]) @optIn(to : $optVar)
-                }
-            }
-        '''
-        GraphQLSchema schema = mkSchema(sdl)
-        def eno = createNormalizedTree(schema, query,
-                [fooArgVar: "fooArgVar", barArgVar: "barArgVar", skipVar: false, optVar : ["optToY"]])
-
-        when:
-        def result = localCompileToDocument(schema, QUERY, "named",
-                eno.getTopLevelFields(),eno.getNormalizedFieldToQueryDirectives(), allVariables)
-        def document = result.document
-        def vars = result.variables
-        def ast = printDoc(document)
-
-        then:
-        vars == [v0:"barArgVar", v1:"fooArgVar"]
-        //
-        // the below is what ir currently produces but its WRONG
-        // fix up when the other tests starts to work
-        //
-//        ast == '''query named {
-//  foo(fooArg: "fooArgVar") @skip(if: false) {
-//    bar(barArg: "barArgVar") @optIn(to: ["optToX"]) @optIn(to: ["optToY"])
-//  }
-//}
-//'''
-
-
-        when: "it has no variables"
-
-
-        result = localCompileToDocument(schema, QUERY, "named",
-                eno.getTopLevelFields(),eno.getNormalizedFieldToQueryDirectives(), noVariables)
-        document = result.document
-        vars = result.variables
-        ast = printDoc(document)
-
-        then:
-        vars == [:]
-        ast == '''query named {
-  foo(fooArg: "fooArgVar") @skip(if: false) {
-    bar(barArg: "barArgVar") @optIn(to: ["optToX"]) @optIn(to: ["optToY"])
-  }
-}
-'''
-
-    }
-
-    private static ExecutableNormalizedOperation createNormalizedTree(GraphQLSchema schema, String query, Map<String, Object> variables = [:]) {
-        assertValidQuery(schema, query, variables)
-        Document originalDocument = TestUtil.parseQuery(query)
-
-        def options = ExecutableNormalizedOperationFactory.Options.defaultOptions().deferSupport(deferSupport)
-        return ExecutableNormalizedOperationFactory.createExecutableNormalizedOperationWithRawVariables(schema, originalDocument, null, RawVariables.of(variables), options)
-    }
-
-    private static List<ExecutableNormalizedField> createNormalizedFields(GraphQLSchema schema, String query, Map<String, Object> variables = [:]) {
-        return createNormalizedTree(schema, query, variables).getTopLevelFields()
-    }
-
-    private static void assertValidQuery(GraphQLSchema graphQLSchema, String query, Map variables = [:]) {
-        GraphQL graphQL = GraphQL.newGraphQL(graphQLSchema).build()
-        assert graphQL.execute(newExecutionInput().query(query).variables(variables)).errors.isEmpty()
-    }
-
-    static GraphQLSchema mkSchema(String sdl) {
-        def wiringFactory = new TestLiveMockedWiringFactory([JsonScalar.JSON_SCALAR])
-        def runtimeWiring = RuntimeWiring.newRuntimeWiring()
-                .wiringFactory(wiringFactory).build()
-        TestUtil.schema(sdl, runtimeWiring)
-    }
-
-    private static ExecutableNormalizedOperationToAstCompiler.CompilerResult localCompileToDocument(
-            GraphQLSchema schema,
-            OperationDefinition.Operation operationKind,
-            String operationName,
-            List<ExecutableNormalizedField> topLevelFields,
-            VariablePredicate variablePredicate
-    ) {
-        return localCompileToDocument(schema, operationKind, operationName, topLevelFields, Map.of(), variablePredicate);
-    }
-
-    private static ExecutableNormalizedOperationToAstCompiler.CompilerResult localCompileToDocument(
-            GraphQLSchema schema,
-            OperationDefinition.Operation operationKind,
-            String operationName,
-            List<ExecutableNormalizedField> topLevelFields,
-            Map<ExecutableNormalizedField, QueryDirectives> normalizedFieldToQueryDirectives,
-            VariablePredicate variablePredicate
-    ) {
-        if (deferSupport) {
-            return compileToDocumentWithDeferSupport(schema, operationKind, operationName, topLevelFields, normalizedFieldToQueryDirectives, variablePredicate)
-        }
-        return compileToDocument(schema, operationKind, operationName, topLevelFields, normalizedFieldToQueryDirectives, variablePredicate)
-    }
-
-    private static Document sortDoc(Document doc) {
-        return new AstSorter().sort(doc)
-    }
-
-    private static printDoc(Document doc) {
-        return AstPrinter.printAst(sortDoc(doc))
-    }
-
 }
 
 class ExecutableNormalizedOperationToAstCompilerTestWithDeferSupport extends ExecutableNormalizedOperationToAstCompilerTest {

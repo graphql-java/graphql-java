@@ -70,20 +70,12 @@ public class QueryDirectivesImpl implements QueryDirectives {
             BiMap<QueryAppliedDirective, GraphQLDirective> gqlDirectiveCounterPartsInverse = gqlDirectiveCounterParts.inverse();
             mergedField.getFields().forEach(field -> {
                 List<Directive> directives = field.getDirectives();
-                Map<String, Directive> astDirectivesByName = FpKit.getByName(directives, Directive::getName);
-                Map<String, List<GraphQLDirective>> directivesMap = directivesResolver
+                BiMap<GraphQLDirective, Directive> directivesMap = directivesResolver
                         .resolveDirectives(directives, schema, coercedVariables, graphQLContext, locale);
-                ImmutableList<GraphQLDirective> resolvedDirectives = ImmutableList.copyOf(
-                        FpKit.flatList(directivesMap.values()));
 
-                // build a counterpart map of GraphQLDirective to AST directive
-                for (int i = 0; i < resolvedDirectives.size(); i++) {
-                    GraphQLDirective graphQLDirective = resolvedDirectives.get(i);
-                    Directive astDirective = astDirectivesByName.get(graphQLDirective.getName());
-                    if (astDirective != null) {
-                        directiveCounterParts.put(graphQLDirective, astDirective);
-                    }
-                }
+                directiveCounterParts.putAll(directivesMap);
+
+                ImmutableList<GraphQLDirective> resolvedDirectives = ImmutableList.copyOf(directivesMap.keySet());
 
                 ImmutableList.Builder<QueryAppliedDirective> appliedDirectiveBuilder = ImmutableList.builder();
                 for (GraphQLDirective resolvedDirective : resolvedDirectives) {
