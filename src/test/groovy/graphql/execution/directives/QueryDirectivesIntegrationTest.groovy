@@ -1,12 +1,12 @@
 package graphql.execution.directives
 
-import com.google.common.collect.ImmutableList
+
 import graphql.GraphQL
 import graphql.TestUtil
-import graphql.execution.CoercedVariables
 import graphql.execution.RawVariables
-import graphql.normalized.ExecutableNormalizedField
+import graphql.language.IntValue
 import graphql.normalized.ExecutableNormalizedOperationFactory
+import graphql.normalized.NormalizedInputValue
 import graphql.schema.DataFetcher
 import graphql.schema.FieldCoordinates
 import spock.lang.Specification
@@ -155,6 +155,53 @@ class QueryDirectivesIntegrationTest extends Specification {
 
         def reviewField = eno.getCoordinatesToNormalizedFields().get(FieldCoordinates.coordinates("Book", "review"))
         def reviewQueryDirectives = eno.getQueryDirectives(reviewField[0])
-        !reviewQueryDirectives.immediateAppliedDirectivesByName.isEmpty()
+        def reviewImmediateDirectivesMap = reviewQueryDirectives.immediateAppliedDirectivesByName
+        def argInputValues = simplifiedInputValuesWithState(reviewImmediateDirectivesMap)
+        argInputValues == [
+                timeout: [
+                        [timeout: [[afterMillis: 5]]], [timeout: [[afterMillis: 28]]], [timeout: [[afterMillis: 10]]]
+                ],
+                cached : [
+                        [cached: [[forMillis: 5]]], [cached: [[forMillis: 10]]]
+                ]
+        ]
+
+        // normalised values are AST values
+        def normalizedValues = simplifiedNormalizedValues(reviewQueryDirectives.getNormalizedInputValueByImmediateAppliedDirectives())
+        normalizedValues == [
+                timeout: [
+                        [afterMillis: 5], [afterMillis: 28], [afterMillis: 10]],
+                cached : [
+                        [forMillis: 5], [forMillis: 10]]
+        ]
+
+    }
+
+    def simplifiedInputValuesWithState(Map<String, List<QueryAppliedDirective>> mapOfDirectives) {
+        def simpleMap = [:]
+        mapOfDirectives.forEach { k, listOfDirectives ->
+
+            def dirVals = listOfDirectives.collect { qd ->
+                def argVals = qd.getArguments().collect { arg ->
+                    def argValue = arg.getArgumentValue()
+                    return [(arg.name): argValue?.value]
+                }
+                return [(qd.name): argVals]
+            }
+            simpleMap[k] = dirVals
+        }
+        return simpleMap
+    }
+
+    def simplifiedNormalizedValues(Map<QueryAppliedDirective, Map<String, NormalizedInputValue>> mapOfDirectives) {
+        Map<String, List<Map<String, Integer>>> simpleMap = new LinkedHashMap<>()
+        mapOfDirectives.forEach { qd, argMap ->
+            def argVals = argMap.collect { entry ->
+                def argValueAst = entry.value?.value as IntValue // just assume INtValue for these tests
+                return [(entry.key): argValueAst?.value?.toInteger()]
+            }
+            simpleMap.computeIfAbsent(qd.name, { _ -> [] }).addAll(argVals)
+        }
+        return simpleMap
     }
 }
