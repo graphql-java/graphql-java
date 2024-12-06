@@ -98,7 +98,7 @@ class InputInterceptorTest extends Specification {
             ''')
                 .graphQLContext({ it.put(InputInterceptor.class, interceptor) })
                 .variables(
-                        "booleanArg": "truthy",
+                        "booleanArg": false,
                         "stringArg": "sdrawkcab"
 
                 )
