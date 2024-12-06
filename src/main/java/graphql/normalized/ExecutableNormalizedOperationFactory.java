@@ -518,11 +518,10 @@ public class ExecutableNormalizedOperationFactory {
 
         private void captureMergedField(ExecutableNormalizedField enf, MergedField mergedFld) {
             // QueryDirectivesImpl is a lazy object and only computes itself when asked for
-            Map<String, NormalizedInputValue> normalizedVariableValues = Optional.ofNullable(this.normalizedVariableValues).map(NormalizedVariables::toMap).orElse(null);
             QueryDirectives queryDirectives = new QueryDirectivesImpl(mergedFld,
                     graphQLSchema,
-                    coercedVariableValues.toMap(),
-                    normalizedVariableValues,
+                    coercedVariableValues,
+                    () -> normalizedVariableValues,
                     options.getGraphQLContext(),
                     options.getLocale());
             normalizedFieldToQueryDirectives.put(enf, queryDirectives);

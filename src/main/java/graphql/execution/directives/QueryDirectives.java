@@ -13,6 +13,7 @@ import graphql.schema.GraphQLSchema;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.function.Supplier;
 
 /**
  * This gives you access to the immediate directives on a {@link graphql.execution.MergedField}.  This does not include directives on parent
@@ -120,7 +121,7 @@ public interface QueryDirectives {
 
         Builder coercedVariables(CoercedVariables coercedVariables);
 
-        Builder normalizedVariables(NormalizedVariables normalizedVariables);
+        Builder normalizedVariables(Supplier<NormalizedVariables> normalizedVariables);
 
         Builder graphQLContext(GraphQLContext graphQLContext);
 

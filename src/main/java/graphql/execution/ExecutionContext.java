@@ -45,7 +45,7 @@ public class ExecutionContext {
     private final OperationDefinition operationDefinition;
     private final Document document;
     private final CoercedVariables coercedVariables;
-    private final NormalizedVariables normalizedVariables;
+    private final Supplier<NormalizedVariables> normalizedVariables;
     private final Object root;
     private final Object context;
     private final GraphQLContext graphQLContext;
@@ -129,7 +129,10 @@ public class ExecutionContext {
         return coercedVariables;
     }
 
-    public NormalizedVariables getNormalizedVariables() {
+    /**
+     * @return a supplier that will give out the operations variables in normalized form
+     */
+    public Supplier<NormalizedVariables> getNormalizedVariables() {
         return normalizedVariables;
     }
 

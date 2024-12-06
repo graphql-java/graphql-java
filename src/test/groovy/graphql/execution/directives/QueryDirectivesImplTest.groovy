@@ -35,7 +35,10 @@ class QueryDirectivesImplTest extends Specification {
 
         def mergedField = MergedField.newMergedField([f1, f2]).build()
 
-        def impl = new QueryDirectivesImpl(mergedField, schema, [var: 10], [var : new NormalizedInputValue("type", IntValue.of(10))], GraphQLContext.getDefault(), Locale.getDefault())
+        def impl = new QueryDirectivesImpl(mergedField, schema,
+                CoercedVariables.of([var: 10]),
+                { -> NormalizedVariables.of([var: new NormalizedInputValue("type", IntValue.of(10))]) },
+                GraphQLContext.getDefault(), Locale.getDefault())
 
         when:
         def directives = impl.getImmediateDirectivesByName()
@@ -80,7 +83,7 @@ class QueryDirectivesImplTest extends Specification {
                 .mergedField(mergedField)
                 .schema(schema)
                 .coercedVariables(CoercedVariables.of([var: 10]))
-                .normalizedVariables(NormalizedVariables.of([var: new NormalizedInputValue("type", IntValue.of(10))]))
+                .normalizedVariables({ NormalizedVariables.of([var: new NormalizedInputValue("type", IntValue.of(10))]) })
                 .graphQLContext(GraphQLContext.getDefault())
                 .locale(Locale.getDefault())
                 .build()

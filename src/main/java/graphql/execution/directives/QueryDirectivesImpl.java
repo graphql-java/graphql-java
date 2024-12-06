@@ -4,9 +4,12 @@ import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import graphql.Assert;
 import graphql.GraphQLContext;
 import graphql.Internal;
+import graphql.execution.CoercedVariables;
 import graphql.execution.MergedField;
+import graphql.execution.NormalizedVariables;
 import graphql.execution.ValuesResolver;
 import graphql.language.Directive;
 import graphql.language.Field;
@@ -14,7 +17,6 @@ import graphql.normalized.NormalizedInputValue;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLDirective;
 import graphql.schema.GraphQLSchema;
-import graphql.util.FpKit;
 import graphql.util.LockKit;
 import org.jetbrains.annotations.Nullable;
 
@@ -23,7 +25,9 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.function.Supplier;
 
+import static graphql.Assert.assertNotNull;
 import static graphql.collect.ImmutableKit.emptyList;
 
 /**
@@ -37,9 +41,8 @@ public class QueryDirectivesImpl implements QueryDirectives {
     private final DirectivesResolver directivesResolver = new DirectivesResolver();
     private final MergedField mergedField;
     private final GraphQLSchema schema;
-    private final Map<String, Object> coercedVariables;
-    @Nullable
-    private final Map<String, NormalizedInputValue> normalizedVariableValues;
+    private final CoercedVariables coercedVariables;
+    private final Supplier<NormalizedVariables> normalizedVariableValues;
     private final GraphQLContext graphQLContext;
     private final Locale locale;
 
@@ -50,13 +53,13 @@ public class QueryDirectivesImpl implements QueryDirectives {
     private volatile ImmutableMap<String, List<QueryAppliedDirective>> fieldAppliedDirectivesByName;
     private volatile ImmutableMap<QueryAppliedDirective, Map<String, NormalizedInputValue>> normalizedValuesByAppliedDirective;
 
-    public QueryDirectivesImpl(MergedField mergedField, GraphQLSchema schema, Map<String, Object> coercedVariables, Map<String, NormalizedInputValue> normalizedVariableValues, GraphQLContext graphQLContext, Locale locale) {
-        this.mergedField = mergedField;
-        this.schema = schema;
-        this.coercedVariables = coercedVariables;
-        this.normalizedVariableValues = normalizedVariableValues;
-        this.graphQLContext = graphQLContext;
-        this.locale = locale;
+    public QueryDirectivesImpl(MergedField mergedField, GraphQLSchema schema, CoercedVariables coercedVariables, Supplier<NormalizedVariables> normalizedVariableValues, GraphQLContext graphQLContext, Locale locale) {
+        this.mergedField = assertNotNull(mergedField);
+        this.schema = assertNotNull(schema);
+        this.coercedVariables = assertNotNull(coercedVariables);
+        this.normalizedVariableValues = assertNotNull(normalizedVariableValues);
+        this.graphQLContext = assertNotNull(graphQLContext);
+        this.locale = assertNotNull(locale);
     }
 
     private void computeValuesLazily() {
@@ -100,14 +103,16 @@ public class QueryDirectivesImpl implements QueryDirectives {
 
             // create NormalizedInputValue values for directive arguments
             Map<QueryAppliedDirective, Map<String, NormalizedInputValue>> normalizedValuesByAppliedDirective = new LinkedHashMap<>();
-            if (this.normalizedVariableValues != null) {
+            NormalizedVariables normalizedVariableValues = this.normalizedVariableValues.get();
+            if (normalizedVariableValues != null) {
                 byNameApplied.values().forEach(directiveList -> {
                     for (QueryAppliedDirective queryAppliedDirective : directiveList) {
                         GraphQLDirective graphQLDirective = gqlDirectiveCounterPartsInverse.get(queryAppliedDirective);
                         // we need this counterpart because the ValuesResolver needs the runtime and AST element
                         Directive directive = directiveCounterParts.get(graphQLDirective);
                         if (directive != null) {
-                            Map<String, NormalizedInputValue> normalizedArgumentValues = ValuesResolver.getNormalizedArgumentValues(graphQLDirective.getArguments(), directive.getArguments(), this.normalizedVariableValues);
+                            Map<String, NormalizedInputValue> normalizedVariables = normalizedVariableValues.toMap();
+                            Map<String, NormalizedInputValue> normalizedArgumentValues = ValuesResolver.getNormalizedArgumentValues(graphQLDirective.getArguments(), directive.getArguments(), normalizedVariables);
                             normalizedValuesByAppliedDirective.put(queryAppliedDirective, normalizedArgumentValues);
                         }
                     }

@@ -26,7 +26,7 @@ public class DirectivesResolver {
     public DirectivesResolver() {
     }
 
-    public BiMap<GraphQLDirective, Directive> resolveDirectives(List<Directive> directives, GraphQLSchema schema, Map<String, Object> variables, GraphQLContext graphQLContext, Locale locale) {
+    public BiMap<GraphQLDirective, Directive> resolveDirectives(List<Directive> directives, GraphQLSchema schema, CoercedVariables variables, GraphQLContext graphQLContext, Locale locale) {
         GraphQLCodeRegistry codeRegistry = schema.getCodeRegistry();
         BiMap<GraphQLDirective, Directive> directiveMap = HashBiMap.create();
         directives.forEach(directive -> {
@@ -43,10 +43,10 @@ public class DirectivesResolver {
                                 GraphQLCodeRegistry codeRegistry,
                                 GraphQLDirective protoType,
                                 Directive fieldDirective,
-                                Map<String, Object> variables,
+                                CoercedVariables variables,
                                 GraphQLContext graphQLContext,
                                 Locale locale) {
-        Map<String, Object> argumentValues = ValuesResolver.getArgumentValues(codeRegistry, protoType.getArguments(), fieldDirective.getArguments(), CoercedVariables.of(variables), graphQLContext, locale);
+        Map<String, Object> argumentValues = ValuesResolver.getArgumentValues(codeRegistry, protoType.getArguments(), fieldDirective.getArguments(), variables, graphQLContext, locale);
         directiveBuilder.clearArguments();
         protoType.getArguments().forEach(protoArg -> {
             if (argumentValues.containsKey(protoArg.getName())) {
