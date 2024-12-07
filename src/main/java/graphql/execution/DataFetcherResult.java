@@ -39,20 +39,6 @@ public class DataFetcherResult<T> {
     private final Object localContext;
     private final Map<Object, Object> extensions;
 
-    /**
-     * Creates a data fetcher result
-     *
-     * @param data   the data
-     * @param errors the errors
-     *
-     * @deprecated use the {@link #newResult()} builder instead
-     */
-    @Internal
-    @Deprecated(since = "2019-01-11")
-    public DataFetcherResult(T data, List<GraphQLError> errors) {
-        this(data, errors, null, null);
-    }
-
     private DataFetcherResult(T data, List<GraphQLError> errors, Object localContext, Map<Object, Object> extensions) {
         this.data = data;
         this.errors = ImmutableList.copyOf(assertNotNull(errors));

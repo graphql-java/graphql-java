@@ -75,17 +75,6 @@ public class FieldValueInfo {
     }
 
     /**
-     * Kept for legacy reasons - this method is no longer sensible and is no longer used by the graphql-java engine
-     * and is kept only for backwards compatible API reasons.
-     *
-     * @return a promise to the {@link ExecutionResult} that wraps the field value.
-     */
-    @Deprecated(since = "2023-09-11")
-    public CompletableFuture<ExecutionResult> getFieldValue() {
-        return getFieldValueFuture().thenApply(fv -> ExecutionResultImpl.newExecutionResult().data(fv).build());
-    }
-
-    /**
      * @return true if the value is a {@link CompletableFuture} promise to a value
      */
     public boolean isFutureValue() {
