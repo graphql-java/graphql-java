@@ -1,8 +1,9 @@
 package graphql.incremental
 
-import graphql.GraphqlErrorBuilder
 import graphql.execution.ResultPath
 import spock.lang.Specification
+
+import static graphql.GraphqlErrorBuilder.newError
 
 class StreamPayloadTest extends Specification {
     def "null data is included"() {
@@ -25,11 +26,11 @@ class StreamPayloadTest extends Specification {
                 .items(["twow is that a bee"])
                 .path(["hello"])
                 .errors([])
-                .addError(GraphqlErrorBuilder.newError()
+                .addError(newError()
                         .message("wow")
                         .build())
                 .addErrors([
-                        GraphqlErrorBuilder.newError()
+                        newError()
                                 .message("yep")
                                 .build(),
                 ])
@@ -65,12 +66,12 @@ class StreamPayloadTest extends Specification {
         def payload = StreamPayload.newStreamedItem()
                 .items(["twow is that a bee"])
                 .path(ResultPath.fromList(["test", "echo"]))
-                .addError(GraphqlErrorBuilder.newError()
+                .addError(newError()
                         .message("wow")
                         .build())
                 .addErrors([])
                 .errors([
-                        GraphqlErrorBuilder.newError()
+                        newError()
                                 .message("yep")
                                 .build(),
                 ])
@@ -95,5 +96,58 @@ class StreamPayloadTest extends Specification {
                 ],
                 path      : ["test", "echo"],
         ]
+    }
+
+    def "test equals and hashCode methods work"() {
+        given:
+        def items1 = ["test1"]
+        def items2 = ["test2", "test3"]
+        def path1 = ["test", "echo"]
+        def path2 = ["test", "echo", "foo"]
+        def errors1 = [newError().message("error1").build()]
+        def errors2 = [newError().message("error2").build()]
+        def extensions1 = [echo: "1"]
+        def extensions2 = [echo: "2"]
+
+        def payload = new StreamPayload.Builder()
+                .items(items1)
+                .path(path1)
+                .label("label1")
+                .errors(errors1)
+                .extensions(extensions1)
+                .build()
+
+        def equivalentPayload = new StreamPayload.Builder()
+                .items(items1)
+                .path(path1)
+                .label("label1")
+                .errors(errors1)
+                .extensions(extensions1)
+                .build()
+
+        def totallyDifferentPayload = new StreamPayload.Builder()
+                .items(items2)
+                .path(path2)
+                .label("label2")
+                .errors(errors2)
+                .extensions(extensions2)
+                .build()
+
+        def slightlyDifferentPayload = new StreamPayload.Builder()
+                .items(items2)
+                .path(path2)
+                .label("label1")
+                .errors(errors1)
+                .extensions(extensions2)
+                .build()
+
+        expect:
+        payload == equivalentPayload
+        payload != totallyDifferentPayload
+        payload != slightlyDifferentPayload
+
+        payload.hashCode() == equivalentPayload.hashCode()
+        payload.hashCode() != totallyDifferentPayload.hashCode()
+        payload.hashCode() != slightlyDifferentPayload.hashCode()
     }
 }

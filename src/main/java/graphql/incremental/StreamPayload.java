@@ -7,6 +7,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * Represents a stream payload
@@ -38,6 +39,20 @@ public class StreamPayload extends IncrementalPayload {
         Map<String, Object> map = new LinkedHashMap<>(super.toSpecification());
         map.put("items", items);
         return map;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), items);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (obj == null || getClass() != obj.getClass()) return false;
+        if (!super.equals(obj)) return false;
+        StreamPayload that = (StreamPayload) obj;
+        return Objects.equals(items, that.items);
     }
 
     /**
