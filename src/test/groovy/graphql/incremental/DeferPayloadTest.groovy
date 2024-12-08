@@ -4,6 +4,8 @@ import graphql.GraphqlErrorBuilder
 import graphql.execution.ResultPath
 import spock.lang.Specification
 
+import static graphql.GraphQLError.newError
+
 class DeferPayloadTest extends Specification {
     def "null data is included"() {
         def payload = DeferPayload.newDeferredItem()
@@ -95,5 +97,45 @@ class DeferPayloadTest extends Specification {
                 ],
                 path      : ["test", "echo"],
         ]
+    }
+
+    def "equals method works correctly"() {
+        when:
+        def payload = DeferPayload.newDeferredItem()
+                .data("data1")
+                .path(["path1"])
+                .label("label1")
+                .errors([newError().message("message1").build()])
+                .extensions([key: "value1"])
+                .build()
+
+        def equivalentPayload = DeferPayload.newDeferredItem()
+                .data("data1")
+                .path(["path1"])
+                .label("label1")
+                .errors([newError().message("message1").build()])
+                .extensions([key: "value1"])
+                .build()
+
+        def totallyDifferentPayload = DeferPayload.newDeferredItem()
+                .data("data2")
+                .path(["path2"])
+                .label("label2")
+                .errors([newError().message("message2").build()])
+                .extensions([key: "value2"])
+                .build()
+
+        def slightlyDifferentPayload = DeferPayload.newDeferredItem()
+                .data("data1")
+                .path(["path1"])
+                .label("label1")
+                .errors([newError().message("message1").build()])
+                .extensions([key: "value2"])
+                .build()
+
+        then:
+        payload.equals(equivalentPayload)
+        !payload.equals(totallyDifferentPayload)
+        !payload.equals(slightlyDifferentPayload)
     }
 }

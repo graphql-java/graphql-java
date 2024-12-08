@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import static java.util.stream.Collectors.toList;
 
@@ -82,6 +83,15 @@ public abstract class IncrementalPayload {
         return errors.stream().map(GraphQLError::toSpecification).collect(toList());
     }
 
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (obj == null || getClass() != obj.getClass()) return false;
+        IncrementalPayload that = (IncrementalPayload) obj;
+        return Objects.equals(path, that.path) &&
+                Objects.equals(label, that.label) &&
+                Objects.equals(errors, that.errors) &&
+                Objects.equals(extensions, that.extensions);
+    }
 
     protected static abstract class Builder<T extends Builder<T>> {
         protected List<Object> path;
