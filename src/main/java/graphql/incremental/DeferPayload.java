@@ -8,6 +8,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * Represents a defer payload
@@ -39,6 +40,20 @@ public class DeferPayload extends IncrementalPayload {
         Map<String, Object> map = new LinkedHashMap<>(super.toSpecification());
         map.put("data", data);
         return map;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), data);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (obj == null || getClass() != obj.getClass()) return false;
+        if (!super.equals(obj)) return false;
+        DeferPayload that = (DeferPayload) obj;
+        return Objects.equals(data, that.data);
     }
 
     /**
