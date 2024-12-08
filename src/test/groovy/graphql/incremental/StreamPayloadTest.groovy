@@ -1,8 +1,9 @@
 package graphql.incremental
 
-import graphql.GraphqlErrorBuilder
 import graphql.execution.ResultPath
 import spock.lang.Specification
+
+import static graphql.GraphqlErrorBuilder.newError
 
 class StreamPayloadTest extends Specification {
     def "null data is included"() {
@@ -25,11 +26,11 @@ class StreamPayloadTest extends Specification {
                 .items(["twow is that a bee"])
                 .path(["hello"])
                 .errors([])
-                .addError(GraphqlErrorBuilder.newError()
+                .addError(newError()
                         .message("wow")
                         .build())
                 .addErrors([
-                        GraphqlErrorBuilder.newError()
+                        newError()
                                 .message("yep")
                                 .build(),
                 ])
@@ -65,12 +66,12 @@ class StreamPayloadTest extends Specification {
         def payload = StreamPayload.newStreamedItem()
                 .items(["twow is that a bee"])
                 .path(ResultPath.fromList(["test", "echo"]))
-                .addError(GraphqlErrorBuilder.newError()
+                .addError(newError()
                         .message("wow")
                         .build())
                 .addErrors([])
                 .errors([
-                        GraphqlErrorBuilder.newError()
+                        newError()
                                 .message("yep")
                                 .build(),
                 ])
@@ -103,8 +104,8 @@ class StreamPayloadTest extends Specification {
         def items2 = ["test2", "test3"]
         def path1 = ["test", "echo"]
         def path2 = ["test", "echo", "foo"]
-        def errors1 = [GraphqlErrorBuilder.newError().message("error1").build()]
-        def errors2 = [GraphqlErrorBuilder.newError().message("error2").build()]
+        def errors1 = [newError().message("error1").build()]
+        def errors2 = [newError().message("error2").build()]
         def extensions1 = [echo: "1"]
         def extensions2 = [echo: "2"]
 
