@@ -99,7 +99,7 @@ class DeferPayloadTest extends Specification {
         ]
     }
 
-    def "equals method works correctly"() {
+    def "equals and hashcode methods work correctly"() {
         when:
         def payload = DeferPayload.newDeferredItem()
                 .data("data1")
@@ -134,8 +134,12 @@ class DeferPayloadTest extends Specification {
                 .build()
 
         then:
-        payload.equals(equivalentPayload)
-        !payload.equals(totallyDifferentPayload)
-        !payload.equals(slightlyDifferentPayload)
+        payload == equivalentPayload
+        payload != totallyDifferentPayload
+        payload != slightlyDifferentPayload
+
+        payload.hashCode() == equivalentPayload.hashCode()
+        payload.hashCode() != totallyDifferentPayload.hashCode()
+        payload.hashCode() != slightlyDifferentPayload.hashCode()
     }
 }

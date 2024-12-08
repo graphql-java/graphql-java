@@ -43,6 +43,11 @@ public class DeferPayload extends IncrementalPayload {
     }
 
     @Override
+    public int hashCode() {
+        return Objects.hash(super.hashCode(), data);
+    }
+
+    @Override
     public boolean equals(Object obj) {
         if (this == obj) return true;
         if (obj == null || getClass() != obj.getClass()) return false;

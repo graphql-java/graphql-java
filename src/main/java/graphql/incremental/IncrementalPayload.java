@@ -83,6 +83,10 @@ public abstract class IncrementalPayload {
         return errors.stream().map(GraphQLError::toSpecification).collect(toList());
     }
 
+    public int hashCode() {
+        return Objects.hash(path, label, errors, extensions);
+    }
+
     public boolean equals(Object obj) {
         if (this == obj) return true;
         if (obj == null || getClass() != obj.getClass()) return false;
