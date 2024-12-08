@@ -78,17 +78,6 @@ public class ExecutionStepInfo {
     }
 
     /**
-     * @return the GraphQLObjectType defining the {@link #getFieldDefinition()}
-     *
-     * @see ExecutionStepInfo#getObjectType()
-     * @deprecated use {@link #getObjectType()} instead as it is named better
-     */
-    @Deprecated(since = "2022-02-03")
-    public GraphQLObjectType getFieldContainer() {
-        return fieldContainer;
-    }
-
-    /**
      * The GraphQLObjectType where fieldDefinition is defined.
      * Note:
      * For the Introspection field __typename the returned object type doesn't actually contain the fieldDefinition.
