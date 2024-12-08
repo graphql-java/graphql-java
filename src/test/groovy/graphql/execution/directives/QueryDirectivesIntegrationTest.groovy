@@ -94,7 +94,7 @@ class QueryDirectivesIntegrationTest extends Specification {
         capturedDirectives = [:]
     }
 
-    def "can collector directives as expected"() {
+    def "can collect directives as expected"() {
         when:
         def er = execute(pathologicalQuery)
         then:
@@ -110,6 +110,36 @@ class QueryDirectivesIntegrationTest extends Specification {
 
         def immediate = capturedDirectives["review"].getImmediateAppliedDirective("cached")
         joinArgs(immediate) == "cached(forMillis:5),cached(forMillis:10)"
+    }
+
+    def "can collect merged field directives as expected"() {
+        when:
+        def query = """
+        query Books  {
+            books(searchString: "monkey") {
+                review @timeout(afterMillis: 10) @cached(forMillis : 10)
+                review @timeout(afterMillis: 100) @cached(forMillis : 100)
+            }
+        }
+
+        """
+        def er = execute(query)
+        then:
+        er.errors.isEmpty()
+
+        def immediateMap = capturedDirectives["review"].getImmediateAppliedDirectivesByName()
+        def entries = immediateMap.entrySet().collectEntries({
+            [(it.getKey()): joinArgs(it.getValue())]
+        })
+        entries == [cached : "cached(forMillis:10),cached(forMillis:100)",
+                    timeout: "timeout(afterMillis:10),timeout(afterMillis:100)"
+        ]
+
+        def immediate = capturedDirectives["review"].getImmediateAppliedDirective("cached")
+        joinArgs(immediate) == "cached(forMillis:10),cached(forMillis:100)"
+
+        def immediate2 = capturedDirectives["review"].getImmediateAppliedDirective("timeout")
+        joinArgs(immediate2) == "timeout(afterMillis:10),timeout(afterMillis:100)"
     }
 
     def "wont create directives for peer fields accidentally"() {
