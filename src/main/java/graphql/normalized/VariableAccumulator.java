@@ -30,6 +30,8 @@ public class VariableAccumulator {
     }
 
     public boolean shouldMakeVariable(ExecutableNormalizedField executableNormalizedField, QueryAppliedDirective queryAppliedDirective, String argName, NormalizedInputValue normalizedInputValue) {
+        // when a variable is used on the argument to a query directive then the queryAppliedDirective will be nonnull.
+        // otherwise it must be a field argument
         if (queryAppliedDirective != null) {
             return variablePredicate != null && variablePredicate.shouldMakeVariable(executableNormalizedField, queryAppliedDirective, argName, normalizedInputValue);
         } else {
