@@ -57,6 +57,9 @@ public class GraphqlErrorHelper {
     /**
      *  Positive integers starting from 1 required for error locations,
      *  from the spec <a href="https://spec.graphql.org/draft/#sec-Errors.Error-Result-Format">...</a>
+     *
+     * @param location the source location in play
+     * @return  a value for source location of the error
      */
     public static Object location(SourceLocation location) {
         int line = location.getLine();
