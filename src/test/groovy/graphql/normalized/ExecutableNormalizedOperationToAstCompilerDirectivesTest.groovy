@@ -7,7 +7,24 @@ import static graphql.language.OperationDefinition.Operation.QUERY
 /**
  * Test related to ENO and directives
  */
-class ENOToAstCompilerDirectivesTest extends ENOToAstCompilerTestBase {
+class ExecutableNormalizedOperationToAstCompilerDirectivesTest extends ENOToAstCompilerTestBase {
+    def bookSDL = '''
+        directive @timeout(afterMillis : Int) on FIELD | FRAGMENT_DEFINITION | FRAGMENT_SPREAD | INLINE_FRAGMENT | QUERY
+        
+        directive @cached(forMillis : Int) on FIELD | FRAGMENT_DEFINITION | FRAGMENT_SPREAD | INLINE_FRAGMENT | QUERY
+        
+        directive @importance(place : String) on FIELD | FRAGMENT_DEFINITION | FRAGMENT_SPREAD | INLINE_FRAGMENT | QUERY
+ 
+        type Query {
+            books(searchString : String) : [Book]
+        }
+        
+        type Book {
+         id :  ID
+         title : String
+         review : String
+        }
+    '''
 
     def "can extract variables or inline values for directives on the query"() {
         def sdl = '''
@@ -77,23 +94,6 @@ class ENOToAstCompilerDirectivesTest extends ENOToAstCompilerTestBase {
     }
 
     def "can handle quite a pathological fragment query as expected"() {
-        def sdl = '''
-        directive @timeout(afterMillis : Int) on FIELD | FRAGMENT_DEFINITION | FRAGMENT_SPREAD | INLINE_FRAGMENT | QUERY
-        
-        directive @cached(forMillis : Int) on FIELD | FRAGMENT_DEFINITION | FRAGMENT_SPREAD | INLINE_FRAGMENT | QUERY
-        
-        directive @importance(place : String) on FIELD | FRAGMENT_DEFINITION | FRAGMENT_SPREAD | INLINE_FRAGMENT | QUERY
- 
-        type Query {
-            books(searchString : String) : [Book]
-        }
-        
-        type Book {
-         id :  ID
-         title : String
-         review : String
-        }
-    '''
 
         def pathologicalQuery = '''
         fragment Details on Book @timeout(afterMillis: 25) @cached(forMillis : 25) @importance(place:"FragDef") {
@@ -117,7 +117,7 @@ class ENOToAstCompilerDirectivesTest extends ENOToAstCompilerTestBase {
         }
     '''
 
-        GraphQLSchema schema = mkSchema(sdl)
+        GraphQLSchema schema = mkSchema(bookSDL)
         def eno = createNormalizedTree(schema, pathologicalQuery, [:])
 
         when:
@@ -130,10 +130,6 @@ class ENOToAstCompilerDirectivesTest extends ENOToAstCompilerTestBase {
 
         then:
         vars == [v0:5, v1:5, v2:28, v3:10, v4:10, v5:"monkey"]
-        //
-        // the below is what ir currently produces but its WRONG
-        // fix up when the other tests starts to work
-        //
         ast == '''query Books($v0: Int, $v1: Int, $v2: Int, $v3: Int, $v4: Int, $v5: String) {
   books(searchString: $v5) {
     id
@@ -165,5 +161,34 @@ class ENOToAstCompilerDirectivesTest extends ENOToAstCompilerTestBase {
 }
 '''
 
+    }
+
+    def "merged fields with the same field will capture all directives"() {
+        def query = '''
+        query Books {
+            books(searchString: "monkey") {
+                review @timeout(afterMillis: 10) @cached(forMillis : 10)
+                review @timeout(afterMillis: 100) @cached(forMillis : 100)
+            }
+        }
+    '''
+
+        GraphQLSchema schema = mkSchema(bookSDL)
+        def eno = createNormalizedTree(schema, query, [:])
+
+        when:
+        def result = localCompileToDocument(schema, QUERY, "Books",
+                eno.getTopLevelFields(), eno.getNormalizedFieldToQueryDirectives(),
+                noVariables)
+        def document = result.document
+        def ast = printDoc(document)
+
+        then:
+        ast == '''query Books {
+  books(searchString: "monkey") {
+    review @cached(forMillis: 10) @cached(forMillis: 100) @timeout(afterMillis: 10) @timeout(afterMillis: 100)
+  }
+}
+'''
     }
 }
