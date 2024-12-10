@@ -256,9 +256,9 @@ public class Execution {
         Directive foundDirective = NodeUtil.findNodeByName(directives, ERROR_HANDLING_DIRECTIVE_DEFINITION.getName());
         if (foundDirective != null) {
             Map<String, Object> argumentValues = ValuesResolver.getArgumentValues(ErrorHandlingDirective.getArguments(), foundDirective.getArguments(), variables, GraphQLContext.getDefault(), Locale.getDefault());
-            Object flag = argumentValues.get("onError");
-            Assert.assertTrue(flag instanceof String, "The '%s' directive MUST have a OnError value for the 'if' argument", ERROR_HANDLING_DIRECTIVE_DEFINITION.getName());
-            return flag.equals(Enums.ON_ERROR_PROPAGATE);
+            Object argumentValue = argumentValues.get("onError");
+            Assert.assertTrue(argumentValue instanceof String, "The '%s' directive MUST have an OnError value for the 'onError' argument", ERROR_HANDLING_DIRECTIVE_DEFINITION.getName());
+            return argumentValue.equals(Enums.ON_ERROR_PROPAGATE);
         }
         return defaultValue;
     }
