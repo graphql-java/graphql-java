@@ -2,11 +2,7 @@ package graphql.execution;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import graphql.ExecutionInput;
-import graphql.GraphQLContext;
-import graphql.GraphQLError;
-import graphql.Internal;
-import graphql.PublicApi;
+import graphql.*;
 import graphql.collect.ImmutableKit;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationState;
@@ -46,6 +42,7 @@ public class ExecutionContextBuilder {
     Object localContext;
     ExecutionInput executionInput;
     DataLoaderDispatchStrategy dataLoaderDispatcherStrategy = DataLoaderDispatchStrategy.NO_OP;
+    boolean propagateErrors = true;
 
     /**
      * @return a new builder of {@link graphql.execution.ExecutionContext}s
@@ -92,6 +89,7 @@ public class ExecutionContextBuilder {
         valueUnboxer = other.getValueUnboxer();
         executionInput = other.getExecutionInput();
         dataLoaderDispatcherStrategy = other.getDataLoaderDispatcherStrategy();
+        propagateErrors = other.propagateErrors();
     }
 
     public ExecutionContextBuilder instrumentation(Instrumentation instrumentation) {
@@ -215,6 +213,13 @@ public class ExecutionContextBuilder {
         this.errors = emptyList();
         return this;
     }
+
+    @ExperimentalApi
+    public ExecutionContextBuilder propagateErrors(boolean propagateErrors) {
+        this.propagateErrors = propagateErrors;
+        return this;
+    }
+
 
     public ExecutionContext build() {
         // preconditions

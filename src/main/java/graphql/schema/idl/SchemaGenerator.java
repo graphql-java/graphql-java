@@ -59,9 +59,7 @@ public class SchemaGenerator {
      * Created a schema from the SDL that is has a mocked runtime.
      *
      * @param sdl the SDL to be mocked
-     *
      * @return a schema with a mocked runtime
-     *
      * @see RuntimeWiring#MOCKED_WIRING
      */
     public static GraphQLSchema createdMockedSchema(String sdl) {
@@ -75,9 +73,7 @@ public class SchemaGenerator {
      *
      * @param typeRegistry this can be obtained via {@link SchemaParser#parse(String)}
      * @param wiring       this can be built using {@link RuntimeWiring#newRuntimeWiring()}
-     *
      * @return an executable schema
-     *
      * @throws SchemaProblem if there are problems in assembling a schema such as missing type resolvers or no operations defined
      */
     public GraphQLSchema makeExecutableSchema(TypeDefinitionRegistry typeRegistry, RuntimeWiring wiring) throws SchemaProblem {
@@ -91,9 +87,7 @@ public class SchemaGenerator {
      * @param options      the controlling options
      * @param typeRegistry this can be obtained via {@link SchemaParser#parse(String)}
      * @param wiring       this can be built using {@link RuntimeWiring#newRuntimeWiring()}
-     *
      * @return an executable schema
-     *
      * @throws SchemaProblem if there are problems in assembling a schema such as missing type resolvers or no operations defined
      */
     public GraphQLSchema makeExecutableSchema(Options options, TypeDefinitionRegistry typeRegistry, RuntimeWiring wiring) throws SchemaProblem {
@@ -101,7 +95,7 @@ public class SchemaGenerator {
         TypeDefinitionRegistry typeRegistryCopy = new TypeDefinitionRegistry();
         typeRegistryCopy.merge(typeRegistry);
 
-        schemaGeneratorHelper.addDirectivesIncludedByDefault(typeRegistryCopy);
+        schemaGeneratorHelper.addDirectivesIncludedByDefault(typeRegistryCopy, options.addOnErrorDirective);
 
         List<GraphQLError> errors = typeChecker.checkTypeRegistry(typeRegistryCopy, wiring);
         if (!errors.isEmpty()) {
@@ -164,11 +158,13 @@ public class SchemaGenerator {
         private final boolean useCommentsAsDescription;
         private final boolean captureAstDefinitions;
         private final boolean useAppliedDirectivesOnly;
+        private final boolean addOnErrorDirective;
 
-        Options(boolean useCommentsAsDescription, boolean captureAstDefinitions, boolean useAppliedDirectivesOnly) {
+        Options(boolean useCommentsAsDescription, boolean captureAstDefinitions, boolean useAppliedDirectivesOnly, boolean addOnErrorDirective) {
             this.useCommentsAsDescription = useCommentsAsDescription;
             this.captureAstDefinitions = captureAstDefinitions;
             this.useAppliedDirectivesOnly = useAppliedDirectivesOnly;
+            this.addOnErrorDirective = addOnErrorDirective;
         }
 
         public boolean isUseCommentsAsDescription() {
@@ -183,8 +179,12 @@ public class SchemaGenerator {
             return useAppliedDirectivesOnly;
         }
 
+        public boolean getAddOnErrorDirective() {
+            return addOnErrorDirective;
+        }
+
         public static Options defaultOptions() {
-            return new Options(true, true, false);
+            return new Options(true, true, false, false);
         }
 
         /**
@@ -193,11 +193,10 @@ public class SchemaGenerator {
          * descriptions are the sanctioned way to make scheme element descriptions.
          *
          * @param useCommentsAsDescription the flag to control whether comments can be used as schema element descriptions
-         *
          * @return a new Options object
          */
         public Options useCommentsAsDescriptions(boolean useCommentsAsDescription) {
-            return new Options(useCommentsAsDescription, captureAstDefinitions, useAppliedDirectivesOnly);
+            return new Options(useCommentsAsDescription, captureAstDefinitions, useAppliedDirectivesOnly, addOnErrorDirective);
         }
 
         /**
@@ -205,11 +204,10 @@ public class SchemaGenerator {
          * some tooling may require them.
          *
          * @param captureAstDefinitions the flag on whether to capture AST definitions
-         *
          * @return a new Options object
          */
         public Options captureAstDefinitions(boolean captureAstDefinitions) {
-            return new Options(useCommentsAsDescription, captureAstDefinitions, useAppliedDirectivesOnly);
+            return new Options(useCommentsAsDescription, captureAstDefinitions, useAppliedDirectivesOnly, addOnErrorDirective);
         }
 
         /**
@@ -218,11 +216,14 @@ public class SchemaGenerator {
          * elements.  This flag allows you to only use {@link graphql.schema.GraphQLAppliedDirective} on schema elements.
          *
          * @param useAppliedDirectivesOnly the flag on whether to use {@link graphql.schema.GraphQLAppliedDirective}s only on schema elements
-         *
          * @return a new Options object
          */
         public Options useAppliedDirectivesOnly(boolean useAppliedDirectivesOnly) {
-            return new Options(useCommentsAsDescription, captureAstDefinitions, useAppliedDirectivesOnly);
+            return new Options(useCommentsAsDescription, captureAstDefinitions, useAppliedDirectivesOnly, addOnErrorDirective);
+        }
+
+        public Options addOnErrorDirective(boolean addOnErrorDirective) {
+            return new Options(useCommentsAsDescription, captureAstDefinitions, useAppliedDirectivesOnly, addOnErrorDirective);
         }
     }
 }

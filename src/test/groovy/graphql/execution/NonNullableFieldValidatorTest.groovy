@@ -7,7 +7,9 @@ import static graphql.schema.GraphQLNonNull.nonNull
 
 class NonNullableFieldValidatorTest extends Specification {
 
-    ExecutionContext context = Mock(ExecutionContext)
+    ExecutionContext context = Mock(ExecutionContext) {
+        propagateErrors() >> true
+    }
 
     def parameters = Mock(ExecutionStrategyParameters) {
         getPath() >> ResultPath.rootPath()

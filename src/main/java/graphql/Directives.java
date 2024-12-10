@@ -1,23 +1,13 @@
 package graphql;
 
 
-import graphql.language.BooleanValue;
-import graphql.language.Description;
-import graphql.language.DirectiveDefinition;
-import graphql.language.StringValue;
+import graphql.language.*;
 import graphql.schema.GraphQLDirective;
+import graphql.schema.GraphQLEnumType;
 
 import static graphql.Scalars.GraphQLBoolean;
 import static graphql.Scalars.GraphQLString;
-import static graphql.introspection.Introspection.DirectiveLocation.ARGUMENT_DEFINITION;
-import static graphql.introspection.Introspection.DirectiveLocation.ENUM_VALUE;
-import static graphql.introspection.Introspection.DirectiveLocation.FIELD;
-import static graphql.introspection.Introspection.DirectiveLocation.FIELD_DEFINITION;
-import static graphql.introspection.Introspection.DirectiveLocation.FRAGMENT_SPREAD;
-import static graphql.introspection.Introspection.DirectiveLocation.INLINE_FRAGMENT;
-import static graphql.introspection.Introspection.DirectiveLocation.INPUT_FIELD_DEFINITION;
-import static graphql.introspection.Introspection.DirectiveLocation.INPUT_OBJECT;
-import static graphql.introspection.Introspection.DirectiveLocation.SCALAR;
+import static graphql.introspection.Introspection.DirectiveLocation.*;
 import static graphql.language.DirectiveLocation.newDirectiveLocation;
 import static graphql.language.InputValueDefinition.newInputValueDefinition;
 import static graphql.language.NonNullType.newNonNullType;
@@ -37,6 +27,7 @@ public class Directives {
     private static final String SPECIFIED_BY = "specifiedBy";
     private static final String ONE_OF = "oneOf";
     private static final String DEFER = "defer";
+    private static final String ERROR_HANDLING = "errorHandling";
 
     public static final DirectiveDefinition DEPRECATED_DIRECTIVE_DEFINITION;
     public static final DirectiveDefinition INCLUDE_DIRECTIVE_DEFINITION;
@@ -46,6 +37,8 @@ public class Directives {
     public static final DirectiveDefinition ONE_OF_DIRECTIVE_DEFINITION;
     @ExperimentalApi
     public static final DirectiveDefinition DEFER_DIRECTIVE_DEFINITION;
+    @ExperimentalApi
+    public static final DirectiveDefinition ERROR_HANDLING_DIRECTIVE_DEFINITION;
 
     public static final String BOOLEAN = "Boolean";
     public static final String STRING = "String";
@@ -131,6 +124,19 @@ public class Directives {
                                 .name("label")
                                 .description(createDescription("A unique label that represents the fragment being deferred"))
                                 .type(newTypeName().name(STRING).build())
+                                .build())
+                .build();
+        ERROR_HANDLING_DIRECTIVE_DEFINITION = DirectiveDefinition.newDirectiveDefinition()
+                .name(ERROR_HANDLING)
+                .directiveLocation(newDirectiveLocation().name(QUERY.name()).build())
+                .directiveLocation(newDirectiveLocation().name(MUTATION.name()).build())
+                .directiveLocation(newDirectiveLocation().name(SUBSCRIPTION.name()).build())
+                .description(createDescription("This directive controls how to handle errors"))
+                .inputValueDefinition(
+                        newInputValueDefinition()
+                                .name("onError")
+                                .type(newNonNullType(newTypeName().name(Enums.ON_ERROR).build()).build())
+                                .defaultValue(EnumValue.newEnumValue(Enums.ON_ERROR_PROPAGATE).build())
                                 .build())
                 .build();
     }
@@ -224,6 +230,23 @@ public class Directives {
             .description("Indicates an Input Object is a OneOf Input Object.")
             .validLocations(INPUT_OBJECT)
             .definition(ONE_OF_DIRECTIVE_DEFINITION)
+            .build();
+
+    @ExperimentalApi
+    public static final GraphQLDirective ErrorHandlingDirective = GraphQLDirective.newDirective()
+            .name(ERROR_HANDLING)
+            .description("This directive controls how to handle errors.")
+            .argument(newArgument()
+                    .name("onError")
+                    .type(nonNull(GraphQLEnumType.newEnum()
+                            .name(Enums.ON_ERROR)
+                            .value(Enums.ON_ERROR_PROPAGATE)
+                            .value(Enums.ON_ERROR_NULL)
+                            .build()))
+                    .defaultValueProgrammatic(Enums.ON_ERROR_PROPAGATE)
+                    .description("The URL that specifies the behaviour of this scalar."))
+            .validLocations(QUERY, MUTATION, SUBSCRIPTION)
+            .definition(ERROR_HANDLING_DIRECTIVE_DEFINITION)
             .build();
 
     private static Description createDescription(String s) {

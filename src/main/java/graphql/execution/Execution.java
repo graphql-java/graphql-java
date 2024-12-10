@@ -1,13 +1,7 @@
 package graphql.execution;
 
 
-import graphql.ExecutionInput;
-import graphql.ExecutionResult;
-import graphql.ExecutionResultImpl;
-import graphql.ExperimentalApi;
-import graphql.GraphQLContext;
-import graphql.GraphQLError;
-import graphql.Internal;
+import graphql.*;
 import graphql.execution.incremental.IncrementalCallState;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationContext;
@@ -20,22 +14,16 @@ import graphql.execution.instrumentation.parameters.InstrumentationExecutionPara
 import graphql.extensions.ExtensionsBuilder;
 import graphql.incremental.DelayedIncrementalPartialResult;
 import graphql.incremental.IncrementalExecutionResultImpl;
-import graphql.language.Document;
-import graphql.language.FragmentDefinition;
-import graphql.language.NodeUtil;
-import graphql.language.OperationDefinition;
-import graphql.language.VariableDefinition;
+import graphql.language.*;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.impl.SchemaUtil;
 import org.reactivestreams.Publisher;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
+import static graphql.Directives.*;
 import static graphql.execution.ExecutionContextBuilder.newExecutionContextBuilder;
 import static graphql.execution.ExecutionStepInfo.newExecutionStepInfo;
 import static graphql.execution.ExecutionStrategyParameters.newParameters;
@@ -106,6 +94,7 @@ public class Execution {
                 .locale(executionInput.getLocale())
                 .valueUnboxer(valueUnboxer)
                 .executionInput(executionInput)
+                .propagateErrors(propagateErrors(coercedVariables, operationDefinition.getDirectives(), true))
                 .build();
 
         executionContext.getGraphQLContext().put(ResultNodesInfo.RESULT_NODES_INFO, executionContext.getResultNodesInfo());
@@ -261,5 +250,16 @@ public class Execution {
             executionResult = extensionsBuilder.setExtensions(executionResult);
         }
         return executionResult;
+    }
+
+    private boolean propagateErrors(CoercedVariables variables, List<Directive> directives, boolean defaultValue) {
+        Directive foundDirective = NodeUtil.findNodeByName(directives, ERROR_HANDLING_DIRECTIVE_DEFINITION.getName());
+        if (foundDirective != null) {
+            Map<String, Object> argumentValues = ValuesResolver.getArgumentValues(ErrorHandlingDirective.getArguments(), foundDirective.getArguments(), variables, GraphQLContext.getDefault(), Locale.getDefault());
+            Object flag = argumentValues.get("onError");
+            Assert.assertTrue(flag instanceof String, "The '%s' directive MUST have a OnError value for the 'if' argument", ERROR_HANDLING_DIRECTIVE_DEFINITION.getName());
+            return flag.equals(Enums.ON_ERROR_PROPAGATE);
+        }
+        return defaultValue;
     }
 }

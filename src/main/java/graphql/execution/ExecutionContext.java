@@ -3,11 +3,7 @@ package graphql.execution;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import graphql.ExecutionInput;
-import graphql.GraphQLContext;
-import graphql.GraphQLError;
-import graphql.Internal;
-import graphql.PublicApi;
+import graphql.*;
 import graphql.collect.ImmutableKit;
 import graphql.execution.incremental.IncrementalCallState;
 import graphql.execution.instrumentation.Instrumentation;
@@ -59,6 +55,7 @@ public class ExecutionContext {
     private final ValueUnboxer valueUnboxer;
     private final ExecutionInput executionInput;
     private final Supplier<ExecutableNormalizedOperation> queryTree;
+    private final boolean propagateErrors;
 
     // this is modified after creation so it needs to be volatile to ensure visibility across Threads
     private volatile DataLoaderDispatchStrategy dataLoaderDispatcherStrategy = DataLoaderDispatchStrategy.NO_OP;
@@ -88,6 +85,7 @@ public class ExecutionContext {
         this.executionInput = builder.executionInput;
         this.dataLoaderDispatcherStrategy = builder.dataLoaderDispatcherStrategy;
         this.queryTree = FpKit.interThreadMemoize(() -> ExecutableNormalizedOperationFactory.createExecutableNormalizedOperation(graphQLSchema, operationDefinition, fragmentsByName, coercedVariables));
+        this.propagateErrors = builder.propagateErrors;
     }
 
 
@@ -169,6 +167,9 @@ public class ExecutionContext {
     public ValueUnboxer getValueUnboxer() {
         return valueUnboxer;
     }
+
+    @ExperimentalApi
+    public boolean propagateErrors() { return propagateErrors; }
 
     /**
      * @return true if the current operation is a Query
