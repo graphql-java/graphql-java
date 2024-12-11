@@ -56,7 +56,6 @@ import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLTypeReference;
 import graphql.schema.GraphQLUnionType;
 import graphql.schema.GraphqlTypeComparatorRegistry;
-import graphql.schema.PropertyDataFetcher;
 import graphql.schema.SingletonPropertyDataFetcher;
 import graphql.schema.TypeResolver;
 import graphql.schema.TypeResolverProxy;
@@ -81,12 +80,14 @@ import java.util.stream.Collectors;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.Directives.DEPRECATED_DIRECTIVE_DEFINITION;
+import static graphql.Directives.ERROR_HANDLING_DIRECTIVE_DEFINITION;
 import static graphql.Directives.IncludeDirective;
 import static graphql.Directives.NO_LONGER_SUPPORTED;
 import static graphql.Directives.ONE_OF_DIRECTIVE_DEFINITION;
 import static graphql.Directives.SPECIFIED_BY_DIRECTIVE_DEFINITION;
 import static graphql.Directives.SkipDirective;
 import static graphql.Directives.SpecifiedByDirective;
+import static graphql.Enums.ON_ERROR_TYPE_DEFINITION;
 import static graphql.collect.ImmutableKit.emptyList;
 import static graphql.introspection.Introspection.DirectiveLocation.ARGUMENT_DEFINITION;
 import static graphql.introspection.Introspection.DirectiveLocation.ENUM;
@@ -1084,11 +1085,20 @@ public class SchemaGeneratorHelper {
     }
 
     void addDirectivesIncludedByDefault(TypeDefinitionRegistry typeRegistry) {
+        addDirectivesIncludedByDefault(typeRegistry, false);
+    }
+
+    void addDirectivesIncludedByDefault(TypeDefinitionRegistry typeRegistry, boolean addOnErrorDirective) {
         // we synthesize this into the type registry - no need for them to add it
         typeRegistry.add(DEPRECATED_DIRECTIVE_DEFINITION);
         typeRegistry.add(SPECIFIED_BY_DIRECTIVE_DEFINITION);
         typeRegistry.add(ONE_OF_DIRECTIVE_DEFINITION);
+        if (addOnErrorDirective) {
+            typeRegistry.add(ERROR_HANDLING_DIRECTIVE_DEFINITION);
+            typeRegistry.add(ON_ERROR_TYPE_DEFINITION);
+        }
     }
+
 
     private Optional<OperationTypeDefinition> getOperationNamed(String name, Map<String, OperationTypeDefinition> operationTypeDefs) {
         return Optional.ofNullable(operationTypeDefs.get(name));
