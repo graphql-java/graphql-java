@@ -23,7 +23,7 @@ class NoErrorPropagationTest extends Specification {
         def graphql = GraphQL.newGraphQL(schema).build()
 
         def query = '''
-            query GetFoo @errorHandling(onError: NULL) { foo }
+            query GetFoo @errorHandling(onError: ALLOW_NULL) { foo }
         '''
         when:
 

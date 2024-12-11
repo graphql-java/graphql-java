@@ -11,7 +11,7 @@ import graphql.language.EnumValueDefinition;
 public class Enums {
     static final String ON_ERROR = "OnError";
     public static final String ON_ERROR_PROPAGATE = "PROPAGATE";
-    static final String ON_ERROR_NULL = "NULL";
+    static final String ON_ERROR_NULL = "ALLOW_NULL";
 
     @ExperimentalApi
     public static final EnumTypeDefinition ON_ERROR_TYPE_DEFINITION;
