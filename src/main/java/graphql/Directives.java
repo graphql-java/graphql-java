@@ -1,13 +1,28 @@
 package graphql;
 
 
-import graphql.language.*;
+import graphql.language.BooleanValue;
+import graphql.language.Description;
+import graphql.language.DirectiveDefinition;
+import graphql.language.EnumValue;
+import graphql.language.StringValue;
 import graphql.schema.GraphQLDirective;
 import graphql.schema.GraphQLEnumType;
 
 import static graphql.Scalars.GraphQLBoolean;
 import static graphql.Scalars.GraphQLString;
-import static graphql.introspection.Introspection.DirectiveLocation.*;
+import static graphql.introspection.Introspection.DirectiveLocation.ARGUMENT_DEFINITION;
+import static graphql.introspection.Introspection.DirectiveLocation.ENUM_VALUE;
+import static graphql.introspection.Introspection.DirectiveLocation.FIELD;
+import static graphql.introspection.Introspection.DirectiveLocation.FIELD_DEFINITION;
+import static graphql.introspection.Introspection.DirectiveLocation.FRAGMENT_SPREAD;
+import static graphql.introspection.Introspection.DirectiveLocation.INLINE_FRAGMENT;
+import static graphql.introspection.Introspection.DirectiveLocation.INPUT_FIELD_DEFINITION;
+import static graphql.introspection.Introspection.DirectiveLocation.INPUT_OBJECT;
+import static graphql.introspection.Introspection.DirectiveLocation.MUTATION;
+import static graphql.introspection.Introspection.DirectiveLocation.QUERY;
+import static graphql.introspection.Introspection.DirectiveLocation.SCALAR;
+import static graphql.introspection.Introspection.DirectiveLocation.SUBSCRIPTION;
 import static graphql.language.DirectiveLocation.newDirectiveLocation;
 import static graphql.language.InputValueDefinition.newInputValueDefinition;
 import static graphql.language.NonNullType.newNonNullType;
