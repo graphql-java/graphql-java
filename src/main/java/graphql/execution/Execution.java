@@ -40,7 +40,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
-import static graphql.Directives.*;
+import static graphql.Directives.ERROR_HANDLING_DIRECTIVE_DEFINITION;
+import static graphql.Directives.ErrorHandlingDirective;
 import static graphql.execution.ExecutionContextBuilder.newExecutionContextBuilder;
 import static graphql.execution.ExecutionStepInfo.newExecutionStepInfo;
 import static graphql.execution.ExecutionStrategyParameters.newParameters;
