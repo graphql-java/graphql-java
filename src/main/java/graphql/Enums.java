@@ -9,9 +9,9 @@ import graphql.language.EnumValueDefinition;
  */
 @PublicApi
 public class Enums {
-    public static final String ON_ERROR = "OnError";
+    static final String ON_ERROR = "OnError";
     public static final String ON_ERROR_PROPAGATE = "PROPAGATE";
-    public static final String ON_ERROR_NULL = "NULL";
+    static final String ON_ERROR_NULL = "NULL";
 
     @ExperimentalApi
     public static final EnumTypeDefinition ON_ERROR_TYPE_DEFINITION;
