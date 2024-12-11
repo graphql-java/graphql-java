@@ -185,7 +185,7 @@ public class SchemaGenerator {
             return useAppliedDirectivesOnly;
         }
 
-        public boolean getAddOnErrorDirective() {
+        public boolean isAddOnErrorDirective() {
             return addOnErrorDirective;
         }
 
