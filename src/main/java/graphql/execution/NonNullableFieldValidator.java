@@ -34,7 +34,7 @@ public class NonNullableFieldValidator {
      */
     public <T> T validate(ExecutionStrategyParameters parameters, T result) throws NonNullableFieldWasNullException {
         if (result == null) {
-            if (executionStepInfo.isNonNullType() && executionContext.propagateErrors()) {
+            if (executionStepInfo.isNonNullType()) {
                 // see https://spec.graphql.org/October2021/#sec-Errors-and-Non-Nullability
                 //
                 //    > If the field returns null because of an error which has already been added to the "errors" list in the response,
@@ -56,7 +56,9 @@ public class NonNullableFieldValidator {
                 } else {
                     executionContext.addError(error, path);
                 }
-                throw nonNullException;
+                if (executionContext.propagateErrors()) {
+                    throw nonNullException;
+                }
             }
         }
         return result;
