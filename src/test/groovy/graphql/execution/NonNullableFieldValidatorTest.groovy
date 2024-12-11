@@ -7,15 +7,15 @@ import static graphql.schema.GraphQLNonNull.nonNull
 
 class NonNullableFieldValidatorTest extends Specification {
 
-    ExecutionContext context = Mock(ExecutionContext) {
-        propagateErrors() >> true
-    }
-
     def parameters = Mock(ExecutionStrategyParameters) {
         getPath() >> ResultPath.rootPath()
     }
 
     def "non nullable field throws exception"() {
+        ExecutionContext context = Mock(ExecutionContext) {
+            propagateErrors() >> true
+        }
+
         ExecutionStepInfo typeInfo = ExecutionStepInfo.newExecutionStepInfo().type(nonNull(GraphQLString)).build()
 
         NonNullableFieldValidator validator = new NonNullableFieldValidator(context, typeInfo)
@@ -29,7 +29,27 @@ class NonNullableFieldValidatorTest extends Specification {
     }
 
     def "nullable field does not throw exception"() {
+        ExecutionContext context = Mock(ExecutionContext) {
+            propagateErrors() >> true
+        }
+
         ExecutionStepInfo typeInfo = ExecutionStepInfo.newExecutionStepInfo().type(GraphQLString).build()
+
+        NonNullableFieldValidator validator = new NonNullableFieldValidator(context, typeInfo)
+
+        when:
+        def result = validator.validate(parameters, null)
+
+        then:
+        result == null
+    }
+
+    def "non nullable field returns null if errors are not propagated"() {
+        ExecutionContext context = Mock(ExecutionContext) {
+            propagateErrors() >> false
+        }
+
+        ExecutionStepInfo typeInfo = ExecutionStepInfo.newExecutionStepInfo().type(nonNull(GraphQLString)).build()
 
         NonNullableFieldValidator validator = new NonNullableFieldValidator(context, typeInfo)
 
