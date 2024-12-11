@@ -7,6 +7,7 @@ import graphql.language.EnumValueDefinition;
 /**
  * The enums that are understood by graphql-java
  */
+@PublicApi
 public class Enums {
     public static final String ON_ERROR = "OnError";
     public static final String ON_ERROR_PROPAGATE = "PROPAGATE";
