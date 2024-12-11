@@ -199,6 +199,7 @@ public class SchemaGenerator {
          * descriptions are the sanctioned way to make scheme element descriptions.
          *
          * @param useCommentsAsDescription the flag to control whether comments can be used as schema element descriptions
+         *
          * @return a new Options object
          */
         public Options useCommentsAsDescriptions(boolean useCommentsAsDescription) {
@@ -210,6 +211,7 @@ public class SchemaGenerator {
          * some tooling may require them.
          *
          * @param captureAstDefinitions the flag on whether to capture AST definitions
+         *
          * @return a new Options object
          */
         public Options captureAstDefinitions(boolean captureAstDefinitions) {
@@ -222,6 +224,7 @@ public class SchemaGenerator {
          * elements.  This flag allows you to only use {@link graphql.schema.GraphQLAppliedDirective} on schema elements.
          *
          * @param useAppliedDirectivesOnly the flag on whether to use {@link graphql.schema.GraphQLAppliedDirective}s only on schema elements
+         *
          * @return a new Options object
          */
         public Options useAppliedDirectivesOnly(boolean useAppliedDirectivesOnly) {
