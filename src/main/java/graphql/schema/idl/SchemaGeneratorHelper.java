@@ -80,14 +80,12 @@ import java.util.stream.Collectors;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.Directives.DEPRECATED_DIRECTIVE_DEFINITION;
-import static graphql.Directives.ERROR_HANDLING_DIRECTIVE_DEFINITION;
 import static graphql.Directives.IncludeDirective;
 import static graphql.Directives.NO_LONGER_SUPPORTED;
 import static graphql.Directives.ONE_OF_DIRECTIVE_DEFINITION;
 import static graphql.Directives.SPECIFIED_BY_DIRECTIVE_DEFINITION;
 import static graphql.Directives.SkipDirective;
 import static graphql.Directives.SpecifiedByDirective;
-import static graphql.Enums.ON_ERROR_TYPE_DEFINITION;
 import static graphql.collect.ImmutableKit.emptyList;
 import static graphql.introspection.Introspection.DirectiveLocation.ARGUMENT_DEFINITION;
 import static graphql.introspection.Introspection.DirectiveLocation.ENUM;
