@@ -1085,20 +1085,11 @@ public class SchemaGeneratorHelper {
     }
 
     void addDirectivesIncludedByDefault(TypeDefinitionRegistry typeRegistry) {
-        addDirectivesIncludedByDefault(typeRegistry, false);
-    }
-
-    void addDirectivesIncludedByDefault(TypeDefinitionRegistry typeRegistry, boolean addOnErrorDirective) {
         // we synthesize this into the type registry - no need for them to add it
         typeRegistry.add(DEPRECATED_DIRECTIVE_DEFINITION);
         typeRegistry.add(SPECIFIED_BY_DIRECTIVE_DEFINITION);
         typeRegistry.add(ONE_OF_DIRECTIVE_DEFINITION);
-        if (addOnErrorDirective) {
-            typeRegistry.add(ERROR_HANDLING_DIRECTIVE_DEFINITION);
-            typeRegistry.add(ON_ERROR_TYPE_DEFINITION);
-        }
     }
-
 
     private Optional<OperationTypeDefinition> getOperationNamed(String name, Map<String, OperationTypeDefinition> operationTypeDefs) {
         return Optional.ofNullable(operationTypeDefs.get(name));

@@ -101,7 +101,7 @@ public class SchemaGenerator {
         TypeDefinitionRegistry typeRegistryCopy = new TypeDefinitionRegistry();
         typeRegistryCopy.merge(typeRegistry);
 
-        schemaGeneratorHelper.addDirectivesIncludedByDefault(typeRegistryCopy, options.addOnErrorDirective);
+        schemaGeneratorHelper.addDirectivesIncludedByDefault(typeRegistryCopy);
 
         List<GraphQLError> errors = typeChecker.checkTypeRegistry(typeRegistryCopy, wiring);
         if (!errors.isEmpty()) {
@@ -164,13 +164,11 @@ public class SchemaGenerator {
         private final boolean useCommentsAsDescription;
         private final boolean captureAstDefinitions;
         private final boolean useAppliedDirectivesOnly;
-        private final boolean addOnErrorDirective;
 
-        Options(boolean useCommentsAsDescription, boolean captureAstDefinitions, boolean useAppliedDirectivesOnly, boolean addOnErrorDirective) {
+        Options(boolean useCommentsAsDescription, boolean captureAstDefinitions, boolean useAppliedDirectivesOnly) {
             this.useCommentsAsDescription = useCommentsAsDescription;
             this.captureAstDefinitions = captureAstDefinitions;
             this.useAppliedDirectivesOnly = useAppliedDirectivesOnly;
-            this.addOnErrorDirective = addOnErrorDirective;
         }
 
         public boolean isUseCommentsAsDescription() {
@@ -185,12 +183,8 @@ public class SchemaGenerator {
             return useAppliedDirectivesOnly;
         }
 
-        public boolean isAddOnErrorDirective() {
-            return addOnErrorDirective;
-        }
-
         public static Options defaultOptions() {
-            return new Options(true, true, false, false);
+            return new Options(true, true, false);
         }
 
         /**
@@ -203,7 +197,7 @@ public class SchemaGenerator {
          * @return a new Options object
          */
         public Options useCommentsAsDescriptions(boolean useCommentsAsDescription) {
-            return new Options(useCommentsAsDescription, captureAstDefinitions, useAppliedDirectivesOnly, addOnErrorDirective);
+            return new Options(useCommentsAsDescription, captureAstDefinitions, useAppliedDirectivesOnly);
         }
 
         /**
@@ -215,7 +209,7 @@ public class SchemaGenerator {
          * @return a new Options object
          */
         public Options captureAstDefinitions(boolean captureAstDefinitions) {
-            return new Options(useCommentsAsDescription, captureAstDefinitions, useAppliedDirectivesOnly, addOnErrorDirective);
+            return new Options(useCommentsAsDescription, captureAstDefinitions, useAppliedDirectivesOnly);
         }
 
         /**
@@ -228,11 +222,7 @@ public class SchemaGenerator {
          * @return a new Options object
          */
         public Options useAppliedDirectivesOnly(boolean useAppliedDirectivesOnly) {
-            return new Options(useCommentsAsDescription, captureAstDefinitions, useAppliedDirectivesOnly, addOnErrorDirective);
-        }
-
-        public Options addOnErrorDirective(boolean addOnErrorDirective) {
-            return new Options(useCommentsAsDescription, captureAstDefinitions, useAppliedDirectivesOnly, addOnErrorDirective);
+            return new Options(useCommentsAsDescription, captureAstDefinitions, useAppliedDirectivesOnly);
         }
     }
 }

@@ -92,6 +92,11 @@ public class Execution {
             throw rte;
         }
 
+        boolean customErrorPropagationEnabled = Optional.ofNullable(executionInput.getGraphQLContext())
+                .map(graphqlContext -> graphqlContext.getBoolean(ExperimentalApi.ENABLE_CUSTOM_ERROR_HANDLING))
+                .orElse(false);
+        boolean propagateErrors = !customErrorPropagationEnabled || propagateErrors(coercedVariables, operationDefinition.getDirectives(), true);
+
         ExecutionContext executionContext = newExecutionContextBuilder()
                 .instrumentation(instrumentation)
                 .instrumentationState(instrumentationState)
@@ -112,7 +117,7 @@ public class Execution {
                 .locale(executionInput.getLocale())
                 .valueUnboxer(valueUnboxer)
                 .executionInput(executionInput)
-                .propagateErrors(propagateErrors(coercedVariables, operationDefinition.getDirectives(), true))
+                .propagateErrors(propagateErrors)
                 .build();
 
         executionContext.getGraphQLContext().put(ResultNodesInfo.RESULT_NODES_INFO, executionContext.getResultNodesInfo());

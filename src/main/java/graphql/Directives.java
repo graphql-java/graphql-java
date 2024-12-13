@@ -152,6 +152,7 @@ public class Directives {
                                 .name("onError")
                                 .type(newNonNullType(newTypeName().name(Enums.ON_ERROR).build()).build())
                                 .defaultValue(EnumValue.newEnumValue(Enums.ON_ERROR_PROPAGATE).build())
+                                .description(createDescription("How to handle errors."))
                                 .build())
                 .build();
     }
@@ -259,7 +260,7 @@ public class Directives {
                             .value(Enums.ON_ERROR_NULL)
                             .build()))
                     .defaultValueProgrammatic(Enums.ON_ERROR_PROPAGATE)
-                    .description("The URL that specifies the behaviour of this scalar."))
+                    .description("How to handle errors."))
             .validLocations(QUERY, MUTATION, SUBSCRIPTION)
             .definition(ERROR_HANDLING_DIRECTIVE_DEFINITION)
             .build();
