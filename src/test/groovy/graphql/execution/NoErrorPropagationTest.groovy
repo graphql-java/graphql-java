@@ -69,6 +69,7 @@ class NoErrorPropagationTest extends Specification {
 
         then:
         er.data == null
+        er.errors[0].message == "The field at path '/foo' was declared as a non null type, but the code involved in retrieving data has wrongly returned a null value.  The graphql specification requires that the parent field be set to null, or if that is non nullable that it bubble up null to its parent and so on. The non-nullable type is 'Int' within parent type 'Query'"
         er.errors[0].path.toList() == ["foo"]
     }
 
