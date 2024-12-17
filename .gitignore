@@ -1,7 +1,8 @@
 *.iml
 *.ipr
 *.iws
-.idea
+.idea/*
+!.idea/codeStyles
 .gradle
 build
 classes
