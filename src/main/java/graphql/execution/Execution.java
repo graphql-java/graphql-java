@@ -1,8 +1,6 @@
 package graphql.execution;
 
 
-import graphql.Assert;
-import graphql.Enums;
 import graphql.ExecutionInput;
 import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
@@ -35,13 +33,11 @@ import org.reactivestreams.Publisher;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
-import static graphql.Directives.ERROR_HANDLING_DIRECTIVE_DEFINITION;
-import static graphql.Directives.ErrorHandlingDirective;
+import static graphql.Directives.NULL_ON_ERROR_DIRECTIVE_DEFINITION;
 import static graphql.execution.ExecutionContextBuilder.newExecutionContextBuilder;
 import static graphql.execution.ExecutionStepInfo.newExecutionStepInfo;
 import static graphql.execution.ExecutionStrategyParameters.newParameters;
@@ -93,9 +89,9 @@ public class Execution {
         }
 
         boolean customErrorPropagationEnabled = Optional.ofNullable(executionInput.getGraphQLContext())
-                .map(graphqlContext -> graphqlContext.getBoolean(ExperimentalApi.ENABLE_CUSTOM_ERROR_HANDLING))
+                .map(graphqlContext -> graphqlContext.getBoolean(ExperimentalApi.ENABLE_NULL_ON_ERROR))
                 .orElse(false);
-        boolean propagateErrors = !customErrorPropagationEnabled || propagateErrors(coercedVariables, operationDefinition.getDirectives(), true);
+        boolean propagateErrors = !customErrorPropagationEnabled || propagateErrors(operationDefinition.getDirectives(), true);
 
         ExecutionContext executionContext = newExecutionContextBuilder()
                 .instrumentation(instrumentation)
@@ -275,13 +271,10 @@ public class Execution {
         return executionResult;
     }
 
-    private boolean propagateErrors(CoercedVariables variables, List<Directive> directives, boolean defaultValue) {
-        Directive foundDirective = NodeUtil.findNodeByName(directives, ERROR_HANDLING_DIRECTIVE_DEFINITION.getName());
+    private boolean propagateErrors(List<Directive> directives, boolean defaultValue) {
+        Directive foundDirective = NodeUtil.findNodeByName(directives, NULL_ON_ERROR_DIRECTIVE_DEFINITION.getName());
         if (foundDirective != null) {
-            Map<String, Object> argumentValues = ValuesResolver.getArgumentValues(ErrorHandlingDirective.getArguments(), foundDirective.getArguments(), variables, GraphQLContext.getDefault(), Locale.getDefault());
-            Object argumentValue = argumentValues.get("onError");
-            Assert.assertTrue(argumentValue instanceof String, "The '%s' directive MUST have an OnError value for the 'onError' argument", ERROR_HANDLING_DIRECTIVE_DEFINITION.getName());
-            return argumentValue.equals(Enums.ON_ERROR_PROPAGATE);
+            return false;
         }
         return defaultValue;
     }

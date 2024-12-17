@@ -7,29 +7,25 @@ import spock.lang.Specification
 
 class NoErrorPropagationTest extends Specification {
 
-    def "when onError is ALLOW_NULL null is returned"() {
+    def "with nullOnError, null is returned"() {
 
         def sdl = '''
             type Query {
                 foo : Int! 
             }
-            enum OnError {
-              ALLOW_NULL
-              PROPAGATE
-            }
-            directive @errorHandling(onError: OnError) on QUERY | MUTATION | SUBSCRIPTION
+            directive @nullOnError on QUERY | MUTATION | SUBSCRIPTION
         '''
 
         def graphql = TestUtil.graphQL(sdl).build()
 
         def query = '''
-            query GetFoo @errorHandling(onError: ALLOW_NULL) { foo }
+            query GetFoo @nullOnError { foo }
         '''
         when:
 
         ExecutionInput ei = ExecutionInput.newExecutionInput(query).root(
                 [foo: null]
-        ).graphQLContext([(ExperimentalApi.ENABLE_CUSTOM_ERROR_HANDLING): true])
+        ).graphQLContext([(ExperimentalApi.ENABLE_NULL_ON_ERROR): true])
                 .build()
 
         def er = graphql.execute(ei)
@@ -40,29 +36,25 @@ class NoErrorPropagationTest extends Specification {
         er.errors[0].path.toList() == ["foo"]
     }
 
-    def "when onError is PROPAGATE error is propagated"() {
+    def "without nullOnError, error is propagated"() {
 
         def sdl = '''
             type Query {
                 foo : Int! 
             }
-            enum OnError {
-              ALLOW_NULL
-              PROPAGATE
-            }
-            directive @errorHandling(onError: OnError) on QUERY | MUTATION | SUBSCRIPTION
+            directive @nullOnError on QUERY | MUTATION | SUBSCRIPTION
         '''
 
         def graphql = TestUtil.graphQL(sdl).build()
 
         def query = '''
-            query GetFoo @errorHandling(onError: PROPAGATE) { foo }
+            query GetFoo { foo }
         '''
         when:
 
         ExecutionInput ei = ExecutionInput.newExecutionInput(query).root(
                 [foo: null]
-        ).graphQLContext([(ExperimentalApi.ENABLE_CUSTOM_ERROR_HANDLING): true])
+        ).graphQLContext([(ExperimentalApi.ENABLE_NULL_ON_ERROR): true])
                 .build()
 
         def er = graphql.execute(ei)
@@ -74,23 +66,19 @@ class NoErrorPropagationTest extends Specification {
     }
 
 
-    def "when custom error propagation is disabled error is propagated"() {
+    def "when ENABLE_NULL_ON_ERROR is false, error is propagated"() {
 
         def sdl = '''
             type Query {
                 foo : Int! 
             }
-            enum OnError {
-              ALLOW_NULL
-              PROPAGATE
-            }
-            directive @errorHandling(onError: OnError) on QUERY | MUTATION | SUBSCRIPTION
+            directive @nullOnError on QUERY | MUTATION | SUBSCRIPTION
         '''
 
         def graphql = TestUtil.graphQL(sdl).build()
 
         def query = '''
-            query GetFoo @errorHandling(onError: ALLOW_NULL) { foo }
+            query GetFoo @nullOnError { foo }
         '''
         when:
 
@@ -105,7 +93,7 @@ class NoErrorPropagationTest extends Specification {
         er.errors[0].path.toList() == ["foo"]
     }
 
-    def "when @errorHandling is not added to the schema operation does not validate"() {
+    def "when @nullOnError is not added to the schema operation does not validate"() {
 
         def sdl = '''
             type Query {
@@ -116,20 +104,20 @@ class NoErrorPropagationTest extends Specification {
         def graphql = TestUtil.graphQL(sdl).build()
 
         def query = '''
-            query GetFoo @errorHandling(onError: PROPAGATE) { foo }
+            query GetFoo @nullOnError { foo }
         '''
         when:
 
         ExecutionInput ei = ExecutionInput.newExecutionInput(query).root(
                 [foo: null]
-        ).graphQLContext([(ExperimentalApi.ENABLE_CUSTOM_ERROR_HANDLING): true])
+        ).graphQLContext([(ExperimentalApi.ENABLE_NULL_ON_ERROR): true])
                 .build()
 
         def er = graphql.execute(ei)
 
         then:
         er.data == null
-        er.errors[0].message.equals("Validation error (UnknownDirective) : Unknown directive 'errorHandling'")
+        er.errors[0].message.equals("Validation error (UnknownDirective) : Unknown directive 'nullOnError'")
     }
 
 }

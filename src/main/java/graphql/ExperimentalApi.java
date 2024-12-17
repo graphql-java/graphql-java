@@ -25,7 +25,7 @@ public @interface ExperimentalApi {
      */
     String ENABLE_INCREMENTAL_SUPPORT  = "ENABLE_INCREMENTAL_SUPPORT";
     /**
-     * The key that should be associated with a boolean value which indicates whether @errorHandling behaviour is enabled for this execution.
+     * The key that should be associated with a boolean value which indicates whether @nullOnError behaviour is enabled for this execution.
      */
-    String ENABLE_CUSTOM_ERROR_HANDLING = "ENABLE_CUSTOM_ERROR_HANDLING";
+    String ENABLE_NULL_ON_ERROR = "ENABLE_NULL_ON_ERROR";
 }

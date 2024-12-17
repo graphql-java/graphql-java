@@ -42,7 +42,7 @@ public class Directives {
     private static final String SPECIFIED_BY = "specifiedBy";
     private static final String ONE_OF = "oneOf";
     private static final String DEFER = "defer";
-    private static final String ERROR_HANDLING = "errorHandling";
+    private static final String NULL_ON_ERROR = "nullOnError";
 
     public static final DirectiveDefinition DEPRECATED_DIRECTIVE_DEFINITION;
     public static final DirectiveDefinition INCLUDE_DIRECTIVE_DEFINITION;
@@ -53,7 +53,7 @@ public class Directives {
     @ExperimentalApi
     public static final DirectiveDefinition DEFER_DIRECTIVE_DEFINITION;
     @ExperimentalApi
-    public static final DirectiveDefinition ERROR_HANDLING_DIRECTIVE_DEFINITION;
+    public static final DirectiveDefinition NULL_ON_ERROR_DIRECTIVE_DEFINITION;
 
     public static final String BOOLEAN = "Boolean";
     public static final String STRING = "String";
@@ -141,19 +141,12 @@ public class Directives {
                                 .type(newTypeName().name(STRING).build())
                                 .build())
                 .build();
-        ERROR_HANDLING_DIRECTIVE_DEFINITION = DirectiveDefinition.newDirectiveDefinition()
-                .name(ERROR_HANDLING)
+        NULL_ON_ERROR_DIRECTIVE_DEFINITION = DirectiveDefinition.newDirectiveDefinition()
+                .name(NULL_ON_ERROR)
                 .directiveLocation(newDirectiveLocation().name(QUERY.name()).build())
                 .directiveLocation(newDirectiveLocation().name(MUTATION.name()).build())
                 .directiveLocation(newDirectiveLocation().name(SUBSCRIPTION.name()).build())
-                .description(createDescription("This directive controls how to handle errors"))
-                .inputValueDefinition(
-                        newInputValueDefinition()
-                                .name("onError")
-                                .type(newNonNullType(newTypeName().name(Enums.ON_ERROR).build()).build())
-                                .defaultValue(EnumValue.newEnumValue(Enums.ON_ERROR_PROPAGATE).build())
-                                .description(createDescription("How to handle errors."))
-                                .build())
+                .description(createDescription("This directive allows returning null in non-null locations that have an associated error"))
                 .build();
     }
 
@@ -249,20 +242,11 @@ public class Directives {
             .build();
 
     @ExperimentalApi
-    public static final GraphQLDirective ErrorHandlingDirective = GraphQLDirective.newDirective()
-            .name(ERROR_HANDLING)
-            .description("This directive controls how to handle errors.")
-            .argument(newArgument()
-                    .name("onError")
-                    .type(nonNull(GraphQLEnumType.newEnum()
-                            .name(Enums.ON_ERROR)
-                            .value(Enums.ON_ERROR_PROPAGATE)
-                            .value(Enums.ON_ERROR_NULL)
-                            .build()))
-                    .defaultValueProgrammatic(Enums.ON_ERROR_PROPAGATE)
-                    .description("How to handle errors."))
+    public static final GraphQLDirective NullOnErrorDirective = GraphQLDirective.newDirective()
+            .name(NULL_ON_ERROR)
+            .description("This directive allows returning null in non-null locations that have an associated error.")
             .validLocations(QUERY, MUTATION, SUBSCRIPTION)
-            .definition(ERROR_HANDLING_DIRECTIVE_DEFINITION)
+            .definition(NULL_ON_ERROR_DIRECTIVE_DEFINITION)
             .build();
 
     private static Description createDescription(String s) {
