@@ -4,10 +4,8 @@ package graphql;
 import graphql.language.BooleanValue;
 import graphql.language.Description;
 import graphql.language.DirectiveDefinition;
-import graphql.language.EnumValue;
 import graphql.language.StringValue;
 import graphql.schema.GraphQLDirective;
-import graphql.schema.GraphQLEnumType;
 
 import static graphql.Scalars.GraphQLBoolean;
 import static graphql.Scalars.GraphQLString;
@@ -146,7 +144,7 @@ public class Directives {
                 .directiveLocation(newDirectiveLocation().name(QUERY.name()).build())
                 .directiveLocation(newDirectiveLocation().name(MUTATION.name()).build())
                 .directiveLocation(newDirectiveLocation().name(SUBSCRIPTION.name()).build())
-                .description(createDescription("This directive allows returning null in non-null locations that have an associated error"))
+                .description(createDescription("This directive allows returning null in non-null positions that have an associated error"))
                 .build();
     }
 
@@ -244,7 +242,7 @@ public class Directives {
     @ExperimentalApi
     public static final GraphQLDirective NullOnErrorDirective = GraphQLDirective.newDirective()
             .name(NULL_ON_ERROR)
-            .description("This directive allows returning null in non-null locations that have an associated error.")
+            .description("This directive allows returning null in non-null positions that have an associated error.")
             .validLocations(QUERY, MUTATION, SUBSCRIPTION)
             .definition(NULL_ON_ERROR_DIRECTIVE_DEFINITION)
             .build();
