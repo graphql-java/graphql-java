@@ -48,8 +48,7 @@ public class DirectivesExamples {
             DataFetcher authDataFetcher = new DataFetcher() {
                 @Override
                 public Object get(DataFetchingEnvironment dataFetchingEnvironment) throws Exception {
-                    Map<String, Object> contextMap = dataFetchingEnvironment.getContext();
-                    AuthorisationCtx authContext = (AuthorisationCtx) contextMap.get("authContext");
+                    AuthorisationCtx authContext = dataFetchingEnvironment.getGraphQlContext().get("authContext");
 
                     if (authContext.hasRole(targetAuthRole)) {
                         return originalDataFetcher.get(dataFetchingEnvironment);
@@ -83,7 +82,7 @@ public class DirectivesExamples {
 
         ExecutionInput executionInput = ExecutionInput.newExecutionInput()
                 .query(query)
-                .graphQLContext(builder -> builder.put("authCtx", authCtx))
+                .graphQLContext(builder -> builder.put("authContext", authCtx))
                 .build();
     }
 
