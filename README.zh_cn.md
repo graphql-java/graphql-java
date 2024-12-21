@@ -24,9 +24,3 @@
 ### License
 
 Copyright (c) 2015, Andreas Marek and [贡献者们](https://github.com/graphql-java/graphql-java/graphs/contributors)
-
-### 帮助支持
-
-![YourKit](https://www.yourkit.com/images/yklogo.png)
-
-[YourKit](https://www.yourkit.com/) 通过 YourKit Java Profiler 能力对该项目提供了支持。
