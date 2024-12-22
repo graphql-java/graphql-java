@@ -3,6 +3,7 @@ package graphql.validation.rules;
 import graphql.Internal;
 import graphql.language.OperationDefinition;
 import graphql.schema.GraphQLSchema;
+import graphql.util.StringKit;
 import graphql.validation.AbstractRule;
 import graphql.validation.ValidationContext;
 import graphql.validation.ValidationErrorCollector;
@@ -27,17 +28,21 @@ public class KnownOperationTypes extends AbstractRule {
         GraphQLSchema graphQLSchema = getValidationContext().getSchema();
         if (documentOperation == OperationDefinition.Operation.MUTATION
                 && graphQLSchema.getMutationType() == null) {
-            String message = i18n(UnknownOperation, "KnownOperationTypes.noOperation", documentOperation.name());
+            String message = i18n(UnknownOperation, "KnownOperationTypes.noOperation", formatOperation(documentOperation));
             addError(UnknownOperation, operationDefinition.getSourceLocation(), message);
         } else if (documentOperation == OperationDefinition.Operation.SUBSCRIPTION
                 && graphQLSchema.getSubscriptionType() == null) {
-            String message = i18n(UnknownOperation, "KnownOperationTypes.noOperation", documentOperation.name());
+            String message = i18n(UnknownOperation, "KnownOperationTypes.noOperation", formatOperation(documentOperation));
             addError(UnknownOperation, operationDefinition.getSourceLocation(), message);
         } else if (documentOperation == OperationDefinition.Operation.QUERY
                 && graphQLSchema.getQueryType() == null) {
             // This is unlikely to happen, as a validated GraphQLSchema must have a Query type by definition
-            String message = i18n(UnknownOperation, "KnownOperationTypes.noOperation", documentOperation.name());
+            String message = i18n(UnknownOperation, "KnownOperationTypes.noOperation", formatOperation(documentOperation));
             addError(UnknownOperation, operationDefinition.getSourceLocation(), message);
         }
+    }
+
+    private String formatOperation(OperationDefinition.Operation operation) {
+        return StringKit.capitalize(operation.name().toLowerCase());
     }
 }

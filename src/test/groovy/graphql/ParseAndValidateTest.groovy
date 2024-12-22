@@ -180,7 +180,7 @@ class ParseAndValidateTest extends Specification {
         errors.size() == 1
         def error = errors.first()
         error.validationErrorType == ValidationErrorType.UnknownOperation
-        error.message == "Validation error (UnknownOperation): The 'MUTATION' operation is not supported by the schema"
+        error.message == "Validation error (UnknownOperation): The 'Mutation' operation is not supported by the schema"
         error.locations == [new SourceLocation(1, 1)]
     }
 
@@ -204,7 +204,7 @@ class ParseAndValidateTest extends Specification {
         errors.size() == 1
         def error = errors.first()
         error.validationErrorType == ValidationErrorType.UnknownOperation
-        error.message == "Validation error (UnknownOperation): The 'SUBSCRIPTION' operation is not supported by the schema"
+        error.message == "Validation error (UnknownOperation): The 'Subscription' operation is not supported by the schema"
         error.locations == [new SourceLocation(1, 1)]
     }
 }
