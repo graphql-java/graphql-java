@@ -1,11 +1,15 @@
 package graphql.validation;
 
 
+import graphql.ExperimentalApi;
 import graphql.Internal;
 import graphql.i18n.I18n;
 import graphql.language.Document;
 import graphql.schema.GraphQLSchema;
 import graphql.validation.rules.ArgumentsOfCorrectType;
+import graphql.validation.rules.DeferDirectiveLabel;
+import graphql.validation.rules.DeferDirectiveOnRootLevel;
+import graphql.validation.rules.DeferDirectiveOnValidOperation;
 import graphql.validation.rules.UniqueObjectFieldName;
 import graphql.validation.rules.ExecutableDefinitions;
 import graphql.validation.rules.FieldsOnCorrectType;
@@ -157,6 +161,14 @@ public class Validator {
         UniqueObjectFieldName uniqueObjectFieldName = new UniqueObjectFieldName(validationContext, validationErrorCollector);
         rules.add(uniqueObjectFieldName);
 
+        DeferDirectiveOnRootLevel deferDirectiveOnRootLevel = new DeferDirectiveOnRootLevel(validationContext, validationErrorCollector);
+        rules.add(deferDirectiveOnRootLevel);
+
+        DeferDirectiveOnValidOperation deferDirectiveOnValidOperation = new DeferDirectiveOnValidOperation(validationContext, validationErrorCollector);
+        rules.add(deferDirectiveOnValidOperation);
+
+        DeferDirectiveLabel deferDirectiveLabel = new DeferDirectiveLabel(validationContext, validationErrorCollector);
+        rules.add(deferDirectiveLabel);
         return rules;
     }
 }

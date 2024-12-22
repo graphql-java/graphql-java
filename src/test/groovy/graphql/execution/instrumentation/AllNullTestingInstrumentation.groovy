@@ -25,11 +25,11 @@ class AllNullTestingInstrumentation implements Instrumentation {
     List<String> executionList = []
     List<DataFetchingEnvironment> dfInvocations = []
     List<Class> dfClasses = []
-    Map<Object,Object> capturedData = [:]
+    Map<Object, Object> capturedData = [:]
 
     @Override
-    InstrumentationState createState(InstrumentationCreateStateParameters parameters) {
-        return instrumentationState
+    CompletableFuture<InstrumentationState> createStateAsync(InstrumentationCreateStateParameters parameters) {
+        return CompletableFuture.completedFuture(instrumentationState)
     }
 
     @Override
@@ -61,6 +61,13 @@ class AllNullTestingInstrumentation implements Instrumentation {
     }
 
     @Override
+    ExecuteObjectInstrumentationContext beginExecuteObject(InstrumentationExecutionStrategyParameters parameters, InstrumentationState state) {
+        assert state == instrumentationState
+        executionList << "start:execute-object"
+        return null
+    }
+
+    @Override
     InstrumentationContext<ExecutionResult> beginExecuteOperation(InstrumentationExecuteOperationParameters parameters, InstrumentationState state) {
         assert state == instrumentationState
         executionList << "start:execute-operation"
@@ -75,7 +82,7 @@ class AllNullTestingInstrumentation implements Instrumentation {
     }
 
     @Override
-    InstrumentationContext<ExecutionResult> beginField(InstrumentationFieldParameters parameters, InstrumentationState state) {
+    InstrumentationContext<Object> beginFieldExecution(InstrumentationFieldParameters parameters, InstrumentationState state) {
         assert state == instrumentationState
         executionList << "start:field-$parameters.field.name"
         return null
@@ -89,14 +96,14 @@ class AllNullTestingInstrumentation implements Instrumentation {
     }
 
     @Override
-    InstrumentationContext<ExecutionResult> beginFieldComplete(InstrumentationFieldCompleteParameters parameters, InstrumentationState state) {
+    InstrumentationContext<Object> beginFieldCompletion(InstrumentationFieldCompleteParameters parameters, InstrumentationState state) {
         assert state == instrumentationState
         executionList << "start:complete-$parameters.field.name"
         return null
     }
 
     @Override
-    InstrumentationContext<ExecutionResult> beginFieldListComplete(InstrumentationFieldCompleteParameters parameters, InstrumentationState state) {
+    InstrumentationContext<Object> beginFieldListCompletion(InstrumentationFieldCompleteParameters parameters, InstrumentationState state) {
         assert state == instrumentationState
         executionList << "start:complete-list-$parameters.field.name"
         return null

@@ -3,12 +3,13 @@ package graphql.execution;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import graphql.DeprecatedAt;
 import graphql.ExecutionInput;
 import graphql.GraphQLContext;
 import graphql.GraphQLError;
+import graphql.Internal;
 import graphql.PublicApi;
 import graphql.collect.ImmutableKit;
+import graphql.execution.incremental.IncrementalCallState;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationState;
 import graphql.language.Document;
@@ -54,9 +55,15 @@ public class ExecutionContext {
     private final Set<ResultPath> errorPaths = new HashSet<>();
     private final DataLoaderRegistry dataLoaderRegistry;
     private final Locale locale;
+    private final IncrementalCallState incrementalCallState = new IncrementalCallState();
     private final ValueUnboxer valueUnboxer;
     private final ExecutionInput executionInput;
     private final Supplier<ExecutableNormalizedOperation> queryTree;
+
+    // this is modified after creation so it needs to be volatile to ensure visibility across Threads
+    private volatile DataLoaderDispatchStrategy dataLoaderDispatcherStrategy = DataLoaderDispatchStrategy.NO_OP;
+
+    private final ResultNodesInfo resultNodesInfo = new ResultNodesInfo();
 
     ExecutionContext(ExecutionContextBuilder builder) {
         this.graphQLSchema = builder.graphQLSchema;
@@ -79,7 +86,8 @@ public class ExecutionContext {
         this.errors.set(builder.errors);
         this.localContext = builder.localContext;
         this.executionInput = builder.executionInput;
-        queryTree = FpKit.interThreadMemoize(() -> ExecutableNormalizedOperationFactory.createExecutableNormalizedOperation(graphQLSchema, operationDefinition, fragmentsByName, coercedVariables));
+        this.dataLoaderDispatcherStrategy = builder.dataLoaderDispatcherStrategy;
+        this.queryTree = FpKit.interThreadMemoize(() -> ExecutableNormalizedOperationFactory.createExecutableNormalizedOperation(graphQLSchema, operationDefinition, fragmentsByName, coercedVariables));
     }
 
 
@@ -115,17 +123,6 @@ public class ExecutionContext {
         return operationDefinition;
     }
 
-    /**
-     * @return map of coerced variables
-     *
-     * @deprecated use {@link #getCoercedVariables()} instead
-     */
-    @Deprecated
-    @DeprecatedAt("2022-05-24")
-    public Map<String, Object> getVariables() {
-        return coercedVariables.toMap();
-    }
-
     public CoercedVariables getCoercedVariables() {
         return coercedVariables;
     }
@@ -137,8 +134,7 @@ public class ExecutionContext {
      *
      * @deprecated use {@link #getGraphQLContext()} instead
      */
-    @Deprecated
-    @DeprecatedAt("2021-07-05")
+    @Deprecated(since = "2021-07-05")
     @SuppressWarnings({"unchecked", "TypeParameterUnusedInFormals"})
     public <T> T getContext() {
         return (T) context;
@@ -172,6 +168,34 @@ public class ExecutionContext {
 
     public ValueUnboxer getValueUnboxer() {
         return valueUnboxer;
+    }
+
+    /**
+     * @return true if the current operation is a Query
+     */
+    public boolean isQueryOperation() {
+        return isOpType(OperationDefinition.Operation.QUERY);
+    }
+
+    /**
+     * @return true if the current operation is a Mutation
+     */
+    public boolean isMutationOperation() {
+        return isOpType(OperationDefinition.Operation.MUTATION);
+    }
+
+    /**
+     * @return true if the current operation is a Subscription
+     */
+    public boolean isSubscriptionOperation() {
+        return isOpType(OperationDefinition.Operation.SUBSCRIPTION);
+    }
+
+    private boolean isOpType(OperationDefinition.Operation operation) {
+        if (operationDefinition != null) {
+            return operation.equals(operationDefinition.getOperation());
+        }
+        return false;
     }
 
     /**
@@ -248,7 +272,9 @@ public class ExecutionContext {
         return errors.get();
     }
 
-    public ExecutionStrategy getQueryStrategy() { return queryStrategy; }
+    public ExecutionStrategy getQueryStrategy() {
+        return queryStrategy;
+    }
 
     public ExecutionStrategy getMutationStrategy() {
         return mutationStrategy;
@@ -256,6 +282,10 @@ public class ExecutionContext {
 
     public ExecutionStrategy getSubscriptionStrategy() {
         return subscriptionStrategy;
+    }
+
+    public IncrementalCallState getIncrementalCallState() {
+        return incrementalCallState;
     }
 
     public ExecutionStrategy getStrategy(OperationDefinition.Operation operation) {
@@ -272,6 +302,16 @@ public class ExecutionContext {
         return queryTree;
     }
 
+    @Internal
+    public void setDataLoaderDispatcherStrategy(DataLoaderDispatchStrategy dataLoaderDispatcherStrategy) {
+        this.dataLoaderDispatcherStrategy = dataLoaderDispatcherStrategy;
+    }
+
+    @Internal
+    public DataLoaderDispatchStrategy getDataLoaderDispatcherStrategy() {
+        return dataLoaderDispatcherStrategy;
+    }
+
     /**
      * This helps you transform the current ExecutionContext object into another one by starting a builder with all
      * the current values and allows you to transform it how you want.
@@ -284,5 +324,9 @@ public class ExecutionContext {
         ExecutionContextBuilder builder = ExecutionContextBuilder.newExecutionContextBuilder(this);
         builderConsumer.accept(builder);
         return builder.build();
+    }
+
+    public ResultNodesInfo getResultNodesInfo() {
+        return resultNodesInfo;
     }
 }

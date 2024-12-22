@@ -91,6 +91,12 @@ public class ArgumentValidationUtil extends ValidationUtil {
         argumentNames.add(0, String.format("[%s]", index));
     }
 
+    @Override
+    protected void handleExtraOneOfFieldsError(GraphQLInputObjectType type, Value<?> value) {
+        errMsgKey = "ArgumentValidationUtil.extraOneOfFieldsError";
+        arguments.add(type.getName());
+    }
+
     public I18nMsg getMsgAndArgs() {
         StringBuilder argument = new StringBuilder(argumentName);
         for (String name : argumentNames) {

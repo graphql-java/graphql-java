@@ -27,18 +27,12 @@ public class GraphQLTypeUtil {
      */
     public static String simplePrint(GraphQLType type) {
         Assert.assertNotNull(type, () -> "type can't be null");
-        StringBuilder sb = new StringBuilder();
         if (isNonNull(type)) {
-            sb.append(simplePrint(unwrapOne(type)));
-            sb.append("!");
+            return simplePrint(unwrapOne(type)) + "!";
         } else if (isList(type)) {
-            sb.append("[");
-            sb.append(simplePrint(unwrapOne(type)));
-            sb.append("]");
-        } else {
-            sb.append(((GraphQLNamedType) type).getName());
+            return "[" + simplePrint(unwrapOne(type)) + "]";
         }
-        return sb.toString();
+        return ((GraphQLNamedType) type).getName();
     }
 
     public static String simplePrint(GraphQLSchemaElement schemaElement) {
@@ -190,6 +184,7 @@ public class GraphQLTypeUtil {
 
     /**
      * Unwraps all layers of the type or just returns the type again if it's not a wrapped type
+     * NOTE: This method does not support GraphQLTypeReference as input and will lead to a ClassCastException
      *
      * @param type the type to unwrapOne
      *

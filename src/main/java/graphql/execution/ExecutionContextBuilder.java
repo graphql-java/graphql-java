@@ -2,7 +2,6 @@ package graphql.execution;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import graphql.DeprecatedAt;
 import graphql.ExecutionInput;
 import graphql.GraphQLContext;
 import graphql.GraphQLError;
@@ -46,6 +45,7 @@ public class ExecutionContextBuilder {
     ValueUnboxer valueUnboxer;
     Object localContext;
     ExecutionInput executionInput;
+    DataLoaderDispatchStrategy dataLoaderDispatcherStrategy = DataLoaderDispatchStrategy.NO_OP;
 
     /**
      * @return a new builder of {@link graphql.execution.ExecutionContext}s
@@ -91,6 +91,7 @@ public class ExecutionContextBuilder {
         errors = ImmutableList.copyOf(other.getErrors());
         valueUnboxer = other.getValueUnboxer();
         executionInput = other.getExecutionInput();
+        dataLoaderDispatcherStrategy = other.getDataLoaderDispatcherStrategy();
     }
 
     public ExecutionContextBuilder instrumentation(Instrumentation instrumentation) {
@@ -131,8 +132,7 @@ public class ExecutionContextBuilder {
     /*
      * @deprecated use {@link #graphQLContext(GraphQLContext)} instead
      */
-    @Deprecated
-    @DeprecatedAt("2021-07-05")
+    @Deprecated(since = "2021-07-05")
     public ExecutionContextBuilder context(Object context) {
         this.context = context;
         return this;
@@ -159,8 +159,7 @@ public class ExecutionContextBuilder {
      *
      * @deprecated use {@link #coercedVariables(CoercedVariables)} instead
      */
-    @Deprecated
-    @DeprecatedAt("2022-05-24")
+    @Deprecated(since = "2022-05-24")
     public ExecutionContextBuilder variables(Map<String, Object> variables) {
         this.coercedVariables = CoercedVariables.of(variables);
         return this;
@@ -203,6 +202,12 @@ public class ExecutionContextBuilder {
 
     public ExecutionContextBuilder executionInput(ExecutionInput executionInput) {
         this.executionInput = executionInput;
+        return this;
+    }
+
+    @Internal
+    public ExecutionContextBuilder dataLoaderDispatcherStrategy(DataLoaderDispatchStrategy dataLoaderDispatcherStrategy) {
+        this.dataLoaderDispatcherStrategy = dataLoaderDispatcherStrategy;
         return this;
     }
 

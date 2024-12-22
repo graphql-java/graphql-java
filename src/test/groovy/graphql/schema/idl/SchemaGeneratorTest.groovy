@@ -1,6 +1,5 @@
 package graphql.schema.idl
 
-
 import graphql.TestUtil
 import graphql.introspection.Introspection
 import graphql.language.Node
@@ -9,9 +8,7 @@ import graphql.schema.DataFetcherFactory
 import graphql.schema.DataFetcherFactoryEnvironment
 import graphql.schema.DataFetchingEnvironment
 import graphql.schema.GraphQLAppliedDirective
-import graphql.schema.GraphQLArgument
 import graphql.schema.GraphQLCodeRegistry
-import graphql.schema.GraphQLDirective
 import graphql.schema.GraphQLDirectiveContainer
 import graphql.schema.GraphQLEnumType
 import graphql.schema.GraphQLFieldDefinition
@@ -1773,7 +1770,8 @@ class SchemaGeneratorTest extends Specification {
 
         def appliedDirective = f1.getAppliedDirective("deprecated")
         appliedDirective.name == "deprecated"
-        appliedDirective.getArgument("reason").type == GraphQLString
+        appliedDirective.getArgument("reason").type instanceof GraphQLNonNull
+        (appliedDirective.getArgument("reason").type as GraphQLNonNull).wrappedType == GraphQLString
         printAst(appliedDirective.getArgument("reason").argumentValue.value as Node) == '"No longer supported"'
 
         when:
@@ -1784,7 +1782,8 @@ class SchemaGeneratorTest extends Specification {
 
         def appliedDirective2 = f2.getAppliedDirective("deprecated")
         appliedDirective2.name == "deprecated"
-        appliedDirective2.getArgument("reason").type == GraphQLString
+        appliedDirective2.getArgument("reason").type instanceof GraphQLNonNull
+        (appliedDirective2.getArgument("reason").type as GraphQLNonNull).wrappedType == GraphQLString
         printAst(appliedDirective2.getArgument("reason").argumentValue.value as Node) == '"Just because"'
         def directive2 = f2.getDirective("deprecated")
         printAst(directive2.getArgument("reason").argumentDefaultValue.value as Node) == '"No longer supported"'
@@ -1818,32 +1817,6 @@ class SchemaGeneratorTest extends Specification {
         GraphQLSchema schema = new SchemaGenerator().makeExecutableSchema(types, wiring)
         expect:
         assert schema != null
-    }
-
-    def "transformers get called once the schema is built"() {
-        def spec = """
-          type Query {
-              hello: String
-          }
-      """
-
-        def types = new SchemaParser().parse(spec)
-
-        def extraDirective = (GraphQLDirective.newDirective()).name("extra")
-                .argument(GraphQLArgument.newArgument().name("value").type(GraphQLString)).build()
-        def transformer = new SchemaGeneratorPostProcessing() {  // Retained to show deprecated code is still run
-            @Override
-            GraphQLSchema process(GraphQLSchema originalSchema) {
-                originalSchema.transform({ builder -> builder.additionalDirective(extraDirective) })
-            }
-        }
-        def wiring = RuntimeWiring.newRuntimeWiring()
-                .transformer(transformer) // Retained to show deprecated code is still run
-                .build()
-        GraphQLSchema schema = new SchemaGenerator().makeExecutableSchema(types, wiring)
-        expect:
-        assert schema != null
-        schema.getDirective("extra") != null
     }
 
     def "enum object default values are handled"() {
@@ -2309,6 +2282,11 @@ class SchemaGeneratorTest extends Specification {
         DataFetcherFactory dff = new DataFetcherFactory() {
             @Override
             DataFetcher get(DataFetcherFactoryEnvironment environment) {
+                return df
+            }
+
+            @Override
+            DataFetcher get(GraphQLFieldDefinition fieldDefinition) {
                 return df
             }
         }

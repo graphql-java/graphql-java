@@ -2,7 +2,6 @@ package graphql.schema;
 
 
 import com.google.common.collect.ImmutableMap;
-import graphql.DeprecatedAt;
 import graphql.GraphQLContext;
 import graphql.Internal;
 import graphql.collect.ImmutableKit;
@@ -18,6 +17,8 @@ import graphql.language.FragmentDefinition;
 import graphql.language.OperationDefinition;
 import org.dataloader.DataLoader;
 import org.dataloader.DataLoaderRegistry;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.Locale;
@@ -95,7 +96,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
                 .locale(executionContext.getLocale())
                 .document(executionContext.getDocument())
                 .operationDefinition(executionContext.getOperationDefinition())
-                .variables(executionContext.getVariables())
+                .variables(executionContext.getCoercedVariables().toMap())
                 .executionId(executionContext.getExecutionId());
     }
 
@@ -130,12 +131,12 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
     }
 
     @Override
-    public GraphQLContext getGraphQlContext() {
+    public @NotNull GraphQLContext getGraphQlContext() {
         return graphQLContext;
     }
 
     @Override
-    public <T> T getLocalContext() {
+    public <T> @Nullable T getLocalContext() {
         return (T) localContext;
     }
 
@@ -205,7 +206,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
     }
 
     @Override
-    public <K, V> DataLoader<K, V> getDataLoader(String dataLoaderName) {
+    public <K, V> @Nullable DataLoader<K, V> getDataLoader(String dataLoaderName) {
         return dataLoaderRegistry.getDataLoader(dataLoaderName);
     }
 
@@ -306,8 +307,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
             return this;
         }
 
-        @Deprecated
-        @DeprecatedAt("2021-07-05")
+        @Deprecated(since = "2021-07-05")
         public Builder context(Object context) {
             this.context = context;
             return this;

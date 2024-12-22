@@ -1,6 +1,5 @@
 package graphql.execution.instrumentation.parameters;
 
-import graphql.DeprecatedAt;
 import graphql.ExecutionInput;
 import graphql.PublicApi;
 import graphql.execution.instrumentation.Instrumentation;
@@ -15,26 +14,9 @@ import graphql.schema.GraphQLSchema;
 public class InstrumentationValidationParameters extends InstrumentationExecutionParameters {
     private final Document document;
 
-    public InstrumentationValidationParameters(ExecutionInput executionInput, Document document, GraphQLSchema schema, InstrumentationState instrumentationState) {
-        super(executionInput, schema, instrumentationState);
+    public InstrumentationValidationParameters(ExecutionInput executionInput, Document document, GraphQLSchema schema) {
+        super(executionInput, schema);
         this.document = document;
-    }
-
-    /**
-     * Returns a cloned parameters object with the new state
-     *
-     * @param instrumentationState the new state for this parameters object
-     *
-     * @return a new parameters object with the new state
-     *
-     * @deprecated state is now passed in direct to instrumentation methods
-     */
-    @Deprecated
-    @DeprecatedAt("2022-07-26")
-    @Override
-    public InstrumentationValidationParameters withNewState(InstrumentationState instrumentationState) {
-        return new InstrumentationValidationParameters(
-                this.getExecutionInput(), document, getSchema(), instrumentationState);
     }
 
 

@@ -21,9 +21,12 @@ class ChainedInstrumentationStateTest extends Specification {
         def a = new NamedInstrumentation("A")
         def b = new NamedInstrumentation("B")
         def c = new NamedInstrumentation("C")
+        def nullState = new SimplePerformantInstrumentation()
+
         def chainedInstrumentation = new ChainedInstrumentation([
                 a,
                 b,
+                nullState,
                 c,
         ])
 
@@ -53,7 +56,7 @@ class ChainedInstrumentationStateTest extends Specification {
                 "end:fetch-hero",
                 "start:complete-hero",
 
-                "start:execution-strategy",
+                "start:execute-object",
 
                 "start:field-id",
                 "start:fetch-id",
@@ -62,7 +65,7 @@ class ChainedInstrumentationStateTest extends Specification {
                 "end:complete-id",
                 "end:field-id",
 
-                "end:execution-strategy",
+                "end:execute-object",
 
                 "end:complete-hero",
                 "end:field-hero",
@@ -86,6 +89,8 @@ class ChainedInstrumentationStateTest extends Specification {
         graphQL.execute(query)
 
         then:
+
+        chainedInstrumentation.getInstrumentations().size() == 4
 
         a.executionList == expected
         b.executionList == expected
@@ -139,7 +144,7 @@ class ChainedInstrumentationStateTest extends Specification {
                 "end:fetch-hero",
                 "start:complete-hero",
 
-                "start:execution-strategy",
+                "start:execute-object",
 
                 "start:field-id",
                 "start:fetch-id",
@@ -148,7 +153,7 @@ class ChainedInstrumentationStateTest extends Specification {
                 "end:complete-id",
                 "end:field-id",
 
-                "end:execution-strategy",
+                "end:execute-object",
 
                 "end:complete-hero",
                 "end:field-hero",
@@ -179,7 +184,7 @@ class ChainedInstrumentationStateTest extends Specification {
                 "end:fetch-hero",
                 "start:complete-hero",
 
-                "start:execution-strategy",
+                "start:execute-object",
 
                 "start:field-id",
                 "start:fetch-id",
@@ -188,7 +193,7 @@ class ChainedInstrumentationStateTest extends Specification {
                 "end:complete-id",
                 "end:field-id",
 
-                "end:execution-strategy",
+                "end:execute-object",
 
                 "end:complete-hero",
                 "end:field-hero",
@@ -333,7 +338,6 @@ class ChainedInstrumentationStateTest extends Specification {
         def graphQL = GraphQL
                 .newGraphQL(StarWarsSchema.starWarsSchema)
                 .instrumentation(new ChainedInstrumentation([instrumentation1, instrumentation2]))
-                .doNotAddDefaultInstrumentations() // important, otherwise a chained one wil be used
                 .build()
 
         when:

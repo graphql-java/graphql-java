@@ -12,10 +12,9 @@ import graphql.execution.instrumentation.parameters.InstrumentationExecuteOperat
 import graphql.execution.instrumentation.parameters.InstrumentationValidationParameters;
 import graphql.validation.ValidationError;
 import org.jetbrains.annotations.Nullable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 
@@ -31,8 +30,6 @@ import static graphql.execution.instrumentation.SimpleInstrumentationContext.noO
  */
 @PublicApi
 public class MaxQueryComplexityInstrumentation extends SimplePerformantInstrumentation {
-
-    private static final Logger log = LoggerFactory.getLogger(MaxQueryComplexityInstrumentation.class);
 
     private final int maxComplexity;
     private final FieldComplexityCalculator fieldComplexityCalculator;
@@ -82,10 +79,9 @@ public class MaxQueryComplexityInstrumentation extends SimplePerformantInstrumen
     }
 
     @Override
-    public InstrumentationState createState(InstrumentationCreateStateParameters parameters) {
-        return new State();
+    public @Nullable CompletableFuture<InstrumentationState> createStateAsync(InstrumentationCreateStateParameters parameters) {
+        return CompletableFuture.completedFuture(new State());
     }
-
 
     @Override
     public @Nullable InstrumentationContext<List<ValidationError>> beginValidation(InstrumentationValidationParameters parameters, InstrumentationState rawState) {
@@ -100,9 +96,6 @@ public class MaxQueryComplexityInstrumentation extends SimplePerformantInstrumen
         State state = ofState(rawState);
         QueryComplexityCalculator queryComplexityCalculator = newQueryComplexityCalculator(instrumentationExecuteOperationParameters.getExecutionContext());
         int totalComplexity = queryComplexityCalculator.calculate();
-        if (log.isDebugEnabled()) {
-            log.debug("Query complexity: {}", totalComplexity);
-        }
         if (totalComplexity > maxComplexity) {
             QueryComplexityInfo queryComplexityInfo = QueryComplexityInfo.newQueryComplexityInfo()
                     .complexity(totalComplexity)

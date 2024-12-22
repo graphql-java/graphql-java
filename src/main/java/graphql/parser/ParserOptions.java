@@ -62,6 +62,7 @@ public class ParserOptions {
             .maxTokens(MAX_QUERY_TOKENS) // to prevent a billion laughs style attacks, we set a default for graphql-java
             .maxWhitespaceTokens(MAX_WHITESPACE_TOKENS)
             .maxRuleDepth(MAX_RULE_DEPTH)
+            .redactTokenParserErrorMessages(false)
             .build();
 
     private static ParserOptions defaultJvmOperationParserOptions = newParserOptions()
@@ -73,6 +74,7 @@ public class ParserOptions {
             .maxTokens(MAX_QUERY_TOKENS) // to prevent a billion laughs style attacks, we set a default for graphql-java
             .maxWhitespaceTokens(MAX_WHITESPACE_TOKENS)
             .maxRuleDepth(MAX_RULE_DEPTH)
+            .redactTokenParserErrorMessages(false)
             .build();
 
     private static ParserOptions defaultJvmSdlParserOptions = newParserOptions()
@@ -84,6 +86,7 @@ public class ParserOptions {
             .maxTokens(Integer.MAX_VALUE) // we are less worried about a billion laughs with SDL parsing since the call path is not facing attackers
             .maxWhitespaceTokens(Integer.MAX_VALUE)
             .maxRuleDepth(Integer.MAX_VALUE)
+            .redactTokenParserErrorMessages(false)
             .build();
 
     /**
@@ -189,6 +192,7 @@ public class ParserOptions {
     private final int maxTokens;
     private final int maxWhitespaceTokens;
     private final int maxRuleDepth;
+    private final boolean redactTokenParserErrorMessages;
     private final ParsingListener parsingListener;
 
     private ParserOptions(Builder builder) {
@@ -200,6 +204,7 @@ public class ParserOptions {
         this.maxTokens = builder.maxTokens;
         this.maxWhitespaceTokens = builder.maxWhitespaceTokens;
         this.maxRuleDepth = builder.maxRuleDepth;
+        this.redactTokenParserErrorMessages = builder.redactTokenParserErrorMessages;
         this.parsingListener = builder.parsingListener;
     }
 
@@ -294,6 +299,16 @@ public class ParserOptions {
         return maxRuleDepth;
     }
 
+    /**
+     * Option to redact offending tokens in parser error messages.
+     * By default, the parser will include the offending token in the error message, if possible.
+     *
+     * @return true if the token parser messages should be redacted
+     */
+    public boolean isRedactTokenParserErrorMessages() {
+        return redactTokenParserErrorMessages;
+    }
+
     public ParsingListener getParsingListener() {
         return parsingListener;
     }
@@ -319,6 +334,7 @@ public class ParserOptions {
         private int maxTokens = MAX_QUERY_TOKENS;
         private int maxWhitespaceTokens = MAX_WHITESPACE_TOKENS;
         private int maxRuleDepth = MAX_RULE_DEPTH;
+        private boolean redactTokenParserErrorMessages = false;
 
         Builder() {
         }
@@ -331,6 +347,7 @@ public class ParserOptions {
             this.maxTokens = parserOptions.maxTokens;
             this.maxWhitespaceTokens = parserOptions.maxWhitespaceTokens;
             this.maxRuleDepth = parserOptions.maxRuleDepth;
+            this.redactTokenParserErrorMessages = parserOptions.redactTokenParserErrorMessages;
             this.parsingListener = parserOptions.parsingListener;
         }
 
@@ -371,6 +388,11 @@ public class ParserOptions {
 
         public Builder maxRuleDepth(int maxRuleDepth) {
             this.maxRuleDepth = maxRuleDepth;
+            return this;
+        }
+
+        public Builder redactTokenParserErrorMessages(boolean redactTokenParserErrorMessages) {
+            this.redactTokenParserErrorMessages = redactTokenParserErrorMessages;
             return this;
         }
 

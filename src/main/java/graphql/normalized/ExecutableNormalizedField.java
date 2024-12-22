@@ -2,13 +2,14 @@ package graphql.normalized;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import graphql.Assert;
+import graphql.ExperimentalApi;
 import graphql.Internal;
 import graphql.Mutable;
 import graphql.PublicApi;
 import graphql.collect.ImmutableKit;
 import graphql.introspection.Introspection;
 import graphql.language.Argument;
+import graphql.normalized.incremental.NormalizedDeferredExecution;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLInterfaceType;
 import graphql.schema.GraphQLNamedOutputType;
@@ -63,6 +64,8 @@ public class ExecutableNormalizedField {
     private final String fieldName;
     private final int level;
 
+    // Mutable List on purpose: it is modified after creation
+    private final LinkedHashSet<NormalizedDeferredExecution> deferredExecutions;
 
     private ExecutableNormalizedField(Builder builder) {
         this.alias = builder.alias;
@@ -74,6 +77,7 @@ public class ExecutableNormalizedField {
         this.children = builder.children;
         this.level = builder.level;
         this.parent = builder.parent;
+        this.deferredExecutions = builder.deferredExecutions;
     }
 
     /**
@@ -129,6 +133,7 @@ public class ExecutableNormalizedField {
      * NOT {@code Cat} or {@code Dog} as their respective implementations would say.
      *
      * @param schema - the graphql schema in play
+     *
      * @return true if the field is conditional
      */
     public boolean isConditional(@NotNull GraphQLSchema schema) {
@@ -178,7 +183,7 @@ public class ExecutableNormalizedField {
     public GraphQLOutputType getType(GraphQLSchema schema) {
         List<GraphQLFieldDefinition> fieldDefinitions = getFieldDefinitions(schema);
         Set<String> fieldTypes = fieldDefinitions.stream().map(fd -> simplePrint(fd.getType())).collect(toSet());
-        Assert.assertTrue(fieldTypes.size() == 1, () -> "More than one type ... use getTypes");
+        assertTrue(fieldTypes.size() == 1, () -> "More than one type ... use getTypes");
         return fieldDefinitions.get(0).getType();
     }
 
@@ -195,7 +200,7 @@ public class ExecutableNormalizedField {
 
         for (String objectTypeName : objectTypeNames) {
             GraphQLObjectType type = (GraphQLObjectType) assertNotNull(schema.getType(objectTypeName));
-            consumer.accept(assertNotNull(type.getField(fieldName), () -> String.format("No field %s found for type %s", fieldName, objectTypeName)));
+            consumer.accept(assertNotNull(type.getField(fieldName), "No field %s found for type %s", fieldName, objectTypeName));
         }
     }
 
@@ -218,7 +223,7 @@ public class ExecutableNormalizedField {
 
         String objectTypeName = objectTypeNames.iterator().next();
         GraphQLObjectType type = (GraphQLObjectType) assertNotNull(schema.getType(objectTypeName));
-        return assertNotNull(type.getField(fieldName), () -> String.format("No field %s found for type %s", fieldName, objectTypeName));
+        return assertNotNull(type.getField(fieldName), "No field %s found for type %s", fieldName, objectTypeName);
     }
 
     private static GraphQLFieldDefinition resolveIntrospectionField(GraphQLSchema schema, Set<String> objectTypeNames, String fieldName) {
@@ -253,6 +258,16 @@ public class ExecutableNormalizedField {
     @Internal
     public void clearChildren() {
         this.children.clear();
+    }
+
+    @Internal
+    public void setDeferredExecutions(Collection<NormalizedDeferredExecution> deferredExecutions) {
+        this.deferredExecutions.clear();
+        this.deferredExecutions.addAll(deferredExecutions);
+    }
+
+    public void addDeferredExecutions(Collection<NormalizedDeferredExecution> deferredExecutions) {
+        this.deferredExecutions.addAll(deferredExecutions);
     }
 
     /**
@@ -364,7 +379,6 @@ public class ExecutableNormalizedField {
         return objectTypeNames.iterator().next();
     }
 
-
     /**
      * @return a helper method show field details
      */
@@ -459,6 +473,16 @@ public class ExecutableNormalizedField {
      */
     public ExecutableNormalizedField getParent() {
         return parent;
+    }
+
+    /**
+     * @return the {@link NormalizedDeferredExecution}s associated with this {@link ExecutableNormalizedField}.
+     *
+     * @see NormalizedDeferredExecution
+     */
+    @ExperimentalApi
+    public LinkedHashSet<NormalizedDeferredExecution> getDeferredExecutions() {
+        return deferredExecutions;
     }
 
     @Internal
@@ -588,6 +612,8 @@ public class ExecutableNormalizedField {
         private LinkedHashMap<String, Object> resolvedArguments = new LinkedHashMap<>();
         private ImmutableList<Argument> astArguments = ImmutableKit.emptyList();
 
+        private LinkedHashSet<NormalizedDeferredExecution> deferredExecutions = new LinkedHashSet<>();
+
         private Builder() {
         }
 
@@ -601,6 +627,7 @@ public class ExecutableNormalizedField {
             this.children = new ArrayList<>(existing.children);
             this.level = existing.getLevel();
             this.parent = existing.getParent();
+            this.deferredExecutions = existing.getDeferredExecutions();
         }
 
         public Builder clearObjectTypesNames() {
@@ -653,6 +680,11 @@ public class ExecutableNormalizedField {
 
         public Builder parent(ExecutableNormalizedField parent) {
             this.parent = parent;
+            return this;
+        }
+
+        public Builder deferredExecutions(LinkedHashSet<NormalizedDeferredExecution> deferredExecutions) {
+            this.deferredExecutions = deferredExecutions;
             return this;
         }
 

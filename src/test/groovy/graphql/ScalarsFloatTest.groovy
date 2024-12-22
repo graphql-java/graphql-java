@@ -64,15 +64,15 @@ class ScalarsFloatTest extends Specification {
         "42"                  | 42d
         "42.123"              | 42.123d
         42.0000d              | 42
-        new Integer(42)       | 42
+        Integer.valueOf(42)   | 42
         "-1"                  | -1
         new BigInteger("42")  | 42
         new BigDecimal("42")  | 42
         new BigDecimal("4.2") | 4.2d
         42.3f                 | 42.3d
         42.0d                 | 42d
-        new Byte("42")        | 42
-        new Short("42")       | 42
+        Byte.valueOf("42")    | 42
+        Short.valueOf("42")   | 42
         1234567l              | 1234567d
         new AtomicInteger(42) | 42
         Double.MAX_VALUE      | Double.MAX_VALUE
@@ -89,15 +89,15 @@ class ScalarsFloatTest extends Specification {
         "42"                  | 42d
         "42.123"              | 42.123d
         42.0000d              | 42
-        new Integer(42)       | 42
+        Integer.valueOf(42)   | 42
         "-1"                  | -1
         new BigInteger("42")  | 42
         new BigDecimal("42")  | 42
         new BigDecimal("4.2") | 4.2d
         42.3f                 | 42.3d
         42.0d                 | 42d
-        new Byte("42")        | 42
-        new Short("42")       | 42
+        Byte.valueOf("42")    | 42
+        Short.valueOf("42")   | 42
         1234567l              | 1234567d
         new AtomicInteger(42) | 42
         Double.MAX_VALUE      | Double.MAX_VALUE
@@ -137,21 +137,18 @@ class ScalarsFloatTest extends Specification {
         where:
         value                 | result
         42.0000d              | 42
-        new Integer(42)       | 42
+        Integer.valueOf(42)   | 42
         new BigInteger("42")  | 42
         new BigDecimal("42")  | 42
         new BigDecimal("4.2") | 4.2d
         42.3f                 | 42.3d
         42.0d                 | 42d
-        new Byte("42")        | 42
-        new Short("42")       | 42
+        Byte.valueOf("42")    | 42
+        Short.valueOf("42")   | 42
         1234567l              | 1234567d
         new AtomicInteger(42) | 42
         Double.MAX_VALUE      | Double.MAX_VALUE
         Double.MIN_VALUE      | Double.MIN_VALUE
-        "42"                  | 42d
-        "42.123"              | 42.123d
-        "-1"                  | -1
     }
 
     @Unroll
@@ -162,21 +159,18 @@ class ScalarsFloatTest extends Specification {
         where:
         value                 | result
         42.0000d              | 42
-        new Integer(42)       | 42
+        Integer.valueOf(42)   | 42
         new BigInteger("42")  | 42
         new BigDecimal("42")  | 42
         new BigDecimal("4.2") | 4.2d
         42.3f                 | 42.3d
         42.0d                 | 42d
-        new Byte("42")        | 42
-        new Short("42")       | 42
+        Byte.valueOf("42")    | 42
+        Short.valueOf("42")   | 42
         1234567l              | 1234567d
         new AtomicInteger(42) | 42
         Double.MAX_VALUE      | Double.MAX_VALUE
         Double.MIN_VALUE      | Double.MIN_VALUE
-        "42"                  | 42d
-        "42.123"              | 42.123d
-        "-1"                  | -1
     }
 
 
@@ -203,6 +197,9 @@ class ScalarsFloatTest extends Specification {
         Float.POSITIVE_INFINITY.toString()  | _
         Float.NEGATIVE_INFINITY             | _
         Float.NEGATIVE_INFINITY.toString()  | _
+        "42"                                | _
+        "42.123"                            | _
+        "-1"                                | _
     }
 
 }

@@ -30,13 +30,15 @@ class ParserOptionsTest extends Specification {
         defaultOptions.isCaptureLineComments()
         !defaultOptions.isCaptureIgnoredChars()
         defaultOptions.isReaderTrackData()
+        !defaultOptions.isRedactTokenParserErrorMessages()
 
         defaultOperationOptions.getMaxTokens() == 15_000
         defaultOperationOptions.getMaxWhitespaceTokens() == 200_000
         defaultOperationOptions.isCaptureSourceLocation()
         !defaultOperationOptions.isCaptureLineComments()
         !defaultOperationOptions.isCaptureIgnoredChars()
-        defaultOptions.isReaderTrackData()
+        defaultOperationOptions.isReaderTrackData()
+        !defaultOperationOptions.isRedactTokenParserErrorMessages()
 
         defaultSdlOptions.getMaxCharacters() == Integer.MAX_VALUE
         defaultSdlOptions.getMaxTokens() == Integer.MAX_VALUE
@@ -44,14 +46,16 @@ class ParserOptionsTest extends Specification {
         defaultSdlOptions.isCaptureSourceLocation()
         defaultSdlOptions.isCaptureLineComments()
         !defaultSdlOptions.isCaptureIgnoredChars()
-        defaultOptions.isReaderTrackData()
+        defaultSdlOptions.isReaderTrackData()
+        !defaultSdlOptions.isRedactTokenParserErrorMessages()
     }
 
     def "can set in new option JVM wide"() {
         def newDefaultOptions = defaultOptions.transform({
             it.captureIgnoredChars(true)
                     .readerTrackData(false)
-        }        )
+                    .redactTokenParserErrorMessages(true)
+        })
         def newDefaultOperationOptions = defaultOperationOptions.transform(
                 {
                     it.captureIgnoredChars(true)
@@ -84,6 +88,7 @@ class ParserOptionsTest extends Specification {
         currentDefaultOptions.isCaptureLineComments()
         currentDefaultOptions.isCaptureIgnoredChars()
         !currentDefaultOptions.isReaderTrackData()
+        currentDefaultOptions.isRedactTokenParserErrorMessages()
 
         currentDefaultOperationOptions.getMaxCharacters() == 1_000_000
         currentDefaultOperationOptions.getMaxTokens() == 15_000
@@ -92,6 +97,7 @@ class ParserOptionsTest extends Specification {
         currentDefaultOperationOptions.isCaptureLineComments()
         currentDefaultOperationOptions.isCaptureIgnoredChars()
         currentDefaultOperationOptions.isReaderTrackData()
+        !currentDefaultOperationOptions.isRedactTokenParserErrorMessages()
 
         currentDefaultSdlOptions.getMaxCharacters() == Integer.MAX_VALUE
         currentDefaultSdlOptions.getMaxTokens() == Integer.MAX_VALUE
@@ -100,5 +106,6 @@ class ParserOptionsTest extends Specification {
         currentDefaultSdlOptions.isCaptureLineComments()
         currentDefaultSdlOptions.isCaptureIgnoredChars()
         currentDefaultSdlOptions.isReaderTrackData()
+        !currentDefaultSdlOptions.isRedactTokenParserErrorMessages()
     }
 }

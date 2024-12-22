@@ -13,10 +13,12 @@ import java.util.Set;
 @PublicApi
 public class MergedSelectionSet {
 
-    private final ImmutableMap<String, MergedField> subFields;
+    private final Map<String, MergedField> subFields;
+    private final List<String> keys;
 
-    private MergedSelectionSet(Map<String, MergedField> subFields) {
-        this.subFields = ImmutableMap.copyOf(Assert.assertNotNull(subFields));
+    protected MergedSelectionSet(Map<String, MergedField> subFields) {
+        this.subFields = subFields == null ? ImmutableMap.of() : subFields;
+        this.keys =  ImmutableList.copyOf(this.subFields.keySet());
     }
 
     public Map<String, MergedField> getSubFields() {
@@ -40,7 +42,7 @@ public class MergedSelectionSet {
     }
 
     public List<String> getKeys() {
-        return ImmutableList.copyOf(keySet());
+        return keys;
     }
 
     public boolean isEmpty() {
@@ -52,10 +54,10 @@ public class MergedSelectionSet {
     }
 
     public static class Builder {
-        private Map<String, MergedField> subFields = ImmutableMap.of();
+
+        private Map<String, MergedField> subFields;
 
         private Builder() {
-
         }
 
         public Builder subFields(Map<String, MergedField> subFields) {

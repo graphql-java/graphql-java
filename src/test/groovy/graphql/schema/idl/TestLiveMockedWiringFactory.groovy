@@ -12,6 +12,7 @@ import graphql.schema.GraphQLScalarType
 import graphql.schema.GraphQLTypeUtil
 import graphql.schema.GraphQLUnionType
 import graphql.schema.PropertyDataFetcher
+import graphql.schema.SingletonPropertyDataFetcher
 import graphql.schema.TypeResolver
 
 class TestLiveMockedWiringFactory implements WiringFactory {
@@ -74,7 +75,7 @@ class TestLiveMockedWiringFactory implements WiringFactory {
 
     @Override
     DataFetcher getDataFetcher(FieldWiringEnvironment environment) {
-        return new PropertyDataFetcher(environment.getFieldDefinition().getName())
+        return SingletonPropertyDataFetcher.singleton()
     }
 
     @Override

@@ -6,8 +6,10 @@ import graphql.PublicApi;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters;
+import graphql.introspection.Introspection;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 import static graphql.execution.instrumentation.SimpleInstrumentationContext.nonNullCtx;
@@ -30,6 +32,7 @@ public class AsyncSerialExecutionStrategy extends AbstractAsyncExecutionStrategy
     @Override
     @SuppressWarnings({"TypeParameterUnusedInFormals", "FutureReturnValueIgnored"})
     public CompletableFuture<ExecutionResult> execute(ExecutionContext executionContext, ExecutionStrategyParameters parameters) throws NonNullableFieldWasNullException {
+        DataLoaderDispatchStrategy dataLoaderDispatcherStrategy = executionContext.getDataLoaderDispatcherStrategy();
 
         Instrumentation instrumentation = executionContext.getInstrumentation();
         InstrumentationExecutionStrategyParameters instrumentationParameters = new InstrumentationExecutionStrategyParameters(executionContext, parameters);
@@ -39,20 +42,46 @@ public class AsyncSerialExecutionStrategy extends AbstractAsyncExecutionStrategy
         MergedSelectionSet fields = parameters.getFields();
         ImmutableList<String> fieldNames = ImmutableList.copyOf(fields.keySet());
 
-        CompletableFuture<List<ExecutionResult>> resultsFuture = Async.eachSequentially(fieldNames, (fieldName, prevResults) -> {
+        // this is highly unlikely since Mutations cant do introspection BUT in theory someone could make the query strategy this code
+        // so belts and braces
+        Optional<ExecutionResult> isNotSensible = Introspection.isIntrospectionSensible(fields, executionContext);
+        if (isNotSensible.isPresent()) {
+            return CompletableFuture.completedFuture(isNotSensible.get());
+        }
+
+        CompletableFuture<List<Object>> resultsFuture = Async.eachSequentially(fieldNames, (fieldName, prevResults) -> {
             MergedField currentField = fields.getSubField(fieldName);
             ResultPath fieldPath = parameters.getPath().segment(mkNameForPath(currentField));
             ExecutionStrategyParameters newParameters = parameters
                     .transform(builder -> builder.field(currentField).path(fieldPath));
-            return resolveField(executionContext, newParameters);
+
+            return resolveSerialField(executionContext, dataLoaderDispatcherStrategy, newParameters);
         });
 
         CompletableFuture<ExecutionResult> overallResult = new CompletableFuture<>();
-        executionStrategyCtx.onDispatched(overallResult);
+        executionStrategyCtx.onDispatched();
 
         resultsFuture.whenComplete(handleResults(executionContext, fieldNames, overallResult));
         overallResult.whenComplete(executionStrategyCtx::onCompleted);
         return overallResult;
     }
 
+    private Object resolveSerialField(ExecutionContext executionContext,
+                                      DataLoaderDispatchStrategy dataLoaderDispatcherStrategy,
+                                      ExecutionStrategyParameters newParameters) {
+        dataLoaderDispatcherStrategy.executionSerialStrategy(executionContext, newParameters);
+
+        Object fieldWithInfo = resolveFieldWithInfo(executionContext, newParameters);
+        if (fieldWithInfo instanceof CompletableFuture) {
+            //noinspection unchecked
+            return ((CompletableFuture<FieldValueInfo>) fieldWithInfo).thenCompose(fvi -> {
+                dataLoaderDispatcherStrategy.executionStrategyOnFieldValuesInfo(List.of(fvi));
+                return fvi.getFieldValueFuture();
+            });
+        } else {
+            FieldValueInfo fvi = (FieldValueInfo) fieldWithInfo;
+            dataLoaderDispatcherStrategy.executionStrategyOnFieldValuesInfo(List.of(fvi));
+            return fvi.getFieldValueObject();
+        }
+    }
 }

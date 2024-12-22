@@ -2,11 +2,11 @@ package graphql.schema;
 
 
 import com.google.common.collect.ImmutableList;
-import graphql.DeprecatedAt;
 import graphql.DirectivesUtil;
 import graphql.Internal;
 import graphql.PublicApi;
 import graphql.language.FieldDefinition;
+import graphql.util.Interning;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
@@ -62,12 +62,12 @@ public class GraphQLFieldDefinition implements GraphQLNamedSchemaElement, GraphQ
         assertValidName(name);
         assertNotNull(type, () -> "type can't be null");
         assertNotNull(arguments, () -> "arguments can't be null");
-        this.name = name;
+        this.name = Interning.intern(name);
         this.description = description;
         this.originalType = type;
         this.dataFetcherFactory = dataFetcherFactory;
         this.arguments = ImmutableList.copyOf(arguments);
-        this.directivesHolder = new DirectivesUtil.DirectivesHolder(directives, appliedDirectives);
+        this.directivesHolder = DirectivesUtil.DirectivesHolder.create(directives, appliedDirectives);
         this.deprecationReason = deprecationReason;
         this.definition = definition;
     }
@@ -88,8 +88,7 @@ public class GraphQLFieldDefinition implements GraphQLNamedSchemaElement, GraphQ
 
     // to be removed in a future version when all code is in the code registry
     @Internal
-    @Deprecated
-    @DeprecatedAt("2018-12-03")
+    @Deprecated(since = "2018-12-03")
     DataFetcher<?> getDataFetcher() {
         if (dataFetcherFactory == null) {
             return null;
@@ -310,8 +309,7 @@ public class GraphQLFieldDefinition implements GraphQLNamedSchemaElement, GraphQ
          *
          * @deprecated use {@link graphql.schema.GraphQLCodeRegistry} instead
          */
-        @Deprecated
-        @DeprecatedAt("2018-12-03")
+        @Deprecated(since = "2018-12-03")
         public Builder dataFetcher(DataFetcher<?> dataFetcher) {
             assertNotNull(dataFetcher, () -> "dataFetcher must be not null");
             this.dataFetcherFactory = DataFetcherFactories.useDataFetcher(dataFetcher);
@@ -327,8 +325,7 @@ public class GraphQLFieldDefinition implements GraphQLNamedSchemaElement, GraphQ
          *
          * @deprecated use {@link graphql.schema.GraphQLCodeRegistry} instead
          */
-        @Deprecated
-        @DeprecatedAt("2018-12-03")
+        @Deprecated(since = "2018-12-03")
         public Builder dataFetcherFactory(DataFetcherFactory<?> dataFetcherFactory) {
             assertNotNull(dataFetcherFactory, () -> "dataFetcherFactory must be not null");
             this.dataFetcherFactory = dataFetcherFactory;
@@ -344,8 +341,7 @@ public class GraphQLFieldDefinition implements GraphQLNamedSchemaElement, GraphQ
          *
          * @deprecated use {@link graphql.schema.GraphQLCodeRegistry} instead
          */
-        @Deprecated
-        @DeprecatedAt("2018-12-03")
+        @Deprecated(since = "2018-12-03")
         public Builder staticValue(final Object value) {
             this.dataFetcherFactory = DataFetcherFactories.useDataFetcher(environment -> value);
             return this;
@@ -398,8 +394,7 @@ public class GraphQLFieldDefinition implements GraphQLNamedSchemaElement, GraphQ
          *
          * @deprecated This is a badly named method and is replaced by {@link #arguments(java.util.List)}
          */
-        @Deprecated
-        @DeprecatedAt("2019-02-06")
+        @Deprecated(since = "2019-02-06")
         public Builder argument(List<GraphQLArgument> arguments) {
             return arguments(arguments);
         }

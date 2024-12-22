@@ -1,7 +1,8 @@
 package graphql.execution;
 
-import graphql.Assert;
 import graphql.PublicApi;
+import graphql.execution.incremental.DeferredCallContext;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.function.Consumer;
 
@@ -20,6 +21,7 @@ public class ExecutionStrategyParameters {
     private final ResultPath path;
     private final MergedField currentField;
     private final ExecutionStrategyParameters parent;
+    private final DeferredCallContext deferredCallContext;
 
     private ExecutionStrategyParameters(ExecutionStepInfo executionStepInfo,
                                         Object source,
@@ -28,7 +30,8 @@ public class ExecutionStrategyParameters {
                                         NonNullableFieldValidator nonNullableFieldValidator,
                                         ResultPath path,
                                         MergedField currentField,
-                                        ExecutionStrategyParameters parent) {
+                                        ExecutionStrategyParameters parent,
+                                        DeferredCallContext deferredCallContext) {
 
         this.executionStepInfo = assertNotNull(executionStepInfo, () -> "executionStepInfo is null");
         this.localContext = localContext;
@@ -38,6 +41,7 @@ public class ExecutionStrategyParameters {
         this.path = path;
         this.currentField = currentField;
         this.parent = parent;
+        this.deferredCallContext = deferredCallContext;
     }
 
     public ExecutionStepInfo getExecutionStepInfo() {
@@ -66,6 +70,40 @@ public class ExecutionStrategyParameters {
 
     public ExecutionStrategyParameters getParent() {
         return parent;
+    }
+
+    /**
+     * Returns the deferred call context if we're in the scope of a deferred call.
+     * A new DeferredCallContext is created for each @defer block, and is passed down to all fields within the deferred call.
+     *
+     * <pre>
+     *     query {
+     *        ... @defer {
+     *            field1 {        # new DeferredCallContext created here
+     *                field1a     # DeferredCallContext passed down to this field
+     *            }
+     *        }
+     *
+     *        ... @defer {
+     *            field2          # new DeferredCallContext created here
+     *        }
+     *     }
+     * </pre>
+     *
+     * @return the deferred call context or null if we're not in the scope of a deferred call
+     */
+    @Nullable
+    public DeferredCallContext getDeferredCallContext() {
+        return deferredCallContext;
+    }
+
+    /**
+     * Returns true if we're in the scope of a deferred call.
+     *
+     * @return true if we're in the scope of a deferred call
+     */
+    public boolean isInDeferredContext() {
+        return deferredCallContext != null;
     }
 
     /**
@@ -106,6 +144,7 @@ public class ExecutionStrategyParameters {
         ResultPath path = ResultPath.rootPath();
         MergedField currentField;
         ExecutionStrategyParameters parent;
+        DeferredCallContext deferredCallContext;
 
         /**
          * @see ExecutionStrategyParameters#newParameters()
@@ -123,6 +162,7 @@ public class ExecutionStrategyParameters {
             this.fields = oldParameters.fields;
             this.nonNullableFieldValidator = oldParameters.nonNullableFieldValidator;
             this.currentField = oldParameters.currentField;
+            this.deferredCallContext = oldParameters.deferredCallContext;
             this.path = oldParameters.path;
             this.parent = oldParameters.parent;
         }
@@ -158,7 +198,7 @@ public class ExecutionStrategyParameters {
         }
 
         public Builder nonNullFieldValidator(NonNullableFieldValidator nonNullableFieldValidator) {
-            this.nonNullableFieldValidator = Assert.assertNotNull(nonNullableFieldValidator, () -> "requires a NonNullValidator");
+            this.nonNullableFieldValidator = assertNotNull(nonNullableFieldValidator, () -> "requires a NonNullValidator");
             return this;
         }
 
@@ -172,9 +212,13 @@ public class ExecutionStrategyParameters {
             return this;
         }
 
+        public Builder deferredCallContext(DeferredCallContext deferredCallContext) {
+            this.deferredCallContext = deferredCallContext;
+            return this;
+        }
 
         public ExecutionStrategyParameters build() {
-            return new ExecutionStrategyParameters(executionStepInfo, source, localContext, fields, nonNullableFieldValidator, path, currentField, parent);
+            return new ExecutionStrategyParameters(executionStepInfo, source, localContext, fields, nonNullableFieldValidator, path, currentField, parent, deferredCallContext);
         }
     }
 }

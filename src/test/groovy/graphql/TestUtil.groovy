@@ -2,6 +2,7 @@ package graphql
 
 import graphql.execution.MergedField
 import graphql.execution.MergedSelectionSet
+import graphql.introspection.Introspection.DirectiveLocation
 import graphql.language.Document
 import graphql.language.Field
 import graphql.language.NullValue
@@ -12,8 +13,8 @@ import graphql.language.Type
 import graphql.parser.Parser
 import graphql.schema.Coercing
 import graphql.schema.DataFetcher
-import graphql.schema.GraphQLAppliedDirectiveArgument
 import graphql.schema.GraphQLAppliedDirective
+import graphql.schema.GraphQLAppliedDirectiveArgument
 import graphql.schema.GraphQLArgument
 import graphql.schema.GraphQLDirective
 import graphql.schema.GraphQLInputType
@@ -194,13 +195,19 @@ class TestUtil {
                 .name(definition.getName())
                 .description(definition.getDescription() == null ? null : definition.getDescription().getContent())
                 .coercing(mockCoercing())
-                .replaceDirectives(definition.getDirectives().stream().map({ mockDirective(it.getName()) }).collect(Collectors.toList()))
+                .replaceDirectives(
+                        definition.getDirectives()
+                                .stream()
+                                .map({ mkDirective(it.getName(), DirectiveLocation.SCALAR) })
+                                .collect(Collectors.toList()))
                 .definition(definition)
                 .build()
     }
 
-    static GraphQLDirective mockDirective(String name) {
-        newDirective().name(name).description(name).build()
+    static GraphQLDirective mkDirective(String name, DirectiveLocation location, GraphQLArgument arg = null) {
+        def b = newDirective().name(name).description(name).validLocation(location)
+        if (arg != null) b.argument(arg)
+        b.build()
     }
 
     static TypeRuntimeWiring mockTypeRuntimeWiring(String typeName, boolean withResolver) {
@@ -309,4 +316,11 @@ class TestUtil {
         return JsonOutput.prettyPrint(JsonOutput.toJson(obj))
 
     }
+
+    static Random rn = new Random()
+
+    static int rand(int min, int max) {
+        return rn.nextInt(max - min + 1) + min
+    }
+
 }

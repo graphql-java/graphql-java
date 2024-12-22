@@ -1,5 +1,6 @@
 package graphql.schema.idl
 
+import graphql.Scalars
 import graphql.TypeResolutionEnvironment
 import graphql.schema.Coercing
 import graphql.schema.DataFetcher
@@ -9,6 +10,7 @@ import graphql.schema.GraphQLFieldsContainer
 import graphql.schema.GraphQLObjectType
 import graphql.schema.GraphQLScalarType
 import graphql.schema.TypeResolver
+import graphql.schema.idl.errors.StrictModeWiringException
 import graphql.schema.visibility.GraphqlFieldVisibility
 import spock.lang.Specification
 
@@ -62,22 +64,22 @@ class RuntimeWiringTest extends Specification {
     def "basic call structure"() {
         def wiring = RuntimeWiring.newRuntimeWiring()
                 .type("Query", { type ->
-            type
-                    .dataFetcher("fieldX", new NamedDF("fieldX"))
-                    .dataFetcher("fieldY", new NamedDF("fieldY"))
-                    .dataFetcher("fieldZ", new NamedDF("fieldZ"))
-                    .defaultDataFetcher(new NamedDF("defaultQueryDF"))
-                    .typeResolver(new NamedTR("typeResolver4Query"))
-        } as UnaryOperator<TypeRuntimeWiring.Builder>)
+                    type
+                            .dataFetcher("fieldX", new NamedDF("fieldX"))
+                            .dataFetcher("fieldY", new NamedDF("fieldY"))
+                            .dataFetcher("fieldZ", new NamedDF("fieldZ"))
+                            .defaultDataFetcher(new NamedDF("defaultQueryDF"))
+                            .typeResolver(new NamedTR("typeResolver4Query"))
+                } as UnaryOperator<TypeRuntimeWiring.Builder>)
 
                 .type("Mutation", { type ->
-            type
-                    .dataFetcher("fieldX", new NamedDF("mfieldX"))
-                    .dataFetcher("fieldY", new NamedDF("mfieldY"))
-                    .dataFetcher("fieldZ", new NamedDF("mfieldZ"))
-                    .defaultDataFetcher(new NamedDF("defaultMutationDF"))
-                    .typeResolver(new NamedTR("typeResolver4Mutation"))
-        } as UnaryOperator<TypeRuntimeWiring.Builder>)
+                    type
+                            .dataFetcher("fieldX", new NamedDF("mfieldX"))
+                            .dataFetcher("fieldY", new NamedDF("mfieldY"))
+                            .dataFetcher("fieldZ", new NamedDF("mfieldZ"))
+                            .defaultDataFetcher(new NamedDF("defaultMutationDF"))
+                            .typeResolver(new NamedTR("typeResolver4Mutation"))
+                } as UnaryOperator<TypeRuntimeWiring.Builder>)
                 .build()
 
 
@@ -189,5 +191,91 @@ class RuntimeWiringTest extends Specification {
         newWiring.scalars["Custom1"] == customScalar1
         newWiring.scalars["Custom2"] == customScalar2
         newWiring.fieldVisibility == fieldVisibility
+    }
+
+    def "strict mode can stop certain redefinitions"() {
+        DataFetcher DF1 = env -> "x"
+        DataFetcher DF2 = env -> "x"
+        TypeResolver TR1 = env -> null
+        EnumValuesProvider EVP1 = name -> null
+
+        when:
+        RuntimeWiring.newRuntimeWiring()
+                .strictMode()
+                .type(TypeRuntimeWiring.newTypeWiring("Foo").dataFetcher("foo", DF1))
+                .type(TypeRuntimeWiring.newTypeWiring("Foo").dataFetcher("bar", DF1))
+
+
+        then:
+        def e1 = thrown(StrictModeWiringException)
+        e1.message == "The type Foo has already been defined"
+
+        when:
+        RuntimeWiring.newRuntimeWiring()
+                .strictMode()
+                .type(TypeRuntimeWiring.newTypeWiring("Foo").typeResolver(TR1))
+                .type(TypeRuntimeWiring.newTypeWiring("Foo").typeResolver(TR1))
+
+        then:
+        def e2 = thrown(StrictModeWiringException)
+        e2.message == "The type Foo already has a type resolver defined"
+
+        when:
+        RuntimeWiring.newRuntimeWiring()
+                .strictMode()
+                .type(TypeRuntimeWiring.newTypeWiring("Foo").enumValues(EVP1))
+                .type(TypeRuntimeWiring.newTypeWiring("Foo").enumValues(EVP1))
+        then:
+        def e3 = thrown(StrictModeWiringException)
+        e3.message == "The type Foo already has a enum provider defined"
+
+        when:
+        RuntimeWiring.newRuntimeWiring()
+                .strictMode()
+                .scalar(Scalars.GraphQLString)
+        then:
+        def e4 = thrown(StrictModeWiringException)
+        e4.message == "The scalar String is already defined"
+
+        when:
+        TypeRuntimeWiring.newTypeWiring("Foo")
+                .strictMode()
+                .defaultDataFetcher(DF1)
+                .defaultDataFetcher(DF2)
+
+        then:
+        def e5 = thrown(StrictModeWiringException)
+        e5.message == "The type Foo has already has a default data fetcher defined"
+    }
+
+    def "overwrite default data fetchers if they are null"() {
+
+        DataFetcher DF1 = env -> "x"
+        DataFetcher DF2 = env -> "x"
+        DataFetcher DEFAULT_DF = env -> null
+        DataFetcher DEFAULT_DF2 = env -> null
+
+        when:
+        def runtimeWiring = RuntimeWiring.newRuntimeWiring()
+                .type(TypeRuntimeWiring.newTypeWiring("Foo").defaultDataFetcher(DEFAULT_DF))
+                .type(TypeRuntimeWiring.newTypeWiring("Foo").dataFetcher("foo", DF1))
+                .type(TypeRuntimeWiring.newTypeWiring("Foo").dataFetcher("bar", DF2))
+                .build()
+
+        then:
+        runtimeWiring.getDefaultDataFetcherForType("Foo") == DEFAULT_DF
+
+        when:
+        runtimeWiring = RuntimeWiring.newRuntimeWiring()
+                .type(TypeRuntimeWiring.newTypeWiring("Foo").defaultDataFetcher(DEFAULT_DF))
+                .type(TypeRuntimeWiring.newTypeWiring("Foo").dataFetcher("foo", DF1))
+                .type(TypeRuntimeWiring.newTypeWiring("Foo").dataFetcher("bar", DF2))
+                // we can specifically overwrite it later
+                .type(TypeRuntimeWiring.newTypeWiring("Foo").defaultDataFetcher(DEFAULT_DF2))
+                .build()
+
+        then:
+        runtimeWiring.getDefaultDataFetcherForType("Foo") == DEFAULT_DF2
+
     }
 }

@@ -40,7 +40,7 @@ public class CodeRegistryVisitor extends GraphQLTypeVisitorStub {
             codeRegistry.typeResolverIfAbsent(node, typeResolver);
         }
         assertTrue(codeRegistry.getTypeResolver(node) != null,
-                () -> String.format("You MUST provide a type resolver for the interface type '%s'", node.getName()));
+                "You MUST provide a type resolver for the interface type '%s'", node.getName());
         return CONTINUE;
     }
 
@@ -51,7 +51,7 @@ public class CodeRegistryVisitor extends GraphQLTypeVisitorStub {
             codeRegistry.typeResolverIfAbsent(node, typeResolver);
         }
         assertTrue(codeRegistry.getTypeResolver(node) != null,
-                () -> String.format("You MUST provide a type resolver for the union type '%s'", node.getName()));
+                "You MUST provide a type resolver for the union type '%s'", node.getName());
         return CONTINUE;
     }
 }

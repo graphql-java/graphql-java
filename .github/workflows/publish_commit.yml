@@ -1,0 +1,17 @@
+name: Publish Commit SHA for performance testing
+on:
+  push:
+    branches:
+      - master
+permissions:
+  id-token: write # This is required for requesting the JWT
+  contents: read  # This is required for actions/checkout
+jobs:
+  publishCommit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::637423498965:role/GitHubActionGrahQLJava
+          aws-region: "ap-southeast-2"
+      - run: aws sns publish  --topic-arn "arn:aws:sns:ap-southeast-2:637423498965:graphql-java-commits.fifo" --message $GITHUB_SHA --message-group-id "graphql-java-commits"

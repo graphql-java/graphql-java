@@ -1,6 +1,5 @@
 package graphql.execution.instrumentation.parameters;
 
-import graphql.DeprecatedAt;
 import graphql.PublicApi;
 import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionStepInfo;
@@ -19,36 +18,15 @@ public class InstrumentationFieldCompleteParameters {
     private final ExecutionContext executionContext;
     private final Supplier<ExecutionStepInfo> executionStepInfo;
     private final Object fetchedValue;
-    private final InstrumentationState instrumentationState;
     private final ExecutionStrategyParameters executionStrategyParameters;
 
     public InstrumentationFieldCompleteParameters(ExecutionContext executionContext, ExecutionStrategyParameters executionStrategyParameters, Supplier<ExecutionStepInfo> executionStepInfo, Object fetchedValue) {
-        this(executionContext, executionStrategyParameters, executionStepInfo, fetchedValue, executionContext.getInstrumentationState());
-    }
-
-    InstrumentationFieldCompleteParameters(ExecutionContext executionContext, ExecutionStrategyParameters executionStrategyParameters, Supplier<ExecutionStepInfo> executionStepInfo, Object fetchedValue, InstrumentationState instrumentationState) {
         this.executionContext = executionContext;
         this.executionStrategyParameters = executionStrategyParameters;
         this.executionStepInfo = executionStepInfo;
         this.fetchedValue = fetchedValue;
-        this.instrumentationState = instrumentationState;
     }
 
-    /**
-     * Returns a cloned parameters object with the new state
-     *
-     * @param instrumentationState the new state for this parameters object
-     *
-     * @return a new parameters object with the new state
-     *
-     * @deprecated state is now passed in direct to instrumentation methods
-     */
-    @Deprecated
-    @DeprecatedAt("2022-07-26")
-    public InstrumentationFieldCompleteParameters withNewState(InstrumentationState instrumentationState) {
-        return new InstrumentationFieldCompleteParameters(
-                this.executionContext, executionStrategyParameters, this.executionStepInfo, this.fetchedValue, instrumentationState);
-    }
 
 
     public ExecutionContext getExecutionContext() {
@@ -63,8 +41,7 @@ public class InstrumentationFieldCompleteParameters {
         return getExecutionStepInfo().getFieldDefinition();
     }
 
-    @Deprecated
-    @DeprecatedAt("2020-09-08")
+    @Deprecated(since = "2020-09-08")
     public ExecutionStepInfo getTypeInfo() {
         return getExecutionStepInfo();
     }
@@ -77,21 +54,4 @@ public class InstrumentationFieldCompleteParameters {
         return fetchedValue;
     }
 
-    /**
-     * Previously the instrumentation parameters had access to the state created via {@link Instrumentation#createState(InstrumentationCreateStateParameters)} but now
-     * to save object allocations, the state is passed directly into instrumentation methods
-     *
-     * @param <T> for two
-     *
-     * @return the state created previously during a call to {@link Instrumentation#createState(InstrumentationCreateStateParameters)}
-     *
-     * @deprecated state is now passed in direct to instrumentation methods
-     */
-    @Deprecated
-    @DeprecatedAt("2022-07-26")
-    @SuppressWarnings("TypeParameterUnusedInFormals")
-    public <T extends InstrumentationState> T getInstrumentationState() {
-        //noinspection unchecked
-        return (T) instrumentationState;
-    }
 }

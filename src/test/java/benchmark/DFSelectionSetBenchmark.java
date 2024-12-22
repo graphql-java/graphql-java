@@ -21,7 +21,6 @@ import org.openjdk.jmh.annotations.OutputTimeUnit;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
-import org.openjdk.jmh.annotations.Threads;
 import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
 
@@ -29,9 +28,9 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 @State(Scope.Benchmark)
-@BenchmarkMode(Mode.Throughput)
-@Warmup(iterations = 2)
-@Measurement(iterations = 2, timeUnit = TimeUnit.NANOSECONDS)
+@Warmup(iterations = 2, time = 5)
+@Measurement(iterations = 3)
+@Fork(3)
 public class DFSelectionSetBenchmark {
 
     @State(Scope.Benchmark)
@@ -65,10 +64,6 @@ public class DFSelectionSetBenchmark {
     }
 
     @Benchmark
-    @Warmup(iterations = 2)
-    @Measurement(iterations = 5, time = 10)
-    @Threads(1)
-    @Fork(3)
     @BenchmarkMode(Mode.AverageTime)
     @OutputTimeUnit(TimeUnit.MILLISECONDS)
     public void benchMarkAvgTime(MyState myState, Blackhole blackhole) {
@@ -77,10 +72,6 @@ public class DFSelectionSetBenchmark {
     }
 
     @Benchmark
-    @Warmup(iterations = 2)
-    @Measurement(iterations = 5, time = 10)
-    @Threads(1)
-    @Fork(3)
     @BenchmarkMode(Mode.Throughput)
     @OutputTimeUnit(TimeUnit.MILLISECONDS)
     public void benchMarkThroughput(MyState myState, Blackhole blackhole) {

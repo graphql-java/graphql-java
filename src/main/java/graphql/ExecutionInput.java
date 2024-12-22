@@ -3,7 +3,6 @@ package graphql;
 import graphql.collect.ImmutableKit;
 import graphql.execution.ExecutionId;
 import graphql.execution.RawVariables;
-import graphql.execution.instrumentation.dataloader.DataLoaderDispatcherInstrumentationState;
 import org.dataloader.DataLoaderRegistry;
 
 import java.util.Locale;
@@ -12,6 +11,7 @@ import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
 
 import static graphql.Assert.assertNotNull;
+import static graphql.execution.instrumentation.dataloader.EmptyDataLoaderRegistryInstance.EMPTY_DATALOADER_REGISTRY;
 
 /**
  * This represents the series of values that can be input on a graphql query execution
@@ -68,8 +68,7 @@ public class ExecutionInput {
      *
      * @deprecated - use {@link #getGraphQLContext()}
      */
-    @Deprecated
-    @DeprecatedAt("2021-07-05")
+    @Deprecated(since = "2021-07-05")
     public Object getContext() {
         return context;
     }
@@ -214,7 +213,7 @@ public class ExecutionInput {
         // this is important - it allows code to later known if we never really set a dataloader and hence it can optimize
         // dataloader field tracking away.
         //
-        private DataLoaderRegistry dataLoaderRegistry = DataLoaderDispatcherInstrumentationState.EMPTY_DATALOADER_REGISTRY;
+        private DataLoaderRegistry dataLoaderRegistry = EMPTY_DATALOADER_REGISTRY;
         private Locale locale = Locale.getDefault();
         private ExecutionId executionId;
 
@@ -273,47 +272,13 @@ public class ExecutionInput {
          *
          * @deprecated - the {@link ExecutionInput#getGraphQLContext()} is a fixed mutable instance now
          */
-        @Deprecated
-        @DeprecatedAt("2021-07-05")
+        @Deprecated(since = "2021-07-05")
         public Builder context(Object context) {
             this.context = context;
             return this;
         }
 
-        /**
-         * The legacy context object
-         *
-         * @param contextBuilder the context builder object to use
-         *
-         * @return this builder
-         *
-         * @deprecated - the {@link ExecutionInput#getGraphQLContext()} is a fixed mutable instance now
-         */
-        @Deprecated
-        @DeprecatedAt("2021-07-05")
-        public Builder context(GraphQLContext.Builder contextBuilder) {
-            this.context = contextBuilder.build();
-            return this;
-        }
-
-        /**
-         * The legacy context object
-         *
-         * @param contextBuilderFunction the context builder function to use
-         *
-         * @return this builder
-         *
-         * @deprecated - the {@link ExecutionInput#getGraphQLContext()} is a fixed mutable instance now
-         */
-        @Deprecated
-        @DeprecatedAt("2021-07-05")
-        public Builder context(UnaryOperator<GraphQLContext.Builder> contextBuilderFunction) {
-            GraphQLContext.Builder builder = GraphQLContext.newContext();
-            builder = contextBuilderFunction.apply(builder);
-            return context(builder.build());
-        }
-
-        /**
+         /**
          * This will give you a builder of {@link GraphQLContext} and any values you set will be copied
          * into the underlying {@link GraphQLContext} of this execution input
          *

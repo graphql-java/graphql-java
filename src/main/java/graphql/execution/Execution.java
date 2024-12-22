@@ -4,15 +4,22 @@ package graphql.execution;
 import graphql.ExecutionInput;
 import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
+import graphql.ExperimentalApi;
 import graphql.GraphQLContext;
 import graphql.GraphQLError;
 import graphql.Internal;
+import graphql.execution.incremental.IncrementalCallState;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationState;
+import graphql.execution.instrumentation.dataloader.FallbackDataLoaderDispatchStrategy;
+import graphql.execution.instrumentation.dataloader.PerLevelDataLoaderDispatchStrategy;
+import graphql.execution.instrumentation.dataloader.PerLevelDataLoaderDispatchStrategyWithDeferAlwaysDispatch;
 import graphql.execution.instrumentation.parameters.InstrumentationExecuteOperationParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters;
 import graphql.extensions.ExtensionsBuilder;
+import graphql.incremental.DelayedIncrementalPartialResult;
+import graphql.incremental.IncrementalExecutionResultImpl;
 import graphql.language.Document;
 import graphql.language.FragmentDefinition;
 import graphql.language.NodeUtil;
@@ -21,37 +28,43 @@ import graphql.language.VariableDefinition;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.impl.SchemaUtil;
-import graphql.util.LogKit;
-import org.slf4j.Logger;
+import org.reactivestreams.Publisher;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
 import static graphql.execution.ExecutionContextBuilder.newExecutionContextBuilder;
 import static graphql.execution.ExecutionStepInfo.newExecutionStepInfo;
 import static graphql.execution.ExecutionStrategyParameters.newParameters;
 import static graphql.execution.instrumentation.SimpleInstrumentationContext.nonNullCtx;
+import static graphql.execution.instrumentation.dataloader.EmptyDataLoaderRegistryInstance.EMPTY_DATALOADER_REGISTRY;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 
 @Internal
 public class Execution {
-    private static final Logger logNotSafe = LogKit.getNotPrivacySafeLogger(Execution.class);
-
     private final FieldCollector fieldCollector = new FieldCollector();
     private final ExecutionStrategy queryStrategy;
     private final ExecutionStrategy mutationStrategy;
     private final ExecutionStrategy subscriptionStrategy;
     private final Instrumentation instrumentation;
     private final ValueUnboxer valueUnboxer;
+    private final boolean doNotAutomaticallyDispatchDataLoader;
 
-    public Execution(ExecutionStrategy queryStrategy, ExecutionStrategy mutationStrategy, ExecutionStrategy subscriptionStrategy, Instrumentation instrumentation, ValueUnboxer valueUnboxer) {
+    public Execution(ExecutionStrategy queryStrategy,
+                     ExecutionStrategy mutationStrategy,
+                     ExecutionStrategy subscriptionStrategy,
+                     Instrumentation instrumentation,
+                     ValueUnboxer valueUnboxer,
+                     boolean doNotAutomaticallyDispatchDataLoader) {
         this.queryStrategy = queryStrategy != null ? queryStrategy : new AsyncExecutionStrategy();
         this.mutationStrategy = mutationStrategy != null ? mutationStrategy : new AsyncSerialExecutionStrategy();
         this.subscriptionStrategy = subscriptionStrategy != null ? subscriptionStrategy : new AsyncExecutionStrategy();
         this.instrumentation = instrumentation;
         this.valueUnboxer = valueUnboxer;
+        this.doNotAutomaticallyDispatchDataLoader = doNotAutomaticallyDispatchDataLoader;
     }
 
     public CompletableFuture<ExecutionResult> execute(Document document, GraphQLSchema graphQLSchema, ExecutionId executionId, ExecutionInput executionInput, InstrumentationState instrumentationState) {
@@ -95,9 +108,10 @@ public class Execution {
                 .executionInput(executionInput)
                 .build();
 
+        executionContext.getGraphQLContext().put(ResultNodesInfo.RESULT_NODES_INFO, executionContext.getResultNodesInfo());
 
         InstrumentationExecutionParameters parameters = new InstrumentationExecutionParameters(
-                executionInput, graphQLSchema, instrumentationState
+                executionInput, graphQLSchema
         );
         executionContext = instrumentation.instrumentExecutionContext(executionContext, parameters, instrumentationState);
         return executeOperation(executionContext, executionInput.getRoot(), executionContext.getOperationDefinition());
@@ -122,7 +136,7 @@ public class Execution {
                 ExecutionResult executionResult = new ExecutionResultImpl(Collections.singletonList((GraphQLError) rte));
                 CompletableFuture<ExecutionResult> resultCompletableFuture = completedFuture(executionResult);
 
-                executeOperationCtx.onDispatched(resultCompletableFuture);
+                executeOperationCtx.onDispatched();
                 executeOperationCtx.onCompleted(executionResult, rte);
                 return resultCompletableFuture;
             }
@@ -137,7 +151,13 @@ public class Execution {
                 .graphQLContext(graphQLContext)
                 .build();
 
-        MergedSelectionSet fields = fieldCollector.collectFields(collectorParameters, operationDefinition.getSelectionSet());
+        MergedSelectionSet fields = fieldCollector.collectFields(
+                collectorParameters,
+                operationDefinition.getSelectionSet(),
+                Optional.ofNullable(executionContext.getGraphQLContext())
+                        .map(graphqlContext -> graphqlContext.getBoolean(ExperimentalApi.ENABLE_INCREMENTAL_SUPPORT))
+                        .orElse(false)
+        );
 
         ResultPath path = ResultPath.rootPath();
         ExecutionStepInfo executionStepInfo = newExecutionStepInfo().type(operationRootType).path(path).build();
@@ -152,12 +172,12 @@ public class Execution {
                 .path(path)
                 .build();
 
+
         CompletableFuture<ExecutionResult> result;
         try {
             ExecutionStrategy executionStrategy = executionContext.getStrategy(operation);
-            if (logNotSafe.isDebugEnabled()) {
-                logNotSafe.debug("Executing '{}' query operation: '{}' using '{}' execution strategy", executionContext.getExecutionId(), operation, executionStrategy.getClass().getName());
-            }
+            DataLoaderDispatchStrategy dataLoaderDispatchStrategy = createDataLoaderDispatchStrategy(executionContext, executionStrategy);
+            executionContext.setDataLoaderDispatcherStrategy(dataLoaderDispatchStrategy);
             result = executionStrategy.execute(executionContext, parameters);
         } catch (NonNullableFieldWasNullException e) {
             // this means it was non-null types all the way from an offending non-null type
@@ -171,14 +191,57 @@ public class Execution {
         }
 
         // note this happens NOW - not when the result completes
-        executeOperationCtx.onDispatched(result);
+        executeOperationCtx.onDispatched();
 
         // fill out extensions if we have them
         result = result.thenApply(er -> mergeExtensionsBuilderIfPresent(er, graphQLContext));
 
         result = result.whenComplete(executeOperationCtx::onCompleted);
-        return result;
+
+        return incrementalSupport(executionContext, result);
     }
+
+    /*
+     * Adds the deferred publisher if it's needed at the end of the query.  This is also a good time for the deferred code to start running
+     */
+    private CompletableFuture<ExecutionResult> incrementalSupport(ExecutionContext executionContext, CompletableFuture<ExecutionResult> result) {
+        return result.thenApply(er -> {
+            IncrementalCallState incrementalCallState = executionContext.getIncrementalCallState();
+            if (incrementalCallState.getIncrementalCallsDetected()) {
+                // we start the rest of the query now to maximize throughput.  We have the initial important results,
+                // and now we can start the rest of the calls as early as possible (even before someone subscribes)
+                Publisher<DelayedIncrementalPartialResult> publisher = incrementalCallState.startDeferredCalls();
+
+                return IncrementalExecutionResultImpl.fromExecutionResult(er)
+                        // "hasNext" can, in theory, be "false" when all the incremental items are delivered in the
+                        // first response payload. However, the current implementation will never result in this.
+                        // The behaviour might change if we decide to make optimizations in the future.
+                        .hasNext(true)
+                        .incrementalItemPublisher(publisher)
+                        .build();
+            }
+            return er;
+        });
+    }
+
+    private DataLoaderDispatchStrategy createDataLoaderDispatchStrategy(ExecutionContext executionContext, ExecutionStrategy executionStrategy) {
+        if (executionContext.getDataLoaderRegistry() == EMPTY_DATALOADER_REGISTRY || doNotAutomaticallyDispatchDataLoader) {
+            return DataLoaderDispatchStrategy.NO_OP;
+        }
+        if (! executionContext.isSubscriptionOperation()) {
+            boolean deferEnabled = Optional.ofNullable(executionContext.getGraphQLContext())
+                    .map(graphqlContext -> graphqlContext.getBoolean(ExperimentalApi.ENABLE_INCREMENTAL_SUPPORT))
+                    .orElse(false);
+
+            // Dedicated strategy for defer support, for safety purposes.
+            return deferEnabled ?
+                    new PerLevelDataLoaderDispatchStrategyWithDeferAlwaysDispatch(executionContext) :
+                    new PerLevelDataLoaderDispatchStrategy(executionContext);
+        } else {
+            return new FallbackDataLoaderDispatchStrategy(executionContext);
+        }
+    }
+
 
     private void addExtensionsBuilderNotPresent(GraphQLContext graphQLContext) {
         Object builder = graphQLContext.get(ExtensionsBuilder.class);

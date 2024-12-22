@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-import static graphql.collect.ImmutableKit.map;
+import static graphql.collect.ImmutableKit.mapAndDropNulls;
 
 /**
  * This little helper allows GraphQlErrors to implement
@@ -51,14 +51,23 @@ public class GraphqlErrorHelper {
     }
 
     public static Object locations(List<SourceLocation> locations) {
-        return map(locations, GraphqlErrorHelper::location);
+        return mapAndDropNulls(locations, GraphqlErrorHelper::location);
     }
 
+    /**
+     *  Positive integers starting from 1 required for error locations,
+     *  from the spec <a href="https://spec.graphql.org/draft/#sec-Errors.Error-Result-Format">...</a>
+     *
+     * @param location the source location in play
+     * @return  a value for source location of the error
+     */
     public static Object location(SourceLocation location) {
-        Map<String, Integer> map = new LinkedHashMap<>();
-        map.put("line", location.getLine());
-        map.put("column", location.getColumn());
-        return map;
+        int line = location.getLine();
+        int column = location.getColumn();
+        if (line < 1 || column < 1) {
+            return null;
+        }
+        return Map.of("line", line, "column", column);
     }
 
     public static int hashCode(GraphQLError dis) {

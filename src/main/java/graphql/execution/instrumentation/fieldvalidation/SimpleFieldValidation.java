@@ -40,11 +40,12 @@ public class SimpleFieldValidation implements FieldValidation {
     @Override
     public List<GraphQLError> validateFields(FieldValidationEnvironment validationEnvironment) {
         List<GraphQLError> errors = new ArrayList<>();
-        for (ResultPath fieldPath : rules.keySet()) {
+        for (Map.Entry<ResultPath, BiFunction<FieldAndArguments, FieldValidationEnvironment, Optional<GraphQLError>>> entry : rules.entrySet()) {
+            ResultPath fieldPath = entry.getKey();
+            BiFunction<FieldAndArguments, FieldValidationEnvironment, Optional<GraphQLError>> ruleFunction = entry.getValue();
+
             List<FieldAndArguments> fieldAndArguments = validationEnvironment.getFieldsByPath().get(fieldPath);
             if (fieldAndArguments != null) {
-                BiFunction<FieldAndArguments, FieldValidationEnvironment, Optional<GraphQLError>> ruleFunction = rules.get(fieldPath);
-
                 for (FieldAndArguments fieldAndArgument : fieldAndArguments) {
                     Optional<GraphQLError> graphQLError = ruleFunction.apply(fieldAndArgument, validationEnvironment);
                     graphQLError.ifPresent(errors::add);

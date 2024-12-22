@@ -1,7 +1,6 @@
 package graphql.schema;
 
 import graphql.Assert;
-import graphql.DeprecatedAt;
 import graphql.Internal;
 import graphql.PublicApi;
 import graphql.schema.visibility.GraphqlFieldVisibility;
@@ -51,24 +50,6 @@ public class GraphQLCodeRegistry {
     }
 
     /**
-     * Returns a data fetcher associated with a field within a container type
-     *
-     * @param parentType      the container type
-     * @param fieldDefinition the field definition
-     *
-     * @return the DataFetcher associated with this field.  All fields have data fetchers
-     *
-     * @see #getDataFetcher(GraphQLObjectType, GraphQLFieldDefinition)
-     * @deprecated This is confusing because {@link GraphQLInterfaceType}s cant have data fetchers.  At runtime only a {@link GraphQLObjectType}
-     * can be used to fetch a field.  This method allows the mapping to be made, but it is never useful if an interface is passed in.
-     */
-    @Deprecated
-    @DeprecatedAt("2023-05-13")
-    public DataFetcher<?> getDataFetcher(GraphQLFieldsContainer parentType, GraphQLFieldDefinition fieldDefinition) {
-        return getDataFetcherImpl(FieldCoordinates.coordinates(parentType, fieldDefinition), fieldDefinition, dataFetcherMap, systemDataFetcherMap, defaultDataFetcherFactory);
-    }
-
-    /**
      * Returns a data fetcher associated with a field within an object type
      *
      * @param parentType      the container type
@@ -103,6 +84,7 @@ public class GraphQLCodeRegistry {
         return hasDataFetcherImpl(coordinates, dataFetcherMap, systemDataFetcherMap);
     }
 
+    @SuppressWarnings("deprecation")
     private static DataFetcher<?> getDataFetcherImpl(FieldCoordinates coordinates, GraphQLFieldDefinition fieldDefinition, Map<FieldCoordinates, DataFetcherFactory<?>> dataFetcherMap, Map<String, DataFetcherFactory<?>> systemDataFetcherMap, DataFetcherFactory<?> defaultDataFetcherFactory) {
         assertNotNull(coordinates);
         assertNotNull(fieldDefinition);
@@ -114,9 +96,15 @@ public class GraphQLCodeRegistry {
                 dataFetcherFactory = defaultDataFetcherFactory;
             }
         }
-        return dataFetcherFactory.get(newDataFetchingFactoryEnvironment()
-                .fieldDefinition(fieldDefinition)
-                .build());
+        // call direct from the field - cheaper to not make a new environment object
+        DataFetcher<?> dataFetcher = dataFetcherFactory.get(fieldDefinition);
+        if (dataFetcher == null) {
+            DataFetcherFactoryEnvironment factoryEnvironment = newDataFetchingFactoryEnvironment()
+                    .fieldDefinition(fieldDefinition)
+                    .build();
+            dataFetcher = dataFetcherFactory.get(factoryEnvironment);
+        }
+        return dataFetcher;
     }
 
     private static boolean hasDataFetcherImpl(FieldCoordinates coords, Map<FieldCoordinates, DataFetcherFactory<?>> dataFetcherMap, Map<String, DataFetcherFactory<?>> systemDataFetcherMap) {
@@ -159,7 +147,7 @@ public class GraphQLCodeRegistry {
         if (typeResolver == null) {
             typeResolver = parentType.getTypeResolver();
         }
-        return assertNotNull(typeResolver, () -> "There must be a type resolver for interface " + parentType.getName());
+        return assertNotNull(typeResolver, "There must be a type resolver for interface %s", parentType.getName());
     }
 
     private static TypeResolver getTypeResolverForUnion(GraphQLUnionType parentType, Map<String, TypeResolver> typeResolverMap) {
@@ -168,7 +156,7 @@ public class GraphQLCodeRegistry {
         if (typeResolver == null) {
             typeResolver = parentType.getTypeResolver();
         }
-        return assertNotNull(typeResolver, () -> "There must be a type resolver for union " + parentType.getName());
+        return assertNotNull(typeResolver, "There must be a type resolver for union %s", parentType.getName());
     }
 
     /**
@@ -208,7 +196,7 @@ public class GraphQLCodeRegistry {
         private final Map<String, DataFetcherFactory<?>> systemDataFetcherMap = new LinkedHashMap<>();
         private final Map<String, TypeResolver> typeResolverMap = new HashMap<>();
         private GraphqlFieldVisibility fieldVisibility = DEFAULT_FIELD_VISIBILITY;
-        private DataFetcherFactory<?> defaultDataFetcherFactory = env -> PropertyDataFetcher.fetching(env.getFieldDefinition().getName());
+        private DataFetcherFactory<?> defaultDataFetcherFactory = SingletonPropertyDataFetcher.singletonFactory();
         private boolean changed = false;
 
         private Builder() {
@@ -252,24 +240,6 @@ public class GraphQLCodeRegistry {
                 changed = true;
             }
             return this;
-        }
-
-        /**
-         * Returns a data fetcher associated with a field within a container type
-         *
-         * @param parentType      the container type
-         * @param fieldDefinition the field definition
-         *
-         * @return the DataFetcher associated with this field.  All fields have data fetchers
-         *
-         * @see #getDataFetcher(GraphQLObjectType, GraphQLFieldDefinition)
-         * @deprecated This is confusing because {@link GraphQLInterfaceType}s cant have data fetchers.  At runtime only a {@link GraphQLObjectType}
-         * can be used to fetch a field.  This method allows the mapping to be made, but it is never useful if an interface is passed in.
-         */
-        @Deprecated
-        @DeprecatedAt("2023-05-13")
-        public DataFetcher<?> getDataFetcher(GraphQLFieldsContainer parentType, GraphQLFieldDefinition fieldDefinition) {
-            return getDataFetcherImpl(FieldCoordinates.coordinates(parentType, fieldDefinition), fieldDefinition, dataFetcherMap, systemDataFetcherMap, defaultDataFetcherFactory);
         }
 
         /**
@@ -359,26 +329,6 @@ public class GraphQLCodeRegistry {
             assertNotNull(dataFetcher);
             return dataFetcher(assertNotNull(coordinates), DataFetcherFactories.useDataFetcher(dataFetcher));
         }
-
-        /**
-         * Sets the data fetcher for a specific field inside a container type
-         *
-         * @param parentType      the container type
-         * @param fieldDefinition the field definition
-         * @param dataFetcher     the data fetcher code for that field
-         *
-         * @return this builder
-         *
-         * @see #dataFetcher(GraphQLObjectType, GraphQLFieldDefinition, DataFetcher)
-         * @deprecated This is confusing because {@link GraphQLInterfaceType}s cant have data fetchers.  At runtime only a {@link GraphQLObjectType}
-         * can be used to fetch a field.  This method allows the mapping to be made, but it is never useful if an interface is passed in.
-         */
-        @Deprecated
-        @DeprecatedAt("2023-05-13")
-        public Builder dataFetcher(GraphQLFieldsContainer parentType, GraphQLFieldDefinition fieldDefinition, DataFetcher<?> dataFetcher) {
-            return dataFetcher(FieldCoordinates.coordinates(parentType.getName(), fieldDefinition.getName()), dataFetcher);
-        }
-
 
         /**
          * Sets the data fetcher for a specific field inside an object type

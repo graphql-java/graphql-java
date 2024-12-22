@@ -1,0 +1,57 @@
+plugins {
+    id 'java'
+}
+
+dependencies {
+    implementation(rootProject)
+    implementation("net.bytebuddy:byte-buddy-agent:1.15.11")
+
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.11.4'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+
+    testImplementation("org.assertj:assertj-core:3.26.3")
+
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(11)
+    }
+}
+
+tasks.named('test', Test) {
+    dependsOn(':agent:shadowJar')
+    useJUnitPlatform()
+
+    maxHeapSize = '4G'
+
+    testLogging {
+        events "passed"
+    }
+}
+
+
+repositories {
+    mavenCentral()
+    mavenLocal()
+}
+
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(11)
+    }
+}
+
+
+jar {
+    manifest {
+        attributes(
+                'Agent-Class': 'graphql.agent.GraphQLJavaAgent',
+                'Can-Redefine-Classes': 'true',
+                'Can-Retransform-Classes': 'true',
+                'Premain-Class': 'graphql.agent.GraphQLJavaAgent'
+        )
+    }
+}
+

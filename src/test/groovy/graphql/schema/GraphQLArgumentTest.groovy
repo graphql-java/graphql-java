@@ -1,6 +1,7 @@
 package graphql.schema
 
 import graphql.collect.ImmutableKit
+import static graphql.introspection.Introspection.DirectiveLocation.ARGUMENT_DEFINITION
 import graphql.language.FloatValue
 import graphql.schema.validation.InvalidSchemaException
 import spock.lang.Specification
@@ -9,10 +10,10 @@ import static graphql.Scalars.GraphQLFloat
 import static graphql.Scalars.GraphQLInt
 import static graphql.Scalars.GraphQLString
 import static graphql.schema.GraphQLArgument.newArgument
-import static graphql.schema.GraphQLDirective.newDirective
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition
 import static graphql.schema.GraphQLObjectType.newObject
 import static graphql.schema.GraphQLSchema.newSchema
+import static graphql.TestUtil.mkDirective
 
 class GraphQLArgumentTest extends Specification {
 
@@ -22,7 +23,7 @@ class GraphQLArgumentTest extends Specification {
                 .description("A1_description")
                 .type(GraphQLInt)
                 .deprecate("custom reason")
-                .withDirective(newDirective().name("directive1"))
+                .withDirective(mkDirective("directive1", ARGUMENT_DEFINITION))
                 .build()
         when:
         def transformedArgument = startingArgument.transform({
@@ -30,7 +31,7 @@ class GraphQLArgumentTest extends Specification {
                     .name("A2")
                     .description("A2_description")
                     .type(GraphQLString)
-                    .withDirective(newDirective().name("directive3"))
+                    .withDirective(mkDirective("directive3", ARGUMENT_DEFINITION))
                     .value("VALUE") // Retain deprecated for test coverage
                     .deprecate(null)
                     .defaultValue("DEFAULT") // Retain deprecated for test coverage
@@ -79,9 +80,9 @@ class GraphQLArgumentTest extends Specification {
         def argument
 
         given:
-        def builder = GraphQLArgument.newArgument().name("A1")
+        def builder = newArgument().name("A1")
                 .type(GraphQLInt)
-                .withDirective(newDirective().name("directive1"))
+                .withDirective(mkDirective("directive1", ARGUMENT_DEFINITION))
 
         when:
         argument = builder.build()
@@ -96,8 +97,8 @@ class GraphQLArgumentTest extends Specification {
         when:
         argument = builder
                 .clearDirectives()
-                .withDirective(newDirective().name("directive2"))
-                .withDirective(newDirective().name("directive3"))
+                .withDirective(mkDirective("directive2", ARGUMENT_DEFINITION))
+                .withDirective(mkDirective("directive3", ARGUMENT_DEFINITION))
                 .build()
 
         then:
@@ -109,9 +110,9 @@ class GraphQLArgumentTest extends Specification {
         when:
         argument = builder
                 .replaceDirectives([
-                        newDirective().name("directive1").build(),
-                        newDirective().name("directive2").build(),
-                        newDirective().name("directive3").build()]) // overwrite
+                        mkDirective("directive1", ARGUMENT_DEFINITION),
+                        mkDirective("directive2", ARGUMENT_DEFINITION),
+                        mkDirective("directive3", ARGUMENT_DEFINITION)]) // overwrite
                 .build()
 
         then:
@@ -195,23 +196,53 @@ class GraphQLArgumentTest extends Specification {
         resolvedDefaultValue == null
     }
 
-    def "Applied schema directives arguments are validated for programmatic schemas"() {
+    def "schema directive arguments are validated for programmatic schemas"() {
         given:
         def arg = newArgument().name("arg").type(GraphQLInt).valueProgrammatic(ImmutableKit.emptyMap()).build() // Retain for test coverage
-        def directive = GraphQLDirective.newDirective().name("cached").argument(arg).build()
+        def directive = mkDirective("cached", ARGUMENT_DEFINITION, arg)
         def field = newFieldDefinition()
-                .name("hello")
-                .type(GraphQLString)
-                .argument(arg)
-                .withDirective(directive)
-                .build()
+            .name("hello")
+            .type(GraphQLString)
+            .argument(arg)
+            .withDirective(directive)
+            .build()
         when:
-        newSchema().query(
+        newSchema()
+            .query(
                 newObject()
-                        .name("Query")
-                        .field(field)
-                        .build())
+                    .name("Query")
+                    .field(field)
+                    .build()
+            )
+            .additionalDirective(directive)
+            .build()
+        then:
+        def e = thrown(InvalidSchemaException)
+        e.message.contains("Invalid argument 'arg' for applied directive of name 'cached'")
+    }
+
+    def "applied directive arguments are validated for programmatic schemas"() {
+        given:
+        def arg = newArgument()
+                .name("arg")
+                .type(GraphQLNonNull.nonNull(GraphQLInt))
                 .build()
+        def directive = mkDirective("cached", ARGUMENT_DEFINITION, arg)
+        def field = newFieldDefinition()
+            .name("hello")
+            .type(GraphQLString)
+            .withAppliedDirective(directive.toAppliedDirective())
+            .build()
+        when:
+        newSchema()
+            .query(
+                newObject()
+                    .name("Query")
+                    .field(field)
+                    .build()
+            )
+            .additionalDirective(directive)
+            .build()
         then:
         def e = thrown(InvalidSchemaException)
         e.message.contains("Invalid argument 'arg' for applied directive of name 'cached'")

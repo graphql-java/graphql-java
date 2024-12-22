@@ -5,6 +5,7 @@ import graphql.GraphQL
 import graphql.Scalars
 import graphql.StarWarsSchema
 import graphql.TestUtil
+import graphql.TrivialDataFetcher
 import graphql.TypeResolutionEnvironment
 import graphql.schema.visibility.GraphqlFieldVisibility
 import spock.lang.Specification
@@ -98,7 +99,7 @@ class GraphQLCodeRegistryTest extends Specification {
         (codeRegistryBuilder.getDataFetcher(objectType("parentType3"), field("fieldD")) as NamedDF).name == "D"
         (codeRegistryBuilder.getDataFetcher(objectType("parentType3"), field("fieldE")) as NamedDF).name == "E"
 
-        codeRegistryBuilder.getDataFetcher(objectType("parentType2"), field("A")) instanceof PropertyDataFetcher // a default one
+        codeRegistryBuilder.getDataFetcher(objectType("parentType2"), field("A")) instanceof SingletonPropertyDataFetcher // a default one
 
         when:
         def codeRegistry = codeRegistryBuilder.build()
@@ -108,7 +109,7 @@ class GraphQLCodeRegistryTest extends Specification {
         (codeRegistry.getDataFetcher(objectType("parentType3"), field("fieldD")) as NamedDF).name == "D"
         (codeRegistry.getDataFetcher(objectType("parentType3"), field("fieldE")) as NamedDF).name == "E"
 
-        codeRegistry.getDataFetcher(objectType("parentType2"), field("A")) instanceof PropertyDataFetcher // a default one
+        codeRegistry.getDataFetcher(objectType("parentType2"), field("A")) instanceof SingletonPropertyDataFetcher // a default one
     }
 
     def "data fetchers can be retrieved using field coordinates"() {
@@ -125,7 +126,7 @@ class GraphQLCodeRegistryTest extends Specification {
         (codeRegistryBuilder.getDataFetcher(FieldCoordinates.coordinates("parentType3", "fieldD"), field("fieldD")) as NamedDF).name == "D"
         (codeRegistryBuilder.getDataFetcher(FieldCoordinates.coordinates("parentType3", "fieldE"), field("fieldE")) as NamedDF).name == "E"
 
-        codeRegistryBuilder.getDataFetcher(FieldCoordinates.coordinates("parentType2", "A"), field("A")) instanceof PropertyDataFetcher // a default one
+        codeRegistryBuilder.getDataFetcher(FieldCoordinates.coordinates("parentType2", "A"), field("A")) instanceof SingletonPropertyDataFetcher // a default one
 
         when:
         def codeRegistry = codeRegistryBuilder.build()
@@ -135,7 +136,7 @@ class GraphQLCodeRegistryTest extends Specification {
         (codeRegistry.getDataFetcher(FieldCoordinates.coordinates("parentType3", "fieldD"), field("fieldD")) as NamedDF).name == "D"
         (codeRegistry.getDataFetcher(FieldCoordinates.coordinates("parentType3", "fieldE"), field("fieldE")) as NamedDF).name == "E"
 
-        codeRegistry.getDataFetcher(FieldCoordinates.coordinates("parentType2", "A"), field("A")) instanceof PropertyDataFetcher // a default one
+        codeRegistry.getDataFetcher(FieldCoordinates.coordinates("parentType2", "A"), field("A")) instanceof SingletonPropertyDataFetcher // a default one
     }
 
     def "records type resolvers against unions and interfaces"() {
@@ -179,13 +180,13 @@ class GraphQLCodeRegistryTest extends Specification {
         (schema.getCodeRegistry().getFieldVisibility() as NamedFieldVisibility).name == "B"
     }
 
-    def "PropertyDataFetcher is the default data fetcher used when no data fetcher is available"() {
+    def "SingletonPropertyDataFetcher is the default data fetcher used when no data fetcher is available"() {
 
         when:
         def codeRegistry = GraphQLCodeRegistry.newCodeRegistry().build()
         def dataFetcher = codeRegistry.getDataFetcher(StarWarsSchema.humanType, StarWarsSchema.humanType.getFieldDefinition("name"))
         then:
-        dataFetcher instanceof PropertyDataFetcher
+        dataFetcher instanceof SingletonPropertyDataFetcher
     }
 
     def "custom DF can be the default data fetcher used when no data fetcher is available"() {
@@ -251,8 +252,8 @@ class GraphQLCodeRegistryTest extends Specification {
         er.errors.isEmpty()
         er.data == [codeRegistryField: "codeRegistryFieldValue", nonCodeRegistryField: "nonCodeRegistryFieldValue", neitherSpecified: "neitherSpecifiedValue"]
 
-        // when nothing is specified then its a plain old PropertyDataFetcher
-        schema.getCodeRegistry().getDataFetcher(queryType, queryType.getFieldDefinition("neitherSpecified")) instanceof PropertyDataFetcher
+        // when nothing is specified then its a plain old SingletonPropertyDataFetcher
+        schema.getCodeRegistry().getDataFetcher(queryType, queryType.getFieldDefinition("neitherSpecified")) instanceof SingletonPropertyDataFetcher
 
     }
 
@@ -287,7 +288,7 @@ class GraphQLCodeRegistryTest extends Specification {
 
         // when nothing is specified then its a plain old PropertyDataFetcher
         def queryType = schema.getObjectType("Query")
-        schema.getCodeRegistry().getDataFetcher(queryType, queryType.getFieldDefinition("neitherSpecified")) instanceof PropertyDataFetcher
+        schema.getCodeRegistry().getDataFetcher(queryType, queryType.getFieldDefinition("neitherSpecified")) instanceof SingletonPropertyDataFetcher
     }
 
     def "will detect system versus user data fetchers"() {

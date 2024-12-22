@@ -1,7 +1,6 @@
 package graphql.schema;
 
 
-import graphql.DeprecatedAt;
 import graphql.DirectivesUtil;
 import graphql.GraphQLContext;
 import graphql.PublicApi;
@@ -63,7 +62,7 @@ public class GraphQLInputObjectField implements GraphQLNamedSchemaElement, Graph
         this.originalType = type;
         this.defaultValue = defaultValue;
         this.description = description;
-        this.directivesHolder = new DirectivesUtil.DirectivesHolder(directives, appliedDirectives);
+        this.directivesHolder = DirectivesUtil.DirectivesHolder.create(directives, appliedDirectives);
         this.definition = definition;
         this.deprecationReason = deprecationReason;
     }
@@ -315,8 +314,7 @@ public class GraphQLInputObjectField implements GraphQLNamedSchemaElement, Graph
          *
          * @deprecated use {@link #defaultValueLiteral(Value)}
          */
-        @Deprecated
-        @DeprecatedAt("2021-05-10")
+        @Deprecated(since = "2021-05-10")
         public Builder defaultValue(Object defaultValue) {
             this.defaultValue = InputValueWithState.newInternalValue(defaultValue);
             return this;

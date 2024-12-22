@@ -1,6 +1,5 @@
 package graphql.execution.instrumentation;
 
-import graphql.DeprecatedAt;
 import graphql.PublicApi;
 
 /**
@@ -12,8 +11,7 @@ import graphql.PublicApi;
  * @deprecated use {@link SimplePerformantInstrumentation} instead as a base class.
  */
 @PublicApi
-@Deprecated
-@DeprecatedAt(value = "2022-10-05")
+@Deprecated(since = "2022-10-05")
 public class SimpleInstrumentation implements Instrumentation {
 
     /**

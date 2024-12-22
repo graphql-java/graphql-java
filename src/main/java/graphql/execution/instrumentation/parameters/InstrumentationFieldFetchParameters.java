@@ -1,6 +1,5 @@
 package graphql.execution.instrumentation.parameters;
 
-import graphql.DeprecatedAt;
 import graphql.PublicApi;
 import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionStrategyParameters;
@@ -25,32 +24,6 @@ public class InstrumentationFieldFetchParameters extends InstrumentationFieldPar
         this.executionStrategyParameters = executionStrategyParameters;
         this.trivialDataFetcher = trivialDataFetcher;
     }
-
-    private InstrumentationFieldFetchParameters(ExecutionContext getExecutionContext, Supplier<DataFetchingEnvironment> environment, InstrumentationState instrumentationState, ExecutionStrategyParameters executionStrategyParameters, boolean trivialDataFetcher) {
-        super(getExecutionContext, () -> environment.get().getExecutionStepInfo(), instrumentationState);
-        this.environment = environment;
-        this.executionStrategyParameters = executionStrategyParameters;
-        this.trivialDataFetcher = trivialDataFetcher;
-    }
-
-    /**
-     * Returns a cloned parameters object with the new state
-     *
-     * @param instrumentationState the new state for this parameters object
-     *
-     * @return a new parameters object with the new state
-     *
-     * @deprecated state is now passed in direct to instrumentation methods
-     */
-    @Deprecated
-    @DeprecatedAt("2022-07-26")
-    @Override
-    public InstrumentationFieldFetchParameters withNewState(InstrumentationState instrumentationState) {
-        return new InstrumentationFieldFetchParameters(
-                this.getExecutionContext(), this.environment,
-                instrumentationState, executionStrategyParameters, trivialDataFetcher);
-    }
-
 
     public DataFetchingEnvironment getEnvironment() {
         return environment.get();

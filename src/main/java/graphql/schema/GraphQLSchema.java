@@ -5,7 +5,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import graphql.Assert;
-import graphql.DeprecatedAt;
 import graphql.Directives;
 import graphql.DirectivesUtil;
 import graphql.Internal;
@@ -19,7 +18,6 @@ import graphql.schema.impl.SchemaUtil;
 import graphql.schema.validation.InvalidSchemaException;
 import graphql.schema.validation.SchemaValidationError;
 import graphql.schema.validation.SchemaValidator;
-import graphql.schema.visibility.GraphqlFieldVisibility;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -72,7 +70,7 @@ public class GraphQLSchema {
     private final ImmutableMap<String, ImmutableList<String>> interfaceNameToObjectTypeNames;
 
     /*
-     * This constructs partial GraphQL schema object which has has the schema (query / mutation / subscription) trees
+     * This constructs partial GraphQL schema object which has the schema (query / mutation / subscription) trees
      * in it but it does not have the collected types, code registry nor the type references replaced
      *
      * But it can be traversed to discover all that and filled out later via another constructor.
@@ -105,7 +103,7 @@ public class GraphQLSchema {
     }
 
     /*
-     * This constructs a full fledged graphql schema object that has not yet had its type references replaced
+     * This constructs a fully fledged graphql schema object that has not yet had its type references replaced
      * but it's otherwise complete
      */
     @Internal
@@ -249,14 +247,14 @@ public class GraphQLSchema {
     public <T extends GraphQLType> List<T> getTypes(Collection<String> typeNames) {
         ImmutableList.Builder<T> builder = ImmutableList.builder();
         for (String typeName : typeNames) {
-            builder.add((T) assertNotNull(typeMap.get(typeName), () -> String.format("No type found for name %s", typeName)));
+            builder.add((T) assertNotNull(typeMap.get(typeName), "No type found for name %s", typeName));
         }
         return builder.build();
     }
 
     /**
      * Gets the named type from the schema or null if it's not present.
-     *
+     * <p>
      * Warning - you are inviting class cast errors if the types are not what you expect.
      *
      * @param typeName the name of the type to retrieve
@@ -287,13 +285,13 @@ public class GraphQLSchema {
      *
      * @return a graphql object type or null if there is one
      *
-     * @throws graphql.GraphQLException if the type is NOT a object type
+     * @throws graphql.GraphQLException if the type is NOT an object type
      */
     public GraphQLObjectType getObjectType(String typeName) {
         GraphQLType graphQLType = typeMap.get(typeName);
         if (graphQLType != null) {
             assertTrue(graphQLType instanceof GraphQLObjectType,
-                    () -> String.format("You have asked for named object type '%s' but it's not an object type but rather a '%s'", typeName, graphQLType.getClass().getName()));
+                    "You have asked for named object type '%s' but it's not an object type but rather a '%s'", typeName, graphQLType.getClass().getName());
         }
         return (GraphQLObjectType) graphQLType;
     }
@@ -324,7 +322,7 @@ public class GraphQLSchema {
         GraphQLType graphQLType = getType(typeName);
         if (graphQLType != null) {
             assertTrue(graphQLType instanceof GraphQLFieldsContainer,
-                    () -> String.format("You have asked for named type '%s' but it's not GraphQLFieldsContainer but rather a '%s'", typeName, graphQLType.getClass().getName()));
+                    "You have asked for named type '%s' but it's not GraphQLFieldsContainer but rather a '%s'", typeName, graphQLType.getClass().getName());
             return ((GraphQLFieldsContainer) graphQLType).getFieldDefinition(fieldName);
         }
         return null;
@@ -414,17 +412,6 @@ public class GraphQLSchema {
     }
 
     /**
-     * @return the field visibility
-     *
-     * @deprecated use {@link GraphQLCodeRegistry#getFieldVisibility()} instead
-     */
-    @Deprecated
-    @DeprecatedAt("2018-12-03")
-    public GraphqlFieldVisibility getFieldVisibility() {
-        return codeRegistry.getFieldVisibility();
-    }
-
-    /**
      * This returns the list of directives definitions that are associated with this schema object including
      * built in ones.
      *
@@ -435,14 +422,14 @@ public class GraphQLSchema {
     }
 
     /**
-     * @return a map of non repeatable directives by directive name
+     * @return a map of non-repeatable directives by directive name
      */
     public Map<String, GraphQLDirective> getDirectivesByName() {
         return directiveDefinitionsHolder.getDirectivesByName();
     }
 
     /**
-     * Returns a named directive that (for legacy reasons) will be only in the set of non repeatable directives
+     * Returns a named directive that (for legacy reasons) will be only in the set of non-repeatable directives
      *
      * @param directiveName the name of the directive to retrieve
      *
@@ -451,7 +438,6 @@ public class GraphQLSchema {
     public GraphQLDirective getDirective(String directiveName) {
         return directiveDefinitionsHolder.getDirective(directiveName);
     }
-
 
 
     /**
@@ -464,8 +450,7 @@ public class GraphQLSchema {
      *
      * @deprecated Use the {@link GraphQLAppliedDirective} methods instead
      */
-    @Deprecated
-    @DeprecatedAt("2022-02-24")
+    @Deprecated(since = "2022-02-24")
     public List<GraphQLDirective> getSchemaDirectives() {
         return schemaAppliedDirectivesHolder.getDirectives();
     }
@@ -480,8 +465,7 @@ public class GraphQLSchema {
      *
      * @deprecated Use the {@link GraphQLAppliedDirective} methods instead
      */
-    @Deprecated
-    @DeprecatedAt("2022-02-24")
+    @Deprecated(since = "2022-02-24")
     public Map<String, GraphQLDirective> getSchemaDirectiveByName() {
         return schemaAppliedDirectivesHolder.getDirectivesByName();
     }
@@ -496,8 +480,7 @@ public class GraphQLSchema {
      *
      * @deprecated Use the {@link GraphQLAppliedDirective} methods instead
      */
-    @Deprecated
-    @DeprecatedAt("2022-02-24")
+    @Deprecated(since = "2022-02-24")
     public Map<String, List<GraphQLDirective>> getAllSchemaDirectivesByName() {
         return schemaAppliedDirectivesHolder.getAllDirectivesByName();
     }
@@ -514,8 +497,7 @@ public class GraphQLSchema {
      *
      * @deprecated Use the {@link GraphQLAppliedDirective} methods instead
      */
-    @Deprecated
-    @DeprecatedAt("2022-02-24")
+    @Deprecated(since = "2022-02-24")
     public GraphQLDirective getSchemaDirective(String directiveName) {
         return schemaAppliedDirectivesHolder.getDirective(directiveName);
     }
@@ -530,8 +512,7 @@ public class GraphQLSchema {
      *
      * @deprecated Use the {@link GraphQLAppliedDirective} methods instead
      */
-    @Deprecated
-    @DeprecatedAt("2022-02-24")
+    @Deprecated(since = "2022-02-24")
     public List<GraphQLDirective> getSchemaDirectives(String directiveName) {
         return schemaAppliedDirectivesHolder.getDirectives(directiveName);
     }
@@ -542,7 +523,7 @@ public class GraphQLSchema {
      * directives for all schema elements, whereas this is just for the schema
      * element itself
      *
-     * @return a map of directives
+     * @return a list of directives
      */
     public List<GraphQLAppliedDirective> getSchemaAppliedDirectives() {
         return schemaAppliedDirectivesHolder.getAppliedDirectives();
@@ -648,6 +629,7 @@ public class GraphQLSchema {
                 .query(existingSchema.getQueryType())
                 .mutation(existingSchema.getMutationType())
                 .subscription(existingSchema.getSubscriptionType())
+                .extensionDefinitions(existingSchema.getExtensionDefinitions())
                 .introspectionSchemaType(existingSchema.getIntrospectionSchemaType())
                 .codeRegistry(existingSchema.getCodeRegistry())
                 .clearAdditionalTypes()
@@ -732,20 +714,6 @@ public class GraphQLSchema {
 
         public Builder subscription(GraphQLObjectType subscriptionType) {
             this.subscriptionType = subscriptionType;
-            return this;
-        }
-
-        /**
-         * @param fieldVisibility the field visibility
-         *
-         * @return this builder
-         *
-         * @deprecated use {@link graphql.schema.GraphQLCodeRegistry.Builder#fieldVisibility(graphql.schema.visibility.GraphqlFieldVisibility)} instead
-         */
-        @Deprecated
-        @DeprecatedAt("2018-12-03")
-        public Builder fieldVisibility(GraphqlFieldVisibility fieldVisibility) {
-            this.codeRegistry = this.codeRegistry.transform(builder -> builder.fieldVisibility(fieldVisibility));
             return this;
         }
 
@@ -867,37 +835,6 @@ public class GraphQLSchema {
         /**
          * Builds the schema
          *
-         * @param additionalTypes - please don't use this anymore
-         *
-         * @return the built schema
-         *
-         * @deprecated - Use the {@link #additionalType(GraphQLType)} methods
-         */
-        @Deprecated
-        @DeprecatedAt("2018-07-30")
-        public GraphQLSchema build(Set<GraphQLType> additionalTypes) {
-            return additionalTypes(additionalTypes).build();
-        }
-
-        /**
-         * Builds the schema
-         *
-         * @param additionalTypes      - please don't use this any more
-         * @param additionalDirectives - please don't use this any more
-         *
-         * @return the built schema
-         *
-         * @deprecated - Use the {@link #additionalType(GraphQLType)} and {@link #additionalDirective(GraphQLDirective)} methods
-         */
-        @Deprecated
-        @DeprecatedAt("2018-07-30")
-        public GraphQLSchema build(Set<GraphQLType> additionalTypes, Set<GraphQLDirective> additionalDirectives) {
-            return additionalTypes(additionalTypes).additionalDirectives(additionalDirectives).build();
-        }
-
-        /**
-         * Builds the schema
-         *
          * @return the built schema
          */
         public GraphQLSchema build() {
@@ -944,7 +881,7 @@ public class GraphQLSchema {
 
         private GraphQLSchema validateSchema(GraphQLSchema graphQLSchema) {
             Collection<SchemaValidationError> errors = new SchemaValidator().validateSchema(graphQLSchema);
-            if (errors.size() > 0) {
+            if (!errors.isEmpty()) {
                 throw new InvalidSchemaException(errors);
             }
             return graphQLSchema;

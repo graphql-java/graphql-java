@@ -104,6 +104,7 @@ class ValuesResolverConversion {
      * @param type            the type of input value
      * @param graphqlContext  the GraphqlContext to use
      * @param locale          the Locale to use
+     *
      * @return a value converted to an internal value
      */
     static Object externalValueToInternalValue(GraphqlFieldVisibility fieldVisibility,
@@ -373,6 +374,7 @@ class ValuesResolverConversion {
                         coercedValues.put(variableName, null);
                     } else {
                         Object coercedValue = externalValueToInternalValueImpl(
+                                variableName,
                                 inputInterceptor,
                                 fieldVisibility,
                                 variableInputType,
@@ -397,11 +399,28 @@ class ValuesResolverConversion {
         return CoercedVariables.of(coercedValues);
     }
 
+    static Object externalValueToInternalValueImpl(
+            InputInterceptor inputInterceptor,
+            GraphqlFieldVisibility fieldVisibility,
+            GraphQLInputType graphQLType,
+            Object originalValue,
+            GraphQLContext graphqlContext,
+            Locale locale
+    ) throws NonNullableValueCoercedAsNullException, CoercingParseValueException {
+        return externalValueToInternalValueImpl("externalValue",
+                inputInterceptor,
+                fieldVisibility,
+                graphQLType,
+                originalValue,
+                graphqlContext,
+                locale);
+    }
+
     /**
      * Performs validation too
      */
-    @SuppressWarnings("unchecked")
     static Object externalValueToInternalValueImpl(
+            String variableName,
             InputInterceptor inputInterceptor,
             GraphqlFieldVisibility fieldVisibility,
             GraphQLInputType graphQLType,
@@ -411,6 +430,7 @@ class ValuesResolverConversion {
     ) throws NonNullableValueCoercedAsNullException, CoercingParseValueException {
         if (isNonNull(graphQLType)) {
             Object returnValue = externalValueToInternalValueImpl(
+                    variableName,
                     inputInterceptor,
                     fieldVisibility,
                     unwrapOneAs(graphQLType),
@@ -457,13 +477,18 @@ class ValuesResolverConversion {
                     locale);
         } else if (graphQLType instanceof GraphQLInputObjectType) {
             if (value instanceof Map) {
-                return externalValueToInternalValueForObject(
+                GraphQLInputObjectType inputObjectType = (GraphQLInputObjectType) graphQLType;
+                //noinspection unchecked
+                Map<String, Object> coercedMap = externalValueToInternalValueForObject(
                         inputInterceptor,
                         fieldVisibility,
-                        (GraphQLInputObjectType) graphQLType,
+                        inputObjectType,
                         (Map<String, Object>) value,
                         graphqlContext,
                         locale);
+
+                ValuesResolverOneOfValidation.validateOneOfInputTypes(inputObjectType, coercedMap, null, variableName, locale);
+                return coercedMap;
             } else {
                 throw CoercingParseValueException.newCoercingParseValueException()
                         .message("Expected type 'Map' but was '" + value.getClass().getSimpleName() +
@@ -478,7 +503,7 @@ class ValuesResolverConversion {
     /**
      * performs validation
      */
-    private static Object externalValueToInternalValueForObject(
+    private static Map<String, Object> externalValueToInternalValueForObject(
             InputInterceptor inputInterceptor,
             GraphqlFieldVisibility fieldVisibility,
             GraphQLInputObjectType inputObjectType,
@@ -595,6 +620,7 @@ class ValuesResolverConversion {
      * @param coercedVariables the coerced variable values
      * @param graphqlContext   the GraphqlContext to use
      * @param locale           the Locale to use
+     *
      * @return literal converted to an internal value
      */
     static Object literalToInternalValue(

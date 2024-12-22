@@ -8,9 +8,11 @@ import graphql.execution.preparsed.PreparsedDocumentEntry;
 import graphql.execution.preparsed.PreparsedDocumentProvider;
 
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 
 import static graphql.Assert.assertNotNull;
+import static java.util.concurrent.CompletableFuture.completedFuture;
 
 /**
  * This abstract class forms the basis for persistent query support.  Derived classes
@@ -36,16 +38,16 @@ public abstract class PersistedQuerySupport implements PreparsedDocumentProvider
     }
 
     @Override
-    public PreparsedDocumentEntry getDocument(ExecutionInput executionInput, Function<ExecutionInput, PreparsedDocumentEntry> parseAndValidateFunction) {
+    public CompletableFuture<PreparsedDocumentEntry> getDocumentAsync(ExecutionInput executionInput, Function<ExecutionInput, PreparsedDocumentEntry> parseAndValidateFunction) {
         Optional<Object> queryIdOption = getPersistedQueryId(executionInput);
-        assertNotNull(queryIdOption, () -> String.format("The class %s MUST return a non null optional query id", this.getClass().getName()));
+        assertNotNull(queryIdOption, "The class %s MUST return a non null optional query id", this.getClass().getName());
 
         try {
             if (queryIdOption.isPresent()) {
                 Object persistedQueryId = queryIdOption.get();
-                return persistedQueryCache.getPersistedQueryDocument(persistedQueryId, executionInput, (queryText) -> {
+                return persistedQueryCache.getPersistedQueryDocumentAsync(persistedQueryId, executionInput, (queryText) -> {
                     // we have a miss and they gave us nothing - bah!
-                    if (queryText == null || queryText.trim().length() == 0) {
+                    if (queryText == null || queryText.isBlank()) {
                         throw new PersistedQueryNotFound(persistedQueryId);
                     }
                     // validate the queryText hash before returning to the cache which we assume will set it
@@ -57,9 +59,9 @@ public abstract class PersistedQuerySupport implements PreparsedDocumentProvider
                 });
             }
             // ok there is no query id - we assume the query is indeed ready to go as is - ie its not a persisted query
-            return parseAndValidateFunction.apply(executionInput);
+            return completedFuture(parseAndValidateFunction.apply(executionInput));
         } catch (PersistedQueryError e) {
-            return mkMissingError(e);
+            return completedFuture(mkMissingError(e));
         }
     }
 

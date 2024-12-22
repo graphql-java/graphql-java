@@ -3,6 +3,7 @@ package graphql.execution.instrumentation
 import graphql.ExecutionInput
 import graphql.ExecutionResult
 import graphql.execution.ExecutionContext
+import graphql.execution.instrumentation.parameters.InstrumentationCreateStateParameters
 import graphql.execution.instrumentation.parameters.InstrumentationExecuteOperationParameters
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters
@@ -33,91 +34,96 @@ class LegacyTestingInstrumentation implements Instrumentation {
     def useOnDispatch = false
 
     @Override
-    InstrumentationState createState() {
-        return instrumentationState
+    CompletableFuture<InstrumentationState> createStateAsync(InstrumentationCreateStateParameters parameters) {
+        return CompletableFuture.completedFuture(instrumentationState)
     }
 
     @Override
-    InstrumentationContext<ExecutionResult> beginExecution(InstrumentationExecutionParameters parameters) {
-        assert parameters.getInstrumentationState() == instrumentationState // Retain for test coverage
+    InstrumentationContext<ExecutionResult> beginExecution(InstrumentationExecutionParameters parameters, InstrumentationState state) {
+        assert state == instrumentationState
         new TestingInstrumentContext("execution", executionList, throwableList, useOnDispatch)
     }
 
     @Override
-    InstrumentationContext<Document> beginParse(InstrumentationExecutionParameters parameters) {
-        assert parameters.getInstrumentationState() == instrumentationState // Retain for test coverage
+    InstrumentationContext<Document> beginParse(InstrumentationExecutionParameters parameters, InstrumentationState state) {
+        assert state == instrumentationState
         return new TestingInstrumentContext("parse", executionList, throwableList, useOnDispatch)
     }
 
     @Override
-    InstrumentationContext<List<ValidationError>> beginValidation(InstrumentationValidationParameters parameters) {
-        assert parameters.getInstrumentationState() == instrumentationState // Retain for test coverage
+    InstrumentationContext<List<ValidationError>> beginValidation(InstrumentationValidationParameters parameters, InstrumentationState state) {
+        assert state == instrumentationState
         return new TestingInstrumentContext("validation", executionList, throwableList, useOnDispatch)
     }
 
     @Override
-    ExecutionStrategyInstrumentationContext beginExecutionStrategy(InstrumentationExecutionStrategyParameters parameters) {
-        assert parameters.getInstrumentationState() == instrumentationState // Retain for test coverage
+    ExecutionStrategyInstrumentationContext beginExecutionStrategy(InstrumentationExecutionStrategyParameters parameters, InstrumentationState state) {
+        assert state == instrumentationState
         return new TestingExecutionStrategyInstrumentationContext("execution-strategy", executionList, throwableList, useOnDispatch)
     }
 
     @Override
-    InstrumentationContext<ExecutionResult> beginExecuteOperation(InstrumentationExecuteOperationParameters parameters) {
-        assert parameters.getInstrumentationState() == instrumentationState // Retain for test coverage
+    ExecuteObjectInstrumentationContext beginExecuteObject(InstrumentationExecutionStrategyParameters parameters, InstrumentationState state) {
+        return new TestingExecuteObjectInstrumentationContext("execute-object", executionList, throwableList, useOnDispatch)
+    }
+
+    @Override
+    InstrumentationContext<ExecutionResult> beginExecuteOperation(InstrumentationExecuteOperationParameters parameters, InstrumentationState state) {
+        assert state == instrumentationState
         return new TestingInstrumentContext("execute-operation", executionList, throwableList, useOnDispatch)
     }
 
     @Override
-    InstrumentationContext<ExecutionResult> beginSubscribedFieldEvent(InstrumentationFieldParameters parameters) {
-        assert parameters.getInstrumentationState() == instrumentationState // Retain for test coverage
+    InstrumentationContext<ExecutionResult> beginSubscribedFieldEvent(InstrumentationFieldParameters parameters, InstrumentationState state) {
+        assert state == instrumentationState
         return new TestingInstrumentContext("subscribed-field-event-$parameters.field.name", executionList, throwableList, useOnDispatch)
     }
 
     @Override
-    InstrumentationContext<ExecutionResult> beginField(InstrumentationFieldParameters parameters) {
-        assert parameters.getInstrumentationState() == instrumentationState // Retain for test coverage
+    InstrumentationContext<Object> beginFieldExecution(InstrumentationFieldParameters parameters, InstrumentationState state) {
+        assert state == instrumentationState
         return new TestingInstrumentContext("field-$parameters.field.name", executionList, throwableList, useOnDispatch)
     }
 
     @Override
-    InstrumentationContext<Object> beginFieldFetch(InstrumentationFieldFetchParameters parameters) {
-        assert parameters.getInstrumentationState() == instrumentationState // Retain for test coverage
+    InstrumentationContext<Object> beginFieldFetch(InstrumentationFieldFetchParameters parameters, InstrumentationState state) {
+        assert state == instrumentationState
         return new TestingInstrumentContext("fetch-$parameters.field.name", executionList, throwableList, useOnDispatch)
     }
 
     @Override
-    InstrumentationContext<CompletableFuture<ExecutionResult>> beginFieldComplete(InstrumentationFieldCompleteParameters parameters) {
-        assert parameters.getInstrumentationState() == instrumentationState // Retain for test coverage
+    InstrumentationContext<Object> beginFieldCompletion(InstrumentationFieldCompleteParameters parameters, InstrumentationState state) {
+        assert state == instrumentationState
         return new TestingInstrumentContext("complete-$parameters.field.name", executionList, throwableList, useOnDispatch)
     }
 
     @Override
-    InstrumentationContext<CompletableFuture<ExecutionResult>> beginFieldListComplete(InstrumentationFieldCompleteParameters parameters) {
-        assert parameters.getInstrumentationState() == instrumentationState // Retain for test coverage
+    InstrumentationContext<Object> beginFieldListCompletion(InstrumentationFieldCompleteParameters parameters, InstrumentationState state) {
+        assert state == instrumentationState
         return new TestingInstrumentContext("complete-list-$parameters.field.name", executionList, throwableList, useOnDispatch)
     }
 
     @Override
-    GraphQLSchema instrumentSchema(GraphQLSchema schema, InstrumentationExecutionParameters parameters) {
-        assert parameters.getInstrumentationState() == instrumentationState // Retain for test coverage
+    GraphQLSchema instrumentSchema(GraphQLSchema schema, InstrumentationExecutionParameters parameters, InstrumentationState state) {
+        assert state == instrumentationState
         return schema
     }
 
     @Override
-    ExecutionInput instrumentExecutionInput(ExecutionInput executionInput, InstrumentationExecutionParameters parameters) {
-        assert parameters.getInstrumentationState() == instrumentationState // Retain for test coverage
+    ExecutionInput instrumentExecutionInput(ExecutionInput executionInput, InstrumentationExecutionParameters parameters, InstrumentationState state) {
+        assert state == instrumentationState
         return executionInput
     }
 
     @Override
-    ExecutionContext instrumentExecutionContext(ExecutionContext executionContext, InstrumentationExecutionParameters parameters) {
-        assert parameters.getInstrumentationState() == instrumentationState // Retain for test coverage
+    ExecutionContext instrumentExecutionContext(ExecutionContext executionContext, InstrumentationExecutionParameters parameters, InstrumentationState state) {
+        assert state == instrumentationState
         return executionContext
     }
 
     @Override
-    DataFetcher<?> instrumentDataFetcher(DataFetcher<?> dataFetcher, InstrumentationFieldFetchParameters parameters) {
-        assert parameters.getInstrumentationState() == instrumentationState // Retain for test coverage
+    DataFetcher<?> instrumentDataFetcher(DataFetcher<?> dataFetcher, InstrumentationFieldFetchParameters parameters, InstrumentationState state) {
+        assert state == instrumentationState
         dfClasses.add(dataFetcher.getClass())
         return new DataFetcher<Object>() {
             @Override
@@ -129,8 +135,8 @@ class LegacyTestingInstrumentation implements Instrumentation {
     }
 
     @Override
-    CompletableFuture<ExecutionResult> instrumentExecutionResult(ExecutionResult executionResult, InstrumentationExecutionParameters parameters) {
-        assert parameters.getInstrumentationState() == instrumentationState // Retain for test coverage
+    CompletableFuture<ExecutionResult> instrumentExecutionResult(ExecutionResult executionResult, InstrumentationExecutionParameters parameters, InstrumentationState state) {
+        assert state == instrumentationState
         return CompletableFuture.completedFuture(executionResult)
     }
 }

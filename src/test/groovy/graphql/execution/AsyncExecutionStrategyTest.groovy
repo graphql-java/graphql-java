@@ -2,6 +2,7 @@ package graphql.execution
 
 import graphql.ErrorType
 import graphql.ExecutionResult
+import graphql.ExperimentalApi
 import graphql.GraphQLContext
 import graphql.execution.instrumentation.ExecutionStrategyInstrumentationContext
 import graphql.execution.instrumentation.InstrumentationState
@@ -22,6 +23,7 @@ import java.util.concurrent.CompletionException
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.locks.ReentrantLock
 
+import static graphql.ExperimentalApi.ENABLE_INCREMENTAL_SUPPORT
 import static graphql.Scalars.GraphQLString
 import static graphql.TestUtil.mergedField
 import static graphql.TestUtil.mergedSelectionSet
@@ -30,7 +32,10 @@ import static graphql.schema.GraphQLObjectType.newObject
 import static graphql.schema.GraphQLSchema.newSchema
 import static org.awaitility.Awaitility.await
 
-class AsyncExecutionStrategyTest extends Specification {
+abstract class AsyncExecutionStrategyTest extends Specification {
+    static boolean incrementalSupport
+
+    def graphqlContextMock = Mock(GraphQLContext)
 
     GraphQLSchema schema(DataFetcher dataFetcher1, DataFetcher dataFetcher2) {
         def queryName = "RootQueryType"
@@ -63,6 +68,10 @@ class AsyncExecutionStrategyTest extends Specification {
                 .build()
 
         schema
+    }
+
+    def setup() {
+        graphqlContextMock.get(ENABLE_INCREMENTAL_SUPPORT) >> incrementalSupport
     }
 
     def "execution is serial if the dataFetchers are blocking"() {
@@ -98,7 +107,7 @@ class AsyncExecutionStrategyTest extends Specification {
                 .operationDefinition(operation)
                 .instrumentation(SimplePerformantInstrumentation.INSTANCE)
                 .valueUnboxer(ValueUnboxer.DEFAULT)
-                .graphQLContext(GraphQLContext.getDefault())
+                .graphQLContext(graphqlContextMock)
                 .locale(Locale.getDefault())
                 .build()
         ExecutionStrategyParameters executionStrategyParameters = ExecutionStrategyParameters
@@ -140,7 +149,7 @@ class AsyncExecutionStrategyTest extends Specification {
                 .valueUnboxer(ValueUnboxer.DEFAULT)
                 .instrumentation(SimplePerformantInstrumentation.INSTANCE)
                 .locale(Locale.getDefault())
-                .graphQLContext(GraphQLContext.getDefault())
+                .graphQLContext(graphqlContextMock)
                 .build()
         ExecutionStrategyParameters executionStrategyParameters = ExecutionStrategyParameters
                 .newParameters()
@@ -182,7 +191,7 @@ class AsyncExecutionStrategyTest extends Specification {
                 .operationDefinition(operation)
                 .valueUnboxer(ValueUnboxer.DEFAULT)
                 .instrumentation(SimplePerformantInstrumentation.INSTANCE)
-                .graphQLContext(GraphQLContext.getDefault())
+                .graphQLContext(graphqlContextMock)
                 .locale(Locale.getDefault())
                 .build()
         ExecutionStrategyParameters executionStrategyParameters = ExecutionStrategyParameters
@@ -225,7 +234,7 @@ class AsyncExecutionStrategyTest extends Specification {
                 .instrumentation(SimplePerformantInstrumentation.INSTANCE)
                 .valueUnboxer(ValueUnboxer.DEFAULT)
                 .locale(Locale.getDefault())
-                .graphQLContext(GraphQLContext.getDefault())
+                .graphQLContext(graphqlContextMock)
                 .build()
         ExecutionStrategyParameters executionStrategyParameters = ExecutionStrategyParameters
                 .newParameters()
@@ -264,7 +273,7 @@ class AsyncExecutionStrategyTest extends Specification {
                 .executionId(ExecutionId.generate())
                 .operationDefinition(operation)
                 .valueUnboxer(ValueUnboxer.DEFAULT)
-                .graphQLContext(GraphQLContext.getDefault())
+                .graphQLContext(graphqlContextMock)
                 .locale(Locale.getDefault())
                 .instrumentation(new SimplePerformantInstrumentation() {
 
@@ -278,7 +287,7 @@ class AsyncExecutionStrategyTest extends Specification {
                             }
 
                             @Override
-                            void onDispatched(CompletableFuture<ExecutionResult> result) {
+                            void onDispatched() {
                             }
 
                             @Override
@@ -310,4 +319,16 @@ class AsyncExecutionStrategyTest extends Specification {
     }
 
 
+}
+
+class AsyncExecutionStrategyTestWithIncrementalSupport extends AsyncExecutionStrategyTest {
+    static {
+        incrementalSupport = true
+    }
+}
+
+class AsyncExecutionStrategyTestNoIncrementalSupport extends AsyncExecutionStrategyTest {
+    static {
+        incrementalSupport = false
+    }
 }

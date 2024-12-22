@@ -1,7 +1,6 @@
 package graphql.parser;
 
 import com.google.common.collect.ImmutableList;
-import graphql.DeprecatedAt;
 import graphql.Internal;
 import graphql.PublicApi;
 import graphql.language.Document;
@@ -137,7 +136,15 @@ public class Parser {
      * @throws InvalidSyntaxException if the input is not valid graphql syntax
      */
     public Document parseDocument(String input) throws InvalidSyntaxException {
-        return parseDocument(input, (ParserOptions) null);
+        MultiSourceReader multiSourceReader = MultiSourceReader.newMultiSourceReader()
+                .string(input, null)
+                .trackData(true)
+                .build();
+
+        ParserEnvironment parserEnvironment = ParserEnvironment.newParserEnvironment()
+                .document(multiSourceReader)
+                .build();
+        return parseDocumentImpl(parserEnvironment);
     }
 
     /**
@@ -152,69 +159,6 @@ public class Parser {
     public Document parseDocument(Reader reader) throws InvalidSyntaxException {
         ParserEnvironment parserEnvironment = ParserEnvironment.newParserEnvironment()
                 .document(reader)
-                .build();
-        return parseDocumentImpl(parserEnvironment);
-    }
-
-    /**
-     * Parses a string input into a graphql AST {@link Document}
-     *
-     * @param input      the input to parse
-     * @param sourceName - the name to attribute to the input text in {@link SourceLocation#getSourceName()}
-     *
-     * @return an AST {@link Document}
-     *
-     * @throws InvalidSyntaxException if the input is not valid graphql syntax
-     * @deprecated use {#{@link #parse(ParserEnvironment)}} instead
-     */
-    @DeprecatedAt("2022-08-31")
-    @Deprecated
-    public Document parseDocument(String input, String sourceName) throws InvalidSyntaxException {
-        MultiSourceReader multiSourceReader = MultiSourceReader.newMultiSourceReader()
-                .string(input, sourceName)
-                .trackData(true)
-                .build();
-        return parseDocument(multiSourceReader);
-    }
-
-    /**
-     * Parses a string input into a graphql AST {@link Document}
-     *
-     * @param input         the input to parse
-     * @param parserOptions the parser options
-     *
-     * @return an AST {@link Document}
-     *
-     * @throws InvalidSyntaxException if the input is not valid graphql syntax
-     * @deprecated use {#{@link #parse(ParserEnvironment)}} instead
-     */
-    @DeprecatedAt("2022-08-31")
-    @Deprecated
-    public Document parseDocument(String input, ParserOptions parserOptions) throws InvalidSyntaxException {
-        MultiSourceReader multiSourceReader = MultiSourceReader.newMultiSourceReader()
-                .string(input, null)
-                .trackData(true)
-                .build();
-        return parseDocument(multiSourceReader, parserOptions);
-    }
-
-    /**
-     * Parses reader  input into a graphql AST {@link Document}
-     *
-     * @param reader        the reader input to parse
-     * @param parserOptions the parser options
-     *
-     * @return an AST {@link Document}
-     *
-     * @throws InvalidSyntaxException if the input is not valid graphql syntax
-     * @deprecated use {#{@link #parse(ParserEnvironment)}} instead
-     */
-    @DeprecatedAt("2022-08-31")
-    @Deprecated
-    public Document parseDocument(Reader reader, ParserOptions parserOptions) throws InvalidSyntaxException {
-        ParserEnvironment parserEnvironment = ParserEnvironment.newParserEnvironment()
-                .document(reader)
-                .parserOptions(parserOptions)
                 .build();
         return parseDocumentImpl(parserEnvironment);
     }
@@ -357,7 +301,7 @@ public class Parser {
                 String preview = AntlrHelper.createPreview(multiSourceReader, line);
                 String msgKey;
                 List<Object> args;
-                if (antlerMsg == null) {
+                if (antlerMsg == null || environment.getParserOptions().isRedactTokenParserErrorMessages()) {
                     msgKey = "InvalidSyntax.noMessage";
                     args = ImmutableList.of(sourceLocation.getLine(), sourceLocation.getColumn());
                 } else {

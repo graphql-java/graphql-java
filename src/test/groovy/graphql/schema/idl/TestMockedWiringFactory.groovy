@@ -49,12 +49,8 @@ class TestMockedWiringFactory implements WiringFactory {
 
     @Override
     boolean providesDataFetcher(FieldWiringEnvironment environment) {
-        return true
-    }
-
-    @Override
-    DataFetcher getDataFetcher(FieldWiringEnvironment environment) {
-        return new PropertyDataFetcher(environment.getFieldDefinition().getName())
+        // rely on defaulting in code registry
+        return false
     }
 
     @Override

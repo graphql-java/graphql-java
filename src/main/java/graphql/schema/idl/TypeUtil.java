@@ -17,18 +17,12 @@ public class TypeUtil {
      * @return the type in graphql SDL format, eg [typeName!]!
      */
     public static String simplePrint(Type type) {
-        StringBuilder sb = new StringBuilder();
         if (isNonNull(type)) {
-            sb.append(simplePrint(unwrapOne(type)));
-            sb.append("!");
+            return simplePrint(unwrapOne(type)) + "!";
         } else if (isList(type)) {
-            sb.append("[");
-            sb.append(simplePrint(unwrapOne(type)));
-            sb.append("]");
-        } else {
-            sb.append(((TypeName) type).getName());
+            return "[" + simplePrint(unwrapOne(type)) + "]";
         }
-        return sb.toString();
+        return ((TypeName) type).getName();
     }
 
     /**

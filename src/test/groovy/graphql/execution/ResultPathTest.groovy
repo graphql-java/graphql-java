@@ -212,6 +212,13 @@ class ResultPathTest extends Specification {
         path.toList() == ["a", "b"]
     }
 
+    def "pass any other object than string or int"(){
+        when:
+        ResultPath.fromList(["a", "b", true])
+
+        then:
+        notThrown(ClassCastException)
+    }
 
     def "can append paths"() {
         when:

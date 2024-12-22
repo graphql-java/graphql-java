@@ -13,7 +13,9 @@ import graphql.language.AstPrinter
 import graphql.parser.Parser
 import graphql.schema.DataFetcher
 import graphql.schema.DataFetchingEnvironment
+import graphql.schema.LightDataFetcher
 import graphql.schema.PropertyDataFetcher
+import graphql.schema.SingletonPropertyDataFetcher
 import graphql.schema.StaticDataFetcher
 import org.awaitility.Awaitility
 import org.jetbrains.annotations.NotNull
@@ -58,7 +60,7 @@ class InstrumentationTest extends Specification {
                 "onDispatched:fetch-hero",
                 "end:fetch-hero",
                 "start:complete-hero",
-                "start:execution-strategy",
+                "start:execute-object",
                 "start:field-id",
                 "start:fetch-id",
                 "onDispatched:fetch-id",
@@ -68,8 +70,8 @@ class InstrumentationTest extends Specification {
                 "end:complete-id",
                 "onDispatched:field-id",
                 "end:field-id",
-                "onDispatched:execution-strategy",
-                "end:execution-strategy",
+                "onDispatched:execute-object",
+                "end:execute-object",
                 "onDispatched:complete-hero",
                 "end:complete-hero",
                 "onDispatched:field-hero",
@@ -99,7 +101,7 @@ class InstrumentationTest extends Specification {
 
         instrumentation.dfClasses.size() == 2
         instrumentation.dfClasses[0] == StaticDataFetcher.class
-        instrumentation.dfClasses[1] == PropertyDataFetcher.class
+        instrumentation.dfClasses[1] == SingletonPropertyDataFetcher.class
 
         instrumentation.dfInvocations.size() == 2
 
@@ -127,8 +129,9 @@ class InstrumentationTest extends Specification {
         """
 
         def instrumentation = new LegacyTestingInstrumentation() {
+
             @Override
-            DataFetcher<?> instrumentDataFetcher(DataFetcher<?> dataFetcher, InstrumentationFieldFetchParameters parameters) {
+            DataFetcher<?> instrumentDataFetcher(DataFetcher<?> dataFetcher, InstrumentationFieldFetchParameters parameters, InstrumentationState state) {
                 return new DataFetcher<Object>() {
                     @Override
                     Object get(DataFetchingEnvironment environment) {
@@ -171,7 +174,7 @@ class InstrumentationTest extends Specification {
             return new ExecutionStrategyInstrumentationContext() {
 
                 @Override
-                void onDispatched(CompletableFuture<ExecutionResult> result) {
+                void onDispatched() {
                     System.out.println(String.format("t%s setting go signal on", Thread.currentThread().getId()))
                     goSignal.set(true)
                 }
@@ -313,7 +316,7 @@ class InstrumentationTest extends Specification {
                 "onDispatched:fetch-hero",
                 "end:fetch-hero",
                 "start:complete-hero",
-                "start:execution-strategy",
+                "start:execute-object",
                 "start:field-id",
                 "start:fetch-id",
                 "onDispatched:fetch-id",
@@ -323,8 +326,8 @@ class InstrumentationTest extends Specification {
                 "end:complete-id",
                 "onDispatched:field-id",
                 "end:field-id",
-                "onDispatched:execution-strategy",
-                "end:execution-strategy",
+                "onDispatched:execute-object",
+                "end:execute-object",
                 "onDispatched:complete-hero",
                 "end:complete-hero",
                 "onDispatched:field-hero",
@@ -375,7 +378,6 @@ class InstrumentationTest extends Specification {
         def graphQL = GraphQL
                 .newGraphQL(StarWarsSchema.starWarsSchema)
                 .instrumentation(instrumentation)
-                .doNotAddDefaultInstrumentations() // important, otherwise a chained one wil be used
                 .build()
 
         when:
@@ -394,7 +396,7 @@ class InstrumentationTest extends Specification {
                 "start:field-human",
                 "start:fetch-human",
                 "start:complete-human",
-                "start:execution-strategy",
+                "start:execute-object",
                 "start:field-id",
                 "start:fetch-id",
                 "start:complete-id",
@@ -447,7 +449,48 @@ class InstrumentationTest extends Specification {
         def graphQL = GraphQL
                 .newGraphQL(StarWarsSchema.starWarsSchema)
                 .instrumentation(instrumentation1)
-                .doNotAddDefaultInstrumentations() // important, otherwise a chained one wil be used
+                .build()
+
+        when:
+        def variables = [var: "1001"]
+        def er = graphQL.execute(ExecutionInput.newExecutionInput().query(query).variables(variables)) // Luke
+
+        then:
+        er.extensions == [i1: "I1"]
+    }
+
+    def "can have an backwards compatibility createState() in play"() {
+
+
+        given:
+
+        def query = '''query Q($var: String!) {
+                                  human(id: $var) {
+                                    id
+                                    name
+                                  }
+                                }
+                            '''
+
+
+        def instrumentation1 = new SimplePerformantInstrumentation() {
+
+            @Override
+            InstrumentationState createState(InstrumentationCreateStateParameters parameters) {
+                return new StringInstrumentationState("I1")
+            }
+
+            @Override
+            CompletableFuture<ExecutionResult> instrumentExecutionResult(ExecutionResult executionResult, InstrumentationExecutionParameters parameters, InstrumentationState state) {
+                return CompletableFuture.completedFuture(
+                        executionResult.transform { it.addExtension("i1", ((StringInstrumentationState) state).value) }
+                )
+            }
+        }
+
+        def graphQL = GraphQL
+                .newGraphQL(StarWarsSchema.starWarsSchema)
+                .instrumentation(instrumentation1)
                 .build()
 
         when:

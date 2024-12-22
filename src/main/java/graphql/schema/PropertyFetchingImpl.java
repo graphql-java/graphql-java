@@ -3,6 +3,8 @@ package graphql.schema;
 import graphql.GraphQLException;
 import graphql.Internal;
 import graphql.schema.fetching.LambdaFetchingSupport;
+import graphql.util.EscapeUtil;
+import graphql.util.StringKit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -12,6 +14,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -32,8 +35,6 @@ import static graphql.schema.GraphQLTypeUtil.unwrapOne;
  */
 @Internal
 public class PropertyFetchingImpl {
-    private static final Logger log = LoggerFactory.getLogger(PropertyFetchingImpl.class);
-
     private final AtomicBoolean USE_SET_ACCESSIBLE = new AtomicBoolean(true);
     private final AtomicBoolean USE_LAMBDA_FACTORY = new AtomicBoolean(true);
     private final AtomicBoolean USE_NEGATIVE_CACHE = new AtomicBoolean(true);
@@ -65,7 +66,7 @@ public class PropertyFetchingImpl {
         }
     }
 
-    public Object getPropertyValue(String propertyName, Object object, GraphQLType graphQLType, boolean dfeInUse, Supplier<Object> singleArgumentValue) {
+    public Object getPropertyValue(String propertyName, Object object, GraphQLType graphQLType, boolean dfeInUse, Supplier<?> singleArgumentValue) {
         if (object instanceof Map) {
             return ((Map<?, ?>) object).get(propertyName);
         }
@@ -123,8 +124,6 @@ public class PropertyFetchingImpl {
                 // are preventing the Meta Lambda from working.  So let's continue with
                 // old skool reflection and if it's all broken there then it will eventually
                 // end up negatively cached
-                log.debug("Unable to invoke fast Meta Lambda for `{}` - Falling back to reflection", object.getClass().getName(), ignored);
-
             }
         }
 
@@ -195,12 +194,12 @@ public class PropertyFetchingImpl {
         Method apply(Class<?> aClass, String s) throws NoSuchMethodException;
     }
 
-    private Object getPropertyViaRecordMethod(Object object, String propertyName, MethodFinder methodFinder, Supplier<Object> singleArgumentValue) throws NoSuchMethodException {
+    private Object getPropertyViaRecordMethod(Object object, String propertyName, MethodFinder methodFinder, Supplier<?> singleArgumentValue) throws NoSuchMethodException {
         Method method = methodFinder.apply(object.getClass(), propertyName);
         return invokeMethod(object, singleArgumentValue, method, takesSingleArgumentTypeAsOnlyArgument(method));
     }
 
-    private Object getPropertyViaGetterMethod(Object object, String propertyName, GraphQLType graphQLType, MethodFinder methodFinder, Supplier<Object> singleArgumentValue) throws NoSuchMethodException {
+    private Object getPropertyViaGetterMethod(Object object, String propertyName, GraphQLType graphQLType, MethodFinder methodFinder, Supplier<?> singleArgumentValue) throws NoSuchMethodException {
         if (isBooleanProperty(graphQLType)) {
             try {
                 return getPropertyViaGetterUsingPrefix(object, propertyName, "is", methodFinder, singleArgumentValue);
@@ -212,8 +211,8 @@ public class PropertyFetchingImpl {
         }
     }
 
-    private Object getPropertyViaGetterUsingPrefix(Object object, String propertyName, String prefix, MethodFinder methodFinder, Supplier<Object> singleArgumentValue) throws NoSuchMethodException {
-        String getterName = prefix + propertyName.substring(0, 1).toUpperCase() + propertyName.substring(1);
+    private Object getPropertyViaGetterUsingPrefix(Object object, String propertyName, String prefix, MethodFinder methodFinder, Supplier<?> singleArgumentValue) throws NoSuchMethodException {
+        String getterName = prefix + StringKit.capitalize(propertyName);
         Method method = methodFinder.apply(object.getClass(), getterName);
         return invokeMethod(object, singleArgumentValue, method, takesSingleArgumentTypeAsOnlyArgument(method));
     }
@@ -341,7 +340,7 @@ public class PropertyFetchingImpl {
         }
     }
 
-    private Object invokeMethod(Object object, Supplier<Object> singleArgumentValue, Method method, boolean takesSingleArgument) throws FastNoSuchMethodException {
+    private Object invokeMethod(Object object, Supplier<?> singleArgumentValue, Method method, boolean takesSingleArgument) throws FastNoSuchMethodException {
         try {
             if (takesSingleArgument) {
                 Object argValue = singleArgumentValue.get();

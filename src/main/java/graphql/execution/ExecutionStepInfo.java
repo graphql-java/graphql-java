@@ -1,6 +1,5 @@
 package graphql.execution;
 
-import graphql.DeprecatedAt;
 import graphql.PublicApi;
 import graphql.collect.ImmutableMapWithNullValues;
 import graphql.schema.GraphQLFieldDefinition;
@@ -76,18 +75,6 @@ public class ExecutionStepInfo {
         this.type = assertNotNull(builder.type, () -> "you must provide a graphql type");
         this.arguments = builder.arguments;
         this.fieldContainer = builder.fieldContainer;
-    }
-
-    /**
-     * @return the GraphQLObjectType defining the {@link #getFieldDefinition()}
-     *
-     * @see ExecutionStepInfo#getObjectType()
-     * @deprecated use {@link #getObjectType()} instead as it is named better
-     */
-    @Deprecated
-    @DeprecatedAt("2022-02-03")
-    public GraphQLObjectType getFieldContainer() {
-        return fieldContainer;
     }
 
     /**
@@ -301,11 +288,8 @@ public class ExecutionStepInfo {
             return this;
         }
 
-        public Builder arguments(Supplier<Map<String, Object>> arguments) {
-            this.arguments = () -> {
-                Map<String, Object> map = arguments.get();
-                return map == null ? ImmutableMapWithNullValues.emptyMap() : ImmutableMapWithNullValues.copyOf(map);
-            };
+        public Builder arguments(Supplier<ImmutableMapWithNullValues<String, Object>> arguments) {
+            this.arguments = arguments;
             return this;
         }
 

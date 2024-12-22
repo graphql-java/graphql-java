@@ -9,6 +9,7 @@ import graphql.schema.GraphQLDirectiveContainer;
 import graphql.util.FpKit;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -23,9 +24,7 @@ import static java.util.stream.Collectors.toSet;
 @Internal
 public class DirectivesUtil {
 
-
-    @Deprecated // use GraphQLAppliedDirectives eventually
-    @DeprecatedAt("2022-02-24")
+    @Deprecated(since = "2022-02-24") // use GraphQLAppliedDirectives eventually
     public static Map<String, GraphQLDirective> nonRepeatableDirectivesByName(List<GraphQLDirective> directives) {
         // filter the repeatable directives
         List<GraphQLDirective> singletonDirectives = directives.stream()
@@ -34,15 +33,13 @@ public class DirectivesUtil {
         return FpKit.getByName(singletonDirectives, GraphQLDirective::getName);
     }
 
-    @Deprecated // use GraphQLAppliedDirectives eventually
-    @DeprecatedAt("2022-02-24")
+    @Deprecated(since = "2022-02-24") // use GraphQLAppliedDirectives eventually
     public static Map<String, ImmutableList<GraphQLDirective>> allDirectivesByName(List<GraphQLDirective> directives) {
 
         return ImmutableMap.copyOf(FpKit.groupingBy(directives, GraphQLDirective::getName));
     }
 
-    @Deprecated // use GraphQLAppliedDirectives eventually
-    @DeprecatedAt("2022-02-24")
+    @Deprecated(since = "2022-02-24") // use GraphQLAppliedDirectives eventually
     public static Optional<GraphQLArgument> directiveWithArg(List<GraphQLDirective> directives, String directiveName, String argumentName) {
         GraphQLDirective directive = nonRepeatableDirectivesByName(directives).get(directiveName);
         GraphQLArgument argument = null;
@@ -52,9 +49,7 @@ public class DirectivesUtil {
         return Optional.ofNullable(argument);
     }
 
-
-    @Deprecated // use GraphQLAppliedDirectives eventually
-    @DeprecatedAt("2022-02-24")
+    @Deprecated(since = "2022-02-24") // use GraphQLAppliedDirectives eventually
     public static boolean isAllNonRepeatable(List<GraphQLDirective> directives) {
         if (directives == null || directives.isEmpty()) {
             return false;
@@ -67,8 +62,7 @@ public class DirectivesUtil {
         return true;
     }
 
-    @Deprecated // use GraphQLAppliedDirectives eventually
-    @DeprecatedAt("2022-02-24")
+    @Deprecated(since = "2022-02-24") // use GraphQLAppliedDirectives eventually
     public static List<GraphQLDirective> add(List<GraphQLDirective> targetList, GraphQLDirective newDirective) {
         assertNotNull(targetList, () -> "directive list can't be null");
         assertNotNull(newDirective, () -> "directive can't be null");
@@ -76,8 +70,7 @@ public class DirectivesUtil {
         return targetList;
     }
 
-    @Deprecated // use GraphQLAppliedDirectives eventually
-    @DeprecatedAt("2022-02-24")
+    @Deprecated(since = "2022-02-24") // use GraphQLAppliedDirectives eventually
     public static List<GraphQLDirective> addAll(List<GraphQLDirective> targetList, List<GraphQLDirective> newDirectives) {
         assertNotNull(targetList, () -> "directive list can't be null");
         assertNotNull(newDirectives, () -> "directive list can't be null");
@@ -85,8 +78,7 @@ public class DirectivesUtil {
         return targetList;
     }
 
-    @Deprecated // use GraphQLAppliedDirectives eventually
-    @DeprecatedAt("2022-02-24")
+    @Deprecated(since = "2022-02-24") // use GraphQLAppliedDirectives eventually
     public static GraphQLDirective getFirstDirective(String name, Map<String, List<GraphQLDirective>> allDirectivesByName) {
         List<GraphQLDirective> directives = allDirectivesByName.getOrDefault(name, emptyList());
         if (directives.isEmpty()) {
@@ -100,7 +92,6 @@ public class DirectivesUtil {
      * directives collection takes precedence.
      *
      * @param directiveContainer the schema element holding applied directives
-     *
      * @return a combined list unique by name
      */
     public static List<GraphQLAppliedDirective> toAppliedDirectives(GraphQLDirectiveContainer directiveContainer) {
@@ -113,7 +104,6 @@ public class DirectivesUtil {
      *
      * @param appliedDirectives the applied directives to use
      * @param directives        the legacy directives to use
-     *
      * @return a combined list unique by name
      */
     public static List<GraphQLAppliedDirective> toAppliedDirectives(Collection<GraphQLAppliedDirective> appliedDirectives, Collection<GraphQLDirective> directives) {
@@ -136,6 +126,7 @@ public class DirectivesUtil {
      * A holder class that breaks a list of directives into maps to be more easily accessible in using classes
      */
     public static class DirectivesHolder {
+        private static final DirectivesHolder EMPTY_HOLDER = new DirectivesHolder(Collections.emptyList(), Collections.emptyList());
 
         private final ImmutableMap<String, List<GraphQLDirective>> allDirectivesByName;
         private final ImmutableMap<String, GraphQLDirective> nonRepeatableDirectivesByName;
@@ -154,7 +145,14 @@ public class DirectivesUtil {
 
             this.allAppliedDirectives = ImmutableList.copyOf(allAppliedDirectives);
             this.allAppliedDirectivesByName = ImmutableMap.copyOf(FpKit.groupingBy(allAppliedDirectives, GraphQLAppliedDirective::getName));
+        }
 
+        public static DirectivesHolder create(List<GraphQLDirective> directives, List<GraphQLAppliedDirective> appliedDirectives) {
+            if (directives.isEmpty() && appliedDirectives.isEmpty()) {
+                return EMPTY_HOLDER;
+            }
+
+            return new DirectivesHolder(directives, appliedDirectives);
         }
 
         public ImmutableMap<String, List<GraphQLDirective>> getAllDirectivesByName() {

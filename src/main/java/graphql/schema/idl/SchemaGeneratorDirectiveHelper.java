@@ -464,7 +464,7 @@ public class SchemaGeneratorDirectiveHelper {
 
     private <T extends GraphQLDirectiveContainer> T invokeWiring(T element, EnvInvoker<T> invoker, SchemaDirectiveWiring schemaDirectiveWiring, SchemaDirectiveWiringEnvironment<T> env) {
         T newElement = invoker.apply(schemaDirectiveWiring, env);
-        assertNotNull(newElement, () -> "The SchemaDirectiveWiring MUST return a non null return value for element '" + element.getName() + "'");
+        assertNotNull(newElement, "The SchemaDirectiveWiring MUST return a non null return value for element '%s'",element.getName());
         return newElement;
     }
 

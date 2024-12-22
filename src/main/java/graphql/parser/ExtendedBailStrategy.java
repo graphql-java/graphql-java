@@ -42,6 +42,10 @@ public class ExtendedBailStrategy extends BailErrorStrategy {
 
     InvalidSyntaxException mkMoreTokensException(Token token) {
         SourceLocation sourceLocation = AntlrHelper.createSourceLocation(multiSourceReader, token);
+        if (environment.getParserOptions().isRedactTokenParserErrorMessages()) {
+            return new MoreTokensSyntaxException(environment.getI18N(), sourceLocation);
+        }
+
         String sourcePreview = AntlrHelper.createPreview(multiSourceReader, token.getLine());
         return new MoreTokensSyntaxException(environment.getI18N(), sourceLocation,
                 token.getText(), sourcePreview);
@@ -66,7 +70,7 @@ public class ExtendedBailStrategy extends BailErrorStrategy {
         String msgKey;
         List<Object> args;
         SourceLocation location = sourceLocation == null ? SourceLocation.EMPTY : sourceLocation;
-        if (offendingToken == null) {
+        if (offendingToken == null || environment.getParserOptions().isRedactTokenParserErrorMessages()) {
             msgKey = "InvalidSyntaxBail.noToken";
             args = ImmutableList.of(location.getLine(), location.getColumn());
         } else {

@@ -152,4 +152,66 @@ class GraphqlErrorBuilderTest extends Specification {
         error.path == null
 
     }
+
+    def "implements equals/hashCode correctly for matching errors"() {
+        when:
+        def firstError = toGraphQLError(first)
+        def secondError = toGraphQLError(second)
+
+        then:
+        firstError == secondError
+        firstError.hashCode() == secondError.hashCode()
+
+        where:
+        first                                                          | second
+        [message: "msg"]                                               | [message: "msg"]
+        [message: "msg", locations: [new SourceLocation(1, 2)]]        | [message: "msg", locations: [new SourceLocation(1, 2)]]
+        [message: "msg", errorType: ErrorType.InvalidSyntax]           | [message: "msg", errorType: ErrorType.InvalidSyntax]
+        [message: "msg", path: ["items", 1, "item"]]                   | [message: "msg", path: ["items", 1, "item"]]
+        [message: "msg", extensions: [aBoolean: true, aString: "foo"]] | [message: "msg", extensions: [aBoolean: true, aString: "foo"]]
+    }
+
+    def "implements equals/hashCode correctly for different errors"() {
+        when:
+        def firstError = toGraphQLError(first)
+        def secondError = toGraphQLError(second)
+
+        then:
+        firstError != secondError
+        firstError.hashCode() != secondError.hashCode()
+
+        where:
+        first                                                   | second
+        [message: "msg"]                                        | [message: "different msg"]
+        [message: "msg", locations: [new SourceLocation(1, 2)]] | [message: "msg", locations: [new SourceLocation(3, 4)]]
+        [message: "msg", errorType: ErrorType.InvalidSyntax]    | [message: "msg", errorType: ErrorType.DataFetchingException]
+        [message: "msg", path: ["items", "1", "item"]]          | [message: "msg", path: ["items"]]
+        [message: "msg", extensions: [aBoolean: false]]         | [message: "msg", extensions: [aString: "foo"]]
+    }
+
+    private static GraphQLError toGraphQLError(Map<String, Object> errorFields) {
+        def errorBuilder = GraphQLError.newError();
+        errorFields.forEach { key, value ->
+            if (value != null) {
+                switch (key) {
+                    case "message":
+                        errorBuilder.message(value as String);
+                        break;
+                    case "locations":
+                        errorBuilder.locations(value as List<SourceLocation>);
+                        break;
+                    case "errorType":
+                        errorBuilder.errorType(value as ErrorClassification);
+                        break;
+                    case "path":
+                        errorBuilder.path(value as List<Object>);
+                        break;
+                    case "extensions":
+                        errorBuilder.extensions(value as Map<String, Object>);
+                        break;
+                }
+            }
+        }
+        return errorBuilder.build();
+    }
 }

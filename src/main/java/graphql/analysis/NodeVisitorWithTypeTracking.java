@@ -30,13 +30,13 @@ import graphql.schema.GraphQLUnmodifiedType;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
+import java.util.Collections;
 import java.util.Locale;
 import java.util.Map;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.schema.GraphQLTypeUtil.unwrapAll;
 import static graphql.util.TraverserContext.Phase.LEAVE;
-import static java.lang.String.format;
 
 /**
  * Internally used node visitor which delegates to a {@link QueryVisitor} with type
@@ -51,13 +51,20 @@ public class NodeVisitorWithTypeTracking extends NodeVisitorStub {
     private final GraphQLSchema schema;
     private final Map<String, FragmentDefinition> fragmentsByName;
     private final ConditionalNodes conditionalNodes = new ConditionalNodes();
+    private final QueryTraversalOptions options;
 
-    public NodeVisitorWithTypeTracking(QueryVisitor preOrderCallback, QueryVisitor postOrderCallback, Map<String, Object> variables, GraphQLSchema schema, Map<String, FragmentDefinition> fragmentsByName) {
+    public NodeVisitorWithTypeTracking(QueryVisitor preOrderCallback,
+                                       QueryVisitor postOrderCallback,
+                                       Map<String, Object> variables,
+                                       GraphQLSchema schema,
+                                       Map<String, FragmentDefinition> fragmentsByName,
+                                       QueryTraversalOptions options) {
         this.preOrderCallback = preOrderCallback;
         this.postOrderCallback = postOrderCallback;
         this.variables = variables;
         this.schema = schema;
         this.fragmentsByName = fragmentsByName;
+        this.options = options;
     }
 
     @Override
@@ -142,8 +149,8 @@ public class NodeVisitorWithTypeTracking extends NodeVisitorStub {
 
         GraphQLCompositeType typeCondition = (GraphQLCompositeType) schema.getType(fragmentDefinition.getTypeCondition().getName());
         assertNotNull(typeCondition,
-                () -> format("Invalid type condition '%s' in fragment '%s'", fragmentDefinition.getTypeCondition().getName(),
-                        fragmentDefinition.getName()));
+                "Invalid type condition '%s' in fragment '%s'", fragmentDefinition.getTypeCondition().getName(),
+                fragmentDefinition.getName());
         context.setVar(QueryTraversalContext.class, new QueryTraversalContext(typeCondition, parentEnv.getEnvironment(), fragmentDefinition, graphQLContext));
         return TraversalControl.CONTINUE;
     }
@@ -157,12 +164,17 @@ public class NodeVisitorWithTypeTracking extends NodeVisitorStub {
         boolean isTypeNameIntrospectionField = fieldDefinition == schema.getIntrospectionTypenameFieldDefinition();
         GraphQLFieldsContainer fieldsContainer = !isTypeNameIntrospectionField ? (GraphQLFieldsContainer) unwrapAll(parentEnv.getOutputType()) : null;
         GraphQLCodeRegistry codeRegistry = schema.getCodeRegistry();
-        Map<String, Object> argumentValues = ValuesResolver.getArgumentValues(codeRegistry,
-                fieldDefinition.getArguments(),
-                field.getArguments(),
-                CoercedVariables.of(variables),
-                GraphQLContext.getDefault(),
-                Locale.getDefault());
+        Map<String, Object> argumentValues;
+        if (options.isCoerceFieldArguments()) {
+            argumentValues = ValuesResolver.getArgumentValues(codeRegistry,
+                    fieldDefinition.getArguments(),
+                    field.getArguments(),
+                    CoercedVariables.of(variables),
+                    GraphQLContext.getDefault(),
+                    Locale.getDefault());
+        } else {
+            argumentValues = Collections.emptyMap();
+        }
         QueryVisitorFieldEnvironment environment = new QueryVisitorFieldEnvironmentImpl(isTypeNameIntrospectionField,
                 field,
                 fieldDefinition,
@@ -204,7 +216,7 @@ public class NodeVisitorWithTypeTracking extends NodeVisitorStub {
         QueryVisitorFieldEnvironment fieldEnv = fieldCtx.getEnvironment();
         GraphQLFieldsContainer fieldsContainer = fieldEnv.getFieldsContainer();
 
-        GraphQLFieldDefinition fieldDefinition = Introspection.getFieldDef(schema, fieldsContainer, field.getName());
+        GraphQLFieldDefinition fieldDefinition = Introspection.getFieldDefinition(schema, fieldsContainer, field.getName());
         GraphQLArgument graphQLArgument = fieldDefinition.getArgument(argument.getName());
         String argumentName = graphQLArgument.getName();
 

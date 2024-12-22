@@ -2,6 +2,7 @@ package benchmark;
 
 import graphql.schema.fetching.LambdaFetchingSupport;
 import org.openjdk.jmh.annotations.Benchmark;
+import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
@@ -10,8 +11,9 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.function.Function;
 
-@Warmup(iterations = 2, time = 2, batchSize = 3)
-@Measurement(iterations = 3, time = 2, batchSize = 4)
+@Warmup(iterations = 2, time = 5, batchSize = 500)
+@Measurement(iterations = 3, batchSize = 500)
+@Fork(3)
 public class GetterAccessBenchmark {
 
     public static class Pojo {
@@ -69,3 +71,4 @@ public class GetterAccessBenchmark {
         }
     }
 }
+

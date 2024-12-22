@@ -12,7 +12,6 @@ import graphql.execution.ExecutionId
 import graphql.execution.ResultPath
 import graphql.execution.ValueUnboxer
 import graphql.execution.instrumentation.ChainedInstrumentation
-import graphql.execution.instrumentation.Instrumentation
 import graphql.execution.instrumentation.SimplePerformantInstrumentation
 import graphql.execution.instrumentation.parameters.InstrumentationCreateStateParameters
 import spock.lang.Specification
@@ -308,10 +307,10 @@ class FieldValidationTest extends Specification {
         def document = TestUtil.parseQuery(query)
         def strategy = new AsyncExecutionStrategy()
         def instrumentation = new FieldValidationInstrumentation(validation)
-        def execution = new Execution(strategy, strategy, strategy, instrumentation, ValueUnboxer.DEFAULT)
+        def execution = new Execution(strategy, strategy, strategy, instrumentation, ValueUnboxer.DEFAULT, false)
 
         def executionInput = ExecutionInput.newExecutionInput().query(query).variables(variables).build()
-        execution.execute(document, schema, ExecutionId.generate(), executionInput, SimplePerformantInstrumentation.INSTANCE.createState(new InstrumentationCreateStateParameters(schema, executionInput)))
+        execution.execute(document, schema, ExecutionId.generate(), executionInput, null)
     }
 
     def "test graphql from end to end with chained instrumentation"() {
@@ -322,7 +321,7 @@ class FieldValidationTest extends Specification {
             }
         }
         def instrumentations = [new FieldValidationInstrumentation
-                (fieldValidation)]
+                                        (fieldValidation)]
         def chainedInstrumentation = new ChainedInstrumentation(instrumentations);
         def graphql = GraphQL
                 .newGraphQL(schema)

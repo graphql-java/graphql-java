@@ -23,9 +23,11 @@ import graphql.language.Value
 import graphql.language.VariableDefinition
 import graphql.language.VariableReference
 import graphql.schema.CoercingParseValueException
+import graphql.schema.DataFetcher
 import spock.lang.Specification
 import spock.lang.Unroll
 
+import static graphql.ExecutionInput.newExecutionInput
 import static graphql.Scalars.GraphQLBoolean
 import static graphql.Scalars.GraphQLFloat
 import static graphql.Scalars.GraphQLInt
@@ -86,6 +88,72 @@ class ValuesResolverTest extends Specification {
         [name: 'a', id: 123] || [name: 'a', id: 123]
         [id: 123]            || [id: 123]
         [name: 'x']          || [name: 'x']
+    }
+
+    def "getVariableValues: @oneOf map object as variable input"() {
+        given:
+        def aField = newInputObjectField()
+                .name("a")
+                .type(GraphQLString)
+        def bField = newInputObjectField()
+                .name("b")
+                .type(GraphQLString)
+        def inputType = newInputObject()
+                .name("Person")
+                .withAppliedDirective(Directives.OneOfDirective.toAppliedDirective())
+                .field(aField)
+                .field(bField)
+                .build()
+        def schema = TestUtil.schemaWithInputType(inputType)
+        VariableDefinition variableDefinition = new VariableDefinition("variable", new TypeName("Person"))
+
+        when:
+        def resolvedValues = ValuesResolver.coerceVariableValues(schema, [variableDefinition], RawVariables.of([variable: [a: 'x']]), graphQLContext, locale)
+        then:
+        resolvedValues.get('variable') == [a: 'x']
+
+        when:
+        resolvedValues = ValuesResolver.coerceVariableValues(schema, [variableDefinition], RawVariables.of([variable: [b: 'y']]), graphQLContext, locale)
+        then:
+        resolvedValues.get('variable') == [b: 'y']
+
+        when:
+        ValuesResolver.coerceVariableValues(schema, [variableDefinition], RawVariables.of([variable: [a: 'x', b: 'y']]), graphQLContext, locale)
+        then:
+        thrown(OneOfTooManyKeysException.class)
+    }
+
+    def "can validate inner input oneOf fields"() {
+        //
+        // a test from https://github.com/graphql-java/graphql-java/issues/3572
+        //
+        def sdl = '''
+            input OneOf @oneOf { a: Int, b: Int }
+            type Outer { inner(oneof: OneOf!): Boolean }
+            type Query { outer: Outer }
+        '''
+
+        DataFetcher outer = { env -> return null }
+        def graphQL = TestUtil.graphQL(sdl, [Query: [outer: outer]]).build()
+
+        def query = '''
+            query ($oneof: OneOf!) { 
+              outer {
+                 # these variables are never accessed by a data fetcher because 
+                 # Query.outer always returns null
+                 inner(oneof: $oneof)
+              }
+            }
+        '''
+
+        when:
+        def er = graphQL.execute(
+                newExecutionInput(query).variables([oneof: [a: 2, b: 1]])
+        )
+
+        then:
+        er.errors.size() == 1
+        er.errors[0].message == "Exactly one key must be specified for OneOf type 'OneOf'."
     }
 
 
@@ -460,59 +528,59 @@ class ValuesResolverTest extends Specification {
         e.message == "Exactly one key must be specified for OneOf type 'OneOfInputObject'."
 
         where:
-        testCase                                            | inputValue   | variables
+        testCase                                           | inputValue   | variables
         '{oneOfField: {a: "abc", b: 123} } {}'             | buildObjectLiteral([
                 oneOfField: [
                         a: StringValue.of("abc"),
                         b: IntValue.of(123)
                 ]
-        ])                                                                 | CoercedVariables.emptyVariables()
+        ])                                                                | CoercedVariables.emptyVariables()
         '{oneOfField: {a: null, b: 123 }} {}'              | buildObjectLiteral([
                 oneOfField: [
                         a: NullValue.of(),
                         b: IntValue.of(123)
                 ]
-        ])                                                                 | CoercedVariables.emptyVariables()
+        ])                                                                | CoercedVariables.emptyVariables()
 
         '{oneOfField: {a: $var, b: 123 }} { var: null }'   | buildObjectLiteral([
                 oneOfField: [
                         a: VariableReference.of("var"),
                         b: IntValue.of(123)
                 ]
-        ])                                                                 | CoercedVariables.of(["var": null])
+        ])                                                                | CoercedVariables.of(["var": null])
 
         '{oneOfField: {a: $var, b: 123 }} {}'              | buildObjectLiteral([
                 oneOfField: [
                         a: VariableReference.of("var"),
                         b: IntValue.of(123)
                 ]
-        ])                                                                 | CoercedVariables.emptyVariables()
+        ])                                                                | CoercedVariables.emptyVariables()
 
         '{oneOfField: {a : "abc", b : null}} {}'           | buildObjectLiteral([
                 oneOfField: [
                         a: StringValue.of("abc"),
                         b: NullValue.of()
                 ]
-        ])                                                                 | CoercedVariables.emptyVariables()
+        ])                                                                | CoercedVariables.emptyVariables()
 
         '{oneOfField: {a : null, b : null}} {}'            | buildObjectLiteral([
                 oneOfField: [
                         a: NullValue.of(),
                         b: NullValue.of()
                 ]
-        ])                                                                 | CoercedVariables.emptyVariables()
+        ])                                                                | CoercedVariables.emptyVariables()
 
         '{oneOfField: {a : $a, b : $b}} {a : "abc"}'       | buildObjectLiteral([
                 oneOfField: [
                         a: VariableReference.of("a"),
                         b: VariableReference.of("v")
                 ]
-        ])                                                                 | CoercedVariables.of(["a": "abc"])
+        ])                                                                | CoercedVariables.of(["a": "abc"])
         '$var {var : {oneOfField: { a : "abc", b : 123}}}' | VariableReference.of("var")
-                                                                           | CoercedVariables.of(["var": ["oneOfField": ["a": "abc", "b": 123]]])
+                                                                          | CoercedVariables.of(["var": ["oneOfField": ["a": "abc", "b": 123]]])
 
-        '$var {var : {oneOfField: {} }}'                    | VariableReference.of("var")
-                                                                           | CoercedVariables.of(["var": ["oneOfField": [:]]])
+        '$var {var : {oneOfField: {} }}'                   | VariableReference.of("var")
+                                                                          | CoercedVariables.of(["var": ["oneOfField": [:]]])
 
     }
 
@@ -600,6 +668,9 @@ class ValuesResolverTest extends Specification {
                 a: VariableReference.of("var")
         ])                                            | CoercedVariables.of(["var": null])
 
+        '`{ a: $var }`  { }'           | buildObjectLiteral([
+                a: VariableReference.of("var")
+        ])                                            | CoercedVariables.emptyVariables()
     }
 
     def "getArgumentValues: invalid oneOf list input because element contains duplicate key - #testCase"() {
@@ -628,38 +699,38 @@ class ValuesResolverTest extends Specification {
 
         where:
 
-        testCase    | inputArray    | variables
+        testCase | inputArray | variables
 
         '[{ a: "abc", b: 123 }]'
-                    | ArrayValue.newArrayValue()
-                        .value(buildObjectLiteral([
-                            a: StringValue.of("abc"),
-                            b: IntValue.of(123)
-                        ])).build()
-                                    | CoercedVariables.emptyVariables()
+                 | ArrayValue.newArrayValue()
+                .value(buildObjectLiteral([
+                        a: StringValue.of("abc"),
+                        b: IntValue.of(123)
+                ])).build()
+                              | CoercedVariables.emptyVariables()
 
         '[{ a: "abc" }, { a: "xyz", b: 789 }]'
-                    | ArrayValue.newArrayValue()
-                        .values([
-                            buildObjectLiteral([
+                 | ArrayValue.newArrayValue()
+                .values([
+                        buildObjectLiteral([
                                 a: StringValue.of("abc")
-                            ]),
-                            buildObjectLiteral([
+                        ]),
+                        buildObjectLiteral([
                                 a: StringValue.of("xyz"),
                                 b: IntValue.of(789)
-                            ]),
-                        ]).build()
-                                    | CoercedVariables.emptyVariables()
+                        ]),
+                ]).build()
+                              | CoercedVariables.emptyVariables()
 
         '[{ a: "abc" }, $var ] [{ a: "abc" }, { a: "xyz", b: 789 }]'
-                    | ArrayValue.newArrayValue()
-                        .values([
-                            buildObjectLiteral([
+                 | ArrayValue.newArrayValue()
+                .values([
+                        buildObjectLiteral([
                                 a: StringValue.of("abc")
-                            ]),
-                            VariableReference.of("var")
-                        ]).build()
-                                    | CoercedVariables.of("var": [a: "xyz", b: 789])
+                        ]),
+                        VariableReference.of("var")
+                ]).build()
+                              | CoercedVariables.of("var": [a: "xyz", b: 789])
 
     }
 
@@ -689,31 +760,31 @@ class ValuesResolverTest extends Specification {
 
         where:
 
-        testCase    | inputArray    | variables
+        testCase | inputArray | variables
 
         '[{ a: "abc" }, { a: null }]'
-                    | ArrayValue.newArrayValue()
-                        .values([
-                            buildObjectLiteral([
+                 | ArrayValue.newArrayValue()
+                .values([
+                        buildObjectLiteral([
                                 a: StringValue.of("abc")
-                            ]),
-                            buildObjectLiteral([
+                        ]),
+                        buildObjectLiteral([
                                 a: NullValue.of()
-                            ]),
-                        ]).build()
-                                    | CoercedVariables.emptyVariables()
+                        ]),
+                ]).build()
+                              | CoercedVariables.emptyVariables()
 
         '[{ a: "abc" }, { a: $var }] [{ a: "abc" }, { a: null }]'
-                    | ArrayValue.newArrayValue()
-                        .values([
-                            buildObjectLiteral([
+                 | ArrayValue.newArrayValue()
+                .values([
+                        buildObjectLiteral([
                                 a: StringValue.of("abc")
-                            ]),
-                            buildObjectLiteral([
+                        ]),
+                        buildObjectLiteral([
                                 a: VariableReference.of("var")
-                            ]),
-                        ]).build()
-                                    | CoercedVariables.of("var": null)
+                        ]),
+                ]).build()
+                              | CoercedVariables.of("var": null)
 
     }
 
@@ -743,38 +814,38 @@ class ValuesResolverTest extends Specification {
 
         where:
 
-        testCase    | inputArray    | variables
+        testCase | inputArray | variables
 
         '[{ a: "abc", b: 123 }]'
-                    | ArrayValue.newArrayValue()
-                        .value(buildObjectLiteral([
-                            a: StringValue.of("abc"),
-                            b: IntValue.of(123)
-                        ])).build()
-                                    | CoercedVariables.emptyVariables()
+                 | ArrayValue.newArrayValue()
+                .value(buildObjectLiteral([
+                        a: StringValue.of("abc"),
+                        b: IntValue.of(123)
+                ])).build()
+                              | CoercedVariables.emptyVariables()
 
         '[{ a: "abc" }, { a: "xyz", b: 789 }]'
-                    | ArrayValue.newArrayValue()
-                        .values([
-                            buildObjectLiteral([
+                 | ArrayValue.newArrayValue()
+                .values([
+                        buildObjectLiteral([
                                 a: StringValue.of("abc")
-                            ]),
-                            buildObjectLiteral([
+                        ]),
+                        buildObjectLiteral([
                                 a: StringValue.of("xyz"),
                                 b: IntValue.of(789)
-                            ]),
-                        ]).build()
-                                    | CoercedVariables.emptyVariables()
+                        ]),
+                ]).build()
+                              | CoercedVariables.emptyVariables()
 
         '[{ a: "abc" }, $var ] [{ a: "abc" }, { a: "xyz", b: 789 }]'
-                    | ArrayValue.newArrayValue()
-                        .values([
-                            buildObjectLiteral([
+                 | ArrayValue.newArrayValue()
+                .values([
+                        buildObjectLiteral([
                                 a: StringValue.of("abc")
-                            ]),
-                            VariableReference.of("var")
-                        ]).build()
-                                    | CoercedVariables.of("var": [a: "xyz", b: 789])
+                        ]),
+                        VariableReference.of("var")
+                ]).build()
+                              | CoercedVariables.of("var": [a: "xyz", b: 789])
 
     }
 
@@ -804,38 +875,38 @@ class ValuesResolverTest extends Specification {
 
         where:
 
-        testCase    | inputArray    | variables
+        testCase | inputArray | variables
 
         '[{ a: "abc", b: 123 }]'
-                    | ArrayValue.newArrayValue()
-                        .value(buildObjectLiteral([
-                            a: StringValue.of("abc"),
-                            b: IntValue.of(123)
-                        ])).build()
-                                    | CoercedVariables.emptyVariables()
+                 | ArrayValue.newArrayValue()
+                .value(buildObjectLiteral([
+                        a: StringValue.of("abc"),
+                        b: IntValue.of(123)
+                ])).build()
+                              | CoercedVariables.emptyVariables()
 
         '[{ a: "abc" }, { a: "xyz", b: 789 }]'
-                    | ArrayValue.newArrayValue()
-                        .values([
-                            buildObjectLiteral([
+                 | ArrayValue.newArrayValue()
+                .values([
+                        buildObjectLiteral([
                                 a: StringValue.of("abc")
-                            ]),
-                            buildObjectLiteral([
+                        ]),
+                        buildObjectLiteral([
                                 a: StringValue.of("xyz"),
                                 b: IntValue.of(789)
-                            ]),
-                        ]).build()
-                                    | CoercedVariables.emptyVariables()
+                        ]),
+                ]).build()
+                              | CoercedVariables.emptyVariables()
 
         '[{ a: "abc" }, $var ] [{ a: "abc" }, { a: "xyz", b: 789 }]'
-                    | ArrayValue.newArrayValue()
-                        .values([
-                            buildObjectLiteral([
+                 | ArrayValue.newArrayValue()
+                .values([
+                        buildObjectLiteral([
                                 a: StringValue.of("abc")
-                            ]),
-                            VariableReference.of("var")
-                        ]).build()
-                                    | CoercedVariables.of("var": [a: "xyz", b: 789])
+                        ]),
+                        VariableReference.of("var")
+                ]).build()
+                              | CoercedVariables.of("var": [a: "xyz", b: 789])
 
     }
 
@@ -912,26 +983,26 @@ class ValuesResolverTest extends Specification {
 
         where:
 
-        testCase    | inputArray    | variables | expectedValues
+        testCase | inputArray | variables | expectedValues
 
         '[{ a: "abc"}]'
-                    | ArrayValue.newArrayValue()
-                        .value(buildObjectLiteral([
-                            a: StringValue.of("abc"),
-                        ])).build()
-                                    | CoercedVariables.emptyVariables()
-                                                | [arg: [[a: "abc"]]]
+                 | ArrayValue.newArrayValue()
+                .value(buildObjectLiteral([
+                        a: StringValue.of("abc"),
+                ])).build()
+                              | CoercedVariables.emptyVariables()
+                                          | [arg: [[a: "abc"]]]
 
         '[{ a: "abc" }, $var ] [{ a: "abc" }, { b: 789 }]'
-                    | ArrayValue.newArrayValue()
-                        .values([
-                            buildObjectLiteral([
+                 | ArrayValue.newArrayValue()
+                .values([
+                        buildObjectLiteral([
                                 a: StringValue.of("abc")
-                            ]),
-                            VariableReference.of("var")
-                        ]).build()
-                                    | CoercedVariables.of("var": [b: 789])
-                                                | [arg: [[a: "abc"], [b: 789]]]
+                        ]),
+                        VariableReference.of("var")
+                ]).build()
+                              | CoercedVariables.of("var": [b: 789])
+                                          | [arg: [[a: "abc"], [b: 789]]]
 
     }
 
@@ -1220,7 +1291,7 @@ class ValuesResolverTest extends Specification {
             }
         '''
 
-        def executionInput = ExecutionInput.newExecutionInput()
+        def executionInput = newExecutionInput()
                 .query(mutation)
                 .variables([input: [name: 'Name', position: 'UNKNOWN_POSITION']])
                 .build()
@@ -1258,7 +1329,7 @@ class ValuesResolverTest extends Specification {
             }
         '''
 
-        def executionInput = ExecutionInput.newExecutionInput()
+        def executionInput = newExecutionInput()
                 .query(mutation)
                 .variables([input: [name: 'Name', hilarious: 'sometimes']])
                 .build()
@@ -1269,7 +1340,7 @@ class ValuesResolverTest extends Specification {
         executionResult.data == null
         executionResult.errors.size() == 1
         executionResult.errors[0].errorType == ErrorType.ValidationError
-        executionResult.errors[0].message == "Variable 'input' has an invalid value: Expected a value that can be converted to type 'Boolean' but it was a 'String'"
+        executionResult.errors[0].message == "Variable 'input' has an invalid value: Expected a Boolean input, but it was a 'String'"
         executionResult.errors[0].locations == [new SourceLocation(2, 35)]
     }
 
@@ -1296,7 +1367,7 @@ class ValuesResolverTest extends Specification {
             }
         '''
 
-        def executionInput = ExecutionInput.newExecutionInput()
+        def executionInput = newExecutionInput()
                 .query(mutation)
                 .variables([input: [name: 'Name', laughsPerMinute: 'none']])
                 .build()
@@ -1307,7 +1378,7 @@ class ValuesResolverTest extends Specification {
         executionResult.data == null
         executionResult.errors.size() == 1
         executionResult.errors[0].errorType == ErrorType.ValidationError
-        executionResult.errors[0].message == "Variable 'input' has an invalid value: Expected a value that can be converted to type 'Float' but it was a 'String'"
+        executionResult.errors[0].message == "Variable 'input' has an invalid value: Expected a Number input, but it was a 'String'"
         executionResult.errors[0].locations == [new SourceLocation(2, 35)]
     }
 }

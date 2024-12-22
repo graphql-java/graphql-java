@@ -10,6 +10,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.StringJoiner;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -242,7 +243,7 @@ public class PrettyAstPrinter extends AstPrinter {
     }
 
     private boolean isEmpty(String s) {
-        return s == null || s.trim().length() == 0;
+        return s == null || s.isBlank();
     }
 
     private <T> List<T> nvl(List<T> list) {
@@ -258,7 +259,7 @@ public class PrettyAstPrinter extends AstPrinter {
     }
 
     private String description(Node<?> node) {
-        Description description = ((AbstractDescribedNode) node).getDescription();
+        Description description = ((AbstractDescribedNode<?>) node).getDescription();
         if (description == null || description.getContent() == null) {
             return "";
         }
@@ -304,21 +305,13 @@ public class PrettyAstPrinter extends AstPrinter {
     }
 
     private <T extends Node> String join(List<T> nodes, String delim, String prefix, String suffix) {
-        StringBuilder joined = new StringBuilder();
+        StringJoiner joiner = new StringJoiner(delim, prefix, suffix);
 
-        joined.append(prefix);
-        boolean first = true;
         for (T node : nodes) {
-            if (first) {
-                first = false;
-            } else {
-                joined.append(delim);
-            }
-            joined.append(node(node));
+            joiner.add(node(node));
         }
 
-        joined.append(suffix);
-        return joined.toString();
+        return joiner.toString();
     }
 
     private String node(Node node) {
@@ -338,22 +331,15 @@ public class PrettyAstPrinter extends AstPrinter {
     }
 
     private String join(String delim, String... args) {
-        StringBuilder builder = new StringBuilder();
+        StringJoiner joiner = new StringJoiner(delim);
 
-        boolean first = true;
         for (final String arg : args) {
-            if (isEmpty(arg)) {
-                continue;
+            if (!isEmpty(arg)) {
+                joiner.add(arg);
             }
-            if (first) {
-                first = false;
-            } else {
-                builder.append(delim);
-            }
-            builder.append(arg);
         }
 
-        return builder.toString();
+        return joiner.toString();
     }
 
     private <T extends Node> String block(List<T> nodes, Node parentNode, String prefix, String suffix, String separatorMultiline, String separatorSingleLine, String whenEmpty) {
@@ -381,8 +367,8 @@ public class PrettyAstPrinter extends AstPrinter {
 
         String blockStart = commentParser.getBeginningOfBlockComment(parentNode, prefix)
                 .map(this::comment)
-                .map(commentText -> String.format("%s %s\n", prefix, commentText))
-                .orElse(String.format("%s%s", prefix, (isMultiline ? "\n" : "")));
+                .map(commentText -> prefix + " " + commentText + "\n")
+                .orElseGet(() -> prefix + (isMultiline ? "\n" : ""));
 
         String blockEndComments = comments(commentParser.getEndOfBlockComments(parentNode, suffix), "\n", "");
         String blockEnd = (isMultiline ? "\n" : "") + suffix;
@@ -422,10 +408,10 @@ public class PrettyAstPrinter extends AstPrinter {
         private static final PrettyPrinterOptions defaultOptions = new PrettyPrinterOptions(IndentType.SPACE, 2);
 
         private PrettyPrinterOptions(IndentType indentType, int indentWidth) {
-            this.indentText =  String.join("", Collections.nCopies(indentWidth, indentType.character));
+            this.indentText = String.join("", Collections.nCopies(indentWidth, indentType.character));
         }
 
-        public static PrettyPrinterOptions defaultOptions()  {
+        public static PrettyPrinterOptions defaultOptions() {
             return defaultOptions;
         }
 

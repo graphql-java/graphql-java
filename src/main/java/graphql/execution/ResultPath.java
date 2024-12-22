@@ -1,7 +1,6 @@
 package graphql.execution;
 
 import com.google.common.collect.ImmutableList;
-import graphql.Assert;
 import graphql.AssertException;
 import graphql.PublicApi;
 import graphql.collect.ImmutableKit;
@@ -112,6 +111,7 @@ public class ResultPath {
      * Parses an execution path from the provided path string in the format /segment1/segment2[index]/segmentN
      *
      * @param pathString the path string
+     *
      * @return a parsed execution path
      */
     public static ResultPath parse(String pathString) {
@@ -140,6 +140,7 @@ public class ResultPath {
      * This will create an execution path from the list of objects
      *
      * @param objects the path objects
+     *
      * @return a new execution path
      */
     public static ResultPath fromList(List<?> objects) {
@@ -148,8 +149,10 @@ public class ResultPath {
         for (Object object : objects) {
             if (object instanceof String) {
                 path = path.segment(((String) object));
-            } else {
+            } else if (object instanceof Integer) {
                 path = path.segment((int) object);
+            } else if (object != null) {
+                path = path.segment(object.toString());
             }
         }
         return path;
@@ -163,6 +166,7 @@ public class ResultPath {
      * Takes the current path and adds a new segment to it, returning a new path
      *
      * @param segment the string path segment to add
+     *
      * @return a new path containing that segment
      */
     public ResultPath segment(String segment) {
@@ -173,6 +177,7 @@ public class ResultPath {
      * Takes the current path and adds a new segment to it, returning a new path
      *
      * @param segment the int path segment to add
+     *
      * @return a new path containing that segment
      */
     public ResultPath segment(int segment) {
@@ -196,10 +201,11 @@ public class ResultPath {
      * equals "/a/b[9]"
      *
      * @param segment the integer segment to use
+     *
      * @return a new path with the last segment replaced
      */
     public ResultPath replaceSegment(int segment) {
-        Assert.assertTrue(!ROOT_PATH.equals(this), () -> "You MUST not call this with the root path");
+        assertTrue(!ROOT_PATH.equals(this), () -> "You MUST not call this with the root path");
         return new ResultPath(parent, segment);
     }
 
@@ -208,10 +214,11 @@ public class ResultPath {
      * equals "/a/b/x"
      *
      * @param segment the string segment to use
+     *
      * @return a new path with the last segment replaced
      */
     public ResultPath replaceSegment(String segment) {
-        Assert.assertTrue(!ROOT_PATH.equals(this), () -> "You MUST not call this with the root path");
+        assertTrue(!ROOT_PATH.equals(this), () -> "You MUST not call this with the root path");
         return new ResultPath(parent, segment);
     }
 
@@ -227,6 +234,7 @@ public class ResultPath {
      * Appends the provided path to the current one
      *
      * @param path the path to append
+     *
      * @return a new path
      */
     public ResultPath append(ResultPath path) {
@@ -237,12 +245,12 @@ public class ResultPath {
 
 
     public ResultPath sibling(String siblingField) {
-        Assert.assertTrue(!ROOT_PATH.equals(this), () -> "You MUST not call this with the root path");
+        assertTrue(!ROOT_PATH.equals(this), "You MUST not call this with the root path");
         return new ResultPath(this.parent, siblingField);
     }
 
     public ResultPath sibling(int siblingField) {
-        Assert.assertTrue(!ROOT_PATH.equals(this), () -> "You MUST not call this with the root path");
+        assertTrue(!ROOT_PATH.equals(this), "You MUST not call this with the root path");
         return new ResultPath(this.parent, siblingField);
     }
 

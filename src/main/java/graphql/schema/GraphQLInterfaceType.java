@@ -2,13 +2,12 @@ package graphql.schema;
 
 import com.google.common.collect.ImmutableList;
 import graphql.Assert;
-import graphql.AssertException;
-import graphql.DeprecatedAt;
 import graphql.DirectivesUtil;
 import graphql.Internal;
 import graphql.PublicApi;
 import graphql.language.InterfaceTypeDefinition;
 import graphql.language.InterfaceTypeExtensionDefinition;
+import graphql.util.FpKit;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
 
@@ -21,12 +20,12 @@ import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
 
 import static graphql.Assert.assertNotNull;
+import static graphql.Assert.assertShouldNeverHappen;
 import static graphql.Assert.assertValidName;
 import static graphql.collect.ImmutableKit.emptyList;
 import static graphql.schema.GraphqlTypeComparators.sortTypes;
 import static graphql.util.FpKit.getByName;
 import static graphql.util.FpKit.valuesToList;
-import static java.lang.String.format;
 
 /**
  * In graphql, an interface is an abstract type that defines the set of fields that a type must include to
@@ -42,7 +41,7 @@ public class GraphQLInterfaceType implements GraphQLNamedType, GraphQLCompositeT
 
     private final String name;
     private final String description;
-    private final Map<String, GraphQLFieldDefinition> fieldDefinitionsByName = new LinkedHashMap<>();
+    private final Map<String, GraphQLFieldDefinition> fieldDefinitionsByName;
     private final TypeResolver typeResolver;
     private final InterfaceTypeDefinition definition;
     private final ImmutableList<InterfaceTypeExtensionDefinition> extensionDefinitions;
@@ -51,7 +50,6 @@ public class GraphQLInterfaceType implements GraphQLNamedType, GraphQLCompositeT
     private final ImmutableList<GraphQLNamedOutputType> originalInterfaces;
     private final Comparator<? super GraphQLSchemaElement> interfaceComparator;
     private ImmutableList<GraphQLNamedOutputType> replacedInterfaces;
-
 
     public static final String CHILD_FIELD_DEFINITIONS = "fieldDefinitions";
     public static final String CHILD_INTERFACES = "interfaces";
@@ -78,25 +76,19 @@ public class GraphQLInterfaceType implements GraphQLNamedType, GraphQLCompositeT
         this.interfaceComparator = interfaceComparator;
         this.originalInterfaces = ImmutableList.copyOf(sortTypes(interfaceComparator, interfaces));
         this.extensionDefinitions = ImmutableList.copyOf(extensionDefinitions);
-        this.directivesHolder = new DirectivesUtil.DirectivesHolder(directives, appliedDirectives);
-        buildDefinitionMap(fieldDefinitions);
+        this.directivesHolder = DirectivesUtil.DirectivesHolder.create(directives, appliedDirectives);
+        this.fieldDefinitionsByName = buildDefinitionMap(fieldDefinitions);
     }
 
-    private void buildDefinitionMap(List<GraphQLFieldDefinition> fieldDefinitions) {
-        for (GraphQLFieldDefinition fieldDefinition : fieldDefinitions) {
-            String name = fieldDefinition.getName();
-            if (fieldDefinitionsByName.containsKey(name)) {
-                throw new AssertException(format("Duplicated definition for field '%s' in interface '%s'", name, this.name));
-            }
-            fieldDefinitionsByName.put(name, fieldDefinition);
-        }
+    private Map<String, GraphQLFieldDefinition> buildDefinitionMap(List<GraphQLFieldDefinition> fieldDefinitions) {
+        return FpKit.getByName(fieldDefinitions, GraphQLFieldDefinition::getName,
+                (fld1, fld2) -> assertShouldNeverHappen("Duplicated definition for field '%s' in interface '%s'", fld1.getName(), this.name));
     }
 
     @Override
     public GraphQLFieldDefinition getFieldDefinition(String name) {
         return fieldDefinitionsByName.get(name);
     }
-
 
     @Override
     public List<GraphQLFieldDefinition> getFieldDefinitions() {
@@ -114,8 +106,7 @@ public class GraphQLInterfaceType implements GraphQLNamedType, GraphQLCompositeT
 
     // to be removed in a future version when all code is in the code registry
     @Internal
-    @Deprecated
-    @DeprecatedAt("2018-12-03")
+    @Deprecated(since = "2018-12-03")
     TypeResolver getTypeResolver() {
         return typeResolver;
     }
@@ -231,9 +222,9 @@ public class GraphQLInterfaceType implements GraphQLNamedType, GraphQLCompositeT
     @Override
     public List<GraphQLNamedOutputType> getInterfaces() {
         if (replacedInterfaces != null) {
-            return ImmutableList.copyOf(replacedInterfaces);
+            return replacedInterfaces;
         }
-        return ImmutableList.copyOf(originalInterfaces);
+        return originalInterfaces;
     }
 
     void replaceInterfaces(List<GraphQLNamedOutputType> interfaces) {
@@ -370,8 +361,7 @@ public class GraphQLInterfaceType implements GraphQLNamedType, GraphQLCompositeT
          *
          * @deprecated use {@link graphql.schema.GraphQLCodeRegistry.Builder#typeResolver(GraphQLInterfaceType, TypeResolver)} instead
          */
-        @Deprecated
-        @DeprecatedAt("2018-12-03")
+        @Deprecated(since = "2018-12-03")
         public Builder typeResolver(TypeResolver typeResolver) {
             this.typeResolver = typeResolver;
             return this;

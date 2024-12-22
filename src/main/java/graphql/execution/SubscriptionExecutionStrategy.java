@@ -2,6 +2,7 @@ package graphql.execution;
 
 import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
+import graphql.GraphQLContext;
 import graphql.PublicApi;
 import graphql.execution.instrumentation.ExecutionStrategyInstrumentationContext;
 import graphql.execution.instrumentation.Instrumentation;
@@ -37,6 +38,14 @@ import static java.util.Collections.singletonMap;
 @PublicApi
 public class SubscriptionExecutionStrategy extends ExecutionStrategy {
 
+    /**
+     * If a boolean value is placed into the {@link GraphQLContext} with this key then the order
+     * of the subscription events can be controlled.   By default, subscription events are published
+     * as the graphql subselection calls complete, and not in the order they originally arrived from the
+     * source publisher.  But this can be changed to {@link Boolean#TRUE} to keep them in order.
+     */
+    public static final String KEEP_SUBSCRIPTION_EVENTS_ORDERED = "KEEP_SUBSCRIPTION_EVENTS_ORDERED";
+
     public SubscriptionExecutionStrategy() {
         super();
     }
@@ -64,15 +73,20 @@ public class SubscriptionExecutionStrategy extends ExecutionStrategy {
                 return new ExecutionResultImpl(null, executionContext.getErrors());
             }
             Function<Object, CompletionStage<ExecutionResult>> mapperFunction = eventPayload -> executeSubscriptionEvent(executionContext, parameters, eventPayload);
-            SubscriptionPublisher mapSourceToResponse = new SubscriptionPublisher(publisher, mapperFunction);
+            boolean keepOrdered = keepOrdered(executionContext.getGraphQLContext());
+            SubscriptionPublisher mapSourceToResponse = new SubscriptionPublisher(publisher, mapperFunction, keepOrdered);
             return new ExecutionResultImpl(mapSourceToResponse, executionContext.getErrors());
         });
 
         // dispatched the subscription query
-        executionStrategyCtx.onDispatched(overallResult);
+        executionStrategyCtx.onDispatched();
         overallResult.whenComplete(executionStrategyCtx::onCompleted);
 
         return overallResult;
+    }
+
+    private boolean keepOrdered(GraphQLContext graphQLContext) {
+        return graphQLContext.getOrDefault(KEEP_SUBSCRIPTION_EVENTS_ORDERED, false);
     }
 
 
@@ -93,13 +107,13 @@ public class SubscriptionExecutionStrategy extends ExecutionStrategy {
     private CompletableFuture<Publisher<Object>> createSourceEventStream(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
         ExecutionStrategyParameters newParameters = firstFieldOfSubscriptionSelection(parameters);
 
-        CompletableFuture<FetchedValue> fieldFetched = fetchField(executionContext, newParameters);
+        CompletableFuture<FetchedValue> fieldFetched = Async.toCompletableFuture(fetchField(executionContext, newParameters));
         return fieldFetched.thenApply(fetchedValue -> {
             Object publisher = fetchedValue.getFetchedValue();
             if (publisher != null) {
                 assertTrue(publisher instanceof Publisher, () -> "Your data fetcher must return a Publisher of events when using graphql subscriptions");
             }
-            //noinspection unchecked
+            //noinspection unchecked,DataFlowIssue
             return (Publisher<Object>) publisher;
         });
     }
@@ -135,16 +149,17 @@ public class SubscriptionExecutionStrategy extends ExecutionStrategy {
         FetchedValue fetchedValue = unboxPossibleDataFetcherResult(newExecutionContext, parameters, eventPayload);
         FieldValueInfo fieldValueInfo = completeField(newExecutionContext, newParameters, fetchedValue);
         CompletableFuture<ExecutionResult> overallResult = fieldValueInfo
-                .getFieldValue()
+                .getFieldValueFuture()
+                .thenApply(val -> new ExecutionResultImpl(val, newExecutionContext.getErrors()))
                 .thenApply(executionResult -> wrapWithRootFieldName(newParameters, executionResult));
 
         // dispatch instrumentation so they can know about each subscription event
-        subscribedFieldCtx.onDispatched(overallResult);
+        subscribedFieldCtx.onDispatched();
         overallResult.whenComplete(subscribedFieldCtx::onCompleted);
 
         // allow them to instrument each ER should they want to
         InstrumentationExecutionParameters i13nExecutionParameters = new InstrumentationExecutionParameters(
-                executionContext.getExecutionInput(), executionContext.getGraphQLSchema(), executionContext.getInstrumentationState());
+                executionContext.getExecutionInput(), executionContext.getGraphQLSchema());
 
         overallResult = overallResult.thenCompose(executionResult -> instrumentation.instrumentExecutionResult(executionResult, i13nExecutionParameters, executionContext.getInstrumentationState()));
         return overallResult;

@@ -1,6 +1,7 @@
 package graphql.execution.instrumentation
 
 import graphql.ExecutionResult
+import graphql.execution.instrumentation.parameters.InstrumentationCreateStateParameters
 import graphql.execution.instrumentation.parameters.InstrumentationExecuteOperationParameters
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters
@@ -26,8 +27,8 @@ class NamedInstrumentation extends ModernTestingInstrumentation {
     }
 
     @Override
-    InstrumentationState createState() {
-        return instrumentationState
+    CompletableFuture<InstrumentationState> createStateAsync(InstrumentationCreateStateParameters parameters) {
+        return CompletableFuture.completedFuture(instrumentationState)
     }
 
     def assertState(InstrumentationState instrumentationState) {
@@ -66,9 +67,9 @@ class NamedInstrumentation extends ModernTestingInstrumentation {
     }
 
     @Override
-    InstrumentationContext<ExecutionResult> beginField(InstrumentationFieldParameters parameters, InstrumentationState state) {
+    InstrumentationContext<Object> beginFieldExecution(InstrumentationFieldParameters parameters, InstrumentationState state) {
         assertState(state)
-        return super.beginField(parameters, state)
+        return super.beginFieldExecution(parameters, state)
     }
 
     @Override

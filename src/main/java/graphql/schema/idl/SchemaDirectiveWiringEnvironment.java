@@ -1,6 +1,5 @@
 package graphql.schema.idl;
 
-import graphql.DeprecatedAt;
 import graphql.PublicApi;
 import graphql.language.NamedNode;
 import graphql.language.NodeParentTree;
@@ -43,8 +42,7 @@ public interface SchemaDirectiveWiringEnvironment<T extends GraphQLDirectiveCont
      *
      * @deprecated use {@link #getAppliedDirective()}
      */
-    @Deprecated
-    @DeprecatedAt("2022-06-21")
+    @Deprecated(since = "2022-06-21")
     GraphQLDirective getDirective();
 
     /**
@@ -66,8 +64,7 @@ public interface SchemaDirectiveWiringEnvironment<T extends GraphQLDirectiveCont
      *
      * @deprecated use {@link #getAppliedDirectives()} instead
      */
-    @Deprecated
-    @DeprecatedAt("2022-06-21")
+    @Deprecated(since = "2022-06-21")
     Map<String, GraphQLDirective> getDirectives();
 
     /**
@@ -79,8 +76,7 @@ public interface SchemaDirectiveWiringEnvironment<T extends GraphQLDirectiveCont
      *
      * @deprecated use {@link #getAppliedDirective(String)}  instead
      */
-    @Deprecated
-    @DeprecatedAt("2022-06-21")
+    @Deprecated(since = "2022-06-21")
     GraphQLDirective getDirective(String directiveName);
 
     /**
@@ -130,7 +126,7 @@ public interface SchemaDirectiveWiringEnvironment<T extends GraphQLDirectiveCont
     TypeDefinitionRegistry getRegistry();
 
     /**
-     * @return a mpa that can be used by implementors to hold context during the SDL build process
+     * @return a map that can be used by implementors to hold context during the SDL build process
      */
     Map<String, Object> getBuildContext();
 

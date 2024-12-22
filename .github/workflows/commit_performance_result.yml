@@ -1,0 +1,38 @@
+name: Commit performance results into repo
+on:
+  workflow_dispatch:
+    inputs:
+      sha:
+        description: 'the commit sha which was performance tested'
+        required: true
+      branch:
+        description: 'the branch which the results should be commited in'
+        required: false
+        default: 'master'
+
+permissions:
+  id-token: write # This is required for requesting the JWT
+  contents: write  # This is required for pushing changes back to the repo
+jobs:
+  commitPerformanceResults:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::637423498965:role/GitHubActionGrahQLJava
+          aws-region: "ap-southeast-2"
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.branch }}
+      - run: |
+          aws s3 cp s3://graphql-java-jmh-output/ ./performance-results --recursive --exclude "*" --include "*-${{ github.event.inputs.sha }}-jdk17.json"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add performance-results/*-${{ github.event.inputs.sha }}-jdk17.json
+          if [ -z "$(git status --porcelain)" ]; then
+            echo "Performance results already present"
+            exit 0
+          fi
+          git commit -m "Add performance results for commit ${{ github.event.inputs.sha }}"
+          git push
+          

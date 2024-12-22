@@ -93,7 +93,7 @@ public class ConditionalNodes {
         if (foundDirective != null) {
             Map<String, Object> argumentValues = ValuesResolver.getArgumentValues(SkipDirective.getArguments(), foundDirective.getArguments(), CoercedVariables.of(variables), GraphQLContext.getDefault(), Locale.getDefault());
             Object flag = argumentValues.get("if");
-            Assert.assertTrue(flag instanceof Boolean, () -> String.format("The '%s' directive MUST have a value for the 'if' argument", directiveName));
+            Assert.assertTrue(flag instanceof Boolean, "The '%s' directive MUST have a value for the 'if' argument", directiveName);
             return (Boolean) flag;
         }
         return defaultValue;

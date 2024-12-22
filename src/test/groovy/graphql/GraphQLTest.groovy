@@ -13,12 +13,13 @@ import graphql.execution.ExecutionId
 import graphql.execution.ExecutionIdProvider
 import graphql.execution.ExecutionStrategyParameters
 import graphql.execution.MissingRootTypeException
+import graphql.execution.ResultNodesInfo
 import graphql.execution.SubscriptionExecutionStrategy
 import graphql.execution.ValueUnboxer
-import graphql.execution.instrumentation.ChainedInstrumentation
 import graphql.execution.instrumentation.Instrumentation
+import graphql.execution.instrumentation.InstrumentationState
 import graphql.execution.instrumentation.SimplePerformantInstrumentation
-import graphql.execution.instrumentation.dataloader.DataLoaderDispatcherInstrumentation
+import graphql.execution.instrumentation.parameters.InstrumentationCreateStateParameters
 import graphql.execution.preparsed.NoOpPreparsedDocumentProvider
 import graphql.language.SourceLocation
 import graphql.schema.DataFetcher
@@ -49,6 +50,7 @@ import static graphql.ExecutionInput.Builder
 import static graphql.ExecutionInput.newExecutionInput
 import static graphql.Scalars.GraphQLInt
 import static graphql.Scalars.GraphQLString
+import static graphql.execution.ResultNodesInfo.MAX_RESULT_NODES
 import static graphql.schema.GraphQLArgument.newArgument
 import static graphql.schema.GraphQLFieldDefinition.newFieldDefinition
 import static graphql.schema.GraphQLInputObjectField.newInputObjectField
@@ -950,8 +952,8 @@ class GraphQLTest extends Specification {
         then:
         result == [hello: 'world']
         queryStrategy.executionId == hello
-        queryStrategy.instrumentation instanceof ChainedInstrumentation
-        (queryStrategy.instrumentation as ChainedInstrumentation).getInstrumentations().contains(instrumentation)
+        queryStrategy.instrumentation instanceof Instrumentation
+        queryStrategy.instrumentation == instrumentation
 
         when:
 
@@ -973,12 +975,11 @@ class GraphQLTest extends Specification {
         then:
         result == [hello: 'world']
         queryStrategy.executionId == goodbye
-        queryStrategy.instrumentation instanceof ChainedInstrumentation
-        (queryStrategy.instrumentation as ChainedInstrumentation).getInstrumentations().contains(newInstrumentation)
-        !(queryStrategy.instrumentation as ChainedInstrumentation).getInstrumentations().contains(instrumentation)
+        queryStrategy.instrumentation instanceof SimplePerformantInstrumentation
+        newGraphQL.instrumentation == newInstrumentation
     }
 
-    def "disabling data loader instrumentation leaves instrumentation as is"() {
+    def "provided instrumentation is unchanged"() {
         given:
         def queryStrategy = new CaptureStrategy()
         def instrumentation = new SimplePerformantInstrumentation()
@@ -988,44 +989,11 @@ class GraphQLTest extends Specification {
 
         when:
         def graphql = builder
-                .doNotAddDefaultInstrumentations()
                 .build()
         graphql.execute('{ hello }')
 
         then:
         queryStrategy.instrumentation == instrumentation
-    }
-
-    def "a single DataLoader instrumentation leaves instrumentation as is"() {
-        given:
-        def queryStrategy = new CaptureStrategy()
-        def instrumentation = new DataLoaderDispatcherInstrumentation()
-        def builder = GraphQL.newGraphQL(simpleSchema())
-                .queryExecutionStrategy(queryStrategy)
-                .instrumentation(instrumentation)
-
-        when:
-        def graphql = builder
-                .build()
-        graphql.execute('{ hello }')
-
-        then:
-        queryStrategy.instrumentation == instrumentation
-    }
-
-    def "DataLoader instrumentation is the default instrumentation"() {
-        given:
-        def queryStrategy = new CaptureStrategy()
-        def builder = GraphQL.newGraphQL(simpleSchema())
-                .queryExecutionStrategy(queryStrategy)
-
-        when:
-        def graphql = builder
-                .build()
-        graphql.execute('{ hello }')
-
-        then:
-        queryStrategy.instrumentation instanceof DataLoaderDispatcherInstrumentation
     }
 
     def "query with triple quoted multi line strings"() {
@@ -1061,6 +1029,28 @@ many lines""") }''')
         result.data == [hello: '''world
 over
 many lines''']
+    }
+
+    def "executionId is set before being passed to instrumentation"() {
+        InstrumentationCreateStateParameters seenParams
+
+        def instrumentation = new Instrumentation() {
+
+            @Override
+            CompletableFuture<InstrumentationState> createStateAsync(InstrumentationCreateStateParameters params) {
+                seenParams = params
+                null
+            }
+        }
+
+        when:
+        GraphQL.newGraphQL(StarWarsSchema.starWarsSchema)
+                .instrumentation(instrumentation)
+                .build()
+                .execute("{ __typename }")
+
+        then:
+        seenParams.executionInput.executionId != null
     }
 
     def "variables map can't be null via ExecutionInput"() {
@@ -1424,7 +1414,7 @@ many lines''']
         graphQL.getIdProvider() == ExecutionIdProvider.DEFAULT_EXECUTION_ID_PROVIDER
         graphQL.getValueUnboxer() == ValueUnboxer.DEFAULT
         graphQL.getPreparsedDocumentProvider() == NoOpPreparsedDocumentProvider.INSTANCE
-        graphQL.getInstrumentation() instanceof ChainedInstrumentation
+        graphQL.getInstrumentation() instanceof Instrumentation
         graphQL.getQueryStrategy() instanceof AsyncExecutionStrategy
         graphQL.getMutationStrategy() instanceof AsyncSerialExecutionStrategy
         graphQL.getSubscriptionStrategy() instanceof SubscriptionExecutionStrategy
@@ -1440,4 +1430,143 @@ many lines''']
         then:
         !er.errors.isEmpty()
     }
+
+    def "max result nodes not breached"() {
+        given:
+        def sdl = '''
+
+        type Query {
+          hello: String
+        }
+        '''
+        def df = { env -> "world" } as DataFetcher
+        def fetchers = ["Query": ["hello": df]]
+        def schema = TestUtil.schema(sdl, fetchers)
+        def graphQL = GraphQL.newGraphQL(schema).build()
+
+        def query = "{ hello h1: hello h2: hello h3: hello } "
+        def ei = newExecutionInput(query).build()
+        ei.getGraphQLContext().put(MAX_RESULT_NODES, 4);
+
+        when:
+        def er = graphQL.execute(ei)
+        def rni = ei.getGraphQLContext().get(ResultNodesInfo.RESULT_NODES_INFO) as ResultNodesInfo
+        then:
+        !rni.maxResultNodesExceeded
+        rni.resultNodesCount == 4
+        er.data == [hello: "world", h1: "world", h2: "world", h3: "world"]
+    }
+
+    def "max result nodes breached"() {
+        given:
+        def sdl = '''
+
+        type Query {
+          hello: String
+        }
+        '''
+        def df = { env -> "world" } as DataFetcher
+        def fetchers = ["Query": ["hello": df]]
+        def schema = TestUtil.schema(sdl, fetchers)
+        def graphQL = GraphQL.newGraphQL(schema).build()
+
+        def query = "{ hello h1: hello h2: hello h3: hello } "
+        def ei = newExecutionInput(query).build()
+        ei.getGraphQLContext().put(MAX_RESULT_NODES, 3);
+
+        when:
+        def er = graphQL.execute(ei)
+        def rni = ei.getGraphQLContext().get(ResultNodesInfo.RESULT_NODES_INFO) as ResultNodesInfo
+        then:
+        rni.maxResultNodesExceeded
+        rni.resultNodesCount == 4
+        er.data == [hello: "world", h1: "world", h2: "world", h3: null]
+    }
+
+    def "max result nodes breached with list"() {
+        given:
+        def sdl = '''
+
+        type Query {
+          hello: [String]
+        }
+        '''
+        def df = { env -> ["w1", "w2", "w3"] } as DataFetcher
+        def fetchers = ["Query": ["hello": df]]
+        def schema = TestUtil.schema(sdl, fetchers)
+        def graphQL = GraphQL.newGraphQL(schema).build()
+
+        def query = "{ hello}"
+        def ei = newExecutionInput(query).build()
+        ei.getGraphQLContext().put(MAX_RESULT_NODES, 3);
+
+        when:
+        def er = graphQL.execute(ei)
+        def rni = ei.getGraphQLContext().get(ResultNodesInfo.RESULT_NODES_INFO) as ResultNodesInfo
+        then:
+        rni.maxResultNodesExceeded
+        rni.resultNodesCount == 4
+        er.data == [hello: null]
+    }
+
+    def "max result nodes breached with list 2"() {
+        given:
+        def sdl = '''
+
+        type Query {
+          hello: [Foo]
+        }
+        type Foo {
+            name: String
+        }
+        '''
+        def df = { env -> [[name: "w1"], [name: "w2"], [name: "w3"]] } as DataFetcher
+        def fetchers = ["Query": ["hello": df]]
+        def schema = TestUtil.schema(sdl, fetchers)
+        def graphQL = GraphQL.newGraphQL(schema).build()
+
+        def query = "{ hello {name}}"
+        def ei = newExecutionInput(query).build()
+        // we have 7 result nodes overall
+        ei.getGraphQLContext().put(MAX_RESULT_NODES, 6);
+
+        when:
+        def er = graphQL.execute(ei)
+        def rni = ei.getGraphQLContext().get(ResultNodesInfo.RESULT_NODES_INFO) as ResultNodesInfo
+        then:
+        rni.resultNodesCount == 7
+        rni.maxResultNodesExceeded
+        er.data == [hello: [[name: "w1"], [name: "w2"], [name: null]]]
+    }
+
+    def "max result nodes not breached with list"() {
+        given:
+        def sdl = '''
+
+        type Query {
+          hello: [Foo]
+        }
+        type Foo {
+            name: String
+        }
+        '''
+        def df = { env -> [[name: "w1"], [name: "w2"], [name: "w3"]] } as DataFetcher
+        def fetchers = ["Query": ["hello": df]]
+        def schema = TestUtil.schema(sdl, fetchers)
+        def graphQL = GraphQL.newGraphQL(schema).build()
+
+        def query = "{ hello {name}}"
+        def ei = newExecutionInput(query).build()
+        // we have 7 result nodes overall
+        ei.getGraphQLContext().put(MAX_RESULT_NODES, 7);
+
+        when:
+        def er = graphQL.execute(ei)
+        def rni = ei.getGraphQLContext().get(ResultNodesInfo.RESULT_NODES_INFO) as ResultNodesInfo
+        then:
+        !rni.maxResultNodesExceeded
+        rni.resultNodesCount == 7
+        er.data == [hello: [[name: "w1"], [name: "w2"], [name: "w3"]]]
+    }
+
 }

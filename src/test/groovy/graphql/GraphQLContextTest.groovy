@@ -276,4 +276,20 @@ class GraphQLContextTest extends Specification {
         executionResult.errors.isEmpty()
         executionResult.data == [field: "ctx1value"]
     }
+
+    def "boolean getters work"() {
+        when:
+        def context = GraphQLContext.newContext().of(
+                "f", false,
+                "t", true,
+                "notABool", "true"
+        ).build()
+
+        then:
+        !context.getBoolean("f")
+        context.getBoolean("t")
+        !context.getBoolean("notABool")
+        !context.getBoolean("missing")
+        context.getBoolean("missing", true)
+    }
 }

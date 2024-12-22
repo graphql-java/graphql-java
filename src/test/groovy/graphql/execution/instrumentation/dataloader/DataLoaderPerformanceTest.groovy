@@ -1,14 +1,13 @@
 package graphql.execution.instrumentation.dataloader
 
-
 import graphql.ExecutionInput
 import graphql.GraphQL
-import graphql.execution.instrumentation.Instrumentation
 import org.dataloader.DataLoaderRegistry
 import spock.lang.Specification
 
+import static graphql.ExperimentalApi.ENABLE_INCREMENTAL_SUPPORT
+import static graphql.execution.instrumentation.dataloader.DataLoaderPerformanceData.expectedExpensiveData
 import static graphql.execution.instrumentation.dataloader.DataLoaderPerformanceData.getExpectedData
-import static graphql.execution.instrumentation.dataloader.DataLoaderPerformanceData.getExpectedExpensiveData
 import static graphql.execution.instrumentation.dataloader.DataLoaderPerformanceData.getExpensiveQuery
 import static graphql.execution.instrumentation.dataloader.DataLoaderPerformanceData.getQuery
 
@@ -22,13 +21,16 @@ class DataLoaderPerformanceTest extends Specification {
         batchCompareDataFetchers = new BatchCompareDataFetchers()
         DataLoaderPerformanceData dataLoaderPerformanceData = new DataLoaderPerformanceData(batchCompareDataFetchers)
         dataLoaderRegistry = dataLoaderPerformanceData.setupDataLoaderRegistry()
-        Instrumentation instrumentation = new DataLoaderDispatcherInstrumentation()
-        graphQL = dataLoaderPerformanceData.setupGraphQL(instrumentation)
+        graphQL = dataLoaderPerformanceData.setupGraphQL()
     }
 
     def "760 ensure data loader is performant for lists"() {
         when:
-        ExecutionInput executionInput = ExecutionInput.newExecutionInput().query(query).dataLoaderRegistry(dataLoaderRegistry).build()
+        ExecutionInput executionInput = ExecutionInput.newExecutionInput()
+                .query(getQuery())
+                .dataLoaderRegistry(dataLoaderRegistry)
+                .graphQLContext([(ENABLE_INCREMENTAL_SUPPORT): incrementalSupport])
+                .build()
         def result = graphQL.execute(executionInput)
 
         then:
@@ -37,13 +39,20 @@ class DataLoaderPerformanceTest extends Specification {
         //  eg 1 for shops-->departments and one for departments --> products
         batchCompareDataFetchers.departmentsForShopsBatchLoaderCounter.get() == 1
         batchCompareDataFetchers.productsForDepartmentsBatchLoaderCounter.get() == 1
+
+        where:
+        incrementalSupport << [true, false]
     }
 
     def "970 ensure data loader is performant for multiple field with lists"() {
 
         when:
 
-        ExecutionInput executionInput = ExecutionInput.newExecutionInput().query(expensiveQuery).dataLoaderRegistry(dataLoaderRegistry).build()
+        ExecutionInput executionInput = ExecutionInput.newExecutionInput()
+                .query(getExpensiveQuery(false))
+                .dataLoaderRegistry(dataLoaderRegistry)
+                .graphQLContext([(ENABLE_INCREMENTAL_SUPPORT): incrementalSupport])
+                .build()
         def result = graphQL.execute(executionInput)
 
         then:
@@ -51,6 +60,9 @@ class DataLoaderPerformanceTest extends Specification {
 
         batchCompareDataFetchers.departmentsForShopsBatchLoaderCounter.get() <= 2
         batchCompareDataFetchers.productsForDepartmentsBatchLoaderCounter.get() <= 2
+
+        where:
+        incrementalSupport << [true, false]
     }
 
     def "ensure data loader is performant for lists using async batch loading"() {
@@ -59,7 +71,12 @@ class DataLoaderPerformanceTest extends Specification {
 
         batchCompareDataFetchers.useAsyncBatchLoading(true)
 
-        ExecutionInput executionInput = ExecutionInput.newExecutionInput().query(query).dataLoaderRegistry(dataLoaderRegistry).build()
+        ExecutionInput executionInput = ExecutionInput.newExecutionInput()
+                .query(getQuery())
+                .dataLoaderRegistry(dataLoaderRegistry)
+                .graphQLContext([(ENABLE_INCREMENTAL_SUPPORT): incrementalSupport])
+                .build()
+
         def result = graphQL.execute(executionInput)
 
         then:
@@ -69,6 +86,8 @@ class DataLoaderPerformanceTest extends Specification {
         batchCompareDataFetchers.departmentsForShopsBatchLoaderCounter.get() == 1
         batchCompareDataFetchers.productsForDepartmentsBatchLoaderCounter.get() == 1
 
+        where:
+        incrementalSupport << [true, false]
     }
 
     def "970 ensure data loader is performant for multiple field with lists using async batch loading"() {
@@ -77,7 +96,12 @@ class DataLoaderPerformanceTest extends Specification {
 
         batchCompareDataFetchers.useAsyncBatchLoading(true)
 
-        ExecutionInput executionInput = ExecutionInput.newExecutionInput().query(expensiveQuery).dataLoaderRegistry(dataLoaderRegistry).build()
+        ExecutionInput executionInput = ExecutionInput.newExecutionInput()
+                .query(getExpensiveQuery(false))
+                .dataLoaderRegistry(dataLoaderRegistry)
+                .graphQLContext([(ENABLE_INCREMENTAL_SUPPORT): incrementalSupport])
+                .build()
+
         def result = graphQL.execute(executionInput)
 
         then:
@@ -85,6 +109,8 @@ class DataLoaderPerformanceTest extends Specification {
 
         batchCompareDataFetchers.departmentsForShopsBatchLoaderCounter.get() <= 2
         batchCompareDataFetchers.productsForDepartmentsBatchLoaderCounter.get() <= 2
-    }
 
+        where:
+        incrementalSupport << [true, false]
+    }
 }

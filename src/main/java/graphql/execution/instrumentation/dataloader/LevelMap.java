@@ -1,6 +1,7 @@
 package graphql.execution.instrumentation.dataloader;
 
 import graphql.Internal;
+
 import java.util.Arrays;
 
 /**
@@ -56,6 +57,16 @@ public class LevelMap {
         StringBuilder result = new StringBuilder();
         result.append("IntMap[");
         for (int i = 0; i < countsByLevel.length; i++) {
+            result.append("level=").append(i).append(",count=").append(countsByLevel[i]).append(" ");
+        }
+        result.append("]");
+        return result.toString();
+    }
+
+    public String toString(int level) {
+        StringBuilder result = new StringBuilder();
+        result.append("IntMap[");
+        for (int i = 1; i <= level; i++) {
             result.append("level=").append(i).append(",count=").append(countsByLevel[i]).append(" ");
         }
         result.append("]");
