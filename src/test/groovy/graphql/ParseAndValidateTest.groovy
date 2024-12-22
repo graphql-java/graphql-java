@@ -1,11 +1,10 @@
 package graphql
 
 import graphql.language.Document
+import graphql.language.SourceLocation
 import graphql.parser.InvalidSyntaxException
 import graphql.parser.Parser
-import graphql.schema.GraphQLSchema
 import graphql.schema.idl.SchemaParser
-import graphql.schema.idl.TypeDefinitionRegistry
 import graphql.schema.idl.UnExecutableSchemaGenerator
 import graphql.validation.ValidationError
 import graphql.validation.ValidationErrorType
@@ -162,23 +161,16 @@ class ParseAndValidateTest extends Specification {
         !rs.errors.isEmpty() // all rules apply - we have errors
     }
 
-    def "issue 2740 - evidence of not working"() {
+    def "validation error raised if mutation operation does not exist in schema"() {
         def sdl = '''
         type Query {
-            myquery : String!
+            myQuery : String!
         }
         '''
 
         def registry = new SchemaParser().parse(sdl)
         def schema = UnExecutableSchemaGenerator.makeUnExecutableSchema(registry)
-        def graphQL = GraphQL.newGraphQL(schema).build()
-
-        String request = "mutation MyMutation { mymutation }"
-
-        when:
-        def er = graphQL.execute(request)
-        then:
-        er.errors.size() == 1
+        String request = "mutation MyMutation { myMutation }"
 
         when:
         Document inputDocument = new Parser().parseDocument(request)
@@ -186,5 +178,33 @@ class ParseAndValidateTest extends Specification {
 
         then:
         errors.size() == 1
+        def error = errors.first()
+        error.validationErrorType == ValidationErrorType.UnknownOperation
+        error.message == "Validation error (UnknownOperation): The 'MUTATION' operation is not supported by the schema"
+        error.locations == [new SourceLocation(1, 1)]
+    }
+
+    def "validation error raised if subscription operation does not exist in schema"() {
+        def sdl = '''
+        type Query {
+            myQuery : String!
+        }
+        '''
+
+        def registry = new SchemaParser().parse(sdl)
+        def schema = UnExecutableSchemaGenerator.makeUnExecutableSchema(registry)
+
+        String request = "subscription MySubscription { mySubscription }"
+
+        when:
+        Document inputDocument = new Parser().parseDocument(request)
+        List<ValidationError> errors = ParseAndValidate.validate(schema, inputDocument)
+
+        then:
+        errors.size() == 1
+        def error = errors.first()
+        error.validationErrorType == ValidationErrorType.UnknownOperation
+        error.message == "Validation error (UnknownOperation): The 'SUBSCRIPTION' operation is not supported by the schema"
+        error.locations == [new SourceLocation(1, 1)]
     }
 }
