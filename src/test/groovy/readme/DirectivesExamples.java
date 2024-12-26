@@ -4,6 +4,9 @@ import graphql.ExecutionInput;
 import graphql.ExecutionResult;
 import graphql.GraphQL;
 import graphql.Scalars;
+import graphql.execution.directives.QueryAppliedDirective;
+import graphql.execution.directives.QueryAppliedDirectiveArgument;
+import graphql.execution.directives.QueryDirectives;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetcherFactories;
 import graphql.schema.DataFetchingEnvironment;
@@ -20,6 +23,7 @@ import graphql.schema.idl.TypeDefinitionRegistry;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @SuppressWarnings({"Convert2Lambda", "unused", "ClassCanBeStatic"})
@@ -171,4 +175,26 @@ public class DirectivesExamples {
         // data['default'] == '08-10-1969'
         // data['usa'] == '10-08-1969'
     }
+
+    DataFetcher<?> cacheDataFetcher = new DataFetcher<Object>() {
+        @Override
+        public String get(DataFetchingEnvironment env) {
+            QueryDirectives queryDirectives = env.getQueryDirectives();
+            List<QueryAppliedDirective> cacheDirectives = queryDirectives
+                    .getImmediateAppliedDirective("cache");
+            // We get a List, because we could have
+            // repeatable directives
+            if (cacheDirectives.size() > 0) {
+                QueryAppliedDirective cache = cacheDirectives.get(0);
+                QueryAppliedDirectiveArgument maxAgeArgument
+                        = cache.getArgument("maxAge");
+                int maxAge = maxAgeArgument.getValue();
+
+                // Now we know the max allowed cache time and
+                // can make use of it
+                // Your logic goes here
+            }
+            return "your logic here";
+        }
+    };
 }
