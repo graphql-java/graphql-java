@@ -178,7 +178,7 @@ public class DirectivesExamples {
 
     DataFetcher<?> cacheDataFetcher = new DataFetcher<Object>() {
         @Override
-        public String get(DataFetchingEnvironment env) {
+        public Object get(DataFetchingEnvironment env) {
             QueryDirectives queryDirectives = env.getQueryDirectives();
             List<QueryAppliedDirective> cacheDirectives = queryDirectives
                     .getImmediateAppliedDirective("cache");
