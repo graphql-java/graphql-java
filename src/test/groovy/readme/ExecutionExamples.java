@@ -298,7 +298,7 @@ public class ExecutionExamples {
     }
 
     private void inputInterceptorObservesExample() {
-        InputInterceptor legacyInputInterceptor =  LegacyCoercingInputInterceptor.observesValues((inputValue, graphQLInputType) -> {
+        InputInterceptor legacyInputInterceptor = LegacyCoercingInputInterceptor.observesValues((inputValue, graphQLInputType) -> {
             emitAMetric(inputValue, graphQLInputType);
         });
 
