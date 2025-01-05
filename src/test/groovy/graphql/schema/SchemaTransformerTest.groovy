@@ -960,7 +960,7 @@ type Query {
         visitedCodeRegistry instanceof GraphQLCodeRegistry.Builder
     }
 
-    def "deprecation transformation overrides existing deprecated directive reason for object type"() {
+    def "deprecation transformation correctly overrides existing deprecated directive reasons"() {
         def schema = TestUtil.schema("""
           schema {
             query: QueryType
