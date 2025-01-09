@@ -17,7 +17,10 @@ import static graphql.introspection.Introspection.DirectiveLocation.FRAGMENT_SPR
 import static graphql.introspection.Introspection.DirectiveLocation.INLINE_FRAGMENT;
 import static graphql.introspection.Introspection.DirectiveLocation.INPUT_FIELD_DEFINITION;
 import static graphql.introspection.Introspection.DirectiveLocation.INPUT_OBJECT;
+import static graphql.introspection.Introspection.DirectiveLocation.MUTATION;
+import static graphql.introspection.Introspection.DirectiveLocation.QUERY;
 import static graphql.introspection.Introspection.DirectiveLocation.SCALAR;
+import static graphql.introspection.Introspection.DirectiveLocation.SUBSCRIPTION;
 import static graphql.language.DirectiveLocation.newDirectiveLocation;
 import static graphql.language.InputValueDefinition.newInputValueDefinition;
 import static graphql.language.NonNullType.newNonNullType;
@@ -37,6 +40,7 @@ public class Directives {
     private static final String SPECIFIED_BY = "specifiedBy";
     private static final String ONE_OF = "oneOf";
     private static final String DEFER = "defer";
+    private static final String NULL_ON_NON_NULL_ERROR = "nullOnNonNullError";
 
     public static final DirectiveDefinition DEPRECATED_DIRECTIVE_DEFINITION;
     public static final DirectiveDefinition INCLUDE_DIRECTIVE_DEFINITION;
@@ -46,6 +50,8 @@ public class Directives {
     public static final DirectiveDefinition ONE_OF_DIRECTIVE_DEFINITION;
     @ExperimentalApi
     public static final DirectiveDefinition DEFER_DIRECTIVE_DEFINITION;
+    @ExperimentalApi
+    public static final DirectiveDefinition NULL_ON_NON_NULL_ERROR_DIRECTIVE_DEFINITION;
 
     public static final String BOOLEAN = "Boolean";
     public static final String STRING = "String";
@@ -132,6 +138,13 @@ public class Directives {
                                 .description(createDescription("A unique label that represents the fragment being deferred"))
                                 .type(newTypeName().name(STRING).build())
                                 .build())
+                .build();
+        NULL_ON_NON_NULL_ERROR_DIRECTIVE_DEFINITION = DirectiveDefinition.newDirectiveDefinition()
+                .name(NULL_ON_NON_NULL_ERROR)
+                .directiveLocation(newDirectiveLocation().name(QUERY.name()).build())
+                .directiveLocation(newDirectiveLocation().name(MUTATION.name()).build())
+                .directiveLocation(newDirectiveLocation().name(SUBSCRIPTION.name()).build())
+                .description(createDescription("This directive allows returning null in non-null positions that have an associated error"))
                 .build();
     }
 
@@ -224,6 +237,14 @@ public class Directives {
             .description("Indicates an Input Object is a OneOf Input Object.")
             .validLocations(INPUT_OBJECT)
             .definition(ONE_OF_DIRECTIVE_DEFINITION)
+            .build();
+
+    @ExperimentalApi
+    public static final GraphQLDirective NullOnErrorDirective = GraphQLDirective.newDirective()
+            .name(NULL_ON_NON_NULL_ERROR)
+            .description("This directive allows returning null in non-null positions that have an associated error.")
+            .validLocations(QUERY, MUTATION, SUBSCRIPTION)
+            .definition(NULL_ON_NON_NULL_ERROR_DIRECTIVE_DEFINITION)
             .build();
 
     private static Description createDescription(String s) {

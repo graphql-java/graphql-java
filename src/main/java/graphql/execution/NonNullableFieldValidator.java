@@ -56,7 +56,9 @@ public class NonNullableFieldValidator {
                 } else {
                     executionContext.addError(error, path);
                 }
-                throw nonNullException;
+                if (executionContext.propagateErrors()) {
+                    throw nonNullException;
+                }
             }
         }
         return result;
