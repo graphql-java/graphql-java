@@ -7,25 +7,25 @@ import spock.lang.Specification
 
 class NoErrorPropagationTest extends Specification {
 
-    def "with nullOnError, null is returned"() {
+    def "with nullOnNonNullError, null is returned"() {
 
         def sdl = '''
             type Query {
                 foo : Int! 
             }
-            directive @nullOnError on QUERY | MUTATION | SUBSCRIPTION
+            directive @nullOnNonNullError on QUERY | MUTATION | SUBSCRIPTION
         '''
 
         def graphql = TestUtil.graphQL(sdl).build()
 
         def query = '''
-            query GetFoo @nullOnError { foo }
+            query GetFoo @nullOnNonNullError { foo }
         '''
         when:
 
         ExecutionInput ei = ExecutionInput.newExecutionInput(query).root(
                 [foo: null]
-        ).graphQLContext([(ExperimentalApi.ENABLE_NULL_ON_ERROR): true])
+        ).graphQLContext([(ExperimentalApi.ENABLE_NULL_ON_NON_NULL_ERROR): true])
                 .build()
 
         def er = graphql.execute(ei)
@@ -36,13 +36,13 @@ class NoErrorPropagationTest extends Specification {
         er.errors[0].path.toList() == ["foo"]
     }
 
-    def "without nullOnError, error is propagated"() {
+    def "without nullOnNonNullError, error is propagated"() {
 
         def sdl = '''
             type Query {
                 foo : Int! 
             }
-            directive @nullOnError on QUERY | MUTATION | SUBSCRIPTION
+            directive @nullOnNonNullError on QUERY | MUTATION | SUBSCRIPTION
         '''
 
         def graphql = TestUtil.graphQL(sdl).build()
@@ -54,7 +54,7 @@ class NoErrorPropagationTest extends Specification {
 
         ExecutionInput ei = ExecutionInput.newExecutionInput(query).root(
                 [foo: null]
-        ).graphQLContext([(ExperimentalApi.ENABLE_NULL_ON_ERROR): true])
+        ).graphQLContext([(ExperimentalApi.ENABLE_NULL_ON_NON_NULL_ERROR): true])
                 .build()
 
         def er = graphql.execute(ei)
@@ -66,19 +66,19 @@ class NoErrorPropagationTest extends Specification {
     }
 
 
-    def "when ENABLE_NULL_ON_ERROR is false, error is propagated"() {
+    def "when ENABLE_NULL_ON_NON_NULL_ERROR is false, error is propagated"() {
 
         def sdl = '''
             type Query {
                 foo : Int! 
             }
-            directive @nullOnError on QUERY | MUTATION | SUBSCRIPTION
+            directive @nullOnNonNullError on QUERY | MUTATION | SUBSCRIPTION
         '''
 
         def graphql = TestUtil.graphQL(sdl).build()
 
         def query = '''
-            query GetFoo @nullOnError { foo }
+            query GetFoo @nullOnNonNullError { foo }
         '''
         when:
 
@@ -93,7 +93,7 @@ class NoErrorPropagationTest extends Specification {
         er.errors[0].path.toList() == ["foo"]
     }
 
-    def "when @nullOnError is not added to the schema operation does not validate"() {
+    def "when @nullOnNonNullError is not added to the schema operation does not validate"() {
 
         def sdl = '''
             type Query {
@@ -104,20 +104,20 @@ class NoErrorPropagationTest extends Specification {
         def graphql = TestUtil.graphQL(sdl).build()
 
         def query = '''
-            query GetFoo @nullOnError { foo }
+            query GetFoo @nullOnNonNullError { foo }
         '''
         when:
 
         ExecutionInput ei = ExecutionInput.newExecutionInput(query).root(
                 [foo: null]
-        ).graphQLContext([(ExperimentalApi.ENABLE_NULL_ON_ERROR): true])
+        ).graphQLContext([(ExperimentalApi.ENABLE_NULL_ON_NON_NULL_ERROR): true])
                 .build()
 
         def er = graphql.execute(ei)
 
         then:
         er.data == null
-        er.errors[0].message.equals("Validation error (UnknownDirective) : Unknown directive 'nullOnError'")
+        er.errors[0].message.equals("Validation error (UnknownDirective) : Unknown directive 'nullOnNonNullError'")
     }
 
 }
