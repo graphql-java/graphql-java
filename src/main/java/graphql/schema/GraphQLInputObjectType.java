@@ -1,5 +1,6 @@
 package graphql.schema;
 
+import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import graphql.Directives;
@@ -152,7 +153,8 @@ public class GraphQLInputObjectType implements GraphQLNamedInputType, GraphQLUnm
 
     @Override
     public List<GraphQLInputObjectField> getFieldDefinitions() {
-        return ImmutableList.copyOf(fieldMap.values());
+        ImmutableCollection<GraphQLInputObjectField> values = fieldMap.values();
+        return values instanceof ImmutableList<?> ? (ImmutableList<GraphQLInputObjectField>) values : ImmutableList.copyOf(values);
     }
 
     public InputObjectTypeDefinition getDefinition() {
