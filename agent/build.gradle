@@ -6,7 +6,7 @@ plugins {
 }
 
 dependencies {
-    implementation("net.bytebuddy:byte-buddy:1.15.11")
+    implementation("net.bytebuddy:byte-buddy:1.16.1")
     // graphql-java itself
     implementation(rootProject)
 }
@@ -24,6 +24,7 @@ java {
 }
 
 shadowJar {
+    include 'META-INF/versions/11/**'
     minimize()
     archiveClassifier.set('')
     configurations = [project.configurations.compileClasspath]
