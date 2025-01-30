@@ -350,7 +350,7 @@ class GraphQLTest extends Specification {
         thrown(GraphQLException)
     }
 
-    def "null mutation type does not throw an npe re: #345 but returns and error"() {
+    def "null mutation type does not throw an npe but returns and error"() {
         given:
 
         GraphQLSchema schema = newSchema().query(
@@ -370,7 +370,7 @@ class GraphQLTest extends Specification {
 
         then:
         result.errors.size() == 1
-        result.errors[0].class == MissingRootTypeException
+        ((ValidationError) result.errors[0]).validationErrorType == ValidationErrorType.UnknownOperation
     }
 
     def "#875 a subscription query against a schema that doesn't support subscriptions should result in a GraphQL error"() {
@@ -393,7 +393,7 @@ class GraphQLTest extends Specification {
 
         then:
         result.errors.size() == 1
-        result.errors[0].class == MissingRootTypeException
+        ((ValidationError) result.errors[0]).validationErrorType == ValidationErrorType.UnknownOperation
     }
 
     def "query with int literal too large"() {
