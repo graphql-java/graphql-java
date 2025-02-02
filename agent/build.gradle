@@ -2,7 +2,7 @@ plugins {
     id 'java'
     id 'java-library'
     id 'maven-publish'
-    id "com.gradleup.shadow" version "8.3.5"
+    id "com.gradleup.shadow" version "8.3.6"
 }
 
 dependencies {
@@ -24,7 +24,6 @@ java {
 }
 
 shadowJar {
-    include 'META-INF/versions/11/**'
     minimize()
     archiveClassifier.set('')
     configurations = [project.configurations.compileClasspath]
