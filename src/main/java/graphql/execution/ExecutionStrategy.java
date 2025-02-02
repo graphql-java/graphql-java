@@ -465,7 +465,8 @@ public abstract class ExecutionStrategy {
             DataFetchingFieldSelectionSet fieldCollector = DataFetchingFieldSelectionSetImpl.newCollector(executionContext.getGraphQLSchema(), fieldDef.getType(), normalizedFieldSupplier);
             QueryDirectives queryDirectives = new QueryDirectivesImpl(field,
                     executionContext.getGraphQLSchema(),
-                    executionContext.getCoercedVariables().toMap(),
+                    executionContext.getCoercedVariables(),
+                    executionContext.getNormalizedVariables(),
                     executionContext.getGraphQLContext(),
                     executionContext.getLocale());
 
