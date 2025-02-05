@@ -7,11 +7,11 @@ plugins {
     id 'maven-publish'
     id 'antlr'
     id 'signing'
-    id "com.github.johnrengelman.shadow" version "8.1.1"
+    id "com.gradleup.shadow" version "8.3.6"
     id "biz.aQute.bnd.builder" version "6.4.0"
     id "io.github.gradle-nexus.publish-plugin" version "2.0.0"
     id "groovy"
-    id "me.champeau.jmh" version "0.7.2"
+    id "me.champeau.jmh" version "0.7.3"
 }
 
 java {
@@ -99,7 +99,7 @@ jar {
 }
 
 dependencies {
-    compileOnly 'org.jetbrains:annotations:26.0.1'
+    compileOnly 'org.jetbrains:annotations:26.0.2'
     implementation 'org.antlr:antlr4-runtime:' + antlrVersion
     api 'com.graphql-java:java-dataloader:3.3.0'
     api 'org.reactivestreams:reactive-streams:' + reactiveStreamsVersion
@@ -109,7 +109,7 @@ dependencies {
     testImplementation 'org.spockframework:spock-core:2.0-groovy-3.0'
     testImplementation 'org.codehaus.groovy:groovy:3.0.23'
     testImplementation 'org.codehaus.groovy:groovy-json:3.0.23'
-    testImplementation 'com.google.code.gson:gson:2.11.0'
+    testImplementation 'com.google.code.gson:gson:2.12.1'
     testImplementation 'org.eclipse.jetty:jetty-server:11.0.24'
     testImplementation 'com.fasterxml.jackson.core:jackson-databind:2.18.2'
     testImplementation 'org.awaitility:awaitility-groovy:4.2.0'
@@ -117,7 +117,7 @@ dependencies {
 
     testImplementation 'org.reactivestreams:reactive-streams-tck:' + reactiveStreamsVersion
     testImplementation "io.reactivex.rxjava2:rxjava:2.2.21"
-    testImplementation "io.projectreactor:reactor-core:3.7.1"
+    testImplementation "io.projectreactor:reactor-core:3.7.2"
 
     testImplementation 'org.testng:testng:7.10.2' // use for reactive streams test inheritance
 

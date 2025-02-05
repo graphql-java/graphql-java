@@ -47,7 +47,7 @@ public class DataFetchingExamples {
         DataFetcher productsDataFetcher = new DataFetcher<List<ProductDTO>>() {
             @Override
             public List<ProductDTO> get(DataFetchingEnvironment environment) {
-                DatabaseSecurityCtx ctx = environment.getContext();
+                DatabaseSecurityCtx ctx = environment.getGraphQlContext().get("databaseSecurityCtx");
 
                 List<ProductDTO> products;
                 String match = environment.getArgument("match");
