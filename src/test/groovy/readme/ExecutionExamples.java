@@ -12,12 +12,15 @@ import graphql.execution.DataFetcherExceptionHandler;
 import graphql.execution.DataFetcherExceptionHandlerParameters;
 import graphql.execution.DataFetcherExceptionHandlerResult;
 import graphql.execution.ExecutionStrategy;
+import graphql.execution.values.InputInterceptor;
+import graphql.execution.values.legacycoercing.LegacyCoercingInputInterceptor;
 import graphql.language.SourceLocation;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
 import graphql.schema.GraphQLCodeRegistry;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLFieldsContainer;
+import graphql.schema.GraphQLInputType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.visibility.BlockedFields;
 import graphql.schema.visibility.GraphqlFieldVisibility;
@@ -287,6 +290,28 @@ public class ExecutionExamples {
 
     private GraphQL buildSchema() {
         return GraphQL.newGraphQL(schema)
+                .build();
+    }
+
+    private void emitAMetric(Object inputValue, GraphQLInputType graphQLInputType) {
+        return;
+    }
+
+    private void inputInterceptorObservesExample() {
+        InputInterceptor legacyInputInterceptor = LegacyCoercingInputInterceptor.observesValues((inputValue, graphQLInputType) -> {
+            emitAMetric(inputValue, graphQLInputType);
+        });
+
+        ExecutionInput executionInput = ExecutionInput.newExecutionInput()
+                .query("query { exampleField }")
+                .graphQLContext(Map.of(InputInterceptor.class, legacyInputInterceptor))
+                .build();
+    }
+
+    private void inputInterceptorMigratesExample() {
+        ExecutionInput executionInput = ExecutionInput.newExecutionInput()
+                .query("query { exampleField }")
+                .graphQLContext(Map.of(InputInterceptor.class, LegacyCoercingInputInterceptor.migratesValues()))
                 .build();
     }
 

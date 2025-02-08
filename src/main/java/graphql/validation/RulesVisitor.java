@@ -44,11 +44,13 @@ public class RulesVisitor implements DocumentVisitor {
     }
 
     private List<AbstractRule> filterRulesVisitingFragmentSpreads(List<AbstractRule> rules, boolean isVisitFragmentSpreads) {
-        Iterator<AbstractRule> itr = rules
-            .stream()
-            .filter(r -> r.isVisitFragmentSpreads() == isVisitFragmentSpreads)
-            .iterator();
-        return ImmutableList.copyOf(itr);
+        ImmutableList.Builder<AbstractRule> builder = ImmutableList.builder();
+        for (AbstractRule rule : rules) {
+            if (rule.isVisitFragmentSpreads() == isVisitFragmentSpreads) {
+                builder.add(rule);
+            }
+        }
+        return builder.build();
     }
 
     @Override
