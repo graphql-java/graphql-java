@@ -28,6 +28,7 @@ import graphql.language.VariableDefinition;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.impl.SchemaUtil;
+import graphql.util.FpKit;
 import org.reactivestreams.Publisher;
 
 import java.util.Collections;
@@ -35,6 +36,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Supplier;
 
 import static graphql.execution.ExecutionContextBuilder.newExecutionContextBuilder;
 import static graphql.execution.ExecutionStepInfo.newExecutionStepInfo;
@@ -77,8 +79,20 @@ public class Execution {
         List<VariableDefinition> variableDefinitions = operationDefinition.getVariableDefinitions();
 
         CoercedVariables coercedVariables;
+        Supplier<NormalizedVariables> normalizedVariableValues;
         try {
-            coercedVariables = ValuesResolver.coerceVariableValues(graphQLSchema, variableDefinitions, inputVariables, executionInput.getGraphQLContext(), executionInput.getLocale());
+            coercedVariables = ValuesResolver.coerceVariableValues(graphQLSchema,
+                    variableDefinitions,
+                    inputVariables,
+                    executionInput.getGraphQLContext(),
+                    executionInput.getLocale());
+
+            normalizedVariableValues = FpKit.intraThreadMemoize(() ->
+                    ValuesResolver.getNormalizedVariableValues(graphQLSchema,
+                            variableDefinitions,
+                            inputVariables,
+                            executionInput.getGraphQLContext(), executionInput.getLocale())
+            );
         } catch (RuntimeException rte) {
             if (rte instanceof GraphQLError) {
                 return completedFuture(new ExecutionResultImpl((GraphQLError) rte));
@@ -100,6 +114,7 @@ public class Execution {
                 .root(executionInput.getRoot())
                 .fragmentsByName(fragmentsByName)
                 .coercedVariables(coercedVariables)
+                .normalizedVariableValues(normalizedVariableValues)
                 .document(document)
                 .operationDefinition(operationDefinition)
                 .dataLoaderRegistry(executionInput.getDataLoaderRegistry())

@@ -4,10 +4,12 @@ import graphql.GraphQLContext;
 import graphql.Internal;
 import graphql.execution.CoercedVariables;
 import graphql.execution.MergedField;
+import graphql.execution.NormalizedVariables;
 import graphql.language.Field;
 import graphql.schema.GraphQLSchema;
 
 import java.util.Locale;
+import java.util.function.Supplier;
 
 @Internal
 public class QueryDirectivesBuilder implements QueryDirectives.Builder {
@@ -15,6 +17,7 @@ public class QueryDirectivesBuilder implements QueryDirectives.Builder {
     private MergedField mergedField;
     private GraphQLSchema schema;
     private CoercedVariables coercedVariables = CoercedVariables.emptyVariables();
+    private Supplier<NormalizedVariables> normalizedVariables = NormalizedVariables::emptyVariables;
     private GraphQLContext graphQLContext = GraphQLContext.getDefault();
     private Locale locale = Locale.getDefault();
 
@@ -43,6 +46,12 @@ public class QueryDirectivesBuilder implements QueryDirectives.Builder {
     }
 
     @Override
+    public QueryDirectives.Builder normalizedVariables(Supplier<NormalizedVariables> normalizedVariables) {
+        this.normalizedVariables = normalizedVariables;
+        return this;
+    }
+
+    @Override
     public QueryDirectives.Builder graphQLContext(GraphQLContext graphQLContext) {
         this.graphQLContext = graphQLContext;
         return this;
@@ -57,6 +66,6 @@ public class QueryDirectivesBuilder implements QueryDirectives.Builder {
 
     @Override
     public QueryDirectives build() {
-        return new QueryDirectivesImpl(mergedField, schema, coercedVariables.toMap(), graphQLContext, locale);
+        return new QueryDirectivesImpl(mergedField, schema, coercedVariables, normalizedVariables, graphQLContext, locale);
     }
 }

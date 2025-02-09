@@ -1,8 +1,14 @@
 package graphql.execution.directives
 
+
 import graphql.GraphQL
 import graphql.TestUtil
+import graphql.execution.RawVariables
+import graphql.language.IntValue
+import graphql.normalized.ExecutableNormalizedOperationFactory
+import graphql.normalized.NormalizedInputValue
 import graphql.schema.DataFetcher
+import graphql.schema.FieldCoordinates
 import spock.lang.Specification
 
 /**
@@ -88,7 +94,7 @@ class QueryDirectivesIntegrationTest extends Specification {
         capturedDirectives = [:]
     }
 
-    def "can collector directives as expected"() {
+    def "can collect directives as expected"() {
         when:
         def er = execute(pathologicalQuery)
         then:
@@ -104,6 +110,36 @@ class QueryDirectivesIntegrationTest extends Specification {
 
         def immediate = capturedDirectives["review"].getImmediateAppliedDirective("cached")
         joinArgs(immediate) == "cached(forMillis:5),cached(forMillis:10)"
+    }
+
+    def "can collect merged field directives as expected"() {
+        when:
+        def query = """
+        query Books  {
+            books(searchString: "monkey") {
+                review @timeout(afterMillis: 10) @cached(forMillis : 10)
+                review @timeout(afterMillis: 100) @cached(forMillis : 100)
+            }
+        }
+
+        """
+        def er = execute(query)
+        then:
+        er.errors.isEmpty()
+
+        def immediateMap = capturedDirectives["review"].getImmediateAppliedDirectivesByName()
+        def entries = immediateMap.entrySet().collectEntries({
+            [(it.getKey()): joinArgs(it.getValue())]
+        })
+        entries == [cached : "cached(forMillis:10),cached(forMillis:100)",
+                    timeout: "timeout(afterMillis:10),timeout(afterMillis:100)"
+        ]
+
+        def immediate = capturedDirectives["review"].getImmediateAppliedDirective("cached")
+        joinArgs(immediate) == "cached(forMillis:10),cached(forMillis:100)"
+
+        def immediate2 = capturedDirectives["review"].getImmediateAppliedDirective("timeout")
+        joinArgs(immediate2) == "timeout(afterMillis:10),timeout(afterMillis:100)"
     }
 
     def "wont create directives for peer fields accidentally"() {
@@ -134,4 +170,68 @@ class QueryDirectivesIntegrationTest extends Specification {
         joinArgs(immediate) == "cached(forMillis:10)"
     }
 
+    def "can capture directive argument values inside ENO path"() {
+        def query = TestUtil.parseQuery(pathologicalQuery)
+        when:
+        def eno = ExecutableNormalizedOperationFactory.createExecutableNormalizedOperationWithRawVariables(
+                schema, query, "Books", RawVariables.emptyVariables())
+
+
+        then:
+        def booksENF = eno.getTopLevelFields()[0]
+        booksENF != null
+        def bookQueryDirectives = eno.getQueryDirectives(booksENF)
+        bookQueryDirectives.immediateAppliedDirectivesByName.isEmpty()
+
+        def reviewField = eno.getCoordinatesToNormalizedFields().get(FieldCoordinates.coordinates("Book", "review"))
+        def reviewQueryDirectives = eno.getQueryDirectives(reviewField[0])
+        def reviewImmediateDirectivesMap = reviewQueryDirectives.immediateAppliedDirectivesByName
+        def argInputValues = simplifiedInputValuesWithState(reviewImmediateDirectivesMap)
+        argInputValues == [
+                timeout: [
+                        [timeout: [[afterMillis: 5]]], [timeout: [[afterMillis: 28]]], [timeout: [[afterMillis: 10]]]
+                ],
+                cached : [
+                        [cached: [[forMillis: 5]]], [cached: [[forMillis: 10]]]
+                ]
+        ]
+
+        // normalised values are AST values
+        def normalizedValues = simplifiedNormalizedValues(reviewQueryDirectives.getNormalizedInputValueByImmediateAppliedDirectives())
+        normalizedValues == [
+                timeout: [
+                        [afterMillis: 5], [afterMillis: 28], [afterMillis: 10]],
+                cached : [
+                        [forMillis: 5], [forMillis: 10]]
+        ]
+
+    }
+
+    def simplifiedInputValuesWithState(Map<String, List<QueryAppliedDirective>> mapOfDirectives) {
+        def simpleMap = [:]
+        mapOfDirectives.forEach { k, listOfDirectives ->
+
+            def dirVals = listOfDirectives.collect { qd ->
+                def argVals = qd.getArguments().collect { arg ->
+                    def argValue = arg.getArgumentValue()
+                    return [(arg.name): argValue?.value]
+                }
+                return [(qd.name): argVals]
+            }
+            simpleMap[k] = dirVals
+        }
+        return simpleMap
+    }
+
+    def simplifiedNormalizedValues(Map<QueryAppliedDirective, Map<String, NormalizedInputValue>> mapOfDirectives) {
+        Map<String, List<Map<String, Integer>>> simpleMap = new LinkedHashMap<>()
+        mapOfDirectives.forEach { qd, argMap ->
+            def argVals = argMap.collect { entry ->
+                def argValueAst = entry.value?.value as IntValue // just assume INtValue for these tests
+                return [(entry.key): argValueAst?.value?.toInteger()]
+            }
+            simpleMap.computeIfAbsent(qd.name, { _ -> [] }).addAll(argVals)
+        }
+        return simpleMap
+    }
 }
