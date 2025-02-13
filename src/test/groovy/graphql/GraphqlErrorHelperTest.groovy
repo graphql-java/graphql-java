@@ -151,7 +151,7 @@ class GraphqlErrorHelperTest extends Specification {
             assert gErr.getErrorType() == ErrorType.DataFetchingException // default from error builder
             assert gErr.getLocations() == []
             assert gErr.getPath() == null
-            assert graphQLError.getExtensions() == null
+            assert gErr.getExtensions() == null
         }
     }
 }
