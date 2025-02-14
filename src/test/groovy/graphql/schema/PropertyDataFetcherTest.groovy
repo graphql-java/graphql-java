@@ -692,6 +692,66 @@ class PropertyDataFetcherTest extends Specification {
         SingletonPropertyDataFetcher.singleton() | _
     }
 
+    private static abstract class AbstractClass {
+        private String somethingAbstract = "somethingAbstract"
+    }
+
+    private static class ConcreteClass extends AbstractClass {
+        private String somethingConcrete = "somethingConcrete"
+    }
+
+    private static class DerivedConcreteClass extends ConcreteClass {
+        private String somethingDerived = "somethingDerived"
+    }
+
+    def "search for private field in class hierarchy for derived classes"() {
+        given:
+        def source = new DerivedConcreteClass()
+        def dfe = env("somethingConcrete", source)
+
+        when:
+        def result = fetcher.get(dfe)
+
+        then:
+        result == "somethingConcrete"
+
+        // repeat - should be cached
+        when:
+        result = fetcher.get(dfe)
+
+        then:
+        result == "somethingConcrete"
+
+        where:
+        fetcher                                      | _
+        new PropertyDataFetcher("somethingConcrete") | _
+        SingletonPropertyDataFetcher.singleton()     | _
+    }
+
+    def "search for private field in class hierarchy for abstract classes"() {
+        given:
+        def source = new DerivedConcreteClass()
+        def dfe = env("somethingAbstract", source)
+
+        when:
+        def result = fetcher.get(dfe)
+
+        then:
+        result == "somethingAbstract"
+
+        // repeat - should be cached
+        when:
+        result = fetcher.get(dfe)
+
+        then:
+        result == "somethingAbstract"
+
+        where:
+        fetcher                                      | _
+        new PropertyDataFetcher("somethingAbstract") | _
+        SingletonPropertyDataFetcher.singleton()     | _
+    }
+
     def "issue 3247 - record like statics should not be used"() {
         given:
         def payload = new UpdateOrganizerSubscriptionPayload(true, new OrganizerSubscriptionError())

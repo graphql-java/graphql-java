@@ -3,10 +3,7 @@ package graphql.schema;
 import graphql.GraphQLException;
 import graphql.Internal;
 import graphql.schema.fetching.LambdaFetchingSupport;
-import graphql.util.EscapeUtil;
 import graphql.util.StringKit;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -14,7 +11,6 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.Arrays;
 import java.util.Comparator;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -321,23 +317,30 @@ public class PropertyFetchingImpl {
             FIELD_CACHE.putIfAbsent(cacheKey, field);
             return field.get(object);
         } catch (NoSuchFieldException e) {
-            if (!USE_SET_ACCESSIBLE.get()) {
-                throw new FastNoSuchMethodException(cacheKey.toString());
-            }
-            // if not public fields then try via setAccessible
+            return getPropertyViaPrivateFieldAccess(cacheKey, object, propertyName, aClass);
+        } catch (IllegalAccessException e) {
+            throw new GraphQLException(e);
+        }
+    }
+
+    private Object getPropertyViaPrivateFieldAccess(CacheKey cacheKey, Object object, String propertyName, Class<?> aClass) throws FastNoSuchMethodException {
+        if (!USE_SET_ACCESSIBLE.get()) {
+            throw new FastNoSuchMethodException(cacheKey.toString());
+        }
+        Class<?> currentClass = aClass;
+        while (currentClass != null) {
             try {
                 Field field = aClass.getDeclaredField(propertyName);
                 field.setAccessible(true);
                 FIELD_CACHE.putIfAbsent(cacheKey, field);
                 return field.get(object);
-            } catch (SecurityException | NoSuchFieldException ignored2) {
-                throw new FastNoSuchMethodException(cacheKey.toString());
-            } catch (IllegalAccessException e1) {
+            } catch (SecurityException | NoSuchFieldException ignored) {
+                currentClass = currentClass.getSuperclass();
+            } catch (IllegalAccessException e) {
                 throw new GraphQLException(e);
             }
-        } catch (IllegalAccessException e) {
-            throw new GraphQLException(e);
         }
+        throw new FastNoSuchMethodException(cacheKey.toString());
     }
 
     private Object invokeMethod(Object object, Supplier<?> singleArgumentValue, Method method, boolean takesSingleArgument) throws FastNoSuchMethodException {
