@@ -133,8 +133,9 @@ class PeopleCompaniesAndProductsDataLoaderTest extends Specification {
 
     RuntimeWiring runtimeWiring = newRuntimeWiring()
             .type("QueryType", { builder -> builder.dataFetcher("products", productsDF) })
-            .type("Product", { builder -> builder.dataFetcher("suppliedBy", suppliedByDF) })
-            .type("Product", { builder -> builder.dataFetcher("madeBy", madeByDF) })
+            .type("Product", { builder -> builder
+                    .dataFetcher("suppliedBy", suppliedByDF)
+                    .dataFetcher("madeBy", madeByDF) })
             .type("Person", { builder -> builder.dataFetcher("company", companyDF) })
             .build()
 
