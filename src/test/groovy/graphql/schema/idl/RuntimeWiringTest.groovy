@@ -304,19 +304,30 @@ class RuntimeWiringTest extends Specification {
         typeRuntimeWiring.defaultDataFetcher == DF2
     }
 
-    def "if new type runtime wiring has default data fetcher only, the last one will be used"() {
+    def "when strict mode on, do not allow default data fetcher redefinition"() {
+        DataFetcher DF1 = env -> "w"
         DataFetcher DEFAULT_DF = env -> "x"
         DataFetcher DEFAULT_DF2 = env -> "y"
 
+        // Having a datafetcher and a default for the type is ok
         when:
-        def runtimeWiring = RuntimeWiring.newRuntimeWiring()
+        def runtimeWiring1 = RuntimeWiring.newRuntimeWiring()
                 .type(TypeRuntimeWiring.newTypeWiring("Foo").defaultDataFetcher(DEFAULT_DF))
-                // we can specifically overwrite it later
+                .type(TypeRuntimeWiring.newTypeWiring("Foo").dataFetcher("foo", DF1))
+                .build()
+
+        then:
+        runtimeWiring1.getDefaultDataFetcherForType("Foo") == DEFAULT_DF
+
+        // Do not permit redefinition of the default datafetcher
+        when:
+        RuntimeWiring.newRuntimeWiring()
+                .type(TypeRuntimeWiring.newTypeWiring("Foo").defaultDataFetcher(DEFAULT_DF))
                 .type(TypeRuntimeWiring.newTypeWiring("Foo").defaultDataFetcher(DEFAULT_DF2))
                 .build()
 
         then:
-        noExceptionThrown()
-        runtimeWiring.getDefaultDataFetcherForType("Foo") == DEFAULT_DF2
+        def error = thrown(StrictModeWiringException)
+        error.message == "The type Foo already has a default data fetcher defined"
     }
 }

@@ -320,6 +320,9 @@ public class RuntimeWiring {
 
             DataFetcher<?> defaultDataFetcher = typeRuntimeWiring.getDefaultDataFetcher();
             if (defaultDataFetcher != null) {
+                if (strictMode && defaultDataFetchers.containsKey(typeName)) {
+                    throw new StrictModeWiringException(format("The type %s already has a default data fetcher defined", typeName));
+                }
                 defaultDataFetchers.put(typeName, defaultDataFetcher);
             }
 
