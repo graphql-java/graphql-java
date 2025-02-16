@@ -103,7 +103,7 @@ class GraphQLInputObjectTypeTest extends Specification {
         when:
         inputObjectType = newInputObject().name("TestInputObjectType")
                 .field(newInputObjectField().name("NAME").type(GraphQLInt))
-                .withAppliedDirective(Directives.OneOfDirective.toAppliedDirective())
+                .addAppliedDirective(Directives.OneOfDirective.toAppliedDirective())
                 .build()
         then:
         inputObjectType.isOneOf()

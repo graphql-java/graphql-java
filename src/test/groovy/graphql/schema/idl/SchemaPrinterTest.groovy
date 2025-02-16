@@ -2305,7 +2305,7 @@ type Query {
                 .build()
 
         objType = newObject().name("obj").field({
-            it.name("f").type(GraphQLString).withAppliedDirective(newAppliedDirective)
+            it.name("f").type(GraphQLString).addAppliedDirective(newAppliedDirective)
         }).build()
 
         result = new SchemaPrinter().print(objType)
@@ -2326,7 +2326,7 @@ type Query {
                 .build()
 
         GraphQLInputObjectType type = GraphQLInputObjectType.newInputObject().name("Person")
-                .field({ it.name("thisMustBeAPercentageSign").type(GraphQLString).withAppliedDirective(constraintAppliedDirective) })
+                .field({ it.name("thisMustBeAPercentageSign").type(GraphQLString).addAppliedDirective(constraintAppliedDirective) })
                 .build()
 
         when:

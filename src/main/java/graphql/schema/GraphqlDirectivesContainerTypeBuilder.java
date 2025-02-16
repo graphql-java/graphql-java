@@ -7,7 +7,6 @@ import java.util.List;
 
 import static graphql.Assert.assertNotNull;
 
-@SuppressWarnings("unchecked")
 @Internal
 public abstract class GraphqlDirectivesContainerTypeBuilder<B extends GraphqlDirectivesContainerTypeBuilder<B, BASE>, BASE extends GraphqlTypeBuilder<BASE>> extends GraphqlTypeBuilder<BASE> {
 
@@ -25,7 +24,7 @@ public abstract class GraphqlDirectivesContainerTypeBuilder<B extends GraphqlDir
     public B addAppliedDirectives(GraphQLAppliedDirective... directives) {
         assertNotNull(directives, () -> "directives can't be null");
         for (GraphQLAppliedDirective directive : directives) {
-            withAppliedDirective(directive);
+            addAppliedDirective(directive);
         }
         return (B) this;
     }
