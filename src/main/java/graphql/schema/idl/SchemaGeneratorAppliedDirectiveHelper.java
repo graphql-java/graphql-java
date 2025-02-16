@@ -50,7 +50,7 @@ class SchemaGeneratorAppliedDirectiveHelper {
             }
         }
         for (GraphQLAppliedDirective appliedDirective : appliedDirectives.second) {
-            builder.withAppliedDirective(appliedDirective);
+            builder.addAppliedDirective(appliedDirective);
         }
     }
 
