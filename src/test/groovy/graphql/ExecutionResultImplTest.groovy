@@ -176,29 +176,58 @@ class ExecutionResultImplTest extends Specification {
 
     def "test setting extensions"() {
         given:
-        def startEr = new ExecutionResultImpl("Some Data", KNOWN_ERRORS,null)
+        def startEr = new ExecutionResultImpl("Some Data", KNOWN_ERRORS, null)
 
-        def er = ExecutionResultImpl.newExecutionResult().from(startEr).extensions([ext1:"here"]).build()
+        def er = ExecutionResultImpl.newExecutionResult().from(startEr).extensions([ext1: "here"]).build()
 
         when:
         def extensions = er.getExtensions()
 
         then:
-        extensions == [ext1:"here"]
+        extensions == [ext1: "here"]
     }
 
     def "test adding extension"() {
         given:
-        def startEr = new ExecutionResultImpl("Some Data", KNOWN_ERRORS,[ext1:"here"])
+        def startEr = new ExecutionResultImpl("Some Data", KNOWN_ERRORS, [ext1: "here"])
 
-        def er = ExecutionResultImpl.newExecutionResult().from(startEr).addExtension("ext2","aswell").build()
+        def er = ExecutionResultImpl.newExecutionResult().from(startEr).addExtension("ext2", "aswell").build()
 
         when:
         def extensions = er.getExtensions()
 
         then:
-        extensions == [ext1:"here", ext2 : "aswell"]
+        extensions == [ext1: "here", ext2: "aswell"]
     }
 
+    def "can parse out a map of to an ER"() {
+        when:
+        def map = [data: [f: "v"]]
+        def er = ExecutionResult.fromSpecification(map)
+        then:
+        er.data == [f: "v"]
+        er.extensions == null
+        er.errors.isEmpty()
 
+        when:
+        // GraphqlErrorHelperTest is more extensive tests for error parsing which we will not repeat here
+        map = [errors: [[message: "m0"], [message: "m1"]]]
+        er = ExecutionResult.fromSpecification(map)
+        then:
+        er.data == null
+        er.extensions == null
+        !er.errors.isEmpty()
+        er.errors[0].message == "m0"
+        er.errors[1].message == "m1"
+
+
+        when:
+        map = [data: [f: "v"], extensions: [ext1: "here", ext2: "and here"]]
+        er = ExecutionResult.fromSpecification(map)
+        then:
+        er.data == [f: "v"]
+        er.extensions == [ext1: "here", ext2: "and here"]
+        er.errors.isEmpty()
+
+    }
 }
