@@ -117,7 +117,7 @@ dependencies {
 
     testImplementation 'org.reactivestreams:reactive-streams-tck:' + reactiveStreamsVersion
     testImplementation "io.reactivex.rxjava2:rxjava:2.2.21"
-    testImplementation "io.projectreactor:reactor-core:3.7.2"
+    testImplementation "io.projectreactor:reactor-core:3.7.3"
 
     testImplementation 'org.testng:testng:7.10.2' // use for reactive streams test inheritance
 
