@@ -12,7 +12,6 @@ import graphql.execution.ExecutionContext
 import graphql.execution.ExecutionId
 import graphql.execution.ExecutionIdProvider
 import graphql.execution.ExecutionStrategyParameters
-import graphql.execution.MissingRootTypeException
 import graphql.execution.ResultNodesInfo
 import graphql.execution.SubscriptionExecutionStrategy
 import graphql.execution.ValueUnboxer
@@ -1569,4 +1568,39 @@ many lines''']
         er.data == [hello: [[name: "w1"], [name: "w2"], [name: "w3"]]]
     }
 
+    def "exceptions thrown are turned into graphql errors"() {
+        def sdl = """
+            type Query {
+                f(arg : Boolean) : String
+            }
+        """
+
+        def graphQL = TestUtil.graphQL(sdl).build()
+
+        when:
+        def ei = newExecutionInput("query badSyntax {").build()
+        def er = graphQL.execute(ei)
+        then:
+        !er.errors.isEmpty()
+        er.errors[0].message.contains("Invalid syntax with offending token")
+
+
+        when:
+
+        ei = newExecutionInput('query badInput($varX : Boolean) { f(arg : $varX) }')
+                .variables([varX: "bad"]).build()
+        er = graphQL.execute(ei)
+        then:
+        !er.errors.isEmpty()
+        er.errors[0].message.contains("Variable 'varX' has an invalid value")
+
+        when:
+
+        ei = newExecutionInput("query ok1 { f } query ok2 { f  } ")
+                .operationName("X").build()
+        er = graphQL.execute(ei)
+        then:
+        !er.errors.isEmpty()
+        er.errors[0].message.contains("Unknown operation named 'X'")
+    }
 }
