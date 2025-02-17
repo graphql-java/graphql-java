@@ -327,7 +327,7 @@ class GraphQLTest extends Specification {
         result.errors.size() == 0
     }
 
-    def "document with two operations but no specified operation throws"() {
+    def "document with two operations but no specified operation does not throw"() {
         given:
 
         GraphQLSchema schema = newSchema().query(
@@ -343,10 +343,12 @@ class GraphQLTest extends Specification {
         """
 
         when:
-        GraphQL.newGraphQL(schema).build().execute(query)
+        def er = GraphQL.newGraphQL(schema).build().execute(query)
 
         then:
-        thrown(GraphQLException)
+        noExceptionThrown()
+        !er.errors.isEmpty()
+        er.errors[0].message.contains("Must provide operation name if query contains multiple operations")
     }
 
     def "null mutation type does not throw an npe but returns and error"() {
