@@ -20,6 +20,7 @@ import graphql.execution.instrumentation.parameters.InstrumentationExecutionPara
 import graphql.extensions.ExtensionsBuilder;
 import graphql.incremental.DelayedIncrementalPartialResult;
 import graphql.incremental.IncrementalExecutionResultImpl;
+import graphql.language.Directive;
 import graphql.language.Document;
 import graphql.language.NodeUtil;
 import graphql.language.OperationDefinition;
@@ -36,6 +37,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
+import static graphql.Directives.NULL_ON_ERROR_DIRECTIVE_DEFINITION;
 import static graphql.execution.ExecutionContextBuilder.newExecutionContextBuilder;
 import static graphql.execution.ExecutionStepInfo.newExecutionStepInfo;
 import static graphql.execution.ExecutionStrategyParameters.newParameters;
@@ -81,6 +83,11 @@ public class Execution {
             throw rte;
         }
 
+        boolean customErrorPropagationEnabled = Optional.ofNullable(executionInput.getGraphQLContext())
+                .map(graphqlContext -> graphqlContext.getBoolean(ExperimentalApi.ENABLE_NULL_ON_ERROR))
+                .orElse(false);
+        boolean propagateErrors = !customErrorPropagationEnabled || propagateErrors(operationDefinition.getDirectives(), true);
+
         ExecutionContext executionContext = newExecutionContextBuilder()
                 .instrumentation(instrumentation)
                 .instrumentationState(instrumentationState)
@@ -101,6 +108,7 @@ public class Execution {
                 .locale(executionInput.getLocale())
                 .valueUnboxer(valueUnboxer)
                 .executionInput(executionInput)
+                .propagateErrors(propagateErrors)
                 .build();
 
         executionContext.getGraphQLContext().put(ResultNodesInfo.RESULT_NODES_INFO, executionContext.getResultNodesInfo());
@@ -262,5 +270,13 @@ public class Execution {
             executionResult = extensionsBuilder.setExtensions(executionResult);
         }
         return executionResult;
+    }
+
+    private boolean propagateErrors(List<Directive> directives, boolean defaultValue) {
+        Directive foundDirective = NodeUtil.findNodeByName(directives, NULL_ON_ERROR_DIRECTIVE_DEFINITION.getName());
+        if (foundDirective != null) {
+            return false;
+        }
+        return defaultValue;
     }
 }
