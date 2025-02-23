@@ -13,7 +13,6 @@ import graphql.execution.ValuesResolver;
 import graphql.execution.conditional.ConditionalNodes;
 import graphql.execution.directives.QueryDirectives;
 import graphql.execution.directives.QueryDirectivesImpl;
-import graphql.execution.incremental.IncrementalUtils;
 import graphql.introspection.Introspection;
 import graphql.language.*;
 import graphql.normalized.ENFMerger;
@@ -25,9 +24,6 @@ import graphql.schema.*;
 import graphql.schema.impl.SchemaUtil;
 
 import java.util.*;
-import java.util.function.Function;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
 
 import static graphql.Assert.*;
 import static graphql.collect.ImmutableKit.map;
@@ -35,8 +31,6 @@ import static graphql.schema.GraphQLTypeUtil.unwrapAll;
 import static graphql.util.FpKit.*;
 import static java.util.Collections.singleton;
 import static java.util.Collections.singletonList;
-import static java.util.stream.Collectors.toCollection;
-import static java.util.stream.Collectors.toSet;
 
 @PublicApi
 public class NormalizedDocumentFactory {
@@ -254,7 +248,7 @@ public class NormalizedDocumentFactory {
 
             Set<GraphQLObjectType> possibleObjects = ImmutableSet.of(rootType);
             List<CollectedField> collectedFields = new ArrayList<>();
-            collectFromSelectionSet(operationDefinition.getSelectionSet(), collectedFields, rootType, possibleObjects, null);
+            collectFromSelectionSet(operationDefinition.getSelectionSet(), collectedFields, rootType, possibleObjects);
             // group by result key
             Map<String, List<CollectedField>> fieldsByName = fieldsByResultKey(collectedFields);
             ImmutableList.Builder<NormalizedField> resultNFs = ImmutableList.builder();
@@ -296,10 +290,6 @@ public class NormalizedDocumentFactory {
                                                    int level,
                                                    ExecutableNormalizedField parent) {
 
-            this.fieldCount++;
-            if (this.fieldCount > this.options.getMaxFieldsCount()) {
-                throw new AbortExecutionException("Maximum field count exceeded. " + this.fieldCount + " > " + this.options.getMaxFieldsCount());
-            }
             Field field;
             Set<GraphQLObjectType> objectTypes = collectedFieldGroup.objectTypes;
             field = collectedFieldGroup.fields.iterator().next().field;
@@ -324,15 +314,8 @@ public class NormalizedDocumentFactory {
                     .build();
         }
 
-        private List<CollectedFieldGroup> groupByCommonParents(Collection<CollectedField> fields) {
-            if (this.options.deferSupport) {
-                return groupByCommonParentsWithDeferSupport(fields);
-            } else {
-                return groupByCommonParentsNoDeferSupport(fields);
-            }
-        }
 
-        private List<CollectedFieldGroup> groupByCommonParentsNoDeferSupport(Collection<CollectedField> fields) {
+        private List<CollectedFieldGroup> groupByCommonParents(Collection<CollectedField> fields) {
             ImmutableSet.Builder<GraphQLObjectType> objectTypes = ImmutableSet.builder();
             for (CollectedField collectedField : fields) {
                 objectTypes.addAll(collectedField.objectTypes);
@@ -350,77 +333,16 @@ public class NormalizedDocumentFactory {
             return result.build();
         }
 
-        private List<CollectedFieldGroup> groupByCommonParentsWithDeferSupport(Collection<CollectedField> fields) {
-            ImmutableSet.Builder<GraphQLObjectType> objectTypes = ImmutableSet.builder();
-            ImmutableSet.Builder<NormalizedDeferredExecution> deferredExecutionsBuilder = ImmutableSet.builder();
 
-            for (CollectedField collectedField : fields) {
-                objectTypes.addAll(collectedField.objectTypes);
-
-                NormalizedDeferredExecution collectedDeferredExecution = collectedField.deferredExecution;
-
-                if (collectedDeferredExecution != null) {
-                    deferredExecutionsBuilder.add(collectedDeferredExecution);
-                }
-            }
-
-            Set<GraphQLObjectType> allRelevantObjects = objectTypes.build();
-            Set<NormalizedDeferredExecution> deferredExecutions = deferredExecutionsBuilder.build();
-
-            Set<String> duplicatedLabels = listDuplicatedLabels(deferredExecutions);
-
-            if (!duplicatedLabels.isEmpty()) {
-                // Query validation should pick this up
-                assertShouldNeverHappen("Duplicated @defer labels are not allowed: [%s]", String.join(",", duplicatedLabels));
-            }
-
-            Map<GraphQLType, ImmutableList<CollectedField>> groupByAstParent = groupingBy(fields, fieldAndType -> fieldAndType.astTypeCondition);
-            if (groupByAstParent.size() == 1) {
-                return singletonList(new CollectedFieldGroup(ImmutableSet.copyOf(fields), allRelevantObjects, deferredExecutions));
-            }
-
-            ImmutableList.Builder<CollectedFieldGroup> result = ImmutableList.builder();
-            for (GraphQLObjectType objectType : allRelevantObjects) {
-                Set<CollectedField> relevantFields = filterSet(fields, field -> field.objectTypes.contains(objectType));
-
-                Set<NormalizedDeferredExecution> filteredDeferredExecutions = deferredExecutions.stream()
-                        .filter(filterExecutionsFromType(objectType))
-                        .collect(toCollection(LinkedHashSet::new));
-
-                result.add(new CollectedFieldGroup(relevantFields, singleton(objectType), filteredDeferredExecutions));
-            }
-            return result.build();
-        }
-
-        private static Predicate<NormalizedDeferredExecution> filterExecutionsFromType(GraphQLObjectType objectType) {
-            String objectTypeName = objectType.getName();
-            return deferredExecution -> deferredExecution.getPossibleTypes()
-                    .stream()
-                    .map(GraphQLObjectType::getName)
-                    .anyMatch(objectTypeName::equals);
-        }
-
-        private Set<String> listDuplicatedLabels(Collection<NormalizedDeferredExecution> deferredExecutions) {
-            return deferredExecutions.stream()
-                    .map(NormalizedDeferredExecution::getLabel)
-                    .filter(Objects::nonNull)
-                    .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()))
-                    .entrySet()
-                    .stream()
-                    .filter(entry -> entry.getValue() > 1)
-                    .map(Map.Entry::getKey)
-                    .collect(toSet());
-        }
 
         private void collectFromSelectionSet(SelectionSet selectionSet,
                                              List<CollectedField> result,
                                              GraphQLCompositeType astTypeCondition,
-                                             Set<GraphQLObjectType> possibleObjects,
-                                             NormalizedDeferredExecution deferredExecution
+                                             Set<GraphQLObjectType> possibleObjects
         ) {
             for (Selection<?> selection : selectionSet.getSelections()) {
                 if (selection instanceof Field) {
-                    collectField(result, (Field) selection, possibleObjects, astTypeCondition, deferredExecution);
+                    collectField(result, (Field) selection, possibleObjects, astTypeCondition);
                 } else if (selection instanceof InlineFragment) {
                     collectInlineFragment(result, (InlineFragment) selection, possibleObjects, astTypeCondition);
                 } else if (selection instanceof FragmentSpread) {
@@ -450,11 +372,7 @@ public class NormalizedDocumentFactory {
             GraphQLCompositeType newAstTypeCondition = (GraphQLCompositeType) assertNotNull(this.graphQLSchema.getType(fragmentDefinition.getTypeCondition().getName()));
             Set<GraphQLObjectType> newPossibleObjects = narrowDownPossibleObjects(possibleObjects, newAstTypeCondition);
 
-            NormalizedDeferredExecution newDeferredExecution = buildDeferredExecution(
-                    fragmentSpread.getDirectives(),
-                    newPossibleObjects);
-
-            collectFromSelectionSet(fragmentDefinition.getSelectionSet(), result, newAstTypeCondition, newPossibleObjects, newDeferredExecution);
+            collectFromSelectionSet(fragmentDefinition.getSelectionSet(), result, newAstTypeCondition, newPossibleObjects);
         }
 
         private void collectInlineFragment(List<CollectedField> result,
@@ -474,27 +392,9 @@ public class NormalizedDocumentFactory {
 
             }
 
-            NormalizedDeferredExecution newDeferredExecution = buildDeferredExecution(
-                    inlineFragment.getDirectives(),
-                    newPossibleObjects
-            );
-
-            collectFromSelectionSet(inlineFragment.getSelectionSet(), result, newAstTypeCondition, newPossibleObjects, newDeferredExecution);
+            collectFromSelectionSet(inlineFragment.getSelectionSet(), result, newAstTypeCondition, newPossibleObjects);
         }
 
-        private NormalizedDeferredExecution buildDeferredExecution(
-                List<Directive> directives,
-                Set<GraphQLObjectType> newPossibleObjects) {
-            if (!options.deferSupport) {
-                return null;
-            }
-
-            return IncrementalUtils.createDeferredExecution(
-                    this.coercedVariableValues.toMap(),
-                    directives,
-                    (label) -> new NormalizedDeferredExecution(label, newPossibleObjects)
-            );
-        }
 
         private void collectField(List<CollectedField> result,
                                   Field field,
@@ -507,6 +407,14 @@ public class NormalizedDocumentFactory {
             if (possibleObjectTypes.isEmpty()) {
                 return;
             }
+            Boolean shouldInclude = conditionalNodes.shouldIncludeWithoutVariables(field);
+            if (shouldInclude != null && !shouldInclude) {
+                return;
+            }
+            if (shouldInclude == null) {
+                // now we need to copy the whole NF and proceed one without and one with
+            }
+            // should include is just true
             result.add(new CollectedField(field, possibleObjectTypes, astTypeCondition));
         }
 
@@ -559,8 +467,11 @@ public class NormalizedDocumentFactory {
         }
 
         private static class CollectedField {
+            // the AST field
             Field field;
+            // the set of type conditions for this field, resolved to object types based on the schema
             Set<GraphQLObjectType> objectTypes;
+            // the last type condition used for this field
             GraphQLCompositeType astTypeCondition;
 
             public CollectedField(Field field, Set<GraphQLObjectType> objectTypes, GraphQLCompositeType astTypeCondition) {

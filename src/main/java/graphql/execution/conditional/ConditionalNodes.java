@@ -4,14 +4,11 @@ import graphql.Assert;
 import graphql.GraphQLContext;
 import graphql.Internal;
 import graphql.execution.CoercedVariables;
-import graphql.execution.ValuesResolver;
-import graphql.language.Directive;
-import graphql.language.DirectivesContainer;
-import graphql.language.NodeUtil;
+import graphql.language.*;
 import graphql.schema.GraphQLSchema;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 
 import static graphql.Directives.IncludeDirective;
@@ -20,6 +17,12 @@ import static graphql.Directives.SkipDirective;
 @Internal
 public class ConditionalNodes {
 
+    /**
+     * return null if skip/include argument contains a variable and therefore could not be resolved
+     */
+    public Boolean shouldIncludeWithoutVariables(DirectivesContainer<?> element) {
+        return shouldInclude(null, element.getDirectives());
+    }
 
     public boolean shouldInclude(DirectivesContainer<?> element,
                                  Map<String, Object> variables,
@@ -75,12 +78,15 @@ public class ConditionalNodes {
     }
 
 
-    private boolean shouldInclude(Map<String, Object> variables, List<Directive> directives) {
+    private @Nullable Boolean shouldInclude(Map<String, Object> variables, List<Directive> directives) {
         // shortcut on no directives
         if (directives.isEmpty()) {
             return true;
         }
-        boolean skip = getDirectiveResult(variables, directives, SkipDirective.getName(), false);
+        Boolean skip = getDirectiveResult(variables, directives, SkipDirective.getName(), false);
+        if (skip == null) {
+            return null;
+        }
         if (skip) {
             return false;
         }
@@ -88,15 +94,27 @@ public class ConditionalNodes {
         return getDirectiveResult(variables, directives, IncludeDirective.getName(), true);
     }
 
-    private boolean getDirectiveResult(Map<String, Object> variables, List<Directive> directives, String directiveName, boolean defaultValue) {
+    private @Nullable Boolean getDirectiveResult(Map<String, Object> variables, List<Directive> directives, String directiveName, boolean defaultValue) {
         Directive foundDirective = NodeUtil.findNodeByName(directives, directiveName);
         if (foundDirective != null) {
-            Map<String, Object> argumentValues = ValuesResolver.getArgumentValues(SkipDirective.getArguments(), foundDirective.getArguments(), CoercedVariables.of(variables), GraphQLContext.getDefault(), Locale.getDefault());
-            Object flag = argumentValues.get("if");
-            Assert.assertTrue(flag instanceof Boolean, "The '%s' directive MUST have a value for the 'if' argument", directiveName);
-            return (Boolean) flag;
+            return getIfValue(foundDirective.getArguments(), variables);
         }
         return defaultValue;
     }
 
+    private @Nullable Boolean getIfValue(List<Argument> arguments, @Nullable Map<String, Object> variables) {
+        for (Argument argument : arguments) {
+            if (argument.getName().equals("if")) {
+                Object value = argument.getValue();
+                if (value instanceof BooleanValue) {
+                    return ((BooleanValue) value).isValue();
+                }
+                if (value instanceof VariableReference && variables != null) {
+                    return (boolean) variables.get(((VariableReference) value).getName());
+                }
+                return null;
+            }
+        }
+        return Assert.assertShouldNeverHappen("The 'if' argument must be present");
+    }
 }
