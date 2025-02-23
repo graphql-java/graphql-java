@@ -93,15 +93,15 @@ public class OverlappingFieldValidationPerformance {
     @Benchmark
     @BenchmarkMode(Mode.AverageTime)
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
-    public void overlappingFieldValidationAbgTime(MyState myState, Blackhole blackhole) {
-        blackhole.consume(validateQuery(myState.schema2, myState.document));
+    public void overlappingFieldValidationAvgTime(MyState myState, Blackhole blackhole) {
+        blackhole.consume(validateQuery(myState.schema, myState.document));
     }
 
     @Benchmark
-    @BenchmarkMode(Mode.AverageTime)
-    @OutputTimeUnit(TimeUnit.NANOSECONDS)
+    @BenchmarkMode(Mode.Throughput)
+    @OutputTimeUnit(TimeUnit.SECONDS)
     public void overlappingFieldValidationThroughput(MyState myState, Blackhole blackhole) {
-        blackhole.consume(validateQuery(myState.schema2, myState.document));
+        blackhole.consume(validateQuery(myState.schema, myState.document));
     }
 
     @Benchmark
