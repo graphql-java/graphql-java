@@ -52,7 +52,7 @@ public class OverlappingFieldValidationPerformance {
         GraphQLSchema schema2;
         Document document;
 
-        @Param({"2", "10", "100"})
+        @Param({"10", "100"})
         int size;
 
         Document overlapFrag;
@@ -106,42 +106,42 @@ public class OverlappingFieldValidationPerformance {
 
     @Benchmark
     @BenchmarkMode(Mode.AverageTime)
-    @OutputTimeUnit(TimeUnit.NANOSECONDS)
+    @OutputTimeUnit(TimeUnit.MILLISECONDS)
     public void benchmarkRepeatedFields(MyState myState, Blackhole blackhole) {
         blackhole.consume(validateQuery(myState.schema2, myState.repeatedFields));
     }
 
     @Benchmark
     @BenchmarkMode(Mode.AverageTime)
-    @OutputTimeUnit(TimeUnit.NANOSECONDS)
+    @OutputTimeUnit(TimeUnit.MILLISECONDS)
     public void benchmarkOverlapFrag(MyState myState, Blackhole blackhole) {
         blackhole.consume(validateQuery(myState.schema2, myState.overlapFrag));
     }
 
     @Benchmark
     @BenchmarkMode(Mode.AverageTime)
-    @OutputTimeUnit(TimeUnit.NANOSECONDS)
+    @OutputTimeUnit(TimeUnit.MILLISECONDS)
     public void benchmarkOverlapNoFrag(MyState myState, Blackhole blackhole) {
         blackhole.consume(validateQuery(myState.schema2, myState.overlapNoFrag));
     }
 
     @Benchmark
     @BenchmarkMode(Mode.AverageTime)
-    @OutputTimeUnit(TimeUnit.NANOSECONDS)
+    @OutputTimeUnit(TimeUnit.MILLISECONDS)
     public void benchmarkNoOverlapFrag(MyState myState, Blackhole blackhole) {
         blackhole.consume(validateQuery(myState.schema2, myState.noOverlapFrag));
     }
 
     @Benchmark
     @BenchmarkMode(Mode.AverageTime)
-    @OutputTimeUnit(TimeUnit.NANOSECONDS)
+    @OutputTimeUnit(TimeUnit.MILLISECONDS)
     public void benchmarkNoOverlapNoFrag(MyState myState, Blackhole blackhole) {
         blackhole.consume(validateQuery(myState.schema2, myState.noOverlapNoFrag));
     }
 
     @Benchmark
     @BenchmarkMode(Mode.AverageTime)
-    @OutputTimeUnit(TimeUnit.NANOSECONDS)
+    @OutputTimeUnit(TimeUnit.MILLISECONDS)
     public void benchmarkDeepAbstractConcrete(MyState myState, Blackhole blackhole) {
         blackhole.consume(validateQuery(myState.schema2, myState.deepAbstractConcrete));
     }
