@@ -6,7 +6,7 @@ import graphql.schema.idl.RuntimeWiring;
 import graphql.schema.idl.TypeRuntimeWiring;
 
 /**
- * An exception that is throw when {@link RuntimeWiring.Builder#strictMode()} or {@link TypeRuntimeWiring.Builder#strictMode()} is true and
+ * An exception that is throw when {@link RuntimeWiring.Builder#strictMode(boolean)} or {@link TypeRuntimeWiring.Builder#strictMode(boolean)} is true and
  * something gets redefined.
  */
 @PublicApi
