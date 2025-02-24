@@ -24,8 +24,4 @@ public @interface ExperimentalApi {
      * The key that should be associated with a boolean value which indicates whether @defer and @stream behaviour is enabled for this execution.
      */
     String ENABLE_INCREMENTAL_SUPPORT  = "ENABLE_INCREMENTAL_SUPPORT";
-    /**
-     * The key that should be associated with a boolean value which indicates whether @nullOnError behaviour is enabled for this execution.
-     */
-    String ENABLE_NULL_ON_ERROR = "ENABLE_NULL_ON_ERROR";
 }

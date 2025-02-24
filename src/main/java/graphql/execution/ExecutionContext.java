@@ -176,7 +176,7 @@ public class ExecutionContext {
     /**
      * @return true if the current operation should propagate errors in non-null positions
      * Propagating errors is the default. Error aware clients may opt in returning null in non-null positions
-     * by using the `@nullOnError` directive.
+     * by using the `@experimental_disableErrorPropagation` directive.
      */
     @ExperimentalApi
     public boolean propagateErrors() { return propagateErrors; }

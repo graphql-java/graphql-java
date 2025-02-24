@@ -37,7 +37,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
-import static graphql.Directives.NULL_ON_ERROR_DIRECTIVE_DEFINITION;
+import static graphql.Directives.DISABLE_ERROR_PROPAGATION_DIRECTIVE_DEFINITION;
 import static graphql.execution.ExecutionContextBuilder.newExecutionContextBuilder;
 import static graphql.execution.ExecutionStepInfo.newExecutionStepInfo;
 import static graphql.execution.ExecutionStrategyParameters.newParameters;
@@ -88,10 +88,7 @@ public class Execution {
             throw rte;
         }
 
-        boolean customErrorPropagationEnabled = Optional.ofNullable(executionInput.getGraphQLContext())
-                .map(graphqlContext -> graphqlContext.getBoolean(ExperimentalApi.ENABLE_NULL_ON_ERROR))
-                .orElse(false);
-        boolean propagateErrors = !customErrorPropagationEnabled || propagateErrors(operationDefinition.getDirectives(), true);
+        boolean propagateErrors = propagateErrors(operationDefinition.getDirectives(), true);
 
         ExecutionContext executionContext = newExecutionContextBuilder()
                 .instrumentation(instrumentation)
@@ -272,7 +269,7 @@ public class Execution {
     }
 
     private boolean propagateErrors(List<Directive> directives, boolean defaultValue) {
-        Directive foundDirective = NodeUtil.findNodeByName(directives, NULL_ON_ERROR_DIRECTIVE_DEFINITION.getName());
+        Directive foundDirective = NodeUtil.findNodeByName(directives, DISABLE_ERROR_PROPAGATION_DIRECTIVE_DEFINITION.getName());
         if (foundDirective != null) {
             return false;
         }

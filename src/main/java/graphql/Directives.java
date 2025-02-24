@@ -40,7 +40,7 @@ public class Directives {
     private static final String SPECIFIED_BY = "specifiedBy";
     private static final String ONE_OF = "oneOf";
     private static final String DEFER = "defer";
-    private static final String NULL_ON_ERROR = "nullOnError";
+    private static final String DISABLE_ERROR_PROPAGATION = "experimental_disableErrorPropagation";
 
     public static final DirectiveDefinition DEPRECATED_DIRECTIVE_DEFINITION;
     public static final DirectiveDefinition INCLUDE_DIRECTIVE_DEFINITION;
@@ -51,7 +51,7 @@ public class Directives {
     @ExperimentalApi
     public static final DirectiveDefinition DEFER_DIRECTIVE_DEFINITION;
     @ExperimentalApi
-    public static final DirectiveDefinition NULL_ON_ERROR_DIRECTIVE_DEFINITION;
+    public static final DirectiveDefinition DISABLE_ERROR_PROPAGATION_DIRECTIVE_DEFINITION;
 
     public static final String BOOLEAN = "Boolean";
     public static final String STRING = "String";
@@ -139,8 +139,8 @@ public class Directives {
                                 .type(newTypeName().name(STRING).build())
                                 .build())
                 .build();
-        NULL_ON_ERROR_DIRECTIVE_DEFINITION = DirectiveDefinition.newDirectiveDefinition()
-                .name(NULL_ON_ERROR)
+        DISABLE_ERROR_PROPAGATION_DIRECTIVE_DEFINITION = DirectiveDefinition.newDirectiveDefinition()
+                .name(DISABLE_ERROR_PROPAGATION)
                 .directiveLocation(newDirectiveLocation().name(QUERY.name()).build())
                 .directiveLocation(newDirectiveLocation().name(MUTATION.name()).build())
                 .directiveLocation(newDirectiveLocation().name(SUBSCRIPTION.name()).build())
@@ -240,11 +240,11 @@ public class Directives {
             .build();
 
     @ExperimentalApi
-    public static final GraphQLDirective NullOnErrorDirective = GraphQLDirective.newDirective()
-            .name(NULL_ON_ERROR)
-            .description("This directive allows returning null in non-null positions that have an associated error.")
+    public static final GraphQLDirective DisableErrorPropagationDirective = GraphQLDirective.newDirective()
+            .name(DISABLE_ERROR_PROPAGATION)
+            .description("This directive disables error propagation for the given operation.")
             .validLocations(QUERY, MUTATION, SUBSCRIPTION)
-            .definition(NULL_ON_ERROR_DIRECTIVE_DEFINITION)
+            .definition(DISABLE_ERROR_PROPAGATION_DIRECTIVE_DEFINITION)
             .build();
 
     private static Description createDescription(String s) {
