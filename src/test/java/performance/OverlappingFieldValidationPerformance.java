@@ -53,7 +53,7 @@ public class OverlappingFieldValidationPerformance {
         GraphQLSchema schema2;
         Document document;
 
-        @Param({"100", "1000"})
+        @Param({"100"})
         int size;
 
         Document overlapFrag;
