@@ -1,5 +1,6 @@
 package performance;
 
+import graphql.Assert;
 import graphql.ExecutionResult;
 import graphql.GraphQL;
 import graphql.i18n.I18n;
@@ -52,7 +53,7 @@ public class OverlappingFieldValidationPerformance {
         GraphQLSchema schema2;
         Document document;
 
-        @Param({"10", "100"})
+        @Param({"100", "1000"})
         int size;
 
         Document overlapFrag;
@@ -153,6 +154,7 @@ public class OverlappingFieldValidationPerformance {
         OverlappingFieldsCanBeMerged overlappingFieldsCanBeMerged = new OverlappingFieldsCanBeMerged(validationContext, errorCollector);
         LanguageTraversal languageTraversal = new LanguageTraversal();
         languageTraversal.traverse(document, new RulesVisitor(validationContext, Collections.singletonList(overlappingFieldsCanBeMerged)));
+        Assert.assertTrue(errorCollector.getErrors().size() == 0);
         return errorCollector.getErrors();
     }
 
