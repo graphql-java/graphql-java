@@ -83,7 +83,7 @@ public class Execution {
             throw rte;
         }
 
-        boolean propagateErrors = propagateErrors(operationDefinition.getDirectives(), true);
+        boolean propagateErrors = propagateErrors(getOperationResult.operationDefinition.getDirectives(), true);
 
         ExecutionContext executionContext = newExecutionContextBuilder()
                 .instrumentation(instrumentation)
