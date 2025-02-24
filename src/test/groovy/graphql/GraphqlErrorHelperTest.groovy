@@ -106,4 +106,52 @@ class GraphqlErrorHelperTest extends Specification {
                     message   : "has extensions"
         ]
     }
+
+    def "can parse out a map and make an error"() {
+        when:
+        def rawError = [message: "m"]
+        def graphQLError = GraphqlErrorHelper.fromSpecification(rawError)
+        then:
+        graphQLError.getMessage() == "m"
+        graphQLError.getErrorType() == ErrorType.DataFetchingException // default from error builder
+        graphQLError.getLocations() == []
+        graphQLError.getPath() == null
+        graphQLError.getExtensions() == null
+
+        when:
+        rawError = [message: "m"]
+        graphQLError = GraphQLError.fromSpecification(rawError) // just so we reference the public method
+        then:
+        graphQLError.getMessage() == "m"
+        graphQLError.getErrorType() == ErrorType.DataFetchingException // default from error builder
+        graphQLError.getLocations() == []
+        graphQLError.getPath() == null
+        graphQLError.getExtensions() == null
+
+        when:
+        def extensionsMap = [attr1: "a1", attr2: "a2", classification: "CLASSIFICATION-X"]
+        rawError = [message: "m", path: ["a", "b"], locations: [[line: 2, column: 3]], extensions: extensionsMap]
+        graphQLError = GraphqlErrorHelper.fromSpecification(rawError)
+
+        then:
+        graphQLError.getMessage() == "m"
+        graphQLError.getErrorType().toString() == "CLASSIFICATION-X"
+        graphQLError.getLocations() == [new SourceLocation(2, 3)]
+        graphQLError.getPath() == ["a", "b"]
+        graphQLError.getExtensions() == extensionsMap
+
+
+        when: "can do a list of errors"
+        def rawErrors = [[message: "m0"], [message: "m1"]]
+        def errors = GraphqlErrorHelper.fromSpecification(rawErrors)
+        then:
+        errors.size() == 2
+        errors.eachWithIndex { GraphQLError gErr, int i ->
+            assert gErr.getMessage() == "m" + i
+            assert gErr.getErrorType() == ErrorType.DataFetchingException // default from error builder
+            assert gErr.getLocations() == []
+            assert gErr.getPath() == null
+            assert gErr.getExtensions() == null
+        }
+    }
 }

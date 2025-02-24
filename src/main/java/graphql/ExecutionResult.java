@@ -56,6 +56,16 @@ public interface ExecutionResult {
      */
     Map<String, Object> toSpecification();
 
+    /**
+     * This allows you to turn a map of results from {@link #toSpecification()} and turn it back into a {@link ExecutionResult}
+     *
+     * @param specificationMap the specification result map
+     *
+     * @return a new {@link ExecutionResult} from that map
+     */
+    static ExecutionResult fromSpecification(Map<String, Object> specificationMap) {
+        return ExecutionResultImpl.fromSpecification(specificationMap);
+    }
 
     /**
      * This helps you transform the current {@link ExecutionResult} object into another one by starting a builder with all

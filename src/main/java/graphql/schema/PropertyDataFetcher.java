@@ -4,6 +4,9 @@ package graphql.schema;
 import graphql.Assert;
 import graphql.PublicApi;
 
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -17,11 +20,12 @@ import java.util.function.Supplier;
  * <li>If the source is null, return null</li>
  * <li>If the source is a Map, return map.get(propertyName)</li>
  * <li>If a function is provided, it is used</li>
+ * <li>Find a public JavaBean getter method named `getPropertyName()` or `isPropertyName()` using {@link java.lang.invoke.LambdaMetafactory#metafactory(MethodHandles.Lookup, String, MethodType, MethodType, MethodHandle, MethodType)}</li>
+ * <li>Find a public Record like method named `propertyName()`</li>
  * <li>Find a public JavaBean getter method named `getPropertyName()` or `isPropertyName()`</li>
  * <li>Find any getter method named `getPropertyName()` or `isPropertyName()` and call method.setAccessible(true)</li>
  * <li>Find a public field named `propertyName`</li>
  * <li>Find any field named `propertyName` and call field.setAccessible(true)</li>
- * <li>Find a public Record like method named `propertyName()`</li>
  * <li>If this cant find anything, then null is returned</li>
  * </ul>
  * <p>

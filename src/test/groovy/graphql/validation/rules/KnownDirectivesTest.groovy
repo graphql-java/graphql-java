@@ -246,6 +246,10 @@ class KnownDirectivesTest extends Specification {
             field: String
         }
         
+        type Subscription {
+            field: String
+        }
+        
     '''
 
     def schema = TestUtil.schema(sdl)

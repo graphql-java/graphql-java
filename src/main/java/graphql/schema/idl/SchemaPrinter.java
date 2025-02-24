@@ -945,7 +945,7 @@ public class SchemaPrinter {
     String directivesString(Class<? extends GraphQLSchemaElement> parentType, boolean isDeprecated, GraphQLDirectiveContainer directiveContainer) {
         List<GraphQLAppliedDirective> directives;
         if (isDeprecated) {
-            directives = addDeprecatedDirectiveIfNeeded(directiveContainer);
+            directives = addOrUpdateDeprecatedDirectiveIfNeeded(directiveContainer);
         } else {
             directives = DirectivesUtil.toAppliedDirectives(directiveContainer);
         }
@@ -1041,23 +1041,48 @@ public class SchemaPrinter {
                 .count() == 1;
     }
 
-    private List<GraphQLAppliedDirective> addDeprecatedDirectiveIfNeeded(GraphQLDirectiveContainer directiveContainer) {
+    private List<GraphQLAppliedDirective> addOrUpdateDeprecatedDirectiveIfNeeded(GraphQLDirectiveContainer directiveContainer) {
         List<GraphQLAppliedDirective> directives = DirectivesUtil.toAppliedDirectives(directiveContainer);
+        String reason = getDeprecationReason(directiveContainer);
+
         if (!hasDeprecatedDirective(directives) && isDeprecatedDirectiveAllowed()) {
             directives = new ArrayList<>(directives);
-            String reason = getDeprecationReason(directiveContainer);
-            GraphQLAppliedDirectiveArgument arg = GraphQLAppliedDirectiveArgument.newArgument()
-                    .name("reason")
-                    .valueProgrammatic(reason)
-                    .type(GraphQLString)
-                    .build();
-            GraphQLAppliedDirective directive = GraphQLAppliedDirective.newDirective()
-                    .name("deprecated")
-                    .argument(arg)
-                    .build();
-            directives.add(directive);
+            directives.add(createDeprecatedDirective(reason));
+        } else if (hasDeprecatedDirective(directives) && isDeprecatedDirectiveAllowed()) {
+            // Update deprecated reason in case modified by schema transform
+            directives = updateDeprecatedDirective(directives, reason);
         }
         return directives;
+    }
+
+    private GraphQLAppliedDirective createDeprecatedDirective(String reason) {
+        GraphQLAppliedDirectiveArgument arg = GraphQLAppliedDirectiveArgument.newArgument()
+                .name("reason")
+                .valueProgrammatic(reason)
+                .type(GraphQLString)
+                .build();
+        return GraphQLAppliedDirective.newDirective()
+                .name("deprecated")
+                .argument(arg)
+                .build();
+    }
+
+    private List<GraphQLAppliedDirective> updateDeprecatedDirective(List<GraphQLAppliedDirective> directives, String reason) {
+        GraphQLAppliedDirectiveArgument newArg = GraphQLAppliedDirectiveArgument.newArgument()
+                .name("reason")
+                .valueProgrammatic(reason)
+                .type(GraphQLString)
+                .build();
+
+        return directives.stream().map(d -> {
+            if (isDeprecatedDirective(d)) {
+                // Don't include reason is deliberately replaced with NOT_SET, for example in Anonymizer
+                if (d.getArgument("reason").getArgumentValue() != InputValueWithState.NOT_SET) {
+                    return d.transform(builder -> builder.argument(newArg));
+                }
+            }
+            return d;
+        }).collect(toList());
     }
 
     private String getDeprecationReason(GraphQLDirectiveContainer directiveContainer) {
