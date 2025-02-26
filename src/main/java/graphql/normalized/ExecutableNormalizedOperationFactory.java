@@ -532,6 +532,9 @@ public class ExecutableNormalizedOperationFactory {
                     if (fieldAndAstParent.field.getSelectionSet() == null) {
                         continue;
                     }
+                    // the AST parent comes from the previous collect from selection set call
+                    // and is the type to which the field belongs (the container type of the field) and output type
+                    // of the field needs to be determined based on the field name
                     GraphQLFieldDefinition fieldDefinition = Introspection.getFieldDef(graphQLSchema, fieldAndAstParent.astParentType, fieldAndAstParent.field.getName());
                     GraphQLUnmodifiedType selectionSetType = unwrapAll(fieldDefinition.getType());
                     this.collectFromSelectionSet(fieldAndAstParent.field.getSelectionSet(),
