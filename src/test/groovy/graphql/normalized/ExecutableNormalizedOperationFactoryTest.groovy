@@ -29,7 +29,7 @@ import static graphql.language.AstPrinter.printAst
 import static graphql.parser.Parser.parseValue
 import static graphql.schema.FieldCoordinates.coordinates
 
-abstract class ExecutableNormalizedOperationFactoryTest extends Specification {
+class ExecutableNormalizedOperationFactoryTest extends Specification {
     static boolean deferSupport
 
 
