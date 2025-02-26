@@ -522,7 +522,6 @@ public class ExecutableNormalizedOperationFactory {
                 collectedFields = new ArrayList<>();
                 collectFromSelectionSet(operationDefinition.getSelectionSet(), collectedFields, rootType, possibleObjects, null);
             } else {
-                checkMaxDepthExceeded(curLevel);
                 List<GraphQLFieldDefinition> fieldDefs = executableNormalizedField.getFieldDefinitions(graphQLSchema);
                 possibleObjects = resolvePossibleObjects(fieldDefs);
                 if (possibleObjects.isEmpty()) {
