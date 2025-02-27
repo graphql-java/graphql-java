@@ -1,5 +1,6 @@
 package graphql.normalized.nf;
 
+import graphql.Assert;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
@@ -15,6 +16,11 @@ public class NormalizedDocument {
 
     public List<NormalizedOperationWithAssumedSkipIncludeVariables> getNormalizedOperations() {
         return normalizedOperations;
+    }
+
+    public NormalizedOperation getSingleNormalizedOperation() {
+        Assert.assertTrue(normalizedOperations.size() == 1, "Expecting a single normalized operation");
+        return normalizedOperations.get(0).getNormalizedOperation();
     }
 
     public static class NormalizedOperationWithAssumedSkipIncludeVariables {
