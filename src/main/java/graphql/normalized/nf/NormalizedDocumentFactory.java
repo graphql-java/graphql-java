@@ -287,7 +287,6 @@ public class NormalizedDocumentFactory {
                         for (String variableName : skipIncludeVariableNames) {
                             assumedSkipIncludeVariableValues.put(variableName, (i & (1 << variableIndex++)) != 0);
                         }
-
                         NormalizedOperation operationWithAssumedVariables = createNormalizedOperation(operationDefinition);
                         normalizedOperations.add(new NormalizedDocument.NormalizedOperationWithAssumedSkipIncludeVariables(assumedSkipIncludeVariableValues, operationWithAssumedVariables));
                     }
@@ -319,7 +318,7 @@ public class NormalizedDocumentFactory {
             NormalizedOperation normalizedOperation = new NormalizedOperation(
                     operationDefinition.getOperation(),
                     operationDefinition.getName(),
-                    rootEnfs,
+                    new ArrayList<>(rootEnfs),
                     fieldToNormalizedField.build(),
                     normalizedFieldToMergedField.build(),
                     normalizedFieldToQueryDirectives.build(),

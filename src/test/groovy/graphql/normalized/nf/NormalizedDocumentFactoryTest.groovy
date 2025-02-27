@@ -150,19 +150,21 @@ type Dog implements Animal{
         def printedTree = printDocumentWithLevelInfo(tree, graphQLSchema)
 
         expect:
-        printedTree == ['-Query.animal: Animal',
-                        '--[Bird, Cat, Dog].name: String',
-                        '--otherName: [Bird, Cat, Dog].name: String',
-                        '--Cat.friends: [Friend]',
-                        '---Friend.isCatOwner: Boolean',
-                        '---Friend.pets: [Pet]',
-                        '----Dog.name: String',
-                        '--Bird.friends: [Friend]',
-                        '---Friend.isBirdOwner: Boolean',
-                        '---Friend.name: String',
-                        '---Friend.pets: [Pet]',
-                        '----Cat.breed: String'
-        ]
+        printedTree.join("\n") == '''variables: [skip:false, include:false]
+-Query.foo: Foo
+--Foo.name: String
+--Foo.bar: Bar
+variables: [skip:true, include:false]
+-Query.foo: Foo
+--Foo.name: String
+variables: [skip:false, include:true]
+-Query.foo: Foo
+--Foo.name: String
+--Foo.bar: Bar
+---Bar.baz: String
+variables: [skip:true, include:true]
+-Query.foo: Foo
+--Foo.name: String'''
     }
 
 
@@ -176,7 +178,9 @@ type Dog implements Animal{
         def result = []
         for (NormalizedDocument.NormalizedOperationWithAssumedSkipIncludeVariables normalizedOperationWithAssumedSkipIncludeVariables : normalizedDocument.normalizedOperations) {
             NormalizedOperation normalizedOperation = normalizedOperationWithAssumedSkipIncludeVariables.normalizedOperation;
-            result << "assumed variables: " + normalizedOperationWithAssumedSkipIncludeVariables.assumedSkipIncludeVariables
+            if (normalizedOperationWithAssumedSkipIncludeVariables.assumedSkipIncludeVariables != null) {
+                result << "variables: " + normalizedOperationWithAssumedSkipIncludeVariables.assumedSkipIncludeVariables
+            }
             Traverser<NormalizedField> traverser = Traverser.depthFirst({ it.getChildren() })
             traverser.traverse(normalizedOperation.getTopLevelFields(), new TraverserVisitorStub<NormalizedField>() {
                 @Override

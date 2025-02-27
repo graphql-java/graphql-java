@@ -146,9 +146,6 @@ public class ConditionalNodes {
                     return ((BooleanValue) value).isValue();
                 }
                 if (value instanceof VariableReference && variables != null) {
-                    if (variables.get(((VariableReference) value).getName()) == null) {
-                        System.out.println("yeahhhhhhhhhhh");
-                    }
                     return (boolean) variables.get(((VariableReference) value).getName());
                 }
                 return null;
