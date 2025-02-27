@@ -1,4 +1,4 @@
-package benchmark;
+package performance;
 
 import graphql.execution.CoercedVariables;
 import graphql.language.Document;
@@ -17,6 +17,7 @@ import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
+import org.openjdk.jmh.infra.Blackhole;
 
 import java.util.concurrent.TimeUnit;
 
@@ -24,7 +25,7 @@ import java.util.concurrent.TimeUnit;
 @Warmup(iterations = 2, time = 5)
 @Measurement(iterations = 3)
 @Fork(3)
-public class ENFBenchmark2 {
+public class ENFExtraLargePerformance {
 
     @State(Scope.Benchmark)
     public static class MyState {
@@ -35,25 +36,33 @@ public class ENFBenchmark2 {
         @Setup
         public void setup() {
             try {
-                String schemaString = BenchmarkUtils.loadResource("large-schema-2.graphqls");
+                String schemaString = PerformanceTestingUtils.loadResource("extra-large-schema-1.graphqls");
                 schema = SchemaGenerator.createdMockedSchema(schemaString);
 
-                String query = BenchmarkUtils.loadResource("large-schema-2-query.graphql");
+                String query = PerformanceTestingUtils.loadResource("extra-large-schema-1-query.graphql");
                 document = Parser.parse(query);
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
         }
-
     }
 
     @Benchmark
     @BenchmarkMode(Mode.AverageTime)
     @OutputTimeUnit(TimeUnit.MILLISECONDS)
-    public ExecutableNormalizedOperation benchMarkAvgTime(MyState myState) {
-        ExecutableNormalizedOperation executableNormalizedOperation = ExecutableNormalizedOperationFactory.createExecutableNormalizedOperation(myState.schema, myState.document, null, CoercedVariables.emptyVariables());
-//        System.out.println("fields size:" + normalizedQuery.getFieldToNormalizedField().size());
-        return executableNormalizedOperation;
+    public void benchMarkAvgTime(MyState myState, Blackhole blackhole) {
+        runImpl(myState, blackhole);
     }
 
+    @Benchmark
+    @BenchmarkMode(Mode.Throughput)
+    @OutputTimeUnit(TimeUnit.SECONDS)
+    public void benchMarkThroughput(MyState myState, Blackhole blackhole) {
+        runImpl(myState, blackhole);
+    }
+
+    private void runImpl(MyState myState, Blackhole blackhole) {
+        ExecutableNormalizedOperation executableNormalizedOperation = ExecutableNormalizedOperationFactory.createExecutableNormalizedOperation(myState.schema, myState.document, null, CoercedVariables.emptyVariables());
+        blackhole.consume(executableNormalizedOperation);
+    }
 }
