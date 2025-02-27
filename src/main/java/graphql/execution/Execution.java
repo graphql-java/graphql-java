@@ -70,24 +70,13 @@ public class Execution {
     }
 
     public CompletableFuture<ExecutionResult> execute(Document document, GraphQLSchema graphQLSchema, ExecutionId executionId, ExecutionInput executionInput, InstrumentationState instrumentationState) {
-
-
         NodeUtil.GetOperationResult getOperationResult;
         CoercedVariables coercedVariables;
         Supplier<NormalizedVariables> normalizedVariableValues;
         try {
             getOperationResult = NodeUtil.getOperation(document, executionInput.getOperationName());
             coercedVariables = coerceVariableValues(graphQLSchema, executionInput, getOperationResult.operationDefinition);
-
-            RawVariables inputVariables = executionInput.getRawVariables();
-            List<VariableDefinition> variableDefinitions = getOperationResult.operationDefinition.getVariableDefinitions();
-
-            normalizedVariableValues = FpKit.intraThreadMemoize(() ->
-                    ValuesResolver.getNormalizedVariableValues(graphQLSchema,
-                            variableDefinitions,
-                            inputVariables,
-                            executionInput.getGraphQLContext(), executionInput.getLocale());
-
+            normalizedVariableValues = normalizedVariableValues(graphQLSchema, executionInput, getOperationResult);
         } catch (RuntimeException rte) {
             if (rte instanceof GraphQLError) {
                 return completedFuture(new ExecutionResultImpl((GraphQLError) rte));
@@ -131,6 +120,19 @@ public class Execution {
         RawVariables inputVariables = executionInput.getRawVariables();
         List<VariableDefinition> variableDefinitions = operationDefinition.getVariableDefinitions();
         return ValuesResolver.coerceVariableValues(graphQLSchema, variableDefinitions, inputVariables, executionInput.getGraphQLContext(), executionInput.getLocale());
+    }
+
+    private static @NotNull Supplier<NormalizedVariables> normalizedVariableValues(GraphQLSchema graphQLSchema, ExecutionInput executionInput, NodeUtil.GetOperationResult getOperationResult) {
+        Supplier<NormalizedVariables> normalizedVariableValues;
+        RawVariables inputVariables = executionInput.getRawVariables();
+        List<VariableDefinition> variableDefinitions = getOperationResult.operationDefinition.getVariableDefinitions();
+
+        normalizedVariableValues = FpKit.intraThreadMemoize(() ->
+                ValuesResolver.getNormalizedVariableValues(graphQLSchema,
+                        variableDefinitions,
+                        inputVariables,
+                        executionInput.getGraphQLContext(), executionInput.getLocale()));
+        return normalizedVariableValues;
     }
 
 
@@ -244,7 +246,7 @@ public class Execution {
         if (executionContext.getDataLoaderRegistry() == EMPTY_DATALOADER_REGISTRY || doNotAutomaticallyDispatchDataLoader) {
             return DataLoaderDispatchStrategy.NO_OP;
         }
-        if (! executionContext.isSubscriptionOperation()) {
+        if (!executionContext.isSubscriptionOperation()) {
             boolean deferEnabled = Optional.ofNullable(executionContext.getGraphQLContext())
                     .map(graphqlContext -> graphqlContext.getBoolean(ExperimentalApi.ENABLE_INCREMENTAL_SUPPORT))
                     .orElse(false);
