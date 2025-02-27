@@ -35,7 +35,7 @@ import static graphql.normalized.ExecutableNormalizedOperationFactory.createExec
 @Fork(2)
 public class ENFDeepIntrospectionPerformance {
 
-    @Param({"2", "10", "20"})
+    @Param({"2", "10"})
     int howDeep = 2;
 
     String query = "";
@@ -69,7 +69,7 @@ public class ENFDeepIntrospectionPerformance {
         runAtStartup();
 
         Options opt = new OptionsBuilder()
-                .include("benchmark.ENFBenchmarkDeepIntrospection")
+                .include("performance.ENFDeepIntrospectionPerformance")
                 .build();
 
         new Runner(opt).run();
