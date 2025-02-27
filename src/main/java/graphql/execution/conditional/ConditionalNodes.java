@@ -4,7 +4,12 @@ import graphql.Assert;
 import graphql.GraphQLContext;
 import graphql.Internal;
 import graphql.execution.CoercedVariables;
-import graphql.language.*;
+import graphql.language.Argument;
+import graphql.language.BooleanValue;
+import graphql.language.Directive;
+import graphql.language.DirectivesContainer;
+import graphql.language.NodeUtil;
+import graphql.language.VariableReference;
 import graphql.schema.GraphQLSchema;
 import org.jetbrains.annotations.Nullable;
 
@@ -27,7 +32,7 @@ public class ConditionalNodes {
     public boolean shouldInclude(DirectivesContainer<?> element,
                                  Map<String, Object> variables,
                                  GraphQLSchema graphQLSchema,
-                                 GraphQLContext graphQLContext
+                                 @Nullable GraphQLContext graphQLContext
     ) {
         //
         // call the base @include / @skip first
@@ -94,6 +99,37 @@ public class ConditionalNodes {
         return getDirectiveResult(variables, directives, IncludeDirective.getName(), true);
     }
 
+    public boolean containsSkipOrIncludeDirective(DirectivesContainer<?> directivesContainer) {
+        return NodeUtil.findNodeByName(directivesContainer.getDirectives(), SkipDirective.getName()) != null ||
+                NodeUtil.findNodeByName(directivesContainer.getDirectives(), IncludeDirective.getName()) != null;
+    }
+
+
+    public String getSkipVariableName(DirectivesContainer<?> directivesContainer) {
+        Directive skipDirective = NodeUtil.findNodeByName(directivesContainer.getDirectives(), SkipDirective.getName());
+        if (skipDirective == null) {
+            return null;
+        }
+        Argument argument = skipDirective.getArgument("if");
+        if (argument.getValue() instanceof VariableReference) {
+            return ((VariableReference) argument.getValue()).getName();
+        }
+        return null;
+    }
+
+    public String getIncludeVariableName(DirectivesContainer<?> directivesContainer) {
+        Directive skipDirective = NodeUtil.findNodeByName(directivesContainer.getDirectives(), IncludeDirective.getName());
+        if (skipDirective == null) {
+            return null;
+        }
+        Argument argument = skipDirective.getArgument("if");
+        if (argument.getValue() instanceof VariableReference) {
+            return ((VariableReference) argument.getValue()).getName();
+        }
+        return null;
+    }
+
+
     private @Nullable Boolean getDirectiveResult(Map<String, Object> variables, List<Directive> directives, String directiveName, boolean defaultValue) {
         Directive foundDirective = NodeUtil.findNodeByName(directives, directiveName);
         if (foundDirective != null) {
@@ -110,6 +146,9 @@ public class ConditionalNodes {
                     return ((BooleanValue) value).isValue();
                 }
                 if (value instanceof VariableReference && variables != null) {
+                    if (variables.get(((VariableReference) value).getName()) == null) {
+                        System.out.println("yeahhhhhhhhhhh");
+                    }
                     return (boolean) variables.get(((VariableReference) value).getName());
                 }
                 return null;

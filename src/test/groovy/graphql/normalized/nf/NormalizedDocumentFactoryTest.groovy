@@ -116,6 +116,56 @@ type Dog implements Animal{
         ]
     }
 
+    def "document with skip/include with variables"() {
+        String schema = """
+        type Query{ 
+            foo: Foo
+        }
+        type Foo {
+            bar: Bar
+            name: String
+        }
+        type Bar {
+            baz: String
+        }
+        """
+        GraphQLSchema graphQLSchema = TestUtil.schema(schema)
+
+        String query = ''' 
+        query ($skip: Boolean!, $include: Boolean!) {
+            foo {
+               name
+               bar @skip(if: $skip)  {
+                    baz @include(if: $include)
+                }
+            }
+        }
+        '''
+
+
+        assertValidQuery(graphQLSchema, query, [skip: false, include: true])
+
+        Document document = TestUtil.parseQuery(query)
+        def tree = NormalizedDocumentFactory.createNormalizedDocument(graphQLSchema, document)
+        def printedTree = printDocumentWithLevelInfo(tree, graphQLSchema)
+
+        expect:
+        printedTree == ['-Query.animal: Animal',
+                        '--[Bird, Cat, Dog].name: String',
+                        '--otherName: [Bird, Cat, Dog].name: String',
+                        '--Cat.friends: [Friend]',
+                        '---Friend.isCatOwner: Boolean',
+                        '---Friend.pets: [Pet]',
+                        '----Dog.name: String',
+                        '--Bird.friends: [Friend]',
+                        '---Friend.isBirdOwner: Boolean',
+                        '---Friend.name: String',
+                        '---Friend.pets: [Pet]',
+                        '----Cat.breed: String'
+        ]
+    }
+
+
     private void assertValidQuery(GraphQLSchema graphQLSchema, String query, Map variables = [:]) {
         GraphQL graphQL = GraphQL.newGraphQL(graphQLSchema).build()
         def ei = ExecutionInput.newExecutionInput(query).variables(variables).build()
@@ -124,7 +174,9 @@ type Dog implements Animal{
 
     static List<String> printDocumentWithLevelInfo(NormalizedDocument normalizedDocument, GraphQLSchema schema) {
         def result = []
-        for (NormalizedOperation normalizedOperation : normalizedDocument.normalizedOperations) {
+        for (NormalizedDocument.NormalizedOperationWithAssumedSkipIncludeVariables normalizedOperationWithAssumedSkipIncludeVariables : normalizedDocument.normalizedOperations) {
+            NormalizedOperation normalizedOperation = normalizedOperationWithAssumedSkipIncludeVariables.normalizedOperation;
+            result << "assumed variables: " + normalizedOperationWithAssumedSkipIncludeVariables.assumedSkipIncludeVariables
             Traverser<NormalizedField> traverser = Traverser.depthFirst({ it.getChildren() })
             traverser.traverse(normalizedOperation.getTopLevelFields(), new TraverserVisitorStub<NormalizedField>() {
                 @Override

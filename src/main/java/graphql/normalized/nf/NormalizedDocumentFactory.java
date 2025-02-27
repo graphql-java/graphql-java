@@ -39,6 +39,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -250,6 +251,10 @@ public class NormalizedDocumentFactory {
 
         private final List<NormalizedField> rootEnfs = new ArrayList<>();
 
+        private final Set<String> skipIncludeVariableNames = new LinkedHashSet<>();
+
+        private Map<String, Boolean> assumedSkipIncludeVariableValues;
+
         private NormalizedDocumentFactoryImpl(
                 GraphQLSchema graphQLSchema,
                 Document document,
@@ -265,44 +270,66 @@ public class NormalizedDocumentFactory {
          * Creates a new NormalizedDocument for the provided query
          */
         private NormalizedDocument createNormalizedQueryImpl() {
-            List<NormalizedOperation> normalizedOperations = new ArrayList<>();
+            List<NormalizedDocument.NormalizedOperationWithAssumedSkipIncludeVariables> normalizedOperations = new ArrayList<>();
             for (OperationDefinition operationDefinition : document.getDefinitionsOfType(OperationDefinition.class)) {
-                this.rootEnfs.clear();
-                this.fieldCount = 0;
-                this.maxDepthSeen = 0;
-                this.possibleMergerList.clear();
-                ;
-                fieldToNormalizedField = ImmutableListMultimap.builder();
-                normalizedFieldToMergedField = ImmutableMap.builder();
-                normalizedFieldToQueryDirectives = ImmutableMap.builder();
-                coordinatesToNormalizedFields = ImmutableListMultimap.builder();
 
-                buildNormalizedFieldsRecursively(null, operationDefinition, null, 0);
+                assumedSkipIncludeVariableValues = null;
+                skipIncludeVariableNames.clear();
+                NormalizedOperation normalizedOperation = createNormalizedOperation(operationDefinition);
 
-                // TODO: handle possible mergers later
-                for (PossibleMerger possibleMerger : possibleMergerList) {
-                    List<NormalizedField> childrenWithSameResultKey = possibleMerger.parent.getChildrenWithSameResultKey(possibleMerger.resultKey);
-                    NormalizedFieldsMerger.merge(possibleMerger.parent, childrenWithSameResultKey, graphQLSchema);
+                if (skipIncludeVariableNames.size() == 0) {
+                    normalizedOperations.add(new NormalizedDocument.NormalizedOperationWithAssumedSkipIncludeVariables(null, normalizedOperation));
+                } else {
+                    int combinations = (int) Math.pow(2, skipIncludeVariableNames.size());
+                    for (int i = 0; i < combinations; i++) {
+                        assumedSkipIncludeVariableValues = new LinkedHashMap<>();
+                        int variableIndex = 0;
+                        for (String variableName : skipIncludeVariableNames) {
+                            assumedSkipIncludeVariableValues.put(variableName, (i & (1 << variableIndex++)) != 0);
+                        }
+
+                        NormalizedOperation operationWithAssumedVariables = createNormalizedOperation(operationDefinition);
+                        normalizedOperations.add(new NormalizedDocument.NormalizedOperationWithAssumedSkipIncludeVariables(assumedSkipIncludeVariableValues, operationWithAssumedVariables));
+                    }
                 }
-
-                NormalizedOperation normalizedOperation = new NormalizedOperation(
-                        operationDefinition.getOperation(),
-                        operationDefinition.getName(),
-                        rootEnfs,
-                        fieldToNormalizedField.build(),
-                        normalizedFieldToMergedField.build(),
-                        normalizedFieldToQueryDirectives.build(),
-                        coordinatesToNormalizedFields.build(),
-                        fieldCount,
-                        maxDepthSeen
-                );
-                normalizedOperations.add(normalizedOperation);
             }
 
             return new NormalizedDocument(
                     normalizedOperations
             );
         }
+
+        private NormalizedOperation createNormalizedOperation(OperationDefinition operationDefinition) {
+            this.rootEnfs.clear();
+            this.fieldCount = 0;
+            this.maxDepthSeen = 0;
+            this.possibleMergerList.clear();
+            fieldToNormalizedField = ImmutableListMultimap.builder();
+            normalizedFieldToMergedField = ImmutableMap.builder();
+            normalizedFieldToQueryDirectives = ImmutableMap.builder();
+            coordinatesToNormalizedFields = ImmutableListMultimap.builder();
+
+            buildNormalizedFieldsRecursively(null, operationDefinition, null, 0);
+
+            for (PossibleMerger possibleMerger : possibleMergerList) {
+                List<NormalizedField> childrenWithSameResultKey = possibleMerger.parent.getChildrenWithSameResultKey(possibleMerger.resultKey);
+                NormalizedFieldsMerger.merge(possibleMerger.parent, childrenWithSameResultKey, graphQLSchema);
+            }
+
+            NormalizedOperation normalizedOperation = new NormalizedOperation(
+                    operationDefinition.getOperation(),
+                    operationDefinition.getName(),
+                    rootEnfs,
+                    fieldToNormalizedField.build(),
+                    normalizedFieldToMergedField.build(),
+                    normalizedFieldToQueryDirectives.build(),
+                    coordinatesToNormalizedFields.build(),
+                    fieldCount,
+                    maxDepthSeen
+            );
+            return normalizedOperation;
+        }
+
 
         private void captureMergedField(NormalizedField enf, MergedField mergedFld) {
 //            // QueryDirectivesImpl is a lazy object and only computes itself when asked for
@@ -557,12 +584,27 @@ public class NormalizedDocumentFactory {
                                   Set<GraphQLObjectType> possibleObjectTypes,
                                   GraphQLCompositeType astTypeCondition
         ) {
-//            if (!conditionalNodes.shouldInclude(field,
-//                    this.coercedVariableValues.toMap(),
-//                    this.graphQLSchema,
-//                    this.options.graphQLContext)) {
-//                return;
-//            }
+            Boolean shouldInclude;
+            if (assumedSkipIncludeVariableValues == null) {
+                if ((shouldInclude = conditionalNodes.shouldIncludeWithoutVariables(field)) == null) {
+
+                    String skipVariableName = conditionalNodes.getSkipVariableName(field);
+                    String includeVariableName = conditionalNodes.getIncludeVariableName(field);
+                    if (skipVariableName != null) {
+                        skipIncludeVariableNames.add(skipVariableName);
+                    }
+                    if (includeVariableName != null) {
+                        skipIncludeVariableNames.add(includeVariableName);
+                    }
+                }
+                if (shouldInclude != null && !shouldInclude) {
+                    return;
+                }
+            } else {
+                if (!conditionalNodes.shouldInclude(field, (Map) assumedSkipIncludeVariableValues, graphQLSchema, null)) {
+                    return;
+                }
+            }
             // this means there is actually no possible type for this field, and we are done
             if (possibleObjectTypes.isEmpty()) {
                 return;
