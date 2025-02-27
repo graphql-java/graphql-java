@@ -211,7 +211,7 @@ class ValidationUtilTest extends Specification {
         given:
         def inputObjectType = GraphQLInputObjectType.newInputObject()
                 .name("inputObjectType")
-                .withAppliedDirective(newDirective().name(OneOfDirective.getName()))
+                .addAppliedDirective(newDirective().name(OneOfDirective.getName()))
                 .field(GraphQLInputObjectField.newInputObjectField()
                         .name("f1")
                         .type(GraphQLString))
@@ -231,7 +231,7 @@ class ValidationUtilTest extends Specification {
         given:
         def inputObjectType = GraphQLInputObjectType.newInputObject()
                 .name("inputObjectType")
-                .withAppliedDirective(newDirective().name(OneOfDirective.getName()))
+                .addAppliedDirective(newDirective().name(OneOfDirective.getName()))
                 .field(GraphQLInputObjectField.newInputObjectField()
                         .name("f1")
                         .type(GraphQLString))

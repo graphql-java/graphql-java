@@ -203,7 +203,7 @@ class SchemaTraverserTest extends Specification {
                 .name("foo")
                 .coercing(coercing)
                 .withDirective(mkDirective("bar", DirectiveLocation.SCALAR))
-                .withAppliedDirective(GraphQLAppliedDirective.newDirective()
+                .addAppliedDirective(GraphQLAppliedDirective.newDirective()
                         .name("barApplied"))
                 .build()
         new SchemaTraverser().depthFirst(visitor, scalarType)
@@ -214,6 +214,23 @@ class SchemaTraverserTest extends Specification {
     }
 
     def "reachable object directive"() {
+        when:
+        def visitor = new GraphQLTestingVisitor()
+        def objectType = GraphQLObjectType.newObject()
+                .name("foo")
+                .withDirective(mkDirective("bar", DirectiveLocation.OBJECT))
+                .addAppliedDirective(GraphQLAppliedDirective.newDirective()
+                        .name("barApplied"))
+                .build()
+        new SchemaTraverser().depthFirst(visitor, objectType)
+        then:
+        visitor.getStack() == [
+                "object: foo", "fallback: foo", "directive: bar", "fallback: bar", "appliedDirective: barApplied", "fallback: barApplied"
+        ]
+    }
+
+    def "reachable object directive legacy test"() {
+        // Delete this test when we remove the legacy withAppliedDirective method
         when:
         def visitor = new GraphQLTestingVisitor()
         def objectType = GraphQLObjectType.newObject()
@@ -236,7 +253,7 @@ class SchemaTraverserTest extends Specification {
                 .name("foo")
                 .type(Scalars.GraphQLString)
                 .withDirective(mkDirective("bar", DirectiveLocation.FIELD_DEFINITION))
-                .withAppliedDirective(GraphQLAppliedDirective.newDirective()
+                .addAppliedDirective(GraphQLAppliedDirective.newDirective()
                         .name("barApplied"))
                 .build()
         new SchemaTraverser().depthFirst(visitor, fieldDefinition)
@@ -253,7 +270,7 @@ class SchemaTraverserTest extends Specification {
                 .name("foo")
                 .type(Scalars.GraphQLString)
                 .withDirective(mkDirective("bar", DirectiveLocation.ARGUMENT_DEFINITION))
-                .withAppliedDirective(GraphQLAppliedDirective.newDirective()
+                .addAppliedDirective(GraphQLAppliedDirective.newDirective()
                         .name("barApplied"))
                 .build()
         new SchemaTraverser().depthFirst(visitor, argument)
@@ -269,7 +286,7 @@ class SchemaTraverserTest extends Specification {
         def interfaceType = GraphQLInterfaceType.newInterface()
                 .name("foo")
                 .withDirective(mkDirective("bar", DirectiveLocation.INTERFACE))
-                .withAppliedDirective(GraphQLAppliedDirective.newDirective()
+                .addAppliedDirective(GraphQLAppliedDirective.newDirective()
                         .name("barApplied"))
                 .build()
         new SchemaTraverser().depthFirst(visitor, interfaceType)
