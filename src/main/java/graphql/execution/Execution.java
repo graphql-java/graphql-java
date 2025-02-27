@@ -38,7 +38,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
-import static graphql.Directives.DISABLE_ERROR_PROPAGATION_DIRECTIVE_DEFINITION;
+import static graphql.Directives.EXPERIMENTAL_DISABLE_ERROR_PROPAGATION_DIRECTIVE_DEFINITION;
 import static graphql.execution.ExecutionContextBuilder.newExecutionContextBuilder;
 import static graphql.execution.ExecutionStepInfo.newExecutionStepInfo;
 import static graphql.execution.ExecutionStrategyParameters.newParameters;
@@ -275,7 +275,7 @@ public class Execution {
         if (! jvmWideEnabled) {
             return true;
         }
-        Directive foundDirective = NodeUtil.findNodeByName(directives, DISABLE_ERROR_PROPAGATION_DIRECTIVE_DEFINITION.getName());
+        Directive foundDirective = NodeUtil.findNodeByName(directives, EXPERIMENTAL_DISABLE_ERROR_PROPAGATION_DIRECTIVE_DEFINITION.getName());
         return foundDirective == null;
     }
 }

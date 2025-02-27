@@ -96,7 +96,7 @@ class ExperimentalDisableErrorPropagationTest extends Specification {
         er.errors[0].path.toList() == ["foo"]
     }
 
-    def "when @experimental_disableErrorPropagation is not added to the schema operation does not validate"() {
+    def "when @experimental_disableErrorPropagation is not added to the schema operation is gets added by schema code"() {
 
         def sdl = '''
             type Query {
@@ -104,22 +104,11 @@ class ExperimentalDisableErrorPropagationTest extends Specification {
             }
         '''
 
+        when:
         def graphql = TestUtil.graphQL(sdl).build()
 
-        def query = '''
-            query GetFoo @experimental_disableErrorPropagation { foo }
-        '''
-        when:
-
-        ExecutionInput ei = ExecutionInput.newExecutionInput(query).root(
-                [foo: null]
-        ).build()
-
-        def er = graphql.execute(ei)
-
         then:
-        er.data == null
-        er.errors[0].message.equals("Validation error (UnknownDirective) : Unknown directive 'experimental_disableErrorPropagation'")
+        graphql.getGraphQLSchema().getDirective(Directives.ExperimentalDisableErrorPropagationDirective.getName()) === Directives.ExperimentalDisableErrorPropagationDirective
     }
 
 }
