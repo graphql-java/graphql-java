@@ -302,6 +302,8 @@ public class ParserOptions {
     /**
      * Option to redact offending tokens in parser error messages.
      * By default, the parser will include the offending token in the error message, if possible.
+     *
+     * @return true if the token parser messages should be redacted
      */
     public boolean isRedactTokenParserErrorMessages() {
         return redactTokenParserErrorMessages;

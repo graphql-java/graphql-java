@@ -253,20 +253,23 @@ class ValuesResolverConversion {
             Locale locale
     ) {
         GraphQLInputType wrappedType = (GraphQLInputType) listType.getWrappedType();
-        List<?> result = FpKit.toListOrSingletonList(value)
-                .stream()
-                .map(val -> externalValueToLiteral(
-                        fieldVisibility,
-                        val,
-                        wrappedType,
-                        valueMode,
-                        graphqlContext,
-                        locale))
-                .collect(toList());
+        List<Object> valueList = FpKit.toListOrSingletonList(value);
+        ImmutableList.Builder<Object> resultBuilder = ImmutableList.builderWithExpectedSize(valueList.size());
+        for (Object item : valueList) {
+            resultBuilder.add(externalValueToLiteral(
+                    fieldVisibility,
+                    item,
+                    wrappedType,
+                    valueMode,
+                    graphqlContext,
+                    locale));
+        }
+        ImmutableList<?> result = resultBuilder.build();
+
         if (valueMode == NORMALIZED) {
             return result;
         } else {
-            return ArrayValue.newArrayValue().values((List<Value>) result).build();
+            return ArrayValue.newArrayValue().values((ImmutableList<Value>) result).build();
         }
     }
 
@@ -282,7 +285,7 @@ class ValuesResolverConversion {
             GraphQLContext graphqlContext,
             Locale locale
     ) {
-        assertTrue(inputValue instanceof Map, () -> "Expect Map as input");
+        assertTrue(inputValue instanceof Map, "Expect Map as input");
         Map<String, Object> inputMap = (Map<String, Object>) inputValue;
         List<GraphQLInputObjectField> fieldDefinitions = fieldVisibility.getFieldDefinitions(inputObjectType);
 

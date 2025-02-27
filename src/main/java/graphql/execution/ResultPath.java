@@ -149,8 +149,10 @@ public class ResultPath {
         for (Object object : objects) {
             if (object instanceof String) {
                 path = path.segment(((String) object));
-            } else {
+            } else if (object instanceof Integer) {
                 path = path.segment((int) object);
+            } else if (object != null) {
+                path = path.segment(object.toString());
             }
         }
         return path;

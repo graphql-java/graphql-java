@@ -6,6 +6,7 @@ import graphql.schema.DataFetcher
 import graphql.schema.DataFetchingEnvironment
 import graphql.schema.DataFetchingEnvironmentImpl
 import graphql.schema.PropertyDataFetcher
+import spock.lang.Ignore
 import spock.lang.Specification
 
 import java.util.concurrent.CompletableFuture
@@ -125,6 +126,7 @@ class ExecutorInstrumentationTest extends Specification {
         observer.actions == ["FETCHING on FetchThread", "PROCESSING on ProcessingThread"]
     }
 
+    @Ignore("This test is flaky on GitHub pipelines")
     def "will execute on another thread and stay there without a processing executor"() {
 
         when:

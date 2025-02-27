@@ -71,6 +71,17 @@ public interface GraphQLError extends Serializable {
     }
 
     /**
+     * This can be called to turn a specification error map into {@link GraphQLError}
+     *
+     * @param specificationMap the map of values that should have come via {@link GraphQLError#toSpecification()}
+     *
+     * @return a {@link GraphQLError}
+     */
+    static GraphQLError fromSpecification(Map<String, Object> specificationMap) {
+        return GraphqlErrorHelper.fromSpecification(specificationMap);
+    }
+
+    /**
      * @return a new builder of {@link GraphQLError}s
      */
     static Builder<?> newError() {

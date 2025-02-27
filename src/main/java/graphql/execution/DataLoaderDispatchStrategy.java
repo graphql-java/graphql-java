@@ -16,11 +16,15 @@ public interface DataLoaderDispatchStrategy {
 
     }
 
-    default void executionStrategyOnFieldValuesInfo(List<FieldValueInfo> fieldValueInfoList, ExecutionStrategyParameters parameters) {
+    default void executionSerialStrategy(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
 
     }
 
-    default void executionStrategyOnFieldValuesException(Throwable t, ExecutionStrategyParameters parameters) {
+    default void executionStrategyOnFieldValuesInfo(List<FieldValueInfo> fieldValueInfoList) {
+
+    }
+
+    default void executionStrategyOnFieldValuesException(Throwable t) {
 
     }
 

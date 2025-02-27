@@ -11,6 +11,7 @@ import java.util.Map;
  */
 @PublicApi
 public class RawVariables {
+    private static final RawVariables EMPTY = RawVariables.of(ImmutableKit.emptyMap());
     private final ImmutableMapWithNullValues<String, Object> rawVariables;
 
     public RawVariables(Map<String, Object> rawVariables) {
@@ -30,7 +31,7 @@ public class RawVariables {
     }
 
     public static RawVariables emptyVariables() {
-        return RawVariables.of(ImmutableKit.emptyMap());
+        return EMPTY;
     }
 
     public static RawVariables of(Map<String, Object> rawVariables) {

@@ -32,7 +32,7 @@ public class AsyncSerialExecutionStrategy extends AbstractAsyncExecutionStrategy
     @Override
     @SuppressWarnings({"TypeParameterUnusedInFormals", "FutureReturnValueIgnored"})
     public CompletableFuture<ExecutionResult> execute(ExecutionContext executionContext, ExecutionStrategyParameters parameters) throws NonNullableFieldWasNullException {
-        executionContext.getDataLoaderDispatcherStrategy().executionStrategy(executionContext, parameters);
+        DataLoaderDispatchStrategy dataLoaderDispatcherStrategy = executionContext.getDataLoaderDispatcherStrategy();
 
         Instrumentation instrumentation = executionContext.getInstrumentation();
         InstrumentationExecutionStrategyParameters instrumentationParameters = new InstrumentationExecutionStrategyParameters(executionContext, parameters);
@@ -54,7 +54,8 @@ public class AsyncSerialExecutionStrategy extends AbstractAsyncExecutionStrategy
             ResultPath fieldPath = parameters.getPath().segment(mkNameForPath(currentField));
             ExecutionStrategyParameters newParameters = parameters
                     .transform(builder -> builder.field(currentField).path(fieldPath));
-            return resolveField(executionContext, newParameters);
+
+            return resolveSerialField(executionContext, dataLoaderDispatcherStrategy, newParameters);
         });
 
         CompletableFuture<ExecutionResult> overallResult = new CompletableFuture<>();
@@ -65,4 +66,22 @@ public class AsyncSerialExecutionStrategy extends AbstractAsyncExecutionStrategy
         return overallResult;
     }
 
+    private Object resolveSerialField(ExecutionContext executionContext,
+                                      DataLoaderDispatchStrategy dataLoaderDispatcherStrategy,
+                                      ExecutionStrategyParameters newParameters) {
+        dataLoaderDispatcherStrategy.executionSerialStrategy(executionContext, newParameters);
+
+        Object fieldWithInfo = resolveFieldWithInfo(executionContext, newParameters);
+        if (fieldWithInfo instanceof CompletableFuture) {
+            //noinspection unchecked
+            return ((CompletableFuture<FieldValueInfo>) fieldWithInfo).thenCompose(fvi -> {
+                dataLoaderDispatcherStrategy.executionStrategyOnFieldValuesInfo(List.of(fvi));
+                return fvi.getFieldValueFuture();
+            });
+        } else {
+            FieldValueInfo fvi = (FieldValueInfo) fieldWithInfo;
+            dataLoaderDispatcherStrategy.executionStrategyOnFieldValuesInfo(List.of(fvi));
+            return fvi.getFieldValueObject();
+        }
+    }
 }

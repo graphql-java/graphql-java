@@ -96,7 +96,12 @@ public class GraphQLUnionType implements GraphQLNamedOutputType, GraphQLComposit
      * @return true if the object type is a member of this union type.
      */
     public boolean isPossibleType(GraphQLObjectType graphQLObjectType) {
-        return getTypes().stream().anyMatch(nt -> nt.getName().equals(graphQLObjectType.getName()));
+        for (GraphQLNamedOutputType type : getTypes()) {
+            if (type.getName().equals(graphQLObjectType.getName())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     // to be removed in a future version when all code is in the code registry

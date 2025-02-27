@@ -126,7 +126,7 @@ public interface SchemaDirectiveWiringEnvironment<T extends GraphQLDirectiveCont
     TypeDefinitionRegistry getRegistry();
 
     /**
-     * @return a mpa that can be used by implementors to hold context during the SDL build process
+     * @return a map that can be used by implementors to hold context during the SDL build process
      */
     Map<String, Object> getBuildContext();
 
