@@ -506,7 +506,7 @@ public class ExecutableNormalizedOperationFactory {
         }
 
         private void buildEnfsRecursively(@Nullable ExecutableNormalizedField executableNormalizedField,
-                                          @Nullable ImmutableList<FieldAndAstParent> fieldAndAstParents,
+                                          @Nullable ImmutableList<CollectedField> fieldAndAstParents,
                                           int curLevel) {
             if (this.maxDepthSeen < curLevel) {
                 this.maxDepthSeen = curLevel;
@@ -528,14 +528,14 @@ public class ExecutableNormalizedOperationFactory {
                     return;
                 }
                 collectedFields = new ArrayList<>();
-                for (FieldAndAstParent fieldAndAstParent : fieldAndAstParents) {
+                for (CollectedField fieldAndAstParent : fieldAndAstParents) {
                     if (fieldAndAstParent.field.getSelectionSet() == null) {
                         continue;
                     }
                     // the AST parent comes from the previous collect from selection set call
                     // and is the type to which the field belongs (the container type of the field) and output type
                     // of the field needs to be determined based on the field name
-                    GraphQLFieldDefinition fieldDefinition = Introspection.getFieldDef(graphQLSchema, fieldAndAstParent.astParentType, fieldAndAstParent.field.getName());
+                    GraphQLFieldDefinition fieldDefinition = Introspection.getFieldDef(graphQLSchema, fieldAndAstParent.astTypeCondition, fieldAndAstParent.field.getName());
                     GraphQLUnmodifiedType selectionSetType = unwrapAll(fieldDefinition.getType());
                     this.collectFromSelectionSet(fieldAndAstParent.field.getSelectionSet(),
                             collectedFields,
@@ -548,11 +548,11 @@ public class ExecutableNormalizedOperationFactory {
 
             Map<String, List<CollectedField>> fieldsByName = fieldsByResultKey(collectedFields);
             ImmutableList.Builder<ExecutableNormalizedField> resultNFs = ImmutableList.builder();
-            ImmutableListMultimap.Builder<ExecutableNormalizedField, FieldAndAstParent> normalizedFieldToAstFields = ImmutableListMultimap.builder();
+            ImmutableListMultimap.Builder<ExecutableNormalizedField, CollectedField> normalizedFieldToAstFields = ImmutableListMultimap.builder();
             createNFs(resultNFs, fieldsByName, normalizedFieldToAstFields, curLevel + 1, executableNormalizedField);
 
             ImmutableList<ExecutableNormalizedField> nextLevelChildren = resultNFs.build();
-            ImmutableListMultimap<ExecutableNormalizedField, FieldAndAstParent> nextLevelNormalizedFieldToAstFields = normalizedFieldToAstFields.build();
+            ImmutableListMultimap<ExecutableNormalizedField, CollectedField> nextLevelNormalizedFieldToAstFields = normalizedFieldToAstFields.build();
 
             for (ExecutableNormalizedField childENF : nextLevelChildren) {
                 if (executableNormalizedField == null) {
@@ -561,7 +561,7 @@ public class ExecutableNormalizedOperationFactory {
                 } else {
                     executableNormalizedField.addChild(childENF);
                 }
-                ImmutableList<FieldAndAstParent> childFieldAndAstParents = nextLevelNormalizedFieldToAstFields.get(childENF);
+                ImmutableList<CollectedField> childFieldAndAstParents = nextLevelNormalizedFieldToAstFields.get(childENF);
 
                 MergedField mergedField = newMergedField(childFieldAndAstParents);
                 captureMergedField(childENF, mergedField);
@@ -582,13 +582,13 @@ public class ExecutableNormalizedOperationFactory {
             }
         }
 
-        private static MergedField newMergedField(ImmutableList<FieldAndAstParent> fieldAndAstParents) {
+        private static MergedField newMergedField(ImmutableList<CollectedField> fieldAndAstParents) {
             return MergedField.newMergedField(map(fieldAndAstParents, fieldAndAstParent -> fieldAndAstParent.field)).build();
         }
 
         private void updateFieldToNFMap(ExecutableNormalizedField executableNormalizedField,
-                                        ImmutableList<FieldAndAstParent> mergedField) {
-            for (FieldAndAstParent astField : mergedField) {
+                                        ImmutableList<CollectedField> mergedField) {
+            for (CollectedField astField : mergedField) {
                 fieldToNormalizedField.put(astField.field, executableNormalizedField);
             }
         }
@@ -612,7 +612,7 @@ public class ExecutableNormalizedOperationFactory {
 
         private void createNFs(ImmutableList.Builder<ExecutableNormalizedField> nfListBuilder,
                                Map<String, List<CollectedField>> fieldsByName,
-                               ImmutableListMultimap.Builder<ExecutableNormalizedField, FieldAndAstParent> normalizedFieldToAstFields,
+                               ImmutableListMultimap.Builder<ExecutableNormalizedField, CollectedField> normalizedFieldToAstFields,
                                int level,
                                ExecutableNormalizedField parent) {
             for (String resultKey : fieldsByName.keySet()) {
@@ -624,7 +624,7 @@ public class ExecutableNormalizedOperationFactory {
                         continue;
                     }
                     for (CollectedField collectedField : fieldGroup.fields) {
-                        normalizedFieldToAstFields.put(nf, new FieldAndAstParent(collectedField.field, collectedField.astTypeCondition));
+                        normalizedFieldToAstFields.put(nf, collectedField);
                     }
                     nfListBuilder.add(nf);
 
@@ -921,26 +921,6 @@ public class ExecutableNormalizedOperationFactory {
                 this.objectTypes = objectTypes;
                 this.astTypeCondition = astTypeCondition;
                 this.deferredExecution = deferredExecution;
-            }
-        }
-
-        public static class CollectNFResult {
-            private final Collection<ExecutableNormalizedField> children;
-            private final ImmutableListMultimap<ExecutableNormalizedField, FieldAndAstParent> normalizedFieldToAstFields;
-
-            public CollectNFResult(Collection<ExecutableNormalizedField> children, ImmutableListMultimap<ExecutableNormalizedField, FieldAndAstParent> normalizedFieldToAstFields) {
-                this.children = children;
-                this.normalizedFieldToAstFields = normalizedFieldToAstFields;
-            }
-        }
-
-        private static class FieldAndAstParent {
-            final Field field;
-            final GraphQLCompositeType astParentType;
-
-            private FieldAndAstParent(Field field, GraphQLCompositeType astParentType) {
-                this.field = field;
-                this.astParentType = astParentType;
             }
         }
 
