@@ -47,7 +47,7 @@ public class ExecutionContextBuilder {
     Object localContext;
     ExecutionInput executionInput;
     DataLoaderDispatchStrategy dataLoaderDispatcherStrategy = DataLoaderDispatchStrategy.NO_OP;
-    boolean propagateErrors = true;
+    boolean propagateErrorsOnNonNullContractFailure = true;
 
     /**
      * @return a new builder of {@link graphql.execution.ExecutionContext}s
@@ -94,7 +94,7 @@ public class ExecutionContextBuilder {
         valueUnboxer = other.getValueUnboxer();
         executionInput = other.getExecutionInput();
         dataLoaderDispatcherStrategy = other.getDataLoaderDispatcherStrategy();
-        propagateErrors = other.propagateErrors();
+        propagateErrorsOnNonNullContractFailure = other.propagateErrorsOnNonNullContractFailure();
     }
 
     public ExecutionContextBuilder instrumentation(Instrumentation instrumentation) {
@@ -220,8 +220,8 @@ public class ExecutionContextBuilder {
     }
 
     @ExperimentalApi
-    public ExecutionContextBuilder propagateErrors(boolean propagateErrors) {
-        this.propagateErrors = propagateErrors;
+    public ExecutionContextBuilder propagapropagateErrorsOnNonNullContractFailureeErrors(boolean propagateErrorsOnNonNullContractFailure) {
+        this.propagateErrorsOnNonNullContractFailure = propagateErrorsOnNonNullContractFailure;
         return this;
     }
 

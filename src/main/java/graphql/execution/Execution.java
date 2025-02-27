@@ -1,6 +1,7 @@
 package graphql.execution;
 
 
+import graphql.Directives;
 import graphql.ExecutionInput;
 import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
@@ -83,7 +84,7 @@ public class Execution {
             throw rte;
         }
 
-        boolean propagateErrors = propagateErrors(getOperationResult.operationDefinition.getDirectives(), true);
+        boolean propagateErrorsOnNonNullContractFailure = propagateErrorsOnNonNullContractFailure(getOperationResult.operationDefinition.getDirectives());
 
         ExecutionContext executionContext = newExecutionContextBuilder()
                 .instrumentation(instrumentation)
@@ -105,7 +106,7 @@ public class Execution {
                 .locale(executionInput.getLocale())
                 .valueUnboxer(valueUnboxer)
                 .executionInput(executionInput)
-                .propagateErrors(propagateErrors)
+                .propagapropagateErrorsOnNonNullContractFailureeErrors(propagateErrorsOnNonNullContractFailure)
                 .build();
 
         executionContext.getGraphQLContext().put(ResultNodesInfo.RESULT_NODES_INFO, executionContext.getResultNodesInfo());
@@ -269,11 +270,12 @@ public class Execution {
         return executionResult;
     }
 
-    private boolean propagateErrors(List<Directive> directives, boolean defaultValue) {
-        Directive foundDirective = NodeUtil.findNodeByName(directives, DISABLE_ERROR_PROPAGATION_DIRECTIVE_DEFINITION.getName());
-        if (foundDirective != null) {
-            return false;
+    private boolean propagateErrorsOnNonNullContractFailure(List<Directive> directives) {
+        boolean jvmWideEnabled = Directives.isExperimentalDisableErrorPropagationDirectiveEnabled();
+        if (! jvmWideEnabled) {
+            return true;
         }
-        return defaultValue;
+        Directive foundDirective = NodeUtil.findNodeByName(directives, DISABLE_ERROR_PROPAGATION_DIRECTIVE_DEFINITION.getName());
+        return foundDirective == null;
     }
 }

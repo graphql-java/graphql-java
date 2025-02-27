@@ -7,6 +7,8 @@ import graphql.language.DirectiveDefinition;
 import graphql.language.StringValue;
 import graphql.schema.GraphQLDirective;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+
 import static graphql.Scalars.GraphQLBoolean;
 import static graphql.Scalars.GraphQLString;
 import static graphql.introspection.Introspection.DirectiveLocation.ARGUMENT_DEFINITION;
@@ -249,5 +251,25 @@ public class Directives {
 
     private static Description createDescription(String s) {
         return new Description(s, null, false);
+    }
+
+    private static final AtomicBoolean EXPERIMENTAL_DISABLE_ERROR_PROPAGATION_DIRECTIVE_ENABLED = new AtomicBoolean(true);
+
+    /**
+     * This can be used to get the state the `@experimental_disableErrorPropagation` directive support on a JVM wide basis .
+     * @return true if the `@experimental_disableErrorPropagation` directive will be respected
+     */
+    public static boolean isExperimentalDisableErrorPropagationDirectiveEnabled() {
+        return EXPERIMENTAL_DISABLE_ERROR_PROPAGATION_DIRECTIVE_ENABLED.get();
+    }
+
+    /**
+     * This can be used to disable the `@experimental_disableErrorPropagation` directive support on a JVM wide basis in case your server
+     * implementation does NOT want to act on this directive ever.
+     *
+     * @param flag the desired state of the flag
+     */
+    public static void setExperimentalDisableErrorPropagationEnabled(boolean flag) {
+        EXPERIMENTAL_DISABLE_ERROR_PROPAGATION_DIRECTIVE_ENABLED.set(flag);
     }
 }

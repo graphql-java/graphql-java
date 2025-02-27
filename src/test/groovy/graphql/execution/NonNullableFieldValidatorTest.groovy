@@ -13,7 +13,7 @@ class NonNullableFieldValidatorTest extends Specification {
 
     def "non nullable field throws exception"() {
         ExecutionContext context = Mock(ExecutionContext) {
-            propagateErrors() >> true
+            propagateErrorsOnNonNullContractFailure() >> true
         }
 
         ExecutionStepInfo typeInfo = ExecutionStepInfo.newExecutionStepInfo().type(nonNull(GraphQLString)).build()
@@ -30,7 +30,7 @@ class NonNullableFieldValidatorTest extends Specification {
 
     def "nullable field does not throw exception"() {
         ExecutionContext context = Mock(ExecutionContext) {
-            propagateErrors() >> true
+            propagateErrorsOnNonNullContractFailure() >> true
         }
 
         ExecutionStepInfo typeInfo = ExecutionStepInfo.newExecutionStepInfo().type(GraphQLString).build()
@@ -46,7 +46,7 @@ class NonNullableFieldValidatorTest extends Specification {
 
     def "non nullable field returns null if errors are not propagated"() {
         ExecutionContext context = Mock(ExecutionContext) {
-            propagateErrors() >> false
+            propagateErrorsOnNonNullContractFailure() >> false
         }
 
         ExecutionStepInfo typeInfo = ExecutionStepInfo.newExecutionStepInfo().type(nonNull(GraphQLString)).build()
