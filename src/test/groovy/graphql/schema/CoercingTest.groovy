@@ -1,6 +1,7 @@
 package graphql.schema
 
 import graphql.ExecutionInput
+import graphql.GraphQLContext
 import graphql.TestUtil
 import graphql.analysis.MaxQueryDepthInstrumentation
 import graphql.language.ArrayValue
@@ -13,6 +14,7 @@ import graphql.language.StringValue
 import graphql.language.VariableReference
 import graphql.schema.idl.RuntimeWiring
 import graphql.schema.idl.TypeRuntimeWiring
+import org.jetbrains.annotations.NotNull
 import spock.lang.Specification
 
 import java.time.ZonedDateTime
@@ -243,6 +245,11 @@ class CoercingTest extends Specification {
         @Override
         Object parseLiteral(Object input) throws CoercingParseLiteralException {
             return input
+        }
+
+        @Override
+        StringValue valueToLiteral(@NotNull Object input, @NotNull GraphQLContext graphQLContext, @NotNull Locale locale) {
+            return new StringValue(input.toString())
         }
     })
     .build()
