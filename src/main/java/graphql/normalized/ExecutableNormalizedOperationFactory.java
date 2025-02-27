@@ -536,10 +536,11 @@ public class ExecutableNormalizedOperationFactory {
                     // and is the type to which the field belongs (the container type of the field) and output type
                     // of the field needs to be determined based on the field name
                     GraphQLFieldDefinition fieldDefinition = Introspection.getFieldDef(graphQLSchema, fieldAndAstParent.astTypeCondition, fieldAndAstParent.field.getName());
-                    GraphQLUnmodifiedType selectionSetType = unwrapAll(fieldDefinition.getType());
+                    // it must a composite type, because the field has a selection set
+                    GraphQLCompositeType selectionSetType = (GraphQLCompositeType) unwrapAll(fieldDefinition.getType());
                     this.collectFromSelectionSet(fieldAndAstParent.field.getSelectionSet(),
                             collectedFields,
-                            (GraphQLCompositeType) selectionSetType,
+                            selectionSetType,
                             possibleObjects,
                             null
                     );
@@ -829,7 +830,7 @@ public class ExecutableNormalizedOperationFactory {
             collectFromSelectionSet(inlineFragment.getSelectionSet(), result, newAstTypeCondition, newPossibleObjects, newDeferredExecution);
         }
 
-        private NormalizedDeferredExecution buildDeferredExecution(
+        private @Nullable NormalizedDeferredExecution buildDeferredExecution(
                 List<Directive> directives,
                 Set<GraphQLObjectType> newPossibleObjects) {
             if (!options.deferSupport) {
