@@ -3,6 +3,7 @@ package graphql.execution;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import graphql.ExecutionInput;
+import graphql.ExperimentalApi;
 import graphql.GraphQLContext;
 import graphql.GraphQLError;
 import graphql.Internal;
@@ -46,6 +47,7 @@ public class ExecutionContextBuilder {
     Object localContext;
     ExecutionInput executionInput;
     DataLoaderDispatchStrategy dataLoaderDispatcherStrategy = DataLoaderDispatchStrategy.NO_OP;
+    boolean propagateErrorsOnNonNullContractFailure = true;
 
     /**
      * @return a new builder of {@link graphql.execution.ExecutionContext}s
@@ -92,6 +94,7 @@ public class ExecutionContextBuilder {
         valueUnboxer = other.getValueUnboxer();
         executionInput = other.getExecutionInput();
         dataLoaderDispatcherStrategy = other.getDataLoaderDispatcherStrategy();
+        propagateErrorsOnNonNullContractFailure = other.propagateErrorsOnNonNullContractFailure();
     }
 
     public ExecutionContextBuilder instrumentation(Instrumentation instrumentation) {
@@ -215,6 +218,13 @@ public class ExecutionContextBuilder {
         this.errors = emptyList();
         return this;
     }
+
+    @ExperimentalApi
+    public ExecutionContextBuilder propagapropagateErrorsOnNonNullContractFailureeErrors(boolean propagateErrorsOnNonNullContractFailure) {
+        this.propagateErrorsOnNonNullContractFailure = propagateErrorsOnNonNullContractFailure;
+        return this;
+    }
+
 
     public ExecutionContext build() {
         // preconditions

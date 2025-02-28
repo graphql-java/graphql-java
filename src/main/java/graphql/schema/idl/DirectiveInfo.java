@@ -34,7 +34,10 @@ public class DirectiveInfo {
             Directives.SkipDirective.getName(), Directives.SkipDirective,
             Directives.DeprecatedDirective.getName(), Directives.DeprecatedDirective,
             Directives.SpecifiedByDirective.getName(), Directives.SpecifiedByDirective,
-            Directives.OneOfDirective.getName(), Directives.OneOfDirective
+            Directives.OneOfDirective.getName(), Directives.OneOfDirective,
+            // technically this is NOT yet in spec - but it is added by default by graphql-java so we include it
+            // we should also do @defer at some future time soon
+            Directives.ExperimentalDisableErrorPropagationDirective.getName(), Directives.ExperimentalDisableErrorPropagationDirective
             );
 
     /**
