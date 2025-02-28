@@ -26,7 +26,7 @@ import java.util.Map;
 public class NormalizedOperation {
     private final OperationDefinition.Operation operation;
     private final String operationName;
-    private final List<NormalizedField> topLevelFields;
+    private final List<NormalizedField> rootFields;
     private final ImmutableListMultimap<Field, NormalizedField> fieldToNormalizedField;
     private final Map<NormalizedField, MergedField> normalizedFieldToMergedField;
     private final Map<NormalizedField, QueryDirectives> normalizedFieldToQueryDirectives;
@@ -37,7 +37,7 @@ public class NormalizedOperation {
     public NormalizedOperation(
             OperationDefinition.Operation operation,
             String operationName,
-            List<NormalizedField> topLevelFields,
+            List<NormalizedField> rootFields,
             ImmutableListMultimap<Field, NormalizedField> fieldToNormalizedField,
             Map<NormalizedField, MergedField> normalizedFieldToMergedField,
             Map<NormalizedField, QueryDirectives> normalizedFieldToQueryDirectives,
@@ -46,7 +46,7 @@ public class NormalizedOperation {
             int operationDepth) {
         this.operation = operation;
         this.operationName = operationName;
-        this.topLevelFields = topLevelFields;
+        this.rootFields = rootFields;
         this.fieldToNormalizedField = fieldToNormalizedField;
         this.normalizedFieldToMergedField = normalizedFieldToMergedField;
         this.normalizedFieldToQueryDirectives = normalizedFieldToQueryDirectives;
@@ -95,8 +95,8 @@ public class NormalizedOperation {
     /**
      * @return a list of the top level {@link NormalizedField}s in this operation.
      */
-    public List<NormalizedField> getTopLevelFields() {
-        return topLevelFields;
+    public List<NormalizedField> getRootFields() {
+        return rootFields;
     }
 
     /**

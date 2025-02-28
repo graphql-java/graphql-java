@@ -14,6 +14,7 @@ import graphql.execution.MergedField;
 import graphql.execution.conditional.ConditionalNodes;
 import graphql.execution.directives.QueryDirectives;
 import graphql.introspection.Introspection;
+import graphql.language.Directive;
 import graphql.language.Document;
 import graphql.language.Field;
 import graphql.language.FragmentDefinition;
@@ -44,6 +45,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertShouldNeverHappen;
@@ -481,16 +483,13 @@ public class NormalizedDocumentFactory {
             Field field;
             Set<GraphQLObjectType> objectTypes = collectedFieldGroup.objectTypes;
             field = collectedFieldGroup.fields.iterator().next().field;
+            List<Directive> directives = collectedFieldGroup.fields.stream().flatMap(f -> f.field.getDirectives().stream()).collect(Collectors.toList());
             String fieldName = field.getName();
-            GraphQLFieldDefinition fieldDefinition = Introspection.getFieldDefinition(graphQLSchema, objectTypes.iterator().next(), fieldName);
-
-//            Map<String, Object> argumentValues = ValuesResolver.getArgumentValues(fieldDefinition.getArguments(), field.getArguments(), CoercedVariables.of(this.coercedVariableValues.toMap()), this.options.graphQLContext, this.options.locale);
             ImmutableList<String> objectTypeNames = map(objectTypes, GraphQLObjectType::getName);
             return NormalizedField.newNormalizedField()
                     .alias(field.getAlias())
-//                    .resolvedArguments(argumentValues)
-//                    .normalizedArguments(normalizedArgumentValues)
                     .astArguments(field.getArguments())
+                    .astDirectives(directives)
                     .objectTypeNames(objectTypeNames)
                     .fieldName(fieldName)
                     .level(level)

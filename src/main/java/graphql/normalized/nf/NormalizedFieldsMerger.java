@@ -4,6 +4,7 @@ import graphql.Internal;
 import graphql.introspection.Introspection;
 import graphql.language.Argument;
 import graphql.language.AstComparator;
+import graphql.language.Directive;
 import graphql.schema.GraphQLInterfaceType;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
@@ -63,7 +64,9 @@ public class NormalizedFieldsMerger {
             boolean mergeable = areFieldSetsTheSame(listOfChildrenForGroup);
             if (mergeable) {
                 Set<String> mergedObjects = new LinkedHashSet<>();
+                List<Directive> mergedDirectives = new ArrayList<>();
                 groupOfFields.forEach(f -> mergedObjects.addAll(f.getObjectTypeNames()));
+                groupOfFields.forEach(f -> mergedDirectives.addAll(f.getAstDirectives()));
                 // patching the first one to contain more objects, remove all others
                 Iterator<NormalizedField> iterator = groupOfFields.iterator();
                 NormalizedField first = iterator.next();
@@ -73,6 +76,7 @@ public class NormalizedFieldsMerger {
                     parent.getChildren().remove(next);
                 }
                 first.setObjectTypeNames(mergedObjects);
+                first.setAstDirectives(mergedDirectives);
             }
         }
     }

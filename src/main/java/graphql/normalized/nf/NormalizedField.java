@@ -8,23 +8,39 @@ import graphql.PublicApi;
 import graphql.collect.ImmutableKit;
 import graphql.introspection.Introspection;
 import graphql.language.Argument;
+import graphql.language.Directive;
 import graphql.normalized.ExecutableNormalizedOperation;
 import graphql.normalized.NormalizedInputValue;
-import graphql.normalized.incremental.NormalizedDeferredExecution;
-import graphql.schema.*;
+import graphql.schema.GraphQLFieldDefinition;
+import graphql.schema.GraphQLInterfaceType;
+import graphql.schema.GraphQLNamedOutputType;
+import graphql.schema.GraphQLObjectType;
+import graphql.schema.GraphQLOutputType;
+import graphql.schema.GraphQLSchema;
+import graphql.schema.GraphQLUnionType;
 import graphql.util.FpKit;
 import graphql.util.MutableRef;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.function.Consumer;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertTrue;
 import static graphql.schema.GraphQLTypeUtil.simplePrint;
 import static graphql.schema.GraphQLTypeUtil.unwrapAll;
-import static java.util.stream.Collectors.*;
+import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toSet;
 
 /**
  * An {@link NormalizedField} represents a field in an executable graphql operation.  Its models what
@@ -40,6 +56,7 @@ public class NormalizedField {
     private final ImmutableMap<String, NormalizedInputValue> normalizedArguments;
     private final LinkedHashMap<String, Object> resolvedArguments;
     private final ImmutableList<Argument> astArguments;
+    private List<Directive> astDirectives;
 
     // Mutable List on purpose: it is modified after creation
     private final LinkedHashSet<String> objectTypeNames;
@@ -60,6 +77,7 @@ public class NormalizedField {
         this.children = builder.children;
         this.level = builder.level;
         this.parent = builder.parent;
+        this.astDirectives = builder.astDirectives;
     }
 
     /**
@@ -293,6 +311,15 @@ public class NormalizedField {
     public ImmutableList<Argument> getAstArguments() {
         return astArguments;
     }
+
+    public List<Directive> getAstDirectives() {
+        return astDirectives;
+    }
+
+    public void setAstDirectives(List<Directive> astDirectives) {
+        this.astDirectives = astDirectives;
+    }
+
 
     /**
      * Returns an argument value as a {@link NormalizedInputValue} which contains its type name and its current value
@@ -556,6 +583,7 @@ public class NormalizedField {
         return builder.build();
     }
 
+
     public static class Builder {
         private LinkedHashSet<String> objectTypeNames = new LinkedHashSet<>();
         private String fieldName;
@@ -566,8 +594,8 @@ public class NormalizedField {
         private ImmutableMap<String, NormalizedInputValue> normalizedArguments = ImmutableKit.emptyMap();
         private LinkedHashMap<String, Object> resolvedArguments = new LinkedHashMap<>();
         private ImmutableList<Argument> astArguments = ImmutableKit.emptyList();
+        private List<Directive> astDirectives = Collections.emptyList();
 
-        private LinkedHashSet<NormalizedDeferredExecution> deferredExecutions = new LinkedHashSet<>();
 
         private Builder() {
         }
@@ -614,6 +642,11 @@ public class NormalizedField {
             return this;
         }
 
+        public Builder astDirectives(@NotNull List<Directive> astDirectives) {
+            this.astDirectives = astDirectives;
+            return this;
+        }
+
 
         public Builder fieldName(String fieldName) {
             this.fieldName = fieldName;
@@ -637,10 +670,6 @@ public class NormalizedField {
             return this;
         }
 
-        public Builder deferredExecutions(LinkedHashSet<NormalizedDeferredExecution> deferredExecutions) {
-            this.deferredExecutions = deferredExecutions;
-            return this;
-        }
 
         public NormalizedField build() {
             return new NormalizedField(this);

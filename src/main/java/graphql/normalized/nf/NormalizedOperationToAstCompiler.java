@@ -5,6 +5,7 @@ import graphql.Assert;
 import graphql.PublicApi;
 import graphql.introspection.Introspection;
 import graphql.language.Argument;
+import graphql.language.Directive;
 import graphql.language.Document;
 import graphql.language.Field;
 import graphql.language.InlineFragment;
@@ -73,7 +74,7 @@ public class NormalizedOperationToAstCompiler {
                                                    NormalizedOperation normalizedOperation) {
         GraphQLObjectType operationType = getOperationType(schema, normalizedOperation.getOperation());
 
-        List<Selection<?>> selections = subSelectionsForNormalizedField(schema, operationType.getName(), normalizedOperation.getTopLevelFields());
+        List<Selection<?>> selections = subSelectionsForNormalizedField(schema, operationType.getName(), normalizedOperation.getRootFields());
         SelectionSet selectionSet = new SelectionSet(selections);
 
         OperationDefinition.Builder definitionBuilder = OperationDefinition.newOperationDefinition()
@@ -164,12 +165,14 @@ public class NormalizedOperationToAstCompiler {
         SelectionSet selectionSet = selectionSetOrNullIfEmpty(subSelections);
 //        List<Argument> arguments = createArguments(executableNormalizedField, variableAccumulator);
         List<Argument> arguments = normalizedField.getAstArguments();
+        List<Directive> directives = normalizedField.getAstDirectives();
 
 
         Field.Builder builder = newField()
                 .name(normalizedField.getFieldName())
                 .alias(normalizedField.getAlias())
                 .selectionSet(selectionSet)
+                .directives(directives)
                 .arguments(arguments);
         return builder.build();
     }

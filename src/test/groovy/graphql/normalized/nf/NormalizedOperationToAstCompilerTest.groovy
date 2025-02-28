@@ -135,6 +135,56 @@ class NormalizedOperationToAstCompilerTest extends Specification {
 '''
     }
 
+    def "print custom directives"() {
+        String sdl = """
+        directive @cache(time: Int!) on FIELD
+        type Query{ 
+            foo: Foo
+        }
+        type Foo {
+            bar: Bar
+            name: String
+        }
+        type Bar {
+            baz: String
+        }
+        """
+
+        String query = ''' 
+        query {
+            foo {
+               name
+               bar @cache(time:100) {
+                    baz 
+                }
+                bar @cache(time:200) {
+                    baz 
+                }
+
+            }
+        }
+        '''
+
+        GraphQLSchema schema = TestUtil.schema(sdl)
+        assertValidQuery(schema, query)
+        def normalizedDocument = NormalizedDocumentFactory.createNormalizedDocument(schema, Parser.parse(query))
+        def normalizedOperation = normalizedDocument.getSingleNormalizedOperation()
+        when:
+        def result = NormalizedOperationToAstCompiler.compileToDocument(schema, normalizedOperation)
+        def printed = AstPrinter.printAst(new AstSorter().sort(result.document))
+        then:
+        printed == '''{
+  foo {
+    bar @cache(time: 100) @cache(time: 200) {
+      baz
+    }
+    name
+  }
+}
+'''
+    }
+
+
     private void assertValidQuery(GraphQLSchema graphQLSchema, String query, Map variables = [:]) {
         GraphQL graphQL = GraphQL.newGraphQL(graphQLSchema).build()
         assert graphQL.execute(newExecutionInput().query(query).variables(variables)).errors.isEmpty()

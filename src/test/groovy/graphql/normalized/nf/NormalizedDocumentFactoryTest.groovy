@@ -167,6 +167,49 @@ variables: [skip:true, include:true]
 --Foo.name: String'''
     }
 
+    def "document with custom directives"() {
+        String schema = """
+        directive @cache(time: Int!) on FIELD
+        type Query{ 
+            foo: Foo
+        }
+        type Foo {
+            bar: Bar
+            name: String
+        }
+        type Bar {
+            baz: String
+        }
+        """
+        GraphQLSchema graphQLSchema = TestUtil.schema(schema)
+
+        String query = ''' 
+        query {
+            foo {
+               name
+               bar @cache(time:100) {
+                    baz 
+                }
+                bar @cache(time:200) {
+                    baz 
+                }
+
+            }
+        }
+        '''
+
+
+        assertValidQuery(graphQLSchema, query, [skip: false, include: true])
+
+        Document document = TestUtil.parseQuery(query)
+        def normalizedDocument = NormalizedDocumentFactory.createNormalizedDocument(graphQLSchema, document)
+        def rootField = normalizedDocument.getSingleNormalizedOperation().getRootFields().get(0)
+        def bar = rootField.getChildren().get(1)
+
+        expect:
+        bar.getAstDirectives().size() == 2
+    }
+
 
     private void assertValidQuery(GraphQLSchema graphQLSchema, String query, Map variables = [:]) {
         GraphQL graphQL = GraphQL.newGraphQL(graphQLSchema).build()
@@ -182,7 +225,7 @@ variables: [skip:true, include:true]
                 result << "variables: " + normalizedOperationWithAssumedSkipIncludeVariables.assumedSkipIncludeVariables
             }
             Traverser<NormalizedField> traverser = Traverser.depthFirst({ it.getChildren() })
-            traverser.traverse(normalizedOperation.getTopLevelFields(), new TraverserVisitorStub<NormalizedField>() {
+            traverser.traverse(normalizedOperation.getRootFields(), new TraverserVisitorStub<NormalizedField>() {
                 @Override
                 TraversalControl enter(TraverserContext<NormalizedField> context) {
                     NormalizedField normalizedField = context.thisNode()
