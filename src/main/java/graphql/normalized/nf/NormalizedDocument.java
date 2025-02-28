@@ -1,11 +1,13 @@
 package graphql.normalized.nf;
 
 import graphql.Assert;
+import graphql.ExperimentalApi;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.Map;
 
+@ExperimentalApi
 public class NormalizedDocument {
 
     private final List<NormalizedOperationWithAssumedSkipIncludeVariables> normalizedOperations;

@@ -2,7 +2,7 @@ package graphql.normalized.nf;
 
 import com.google.common.collect.ImmutableList;
 import graphql.Assert;
-import graphql.PublicApi;
+import graphql.ExperimentalApi;
 import graphql.introspection.Introspection;
 import graphql.language.Argument;
 import graphql.language.Directive;
@@ -45,7 +45,7 @@ import static graphql.schema.GraphQLTypeUtil.unwrapAll;
  * You could for example send that operation text onto to some other graphql server if it
  * has the same schema as the one provided.
  */
-@PublicApi
+@ExperimentalApi
 public class NormalizedOperationToAstCompiler {
 
     /**

@@ -7,7 +7,6 @@ import com.google.common.collect.ImmutableSet;
 import graphql.Assert;
 import graphql.ExperimentalApi;
 import graphql.GraphQLContext;
-import graphql.PublicApi;
 import graphql.collect.ImmutableKit;
 import graphql.execution.AbortExecutionException;
 import graphql.execution.MergedField;
@@ -57,7 +56,7 @@ import static graphql.util.FpKit.intersection;
 import static java.util.Collections.singleton;
 import static java.util.Collections.singletonList;
 
-@PublicApi
+@ExperimentalApi
 public class NormalizedDocumentFactory {
 
     public static class Options {

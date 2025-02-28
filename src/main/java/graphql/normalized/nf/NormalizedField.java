@@ -2,9 +2,9 @@ package graphql.normalized.nf;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import graphql.ExperimentalApi;
 import graphql.Internal;
 import graphql.Mutable;
-import graphql.PublicApi;
 import graphql.collect.ImmutableKit;
 import graphql.introspection.Introspection;
 import graphql.language.Argument;
@@ -49,7 +49,7 @@ import static java.util.stream.Collectors.toSet;
  * This class is intentionally mutable for performance reasons since building immutable parent child
  * objects is too expensive.
  */
-@PublicApi
+@ExperimentalApi
 @Mutable
 public class NormalizedField {
     private final String alias;

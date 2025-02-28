@@ -2,7 +2,7 @@ package graphql.normalized.nf;
 
 import com.google.common.collect.ImmutableListMultimap;
 import graphql.Assert;
-import graphql.PublicApi;
+import graphql.ExperimentalApi;
 import graphql.execution.MergedField;
 import graphql.execution.ResultPath;
 import graphql.execution.directives.QueryDirectives;
@@ -22,7 +22,7 @@ import java.util.Map;
  * <p>
  * An operation consists of a list of {@link NormalizedField}s in a parent child hierarchy
  */
-@PublicApi
+@ExperimentalApi
 public class NormalizedOperation {
     private final OperationDefinition.Operation operation;
     private final String operationName;
