@@ -27,7 +27,7 @@ public class VariableDefaultValuesOfCorrectType extends AbstractRule {
             return;
         }
         if (variableDefinition.getDefaultValue() != null
-                && !getValidationUtil().isValidLiteralValue(variableDefinition.getDefaultValue(), inputType, getValidationContext().getSchema(), getValidationContext().getGraphQLContext(), Locale.getDefault())) {
+                && !getValidationUtil().isValidLiteralValue(variableDefinition.getDefaultValue(), inputType, getValidationContext().getSchema(), getValidationContext().getGraphQLContext(), getValidationContext().getI18n().getLocale())) {
             String message = i18n(BadValueForDefaultArg, "VariableDefaultValuesOfCorrectType.badDefault", variableDefinition.getDefaultValue(), simplePrint(inputType));
             addError(BadValueForDefaultArg, variableDefinition.getSourceLocation(), message);
         }
