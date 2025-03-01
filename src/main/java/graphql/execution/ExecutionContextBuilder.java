@@ -19,6 +19,7 @@ import org.dataloader.DataLoaderRegistry;
 
 import java.util.Locale;
 import java.util.Map;
+import java.util.function.Supplier;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.collect.ImmutableKit.emptyList;
@@ -39,6 +40,7 @@ public class ExecutionContextBuilder {
     Document document;
     OperationDefinition operationDefinition;
     CoercedVariables coercedVariables = CoercedVariables.emptyVariables();
+    Supplier<NormalizedVariables> normalizedVariables = NormalizedVariables::emptyVariables;
     ImmutableMap<String, FragmentDefinition> fragmentsByName = ImmutableKit.emptyMap();
     DataLoaderRegistry dataLoaderRegistry;
     Locale locale;
@@ -170,6 +172,11 @@ public class ExecutionContextBuilder {
 
     public ExecutionContextBuilder coercedVariables(CoercedVariables coercedVariables) {
         this.coercedVariables = coercedVariables;
+        return this;
+    }
+
+    public ExecutionContextBuilder normalizedVariableValues(Supplier<NormalizedVariables> normalizedVariables) {
+        this.normalizedVariables = normalizedVariables;
         return this;
     }
 
