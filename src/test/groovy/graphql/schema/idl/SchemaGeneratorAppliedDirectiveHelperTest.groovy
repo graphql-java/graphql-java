@@ -55,6 +55,7 @@ class SchemaGeneratorAppliedDirectiveHelperTest extends Specification {
         schema.getDirectives().collect {it.name}.sort() == [
                 "bar",
                 "complex",
+                "defer",
                 "deprecated",
                 "experimental_disableErrorPropagation",
                 "foo",
@@ -106,6 +107,7 @@ class SchemaGeneratorAppliedDirectiveHelperTest extends Specification {
         schema.getDirectives().collect {it.name}.sort() == [
                 "bar",
                 "complex",
+                "defer",
                 "deprecated",
                 "experimental_disableErrorPropagation",
                 "foo",

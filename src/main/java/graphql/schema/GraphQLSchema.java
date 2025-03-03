@@ -850,6 +850,7 @@ public class GraphQLSchema {
             addBuiltInDirective(Directives.DeprecatedDirective, additionalDirectives);
             addBuiltInDirective(Directives.SpecifiedByDirective, additionalDirectives);
             addBuiltInDirective(Directives.OneOfDirective, additionalDirectives);
+            addBuiltInDirective(Directives.DeferDirective, additionalDirectives);
             addBuiltInDirective(Directives.ExperimentalDisableErrorPropagationDirective, additionalDirectives);
 
             // quick build - no traversing
