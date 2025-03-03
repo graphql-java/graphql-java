@@ -870,7 +870,7 @@ public class GraphQLSchema {
             // this is now build however its contained types are still to be mutated by type reference replacement
             final GraphQLSchema finalSchema = new GraphQLSchema(partiallyBuiltSchema, codeRegistry, allTypes, interfaceNameToObjectTypes);
             SchemaUtil.replaceTypeReferences(finalSchema);
-            return validateSchema(finalSchema);
+            return validateSchema(finalSchema, codeRegistry);
         }
 
         private void addBuiltInDirective(GraphQLDirective qlDirective, Set<GraphQLDirective> additionalDirectives1) {
@@ -879,8 +879,8 @@ public class GraphQLSchema {
             }
         }
 
-        private GraphQLSchema validateSchema(GraphQLSchema graphQLSchema) {
-            Collection<SchemaValidationError> errors = new SchemaValidator().validateSchema(graphQLSchema);
+        private GraphQLSchema validateSchema(GraphQLSchema graphQLSchema, GraphQLCodeRegistry codeRegistry) {
+            Collection<SchemaValidationError> errors = new SchemaValidator().validateSchema(graphQLSchema, codeRegistry);
             if (!errors.isEmpty()) {
                 throw new InvalidSchemaException(errors);
             }
