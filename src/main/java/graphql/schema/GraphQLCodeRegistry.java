@@ -1,9 +1,15 @@
 package graphql.schema;
 
 import graphql.Assert;
+import graphql.AssertException;
 import graphql.Internal;
 import graphql.PublicApi;
+import graphql.schema.validation.SchemaValidationError;
+import graphql.schema.validation.SchemaValidationErrorCollector;
+import graphql.schema.validation.SchemaValidationErrorType;
 import graphql.schema.visibility.GraphqlFieldVisibility;
+import graphql.util.TraversalControl;
+import graphql.util.TraverserContext;
 
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -15,6 +21,7 @@ import static graphql.Assert.assertValidName;
 import static graphql.schema.DataFetcherFactoryEnvironment.newDataFetchingFactoryEnvironment;
 import static graphql.schema.FieldCoordinates.coordinates;
 import static graphql.schema.visibility.DefaultGraphqlFieldVisibility.DEFAULT_FIELD_VISIBILITY;
+import static java.lang.String.format;
 
 
 /**
@@ -40,6 +47,84 @@ public class GraphQLCodeRegistry {
         this.typeResolverMap = builder.typeResolverMap;
         this.fieldVisibility = builder.fieldVisibility;
         this.defaultDataFetcherFactory = builder.defaultDataFetcherFactory;
+    }
+
+    /**
+     * This will validate the code registry against the provided schema.
+     * <p>
+     * NOTE: This is an @Internal method
+     *
+     * @return a {@link GraphQLTypeVisitor} that implements validation inline with the internal class
+     * {@link graphql.schema.validation.SchemaValidator}
+     */
+    @Internal
+    public GraphQLTypeVisitor validationRule() {
+        return new GraphQLTypeVisitorStub() {
+
+            @Override
+            public TraversalControl visitGraphQLInterfaceType(GraphQLInterfaceType node, TraverserContext<GraphQLSchemaElement> context) {
+                SchemaValidationErrorCollector errorCollector = context.getVarFromParents(SchemaValidationErrorCollector.class);
+
+                for (GraphQLFieldDefinition field : node.getFields()) {
+                    checkFieldsHaveNoDataFetchers(node.getName(), field.getName(), "Interface", errorCollector);
+                }
+
+                checkTypeResolverPresent(() -> getTypeResolver(node), node, "Interface", errorCollector);
+                return super.visitGraphQLInterfaceType(node, context);
+            }
+
+            private void checkFieldsHaveNoDataFetchers(String parentType, String fieldName, String kind, SchemaValidationErrorCollector errorCollector) {
+                if (hasDataFetcher(FieldCoordinates.coordinates(parentType, fieldName))) {
+                    String message = format("The %s type '%s' field '%s' must NOT a DataFetcher registered", kind, parentType, fieldName);
+                    errorCollector.addError(new SchemaValidationError(SchemaValidationErrorType.CodeRegistryError, message));
+                }
+            }
+
+            @Override
+            public TraversalControl visitGraphQLUnionType(GraphQLUnionType node, TraverserContext<GraphQLSchemaElement> context) {
+                SchemaValidationErrorCollector errorCollector = context.getVarFromParents(SchemaValidationErrorCollector.class);
+
+                checkTypeResolverPresent(() -> getTypeResolver(node), node, "Union", errorCollector);
+                return super.visitGraphQLUnionType(node, context);
+            }
+
+            @Override
+            public TraversalControl visitGraphQLObjectType(GraphQLObjectType node, TraverserContext<GraphQLSchemaElement> context) {
+                SchemaValidationErrorCollector errorCollector = context.getVarFromParents(SchemaValidationErrorCollector.class);
+
+                checkTypeResolverNotPresent(node, "Object", errorCollector);
+                return super.visitGraphQLObjectType(node, context);
+            }
+
+            @Override
+            public TraversalControl visitGraphQLInputObjectType(GraphQLInputObjectType node, TraverserContext<GraphQLSchemaElement> context) {
+                SchemaValidationErrorCollector errorCollector = context.getVarFromParents(SchemaValidationErrorCollector.class);
+
+                for (GraphQLInputObjectField field : node.getFields()) {
+                    checkFieldsHaveNoDataFetchers(node.getName(), field.getName(), "InputObject", errorCollector);
+                }
+
+                checkTypeResolverNotPresent(node, "InputObject", errorCollector);
+                return super.visitGraphQLInputObjectType(node, context);
+            }
+
+            private void checkTypeResolverPresent(Runnable check, GraphQLNamedType namedType, String kind, SchemaValidationErrorCollector errorCollector) {
+                try {
+                    check.run();
+                } catch (AssertException ignored) {
+                    String message = format("The %s type '%s' must have a TypeResolver registered", kind, namedType.getName());
+                    errorCollector.addError(new SchemaValidationError(SchemaValidationErrorType.CodeRegistryError, message));
+                }
+            }
+
+            private void checkTypeResolverNotPresent(GraphQLNamedType namedType, String kind, SchemaValidationErrorCollector errorCollector) {
+                TypeResolver typeResolver = typeResolverMap.get(namedType.getName());
+                if (typeResolver != null) {
+                    String message = format("The %s type '%s' must have NOT a TypeResolver registered", kind, namedType.getName());
+                    errorCollector.addError(new SchemaValidationError(SchemaValidationErrorType.CodeRegistryError, message));
+                }
+            }
+        };
     }
 
     /**
