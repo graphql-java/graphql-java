@@ -2,7 +2,7 @@ package graphql.extensions;
 
 import com.google.common.collect.Sets;
 import graphql.Internal;
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -15,8 +15,8 @@ import java.util.Set;
 @Internal
 public class DefaultExtensionsMerger implements ExtensionsMerger {
     @Override
-    @NotNull
-    public Map<Object, Object> merge(@NotNull Map<Object, Object> leftMap, @NotNull Map<Object, Object> rightMap) {
+    @NonNull
+    public Map<Object, Object> merge(@NonNull Map<Object, Object> leftMap, @NonNull Map<Object, Object> rightMap) {
         if (leftMap.isEmpty()) {
             return mapCast(rightMap);
         }
@@ -55,7 +55,7 @@ public class DefaultExtensionsMerger implements ExtensionsMerger {
         }
     }
 
-    @NotNull
+    @NonNull
     private List<Object> appendLists(Object leftVal, Object rightVal) {
         List<Object> target = new ArrayList<>(listCast(leftVal));
         target.addAll(listCast(rightVal));

@@ -20,8 +20,8 @@ import graphql.language.Document;
 import graphql.schema.DataFetcher;
 import graphql.schema.GraphQLSchema;
 import graphql.validation.ValidationError;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.AbstractMap;
 import java.util.Arrays;
@@ -111,7 +111,7 @@ public class ChainedInstrumentation implements Instrumentation {
     }
 
     @Override
-    public @NotNull CompletableFuture<InstrumentationState> createStateAsync(InstrumentationCreateStateParameters parameters) {
+    public @NonNull CompletableFuture<InstrumentationState> createStateAsync(InstrumentationCreateStateParameters parameters) {
         return ChainedInstrumentationState.combineAll(instrumentations, parameters);
     }
 
@@ -212,41 +212,41 @@ public class ChainedInstrumentation implements Instrumentation {
         return chainedCtx(state, (instrumentation, specificState) -> instrumentation.beginFieldListCompletion(parameters, specificState));
     }
 
-    @NotNull
+    @NonNull
     @Override
     public ExecutionInput instrumentExecutionInput(ExecutionInput executionInput, InstrumentationExecutionParameters parameters, InstrumentationState state) {
         return chainedInstrument(state, executionInput, (instrumentation, specificState, accumulator) -> instrumentation.instrumentExecutionInput(accumulator, parameters, specificState));
     }
 
-    @NotNull
+    @NonNull
     @Override
     public DocumentAndVariables instrumentDocumentAndVariables(DocumentAndVariables documentAndVariables, InstrumentationExecutionParameters parameters, InstrumentationState state) {
         return chainedInstrument(state, documentAndVariables, (instrumentation, specificState, accumulator) ->
                 instrumentation.instrumentDocumentAndVariables(accumulator, parameters, specificState));
     }
 
-    @NotNull
+    @NonNull
     @Override
     public GraphQLSchema instrumentSchema(GraphQLSchema schema, InstrumentationExecutionParameters parameters, InstrumentationState state) {
         return chainedInstrument(state, schema, (instrumentation, specificState, accumulator) ->
                 instrumentation.instrumentSchema(accumulator, parameters, specificState));
     }
 
-    @NotNull
+    @NonNull
     @Override
     public ExecutionContext instrumentExecutionContext(ExecutionContext executionContext, InstrumentationExecutionParameters parameters, InstrumentationState state) {
         return chainedInstrument(state, executionContext, (instrumentation, specificState, accumulator) ->
                 instrumentation.instrumentExecutionContext(accumulator, parameters, specificState));
     }
 
-    @NotNull
+    @NonNull
     @Override
     public DataFetcher<?> instrumentDataFetcher(DataFetcher<?> dataFetcher, InstrumentationFieldFetchParameters parameters, InstrumentationState state) {
         return chainedInstrument(state, dataFetcher, (Instrumentation instrumentation, InstrumentationState specificState, DataFetcher<?> accumulator) ->
                 instrumentation.instrumentDataFetcher(accumulator, parameters, specificState));
     }
 
-    @NotNull
+    @NonNull
     @Override
     public CompletableFuture<ExecutionResult> instrumentExecutionResult(ExecutionResult executionResult, InstrumentationExecutionParameters parameters, InstrumentationState state) {
         ImmutableList<Map.Entry<Instrumentation, InstrumentationState>> entries = chainedMapAndDropNulls(state, AbstractMap.SimpleEntry::new);

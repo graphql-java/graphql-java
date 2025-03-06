@@ -3,7 +3,7 @@ package graphql.util;
 import com.google.common.collect.Interner;
 import com.google.common.collect.Interners;
 import graphql.Internal;
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 
 /**
  * Interner allowing object-identity comparison of key entities like field names.  This is useful on hotspot
@@ -18,7 +18,7 @@ public class Interning {
 
     private static final Interner<String> INTERNER = Interners.newWeakInterner();
 
-    public static @NotNull String intern(@NotNull String name) {
+    public static @NonNull String intern(@NonNull String name) {
         return INTERNER.intern(name);
     }
 

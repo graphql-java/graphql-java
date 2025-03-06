@@ -10,7 +10,7 @@ import graphql.schema.GraphQLInputSchemaElement;
 import graphql.schema.GraphQLInputValueDefinition;
 import graphql.schema.GraphQLList;
 import graphql.schema.GraphQLScalarType;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 import java.util.Map;

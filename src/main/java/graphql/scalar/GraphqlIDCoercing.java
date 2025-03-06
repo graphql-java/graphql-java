@@ -10,14 +10,13 @@ import graphql.schema.Coercing;
 import graphql.schema.CoercingParseLiteralException;
 import graphql.schema.CoercingParseValueException;
 import graphql.schema.CoercingSerializeException;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.math.BigInteger;
 import java.util.Locale;
 import java.util.UUID;
 
-import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertShouldNeverHappen;
 import static graphql.scalar.CoercingUtil.i18nMsg;
 import static graphql.scalar.CoercingUtil.typeName;
@@ -49,8 +48,8 @@ public class GraphqlIDCoercing implements Coercing<Object, Object> {
 
     }
 
-    @NotNull
-    private String serializeImpl(Object input, @NotNull Locale locale) {
+    @NonNull
+    private String serializeImpl(Object input, @NonNull Locale locale) {
         String result = String.valueOf(input);
         if (result == null) {
             throw new CoercingSerializeException(
@@ -60,8 +59,8 @@ public class GraphqlIDCoercing implements Coercing<Object, Object> {
         return result;
     }
 
-    @NotNull
-    private String parseValueImpl(Object input, @NotNull Locale locale) {
+    @NonNull
+    private String parseValueImpl(Object input, @NonNull Locale locale) {
         String result = convertImpl(input);
         if (result == null) {
             throw new CoercingParseValueException(
@@ -71,7 +70,7 @@ public class GraphqlIDCoercing implements Coercing<Object, Object> {
         return result;
     }
 
-    private String parseLiteralImpl(Object input, @NotNull Locale locale) {
+    private String parseLiteralImpl(Object input, @NonNull Locale locale) {
         if (input instanceof StringValue) {
             return ((StringValue) input).getValue();
         }
@@ -83,8 +82,8 @@ public class GraphqlIDCoercing implements Coercing<Object, Object> {
         );
     }
 
-    @NotNull
-    private StringValue valueToLiteralImpl(Object input, @NotNull Locale locale) {
+    @NonNull
+    private StringValue valueToLiteralImpl(Object input, @NonNull Locale locale) {
         String result = convertImpl(input);
         if (result == null) {
             assertShouldNeverHappen(i18nMsg(locale, "ID.notId", typeName(input)));
@@ -94,45 +93,45 @@ public class GraphqlIDCoercing implements Coercing<Object, Object> {
 
     @Override
     @Deprecated
-    public String serialize(@NotNull Object dataFetcherResult) {
+    public String serialize(@NonNull Object dataFetcherResult) {
         return serializeImpl(dataFetcherResult, Locale.getDefault());
     }
 
     @Override
-    public @Nullable Object serialize(@NotNull Object dataFetcherResult, @NotNull GraphQLContext graphQLContext, @NotNull Locale locale) throws CoercingSerializeException {
+    public @Nullable Object serialize(@NonNull Object dataFetcherResult, @NonNull GraphQLContext graphQLContext, @NonNull Locale locale) throws CoercingSerializeException {
         return serializeImpl(dataFetcherResult, locale);
     }
 
     @Override
     @Deprecated
-    public String parseValue(@NotNull Object input) {
+    public String parseValue(@NonNull Object input) {
         return parseValueImpl(input, Locale.getDefault());
     }
 
     @Override
-    public Object parseValue(@NotNull Object input, @NotNull GraphQLContext graphQLContext, @NotNull Locale locale) throws CoercingParseValueException {
+    public Object parseValue(@NonNull Object input, @NonNull GraphQLContext graphQLContext, @NonNull Locale locale) throws CoercingParseValueException {
         return parseValueImpl(input, locale);
     }
 
     @Override
     @Deprecated
-    public String parseLiteral(@NotNull Object input) {
+    public String parseLiteral(@NonNull Object input) {
         return parseLiteralImpl(input, Locale.getDefault());
     }
 
     @Override
-    public @Nullable Object parseLiteral(@NotNull Value<?> input, @NotNull CoercedVariables variables, @NotNull GraphQLContext graphQLContext, @NotNull Locale locale) throws CoercingParseLiteralException {
+    public @Nullable Object parseLiteral(@NonNull Value<?> input, @NonNull CoercedVariables variables, @NonNull GraphQLContext graphQLContext, @NonNull Locale locale) throws CoercingParseLiteralException {
         return parseLiteralImpl(input, locale);
     }
 
     @Override
     @Deprecated
-    public Value valueToLiteral(@NotNull Object input) {
+    public Value valueToLiteral(@NonNull Object input) {
         return valueToLiteralImpl(input, Locale.getDefault());
     }
 
     @Override
-    public @NotNull Value<?> valueToLiteral(@NotNull Object input, @NotNull GraphQLContext graphQLContext, @NotNull Locale locale) {
+    public @NonNull Value<?> valueToLiteral(@NonNull Object input, @NonNull GraphQLContext graphQLContext, @NonNull Locale locale) {
         return valueToLiteralImpl(input, locale);
     }
 }

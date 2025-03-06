@@ -2,7 +2,7 @@ package graphql.execution.reactive;
 
 import graphql.Internal;
 import graphql.util.LockKit;
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
 
@@ -69,7 +69,7 @@ public class CompletionStageSubscriber<U, D> implements Subscriber<U> {
         }
     }
 
-    @NotNull
+    @NonNull
     private BiConsumer<D, Throwable> whenComplete(CompletionStage<D> completionStage) {
         return (d, throwable) -> {
             if (isTerminal()) {

@@ -15,8 +15,8 @@ import graphql.language.Value;
 import graphql.language.VariableDefinition;
 import graphql.language.VariableReference;
 import graphql.parser.Parser;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -76,7 +76,7 @@ public class ValueToVariableValueCompiler {
                 .collect(toList());
     }
 
-    @NotNull
+    @NonNull
     private static Map<String, Object> normalisedValueToVariableValues(Map<String, Object> objectMap) {
         Map<String, Object> output = new LinkedHashMap<>();
         objectMap.forEach((k, v) -> {
@@ -97,7 +97,7 @@ public class ValueToVariableValueCompiler {
         return map;
     }
 
-    @NotNull
+    @NonNull
     private static List<Object> toVariableValues(List<Value> arrayValues) {
         // some values can be null (NullValue) and hence we can use Immutable Lists
         return arrayValues.stream()

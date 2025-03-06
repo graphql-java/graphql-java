@@ -7,9 +7,9 @@ import graphql.language.Directive;
 import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLDirective;
 import graphql.schema.GraphqlTypeBuilder;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -47,7 +47,7 @@ public class QueryAppliedDirective {
         this.definition = definition;
     }
 
-    @NotNull
+    @NonNull
     public String getName() {
         return name;
     }

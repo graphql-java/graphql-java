@@ -2,8 +2,8 @@ package graphql.schema;
 
 import graphql.PublicApi;
 import graphql.language.Node;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * A Schema element which has a name and also a description and AST Node which it is based on.
@@ -14,7 +14,7 @@ public interface GraphQLNamedSchemaElement extends GraphQLSchemaElement {
     /**
      * @return the name of this element.  This cant be null
      */
-    @NotNull
+    @NonNull
     String getName();
 
     /**

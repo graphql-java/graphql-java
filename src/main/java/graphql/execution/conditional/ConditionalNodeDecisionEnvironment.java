@@ -5,7 +5,7 @@ import graphql.execution.CoercedVariables;
 import graphql.language.Directive;
 import graphql.language.DirectivesContainer;
 import graphql.schema.GraphQLSchema;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 
@@ -39,7 +39,8 @@ public interface ConditionalNodeDecisionEnvironment {
     /**
      * @return the {@link GraphQLSchema} in question - this can be null for certain call paths
      */
-    @Nullable GraphQLSchema getGraphQlSchema();
+    @Nullable
+    GraphQLSchema getGraphQlSchema();
 
     /**
      * @return a graphql context

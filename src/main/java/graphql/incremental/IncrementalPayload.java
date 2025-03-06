@@ -3,7 +3,7 @@ package graphql.incremental;
 import graphql.ExperimentalApi;
 import graphql.GraphQLError;
 import graphql.execution.ResultPath;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;

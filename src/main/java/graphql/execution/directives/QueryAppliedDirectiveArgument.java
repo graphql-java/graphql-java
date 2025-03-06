@@ -10,8 +10,8 @@ import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLInputType;
 import graphql.schema.GraphqlTypeBuilder;
 import graphql.schema.InputValueWithState;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Locale;
 import java.util.function.Consumer;
@@ -47,12 +47,12 @@ public class QueryAppliedDirectiveArgument {
         this.definition = definition;
     }
 
-    @NotNull
+    @NonNull
     public String getName() {
         return name;
     }
 
-    @NotNull
+    @NonNull
     public GraphQLInputType getType() {
         return originalType;
     }
@@ -64,7 +64,7 @@ public class QueryAppliedDirectiveArgument {
     /**
      * @return an input value with state for an applied directive argument
      */
-    public @NotNull InputValueWithState getArgumentValue() {
+    public @NonNull InputValueWithState getArgumentValue() {
         return value;
     }
 
@@ -166,7 +166,7 @@ public class QueryAppliedDirectiveArgument {
          *
          * @return this builder
          */
-        public Builder valueLiteral(@NotNull Value<?> value) {
+        public Builder valueLiteral(@NonNull Value<?> value) {
             this.value = InputValueWithState.newLiteralValue(value);
             return this;
         }
@@ -181,7 +181,7 @@ public class QueryAppliedDirectiveArgument {
             return this;
         }
 
-        public Builder inputValueWithState(@NotNull InputValueWithState value) {
+        public Builder inputValueWithState(@NonNull InputValueWithState value) {
             this.value = Assert.assertNotNull(value);
             return this;
         }

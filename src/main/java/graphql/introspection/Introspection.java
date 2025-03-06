@@ -36,7 +36,7 @@ import graphql.schema.GraphQLScalarType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLUnionType;
 import graphql.schema.InputValueWithState;
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -134,7 +134,7 @@ public class Introspection {
         return Optional.empty();
     }
 
-    @NotNull
+    @NonNull
     private static Optional<ExecutionResult> mkDisabledError(MergedField schemaField) {
         IntrospectionDisabledError error = new IntrospectionDisabledError(schemaField.getSingleField().getSourceLocation());
         return Optional.of(ExecutionResult.newExecutionResult().addError(error).build());

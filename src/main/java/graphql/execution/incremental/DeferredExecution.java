@@ -2,7 +2,7 @@ package graphql.execution.incremental;
 
 import graphql.ExperimentalApi;
 import graphql.normalized.incremental.NormalizedDeferredExecution;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Represents details about the defer execution that can be associated with a {@link graphql.execution.MergedField}.

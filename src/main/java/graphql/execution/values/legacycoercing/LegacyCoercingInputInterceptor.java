@@ -5,8 +5,8 @@ import graphql.Scalars;
 import graphql.execution.values.InputInterceptor;
 import graphql.scalar.CoercingUtil;
 import graphql.schema.GraphQLInputType;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.math.BigDecimal;
 import java.util.Locale;
@@ -77,7 +77,7 @@ public class LegacyCoercingInputInterceptor implements InputInterceptor {
     }
 
     @Override
-    public Object intercept(@Nullable Object input, @NotNull GraphQLInputType graphQLType, @NotNull GraphQLContext graphqlContext, @NotNull Locale locale) {
+    public Object intercept(@Nullable Object input, @NonNull GraphQLInputType graphQLType, @NonNull GraphQLContext graphqlContext, @NonNull Locale locale) {
         if (isLegacyValue(input, graphQLType)) {
             // we ONLY apply the new behavior IF it's an old acceptable legacy value.
             // so for compliant values - we change nothing and invoke no behaviour

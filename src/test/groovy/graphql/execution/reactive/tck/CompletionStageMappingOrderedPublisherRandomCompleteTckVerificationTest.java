@@ -1,9 +1,8 @@
 package graphql.execution.reactive.tck;
 
 import graphql.execution.reactive.CompletionStageMappingOrderedPublisher;
-import graphql.execution.reactive.CompletionStageMappingPublisher;
 import io.reactivex.Flowable;
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 import org.reactivestreams.Publisher;
 import org.reactivestreams.tck.PublisherVerification;
 import org.reactivestreams.tck.TestEnvironment;
@@ -48,7 +47,7 @@ public class CompletionStageMappingOrderedPublisherRandomCompleteTckVerification
         return true;
     }
 
-    @NotNull
+    @NonNull
     private static Function<Integer, CompletionStage<String>> mapperFunc() {
         return i -> CompletableFuture.supplyAsync(() -> {
             int ms = rand(0, 5);

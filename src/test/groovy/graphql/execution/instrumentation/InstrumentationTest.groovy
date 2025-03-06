@@ -13,8 +13,6 @@ import graphql.language.AstPrinter
 import graphql.parser.Parser
 import graphql.schema.DataFetcher
 import graphql.schema.DataFetchingEnvironment
-import graphql.schema.LightDataFetcher
-import graphql.schema.PropertyDataFetcher
 import graphql.schema.SingletonPropertyDataFetcher
 import graphql.schema.StaticDataFetcher
 import org.awaitility.Awaitility

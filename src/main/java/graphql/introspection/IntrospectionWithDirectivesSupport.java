@@ -8,8 +8,8 @@ import graphql.execution.ValuesResolver;
 import graphql.language.AstPrinter;
 import graphql.language.Node;
 import graphql.schema.DataFetcher;
-import graphql.schema.GraphQLAppliedDirectiveArgument;
 import graphql.schema.GraphQLAppliedDirective;
+import graphql.schema.GraphQLAppliedDirectiveArgument;
 import graphql.schema.GraphQLCodeRegistry;
 import graphql.schema.GraphQLDirective;
 import graphql.schema.GraphQLDirectiveContainer;
@@ -23,7 +23,7 @@ import graphql.schema.InputValueWithState;
 import graphql.schema.SchemaTransformer;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 
 import java.util.List;
 import java.util.Set;
@@ -238,7 +238,7 @@ public class IntrospectionWithDirectivesSupport {
         }).collect(toList());
     }
 
-    @NotNull
+    @NonNull
     private DirectivePredicateEnvironment buildDirectivePredicateEnv(GraphQLSchema schema, boolean isDefinedDirective, GraphQLDirectiveContainer container, String directiveName) {
         return new DirectivePredicateEnvironment() {
             @Override

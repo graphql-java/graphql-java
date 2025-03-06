@@ -18,8 +18,8 @@ import graphql.schema.impl.SchemaUtil;
 import graphql.schema.validation.InvalidSchemaException;
 import graphql.schema.validation.SchemaValidationError;
 import graphql.schema.validation.SchemaValidator;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -230,7 +230,7 @@ public class GraphQLSchema {
      *
      * @return the type
      */
-    public @Nullable GraphQLType getType(@NotNull String typeName) {
+    public @Nullable GraphQLType getType(@NonNull String typeName) {
         return typeMap.get(typeName);
     }
 

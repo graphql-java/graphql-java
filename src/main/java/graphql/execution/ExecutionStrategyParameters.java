@@ -2,7 +2,7 @@ package graphql.execution;
 
 import graphql.PublicApi;
 import graphql.execution.incremental.DeferredCallContext;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.util.function.Consumer;
 

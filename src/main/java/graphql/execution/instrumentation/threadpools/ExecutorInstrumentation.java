@@ -10,7 +10,7 @@ import graphql.execution.instrumentation.SimplePerformantInstrumentation;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -108,7 +108,7 @@ public class ExecutorInstrumentation extends SimplePerformantInstrumentation {
     }
 
     @Override
-    public @NotNull DataFetcher<?> instrumentDataFetcher(DataFetcher<?> originalDataFetcher, InstrumentationFieldFetchParameters parameters, InstrumentationState state) {
+    public @NonNull DataFetcher<?> instrumentDataFetcher(DataFetcher<?> originalDataFetcher, InstrumentationFieldFetchParameters parameters, InstrumentationState state) {
         if (originalDataFetcher instanceof TrivialDataFetcher) {
             return originalDataFetcher;
         }

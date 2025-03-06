@@ -8,7 +8,7 @@ import graphql.parser.ParserOptions;
 import graphql.schema.GraphQLSchema;
 import graphql.validation.ValidationError;
 import graphql.validation.Validator;
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 
 import java.util.List;
 import java.util.Locale;
@@ -42,7 +42,7 @@ public class ParseAndValidate {
      *
      * @return a result object that indicates how this operation went
      */
-    public static ParseAndValidateResult parseAndValidate(@NotNull GraphQLSchema graphQLSchema, @NotNull ExecutionInput executionInput) {
+    public static ParseAndValidateResult parseAndValidate(@NonNull GraphQLSchema graphQLSchema, @NonNull ExecutionInput executionInput) {
         ParseAndValidateResult result = parse(executionInput);
         if (!result.isFailure()) {
             List<ValidationError> errors = validate(graphQLSchema, result.getDocument(), executionInput.getLocale());
@@ -58,7 +58,7 @@ public class ParseAndValidate {
      *
      * @return a result object that indicates how this operation went
      */
-    public static ParseAndValidateResult parse(@NotNull ExecutionInput executionInput) {
+    public static ParseAndValidateResult parse(@NonNull ExecutionInput executionInput) {
         try {
             //
             // we allow the caller to specify new parser options by context
@@ -87,7 +87,7 @@ public class ParseAndValidate {
      *
      * @return a result object that indicates how this operation went
      */
-    public static List<ValidationError> validate(@NotNull GraphQLSchema graphQLSchema, @NotNull Document parsedDocument, @NotNull Locale locale) {
+    public static List<ValidationError> validate(@NonNull GraphQLSchema graphQLSchema, @NonNull Document parsedDocument, @NonNull Locale locale) {
         return validate(graphQLSchema, parsedDocument, ruleClass -> true, locale);
     }
 
@@ -99,7 +99,7 @@ public class ParseAndValidate {
      *
      * @return a result object that indicates how this operation went
      */
-    public static List<ValidationError> validate(@NotNull GraphQLSchema graphQLSchema, @NotNull Document parsedDocument) {
+    public static List<ValidationError> validate(@NonNull GraphQLSchema graphQLSchema, @NonNull Document parsedDocument) {
         return validate(graphQLSchema, parsedDocument, ruleClass -> true, Locale.getDefault());
     }
 
@@ -113,7 +113,7 @@ public class ParseAndValidate {
      *
      * @return a result object that indicates how this operation went
      */
-    public static List<ValidationError> validate(@NotNull GraphQLSchema graphQLSchema, @NotNull Document parsedDocument, @NotNull Predicate<Class<?>> rulePredicate, @NotNull Locale locale) {
+    public static List<ValidationError> validate(@NonNull GraphQLSchema graphQLSchema, @NonNull Document parsedDocument, @NonNull Predicate<Class<?>> rulePredicate, @NonNull Locale locale) {
         Validator validator = new Validator();
         return validator.validateDocument(graphQLSchema, parsedDocument, rulePredicate, locale);
     }
@@ -127,7 +127,7 @@ public class ParseAndValidate {
      *
      * @return a result object that indicates how this operation went
      */
-    public static List<ValidationError> validate(@NotNull GraphQLSchema graphQLSchema, @NotNull Document parsedDocument, @NotNull Predicate<Class<?>> rulePredicate) {
+    public static List<ValidationError> validate(@NonNull GraphQLSchema graphQLSchema, @NonNull Document parsedDocument, @NonNull Predicate<Class<?>> rulePredicate) {
         Validator validator = new Validator();
         return validator.validateDocument(graphQLSchema, parsedDocument, rulePredicate, Locale.getDefault());
     }

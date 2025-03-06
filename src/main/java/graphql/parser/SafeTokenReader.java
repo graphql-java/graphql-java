@@ -1,7 +1,7 @@
 package graphql.parser;
 
 import graphql.Internal;
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -40,7 +40,7 @@ public class SafeTokenReader extends Reader {
     }
 
     @Override
-    public int read(char @NotNull [] buff, int off, int len) throws IOException {
+    public int read(char @NonNull [] buff, int off, int len) throws IOException {
         int howMany = delegate.read(buff, off, len);
         return checkHowMany(howMany, howMany);
     }
@@ -52,13 +52,13 @@ public class SafeTokenReader extends Reader {
     }
 
     @Override
-    public int read(@NotNull CharBuffer target) throws IOException {
+    public int read(@NonNull CharBuffer target) throws IOException {
         int howMany = delegate.read(target);
         return checkHowMany(howMany, howMany);
     }
 
     @Override
-    public int read( char @NotNull [] buff) throws IOException {
+    public int read(char @NonNull [] buff) throws IOException {
         int howMany = delegate.read(buff);
         return checkHowMany(howMany, howMany);
     }

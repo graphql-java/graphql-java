@@ -1,7 +1,7 @@
 package graphql.execution.reactive;
 
 import graphql.Internal;
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
 
@@ -30,7 +30,7 @@ public class CompletionStageMappingOrderedPublisher<D, U> extends CompletionStag
     }
 
     @Override
-    protected @NotNull Subscriber<? super U> createSubscriber(Subscriber<? super D> downstreamSubscriber) {
+    protected @NonNull Subscriber<? super U> createSubscriber(Subscriber<? super D> downstreamSubscriber) {
         return new CompletionStageOrderedSubscriber<>(mapper, downstreamSubscriber);
     }
 }

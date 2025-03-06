@@ -26,8 +26,8 @@ import graphql.schema.InputValueWithState;
 import graphql.schema.visibility.DefaultGraphqlFieldVisibility;
 import graphql.schema.visibility.GraphqlFieldVisibility;
 import graphql.util.FpKit;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -220,7 +220,7 @@ class ValuesResolverConversion {
             GraphQLScalarType scalarType,
             Object value,
             GraphQLContext graphqlContext,
-            @NotNull Locale locale
+            @NonNull Locale locale
     ) {
         return scalarType.getCoercing().valueToLiteral(value, graphqlContext, locale);
 
@@ -714,7 +714,7 @@ class ValuesResolverConversion {
             GraphQLScalarType scalarType,
             CoercedVariables coercedVariables,
             GraphQLContext graphqlContext,
-            @NotNull Locale locale
+            @NonNull Locale locale
     ) {
         // the CoercingParseLiteralException exception that could happen here has been validated earlier via ValidationUtil
         return scalarType.getCoercing().parseLiteral(

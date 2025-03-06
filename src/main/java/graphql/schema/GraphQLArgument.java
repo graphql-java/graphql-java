@@ -8,8 +8,8 @@ import graphql.language.InputValueDefinition;
 import graphql.language.Value;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -104,7 +104,7 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
      *
      * @return a {@link InputValueWithState} that represents the arguments default value
      */
-    public @NotNull InputValueWithState getArgumentDefaultValue() {
+    public @NonNull InputValueWithState getArgumentDefaultValue() {
         return defaultValue;
     }
 
@@ -125,7 +125,7 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
      * @deprecated use {@link GraphQLAppliedDirectiveArgument} instead
      */
     @Deprecated(since = "2022-02-24")
-    public @NotNull InputValueWithState getArgumentValue() {
+    public @NonNull InputValueWithState getArgumentValue() {
         return value;
     }
 
@@ -382,7 +382,7 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
          *
          * @return this builder
          */
-        public Builder defaultValueLiteral(@NotNull Value defaultValue) {
+        public Builder defaultValueLiteral(@NonNull Value defaultValue) {
             this.defaultValue = InputValueWithState.newLiteralValue(defaultValue);
             return this;
         }
@@ -432,7 +432,7 @@ public class GraphQLArgument implements GraphQLNamedSchemaElement, GraphQLInputV
          * @deprecated use {@link  GraphQLAppliedDirectiveArgument} methods instead
          */
         @Deprecated(since = "2022-02-24")
-        public Builder valueLiteral(@NotNull Value value) {
+        public Builder valueLiteral(@NonNull Value value) {
             this.value = InputValueWithState.newLiteralValue(value);
             return this;
         }

@@ -3,8 +3,8 @@ package graphql.extensions;
 import com.google.common.collect.ImmutableMap;
 import graphql.ExecutionResult;
 import graphql.PublicApi;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -69,7 +69,7 @@ public class ExtensionsBuilder {
      *
      * @return this builder for fluent style reasons
      */
-    public ExtensionsBuilder addValues(@NotNull Map<Object, Object> newValues) {
+    public ExtensionsBuilder addValues(@NonNull Map<Object, Object> newValues) {
         assertNotNull(newValues);
         if (!newValues.isEmpty()) {
             changes.add(newValues);
@@ -85,7 +85,7 @@ public class ExtensionsBuilder {
      *
      * @return this builder for fluent style reasons
      */
-    public ExtensionsBuilder addValue(@NotNull Object key, @Nullable Object value) {
+    public ExtensionsBuilder addValue(@NonNull Object key, @Nullable Object value) {
         assertNotNull(key);
         return addValues(Collections.singletonMap(key, value));
     }
