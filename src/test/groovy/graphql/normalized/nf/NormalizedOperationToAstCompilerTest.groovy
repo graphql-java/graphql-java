@@ -4,6 +4,7 @@ import graphql.GraphQL
 import graphql.TestUtil
 import graphql.language.AstPrinter
 import graphql.language.AstSorter
+import graphql.language.OperationDefinition
 import graphql.parser.Parser
 import graphql.schema.GraphQLSchema
 import spock.lang.Specification
@@ -179,6 +180,68 @@ class NormalizedOperationToAstCompilerTest extends Specification {
       baz
     }
     name
+  }
+}
+'''
+    }
+
+
+    def "print one root field"() {
+        def sdl = """
+        type Query {
+            foo: Foo
+        }
+        type Foo {
+            bar: String
+        }
+        """
+        def query = '''
+        { foo { bar } }
+        '''
+        GraphQLSchema schema = TestUtil.schema(sdl)
+        assertValidQuery(schema, query)
+        def normalizedDocument = NormalizedDocumentFactory.createNormalizedDocument(schema, Parser.parse(query))
+        def normalizedOperation = normalizedDocument.getSingleNormalizedOperation()
+        def rootField = normalizedOperation.getRootFields().get(0)
+        when:
+        def result = NormalizedOperationToAstCompiler.compileToDocument(schema, schema.getObjectType("Query"), rootField, "myOperation", OperationDefinition.Operation.QUERY)
+        def printed = AstPrinter.printAst(new AstSorter().sort(result.document))
+        then:
+        printed == '''query myOperation {
+  foo {
+    bar
+  }
+}
+'''
+    }
+
+    def "print list of root fields"() {
+        def sdl = """
+        type Query {
+            foo: Foo
+        }
+        type Foo {
+            bar: String
+        }
+        """
+        def query = '''
+        { foo { bar } foo2: foo { bar } }
+        '''
+        GraphQLSchema schema = TestUtil.schema(sdl)
+        assertValidQuery(schema, query)
+        def normalizedDocument = NormalizedDocumentFactory.createNormalizedDocument(schema, Parser.parse(query))
+        def normalizedOperation = normalizedDocument.getSingleNormalizedOperation()
+        def rootFields = normalizedOperation.getRootFields()
+        when:
+        def result = NormalizedOperationToAstCompiler.compileToDocument(schema, schema.getObjectType("Query"), rootFields, "myOperation", OperationDefinition.Operation.QUERY)
+        def printed = AstPrinter.printAst(new AstSorter().sort(result.document))
+        then:
+        printed == '''query myOperation {
+  foo {
+    bar
+  }
+  foo2: foo {
+    bar
   }
 }
 '''

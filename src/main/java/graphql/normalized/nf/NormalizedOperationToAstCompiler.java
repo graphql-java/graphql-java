@@ -70,16 +70,51 @@ public class NormalizedOperationToAstCompiler {
         }
     }
 
-    public static CompilerResult compileToDocument(@NonNull GraphQLSchema schema,
+    public static CompilerResult compileToDocument(GraphQLSchema graphQLSchema,
+                                                   GraphQLObjectType rootType,
+                                                   List<NormalizedField> rootFields,
+                                                   @Nullable String operationName,
+                                                   OperationDefinition.Operation operationKind) {
+
+        return compileToDocumentImpl(graphQLSchema, rootType, rootFields, operationName, operationKind);
+    }
+
+    public static CompilerResult compileToDocument(GraphQLSchema graphQLSchema,
+                                                   GraphQLObjectType rootType,
+                                                   NormalizedField singleRootField,
+                                                   @Nullable String operationName,
+                                                   OperationDefinition.Operation operationKind) {
+        return compileToDocumentImpl(graphQLSchema, rootType, ImmutableList.of(singleRootField), operationName, operationKind);
+
+
+    }
+
+
+    public static CompilerResult compileToDocument(GraphQLSchema schema,
                                                    NormalizedOperation normalizedOperation) {
         GraphQLObjectType operationType = getOperationType(schema, normalizedOperation.getOperation());
 
-        List<Selection<?>> selections = subSelectionsForNormalizedField(schema, operationType.getName(), normalizedOperation.getRootFields());
+        return compileToDocumentImpl(
+                schema,
+                operationType,
+                normalizedOperation.getRootFields(),
+                normalizedOperation.getOperationName(),
+                normalizedOperation.getOperation()
+        );
+    }
+
+    private static CompilerResult compileToDocumentImpl(GraphQLSchema schema,
+                                                        GraphQLObjectType rootType,
+                                                        List<NormalizedField> rootFields,
+                                                        @Nullable String operationName,
+                                                        OperationDefinition.Operation operationKind) {
+
+        List<Selection<?>> selections = subSelectionsForNormalizedFields(schema, rootType.getName(), rootFields);
         SelectionSet selectionSet = new SelectionSet(selections);
 
         OperationDefinition.Builder definitionBuilder = OperationDefinition.newOperationDefinition()
-                .name(normalizedOperation.getOperationName())
-                .operation(normalizedOperation.getOperation())
+                .name(operationName)
+                .operation(operationKind)
                 .selectionSet(selectionSet);
 
 //        definitionBuilder.variableDefinitions(variableAccumulator.getVariableDefinitions());
@@ -92,9 +127,10 @@ public class NormalizedOperationToAstCompiler {
         );
     }
 
-    private static List<Selection<?>> subSelectionsForNormalizedField(GraphQLSchema schema,
-                                                                      @NonNull String parentOutputType,
-                                                                      List<NormalizedField> normalizedFields
+
+    private static List<Selection<?>> subSelectionsForNormalizedFields(GraphQLSchema schema,
+                                                                       @NonNull String parentOutputType,
+                                                                       List<NormalizedField> normalizedFields
     ) {
         ImmutableList.Builder<Selection<?>> selections = ImmutableList.builder();
 
@@ -155,7 +191,7 @@ public class NormalizedOperationToAstCompiler {
             GraphQLFieldDefinition fieldDef = getFieldDefinition(schema, objectTypeName, normalizedField);
             GraphQLUnmodifiedType fieldOutputType = unwrapAll(fieldDef.getType());
 
-            subSelections = subSelectionsForNormalizedField(
+            subSelections = subSelectionsForNormalizedFields(
                     schema,
                     fieldOutputType.getName(),
                     normalizedField.getChildren()
@@ -195,7 +231,6 @@ public class NormalizedOperationToAstCompiler {
     }
 
 
-    @Nullable
     private static GraphQLObjectType getOperationType(@NonNull GraphQLSchema schema,
                                                       OperationDefinition.@NonNull Operation operationKind) {
         switch (operationKind) {
