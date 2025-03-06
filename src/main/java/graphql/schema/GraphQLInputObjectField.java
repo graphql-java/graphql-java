@@ -8,7 +8,7 @@ import graphql.language.InputValueDefinition;
 import graphql.language.Value;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -87,7 +87,7 @@ public class GraphQLInputObjectField implements GraphQLNamedSchemaElement, Graph
      *
      * @return a input value with captured state
      */
-    public @NotNull InputValueWithState getInputFieldDefaultValue() {
+    public @NonNull InputValueWithState getInputFieldDefaultValue() {
         return defaultValue;
     }
 

@@ -29,7 +29,7 @@ import graphql.language.VariableDefinition;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.impl.SchemaUtil;
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 import org.reactivestreams.Publisher;
 
 import java.util.Collections;
@@ -118,7 +118,7 @@ public class Execution {
         return executeOperation(executionContext, executionInput.getRoot(), executionContext.getOperationDefinition());
     }
 
-    private static @NotNull CoercedVariables coerceVariableValues(GraphQLSchema graphQLSchema, ExecutionInput executionInput, OperationDefinition operationDefinition) {
+    private static @NonNull CoercedVariables coerceVariableValues(GraphQLSchema graphQLSchema, ExecutionInput executionInput, OperationDefinition operationDefinition) {
         RawVariables inputVariables = executionInput.getRawVariables();
         List<VariableDefinition> variableDefinitions = operationDefinition.getVariableDefinitions();
         return ValuesResolver.coerceVariableValues(graphQLSchema, variableDefinitions, inputVariables, executionInput.getGraphQLContext(), executionInput.getLocale());

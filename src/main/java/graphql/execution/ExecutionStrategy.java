@@ -48,7 +48,7 @@ import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLType;
 import graphql.schema.LightDataFetcher;
 import graphql.util.FpKit;
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -266,8 +266,7 @@ public abstract class ExecutionStrategy {
         }
     }
 
-    @NotNull
-    private static Async.CombinedBuilder<Object> fieldValuesCombinedBuilder(List<FieldValueInfo> completeValueInfos) {
+    private static Async.@NonNull CombinedBuilder<Object> fieldValuesCombinedBuilder(List<FieldValueInfo> completeValueInfos) {
         Async.CombinedBuilder<Object> resultFutures = Async.ofExpectedSize(completeValueInfos.size());
         for (FieldValueInfo completeValueInfo : completeValueInfos) {
             resultFutures.addObject(completeValueInfo.getFieldValueObject());
@@ -286,7 +285,7 @@ public abstract class ExecutionStrategy {
         };
     }
 
-    @NotNull
+    @NonNull
     private static Map<String, Object> buildFieldValueMap(List<String> fieldNames, List<Object> results) {
         Map<String, Object> resolvedValuesByField = Maps.newLinkedHashMapWithExpectedSize(fieldNames.size());
         int ix = 0;
@@ -312,8 +311,7 @@ public abstract class ExecutionStrategy {
 
     }
 
-    @NotNull
-    Async.CombinedBuilder<FieldValueInfo> getAsyncFieldValueInfo(
+    Async.@NonNull CombinedBuilder<FieldValueInfo> getAsyncFieldValueInfo(
             ExecutionContext executionContext,
             ExecutionStrategyParameters parameters,
             DeferredExecutionSupport deferredExecutionSupport
@@ -1007,6 +1005,7 @@ public abstract class ExecutionStrategy {
      * if max nodes were exceeded for this request.
      *
      * @param executionContext the execution context in play
+     *
      * @return true if max nodes were exceeded
      */
     private boolean incrementAndCheckMaxNodesExceeded(ExecutionContext executionContext) {
@@ -1059,6 +1058,7 @@ public abstract class ExecutionStrategy {
      *
      * @param e this indicates that a null value was returned for a non null field, which needs to cause the parent field
      *          to become null OR continue on as an exception
+     *
      * @throws NonNullableFieldWasNullException if a non null field resolves to a null value
      */
     protected void assertNonNullFieldPrecondition(NonNullableFieldWasNullException e) throws NonNullableFieldWasNullException {
@@ -1136,7 +1136,7 @@ public abstract class ExecutionStrategy {
                 .build();
     }
 
-    @NotNull
+    @NonNull
     private static Supplier<ImmutableMapWithNullValues<String, Object>> getArgumentValues(ExecutionContext executionContext,
                                                                                           List<GraphQLArgument> fieldArgDefs,
                                                                                           List<Argument> fieldArgs) {

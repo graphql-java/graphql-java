@@ -18,8 +18,8 @@ import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLUnmodifiedType;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -70,7 +70,7 @@ public class NormalizedOperationToAstCompiler {
         }
     }
 
-    public static CompilerResult compileToDocument(@NotNull GraphQLSchema schema,
+    public static CompilerResult compileToDocument(@NonNull GraphQLSchema schema,
                                                    NormalizedOperation normalizedOperation) {
         GraphQLObjectType operationType = getOperationType(schema, normalizedOperation.getOperation());
 
@@ -93,7 +93,7 @@ public class NormalizedOperationToAstCompiler {
     }
 
     private static List<Selection<?>> subSelectionsForNormalizedField(GraphQLSchema schema,
-                                                                      @NotNull String parentOutputType,
+                                                                      @NonNull String parentOutputType,
                                                                       List<NormalizedField> normalizedFields
     ) {
         ImmutableList.Builder<Selection<?>> selections = ImmutableList.builder();
@@ -187,7 +187,7 @@ public class NormalizedOperationToAstCompiler {
     }
 
 
-    @NotNull
+    @NonNull
     private static GraphQLFieldDefinition getFieldDefinition(GraphQLSchema schema,
                                                              String parentType,
                                                              NormalizedField nf) {
@@ -196,8 +196,8 @@ public class NormalizedOperationToAstCompiler {
 
 
     @Nullable
-    private static GraphQLObjectType getOperationType(@NotNull GraphQLSchema schema,
-                                                      @NotNull OperationDefinition.Operation operationKind) {
+    private static GraphQLObjectType getOperationType(@NonNull GraphQLSchema schema,
+                                                      OperationDefinition.@NonNull Operation operationKind) {
         switch (operationKind) {
             case QUERY:
                 return schema.getQueryType();

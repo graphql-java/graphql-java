@@ -20,8 +20,8 @@ import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLUnionType;
 import graphql.util.FpKit;
 import graphql.util.MutableRef;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -135,7 +135,7 @@ public class NormalizedField {
      * @param schema - the graphql schema in play
      * @return true if the field is conditional
      */
-    public boolean isConditional(@NotNull GraphQLSchema schema) {
+    public boolean isConditional(@NonNull GraphQLSchema schema) {
         if (parent == null) {
             return false;
         }
@@ -637,12 +637,12 @@ public class NormalizedField {
             return this;
         }
 
-        public Builder astArguments(@NotNull List<Argument> astArguments) {
+        public Builder astArguments(@NonNull List<Argument> astArguments) {
             this.astArguments = ImmutableList.copyOf(astArguments);
             return this;
         }
 
-        public Builder astDirectives(@NotNull List<Directive> astDirectives) {
+        public Builder astDirectives(@NonNull List<Directive> astDirectives) {
             this.astDirectives = astDirectives;
             return this;
         }

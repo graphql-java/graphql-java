@@ -9,7 +9,7 @@ import graphql.schema.GraphQLSchema;
 import graphql.schema.idl.RuntimeWiring;
 import graphql.schema.idl.SchemaGenerator;
 import graphql.schema.idl.SchemaParser;
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
@@ -134,7 +134,7 @@ public class SubscriptionReproduction {
         return counter;
     }
 
-    private @NotNull Object mkValue(Integer counter) {
+    private @NonNull Object mkValue(Integer counter) {
         // name and isFavorite are future values via DFs
         return Map.of(
                 "counter", counter,
