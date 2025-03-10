@@ -46,6 +46,7 @@ public class ExecutionContext {
     private final OperationDefinition operationDefinition;
     private final Document document;
     private final CoercedVariables coercedVariables;
+    private final Supplier<NormalizedVariables> normalizedVariables;
     private final Object root;
     private final Object context;
     private final GraphQLContext graphQLContext;
@@ -76,6 +77,7 @@ public class ExecutionContext {
         this.subscriptionStrategy = builder.subscriptionStrategy;
         this.fragmentsByName = builder.fragmentsByName;
         this.coercedVariables = builder.coercedVariables;
+        this.normalizedVariables = builder.normalizedVariables;
         this.document = builder.document;
         this.operationDefinition = builder.operationDefinition;
         this.context = builder.context;
@@ -128,6 +130,13 @@ public class ExecutionContext {
 
     public CoercedVariables getCoercedVariables() {
         return coercedVariables;
+    }
+
+    /**
+     * @return a supplier that will give out the operations variables in normalized form
+     */
+    public Supplier<NormalizedVariables> getNormalizedVariables() {
+        return normalizedVariables;
     }
 
     /**
