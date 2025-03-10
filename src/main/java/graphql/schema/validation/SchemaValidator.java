@@ -1,6 +1,7 @@
 package graphql.schema.validation;
 
 import graphql.Internal;
+import graphql.schema.GraphQLCodeRegistry;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLTypeVisitor;
 import graphql.schema.SchemaTraverser;
@@ -33,12 +34,18 @@ public class SchemaValidator {
         return rules;
     }
 
-    public Set<SchemaValidationError> validateSchema(GraphQLSchema schema) {
+    public Set<SchemaValidationError> validateSchema(GraphQLSchema schema, GraphQLCodeRegistry codeRegistry) {
         SchemaValidationErrorCollector validationErrorCollector = new SchemaValidationErrorCollector();
         Map<Class<?>, Object> rootVars = new LinkedHashMap<>();
         rootVars.put(GraphQLSchema.class, schema);
         rootVars.put(SchemaValidationErrorCollector.class, validationErrorCollector);
-        new SchemaTraverser().depthFirstFullSchema(rules, schema, rootVars);
+        rootVars.put(GraphQLCodeRegistry.class, codeRegistry);
+        List<GraphQLTypeVisitor> appliedRules = rules;
+        if (true) {
+            appliedRules = new ArrayList<>(rules);
+            appliedRules.add(codeRegistry.validationRule());
+        }
+        new SchemaTraverser().depthFirstFullSchema(appliedRules, schema, rootVars);
         return validationErrorCollector.getErrors();
     }
 
