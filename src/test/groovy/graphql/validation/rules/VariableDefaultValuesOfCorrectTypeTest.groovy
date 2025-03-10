@@ -19,10 +19,13 @@ class VariableDefaultValuesOfCorrectTypeTest extends Specification {
     ValidationContext validationContext = Mock(ValidationContext)
     ValidationErrorCollector errorCollector = new ValidationErrorCollector()
     VariableDefaultValuesOfCorrectType defaultValuesOfCorrectType = new VariableDefaultValuesOfCorrectType(validationContext, errorCollector)
+    I18n i18n = Mock(I18n)
 
     void setup() {
         def context = GraphQLContext.getDefault()
         validationContext.getGraphQLContext() >> context
+        validationContext.getI18n() >> i18n
+        i18n.getLocale() >> Locale.ENGLISH
     }
 
     def "default value has wrong type"() {
