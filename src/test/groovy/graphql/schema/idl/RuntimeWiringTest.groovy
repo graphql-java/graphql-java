@@ -193,7 +193,7 @@ class RuntimeWiringTest extends Specification {
         newWiring.fieldVisibility == fieldVisibility
     }
 
-    def "strict mode can stop certain redefinitions"() {
+    def "strict mode, on by default, can stop certain redefinitions"() {
         DataFetcher DF1 = env -> "x"
         DataFetcher DF2 = env -> "x"
         TypeResolver TR1 = env -> null
@@ -201,7 +201,6 @@ class RuntimeWiringTest extends Specification {
 
         when:
         RuntimeWiring.newRuntimeWiring()
-                .strictMode()
                 .type(TypeRuntimeWiring.newTypeWiring("Foo").dataFetcher("foo", DF1))
                 .type(TypeRuntimeWiring.newTypeWiring("Foo").dataFetcher("bar", DF1))
 
@@ -212,7 +211,6 @@ class RuntimeWiringTest extends Specification {
 
         when:
         RuntimeWiring.newRuntimeWiring()
-                .strictMode()
                 .type(TypeRuntimeWiring.newTypeWiring("Foo").typeResolver(TR1))
                 .type(TypeRuntimeWiring.newTypeWiring("Foo").typeResolver(TR1))
 
@@ -222,7 +220,6 @@ class RuntimeWiringTest extends Specification {
 
         when:
         RuntimeWiring.newRuntimeWiring()
-                .strictMode()
                 .type(TypeRuntimeWiring.newTypeWiring("Foo").enumValues(EVP1))
                 .type(TypeRuntimeWiring.newTypeWiring("Foo").enumValues(EVP1))
         then:
@@ -231,7 +228,6 @@ class RuntimeWiringTest extends Specification {
 
         when:
         RuntimeWiring.newRuntimeWiring()
-                .strictMode()
                 .scalar(Scalars.GraphQLString)
         then:
         def e4 = thrown(StrictModeWiringException)
@@ -239,7 +235,6 @@ class RuntimeWiringTest extends Specification {
 
         when:
         TypeRuntimeWiring.newTypeWiring("Foo")
-                .strictMode()
                 .defaultDataFetcher(DF1)
                 .defaultDataFetcher(DF2)
 
@@ -248,34 +243,91 @@ class RuntimeWiringTest extends Specification {
         e5.message == "The type Foo has already has a default data fetcher defined"
     }
 
-    def "overwrite default data fetchers if they are null"() {
-
+    def "strict mode, if set to off, won't stop certain redefinitions"() {
         DataFetcher DF1 = env -> "x"
         DataFetcher DF2 = env -> "x"
-        DataFetcher DEFAULT_DF = env -> null
-        DataFetcher DEFAULT_DF2 = env -> null
+        TypeResolver TR1 = env -> null
+        EnumValuesProvider EVP1 = name -> null
 
         when:
-        def runtimeWiring = RuntimeWiring.newRuntimeWiring()
-                .type(TypeRuntimeWiring.newTypeWiring("Foo").defaultDataFetcher(DEFAULT_DF))
+        def runtimeWiring1 = RuntimeWiring.newRuntimeWiring()
+                .strictMode(false)
                 .type(TypeRuntimeWiring.newTypeWiring("Foo").dataFetcher("foo", DF1))
-                .type(TypeRuntimeWiring.newTypeWiring("Foo").dataFetcher("bar", DF2))
+                .type(TypeRuntimeWiring.newTypeWiring("Foo").dataFetcher("bar", DF1))
                 .build()
 
         then:
-        runtimeWiring.getDefaultDataFetcherForType("Foo") == DEFAULT_DF
+        noExceptionThrown()
+        runtimeWiring1.getDataFetchers().get("Foo").get("bar") == DF1
 
         when:
-        runtimeWiring = RuntimeWiring.newRuntimeWiring()
+        def runtimeWiring2 = RuntimeWiring.newRuntimeWiring()
+                .strictMode(false)
+                .type(TypeRuntimeWiring.newTypeWiring("Foo").typeResolver(TR1))
+                .type(TypeRuntimeWiring.newTypeWiring("Foo").typeResolver(TR1))
+                .build()
+
+        then:
+        noExceptionThrown()
+        runtimeWiring2.typeResolvers.get("Foo") == TR1
+
+        when:
+        def runtimeWiring3 = RuntimeWiring.newRuntimeWiring()
+                .strictMode(false)
+                .type(TypeRuntimeWiring.newTypeWiring("Foo").enumValues(EVP1))
+                .type(TypeRuntimeWiring.newTypeWiring("Foo").enumValues(EVP1))
+                .build()
+
+        then:
+        noExceptionThrown()
+        runtimeWiring3.getEnumValuesProviders().get("Foo") == EVP1
+
+        when:
+        def runtimeWiring4 = RuntimeWiring.newRuntimeWiring()
+                .strictMode(false)
+                .scalar(Scalars.GraphQLString)
+                .build()
+
+        then:
+        noExceptionThrown()
+        runtimeWiring4.scalars.get("String") == Scalars.GraphQLString
+
+        when:
+        def typeRuntimeWiring = TypeRuntimeWiring.newTypeWiring("Foo")
+                .strictMode(false)
+                .defaultDataFetcher(DF1)
+                .defaultDataFetcher(DF2)
+                .build()
+
+        then:
+        noExceptionThrown()
+        typeRuntimeWiring.defaultDataFetcher == DF2
+    }
+
+    def "when strict mode on, do not allow default data fetcher redefinition"() {
+        DataFetcher DF1 = env -> "w"
+        DataFetcher DEFAULT_DF = env -> "x"
+        DataFetcher DEFAULT_DF2 = env -> "y"
+
+        // Having a datafetcher and a default for the type is ok
+        when:
+        def runtimeWiring1 = RuntimeWiring.newRuntimeWiring()
                 .type(TypeRuntimeWiring.newTypeWiring("Foo").defaultDataFetcher(DEFAULT_DF))
                 .type(TypeRuntimeWiring.newTypeWiring("Foo").dataFetcher("foo", DF1))
-                .type(TypeRuntimeWiring.newTypeWiring("Foo").dataFetcher("bar", DF2))
-                // we can specifically overwrite it later
+                .build()
+
+        then:
+        runtimeWiring1.getDefaultDataFetcherForType("Foo") == DEFAULT_DF
+
+        // Do not permit redefinition of the default datafetcher
+        when:
+        RuntimeWiring.newRuntimeWiring()
+                .type(TypeRuntimeWiring.newTypeWiring("Foo").defaultDataFetcher(DEFAULT_DF))
                 .type(TypeRuntimeWiring.newTypeWiring("Foo").defaultDataFetcher(DEFAULT_DF2))
                 .build()
 
         then:
-        runtimeWiring.getDefaultDataFetcherForType("Foo") == DEFAULT_DF2
-
+        def error = thrown(StrictModeWiringException)
+        error.message == "The type Foo already has a default data fetcher defined"
     }
 }

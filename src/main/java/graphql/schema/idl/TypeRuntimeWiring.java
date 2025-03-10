@@ -16,21 +16,20 @@ import static java.lang.String.format;
 
 /**
  * A type runtime wiring is a specification of the data fetchers and possible type resolver for a given type name.
- *
+ * <br>
  * This is used by {@link RuntimeWiring} to wire together a functional {@link GraphQLSchema}
  */
 @PublicApi
 public class TypeRuntimeWiring {
 
-    private final static AtomicBoolean DEFAULT_STRICT_MODE = new AtomicBoolean(false);
+    private final static AtomicBoolean DEFAULT_STRICT_MODE = new AtomicBoolean(true);
 
     /**
-     * By default {@link TypeRuntimeWiring} builders are not in strict mode, but you can set a JVM wide value
-     * so that any created will be.
+     * By default {@link TypeRuntimeWiring} builders are in strict mode, but you can set a JVM wide value too
      *
      * @param strictMode the desired strict mode state
      *
-     * @see Builder#strictMode()
+     * @see Builder#strictMode(boolean)
      */
     public static void setStrictModeJvmWide(boolean strictMode) {
         DEFAULT_STRICT_MODE.set(strictMode);
@@ -127,6 +126,20 @@ public class TypeRuntimeWiring {
          *
          * @return this builder
          */
+        public Builder strictMode(boolean strictMode) {
+            this.strictMode = strictMode;
+            return this;
+        }
+
+        /**
+         * This puts the builder into strict mode, so if things get defined twice, for example, it
+         * will throw a {@link StrictModeWiringException}.
+         *
+         * @return this builder
+         *
+         * @deprecated use {@link #strictMode(boolean)} instead
+         */
+        @Deprecated(since = "2025-02-15", forRemoval = true)
         public Builder strictMode() {
             this.strictMode = true;
             return this;
