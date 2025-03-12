@@ -3,8 +3,8 @@ package graphql.execution.instrumentation;
 import graphql.Internal;
 import graphql.PublicSpi;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 /**
  * FieldFetchingInstrumentationContext is returned back from the {@link Instrumentation#beginFieldFetching(InstrumentationFieldFetchParameters, InstrumentationState)}
@@ -43,7 +43,7 @@ public interface FieldFetchingInstrumentationContext extends InstrumentationCont
      * @param nullableContext a {@link InstrumentationContext} that can be null
      * @return a non-null {@link InstrumentationContext} that maybe a no-op
      */
-    @NotNull
+    @NonNull
     @Internal
     static FieldFetchingInstrumentationContext nonNullCtx(FieldFetchingInstrumentationContext nullableContext) {
         return nullableContext == null ? NOOP : nullableContext;

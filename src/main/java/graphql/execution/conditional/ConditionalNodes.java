@@ -11,7 +11,7 @@ import graphql.language.DirectivesContainer;
 import graphql.language.NodeUtil;
 import graphql.language.VariableReference;
 import graphql.schema.GraphQLSchema;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 import java.util.Map;
