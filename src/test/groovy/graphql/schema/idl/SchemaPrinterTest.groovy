@@ -965,6 +965,14 @@ type Query {
         // args and directives are sorted like the rest of the schema printer
         result == '''directive @argDirective on ARGUMENT_DEFINITION
 
+"This directive allows results to be deferred during execution"
+directive @defer(
+    "Deferred behaviour is controlled by this argument"
+    if: Boolean! = true,
+    "A unique label that represents the fragment being deferred"
+    label: String
+  ) on FRAGMENT_SPREAD | INLINE_FRAGMENT
+
 "Marks the field, argument, input field or enum value as deprecated"
 directive @deprecated(
     "The reason for the deprecation"
@@ -1144,7 +1152,15 @@ input SomeInput {
 
         then:
         // args and directives are sorted like the rest of the schema printer
-        result == '''"Marks the field, argument, input field or enum value as deprecated"
+        result == '''"This directive allows results to be deferred during execution"
+directive @defer(
+    "Deferred behaviour is controlled by this argument"
+    if: Boolean! = true,
+    "A unique label that represents the fragment being deferred"
+    label: String
+  ) on FRAGMENT_SPREAD | INLINE_FRAGMENT
+
+"Marks the field, argument, input field or enum value as deprecated"
 directive @deprecated(
     "The reason for the deprecation"
     reason: String! = "No longer supported"
@@ -1243,7 +1259,15 @@ type Query {
         def resultWithDirectives = new SchemaPrinter(defaultOptions().includeDirectives(true)).print(schema)
 
         then:
-        resultWithDirectives == '''"Marks the field, argument, input field or enum value as deprecated"
+        resultWithDirectives == '''"This directive allows results to be deferred during execution"
+directive @defer(
+    "Deferred behaviour is controlled by this argument"
+    if: Boolean! = true,
+    "A unique label that represents the fragment being deferred"
+    label: String
+  ) on FRAGMENT_SPREAD | INLINE_FRAGMENT
+
+"Marks the field, argument, input field or enum value as deprecated"
 directive @deprecated(
     "The reason for the deprecation"
     reason: String! = "No longer supported"
@@ -1314,7 +1338,15 @@ type Query {
         def resultWithDirectiveDefinitions = new SchemaPrinter(defaultOptions().includeDirectiveDefinitions(true)).print(schema)
 
         then:
-        resultWithDirectiveDefinitions == '''"Marks the field, argument, input field or enum value as deprecated"
+        resultWithDirectiveDefinitions == '''"This directive allows results to be deferred during execution"
+directive @defer(
+    "Deferred behaviour is controlled by this argument"
+    if: Boolean! = true,
+    "A unique label that represents the fragment being deferred"
+    label: String
+  ) on FRAGMENT_SPREAD | INLINE_FRAGMENT
+
+"Marks the field, argument, input field or enum value as deprecated"
 directive @deprecated(
     "The reason for the deprecation"
     reason: String! = "No longer supported"
@@ -1414,6 +1446,14 @@ extend schema {
   subscription: MySubscription
 }
 
+"This directive allows results to be deferred during execution"
+directive @defer(
+    "Deferred behaviour is controlled by this argument"
+    if: Boolean! = true,
+    "A unique label that represents the fragment being deferred"
+    label: String
+  ) on FRAGMENT_SPREAD | INLINE_FRAGMENT
+
 "Marks the field, argument, input field or enum value as deprecated"
 directive @deprecated(
     "The reason for the deprecation"
@@ -1502,6 +1542,14 @@ schema @schemaDirective{
   query: MyQuery
   mutation: MyMutation
 }
+
+"This directive allows results to be deferred during execution"
+directive @defer(
+    "Deferred behaviour is controlled by this argument"
+    if: Boolean! = true,
+    "A unique label that represents the fragment being deferred"
+    label: String
+  ) on FRAGMENT_SPREAD | INLINE_FRAGMENT
 
 "Marks the field, argument, input field or enum value as deprecated"
 directive @deprecated(
@@ -1646,7 +1694,15 @@ type MyQuery {
         def result = new SchemaPrinter(printOptions).print(schema)
 
         then:
-        result == '''"Marks the field, argument, input field or enum value as deprecated"
+        result == '''"This directive allows results to be deferred during execution"
+directive @defer(
+    "Deferred behaviour is controlled by this argument"
+    if: Boolean! = true,
+    "A unique label that represents the fragment being deferred"
+    label: String
+  ) on FRAGMENT_SPREAD | INLINE_FRAGMENT
+
+"Marks the field, argument, input field or enum value as deprecated"
 directive @deprecated(
     "The reason for the deprecation"
     reason: String! = "No longer supported"
@@ -2185,6 +2241,14 @@ type PrintMeType {
   query: MyQuery
 }
 
+"This directive allows results to be deferred during execution"
+directive @defer(
+    "Deferred behaviour is controlled by this argument"
+    if: Boolean! = true,
+    "A unique label that represents the fragment being deferred"
+    label: String
+  ) on FRAGMENT_SPREAD | INLINE_FRAGMENT
+
 "Marks the field, argument, input field or enum value as deprecated"
 directive @deprecated(
     "The reason for the deprecation"
@@ -2429,6 +2493,14 @@ directive @deprecated(
     reason: String! = "No longer supported"
   ) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION
 
+"This directive allows results to be deferred during execution"
+directive @defer(
+    "A unique label that represents the fragment being deferred"
+    label: String,
+    "Deferred behaviour is controlled by this argument"
+    if: Boolean! = true
+  ) on FRAGMENT_SPREAD | INLINE_FRAGMENT
+
 union ZUnion = XQuery | Query
 
 scalar ZScalar
@@ -2538,6 +2610,14 @@ schema {
   query: Query
   mutation: Mutation
 }
+
+"This directive allows results to be deferred during execution"
+directive @defer(
+    "Deferred behaviour is controlled by this argument"
+    if: Boolean! = true,
+    "A unique label that represents the fragment being deferred"
+    label: String
+  ) on FRAGMENT_SPREAD | INLINE_FRAGMENT
 
 "Marks the field, argument, input field or enum value as deprecated"
 directive @deprecated(
@@ -2779,6 +2859,14 @@ schema {
   mutation: Mutation
 }
 
+"This directive allows results to be deferred during execution"
+directive @defer(
+    "Deferred behaviour is controlled by this argument"
+    if: Boolean! = true,
+    "A unique label that represents the fragment being deferred"
+    label: String
+  ) on FRAGMENT_SPREAD | INLINE_FRAGMENT
+
 "Marks the field, argument, input field or enum value as deprecated"
 directive @deprecated(
     "The reason for the deprecation"
@@ -2970,7 +3058,15 @@ input Input {
 
         expect: "has no skip definition"
 
-        result == """"Marks the field, argument, input field or enum value as deprecated"
+        result == """"This directive allows results to be deferred during execution"
+directive @defer(
+    "Deferred behaviour is controlled by this argument"
+    if: Boolean! = true,
+    "A unique label that represents the fragment being deferred"
+    label: String
+  ) on FRAGMENT_SPREAD | INLINE_FRAGMENT
+
+"Marks the field, argument, input field or enum value as deprecated"
 directive @deprecated(
     "The reason for the deprecation"
     reason: String! = "No longer supported"
