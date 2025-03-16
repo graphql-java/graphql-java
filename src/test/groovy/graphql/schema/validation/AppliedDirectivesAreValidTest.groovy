@@ -59,7 +59,7 @@ class AppliedDirectivesAreValidTest extends Specification {
         hasError(schemaProblem, "The directive 'directiveA' on the 'GraphQLInputObjectField' called 'inputFieldA' is a non repeatable directive but has been applied 2 times")
     }
 
-    def "add applied directive builders do not clear any existing applied directives"(){
+    def "applied directive builders do not clear any existing applied directives"() {
         given:
         def directive1 = mkDirective("myDirectiveName1", FIELD_DEFINITION)
         def directive2 = mkDirective("myDirectiveName2", FIELD_DEFINITION)
@@ -89,16 +89,15 @@ class AppliedDirectivesAreValidTest extends Specification {
         fieldAppliedDirectives.any { it.name == "myDirectiveName2" }
     }
 
-    def "with applied directive builders do clear and replace existing applied directives"(){
-        // Retain for test coverage. Delete after deprecated methods are removed
+    def "replace applied directive builders do clear and replace existing applied directives"(){
         given:
         def directive1 = mkDirective("myDirectiveName1", FIELD_DEFINITION)
         def directive2 = mkDirective("myDirectiveName2", FIELD_DEFINITION)
         def field = newFieldDefinition()
                 .name("hello")
                 .type(GraphQLString)
-                .withAppliedDirectives(directive1.toAppliedDirective())
-                .withAppliedDirectives(directive2.toAppliedDirective())
+                .withAppliedDirective(directive1.toAppliedDirective())
+                .replaceAppliedDirectives(List.of(directive2.toAppliedDirective()))
                 .build()
 
         when:
