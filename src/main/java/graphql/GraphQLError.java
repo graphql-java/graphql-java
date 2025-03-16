@@ -3,7 +3,7 @@ package graphql;
 
 import graphql.execution.ResultPath;
 import graphql.language.SourceLocation;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.io.Serializable;
 import java.util.List;
@@ -68,6 +68,17 @@ public interface GraphQLError extends Serializable {
      */
     default Map<String, Object> getExtensions() {
         return null;
+    }
+
+    /**
+     * This can be called to turn a specification error map into {@link GraphQLError}
+     *
+     * @param specificationMap the map of values that should have come via {@link GraphQLError#toSpecification()}
+     *
+     * @return a {@link GraphQLError}
+     */
+    static GraphQLError fromSpecification(Map<String, Object> specificationMap) {
+        return GraphqlErrorHelper.fromSpecification(specificationMap);
     }
 
     /**

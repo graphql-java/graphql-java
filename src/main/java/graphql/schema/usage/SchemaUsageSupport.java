@@ -22,7 +22,6 @@ import graphql.schema.GraphQLUnionType;
 import graphql.schema.SchemaTraverser;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.HashSet;
 import java.util.List;

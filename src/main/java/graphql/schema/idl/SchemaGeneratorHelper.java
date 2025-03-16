@@ -56,7 +56,6 @@ import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLTypeReference;
 import graphql.schema.GraphQLUnionType;
 import graphql.schema.GraphqlTypeComparatorRegistry;
-import graphql.schema.PropertyDataFetcher;
 import graphql.schema.SingletonPropertyDataFetcher;
 import graphql.schema.TypeResolver;
 import graphql.schema.TypeResolverProxy;

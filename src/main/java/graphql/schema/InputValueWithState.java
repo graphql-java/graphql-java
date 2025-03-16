@@ -2,8 +2,8 @@ package graphql.schema;
 
 import graphql.PublicApi;
 import graphql.language.Value;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import static graphql.Assert.assertNotNull;
 
@@ -44,7 +44,7 @@ public class InputValueWithState {
 
     public static final InputValueWithState NOT_SET = new InputValueWithState(State.NOT_SET, null);
 
-    public static InputValueWithState newLiteralValue(@NotNull Value value) {
+    public static InputValueWithState newLiteralValue(@NonNull Value value) {
         assertNotNull(value, () -> "value literal can't be null");
         return new InputValueWithState(State.LITERAL, value);
     }

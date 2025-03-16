@@ -7,7 +7,7 @@ import com.google.common.collect.LinkedHashMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Table;
 import graphql.ExperimentalApi;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -18,7 +18,6 @@ import java.util.Optional;
 import java.util.function.Predicate;
 
 import static graphql.Assert.assertTrue;
-import static java.lang.String.format;
 
 @ExperimentalApi
 public class SchemaGraph {

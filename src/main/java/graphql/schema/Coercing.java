@@ -5,8 +5,8 @@ import graphql.GraphQLContext;
 import graphql.PublicSpi;
 import graphql.execution.CoercedVariables;
 import graphql.language.Value;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Locale;
 import java.util.Map;
@@ -54,7 +54,7 @@ public interface Coercing<I, O> {
      * @throws graphql.schema.CoercingSerializeException if value input can't be serialized
      */
     @Deprecated(since = "2022-08-22")
-    default @Nullable O serialize(@NotNull Object dataFetcherResult) throws CoercingSerializeException {
+    default @Nullable O serialize(@NonNull Object dataFetcherResult) throws CoercingSerializeException {
         throw new UnsupportedOperationException("The non deprecated version of serialize has not been implemented by this scalar : " + this.getClass());
     }
 
@@ -75,7 +75,7 @@ public interface Coercing<I, O> {
      *
      * @throws graphql.schema.CoercingSerializeException if value input can't be serialized
      */
-    default @Nullable O serialize(@NotNull Object dataFetcherResult, @NotNull GraphQLContext graphQLContext, @NotNull Locale locale) throws CoercingSerializeException {
+    default @Nullable O serialize(@NonNull Object dataFetcherResult, @NonNull GraphQLContext graphQLContext, @NonNull Locale locale) throws CoercingSerializeException {
         assertNotNull(dataFetcherResult);
         assertNotNull(graphQLContext);
         return serialize(dataFetcherResult);
@@ -98,7 +98,7 @@ public interface Coercing<I, O> {
      * @throws graphql.schema.CoercingParseValueException if value input can't be parsed
      */
     @Deprecated(since = "2022-08-22")
-    default @Nullable I parseValue(@NotNull Object input) throws CoercingParseValueException {
+    default @Nullable I parseValue(@NonNull Object input) throws CoercingParseValueException {
         throw new UnsupportedOperationException("The non deprecated version of parseValue has not been implemented by this scalar : " + this.getClass());
     }
 
@@ -119,7 +119,7 @@ public interface Coercing<I, O> {
      * @throws graphql.schema.CoercingParseValueException if value input can't be parsed
      */
     @Nullable
-    default I parseValue(@NotNull Object input, @NotNull GraphQLContext graphQLContext, @NotNull Locale locale) throws CoercingParseValueException {
+    default I parseValue(@NonNull Object input, @NonNull GraphQLContext graphQLContext, @NonNull Locale locale) throws CoercingParseValueException {
         assertNotNull(input);
         assertNotNull(graphQLContext);
         assertNotNull(locale);
@@ -144,7 +144,7 @@ public interface Coercing<I, O> {
      * @throws graphql.schema.CoercingParseLiteralException if input literal can't be parsed
      */
     @Deprecated(since = "2022-08-22")
-    default @Nullable I parseLiteral(@NotNull Object input) throws CoercingParseLiteralException {
+    default @Nullable I parseLiteral(@NonNull Object input) throws CoercingParseLiteralException {
         throw new UnsupportedOperationException("The non deprecated version of parseLiteral has not been implemented by this scalar : " + this.getClass());
     }
 
@@ -198,7 +198,7 @@ public interface Coercing<I, O> {
      *
      * @throws graphql.schema.CoercingParseLiteralException if input literal can't be parsed
      */
-    default @Nullable I parseLiteral(@NotNull Value<?> input, @NotNull CoercedVariables variables, @NotNull GraphQLContext graphQLContext, @NotNull Locale locale) throws CoercingParseLiteralException {
+    default @Nullable I parseLiteral(@NonNull Value<?> input, @NonNull CoercedVariables variables, @NonNull GraphQLContext graphQLContext, @NonNull Locale locale) throws CoercingParseLiteralException {
         assertNotNull(input);
         assertNotNull(graphQLContext);
         assertNotNull(locale);
@@ -218,7 +218,7 @@ public interface Coercing<I, O> {
      * @return The literal matching the external input value.
      */
     @Deprecated(since = "2022-08-22")
-    default @NotNull Value valueToLiteral(@NotNull Object input) {
+    default @NonNull Value valueToLiteral(@NonNull Object input) {
         throw new UnsupportedOperationException("The non deprecated version of valueToLiteral has not been implemented by this scalar : " + this.getClass());
     }
 
@@ -233,7 +233,7 @@ public interface Coercing<I, O> {
      *
      * @return The literal matching the external input value.
      */
-    default @NotNull Value<?> valueToLiteral(@NotNull Object input, @NotNull GraphQLContext graphQLContext, @NotNull Locale locale) {
+    default @NonNull Value<?> valueToLiteral(@NonNull Object input, @NonNull GraphQLContext graphQLContext, @NonNull Locale locale) {
         assertNotNull(input);
         assertNotNull(graphQLContext);
         assertNotNull(locale);

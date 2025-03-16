@@ -21,8 +21,8 @@ import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchPar
 import graphql.execution.instrumentation.tracing.TracingInstrumentation;
 import graphql.schema.DataFetcher;
 import graphql.schema.GraphQLSchema;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -86,7 +86,7 @@ public class InstrumentationExamples {
         }
 
         @Override
-        public @NotNull DataFetcher<?> instrumentDataFetcher(DataFetcher<?> dataFetcher, InstrumentationFieldFetchParameters parameters, InstrumentationState state) {
+        public @NonNull DataFetcher<?> instrumentDataFetcher(DataFetcher<?> dataFetcher, InstrumentationFieldFetchParameters parameters, InstrumentationState state) {
             //
             // this allows you to intercept the data fetcher used to fetch a field and provide another one, perhaps
             // that enforces certain behaviours or has certain side effects on the data
@@ -95,7 +95,7 @@ public class InstrumentationExamples {
         }
 
         @Override
-        public @NotNull CompletableFuture<ExecutionResult> instrumentExecutionResult(ExecutionResult executionResult, InstrumentationExecutionParameters parameters, InstrumentationState state) {
+        public @NonNull CompletableFuture<ExecutionResult> instrumentExecutionResult(ExecutionResult executionResult, InstrumentationExecutionParameters parameters, InstrumentationState state) {
             //
             // this allows you to instrument the execution result somehow.  For example the Tracing support uses this to put
             // the `extensions` map of data in place
