@@ -7,6 +7,8 @@ import graphql.language.DirectiveDefinition;
 import graphql.language.StringValue;
 import graphql.schema.GraphQLDirective;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+
 import static graphql.Scalars.GraphQLBoolean;
 import static graphql.Scalars.GraphQLString;
 import static graphql.introspection.Introspection.DirectiveLocation.ARGUMENT_DEFINITION;
@@ -17,7 +19,10 @@ import static graphql.introspection.Introspection.DirectiveLocation.FRAGMENT_SPR
 import static graphql.introspection.Introspection.DirectiveLocation.INLINE_FRAGMENT;
 import static graphql.introspection.Introspection.DirectiveLocation.INPUT_FIELD_DEFINITION;
 import static graphql.introspection.Introspection.DirectiveLocation.INPUT_OBJECT;
+import static graphql.introspection.Introspection.DirectiveLocation.MUTATION;
+import static graphql.introspection.Introspection.DirectiveLocation.QUERY;
 import static graphql.introspection.Introspection.DirectiveLocation.SCALAR;
+import static graphql.introspection.Introspection.DirectiveLocation.SUBSCRIPTION;
 import static graphql.language.DirectiveLocation.newDirectiveLocation;
 import static graphql.language.InputValueDefinition.newInputValueDefinition;
 import static graphql.language.NonNullType.newNonNullType;
@@ -37,6 +42,7 @@ public class Directives {
     private static final String SPECIFIED_BY = "specifiedBy";
     private static final String ONE_OF = "oneOf";
     private static final String DEFER = "defer";
+    private static final String EXPERIMENTAL_DISABLE_ERROR_PROPAGATION = "experimental_disableErrorPropagation";
 
     public static final DirectiveDefinition DEPRECATED_DIRECTIVE_DEFINITION;
     public static final DirectiveDefinition INCLUDE_DIRECTIVE_DEFINITION;
@@ -46,6 +52,8 @@ public class Directives {
     public static final DirectiveDefinition ONE_OF_DIRECTIVE_DEFINITION;
     @ExperimentalApi
     public static final DirectiveDefinition DEFER_DIRECTIVE_DEFINITION;
+    @ExperimentalApi
+    public static final DirectiveDefinition EXPERIMENTAL_DISABLE_ERROR_PROPAGATION_DIRECTIVE_DEFINITION;
 
     public static final String BOOLEAN = "Boolean";
     public static final String STRING = "String";
@@ -132,6 +140,13 @@ public class Directives {
                                 .description(createDescription("A unique label that represents the fragment being deferred"))
                                 .type(newTypeName().name(STRING).build())
                                 .build())
+                .build();
+        EXPERIMENTAL_DISABLE_ERROR_PROPAGATION_DIRECTIVE_DEFINITION = DirectiveDefinition.newDirectiveDefinition()
+                .name(EXPERIMENTAL_DISABLE_ERROR_PROPAGATION)
+                .directiveLocation(newDirectiveLocation().name(QUERY.name()).build())
+                .directiveLocation(newDirectiveLocation().name(MUTATION.name()).build())
+                .directiveLocation(newDirectiveLocation().name(SUBSCRIPTION.name()).build())
+                .description(createDescription("This directive allows returning null in non-null positions that have an associated error"))
                 .build();
     }
 
@@ -226,7 +241,35 @@ public class Directives {
             .definition(ONE_OF_DIRECTIVE_DEFINITION)
             .build();
 
+    @ExperimentalApi
+    public static final GraphQLDirective ExperimentalDisableErrorPropagationDirective = GraphQLDirective.newDirective()
+            .name(EXPERIMENTAL_DISABLE_ERROR_PROPAGATION)
+            .description("This directive disables error propagation when a non nullable field returns null for the given operation.")
+            .validLocations(QUERY, MUTATION, SUBSCRIPTION)
+            .definition(EXPERIMENTAL_DISABLE_ERROR_PROPAGATION_DIRECTIVE_DEFINITION)
+            .build();
+
     private static Description createDescription(String s) {
         return new Description(s, null, false);
+    }
+
+    private static final AtomicBoolean EXPERIMENTAL_DISABLE_ERROR_PROPAGATION_DIRECTIVE_ENABLED = new AtomicBoolean(true);
+
+    /**
+     * This can be used to get the state the `@experimental_disableErrorPropagation` directive support on a JVM wide basis .
+     * @return true if the `@experimental_disableErrorPropagation` directive will be respected
+     */
+    public static boolean isExperimentalDisableErrorPropagationDirectiveEnabled() {
+        return EXPERIMENTAL_DISABLE_ERROR_PROPAGATION_DIRECTIVE_ENABLED.get();
+    }
+
+    /**
+     * This can be used to disable the `@experimental_disableErrorPropagation` directive support on a JVM wide basis in case your server
+     * implementation does NOT want to act on this directive ever.
+     *
+     * @param flag the desired state of the flag
+     */
+    public static void setExperimentalDisableErrorPropagationEnabled(boolean flag) {
+        EXPERIMENTAL_DISABLE_ERROR_PROPAGATION_DIRECTIVE_ENABLED.set(flag);
     }
 }

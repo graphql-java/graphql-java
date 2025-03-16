@@ -35,7 +35,7 @@ import static graphql.util.Pair.pair;
 import static java.util.stream.Collectors.toMap;
 
 /**
- * This contains helper code to build out appliedm directives on schema element
+ * This contains helper code to build out applied directives on schema element
  */
 @Internal
 class SchemaGeneratorAppliedDirectiveHelper {

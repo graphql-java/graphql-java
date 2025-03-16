@@ -6,13 +6,16 @@ import graphql.schema.GraphQLModifiedType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLSchemaElement;
 import graphql.util.TraverserContext;
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Predicate;
 
-import static graphql.schema.visitor.GraphQLSchemaTraversalControl.*;
+import static graphql.schema.visitor.GraphQLSchemaTraversalControl.CONTINUE;
+import static graphql.schema.visitor.GraphQLSchemaTraversalControl.Control;
+import static graphql.schema.visitor.GraphQLSchemaTraversalControl.DELETE;
+import static graphql.schema.visitor.GraphQLSchemaTraversalControl.QUIT;
 
 @Internal
 class GraphQLSchemaVisitorEnvironmentImpl<T extends GraphQLSchemaElement> implements GraphQLSchemaVisitorEnvironment<T> {
@@ -50,7 +53,7 @@ class GraphQLSchemaVisitorEnvironmentImpl<T extends GraphQLSchemaElement> implem
         return buildParentsImpl(schemaElement -> !(schemaElement instanceof GraphQLModifiedType));
     }
 
-    @NotNull
+    @NonNull
     private List<GraphQLSchemaElement> buildParentsImpl(Predicate<GraphQLSchemaElement> predicate) {
         List<GraphQLSchemaElement> list = new ArrayList<>();
         TraverserContext<GraphQLSchemaElement> parentContext = context.getParentContext();

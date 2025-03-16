@@ -47,6 +47,7 @@ class OverlappingFieldsCanBeMergedTest extends Specification {
     def "identical fields are ok"() {
         given:
         def query = """
+           {...f}
             fragment f on Test{
                 name
                 name
@@ -59,9 +60,22 @@ class OverlappingFieldsCanBeMergedTest extends Specification {
         errorCollector.errors.isEmpty()
     }
 
+    def "identical fields are ok 2"() {
+        given:
+        def query = """
+           { name name name name: name}
+        """
+        when:
+        traverse(query, null)
+
+        then:
+        errorCollector.errors.isEmpty()
+    }
+
     def "two aliases with different targets"() {
         given:
         def query = """
+            {... f }
             fragment f on Test{
                 myName : name
                 myName : nickname
@@ -72,8 +86,8 @@ class OverlappingFieldsCanBeMergedTest extends Specification {
 
         then:
         errorCollector.getErrors().size() == 1
-        errorCollector.getErrors()[0].message == "Validation error (FieldsConflict@[f]) : 'myName' : 'name' and 'nickname' are different fields"
-        errorCollector.getErrors()[0].locations == [new SourceLocation(3, 17), new SourceLocation(4, 17)]
+        errorCollector.getErrors()[0].message == "Validation error (FieldsConflict) : 'myName' : 'name' and 'nickname' are different fields"
+        errorCollector.getErrors()[0].locations == [new SourceLocation(4, 17), new SourceLocation(5, 17)]
     }
 
     static GraphQLSchema unionSchema() {
@@ -134,7 +148,7 @@ class OverlappingFieldsCanBeMergedTest extends Specification {
 
         then:
         errorCollector.getErrors().size() == 1
-        errorCollector.getErrors()[0].message == "Validation error (FieldsConflict@[boxUnion]) : 'scalar' : returns different types 'Int' and 'String'"
+        errorCollector.getErrors()[0].message == "Validation error (FieldsConflict) : 'boxUnion/scalar' : returns different types 'Int' and 'String'"
     }
 
 
@@ -182,7 +196,7 @@ class OverlappingFieldsCanBeMergedTest extends Specification {
 
         then:
         errorCollector.getErrors().size() == 1
-        errorCollector.getErrors()[0].message == "Validation error (FieldsConflict@[boxUnion]) : 'scalar' : fields have different nullability shapes"
+        errorCollector.getErrors()[0].message == "Validation error (FieldsConflict) : 'boxUnion/scalar' : fields have different nullability shapes"
     }
 
     def 'not the same list return types'() {
@@ -206,7 +220,7 @@ class OverlappingFieldsCanBeMergedTest extends Specification {
 
         then:
         errorCollector.getErrors().size() == 1
-        errorCollector.getErrors()[0].message == "Validation error (FieldsConflict@[boxUnion]) : 'scalar' : fields have different list shapes"
+        errorCollector.getErrors()[0].message == "Validation error (FieldsConflict) : 'boxUnion/scalar' : fields have different list shapes"
     }
 
 
@@ -303,6 +317,7 @@ class OverlappingFieldsCanBeMergedTest extends Specification {
     def 'Same aliases with different field targets'() {
         given:
         def query = """
+        {dog{...sameAliasesWithDifferentFieldTargets}}
         fragment sameAliasesWithDifferentFieldTargets on Dog {
             fido: name
             fido: nickname
@@ -322,13 +337,14 @@ class OverlappingFieldsCanBeMergedTest extends Specification {
 
         then:
         errorCollector.getErrors().size() == 1
-        errorCollector.getErrors()[0].message == "Validation error (FieldsConflict@[sameAliasesWithDifferentFieldTargets]) : 'fido' : 'name' and 'nickname' are different fields"
-        errorCollector.getErrors()[0].locations == [new SourceLocation(3, 13), new SourceLocation(4, 13)]
+        errorCollector.getErrors()[0].message == "Validation error (FieldsConflict) : 'dog/fido' : 'name' and 'nickname' are different fields"
+        errorCollector.getErrors()[0].locations == [new SourceLocation(4, 13), new SourceLocation(5, 13)]
     }
 
     def 'Alias masking direct field access'() {
         given:
         def query = """
+        {dog{...aliasMaskingDirectFieldAccess}}
         fragment aliasMaskingDirectFieldAccess on Dog {
             name: nickname
             name
@@ -346,8 +362,8 @@ class OverlappingFieldsCanBeMergedTest extends Specification {
 
         then:
         errorCollector.getErrors().size() == 1
-        errorCollector.getErrors()[0].message == "Validation error (FieldsConflict@[aliasMaskingDirectFieldAccess]) : 'name' : 'nickname' and 'name' are different fields"
-        errorCollector.getErrors()[0].locations == [new SourceLocation(3, 13), new SourceLocation(4, 13)]
+        errorCollector.getErrors()[0].message == "Validation error (FieldsConflict) : 'dog/name' : 'nickname' and 'name' are different fields"
+        errorCollector.getErrors()[0].locations == [new SourceLocation(4, 13), new SourceLocation(5, 13)]
     }
 
     def 'issue 3332 - Alias masking direct field access non fragment'() {
@@ -370,7 +386,7 @@ class OverlappingFieldsCanBeMergedTest extends Specification {
 
         then:
         errorCollector.getErrors().size() == 1
-        errorCollector.getErrors()[0].message == "Validation error (FieldsConflict@[dog]) : 'name' : 'nickname' and 'name' are different fields"
+        errorCollector.getErrors()[0].message == "Validation error (FieldsConflict) : 'dog/name' : 'nickname' and 'name' are different fields"
         errorCollector.getErrors()[0].locations == [new SourceLocation(3, 13), new SourceLocation(4, 13)]
     }
 
@@ -398,13 +414,14 @@ class OverlappingFieldsCanBeMergedTest extends Specification {
 
         then:
         errorCollector.getErrors().size() == 1
-        errorCollector.getErrors()[0].message == "Validation error (FieldsConflict@[cat]) : 'foo1' : 'foo1' and 'foo2' are different fields"
+        errorCollector.getErrors()[0].message == "Validation error (FieldsConflict) : 'cat/foo1' : 'foo1' and 'foo2' are different fields"
         errorCollector.getErrors()[0].locations == [new SourceLocation(4, 17), new SourceLocation(5, 17)]
     }
 
     def 'conflicting args'() {
         given:
         def query = """
+        {dog{...conflictingArgs}}
                 fragment conflictingArgs on Dog {
             doesKnowCommand(dogCommand: SIT)
             doesKnowCommand(dogCommand: HEEL)
@@ -424,8 +441,8 @@ class OverlappingFieldsCanBeMergedTest extends Specification {
 
         then:
         errorCollector.getErrors().size() == 1
-        errorCollector.getErrors()[0].message == "Validation error (FieldsConflict@[conflictingArgs]) : 'doesKnowCommand' : fields have different arguments"
-        errorCollector.getErrors()[0].locations == [new SourceLocation(3, 13), new SourceLocation(4, 13)]
+        errorCollector.getErrors()[0].message == "Validation error (FieldsConflict) : 'dog/doesKnowCommand' : fields have different arguments"
+        errorCollector.getErrors()[0].locations == [new SourceLocation(4, 13), new SourceLocation(5, 13)]
     }
 
     //
@@ -524,7 +541,7 @@ class OverlappingFieldsCanBeMergedTest extends Specification {
         then:
         errorCollector.getErrors().size() == 1
 
-        errorCollector.getErrors()[0].message == "Validation error (FieldsConflict@[f1]) : 'x' : 'a' and 'b' are different fields"
+        errorCollector.getErrors()[0].message == "Validation error (FieldsConflict) : 'f1/x' : 'a' and 'b' are different fields"
         errorCollector.getErrors()[0].locations == [new SourceLocation(18, 13), new SourceLocation(21, 13)]
     }
 
@@ -672,7 +689,7 @@ class OverlappingFieldsCanBeMergedTest extends Specification {
 
         then:
         errorCollector.getErrors().size() == 1
-        errorCollector.getErrors()[0].message == "Validation error (FieldsConflict@[field]) : 'deepField/x' : 'a' and 'b' are different fields"
+        errorCollector.getErrors()[0].message == "Validation error (FieldsConflict) : 'field/deepField/x' : 'a' and 'b' are different fields"
         errorCollector.getErrors()[0].locations.size() == 2
     }
 
@@ -892,7 +909,7 @@ class OverlappingFieldsCanBeMergedTest extends Specification {
 
         then:
         errorCollector.getErrors().size() == 1
-        errorCollector.getErrors()[0].message == "Validation error (FieldsConflict@[pets]) : 'friends/conflict' : returns different types 'Int' and 'Float'"
+        errorCollector.getErrors()[0].message == "Validation error (FieldsConflict) : 'pets/friends/conflict' : returns different types 'Int' and 'Float'"
     }
 
 
@@ -946,6 +963,58 @@ class OverlappingFieldsCanBeMergedTest extends Specification {
 
         then:
         errorCollector.getErrors().size() == 0
+    }
+
+    def "overlapping fields on lower level"() {
+        given:
+        def schema = schema('''
+        type Query {
+         pets: [Pet]
+        }
+        interface Pet {
+         name: String
+         breed: String
+         friends: [Pet]
+        }
+        type Dog implements Pet {
+          name: String
+          age: Int
+          dogBreed: String
+         breed: String
+          friends: [Pet]
+
+        }
+        type Cat implements Pet {
+          catBreed: String
+          breed: String
+          height: Float
+          name : String
+          friends: [Pet]
+
+        }
+        ''')
+        def query = '''
+        {
+          pets {
+               friends {
+                ... on Dog {
+                  x: name
+                  }
+                ... on Cat {
+                 x: height
+                }
+               }
+            }
+        }
+        '''
+        when:
+        traverse(query, schema)
+
+
+        then:
+        errorCollector.getErrors().size() == 1
+        errorCollector.getErrors()[0].message == "Validation error (FieldsConflict) : 'pets/friends/x' : returns different types 'String' and 'Float'"
+
     }
 
 

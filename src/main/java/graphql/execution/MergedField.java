@@ -6,7 +6,7 @@ import graphql.PublicApi;
 import graphql.execution.incremental.DeferredExecution;
 import graphql.language.Argument;
 import graphql.language.Field;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 import java.util.Objects;

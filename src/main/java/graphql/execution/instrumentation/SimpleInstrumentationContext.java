@@ -1,11 +1,9 @@
 package graphql.execution.instrumentation;
 
 import graphql.PublicApi;
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 
-import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
-import java.util.function.Consumer;
 
 /**
  * A simple implementation of {@link InstrumentationContext}
@@ -43,7 +41,7 @@ public class SimpleInstrumentationContext<T> implements InstrumentationContext<T
      *
      * @return a non null {@link InstrumentationContext} that maybe a no-op
      */
-    @NotNull
+    @NonNull
     public static <T> InstrumentationContext<T> nonNullCtx(InstrumentationContext<T> nullableContext) {
         return nullableContext == null ? noOp() : nullableContext;
     }

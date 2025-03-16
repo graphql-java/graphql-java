@@ -1,5 +1,6 @@
-package benchmark;
+package performance;
 
+import benchmark.BenchmarkUtils;
 import graphql.execution.CoercedVariables;
 import graphql.language.Document;
 import graphql.normalized.ExecutableNormalizedOperation;
@@ -26,15 +27,15 @@ import org.openjdk.jmh.runner.options.OptionsBuilder;
 
 import java.util.concurrent.TimeUnit;
 
-import static graphql.normalized.ExecutableNormalizedOperationFactory.*;
+import static graphql.normalized.ExecutableNormalizedOperationFactory.createExecutableNormalizedOperation;
 
 @State(Scope.Benchmark)
 @Warmup(iterations = 2, time = 5)
 @Measurement(iterations = 3, time = 5)
 @Fork(2)
-public class ENFBenchmarkDeepIntrospection {
+public class ENFDeepIntrospectionPerformance {
 
-    @Param({"2", "10", "20"})
+    @Param({"2", "10"})
     int howDeep = 2;
 
     String query = "";
@@ -44,17 +45,18 @@ public class ENFBenchmarkDeepIntrospection {
 
     @Setup(Level.Trial)
     public void setUp() {
-        String schemaString = BenchmarkUtils.loadResource("large-schema-2.graphqls");
+        String schemaString = PerformanceTestingUtils.loadResource("large-schema-2.graphqls");
         schema = SchemaGenerator.createdMockedSchema(schemaString);
 
         query = createDeepQuery(howDeep);
         document = Parser.parse(query);
     }
+
     @Benchmark
     @BenchmarkMode(Mode.AverageTime)
     @OutputTimeUnit(TimeUnit.MILLISECONDS)
     public ExecutableNormalizedOperation benchMarkAvgTime() {
-        ExecutableNormalizedOperationFactory.Options options  = ExecutableNormalizedOperationFactory.Options.defaultOptions();
+        ExecutableNormalizedOperationFactory.Options options = ExecutableNormalizedOperationFactory.Options.defaultOptions();
         ExecutableNormalizedOperation executableNormalizedOperation = createExecutableNormalizedOperation(schema,
                 document,
                 null,
@@ -67,7 +69,7 @@ public class ENFBenchmarkDeepIntrospection {
         runAtStartup();
 
         Options opt = new OptionsBuilder()
-                .include("benchmark.ENFBenchmarkDeepIntrospection")
+                .include("performance.ENFDeepIntrospectionPerformance")
                 .build();
 
         new Runner(opt).run();
@@ -75,16 +77,20 @@ public class ENFBenchmarkDeepIntrospection {
 
     private static void runAtStartup() {
 
-        ENFBenchmarkDeepIntrospection benchmarkIntrospection = new ENFBenchmarkDeepIntrospection();
+        ENFDeepIntrospectionPerformance benchmarkIntrospection = new ENFDeepIntrospectionPerformance();
         benchmarkIntrospection.howDeep = 2;
 
         BenchmarkUtils.runInToolingForSomeTimeThenExit(
                 benchmarkIntrospection::setUp,
-                () -> { while (true) { benchmarkIntrospection.benchMarkAvgTime(); }},
-                () ->{}
+                () -> {
+                    while (true) {
+                        benchmarkIntrospection.benchMarkAvgTime();
+                    }
+                },
+                () -> {
+                }
         );
     }
-
 
 
     private static String createDeepQuery(int depth) {
@@ -100,12 +106,12 @@ public class ENFBenchmarkDeepIntrospection {
             result += "        fragment F" + i + " on __Type {\n" +
                     "          fields {\n" +
                     "            type {\n" +
-                    "              ...F" + (i + 1) +"\n" +
+                    "              ...F" + (i + 1) + "\n" +
                     "            }\n" +
                     "          }\n" +
                     "\n" +
                     "          ofType {\n" +
-                    "            ...F"+ (i + 1) + "\n" +
+                    "            ...F" + (i + 1) + "\n" +
                     "          }\n" +
                     "        }\n";
         }
