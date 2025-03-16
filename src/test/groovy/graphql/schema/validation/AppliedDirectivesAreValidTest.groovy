@@ -66,8 +66,8 @@ class AppliedDirectivesAreValidTest extends Specification {
         def field = newFieldDefinition()
                 .name("hello")
                 .type(GraphQLString)
-                .addAppliedDirectives(directive1.toAppliedDirective())
-                .addAppliedDirectives(directive2.toAppliedDirective())
+                .withAppliedDirectives(directive1.toAppliedDirective())
+                .withAppliedDirectives(directive2.toAppliedDirective())
                 .build()
 
         when:

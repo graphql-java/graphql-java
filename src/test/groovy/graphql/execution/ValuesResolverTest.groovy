@@ -2,7 +2,6 @@ package graphql.execution
 
 import graphql.Directives
 import graphql.ErrorType
-import graphql.ExecutionInput
 import graphql.GraphQLContext
 import graphql.GraphQLException
 import graphql.TestUtil
@@ -100,7 +99,7 @@ class ValuesResolverTest extends Specification {
                 .type(GraphQLString)
         def inputType = newInputObject()
                 .name("Person")
-                .addAppliedDirective(Directives.OneOfDirective.toAppliedDirective())
+                .withAppliedDirective(Directives.OneOfDirective.toAppliedDirective())
                 .field(aField)
                 .field(bField)
                 .build()
@@ -418,7 +417,7 @@ class ValuesResolverTest extends Specification {
         given: "schema defining input object"
         def inputObjectType = newInputObject()
                 .name("oneOfInputObject")
-                .addAppliedDirective(Directives.OneOfDirective.toAppliedDirective())
+                .withAppliedDirective(Directives.OneOfDirective.toAppliedDirective())
                 .field(newInputObjectField()
                         .name("a")
                         .type(GraphQLString)
@@ -498,7 +497,7 @@ class ValuesResolverTest extends Specification {
         given: "schema defining input object"
         def oneOfObjectType = newInputObject()
                 .name("OneOfInputObject")
-                .addAppliedDirective(Directives.OneOfDirective.toAppliedDirective())
+                .withAppliedDirective(Directives.OneOfDirective.toAppliedDirective())
                 .field(newInputObjectField()
                         .name("a")
                         .type(GraphQLString)
@@ -588,7 +587,7 @@ class ValuesResolverTest extends Specification {
         given: "schema defining input object"
         def oneOfObjectType = newInputObject()
                 .name("OneOfInputObject")
-                .addAppliedDirective(Directives.OneOfDirective.toAppliedDirective())
+                .withAppliedDirective(Directives.OneOfDirective.toAppliedDirective())
                 .field(newInputObjectField()
                         .name("a")
                         .type(GraphQLString)
@@ -636,7 +635,7 @@ class ValuesResolverTest extends Specification {
         given: "schema defining input object"
         def inputObjectType = newInputObject()
                 .name("oneOfInputObject")
-                .addAppliedDirective(Directives.OneOfDirective.toAppliedDirective())
+                .withAppliedDirective(Directives.OneOfDirective.toAppliedDirective())
                 .field(newInputObjectField()
                         .name("a")
                         .type(GraphQLString)
@@ -677,7 +676,7 @@ class ValuesResolverTest extends Specification {
         given: "schema defining input object"
         def inputObjectType = newInputObject()
                 .name("oneOfInputObject")
-                .addAppliedDirective(Directives.OneOfDirective.toAppliedDirective())
+                .withAppliedDirective(Directives.OneOfDirective.toAppliedDirective())
                 .field(newInputObjectField()
                         .name("a")
                         .type(GraphQLString)
@@ -738,7 +737,7 @@ class ValuesResolverTest extends Specification {
         given: "schema defining input object"
         def inputObjectType = newInputObject()
                 .name("oneOfInputObject")
-                .addAppliedDirective(Directives.OneOfDirective.toAppliedDirective())
+                .withAppliedDirective(Directives.OneOfDirective.toAppliedDirective())
                 .field(newInputObjectField()
                         .name("a")
                         .type(GraphQLString)
@@ -792,7 +791,7 @@ class ValuesResolverTest extends Specification {
         given: "schema defining input object"
         def inputObjectType = newInputObject()
                 .name("oneOfInputObject")
-                .addAppliedDirective(Directives.OneOfDirective.toAppliedDirective())
+                .withAppliedDirective(Directives.OneOfDirective.toAppliedDirective())
                 .field(newInputObjectField()
                         .name("a")
                         .type(GraphQLString)
@@ -853,7 +852,7 @@ class ValuesResolverTest extends Specification {
         given: "schema defining input object"
         def inputObjectType = newInputObject()
                 .name("oneOfInputObject")
-                .addAppliedDirective(Directives.OneOfDirective.toAppliedDirective())
+                .withAppliedDirective(Directives.OneOfDirective.toAppliedDirective())
                 .field(newInputObjectField()
                         .name("a")
                         .type(GraphQLString)
@@ -914,7 +913,7 @@ class ValuesResolverTest extends Specification {
         given: "schema defining input object"
         def inputObjectType = newInputObject()
                 .name("oneOfInputObject")
-                .addAppliedDirective(Directives.OneOfDirective.toAppliedDirective())
+                .withAppliedDirective(Directives.OneOfDirective.toAppliedDirective())
                 .field(newInputObjectField()
                         .name("a")
                         .type(GraphQLString)
@@ -962,7 +961,7 @@ class ValuesResolverTest extends Specification {
         given: "schema defining input object"
         def inputObjectType = newInputObject()
                 .name("oneOfInputObject")
-                .addAppliedDirective(Directives.OneOfDirective.toAppliedDirective())
+                .withAppliedDirective(Directives.OneOfDirective.toAppliedDirective())
                 .field(newInputObjectField()
                         .name("a")
                         .type(GraphQLString)
@@ -1010,7 +1009,7 @@ class ValuesResolverTest extends Specification {
         given: "schema defining input object"
         def inputObjectType = newInputObject()
                 .name("oneOfInputObject")
-                .addAppliedDirective(Directives.OneOfDirective.toAppliedDirective())
+                .withAppliedDirective(Directives.OneOfDirective.toAppliedDirective())
                 .field(newInputObjectField()
                         .name("a")
                         .type(GraphQLString)

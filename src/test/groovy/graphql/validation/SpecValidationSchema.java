@@ -190,7 +190,7 @@ public class SpecValidationSchema {
 
     public static final GraphQLInputObjectType oneOfInputType = GraphQLInputObjectType.newInputObject()
             .name("oneOfInputType")
-            .addAppliedDirective(Directives.OneOfDirective.toAppliedDirective())
+            .withAppliedDirective(Directives.OneOfDirective.toAppliedDirective())
             .field(GraphQLInputObjectField.newInputObjectField()
                     .name("a")
                     .type(GraphQLString))

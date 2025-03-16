@@ -945,7 +945,7 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
         def account = newObject()
                 .name("Account")
                 .field(newFieldDefinition().name("name").type(Scalars.GraphQLString).build())
-                .field(newFieldDefinition().name("billingStatus").type(typeRef("SuperSecretCustomerData")).addAppliedDirective(privateDirective).build())
+                .field(newFieldDefinition().name("billingStatus").type(typeRef("SuperSecretCustomerData")).withAppliedDirective(privateDirective).build())
                 .build()
 
         def billingStatus = newObject()
@@ -994,7 +994,7 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
         def account = newObject()
                 .name("Account")
                 .field(newFieldDefinition().name("name").type(Scalars.GraphQLString).build())
-                .field(newFieldDefinition().name("billingStatus").type(typeRef("BillingStatus")).addAppliedDirective(privateDirective).build())
+                .field(newFieldDefinition().name("billingStatus").type(typeRef("BillingStatus")).withAppliedDirective(privateDirective).build())
                 .build()
 
         def billingStatus = newObject()
@@ -1042,7 +1042,7 @@ class FieldVisibilitySchemaTransformationTest extends Specification {
         def account = newObject()
                 .name("Account")
                 .field(newFieldDefinition().name("name").type(Scalars.GraphQLString).build())
-                .field(newFieldDefinition().name("billingStatus").type(typeRef("BillingStatus")).addAppliedDirective(privateDirective).build())
+                .field(newFieldDefinition().name("billingStatus").type(typeRef("BillingStatus")).withAppliedDirective(privateDirective).build())
                 .build()
 
         def billingStatus = newObject()
