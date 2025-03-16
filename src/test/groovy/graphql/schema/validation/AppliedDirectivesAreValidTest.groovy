@@ -89,7 +89,7 @@ class AppliedDirectivesAreValidTest extends Specification {
         fieldAppliedDirectives.any { it.name == "myDirectiveName2" }
     }
 
-    def "replace applied directive builder does clear and replace existing applied directives"(){
+    def "replace applied directive builder does clear and replace existing applied directives"() {
         given:
         def directive1 = mkDirective("myDirectiveName1", FIELD_DEFINITION)
         def directive2 = mkDirective("myDirectiveName2", FIELD_DEFINITION)
