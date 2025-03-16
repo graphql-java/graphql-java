@@ -229,23 +229,6 @@ class SchemaTraverserTest extends Specification {
         ]
     }
 
-    def "reachable object directive legacy test"() {
-        // Delete this test when we remove the legacy withAppliedDirective method
-        when:
-        def visitor = new GraphQLTestingVisitor()
-        def objectType = GraphQLObjectType.newObject()
-                .name("foo")
-                .withDirective(mkDirective("bar", DirectiveLocation.OBJECT))
-                .withAppliedDirective(GraphQLAppliedDirective.newDirective()
-                        .name("barApplied"))
-                .build()
-        new SchemaTraverser().depthFirst(visitor, objectType)
-        then:
-        visitor.getStack() == [
-                "object: foo", "fallback: foo", "directive: bar", "fallback: bar", "appliedDirective: barApplied", "fallback: barApplied"
-        ]
-    }
-
     def "reachable field definition directive"() {
         when:
         def visitor = new GraphQLTestingVisitor()

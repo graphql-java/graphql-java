@@ -231,7 +231,7 @@ class GraphQLArgumentTest extends Specification {
         def field = newFieldDefinition()
             .name("hello")
             .type(GraphQLString)
-            .addAppliedDirective(directive.toAppliedDirective())
+            .withAppliedDirective(directive.toAppliedDirective())
             .build()
         when:
         newSchema()
