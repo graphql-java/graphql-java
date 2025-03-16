@@ -78,7 +78,6 @@ public abstract class GraphqlDirectivesContainerTypeBuilder<B extends GraphqlDir
     @Deprecated(since = "2022-02-24")
     public B withDirectives(GraphQLDirective... directives) {
         assertNotNull(directives, () -> "directives can't be null");
-        this.directives.clear();
         for (GraphQLDirective directive : directives) {
             withDirective(directive);
         }
