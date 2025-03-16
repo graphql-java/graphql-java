@@ -3,8 +3,8 @@ package graphql.execution.values;
 import graphql.GraphQLContext;
 import graphql.Internal;
 import graphql.schema.GraphQLInputType;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Locale;
 
@@ -36,7 +36,7 @@ public interface InputInterceptor {
      * @return a value that may differ from the original value
      */
     Object intercept(@Nullable Object value,
-                     @NotNull GraphQLInputType graphQLType,
-                     @NotNull GraphQLContext graphqlContext,
-                     @NotNull Locale locale);
+                     @NonNull GraphQLInputType graphQLType,
+                     @NonNull GraphQLContext graphqlContext,
+                     @NonNull Locale locale);
 }

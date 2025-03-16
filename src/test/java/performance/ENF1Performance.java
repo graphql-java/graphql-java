@@ -1,4 +1,4 @@
-package benchmark;
+package performance;
 
 import graphql.execution.CoercedVariables;
 import graphql.language.Document;
@@ -25,7 +25,7 @@ import java.util.concurrent.TimeUnit;
 @Warmup(iterations = 2, time = 5)
 @Measurement(iterations = 3)
 @Fork(3)
-public class ENFBenchmark1 {
+public class ENF1Performance {
 
     @State(Scope.Benchmark)
     public static class MyState {
@@ -36,10 +36,10 @@ public class ENFBenchmark1 {
         @Setup
         public void setup() {
             try {
-                String schemaString = BenchmarkUtils.loadResource("large-schema-1.graphqls");
+                String schemaString = PerformanceTestingUtils.loadResource("large-schema-1.graphqls");
                 schema = SchemaGenerator.createdMockedSchema(schemaString);
 
-                String query = BenchmarkUtils.loadResource("large-schema-1-query.graphql");
+                String query = PerformanceTestingUtils.loadResource("large-schema-1-query.graphql");
                 document = Parser.parse(query);
             } catch (Exception e) {
                 throw new RuntimeException(e);

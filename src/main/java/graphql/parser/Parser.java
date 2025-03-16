@@ -25,7 +25,7 @@ import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.atn.PredictionMode;
 import org.antlr.v4.runtime.tree.ParseTreeListener;
 import org.antlr.v4.runtime.tree.TerminalNode;
-import org.jetbrains.annotations.NotNull;
+import org.jspecify.annotations.NonNull;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -270,7 +270,7 @@ public class Parser {
         return multiSourceReader;
     }
 
-    @NotNull
+    @NonNull
     private static SafeTokenReader setupSafeTokenReader(ParserEnvironment environment, ParserOptions parserOptions, MultiSourceReader multiSourceReader) {
         int maxCharacters = parserOptions.getMaxCharacters();
         Consumer<Integer> onTooManyCharacters = it -> {
@@ -279,7 +279,7 @@ public class Parser {
         return new SafeTokenReader(multiSourceReader, maxCharacters, onTooManyCharacters);
     }
 
-    @NotNull
+    @NonNull
     private static CodePointCharStream setupCharStream(SafeTokenReader safeTokenReader) {
         CodePointCharStream charStream;
         try {
@@ -290,7 +290,7 @@ public class Parser {
         return charStream;
     }
 
-    @NotNull
+    @NonNull
     private static GraphqlLexer setupGraphqlLexer(ParserEnvironment environment, MultiSourceReader multiSourceReader, CodePointCharStream charStream) {
         GraphqlLexer lexer = new GraphqlLexer(charStream);
         lexer.removeErrorListeners();
@@ -315,7 +315,7 @@ public class Parser {
         return lexer;
     }
 
-    @NotNull
+    @NonNull
     private SafeTokenSource getSafeTokenSource(ParserEnvironment environment, ParserOptions parserOptions, MultiSourceReader multiSourceReader, GraphqlLexer lexer) {
         int maxTokens = parserOptions.getMaxTokens();
         int maxWhitespaceTokens = parserOptions.getMaxWhitespaceTokens();

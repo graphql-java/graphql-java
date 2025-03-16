@@ -1,6 +1,7 @@
 package graphql.execution;
 
 
+import graphql.Directives;
 import graphql.ExecutionInput;
 import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
@@ -20,14 +21,15 @@ import graphql.execution.instrumentation.parameters.InstrumentationExecutionPara
 import graphql.extensions.ExtensionsBuilder;
 import graphql.incremental.DelayedIncrementalPartialResult;
 import graphql.incremental.IncrementalExecutionResultImpl;
+import graphql.language.Directive;
 import graphql.language.Document;
-import graphql.language.FragmentDefinition;
 import graphql.language.NodeUtil;
 import graphql.language.OperationDefinition;
 import graphql.language.VariableDefinition;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.impl.SchemaUtil;
+import org.jspecify.annotations.NonNull;
 import org.reactivestreams.Publisher;
 
 import java.util.Collections;
@@ -36,6 +38,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
+import static graphql.Directives.EXPERIMENTAL_DISABLE_ERROR_PROPAGATION_DIRECTIVE_DEFINITION;
 import static graphql.execution.ExecutionContextBuilder.newExecutionContextBuilder;
 import static graphql.execution.ExecutionStepInfo.newExecutionStepInfo;
 import static graphql.execution.ExecutionStrategyParameters.newParameters;
@@ -69,22 +72,19 @@ public class Execution {
 
     public CompletableFuture<ExecutionResult> execute(Document document, GraphQLSchema graphQLSchema, ExecutionId executionId, ExecutionInput executionInput, InstrumentationState instrumentationState) {
 
-        NodeUtil.GetOperationResult getOperationResult = NodeUtil.getOperation(document, executionInput.getOperationName());
-        Map<String, FragmentDefinition> fragmentsByName = getOperationResult.fragmentsByName;
-        OperationDefinition operationDefinition = getOperationResult.operationDefinition;
-
-        RawVariables inputVariables = executionInput.getRawVariables();
-        List<VariableDefinition> variableDefinitions = operationDefinition.getVariableDefinitions();
-
+        NodeUtil.GetOperationResult getOperationResult;
         CoercedVariables coercedVariables;
         try {
-            coercedVariables = ValuesResolver.coerceVariableValues(graphQLSchema, variableDefinitions, inputVariables, executionInput.getGraphQLContext(), executionInput.getLocale());
+            getOperationResult = NodeUtil.getOperation(document, executionInput.getOperationName());
+            coercedVariables = coerceVariableValues(graphQLSchema, executionInput, getOperationResult.operationDefinition);
         } catch (RuntimeException rte) {
             if (rte instanceof GraphQLError) {
                 return completedFuture(new ExecutionResultImpl((GraphQLError) rte));
             }
             throw rte;
         }
+
+        boolean propagateErrorsOnNonNullContractFailure = propagateErrorsOnNonNullContractFailure(getOperationResult.operationDefinition.getDirectives());
 
         ExecutionContext executionContext = newExecutionContextBuilder()
                 .instrumentation(instrumentation)
@@ -98,14 +98,15 @@ public class Execution {
                 .graphQLContext(executionInput.getGraphQLContext())
                 .localContext(executionInput.getLocalContext())
                 .root(executionInput.getRoot())
-                .fragmentsByName(fragmentsByName)
+                .fragmentsByName(getOperationResult.fragmentsByName)
                 .coercedVariables(coercedVariables)
                 .document(document)
-                .operationDefinition(operationDefinition)
+                .operationDefinition(getOperationResult.operationDefinition)
                 .dataLoaderRegistry(executionInput.getDataLoaderRegistry())
                 .locale(executionInput.getLocale())
                 .valueUnboxer(valueUnboxer)
                 .executionInput(executionInput)
+                .propagapropagateErrorsOnNonNullContractFailureeErrors(propagateErrorsOnNonNullContractFailure)
                 .build();
 
         executionContext.getGraphQLContext().put(ResultNodesInfo.RESULT_NODES_INFO, executionContext.getResultNodesInfo());
@@ -115,6 +116,12 @@ public class Execution {
         );
         executionContext = instrumentation.instrumentExecutionContext(executionContext, parameters, instrumentationState);
         return executeOperation(executionContext, executionInput.getRoot(), executionContext.getOperationDefinition());
+    }
+
+    private static @NonNull CoercedVariables coerceVariableValues(GraphQLSchema graphQLSchema, ExecutionInput executionInput, OperationDefinition operationDefinition) {
+        RawVariables inputVariables = executionInput.getRawVariables();
+        List<VariableDefinition> variableDefinitions = operationDefinition.getVariableDefinitions();
+        return ValuesResolver.coerceVariableValues(graphQLSchema, variableDefinitions, inputVariables, executionInput.getGraphQLContext(), executionInput.getLocale());
     }
 
 
@@ -261,5 +268,14 @@ public class Execution {
             executionResult = extensionsBuilder.setExtensions(executionResult);
         }
         return executionResult;
+    }
+
+    private boolean propagateErrorsOnNonNullContractFailure(List<Directive> directives) {
+        boolean jvmWideEnabled = Directives.isExperimentalDisableErrorPropagationDirectiveEnabled();
+        if (! jvmWideEnabled) {
+            return true;
+        }
+        Directive foundDirective = NodeUtil.findNodeByName(directives, EXPERIMENTAL_DISABLE_ERROR_PROPAGATION_DIRECTIVE_DEFINITION.getName());
+        return foundDirective == null;
     }
 }

@@ -97,6 +97,24 @@ public class ExecutionResultImpl implements ExecutionResult {
         return map(errors, GraphQLError::toSpecification);
     }
 
+    @SuppressWarnings("unchecked")
+    static ExecutionResult fromSpecification(Map<String, Object> specificationMap) {
+        ExecutionResult.Builder<?> builder = ExecutionResult.newExecutionResult();
+        Object data = specificationMap.get("data");
+        if (data != null) {
+            builder.data(data);
+        }
+        List<Map<String, Object>> errors = (List<Map<String, Object>>) specificationMap.get("errors");
+        if (errors != null) {
+            builder.errors(GraphqlErrorHelper.fromSpecification(errors));
+        }
+        Map<Object, Object> extensions = (Map<Object, Object>) specificationMap.get("extensions");
+        if (extensions != null) {
+            builder.extensions(extensions);
+        }
+        return builder.build();
+    }
+
     @Override
     public String toString() {
         return "ExecutionResultImpl{" +

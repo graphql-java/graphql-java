@@ -9,8 +9,8 @@ import graphql.schema.Coercing;
 import graphql.schema.CoercingParseLiteralException;
 import graphql.schema.CoercingParseValueException;
 import graphql.schema.CoercingSerializeException;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Locale;
 
@@ -28,7 +28,7 @@ public class GraphqlStringCoercing implements Coercing<String, String> {
         return String.valueOf(input);
     }
 
-    private String parseValueImpl(@NotNull Object input, @NotNull Locale locale) {
+    private String parseValueImpl(@NonNull Object input, @NonNull Locale locale) {
         if (!(input instanceof String)) {
             throw new CoercingParseValueException(
                     i18nMsg(locale, "String.unexpectedRawValueType", typeName(input))
@@ -37,7 +37,7 @@ public class GraphqlStringCoercing implements Coercing<String, String> {
         return (String) input;
     }
 
-    private String parseLiteralImpl(@NotNull Object input, Locale locale) {
+    private String parseLiteralImpl(@NonNull Object input, Locale locale) {
         if (!(input instanceof StringValue)) {
             throw new CoercingParseLiteralException(
                     i18nMsg(locale, "Scalar.unexpectedAstType", "StringValue", typeName(input))
@@ -46,51 +46,51 @@ public class GraphqlStringCoercing implements Coercing<String, String> {
         return ((StringValue) input).getValue();
     }
 
-    private StringValue valueToLiteralImpl(@NotNull Object input) {
+    private StringValue valueToLiteralImpl(@NonNull Object input) {
         return StringValue.newStringValue(input.toString()).build();
     }
 
     @Override
     @Deprecated
-    public String serialize(@NotNull Object dataFetcherResult) {
+    public String serialize(@NonNull Object dataFetcherResult) {
         return toStringImpl(dataFetcherResult);
     }
 
     @Override
-    public @Nullable String serialize(@NotNull Object dataFetcherResult, @NotNull GraphQLContext graphQLContext, @NotNull Locale locale) throws CoercingSerializeException {
+    public @Nullable String serialize(@NonNull Object dataFetcherResult, @NonNull GraphQLContext graphQLContext, @NonNull Locale locale) throws CoercingSerializeException {
         return toStringImpl(dataFetcherResult);
     }
 
     @Override
     @Deprecated
-    public String parseValue(@NotNull Object input) {
+    public String parseValue(@NonNull Object input) {
         return parseValueImpl(input, Locale.getDefault());
     }
 
     @Override
-    public String parseValue(@NotNull Object input, @NotNull GraphQLContext graphQLContext, @NotNull Locale locale) throws CoercingParseValueException {
+    public String parseValue(@NonNull Object input, @NonNull GraphQLContext graphQLContext, @NonNull Locale locale) throws CoercingParseValueException {
         return parseValueImpl(input, locale);
     }
 
     @Override
     @Deprecated
-    public String parseLiteral(@NotNull Object input) {
+    public String parseLiteral(@NonNull Object input) {
         return parseLiteralImpl(input, Locale.getDefault());
     }
 
     @Override
-    public @Nullable String parseLiteral(@NotNull Value<?> input, @NotNull CoercedVariables variables, @NotNull GraphQLContext graphQLContext, @NotNull Locale locale) throws CoercingParseLiteralException {
+    public @Nullable String parseLiteral(@NonNull Value<?> input, @NonNull CoercedVariables variables, @NonNull GraphQLContext graphQLContext, @NonNull Locale locale) throws CoercingParseLiteralException {
         return parseLiteralImpl(input, locale);
     }
 
     @Override
     @Deprecated
-    public @NotNull Value<?> valueToLiteral(@NotNull Object input) {
+    public @NonNull Value<?> valueToLiteral(@NonNull Object input) {
         return valueToLiteralImpl(input);
     }
 
     @Override
-    public @NotNull Value<?> valueToLiteral(@NotNull Object input, @NotNull GraphQLContext graphQLContext, @NotNull Locale locale) {
+    public @NonNull Value<?> valueToLiteral(@NonNull Object input, @NonNull GraphQLContext graphQLContext, @NonNull Locale locale) {
         return valueToLiteralImpl(input);
     }
 }

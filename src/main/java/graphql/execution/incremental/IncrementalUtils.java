@@ -7,6 +7,7 @@ import graphql.execution.CoercedVariables;
 import graphql.execution.ValuesResolver;
 import graphql.language.Directive;
 import graphql.language.NodeUtil;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 import java.util.Locale;
@@ -20,7 +21,7 @@ public class IncrementalUtils {
     private IncrementalUtils() {
     }
 
-    public static <T> T createDeferredExecution(
+    public static @Nullable <T> T createDeferredExecution(
             Map<String, Object> variables,
             List<Directive> directives,
             Function<String, T> builderFunction

@@ -10,6 +10,7 @@ import graphql.language.Field;
 import graphql.language.FragmentDefinition;
 import graphql.language.FragmentSpread;
 import graphql.language.InlineFragment;
+import graphql.language.OperationDefinition;
 import graphql.language.Selection;
 import graphql.language.SelectionSet;
 import graphql.schema.GraphQLFieldDefinition;
@@ -47,7 +48,6 @@ import static graphql.schema.GraphQLTypeUtil.unwrapOne;
 import static graphql.util.FpKit.filterSet;
 import static graphql.util.FpKit.groupingBy;
 import static graphql.validation.ValidationErrorType.FieldsConflict;
-import static java.lang.String.format;
 
 @Internal
 public class OverlappingFieldsCanBeMerged extends AbstractRule {
@@ -62,10 +62,15 @@ public class OverlappingFieldsCanBeMerged extends AbstractRule {
     }
 
     @Override
-    public void leaveSelectionSet(SelectionSet selectionSet) {
+    public void checkOperationDefinition(OperationDefinition operationDefinition) {
+        super.checkOperationDefinition(operationDefinition);
+        impl(operationDefinition.getSelectionSet(), getValidationContext().getOutputType());
+    }
+
+    public void impl(SelectionSet selectionSet, GraphQLOutputType graphQLOutputType) {
         Map<String, Set<FieldAndType>> fieldMap = new LinkedHashMap<>();
         Set<String> visitedFragmentSpreads = new LinkedHashSet<>();
-        collectFields(fieldMap, selectionSet, getValidationContext().getOutputType(), visitedFragmentSpreads);
+        collectFields(fieldMap, selectionSet, graphQLOutputType, visitedFragmentSpreads);
         List<Conflict> conflicts = findConflicts(fieldMap);
         for (Conflict conflict : conflicts) {
             if (conflictsReported.contains(conflict.fields)) {

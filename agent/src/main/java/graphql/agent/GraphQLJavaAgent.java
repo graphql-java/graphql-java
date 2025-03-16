@@ -71,7 +71,7 @@ public class GraphQLJavaAgent {
                     return builder
                             .visit(Advice.to(DataLoaderHelperDispatchAdvice.class).on(nameMatches("dispatch")))
                             .visit(Advice.to(DataLoaderHelperInvokeBatchLoaderAdvice.class)
-                                    .on(nameMatches("invokeLoader").and(takesArguments(List.class, List.class))));
+                                    .on(nameMatches("invokeLoader").and(takesArguments(List.class, List.class, List.class))));
                 })
                 .type(named("graphql.schema.DataFetchingEnvironmentImpl"))
                 .transform((builder, typeDescription, classLoader, module, protectionDomain) -> {
@@ -207,6 +207,7 @@ public class GraphQLJavaAgent {
         @Advice.OnMethodEnter
         public static void invokeLoader(@Advice.Argument(0) List keys,
                                         @Advice.Argument(1) List keysContext,
+                                        @Advice.Argument(2) List queuedFutures,
                                         @Advice.This(typing = Assigner.Typing.DYNAMIC) Object dataLoaderHelper) {
             DataLoader dataLoader = getDataLoaderForHelper(dataLoaderHelper);
             ExecutionId executionId = GraphQLJavaAgent.dataLoaderToExecutionId.get(dataLoader);
