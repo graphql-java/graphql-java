@@ -12,8 +12,8 @@ import graphql.language.NullValue;
 import graphql.language.ObjectField;
 import graphql.language.ObjectValue;
 import graphql.language.Value;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 import java.util.Map;
@@ -94,7 +94,7 @@ class ArgumentMaker {
         return (Value<?>) value;
     }
 
-    @NotNull
+    @NonNull
     private static Value<?> argValue(ExecutableNormalizedField executableNormalizedField,
                                      QueryAppliedDirective queryAppliedDirective,
                                      String argName,

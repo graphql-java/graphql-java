@@ -31,7 +31,6 @@ import graphql.schema.GraphQLSchema;
 import graphql.schema.impl.SchemaUtil;
 import org.jspecify.annotations.NonNull;
 import graphql.util.FpKit;
-import org.jetbrains.annotations.NotNull;
 import org.reactivestreams.Publisher;
 
 import java.util.Collections;
@@ -129,7 +128,7 @@ public class Execution {
         return ValuesResolver.coerceVariableValues(graphQLSchema, variableDefinitions, inputVariables, executionInput.getGraphQLContext(), executionInput.getLocale());
     }
 
-    private static @NotNull Supplier<NormalizedVariables> normalizedVariableValues(GraphQLSchema graphQLSchema, ExecutionInput executionInput, NodeUtil.GetOperationResult getOperationResult) {
+    private static @NonNull Supplier<NormalizedVariables> normalizedVariableValues(GraphQLSchema graphQLSchema, ExecutionInput executionInput, NodeUtil.GetOperationResult getOperationResult) {
         Supplier<NormalizedVariables> normalizedVariableValues;
         RawVariables inputVariables = executionInput.getRawVariables();
         List<VariableDefinition> variableDefinitions = getOperationResult.operationDefinition.getVariableDefinitions();

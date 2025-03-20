@@ -389,7 +389,7 @@ public class ExecutableNormalizedOperationToAstCompiler {
                 .build();
     }
 
-    private static @NotNull List<Directive> buildDirectives(ExecutableNormalizedField executableNormalizedField, QueryDirectives queryDirectives, VariableAccumulator variableAccumulator) {
+    private static @NonNull List<Directive> buildDirectives(ExecutableNormalizedField executableNormalizedField, QueryDirectives queryDirectives, VariableAccumulator variableAccumulator) {
         if (queryDirectives == null || queryDirectives.getImmediateAppliedDirectivesByField().isEmpty()) {
             return emptyList();
         }
@@ -401,7 +401,7 @@ public class ExecutableNormalizedOperationToAstCompiler {
 
     private static Directive buildDirective(ExecutableNormalizedField executableNormalizedField, QueryDirectives queryDirectives, QueryAppliedDirective queryAppliedDirective, VariableAccumulator variableAccumulator) {
 
-        List<Argument> arguments = ArgumentMaker.createDirectiveArguments(executableNormalizedField,queryDirectives,queryAppliedDirective, variableAccumulator);
+        List<Argument> arguments = ArgumentMaker.createDirectiveArguments(executableNormalizedField, queryDirectives, queryAppliedDirective, variableAccumulator);
         return Directive.newDirective()
                 .name(queryAppliedDirective.getName())
                 .arguments(arguments).build();
@@ -416,59 +416,6 @@ public class ExecutableNormalizedOperationToAstCompiler {
         return newSelectionSet().selections(fields).build();
     }
 
-    private static List<Argument> createArguments(ExecutableNormalizedField executableNormalizedField,
-                                                  VariableAccumulator variableAccumulator) {
-        ImmutableList.Builder<Argument> result = ImmutableList.builder();
-        ImmutableMap<String, NormalizedInputValue> normalizedArguments = executableNormalizedField.getNormalizedArguments();
-        for (String argName : normalizedArguments.keySet()) {
-            NormalizedInputValue normalizedInputValue = normalizedArguments.get(argName);
-            Value<?> value = argValue(executableNormalizedField, argName, normalizedInputValue, variableAccumulator);
-            Argument argument = newArgument()
-                    .name(argName)
-                    .value(value)
-                    .build();
-            result.add(argument);
-        }
-        return result.build();
-    }
-
-    @SuppressWarnings("unchecked")
-    private static Value<?> argValue(ExecutableNormalizedField executableNormalizedField,
-                                     String argName,
-                                     @Nullable Object value,
-                                     VariableAccumulator variableAccumulator) {
-        if (value instanceof List) {
-            ArrayValue.Builder arrayValue = ArrayValue.newArrayValue();
-            arrayValue.values(map((List<Object>) value, val -> argValue(executableNormalizedField, argName, val, variableAccumulator)));
-            return arrayValue.build();
-        }
-        if (value instanceof Map) {
-            ObjectValue.Builder objectValue = ObjectValue.newObjectValue();
-            Map<String, Object> map = (Map<String, Object>) value;
-            for (String fieldName : map.keySet()) {
-                Value<?> fieldValue = argValue(executableNormalizedField, argName, (NormalizedInputValue) map.get(fieldName), variableAccumulator);
-                objectValue.objectField(ObjectField.newObjectField().name(fieldName).value(fieldValue).build());
-            }
-            return objectValue.build();
-        }
-        if (value == null) {
-            return NullValue.newNullValue().build();
-        }
-        return (Value<?>) value;
-    }
-
-    @NonNull
-    private static Value<?> argValue(ExecutableNormalizedField executableNormalizedField,
-                                     String argName,
-                                     NormalizedInputValue normalizedInputValue,
-                                     VariableAccumulator variableAccumulator) {
-        if (variableAccumulator.shouldMakeVariable(executableNormalizedField, argName, normalizedInputValue)) {
-            VariableValueWithDefinition variableWithDefinition = variableAccumulator.accumulateVariable(normalizedInputValue);
-            return variableWithDefinition.getVariableReference();
-        } else {
-            return argValue(executableNormalizedField, argName, normalizedInputValue.getValue(), variableAccumulator);
-        }
-    }
 
     @NonNull
     private static GraphQLFieldDefinition getFieldDefinition(GraphQLSchema schema,
