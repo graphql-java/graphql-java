@@ -1,7 +1,7 @@
 package graphql.incremental;
 
 import graphql.ExperimentalApi;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 import java.util.Map;

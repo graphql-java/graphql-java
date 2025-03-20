@@ -10,8 +10,8 @@ import graphql.schema.Coercing;
 import graphql.schema.CoercingParseLiteralException;
 import graphql.schema.CoercingParseValueException;
 import graphql.schema.CoercingSerializeException;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.math.BigDecimal;
 import java.util.Locale;
@@ -52,8 +52,8 @@ public class GraphqlFloatCoercing implements Coercing<Double, Double> {
         return doubleInput;
     }
 
-    @NotNull
-    private Double serialiseImpl(Object input, @NotNull Locale locale) {
+    @NonNull
+    private Double serialiseImpl(Object input, @NonNull Locale locale) {
         Double result = convertImpl(input);
         if (result == null) {
             throw new CoercingSerializeException(
@@ -63,8 +63,8 @@ public class GraphqlFloatCoercing implements Coercing<Double, Double> {
         return result;
     }
 
-    @NotNull
-    private Double parseValueImpl(@NotNull Object input, @NotNull Locale locale) {
+    @NonNull
+    private Double parseValueImpl(@NonNull Object input, @NonNull Locale locale) {
         if (!(input instanceof Number)) {
             throw new CoercingParseValueException(
                     i18nMsg(locale, "Float.unexpectedRawValueType", typeName(input))
@@ -81,7 +81,7 @@ public class GraphqlFloatCoercing implements Coercing<Double, Double> {
         return result;
     }
 
-    private static double parseLiteralImpl(@NotNull Object input, @NotNull Locale locale) {
+    private static double parseLiteralImpl(@NonNull Object input, @NonNull Locale locale) {
         if (input instanceof IntValue) {
             return ((IntValue) input).getValue().doubleValue();
         } else if (input instanceof FloatValue) {
@@ -93,8 +93,8 @@ public class GraphqlFloatCoercing implements Coercing<Double, Double> {
         }
     }
 
-    @NotNull
-    private FloatValue valueToLiteralImpl(Object input, @NotNull Locale locale) {
+    @NonNull
+    private FloatValue valueToLiteralImpl(Object input, @NonNull Locale locale) {
         Double result = convertImpl(input);
         if (result == null) {
             assertShouldNeverHappen(i18nMsg(locale, "Float.notFloat", typeName(input)));
@@ -104,45 +104,45 @@ public class GraphqlFloatCoercing implements Coercing<Double, Double> {
 
     @Override
     @Deprecated
-    public Double serialize(@NotNull Object dataFetcherResult) {
+    public Double serialize(@NonNull Object dataFetcherResult) {
         return serialiseImpl(dataFetcherResult, Locale.getDefault());
     }
 
     @Override
-    public @Nullable Double serialize(@NotNull Object dataFetcherResult, @NotNull GraphQLContext graphQLContext, @NotNull Locale locale) throws CoercingSerializeException {
+    public @Nullable Double serialize(@NonNull Object dataFetcherResult, @NonNull GraphQLContext graphQLContext, @NonNull Locale locale) throws CoercingSerializeException {
         return serialiseImpl(dataFetcherResult, locale);
     }
 
     @Override
     @Deprecated
-    public @NotNull Double parseValue(@NotNull Object input) {
+    public @NonNull Double parseValue(@NonNull Object input) {
         return parseValueImpl(input, Locale.getDefault());
     }
 
     @Override
-    public Double parseValue(@NotNull Object input, @NotNull GraphQLContext graphQLContext, @NotNull Locale locale) throws CoercingParseValueException {
+    public Double parseValue(@NonNull Object input, @NonNull GraphQLContext graphQLContext, @NonNull Locale locale) throws CoercingParseValueException {
         return parseValueImpl(input, locale);
     }
 
     @Override
     @Deprecated
-    public Double parseLiteral(@NotNull Object input) {
+    public Double parseLiteral(@NonNull Object input) {
         return parseLiteralImpl(input, Locale.getDefault());
     }
 
     @Override
-    public @Nullable Double parseLiteral(@NotNull Value<?> input, @NotNull CoercedVariables variables, @NotNull GraphQLContext graphQLContext, @NotNull Locale locale) throws CoercingParseLiteralException {
+    public @Nullable Double parseLiteral(@NonNull Value<?> input, @NonNull CoercedVariables variables, @NonNull GraphQLContext graphQLContext, @NonNull Locale locale) throws CoercingParseLiteralException {
         return parseLiteralImpl(input, locale);
     }
 
     @Override
     @Deprecated
-    public Value valueToLiteral(@NotNull Object input) {
+    public Value valueToLiteral(@NonNull Object input) {
         return valueToLiteralImpl(input, Locale.getDefault());
     }
 
     @Override
-    public @NotNull Value<?> valueToLiteral(@NotNull Object input, @NotNull GraphQLContext graphQLContext, @NotNull Locale locale) {
+    public @NonNull Value<?> valueToLiteral(@NonNull Object input, @NonNull GraphQLContext graphQLContext, @NonNull Locale locale) {
         return valueToLiteralImpl(input, locale);
     }
 }

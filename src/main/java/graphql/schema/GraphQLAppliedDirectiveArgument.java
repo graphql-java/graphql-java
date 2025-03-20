@@ -8,8 +8,8 @@ import graphql.language.Argument;
 import graphql.language.Value;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -70,7 +70,7 @@ public class GraphQLAppliedDirectiveArgument implements GraphQLNamedSchemaElemen
     /**
      * @return an input value with state for an applied directive argument
      */
-    public @NotNull InputValueWithState getArgumentValue() {
+    public @NonNull InputValueWithState getArgumentValue() {
         return value;
     }
 
@@ -218,7 +218,7 @@ public class GraphQLAppliedDirectiveArgument implements GraphQLNamedSchemaElemen
          *
          * @return this builder
          */
-        public Builder valueLiteral(@NotNull Value<?> value) {
+        public Builder valueLiteral(@NonNull Value<?> value) {
             this.value = InputValueWithState.newLiteralValue(value);
             return this;
         }
@@ -233,7 +233,7 @@ public class GraphQLAppliedDirectiveArgument implements GraphQLNamedSchemaElemen
             return this;
         }
 
-        public Builder inputValueWithState(@NotNull InputValueWithState value) {
+        public Builder inputValueWithState(@NonNull InputValueWithState value) {
             this.value = Assert.assertNotNull(value);
             return this;
         }

@@ -2,8 +2,8 @@ package graphql.execution;
 
 import graphql.Assert;
 import graphql.Internal;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -230,7 +230,7 @@ public class Async {
         }
 
         @SuppressWarnings("unchecked")
-        @NotNull
+        @NonNull
         private CompletableFuture<T>[] copyOnlyCFsToArray() {
             if (cfCount == array.length) {
                 // if it's all CFs - make a type safe copy via C code
@@ -258,7 +258,7 @@ public class Async {
             }
         }
 
-        @NotNull
+        @NonNull
         private List<T> materialisedList(Object[] array) {
             List<T> results = new ArrayList<>(array.length);
             for (Object object : array) {
@@ -405,7 +405,7 @@ public class Async {
      *
      * @return the completableFuture if it's not null or one that always resoles to null
      */
-    public static <T> @NotNull CompletableFuture<T> orNullCompletedFuture(@Nullable CompletableFuture<T> completableFuture) {
+    public static <T> @NonNull CompletableFuture<T> orNullCompletedFuture(@Nullable CompletableFuture<T> completableFuture) {
         return completableFuture != null ? completableFuture : CompletableFuture.completedFuture(null);
     }
 }

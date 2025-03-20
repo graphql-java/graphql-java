@@ -27,8 +27,8 @@ import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLType;
 import graphql.schema.InputValueWithState;
 import graphql.schema.visibility.GraphqlFieldVisibility;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -196,7 +196,7 @@ public class ValuesResolver {
         return result;
     }
 
-    @NotNull
+    @NonNull
     public static Map<String, Object> getArgumentValues(
             GraphQLCodeRegistry codeRegistry,
             List<GraphQLArgument> argumentTypes,
@@ -223,9 +223,9 @@ public class ValuesResolver {
      * @return a value converted to a literal
      */
     public static Value<?> valueToLiteral(
-            @NotNull GraphqlFieldVisibility fieldVisibility,
-            @NotNull InputValueWithState inputValueWithState,
-            @NotNull GraphQLType type,
+            @NonNull GraphqlFieldVisibility fieldVisibility,
+            @NonNull InputValueWithState inputValueWithState,
+            @NonNull GraphQLType type,
             GraphQLContext graphqlContext,
             Locale locale
     ) {
@@ -239,8 +239,8 @@ public class ValuesResolver {
     }
 
     public static Value<?> valueToLiteral(
-            @NotNull InputValueWithState inputValueWithState,
-            @NotNull GraphQLType type,
+            @NonNull InputValueWithState inputValueWithState,
+            @NonNull GraphQLType type,
             GraphQLContext graphqlContext,
             Locale locale
     ) {
@@ -316,7 +316,7 @@ public class ValuesResolver {
     }
 
 
-    @NotNull
+    @NonNull
     private static Map<String, Object> getArgumentValuesImpl(
             InputInterceptor inputInterceptor,
             GraphqlFieldVisibility fieldVisibility,

@@ -3,7 +3,7 @@ package graphql.normalized;
 import graphql.Internal;
 import graphql.execution.directives.QueryAppliedDirective;
 import graphql.language.VariableDefinition;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;

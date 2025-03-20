@@ -18,8 +18,8 @@ import graphql.schema.impl.SchemaUtil;
 import graphql.schema.validation.InvalidSchemaException;
 import graphql.schema.validation.SchemaValidationError;
 import graphql.schema.validation.SchemaValidator;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -230,7 +230,7 @@ public class GraphQLSchema {
      *
      * @return the type
      */
-    public @Nullable GraphQLType getType(@NotNull String typeName) {
+    public @Nullable GraphQLType getType(@NonNull String typeName) {
         return typeMap.get(typeName);
     }
 
@@ -847,16 +847,11 @@ public class GraphQLSchema {
 
             // schemas built via the schema generator have the deprecated directive BUT we want it present for hand built
             // schemas - it's inherently part of the spec!
-            if (additionalDirectives.stream().noneMatch(d -> d.getName().equals(Directives.DeprecatedDirective.getName()))) {
-                additionalDirectives.add(Directives.DeprecatedDirective);
-            }
-
-            if (additionalDirectives.stream().noneMatch(d -> d.getName().equals(Directives.SpecifiedByDirective.getName()))) {
-                additionalDirectives.add(Directives.SpecifiedByDirective);
-            }
-            if (additionalDirectives.stream().noneMatch(d -> d.getName().equals(Directives.OneOfDirective.getName()))) {
-                additionalDirectives.add(Directives.OneOfDirective);
-            }
+            addBuiltInDirective(Directives.DeprecatedDirective, additionalDirectives);
+            addBuiltInDirective(Directives.SpecifiedByDirective, additionalDirectives);
+            addBuiltInDirective(Directives.OneOfDirective, additionalDirectives);
+            addBuiltInDirective(Directives.DeferDirective, additionalDirectives);
+            addBuiltInDirective(Directives.ExperimentalDisableErrorPropagationDirective, additionalDirectives);
 
             // quick build - no traversing
             final GraphQLSchema partiallyBuiltSchema = new GraphQLSchema(this);
@@ -877,6 +872,12 @@ public class GraphQLSchema {
             final GraphQLSchema finalSchema = new GraphQLSchema(partiallyBuiltSchema, codeRegistry, allTypes, interfaceNameToObjectTypes);
             SchemaUtil.replaceTypeReferences(finalSchema);
             return validateSchema(finalSchema);
+        }
+
+        private void addBuiltInDirective(GraphQLDirective qlDirective, Set<GraphQLDirective> additionalDirectives1) {
+            if (additionalDirectives1.stream().noneMatch(d -> d.getName().equals(qlDirective.getName()))) {
+                additionalDirectives1.add(qlDirective);
+            }
         }
 
         private GraphQLSchema validateSchema(GraphQLSchema graphQLSchema) {
