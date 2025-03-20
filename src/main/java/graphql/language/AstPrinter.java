@@ -3,7 +3,8 @@ package graphql.language;
 import graphql.PublicApi;
 import graphql.collect.ImmutableKit;
 
-import java.io.PrintWriter;
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.io.Writer;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -745,8 +746,31 @@ public class AstPrinter {
      */
     public static String printAst(Node node) {
         StringBuilder builder = new StringBuilder();
-        printImpl(builder, node, false);
+        printAstTo(node, builder);
         return builder.toString();
+    }
+
+    /**
+     * This will pretty print the AST node in graphql language format to the given Appendable
+     *
+     * @param node       the AST node to print
+     * @param appendable the Appendable to write the output to
+     *
+     */
+    public static void printAstTo(Node<?> node, Appendable appendable) {
+        if (appendable instanceof StringBuilder) {
+            printImpl((StringBuilder) appendable, node, false);
+        } else if (appendable instanceof Writer) {
+            printAst((Writer) appendable, node);
+        } else {
+            StringBuilder builder = new StringBuilder();
+            printImpl(builder, node, false);
+            try {
+                appendable.append(builder);
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        }
     }
 
     /**
@@ -757,8 +781,11 @@ public class AstPrinter {
      */
     public static void printAst(Writer writer, Node node) {
         String ast = printAst(node);
-        PrintWriter printer = new PrintWriter(writer);
-        printer.write(ast);
+        try {
+            writer.write(ast);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     /**
@@ -775,7 +802,7 @@ public class AstPrinter {
         return builder.toString();
     }
 
-    private static void printImpl(StringBuilder writer, Node node, boolean compactMode) {
+    private static void printImpl(StringBuilder writer, Node<?> node, boolean compactMode) {
         AstPrinter astPrinter = new AstPrinter(compactMode);
         NodePrinter<Node> printer = astPrinter._findPrinter(node);
         printer.print(writer, node);
