@@ -2,7 +2,6 @@ package graphql.execution
 
 import graphql.Directives
 import graphql.ErrorType
-import graphql.ExecutionInput
 import graphql.GraphQLContext
 import graphql.GraphQLException
 import graphql.TestUtil
