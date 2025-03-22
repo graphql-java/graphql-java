@@ -1,6 +1,7 @@
 package graphql.normalized;
 
 import graphql.Internal;
+import graphql.execution.directives.QueryAppliedDirective;
 import graphql.language.VariableDefinition;
 import org.jspecify.annotations.Nullable;
 
@@ -28,8 +29,14 @@ public class VariableAccumulator {
         valueWithDefinitions = new ArrayList<>();
     }
 
-    public boolean shouldMakeVariable(ExecutableNormalizedField executableNormalizedField, String argName, NormalizedInputValue normalizedInputValue) {
-        return variablePredicate != null && variablePredicate.shouldMakeVariable(executableNormalizedField, argName, normalizedInputValue);
+    public boolean shouldMakeVariable(ExecutableNormalizedField executableNormalizedField, QueryAppliedDirective queryAppliedDirective, String argName, NormalizedInputValue normalizedInputValue) {
+        // when a variable is used on the argument to a query directive then the queryAppliedDirective will be nonnull.
+        // otherwise it must be a field argument
+        if (queryAppliedDirective != null) {
+            return variablePredicate != null && variablePredicate.shouldMakeVariable(executableNormalizedField, queryAppliedDirective, argName, normalizedInputValue);
+        } else {
+            return variablePredicate != null && variablePredicate.shouldMakeVariable(executableNormalizedField, argName, normalizedInputValue);
+        }
     }
 
     public VariableValueWithDefinition accumulateVariable(NormalizedInputValue normalizedInputValue) {

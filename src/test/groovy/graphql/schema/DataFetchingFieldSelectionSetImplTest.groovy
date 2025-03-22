@@ -348,6 +348,54 @@ class DataFetchingFieldSelectionSetImplTest extends Specification {
         fields.collect({ field -> field.qualifiedName }) == expectedFieldName
     }
 
+
+    def "immediate fields followed by fields are computed"() {
+
+        when:
+        def ei = ExecutionInput.newExecutionInput(relayQuery).build()
+        def er = relayGraphql.execute(ei)
+
+        then:
+        er.getErrors().isEmpty()
+
+        then:
+        List<SelectedField> immediateFields = selectionSet.getImmediateFields()
+
+        then:
+        def expectedImmediateFieldName = [
+                "nodes",
+                "edges",
+                "totalCount"
+        ]
+
+        immediateFields.collect({ field -> field.qualifiedName }) == expectedImmediateFieldName
+
+        then:
+        List<SelectedField> fieldsGlob = selectionSet.getFields("**")
+        List<SelectedField> fields = selectionSet.getFields()
+
+        def expectedFieldName = [
+                "nodes",
+                "nodes/key",
+                "nodes/summary",
+                "nodes/status",
+                "nodes/status/name",
+                "nodes/stuff",
+                "nodes/stuff/name",
+                "edges",
+                "edges/cursor",
+                "edges/node",
+                "edges/node/description",
+                "edges/node/status",
+                "edges/node/status/name",
+                "totalCount"
+        ]
+
+        then:
+        fieldsGlob.collect({ field -> field.qualifiedName }) == expectedFieldName
+        fields.collect({ field -> field.qualifiedName }) == expectedFieldName
+    }
+
     def petSDL = '''
             type Query {
                 petUnion : PetUnion

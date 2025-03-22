@@ -19,10 +19,13 @@ class VariableDefaultValuesOfCorrectTypeTest extends Specification {
     ValidationContext validationContext = Mock(ValidationContext)
     ValidationErrorCollector errorCollector = new ValidationErrorCollector()
     VariableDefaultValuesOfCorrectType defaultValuesOfCorrectType = new VariableDefaultValuesOfCorrectType(validationContext, errorCollector)
+    I18n i18n = Mock(I18n)
 
     void setup() {
         def context = GraphQLContext.getDefault()
         validationContext.getGraphQLContext() >> context
+        validationContext.getI18n() >> i18n
+        i18n.getLocale() >> Locale.ENGLISH
     }
 
     def "default value has wrong type"() {
@@ -69,5 +72,39 @@ class VariableDefaultValuesOfCorrectTypeTest extends Specification {
         validationErrors.size() == 1
         validationErrors[0].getValidationErrorType() == ValidationErrorType.BadValueForDefaultArg
         validationErrors[0].message == "Validation error (BadValueForDefaultArg) : Bad default value 'StringValue{value='NotANumber'}' for type 'Int'"
+    }
+
+    def "default value has wrong type with error message of client (German), not server (English)"() {
+        setup:
+        def schema = '''
+            type User {
+                id: String
+            }
+            
+            type Query {
+                getUsers(howMany: Int) : [User]
+            }
+        '''
+
+        def query = '''
+            query($howMany: Int = "NotANumber") {
+                getUsers(howMany: $howMany) {
+                    id
+                } 
+            }
+        '''
+
+        def graphQlSchema = TestUtil.schema(schema)
+        def document = TestUtil.parseQuery(query)
+        def validator = new Validator()
+
+        when:
+        def validationErrors = validator.validateDocument(graphQlSchema, document, Locale.GERMAN)
+
+        then:
+        !validationErrors.empty
+        validationErrors.size() == 1
+        validationErrors[0].getValidationErrorType() == ValidationErrorType.BadValueForDefaultArg
+        validationErrors[0].message == "Validierungsfehler (BadValueForDefaultArg) : Ungültiger Standardwert 'StringValue{value='NotANumber'}' für Typ 'Int'"
     }
 }

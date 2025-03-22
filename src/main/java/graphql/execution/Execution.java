@@ -30,6 +30,7 @@ import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.impl.SchemaUtil;
 import org.jspecify.annotations.NonNull;
+import graphql.util.FpKit;
 import org.reactivestreams.Publisher;
 
 import java.util.Collections;
@@ -37,6 +38,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Supplier;
 
 import static graphql.Directives.EXPERIMENTAL_DISABLE_ERROR_PROPAGATION_DIRECTIVE_DEFINITION;
 import static graphql.execution.ExecutionContextBuilder.newExecutionContextBuilder;
@@ -71,12 +73,13 @@ public class Execution {
     }
 
     public CompletableFuture<ExecutionResult> execute(Document document, GraphQLSchema graphQLSchema, ExecutionId executionId, ExecutionInput executionInput, InstrumentationState instrumentationState) {
-
         NodeUtil.GetOperationResult getOperationResult;
         CoercedVariables coercedVariables;
+        Supplier<NormalizedVariables> normalizedVariableValues;
         try {
             getOperationResult = NodeUtil.getOperation(document, executionInput.getOperationName());
             coercedVariables = coerceVariableValues(graphQLSchema, executionInput, getOperationResult.operationDefinition);
+            normalizedVariableValues = normalizedVariableValues(graphQLSchema, executionInput, getOperationResult);
         } catch (RuntimeException rte) {
             if (rte instanceof GraphQLError) {
                 return completedFuture(new ExecutionResultImpl((GraphQLError) rte));
@@ -100,6 +103,7 @@ public class Execution {
                 .root(executionInput.getRoot())
                 .fragmentsByName(getOperationResult.fragmentsByName)
                 .coercedVariables(coercedVariables)
+                .normalizedVariableValues(normalizedVariableValues)
                 .document(document)
                 .operationDefinition(getOperationResult.operationDefinition)
                 .dataLoaderRegistry(executionInput.getDataLoaderRegistry())
@@ -122,6 +126,19 @@ public class Execution {
         RawVariables inputVariables = executionInput.getRawVariables();
         List<VariableDefinition> variableDefinitions = operationDefinition.getVariableDefinitions();
         return ValuesResolver.coerceVariableValues(graphQLSchema, variableDefinitions, inputVariables, executionInput.getGraphQLContext(), executionInput.getLocale());
+    }
+
+    private static @NonNull Supplier<NormalizedVariables> normalizedVariableValues(GraphQLSchema graphQLSchema, ExecutionInput executionInput, NodeUtil.GetOperationResult getOperationResult) {
+        Supplier<NormalizedVariables> normalizedVariableValues;
+        RawVariables inputVariables = executionInput.getRawVariables();
+        List<VariableDefinition> variableDefinitions = getOperationResult.operationDefinition.getVariableDefinitions();
+
+        normalizedVariableValues = FpKit.intraThreadMemoize(() ->
+                ValuesResolver.getNormalizedVariableValues(graphQLSchema,
+                        variableDefinitions,
+                        inputVariables,
+                        executionInput.getGraphQLContext(), executionInput.getLocale()));
+        return normalizedVariableValues;
     }
 
 
@@ -235,7 +252,7 @@ public class Execution {
         if (executionContext.getDataLoaderRegistry() == EMPTY_DATALOADER_REGISTRY || doNotAutomaticallyDispatchDataLoader) {
             return DataLoaderDispatchStrategy.NO_OP;
         }
-        if (! executionContext.isSubscriptionOperation()) {
+        if (!executionContext.isSubscriptionOperation()) {
             boolean deferEnabled = Optional.ofNullable(executionContext.getGraphQLContext())
                     .map(graphqlContext -> graphqlContext.getBoolean(ExperimentalApi.ENABLE_INCREMENTAL_SUPPORT))
                     .orElse(false);

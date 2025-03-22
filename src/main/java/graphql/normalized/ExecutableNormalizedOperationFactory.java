@@ -12,6 +12,7 @@ import graphql.collect.ImmutableKit;
 import graphql.execution.AbortExecutionException;
 import graphql.execution.CoercedVariables;
 import graphql.execution.MergedField;
+import graphql.execution.NormalizedVariables;
 import graphql.execution.RawVariables;
 import graphql.execution.ValuesResolver;
 import graphql.execution.conditional.ConditionalNodes;
@@ -52,6 +53,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -423,7 +425,7 @@ public class ExecutableNormalizedOperationFactory {
                 rawVariables,
                 options.getGraphQLContext(),
                 options.getLocale());
-        Map<String, NormalizedInputValue> normalizedVariableValues = ValuesResolver.getNormalizedVariableValues(graphQLSchema,
+        NormalizedVariables normalizedVariableValues = ValuesResolver.getNormalizedVariableValues(graphQLSchema,
                 variableDefinitions,
                 rawVariables,
                 options.getGraphQLContext(),
@@ -445,7 +447,7 @@ public class ExecutableNormalizedOperationFactory {
         private final OperationDefinition operationDefinition;
         private final Map<String, FragmentDefinition> fragments;
         private final CoercedVariables coercedVariableValues;
-        private final @Nullable Map<String, NormalizedInputValue> normalizedVariableValues;
+        private final @Nullable NormalizedVariables normalizedVariableValues;
         private final Options options;
 
         private final List<PossibleMerger> possibleMergerList = new ArrayList<>();
@@ -464,7 +466,7 @@ public class ExecutableNormalizedOperationFactory {
                 OperationDefinition operationDefinition,
                 Map<String, FragmentDefinition> fragments,
                 CoercedVariables coercedVariableValues,
-                @Nullable Map<String, NormalizedInputValue> normalizedVariableValues,
+                @Nullable NormalizedVariables normalizedVariableValues,
                 Options options
         ) {
             this.graphQLSchema = graphQLSchema;
@@ -500,7 +502,12 @@ public class ExecutableNormalizedOperationFactory {
 
         private void captureMergedField(ExecutableNormalizedField enf, MergedField mergedFld) {
             // QueryDirectivesImpl is a lazy object and only computes itself when asked for
-            QueryDirectives queryDirectives = new QueryDirectivesImpl(mergedFld, graphQLSchema, coercedVariableValues.toMap(), options.getGraphQLContext(), options.getLocale());
+            QueryDirectives queryDirectives = new QueryDirectivesImpl(mergedFld,
+                    graphQLSchema,
+                    coercedVariableValues,
+                    () -> normalizedVariableValues,
+                    options.getGraphQLContext(),
+                    options.getLocale());
             normalizedFieldToQueryDirectives.put(enf, queryDirectives);
             normalizedFieldToMergedField.put(enf, mergedFld);
         }
@@ -657,7 +664,7 @@ public class ExecutableNormalizedOperationFactory {
             Map<String, Object> argumentValues = ValuesResolver.getArgumentValues(fieldDefinition.getArguments(), field.getArguments(), CoercedVariables.of(this.coercedVariableValues.toMap()), this.options.graphQLContext, this.options.locale);
             Map<String, NormalizedInputValue> normalizedArgumentValues = null;
             if (this.normalizedVariableValues != null) {
-                normalizedArgumentValues = ValuesResolver.getNormalizedArgumentValues(fieldDefinition.getArguments(), field.getArguments(), this.normalizedVariableValues);
+                normalizedArgumentValues = ValuesResolver.getNormalizedArgumentValues(fieldDefinition.getArguments(), field.getArguments(), this.normalizedVariableValues.toMap());
             }
             ImmutableList<String> objectTypeNames = map(objectTypes, GraphQLObjectType::getName);
             return ExecutableNormalizedField.newNormalizedField()
