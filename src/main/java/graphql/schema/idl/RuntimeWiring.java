@@ -313,10 +313,17 @@ public class RuntimeWiring {
         public Builder type(TypeRuntimeWiring typeRuntimeWiring) {
             String typeName = typeRuntimeWiring.getTypeName();
             Map<String, DataFetcher> typeDataFetchers = dataFetchers.computeIfAbsent(typeName, k -> new LinkedHashMap<>());
+
+            Map<String, DataFetcher> additionalFieldDataFetchers = typeRuntimeWiring.getFieldDataFetchers();
             if (strictMode && !typeDataFetchers.isEmpty()) {
-                throw new StrictModeWiringException(format("The type %s has already been defined", typeName));
+                // Check if the existing type wiring contains overlapping DataFetcher definitions
+                for (String fieldName : additionalFieldDataFetchers.keySet()) {
+                    if (typeDataFetchers.containsKey(fieldName)) {
+                        throw new StrictModeWiringException(format("The field %s on type %s has already been defined", fieldName, typeName));
+                    }
+                }
             }
-            typeDataFetchers.putAll(typeRuntimeWiring.getFieldDataFetchers());
+            typeDataFetchers.putAll(additionalFieldDataFetchers);
 
             DataFetcher<?> defaultDataFetcher = typeRuntimeWiring.getDefaultDataFetcher();
             if (defaultDataFetcher != null) {

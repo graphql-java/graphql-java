@@ -206,7 +206,7 @@ class RuntimeWiringTest extends Specification {
 
         then:
         def e1 = thrown(StrictModeWiringException)
-        e1.message == "The type Foo has already been defined"
+        e1.message == "The field foo on type Foo has already been defined"
 
         when:
         RuntimeWiring.newRuntimeWiring()
@@ -253,6 +253,7 @@ class RuntimeWiringTest extends Specification {
         def runtimeWiring1 = RuntimeWiring.newRuntimeWiring()
                 .type(TypeRuntimeWiring.newTypeWiring("Foo").dataFetcher("foo", DF1))
                 .type(TypeRuntimeWiring.newTypeWiring("Foo").dataFetcher("bar", DF2))
+                .build()
 
         then:
         noExceptionThrown()
@@ -313,7 +314,7 @@ class RuntimeWiringTest extends Specification {
 
         then:
         noExceptionThrown()
-        runtimeWiring1.getDataFetchers().get("Foo").get("bar") == DF1
+        runtimeWiring1.getDataFetchers().get("Foo").get("foo") == DF2
 
         when:
         def runtimeWiring2 = RuntimeWiring.newRuntimeWiring()
