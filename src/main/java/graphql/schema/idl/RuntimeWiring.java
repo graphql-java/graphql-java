@@ -209,7 +209,7 @@ public class RuntimeWiring {
          *
          * @deprecated strictMode default value changed to true, use {@link #strictMode(boolean)} instead
          */
-        @Deprecated(since = "2025-02-15", forRemoval = true)
+        @Deprecated(since = "2025-03-22", forRemoval = true)
         public Builder strictMode() {
             this.strictMode = true;
             return this;
