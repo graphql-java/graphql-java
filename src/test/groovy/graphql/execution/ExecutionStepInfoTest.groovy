@@ -160,10 +160,8 @@ class ExecutionStepInfoTest extends Specification {
 
         def runtimeWiring = newRuntimeWiring()
                 .type(newTypeWiring("Query").dataFetcher("hero", samwiseDF))
-                .type(newTypeWiring("User")
-                        .dataFetcher("friends", friendsDF)
-                        .dataFetcher("mates", friendsDF)
-                )
+                .type(newTypeWiring("User").dataFetcher("friends", friendsDF))
+                .type(newTypeWiring("User").dataFetcher("mates", friendsDF))
                 .build()
 
         def graphQL = TestUtil.graphQL(spec, runtimeWiring).build()
