@@ -4,6 +4,7 @@ import graphql.ExecutionInput;
 import graphql.ExecutionResult;
 import graphql.ExperimentalApi;
 import graphql.PublicSpi;
+import graphql.execution.CF;
 import graphql.execution.ExecutionContext;
 import graphql.execution.instrumentation.parameters.InstrumentationCreateStateParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecuteOperationParameters;
@@ -339,6 +340,6 @@ public interface Instrumentation {
      */
     @NonNull
     default CompletableFuture<ExecutionResult> instrumentExecutionResult(ExecutionResult executionResult, InstrumentationExecutionParameters parameters, InstrumentationState state) {
-        return CompletableFuture.completedFuture(executionResult);
+        return CF.completedFuture(executionResult);
     }
 }

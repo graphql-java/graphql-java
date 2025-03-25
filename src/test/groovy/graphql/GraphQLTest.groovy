@@ -92,6 +92,40 @@ class GraphQLTest extends Specification {
         result == [hello: 'world']
     }
 
+    def "to batch"() {
+        given:
+        def sdl = '''
+
+        type Query {
+          dogName: String
+          catName: String
+        }
+        '''
+        def df1 = { env ->
+//            return CF.newBatchCF("animalName1").thenCompose { it -> CF.newBatchCF("animalName2") }
+            return "Luna"
+        } as DataFetcher
+
+        def df2 = { env ->
+//            return CF.newBatchCF("animalName1").thenCompose { it -> CF.newBatchCF("animalName2") }
+            return "Tiger"
+        } as DataFetcher
+
+
+        def fetchers = ["Query": ["dogName": df1, "catName": df2]]
+        def schema = TestUtil.schema(sdl, fetchers)
+        def graphQL = GraphQL.newGraphQL(schema).build()
+
+        def query = "{ dogName catName } "
+        def ei = newExecutionInput(query).build()
+
+        when:
+        def er = graphQL.execute(ei)
+        then:
+        er.data == [hello: "world"]
+    }
+
+
     def "query with sub-fields"() {
         given:
         GraphQLObjectType heroType = newObject()

@@ -56,7 +56,7 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
         DeferredExecutionSupport deferredExecutionSupport = createDeferredExecutionSupport(executionContext, parameters);
         Async.CombinedBuilder<FieldValueInfo> futures = getAsyncFieldValueInfo(executionContext, parameters, deferredExecutionSupport);
 
-        CompletableFuture<ExecutionResult> overallResult = new CompletableFuture<>();
+        CF<ExecutionResult> overallResult = new CF<>();
         executionStrategyCtx.onDispatched();
 
         futures.await().whenComplete((completeValueInfos, throwable) -> {

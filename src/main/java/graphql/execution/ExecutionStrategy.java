@@ -215,7 +215,7 @@ public abstract class ExecutionStrategy {
         DeferredExecutionSupport deferredExecutionSupport = createDeferredExecutionSupport(executionContext, parameters);
         Async.CombinedBuilder<FieldValueInfo> resolvedFieldFutures = getAsyncFieldValueInfo(executionContext, parameters, deferredExecutionSupport);
 
-        CompletableFuture<Map<String, Object>> overallResult = new CompletableFuture<>();
+        CompletableFuture<Map<String, Object>> overallResult = new CF<>();
         List<String> fieldsExecutedOnInitialResult = deferredExecutionSupport.getNonDeferredFieldNames(fieldNames);
         BiConsumer<List<Object>, Throwable> handleResultsConsumer = buildFieldValueMap(fieldsExecutedOnInitialResult, overallResult, executionContext);
 
@@ -828,7 +828,7 @@ public abstract class ExecutionStrategy {
         if (listResults instanceof CompletableFuture) {
             @SuppressWarnings("unchecked")
             CompletableFuture<List<Object>> resultsFuture = (CompletableFuture<List<Object>>) listResults;
-            CompletableFuture<Object> overallResult = new CompletableFuture<>();
+            CompletableFuture<Object> overallResult = new CF<>();
             completeListCtx.onDispatched();
             overallResult.whenComplete(completeListCtx::onCompleted);
 

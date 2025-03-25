@@ -3,6 +3,7 @@ package graphql.execution.preparsed;
 
 import graphql.ExecutionInput;
 import graphql.Internal;
+import graphql.execution.CF;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
@@ -13,6 +14,6 @@ public class NoOpPreparsedDocumentProvider implements PreparsedDocumentProvider 
 
     @Override
     public CompletableFuture<PreparsedDocumentEntry> getDocumentAsync(ExecutionInput executionInput, Function<ExecutionInput, PreparsedDocumentEntry> parseAndValidateFunction) {
-        return CompletableFuture.completedFuture(parseAndValidateFunction.apply(executionInput));
+        return CF.completedFuture(parseAndValidateFunction.apply(executionInput));
     }
 }

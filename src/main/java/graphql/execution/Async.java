@@ -108,7 +108,7 @@ public class Async {
         }
 
         // implementation details: infer the type of Completable<List<T>> from a singleton empty
-        private static final CompletableFuture<List<?>> EMPTY = CompletableFuture.completedFuture(Collections.emptyList());
+        private static final CompletableFuture<List<?>> EMPTY = CF.completedFuture(Collections.emptyList());
 
         @SuppressWarnings("unchecked")
         private static <T> CompletableFuture<T> typedEmpty() {
@@ -143,7 +143,7 @@ public class Async {
                 return cf.thenApply(Collections::singletonList);
             }
             //noinspection unchecked
-            return CompletableFuture.completedFuture(Collections.singletonList((T) value));
+            return CF.completedFuture(Collections.singletonList((T) value));
         }
 
         @Override
@@ -194,12 +194,12 @@ public class Async {
         public CompletableFuture<List<T>> await() {
             commonSizeAssert();
 
-            CompletableFuture<List<T>> overallResult = new CompletableFuture<>();
+            CF<List<T>> overallResult = new CF<>();
             if (cfCount == 0) {
                 overallResult.complete(materialisedList(array));
             } else {
-                CompletableFuture<T>[] cfsArr = copyOnlyCFsToArray();
-                CompletableFuture.allOf(cfsArr)
+                CF<T>[] cfsArr = copyOnlyCFsToArray();
+                CF.allOf(cfsArr)
                         .whenComplete((ignored, exception) -> {
                             if (exception != null) {
                                 overallResult.completeExceptionally(exception);
@@ -231,16 +231,16 @@ public class Async {
 
         @SuppressWarnings("unchecked")
         @NonNull
-        private CompletableFuture<T>[] copyOnlyCFsToArray() {
+        private CF<T>[] copyOnlyCFsToArray() {
             if (cfCount == array.length) {
                 // if it's all CFs - make a type safe copy via C code
-                return Arrays.copyOf(array, array.length, CompletableFuture[].class);
+                return Arrays.copyOf(array, array.length, CF[].class);
             } else {
                 int i = 0;
-                CompletableFuture<T>[] dest = new CompletableFuture[cfCount];
+                CF<T>[] dest = new CF[cfCount];
                 for (Object o : array) {
-                    if (o instanceof CompletableFuture) {
-                        dest[i] = (CompletableFuture<T>) o;
+                    if (o instanceof CF) {
+                        dest[i] = (CF<T>) o;
                         i++;
                     }
                 }
@@ -405,7 +405,7 @@ public class Async {
      *
      * @return the completableFuture if it's not null or one that always resoles to null
      */
-    public static <T> @NonNull CompletableFuture<T> orNullCompletedFuture(@Nullable CompletableFuture<T> completableFuture) {
-        return completableFuture != null ? completableFuture : CompletableFuture.completedFuture(null);
+    public static <T> @NonNull CF<T> orNullCompletedFuture(@Nullable CompletableFuture<T> completableFuture) {
+        return completableFuture != null ? CF.wrap(completableFuture) : new CF<>();//CF.completedFuture(null);
     }
 }
