@@ -141,6 +141,7 @@ class GraphQLTest extends Specification {
             return CF.newDataLoaderCF(env, "name", "Key2").thenCompose {
                 result ->
                     {
+//                        throw new RuntimeException();
                         println "finished Cat outer DF with $result"
                         return CF.newDataLoaderCF(env, "name", result)
                     }

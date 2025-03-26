@@ -29,7 +29,7 @@ public class SimpleDataFetcherExceptionHandler implements DataFetcherExceptionHa
 
     @Override
     public CompletableFuture<DataFetcherExceptionHandlerResult> handleException(DataFetcherExceptionHandlerParameters handlerParameters) {
-        return CompletableFuture.completedFuture(handleExceptionImpl(handlerParameters));
+        return CF.completedFuture(handleExceptionImpl(handlerParameters));
     }
 
     /**
