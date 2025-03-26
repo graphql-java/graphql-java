@@ -158,7 +158,7 @@ class GraphQLTest extends Specification {
         when:
         def er = graphQL.execute(ei)
         then:
-        er.data == [hello: "world"]
+        er.data == [dogName: "Luna", catName: "Tiger"]
     }
 
 
