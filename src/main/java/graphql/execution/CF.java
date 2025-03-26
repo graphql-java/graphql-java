@@ -1339,9 +1339,6 @@ public class CF<T> extends CompletableFuture<T> {
                     }
                     @SuppressWarnings("unchecked") T t = (T) r;
                     CompletionStage<V> apply = f.apply(t).toCompletableFuture();
-                    if (!(apply instanceof CF)) {
-                        System.out.println("mmm");
-                    }
                     CF<V> g = (CF<V>) apply;
                     if ((r = g.result) != null) {
                         d.completeRelay(r);
@@ -1806,36 +1803,6 @@ public class CF<T> extends CompletableFuture<T> {
         return d;
     }
 
-    static CF<Void> andTreeEngine(CF<?>[] cfs,
-                                  int lo, int hi) {
-        CF<Void> d = new EngineCF<>();
-        if (lo > hi) // empty
-        {
-            d.assignResult(NIL);
-        } else {
-            CF<?> a, b;
-            Object r, s, z;
-            Throwable x;
-            int mid = (lo + hi) >>> 1;
-            if ((a = (lo == mid ? cfs[lo] :
-                    andTreeEngine(cfs, lo, mid))) == null ||
-                    (b = (lo == hi ? a : (hi == mid + 1) ? cfs[hi] :
-                            andTreeEngine(cfs, mid + 1, hi))) == null) {
-                throw new NullPointerException();
-            }
-            if ((r = a.result) == null || (s = b.result) == null) {
-                a.bipush(b, new BiRelay<>(d, a, b));
-            } else if ((r instanceof AltResult
-                    && (x = ((AltResult) (z = r)).ex) != null) ||
-                    (s instanceof AltResult
-                            && (x = ((AltResult) (z = s)).ex) != null)) {
-                d.assignResult(encodeThrowable(x, z));
-            } else {
-                d.assignResult(NIL);
-            }
-        }
-        return d;
-    }
 
 
     /* ------------- Projected (Ored) BiCompletions -------------- */
@@ -2399,8 +2366,6 @@ public class CF<T> extends CompletableFuture<T> {
     private void newInstance() {
         if ((this instanceof DataLoaderCF)) {
             dataLoaderCFs.add((DataLoaderCF<?>) this);
-        } else if ((this instanceof EngineCF)) {
-//            System.out.println("new Engine CF instance " + this);
         } else {
             allNormalCFs.add(this);
 //            System.out.println("new CF instance " + this + " total count" + allNormalCFs.size());
@@ -2408,7 +2373,7 @@ public class CF<T> extends CompletableFuture<T> {
     }
 
     private void afterCompletedInternal() {
-        if (this.result != null && !(this instanceof DataLoaderCF) && !(this instanceof EngineCF)) {
+        if (this.result != null && !(this instanceof DataLoaderCF)) {
             completedCfs.add(this);
 //            System.out.println("completed CF instance " + this + " completed count: " + completedCfs.size());
         }
@@ -2884,10 +2849,6 @@ public class CF<T> extends CompletableFuture<T> {
         return andTree(cfs, 0, cfs.length - 1);
     }
 
-    public static CF<Void> allOfEngineCFs(CF<?>... cfs) {
-        return andTreeEngine(cfs, 0, cfs.length - 1);
-    }
-
 
     /**
      * Returns a new CF that is completed when any of
@@ -3338,7 +3299,7 @@ public class CF<T> extends CompletableFuture<T> {
         if (completableFuture instanceof CF) {
             return (CF<U>) completableFuture;
         }
-        EngineCF<U> cf = new EngineCF<>();
+        CF<U> cf = new CF<>();
         completableFuture.whenComplete((u, ex) -> {
             if (ex != null) {
                 cf.completeExceptionally(ex);
@@ -3601,32 +3562,6 @@ public class CF<T> extends CompletableFuture<T> {
             }
         }
     }
-
-    private static class EngineCF<T> extends CF<T> {
-
-        public EngineCF() {
-        }
-
-        public EngineCF(Object r) {
-            super(r);
-        }
-
-        @Override
-        public <U> CF<U> newIncompleteFuture() {
-            return new EngineCF<>();
-        }
-
-    }
-
-    // meaning the CF is not considered when we decide to dispatch
-    public static <T> CF<T> newEngineCF() {
-        return new EngineCF<>();
-    }
-
-    public static <T> CF<T> completedEngineCF(Object value) {
-        return new EngineCF<>((value == null) ? NIL : value);
-    }
-
 
     private static class DataLoaderCF<T> extends CF<T> {
         final DataLoaderRegistry registry;

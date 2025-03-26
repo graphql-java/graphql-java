@@ -57,7 +57,7 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
         Async.CombinedBuilder<FieldValueInfo> futures = getAsyncFieldValueInfo(executionContext, parameters, deferredExecutionSupport);
 
         // can be waiting on DataFetcher completion, therefore it is a engine cCF
-        CF<ExecutionResult> overallResult = CF.newEngineCF();
+        CF<ExecutionResult> overallResult = new CF<>();
         executionStrategyCtx.onDispatched();
 
         futures.await().whenComplete((completeValueInfos, throwable) -> {
