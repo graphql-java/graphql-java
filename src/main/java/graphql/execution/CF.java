@@ -2297,6 +2297,8 @@ public class CF<T> extends CompletableFuture<T> {
         if (Thread.interrupted()) {
             return null;
         }
+        // Signaller is a Completion that unblocks the current threads
+        // meaning once this CF is completed the Thread is relased
         if (nanos > 0L) {
             long d = System.nanoTime() + nanos;
             long deadline = (d == 0L) ? 1L : d; // avoid 0
@@ -2307,7 +2309,7 @@ public class CF<T> extends CompletableFuture<T> {
                 if (q == null) {
                     q = new Signaller(true, nanos, deadline);
 //                    if (Thread.currentThread() instanceof ForkJoinWorkerThread) {
-//                        ForkJoinPool.helpAsyncBlocker(defaultExecutor(), q);
+//                    ForkJoinPool.helpAsyncBlocker(defaultExecutor(), q);
 //                    }
                 } else if (!queued) {
                     queued = tryPushStack(q);
@@ -2785,6 +2787,19 @@ public class CF<T> extends CompletableFuture<T> {
     @Override
     public CF<T> toCompletableFuture() {
         return this;
+    }
+
+    public CompletableFuture<T> bridgeToDefaultCompletableFuture() {
+        CompletableFuture<T> future = new CompletableFuture<>();
+        whenComplete((t, throwable) -> {
+                    if (throwable != null) {
+                        future.completeExceptionally(throwable);
+                    } else {
+                        future.complete(t);
+                    }
+                }
+        );
+        return future;
     }
 
     public CF<T> exceptionally(
@@ -3615,7 +3630,7 @@ public class CF<T> extends CompletableFuture<T> {
         }
         new Thread(() -> {
             try {
-                // waiting until all DL CFs are completed
+                // waiting until all sync codes for all DL CFs are run
                 countDownLatch.await();
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);

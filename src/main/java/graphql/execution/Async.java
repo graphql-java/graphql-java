@@ -140,7 +140,7 @@ public class Async {
             if (value instanceof CompletableFuture) {
                 @SuppressWarnings("unchecked")
                 CompletableFuture<T> cf = (CompletableFuture<T>) value;
-                return cf.thenApply(Collections::singletonList);
+                return CF.wrap(cf).thenApply(Collections::singletonList);
             }
             //noinspection unchecked
             return CF.completedFuture(Collections.singletonList((T) value));
@@ -152,7 +152,7 @@ public class Async {
             if (value instanceof CompletableFuture) {
                 @SuppressWarnings("unchecked")
                 CompletableFuture<T> cf = (CompletableFuture<T>) value;
-                return cf.thenApply(Collections::singletonList);
+                return CF.wrap(cf).thenApply(Collections::singletonList);
             }
             //noinspection unchecked
             return Collections.singletonList((T) value);
@@ -278,7 +278,7 @@ public class Async {
     public static <T, U> CompletableFuture<List<U>> each(Collection<T> list, Function<T, Object> cfOrMaterialisedValueFactory) {
         Object l = eachPolymorphic(list, cfOrMaterialisedValueFactory);
         if (l instanceof CompletableFuture) {
-            return (CompletableFuture<List<U>>) l;
+            return CF.wrap((CompletableFuture<List<U>>) l);
         } else {
             return CF.completedFuture((List<U>) l);
         }
@@ -333,7 +333,7 @@ public class Async {
         }
         if (value instanceof CompletableFuture) {
             CompletableFuture<U> cf = (CompletableFuture<U>) value;
-            cf.whenComplete((cfResult, exception) -> {
+            CF.wrap(cf).whenComplete((cfResult, exception) -> {
                 if (exception != null) {
                     overallResult.completeExceptionally(exception);
                     return;
@@ -404,6 +404,6 @@ public class Async {
      * @return the completableFuture if it's not null or one that always resoles to null
      */
     public static <T> @NonNull CF<T> orNullCompletedFuture(@Nullable CompletableFuture<T> completableFuture) {
-        return completableFuture != null ? CF.wrap(completableFuture) : new CF<>();//CF.completedFuture(null);
+        return completableFuture != null ? CF.wrap(completableFuture) : CF.completedFuture(null);
     }
 }

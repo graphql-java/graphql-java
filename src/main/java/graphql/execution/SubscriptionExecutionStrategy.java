@@ -161,7 +161,7 @@ public class SubscriptionExecutionStrategy extends ExecutionStrategy {
         InstrumentationExecutionParameters i13nExecutionParameters = new InstrumentationExecutionParameters(
                 executionContext.getExecutionInput(), executionContext.getGraphQLSchema());
 
-        overallResult = overallResult.thenCompose(executionResult -> instrumentation.instrumentExecutionResult(executionResult, i13nExecutionParameters, executionContext.getInstrumentationState()));
+        overallResult = overallResult.thenCompose(executionResult -> CF.wrap(instrumentation.instrumentExecutionResult(executionResult, i13nExecutionParameters, executionContext.getInstrumentationState())));
         return overallResult;
     }
 

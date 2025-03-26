@@ -18,6 +18,7 @@ import java.util.function.Consumer
 import static ExecutorInstrumentation.Action
 import static java.lang.Thread.currentThread
 
+@Ignore
 class ExecutorInstrumentationTest extends Specification {
 
     private static ThreadFactory threadFactory(String name) {

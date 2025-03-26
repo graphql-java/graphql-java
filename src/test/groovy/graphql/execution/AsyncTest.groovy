@@ -8,7 +8,8 @@ import java.util.concurrent.CompletionException
 import java.util.function.BiFunction
 import java.util.function.Function
 
-import static java.util.concurrent.CompletableFuture.completedFuture
+import static graphql.execution.CF.completedFuture
+
 
 class AsyncTest extends Specification {
 

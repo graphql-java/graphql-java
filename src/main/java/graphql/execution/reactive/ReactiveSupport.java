@@ -2,6 +2,7 @@ package graphql.execution.reactive;
 
 import graphql.DuckTyped;
 import graphql.Internal;
+import graphql.execution.CF;
 import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
@@ -34,13 +35,13 @@ public class ReactiveSupport {
     private static CompletableFuture<Object> reactivePublisherToCF(Publisher<?> publisher) {
         ReactivePublisherToCompletableFuture<Object> cf = new ReactivePublisherToCompletableFuture<>();
         publisher.subscribe(cf);
-        return cf;
+        return CF.wrap(cf);
     }
 
     private static CompletableFuture<Object> flowPublisherToCF(Flow.Publisher<?> publisher) {
         FlowPublisherToCompletableFuture<Object> cf = new FlowPublisherToCompletableFuture<>();
         publisher.subscribe(cf);
-        return cf;
+        return CF.wrap(cf);
     }
 
     /**

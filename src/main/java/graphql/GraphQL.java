@@ -441,8 +441,7 @@ public class GraphQL {
                 return handleAbortException(executionInput, instrumentationState, abortException);
             }
         });
-        rootCF.complete(null);
-        return cf;
+        return cf.bridgeToDefaultCompletableFuture();
     }
 
     private CompletableFuture<ExecutionResult> handleAbortException(ExecutionInput executionInput, InstrumentationState instrumentationState, AbortExecutionException abortException) {
