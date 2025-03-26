@@ -280,7 +280,7 @@ public class Async {
         if (l instanceof CompletableFuture) {
             return (CompletableFuture<List<U>>) l;
         } else {
-            return CompletableFuture.completedFuture((List<U>) l);
+            return CF.completedFuture((List<U>) l);
         }
     }
 
@@ -359,9 +359,9 @@ public class Async {
     @SuppressWarnings("unchecked")
     public static <T> CompletableFuture<T> toCompletableFuture(Object t) {
         if (t instanceof CompletionStage) {
-            return ((CompletionStage<T>) t).toCompletableFuture();
+            return CF.wrap(((CompletionStage<T>) t).toCompletableFuture());
         } else {
-            return CompletableFuture.completedFuture((T) t);
+            return CF.completedFuture((T) t);
         }
     }
 

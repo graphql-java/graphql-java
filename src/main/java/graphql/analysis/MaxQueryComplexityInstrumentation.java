@@ -3,6 +3,7 @@ package graphql.analysis;
 import graphql.ExecutionResult;
 import graphql.PublicApi;
 import graphql.execution.AbortExecutionException;
+import graphql.execution.CF;
 import graphql.execution.ExecutionContext;
 import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationState;
@@ -80,7 +81,7 @@ public class MaxQueryComplexityInstrumentation extends SimplePerformantInstrumen
 
     @Override
     public @Nullable CompletableFuture<InstrumentationState> createStateAsync(InstrumentationCreateStateParameters parameters) {
-        return CompletableFuture.completedFuture(new State());
+        return CF.completedFuture(new State());
     }
 
     @Override

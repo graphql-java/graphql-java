@@ -50,7 +50,7 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
 
         Optional<ExecutionResult> isNotSensible = Introspection.isIntrospectionSensible(fields, executionContext);
         if (isNotSensible.isPresent()) {
-            return CompletableFuture.completedFuture(isNotSensible.get());
+            return CF.completedFuture(isNotSensible.get());
         }
 
         DeferredExecutionSupport deferredExecutionSupport = createDeferredExecutionSupport(executionContext, parameters);

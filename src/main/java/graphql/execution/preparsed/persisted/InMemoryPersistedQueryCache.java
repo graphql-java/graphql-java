@@ -3,6 +3,7 @@ package graphql.execution.preparsed.persisted;
 import graphql.Assert;
 import graphql.ExecutionInput;
 import graphql.PublicApi;
+import graphql.execution.CF;
 import graphql.execution.preparsed.PreparsedDocumentEntry;
 
 import java.util.HashMap;
@@ -46,7 +47,7 @@ public class InMemoryPersistedQueryCache implements PersistedQueryCache {
             }
             return onCacheMiss.apply(queryText);
         });
-        return CompletableFuture.completedFuture(documentEntry);
+        return CF.completedFuture(documentEntry);
     }
 
     public static Builder newInMemoryPersistedQueryCache() {

@@ -46,7 +46,7 @@ public class AsyncSerialExecutionStrategy extends AbstractAsyncExecutionStrategy
         // so belts and braces
         Optional<ExecutionResult> isNotSensible = Introspection.isIntrospectionSensible(fields, executionContext);
         if (isNotSensible.isPresent()) {
-            return CompletableFuture.completedFuture(isNotSensible.get());
+            return CF.completedFuture(isNotSensible.get());
         }
 
         CompletableFuture<List<Object>> resultsFuture = Async.eachSequentially(fieldNames, (fieldName, prevResults) -> {

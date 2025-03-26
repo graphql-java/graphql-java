@@ -5,6 +5,7 @@ import graphql.Assert;
 import graphql.Internal;
 import graphql.TrivialDataFetcher;
 import graphql.execution.Async;
+import graphql.execution.CF;
 import graphql.execution.instrumentation.InstrumentationState;
 import graphql.execution.instrumentation.SimplePerformantInstrumentation;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters;
@@ -160,7 +161,7 @@ public class ExecutorInstrumentation extends SimplePerformantInstrumentation {
         if (value instanceof CompletionStage) {
             return ((CompletionStage<?>) value);
         } else {
-            return CompletableFuture.completedFuture(value);
+            return CF.completedFuture(value);
         }
     }
 }

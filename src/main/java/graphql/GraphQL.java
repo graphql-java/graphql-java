@@ -480,7 +480,7 @@ public class GraphQL {
             try {
                 return execute(executionInputRef.get(), preparsedDocumentEntry.getDocument(), graphQLSchema, instrumentationState);
             } catch (AbortExecutionException e) {
-                return CompletableFuture.completedFuture(e.toExecutionResult());
+                return CF.completedFuture(e.toExecutionResult());
             }
         });
     }
