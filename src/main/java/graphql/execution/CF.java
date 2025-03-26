@@ -6,11 +6,12 @@ package graphql.execution;
  * http://creativecommons.org/publicdomain/zero/1.0/
  */
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import graphql.schema.DataFetchingEnvironment;
+import org.dataloader.DataLoaderRegistry;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CancellationException;
@@ -19,6 +20,7 @@ import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ForkJoinPool;
@@ -135,7 +137,6 @@ import java.util.function.Supplier;
  * @since 1.8
  */
 public class CF<T> extends CompletableFuture<T> {
-    private static final Logger log = LoggerFactory.getLogger(CF.class);
 
     /*
      * Overview:
@@ -1337,7 +1338,11 @@ public class CF<T> extends CompletableFuture<T> {
                         return null;
                     }
                     @SuppressWarnings("unchecked") T t = (T) r;
-                    CF<V> g = (CF<V>) f.apply(t).toCompletableFuture();
+                    CompletionStage<V> apply = f.apply(t).toCompletableFuture();
+                    if (!(apply instanceof CF)) {
+                        System.out.println("mmm");
+                    }
+                    CF<V> g = (CF<V>) apply;
                     if ((r = g.result) != null) {
                         d.completeRelay(r);
                     } else {
@@ -1800,6 +1805,38 @@ public class CF<T> extends CompletableFuture<T> {
         }
         return d;
     }
+
+    static CF<Void> andTreeEngine(CF<?>[] cfs,
+                                  int lo, int hi) {
+        CF<Void> d = new EngineCF<>();
+        if (lo > hi) // empty
+        {
+            d.assignResult(NIL);
+        } else {
+            CF<?> a, b;
+            Object r, s, z;
+            Throwable x;
+            int mid = (lo + hi) >>> 1;
+            if ((a = (lo == mid ? cfs[lo] :
+                    andTreeEngine(cfs, lo, mid))) == null ||
+                    (b = (lo == hi ? a : (hi == mid + 1) ? cfs[hi] :
+                            andTreeEngine(cfs, mid + 1, hi))) == null) {
+                throw new NullPointerException();
+            }
+            if ((r = a.result) == null || (s = b.result) == null) {
+                a.bipush(b, new BiRelay<>(d, a, b));
+            } else if ((r instanceof AltResult
+                    && (x = ((AltResult) (z = r)).ex) != null) ||
+                    (s instanceof AltResult
+                            && (x = ((AltResult) (z = s)).ex) != null)) {
+                d.assignResult(encodeThrowable(x, z));
+            } else {
+                d.assignResult(NIL);
+            }
+        }
+        return d;
+    }
+
 
     /* ------------- Projected (Ored) BiCompletions -------------- */
 
@@ -2338,8 +2375,9 @@ public class CF<T> extends CompletableFuture<T> {
 
     /* ------------- public methods -------------- */
 
-    public static CopyOnWriteArrayList<CF<?>> allNonBatchedCFs = new CopyOnWriteArrayList<>();
-    public static List<CF<?>> batchedCFs = new CopyOnWriteArrayList<>();
+    public static CopyOnWriteArrayList<CF<?>> allNormalCFs = new CopyOnWriteArrayList<>();
+    public static List<DataLoaderCF<?>> dataLoaderCFs = new CopyOnWriteArrayList<>();
+    public static List<DataLoaderCF<?>> completedDataLoaderCFs = new CopyOnWriteArrayList<>();
     public static Set<CF<?>> completedCfs = ConcurrentHashMap.newKeySet();
 
     /**
@@ -2359,23 +2397,20 @@ public class CF<T> extends CompletableFuture<T> {
     }
 
     private void newInstance() {
-        if ((this instanceof ToBatchCF)) {
-            System.out.println("NEW Batch instance");
-            batchedCFs.add(this);
+        if ((this instanceof DataLoaderCF)) {
+            dataLoaderCFs.add((DataLoaderCF<?>) this);
+        } else if ((this instanceof EngineCF)) {
+//            System.out.println("new Engine CF instance " + this);
         } else {
-            allNonBatchedCFs.add(this);
-            System.out.println("new CF instance " + this + " total count" + allNonBatchedCFs.size());
+            allNormalCFs.add(this);
+//            System.out.println("new CF instance " + this + " total count" + allNormalCFs.size());
         }
     }
 
     private void afterCompletedInternal() {
-        if (this.result != null) {
+        if (this.result != null && !(this instanceof DataLoaderCF) && !(this instanceof EngineCF)) {
             completedCfs.add(this);
-            System.out.println("completed CF instance " + this + " completed count: " + completedCfs.size());
-            if (completedCfs.size() == allNonBatchedCFs.size()) {
-                // Now it is time to resolve the Batched CFs
-                // ... trigger DataLoader here
-            }
+//            System.out.println("completed CF instance " + this + " completed count: " + completedCfs.size());
         }
     }
 
@@ -2849,6 +2884,11 @@ public class CF<T> extends CompletableFuture<T> {
         return andTree(cfs, 0, cfs.length - 1);
     }
 
+    public static CF<Void> allOfEngineCFs(CF<?>... cfs) {
+        return andTreeEngine(cfs, 0, cfs.length - 1);
+    }
+
+
     /**
      * Returns a new CF that is completed when any of
      * the given CFs complete, with the same result.
@@ -3053,7 +3093,7 @@ public class CF<T> extends CompletableFuture<T> {
      * returned by a CompletionStage method. Subclasses should
      * normally override this method to return an instance of the same
      * class as this CF. The default implementation
-     * returns an instance of class CF.
+     * returns an instance of class CompletableFuture.
      *
      * @param <U> the type of the value
      *
@@ -3298,7 +3338,7 @@ public class CF<T> extends CompletableFuture<T> {
         if (completableFuture instanceof CF) {
             return (CF<U>) completableFuture;
         }
-        CF<U> cf = new CF<>();
+        EngineCF<U> cf = new EngineCF<>();
         completableFuture.whenComplete((u, ex) -> {
             if (ex != null) {
                 cf.completeExceptionally(ex);
@@ -3562,17 +3602,95 @@ public class CF<T> extends CompletableFuture<T> {
         }
     }
 
-    private static class ToBatchCF<T> extends CF<T> {
+    private static class EngineCF<T> extends CF<T> {
 
-        final String batchName;
+        public EngineCF() {
+        }
 
-        private ToBatchCF(String batchName) {
-            this.batchName = batchName;
+        public EngineCF(Object r) {
+            super(r);
+        }
+
+        @Override
+        public <U> CF<U> newIncompleteFuture() {
+            return new EngineCF<>();
+        }
+
+    }
+
+    // meaning the CF is not considered when we decide to dispatch
+    public static <T> CF<T> newEngineCF() {
+        return new EngineCF<>();
+    }
+
+    public static <T> CF<T> completedEngineCF(Object value) {
+        return new EngineCF<>((value == null) ? NIL : value);
+    }
+
+
+    private static class DataLoaderCF<T> extends CF<T> {
+        final DataLoaderRegistry registry;
+        final String dataLoaderName;
+        final Object key;
+        final CompletableFuture<Object> dataLoaderCF;
+
+        volatile CountDownLatch latch;
+
+        public DataLoaderCF(DataLoaderRegistry registry, String dataLoaderName, Object key) {
+            this.registry = registry;
+            this.dataLoaderName = dataLoaderName;
+            this.key = key;
+            dataLoaderCF = registry.getDataLoader(dataLoaderName).load(key);
+            dataLoaderCF.whenComplete((value, throwable) -> {
+                if (throwable != null) {
+                    completeExceptionally(throwable);
+                } else {
+                    complete((T) value);
+                }
+                if (latch != null) {
+                    latch.countDown();
+                }
+            });
+        }
+
+        DataLoaderCF() {
+            this.registry = null;
+            this.dataLoaderName = null;
+            this.key = null;
+            dataLoaderCF = null;
+        }
+
+
+        @Override
+        public <U> CF<U> newIncompleteFuture() {
+            return new CF<>();
         }
     }
 
-    public static <T> CF<T> newBatchCF(String name) {
-        return new ToBatchCF<>(name);
+    public static void dispatch(DataLoaderRegistry dataLoaderRegistry) {
+        if (dataLoaderCFs.size() == 0) {
+            return;
+        }
+        List<DataLoaderCF<?>> dataLoaderCFCopy = new ArrayList<>(dataLoaderCFs);
+        dataLoaderCFs.clear();
+        CountDownLatch countDownLatch = new CountDownLatch(dataLoaderCFCopy.size());
+        for (DataLoaderCF dlCF : dataLoaderCFCopy) {
+            dlCF.latch = countDownLatch;
+        }
+        new Thread(() -> {
+            try {
+                // waiting until all DL CFs are completed
+                countDownLatch.await();
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+            dispatch(dataLoaderRegistry);
+        }).start();
+        dataLoaderRegistry.dispatchAll();
+    }
+
+    public static <T> CF<T> newDataLoaderCF(DataFetchingEnvironment environment, String dataLoaderName, Object key) {
+        return new DataLoaderCF<>(environment.getDataLoaderRegistry(), dataLoaderName, key);
     }
 
     // Replaced misc unsafe with VarHandle
@@ -3598,22 +3716,24 @@ public class CF<T> extends CompletableFuture<T> {
 
     public static void main(String[] args) {
         CompletableFuture<Object> future = new CompletableFuture<>();
-        CF<Object> cf = new CF<>();
-        // on the CompletableFuture level cf has a dependent on overall
-        CompletableFuture<Object> overall = future.thenCompose(o -> cf);
-
-        overall.whenComplete((o, throwable) ->
-                System.out.println("Future completed with: " + o)
-        );
-        future.complete(null);
-        cf.complete(null);
-
-        cf.thenCompose(x -> {
-            // some worka
-            return new CF<>();
+        future.thenApply(o -> {
+            System.out.println("1");
+            return null;
+        }).thenAccept(o -> {
+            System.out.println("1-1");
+        }).thenAccept(o -> {
+            System.out.println("1-2");
         });
-        // then compose is a two step: first the outer -> then the function -> then the result of the function
-
+        future.thenApply(o -> {
+            System.out.println("2");
+            return null;
+        }).thenAccept(o -> {
+            System.out.println("2-1");
+        }).thenAccept(o -> {
+            ;
+            System.out.println("2-2");
+        });
+        future.complete(null);
     }
 }
 

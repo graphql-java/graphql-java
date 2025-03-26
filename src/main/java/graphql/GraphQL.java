@@ -475,7 +475,7 @@ public class GraphQL {
         CF<PreparsedDocumentEntry> preparsedDoc = CF.wrap(preparsedDocumentProvider.getDocumentAsync(executionInput, computeFunction));
         return preparsedDoc.thenCompose(preparsedDocumentEntry -> {
             if (preparsedDocumentEntry.hasErrors()) {
-                return CF.completedFuture(new ExecutionResultImpl(preparsedDocumentEntry.getErrors()));
+                return CF.completedEngineCF(new ExecutionResultImpl(preparsedDocumentEntry.getErrors()));
             }
             try {
                 return execute(executionInputRef.get(), preparsedDocumentEntry.getDocument(), graphQLSchema, instrumentationState);

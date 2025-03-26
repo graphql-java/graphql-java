@@ -2,6 +2,7 @@ package graphql.execution.instrumentation.dataloader;
 
 import graphql.Assert;
 import graphql.Internal;
+import graphql.execution.CF;
 import graphql.execution.DataLoaderDispatchStrategy;
 import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionStrategyParameters;
@@ -276,7 +277,8 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
 
     void dispatch(int level) {
         DataLoaderRegistry dataLoaderRegistry = executionContext.getDataLoaderRegistry();
-        dataLoaderRegistry.dispatchAll();
+        CF.dispatch(dataLoaderRegistry);
+//        dataLoaderRegistry.dispatchAll();
     }
 
 }

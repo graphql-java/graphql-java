@@ -14,6 +14,6 @@ public class NoOpPreparsedDocumentProvider implements PreparsedDocumentProvider 
 
     @Override
     public CompletableFuture<PreparsedDocumentEntry> getDocumentAsync(ExecutionInput executionInput, Function<ExecutionInput, PreparsedDocumentEntry> parseAndValidateFunction) {
-        return CF.completedFuture(parseAndValidateFunction.apply(executionInput));
+        return CF.completedEngineCF(parseAndValidateFunction.apply(executionInput));
     }
 }

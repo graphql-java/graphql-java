@@ -58,7 +58,7 @@ public class AsyncSerialExecutionStrategy extends AbstractAsyncExecutionStrategy
             return resolveSerialField(executionContext, dataLoaderDispatcherStrategy, newParameters);
         });
 
-        CF<ExecutionResult> overallResult = new CF<>();
+        CF<ExecutionResult> overallResult = CF.newEngineCF();
         executionStrategyCtx.onDispatched();
 
         resultsFuture.whenComplete(handleResults(executionContext, fieldNames, overallResult));
