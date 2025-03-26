@@ -13,12 +13,10 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
@@ -2344,10 +2342,10 @@ public class CF<T> extends CompletableFuture<T> {
 
     /* ------------- public methods -------------- */
 
-    public static CopyOnWriteArrayList<CF<?>> allNormalCFs = new CopyOnWriteArrayList<>();
+    //    public static CopyOnWriteArrayList<CF<?>> allNormalCFs = new CopyOnWriteArrayList<>();
     public static List<DataLoaderCF<?>> dataLoaderCFs = new CopyOnWriteArrayList<>();
-    public static List<DataLoaderCF<?>> completedDataLoaderCFs = new CopyOnWriteArrayList<>();
-    public static Set<CF<?>> completedCfs = ConcurrentHashMap.newKeySet();
+//    public static List<DataLoaderCF<?>> completedDataLoaderCFs = new CopyOnWriteArrayList<>();
+//    public static Set<CF<?>> completedCfs = ConcurrentHashMap.newKeySet();
 
     /**
      * Creates a new incomplete CF.
@@ -2369,14 +2367,14 @@ public class CF<T> extends CompletableFuture<T> {
         if ((this instanceof DataLoaderCF)) {
             dataLoaderCFs.add((DataLoaderCF<?>) this);
         } else {
-            allNormalCFs.add(this);
+//            allNormalCFs.add(this);
 //            System.out.println("new CF instance " + this + " total count" + allNormalCFs.size());
         }
     }
 
     private void afterCompletedInternal() {
         if (this.result != null && !(this instanceof DataLoaderCF)) {
-            completedCfs.add(this);
+//            completedCfs.add(this);
 //            System.out.println("completed CF instance " + this + " completed count: " + completedCfs.size());
         }
     }
@@ -3666,25 +3664,6 @@ public class CF<T> extends CompletableFuture<T> {
 
 
     public static void main(String[] args) {
-        CompletableFuture<Object> future = new CompletableFuture<>();
-        future.thenApply(o -> {
-            System.out.println("1");
-            return null;
-        }).thenAccept(o -> {
-            System.out.println("1-1");
-        }).thenAccept(o -> {
-            System.out.println("1-2");
-        });
-        future.thenApply(o -> {
-            System.out.println("2");
-            return null;
-        }).thenAccept(o -> {
-            System.out.println("2-1");
-        }).thenAccept(o -> {
-            ;
-            System.out.println("2-2");
-        });
-        future.complete(null);
     }
 }
 
