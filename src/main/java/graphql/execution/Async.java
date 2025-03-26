@@ -303,7 +303,7 @@ public class Async {
                 Object value = cfOrMaterialisedValueFactory.apply(t);
                 futures.addObject(value);
             } catch (Exception e) {
-                CompletableFuture<Object> cf = new CompletableFuture<>();
+                CF<Object> cf = new CF<>();
                 // Async.each makes sure that it is not a CompletionException inside a CompletionException
                 cf.completeExceptionally(new CompletionException(e));
                 futures.add(cf);
@@ -313,7 +313,7 @@ public class Async {
     }
 
     public static <T, U> CompletableFuture<List<U>> eachSequentially(Iterable<T> list, BiFunction<T, List<U>, Object> cfOrMaterialisedValueFactory) {
-        CompletableFuture<List<U>> result = new CompletableFuture<>();
+        CF<List<U>> result = new CF<>();
         eachSequentiallyPolymorphicImpl(list.iterator(), cfOrMaterialisedValueFactory, new ArrayList<>(), result);
         return result;
     }
@@ -375,7 +375,7 @@ public class Async {
      */
     public static Object toCompletableFutureOrMaterializedObject(Object object) {
         if (object instanceof CompletionStage) {
-            return ((CompletionStage<?>) object).toCompletableFuture();
+            return CF.wrap(((CompletionStage<?>) object).toCompletableFuture());
         } else {
             return object;
         }
@@ -385,14 +385,12 @@ public class Async {
         try {
             return supplier.get();
         } catch (Exception e) {
-            CompletableFuture<T> result = new CompletableFuture<>();
-            result.completeExceptionally(e);
-            return result;
+            return exceptionallyCompletedFuture(e);
         }
     }
 
     public static <T> CompletableFuture<T> exceptionallyCompletedFuture(Throwable exception) {
-        CompletableFuture<T> result = new CompletableFuture<>();
+        CF<T> result = new CF<>();
         result.completeExceptionally(exception);
         return result;
     }

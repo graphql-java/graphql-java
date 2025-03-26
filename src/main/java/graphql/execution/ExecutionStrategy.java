@@ -607,7 +607,7 @@ public abstract class ExecutionStrategy {
 
     private <T> CompletableFuture<T> asyncHandleException(DataFetcherExceptionHandler handler, DataFetcherExceptionHandlerParameters handlerParameters) {
         //noinspection unchecked
-        return handler.handleException(handlerParameters).thenApply(
+        return CF.wrap(handler.handleException(handlerParameters)).thenApply(
                 handlerResult -> (T) DataFetcherResult.<FetchedValue>newResult().errors(handlerResult.getErrors()).build()
         );
     }

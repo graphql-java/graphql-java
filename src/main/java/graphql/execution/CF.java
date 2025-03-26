@@ -3604,6 +3604,7 @@ public class CF<T> extends CompletableFuture<T> {
 
     public static void dispatch(DataLoaderRegistry dataLoaderRegistry) {
         if (dataLoaderCFs.size() == 0) {
+            dataLoaderRegistry.dispatchAll();
             return;
         }
         List<DataLoaderCF<?>> dataLoaderCFCopy = new ArrayList<>(dataLoaderCFs);

@@ -141,7 +141,7 @@ public class ExecutorInstrumentation extends SimplePerformantInstrumentation {
 
     private CompletableFuture<CompletionStage<?>> invokedSync(DataFetcher<?> originalDataFetcher, DataFetchingEnvironment environment) {
         actionObserver.accept(FETCHING);
-        return CompletableFuture.completedFuture(invokeOriginalDF(originalDataFetcher, environment));
+        return CF.completedFuture(invokeOriginalDF(originalDataFetcher, environment));
     }
 
     private Function<CompletionStage<?>, CompletionStage<?>> processingControl() {

@@ -52,7 +52,7 @@ public interface Instrumentation {
     @Nullable
     default CompletableFuture<InstrumentationState> createStateAsync(InstrumentationCreateStateParameters parameters) {
         InstrumentationState state = createState(parameters);
-        return state == null ? null : CompletableFuture.completedFuture(state);
+        return state == null ? null : CF.completedFuture(state);
     }
 
     /**

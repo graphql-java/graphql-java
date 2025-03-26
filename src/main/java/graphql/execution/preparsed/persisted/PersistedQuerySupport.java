@@ -4,6 +4,7 @@ import graphql.ExecutionInput;
 import graphql.GraphQLError;
 import graphql.GraphqlErrorBuilder;
 import graphql.PublicSpi;
+import graphql.execution.CF;
 import graphql.execution.preparsed.PreparsedDocumentEntry;
 import graphql.execution.preparsed.PreparsedDocumentProvider;
 
@@ -12,7 +13,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 
 import static graphql.Assert.assertNotNull;
-import static java.util.concurrent.CompletableFuture.completedFuture;
 
 /**
  * This abstract class forms the basis for persistent query support.  Derived classes
@@ -59,9 +59,9 @@ public abstract class PersistedQuerySupport implements PreparsedDocumentProvider
                 });
             }
             // ok there is no query id - we assume the query is indeed ready to go as is - ie its not a persisted query
-            return completedFuture(parseAndValidateFunction.apply(executionInput));
+            return CF.completedFuture(parseAndValidateFunction.apply(executionInput));
         } catch (PersistedQueryError e) {
-            return completedFuture(mkMissingError(e));
+            return CF.completedFuture(mkMissingError(e));
         }
     }
 
