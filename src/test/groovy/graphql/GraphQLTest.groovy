@@ -130,13 +130,13 @@ class GraphQLTest extends Specification {
             return CF.newDataLoaderCF(env, "name", "Key1").thenCompose {
                 result ->
                     {
-                        CF.supplyAsync({
-                            Thread.sleep(500)
-                            return "";
-                        }).thenCompose {
+//                        CF.supplyAsync({
+//                            Thread.sleep(500)
+//                            return "";
+//                        }).thenCompose {
                             println "finished Dog outer DF with $result"
                             return CF.newDataLoaderCF(env, "name", result)
-                        }
+//                        }
                     }
             }
         } as DataFetcher
