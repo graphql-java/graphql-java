@@ -291,11 +291,11 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
 
     void dispatch(int level) {
         DataLoaderRegistry dataLoaderRegistry = executionContext.getDataLoaderRegistry();
-//        if (callStack.dataFetchingEnvironmentMap.isEmpty()) {
+        if (callStack.dataFetchingEnvironmentMap.isEmpty()) {
             dataLoaderRegistry.dispatchAll();
-//        } else {
-//            CF.dispatch(executionContext, callStack.dataFetchingEnvironmentMap.get(level));
-//        }
+        } else {
+            CF.dispatch(executionContext, callStack.dataFetchingEnvironmentMap.get(level));
+        }
     }
 
 }
