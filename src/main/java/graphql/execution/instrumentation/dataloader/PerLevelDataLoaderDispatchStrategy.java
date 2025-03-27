@@ -277,7 +277,7 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
 
     void dispatch(int level) {
         DataLoaderRegistry dataLoaderRegistry = executionContext.getDataLoaderRegistry();
-        CF.dispatch(dataLoaderRegistry);
+        CF.dispatch(executionContext);
 //        dataLoaderRegistry.dispatchAll();
     }
 

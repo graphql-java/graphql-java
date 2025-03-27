@@ -6,25 +6,34 @@ package graphql.execution;
  * http://creativecommons.org/publicdomain/zero/1.0/
  */
 
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Multimap;
+import com.google.common.collect.Multimaps;
 import graphql.schema.DataFetchingEnvironment;
 import org.dataloader.DataLoaderRegistry;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.CompletionStage;
-import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.ForkJoinTask;
 import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.ThreadFactory;
@@ -36,6 +45,8 @@ import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
+
+import static graphql.execution.Execution.EXECUTION_CONTEXT_KEY;
 
 /**
  * A {@link Future} that may be explicitly completed (setting its
@@ -2342,10 +2353,8 @@ public class CF<T> extends CompletableFuture<T> {
 
     /* ------------- public methods -------------- */
 
-    //    public static CopyOnWriteArrayList<CF<?>> allNormalCFs = new CopyOnWriteArrayList<>();
-    public static List<DataLoaderCF<?>> dataLoaderCFs = new CopyOnWriteArrayList<>();
-//    public static List<DataLoaderCF<?>> completedDataLoaderCFs = new CopyOnWriteArrayList<>();
-//    public static Set<CF<?>> completedCfs = ConcurrentHashMap.newKeySet();
+    static Multimap<ExecutionContext, DataLoaderCF<?>> executionToDataLoaderCFs = Multimaps.synchronizedMultimap(HashMultimap.create());
+    static Map<ExecutionContext, Set<DataFetchingEnvironment>> executionToFinishedDispatchingDFEs = new ConcurrentHashMap<>();
 
     /**
      * Creates a new incomplete CF.
@@ -2365,7 +2374,7 @@ public class CF<T> extends CompletableFuture<T> {
 
     private void newInstance() {
         if ((this instanceof DataLoaderCF)) {
-            dataLoaderCFs.add((DataLoaderCF<?>) this);
+//            dataLoaderCFs.add((DataLoaderCF<?>) this);
         } else {
 //            allNormalCFs.add(this);
 //            System.out.println("new CF instance " + this + " total count" + allNormalCFs.size());
@@ -3577,32 +3586,36 @@ public class CF<T> extends CompletableFuture<T> {
     }
 
     private static class DataLoaderCF<T> extends CF<T> {
-        final DataLoaderRegistry registry;
+        final DataFetchingEnvironment dfe;
         final String dataLoaderName;
         final Object key;
         final CompletableFuture<Object> dataLoaderCF;
 
         volatile CountDownLatch latch;
 
-        public DataLoaderCF(DataLoaderRegistry registry, String dataLoaderName, Object key) {
-            this.registry = registry;
+        public DataLoaderCF(DataFetchingEnvironment dfe, String dataLoaderName, Object key) {
+            this.dfe = dfe;
             this.dataLoaderName = dataLoaderName;
             this.key = key;
-            dataLoaderCF = registry.getDataLoader(dataLoaderName).load(key);
-            dataLoaderCF.whenComplete((value, throwable) -> {
-                if (throwable != null) {
-                    completeExceptionally(throwable);
-                } else {
-                    complete((T) value);
-                }
-                if (latch != null) {
-                    latch.countDown();
-                }
-            });
+            if (dataLoaderName != null) {
+                dataLoaderCF = dfe.getDataLoaderRegistry().getDataLoader(dataLoaderName).load(key);
+                dataLoaderCF.whenComplete((value, throwable) -> {
+                    if (throwable != null) {
+                        completeExceptionally(throwable);
+                    } else {
+                        complete((T) value);
+                    }
+                    if (latch != null) {
+                        latch.countDown();
+                    }
+                });
+            } else {
+                dataLoaderCF = null;
+            }
         }
 
         DataLoaderCF() {
-            this.registry = null;
+            this.dfe = null;
             this.dataLoaderName = null;
             this.key = null;
             dataLoaderCF = null;
@@ -3615,16 +3628,28 @@ public class CF<T> extends CompletableFuture<T> {
         }
     }
 
-    public static void dispatch(DataLoaderRegistry dataLoaderRegistry) {
+
+    public static void dispatch(ExecutionContext executionContext) {
+        dispatchImpl(executionContext, executionContext.getDataLoaderRegistry(), new LinkedHashSet<>());
+    }
+
+    static final ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
+
+    public static void dispatchImpl(ExecutionContext executionContext, DataLoaderRegistry dataLoaderRegistry, Set<DataFetchingEnvironment> seenDFEs) {
+        Collection<DataLoaderCF<?>> dataLoaderCFs = executionToDataLoaderCFs.get(executionContext);
         if (dataLoaderCFs.size() == 0) {
+            executionToFinishedDispatchingDFEs.put(executionContext, seenDFEs);
             dataLoaderRegistry.dispatchAll();
             return;
         }
+        // we are dispatching all data loaders and waiting for all dataLoaderCFs to complete
+        // and to finish their sync actions
         List<DataLoaderCF<?>> dataLoaderCFCopy = new ArrayList<>(dataLoaderCFs);
         dataLoaderCFs.clear();
         CountDownLatch countDownLatch = new CountDownLatch(dataLoaderCFCopy.size());
         for (DataLoaderCF dlCF : dataLoaderCFCopy) {
             dlCF.latch = countDownLatch;
+            seenDFEs.add(dlCF.dfe);
         }
         new Thread(() -> {
             try {
@@ -3633,13 +3658,39 @@ public class CF<T> extends CompletableFuture<T> {
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
-            dispatch(dataLoaderRegistry);
+            // now we handle all new DataLoaders
+            dispatchImpl(executionContext, dataLoaderRegistry, seenDFEs);
         }).start();
         dataLoaderRegistry.dispatchAll();
     }
 
-    public static <T> CF<T> newDataLoaderCF(DataFetchingEnvironment environment, String dataLoaderName, Object key) {
-        return new DataLoaderCF<>(environment.getDataLoaderRegistry(), dataLoaderName, key);
+    static final int BATCH_WINDOW_NANO_SECONDS = 500_000;
+
+    private static void dispatchIsolatedDataLoader(DataLoaderCF<?> dlCF) {
+        Runnable runnable = () -> {
+            dispatch(dlCF.dfe.getGraphQlContext().get(EXECUTION_CONTEXT_KEY));
+        };
+        scheduledExecutorService.schedule(runnable, BATCH_WINDOW_NANO_SECONDS, TimeUnit.NANOSECONDS);
+    }
+
+    public static <T> CF<T> newDataLoaderCF(DataFetchingEnvironment dfe, String dataLoaderName, Object key) {
+        DataLoaderCF<T> result = new DataLoaderCF<>(dfe, dataLoaderName, key);
+        ExecutionContext executionContext = dfe.getGraphQlContext().get(EXECUTION_CONTEXT_KEY);
+        executionToDataLoaderCFs.put(executionContext, result);
+        // this means it is a new DataLoader that was created during a DataFetcher after the
+        // dispatching for this fields was done already, so we need to handle it extra
+        Set<DataFetchingEnvironment> finishedDFe = executionToFinishedDispatchingDFEs.get(executionContext);
+        if (finishedDFe != null && finishedDFe.contains(dfe)) {
+            dispatchIsolatedDataLoader(result);
+        }
+        return result;
+    }
+
+    public static <U> CF<U> supplyAsyncDataLoaderCF(DataFetchingEnvironment env, Supplier<U> supplier) {
+        DataLoaderCF<U> d = new DataLoaderCF<>(env, null, null);
+        ASYNC_POOL.execute(new AsyncSupply<U>(d, supplier));
+        return d;
+
     }
 
     // Replaced misc unsafe with VarHandle

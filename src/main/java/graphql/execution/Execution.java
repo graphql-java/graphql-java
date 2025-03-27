@@ -57,6 +57,9 @@ public class Execution {
     private final ValueUnboxer valueUnboxer;
     private final boolean doNotAutomaticallyDispatchDataLoader;
 
+
+    public static final String EXECUTION_CONTEXT_KEY = "__GraphQL_Java_ExecutionContext";
+
     public Execution(ExecutionStrategy queryStrategy,
                      ExecutionStrategy mutationStrategy,
                      ExecutionStrategy subscriptionStrategy,
@@ -113,6 +116,7 @@ public class Execution {
                 .build();
 
         executionContext.getGraphQLContext().put(ResultNodesInfo.RESULT_NODES_INFO, executionContext.getResultNodesInfo());
+        executionContext.getGraphQLContext().put(EXECUTION_CONTEXT_KEY, executionContext);
 
         InstrumentationExecutionParameters parameters = new InstrumentationExecutionParameters(
                 executionInput, graphQLSchema
@@ -288,7 +292,7 @@ public class Execution {
 
     private boolean propagateErrorsOnNonNullContractFailure(List<Directive> directives) {
         boolean jvmWideEnabled = Directives.isExperimentalDisableErrorPropagationDirectiveEnabled();
-        if (! jvmWideEnabled) {
+        if (!jvmWideEnabled) {
             return true;
         }
         Directive foundDirective = NodeUtil.findNodeByName(directives, EXPERIMENTAL_DISABLE_ERROR_PROPAGATION_DIRECTIVE_DEFINITION.getName());
