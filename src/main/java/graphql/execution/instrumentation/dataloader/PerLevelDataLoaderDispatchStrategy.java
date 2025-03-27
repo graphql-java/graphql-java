@@ -253,7 +253,6 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
             if (CF.isDataLoaderCF(fetchedValue)) {
                 callStack.addDataLoaderDFE(level, dataFetchingEnvironment.get());
             }
-            callStack.increaseExpectedExecuteObjectCalls(level + 1, 1);
             return dispatchIfNeeded(level);
         });
         if (dispatchNeeded) {
@@ -292,11 +291,11 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
 
     void dispatch(int level) {
         DataLoaderRegistry dataLoaderRegistry = executionContext.getDataLoaderRegistry();
-        if (callStack.dataFetchingEnvironmentMap.isEmpty()) {
+//        if (callStack.dataFetchingEnvironmentMap.isEmpty()) {
             dataLoaderRegistry.dispatchAll();
-        } else {
-            CF.dispatch(executionContext, callStack.dataFetchingEnvironmentMap.get(level));
-        }
+//        } else {
+//            CF.dispatch(executionContext, callStack.dataFetchingEnvironmentMap.get(level));
+//        }
     }
 
 }
