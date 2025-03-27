@@ -4,7 +4,6 @@ import graphql.analysis.MaxQueryComplexityInstrumentation
 import graphql.analysis.MaxQueryDepthInstrumentation
 import graphql.execution.AsyncExecutionStrategy
 import graphql.execution.AsyncSerialExecutionStrategy
-import graphql.execution.CF
 import graphql.execution.DataFetcherExceptionHandler
 import graphql.execution.DataFetcherExceptionHandlerParameters
 import graphql.execution.DataFetcherExceptionHandlerResult
@@ -39,10 +38,6 @@ import graphql.schema.idl.errors.SchemaProblem
 import graphql.schema.validation.InvalidSchemaException
 import graphql.validation.ValidationError
 import graphql.validation.ValidationErrorType
-import org.dataloader.BatchLoader
-import org.dataloader.DataLoader
-import org.dataloader.DataLoaderFactory
-import org.dataloader.DataLoaderRegistry
 import spock.lang.Specification
 import spock.lang.Unroll
 
@@ -97,74 +92,6 @@ class GraphQLTest extends Specification {
         result == [hello: 'world']
     }
 
-    def "to batch"() {
-        given:
-        def sdl = '''
-
-        type Query {
-          dogName: String
-          catName: String
-        }
-        '''
-        BatchLoader<String, String> batchLoader = { keys ->
-            return CompletableFuture.supplyAsync {
-                Thread.sleep(1000)
-                println "BatchLoader called with keys: $keys"
-                if (keys.size() == 1) {
-                    return ["ONLY ONE KEY"]
-                } else {
-                    return ["Luna", "Tiger"]
-                }
-            }
-        }
-
-        DataLoader<String, String> nameDataLoader = DataLoaderFactory.newDataLoader(batchLoader);
-
-        DataLoaderRegistry dataLoaderRegistry = new DataLoaderRegistry();
-        //
-        // we make sure our dataloader is in the registry
-        dataLoaderRegistry.register("name", nameDataLoader);
-
-        def df1 = { env ->
-            println "DF1"
-            return CF.newDataLoaderCF(env, "name", "Key1").thenCompose {
-                result ->
-                    {
-//                        CF.supplyAsync({
-//                            Thread.sleep(500)
-//                            return "";
-//                        }).thenCompose {
-                            println "finished Dog outer DF with $result"
-                            return CF.newDataLoaderCF(env, "name", result)
-//                        }
-                    }
-            }
-        } as DataFetcher
-
-        def df2 = { env ->
-            println "DF2"
-            return CF.newDataLoaderCF(env, "name", "Key2").thenCompose {
-                result ->
-                    {
-                        println "finished Cat outer DF with $result"
-                        return CF.newDataLoaderCF(env, "name", result)
-                    }
-            }
-        } as DataFetcher
-
-
-        def fetchers = ["Query": ["dogName": df1, "catName": df2]]
-        def schema = TestUtil.schema(sdl, fetchers)
-        def graphQL = GraphQL.newGraphQL(schema).build()
-
-        def query = "{ dogName catName } "
-        def ei = newExecutionInput(query).dataLoaderRegistry(dataLoaderRegistry).build()
-
-        when:
-        def er = graphQL.execute(ei)
-        then:
-        er.data == [dogName: "Luna", catName: "Tiger"]
-    }
 
 
     def "query with sub-fields"() {
