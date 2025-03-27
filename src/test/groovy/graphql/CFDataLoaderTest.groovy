@@ -160,7 +160,7 @@ class CFDataLoaderTest extends Specification {
     }
 
 
-    def "chained data loaders with second one delayed"() {
+    def "chained data loaders with an isolated data loader"() {
         given:
         def sdl = '''
 
@@ -222,6 +222,63 @@ class CFDataLoaderTest extends Specification {
         then:
         er.data == [dogName: "Luna2", catName: "Tiger2"]
         batchLoadCalls == 3
+    }
+
+    def "chained data loaders with two isolated data loaders"() {
+        given:
+        def sdl = '''
+
+        type Query {
+          foo: String
+         bar: String
+        }
+        '''
+        int batchLoadCalls = 0
+        BatchLoader<String, String> batchLoader = { keys ->
+            return CompletableFuture.supplyAsync {
+                batchLoadCalls++
+                Thread.sleep(250)
+                println "BatchLoader called with keys: $keys"
+                return keys;
+            }
+        }
+
+        DataLoader<String, String> nameDataLoader = DataLoaderFactory.newDataLoader(batchLoader);
+
+        DataLoaderRegistry dataLoaderRegistry = new DataLoaderRegistry();
+        dataLoaderRegistry.register("dl", nameDataLoader);
+
+        def fooDF = { env ->
+            return CF.supplyAsyncDataLoaderCF(env, {
+                Thread.sleep(1000)
+                return "fooFirstValue"
+            }).thenCompose {
+                return CF.newDataLoaderCF(env, "dl", it)
+            }
+        } as DataFetcher
+
+        def barDF = { env ->
+            return CF.supplyAsyncDataLoaderCF(env, {
+                Thread.sleep(1000)
+                return "barFirstValue"
+            }).thenCompose {
+                return CF.newDataLoaderCF(env, "dl", it)
+            }
+        } as DataFetcher
+
+
+        def fetchers = ["Query": ["foo": fooDF, "bar": barDF]]
+        def schema = TestUtil.schema(sdl, fetchers)
+        def graphQL = GraphQL.newGraphQL(schema).build()
+
+        def query = "{ foo bar } "
+        def ei = newExecutionInput(query).dataLoaderRegistry(dataLoaderRegistry).build()
+
+        when:
+        def er = graphQL.execute(ei)
+        then:
+        er.data == [foo: "fooFirstValue", bar: "barFirstValue"]
+        batchLoadCalls == 1
     }
 
 

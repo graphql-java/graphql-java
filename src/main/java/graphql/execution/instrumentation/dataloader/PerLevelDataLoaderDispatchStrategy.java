@@ -8,12 +8,16 @@ import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionStrategyParameters;
 import graphql.execution.FieldValueInfo;
 import graphql.schema.DataFetcher;
+import graphql.schema.DataFetchingEnvironment;
 import graphql.util.LockKit;
 import org.dataloader.DataLoaderRegistry;
 
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Supplier;
 
 @Internal
 public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStrategy {
@@ -35,8 +39,14 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
 
         private final Set<Integer> dispatchedLevels = new LinkedHashSet<>();
 
+        private final Map<Integer, Set<DataFetchingEnvironment>> dataFetchingEnvironmentMap = new ConcurrentHashMap<>();
+
         public CallStack() {
             expectedExecuteObjectCallsPerLevel.set(1, 1);
+        }
+
+        public void addDataLoaderDFE(int level, DataFetchingEnvironment dfe) {
+            dataFetchingEnvironmentMap.computeIfAbsent(level, k -> new LinkedHashSet<>()).add(dfe);
         }
 
         void increaseExpectedFetchCount(int level, int count) {
@@ -233,12 +243,17 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
 
     @Override
     public void fieldFetched(ExecutionContext executionContext,
+                             Supplier<DataFetchingEnvironment> dataFetchingEnvironment,
                              ExecutionStrategyParameters executionStrategyParameters,
                              DataFetcher<?> dataFetcher,
                              Object fetchedValue) {
         int level = executionStrategyParameters.getPath().getLevel();
         boolean dispatchNeeded = callStack.lock.callLocked(() -> {
             callStack.increaseFetchCount(level);
+            if (CF.isDataLoaderCF(fetchedValue)) {
+                callStack.addDataLoaderDFE(level, dataFetchingEnvironment.get());
+            }
+            callStack.increaseExpectedExecuteObjectCalls(level + 1, 1);
             return dispatchIfNeeded(level);
         });
         if (dispatchNeeded) {
@@ -277,8 +292,11 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
 
     void dispatch(int level) {
         DataLoaderRegistry dataLoaderRegistry = executionContext.getDataLoaderRegistry();
-        CF.dispatch(executionContext);
-//        dataLoaderRegistry.dispatchAll();
+        if (callStack.dataFetchingEnvironmentMap.isEmpty()) {
+            dataLoaderRegistry.dispatchAll();
+        } else {
+            CF.dispatch(executionContext, callStack.dataFetchingEnvironmentMap.get(level));
+        }
     }
 
 }

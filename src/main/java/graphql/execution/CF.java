@@ -10,7 +10,6 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Multimaps;
 import graphql.schema.DataFetchingEnvironment;
-import org.dataloader.DataLoaderRegistry;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
@@ -2355,6 +2354,7 @@ public class CF<T> extends CompletableFuture<T> {
 
     static Multimap<ExecutionContext, DataLoaderCF<?>> executionToDataLoaderCFs = Multimaps.synchronizedMultimap(HashMultimap.create());
     static Map<ExecutionContext, Set<DataFetchingEnvironment>> executionToFinishedDispatchingDFEs = new ConcurrentHashMap<>();
+    static Map<ExecutionContext, Set<DataFetchingEnvironment>> executionToDfWithDataLoaderCF = new ConcurrentHashMap<>();
 
     /**
      * Creates a new incomplete CF.
@@ -3624,32 +3624,37 @@ public class CF<T> extends CompletableFuture<T> {
 
         @Override
         public <U> CF<U> newIncompleteFuture() {
-            return new CF<>();
+            return new DataLoaderCF<>();
         }
     }
 
 
-    public static void dispatch(ExecutionContext executionContext) {
-        dispatchImpl(executionContext, executionContext.getDataLoaderRegistry(), new LinkedHashSet<>());
+    public static void dispatch(ExecutionContext executionContext, Set<DataFetchingEnvironment> dfeToDispatch) {
+        dispatchImpl(executionContext, dfeToDispatch);
     }
 
     static final ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
 
-    public static void dispatchImpl(ExecutionContext executionContext, DataLoaderRegistry dataLoaderRegistry, Set<DataFetchingEnvironment> seenDFEs) {
+
+    public static void dispatchImpl(ExecutionContext executionContext, Set<DataFetchingEnvironment> dfeToDispatchSet) {
+
         Collection<DataLoaderCF<?>> dataLoaderCFs = executionToDataLoaderCFs.get(executionContext);
-        if (dataLoaderCFs.size() == 0) {
-            executionToFinishedDispatchingDFEs.put(executionContext, seenDFEs);
-            dataLoaderRegistry.dispatchAll();
+        List<DataLoaderCF<?>> relevantDataLoaderCFs = new ArrayList<>();
+        for (DataLoaderCF<?> dataLoaderCF : dataLoaderCFs) {
+            if (dfeToDispatchSet.contains(dataLoaderCF.dfe)) {
+                relevantDataLoaderCFs.add(dataLoaderCF);
+            }
+        }
+        dataLoaderCFs.removeAll(relevantDataLoaderCFs);
+        if (relevantDataLoaderCFs.size() == 0) {
+            executionToFinishedDispatchingDFEs.computeIfAbsent(executionContext, __ -> new LinkedHashSet<>()).addAll(dfeToDispatchSet);
             return;
         }
         // we are dispatching all data loaders and waiting for all dataLoaderCFs to complete
         // and to finish their sync actions
-        List<DataLoaderCF<?>> dataLoaderCFCopy = new ArrayList<>(dataLoaderCFs);
-        dataLoaderCFs.clear();
-        CountDownLatch countDownLatch = new CountDownLatch(dataLoaderCFCopy.size());
-        for (DataLoaderCF dlCF : dataLoaderCFCopy) {
+        CountDownLatch countDownLatch = new CountDownLatch(relevantDataLoaderCFs.size());
+        for (DataLoaderCF dlCF : relevantDataLoaderCFs) {
             dlCF.latch = countDownLatch;
-            seenDFEs.add(dlCF.dfe);
         }
         new Thread(() -> {
             try {
@@ -3659,18 +3664,31 @@ public class CF<T> extends CompletableFuture<T> {
                 throw new RuntimeException(e);
             }
             // now we handle all new DataLoaders
-            dispatchImpl(executionContext, dataLoaderRegistry, seenDFEs);
+            dispatchImpl(executionContext, dfeToDispatchSet);
         }).start();
-        dataLoaderRegistry.dispatchAll();
+        executionContext.getDataLoaderRegistry().dispatchAll();
     }
 
     static final int BATCH_WINDOW_NANO_SECONDS = 500_000;
 
-    private static void dispatchIsolatedDataLoader(DataLoaderCF<?> dlCF) {
-        Runnable runnable = () -> {
-            dispatch(dlCF.dfe.getGraphQlContext().get(EXECUTION_CONTEXT_KEY));
-        };
-        scheduledExecutorService.schedule(runnable, BATCH_WINDOW_NANO_SECONDS, TimeUnit.NANOSECONDS);
+    static final Map<ExecutionContext, Set<DataFetchingEnvironment>> batchWindowOfDfeToDispatch = new ConcurrentHashMap<>();
+    static final Set<ExecutionContext> scheduledExecutionContexts = ConcurrentHashMap.newKeySet();
+
+    private static void dispatchIsolatedDataLoader(ExecutionContext executionContext, DataLoaderCF<?> dlCF) {
+        synchronized (batchWindowOfDfeToDispatch) {
+            batchWindowOfDfeToDispatch.computeIfAbsent(executionContext, __ -> new LinkedHashSet<>()).add(dlCF.dfe);
+            if (!scheduledExecutionContexts.contains(executionContext)) {
+                System.out.println("new scheduled");
+                scheduledExecutionContexts.add(executionContext);
+                Runnable runnable = () -> {
+                    scheduledExecutionContexts.remove(executionContext);
+                    dispatch(executionContext, batchWindowOfDfeToDispatch.remove(executionContext));
+                };
+                scheduledExecutorService.schedule(runnable, BATCH_WINDOW_NANO_SECONDS, TimeUnit.NANOSECONDS);
+            } else {
+                System.out.println("already scheduled");
+            }
+        }
     }
 
     public static <T> CF<T> newDataLoaderCF(DataFetchingEnvironment dfe, String dataLoaderName, Object key) {
@@ -3681,17 +3699,41 @@ public class CF<T> extends CompletableFuture<T> {
         // dispatching for this fields was done already, so we need to handle it extra
         Set<DataFetchingEnvironment> finishedDFe = executionToFinishedDispatchingDFEs.get(executionContext);
         if (finishedDFe != null && finishedDFe.contains(dfe)) {
-            dispatchIsolatedDataLoader(result);
+            System.out.println("isolation dispatch");
+            dispatchIsolatedDataLoader(executionContext, result);
+        } else {
+            System.out.println("no isolation dispatch");
         }
         return result;
     }
 
     public static <U> CF<U> supplyAsyncDataLoaderCF(DataFetchingEnvironment env, Supplier<U> supplier) {
         DataLoaderCF<U> d = new DataLoaderCF<>(env, null, null);
+        ExecutionContext executionContext = env.getGraphQlContext().get(EXECUTION_CONTEXT_KEY);
+        executionToDfWithDataLoaderCF.computeIfAbsent(executionContext, ignored -> new LinkedHashSet<>()).add(env);
         ASYNC_POOL.execute(new AsyncSupply<U>(d, supplier));
         return d;
 
     }
+
+    public static <U> CF<U> wrapDataLoaderCF(DataFetchingEnvironment env, CompletableFuture<U> completableFuture) {
+        DataLoaderCF<U> d = new DataLoaderCF<>(env, null, null);
+        ExecutionContext executionContext = env.getGraphQlContext().get(EXECUTION_CONTEXT_KEY);
+        executionToDfWithDataLoaderCF.computeIfAbsent(executionContext, ignored -> new LinkedHashSet<>()).add(env);
+        completableFuture.whenComplete((u, ex) -> {
+            if (ex != null) {
+                d.completeExceptionally(ex);
+            } else {
+                d.complete(u);
+            }
+        });
+        return d;
+    }
+
+    public static boolean isDataLoaderCF(Object fetchedValue) {
+        return fetchedValue instanceof DataLoaderCF;
+    }
+
 
     // Replaced misc unsafe with VarHandle
     private static final VarHandle RESULT;

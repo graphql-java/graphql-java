@@ -496,7 +496,7 @@ public abstract class ExecutionStrategy {
         dataFetcher = instrumentation.instrumentDataFetcher(dataFetcher, instrumentationFieldFetchParams, executionContext.getInstrumentationState());
         dataFetcher = executionContext.getDataLoaderDispatcherStrategy().modifyDataFetcher(dataFetcher);
         Object fetchedObject = invokeDataFetcher(executionContext, parameters, fieldDef, dataFetchingEnvironment, dataFetcher);
-        executionContext.getDataLoaderDispatcherStrategy().fieldFetched(executionContext, parameters, dataFetcher, fetchedObject);
+        executionContext.getDataLoaderDispatcherStrategy().fieldFetched(executionContext, dataFetchingEnvironment, parameters, dataFetcher, fetchedObject);
         fetchCtx.onDispatched();
         fetchCtx.onFetchedValue(fetchedObject);
         // if it's a subscription, leave any reactive objects alone
