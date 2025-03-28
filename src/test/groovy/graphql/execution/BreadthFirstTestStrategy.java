@@ -35,13 +35,13 @@ public class BreadthFirstTestStrategy extends ExecutionStrategy {
     private Map<String, FetchedValue> fetchFields(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
         MergedSelectionSet fields = parameters.getFields();
 
-        Map<String, CF<FetchedValue>> fetchFutures = new LinkedHashMap<>();
+        Map<String, CompletableFuture<FetchedValue>> fetchFutures = new LinkedHashMap<>();
 
         // first fetch every value
         for (String fieldName : fields.keySet()) {
             ExecutionStrategyParameters newParameters = newParameters(parameters, fields, fieldName);
 
-            CF fetchFuture = (CF) Async.toCompletableFuture(fetchField(executionContext, newParameters));
+            CompletableFuture fetchFuture = (CompletableFuture) Async.toCompletableFuture(fetchField(executionContext, newParameters));
             fetchFutures.put(fieldName, fetchFuture);
         }
 
@@ -82,10 +82,10 @@ public class BreadthFirstTestStrategy extends ExecutionStrategy {
     }
 
 
-    public static <T> CF<List<T>> allOf(final Collection<CF<T>> futures) {
-        CF[] cfs = futures.toArray(new CF[futures.size()]);
+    public static <T> CompletableFuture<List<T>> allOf(final Collection<CompletableFuture<T>> futures) {
+        CompletableFuture[] cfs = futures.toArray(new CF[futures.size()]);
 
-        return CF.allOf(cfs)
+        return CompletableFuture.allOf(cfs)
                 .thenApply(vd -> futures.stream()
                         .map(CompletableFuture::join)
                         .collect(Collectors.toList())

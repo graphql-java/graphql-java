@@ -418,7 +418,7 @@ public class GraphQL {
 
         CompletableFuture<InstrumentationState> instrumentationStateCF = instrumentation.createStateAsync(new InstrumentationCreateStateParameters(this.graphQLSchema, executionInputWithId));
         CF<InstrumentationState> rootCF = Async.orNullCompletedFuture(instrumentationStateCF);
-        CF<ExecutionResult> cf = rootCF.thenCompose(instrumentationState -> {
+        CompletableFuture<ExecutionResult> cf = rootCF.thenCompose(instrumentationState -> {
             try {
                 InstrumentationExecutionParameters inputInstrumentationParameters = new InstrumentationExecutionParameters(executionInputWithId, this.graphQLSchema);
                 ExecutionInput instrumentedExecutionInput = instrumentation.instrumentExecutionInput(executionInputWithId, inputInstrumentationParameters, instrumentationState);
@@ -429,7 +429,7 @@ public class GraphQL {
 
                 GraphQLSchema graphQLSchema = instrumentation.instrumentSchema(this.graphQLSchema, instrumentationParameters, instrumentationState);
 
-                CF<ExecutionResult> executionResult = parseValidateAndExecute(instrumentedExecutionInput, graphQLSchema, instrumentationState);
+                CompletableFuture<ExecutionResult> executionResult = parseValidateAndExecute(instrumentedExecutionInput, graphQLSchema, instrumentationState);
                 //
                 // finish up instrumentation
                 executionResult = executionResult.whenComplete(completeInstrumentationCtxCF(executionInstrumentation));
@@ -441,11 +441,11 @@ public class GraphQL {
                 return handleAbortException(executionInput, instrumentationState, abortException);
             }
         });
-        return cf.bridgeToDefaultCompletableFuture();
+        return cf;
     }
 
     private CompletableFuture<ExecutionResult> handleAbortException(ExecutionInput executionInput, InstrumentationState instrumentationState, AbortExecutionException abortException) {
-        CF<ExecutionResult> executionResult = CF.completedFuture(abortException.toExecutionResult());
+        CompletableFuture<ExecutionResult> executionResult = CF.completedFuture(abortException.toExecutionResult());
         InstrumentationExecutionParameters instrumentationParameters = new InstrumentationExecutionParameters(executionInput, this.graphQLSchema);
         //
         // allow instrumentation to tweak the result
@@ -464,14 +464,14 @@ public class GraphQL {
     }
 
 
-    private CF<ExecutionResult> parseValidateAndExecute(ExecutionInput executionInput, GraphQLSchema graphQLSchema, InstrumentationState instrumentationState) {
+    private CompletableFuture<ExecutionResult> parseValidateAndExecute(ExecutionInput executionInput, GraphQLSchema graphQLSchema, InstrumentationState instrumentationState) {
         AtomicReference<ExecutionInput> executionInputRef = new AtomicReference<>(executionInput);
         Function<ExecutionInput, PreparsedDocumentEntry> computeFunction = transformedInput -> {
             // if they change the original query in the pre-parser, then we want to see it downstream from then on
             executionInputRef.set(transformedInput);
             return parseAndValidate(executionInputRef, graphQLSchema, instrumentationState);
         };
-        CF<PreparsedDocumentEntry> preparsedDoc = CF.wrap(preparsedDocumentProvider.getDocumentAsync(executionInput, computeFunction));
+        CompletableFuture<PreparsedDocumentEntry> preparsedDoc = CF.wrap(preparsedDocumentProvider.getDocumentAsync(executionInput, computeFunction));
         return preparsedDoc.thenCompose(preparsedDocumentEntry -> {
             if (preparsedDocumentEntry.hasErrors()) {
                 return CF.completedFuture(new ExecutionResultImpl(preparsedDocumentEntry.getErrors()));
