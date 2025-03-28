@@ -33,6 +33,7 @@ jobs:
             echo "Performance results already present"
             exit 0
           fi
+          git pull
           git commit -m "Add performance results for commit ${{ github.event.inputs.sha }}"
           git push
           

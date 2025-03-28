@@ -1,8 +1,12 @@
 name: Publish Commit SHA for performance testing
 on:
-  push:
+  pull_request:
+    types:
+      - closed
     branches:
       - master
+    paths-ignore:
+      - 'performance-results/**'
 permissions:
   id-token: write # This is required for requesting the JWT
   contents: read  # This is required for actions/checkout
