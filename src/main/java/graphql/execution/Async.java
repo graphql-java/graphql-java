@@ -108,7 +108,7 @@ public class Async {
         }
 
         // implementation details: infer the type of Completable<List<T>> from a singleton empty
-        private static final CompletableFuture<List<?>> EMPTY = CompletableFuture.completedFuture(Collections.emptyList());
+        private static final CompletableFuture<List<?>> EMPTY = CF.completedFuture(Collections.emptyList());
 
         @SuppressWarnings("unchecked")
         private static <T> CompletableFuture<T> typedEmpty() {
@@ -140,10 +140,10 @@ public class Async {
             if (value instanceof CompletableFuture) {
                 @SuppressWarnings("unchecked")
                 CompletableFuture<T> cf = (CompletableFuture<T>) value;
-                return cf.thenApply(Collections::singletonList);
+                return CF.wrap(cf).thenApply(Collections::singletonList);
             }
             //noinspection unchecked
-            return CompletableFuture.completedFuture(Collections.singletonList((T) value));
+            return CF.completedFuture(Collections.singletonList((T) value));
         }
 
         @Override
@@ -152,7 +152,7 @@ public class Async {
             if (value instanceof CompletableFuture) {
                 @SuppressWarnings("unchecked")
                 CompletableFuture<T> cf = (CompletableFuture<T>) value;
-                return cf.thenApply(Collections::singletonList);
+                return CF.wrap(cf).thenApply(Collections::singletonList);
             }
             //noinspection unchecked
             return Collections.singletonList((T) value);
@@ -194,12 +194,12 @@ public class Async {
         public CompletableFuture<List<T>> await() {
             commonSizeAssert();
 
-            CompletableFuture<List<T>> overallResult = new CompletableFuture<>();
+            CF<List<T>> overallResult = new CF<>();
             if (cfCount == 0) {
                 overallResult.complete(materialisedList(array));
             } else {
-                CompletableFuture<T>[] cfsArr = copyOnlyCFsToArray();
-                CompletableFuture.allOf(cfsArr)
+                CF<T>[] cfsArr = copyOnlyCFsToArray();
+                CF.allOf(cfsArr)
                         .whenComplete((ignored, exception) -> {
                             if (exception != null) {
                                 overallResult.completeExceptionally(exception);
@@ -231,16 +231,16 @@ public class Async {
 
         @SuppressWarnings("unchecked")
         @NonNull
-        private CompletableFuture<T>[] copyOnlyCFsToArray() {
+        private CF<T>[] copyOnlyCFsToArray() {
             if (cfCount == array.length) {
                 // if it's all CFs - make a type safe copy via C code
-                return Arrays.copyOf(array, array.length, CompletableFuture[].class);
+                return Arrays.copyOf(array, array.length, CF[].class);
             } else {
                 int i = 0;
-                CompletableFuture<T>[] dest = new CompletableFuture[cfCount];
+                CF<T>[] dest = new CF[cfCount];
                 for (Object o : array) {
-                    if (o instanceof CompletableFuture) {
-                        dest[i] = (CompletableFuture<T>) o;
+                    if (o instanceof CF) {
+                        dest[i] = (CF<T>) o;
                         i++;
                     }
                 }
@@ -278,9 +278,9 @@ public class Async {
     public static <T, U> CompletableFuture<List<U>> each(Collection<T> list, Function<T, Object> cfOrMaterialisedValueFactory) {
         Object l = eachPolymorphic(list, cfOrMaterialisedValueFactory);
         if (l instanceof CompletableFuture) {
-            return (CompletableFuture<List<U>>) l;
+            return CF.wrap((CompletableFuture<List<U>>) l);
         } else {
-            return CompletableFuture.completedFuture((List<U>) l);
+            return CF.completedFuture((List<U>) l);
         }
     }
 
@@ -303,7 +303,7 @@ public class Async {
                 Object value = cfOrMaterialisedValueFactory.apply(t);
                 futures.addObject(value);
             } catch (Exception e) {
-                CompletableFuture<Object> cf = new CompletableFuture<>();
+                CF<Object> cf = new CF<>();
                 // Async.each makes sure that it is not a CompletionException inside a CompletionException
                 cf.completeExceptionally(new CompletionException(e));
                 futures.add(cf);
@@ -313,7 +313,7 @@ public class Async {
     }
 
     public static <T, U> CompletableFuture<List<U>> eachSequentially(Iterable<T> list, BiFunction<T, List<U>, Object> cfOrMaterialisedValueFactory) {
-        CompletableFuture<List<U>> result = new CompletableFuture<>();
+        CF<List<U>> result = new CF<>();
         eachSequentiallyPolymorphicImpl(list.iterator(), cfOrMaterialisedValueFactory, new ArrayList<>(), result);
         return result;
     }
@@ -333,7 +333,7 @@ public class Async {
         }
         if (value instanceof CompletableFuture) {
             CompletableFuture<U> cf = (CompletableFuture<U>) value;
-            cf.whenComplete((cfResult, exception) -> {
+            CF.wrap(cf).whenComplete((cfResult, exception) -> {
                 if (exception != null) {
                     overallResult.completeExceptionally(exception);
                     return;
@@ -359,9 +359,9 @@ public class Async {
     @SuppressWarnings("unchecked")
     public static <T> CompletableFuture<T> toCompletableFuture(Object t) {
         if (t instanceof CompletionStage) {
-            return ((CompletionStage<T>) t).toCompletableFuture();
+            return CF.wrap(((CompletionStage<T>) t).toCompletableFuture());
         } else {
-            return CompletableFuture.completedFuture((T) t);
+            return CF.completedFuture((T) t);
         }
     }
 
@@ -375,7 +375,7 @@ public class Async {
      */
     public static Object toCompletableFutureOrMaterializedObject(Object object) {
         if (object instanceof CompletionStage) {
-            return ((CompletionStage<?>) object).toCompletableFuture();
+            return CF.wrap(((CompletionStage<?>) object).toCompletableFuture());
         } else {
             return object;
         }
@@ -385,14 +385,12 @@ public class Async {
         try {
             return supplier.get();
         } catch (Exception e) {
-            CompletableFuture<T> result = new CompletableFuture<>();
-            result.completeExceptionally(e);
-            return result;
+            return exceptionallyCompletedFuture(e);
         }
     }
 
     public static <T> CompletableFuture<T> exceptionallyCompletedFuture(Throwable exception) {
-        CompletableFuture<T> result = new CompletableFuture<>();
+        CF<T> result = new CF<>();
         result.completeExceptionally(exception);
         return result;
     }
@@ -405,7 +403,7 @@ public class Async {
      *
      * @return the completableFuture if it's not null or one that always resoles to null
      */
-    public static <T> @NonNull CompletableFuture<T> orNullCompletedFuture(@Nullable CompletableFuture<T> completableFuture) {
-        return completableFuture != null ? completableFuture : CompletableFuture.completedFuture(null);
+    public static <T> @NonNull CF<T> orNullCompletedFuture(@Nullable CompletableFuture<T> completableFuture) {
+        return completableFuture != null ? CF.wrap(completableFuture) : CF.completedFuture(null);
     }
 }

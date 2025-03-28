@@ -4,6 +4,7 @@ import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
 import graphql.PublicApi;
 import graphql.collect.ImmutableKit;
+import graphql.execution.CF;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationContext;
 import graphql.execution.instrumentation.InstrumentationState;
@@ -73,7 +74,7 @@ public class TracingInstrumentation extends SimplePerformantInstrumentation {
 
     @Override
     public @Nullable CompletableFuture<InstrumentationState> createStateAsync(InstrumentationCreateStateParameters parameters) {
-        return CompletableFuture.completedFuture(new TracingSupport(options.includeTrivialDataFetchers));
+        return CF.completedFuture(new TracingSupport(options.includeTrivialDataFetchers));
     }
 
     @Override
@@ -84,7 +85,7 @@ public class TracingInstrumentation extends SimplePerformantInstrumentation {
         Map<Object, Object> withTracingExt = new LinkedHashMap<>(currentExt == null ? ImmutableKit.emptyMap() : currentExt);
         withTracingExt.put("tracing", tracingSupport.snapshotTracingData());
 
-        return CompletableFuture.completedFuture(new ExecutionResultImpl(executionResult.getData(), executionResult.getErrors(), withTracingExt));
+        return CF.completedFuture(new ExecutionResultImpl(executionResult.getData(), executionResult.getErrors(), withTracingExt));
     }
 
     @Override

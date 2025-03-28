@@ -5,6 +5,7 @@ import graphql.Assert;
 import graphql.Internal;
 import graphql.TrivialDataFetcher;
 import graphql.execution.Async;
+import graphql.execution.CF;
 import graphql.execution.instrumentation.InstrumentationState;
 import graphql.execution.instrumentation.SimplePerformantInstrumentation;
 import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchParameters;
@@ -140,7 +141,7 @@ public class ExecutorInstrumentation extends SimplePerformantInstrumentation {
 
     private CompletableFuture<CompletionStage<?>> invokedSync(DataFetcher<?> originalDataFetcher, DataFetchingEnvironment environment) {
         actionObserver.accept(FETCHING);
-        return CompletableFuture.completedFuture(invokeOriginalDF(originalDataFetcher, environment));
+        return CF.completedFuture(invokeOriginalDF(originalDataFetcher, environment));
     }
 
     private Function<CompletionStage<?>, CompletionStage<?>> processingControl() {
@@ -160,7 +161,7 @@ public class ExecutorInstrumentation extends SimplePerformantInstrumentation {
         if (value instanceof CompletionStage) {
             return ((CompletionStage<?>) value);
         } else {
-            return CompletableFuture.completedFuture(value);
+            return CF.completedFuture(value);
         }
     }
 }

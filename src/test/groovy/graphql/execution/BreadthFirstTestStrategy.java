@@ -41,7 +41,7 @@ public class BreadthFirstTestStrategy extends ExecutionStrategy {
         for (String fieldName : fields.keySet()) {
             ExecutionStrategyParameters newParameters = newParameters(parameters, fields, fieldName);
 
-            CompletableFuture<FetchedValue> fetchFuture = Async.toCompletableFuture(fetchField(executionContext, newParameters));
+            CompletableFuture fetchFuture = (CompletableFuture) Async.toCompletableFuture(fetchField(executionContext, newParameters));
             fetchFutures.put(fieldName, fetchFuture);
         }
 
@@ -71,7 +71,7 @@ public class BreadthFirstTestStrategy extends ExecutionStrategy {
                 break;
             }
         }
-        return CompletableFuture.completedFuture(new ExecutionResultImpl(results, executionContext.getErrors()));
+        return CF.completedFuture(new ExecutionResultImpl(results, executionContext.getErrors()));
     }
 
     private ExecutionStrategyParameters newParameters(ExecutionStrategyParameters parameters, MergedSelectionSet fields, String fieldName) {
@@ -83,7 +83,7 @@ public class BreadthFirstTestStrategy extends ExecutionStrategy {
 
 
     public static <T> CompletableFuture<List<T>> allOf(final Collection<CompletableFuture<T>> futures) {
-        CompletableFuture[] cfs = futures.toArray(new CompletableFuture[futures.size()]);
+        CompletableFuture[] cfs = futures.toArray(new CF[futures.size()]);
 
         return CompletableFuture.allOf(cfs)
                 .thenApply(vd -> futures.stream()

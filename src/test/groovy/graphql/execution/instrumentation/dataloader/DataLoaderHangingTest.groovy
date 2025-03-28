@@ -6,6 +6,7 @@ import graphql.GraphQL
 import graphql.TestUtil
 import graphql.execution.Async
 import graphql.execution.AsyncExecutionStrategy
+import graphql.execution.CF
 import graphql.execution.DataFetcherExceptionHandler
 import graphql.execution.DataFetcherExceptionHandlerParameters
 import graphql.execution.DataFetcherExceptionHandlerResult
@@ -163,7 +164,7 @@ class DataLoaderHangingTest extends Specification {
                 assert res.errors.empty
             })
             // add all futures
-            futures.add(result)
+            futures.add(CF.wrap(result))
         }
         // wait for each future to complete and grab the results
         futures.await()

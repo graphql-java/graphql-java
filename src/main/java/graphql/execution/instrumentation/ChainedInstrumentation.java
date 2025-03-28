@@ -6,6 +6,7 @@ import graphql.ExecutionResult;
 import graphql.ExperimentalApi;
 import graphql.PublicApi;
 import graphql.execution.Async;
+import graphql.execution.CF;
 import graphql.execution.ExecutionContext;
 import graphql.execution.FieldValueInfo;
 import graphql.execution.instrumentation.parameters.InstrumentationCreateStateParameters;
@@ -254,7 +255,7 @@ public class ChainedInstrumentation implements Instrumentation {
             Instrumentation instrumentation = entry.getKey();
             InstrumentationState specificState = entry.getValue();
             ExecutionResult lastResult = !prevResults.isEmpty() ? prevResults.get(prevResults.size() - 1) : executionResult;
-            return instrumentation.instrumentExecutionResult(lastResult, parameters, specificState);
+            return CF.wrap(instrumentation.instrumentExecutionResult(lastResult, parameters, specificState));
         });
         return resultsFuture.thenApply((results) -> results.isEmpty() ? executionResult : results.get(results.size() - 1));
     }

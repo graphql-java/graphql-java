@@ -215,7 +215,7 @@ public abstract class ExecutionStrategy {
         DeferredExecutionSupport deferredExecutionSupport = createDeferredExecutionSupport(executionContext, parameters);
         Async.CombinedBuilder<FieldValueInfo> resolvedFieldFutures = getAsyncFieldValueInfo(executionContext, parameters, deferredExecutionSupport);
 
-        CompletableFuture<Map<String, Object>> overallResult = new CompletableFuture<>();
+        CompletableFuture<Map<String, Object>> overallResult = new CF<>();
         List<String> fieldsExecutedOnInitialResult = deferredExecutionSupport.getNonDeferredFieldNames(fieldNames);
         BiConsumer<List<Object>, Throwable> handleResultsConsumer = buildFieldValueMap(fieldsExecutedOnInitialResult, overallResult, executionContext);
 
@@ -496,7 +496,7 @@ public abstract class ExecutionStrategy {
         dataFetcher = instrumentation.instrumentDataFetcher(dataFetcher, instrumentationFieldFetchParams, executionContext.getInstrumentationState());
         dataFetcher = executionContext.getDataLoaderDispatcherStrategy().modifyDataFetcher(dataFetcher);
         Object fetchedObject = invokeDataFetcher(executionContext, parameters, fieldDef, dataFetchingEnvironment, dataFetcher);
-        executionContext.getDataLoaderDispatcherStrategy().fieldFetched(executionContext, parameters, dataFetcher, fetchedObject);
+        executionContext.getDataLoaderDispatcherStrategy().fieldFetched(executionContext, dataFetchingEnvironment, parameters, dataFetcher, fetchedObject);
         fetchCtx.onDispatched();
         fetchCtx.onFetchedValue(fetchedObject);
         // if it's a subscription, leave any reactive objects alone
@@ -607,7 +607,7 @@ public abstract class ExecutionStrategy {
 
     private <T> CompletableFuture<T> asyncHandleException(DataFetcherExceptionHandler handler, DataFetcherExceptionHandlerParameters handlerParameters) {
         //noinspection unchecked
-        return handler.handleException(handlerParameters).thenApply(
+        return CF.wrap(handler.handleException(handlerParameters)).thenApply(
                 handlerResult -> (T) DataFetcherResult.<FetchedValue>newResult().errors(handlerResult.getErrors()).build()
         );
     }
@@ -828,7 +828,7 @@ public abstract class ExecutionStrategy {
         if (listResults instanceof CompletableFuture) {
             @SuppressWarnings("unchecked")
             CompletableFuture<List<Object>> resultsFuture = (CompletableFuture<List<Object>>) listResults;
-            CompletableFuture<Object> overallResult = new CompletableFuture<>();
+            CompletableFuture<Object> overallResult = new CF<>();
             completeListCtx.onDispatched();
             overallResult.whenComplete(completeListCtx::onCompleted);
 

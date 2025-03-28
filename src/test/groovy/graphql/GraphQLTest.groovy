@@ -92,6 +92,8 @@ class GraphQLTest extends Specification {
         result == [hello: 'world']
     }
 
+
+
     def "query with sub-fields"() {
         given:
         GraphQLObjectType heroType = newObject()

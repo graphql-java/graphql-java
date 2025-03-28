@@ -36,6 +36,7 @@ import java.util.function.Supplier;
 @PublicApi
 public class ExecutionContext {
 
+
     private final GraphQLSchema graphQLSchema;
     private final ExecutionId executionId;
     private final InstrumentationState instrumentationState;

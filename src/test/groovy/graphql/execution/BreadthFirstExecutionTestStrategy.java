@@ -48,7 +48,7 @@ public class BreadthFirstExecutionTestStrategy extends ExecutionStrategy {
                 break;
             }
         }
-        return CompletableFuture.completedFuture(new ExecutionResultImpl(results, executionContext.getErrors()));
+        return CF.completedFuture(new ExecutionResultImpl(results, executionContext.getErrors()));
     }
 
     private FetchedValue fetchField(ExecutionContext executionContext, ExecutionStrategyParameters parameters, MergedSelectionSet fields, String fieldName) {

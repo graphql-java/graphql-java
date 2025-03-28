@@ -5,6 +5,7 @@ import graphql.ExecutionResult;
 import graphql.GraphQLError;
 import graphql.Internal;
 import graphql.execution.Async;
+import graphql.execution.CF;
 import graphql.execution.NonNullableFieldWasNullError;
 import graphql.execution.NonNullableFieldWasNullException;
 import graphql.execution.ResultPath;
@@ -66,7 +67,7 @@ public class DeferredFragmentCall implements IncrementalCall<DeferPayload> {
 
         calls.forEach(call -> {
             CompletableFuture<FieldWithExecutionResult> cf = call.get();
-            futures.add(cf);
+            futures.add(CF.wrap(cf));
         });
 
         return futures.await()

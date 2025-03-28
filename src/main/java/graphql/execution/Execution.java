@@ -29,8 +29,8 @@ import graphql.language.VariableDefinition;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.impl.SchemaUtil;
-import org.jspecify.annotations.NonNull;
 import graphql.util.FpKit;
+import org.jspecify.annotations.NonNull;
 import org.reactivestreams.Publisher;
 
 import java.util.Collections;
@@ -46,7 +46,6 @@ import static graphql.execution.ExecutionStepInfo.newExecutionStepInfo;
 import static graphql.execution.ExecutionStrategyParameters.newParameters;
 import static graphql.execution.instrumentation.SimpleInstrumentationContext.nonNullCtx;
 import static graphql.execution.instrumentation.dataloader.EmptyDataLoaderRegistryInstance.EMPTY_DATALOADER_REGISTRY;
-import static java.util.concurrent.CompletableFuture.completedFuture;
 
 @Internal
 public class Execution {
@@ -57,6 +56,9 @@ public class Execution {
     private final Instrumentation instrumentation;
     private final ValueUnboxer valueUnboxer;
     private final boolean doNotAutomaticallyDispatchDataLoader;
+
+
+    public static final String EXECUTION_CONTEXT_KEY = "__GraphQL_Java_ExecutionContext";
 
     public Execution(ExecutionStrategy queryStrategy,
                      ExecutionStrategy mutationStrategy,
@@ -82,7 +84,7 @@ public class Execution {
             normalizedVariableValues = normalizedVariableValues(graphQLSchema, executionInput, getOperationResult);
         } catch (RuntimeException rte) {
             if (rte instanceof GraphQLError) {
-                return completedFuture(new ExecutionResultImpl((GraphQLError) rte));
+                return CF.completedFuture(new ExecutionResultImpl((GraphQLError) rte));
             }
             throw rte;
         }
@@ -114,6 +116,7 @@ public class Execution {
                 .build();
 
         executionContext.getGraphQLContext().put(ResultNodesInfo.RESULT_NODES_INFO, executionContext.getResultNodesInfo());
+        executionContext.getGraphQLContext().put(EXECUTION_CONTEXT_KEY, executionContext);
 
         InstrumentationExecutionParameters parameters = new InstrumentationExecutionParameters(
                 executionInput, graphQLSchema
@@ -158,7 +161,7 @@ public class Execution {
         } catch (RuntimeException rte) {
             if (rte instanceof GraphQLError) {
                 ExecutionResult executionResult = new ExecutionResultImpl(Collections.singletonList((GraphQLError) rte));
-                CompletableFuture<ExecutionResult> resultCompletableFuture = completedFuture(executionResult);
+                CompletableFuture<ExecutionResult> resultCompletableFuture = CF.completedFuture(executionResult);
 
                 executeOperationCtx.onDispatched();
                 executeOperationCtx.onCompleted(executionResult, rte);
@@ -211,7 +214,7 @@ public class Execution {
             //
             // https://spec.graphql.org/October2021/#sec-Handling-Field-Errors
             //
-            result = completedFuture(new ExecutionResultImpl(null, executionContext.getErrors()));
+            result = CF.completedFuture(new ExecutionResultImpl(null, executionContext.getErrors()));
         }
 
         // note this happens NOW - not when the result completes
@@ -289,7 +292,7 @@ public class Execution {
 
     private boolean propagateErrorsOnNonNullContractFailure(List<Directive> directives) {
         boolean jvmWideEnabled = Directives.isExperimentalDisableErrorPropagationDirectiveEnabled();
-        if (! jvmWideEnabled) {
+        if (!jvmWideEnabled) {
             return true;
         }
         Directive foundDirective = NodeUtil.findNodeByName(directives, EXPERIMENTAL_DISABLE_ERROR_PROPAGATION_DIRECTIVE_DEFINITION.getName());
