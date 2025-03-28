@@ -1,5 +1,5 @@
 package graphql.execution;
-/* Original source from https://gee.cs.oswego.edu/dl/jsr166/src/jdk8/java/util/concurrent/CF.java
+/* Original source from https://gee.cs.oswego.edu/dl/jsr166/src/jdk8/java/util/concurrent/CompletableFuture.java
  *
  * Written by Doug Lea with assistance from members of JCP JSR-166
  * Expert Group and released to the public domain, as explained at
@@ -3605,6 +3605,7 @@ public class CF<T> extends CompletableFuture<T> {
                     } else {
                         complete((T) value);
                     }
+                    // post completion hook
                     if (latch != null) {
                         latch.countDown();
                     }
@@ -3638,6 +3639,7 @@ public class CF<T> extends CompletableFuture<T> {
 
     public static void dispatchImpl(ExecutionContext executionContext, Set<DataFetchingEnvironment> dfeToDispatchSet) {
 
+        // filter out all DataLoaderCFS that are matching the fields we want to dispatch
         Collection<DataLoaderCF<?>> dataLoaderCFs = executionToDataLoaderCFs.get(executionContext);
         List<DataLoaderCF<?>> relevantDataLoaderCFs = new ArrayList<>();
         for (DataLoaderCF<?> dataLoaderCF : dataLoaderCFs) {
@@ -3666,6 +3668,7 @@ public class CF<T> extends CompletableFuture<T> {
             // now we handle all new DataLoaders
             dispatchImpl(executionContext, dfeToDispatchSet);
         }).start();
+        //optimize: we should only dispatch the relevant DataLoaders, not all
         executionContext.getDataLoaderRegistry().dispatchAll();
     }
 
