@@ -33,6 +33,9 @@ class SubscriptionRootFieldNoSkipNoIncludeTest extends Specification {
             dog @skip(if: \$bool) {
                 name
             }
+            dog @include(if: true) {
+                nickname
+            }
         }
         """
 
