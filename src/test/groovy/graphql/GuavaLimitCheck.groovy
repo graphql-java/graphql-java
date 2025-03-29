@@ -14,23 +14,34 @@ class GuavaLimitCheck extends Specification {
     static final String GUAVA_PACKAGE_PREFIX = "com.google.common"
 
     static final Set<String> ALLOWED_GUAVA_CLASSES = [
-            "com.google.common.collect.ImmutableMap",
-            "com.google.common.collect.ImmutableSet",
-            "com.google.common.collect.ImmutableList",
             "com.google.common.base.Strings",
             "com.google.common.collect.BiMap",
-            "com.google.common.collect.HashBiMap",
-            "com.google.common.collect.ImmutableCollection",
-            "com.google.common.collect.LinkedHashMultimap",
-            "com.google.common.collect.Multimap",
-            "com.google.common.collect.Table",
-            "com.google.common.collect.Sets",
-            "com.google.common.collect.Multimaps",
-            "com.google.common.collect.Iterables",
             "com.google.common.collect.HashBasedTable",
+            "com.google.common.collect.HashBiMap",
             "com.google.common.collect.HashMultimap",
+            "com.google.common.collect.HashMultiset",
+            "com.google.common.collect.ImmutableBiMap",
+            "com.google.common.collect.ImmutableCollection",
+            "com.google.common.collect.ImmutableList",
+            "com.google.common.collect.ImmutableList\$Builder",
+            "com.google.common.collect.ImmutableListMultimap",
+            "com.google.common.collect.ImmutableListMultimap\$Builder",
+            "com.google.common.collect.ImmutableMap",
+            "com.google.common.collect.ImmutableMap\$Builder",
+            "com.google.common.collect.ImmutableSet",
+            "com.google.common.collect.ImmutableSet\$Builder",
             "com.google.common.collect.Interner",
-            "com.google.common.collect.Interners"
+            "com.google.common.collect.Interners",
+            "com.google.common.collect.Iterables",
+            "com.google.common.collect.LinkedHashMultimap",
+            "com.google.common.collect.Maps",
+            "com.google.common.collect.Multimap",
+            "com.google.common.collect.Multimaps",
+            "com.google.common.collect.Multiset",
+            "com.google.common.collect.Multisets",
+            "com.google.common.collect.Sets",
+            "com.google.common.collect.Sets\$SetView",
+            "com.google.common.collect.Table"
     ]
 
     def "should identify which classes use prohibited Guava dependencies"() {
