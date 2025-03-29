@@ -4,6 +4,7 @@ import graphql.ExecutionInput;
 import graphql.ExecutionResult;
 import graphql.PublicApi;
 import graphql.execution.CF;
+import graphql.execution.Execution;
 import graphql.execution.ExecutionContext;
 import graphql.execution.instrumentation.parameters.InstrumentationCreateStateParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecuteOperationParameters;
@@ -49,7 +50,8 @@ public class SimplePerformantInstrumentation implements Instrumentation {
     @Override
     public @Nullable CompletableFuture<InstrumentationState> createStateAsync(InstrumentationCreateStateParameters parameters) {
         InstrumentationState state = createState(parameters);
-        return state == null ? null : CF.completedFuture(state);
+        ExecutionContext executionContext = parameters.getExecutionInput().getGraphQLContext().get(Execution.EXECUTION_CONTEXT_KEY);
+        return state == null ? null : CF.completedFuture(state, executionContext);
     }
 
     @Override
@@ -139,6 +141,7 @@ public class SimplePerformantInstrumentation implements Instrumentation {
 
     @Override
     public @NonNull CompletableFuture<ExecutionResult> instrumentExecutionResult(ExecutionResult executionResult, InstrumentationExecutionParameters parameters, InstrumentationState state) {
-        return CF.completedFuture(executionResult);
+        ExecutionContext executionContext = parameters.getExecutionInput().getGraphQLContext().get(Execution.EXECUTION_CONTEXT_KEY);
+        return CF.completedFuture(executionResult, executionContext);
     }
 }

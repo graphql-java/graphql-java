@@ -46,7 +46,7 @@ public class AsyncSerialExecutionStrategy extends AbstractAsyncExecutionStrategy
         // so belts and braces
         Optional<ExecutionResult> isNotSensible = Introspection.isIntrospectionSensible(fields, executionContext);
         if (isNotSensible.isPresent()) {
-            return CF.completedFuture(isNotSensible.get());
+            return CF.completedFuture(isNotSensible.get(), executionContext);
         }
 
         CompletableFuture<List<Object>> resultsFuture = Async.eachSequentially(fieldNames, (fieldName, prevResults) -> {
@@ -56,9 +56,9 @@ public class AsyncSerialExecutionStrategy extends AbstractAsyncExecutionStrategy
                     .transform(builder -> builder.field(currentField).path(fieldPath));
 
             return resolveSerialField(executionContext, dataLoaderDispatcherStrategy, newParameters);
-        });
+        }, executionContext);
 
-        CF<ExecutionResult> overallResult = new CF<>();
+        CF<ExecutionResult> overallResult = new CF<>(executionContext);
         executionStrategyCtx.onDispatched();
 
         resultsFuture.whenComplete(handleResults(executionContext, fieldNames, overallResult));
@@ -76,7 +76,7 @@ public class AsyncSerialExecutionStrategy extends AbstractAsyncExecutionStrategy
             //noinspection unchecked
             return ((CompletableFuture<FieldValueInfo>) fieldWithInfo).thenCompose(fvi -> {
                 dataLoaderDispatcherStrategy.executionStrategyOnFieldValuesInfo(List.of(fvi));
-                return fvi.getFieldValueFuture();
+                return fvi.getFieldValueFuture(executionContext);
             });
         } else {
             FieldValueInfo fvi = (FieldValueInfo) fieldWithInfo;

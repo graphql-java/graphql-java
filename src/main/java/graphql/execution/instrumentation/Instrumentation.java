@@ -5,6 +5,7 @@ import graphql.ExecutionResult;
 import graphql.ExperimentalApi;
 import graphql.PublicSpi;
 import graphql.execution.CF;
+import graphql.execution.Execution;
 import graphql.execution.ExecutionContext;
 import graphql.execution.instrumentation.parameters.InstrumentationCreateStateParameters;
 import graphql.execution.instrumentation.parameters.InstrumentationExecuteOperationParameters;
@@ -52,7 +53,8 @@ public interface Instrumentation {
     @Nullable
     default CompletableFuture<InstrumentationState> createStateAsync(InstrumentationCreateStateParameters parameters) {
         InstrumentationState state = createState(parameters);
-        return state == null ? null : CF.completedFuture(state);
+        ExecutionContext executionContext = parameters.getExecutionInput().getGraphQLContext().get(Execution.EXECUTION_CONTEXT_KEY);
+        return state == null ? null : CF.completedFuture(state, executionContext);
     }
 
     /**
@@ -340,6 +342,7 @@ public interface Instrumentation {
      */
     @NonNull
     default CompletableFuture<ExecutionResult> instrumentExecutionResult(ExecutionResult executionResult, InstrumentationExecutionParameters parameters, InstrumentationState state) {
-        return CF.completedFuture(executionResult);
+        ExecutionContext executionContext = parameters.getExecutionInput().getGraphQLContext().get(Execution.EXECUTION_CONTEXT_KEY);
+        return CF.completedFuture(executionResult, executionContext);
     }
 }

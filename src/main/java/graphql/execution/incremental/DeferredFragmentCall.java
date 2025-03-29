@@ -6,6 +6,7 @@ import graphql.GraphQLError;
 import graphql.Internal;
 import graphql.execution.Async;
 import graphql.execution.CF;
+import graphql.execution.ExecutionContext;
 import graphql.execution.NonNullableFieldWasNullError;
 import graphql.execution.NonNullableFieldWasNullException;
 import graphql.execution.ResultPath;
@@ -48,26 +49,29 @@ public class DeferredFragmentCall implements IncrementalCall<DeferPayload> {
     private final ResultPath path;
     private final List<Supplier<CompletableFuture<FieldWithExecutionResult>>> calls;
     private final DeferredCallContext deferredCallContext;
+    private final ExecutionContext executionContext;
 
     public DeferredFragmentCall(
             String label,
             ResultPath path,
             List<Supplier<CompletableFuture<FieldWithExecutionResult>>> calls,
-            DeferredCallContext deferredCallContext
+            DeferredCallContext deferredCallContext,
+            ExecutionContext executionContext
     ) {
         this.label = label;
         this.path = path;
         this.calls = calls;
         this.deferredCallContext = deferredCallContext;
+        this.executionContext = executionContext;
     }
 
     @Override
     public CompletableFuture<DeferPayload> invoke() {
-        Async.CombinedBuilder<FieldWithExecutionResult> futures = Async.ofExpectedSize(calls.size());
+        Async.CombinedBuilder<FieldWithExecutionResult> futures = Async.ofExpectedSize(calls.size(), executionContext);
 
         calls.forEach(call -> {
             CompletableFuture<FieldWithExecutionResult> cf = call.get();
-            futures.add(CF.wrap(cf));
+            futures.add(CF.wrap(cf, executionContext));
         });
 
         return futures.await()

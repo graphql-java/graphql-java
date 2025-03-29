@@ -4,6 +4,8 @@ import graphql.Assert;
 import graphql.ExecutionInput;
 import graphql.PublicApi;
 import graphql.execution.CF;
+import graphql.execution.Execution;
+import graphql.execution.ExecutionContext;
 import graphql.execution.preparsed.PreparsedDocumentEntry;
 
 import java.util.HashMap;
@@ -47,7 +49,8 @@ public class InMemoryPersistedQueryCache implements PersistedQueryCache {
             }
             return onCacheMiss.apply(queryText);
         });
-        return CF.completedFuture(documentEntry);
+        ExecutionContext executionContext = executionInput.getGraphQLContext().get(Execution.EXECUTION_CONTEXT_KEY);
+        return CF.completedFuture(documentEntry, executionContext);
     }
 
     public static Builder newInMemoryPersistedQueryCache() {

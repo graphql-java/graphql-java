@@ -5,6 +5,8 @@ import graphql.GraphQLError;
 import graphql.GraphqlErrorBuilder;
 import graphql.PublicSpi;
 import graphql.execution.CF;
+import graphql.execution.Execution;
+import graphql.execution.ExecutionContext;
 import graphql.execution.preparsed.PreparsedDocumentEntry;
 import graphql.execution.preparsed.PreparsedDocumentProvider;
 
@@ -42,6 +44,7 @@ public abstract class PersistedQuerySupport implements PreparsedDocumentProvider
         Optional<Object> queryIdOption = getPersistedQueryId(executionInput);
         assertNotNull(queryIdOption, "The class %s MUST return a non null optional query id", this.getClass().getName());
 
+        ExecutionContext executionContext = executionInput.getGraphQLContext().get(Execution.EXECUTION_CONTEXT_KEY);
         try {
             if (queryIdOption.isPresent()) {
                 Object persistedQueryId = queryIdOption.get();
@@ -59,9 +62,9 @@ public abstract class PersistedQuerySupport implements PreparsedDocumentProvider
                 });
             }
             // ok there is no query id - we assume the query is indeed ready to go as is - ie its not a persisted query
-            return CF.completedFuture(parseAndValidateFunction.apply(executionInput));
+            return CF.completedFuture(parseAndValidateFunction.apply(executionInput), executionContext);
         } catch (PersistedQueryError e) {
-            return CF.completedFuture(mkMissingError(e));
+            return CF.completedFuture(mkMissingError(e), executionContext);
         }
     }
 

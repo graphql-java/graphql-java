@@ -267,7 +267,9 @@ public class CF<T> extends CompletableFuture<T> {
 
     volatile Object result;       // Either the result or boxed AltResult
     volatile Completion stack;    // Top of Treiber stack of dependent actions
+    public final ExecutionContext executionContext;
 
+    static final Map<ExecutionContext, Boolean> EXECUTION_RUNNING = new ConcurrentHashMap<>();
 
     final boolean internalComplete(Object r) { // CAS from null to r
         boolean result = RESULT.compareAndSet(this, null, r);
@@ -633,6 +635,7 @@ public class CF<T> extends CompletableFuture<T> {
         Executor executor;                 // executor to use (null if none)
         CF<V> dep;          // the dependent to complete
         CF<T> src;          // source for action
+        public volatile boolean finishedRunningCode; // true if completed
 
         UniCompletion(Executor executor, CF<V> dep,
                       CF<T> src) {
@@ -688,16 +691,12 @@ public class CF<T> extends CompletableFuture<T> {
      * or returns this to caller, depending on mode.
      */
     final CF<T> postFire(CF<?> a, int mode) {
-        if (a != null && a.stack != null) {
-            Object r;
-            if ((r = a.result) == null) {
-                a.cleanStack();
-            }
-            if (mode >= 0 && (r != null || a.result != null)) {
+        if (a.stack != null) {
+            if (mode >= 0) {
                 a.postComplete();
             }
         }
-        if (result != null && stack != null) {
+        if (stack != null) {
             if (mode < 0) {
                 return this;
             } else {
@@ -764,7 +763,7 @@ public class CF<T> extends CompletableFuture<T> {
         if ((r = result) != null) {
             return uniApplyNow(r, e, f);
         }
-        CF<V> d = newIncompleteFuture();
+        CF<V> d = newIncompleteFuture(executionContext);
         unipush(new UniApply<T, V>(e, d, this, f));
         return d;
     }
@@ -772,7 +771,7 @@ public class CF<T> extends CompletableFuture<T> {
     private <V> CF<V> uniApplyNow(
             Object r, Executor e, Function<? super T, ? extends V> f) {
         Throwable x;
-        CF<V> d = newIncompleteFuture();
+        CF<V> d = newIncompleteFuture(executionContext);
         if (r instanceof AltResult) {
             if ((x = ((AltResult) r).ex) != null) {
                 d.assignResult(encodeThrowable(x, r));
@@ -828,6 +827,7 @@ public class CF<T> extends CompletableFuture<T> {
                     } else {
                         @SuppressWarnings("unchecked") T t = (T) r;
                         f.accept(t);
+                        finishedRunningCode = true;
                         d.completeNull();
                     }
                 } catch (Throwable ex) {
@@ -850,7 +850,7 @@ public class CF<T> extends CompletableFuture<T> {
         if ((r = result) != null) {
             return uniAcceptNow(r, e, f);
         }
-        CF<Void> d = newIncompleteFuture();
+        CF<Void> d = newIncompleteFuture(executionContext);
         unipush(new UniAccept<T>(e, d, this, f));
         return d;
     }
@@ -858,7 +858,7 @@ public class CF<T> extends CompletableFuture<T> {
     private CF<Void> uniAcceptNow(
             Object r, Executor e, Consumer<? super T> f) {
         Throwable x;
-        CF<Void> d = newIncompleteFuture();
+        CF<Void> d = newIncompleteFuture(executionContext);
         if (r instanceof AltResult) {
             if ((x = ((AltResult) r).ex) != null) {
                 d.assignResult(encodeThrowable(x, r));
@@ -931,14 +931,14 @@ public class CF<T> extends CompletableFuture<T> {
         if ((r = result) != null) {
             return uniRunNow(r, e, f);
         }
-        CF<Void> d = newIncompleteFuture();
+        CF<Void> d = newIncompleteFuture(executionContext);
         unipush(new UniRun<T>(e, d, this, f));
         return d;
     }
 
     private CF<Void> uniRunNow(Object r, Executor e, Runnable f) {
         Throwable x;
-        CF<Void> d = newIncompleteFuture();
+        CF<Void> d = newIncompleteFuture(executionContext);
         if (r instanceof AltResult && (x = ((AltResult) r).ex) != null) {
             d.assignResult(encodeThrowable(x, r));
         } else {
@@ -1002,6 +1002,7 @@ public class CF<T> extends CompletableFuture<T> {
                     t = tr;
                 }
                 f.accept(t, x);
+
                 if (x == null) {
                     internalComplete(r);
                     return true;
@@ -1023,7 +1024,7 @@ public class CF<T> extends CompletableFuture<T> {
         if (f == null) {
             throw new NullPointerException();
         }
-        CF<T> d = newIncompleteFuture();
+        CF<T> d = newIncompleteFuture(executionContext);
         Object r;
         if ((r = result) == null) {
             unipush(new UniWhenComplete<T>(e, d, this, f));
@@ -1098,7 +1099,7 @@ public class CF<T> extends CompletableFuture<T> {
         if (f == null) {
             throw new NullPointerException();
         }
-        CF<V> d = newIncompleteFuture();
+        CF<V> d = newIncompleteFuture(executionContext);
         Object r;
         if ((r = result) == null) {
             unipush(new UniHandle<T, V>(e, d, this, f));
@@ -1168,7 +1169,7 @@ public class CF<T> extends CompletableFuture<T> {
         if (f == null) {
             throw new NullPointerException();
         }
-        CF<T> d = newIncompleteFuture();
+        CF<T> d = newIncompleteFuture(executionContext);
         Object r;
         if ((r = result) == null) {
             unipush(new UniExceptionally<T>(e, d, this, f));
@@ -1240,7 +1241,7 @@ public class CF<T> extends CompletableFuture<T> {
         if (f == null) {
             throw new NullPointerException();
         }
-        CF<T> d = newIncompleteFuture();
+        CF<T> d = newIncompleteFuture(executionContext);
         Object r, s;
         Throwable x;
         if ((r = result) == null) {
@@ -1290,9 +1291,9 @@ public class CF<T> extends CompletableFuture<T> {
     }
 
     private static <U, T extends U> CF<U> uniCopyStage(
-            CF<T> src) {
+            CF<T> src, ExecutionContext executionContext) {
         Object r;
-        CF<U> d = src.newIncompleteFuture();
+        CF<U> d = src.newIncompleteFuture(executionContext);
         if ((r = src.result) != null) {
             d.assignResult(encodeRelay(r));
         } else {
@@ -1301,15 +1302,15 @@ public class CF<T> extends CompletableFuture<T> {
         return d;
     }
 
-    private MinimalStage<T> uniAsMinimalStage() {
-        Object r;
-        if ((r = result) != null) {
-            return new MinimalStage<T>(encodeRelay(r));
-        }
-        MinimalStage<T> d = new MinimalStage<T>();
-        unipush(new UniRelay<T, T>(d, this));
-        return d;
-    }
+//    private MinimalStage<T> uniAsMinimalStage() {
+//        Object r;
+//        if ((r = result) != null) {
+//            return new MinimalStage<T>(encodeRelay(r));
+//        }
+//        MinimalStage<T> d = new MinimalStage<T>();
+//        unipush(new UniRelay<T, T>(d, this));
+//        return d;
+//    }
 
     @SuppressWarnings("serial")
     static final class UniCompose<T, V> extends UniCompletion<T, V> {
@@ -1372,7 +1373,7 @@ public class CF<T> extends CompletableFuture<T> {
         if (f == null) {
             throw new NullPointerException();
         }
-        CF<V> d = newIncompleteFuture();
+        CF<V> d = newIncompleteFuture(executionContext);
         Object r, s;
         Throwable x;
         if ((r = result) == null) {
@@ -1476,12 +1477,8 @@ public class CF<T> extends CompletableFuture<T> {
      */
     final CF<T> postFire(CF<?> a,
                          CF<?> b, int mode) {
-        if (b != null && b.stack != null) { // clean second source
-            Object r;
-            if ((r = b.result) == null) {
-                b.cleanStack();
-            }
-            if (mode >= 0 && (r != null || b.result != null)) {
+        if (b.stack != null) { // clean second source
+            if (mode >= 0) {
                 b.postComplete();
             }
         }
@@ -1561,7 +1558,7 @@ public class CF<T> extends CompletableFuture<T> {
         if (f == null || (b = (CF<U>) o.toCompletableFuture()) == null) {
             throw new NullPointerException();
         }
-        CF<V> d = newIncompleteFuture();
+        CF<V> d = newIncompleteFuture(executionContext);
         if ((r = result) == null || (s = b.result) == null) {
             bipush(b, new BiApply<T, U, V>(e, d, this, b, f));
         } else if (e == null) {
@@ -1650,7 +1647,7 @@ public class CF<T> extends CompletableFuture<T> {
         if (f == null || (b = (CF<U>) o.toCompletableFuture()) == null) {
             throw new NullPointerException();
         }
-        CF<Void> d = newIncompleteFuture();
+        CF<Void> d = newIncompleteFuture(executionContext);
         if ((r = result) == null || (s = b.result) == null) {
             bipush(b, new BiAccept<T, U>(e, d, this, b, f));
         } else if (e == null) {
@@ -1727,7 +1724,7 @@ public class CF<T> extends CompletableFuture<T> {
         if (f == null || (b = (CF<?>) o.toCompletableFuture()) == null) {
             throw new NullPointerException();
         }
-        CF<Void> d = newIncompleteFuture();
+        CF<Void> d = newIncompleteFuture(executionContext);
         if ((r = result) == null || (s = b.result) == null) {
             bipush(b, new BiRun<>(e, d, this, b, f));
         } else if (e == null) {
@@ -1781,8 +1778,9 @@ public class CF<T> extends CompletableFuture<T> {
      * Recursively constructs a tree of completions.
      */
     static CF<Void> andTree(CF<?>[] cfs,
-                            int lo, int hi) {
-        CF<Void> d = new CF<>();
+                            int lo, int hi,
+                            ExecutionContext executionContext) {
+        CF<Void> d = new CF<>(executionContext);
         if (lo > hi) // empty
         {
             d.assignResult(NIL);
@@ -1792,9 +1790,9 @@ public class CF<T> extends CompletableFuture<T> {
             Throwable x;
             int mid = (lo + hi) >>> 1;
             if ((a = (lo == mid ? cfs[lo] :
-                    andTree(cfs, lo, mid))) == null ||
+                    andTree(cfs, lo, mid, executionContext))) == null ||
                     (b = (lo == hi ? a : (hi == mid + 1) ? cfs[hi] :
-                            andTree(cfs, mid + 1, hi))) == null) {
+                            andTree(cfs, mid + 1, hi, executionContext))) == null) {
                 throw new NullPointerException();
             }
             if ((r = a.result) == null || (s = b.result) == null) {
@@ -1886,7 +1884,7 @@ public class CF<T> extends CompletableFuture<T> {
     }
 
     private <U extends T, V> CF<V> orApplyStage(
-            Executor e, CompletionStage<U> o, Function<? super T, ? extends V> f) {
+            Executor e, CompletionStage<U> o, Function<? super T, ? extends V> f, ExecutionContext executionContext) {
         CF<U> b;
         if (f == null || (b = (CF<U>) o.toCompletableFuture()) == null) {
             throw new NullPointerException();
@@ -1899,7 +1897,7 @@ public class CF<T> extends CompletableFuture<T> {
             return z.uniApplyNow(r, e, f);
         }
 
-        CF<V> d = newIncompleteFuture();
+        CF<V> d = newIncompleteFuture(executionContext);
         orpush(b, new OrApply<T, U, V>(e, d, this, b, f));
         return d;
     }
@@ -1969,7 +1967,7 @@ public class CF<T> extends CompletableFuture<T> {
             return z.uniAcceptNow(r, e, f);
         }
 
-        CF<Void> d = newIncompleteFuture();
+        CF<Void> d = newIncompleteFuture(executionContext);
         orpush(b, new OrAccept<T, U>(e, d, this, b, f));
         return d;
     }
@@ -2034,7 +2032,7 @@ public class CF<T> extends CompletableFuture<T> {
             return z.uniRunNow(r, e, f);
         }
 
-        CF<Void> d = newIncompleteFuture();
+        CF<Void> d = newIncompleteFuture(executionContext);
         orpush(b, new OrRun<>(e, d, this, b, f));
         return d;
     }
@@ -2134,11 +2132,12 @@ public class CF<T> extends CompletableFuture<T> {
     }
 
     static <U> CF<U> asyncSupplyStage(Executor e,
-                                      Supplier<U> f) {
+                                      Supplier<U> f,
+                                      ExecutionContext executionContext) {
         if (f == null) {
             throw new NullPointerException();
         }
-        CF<U> d = new CF<U>();
+        CF<U> d = new CF<U>(executionContext);
         e.execute(new AsyncSupply<U>(d, f));
         return d;
     }
@@ -2185,11 +2184,11 @@ public class CF<T> extends CompletableFuture<T> {
         }
     }
 
-    static CF<Void> asyncRunStage(Executor e, Runnable f) {
+    static CF<Void> asyncRunStage(Executor e, Runnable f, ExecutionContext executionContext) {
         if (f == null) {
             throw new NullPointerException();
         }
-        CF<Void> d = new CF<Void>();
+        CF<Void> d = new CF<Void>(executionContext);
         e.execute(new AsyncRun(d, f));
         return d;
     }
@@ -2359,15 +2358,17 @@ public class CF<T> extends CompletableFuture<T> {
     /**
      * Creates a new incomplete CF.
      */
-    public CF() {
+    public CF(ExecutionContext executionContext) {
+        this.executionContext = executionContext;
         newInstance();
     }
 
     /**
      * Creates a new complete CF with given encoded result.
      */
-    CF(Object r) {
+    CF(Object r, ExecutionContext executionContext) {
         this.result = r;
+        this.executionContext = executionContext;
         newInstance();
         afterCompletedInternal();
     }
@@ -2404,8 +2405,8 @@ public class CF<T> extends CompletableFuture<T> {
      *
      * @return the new CF
      */
-    public static <U> CF<U> supplyAsync(Supplier<U> supplier) {
-        return asyncSupplyStage(ASYNC_POOL, supplier);
+    public static <U> CF<U> supplyAsync(Supplier<U> supplier, ExecutionContext executionContext) {
+        return asyncSupplyStage(ASYNC_POOL, supplier, executionContext);
     }
 
     /**
@@ -2421,8 +2422,9 @@ public class CF<T> extends CompletableFuture<T> {
      * @return the new CF
      */
     public static <U> CF<U> supplyAsync(Supplier<U> supplier,
-                                        Executor executor) {
-        return asyncSupplyStage(screenExecutor(executor), supplier);
+                                        Executor executor,
+                                        ExecutionContext executionContext) {
+        return asyncSupplyStage(screenExecutor(executor), supplier, executionContext);
     }
 
     /**
@@ -2435,9 +2437,9 @@ public class CF<T> extends CompletableFuture<T> {
      *
      * @return the new CF
      */
-    public static CF<Void> runAsync(Runnable runnable) {
-        return asyncRunStage(ASYNC_POOL, runnable);
-    }
+//    public static CF<Void> runAsync(Runnable runnable,Exec) {
+//        return asyncRunStage(ASYNC_POOL, runnable);
+//    }
 
     /**
      * Returns a new CF that is asynchronously completed
@@ -2450,10 +2452,11 @@ public class CF<T> extends CompletableFuture<T> {
      *
      * @return the new CF
      */
-    public static CF<Void> runAsync(Runnable runnable,
-                                    Executor executor) {
-        return asyncRunStage(screenExecutor(executor), runnable);
-    }
+//    public static CF<Void> runAsync(Runnable runnable,
+//                                    Executor executor) {
+//        return asyncRunStage(screenExecutor(executor), runnable);
+//    }
+//
 
     /**
      * Returns a new CF that is already completed with
@@ -2464,8 +2467,8 @@ public class CF<T> extends CompletableFuture<T> {
      *
      * @return the completed CF
      */
-    public static <U> CF<U> completedFuture(U value) {
-        return new CF<>((value == null) ? NIL : value);
+    public static <U> CF<U> completedFuture(U value, ExecutionContext executionContext) {
+        return new CF<>((value == null) ? NIL : value, executionContext);
     }
 
     /**
@@ -2693,19 +2696,19 @@ public class CF<T> extends CompletableFuture<T> {
     }
 
     public <U> CF<U> applyToEither(
-            CompletionStage<? extends T> other, Function<? super T, U> fn) {
-        return orApplyStage(null, other, fn);
+            CompletionStage<? extends T> other, Function<? super T, U> fn, ExecutionContext executionContext) {
+        return orApplyStage(null, other, fn, executionContext);
     }
 
     public <U> CF<U> applyToEitherAsync(
             CompletionStage<? extends T> other, Function<? super T, U> fn) {
-        return orApplyStage(defaultExecutor(), other, fn);
+        return orApplyStage(defaultExecutor(), other, fn, executionContext);
     }
 
     public <U> CF<U> applyToEitherAsync(
             CompletionStage<? extends T> other, Function<? super T, U> fn,
             Executor executor) {
-        return orApplyStage(screenExecutor(executor), other, fn);
+        return orApplyStage(screenExecutor(executor), other, fn, executionContext);
     }
 
     public CF<Void> acceptEither(
@@ -2867,62 +2870,11 @@ public class CF<T> extends CompletableFuture<T> {
      * @throws NullPointerException if the array or any of its elements are
      *                              {@code null}
      */
-    public static CF<Void> allOf(CF<?>... cfs) {
-        return andTree(cfs, 0, cfs.length - 1);
+    public static CF<Void> allOf(ExecutionContext executionContext, CF<?>... cfs) {
+        return andTree(cfs, 0, cfs.length - 1, executionContext);
     }
 
 
-    /**
-     * Returns a new CF that is completed when any of
-     * the given CFs complete, with the same result.
-     * Otherwise, if it completed exceptionally, the returned
-     * CF also does so, with a CompletionException
-     * holding this exception as its cause.  If no CFs
-     * are provided, returns an incomplete CF.
-     *
-     * @param cfs the CFs
-     *
-     * @return a new CF that is completed with the
-     * result or exception of any of the given CFs when
-     * one completes
-     *
-     * @throws NullPointerException if the array or any of its elements are
-     *                              {@code null}
-     */
-    public static CF<Object> anyOf(CF<?>... cfs) {
-        int n;
-        Object r;
-        if ((n = cfs.length) <= 1) {
-            return (n == 0)
-                    ? new CF<Object>()
-                    : uniCopyStage(cfs[0]);
-        }
-        for (CF<?> cf : cfs) {
-            if ((r = cf.result) != null) {
-                return new CF<Object>(encodeRelay(r));
-            }
-        }
-        cfs = cfs.clone();
-        CF<Object> d = new CF<>();
-        for (CF<?> cf : cfs) {
-            cf.unipush(new AnyOf(d, cf, cfs));
-        }
-        // If d was completed while we were adding completions, we should
-        // clean the stack of any sources that may have had completions
-        // pushed on their stack after d was completed.
-        if (d.result != null) {
-            for (int i = 0, len = cfs.length; i < len; i++) {
-                if (cfs[i].result != null) {
-                    for (i++; i < len; i++) {
-                        if (cfs[i].result == null) {
-                            cfs[i].cleanStack();
-                        }
-                    }
-                }
-            }
-        }
-        return d;
-    }
 
     /* ------------- Control and status methods -------------- */
 
@@ -3084,8 +3036,8 @@ public class CF<T> extends CompletableFuture<T> {
      *
      * @since 9
      */
-    public <U> CF<U> newIncompleteFuture() {
-        return new CF<U>();
+    public <U> CF<U> newIncompleteFuture(ExecutionContext executionContext) {
+        return new CF<U>(executionContext);
     }
 
     /**
@@ -3120,7 +3072,7 @@ public class CF<T> extends CompletableFuture<T> {
      * @since 9
      */
     public CF<T> copy() {
-        return uniCopyStage(this);
+        return uniCopyStage(this, executionContext);
     }
 
     /**
@@ -3143,10 +3095,10 @@ public class CF<T> extends CompletableFuture<T> {
      * @return the new CompletionStage
      *
      * @since 9
-     */
-    public CompletionStage<T> minimalCompletionStage() {
-        return uniAsMinimalStage();
-    }
+    //     */
+//    public CompletionStage<T> minimalCompletionStage() {
+//        return uniAsMinimalStage();
+//    }
 
     /**
      * Completes this CF with the result of
@@ -3294,9 +3246,9 @@ public class CF<T> extends CompletableFuture<T> {
      *
      * @since 9
      */
-    public static <U> CompletionStage<U> completedStage(U value) {
-        return new MinimalStage<U>((value == null) ? NIL : value);
-    }
+//    public static <U> CompletionStage<U> completedStage(U value) {
+//        return new MinimalStage<U>((value == null) ? NIL : value);
+//    }
 
     /**
      * Returns a new CF that is already completed
@@ -3309,19 +3261,20 @@ public class CF<T> extends CompletableFuture<T> {
      *
      * @since 9
      */
-    public static <U> CF<U> failedFuture(Throwable ex) {
+    public static <U> CF<U> failedFuture(Throwable ex, ExecutionContext executionContext) {
         if (ex == null) {
             throw new NullPointerException();
         }
-        return new CF<U>(new AltResult(ex));
+        return new CF<U>(new AltResult(ex), executionContext);
     }
 
     public static <U> CF<U> wrap(
-            CompletableFuture<U> completableFuture) {
+            CompletableFuture<U> completableFuture,
+            ExecutionContext executionContext) {
         if (completableFuture instanceof CF) {
             return (CF<U>) completableFuture;
         }
-        CF<U> cf = new CF<>();
+        CF<U> cf = new CF<>(executionContext);
         completableFuture.whenComplete((u, ex) -> {
             if (ex != null) {
                 cf.completeExceptionally(ex);
@@ -3344,12 +3297,12 @@ public class CF<T> extends CompletableFuture<T> {
      *
      * @since 9
      */
-    public static <U> CompletionStage<U> failedStage(Throwable ex) {
-        if (ex == null) {
-            throw new NullPointerException();
-        }
-        return new MinimalStage<U>(new AltResult(ex));
-    }
+//    public static <U> CompletionStage<U> failedStage(Throwable ex) {
+//        if (ex == null) {
+//            throw new NullPointerException();
+//        }
+//        return new MinimalStage<U>(new AltResult(ex));
+//    }
 
     /**
      * Singleton delay scheduler, used only for starting and
@@ -3470,120 +3423,120 @@ public class CF<T> extends CompletableFuture<T> {
     /**
      * A subclass that just throws UOE for most non-CompletionStage methods.
      */
-    static final class MinimalStage<T> extends CF<T> {
-        MinimalStage() {
-        }
-
-        MinimalStage(Object r) {
-            super(r);
-        }
-
-        @Override
-        public <U> CF<U> newIncompleteFuture() {
-            return new MinimalStage<U>();
-        }
-
-        @Override
-        public T get() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public T get(long timeout, TimeUnit unit) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public T getNow(T valueIfAbsent) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public T join() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public boolean complete(T value) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public boolean completeExceptionally(Throwable ex) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public boolean cancel(boolean mayInterruptIfRunning) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void obtrudeValue(T value) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void obtrudeException(Throwable ex) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public boolean isDone() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public boolean isCancelled() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public boolean isCompletedExceptionally() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public int getNumberOfDependents() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public CF<T> completeAsync
-                (Supplier<? extends T> supplier, Executor executor) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public CF<T> completeAsync
-                (Supplier<? extends T> supplier) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public CF<T> orTimeout
-                (long timeout, TimeUnit unit) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public CF<T> completeOnTimeout
-                (T value, long timeout, TimeUnit unit) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public CF<T> toCompletableFuture() {
-            Object r;
-            if ((r = result) != null) {
-                return new CF<T>(encodeRelay(r));
-            } else {
-                CF<T> d = new CF<>();
-                unipush(new UniRelay<T, T>(d, this));
-                return d;
-            }
-        }
-    }
+//    static final class MinimalStage<T> extends CF<T> {
+//        MinimalStage() {
+//        }
+//
+//        MinimalStage(Object r) {
+//            super(r);
+//        }
+//
+//        @Override
+//        public <U> CF<U> newIncompleteFuture() {
+//            return new MinimalStage<U>();
+//        }
+//
+//        @Override
+//        public T get() {
+//            throw new UnsupportedOperationException();
+//        }
+//
+//        @Override
+//        public T get(long timeout, TimeUnit unit) {
+//            throw new UnsupportedOperationException();
+//        }
+//
+//        @Override
+//        public T getNow(T valueIfAbsent) {
+//            throw new UnsupportedOperationException();
+//        }
+//
+//        @Override
+//        public T join() {
+//            throw new UnsupportedOperationException();
+//        }
+//
+//        @Override
+//        public boolean complete(T value) {
+//            throw new UnsupportedOperationException();
+//        }
+//
+//        @Override
+//        public boolean completeExceptionally(Throwable ex) {
+//            throw new UnsupportedOperationException();
+//        }
+//
+//        @Override
+//        public boolean cancel(boolean mayInterruptIfRunning) {
+//            throw new UnsupportedOperationException();
+//        }
+//
+//        @Override
+//        public void obtrudeValue(T value) {
+//            throw new UnsupportedOperationException();
+//        }
+//
+//        @Override
+//        public void obtrudeException(Throwable ex) {
+//            throw new UnsupportedOperationException();
+//        }
+//
+//        @Override
+//        public boolean isDone() {
+//            throw new UnsupportedOperationException();
+//        }
+//
+//        @Override
+//        public boolean isCancelled() {
+//            throw new UnsupportedOperationException();
+//        }
+//
+//        @Override
+//        public boolean isCompletedExceptionally() {
+//            throw new UnsupportedOperationException();
+//        }
+//
+//        @Override
+//        public int getNumberOfDependents() {
+//            throw new UnsupportedOperationException();
+//        }
+//
+//        @Override
+//        public CF<T> completeAsync
+//                (Supplier<? extends T> supplier, Executor executor) {
+//            throw new UnsupportedOperationException();
+//        }
+//
+//        @Override
+//        public CF<T> completeAsync
+//                (Supplier<? extends T> supplier) {
+//            throw new UnsupportedOperationException();
+//        }
+//
+//        @Override
+//        public CF<T> orTimeout
+//                (long timeout, TimeUnit unit) {
+//            throw new UnsupportedOperationException();
+//        }
+//
+//        @Override
+//        public CF<T> completeOnTimeout
+//                (T value, long timeout, TimeUnit unit) {
+//            throw new UnsupportedOperationException();
+//        }
+//
+//        @Override
+//        public CF<T> toCompletableFuture() {
+//            Object r;
+//            if ((r = result) != null) {
+//                return new CF<T>(encodeRelay(r));
+//            } else {
+//                CF<T> d = new CF<>();
+//                unipush(new UniRelay<T, T>(d, this));
+//                return d;
+//            }
+//        }
+//    }
 
     private static class DataLoaderCF<T> extends CF<T> {
         final DataFetchingEnvironment dfe;
@@ -3594,6 +3547,7 @@ public class CF<T> extends CompletableFuture<T> {
         volatile CountDownLatch latch;
 
         public DataLoaderCF(DataFetchingEnvironment dfe, String dataLoaderName, Object key) {
+            super(dfe.getGraphQlContext().get(EXECUTION_CONTEXT_KEY));
             this.dfe = dfe;
             this.dataLoaderName = dataLoaderName;
             this.key = key;
@@ -3615,7 +3569,8 @@ public class CF<T> extends CompletableFuture<T> {
             }
         }
 
-        DataLoaderCF() {
+        DataLoaderCF(ExecutionContext executionContext) {
+            super(executionContext);
             this.dfe = null;
             this.dataLoaderName = null;
             this.key = null;
@@ -3625,7 +3580,12 @@ public class CF<T> extends CompletableFuture<T> {
 
         @Override
         public <U> CF<U> newIncompleteFuture() {
-            return new DataLoaderCF<>();
+            return new DataLoaderCF<>(executionContext);
+        }
+
+        @Override
+        public <U> CF<U> newIncompleteFuture(ExecutionContext executionContext) {
+            return new DataLoaderCF<>(executionContext);
         }
     }
 

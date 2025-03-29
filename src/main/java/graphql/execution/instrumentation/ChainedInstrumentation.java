@@ -34,6 +34,7 @@ import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 
 import static graphql.Assert.assertNotNull;
+import static graphql.execution.Execution.EXECUTION_CONTEXT_KEY;
 
 /**
  * This allows you to chain together a number of {@link graphql.execution.instrumentation.Instrumentation} implementations
@@ -251,12 +252,14 @@ public class ChainedInstrumentation implements Instrumentation {
     @Override
     public CompletableFuture<ExecutionResult> instrumentExecutionResult(ExecutionResult executionResult, InstrumentationExecutionParameters parameters, InstrumentationState state) {
         ImmutableList<Map.Entry<Instrumentation, InstrumentationState>> entries = chainedMapAndDropNulls(state, AbstractMap.SimpleEntry::new);
+        ExecutionContext executionContext = parameters.getExecutionInput().getGraphQLContext().get(EXECUTION_CONTEXT_KEY);
         CompletableFuture<List<ExecutionResult>> resultsFuture = Async.eachSequentially(entries, (entry, prevResults) -> {
             Instrumentation instrumentation = entry.getKey();
             InstrumentationState specificState = entry.getValue();
             ExecutionResult lastResult = !prevResults.isEmpty() ? prevResults.get(prevResults.size() - 1) : executionResult;
-            return CF.wrap(instrumentation.instrumentExecutionResult(lastResult, parameters, specificState));
-        });
+
+            return CF.wrap(instrumentation.instrumentExecutionResult(lastResult, parameters, specificState), executionContext);
+        }, executionContext);
         return resultsFuture.thenApply((results) -> results.isEmpty() ? executionResult : results.get(results.size() - 1));
     }
 
@@ -272,10 +275,11 @@ public class ChainedInstrumentation implements Instrumentation {
         }
 
         private static CompletableFuture<InstrumentationState> combineAll(List<Instrumentation> instrumentations, InstrumentationCreateStateParameters parameters) {
-            Async.CombinedBuilder<InstrumentationState> builder = Async.ofExpectedSize(instrumentations.size());
+            ExecutionContext executionContext = parameters.getExecutionInput().getGraphQLContext().get(EXECUTION_CONTEXT_KEY);
+            Async.CombinedBuilder<InstrumentationState> builder = Async.ofExpectedSize(instrumentations.size(), executionContext);
             for (Instrumentation instrumentation : instrumentations) {
                 // state can be null including the CF so handle that
-                CompletableFuture<InstrumentationState> stateCF = Async.orNullCompletedFuture(instrumentation.createStateAsync(parameters));
+                CompletableFuture<InstrumentationState> stateCF = Async.orNullCompletedFuture(instrumentation.createStateAsync(parameters), executionContext);
                 builder.add(stateCF);
             }
             return builder.await().thenApply(ChainedInstrumentationState::new);

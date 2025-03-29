@@ -124,7 +124,8 @@ public interface DeferredExecutionSupport {
                     deferredExecution.getLabel(),
                     this.parameters.getPath(),
                     calls,
-                    deferredCallContext
+                    deferredCallContext,
+                    executionContext
             );
         }
 
@@ -165,7 +166,7 @@ public interface DeferredExecutionSupport {
                                                     executionContext.getDataLoaderDispatcherStrategy().executeDeferredOnFieldValueInfo(fvi, executionStrategyParameters);
 
                                                     return fvi
-                                                            .getFieldValueFuture()
+                                                            .getFieldValueFuture(executionContext)
                                                             .thenApply(fv -> ExecutionResultImpl.newExecutionResult().data(fv).build());
                                                 }
                                         );

@@ -3,6 +3,7 @@ package graphql.execution.reactive;
 import graphql.DuckTyped;
 import graphql.Internal;
 import graphql.execution.CF;
+import graphql.execution.ExecutionContext;
 import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
 import org.reactivestreams.Subscription;
@@ -22,26 +23,26 @@ import java.util.concurrent.atomic.AtomicReference;
 public class ReactiveSupport {
 
     @DuckTyped(shape = "CompletableFuture | Object")
-    public static Object fetchedObject(Object fetchedObject) {
+    public static Object fetchedObject(Object fetchedObject, ExecutionContext executionContext) {
         if (fetchedObject instanceof Flow.Publisher) {
-            return flowPublisherToCF((Flow.Publisher<?>) fetchedObject);
+            return flowPublisherToCF((Flow.Publisher<?>) fetchedObject, executionContext);
         }
         if (fetchedObject instanceof Publisher) {
-            return reactivePublisherToCF((Publisher<?>) fetchedObject);
+            return reactivePublisherToCF((Publisher<?>) fetchedObject, executionContext);
         }
         return fetchedObject;
     }
 
-    private static CompletableFuture<Object> reactivePublisherToCF(Publisher<?> publisher) {
+    private static CompletableFuture<Object> reactivePublisherToCF(Publisher<?> publisher, ExecutionContext executionContext) {
         ReactivePublisherToCompletableFuture<Object> cf = new ReactivePublisherToCompletableFuture<>();
         publisher.subscribe(cf);
-        return CF.wrap(cf);
+        return CF.wrap(cf, executionContext);
     }
 
-    private static CompletableFuture<Object> flowPublisherToCF(Flow.Publisher<?> publisher) {
+    private static CompletableFuture<Object> flowPublisherToCF(Flow.Publisher<?> publisher, ExecutionContext executionContext) {
         FlowPublisherToCompletableFuture<Object> cf = new FlowPublisherToCompletableFuture<>();
         publisher.subscribe(cf);
-        return CF.wrap(cf);
+        return CF.wrap(cf, executionContext);
     }
 
     /**

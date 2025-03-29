@@ -41,12 +41,12 @@ public class BreadthFirstTestStrategy extends ExecutionStrategy {
         for (String fieldName : fields.keySet()) {
             ExecutionStrategyParameters newParameters = newParameters(parameters, fields, fieldName);
 
-            CF fetchFuture = (CF) Async.toCompletableFuture(fetchField(executionContext, newParameters));
+            CF fetchFuture = (CF) Async.toCompletableFuture(fetchField(executionContext, newParameters), executionContext);
             fetchFutures.put(fieldName, fetchFuture);
         }
 
         // now wait for all fetches to finish together via this join
-        allOf(fetchFutures.values()).join();
+        allOf(fetchFutures.values(), executionContext).join();
 
         Map<String, FetchedValue> fetchedValues = new LinkedHashMap<>();
         fetchFutures.forEach((k, v) -> fetchedValues.put(k, v.join()));
@@ -63,7 +63,7 @@ public class BreadthFirstTestStrategy extends ExecutionStrategy {
 
             FetchedValue fetchedValue = fetchedValues.get(fieldName);
             try {
-                Object resolvedResult = completeField(executionContext, newParameters, fetchedValue).getFieldValueFuture().join();
+                Object resolvedResult = completeField(executionContext, newParameters, fetchedValue).getFieldValueFuture(executionContext).join();
                 results.put(fieldName, resolvedResult);
             } catch (NonNullableFieldWasNullException e) {
                 assertNonNullFieldPrecondition(e);
@@ -82,10 +82,10 @@ public class BreadthFirstTestStrategy extends ExecutionStrategy {
     }
 
 
-    public static <T> CF<List<T>> allOf(final Collection<CF<T>> futures) {
+    public static <T> CF<List<T>> allOf(final Collection<CF<T>> futures, ExecutionContext executionContext) {
         CF[] cfs = futures.toArray(new CF[futures.size()]);
 
-        return CF.allOf(cfs)
+        return CF.allOf(executionContext, cfs)
                 .thenApply(vd -> futures.stream()
                         .map(CompletableFuture::join)
                         .collect(Collectors.toList())

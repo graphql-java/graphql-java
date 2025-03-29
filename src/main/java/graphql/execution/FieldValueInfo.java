@@ -1,8 +1,6 @@
 package graphql.execution;
 
 import com.google.common.collect.ImmutableList;
-import graphql.ExecutionResult;
-import graphql.ExecutionResultImpl;
 import graphql.PublicApi;
 
 import java.util.List;
@@ -70,8 +68,8 @@ public class FieldValueInfo {
      *
      * @return a {@link CompletableFuture} promise to the value
      */
-    public CompletableFuture<Object> getFieldValueFuture() {
-        return Async.toCompletableFuture(fieldValueObject);
+    public CompletableFuture<Object> getFieldValueFuture(ExecutionContext executionContext) {
+        return Async.toCompletableFuture(fieldValueObject, executionContext);
     }
 
     /**

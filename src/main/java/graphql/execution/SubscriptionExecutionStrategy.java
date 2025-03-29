@@ -107,7 +107,7 @@ public class SubscriptionExecutionStrategy extends ExecutionStrategy {
     private CompletableFuture<Publisher<Object>> createSourceEventStream(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
         ExecutionStrategyParameters newParameters = firstFieldOfSubscriptionSelection(parameters);
 
-        CompletableFuture<FetchedValue> fieldFetched = Async.toCompletableFuture(fetchField(executionContext, newParameters));
+        CompletableFuture<FetchedValue> fieldFetched = Async.toCompletableFuture(fetchField(executionContext, newParameters), executionContext);
         return fieldFetched.thenApply(fetchedValue -> {
             Object publisher = fetchedValue.getFetchedValue();
             if (publisher != null) {
@@ -149,7 +149,7 @@ public class SubscriptionExecutionStrategy extends ExecutionStrategy {
         FetchedValue fetchedValue = unboxPossibleDataFetcherResult(newExecutionContext, parameters, eventPayload);
         FieldValueInfo fieldValueInfo = completeField(newExecutionContext, newParameters, fetchedValue);
         CompletableFuture<ExecutionResult> overallResult = fieldValueInfo
-                .getFieldValueFuture()
+                .getFieldValueFuture(executionContext)
                 .thenApply(val -> new ExecutionResultImpl(val, newExecutionContext.getErrors()))
                 .thenApply(executionResult -> wrapWithRootFieldName(newParameters, executionResult));
 
@@ -161,7 +161,7 @@ public class SubscriptionExecutionStrategy extends ExecutionStrategy {
         InstrumentationExecutionParameters i13nExecutionParameters = new InstrumentationExecutionParameters(
                 executionContext.getExecutionInput(), executionContext.getGraphQLSchema());
 
-        overallResult = overallResult.thenCompose(executionResult -> CF.wrap(instrumentation.instrumentExecutionResult(executionResult, i13nExecutionParameters, executionContext.getInstrumentationState())));
+        overallResult = overallResult.thenCompose(executionResult -> CF.wrap(instrumentation.instrumentExecutionResult(executionResult, i13nExecutionParameters, executionContext.getInstrumentationState()), executionContext));
         return overallResult;
     }
 
