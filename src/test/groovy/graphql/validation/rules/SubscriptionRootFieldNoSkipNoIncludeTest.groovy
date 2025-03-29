@@ -47,8 +47,8 @@ class SubscriptionRootFieldNoSkipNoIncludeTest extends Specification {
     def "invalid subscription with @include directive on root field"() {
         given:
         def query = """
-        subscription MySubscription {
-            dog @include(if: true) {
+        subscription MySubscription(\$bool: Boolean = true) {
+            dog @include(if: \$bool) {
               name
             }
         }
@@ -62,16 +62,15 @@ class SubscriptionRootFieldNoSkipNoIncludeTest extends Specification {
         validationErrors.first().getMessage().contains("Subscription operation 'MySubscription' root field 'dog' must not use @skip nor @include directives in top level selection")
     }
 
-    // dz todo investigate NPE with field collector on spreads at root level
-    def "invalid subscription with directive in fragment spread"() {
+    def "invalid subscription with directive on root field in fragment spread"() {
         given:
         def query = """
-        subscription MySubscription {
-            ...dogFragment @skip(if: false)
+        subscription MySubscription(\$bool: Boolean = false) {
+            ...dogFragment
         }
         
-        fragment dogFragment on Subscription {
-            dog {
+        fragment dogFragment on SubscriptionRoot {
+            dog @skip(if: \$bool) {
               name
             }
         }
@@ -82,16 +81,15 @@ class SubscriptionRootFieldNoSkipNoIncludeTest extends Specification {
 
         then:
         validationErrors.size() == 1
-        validationErrors.first().getMessage() == "Subscription root field cannot have @skip directive."
+        validationErrors.first().getMessage().contains("Subscription operation 'MySubscription' root field 'dog' must not use @skip nor @include directives in top level selection")
     }
 
-    // dz todo investigate NPE with field collector on spreads at root level
-    def "invalid subscription with directive in inline fragment"() {
+    def "invalid subscription with directive on root field in inline fragment"() {
         given:
         def query = """
-        subscription MySubscription {
-            ... on Subscription @include(if: true) {
-                dog {
+        subscription MySubscription(\$bool: Boolean = true) {
+            ... on SubscriptionRoot {
+                dog @include(if: \$bool) {
                   name
                 }
             }
@@ -103,7 +101,7 @@ class SubscriptionRootFieldNoSkipNoIncludeTest extends Specification {
 
         then:
         validationErrors.size() == 1
-        validationErrors.first().getMessage() == "Subscription root fields cannot have @include directive."
+        validationErrors.first().getMessage().contains("Subscription operation 'MySubscription' root field 'dog' must not use @skip nor @include directives in top level selection")
     }
 
     def "@skip and @include directives are valid on query root fields"() {
