@@ -46,7 +46,7 @@ class GuavaLimitCheck extends Specification {
             def className = javaClass.name
             def guavaUsages = javaClass.getAccessesFromSelf()
                     .collect { it.targetOwner }
-                    .findAll { it.packageName.startsWith(GUAVA_PACKAGE_PREFIX) && !ALLOWED_GUAVA_CLASSES.contains(it) }
+                    .findAll { it.packageName.startsWith(GUAVA_PACKAGE_PREFIX) && !ALLOWED_GUAVA_CLASSES.contains(it.fullName) }
                     .toSet()
 
             if (!guavaUsages.isEmpty()) {
