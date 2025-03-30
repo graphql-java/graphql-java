@@ -3,6 +3,7 @@ package graphql.execution.instrumentation.dataloader;
 import graphql.Assert;
 import graphql.Internal;
 import graphql.execution.DataLoaderDispatchStrategy;
+import graphql.execution.Execution;
 import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionStrategyParameters;
 import graphql.execution.FieldValueInfo;
@@ -32,7 +33,7 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
     private final ExecutionContext executionContext;
 
     static final ScheduledExecutorService isolatedDLCFBatchWindowScheduler = Executors.newSingleThreadScheduledExecutor();
-    static final int BATCH_WINDOW_NANO_SECONDS = 500_000;
+    static final int BATCH_WINDOW_NANO_SECONDS = 100_000;
 
 
     private static class CallStack {
@@ -310,9 +311,8 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
     }
 
     void dispatch(int level) {
-        if (callStack.levelToDFEWithDataLoaderCF.size() > 0) {
-            dispatchDLCFImpl(callStack.levelToDFEWithDataLoaderCF.get(level));
-        } else {
+        // only dispatch if we don't use any DataLoaderCFs
+        if (callStack.levelToDFEWithDataLoaderCF.size() == 0) {
             DataLoaderRegistry dataLoaderRegistry = executionContext.getDataLoaderRegistry();
             dataLoaderRegistry.dispatchAll();
         }
@@ -359,28 +359,44 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
         callStack.lock.runLocked(() -> {
             callStack.allDataLoaderCF.add(dataLoaderCF);
         });
-        if (callStack.fieldsFinishedDispatching.contains(dataLoaderCF.dfe)) {
-            System.out.println("isolated dispatch");
-            dispatchIsolatedDataLoader(dataLoaderCF);
+//        if (callStack.fieldsFinishedDispatching.contains(dataLoaderCF.dfe)) {
+        System.out.println("isolated dispatch");
+        dispatchIsolatedDataLoader(dataLoaderCF);
+//        }
+
+    }
+
+    class TriggerDispatch implements Runnable {
+
+        final ExecutionContext executionContext;
+
+        TriggerDispatch(ExecutionContext executionContext) {
+            this.executionContext = executionContext;
         }
 
+        @Override
+        public void run() {
+            if (executionContext.isRunning()) {
+                isolatedDLCFBatchWindowScheduler.schedule(this, BATCH_WINDOW_NANO_SECONDS, TimeUnit.NANOSECONDS);
+                return;
+            }
+            AtomicReference<Set<DataFetchingEnvironment>> dfesToDispatch = new AtomicReference<>();
+            callStack.lock.runLocked(() -> {
+                dfesToDispatch.set(new LinkedHashSet<>(callStack.batchWindowOfIsolatedDfeToDispatch));
+                callStack.batchWindowOfIsolatedDfeToDispatch.clear();
+                callStack.batchWindowOpen = false;
+            });
+            dispatchDLCFImpl(dfesToDispatch.get());
+        }
     }
 
     private void dispatchIsolatedDataLoader(DataLoaderCF<?> dlCF) {
         callStack.lock.runLocked(() -> {
             callStack.batchWindowOfIsolatedDfeToDispatch.add(dlCF.dfe);
+            ExecutionContext executionContext = dlCF.dfe.getGraphQlContext().get(Execution.EXECUTION_CONTEXT_KEY);
             if (!callStack.batchWindowOpen) {
                 callStack.batchWindowOpen = true;
-                AtomicReference<Set<DataFetchingEnvironment>> dfesToDispatch = new AtomicReference<>();
-                Runnable runnable = () -> {
-                    callStack.lock.runLocked(() -> {
-                        dfesToDispatch.set(new LinkedHashSet<>(callStack.batchWindowOfIsolatedDfeToDispatch));
-                        callStack.batchWindowOfIsolatedDfeToDispatch.clear();
-                        callStack.batchWindowOpen = false;
-                    });
-                    dispatchDLCFImpl(dfesToDispatch.get());
-                };
-                isolatedDLCFBatchWindowScheduler.schedule(runnable, BATCH_WINDOW_NANO_SECONDS, TimeUnit.NANOSECONDS);
+                isolatedDLCFBatchWindowScheduler.schedule(new TriggerDispatch(executionContext), BATCH_WINDOW_NANO_SECONDS, TimeUnit.NANOSECONDS);
             }
 
         });
