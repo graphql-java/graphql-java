@@ -201,6 +201,7 @@ public abstract class ExecutionStrategy {
     @SuppressWarnings("unchecked")
     @DuckTyped(shape = "CompletableFuture<Map<String, Object>> | Map<String, Object>")
     protected Object executeObject(ExecutionContext executionContext, ExecutionStrategyParameters parameters) throws NonNullableFieldWasNullException {
+        executionContext.running();
         DataLoaderDispatchStrategy dataLoaderDispatcherStrategy = executionContext.getDataLoaderDispatcherStrategy();
         dataLoaderDispatcherStrategy.executeObject(executionContext, parameters);
         Instrumentation instrumentation = executionContext.getInstrumentation();
@@ -225,8 +226,10 @@ public abstract class ExecutionStrategy {
         if (fieldValueInfosResult instanceof CompletableFuture) {
             CompletableFuture<List<FieldValueInfo>> fieldValueInfos = (CompletableFuture<List<FieldValueInfo>>) fieldValueInfosResult;
             fieldValueInfos.whenComplete((completeValueInfos, throwable) -> {
+                executionContext.running();
                 if (throwable != null) {
                     handleResultsConsumer.accept(null, throwable);
+                    executionContext.finished();
                     return;
                 }
 
@@ -234,16 +237,20 @@ public abstract class ExecutionStrategy {
                 dataLoaderDispatcherStrategy.executeObjectOnFieldValuesInfo(completeValueInfos, parameters);
                 resolveObjectCtx.onFieldValuesInfo(completeValueInfos);
                 resultFutures.await().whenComplete(handleResultsConsumer);
+                executionContext.finished();
             }).exceptionally((ex) -> {
+                executionContext.running();
                 // if there are any issues with combining/handling the field results,
                 // complete the future at all costs and bubble up any thrown exception so
                 // the execution does not hang.
                 dataLoaderDispatcherStrategy.executeObjectOnFieldValuesException(ex, parameters);
                 resolveObjectCtx.onFieldValuesException();
                 overallResult.completeExceptionally(ex);
+                executionContext.finished();
                 return null;
             });
             overallResult.whenComplete(resolveObjectCtx::onCompleted);
+            executionContext.finished();
             return overallResult;
         } else {
             List<FieldValueInfo> completeValueInfos = (List<FieldValueInfo>) fieldValueInfosResult;
@@ -257,10 +264,12 @@ public abstract class ExecutionStrategy {
                 CompletableFuture<List<Object>> completedValues = (CompletableFuture<List<Object>>) completedValuesObject;
                 completedValues.whenComplete(handleResultsConsumer);
                 overallResult.whenComplete(resolveObjectCtx::onCompleted);
+                executionContext.finished();
                 return overallResult;
             } else {
                 Map<String, Object> fieldValueMap = buildFieldValueMap(fieldsExecutedOnInitialResult, (List<Object>) completedValuesObject);
                 resolveObjectCtx.onCompleted(fieldValueMap, null);
+                executionContext.finished();
                 return fieldValueMap;
             }
         }
@@ -276,12 +285,15 @@ public abstract class ExecutionStrategy {
 
     private BiConsumer<List<Object>, Throwable> buildFieldValueMap(List<String> fieldNames, CompletableFuture<Map<String, Object>> overallResult, ExecutionContext executionContext) {
         return (List<Object> results, Throwable exception) -> {
+            executionContext.running();
             if (exception != null) {
                 handleValueException(overallResult, exception, executionContext);
+                executionContext.finished();
                 return;
             }
             Map<String, Object> resolvedValuesByField = buildFieldValueMap(fieldNames, results);
             overallResult.complete(resolvedValuesByField);
+            executionContext.finished();
         };
     }
 
@@ -509,11 +521,15 @@ public abstract class ExecutionStrategy {
             CompletableFuture<Object> fetchedValue = (CompletableFuture<Object>) fetchedObject;
             return fetchedValue
                     .handle((result, exception) -> {
+                        executionContext.running();
                         fetchCtx.onCompleted(result, exception);
                         if (exception != null) {
-                            return handleFetchingException(dataFetchingEnvironment.get(), parameters, exception);
+                            CompletableFuture<Object> handleFetchingExceptionResult = handleFetchingException(dataFetchingEnvironment.get(), parameters, exception);
+                            executionContext.finished();
+                            return handleFetchingExceptionResult;
                         } else {
                             // we can simply return the fetched value CF and avoid a allocation
+                            executionContext.finished();
                             return fetchedValue;
                         }
                     })
@@ -553,7 +569,7 @@ public abstract class ExecutionStrategy {
     protected FetchedValue unboxPossibleDataFetcherResult(ExecutionContext executionContext,
                                                           ExecutionStrategyParameters parameters,
                                                           Object result) {
-
+        executionContext.running();
         if (result instanceof DataFetcherResult) {
             DataFetcherResult<?> dataFetcherResult = (DataFetcherResult<?>) result;
 
@@ -567,10 +583,14 @@ public abstract class ExecutionStrategy {
                 localContext = parameters.getLocalContext();
             }
             Object unBoxedValue = executionContext.getValueUnboxer().unbox(dataFetcherResult.getData());
-            return new FetchedValue(unBoxedValue, dataFetcherResult.getErrors(), localContext);
+            FetchedValue fetchedValue = new FetchedValue(unBoxedValue, dataFetcherResult.getErrors(), localContext);
+            executionContext.finished();
+            return fetchedValue;
         } else {
             Object unBoxedValue = executionContext.getValueUnboxer().unbox(result);
-            return new FetchedValue(unBoxedValue, ImmutableList.of(), parameters.getLocalContext());
+            FetchedValue fetchedValue = new FetchedValue(unBoxedValue, ImmutableList.of(), parameters.getLocalContext());
+            executionContext.finished();
+            return fetchedValue;
         }
     }
 
@@ -638,6 +658,7 @@ public abstract class ExecutionStrategy {
     }
 
     private FieldValueInfo completeField(GraphQLFieldDefinition fieldDef, ExecutionContext executionContext, ExecutionStrategyParameters parameters, FetchedValue fetchedValue) {
+        executionContext.running();
         GraphQLObjectType parentType = (GraphQLObjectType) parameters.getExecutionStepInfo().getUnwrappedNonNullType();
         ExecutionStepInfo executionStepInfo = createExecutionStepInfo(executionContext, parameters, fieldDef, parentType);
 
@@ -661,6 +682,7 @@ public abstract class ExecutionStrategy {
         CompletableFuture<Object> executionResultFuture = fieldValueInfo.getFieldValueFuture();
         ctxCompleteField.onDispatched();
         executionResultFuture.whenComplete(ctxCompleteField::onCompleted);
+        executionContext.finished();
         return fieldValueInfo;
     }
 
@@ -833,13 +855,16 @@ public abstract class ExecutionStrategy {
             overallResult.whenComplete(completeListCtx::onCompleted);
 
             resultsFuture.whenComplete((results, exception) -> {
+                executionContext.running();
                 if (exception != null) {
                     handleValueException(overallResult, exception, executionContext);
+                    executionContext.finished();
                     return;
                 }
                 List<Object> completedResults = new ArrayList<>(results.size());
                 completedResults.addAll(results);
                 overallResult.complete(completedResults);
+                executionContext.finished();
             });
             listOrPromiseToList = overallResult;
         } else {

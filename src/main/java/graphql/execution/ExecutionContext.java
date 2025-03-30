@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -62,6 +63,8 @@ public class ExecutionContext {
     private final ExecutionInput executionInput;
     private final Supplier<ExecutableNormalizedOperation> queryTree;
     private final boolean propagateErrorsOnNonNullContractFailure;
+
+    private final AtomicInteger isRunning = new AtomicInteger(0);
 
     // this is modified after creation so it needs to be volatile to ensure visibility across Threads
     private volatile DataLoaderDispatchStrategy dataLoaderDispatcherStrategy = DataLoaderDispatchStrategy.NO_OP;
@@ -141,7 +144,9 @@ public class ExecutionContext {
 
     /**
      * @param <T> for two
+     *
      * @return the legacy context
+     *
      * @deprecated use {@link #getGraphQLContext()} instead
      */
     @Deprecated(since = "2021-07-05")
@@ -184,6 +189,7 @@ public class ExecutionContext {
      * @return true if the current operation should propagate errors in non-null positions
      * Propagating errors is the default. Error aware clients may opt in returning null in non-null positions
      * by using the `@experimental_disableErrorPropagation` directive.
+     *
      * @see graphql.Directives#setExperimentalDisableErrorPropagationEnabled(boolean) to change the JVM wide default
      */
     @ExperimentalApi
@@ -338,6 +344,7 @@ public class ExecutionContext {
      * the current values and allows you to transform it how you want.
      *
      * @param builderConsumer the consumer code that will be given a builder to transform
+     *
      * @return a new ExecutionContext object based on calling build on that builder
      */
     public ExecutionContext transform(Consumer<ExecutionContextBuilder> builderConsumer) {
@@ -348,5 +355,20 @@ public class ExecutionContext {
 
     public ResultNodesInfo getResultNodesInfo() {
         return resultNodesInfo;
+    }
+
+    @Internal
+    public boolean isRunning() {
+        return isRunning.get() > 0;
+    }
+
+    @Internal
+    public void running() {
+        isRunning.incrementAndGet();
+    }
+
+    @Internal
+    public void finished() {
+        isRunning.decrementAndGet();
     }
 }

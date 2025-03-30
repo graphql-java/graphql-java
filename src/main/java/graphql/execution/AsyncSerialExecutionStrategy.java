@@ -32,6 +32,7 @@ public class AsyncSerialExecutionStrategy extends AbstractAsyncExecutionStrategy
     @Override
     @SuppressWarnings({"TypeParameterUnusedInFormals", "FutureReturnValueIgnored"})
     public CompletableFuture<ExecutionResult> execute(ExecutionContext executionContext, ExecutionStrategyParameters parameters) throws NonNullableFieldWasNullException {
+        executionContext.running();
         DataLoaderDispatchStrategy dataLoaderDispatcherStrategy = executionContext.getDataLoaderDispatcherStrategy();
 
         Instrumentation instrumentation = executionContext.getInstrumentation();
@@ -46,16 +47,20 @@ public class AsyncSerialExecutionStrategy extends AbstractAsyncExecutionStrategy
         // so belts and braces
         Optional<ExecutionResult> isNotSensible = Introspection.isIntrospectionSensible(fields, executionContext);
         if (isNotSensible.isPresent()) {
+            executionContext.finished();
             return CompletableFuture.completedFuture(isNotSensible.get());
         }
 
         CompletableFuture<List<Object>> resultsFuture = Async.eachSequentially(fieldNames, (fieldName, prevResults) -> {
+            executionContext.running();
             MergedField currentField = fields.getSubField(fieldName);
             ResultPath fieldPath = parameters.getPath().segment(mkNameForPath(currentField));
             ExecutionStrategyParameters newParameters = parameters
                     .transform(builder -> builder.field(currentField).path(fieldPath));
 
-            return resolveSerialField(executionContext, dataLoaderDispatcherStrategy, newParameters);
+            Object resolveSerialField = resolveSerialField(executionContext, dataLoaderDispatcherStrategy, newParameters);
+            executionContext.finished();
+            return resolveSerialField;
         });
 
         CompletableFuture<ExecutionResult> overallResult = new CompletableFuture<>();
@@ -63,6 +68,7 @@ public class AsyncSerialExecutionStrategy extends AbstractAsyncExecutionStrategy
 
         resultsFuture.whenComplete(handleResults(executionContext, fieldNames, overallResult));
         overallResult.whenComplete(executionStrategyCtx::onCompleted);
+        executionContext.finished();
         return overallResult;
     }
 
@@ -75,8 +81,11 @@ public class AsyncSerialExecutionStrategy extends AbstractAsyncExecutionStrategy
         if (fieldWithInfo instanceof CompletableFuture) {
             //noinspection unchecked
             return ((CompletableFuture<FieldValueInfo>) fieldWithInfo).thenCompose(fvi -> {
+                executionContext.running();
                 dataLoaderDispatcherStrategy.executionStrategyOnFieldValuesInfo(List.of(fvi));
-                return fvi.getFieldValueFuture();
+                CompletableFuture<Object> fieldValueFuture = fvi.getFieldValueFuture();
+                executionContext.finished();
+                return fieldValueFuture;
             });
         } else {
             FieldValueInfo fvi = (FieldValueInfo) fieldWithInfo;
