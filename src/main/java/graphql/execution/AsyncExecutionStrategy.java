@@ -38,6 +38,7 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
     @Override
     @SuppressWarnings("FutureReturnValueIgnored")
     public CompletableFuture<ExecutionResult> execute(ExecutionContext executionContext, ExecutionStrategyParameters parameters) throws NonNullableFieldWasNullException {
+        System.out.println("start async execution strategy execute");
         DataLoaderDispatchStrategy dataLoaderDispatcherStrategy = executionContext.getDataLoaderDispatcherStrategy();
         dataLoaderDispatcherStrategy.executionStrategy(executionContext, parameters);
         Instrumentation instrumentation = executionContext.getInstrumentation();
@@ -86,6 +87,7 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
         });
 
         overallResult.whenComplete(executionStrategyCtx::onCompleted);
+        System.out.println("finished async execution strategy");
         return overallResult;
     }
 }

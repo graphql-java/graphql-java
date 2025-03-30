@@ -269,7 +269,29 @@ public class CF<T> extends CompletableFuture<T> {
     volatile Completion stack;    // Top of Treiber stack of dependent actions
     public final ExecutionContext executionContext;
 
-    static final Map<ExecutionContext, Boolean> EXECUTION_RUNNING = new ConcurrentHashMap<>();
+    static final Map<ExecutionContext, Integer> EXECUTION_RUNNING = new ConcurrentHashMap<>();
+
+    static void newCode(ExecutionContext executionContext) {
+        if (executionContext == null) {
+            System.out.println("null execution context");
+            return;
+        }
+        EXECUTION_RUNNING.compute(executionContext, (__, integer) -> {
+            System.out.println("new code for context: " + executionContext + " count: " + (integer == null ? 1 : integer + 1));
+            return integer == null ? 1 : integer + 1;
+        });
+    }
+
+    static void finishedCode(ExecutionContext executionContext) {
+        if (executionContext == null) {
+            System.out.println("null execution context");
+            return;
+        }
+        EXECUTION_RUNNING.compute(executionContext, (__, integer) -> {
+            System.out.println("finished ode for context: " + executionContext + " count: " + (integer == null ? 0 : integer - 1));
+            return integer == null ? 0 : integer - 1;
+        });
+    }
 
     final boolean internalComplete(Object r) { // CAS from null to r
         boolean result = RESULT.compareAndSet(this, null, r);
@@ -635,7 +657,6 @@ public class CF<T> extends CompletableFuture<T> {
         Executor executor;                 // executor to use (null if none)
         CF<V> dep;          // the dependent to complete
         CF<T> src;          // source for action
-        public volatile boolean finishedRunningCode; // true if completed
 
         UniCompletion(Executor executor, CF<V> dep,
                       CF<T> src) {
@@ -742,6 +763,7 @@ public class CF<T> extends CompletableFuture<T> {
                     } else {
                         @SuppressWarnings("unchecked") T t = (T) r;
                         d.completeValue(f.apply(t));
+                        finishedCode(d.executionContext);
                     }
                 } catch (Throwable ex) {
                     d.completeThrowable(ex);
@@ -759,6 +781,7 @@ public class CF<T> extends CompletableFuture<T> {
         if (f == null) {
             throw new NullPointerException();
         }
+        newCode(executionContext);
         Object r;
         if ((r = result) != null) {
             return uniApplyNow(r, e, f);
@@ -785,6 +808,7 @@ public class CF<T> extends CompletableFuture<T> {
             } else {
                 @SuppressWarnings("unchecked") T t = (T) r;
                 d.assignResult(d.encodeValue(f.apply(t)));
+                finishedCode(executionContext);
             }
         } catch (Throwable ex) {
             d.assignResult(encodeThrowable(ex));
@@ -827,7 +851,7 @@ public class CF<T> extends CompletableFuture<T> {
                     } else {
                         @SuppressWarnings("unchecked") T t = (T) r;
                         f.accept(t);
-                        finishedRunningCode = true;
+                        finishedCode(d.executionContext);
                         d.completeNull();
                     }
                 } catch (Throwable ex) {
@@ -846,6 +870,7 @@ public class CF<T> extends CompletableFuture<T> {
         if (f == null) {
             throw new NullPointerException();
         }
+        newCode(executionContext);
         Object r;
         if ((r = result) != null) {
             return uniAcceptNow(r, e, f);
@@ -909,6 +934,7 @@ public class CF<T> extends CompletableFuture<T> {
                             return null;
                         } else {
                             f.run();
+                            finishedCode(d.executionContext);
                             d.completeNull();
                         }
                     } catch (Throwable ex) {
@@ -927,6 +953,7 @@ public class CF<T> extends CompletableFuture<T> {
         if (f == null) {
             throw new NullPointerException();
         }
+        newCode(executionContext);
         Object r;
         if ((r = result) != null) {
             return uniRunNow(r, e, f);
@@ -1002,6 +1029,7 @@ public class CF<T> extends CompletableFuture<T> {
                     t = tr;
                 }
                 f.accept(t, x);
+                finishedCode(executionContext);
 
                 if (x == null) {
                     internalComplete(r);
@@ -1024,6 +1052,7 @@ public class CF<T> extends CompletableFuture<T> {
         if (f == null) {
             throw new NullPointerException();
         }
+        newCode(executionContext);
         CF<T> d = newIncompleteFuture(executionContext);
         Object r;
         if ((r = result) == null) {
@@ -1087,6 +1116,7 @@ public class CF<T> extends CompletableFuture<T> {
                     s = ss;
                 }
                 completeValue(f.apply(s, x));
+                finishedCode(executionContext);
             } catch (Throwable ex) {
                 completeThrowable(ex);
             }
@@ -1099,6 +1129,7 @@ public class CF<T> extends CompletableFuture<T> {
         if (f == null) {
             throw new NullPointerException();
         }
+        newCode(executionContext);
         CF<V> d = newIncompleteFuture(executionContext);
         Object r;
         if ((r = result) == null) {
@@ -1154,6 +1185,7 @@ public class CF<T> extends CompletableFuture<T> {
                 }
                 if (r instanceof AltResult && (x = ((AltResult) r).ex) != null) {
                     completeValue(f.apply(x));
+                    finishedCode(executionContext);
                 } else {
                     internalComplete(r);
                 }
@@ -1169,6 +1201,7 @@ public class CF<T> extends CompletableFuture<T> {
         if (f == null) {
             throw new NullPointerException();
         }
+        newCode(executionContext);
         CF<T> d = newIncompleteFuture(executionContext);
         Object r;
         if ((r = result) == null) {
@@ -1214,6 +1247,7 @@ public class CF<T> extends CompletableFuture<T> {
                             return null;
                         }
                         CF<T> g = (CF<T>) f.apply(x).toCompletableFuture();
+                        finishedCode(d.executionContext);
                         if ((r = g.result) != null) {
                             d.completeRelay(r);
                         } else {
@@ -1241,6 +1275,7 @@ public class CF<T> extends CompletableFuture<T> {
         if (f == null) {
             throw new NullPointerException();
         }
+        newCode(executionContext);
         CF<T> d = newIncompleteFuture(executionContext);
         Object r, s;
         Throwable x;
@@ -1254,6 +1289,7 @@ public class CF<T> extends CompletableFuture<T> {
                     e.execute(new UniComposeExceptionally<T>(null, d, this, f));
                 } else {
                     CF<T> g = (CF<T>) f.apply(x).toCompletableFuture();
+                    finishedCode(d.executionContext);
                     if ((s = g.result) != null) {
                         d.assignResult(encodeRelay(s));
                     } else {
@@ -1348,6 +1384,7 @@ public class CF<T> extends CompletableFuture<T> {
                     }
                     @SuppressWarnings("unchecked") T t = (T) r;
                     CompletionStage<V> apply = f.apply(t).toCompletableFuture();
+                    finishedCode(d.executionContext);
                     CF<V> g = (CF<V>) apply;
                     if ((r = g.result) != null) {
                         d.completeRelay(r);
@@ -1373,6 +1410,7 @@ public class CF<T> extends CompletableFuture<T> {
         if (f == null) {
             throw new NullPointerException();
         }
+        newCode(executionContext);
         CF<V> d = newIncompleteFuture(executionContext);
         Object r, s;
         Throwable x;
@@ -1389,6 +1427,7 @@ public class CF<T> extends CompletableFuture<T> {
             try {
                 @SuppressWarnings("unchecked") T t = (T) r;
                 CF<V> g = (CF<V>) f.apply(t).toCompletableFuture();
+                finishedCode(d.executionContext);
                 if ((s = g.result) != null) {
                     d.assignResult(encodeRelay(s));
                 } else {

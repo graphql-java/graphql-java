@@ -294,7 +294,7 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
         if (callStack.dataFetchingEnvironmentMap.isEmpty()) {
             dataLoaderRegistry.dispatchAll();
         } else {
-            CF.dispatch(executionContext, callStack.dataFetchingEnvironmentMap.get(level));
+//            CF.dispatch(executionContext, callStack.dataFetchingEnvironmentMap.get(level));
         }
     }
 
