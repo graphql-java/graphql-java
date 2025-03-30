@@ -27,7 +27,6 @@ public class DataLoaderCF<T> extends CompletableFuture<T> {
         if (dataLoaderName != null) {
             dataLoaderCF = dfe.getDataLoaderRegistry().getDataLoader(dataLoaderName).load(key);
             dataLoaderCF.whenComplete((value, throwable) -> {
-                System.out.println("underlying DataLoader completed");
                 if (throwable != null) {
                     completeExceptionally(throwable);
                 } else {
