@@ -7,18 +7,32 @@ import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionStrategyParameters;
 import graphql.execution.FieldValueInfo;
 import graphql.schema.DataFetcher;
+import graphql.schema.DataFetchingEnvironment;
 import graphql.util.LockKit;
 import org.dataloader.DataLoaderRegistry;
 
+import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
 
 @Internal
 public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStrategy {
 
     private final CallStack callStack;
     private final ExecutionContext executionContext;
+
+    static final ScheduledExecutorService isolatedDLCFBatchWindowScheduler = Executors.newSingleThreadScheduledExecutor();
+    static final int BATCH_WINDOW_NANO_SECONDS = 500_000;
 
 
     private static class CallStack {
@@ -34,9 +48,26 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
 
         private final Set<Integer> dispatchedLevels = new LinkedHashSet<>();
 
+        // fields only relevant when a DataLoaderCF is involved
+        private final List<DataLoaderCF<?>> allDataLoaderCF = new CopyOnWriteArrayList<>();
+        //TODO: maybe this should be cleaned up once the CF returned by these fields are completed
+        // otherwise this will stick around until the whole request is finished
+        private final Set<DataFetchingEnvironment> fieldsFinishedDispatching = ConcurrentHashMap.newKeySet();
+        private final Map<Integer, Set<DataFetchingEnvironment>> levelToDFEWithDataLoaderCF = new ConcurrentHashMap<>();
+
+        private final Set<DataFetchingEnvironment> batchWindowOfIsolatedDfeToDispatch = ConcurrentHashMap.newKeySet();
+
+        private boolean batchWindowOpen = false;
+
+
         public CallStack() {
             expectedExecuteObjectCallsPerLevel.set(1, 1);
         }
+
+        public void addDataLoaderDFE(int level, DataFetchingEnvironment dfe) {
+            levelToDFEWithDataLoaderCF.computeIfAbsent(level, k -> new LinkedHashSet<>()).add(dfe);
+        }
+
 
         void increaseExpectedFetchCount(int level, int count) {
             expectedFetchCountPerLevel.increment(level, count);
@@ -234,9 +265,13 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
     public void fieldFetched(ExecutionContext executionContext,
                              ExecutionStrategyParameters executionStrategyParameters,
                              DataFetcher<?> dataFetcher,
-                             Object fetchedValue) {
+                             Object fetchedValue,
+                             Supplier<DataFetchingEnvironment> dataFetchingEnvironment) {
         int level = executionStrategyParameters.getPath().getLevel();
         boolean dispatchNeeded = callStack.lock.callLocked(() -> {
+            if (DataLoaderCF.isDataLoaderCF(fetchedValue)) {
+                callStack.addDataLoaderDFE(level, dataFetchingEnvironment.get());
+            }
             callStack.increaseFetchCount(level);
             return dispatchIfNeeded(level);
         });
@@ -275,9 +310,89 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
     }
 
     void dispatch(int level) {
-        DataLoaderRegistry dataLoaderRegistry = executionContext.getDataLoaderRegistry();
-        dataLoaderRegistry.dispatchAll();
+        if (callStack.levelToDFEWithDataLoaderCF.size() > 0) {
+            dispatchDLCFImpl(callStack.levelToDFEWithDataLoaderCF.get(level));
+        } else {
+            DataLoaderRegistry dataLoaderRegistry = executionContext.getDataLoaderRegistry();
+            dataLoaderRegistry.dispatchAll();
+        }
     }
+
+
+    public void dispatchDLCFImpl(Set<DataFetchingEnvironment> dfeToDispatchSet) {
+
+        // filter out all DataLoaderCFS that are matching the fields we want to dispatch
+        List<DataLoaderCF<?>> relevantDataLoaderCFs = new ArrayList<>();
+        for (DataLoaderCF<?> dataLoaderCF : callStack.allDataLoaderCF) {
+            if (dfeToDispatchSet.contains(dataLoaderCF.dfe)) {
+                relevantDataLoaderCFs.add(dataLoaderCF);
+            }
+        }
+        // we are cleaning up the list of all DataLoadersCFs
+        callStack.allDataLoaderCF.removeAll(relevantDataLoaderCFs);
+
+        // means we are all done dispatching the fields
+        if (relevantDataLoaderCFs.size() == 0) {
+            callStack.fieldsFinishedDispatching.addAll(dfeToDispatchSet);
+            return;
+        }
+        // we are dispatching all data loaders and waiting for all dataLoaderCFs to complete
+        // and to finish their sync actions
+        CountDownLatch countDownLatch = new CountDownLatch(relevantDataLoaderCFs.size());
+        for (DataLoaderCF dlCF : relevantDataLoaderCFs) {
+            dlCF.latch = countDownLatch;
+        }
+        // TODO: this should be done async or in a more regulated way with a configurable thread pool or so
+        new Thread(() -> {
+            try {
+                // waiting until all sync codes for all DL CFs are run
+                countDownLatch.await();
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+            // now we handle all new DataLoaders
+            dispatchDLCFImpl(dfeToDispatchSet);
+        }).start();
+        // Only dispatching relevant data loaders
+        for (DataLoaderCF dlCF : relevantDataLoaderCFs) {
+            dlCF.dfe.getDataLoader(dlCF.dataLoaderName).dispatch();
+        }
+//        executionContext.getDataLoaderRegistry().dispatchAll();
+    }
+
+
+    public void newDataLoaderCF(DataLoaderCF<?> dataLoaderCF) {
+        System.out.println("newDataLoaderCF");
+        callStack.lock.runLocked(() -> {
+            callStack.allDataLoaderCF.add(dataLoaderCF);
+        });
+        if (callStack.fieldsFinishedDispatching.contains(dataLoaderCF.dfe)) {
+            System.out.println("isolated dispatch");
+            dispatchIsolatedDataLoader(dataLoaderCF);
+        }
+
+    }
+
+    private void dispatchIsolatedDataLoader(DataLoaderCF<?> dlCF) {
+        callStack.lock.runLocked(() -> {
+            callStack.batchWindowOfIsolatedDfeToDispatch.add(dlCF.dfe);
+            if (!callStack.batchWindowOpen) {
+                callStack.batchWindowOpen = true;
+                AtomicReference<Set<DataFetchingEnvironment>> dfesToDispatch = new AtomicReference<>();
+                Runnable runnable = () -> {
+                    callStack.lock.runLocked(() -> {
+                        dfesToDispatch.set(new LinkedHashSet<>(callStack.batchWindowOfIsolatedDfeToDispatch));
+                        callStack.batchWindowOfIsolatedDfeToDispatch.clear();
+                        callStack.batchWindowOpen = false;
+                    });
+                    dispatchDLCFImpl(dfesToDispatch.get());
+                };
+                isolatedDLCFBatchWindowScheduler.schedule(runnable, BATCH_WINDOW_NANO_SECONDS, TimeUnit.NANOSECONDS);
+            }
+
+        });
+    }
+
 
 }
 

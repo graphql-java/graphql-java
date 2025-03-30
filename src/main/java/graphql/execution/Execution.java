@@ -29,8 +29,8 @@ import graphql.language.VariableDefinition;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.impl.SchemaUtil;
-import org.jspecify.annotations.NonNull;
 import graphql.util.FpKit;
+import org.jspecify.annotations.NonNull;
 import org.reactivestreams.Publisher;
 
 import java.util.Collections;
@@ -57,6 +57,8 @@ public class Execution {
     private final Instrumentation instrumentation;
     private final ValueUnboxer valueUnboxer;
     private final boolean doNotAutomaticallyDispatchDataLoader;
+
+    public static final String EXECUTION_CONTEXT_KEY = "__GraphQL_Java_ExecutionContext";
 
     public Execution(ExecutionStrategy queryStrategy,
                      ExecutionStrategy mutationStrategy,
@@ -114,6 +116,8 @@ public class Execution {
                 .build();
 
         executionContext.getGraphQLContext().put(ResultNodesInfo.RESULT_NODES_INFO, executionContext.getResultNodesInfo());
+        executionContext.getGraphQLContext().put(EXECUTION_CONTEXT_KEY, executionContext);
+
 
         InstrumentationExecutionParameters parameters = new InstrumentationExecutionParameters(
                 executionInput, graphQLSchema
