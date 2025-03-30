@@ -16,9 +16,9 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -323,9 +323,11 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
 
         // filter out all DataLoaderCFS that are matching the fields we want to dispatch
         List<DataLoaderCF<?>> relevantDataLoaderCFs = new ArrayList<>();
+        List<CompletableFuture<Void>> finishedSyncDependentsCFs = new ArrayList<>();
         for (DataLoaderCF<?> dataLoaderCF : callStack.allDataLoaderCF) {
             if (dfeToDispatchSet.contains(dataLoaderCF.dfe)) {
                 relevantDataLoaderCFs.add(dataLoaderCF);
+                finishedSyncDependentsCFs.add(dataLoaderCF.finishedSyncDependents);
             }
         }
         // we are cleaning up the list of all DataLoadersCFs
@@ -338,21 +340,12 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
         }
         // we are dispatching all data loaders and waiting for all dataLoaderCFs to complete
         // and to finish their sync actions
-        CountDownLatch countDownLatch = new CountDownLatch(relevantDataLoaderCFs.size());
-        for (DataLoaderCF dlCF : relevantDataLoaderCFs) {
-            dlCF.latch = countDownLatch;
-        }
-        // TODO: this should be done async or in a more regulated way with a configurable thread pool or so
-        new Thread(() -> {
-            try {
-                // waiting until all sync codes for all DL CFs are run
-                countDownLatch.await();
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
-            // now we handle all new DataLoaders
-            dispatchDLCFImpl(dfeToDispatchSet);
-        }).start();
+
+        CompletableFuture
+                .allOf(finishedSyncDependentsCFs.toArray(new CompletableFuture[0]))
+                .whenComplete((unused, throwable) ->
+                        dispatchDLCFImpl(dfeToDispatchSet)
+                );
         // Only dispatching relevant data loaders
         for (DataLoaderCF dlCF : relevantDataLoaderCFs) {
             dlCF.dfe.getDataLoader(dlCF.dataLoaderName).dispatch();

@@ -7,7 +7,6 @@ import graphql.execution.ExecutionContext;
 import graphql.schema.DataFetchingEnvironment;
 
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CountDownLatch;
 import java.util.function.Supplier;
 
 import static graphql.execution.Execution.EXECUTION_CONTEXT_KEY;
@@ -19,7 +18,7 @@ public class DataLoaderCF<T> extends CompletableFuture<T> {
     final Object key;
     final CompletableFuture<Object> dataLoaderCF;
 
-    volatile CountDownLatch latch;
+    final CompletableFuture<Void> finishedSyncDependents = new CompletableFuture<Void>();
 
     public DataLoaderCF(DataFetchingEnvironment dfe, String dataLoaderName, Object key) {
         this.dfe = dfe;
@@ -35,9 +34,7 @@ public class DataLoaderCF<T> extends CompletableFuture<T> {
                     complete((T) value);
                 }
                 // post completion hook
-                if (latch != null) {
-                    latch.countDown();
-                }
+                finishedSyncDependents.complete(null);
             });
         } else {
             dataLoaderCF = null;
