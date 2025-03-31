@@ -347,7 +347,7 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
                         dispatchDLCFImpl(dfeToDispatchSet, false)
                 );
         if (dispatchAll) {
-            // if we have a mixed world with old and new DataLoaderCFs
+            // if we have a mixed world with old and new DataLoaderCFs we dispatch all DataLoaders to retain compatibility
             executionContext.getDataLoaderRegistry().dispatchAll();
         } else {
             // Only dispatching relevant data loaders
