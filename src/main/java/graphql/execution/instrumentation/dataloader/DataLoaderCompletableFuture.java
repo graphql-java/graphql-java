@@ -1,6 +1,5 @@
 package graphql.execution.instrumentation.dataloader;
 
-import graphql.ExperimentalApi;
 import graphql.Internal;
 import graphql.execution.DataLoaderDispatchStrategy;
 import graphql.execution.ExecutionContext;
@@ -18,7 +17,7 @@ import static graphql.execution.Execution.EXECUTION_CONTEXT_KEY;
 
 @Internal
 @NullMarked
-public class DataLoaderCF<T> extends CompletableFuture<T> {
+public class DataLoaderCompletableFuture<T> extends CompletableFuture<T> {
     final DataFetchingEnvironment dfe;
     final String dataLoaderName;
     final Object key;
@@ -26,7 +25,7 @@ public class DataLoaderCF<T> extends CompletableFuture<T> {
 
     final CompletableFuture<Void> finishedSyncDependents = new CompletableFuture<>();
 
-    public DataLoaderCF(DataFetchingEnvironment dfe, String dataLoaderName, Object key) {
+    public DataLoaderCompletableFuture(DataFetchingEnvironment dfe, String dataLoaderName, Object key) {
         this.dfe = dfe;
         this.dataLoaderName = dataLoaderName;
         this.key = key;
@@ -46,7 +45,7 @@ public class DataLoaderCF<T> extends CompletableFuture<T> {
         }
     }
 
-    DataLoaderCF() {
+    DataLoaderCompletableFuture() {
         this.dfe = null;
         this.dataLoaderName = null;
         this.key = null;
@@ -56,16 +55,15 @@ public class DataLoaderCF<T> extends CompletableFuture<T> {
 
     @Override
     public <U> CompletableFuture<U> newIncompleteFuture() {
-        return new DataLoaderCF<>();
+        return new DataLoaderCompletableFuture<>();
     }
 
-    public static boolean isDataLoaderCF(Object object) {
-        return object instanceof DataLoaderCF;
+    public static boolean isDataLoaderCompletableFuture(Object object) {
+        return object instanceof DataLoaderCompletableFuture;
     }
 
-    @ExperimentalApi
-    public static <T> CompletableFuture<T> newDataLoaderCF(DataFetchingEnvironment dfe, String dataLoaderName, Object key) {
-        DataLoaderCF<T> result = new DataLoaderCF<>(dfe, dataLoaderName, key);
+    public static <T> CompletableFuture<T> newDLCF(DataFetchingEnvironment dfe, String dataLoaderName, Object key) {
+        DataLoaderCompletableFuture<T> result = new DataLoaderCompletableFuture<>(dfe, dataLoaderName, key);
         ExecutionContext executionContext = dfe.getGraphQlContext().get(EXECUTION_CONTEXT_KEY);
         DataLoaderDispatchStrategy dataLoaderDispatcherStrategy = executionContext.getDataLoaderDispatcherStrategy();
         if (dataLoaderDispatcherStrategy instanceof PerLevelDataLoaderDispatchStrategy) {
@@ -75,9 +73,8 @@ public class DataLoaderCF<T> extends CompletableFuture<T> {
     }
 
 
-    @ExperimentalApi
-    public static <U> CompletableFuture<U> supplyAsyncDataLoaderCF(DataFetchingEnvironment env, Supplier<U> supplier, @Nullable Executor executor) {
-        DataLoaderCF<U> d = new DataLoaderCF<>(env, null, null);
+    public static <U> CompletableFuture<U> supplyDLCF(DataFetchingEnvironment env, Supplier<U> supplier, @Nullable Executor executor) {
+        DataLoaderCompletableFuture<U> d = new DataLoaderCompletableFuture<>(env, null, null);
         if (executor == null) {
             executor = d.defaultExecutor();
         }
@@ -89,9 +86,11 @@ public class DataLoaderCF<T> extends CompletableFuture<T> {
     }
 
 
-    @ExperimentalApi
     public static <U> CompletableFuture<U> wrap(DataFetchingEnvironment env, CompletableFuture<U> completableFuture) {
-        DataLoaderCF<U> d = new DataLoaderCF<>(env, null, null);
+        if (completableFuture instanceof DataLoaderCompletableFuture) {
+            return completableFuture;
+        }
+        DataLoaderCompletableFuture<U> d = new DataLoaderCompletableFuture<>(env, null, null);
         completableFuture.whenComplete((u, ex) -> {
             if (ex != null) {
                 d.completeExceptionally(ex);
@@ -102,10 +101,10 @@ public class DataLoaderCF<T> extends CompletableFuture<T> {
         return d;
     }
 
-    public static CompletableFuture<Void> waitUntilAllSyncDependentsComplete(List<DataLoaderCF<?>> dataLoaderCFList) {
-        CompletableFuture<?>[] finishedSyncArray = dataLoaderCFList
+    public static CompletableFuture<Void> waitUntilAllSyncDependentsComplete(List<DataLoaderCompletableFuture<?>> dataLoaderCompletableFutureList) {
+        CompletableFuture<?>[] finishedSyncArray = dataLoaderCompletableFutureList
                 .stream()
-                .map(dataLoaderCF -> dataLoaderCF.finishedSyncDependents)
+                .map(dataLoaderCompletableFuture -> dataLoaderCompletableFuture.finishedSyncDependents)
                 .toArray(CompletableFuture[]::new);
         return CompletableFuture.allOf(finishedSyncArray);
     }

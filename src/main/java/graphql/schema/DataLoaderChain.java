@@ -1,7 +1,7 @@
 package graphql.schema;
 
 import graphql.PublicApi;
-import graphql.execution.instrumentation.dataloader.DataLoaderCF;
+import graphql.execution.instrumentation.dataloader.DataLoaderCompletableFuture;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
@@ -11,16 +11,16 @@ import java.util.function.Supplier;
 
 @PublicApi
 @NullMarked
-public class DataLoaderCFFactory {
+public class DataLoaderChain {
 
     private final DataFetchingEnvironment dfe;
 
-    public DataLoaderCFFactory(DataFetchingEnvironment dfe) {
+    public DataLoaderChain(DataFetchingEnvironment dfe) {
         this.dfe = dfe;
     }
 
     public <T> CompletableFuture<T> load(String dataLoaderName, Object key) {
-        return DataLoaderCF.newDataLoaderCF(dfe, dataLoaderName, key);
+        return DataLoaderCompletableFuture.newDLCF(dfe, dataLoaderName, key);
     }
 
     public <T> CompletableFuture<T> supplyAsync(Supplier<T> supplier) {
@@ -28,10 +28,10 @@ public class DataLoaderCFFactory {
     }
 
     public <T> CompletableFuture<T> supplyAsync(Supplier<T> supplier, @Nullable Executor executor) {
-        return DataLoaderCF.supplyAsyncDataLoaderCF(dfe, supplier, executor);
+        return DataLoaderCompletableFuture.supplyDLCF(dfe, supplier, executor);
     }
 
     public <T> CompletableFuture<T> wrap(CompletableFuture<T> future) {
-        return DataLoaderCF.wrap(dfe, future);
+        return DataLoaderCompletableFuture.wrap(dfe, future);
     }
 }

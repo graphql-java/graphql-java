@@ -446,6 +446,7 @@ public abstract class ExecutionStrategy {
         }
 
         MergedField field = parameters.getField();
+        String pathString = parameters.getPath().toString();
         GraphQLObjectType parentType = (GraphQLObjectType) parameters.getExecutionStepInfo().getUnwrappedNonNullType();
 
         // if the DF (like PropertyDataFetcher) does not use the arguments or execution step info then dont build any

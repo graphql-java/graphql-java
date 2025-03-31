@@ -50,7 +50,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
     private final ImmutableMapWithNullValues<String, Object> variables;
     private final QueryDirectives queryDirectives;
 
-    private volatile DataLoaderCFFactory dataLoaderCFFactory; // created when first accessed
+    private volatile DataLoaderChain dataLoaderChain; // created when first accessed
 
     private DataFetchingEnvironmentImpl(Builder builder) {
         this.source = builder.source;
@@ -213,15 +213,15 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
     }
 
     @Override
-    public DataLoaderCFFactory getDataLoaderCFFactory() {
-        if (dataLoaderCFFactory == null) {
+    public DataLoaderChain getDataLoaderChain() {
+        if (dataLoaderChain == null) {
             synchronized (this) {
-                if (dataLoaderCFFactory == null) {
-                    dataLoaderCFFactory = new DataLoaderCFFactory(this);
+                if (dataLoaderChain == null) {
+                    dataLoaderChain = new DataLoaderChain(this);
                 }
             }
         }
-        return dataLoaderCFFactory;
+        return dataLoaderChain;
     }
 
     @Override

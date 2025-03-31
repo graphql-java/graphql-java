@@ -153,8 +153,8 @@ public class DelegatingDataFetchingEnvironment implements DataFetchingEnvironmen
     }
 
     @Override
-    public DataLoaderCFFactory getDataLoaderCFFactory() {
-        return delegateEnvironment.getDataLoaderCFFactory();
+    public DataLoaderChain getDataLoaderChain() {
+        return delegateEnvironment.getDataLoaderChain();
     }
 
     @Override
