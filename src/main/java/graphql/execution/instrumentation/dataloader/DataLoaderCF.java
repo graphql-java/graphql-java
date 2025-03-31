@@ -6,37 +6,39 @@ import graphql.execution.DataLoaderDispatchStrategy;
 import graphql.execution.ExecutionContext;
 import graphql.schema.DataFetchingEnvironment;
 
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 
 import static graphql.execution.Execution.EXECUTION_CONTEXT_KEY;
+
 
 @Internal
 public class DataLoaderCF<T> extends CompletableFuture<T> {
     final DataFetchingEnvironment dfe;
     final String dataLoaderName;
     final Object key;
-    final CompletableFuture<Object> dataLoaderCF;
+    private final CompletableFuture<Object> underlyingDataLoaderCompletableFuture;
 
-    final CompletableFuture<Void> finishedSyncDependents = new CompletableFuture<Void>();
+    final CompletableFuture<Void> finishedSyncDependents = new CompletableFuture<>();
 
     public DataLoaderCF(DataFetchingEnvironment dfe, String dataLoaderName, Object key) {
         this.dfe = dfe;
         this.dataLoaderName = dataLoaderName;
         this.key = key;
         if (dataLoaderName != null) {
-            dataLoaderCF = dfe.getDataLoaderRegistry().getDataLoader(dataLoaderName).load(key);
-            dataLoaderCF.whenComplete((value, throwable) -> {
+            underlyingDataLoaderCompletableFuture = dfe.getDataLoaderRegistry().getDataLoader(dataLoaderName).load(key);
+            underlyingDataLoaderCompletableFuture.whenComplete((value, throwable) -> {
                 if (throwable != null) {
                     completeExceptionally(throwable);
                 } else {
-                    complete((T) value);
+                    complete((T) value); // causing all sync dependent code to run
                 }
                 // post completion hook
                 finishedSyncDependents.complete(null);
             });
         } else {
-            dataLoaderCF = null;
+            underlyingDataLoaderCompletableFuture = null;
         }
     }
 
@@ -44,8 +46,9 @@ public class DataLoaderCF<T> extends CompletableFuture<T> {
         this.dfe = null;
         this.dataLoaderName = null;
         this.key = null;
-        dataLoaderCF = null;
+        underlyingDataLoaderCompletableFuture = null;
     }
+
 
     @Override
     public <U> CompletableFuture<U> newIncompleteFuture() {
@@ -91,5 +94,14 @@ public class DataLoaderCF<T> extends CompletableFuture<T> {
         return d;
     }
 
+    public static CompletableFuture<Void> waitUntilAllSyncDependentsComplete(List<DataLoaderCF<?>> dataLoaderCFList) {
+        CompletableFuture<?>[] finishedSyncArray = dataLoaderCFList
+                .stream()
+                .map(dataLoaderCF -> dataLoaderCF.finishedSyncDependents)
+                .toArray(CompletableFuture[]::new);
+        return CompletableFuture.allOf(finishedSyncArray);
+    }
+
 
 }
+

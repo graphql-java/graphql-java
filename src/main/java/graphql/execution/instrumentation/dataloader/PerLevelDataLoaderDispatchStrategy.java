@@ -16,7 +16,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executors;
@@ -323,11 +322,9 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
 
         // filter out all DataLoaderCFS that are matching the fields we want to dispatch
         List<DataLoaderCF<?>> relevantDataLoaderCFs = new ArrayList<>();
-        List<CompletableFuture<Void>> finishedSyncDependentsCFs = new ArrayList<>();
         for (DataLoaderCF<?> dataLoaderCF : callStack.allDataLoaderCF) {
             if (dfeToDispatchSet.contains(dataLoaderCF.dfe)) {
                 relevantDataLoaderCFs.add(dataLoaderCF);
-                finishedSyncDependentsCFs.add(dataLoaderCF.finishedSyncDependents);
             }
         }
         // we are cleaning up the list of all DataLoadersCFs
@@ -340,17 +337,14 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
         }
         // we are dispatching all data loaders and waiting for all dataLoaderCFs to complete
         // and to finish their sync actions
-
-        CompletableFuture
-                .allOf(finishedSyncDependentsCFs.toArray(new CompletableFuture[0]))
+        DataLoaderCF.waitUntilAllSyncDependentsComplete(relevantDataLoaderCFs)
                 .whenComplete((unused, throwable) ->
                         dispatchDLCFImpl(dfeToDispatchSet)
                 );
         // Only dispatching relevant data loaders
-        for (DataLoaderCF dlCF : relevantDataLoaderCFs) {
+        for (DataLoaderCF<?> dlCF : relevantDataLoaderCFs) {
             dlCF.dfe.getDataLoader(dlCF.dataLoaderName).dispatch();
         }
-//        executionContext.getDataLoaderRegistry().dispatchAll();
     }
 
 
