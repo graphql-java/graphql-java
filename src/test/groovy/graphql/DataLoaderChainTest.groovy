@@ -9,6 +9,7 @@ import org.dataloader.DataLoaderRegistry
 import spock.lang.Specification
 
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.atomic.AtomicInteger
 
 import static graphql.ExecutionInput.newExecutionInput
 
@@ -235,10 +236,10 @@ class DataLoaderChainTest extends Specification {
          bar: String
         }
         '''
-        int batchLoadCalls = 0
+        AtomicInteger batchLoadCalls = new AtomicInteger()
         BatchLoader<String, String> batchLoader = { keys ->
             return CompletableFuture.supplyAsync {
-                batchLoadCalls++
+                batchLoadCalls.incrementAndGet()
                 Thread.sleep(250)
                 println "BatchLoader called with keys: $keys"
                 return keys;
@@ -280,7 +281,7 @@ class DataLoaderChainTest extends Specification {
         def er = graphQL.execute(ei)
         then:
         er.data == [foo: "fooFirstValue", bar: "barFirstValue"]
-        batchLoadCalls == 1
+        batchLoadCalls.get() == 1
     }
 
 
