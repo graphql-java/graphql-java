@@ -153,6 +153,11 @@ public class DelegatingDataFetchingEnvironment implements DataFetchingEnvironmen
     }
 
     @Override
+    public DataLoaderCFFactory getDataLoaderCFFactory() {
+        return delegateEnvironment.getDataLoaderCFFactory();
+    }
+
+    @Override
     public DataLoaderRegistry getDataLoaderRegistry() {
         return delegateEnvironment.getDataLoaderRegistry();
     }

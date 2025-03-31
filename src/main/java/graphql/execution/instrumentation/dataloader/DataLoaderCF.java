@@ -5,15 +5,19 @@ import graphql.Internal;
 import graphql.execution.DataLoaderDispatchStrategy;
 import graphql.execution.ExecutionContext;
 import graphql.schema.DataFetchingEnvironment;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 import java.util.function.Supplier;
 
 import static graphql.execution.Execution.EXECUTION_CONTEXT_KEY;
 
 
 @Internal
+@NullMarked
 public class DataLoaderCF<T> extends CompletableFuture<T> {
     final DataFetchingEnvironment dfe;
     final String dataLoaderName;
@@ -72,14 +76,18 @@ public class DataLoaderCF<T> extends CompletableFuture<T> {
 
 
     @ExperimentalApi
-    public static <U> CompletableFuture<U> supplyAsyncDataLoaderCF(DataFetchingEnvironment env, Supplier<U> supplier) {
+    public static <U> CompletableFuture<U> supplyAsyncDataLoaderCF(DataFetchingEnvironment env, Supplier<U> supplier, @Nullable Executor executor) {
         DataLoaderCF<U> d = new DataLoaderCF<>(env, null, null);
-        d.defaultExecutor().execute(() -> {
+        if (executor == null) {
+            executor = d.defaultExecutor();
+        }
+        executor.execute(() -> {
             d.complete(supplier.get());
         });
         return d;
 
     }
+
 
     @ExperimentalApi
     public static <U> CompletableFuture<U> wrap(DataFetchingEnvironment env, CompletableFuture<U> completableFuture) {

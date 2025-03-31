@@ -50,6 +50,8 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
     private final ImmutableMapWithNullValues<String, Object> variables;
     private final QueryDirectives queryDirectives;
 
+    private volatile DataLoaderCFFactory dataLoaderCFFactory; // created when first accessed
+
     private DataFetchingEnvironmentImpl(Builder builder) {
         this.source = builder.source;
         this.arguments = builder.arguments == null ? ImmutableKit::emptyMap : builder.arguments;
@@ -208,6 +210,18 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
     @Override
     public <K, V> @Nullable DataLoader<K, V> getDataLoader(String dataLoaderName) {
         return dataLoaderRegistry.getDataLoader(dataLoaderName);
+    }
+
+    @Override
+    public DataLoaderCFFactory getDataLoaderCFFactory() {
+        if (dataLoaderCFFactory == null) {
+            synchronized (this) {
+                if (dataLoaderCFFactory == null) {
+                    dataLoaderCFFactory = new DataLoaderCFFactory(this);
+                }
+            }
+        }
+        return dataLoaderCFFactory;
     }
 
     @Override

@@ -1,6 +1,6 @@
 package graphql
 
-import graphql.execution.instrumentation.dataloader.DataLoaderCF
+
 import graphql.schema.DataFetcher
 import org.dataloader.BatchLoader
 import org.dataloader.DataLoader
@@ -41,19 +41,19 @@ class DataLoaderCFTest extends Specification {
         dataLoaderRegistry.register("name", nameDataLoader);
 
         def df1 = { env ->
-            return DataLoaderCF.newDataLoaderCF(env, "name", "Key1").thenCompose {
+            return env.getDataLoaderCFFactory().load("name", "Key1").thenCompose {
                 result ->
                     {
-                        return DataLoaderCF.newDataLoaderCF(env, "name", result)
+                        return env.getDataLoaderCFFactory().load("name", result)
                     }
             }
         } as DataFetcher
 
         def df2 = { env ->
-            return DataLoaderCF.newDataLoaderCF(env, "name", "Key2").thenCompose {
+            return env.getDataLoaderCFFactory().load("name", "Key2").thenCompose {
                 result ->
                     {
-                        return DataLoaderCF.newDataLoaderCF(env, "name", result)
+                        return env.getDataLoaderCFFactory().load("name", result)
                     }
             }
         } as DataFetcher
@@ -113,19 +113,19 @@ class DataLoaderCFTest extends Specification {
         dataLoaderRegistry.register("dl2", dl2);
 
         def df = { env ->
-            return DataLoaderCF.newDataLoaderCF(env, "dl1", "start").thenCompose {
+            return env.getDataLoaderCFFactory().load("dl1", "start").thenCompose {
                 firstDLResult ->
 
-                    def otherCF1 = DataLoaderCF.supplyAsyncDataLoaderCF(env, {
+                    def otherCF1 = env.getDataLoaderCFFactory().supplyAsync {
                         Thread.sleep(1000)
                         return "otherCF1"
-                    })
-                    def otherCF2 = DataLoaderCF.supplyAsyncDataLoaderCF(env, {
+                    }
+                    def otherCF2 = env.getDataLoaderCFFactory().supplyAsync {
                         Thread.sleep(1000)
                         return "otherCF2"
-                    })
+                    }
 
-                    def secondDL = DataLoaderCF.newDataLoaderCF(env, "dl2", firstDLResult).thenApply {
+                    def secondDL = env.getDataLoaderCFFactory().load("dl2", firstDLResult).thenApply {
                         secondDLResult ->
                             return secondDLResult + "-apply"
                     }
@@ -187,24 +187,24 @@ class DataLoaderCFTest extends Specification {
         dataLoaderRegistry.register("name", nameDataLoader);
 
         def df1 = { env ->
-            return DataLoaderCF.newDataLoaderCF(env, "name", "Luna0").thenCompose {
+            return env.getDataLoaderCFFactory().load("name", "Luna0").thenCompose {
                 result ->
                     {
-                        return DataLoaderCF.supplyAsyncDataLoaderCF(env, {
+                        return env.getDataLoaderCFFactory().supplyAsync {
                             Thread.sleep(1000)
                             return "foo"
-                        }).thenCompose {
-                            return DataLoaderCF.newDataLoaderCF(env, "name", result)
+                        }.thenCompose {
+                            return env.getDataLoaderCFFactory().load("name", result)
                         }
                     }
             }
         } as DataFetcher
 
         def df2 = { env ->
-            return DataLoaderCF.newDataLoaderCF(env, "name", "Tiger0").thenCompose {
+            return env.getDataLoaderCFFactory().load("name", "Tiger0").thenCompose {
                 result ->
                     {
-                        return DataLoaderCF.newDataLoaderCF(env, "name", result)
+                        return env.getDataLoaderCFFactory().load("name", result)
                     }
             }
         } as DataFetcher
@@ -251,20 +251,20 @@ class DataLoaderCFTest extends Specification {
         dataLoaderRegistry.register("dl", nameDataLoader);
 
         def fooDF = { env ->
-            return DataLoaderCF.supplyAsyncDataLoaderCF(env, {
+            return env.getDataLoaderCFFactory().supplyAsync {
                 Thread.sleep(1000)
                 return "fooFirstValue"
-            }).thenCompose {
-                return DataLoaderCF.newDataLoaderCF(env, "dl", it)
+            }.thenCompose {
+                return env.getDataLoaderCFFactory().load("dl", it)
             }
         } as DataFetcher
 
         def barDF = { env ->
-            return DataLoaderCF.supplyAsyncDataLoaderCF(env, {
+            return env.getDataLoaderCFFactory().supplyAsync {
                 Thread.sleep(1000)
                 return "barFirstValue"
-            }).thenCompose {
-                return DataLoaderCF.newDataLoaderCF(env, "dl", it)
+            }.thenCompose {
+                return env.getDataLoaderCFFactory().load("dl", it)
             }
         } as DataFetcher
 

@@ -237,6 +237,9 @@ public interface DataFetchingEnvironment extends IntrospectionDataFetchingEnviro
     @Nullable
     <K, V> DataLoader<K, V> getDataLoader(String dataLoaderName);
 
+
+    DataLoaderCFFactory getDataLoaderCFFactory();
+
     /**
      * @return the {@link org.dataloader.DataLoaderRegistry} in play
      */
@@ -270,4 +273,6 @@ public interface DataFetchingEnvironment extends IntrospectionDataFetchingEnviro
      * @return the coerced variables that have been passed to the query that is being executed
      */
     Map<String, Object> getVariables();
+
+
 }
