@@ -9,8 +9,6 @@ import graphql.execution.instrumentation.InstrumentationState;
 import graphql.execution.instrumentation.SimplePerformantInstrumentation;
 import graphql.execution.instrumentation.parameters.InstrumentationExecuteOperationParameters;
 import org.jspecify.annotations.Nullable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.function.Function;
 
@@ -25,7 +23,6 @@ import static graphql.execution.instrumentation.SimpleInstrumentationContext.noO
 @PublicApi
 public class MaxQueryDepthInstrumentation extends SimplePerformantInstrumentation {
 
-    private static final Logger log = LoggerFactory.getLogger(MaxQueryDepthInstrumentation.class);
 
     private final int maxDepth;
     private final Function<QueryDepthInfo, Boolean> maxQueryDepthExceededFunction;
@@ -54,9 +51,6 @@ public class MaxQueryDepthInstrumentation extends SimplePerformantInstrumentatio
     public @Nullable InstrumentationContext<ExecutionResult> beginExecuteOperation(InstrumentationExecuteOperationParameters parameters, InstrumentationState state) {
         QueryTraverser queryTraverser = newQueryTraverser(parameters.getExecutionContext());
         int depth = queryTraverser.reducePreOrder((env, acc) -> Math.max(getPathLength(env.getParentEnvironment()), acc), 0);
-        if (log.isDebugEnabled()) {
-            log.debug("Query depth info: {}", depth);
-        }
         if (depth > maxDepth) {
             QueryDepthInfo queryDepthInfo = QueryDepthInfo.newQueryDepthInfo()
                     .depth(depth)
