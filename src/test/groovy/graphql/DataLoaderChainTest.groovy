@@ -7,6 +7,7 @@ import org.dataloader.DataLoaderFactory
 import org.dataloader.DataLoaderRegistry
 import spock.lang.Specification
 
+import java.util.concurrent.CompletableFuture
 import java.util.concurrent.atomic.AtomicInteger
 
 import static graphql.ExecutionInput.newExecutionInput
@@ -225,8 +226,6 @@ class DataLoaderChainTest extends Specification {
     }
 
     def "chained data loaders with two isolated data loaders"() {
-        // TODO: this test is naturally flaky, because there is no guarantee that the Thread.sleep(1000) finish close
-        // enough time wise to be batched together
         given:
         def sdl = '''
 
@@ -250,9 +249,12 @@ class DataLoaderChainTest extends Specification {
         DataLoaderRegistry dataLoaderRegistry = new DataLoaderRegistry();
         dataLoaderRegistry.register("dl", nameDataLoader);
 
+        def cf = new CompletableFuture()
+
         def fooDF = { env ->
             return supplyAsync {
                 Thread.sleep(1000)
+                cf.complete("barFirstValue")
                 return "fooFirstValue"
             }.thenCompose {
                 return env.getDataLoader("dl").load(it)
@@ -260,10 +262,7 @@ class DataLoaderChainTest extends Specification {
         } as DataFetcher
 
         def barDF = { env ->
-            return supplyAsync {
-                Thread.sleep(1000)
-                return "barFirstValue"
-            }.thenCompose {
+            cf.thenCompose {
                 return env.getDataLoader("dl").load(it)
             }
         } as DataFetcher

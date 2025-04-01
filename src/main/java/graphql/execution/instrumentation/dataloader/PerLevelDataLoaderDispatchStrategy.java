@@ -54,13 +54,12 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
         private final Set<Integer> dispatchedLevels = ConcurrentHashMap.newKeySet();
 
         // fields only relevant when a DataLoaderCF is involved
-        private final List<DFEWithDataLoader> allDFEWithDataLoader = new CopyOnWriteArrayList<>();
+        private final List<ResultPathWithDataLoader> allResultPathWithDataLoader = new CopyOnWriteArrayList<>();
+
         //TODO: maybe this should be cleaned up once the CF returned by these fields are completed
         // otherwise this will stick around until the whole request is finished
-//        private final Set<DataFetchingEnvironment> fieldsFinishedDispatching = ConcurrentHashMap.newKeySet();
-        private final Map<Integer, Set<DFEWithDataLoader>> levelToDFEWithDataLoaderCF = new ConcurrentHashMap<>();
-
-        private final Set<DataFetchingEnvironment> batchWindowOfIsolatedDfeToDispatch = ConcurrentHashMap.newKeySet();
+        private final Map<Integer, Set<ResultPathWithDataLoader>> levelToResultPathWithDataLoader = new ConcurrentHashMap<>();
+        private final Set<String> batchWindowOfIsolatedDataLoaderToDispatch = ConcurrentHashMap.newKeySet();
 
         private boolean batchWindowOpen = false;
 
@@ -69,8 +68,8 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
             expectedExecuteObjectCallsPerLevel.set(1, 1);
         }
 
-        public void addDataLoaderDFE(int level, DFEWithDataLoader dfe) {
-            levelToDFEWithDataLoaderCF.computeIfAbsent(level, k -> new LinkedHashSet<>()).add(dfe);
+        public void addDataLoaderDFE(int level, ResultPathWithDataLoader resultPathWithDataLoader) {
+            levelToResultPathWithDataLoader.computeIfAbsent(level, k -> new LinkedHashSet<>()).add(resultPathWithDataLoader);
         }
 
 
@@ -313,11 +312,11 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
 
     void dispatch(int level) {
         // if we have any DataLoaderCFs => use new Algorithm
-        Set<DFEWithDataLoader> dfeWithDataLoaders = callStack.levelToDFEWithDataLoaderCF.get(level);
-        if (dfeWithDataLoaders != null) {
-            dispatchDLCFImpl(dfeWithDataLoaders
+        Set<ResultPathWithDataLoader> resultPathWithDataLoaders = callStack.levelToResultPathWithDataLoader.get(level);
+        if (resultPathWithDataLoaders != null) {
+            dispatchDLCFImpl(resultPathWithDataLoaders
                     .stream()
-                    .map(dfeWithDataLoader -> dfeWithDataLoader.dfe)
+                    .map(resultPathWithDataLoader -> resultPathWithDataLoader.resultPath)
                     .collect(Collectors.toSet()), true);
         } else {
             // otherwise dispatch all DataLoaders
@@ -327,21 +326,21 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
     }
 
 
-    public void dispatchDLCFImpl(Set<DataFetchingEnvironment> dfeToDispatchSet, boolean dispatchAll) {
+    public void dispatchDLCFImpl(Set<String> resultPathsToDispatch, boolean dispatchAll) {
 
         // filter out all DataLoaderCFS that are matching the fields we want to dispatch
-        List<DFEWithDataLoader> relevantDFEWithDataLoader = new ArrayList<>();
-        for (DFEWithDataLoader dfeWithDataLoader : callStack.allDFEWithDataLoader) {
-            if (dfeToDispatchSet.contains(dfeWithDataLoader.dfe)) {
-                relevantDFEWithDataLoader.add(dfeWithDataLoader);
+        List<ResultPathWithDataLoader> relevantResultPathWithDataLoader = new ArrayList<>();
+        for (ResultPathWithDataLoader resultPathWithDataLoader : callStack.allResultPathWithDataLoader) {
+            if (resultPathsToDispatch.contains(resultPathWithDataLoader.resultPath)) {
+                relevantResultPathWithDataLoader.add(resultPathWithDataLoader);
             }
         }
         // we are cleaning up the list of all DataLoadersCFs
-        callStack.allDFEWithDataLoader.removeAll(relevantDFEWithDataLoader);
+        callStack.allResultPathWithDataLoader.removeAll(relevantResultPathWithDataLoader);
 
         // means we are all done dispatching the fields
-        if (relevantDFEWithDataLoader.size() == 0) {
-//            callStack.fieldsFinishedDispatching.addAll(dfeToDispatchSet);
+        if (relevantResultPathWithDataLoader.size() == 0) {
+//            callStack.fieldsFinishedDispatching.addAll(resultPathsToDispatch);
             return;
         }
         List<CompletableFuture> allDispatchedCFs = new ArrayList<>();
@@ -352,35 +351,35 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
             }
         } else {
             // Only dispatching relevant data loaders
-            for (DFEWithDataLoader dfeWithDataLoader : relevantDFEWithDataLoader) {
-                allDispatchedCFs.add(dfeWithDataLoader.dataLoader.dispatch());
+            for (ResultPathWithDataLoader resultPathWithDataLoader : relevantResultPathWithDataLoader) {
+                allDispatchedCFs.add(resultPathWithDataLoader.dataLoader.dispatch());
             }
         }
         CompletableFuture.allOf(allDispatchedCFs.toArray(new CompletableFuture[0]))
                 .whenComplete((unused, throwable) -> {
                             System.out.println("RECURSIVE DISPATCH!!");
-                            dispatchDLCFImpl(dfeToDispatchSet, false);
+                    dispatchDLCFImpl(resultPathsToDispatch, false);
                         }
                 );
 
     }
 
 
-    public void newDataLoaderCF(DFEWithDataLoader dfeWithDataLoader) {
+    public void newDataLoaderCF(String resultPath, int level, DataLoader dataLoader) {
         System.out.println("newDataLoaderCF");
-        int level = dfeWithDataLoader.dfe.getExecutionStepInfo().getPath().getLevel();
+        ResultPathWithDataLoader resultPathWithDataLoader = new ResultPathWithDataLoader(resultPath, level, dataLoader);
         callStack.lock.runLocked(() -> {
-            callStack.allDFEWithDataLoader.add(dfeWithDataLoader);
+            callStack.allResultPathWithDataLoader.add(resultPathWithDataLoader);
             if (!callStack.dispatchedLevels.contains(level)) {
                 System.out.println("not finished dispatching level " + level);
-                callStack.addDataLoaderDFE(level, dfeWithDataLoader);
+                callStack.addDataLoaderDFE(level, resultPathWithDataLoader);
             } else {
                 System.out.println("already finished dispatching level " + level);
             }
         });
         if (callStack.dispatchedLevels.contains(level)) {
             System.out.println("isolated dispatch");
-            dispatchIsolatedDataLoader(dfeWithDataLoader);
+            dispatchIsolatedDataLoader(resultPathWithDataLoader);
         } else {
             System.out.println("normal dispatch");
         }
@@ -388,16 +387,16 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
 
     }
 
-    private void dispatchIsolatedDataLoader(DFEWithDataLoader dfeWithDataLoader) {
+    private void dispatchIsolatedDataLoader(ResultPathWithDataLoader resultPathWithDataLoader) {
         callStack.lock.runLocked(() -> {
-            callStack.batchWindowOfIsolatedDfeToDispatch.add(dfeWithDataLoader.dfe);
+            callStack.batchWindowOfIsolatedDataLoaderToDispatch.add(resultPathWithDataLoader.resultPath);
             if (!callStack.batchWindowOpen) {
                 callStack.batchWindowOpen = true;
-                AtomicReference<Set<DataFetchingEnvironment>> dfesToDispatch = new AtomicReference<>();
+                AtomicReference<Set<String>> dfesToDispatch = new AtomicReference<>();
                 Runnable runnable = () -> {
                     callStack.lock.runLocked(() -> {
-                        dfesToDispatch.set(new LinkedHashSet<>(callStack.batchWindowOfIsolatedDfeToDispatch));
-                        callStack.batchWindowOfIsolatedDfeToDispatch.clear();
+                        dfesToDispatch.set(new LinkedHashSet<>(callStack.batchWindowOfIsolatedDataLoaderToDispatch));
+                        callStack.batchWindowOfIsolatedDataLoaderToDispatch.clear();
                         callStack.batchWindowOpen = false;
                     });
                     dispatchDLCFImpl(dfesToDispatch.get(), false);
@@ -409,12 +408,14 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
     }
 
 
-    public static class DFEWithDataLoader {
-        final DataFetchingEnvironment dfe;
+    private static class ResultPathWithDataLoader {
+        final String resultPath;
+        final int level;
         final DataLoader dataLoader;
 
-        public DFEWithDataLoader(DataFetchingEnvironment dfe, DataLoader dataLoader) {
-            this.dfe = dfe;
+        public ResultPathWithDataLoader(String resultPath, int level, DataLoader dataLoader) {
+            this.resultPath = resultPath;
+            this.level = level;
             this.dataLoader = dataLoader;
         }
     }

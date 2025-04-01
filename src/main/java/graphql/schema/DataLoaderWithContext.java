@@ -32,9 +32,11 @@ public class DataLoaderWithContext<K, V> extends DataLoader<K, V> {
     public CompletableFuture<V> load(K key) {
         // inform DispatchingStrategy that we are having a DataLoader in DFE
         ExecutionContext executionContext = dfe.getGraphQlContext().get(EXECUTION_CONTEXT_KEY);
+        int level = dfe.getExecutionStepInfo().getPath().getLevel();
+        String path = dfe.getExecutionStepInfo().getPath().toString();
         DataLoaderDispatchStrategy dataLoaderDispatcherStrategy = executionContext.getDataLoaderDispatcherStrategy();
         if (dataLoaderDispatcherStrategy instanceof PerLevelDataLoaderDispatchStrategy) {
-            ((PerLevelDataLoaderDispatchStrategy) dataLoaderDispatcherStrategy).newDataLoaderCF(new PerLevelDataLoaderDispatchStrategy.DFEWithDataLoader(dfe, delegate));
+            ((PerLevelDataLoaderDispatchStrategy) dataLoaderDispatcherStrategy).newDataLoaderCF(path, level, delegate);
         }
         return delegate.load(key);
     }
