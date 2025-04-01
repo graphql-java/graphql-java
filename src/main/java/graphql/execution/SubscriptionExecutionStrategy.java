@@ -70,7 +70,6 @@ public class SubscriptionExecutionStrategy extends ExecutionStrategy {
         // when the upstream source event stream completes, subscribe to it and wire in our adapter
         CompletableFuture<ExecutionResult> overallResult = sourceEventStream.thenApply((publisher) -> {
             executionContext.running();
-            ;
             if (publisher == null) {
                 ExecutionResultImpl executionResult = new ExecutionResultImpl(null, executionContext.getErrors());
                 executionContext.finished();
