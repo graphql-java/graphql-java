@@ -1,7 +1,6 @@
 package graphql.schema;
 
 import graphql.execution.DataLoaderDispatchStrategy;
-import graphql.execution.ExecutionContext;
 import graphql.execution.instrumentation.dataloader.PerLevelDataLoaderDispatchStrategy;
 import org.dataloader.CacheMap;
 import org.dataloader.DataLoader;
@@ -13,8 +12,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
-
-import static graphql.execution.Execution.EXECUTION_CONTEXT_KEY;
 
 public class DataLoaderWithContext<K, V> extends DataLoader<K, V> {
     final DataFetchingEnvironment dfe;
@@ -30,11 +27,11 @@ public class DataLoaderWithContext<K, V> extends DataLoader<K, V> {
 
     @Override
     public CompletableFuture<V> load(K key) {
-        // inform DispatchingStrategy that we are having a DataLoader in DFE
-        ExecutionContext executionContext = dfe.getGraphQlContext().get(EXECUTION_CONTEXT_KEY);
+
+        DataFetchingEnvironmentImpl dfeImpl = (DataFetchingEnvironmentImpl) dfe;
         int level = dfe.getExecutionStepInfo().getPath().getLevel();
         String path = dfe.getExecutionStepInfo().getPath().toString();
-        DataLoaderDispatchStrategy dataLoaderDispatcherStrategy = executionContext.getDataLoaderDispatcherStrategy();
+        DataLoaderDispatchStrategy dataLoaderDispatcherStrategy = dfeImpl.getDataLoaderDispatchStrategy();
         if (dataLoaderDispatcherStrategy instanceof PerLevelDataLoaderDispatchStrategy) {
             ((PerLevelDataLoaderDispatchStrategy) dataLoaderDispatcherStrategy).newDataLoaderCF(path, level, delegate);
         }

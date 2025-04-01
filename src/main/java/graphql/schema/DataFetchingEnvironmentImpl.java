@@ -6,6 +6,7 @@ import graphql.GraphQLContext;
 import graphql.Internal;
 import graphql.collect.ImmutableKit;
 import graphql.collect.ImmutableMapWithNullValues;
+import graphql.execution.DataLoaderDispatchStrategy;
 import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionId;
 import graphql.execution.ExecutionStepInfo;
@@ -50,6 +51,8 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
     private final ImmutableMapWithNullValues<String, Object> variables;
     private final QueryDirectives queryDirectives;
 
+    // exposed only via Impl
+    private final DataLoaderDispatchStrategy dataLoaderDispatchStrategy;
 
     private DataFetchingEnvironmentImpl(Builder builder) {
         this.source = builder.source;
@@ -73,6 +76,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
         this.document = builder.document;
         this.variables = builder.variables == null ? ImmutableMapWithNullValues.emptyMap() : builder.variables;
         this.queryDirectives = builder.queryDirectives;
+        this.dataLoaderDispatchStrategy = builder.dataLoaderDispatchStrategy;
     }
 
     /**
@@ -98,7 +102,9 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
                 .document(executionContext.getDocument())
                 .operationDefinition(executionContext.getOperationDefinition())
                 .variables(executionContext.getCoercedVariables().toMap())
-                .executionId(executionContext.getExecutionId());
+                .executionId(executionContext.getExecutionId())
+                .dataLoaderDispatchStrategy(executionContext.getDataLoaderDispatcherStrategy());
+
     }
 
     @Override
@@ -237,6 +243,12 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
         return variables;
     }
 
+    @Internal
+    public DataLoaderDispatchStrategy getDataLoaderDispatchStrategy() {
+        return dataLoaderDispatchStrategy;
+    }
+
+
     @Override
     public String toString() {
         return "DataFetchingEnvironmentImpl{" +
@@ -267,6 +279,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
         private ImmutableMap<String, FragmentDefinition> fragmentsByName;
         private ImmutableMapWithNullValues<String, Object> variables;
         private QueryDirectives queryDirectives;
+        private DataLoaderDispatchStrategy dataLoaderDispatchStrategy;
 
         public Builder(DataFetchingEnvironmentImpl env) {
             this.source = env.source;
@@ -290,6 +303,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
             this.document = env.document;
             this.variables = env.variables;
             this.queryDirectives = env.queryDirectives;
+            this.dataLoaderDispatchStrategy = env.dataLoaderDispatchStrategy;
         }
 
         public Builder() {
@@ -411,6 +425,11 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
 
         public DataFetchingEnvironment build() {
             return new DataFetchingEnvironmentImpl(this);
+        }
+
+        public Builder dataLoaderDispatchStrategy(DataLoaderDispatchStrategy dataLoaderDispatcherStrategy) {
+            this.dataLoaderDispatchStrategy = dataLoaderDispatcherStrategy;
+            return this;
         }
     }
 }
