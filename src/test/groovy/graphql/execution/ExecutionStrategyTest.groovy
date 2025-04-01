@@ -541,7 +541,7 @@ class ExecutionStrategyTest extends Specification {
         DataFetchingEnvironment environment
 
         when:
-        executionStrategy.resolveField(executionContext, parameters)
+        executionStrategy.resolveFieldWithInfo(executionContext, parameters)
 
         then:
         1 * dataFetcher.get(_,_,_) >> { environment = (it[2] as Supplier<DataFetchingEnvironment>).get() }
@@ -636,7 +636,7 @@ class ExecutionStrategyTest extends Specification {
         }
 
         when:
-        overridingStrategy.resolveField(executionContext, parameters)
+        overridingStrategy.resolveFieldWithInfo(executionContext, parameters)
 
         then:
         handlerCalled == true
@@ -646,29 +646,6 @@ class ExecutionStrategyTest extends Specification {
         exceptionWhileDataFetching.getMessage().contains('This is the exception you are looking for')
     }
 
-    def "test that the old legacy method is still useful for those who derive new execution strategies"() {
-
-        def expectedException = new UnsupportedOperationException("This is the exception you are looking for")
-
-        //noinspection GroovyAssignabilityCheck,GroovyUnusedAssignment
-        def (ExecutionContext executionContext, GraphQLFieldDefinition fieldDefinition, ResultPath expectedPath, ExecutionStrategyParameters parameters, Field field, SourceLocation sourceLocation) = exceptionSetupFixture(expectedException)
-
-
-        ExecutionStrategy overridingStrategy = new ExecutionStrategy() {
-            @Override
-            CompletableFuture<ExecutionResult> execute(ExecutionContext ec, ExecutionStrategyParameters p) throws NonNullableFieldWasNullException {
-                null
-            }
-        }
-
-        when:
-        overridingStrategy.resolveField(executionContext, parameters)
-
-        then:
-        executionContext.errors.size() == 1
-        def exceptionWhileDataFetching = executionContext.errors[0] as ExceptionWhileDataFetching
-        exceptionWhileDataFetching.getMessage().contains('This is the exception you are looking for')
-    }
 
     def "#2519 data fetcher errors for a given field appear in FetchedResult within instrumentation"() {
         def expectedException = new UnsupportedOperationException("This is the exception you are looking for")
@@ -700,7 +677,7 @@ class ExecutionStrategyTest extends Specification {
         }
 
         when:
-        overridingStrategy.resolveField(instrumentedExecutionContext, params)
+        overridingStrategy.resolveFieldWithInfo(instrumentedExecutionContext, params)
 
         then:
         FetchedValue fetchedValue = instrumentation.fetchedValues.get("someField")
@@ -761,7 +738,8 @@ class ExecutionStrategyTest extends Specification {
                 .build()
 
         when:
-        executionStrategy.resolveField(executionContext, parameters).join()
+        FieldValueInfo fieldValueInfo = (executionStrategy.resolveFieldWithInfo(executionContext, parameters) as CompletableFuture).join()
+        (fieldValueInfo.fieldValueObject as CompletableFuture).join()
 
         then:
         thrown(CompletionException)
