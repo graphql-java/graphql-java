@@ -1,6 +1,5 @@
 package graphql
 
-
 import graphql.schema.DataFetcher
 import org.dataloader.BatchLoader
 import org.dataloader.DataLoader
@@ -8,10 +7,10 @@ import org.dataloader.DataLoaderFactory
 import org.dataloader.DataLoaderRegistry
 import spock.lang.Specification
 
-import java.util.concurrent.CompletableFuture
 import java.util.concurrent.atomic.AtomicInteger
 
 import static graphql.ExecutionInput.newExecutionInput
+import static java.util.concurrent.CompletableFuture.supplyAsync
 
 class DataLoaderChainTest extends Specification {
 
@@ -27,7 +26,7 @@ class DataLoaderChainTest extends Specification {
         '''
         int batchLoadCalls = 0
         BatchLoader<String, String> batchLoader = { keys ->
-            return CompletableFuture.supplyAsync {
+            return supplyAsync {
                 batchLoadCalls++
                 Thread.sleep(250)
                 println "BatchLoader called with keys: $keys"
@@ -42,19 +41,19 @@ class DataLoaderChainTest extends Specification {
         dataLoaderRegistry.register("name", nameDataLoader);
 
         def df1 = { env ->
-            return env.getDataLoaderChain().load("name", "Key1").thenCompose {
+            return env.getDataLoader("name").load("Key1").thenCompose {
                 result ->
                     {
-                        return env.getDataLoaderChain().load("name", result)
+                        return env.getDataLoader("name").load(result)
                     }
             }
         } as DataFetcher
 
         def df2 = { env ->
-            return env.getDataLoaderChain().load("name", "Key2").thenCompose {
+            return env.getDataLoader("name").load("Key2").thenCompose {
                 result ->
                     {
-                        return env.getDataLoaderChain().load("name", result)
+                        return env.getDataLoader("name").load(result)
                     }
             }
         } as DataFetcher
@@ -84,7 +83,7 @@ class DataLoaderChainTest extends Specification {
         '''
         int batchLoadCalls1 = 0
         BatchLoader<String, String> batchLoader1 = { keys ->
-            return CompletableFuture.supplyAsync {
+            return supplyAsync {
                 batchLoadCalls1++
                 Thread.sleep(250)
                 println "BatchLoader1 called with keys: $keys"
@@ -95,7 +94,7 @@ class DataLoaderChainTest extends Specification {
         }
         int batchLoadCalls2 = 0
         BatchLoader<String, String> batchLoader2 = { keys ->
-            return CompletableFuture.supplyAsync {
+            return supplyAsync {
                 batchLoadCalls2++
                 Thread.sleep(250)
                 println "BatchLoader2 called with keys: $keys"
@@ -114,19 +113,19 @@ class DataLoaderChainTest extends Specification {
         dataLoaderRegistry.register("dl2", dl2);
 
         def df = { env ->
-            return env.getDataLoaderChain().load("dl1", "start").thenCompose {
+            return env.getDataLoader("dl1").load("start").thenCompose {
                 firstDLResult ->
 
-                    def otherCF1 = env.getDataLoaderChain().supplyAsync {
+                    def otherCF1 = supplyAsync {
                         Thread.sleep(1000)
                         return "otherCF1"
                     }
-                    def otherCF2 = env.getDataLoaderChain().supplyAsync {
+                    def otherCF2 = supplyAsync {
                         Thread.sleep(1000)
                         return "otherCF2"
                     }
 
-                    def secondDL = env.getDataLoaderChain().load("dl2", firstDLResult).thenApply {
+                    def secondDL = env.getDataLoader("dl2").load(firstDLResult).thenApply {
                         secondDLResult ->
                             return secondDLResult + "-apply"
                     }
@@ -172,7 +171,7 @@ class DataLoaderChainTest extends Specification {
         '''
         int batchLoadCalls = 0
         BatchLoader<String, String> batchLoader = { keys ->
-            return CompletableFuture.supplyAsync {
+            return supplyAsync {
                 batchLoadCalls++
                 Thread.sleep(250)
                 println "BatchLoader called with keys: $keys"
@@ -188,24 +187,24 @@ class DataLoaderChainTest extends Specification {
         dataLoaderRegistry.register("name", nameDataLoader);
 
         def df1 = { env ->
-            return env.getDataLoaderChain().load("name", "Luna0").thenCompose {
+            return env.getDataLoader("name").load("Luna0").thenCompose {
                 result ->
                     {
-                        return env.getDataLoaderChain().supplyAsync {
+                        return supplyAsync {
                             Thread.sleep(1000)
                             return "foo"
                         }.thenCompose {
-                            return env.getDataLoaderChain().load("name", result)
+                            return env.getDataLoader("name").load(result)
                         }
                     }
             }
         } as DataFetcher
 
         def df2 = { env ->
-            return env.getDataLoaderChain().load("name", "Tiger0").thenCompose {
+            return env.getDataLoader("name").load("Tiger0").thenCompose {
                 result ->
                     {
-                        return env.getDataLoaderChain().load("name", result)
+                        return env.getDataLoader("name").load(result)
                     }
             }
         } as DataFetcher
@@ -238,7 +237,7 @@ class DataLoaderChainTest extends Specification {
         '''
         AtomicInteger batchLoadCalls = new AtomicInteger()
         BatchLoader<String, String> batchLoader = { keys ->
-            return CompletableFuture.supplyAsync {
+            return supplyAsync {
                 batchLoadCalls.incrementAndGet()
                 Thread.sleep(250)
                 println "BatchLoader called with keys: $keys"
@@ -252,20 +251,20 @@ class DataLoaderChainTest extends Specification {
         dataLoaderRegistry.register("dl", nameDataLoader);
 
         def fooDF = { env ->
-            return env.getDataLoaderChain().supplyAsync {
+            return supplyAsync {
                 Thread.sleep(1000)
                 return "fooFirstValue"
             }.thenCompose {
-                return env.getDataLoaderChain().load("dl", it)
+                return env.getDataLoader("dl").load(it)
             }
         } as DataFetcher
 
         def barDF = { env ->
-            return env.getDataLoaderChain().supplyAsync {
+            return supplyAsync {
                 Thread.sleep(1000)
                 return "barFirstValue"
             }.thenCompose {
-                return env.getDataLoaderChain().load("dl", it)
+                return env.getDataLoader("dl").load(it)
             }
         } as DataFetcher
 

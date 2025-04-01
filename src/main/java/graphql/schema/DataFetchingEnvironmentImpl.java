@@ -207,9 +207,10 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
         return executionStepInfo.get();
     }
 
+
     @Override
     public <K, V> @Nullable DataLoader<K, V> getDataLoader(String dataLoaderName) {
-        return dataLoaderRegistry.getDataLoader(dataLoaderName);
+        return new DataLoaderWithContext<>(this, dataLoaderName, dataLoaderRegistry.getDataLoader(dataLoaderName));
     }
 
     @Override

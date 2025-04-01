@@ -1,8 +1,6 @@
 package graphql.execution.instrumentation.dataloader;
 
 import graphql.Internal;
-import graphql.execution.DataLoaderDispatchStrategy;
-import graphql.execution.ExecutionContext;
 import graphql.schema.DataFetchingEnvironment;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
@@ -11,8 +9,6 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.function.Supplier;
-
-import static graphql.execution.Execution.EXECUTION_CONTEXT_KEY;
 
 
 @Internal
@@ -38,7 +34,7 @@ public class DataLoaderCompletableFuture<T> extends CompletableFuture<T> {
                     complete((T) value); // causing all sync dependent code to run
                 }
                 // post completion hook
-                finishedSyncDependents.complete(null);
+                finishedSyncDependents.complete(null); // is the same as dispatch CF returned by DataLoader.dispatch()
             });
         } else {
             underlyingDataLoaderCompletableFuture = null;
@@ -52,7 +48,6 @@ public class DataLoaderCompletableFuture<T> extends CompletableFuture<T> {
         underlyingDataLoaderCompletableFuture = null;
     }
 
-
     @Override
     public <U> CompletableFuture<U> newIncompleteFuture() {
         return new DataLoaderCompletableFuture<>();
@@ -63,13 +58,14 @@ public class DataLoaderCompletableFuture<T> extends CompletableFuture<T> {
     }
 
     public static <T> CompletableFuture<T> newDLCF(DataFetchingEnvironment dfe, String dataLoaderName, Object key) {
-        DataLoaderCompletableFuture<T> result = new DataLoaderCompletableFuture<>(dfe, dataLoaderName, key);
-        ExecutionContext executionContext = dfe.getGraphQlContext().get(EXECUTION_CONTEXT_KEY);
-        DataLoaderDispatchStrategy dataLoaderDispatcherStrategy = executionContext.getDataLoaderDispatcherStrategy();
-        if (dataLoaderDispatcherStrategy instanceof PerLevelDataLoaderDispatchStrategy) {
-            ((PerLevelDataLoaderDispatchStrategy) dataLoaderDispatcherStrategy).newDataLoaderCF(result);
-        }
-        return result;
+        throw new UnsupportedOperationException();
+//        DataLoaderCompletableFuture<T> result = new DataLoaderCompletableFuture<>(dfe, dataLoaderName, key);
+//        ExecutionContext executionContext = dfe.getGraphQlContext().get(EXECUTION_CONTEXT_KEY);
+//        DataLoaderDispatchStrategy dataLoaderDispatcherStrategy = executionContext.getDataLoaderDispatcherStrategy();
+//        if (dataLoaderDispatcherStrategy instanceof PerLevelDataLoaderDispatchStrategy) {
+//            ((PerLevelDataLoaderDispatchStrategy) dataLoaderDispatcherStrategy).newDataLoaderCF(new PerLevelDataLoaderDispatchStrategy.DFEWithDataLoader());
+//        }
+//        return result;
     }
 
 
