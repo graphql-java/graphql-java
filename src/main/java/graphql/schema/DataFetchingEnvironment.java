@@ -238,8 +238,6 @@ public interface DataFetchingEnvironment extends IntrospectionDataFetchingEnviro
     <K, V> DataLoader<K, V> getDataLoader(String dataLoaderName);
 
 
-    DataLoaderChain getDataLoaderChain();
-
     /**
      * @return the {@link org.dataloader.DataLoaderRegistry} in play
      */

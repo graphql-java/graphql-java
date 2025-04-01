@@ -50,7 +50,6 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
     private final ImmutableMapWithNullValues<String, Object> variables;
     private final QueryDirectives queryDirectives;
 
-    private volatile DataLoaderChain dataLoaderChain; // created when first accessed
 
     private DataFetchingEnvironmentImpl(Builder builder) {
         this.source = builder.source;
@@ -211,18 +210,6 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
     @Override
     public <K, V> @Nullable DataLoader<K, V> getDataLoader(String dataLoaderName) {
         return new DataLoaderWithContext<>(this, dataLoaderName, dataLoaderRegistry.getDataLoader(dataLoaderName));
-    }
-
-    @Override
-    public DataLoaderChain getDataLoaderChain() {
-        if (dataLoaderChain == null) {
-            synchronized (this) {
-                if (dataLoaderChain == null) {
-                    dataLoaderChain = new DataLoaderChain(this);
-                }
-            }
-        }
-        return dataLoaderChain;
     }
 
     @Override
