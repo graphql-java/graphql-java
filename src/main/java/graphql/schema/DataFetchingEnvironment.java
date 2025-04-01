@@ -1,6 +1,7 @@
 package graphql.schema;
 
 import graphql.GraphQLContext;
+import graphql.Internal;
 import graphql.PublicApi;
 import graphql.execution.ExecutionId;
 import graphql.execution.ExecutionStepInfo;
@@ -272,5 +273,14 @@ public interface DataFetchingEnvironment extends IntrospectionDataFetchingEnviro
      */
     Map<String, Object> getVariables();
 
+
+    /**
+     * A method that should only be used by the GraphQL Java library itself.
+     * It is not intended for public use.
+     *
+     * @return an internal representation of the DataFetchingEnvironment
+     */
+    @Internal
+    Object toInternal();
 
 }

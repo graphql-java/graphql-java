@@ -51,8 +51,8 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
     private final ImmutableMapWithNullValues<String, Object> variables;
     private final QueryDirectives queryDirectives;
 
-    // exposed only via Impl
-    private final DataLoaderDispatchStrategy dataLoaderDispatchStrategy;
+    // used for internal() method
+    private final DFEInternalState dfeInternalState;
 
     private DataFetchingEnvironmentImpl(Builder builder) {
         this.source = builder.source;
@@ -76,7 +76,9 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
         this.document = builder.document;
         this.variables = builder.variables == null ? ImmutableMapWithNullValues.emptyMap() : builder.variables;
         this.queryDirectives = builder.queryDirectives;
-        this.dataLoaderDispatchStrategy = builder.dataLoaderDispatchStrategy;
+
+        // internal state
+        this.dfeInternalState = new DFEInternalState(builder.dataLoaderDispatchStrategy);
     }
 
     /**
@@ -243,11 +245,11 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
         return variables;
     }
 
-    @Internal
-    public DataLoaderDispatchStrategy getDataLoaderDispatchStrategy() {
-        return dataLoaderDispatchStrategy;
-    }
 
+    @Override
+    public Object toInternal() {
+        return this.dfeInternalState;
+    }
 
     @Override
     public String toString() {
@@ -303,7 +305,7 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
             this.document = env.document;
             this.variables = env.variables;
             this.queryDirectives = env.queryDirectives;
-            this.dataLoaderDispatchStrategy = env.dataLoaderDispatchStrategy;
+            this.dataLoaderDispatchStrategy = env.dfeInternalState.dataLoaderDispatchStrategy;
         }
 
         public Builder() {
@@ -430,6 +432,19 @@ public class DataFetchingEnvironmentImpl implements DataFetchingEnvironment {
         public Builder dataLoaderDispatchStrategy(DataLoaderDispatchStrategy dataLoaderDispatcherStrategy) {
             this.dataLoaderDispatchStrategy = dataLoaderDispatcherStrategy;
             return this;
+        }
+    }
+
+    @Internal
+    public static class DFEInternalState {
+        final DataLoaderDispatchStrategy dataLoaderDispatchStrategy;
+
+        public DFEInternalState(DataLoaderDispatchStrategy dataLoaderDispatchStrategy) {
+            this.dataLoaderDispatchStrategy = dataLoaderDispatchStrategy;
+        }
+
+        public DataLoaderDispatchStrategy getDataLoaderDispatchStrategy() {
+            return dataLoaderDispatchStrategy;
         }
     }
 }

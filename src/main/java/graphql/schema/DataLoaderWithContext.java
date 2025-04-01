@@ -1,6 +1,5 @@
 package graphql.schema;
 
-import graphql.execution.DataLoaderDispatchStrategy;
 import graphql.execution.instrumentation.dataloader.PerLevelDataLoaderDispatchStrategy;
 import org.dataloader.CacheMap;
 import org.dataloader.DataLoader;
@@ -31,9 +30,9 @@ public class DataLoaderWithContext<K, V> extends DataLoader<K, V> {
         DataFetchingEnvironmentImpl dfeImpl = (DataFetchingEnvironmentImpl) dfe;
         int level = dfe.getExecutionStepInfo().getPath().getLevel();
         String path = dfe.getExecutionStepInfo().getPath().toString();
-        DataLoaderDispatchStrategy dataLoaderDispatcherStrategy = dfeImpl.getDataLoaderDispatchStrategy();
-        if (dataLoaderDispatcherStrategy instanceof PerLevelDataLoaderDispatchStrategy) {
-            ((PerLevelDataLoaderDispatchStrategy) dataLoaderDispatcherStrategy).newDataLoaderCF(path, level, delegate);
+        DataFetchingEnvironmentImpl.DFEInternalState dfeInternalState = (DataFetchingEnvironmentImpl.DFEInternalState) dfeImpl.toInternal();
+        if (dfeInternalState.getDataLoaderDispatchStrategy() instanceof PerLevelDataLoaderDispatchStrategy) {
+            ((PerLevelDataLoaderDispatchStrategy) dfeInternalState.dataLoaderDispatchStrategy).newDataLoaderCF(path, level, delegate);
         }
         return delegate.load(key);
     }
