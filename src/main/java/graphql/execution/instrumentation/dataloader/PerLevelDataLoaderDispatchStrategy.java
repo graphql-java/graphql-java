@@ -147,6 +147,7 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
                 Assert.assertShouldNeverHappen("level " + level + " already dispatched");
                 return false;
             }
+            System.out.println("adding level " + level + " to dispatched levels" + dispatchedLevels);
             dispatchedLevels.add(level);
             return true;
         }
@@ -234,8 +235,9 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
         boolean dispatchNeeded = callStack.lock.callLocked(() ->
                 handleOnFieldValuesInfo(fieldValueInfoList, curLevel)
         );
+        // the handle on field values check for the next level if it is ready
         if (dispatchNeeded) {
-            dispatch(curLevel);
+            dispatch(curLevel + 1);
         }
     }
 
@@ -245,7 +247,10 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
     private boolean handleOnFieldValuesInfo(List<FieldValueInfo> fieldValueInfos, int curLevel) {
         callStack.increaseHappenedOnFieldValueCalls(curLevel);
         int expectedOnObjectCalls = getObjectCountForList(fieldValueInfos);
+        // on the next level we expect the following on object calls because we found non null objects
         callStack.increaseExpectedExecuteObjectCalls(curLevel + 1, expectedOnObjectCalls);
+        // maybe the object calls happened already (because the DataFetcher return directly values synchronously)
+        // therefore we check if the next level is ready
         return dispatchIfNeeded(curLevel + 1);
     }
 
@@ -311,9 +316,11 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
     }
 
     void dispatch(int level) {
+        System.out.println("dispatching level " + level);
         // if we have any DataLoaderCFs => use new Algorithm
         Set<ResultPathWithDataLoader> resultPathWithDataLoaders = callStack.levelToResultPathWithDataLoader.get(level);
         if (resultPathWithDataLoaders != null) {
+            System.out.println("dispatching level " + level + " with " + resultPathWithDataLoaders.size() + " DataLoaderCFs" + " this: " + this);
             dispatchDLCFImpl(resultPathWithDataLoaders
                     .stream()
                     .map(resultPathWithDataLoader -> resultPathWithDataLoader.resultPath)
@@ -340,7 +347,6 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
 
         // means we are all done dispatching the fields
         if (relevantResultPathWithDataLoader.size() == 0) {
-//            callStack.fieldsFinishedDispatching.addAll(resultPathsToDispatch);
             return;
         }
         List<CompletableFuture> allDispatchedCFs = new ArrayList<>();
@@ -357,7 +363,6 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
         }
         CompletableFuture.allOf(allDispatchedCFs.toArray(new CompletableFuture[0]))
                 .whenComplete((unused, throwable) -> {
-                            System.out.println("RECURSIVE DISPATCH!!");
                     dispatchDLCFImpl(resultPathsToDispatch, false);
                         }
                 );

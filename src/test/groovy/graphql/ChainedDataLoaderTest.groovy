@@ -13,7 +13,7 @@ import java.util.concurrent.atomic.AtomicInteger
 import static graphql.ExecutionInput.newExecutionInput
 import static java.util.concurrent.CompletableFuture.supplyAsync
 
-class DataLoaderChainTest extends Specification {
+class ChainedDataLoaderTest extends Specification {
 
 
     def "chained data loaders"() {
