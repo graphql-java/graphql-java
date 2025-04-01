@@ -56,38 +56,37 @@ public class SubscriptionExecutionStrategy extends ExecutionStrategy {
 
     @Override
     public CompletableFuture<ExecutionResult> execute(ExecutionContext executionContext, ExecutionStrategyParameters parameters) throws NonNullableFieldWasNullException {
-        executionContext.running();
-        Instrumentation instrumentation = executionContext.getInstrumentation();
-        InstrumentationExecutionStrategyParameters instrumentationParameters = new InstrumentationExecutionStrategyParameters(executionContext, parameters);
-        ExecutionStrategyInstrumentationContext executionStrategyCtx = ExecutionStrategyInstrumentationContext.nonNullCtx(instrumentation.beginExecutionStrategy(
-                instrumentationParameters,
-                executionContext.getInstrumentationState()
-        ));
+        return executionContext.run(() -> {
+            Instrumentation instrumentation = executionContext.getInstrumentation();
+            InstrumentationExecutionStrategyParameters instrumentationParameters = new InstrumentationExecutionStrategyParameters(executionContext, parameters);
+            ExecutionStrategyInstrumentationContext executionStrategyCtx = ExecutionStrategyInstrumentationContext.nonNullCtx(instrumentation.beginExecutionStrategy(
+                    instrumentationParameters,
+                    executionContext.getInstrumentationState()
+            ));
 
-        CompletableFuture<Publisher<Object>> sourceEventStream = createSourceEventStream(executionContext, parameters);
+            CompletableFuture<Publisher<Object>> sourceEventStream = createSourceEventStream(executionContext, parameters);
 
-        //
-        // when the upstream source event stream completes, subscribe to it and wire in our adapter
-        CompletableFuture<ExecutionResult> overallResult = sourceEventStream.thenApply((publisher) -> {
-            executionContext.running();
-            if (publisher == null) {
-                ExecutionResultImpl executionResult = new ExecutionResultImpl(null, executionContext.getErrors());
-                executionContext.finished();
-                return executionResult;
-            }
-            Function<Object, CompletionStage<ExecutionResult>> mapperFunction = eventPayload -> executeSubscriptionEvent(executionContext, parameters, eventPayload);
-            boolean keepOrdered = keepOrdered(executionContext.getGraphQLContext());
-            SubscriptionPublisher mapSourceToResponse = new SubscriptionPublisher(publisher, mapperFunction, keepOrdered);
-            ExecutionResultImpl executionResult = new ExecutionResultImpl(mapSourceToResponse, executionContext.getErrors());
-            executionContext.finished();
-            return executionResult;
+            //
+            // when the upstream source event stream completes, subscribe to it and wire in our adapter
+            CompletableFuture<ExecutionResult> overallResult = sourceEventStream.thenApply((publisher) -> {
+                return executionContext.run(() -> {
+                    if (publisher == null) {
+                        ExecutionResultImpl executionResult = new ExecutionResultImpl(null, executionContext.getErrors());
+                        return executionResult;
+                    }
+                    Function<Object, CompletionStage<ExecutionResult>> mapperFunction = eventPayload -> executeSubscriptionEvent(executionContext, parameters, eventPayload);
+                    boolean keepOrdered = keepOrdered(executionContext.getGraphQLContext());
+                    SubscriptionPublisher mapSourceToResponse = new SubscriptionPublisher(publisher, mapperFunction, keepOrdered);
+                    ExecutionResultImpl executionResult = new ExecutionResultImpl(mapSourceToResponse, executionContext.getErrors());
+                    return executionResult;
+                });
+            });
+
+            // dispatched the subscription query
+            executionStrategyCtx.onDispatched();
+            overallResult.whenComplete(executionStrategyCtx::onCompleted);
+            return overallResult;
         });
-
-        // dispatched the subscription query
-        executionStrategyCtx.onDispatched();
-        overallResult.whenComplete(executionStrategyCtx::onCompleted);
-        executionContext.finished();
-        return overallResult;
     }
 
     private boolean keepOrdered(GraphQLContext graphQLContext) {
@@ -113,16 +112,14 @@ public class SubscriptionExecutionStrategy extends ExecutionStrategy {
         ExecutionStrategyParameters newParameters = firstFieldOfSubscriptionSelection(parameters);
 
         CompletableFuture<FetchedValue> fieldFetched = Async.toCompletableFuture(fetchField(executionContext, newParameters));
-        return fieldFetched.thenApply(fetchedValue -> {
-            executionContext.running();
+        return fieldFetched.thenApply(fetchedValue -> executionContext.run(() -> {
             Object publisher = fetchedValue.getFetchedValue();
             if (publisher != null) {
                 assertTrue(publisher instanceof Publisher, () -> "Your data fetcher must return a Publisher of events when using graphql subscriptions");
             }
             //noinspection unchecked,DataFlowIssue
-            executionContext.finished();
             return (Publisher<Object>) publisher;
-        });
+        }));
     }
 
     /*
@@ -139,39 +136,39 @@ public class SubscriptionExecutionStrategy extends ExecutionStrategy {
      */
 
     private CompletableFuture<ExecutionResult> executeSubscriptionEvent(ExecutionContext executionContext, ExecutionStrategyParameters parameters, Object eventPayload) {
-        executionContext.running();
-        Instrumentation instrumentation = executionContext.getInstrumentation();
+        return executionContext.run(() -> {
+            Instrumentation instrumentation = executionContext.getInstrumentation();
 
-        ExecutionContext newExecutionContext = executionContext.transform(builder -> builder
-                .root(eventPayload)
-                .resetErrors()
-        );
-        ExecutionStrategyParameters newParameters = firstFieldOfSubscriptionSelection(parameters);
-        ExecutionStepInfo subscribedFieldStepInfo = createSubscribedFieldStepInfo(executionContext, newParameters);
+            ExecutionContext newExecutionContext = executionContext.transform(builder -> builder
+                    .root(eventPayload)
+                    .resetErrors()
+            );
+            ExecutionStrategyParameters newParameters = firstFieldOfSubscriptionSelection(parameters);
+            ExecutionStepInfo subscribedFieldStepInfo = createSubscribedFieldStepInfo(executionContext, newParameters);
 
-        InstrumentationFieldParameters i13nFieldParameters = new InstrumentationFieldParameters(executionContext, () -> subscribedFieldStepInfo);
-        InstrumentationContext<ExecutionResult> subscribedFieldCtx = nonNullCtx(instrumentation.beginSubscribedFieldEvent(
-                i13nFieldParameters, executionContext.getInstrumentationState()
-        ));
+            InstrumentationFieldParameters i13nFieldParameters = new InstrumentationFieldParameters(executionContext, () -> subscribedFieldStepInfo);
+            InstrumentationContext<ExecutionResult> subscribedFieldCtx = nonNullCtx(instrumentation.beginSubscribedFieldEvent(
+                    i13nFieldParameters, executionContext.getInstrumentationState()
+            ));
 
-        FetchedValue fetchedValue = unboxPossibleDataFetcherResult(newExecutionContext, parameters, eventPayload);
-        FieldValueInfo fieldValueInfo = completeField(newExecutionContext, newParameters, fetchedValue);
-        CompletableFuture<ExecutionResult> overallResult = fieldValueInfo
-                .getFieldValueFuture()
-                .thenApply(val -> new ExecutionResultImpl(val, newExecutionContext.getErrors()))
-                .thenApply(executionResult -> wrapWithRootFieldName(newParameters, executionResult));
+            FetchedValue fetchedValue = unboxPossibleDataFetcherResult(newExecutionContext, parameters, eventPayload);
+            FieldValueInfo fieldValueInfo = completeField(newExecutionContext, newParameters, fetchedValue);
+            CompletableFuture<ExecutionResult> overallResult = fieldValueInfo
+                    .getFieldValueFuture()
+                    .thenApply(val -> new ExecutionResultImpl(val, newExecutionContext.getErrors()))
+                    .thenApply(executionResult -> wrapWithRootFieldName(newParameters, executionResult));
 
-        // dispatch instrumentation so they can know about each subscription event
-        subscribedFieldCtx.onDispatched();
-        overallResult.whenComplete(subscribedFieldCtx::onCompleted);
+            // dispatch instrumentation so they can know about each subscription event
+            subscribedFieldCtx.onDispatched();
+            overallResult.whenComplete(subscribedFieldCtx::onCompleted);
 
-        // allow them to instrument each ER should they want to
-        InstrumentationExecutionParameters i13nExecutionParameters = new InstrumentationExecutionParameters(
-                executionContext.getExecutionInput(), executionContext.getGraphQLSchema());
+            // allow them to instrument each ER should they want to
+            InstrumentationExecutionParameters i13nExecutionParameters = new InstrumentationExecutionParameters(
+                    executionContext.getExecutionInput(), executionContext.getGraphQLSchema());
 
-        overallResult = overallResult.thenCompose(executionResult -> instrumentation.instrumentExecutionResult(executionResult, i13nExecutionParameters, executionContext.getInstrumentationState()));
-        executionContext.finished();
-        return overallResult;
+            overallResult = overallResult.thenCompose(executionResult -> instrumentation.instrumentExecutionResult(executionResult, i13nExecutionParameters, executionContext.getInstrumentationState()));
+            return overallResult;
+        });
     }
 
     private ExecutionResult wrapWithRootFieldName(ExecutionStrategyParameters parameters, ExecutionResult executionResult) {
