@@ -7,8 +7,8 @@ import org.dataloader.DataLoaderRegistry;
 
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
-import java.util.function.UnaryOperator;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.execution.instrumentation.dataloader.EmptyDataLoaderRegistryInstance.EMPTY_DATALOADER_REGISTRY;
@@ -29,6 +29,7 @@ public class ExecutionInput {
     private final DataLoaderRegistry dataLoaderRegistry;
     private final ExecutionId executionId;
     private final Locale locale;
+    private final AtomicBoolean cancelled;
 
 
     @Internal
@@ -44,6 +45,8 @@ public class ExecutionInput {
         this.locale = builder.locale != null ? builder.locale : Locale.getDefault(); // always have a locale in place
         this.localContext = builder.localContext;
         this.extensions = builder.extensions;
+
+        cancelled = new AtomicBoolean(false);
     }
 
     /**
@@ -137,6 +140,27 @@ public class ExecutionInput {
      */
     public Map<String, Object> getExtensions() {
         return extensions;
+    }
+
+
+    /**
+     * The graphql engine will check this frequently and if that is true, it will
+     * throw a {@link graphql.execution.AbortExecutionException} to cancel the execution.
+     * <p>
+     * This is a best-efforts cancellation.  Asynchronous data fetching code may still continue to
+     * run.
+     *
+     * @return true if the execution should be cancelled
+     */
+    public boolean isCancelled() {
+        return cancelled.get();
+    }
+
+    /**
+     * This can be called to cancel the graphql execution.
+     */
+    private void cancel() {
+        cancelled.set(true);
     }
 
     /**

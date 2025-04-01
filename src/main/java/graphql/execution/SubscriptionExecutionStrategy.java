@@ -56,6 +56,7 @@ public class SubscriptionExecutionStrategy extends ExecutionStrategy {
 
     @Override
     public CompletableFuture<ExecutionResult> execute(ExecutionContext executionContext, ExecutionStrategyParameters parameters) throws NonNullableFieldWasNullException {
+        checkIsCancelled(executionContext);
 
         Instrumentation instrumentation = executionContext.getInstrumentation();
         InstrumentationExecutionStrategyParameters instrumentationParameters = new InstrumentationExecutionStrategyParameters(executionContext, parameters);
@@ -69,6 +70,8 @@ public class SubscriptionExecutionStrategy extends ExecutionStrategy {
         //
         // when the upstream source event stream completes, subscribe to it and wire in our adapter
         CompletableFuture<ExecutionResult> overallResult = sourceEventStream.thenApply((publisher) -> {
+            checkIsCancelled(executionContext);
+
             if (publisher == null) {
                 return new ExecutionResultImpl(null, executionContext.getErrors());
             }
@@ -132,6 +135,10 @@ public class SubscriptionExecutionStrategy extends ExecutionStrategy {
      */
 
     private CompletableFuture<ExecutionResult> executeSubscriptionEvent(ExecutionContext executionContext, ExecutionStrategyParameters parameters, Object eventPayload) {
+        // this possible exception wil be caught by the reactive Publishers and the
+        // reactive stream will be made into an error state
+        checkIsCancelled(executionContext);
+
         Instrumentation instrumentation = executionContext.getInstrumentation();
 
         ExecutionContext newExecutionContext = executionContext.transform(builder -> builder

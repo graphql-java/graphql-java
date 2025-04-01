@@ -201,6 +201,8 @@ public abstract class ExecutionStrategy {
     @SuppressWarnings("unchecked")
     @DuckTyped(shape = "CompletableFuture<Map<String, Object>> | Map<String, Object>")
     protected Object executeObject(ExecutionContext executionContext, ExecutionStrategyParameters parameters) throws NonNullableFieldWasNullException {
+        checkIsCancelled(executionContext);
+
         DataLoaderDispatchStrategy dataLoaderDispatcherStrategy = executionContext.getDataLoaderDispatcherStrategy();
         dataLoaderDispatcherStrategy.executeObject(executionContext, parameters);
         Instrumentation instrumentation = executionContext.getInstrumentation();
@@ -229,6 +231,7 @@ public abstract class ExecutionStrategy {
                     handleResultsConsumer.accept(null, throwable);
                     return;
                 }
+                checkIsCancelled(executionContext);
 
                 Async.CombinedBuilder<Object> resultFutures = fieldValuesCombinedBuilder(completeValueInfos);
                 dataLoaderDispatcherStrategy.executeObjectOnFieldValuesInfo(completeValueInfos, parameters);
@@ -259,7 +262,7 @@ public abstract class ExecutionStrategy {
                 overallResult.whenComplete(resolveObjectCtx::onCompleted);
                 return overallResult;
             } else {
-                Map<String, Object> fieldValueMap = buildFieldValueMap(fieldsExecutedOnInitialResult, (List<Object>) completedValuesObject);
+                Map<String, Object> fieldValueMap = buildFieldValueMap(executionContext, fieldsExecutedOnInitialResult, (List<Object>) completedValuesObject);
                 resolveObjectCtx.onCompleted(fieldValueMap, null);
                 return fieldValueMap;
             }
@@ -280,13 +283,15 @@ public abstract class ExecutionStrategy {
                 handleValueException(overallResult, exception, executionContext);
                 return;
             }
-            Map<String, Object> resolvedValuesByField = buildFieldValueMap(fieldNames, results);
+            checkIsCancelled(executionContext);
+            Map<String, Object> resolvedValuesByField = buildFieldValueMap(executionContext, fieldNames, results);
             overallResult.complete(resolvedValuesByField);
         };
     }
 
     @NonNull
-    private static Map<String, Object> buildFieldValueMap(List<String> fieldNames, List<Object> results) {
+    private static Map<String, Object> buildFieldValueMap(ExecutionContext executionContext, List<String> fieldNames, List<Object> results) {
+        checkIsCancelled(executionContext);
         Map<String, Object> resolvedValuesByField = Maps.newLinkedHashMapWithExpectedSize(fieldNames.size());
         int ix = 0;
         for (Object fieldValue : results) {
@@ -638,6 +643,8 @@ public abstract class ExecutionStrategy {
     }
 
     private FieldValueInfo completeField(GraphQLFieldDefinition fieldDef, ExecutionContext executionContext, ExecutionStrategyParameters parameters, FetchedValue fetchedValue) {
+        checkIsCancelled(executionContext);
+
         GraphQLObjectType parentType = (GraphQLObjectType) parameters.getExecutionStepInfo().getUnwrappedNonNullType();
         ExecutionStepInfo executionStepInfo = createExecutionStepInfo(executionContext, parameters, fieldDef, parentType);
 
@@ -681,6 +688,8 @@ public abstract class ExecutionStrategy {
      * @throws NonNullableFieldWasNullException if a non null field resolves to a null value
      */
     protected FieldValueInfo completeValue(ExecutionContext executionContext, ExecutionStrategyParameters parameters) throws NonNullableFieldWasNullException {
+        checkIsCancelled(executionContext);
+
         ExecutionStepInfo executionStepInfo = parameters.getExecutionStepInfo();
         Object result = executionContext.getValueUnboxer().unbox(parameters.getSource());
         GraphQLType fieldType = executionStepInfo.getUnwrappedNonNullType();
@@ -1135,6 +1144,12 @@ public abstract class ExecutionStrategy {
                 .parentInfo(parentStepInfo)
                 .arguments(argumentValues)
                 .build();
+    }
+
+    protected static void checkIsCancelled(ExecutionContext executionContext) {
+        if (executionContext.getExecutionInput().isCancelled()) {
+            throw new AbortExecutionException("Execution has been asked to be cancelled");
+        }
     }
 
     @NonNull
