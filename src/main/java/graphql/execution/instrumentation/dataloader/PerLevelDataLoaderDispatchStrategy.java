@@ -11,8 +11,6 @@ import graphql.schema.DataFetchingEnvironment;
 import graphql.util.LockKit;
 import org.dataloader.DataLoader;
 import org.dataloader.DataLoaderRegistry;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
@@ -32,7 +30,6 @@ import java.util.stream.Collectors;
 @Internal
 public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStrategy {
 
-    private static final Logger log = LoggerFactory.getLogger(PerLevelDataLoaderDispatchStrategy.class);
     private final CallStack callStack;
     private final ExecutionContext executionContext;
 
