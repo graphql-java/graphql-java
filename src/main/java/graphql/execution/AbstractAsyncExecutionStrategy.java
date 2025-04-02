@@ -5,7 +5,6 @@ import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
 import graphql.PublicSpi;
 
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -23,7 +22,7 @@ public abstract class AbstractAsyncExecutionStrategy extends ExecutionStrategy {
     }
 
     protected BiConsumer<List<Object>, Throwable> handleResults(ExecutionContext executionContext, List<String> fieldNames, CompletableFuture<ExecutionResult> overallResult) {
-        return (List<Object> results, Throwable exception) -> {
+        return (List<Object> results, Throwable exception) -> executionContext.run(() -> {
             if (exception != null) {
                 handleNonNullException(executionContext, overallResult, exception);
                 return;
@@ -35,6 +34,6 @@ public abstract class AbstractAsyncExecutionStrategy extends ExecutionStrategy {
                 resolvedValuesByField.put(fieldName, result);
             }
             overallResult.complete(new ExecutionResultImpl(resolvedValuesByField, executionContext.getErrors()));
-        };
+        });
     }
 }
