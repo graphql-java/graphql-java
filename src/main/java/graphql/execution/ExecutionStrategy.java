@@ -340,33 +340,6 @@ public abstract class ExecutionStrategy {
     }
 
     /**
-     * Called to fetch a value for a field and resolve it further in terms of the graphql query.  This will call
-     * #fetchField followed by #completeField and the completed Object is returned.
-     * <p>
-     * An execution strategy can iterate the fields to be executed and call this method for each one
-     * <p>
-     * Graphql fragments mean that for any give logical field can have one or more {@link Field} values associated with it
-     * in the query, hence the fieldList.  However, the first entry is representative of the field for most purposes.
-     *
-     * @param executionContext contains the top level execution parameters
-     * @param parameters       contains the parameters holding the fields to be executed and source object
-     *
-     * @return a {@link CompletableFuture} promise to an {@link Object} or the materialized {@link Object}
-     *
-     * @throws NonNullableFieldWasNullException in the future if a non-null field resolved to a null value
-     */
-    @SuppressWarnings("unchecked")
-    @DuckTyped(shape = " CompletableFuture<Object> | Object")
-    protected Object resolveField(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
-        Object fieldWithInfo = resolveFieldWithInfo(executionContext, parameters);
-        if (fieldWithInfo instanceof CompletableFuture) {
-            return ((CompletableFuture<FieldValueInfo>) fieldWithInfo).thenCompose(FieldValueInfo::getFieldValueFuture);
-        } else {
-            return ((FieldValueInfo) fieldWithInfo).getFieldValueObject();
-        }
-    }
-
-    /**
      * Called to fetch a value for a field and its extra runtime info and resolve it further in terms of the graphql query.  This will call
      * #fetchField followed by #completeField and the completed {@link graphql.execution.FieldValueInfo} is returned.
      * <p>
