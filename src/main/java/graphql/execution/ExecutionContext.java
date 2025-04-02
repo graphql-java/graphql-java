@@ -22,6 +22,7 @@ import graphql.schema.GraphQLSchema;
 import graphql.util.FpKit;
 import graphql.util.LockKit;
 import org.dataloader.DataLoaderRegistry;
+import org.jspecify.annotations.Nullable;
 
 import java.util.HashSet;
 import java.util.List;
@@ -70,6 +71,7 @@ public class ExecutionContext {
     private volatile DataLoaderDispatchStrategy dataLoaderDispatcherStrategy = DataLoaderDispatchStrategy.NO_OP;
 
     private final ResultNodesInfo resultNodesInfo = new ResultNodesInfo();
+    private final EngineRunningObserver engineRunningObserver;
 
     ExecutionContext(ExecutionContextBuilder builder) {
         this.graphQLSchema = builder.graphQLSchema;
@@ -96,6 +98,7 @@ public class ExecutionContext {
         this.dataLoaderDispatcherStrategy = builder.dataLoaderDispatcherStrategy;
         this.queryTree = FpKit.interThreadMemoize(() -> ExecutableNormalizedOperationFactory.createExecutableNormalizedOperation(graphQLSchema, operationDefinition, fragmentsByName, coercedVariables));
         this.propagateErrorsOnNonNullContractFailure = builder.propagateErrorsOnNonNullContractFailure;
+        this.engineRunningObserver = builder.engineRunningObserver;
     }
 
 
@@ -357,26 +360,40 @@ public class ExecutionContext {
         return resultNodesInfo;
     }
 
+    @Nullable
+    EngineRunningObserver getEngineRunningObserver() {
+        return engineRunningObserver;
+    }
+
     @Internal
     public boolean isRunning() {
         return isRunning.get() > 0;
     }
 
     public <T> T call(Supplier<T> callable) {
-        isRunning.incrementAndGet();
+        if (isRunning.incrementAndGet() == 1 && engineRunningObserver != null) {
+            engineRunningObserver.runningStateChanged(executionId, graphQLContext, true);
+        }
         try {
             return callable.get();
         } finally {
-            isRunning.decrementAndGet();
+            if (isRunning.decrementAndGet() == 0 && engineRunningObserver != null) {
+                engineRunningObserver.runningStateChanged(executionId, graphQLContext, false);
+            }
         }
     }
 
     public void run(Runnable runnable) {
-        isRunning.incrementAndGet();
+        if (isRunning.incrementAndGet() == 1 && engineRunningObserver != null) {
+            engineRunningObserver.runningStateChanged(executionId, graphQLContext, true);
+        }
         try {
             runnable.run();
         } finally {
-            isRunning.decrementAndGet();
+            if (isRunning.decrementAndGet() == 0 && engineRunningObserver != null) {
+                engineRunningObserver.runningStateChanged(executionId, graphQLContext, false);
+            }
+
         }
     }
 

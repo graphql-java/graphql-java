@@ -29,8 +29,8 @@ import graphql.language.VariableDefinition;
 import graphql.schema.GraphQLObjectType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.impl.SchemaUtil;
-import org.jspecify.annotations.NonNull;
 import graphql.util.FpKit;
+import org.jspecify.annotations.NonNull;
 import org.reactivestreams.Publisher;
 
 import java.util.Collections;
@@ -89,6 +89,9 @@ public class Execution {
 
         boolean propagateErrorsOnNonNullContractFailure = propagateErrorsOnNonNullContractFailure(getOperationResult.operationDefinition.getDirectives());
 
+        // can be null
+        EngineRunningObserver engineRunningObserver = executionInput.getGraphQLContext().get(EngineRunningObserver.ENGINE_RUNNING_OBSERVER_KEY);
+
         ExecutionContext executionContext = newExecutionContextBuilder()
                 .instrumentation(instrumentation)
                 .instrumentationState(instrumentationState)
@@ -111,6 +114,7 @@ public class Execution {
                 .valueUnboxer(valueUnboxer)
                 .executionInput(executionInput)
                 .propagapropagateErrorsOnNonNullContractFailureeErrors(propagateErrorsOnNonNullContractFailure)
+                .engineRunningObserver(engineRunningObserver)
                 .build();
 
         executionContext.getGraphQLContext().put(ResultNodesInfo.RESULT_NODES_INFO, executionContext.getResultNodesInfo());
