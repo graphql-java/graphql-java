@@ -27,7 +27,6 @@ public abstract class AbstractAsyncExecutionStrategy extends ExecutionStrategy {
                 handleNonNullException(executionContext, overallResult, exception);
                 return;
             }
-            executionContext.checkIsCancelled();
 
             Map<String, Object> resolvedValuesByField = Maps.newLinkedHashMapWithExpectedSize(fieldNames.size());
             int ix = 0;

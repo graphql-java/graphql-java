@@ -10,6 +10,7 @@ import graphql.GraphQLError;
 import graphql.Internal;
 import graphql.PublicApi;
 import graphql.collect.ImmutableKit;
+import graphql.execution.EngineRunningObserver.RunningState;
 import graphql.execution.incremental.IncrementalCallState;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationState;
@@ -34,6 +35,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+
+import static graphql.execution.EngineRunningObserver.RunningState.CANCELLED;
+import static graphql.execution.EngineRunningObserver.RunningState.NOT_RUNNING;
+import static graphql.execution.EngineRunningObserver.RunningState.RUNNING;
 
 @SuppressWarnings("TypeParameterUnusedInFormals")
 @PublicApi
@@ -371,48 +376,89 @@ public class ExecutionContext {
         return isRunning.get() > 0;
     }
 
-    public void incrementRunning() {
-        if (isRunning.incrementAndGet() == 1 && engineRunningObserver != null) {
-            engineRunningObserver.runningStateChanged(executionId, graphQLContext, true);
+    private void incrementRunning(Throwable throwable) {
+        checkIsCancelled(throwable);
+
+        if (isRunning.incrementAndGet() == 1) {
+            changeOfState(RUNNING);
         }
     }
 
-    public void decrementRunning() {
-        if (isRunning.decrementAndGet() == 0 && engineRunningObserver != null) {
-            engineRunningObserver.runningStateChanged(executionId, graphQLContext, false);
+    private void decrementRunning(Throwable throwable) {
+        checkIsCancelled(throwable);
+
+        if (isRunning.decrementAndGet() == 0) {
+            changeOfState(NOT_RUNNING);
         }
     }
 
+    @Internal
     public void incrementRunning(CompletableFuture<?> cf) {
         cf.whenComplete((result, throwable) -> {
-            incrementRunning();
+            incrementRunning(throwable);
         });
     }
 
+    @Internal
     public void decrementRunning(CompletableFuture<?> cf) {
         cf.whenComplete((result, throwable) -> {
-            decrementRunning();
+            decrementRunning(throwable);
         });
 
     }
 
+    @Internal
     public <T> T call(Supplier<T> callable) {
-        incrementRunning();
+        return call(null, callable);
+    }
+
+    @Internal
+    public <T> T call(Throwable throwable, Supplier<T> callable) {
+        incrementRunning(throwable);
         try {
             return callable.get();
         } finally {
-            decrementRunning();
+            decrementRunning(throwable);
         }
     }
 
+    @Internal
     public void run(Runnable runnable) {
-        incrementRunning();
+        run(null, runnable);
+    }
+
+    @Internal
+    public void run(Throwable throwable, Runnable runnable) {
+        incrementRunning(throwable);
         try {
             runnable.run();
         } finally {
-            decrementRunning();
+            decrementRunning(throwable);
         }
     }
 
+    private void checkIsCancelled(Throwable currentThrowable) {
+        // no need to check we are cancelled if we already have an exception in play
+        // since it can lead to an exception being thrown when an exception has already been
+        // thrown
+        if (currentThrowable == null) {
+            checkIsCancelled();
+        }
+    }
 
+    /**
+     * This will abort the execution via {@link AbortExecutionException} if the {@link ExecutionInput} has been cancelled
+     */
+    private void checkIsCancelled() {
+        if (executionInput.isCancelled()) {
+            changeOfState(CANCELLED);
+            throw new AbortExecutionException("Execution has been asked to be cancelled");
+        }
+    }
+
+    private void changeOfState(RunningState runningState) {
+        if (engineRunningObserver != null) {
+            engineRunningObserver.runningStateChanged(executionId, graphQLContext, runningState);
+        }
+    }
 }
