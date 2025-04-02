@@ -28,7 +28,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -363,24 +362,19 @@ public class ExecutionContext {
         return isRunning.get() > 0;
     }
 
-    public <T> T run(Callable<T> callable) {
+    public <T> T call(CallableWithoutException<T> callable) {
         isRunning.incrementAndGet();
         try {
             return callable.call();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
         } finally {
             isRunning.decrementAndGet();
         }
     }
 
-    public void runnable(Runnable runnable) {
+    public void run(Runnable runnable) {
         isRunning.incrementAndGet();
         try {
             runnable.run();
-            ;
-        } catch (Exception e) {
-            throw new RuntimeException(e);
         } finally {
             isRunning.decrementAndGet();
         }

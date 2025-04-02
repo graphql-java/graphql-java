@@ -38,7 +38,7 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
     @Override
     @SuppressWarnings("FutureReturnValueIgnored")
     public CompletableFuture<ExecutionResult> execute(ExecutionContext executionContext, ExecutionStrategyParameters parameters) throws NonNullableFieldWasNullException {
-        return executionContext.run(() -> {
+        return executionContext.call(() -> {
             DataLoaderDispatchStrategy dataLoaderDispatcherStrategy = executionContext.getDataLoaderDispatcherStrategy();
             dataLoaderDispatcherStrategy.executionStrategy(executionContext, parameters);
             Instrumentation instrumentation = executionContext.getInstrumentation();
@@ -61,7 +61,7 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
             executionStrategyCtx.onDispatched();
 
             futures.await().whenComplete((completeValueInfos, throwable) -> {
-                executionContext.runnable(() -> {
+                executionContext.run(() -> {
                     List<String> fieldsExecutedOnInitialResult = deferredExecutionSupport.getNonDeferredFieldNames(fieldNames);
 
                     BiConsumer<List<Object>, Throwable> handleResultsConsumer = handleResults(executionContext, fieldsExecutedOnInitialResult, overallResult);
@@ -78,7 +78,7 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
                     executionStrategyCtx.onFieldValuesInfo(completeValueInfos);
                     fieldValuesFutures.await().whenComplete(handleResultsConsumer);
                 });
-            }).exceptionally((ex) -> executionContext.run(() -> {
+            }).exceptionally((ex) -> executionContext.call(() -> {
                 // if there are any issues with combining/handling the field results,
                 // complete the future at all costs and bubble up any thrown exception so
                 // the execution does not hang.

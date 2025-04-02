@@ -201,7 +201,7 @@ public abstract class ExecutionStrategy {
     @SuppressWarnings("unchecked")
     @DuckTyped(shape = "CompletableFuture<Map<String, Object>> | Map<String, Object>")
     protected Object executeObject(ExecutionContext executionContext, ExecutionStrategyParameters parameters) throws NonNullableFieldWasNullException {
-        return executionContext.run(() -> {
+        return executionContext.call(() -> {
             DataLoaderDispatchStrategy dataLoaderDispatcherStrategy = executionContext.getDataLoaderDispatcherStrategy();
             dataLoaderDispatcherStrategy.executeObject(executionContext, parameters);
             Instrumentation instrumentation = executionContext.getInstrumentation();
@@ -226,7 +226,7 @@ public abstract class ExecutionStrategy {
             if (fieldValueInfosResult instanceof CompletableFuture) {
                 CompletableFuture<List<FieldValueInfo>> fieldValueInfos = (CompletableFuture<List<FieldValueInfo>>) fieldValueInfosResult;
                 fieldValueInfos.whenComplete((completeValueInfos, throwable) -> {
-                    executionContext.runnable(() -> {
+                    executionContext.run(() -> {
                         if (throwable != null) {
                             handleResultsConsumer.accept(null, throwable);
                             return;
@@ -237,7 +237,7 @@ public abstract class ExecutionStrategy {
                         resolveObjectCtx.onFieldValuesInfo(completeValueInfos);
                         resultFutures.await().whenComplete(handleResultsConsumer);
                     });
-                }).exceptionally((ex) -> executionContext.run(() -> {
+                }).exceptionally((ex) -> executionContext.call(() -> {
                     // if there are any issues with combining/handling the field results,
                     // complete the future at all costs and bubble up any thrown exception so
                     // the execution does not hang.
@@ -280,7 +280,7 @@ public abstract class ExecutionStrategy {
 
     private BiConsumer<List<Object>, Throwable> buildFieldValueMap(List<String> fieldNames, CompletableFuture<Map<String, Object>> overallResult, ExecutionContext executionContext) {
         return (List<Object> results, Throwable exception) -> {
-            executionContext.runnable(() -> {
+            executionContext.run(() -> {
                 if (exception != null) {
                     handleValueException(overallResult, exception, executionContext);
                     return;
@@ -514,7 +514,7 @@ public abstract class ExecutionStrategy {
             @SuppressWarnings("unchecked")
             CompletableFuture<Object> fetchedValue = (CompletableFuture<Object>) fetchedObject;
             return fetchedValue
-                    .handle((result, exception) -> executionContext.run(() -> {
+                    .handle((result, exception) -> executionContext.call(() -> {
                         fetchCtx.onCompleted(result, exception);
                         if (exception != null) {
                             CompletableFuture<Object> handleFetchingExceptionResult = handleFetchingException(dataFetchingEnvironment.get(), parameters, exception);
@@ -560,7 +560,7 @@ public abstract class ExecutionStrategy {
     protected FetchedValue unboxPossibleDataFetcherResult(ExecutionContext executionContext,
                                                           ExecutionStrategyParameters parameters,
                                                           Object result) {
-        return executionContext.run(() -> {
+        return executionContext.call(() -> {
             if (result instanceof DataFetcherResult) {
                 DataFetcherResult<?> dataFetcherResult = (DataFetcherResult<?>) result;
 
@@ -646,7 +646,7 @@ public abstract class ExecutionStrategy {
     }
 
     private FieldValueInfo completeField(GraphQLFieldDefinition fieldDef, ExecutionContext executionContext, ExecutionStrategyParameters parameters, FetchedValue fetchedValue) {
-        return executionContext.run(() -> {
+        return executionContext.call(() -> {
             GraphQLObjectType parentType = (GraphQLObjectType) parameters.getExecutionStepInfo().getUnwrappedNonNullType();
             ExecutionStepInfo executionStepInfo = createExecutionStepInfo(executionContext, parameters, fieldDef, parentType);
 
@@ -843,7 +843,7 @@ public abstract class ExecutionStrategy {
             overallResult.whenComplete(completeListCtx::onCompleted);
 
             resultsFuture.whenComplete((results, exception) -> {
-                executionContext.runnable(() -> {
+                executionContext.run(() -> {
                     if (exception != null) {
                         handleValueException(overallResult, exception, executionContext);
                         return;

@@ -56,7 +56,7 @@ public class SubscriptionExecutionStrategy extends ExecutionStrategy {
 
     @Override
     public CompletableFuture<ExecutionResult> execute(ExecutionContext executionContext, ExecutionStrategyParameters parameters) throws NonNullableFieldWasNullException {
-        return executionContext.run(() -> {
+        return executionContext.call(() -> {
             Instrumentation instrumentation = executionContext.getInstrumentation();
             InstrumentationExecutionStrategyParameters instrumentationParameters = new InstrumentationExecutionStrategyParameters(executionContext, parameters);
             ExecutionStrategyInstrumentationContext executionStrategyCtx = ExecutionStrategyInstrumentationContext.nonNullCtx(instrumentation.beginExecutionStrategy(
@@ -69,7 +69,7 @@ public class SubscriptionExecutionStrategy extends ExecutionStrategy {
             //
             // when the upstream source event stream completes, subscribe to it and wire in our adapter
             CompletableFuture<ExecutionResult> overallResult = sourceEventStream.thenApply((publisher) -> {
-                return executionContext.run(() -> {
+                return executionContext.call(() -> {
                     if (publisher == null) {
                         ExecutionResultImpl executionResult = new ExecutionResultImpl(null, executionContext.getErrors());
                         return executionResult;
@@ -112,7 +112,7 @@ public class SubscriptionExecutionStrategy extends ExecutionStrategy {
         ExecutionStrategyParameters newParameters = firstFieldOfSubscriptionSelection(parameters);
 
         CompletableFuture<FetchedValue> fieldFetched = Async.toCompletableFuture(fetchField(executionContext, newParameters));
-        return fieldFetched.thenApply(fetchedValue -> executionContext.run(() -> {
+        return fieldFetched.thenApply(fetchedValue -> executionContext.call(() -> {
             Object publisher = fetchedValue.getFetchedValue();
             if (publisher != null) {
                 assertTrue(publisher instanceof Publisher, () -> "Your data fetcher must return a Publisher of events when using graphql subscriptions");
@@ -136,7 +136,7 @@ public class SubscriptionExecutionStrategy extends ExecutionStrategy {
      */
 
     private CompletableFuture<ExecutionResult> executeSubscriptionEvent(ExecutionContext executionContext, ExecutionStrategyParameters parameters, Object eventPayload) {
-        return executionContext.run(() -> {
+        return executionContext.call(() -> {
             Instrumentation instrumentation = executionContext.getInstrumentation();
 
             ExecutionContext newExecutionContext = executionContext.transform(builder -> builder
