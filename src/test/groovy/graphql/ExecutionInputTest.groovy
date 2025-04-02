@@ -184,14 +184,18 @@ class ExecutionInputTest extends Specification {
         CountDownLatch fieldLatch = new CountDownLatch(1)
 
         DataFetcher df1Sec = { DataFetchingEnvironment env ->
+            println("Entering DF1")
             return CompletableFuture.supplyAsync {
+                println("DF1 async run")
                 fieldLatch.await()
                 Thread.sleep(1000)
                 return [f: "x"]
             }
         }
         DataFetcher df10Sec = { DataFetchingEnvironment env ->
+            println("Entering DF10")
             return CompletableFuture.supplyAsync {
+                println("DF10 async run")
                 fieldLatch.await()
                 Thread.sleep(10000)
                 return "x"
@@ -214,11 +218,14 @@ class ExecutionInputTest extends Specification {
         Thread.sleep(250) // let it get into the field fetching say
 
         // lets cancel it
+        println("cancelling")
         executionInput.cancel()
 
         // let the DFs run
+        println("make the fields run")
         fieldLatch.countDown()
 
+        println("and await for the overall CF to complete")
         Awaitility.await().atMost(Duration.ofSeconds(60)).until({ -> cf.isDone() })
 
         def er = cf.join()

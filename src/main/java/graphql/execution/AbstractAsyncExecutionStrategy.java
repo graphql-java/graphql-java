@@ -22,7 +22,7 @@ public abstract class AbstractAsyncExecutionStrategy extends ExecutionStrategy {
     }
 
     protected BiConsumer<List<Object>, Throwable> handleResults(ExecutionContext executionContext, List<String> fieldNames, CompletableFuture<ExecutionResult> overallResult) {
-        return (List<Object> results, Throwable exception) -> executionContext.run(() -> {
+        return (List<Object> results, Throwable exception) -> executionContext.run(exception, () -> {
             if (exception != null) {
                 handleNonNullException(executionContext, overallResult, exception);
                 return;

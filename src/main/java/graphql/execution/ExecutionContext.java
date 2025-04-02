@@ -381,9 +381,14 @@ public class ExecutionContext {
     }
 
     public <T> T call(Supplier<T> callable) {
+        return call(null,callable);
+    }
+
+    public <T> T call(Throwable currentThrowable, Supplier<T> callable) {
         if (isRunning.incrementAndGet() == 1 && engineRunningObserver != null) {
             engineRunningObserver.runningStateChanged(executionId, graphQLContext, true);
         }
+        checkIsCancelled(currentThrowable);
         try {
             return callable.get();
         } finally {
@@ -394,9 +399,14 @@ public class ExecutionContext {
     }
 
     public void run(Runnable runnable) {
+        run(null,runnable);
+    }
+
+    public void run(Throwable currentThrowable, Runnable runnable) {
         if (isRunning.incrementAndGet() == 1 && engineRunningObserver != null) {
             engineRunningObserver.runningStateChanged(executionId, graphQLContext, true);
         }
+        checkIsCancelled(currentThrowable);
         try {
             runnable.run();
         } finally {
@@ -404,6 +414,13 @@ public class ExecutionContext {
                 engineRunningObserver.runningStateChanged(executionId, graphQLContext, false);
             }
 
+        }
+    }
+
+    private void checkIsCancelled(Throwable currentThrowable) {
+        // no need to check if we already have an exception in place
+        if (currentThrowable == null) {
+            checkIsCancelled();
         }
     }
 

@@ -226,7 +226,7 @@ public abstract class ExecutionStrategy {
             if (fieldValueInfosResult instanceof CompletableFuture) {
                 CompletableFuture<List<FieldValueInfo>> fieldValueInfos = (CompletableFuture<List<FieldValueInfo>>) fieldValueInfosResult;
                 fieldValueInfos.whenComplete((completeValueInfos, throwable) -> {
-                    executionContext.run(() -> {
+                    executionContext.run(throwable,() -> {
                         if (throwable != null) {
                             handleResultsConsumer.accept(null, throwable);
                             return;
@@ -280,7 +280,7 @@ public abstract class ExecutionStrategy {
 
     private BiConsumer<List<Object>, Throwable> buildFieldValueMap(List<String> fieldNames, CompletableFuture<Map<String, Object>> overallResult, ExecutionContext executionContext) {
         return (List<Object> results, Throwable exception) -> {
-            executionContext.run(() -> {
+            executionContext.run(exception,() -> {
                 if (exception != null) {
                     handleValueException(overallResult, exception, executionContext);
                     return;
@@ -514,7 +514,7 @@ public abstract class ExecutionStrategy {
             @SuppressWarnings("unchecked")
             CompletableFuture<Object> fetchedValue = (CompletableFuture<Object>) fetchedObject;
             return fetchedValue
-                    .handle((result, exception) -> executionContext.call(() -> {
+                    .handle((result, exception) -> executionContext.call(exception,() -> {
                         fetchCtx.onCompleted(result, exception);
                         if (exception != null) {
                             CompletableFuture<Object> handleFetchingExceptionResult = handleFetchingException(dataFetchingEnvironment.get(), parameters, exception);
@@ -843,7 +843,7 @@ public abstract class ExecutionStrategy {
             overallResult.whenComplete(completeListCtx::onCompleted);
 
             resultsFuture.whenComplete((results, exception) -> {
-                executionContext.run(() -> {
+                executionContext.run(exception, () -> {
                     if (exception != null) {
                         handleValueException(overallResult, exception, executionContext);
                         return;
