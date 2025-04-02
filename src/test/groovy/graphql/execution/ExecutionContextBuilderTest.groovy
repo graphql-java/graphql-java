@@ -1,5 +1,6 @@
 package graphql.execution
 
+import graphql.ExecutionInput
 import graphql.GraphQLContext
 import graphql.execution.instrumentation.Instrumentation
 import graphql.language.Document
@@ -9,6 +10,8 @@ import graphql.parser.Parser
 import graphql.schema.GraphQLSchema
 import org.dataloader.DataLoaderRegistry
 import spock.lang.Specification
+
+import java.util.concurrent.CountDownLatch
 
 class ExecutionContextBuilderTest extends Specification {
 
@@ -137,24 +140,24 @@ class ExecutionContextBuilderTest extends Specification {
         given:
         def oldCoercedVariables = CoercedVariables.emptyVariables()
         def executionContextOld = new ExecutionContextBuilder()
-            .instrumentation(instrumentation)
-            .queryStrategy(queryStrategy)
-            .mutationStrategy(mutationStrategy)
-            .subscriptionStrategy(subscriptionStrategy)
-            .graphQLSchema(schema)
-            .executionId(executionId)
-            .graphQLContext(graphQLContext)
-            .root(root)
-            .operationDefinition(operation)
-            .coercedVariables(oldCoercedVariables)
-            .fragmentsByName([MyFragment: fragment])
-            .dataLoaderRegistry(dataLoaderRegistry)
-            .build()
+                .instrumentation(instrumentation)
+                .queryStrategy(queryStrategy)
+                .mutationStrategy(mutationStrategy)
+                .subscriptionStrategy(subscriptionStrategy)
+                .graphQLSchema(schema)
+                .executionId(executionId)
+                .graphQLContext(graphQLContext)
+                .root(root)
+                .operationDefinition(operation)
+                .coercedVariables(oldCoercedVariables)
+                .fragmentsByName([MyFragment: fragment])
+                .dataLoaderRegistry(dataLoaderRegistry)
+                .build()
 
         when:
         def coercedVariables = CoercedVariables.of([var: 'value'])
         def executionContext = executionContextOld.transform(builder -> builder
-                                                        .coercedVariables(coercedVariables))
+                .coercedVariables(coercedVariables))
 
         then:
         executionContext.executionId == executionId
@@ -231,7 +234,7 @@ class ExecutionContextBuilderTest extends Specification {
         when:
         def executionContext = executionContextOld
                 .transform(builder -> builder
-                .dataLoaderDispatcherStrategy(mockDataLoaderDispatcherStrategy))
+                        .dataLoaderDispatcherStrategy(mockDataLoaderDispatcherStrategy))
 
         then:
         executionContext.getDataLoaderDispatcherStrategy() == mockDataLoaderDispatcherStrategy
@@ -264,5 +267,77 @@ class ExecutionContextBuilderTest extends Specification {
         OperationDefinition.Operation.QUERY        | true    | false      | false
         OperationDefinition.Operation.MUTATION     | false   | true       | false
         OperationDefinition.Operation.SUBSCRIPTION | false   | false      | true
+    }
+
+    def "can track if its running or not"() {
+
+        when:
+        def executionContext = new ExecutionContextBuilder()
+                .instrumentation(instrumentation)
+                .queryStrategy(queryStrategy)
+                .mutationStrategy(mutationStrategy)
+                .subscriptionStrategy(subscriptionStrategy)
+                .graphQLSchema(schema)
+                .executionId(executionId)
+                .graphQLContext(graphQLContext)
+                .root(root)
+                .operationDefinition(operation)
+                .fragmentsByName([MyFragment: fragment])
+                .dataLoaderRegistry(dataLoaderRegistry)
+                .executionInput(ExecutionInput.newExecutionInput("query q { f }").build())
+                .operationDefinition(OperationDefinition.newOperationDefinition().operation(OperationDefinition.Operation.QUERY).build())
+                .build()
+
+        then:
+        !executionContext.isRunning()
+
+        when:
+        CountDownLatch latch = new CountDownLatch(1)
+        CountDownLatch threadLatch = new CountDownLatch(1)
+        offThread({
+            executionContext.run {
+                threadLatch.countDown()
+                println("running on ${Thread.currentThread().name}")
+                latch.await()
+            }
+        })
+        threadLatch.await()
+
+        then:
+        executionContext.isRunning()
+
+        when:
+        latch.countDown()
+        Thread.sleep(10) // time for the runnable to exit
+
+        then:
+        !executionContext.isRunning()
+
+        when:
+        latch = new CountDownLatch(1)
+        threadLatch = new CountDownLatch(1)
+        offThread({
+            executionContext.call {
+                threadLatch.countDown()
+                println("running on ${Thread.currentThread().name}")
+                latch.await()
+                return "x"
+            }
+        })
+        then:
+        threadLatch.await()
+        executionContext.isRunning()
+
+        when:
+        latch.countDown()
+        Thread.sleep(10) // time for the call to exit
+
+        then:
+        !executionContext.isRunning()
+    }
+
+    def offThread(Runnable runnable) {
+        new Thread(runnable).start()
+        return "x"
     }
 }
