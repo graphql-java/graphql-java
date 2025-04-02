@@ -362,10 +362,10 @@ public class ExecutionContext {
         return isRunning.get() > 0;
     }
 
-    public <T> T call(CallableWithoutException<T> callable) {
+    public <T> T call(Supplier<T> callable) {
         isRunning.incrementAndGet();
         try {
-            return callable.call();
+            return callable.get();
         } finally {
             isRunning.decrementAndGet();
         }
