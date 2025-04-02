@@ -334,6 +334,16 @@ public class ExecutionContext {
     }
 
     /**
+     * This will abort the execution via {@link AbortExecutionException} if the {@link ExecutionInput} has been cancelled
+     */
+    @Internal
+    public void checkIsCancelled() {
+        if (getExecutionInput().isCancelled()) {
+            throw new AbortExecutionException("Execution has been asked to be cancelled");
+        }
+    }
+
+    /**
      * This helps you transform the current ExecutionContext object into another one by starting a builder with all
      * the current values and allows you to transform it how you want.
      *

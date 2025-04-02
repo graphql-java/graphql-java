@@ -32,7 +32,7 @@ public class AsyncSerialExecutionStrategy extends AbstractAsyncExecutionStrategy
     @Override
     @SuppressWarnings({"TypeParameterUnusedInFormals", "FutureReturnValueIgnored"})
     public CompletableFuture<ExecutionResult> execute(ExecutionContext executionContext, ExecutionStrategyParameters parameters) throws NonNullableFieldWasNullException {
-        checkIsCancelled(executionContext);
+        executionContext.checkIsCancelled();
 
         DataLoaderDispatchStrategy dataLoaderDispatcherStrategy = executionContext.getDataLoaderDispatcherStrategy();
 
@@ -52,7 +52,7 @@ public class AsyncSerialExecutionStrategy extends AbstractAsyncExecutionStrategy
         }
 
         CompletableFuture<List<Object>> resultsFuture = Async.eachSequentially(fieldNames, (fieldName, prevResults) -> {
-            checkIsCancelled(executionContext);
+            executionContext.checkIsCancelled();
 
             MergedField currentField = fields.getSubField(fieldName);
             ResultPath fieldPath = parameters.getPath().segment(mkNameForPath(currentField));

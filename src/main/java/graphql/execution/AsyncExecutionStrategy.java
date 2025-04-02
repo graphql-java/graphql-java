@@ -38,7 +38,7 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
     @Override
     @SuppressWarnings("FutureReturnValueIgnored")
     public CompletableFuture<ExecutionResult> execute(ExecutionContext executionContext, ExecutionStrategyParameters parameters) throws NonNullableFieldWasNullException {
-        checkIsCancelled(executionContext);
+        executionContext.checkIsCancelled();
 
         DataLoaderDispatchStrategy dataLoaderDispatcherStrategy = executionContext.getDataLoaderDispatcherStrategy();
         dataLoaderDispatcherStrategy.executionStrategy(executionContext, parameters);
@@ -70,7 +70,7 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
                 return;
             }
 
-            checkIsCancelled(executionContext);
+            executionContext.checkIsCancelled();
 
             Async.CombinedBuilder<Object> fieldValuesFutures = Async.ofExpectedSize(completeValueInfos.size());
             for (FieldValueInfo completeValueInfo : completeValueInfos) {
