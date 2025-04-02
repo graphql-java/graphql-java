@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -370,31 +371,48 @@ public class ExecutionContext {
         return isRunning.get() > 0;
     }
 
-    public <T> T call(Supplier<T> callable) {
+    public void incrementRunning() {
         if (isRunning.incrementAndGet() == 1 && engineRunningObserver != null) {
             engineRunningObserver.runningStateChanged(executionId, graphQLContext, true);
         }
+    }
+
+    public void decrementRunning() {
+        if (isRunning.decrementAndGet() == 0 && engineRunningObserver != null) {
+            engineRunningObserver.runningStateChanged(executionId, graphQLContext, false);
+        }
+    }
+
+    public void incrementRunning(CompletableFuture<?> cf) {
+        cf.whenComplete((result, throwable) -> {
+            incrementRunning();
+        });
+    }
+
+    public void decrementRunning(CompletableFuture<?> cf) {
+        cf.whenComplete((result, throwable) -> {
+            decrementRunning();
+        });
+
+    }
+
+    public <T> T call(Supplier<T> callable) {
+        incrementRunning();
         try {
             return callable.get();
         } finally {
-            if (isRunning.decrementAndGet() == 0 && engineRunningObserver != null) {
-                engineRunningObserver.runningStateChanged(executionId, graphQLContext, false);
-            }
+            decrementRunning();
         }
     }
 
     public void run(Runnable runnable) {
-        if (isRunning.incrementAndGet() == 1 && engineRunningObserver != null) {
-            engineRunningObserver.runningStateChanged(executionId, graphQLContext, true);
-        }
+        incrementRunning();
         try {
             runnable.run();
         } finally {
-            if (isRunning.decrementAndGet() == 0 && engineRunningObserver != null) {
-                engineRunningObserver.runningStateChanged(executionId, graphQLContext, false);
-            }
-
+            decrementRunning();
         }
     }
+
 
 }

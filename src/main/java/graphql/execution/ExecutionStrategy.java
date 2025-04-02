@@ -513,7 +513,8 @@ public abstract class ExecutionStrategy {
         if (fetchedObject instanceof CompletableFuture) {
             @SuppressWarnings("unchecked")
             CompletableFuture<Object> fetchedValue = (CompletableFuture<Object>) fetchedObject;
-            return fetchedValue
+            executionContext.decrementRunning(fetchedValue);
+            CompletableFuture<FetchedValue> fetchedValueCF = fetchedValue
                     .handle((result, exception) -> executionContext.call(() -> {
                         fetchCtx.onCompleted(result, exception);
                         if (exception != null) {
@@ -526,6 +527,8 @@ public abstract class ExecutionStrategy {
                     }))
                     .thenCompose(Function.identity())
                     .thenApply(result -> unboxPossibleDataFetcherResult(executionContext, parameters, result));
+            executionContext.incrementRunning(fetchedValue);
+            return fetchedValueCF;
         } else {
             fetchCtx.onCompleted(fetchedObject, null);
             return unboxPossibleDataFetcherResult(executionContext, parameters, fetchedObject);
