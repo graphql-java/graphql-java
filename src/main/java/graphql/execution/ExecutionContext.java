@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -343,16 +344,6 @@ public class ExecutionContext {
     }
 
     /**
-     * This will abort the execution via {@link AbortExecutionException} if the {@link ExecutionInput} has been cancelled
-     */
-    @Internal
-    public void checkIsCancelled() {
-        if (getExecutionInput().isCancelled()) {
-            throw new AbortExecutionException("Execution has been asked to be cancelled");
-        }
-    }
-
-    /**
      * This helps you transform the current ExecutionContext object into another one by starting a builder with all
      * the current values and allows you to transform it how you want.
      *
@@ -380,48 +371,48 @@ public class ExecutionContext {
         return isRunning.get() > 0;
     }
 
-    public <T> T call(Supplier<T> callable) {
-        return call(null,callable);
-    }
-
-    public <T> T call(Throwable currentThrowable, Supplier<T> callable) {
+    public void incrementRunning() {
         if (isRunning.incrementAndGet() == 1 && engineRunningObserver != null) {
             engineRunningObserver.runningStateChanged(executionId, graphQLContext, true);
         }
-        checkIsCancelled(currentThrowable);
+    }
+
+    public void decrementRunning() {
+        if (isRunning.decrementAndGet() == 0 && engineRunningObserver != null) {
+            engineRunningObserver.runningStateChanged(executionId, graphQLContext, false);
+        }
+    }
+
+    public void incrementRunning(CompletableFuture<?> cf) {
+        cf.whenComplete((result, throwable) -> {
+            incrementRunning();
+        });
+    }
+
+    public void decrementRunning(CompletableFuture<?> cf) {
+        cf.whenComplete((result, throwable) -> {
+            decrementRunning();
+        });
+
+    }
+
+    public <T> T call(Supplier<T> callable) {
+        incrementRunning();
         try {
             return callable.get();
         } finally {
-            if (isRunning.decrementAndGet() == 0 && engineRunningObserver != null) {
-                engineRunningObserver.runningStateChanged(executionId, graphQLContext, false);
-            }
+            decrementRunning();
         }
     }
 
     public void run(Runnable runnable) {
-        run(null,runnable);
-    }
-
-    public void run(Throwable currentThrowable, Runnable runnable) {
-        if (isRunning.incrementAndGet() == 1 && engineRunningObserver != null) {
-            engineRunningObserver.runningStateChanged(executionId, graphQLContext, true);
-        }
-        checkIsCancelled(currentThrowable);
+        incrementRunning();
         try {
             runnable.run();
         } finally {
-            if (isRunning.decrementAndGet() == 0 && engineRunningObserver != null) {
-                engineRunningObserver.runningStateChanged(executionId, graphQLContext, false);
-            }
-
+            decrementRunning();
         }
     }
 
-    private void checkIsCancelled(Throwable currentThrowable) {
-        // no need to check if we already have an exception in place
-        if (currentThrowable == null) {
-            checkIsCancelled();
-        }
-    }
 
 }

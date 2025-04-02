@@ -45,7 +45,7 @@ class EngineRunningTest extends Specification {
         states == [true, false]
     }
 
-    def "engine running state is observed with async datafetcher"() {
+    def "engine running state is observed with one async datafetcher"() {
         given:
         def sdl = '''
 
@@ -80,10 +80,61 @@ class EngineRunningTest extends Specification {
         cf.complete("world")
 
         then:
-        //TODO: why is that so much back and forth between true and false?
-        states == [true, false, true, false, true, false, true, false]
+        states == [true, false]
         er.get().data == [hello: "world"]
 
+    }
+
+    def "engine running state is observed with two async datafetcher"() {
+        given:
+        def sdl = '''
+
+        type Query {
+          hello: String
+          hello2: String
+        }
+        '''
+        CompletableFuture cf1 = new CompletableFuture();
+        CompletableFuture cf2 = new CompletableFuture();
+        def df = { env ->
+            return cf1;
+        } as DataFetcher
+        def df2 = { env ->
+            return cf2
+        } as DataFetcher
+
+        def fetchers = ["Query": ["hello": df, "hello2": df2]]
+        def schema = TestUtil.schema(sdl, fetchers)
+        def graphQL = GraphQL.newGraphQL(schema).build()
+
+        def query = "{ hello hello2 }"
+        def ei = newExecutionInput(query).build()
+
+        List<Boolean> states = new CopyOnWriteArrayList<>();
+        ei.getGraphQLContext().put(ENGINE_RUNNING_OBSERVER_KEY, {
+            ExecutionId executionId, GraphQLContext context, boolean running ->
+                states.add(running)
+        } as EngineRunningObserver);
+
+        when:
+        def er = graphQL.executeAsync(ei)
+        then:
+        states == [true, false]
+
+        when:
+        states.clear();
+        cf1.complete("world")
+
+        then:
+        states == [true, false]
+
+        when:
+        states.clear();
+        cf2.complete("world2")
+
+        then:
+        states == [true, false]
+        er.get().data == [hello: "world", hello2: "world2"]
     }
 
 

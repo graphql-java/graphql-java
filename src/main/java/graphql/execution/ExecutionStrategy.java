@@ -226,7 +226,7 @@ public abstract class ExecutionStrategy {
             if (fieldValueInfosResult instanceof CompletableFuture) {
                 CompletableFuture<List<FieldValueInfo>> fieldValueInfos = (CompletableFuture<List<FieldValueInfo>>) fieldValueInfosResult;
                 fieldValueInfos.whenComplete((completeValueInfos, throwable) -> {
-                    executionContext.run(throwable,() -> {
+                    executionContext.run(() -> {
                         if (throwable != null) {
                             handleResultsConsumer.accept(null, throwable);
                             return;
@@ -280,7 +280,7 @@ public abstract class ExecutionStrategy {
 
     private BiConsumer<List<Object>, Throwable> buildFieldValueMap(List<String> fieldNames, CompletableFuture<Map<String, Object>> overallResult, ExecutionContext executionContext) {
         return (List<Object> results, Throwable exception) -> {
-            executionContext.run(exception,() -> {
+            executionContext.run(() -> {
                 if (exception != null) {
                     handleValueException(overallResult, exception, executionContext);
                     return;
@@ -343,33 +343,6 @@ public abstract class ExecutionStrategy {
             }
         }
         return futures;
-    }
-
-    /**
-     * Called to fetch a value for a field and resolve it further in terms of the graphql query.  This will call
-     * #fetchField followed by #completeField and the completed Object is returned.
-     * <p>
-     * An execution strategy can iterate the fields to be executed and call this method for each one
-     * <p>
-     * Graphql fragments mean that for any give logical field can have one or more {@link Field} values associated with it
-     * in the query, hence the fieldList.  However, the first entry is representative of the field for most purposes.
-     *
-     * @param executionContext contains the top level execution parameters
-     * @param parameters       contains the parameters holding the fields to be executed and source object
-     *
-     * @return a {@link CompletableFuture} promise to an {@link Object} or the materialized {@link Object}
-     *
-     * @throws NonNullableFieldWasNullException in the future if a non-null field resolved to a null value
-     */
-    @SuppressWarnings("unchecked")
-    @DuckTyped(shape = " CompletableFuture<Object> | Object")
-    protected Object resolveField(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
-        Object fieldWithInfo = resolveFieldWithInfo(executionContext, parameters);
-        if (fieldWithInfo instanceof CompletableFuture) {
-            return ((CompletableFuture<FieldValueInfo>) fieldWithInfo).thenCompose(FieldValueInfo::getFieldValueFuture);
-        } else {
-            return ((FieldValueInfo) fieldWithInfo).getFieldValueObject();
-        }
     }
 
     /**
@@ -513,8 +486,9 @@ public abstract class ExecutionStrategy {
         if (fetchedObject instanceof CompletableFuture) {
             @SuppressWarnings("unchecked")
             CompletableFuture<Object> fetchedValue = (CompletableFuture<Object>) fetchedObject;
-            return fetchedValue
-                    .handle((result, exception) -> executionContext.call(exception,() -> {
+            executionContext.decrementRunning(fetchedValue);
+            CompletableFuture<FetchedValue> fetchedValueCF = fetchedValue
+                    .handle((result, exception) -> executionContext.call(() -> {
                         fetchCtx.onCompleted(result, exception);
                         if (exception != null) {
                             CompletableFuture<Object> handleFetchingExceptionResult = handleFetchingException(dataFetchingEnvironment.get(), parameters, exception);
@@ -526,6 +500,8 @@ public abstract class ExecutionStrategy {
                     }))
                     .thenCompose(Function.identity())
                     .thenApply(result -> unboxPossibleDataFetcherResult(executionContext, parameters, result));
+            executionContext.incrementRunning(fetchedValue);
+            return fetchedValueCF;
         } else {
             fetchCtx.onCompleted(fetchedObject, null);
             return unboxPossibleDataFetcherResult(executionContext, parameters, fetchedObject);
@@ -843,7 +819,7 @@ public abstract class ExecutionStrategy {
             overallResult.whenComplete(completeListCtx::onCompleted);
 
             resultsFuture.whenComplete((results, exception) -> {
-                executionContext.run(exception, () -> {
+                executionContext.run(() -> {
                     if (exception != null) {
                         handleValueException(overallResult, exception, executionContext);
                         return;
