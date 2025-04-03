@@ -36,6 +36,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
+import static graphql.Assert.assertTrue;
 import static graphql.execution.EngineRunningObserver.RunningState.CANCELLED;
 import static graphql.execution.EngineRunningObserver.RunningState.NOT_RUNNING;
 import static graphql.execution.EngineRunningObserver.RunningState.RUNNING;
@@ -378,7 +379,7 @@ public class ExecutionContext {
 
     private void incrementRunning(Throwable throwable) {
         checkIsCancelled(throwable);
-
+        assertTrue(isRunning.get() >= 0);
         if (isRunning.incrementAndGet() == 1) {
             changeOfState(RUNNING);
         }
@@ -386,7 +387,7 @@ public class ExecutionContext {
 
     private void decrementRunning(Throwable throwable) {
         checkIsCancelled(throwable);
-
+        assertTrue(isRunning.get() > 0);
         if (isRunning.decrementAndGet() == 0) {
             changeOfState(NOT_RUNNING);
         }

@@ -226,7 +226,7 @@ public abstract class ExecutionStrategy {
             if (fieldValueInfosResult instanceof CompletableFuture) {
                 CompletableFuture<List<FieldValueInfo>> fieldValueInfos = (CompletableFuture<List<FieldValueInfo>>) fieldValueInfosResult;
                 fieldValueInfos.whenComplete((completeValueInfos, throwable) -> {
-                    executionContext.run(throwable,() -> {
+                    executionContext.run(throwable, () -> {
                         if (throwable != null) {
                             handleResultsConsumer.accept(null, throwable);
                             return;
@@ -280,7 +280,7 @@ public abstract class ExecutionStrategy {
 
     private BiConsumer<List<Object>, Throwable> buildFieldValueMap(List<String> fieldNames, CompletableFuture<Map<String, Object>> overallResult, ExecutionContext executionContext) {
         return (List<Object> results, Throwable exception) -> {
-            executionContext.run(exception,() -> {
+            executionContext.run(exception, () -> {
                 if (exception != null) {
                     handleValueException(overallResult, exception, executionContext);
                     return;
@@ -485,22 +485,26 @@ public abstract class ExecutionStrategy {
         }
         if (fetchedObject instanceof CompletableFuture) {
             @SuppressWarnings("unchecked")
-            CompletableFuture<Object> fetchedValue = (CompletableFuture<Object>) fetchedObject;
-            executionContext.decrementRunning(fetchedValue);
-            CompletableFuture<FetchedValue> fetchedValueCF = fetchedValue
-                    .handle((result, exception) -> executionContext.call(exception,() -> {
+            CompletableFuture<Object> originalFetchValue = (CompletableFuture<Object>) fetchedObject;
+            CompletableFuture<Object> fetchedValue = originalFetchValue.thenApply(Function.identity());
+            executionContext.incrementRunning(fetchedValue);
+            CompletableFuture<Object> rawResultCF = fetchedValue
+                    .handle((result, exception) -> executionContext.call(exception, () -> {
                         fetchCtx.onCompleted(result, exception);
                         if (exception != null) {
                             CompletableFuture<Object> handleFetchingExceptionResult = handleFetchingException(dataFetchingEnvironment.get(), parameters, exception);
                             return handleFetchingExceptionResult;
                         } else {
                             // we can simply return the fetched value CF and avoid a allocation
-                            return fetchedValue;
+                            return originalFetchValue;
                         }
                     }))
-                    .thenCompose(Function.identity())
+                    .thenCompose(Function.identity());
+            executionContext.incrementRunning(rawResultCF);
+            CompletableFuture<FetchedValue> fetchedValueCF = rawResultCF
                     .thenApply(result -> unboxPossibleDataFetcherResult(executionContext, parameters, result));
-            executionContext.incrementRunning(fetchedValue);
+            executionContext.decrementRunning(rawResultCF);
+            executionContext.decrementRunning(fetchedValue);
             return fetchedValueCF;
         } else {
             fetchCtx.onCompleted(fetchedObject, null);
@@ -819,7 +823,7 @@ public abstract class ExecutionStrategy {
             overallResult.whenComplete(completeListCtx::onCompleted);
 
             resultsFuture.whenComplete((results, exception) -> {
-                executionContext.run(exception,() -> {
+                executionContext.run(exception, () -> {
                     if (exception != null) {
                         handleValueException(overallResult, exception, executionContext);
                         return;
@@ -1161,6 +1165,4 @@ public abstract class ExecutionStrategy {
             executionContext.addErrors(errors);
         }
     }
-
-
 }
