@@ -496,7 +496,9 @@ public abstract class ExecutionStrategy {
                     .handle((result, exception) -> executionContext.call(exception, () -> {
                         fetchCtx.onCompleted(result, exception);
                         if (exception != null) {
-                            CompletableFuture<Object> handleFetchingExceptionResult = handleFetchingException(dataFetchingEnvironment.get(), parameters, exception);
+                            // because we added an artificial CF, we need to unwrap the exception
+                            Throwable cause = exception.getCause();
+                            CompletableFuture<Object> handleFetchingExceptionResult = handleFetchingException(dataFetchingEnvironment.get(), parameters, cause);
                             return handleFetchingExceptionResult;
                         } else {
                             // we can simply return the fetched value CF and avoid a allocation
