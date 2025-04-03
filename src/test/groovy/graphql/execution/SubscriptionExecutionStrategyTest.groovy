@@ -712,7 +712,7 @@ class SubscriptionExecutionStrategyTest extends Specification {
 
     def "we can cancel the operation and the upstream publisher is told"() {
         List<Runnable> promises = []
-        Publisher<Object> publisher = new RxJavaMessagePublisher(10)
+        RxJavaMessagePublisher publisher = new RxJavaMessagePublisher(10)
 
         DataFetcher newMessageDF = { env -> return publisher }
         DataFetcher senderDF = dfThatDoesNotComplete("sender", promises)
@@ -750,6 +750,7 @@ class SubscriptionExecutionStrategyTest extends Specification {
         messages.size() == 1
         def error = messages[0].errors[0]
         assert error.message == "Execution has been asked to be cancelled"
+        publisher.counter == 2
     }
 
     private static DataFetcher<?> dfThatDoesNotComplete(String propertyName, List<Runnable> promises) {
