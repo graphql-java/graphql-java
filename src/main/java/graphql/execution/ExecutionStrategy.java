@@ -493,12 +493,12 @@ public abstract class ExecutionStrategy {
             CompletableFuture<Object> fetchedValue = originalFetchValue.thenApply(Function.identity());
             executionContext.incrementRunning(fetchedValue);
             CompletableFuture<Object> rawResultCF = fetchedValue
-                    .handle((result, exception) -> executionContext.call(exception, () -> {
+                    .handle((result, wrapperExceptionOrNull) -> executionContext.call(wrapperExceptionOrNull, () -> {
+                        // because we added an artificial CF, we need to unwrap the exception
+                        Throwable exception = wrapperExceptionOrNull != null ? wrapperExceptionOrNull.getCause() : null;
                         fetchCtx.onCompleted(result, exception);
                         if (exception != null) {
-                            // because we added an artificial CF, we need to unwrap the exception
-                            Throwable cause = exception.getCause();
-                            CompletableFuture<Object> handleFetchingExceptionResult = handleFetchingException(dataFetchingEnvironment.get(), parameters, cause);
+                            CompletableFuture<Object> handleFetchingExceptionResult = handleFetchingException(dataFetchingEnvironment.get(), parameters, exception);
                             return handleFetchingExceptionResult;
                         } else {
                             // we can simply return the fetched value CF and avoid a allocation
