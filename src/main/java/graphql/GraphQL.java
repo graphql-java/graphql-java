@@ -483,7 +483,6 @@ public class GraphQL {
     private PreparsedDocumentEntry parseAndValidate(AtomicReference<ExecutionInput> executionInputRef, GraphQLSchema graphQLSchema, InstrumentationState instrumentationState) {
 
         ExecutionInput executionInput = executionInputRef.get();
-        String query = executionInput.getQuery();
 
         ParseAndValidateResult parseResult = parse(executionInput, graphQLSchema, instrumentationState);
         if (parseResult.isFailure()) {

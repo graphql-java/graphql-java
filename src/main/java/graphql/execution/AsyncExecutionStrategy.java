@@ -61,7 +61,7 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
             executionStrategyCtx.onDispatched();
 
             futures.await().whenComplete((completeValueInfos, throwable) -> {
-                executionContext.run(() -> {
+                executionContext.run(throwable,() -> {
                     List<String> fieldsExecutedOnInitialResult = deferredExecutionSupport.getNonDeferredFieldNames(fieldNames);
 
                     BiConsumer<List<Object>, Throwable> handleResultsConsumer = handleResults(executionContext, fieldsExecutedOnInitialResult, overallResult);
@@ -78,7 +78,7 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
                     executionStrategyCtx.onFieldValuesInfo(completeValueInfos);
                     fieldValuesFutures.await().whenComplete(handleResultsConsumer);
                 });
-            }).exceptionally((ex) -> executionContext.call(() -> {
+            }).exceptionally((ex) -> executionContext.call(ex,() -> {
                 // if there are any issues with combining/handling the field results,
                 // complete the future at all costs and bubble up any thrown exception so
                 // the execution does not hang.

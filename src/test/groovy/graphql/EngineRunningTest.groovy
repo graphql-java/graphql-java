@@ -10,9 +10,21 @@ import java.util.concurrent.CopyOnWriteArrayList
 
 import static graphql.ExecutionInput.newExecutionInput
 import static graphql.execution.EngineRunningObserver.ENGINE_RUNNING_OBSERVER_KEY
+import static graphql.execution.EngineRunningObserver.RunningState
+import static graphql.execution.EngineRunningObserver.RunningState.NOT_RUNNING
+import static graphql.execution.EngineRunningObserver.RunningState.RUNNING
 
 class EngineRunningTest extends Specification {
 
+
+    private static List<RunningState> trackStates(ExecutionInput ei) {
+        List<RunningState> states = new CopyOnWriteArrayList<>();
+        ei.getGraphQLContext().put(ENGINE_RUNNING_OBSERVER_KEY, {
+            ExecutionId executionId, GraphQLContext context, RunningState running ->
+                states.add(running)
+        } as EngineRunningObserver);
+        states
+    }
 
     def "engine running state is observed"() {
         given:
@@ -32,17 +44,13 @@ class EngineRunningTest extends Specification {
         def query = "{ hello }"
         def ei = newExecutionInput(query).build()
 
-        List<Boolean> states = new CopyOnWriteArrayList<>();
-        ei.getGraphQLContext().put(ENGINE_RUNNING_OBSERVER_KEY, {
-            ExecutionId executionId, GraphQLContext context, boolean running ->
-                states.add(running)
-        } as EngineRunningObserver);
+        List<RunningState> states = trackStates(ei)
 
         when:
         def er = graphQL.execute(ei)
         then:
         er.data == [hello: "world"]
-        states == [true, false]
+        states == [RUNNING, NOT_RUNNING]
     }
 
     def "engine running state is observed with one async datafetcher"() {
@@ -64,25 +72,20 @@ class EngineRunningTest extends Specification {
         def query = "{ hello }"
         def ei = newExecutionInput(query).build()
 
-        List<Boolean> states = new CopyOnWriteArrayList<>();
-        ei.getGraphQLContext().put(ENGINE_RUNNING_OBSERVER_KEY, {
-            ExecutionId executionId, GraphQLContext context, boolean running ->
-                states.add(running)
-        } as EngineRunningObserver);
+        List<RunningState> states = trackStates(ei)
 
         when:
         def er = graphQL.executeAsync(ei)
         then:
-        states == [true, false]
+        states == [RUNNING, NOT_RUNNING]
 
         when:
         states.clear();
         cf.complete("world")
 
         then:
-        states == [true, false]
+        states == [RUNNING, NOT_RUNNING]
         er.get().data == [hello: "world"]
-
     }
 
     def "engine running state is observed with two async datafetcher"() {
@@ -110,32 +113,26 @@ class EngineRunningTest extends Specification {
         def query = "{ hello hello2 }"
         def ei = newExecutionInput(query).build()
 
-        List<Boolean> states = new CopyOnWriteArrayList<>();
-        ei.getGraphQLContext().put(ENGINE_RUNNING_OBSERVER_KEY, {
-            ExecutionId executionId, GraphQLContext context, boolean running ->
-                states.add(running)
-        } as EngineRunningObserver);
+        List<RunningState> states = trackStates(ei)
 
         when:
         def er = graphQL.executeAsync(ei)
         then:
-        states == [true, false]
+        states == [RUNNING, NOT_RUNNING]
 
         when:
         states.clear();
         cf1.complete("world")
 
         then:
-        states == [true, false]
+        states == [RUNNING, NOT_RUNNING]
 
         when:
         states.clear();
         cf2.complete("world2")
 
         then:
-        states == [true, false]
+        states == [RUNNING, NOT_RUNNING]
         er.get().data == [hello: "world", hello2: "world2"]
     }
-
-
 }

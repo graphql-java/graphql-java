@@ -68,19 +68,18 @@ public class SubscriptionExecutionStrategy extends ExecutionStrategy {
 
             //
             // when the upstream source event stream completes, subscribe to it and wire in our adapter
-            CompletableFuture<ExecutionResult> overallResult = sourceEventStream.thenApply((publisher) -> {
-                return executionContext.call(() -> {
-                    if (publisher == null) {
-                        ExecutionResultImpl executionResult = new ExecutionResultImpl(null, executionContext.getErrors());
+            CompletableFuture<ExecutionResult> overallResult = sourceEventStream.thenApply((publisher) ->
+                    executionContext.call(() -> {
+                        if (publisher == null) {
+                            ExecutionResultImpl executionResult = new ExecutionResultImpl(null, executionContext.getErrors());
+                            return executionResult;
+                        }
+                        Function<Object, CompletionStage<ExecutionResult>> mapperFunction = eventPayload -> executeSubscriptionEvent(executionContext, parameters, eventPayload);
+                        boolean keepOrdered = keepOrdered(executionContext.getGraphQLContext());
+                        SubscriptionPublisher mapSourceToResponse = new SubscriptionPublisher(publisher, mapperFunction, keepOrdered);
+                        ExecutionResultImpl executionResult = new ExecutionResultImpl(mapSourceToResponse, executionContext.getErrors());
                         return executionResult;
-                    }
-                    Function<Object, CompletionStage<ExecutionResult>> mapperFunction = eventPayload -> executeSubscriptionEvent(executionContext, parameters, eventPayload);
-                    boolean keepOrdered = keepOrdered(executionContext.getGraphQLContext());
-                    SubscriptionPublisher mapSourceToResponse = new SubscriptionPublisher(publisher, mapperFunction, keepOrdered);
-                    ExecutionResultImpl executionResult = new ExecutionResultImpl(mapSourceToResponse, executionContext.getErrors());
-                    return executionResult;
-                });
-            });
+                    }));
 
             // dispatched the subscription query
             executionStrategyCtx.onDispatched();
