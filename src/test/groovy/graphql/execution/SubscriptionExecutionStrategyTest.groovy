@@ -710,6 +710,48 @@ class SubscriptionExecutionStrategyTest extends Specification {
         }
     }
 
+    def "we can cancel the operation and the upstream publisher is told"() {
+        List<Runnable> promises = []
+        Publisher<Object> publisher = new RxJavaMessagePublisher(10)
+
+        DataFetcher newMessageDF = { env -> return publisher }
+        DataFetcher senderDF = dfThatDoesNotComplete("sender", promises)
+        DataFetcher textDF = PropertyDataFetcher.fetching("text")
+
+        GraphQL graphQL = buildSubscriptionQL(newMessageDF, senderDF, textDF)
+
+        def executionInput = ExecutionInput.newExecutionInput().query("""
+            subscription NewMessages {
+              newMessage(roomId: 123) {
+                sender
+                text
+              }
+            }
+        """).graphQLContext([(SubscriptionExecutionStrategy.KEEP_SUBSCRIPTION_EVENTS_ORDERED): true]).build()
+
+        def executionResult = graphQL.execute(executionInput)
+
+        when:
+        Publisher<ExecutionResult> msgStream = executionResult.getData()
+        def capturingSubscriber = new CapturingSubscriber<ExecutionResult>(1)
+        msgStream.subscribe(capturingSubscriber)
+
+        // now cancel the operation
+        executionInput.cancel()
+
+        // make things over the subscription
+        promises.forEach {it.run()}
+
+
+        then:
+        Awaitility.await().untilTrue(capturingSubscriber.isDone())
+
+        def messages = capturingSubscriber.events
+        messages.size() == 1
+        def error = messages[0].errors[0]
+        assert error.message == "Execution has been asked to be cancelled"
+    }
+
     private static DataFetcher<?> dfThatDoesNotComplete(String propertyName, List<Runnable> promises) {
         { env ->
             def df = PropertyDataFetcher.fetching(propertyName)
