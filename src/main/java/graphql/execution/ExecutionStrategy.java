@@ -486,6 +486,10 @@ public abstract class ExecutionStrategy {
         if (fetchedObject instanceof CompletableFuture) {
             @SuppressWarnings("unchecked")
             CompletableFuture<Object> originalFetchValue = (CompletableFuture<Object>) fetchedObject;
+            // the completion order of dependent CFs is in stack order for
+            // directly dependent CFs, but in reverse stack order for indirect dependent ones
+            // By creating one dependent CF on originalFetchValue, we make sure the order it is always
+            // in reverse stack order
             CompletableFuture<Object> fetchedValue = originalFetchValue.thenApply(Function.identity());
             executionContext.incrementRunning(fetchedValue);
             CompletableFuture<Object> rawResultCF = fetchedValue
