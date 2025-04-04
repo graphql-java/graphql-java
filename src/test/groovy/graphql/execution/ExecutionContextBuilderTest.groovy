@@ -269,10 +269,8 @@ class ExecutionContextBuilderTest extends Specification {
         OperationDefinition.Operation.SUBSCRIPTION | false   | false      | true
     }
 
-    def "can track if its running or not"() {
-
-        when:
-        def executionContext = new ExecutionContextBuilder()
+    def mkEexecutionContext() {
+        return new ExecutionContextBuilder()
                 .instrumentation(instrumentation)
                 .queryStrategy(queryStrategy)
                 .mutationStrategy(mutationStrategy)
@@ -287,6 +285,16 @@ class ExecutionContextBuilderTest extends Specification {
                 .executionInput(ExecutionInput.newExecutionInput("query q { f }").build())
                 .operationDefinition(OperationDefinition.newOperationDefinition().operation(OperationDefinition.Operation.QUERY).build())
                 .build()
+    }
+
+    def offThread(Runnable runnable) {
+        new Thread(runnable).start()
+    }
+
+    def "can track if its running or not"() {
+
+        when:
+        def executionContext = mkEexecutionContext()
 
         then:
         !executionContext.isRunning()
@@ -336,8 +344,49 @@ class ExecutionContextBuilderTest extends Specification {
         !executionContext.isRunning()
     }
 
-    def offThread(Runnable runnable) {
-        new Thread(runnable).start()
-        return "x"
+    def "can abort execution if asked to"() {
+
+        when:
+        def executionContext = mkEexecutionContext()
+
+        then:
+        !executionContext.isRunning()
+
+        when:
+        executionContext.getExecutionInput().cancel() // now in cancel state
+        executionContext.run { "x" }
+
+        then:
+        thrown(AbortExecutionException)
+
+        when:
+        executionContext.call { "x" }
+
+        then:
+        thrown(AbortExecutionException)
     }
+
+    def "wont abort of we already have an exception"() {
+
+        when:
+        def executionContext = mkEexecutionContext()
+        def existingException = new AbortExecutionException("x")
+
+        then:
+        !executionContext.isRunning()
+
+        when:
+        executionContext.getExecutionInput().cancel() // now in cancel state
+        executionContext.run(existingException, { "x" })
+
+        then:
+        notThrown(AbortExecutionException)
+
+        when:
+        executionContext.call(existingException, { "x" })
+
+        then:
+        notThrown(AbortExecutionException)
+    }
+
 }
