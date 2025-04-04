@@ -1,6 +1,7 @@
 package graphql.execution.instrumentation.dataloader;
 
 import graphql.Assert;
+import graphql.GraphQLContext;
 import graphql.Internal;
 import graphql.execution.DataLoaderDispatchStrategy;
 import graphql.execution.ExecutionContext;
@@ -34,6 +35,7 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
     private final CallStack callStack;
     private final ExecutionContext executionContext;
     private final int batchWindowNs;
+    private final boolean disableNewDataLoaderDispatching;
 
     private final InterThreadMemoizedSupplier<ScheduledExecutorService> delayedDataLoaderDispatchExecutor;
 
@@ -159,7 +161,8 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
         this.callStack = new CallStack();
         this.executionContext = executionContext;
 
-        Integer batchWindowNs = executionContext.getGraphQLContext().get(DispatchingContextKeys.DELAYED_DATA_LOADER_BATCH_WINDOW_SIZE_NANO_SECONDS);
+        GraphQLContext graphQLContext = executionContext.getGraphQLContext();
+        Integer batchWindowNs = graphQLContext.get(DispatchingContextKeys.DELAYED_DATA_LOADER_BATCH_WINDOW_SIZE_NANO_SECONDS);
         if (batchWindowNs != null) {
             this.batchWindowNs = batchWindowNs;
         } else {
@@ -167,12 +170,15 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
         }
 
         this.delayedDataLoaderDispatchExecutor = new InterThreadMemoizedSupplier<>(() -> {
-            DelayedDataLoaderDispatcherExecutorFactory delayedDataLoaderDispatcherExecutorFactory = executionContext.getGraphQLContext().get(DispatchingContextKeys.DELAYED_DATA_LOADER_DISPATCHING_EXECUTOR_FACTORY);
+            DelayedDataLoaderDispatcherExecutorFactory delayedDataLoaderDispatcherExecutorFactory = graphQLContext.get(DispatchingContextKeys.DELAYED_DATA_LOADER_DISPATCHING_EXECUTOR_FACTORY);
             if (delayedDataLoaderDispatcherExecutorFactory != null) {
-                return delayedDataLoaderDispatcherExecutorFactory.createExecutor(executionContext.getExecutionId(), executionContext.getGraphQLContext());
+                return delayedDataLoaderDispatcherExecutorFactory.createExecutor(executionContext.getExecutionId(), graphQLContext);
             }
             return defaultDelayedDLCFBatchWindowScheduler.get();
         });
+
+        Boolean disableNewDispatching = graphQLContext.get(DispatchingContextKeys.DISABLE_NEW_DATA_LOADER_DISPATCHING);
+        this.disableNewDataLoaderDispatching = disableNewDispatching != null && disableNewDispatching;
     }
 
     @Override
@@ -333,7 +339,12 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
     }
 
     void dispatch(int level) {
-        // if we have any DataLoaderCFs => use new Algorithm
+        if (disableNewDataLoaderDispatching) {
+            DataLoaderRegistry dataLoaderRegistry = executionContext.getDataLoaderRegistry();
+            dataLoaderRegistry.dispatchAll();
+            return;
+        }
+
         Set<ResultPathWithDataLoader> resultPathWithDataLoaders = callStack.levelToResultPathWithDataLoader.get(level);
         if (resultPathWithDataLoaders != null) {
             dispatchDLCFImpl(resultPathWithDataLoaders
@@ -341,7 +352,7 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
                     .map(resultPathWithDataLoader -> resultPathWithDataLoader.resultPath)
                     .collect(Collectors.toSet()), true);
         } else {
-            // otherwise dispatch all DataLoaders
+            // TODO: this is questionable if we should do that: we didn't find any DataLoaders in that level
             DataLoaderRegistry dataLoaderRegistry = executionContext.getDataLoaderRegistry();
             dataLoaderRegistry.dispatchAll();
         }
@@ -386,6 +397,9 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
 
 
     public void newDataLoaderCF(String resultPath, int level, DataLoader dataLoader) {
+        if (disableNewDataLoaderDispatching) {
+            return;
+        }
         ResultPathWithDataLoader resultPathWithDataLoader = new ResultPathWithDataLoader(resultPath, level, dataLoader);
         callStack.lock.runLocked(() -> {
             callStack.allResultPathWithDataLoader.add(resultPathWithDataLoader);

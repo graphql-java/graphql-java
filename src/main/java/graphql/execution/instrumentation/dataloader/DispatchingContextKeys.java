@@ -28,4 +28,15 @@ public final class DispatchingContextKeys {
      * Default is one static executor thread pool with a single thread.
      */
     public static final String DELAYED_DATA_LOADER_DISPATCHING_EXECUTOR_FACTORY = "__GJ_delayed_data_loader_dispatching_executor_factory";
+
+
+    /**
+     * Allows for disabling the new delayed DataLoader dispatching.
+     * Because this will be removed soon and only intended for a short transition period,
+     * it is immediately deprecated.
+     *
+     * Expects a boolean value.
+     */
+    @Deprecated
+    public static final String DISABLE_NEW_DATA_LOADER_DISPATCHING = "__GJ_disable_new_data_loader_dispatching";
 }

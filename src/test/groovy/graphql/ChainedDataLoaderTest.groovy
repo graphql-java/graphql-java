@@ -350,4 +350,65 @@ class ChainedDataLoaderTest extends Specification {
 
     }
 
+    def "handling of chained DataLoaders can be disabled"() {
+        given:
+        def sdl = '''
+
+        type Query {
+          dogName: String
+          catName: String
+        }
+        '''
+        int batchLoadCalls = 0
+        BatchLoader<String, String> batchLoader = { keys ->
+            return supplyAsync {
+                batchLoadCalls++
+                println "BatchLoader called with keys: $keys"
+                assert keys.size() == 2
+                return ["Luna", "Tiger"]
+            }
+        }
+
+        DataLoader<String, String> nameDataLoader = DataLoaderFactory.newDataLoader(batchLoader);
+
+        DataLoaderRegistry dataLoaderRegistry = new DataLoaderRegistry();
+        dataLoaderRegistry.register("name", nameDataLoader);
+
+        def df1 = { env ->
+            return env.getDataLoader("name").load("Key1").thenCompose {
+                result ->
+                    {
+                        return env.getDataLoader("name").load(result)
+                    }
+            }
+        } as DataFetcher
+
+        def df2 = { env ->
+            return env.getDataLoader("name").load("Key2").thenCompose {
+                result ->
+                    {
+                        return env.getDataLoader("name").load(result)
+                    }
+            }
+        } as DataFetcher
+
+
+        def fetchers = ["Query": ["dogName": df1, "catName": df2]]
+        def schema = TestUtil.schema(sdl, fetchers)
+        def graphQL = GraphQL.newGraphQL(schema).build()
+
+        def query = "{ dogName catName } "
+        def ei = newExecutionInput(query).dataLoaderRegistry(dataLoaderRegistry).build()
+
+        ei.getGraphQLContext().put(DispatchingContextKeys.DISABLE_NEW_DATA_LOADER_DISPATCHING, true)
+
+        when:
+        def er = graphQL.executeAsync(ei)
+        Thread.sleep(1000)
+        then:
+        batchLoadCalls == 1
+        !er.isDone()
+    }
+
+
 }
