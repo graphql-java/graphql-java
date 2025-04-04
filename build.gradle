@@ -100,7 +100,7 @@ jar {
 
 dependencies {
     implementation 'org.antlr:antlr4-runtime:' + antlrVersion
-    api 'com.graphql-java:java-dataloader:0.0.0-2025-04-02T09-39-10-3060a30'
+    api 'com.graphql-java:java-dataloader:0.0.0-2025-04-02T02-29-06-b56f38e'
     api 'org.reactivestreams:reactive-streams:' + reactiveStreamsVersion
     api "org.jspecify:jspecify:1.0.0"
     antlr 'org.antlr:antlr4:' + antlrVersion
