@@ -65,6 +65,9 @@ public class GraphqlErrorHelper {
      * @return a value for source location of the error
      */
     public static Object location(SourceLocation location) {
+        if (location == null) {
+            return null;
+        }
         int line = location.getLine();
         int column = location.getColumn();
         if (line < 1 || column < 1) {

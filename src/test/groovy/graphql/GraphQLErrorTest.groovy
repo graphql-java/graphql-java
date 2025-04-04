@@ -94,6 +94,26 @@ class GraphQLErrorTest extends Specification {
         error.toSpecification() == expectedMap
     }
 
+    def "toSpecification filters out null error locations"() {
+        given:
+        def error = ValidationError.newValidationError()
+                .validationErrorType(ValidationErrorType.UnknownType)
+                .sourceLocations([null, mkLocation(333, 1)])
+                .description("Test ValidationError")
+                .build()
+
+        def expectedMap = [
+                locations: [
+                        [line: 333, column: 1]
+                ],
+                message: "Test ValidationError",
+                extensions: [classification:"ValidationError"]
+        ]
+
+        expect:
+        error.toSpecification() == expectedMap
+    }
+
     class CustomException extends RuntimeException implements GraphQLError {
         private LinkedHashMap<String, String> map
 
