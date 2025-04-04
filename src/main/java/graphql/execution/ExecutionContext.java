@@ -37,6 +37,7 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import static graphql.Assert.assertTrue;
+import static graphql.execution.EngineRunningObserver.RunningState.CANCELLED;
 import static graphql.execution.EngineRunningObserver.RunningState.NOT_RUNNING;
 import static graphql.execution.EngineRunningObserver.RunningState.RUNNING;
 
@@ -377,6 +378,7 @@ public class ExecutionContext {
     }
 
     private void incrementRunning(Throwable throwable) {
+        checkIsCancelled(throwable);
         assertTrue(isRunning.get() >= 0);
         if (isRunning.incrementAndGet() == 1) {
             changeOfState(RUNNING);
@@ -384,6 +386,7 @@ public class ExecutionContext {
     }
 
     private void decrementRunning(Throwable throwable) {
+        checkIsCancelled(throwable);
         assertTrue(isRunning.get() > 0);
         if (isRunning.decrementAndGet() == 0) {
             changeOfState(NOT_RUNNING);
@@ -432,6 +435,25 @@ public class ExecutionContext {
             runnable.run();
         } finally {
             decrementRunning(throwable);
+        }
+    }
+
+    private void checkIsCancelled(Throwable currentThrowable) {
+        // no need to check we are cancelled if we already have an exception in play
+        // since it can lead to an exception being thrown when an exception has already been
+        // thrown
+        if (currentThrowable == null) {
+            checkIsCancelled();
+        }
+    }
+
+    /**
+     * This will abort the execution via {@link AbortExecutionException} if the {@link ExecutionInput} has been cancelled
+     */
+    private void checkIsCancelled() {
+        if (executionInput.isCancelled()) {
+            changeOfState(CANCELLED);
+            throw new AbortExecutionException("Execution has been asked to be cancelled");
         }
     }
 

@@ -167,4 +167,71 @@ class ExecutionInputTest extends Specification {
         er.errors.isEmpty()
         er.data["fetch"] == "{locale=German, executionId=ID123, graphqlContext=b}"
     }
+
+    def "can cancel the execution"() {
+        def sdl = '''
+            type Query {
+                fetch1 : Inner
+                fetch2 : Inner
+            }
+            
+            type Inner {
+                f : String
+            }
+                
+        '''
+
+        CountDownLatch fieldLatch = new CountDownLatch(1)
+
+        DataFetcher df1Sec = { DataFetchingEnvironment env ->
+            println("Entering DF1")
+            return CompletableFuture.supplyAsync {
+                println("DF1 async run")
+                fieldLatch.await()
+                Thread.sleep(1000)
+                return [f: "x"]
+            }
+        }
+        DataFetcher df10Sec = { DataFetchingEnvironment env ->
+            println("Entering DF10")
+            return CompletableFuture.supplyAsync {
+                println("DF10 async run")
+                fieldLatch.await()
+                Thread.sleep(10000)
+                return "x"
+            }
+        }
+
+        def fetcherMap = ["Query": ["fetch1": df1Sec, "fetch2": df1Sec],
+                          "Inner": ["f": df10Sec]
+        ]
+        def schema = TestUtil.schema(sdl, fetcherMap)
+        def graphQL = GraphQL.newGraphQL(schema).build()
+
+        when:
+        ExecutionInput executionInput = ExecutionInput.newExecutionInput()
+                .query("query q { fetch1 { f }  fetch2 { f } }")
+                .build()
+
+        def cf = graphQL.executeAsync(executionInput)
+
+        Thread.sleep(250) // let it get into the field fetching say
+
+        // lets cancel it
+        println("cancelling")
+        executionInput.cancel()
+
+        // let the DFs run
+        println("make the fields run")
+        fieldLatch.countDown()
+
+        println("and await for the overall CF to complete")
+        Awaitility.await().atMost(Duration.ofSeconds(60)).until({ -> cf.isDone() })
+
+        def er = cf.join()
+
+        then:
+        !er.errors.isEmpty()
+        er.errors[0]["message"] == "Execution has been asked to be cancelled"
+    }
 }
