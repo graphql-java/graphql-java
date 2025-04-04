@@ -32,9 +32,10 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
 
     private final CallStack callStack;
     private final ExecutionContext executionContext;
+    private final int batchWindowNs;
 
-    static final ScheduledExecutorService isolatedDLCFBatchWindowScheduler = Executors.newSingleThreadScheduledExecutor();
-    static final int BATCH_WINDOW_NANO_SECONDS = 500_000;
+    static final ScheduledExecutorService delayedDLCFBatchWindowScheduler = Executors.newSingleThreadScheduledExecutor();
+    static final int BATCH_WINDOW_NANO_SECONDS_DEFAULT = 500_000;
 
 
     private static class CallStack {
@@ -56,7 +57,7 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
         //TODO: maybe this should be cleaned up once the CF returned by these fields are completed
         // otherwise this will stick around until the whole request is finished
         private final Map<Integer, Set<ResultPathWithDataLoader>> levelToResultPathWithDataLoader = new ConcurrentHashMap<>();
-        private final Set<String> batchWindowOfIsolatedDataLoaderToDispatch = ConcurrentHashMap.newKeySet();
+        private final Set<String> batchWindowOfDelayedDataLoaderToDispatch = ConcurrentHashMap.newKeySet();
 
         private boolean batchWindowOpen = false;
 
@@ -144,7 +145,6 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
                 Assert.assertShouldNeverHappen("level " + level + " already dispatched");
                 return false;
             }
-            System.out.println("adding level " + level + " to dispatched levels" + dispatchedLevels);
             dispatchedLevels.add(level);
             return true;
         }
@@ -153,6 +153,13 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
     public PerLevelDataLoaderDispatchStrategy(ExecutionContext executionContext) {
         this.callStack = new CallStack();
         this.executionContext = executionContext;
+
+        Integer batchWindowNs = executionContext.getGraphQLContext().get(DispatchingContextKeys.BATCH_WINDOW_DELAYED_DL_NANO_SECONDS);
+        if (batchWindowNs != null) {
+            this.batchWindowNs = batchWindowNs;
+        } else {
+            this.batchWindowNs = BATCH_WINDOW_NANO_SECONDS_DEFAULT;
+        }
     }
 
     @Override
@@ -380,8 +387,8 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
             }
         });
         if (callStack.dispatchedLevels.contains(level)) {
-            System.out.println("isolated dispatch");
-            dispatchIsolatedDataLoader(resultPathWithDataLoader);
+            System.out.println("delayed dispatch");
+            dispatchDelayedDataLoader(resultPathWithDataLoader);
         } else {
             System.out.println("normal dispatch");
         }
@@ -389,21 +396,22 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
 
     }
 
-    private void dispatchIsolatedDataLoader(ResultPathWithDataLoader resultPathWithDataLoader) {
+    private void dispatchDelayedDataLoader(ResultPathWithDataLoader resultPathWithDataLoader) {
         callStack.lock.runLocked(() -> {
-            callStack.batchWindowOfIsolatedDataLoaderToDispatch.add(resultPathWithDataLoader.resultPath);
+            callStack.batchWindowOfDelayedDataLoaderToDispatch.add(resultPathWithDataLoader.resultPath);
             if (!callStack.batchWindowOpen) {
                 callStack.batchWindowOpen = true;
                 AtomicReference<Set<String>> dfesToDispatch = new AtomicReference<>();
                 Runnable runnable = () -> {
                     callStack.lock.runLocked(() -> {
-                        dfesToDispatch.set(new LinkedHashSet<>(callStack.batchWindowOfIsolatedDataLoaderToDispatch));
-                        callStack.batchWindowOfIsolatedDataLoaderToDispatch.clear();
+                        dfesToDispatch.set(new LinkedHashSet<>(callStack.batchWindowOfDelayedDataLoaderToDispatch));
+                        callStack.batchWindowOfDelayedDataLoaderToDispatch.clear();
                         callStack.batchWindowOpen = false;
                     });
+                    System.out.println("start dispatch with " + dfesToDispatch.get().size());
                     dispatchDLCFImpl(dfesToDispatch.get(), false);
                 };
-                isolatedDLCFBatchWindowScheduler.schedule(runnable, BATCH_WINDOW_NANO_SECONDS, TimeUnit.NANOSECONDS);
+                delayedDLCFBatchWindowScheduler.schedule(runnable, this.batchWindowNs, TimeUnit.NANOSECONDS);
             }
 
         });

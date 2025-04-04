@@ -1,5 +1,6 @@
 package graphql
 
+import graphql.execution.instrumentation.dataloader.DispatchingContextKeys
 import graphql.schema.DataFetcher
 import org.dataloader.BatchLoader
 import org.dataloader.DataLoader
@@ -7,7 +8,6 @@ import org.dataloader.DataLoaderFactory
 import org.dataloader.DataLoaderRegistry
 import spock.lang.Specification
 
-import java.util.concurrent.CompletableFuture
 import java.util.concurrent.atomic.AtomicInteger
 
 import static graphql.ExecutionInput.newExecutionInput
@@ -249,12 +249,9 @@ class ChainedDataLoaderTest extends Specification {
         DataLoaderRegistry dataLoaderRegistry = new DataLoaderRegistry();
         dataLoaderRegistry.register("dl", nameDataLoader);
 
-        def cf = new CompletableFuture()
-
         def fooDF = { env ->
             return supplyAsync {
                 Thread.sleep(1000)
-                cf.complete("barFirstValue")
                 return "fooFirstValue"
             }.thenCompose {
                 return env.getDataLoader("dl").load(it)
@@ -262,7 +259,10 @@ class ChainedDataLoaderTest extends Specification {
         } as DataFetcher
 
         def barDF = { env ->
-            cf.thenCompose {
+            return supplyAsync {
+                Thread.sleep(1000)
+                return "barFirstValue"
+            }.thenCompose {
                 return env.getDataLoader("dl").load(it)
             }
         } as DataFetcher
@@ -274,6 +274,9 @@ class ChainedDataLoaderTest extends Specification {
 
         def query = "{ foo bar } "
         def ei = newExecutionInput(query).dataLoaderRegistry(dataLoaderRegistry).build()
+
+        // make the window large enough to avoid flaky tests
+        ei.getGraphQLContext().put(DispatchingContextKeys.BATCH_WINDOW_DELAYED_DL_NANO_SECONDS, 2_000_000)
 
         when:
         def er = graphQL.execute(ei)
