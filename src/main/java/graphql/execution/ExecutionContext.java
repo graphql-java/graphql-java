@@ -10,6 +10,7 @@ import graphql.GraphQLError;
 import graphql.Internal;
 import graphql.PublicApi;
 import graphql.collect.ImmutableKit;
+import graphql.execution.EngineRunningObserver.RunningState;
 import graphql.execution.incremental.IncrementalCallState;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationState;
@@ -22,15 +23,23 @@ import graphql.schema.GraphQLSchema;
 import graphql.util.FpKit;
 import graphql.util.LockKit;
 import org.dataloader.DataLoaderRegistry;
+import org.jspecify.annotations.Nullable;
 
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+
+import static graphql.Assert.assertTrue;
+import static graphql.execution.EngineRunningObserver.RunningState.CANCELLED;
+import static graphql.execution.EngineRunningObserver.RunningState.NOT_RUNNING;
+import static graphql.execution.EngineRunningObserver.RunningState.RUNNING;
 
 @SuppressWarnings("TypeParameterUnusedInFormals")
 @PublicApi
@@ -63,10 +72,13 @@ public class ExecutionContext {
     private final Supplier<ExecutableNormalizedOperation> queryTree;
     private final boolean propagateErrorsOnNonNullContractFailure;
 
+    private final AtomicInteger isRunning = new AtomicInteger(0);
+
     // this is modified after creation so it needs to be volatile to ensure visibility across Threads
     private volatile DataLoaderDispatchStrategy dataLoaderDispatcherStrategy = DataLoaderDispatchStrategy.NO_OP;
 
     private final ResultNodesInfo resultNodesInfo = new ResultNodesInfo();
+    private final EngineRunningObserver engineRunningObserver;
 
     ExecutionContext(ExecutionContextBuilder builder) {
         this.graphQLSchema = builder.graphQLSchema;
@@ -93,6 +105,7 @@ public class ExecutionContext {
         this.dataLoaderDispatcherStrategy = builder.dataLoaderDispatcherStrategy;
         this.queryTree = FpKit.interThreadMemoize(() -> ExecutableNormalizedOperationFactory.createExecutableNormalizedOperation(graphQLSchema, operationDefinition, fragmentsByName, coercedVariables));
         this.propagateErrorsOnNonNullContractFailure = builder.propagateErrorsOnNonNullContractFailure;
+        this.engineRunningObserver = builder.engineRunningObserver;
     }
 
 
@@ -141,7 +154,9 @@ public class ExecutionContext {
 
     /**
      * @param <T> for two
+     *
      * @return the legacy context
+     *
      * @deprecated use {@link #getGraphQLContext()} instead
      */
     @Deprecated(since = "2021-07-05")
@@ -184,6 +199,7 @@ public class ExecutionContext {
      * @return true if the current operation should propagate errors in non-null positions
      * Propagating errors is the default. Error aware clients may opt in returning null in non-null positions
      * by using the `@experimental_disableErrorPropagation` directive.
+     *
      * @see graphql.Directives#setExperimentalDisableErrorPropagationEnabled(boolean) to change the JVM wide default
      */
     @ExperimentalApi
@@ -338,6 +354,7 @@ public class ExecutionContext {
      * the current values and allows you to transform it how you want.
      *
      * @param builderConsumer the consumer code that will be given a builder to transform
+     *
      * @return a new ExecutionContext object based on calling build on that builder
      */
     public ExecutionContext transform(Consumer<ExecutionContextBuilder> builderConsumer) {
@@ -348,5 +365,101 @@ public class ExecutionContext {
 
     public ResultNodesInfo getResultNodesInfo() {
         return resultNodesInfo;
+    }
+
+    @Nullable
+    EngineRunningObserver getEngineRunningObserver() {
+        return engineRunningObserver;
+    }
+
+    @Internal
+    public boolean isRunning() {
+        return isRunning.get() > 0;
+    }
+
+    private void incrementRunning(Throwable throwable) {
+        checkIsCancelled(throwable);
+        assertTrue(isRunning.get() >= 0);
+        if (isRunning.incrementAndGet() == 1) {
+            changeOfState(RUNNING);
+        }
+    }
+
+    private void decrementRunning(Throwable throwable) {
+        checkIsCancelled(throwable);
+        assertTrue(isRunning.get() > 0);
+        if (isRunning.decrementAndGet() == 0) {
+            changeOfState(NOT_RUNNING);
+        }
+    }
+
+    @Internal
+    public void incrementRunning(CompletableFuture<?> cf) {
+        cf.whenComplete((result, throwable) -> {
+            incrementRunning(throwable);
+        });
+    }
+
+    @Internal
+    public void decrementRunning(CompletableFuture<?> cf) {
+        cf.whenComplete((result, throwable) -> {
+            decrementRunning(throwable);
+        });
+
+    }
+
+    @Internal
+    public <T> T call(Supplier<T> callable) {
+        return call(null, callable);
+    }
+
+    @Internal
+    public <T> T call(Throwable throwable, Supplier<T> callable) {
+        incrementRunning(throwable);
+        try {
+            return callable.get();
+        } finally {
+            decrementRunning(throwable);
+        }
+    }
+
+    @Internal
+    public void run(Runnable runnable) {
+        run(null, runnable);
+    }
+
+    @Internal
+    public void run(Throwable throwable, Runnable runnable) {
+        incrementRunning(throwable);
+        try {
+            runnable.run();
+        } finally {
+            decrementRunning(throwable);
+        }
+    }
+
+    private void checkIsCancelled(Throwable currentThrowable) {
+        // no need to check we are cancelled if we already have an exception in play
+        // since it can lead to an exception being thrown when an exception has already been
+        // thrown
+        if (currentThrowable == null) {
+            checkIsCancelled();
+        }
+    }
+
+    /**
+     * This will abort the execution via {@link AbortExecutionException} if the {@link ExecutionInput} has been cancelled
+     */
+    private void checkIsCancelled() {
+        if (executionInput.isCancelled()) {
+            changeOfState(CANCELLED);
+            throw new AbortExecutionException("Execution has been asked to be cancelled");
+        }
+    }
+
+    private void changeOfState(RunningState runningState) {
+        if (engineRunningObserver != null) {
+            engineRunningObserver.runningStateChanged(executionId, graphQLContext, runningState);
+        }
     }
 }

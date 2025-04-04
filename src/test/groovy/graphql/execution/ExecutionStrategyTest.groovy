@@ -2,6 +2,7 @@ package graphql.execution
 
 import graphql.Assert
 import graphql.ExceptionWhileDataFetching
+import graphql.ExecutionInput
 import graphql.ExecutionResult
 import graphql.GraphQLContext
 import graphql.GraphqlErrorBuilder
@@ -78,6 +79,7 @@ class ExecutionStrategyTest extends Specification {
                 .subscriptionStrategy(executionStrategy)
                 .coercedVariables(CoercedVariables.of(variables))
                 .graphQLContext(GraphQLContext.newContext().of("key", "context").build())
+                .executionInput(ExecutionInput.newExecutionInput("{}").build())
                 .root("root")
                 .dataLoaderRegistry(new DataLoaderRegistry())
                 .locale(Locale.getDefault())
@@ -125,6 +127,7 @@ class ExecutionStrategyTest extends Specification {
 
         builder.operationDefinition(operation)
         builder.executionId(ExecutionId.generate())
+        builder.executionInput(ExecutionInput.newExecutionInput("{}").build())
 
         def executionContext = builder.build()
         def result = new Object()

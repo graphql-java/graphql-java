@@ -7,8 +7,8 @@ import org.dataloader.DataLoaderRegistry;
 
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
-import java.util.function.UnaryOperator;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.execution.instrumentation.dataloader.EmptyDataLoaderRegistryInstance.EMPTY_DATALOADER_REGISTRY;
@@ -29,6 +29,7 @@ public class ExecutionInput {
     private final DataLoaderRegistry dataLoaderRegistry;
     private final ExecutionId executionId;
     private final Locale locale;
+    private final AtomicBoolean cancelled;
 
 
     @Internal
@@ -44,6 +45,7 @@ public class ExecutionInput {
         this.locale = builder.locale != null ? builder.locale : Locale.getDefault(); // always have a locale in place
         this.localContext = builder.localContext;
         this.extensions = builder.extensions;
+        this.cancelled = builder.cancelled;
     }
 
     /**
@@ -139,6 +141,28 @@ public class ExecutionInput {
         return extensions;
     }
 
+
+    /**
+     * The graphql engine will check this frequently and if that is true, it will
+     * throw a {@link graphql.execution.AbortExecutionException} to cancel the execution.
+     * <p>
+     * This is a cooperative cancellation.  Some asynchronous data fetching code may still continue to
+     * run but there will be no more efforts run future field fetches say.
+     *
+     * @return true if the execution should be cancelled
+     */
+    public boolean isCancelled() {
+        return cancelled.get();
+    }
+
+    /**
+     * This can be called to cancel the graphql execution.  Remember this is a cooperative cancellation
+     * and the graphql engine needs to be running on a thread to allow is to respect this flag.
+     */
+    public void cancel() {
+        cancelled.set(true);
+    }
+
     /**
      * This helps you transform the current ExecutionInput object into another one by starting a builder with all
      * the current values and allows you to transform it how you want.
@@ -152,7 +176,8 @@ public class ExecutionInput {
                 .query(this.query)
                 .operationName(this.operationName)
                 .context(this.context)
-                .transfer(this.graphQLContext)
+                .internalTransferContext(this.graphQLContext)
+                .internalTransferCancelBoolean(this.cancelled)
                 .localContext(this.localContext)
                 .root(this.root)
                 .dataLoaderRegistry(this.dataLoaderRegistry)
@@ -208,7 +233,7 @@ public class ExecutionInput {
         private Object localContext;
         private Object root;
         private RawVariables rawVariables = RawVariables.emptyVariables();
-        public Map<String, Object> extensions = ImmutableKit.emptyMap();
+        private Map<String, Object> extensions = ImmutableKit.emptyMap();
         //
         // this is important - it allows code to later known if we never really set a dataloader and hence it can optimize
         // dataloader field tracking away.
@@ -216,6 +241,7 @@ public class ExecutionInput {
         private DataLoaderRegistry dataLoaderRegistry = EMPTY_DATALOADER_REGISTRY;
         private Locale locale = Locale.getDefault();
         private ExecutionId executionId;
+        private AtomicBoolean cancelled = new AtomicBoolean(false);
 
         public Builder query(String query) {
             this.query = assertNotNull(query, () -> "query can't be null");
@@ -306,10 +332,17 @@ public class ExecutionInput {
         }
 
         // hidden on purpose
-        private Builder transfer(GraphQLContext graphQLContext) {
+        private Builder internalTransferContext(GraphQLContext graphQLContext) {
             this.graphQLContext = Assert.assertNotNull(graphQLContext);
             return this;
         }
+
+        // hidden on purpose
+        private Builder internalTransferCancelBoolean(AtomicBoolean cancelled) {
+            this.cancelled = cancelled;
+            return this;
+        }
+
 
         public Builder root(Object root) {
             this.root = root;
