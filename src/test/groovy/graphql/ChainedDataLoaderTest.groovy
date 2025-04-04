@@ -1,5 +1,8 @@
 package graphql
 
+
+import graphql.execution.ExecutionId
+import graphql.execution.instrumentation.dataloader.DelayedDataLoaderDispatcherExecutorFactory
 import graphql.execution.instrumentation.dataloader.DispatchingContextKeys
 import graphql.schema.DataFetcher
 import org.dataloader.BatchLoader
@@ -8,6 +11,9 @@ import org.dataloader.DataLoaderFactory
 import org.dataloader.DataLoaderRegistry
 import spock.lang.Specification
 
+import java.util.concurrent.Executors
+import java.util.concurrent.ScheduledExecutorService
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 
 import static graphql.ExecutionInput.newExecutionInput
@@ -276,7 +282,7 @@ class ChainedDataLoaderTest extends Specification {
         def ei = newExecutionInput(query).dataLoaderRegistry(dataLoaderRegistry).build()
 
         // make the window large enough to avoid flaky tests
-        ei.getGraphQLContext().put(DispatchingContextKeys.BATCH_WINDOW_DELAYED_DL_NANO_SECONDS, 2_000_000)
+        ei.getGraphQLContext().put(DispatchingContextKeys.DELAYED_DATA_LOADER_BATCH_WINDOW_SIZE_NANO_SECONDS, 2_000_000)
 
         when:
         def er = graphQL.execute(ei)
@@ -285,5 +291,63 @@ class ChainedDataLoaderTest extends Specification {
         batchLoadCalls.get() == 1
     }
 
+    def "executor for delayed dispatching can be configured"() {
+        given:
+        def sdl = '''
+
+        type Query {
+          foo: String
+         bar: String
+        }
+        '''
+        BatchLoader<String, String> batchLoader = { keys ->
+            return supplyAsync {
+                Thread.sleep(250)
+                return keys;
+            }
+        }
+
+        DataLoader<String, String> nameDataLoader = DataLoaderFactory.newDataLoader(batchLoader);
+
+        DataLoaderRegistry dataLoaderRegistry = new DataLoaderRegistry();
+        dataLoaderRegistry.register("dl", nameDataLoader);
+
+        def fooDF = { env ->
+            return supplyAsync {
+                Thread.sleep(1000)
+                return "fooFirstValue"
+            }.thenCompose {
+                return env.getDataLoader("dl").load(it)
+            }
+        } as DataFetcher
+
+
+        def fetchers = ["Query": ["foo": fooDF]]
+        def schema = TestUtil.schema(sdl, fetchers)
+        def graphQL = GraphQL.newGraphQL(schema).build()
+
+        def query = "{ foo } "
+        def ei = newExecutionInput(query).dataLoaderRegistry(dataLoaderRegistry).build()
+
+
+        ScheduledExecutorService scheduledExecutorService = Mock()
+        ei.getGraphQLContext().put(DispatchingContextKeys.DELAYED_DATA_LOADER_DISPATCHING_EXECUTOR_FACTORY, new DelayedDataLoaderDispatcherExecutorFactory() {
+            @Override
+            ScheduledExecutorService createExecutor(ExecutionId executionId, GraphQLContext graphQLContext) {
+                return scheduledExecutorService
+            }
+        })
+
+
+        when:
+        def er = graphQL.execute(ei)
+
+        then:
+        er.data == [foo: "fooFirstValue"]
+        1 * scheduledExecutorService.schedule(_ as Runnable, _ as Long, _ as TimeUnit) >> { Runnable runnable, Long delay, TimeUnit timeUnit ->
+            return Executors.newSingleThreadScheduledExecutor().schedule(runnable, delay, timeUnit)
+        }
+
+    }
 
 }

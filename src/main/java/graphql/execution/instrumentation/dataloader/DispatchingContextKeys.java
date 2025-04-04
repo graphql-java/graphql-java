@@ -2,8 +2,10 @@ package graphql.execution.instrumentation.dataloader;
 
 
 import graphql.ExperimentalApi;
+import org.jspecify.annotations.NullMarked;
 
 @ExperimentalApi
+@NullMarked
 public final class DispatchingContextKeys {
     private DispatchingContextKeys() {
     }
@@ -12,6 +14,18 @@ public final class DispatchingContextKeys {
      * In nano seconds, the batch window size for delayed DataLoaders.
      * That is for DataLoaders, that are not batched as part of the normal per level
      * dispatching, because they were created after the level was already dispatched.
+     *
+     * Expect Integer values
+     *
+     * Default is 500_000 (0.5 ms)
      */
-    public static final String BATCH_WINDOW_DELAYED_DL_NANO_SECONDS = "__batch_window_delayed_dl_nano_seconds";
+    public static final String DELAYED_DATA_LOADER_BATCH_WINDOW_SIZE_NANO_SECONDS = "__GJ_delayed_data_loader_batch_window_size_nano_seconds";
+
+    /**
+     * An instance of {@link DelayedDataLoaderDispatcherExecutorFactory} that is used to create the
+     * {@link java.util.concurrent.ScheduledExecutorService} for the delayed DataLoader dispatching.
+     *
+     * Default is one static executor thread pool with a single thread.
+     */
+    public static final String DELAYED_DATA_LOADER_DISPATCHING_EXECUTOR_FACTORY = "__GJ_delayed_data_loader_dispatching_executor_factory";
 }

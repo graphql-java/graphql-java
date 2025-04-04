@@ -8,6 +8,7 @@ import graphql.execution.ExecutionStrategyParameters;
 import graphql.execution.FieldValueInfo;
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
+import graphql.util.InterThreadMemoizedSupplier;
 import graphql.util.LockKit;
 import org.dataloader.DataLoader;
 import org.dataloader.DataLoaderRegistry;
@@ -34,8 +35,12 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
     private final ExecutionContext executionContext;
     private final int batchWindowNs;
 
-    static final ScheduledExecutorService delayedDLCFBatchWindowScheduler = Executors.newSingleThreadScheduledExecutor();
-    static final int BATCH_WINDOW_NANO_SECONDS_DEFAULT = 500_000;
+    private final InterThreadMemoizedSupplier<ScheduledExecutorService> delayedDataLoaderDispatchExecutor;
+
+    static final InterThreadMemoizedSupplier<ScheduledExecutorService> defaultDelayedDLCFBatchWindowScheduler
+            = new InterThreadMemoizedSupplier<>(Executors::newSingleThreadScheduledExecutor);
+
+    static final int DEFAULT_BATCH_WINDOW_NANO_SECONDS_DEFAULT = 500_000;
 
 
     private static class CallStack {
@@ -154,12 +159,20 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
         this.callStack = new CallStack();
         this.executionContext = executionContext;
 
-        Integer batchWindowNs = executionContext.getGraphQLContext().get(DispatchingContextKeys.BATCH_WINDOW_DELAYED_DL_NANO_SECONDS);
+        Integer batchWindowNs = executionContext.getGraphQLContext().get(DispatchingContextKeys.DELAYED_DATA_LOADER_BATCH_WINDOW_SIZE_NANO_SECONDS);
         if (batchWindowNs != null) {
             this.batchWindowNs = batchWindowNs;
         } else {
-            this.batchWindowNs = BATCH_WINDOW_NANO_SECONDS_DEFAULT;
+            this.batchWindowNs = DEFAULT_BATCH_WINDOW_NANO_SECONDS_DEFAULT;
         }
+
+        this.delayedDataLoaderDispatchExecutor = new InterThreadMemoizedSupplier<>(() -> {
+            DelayedDataLoaderDispatcherExecutorFactory delayedDataLoaderDispatcherExecutorFactory = executionContext.getGraphQLContext().get(DispatchingContextKeys.DELAYED_DATA_LOADER_DISPATCHING_EXECUTOR_FACTORY);
+            if (delayedDataLoaderDispatcherExecutorFactory != null) {
+                return delayedDataLoaderDispatcherExecutorFactory.createExecutor(executionContext.getExecutionId(), executionContext.getGraphQLContext());
+            }
+            return defaultDelayedDLCFBatchWindowScheduler.get();
+        });
     }
 
     @Override
@@ -320,11 +333,9 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
     }
 
     void dispatch(int level) {
-        System.out.println("dispatching level " + level);
         // if we have any DataLoaderCFs => use new Algorithm
         Set<ResultPathWithDataLoader> resultPathWithDataLoaders = callStack.levelToResultPathWithDataLoader.get(level);
         if (resultPathWithDataLoaders != null) {
-            System.out.println("dispatching level " + level + " with " + resultPathWithDataLoaders.size() + " DataLoaderCFs" + " this: " + this);
             dispatchDLCFImpl(resultPathWithDataLoaders
                     .stream()
                     .map(resultPathWithDataLoader -> resultPathWithDataLoader.resultPath)
@@ -375,22 +386,15 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
 
 
     public void newDataLoaderCF(String resultPath, int level, DataLoader dataLoader) {
-        System.out.println("newDataLoaderCF");
         ResultPathWithDataLoader resultPathWithDataLoader = new ResultPathWithDataLoader(resultPath, level, dataLoader);
         callStack.lock.runLocked(() -> {
             callStack.allResultPathWithDataLoader.add(resultPathWithDataLoader);
             if (!callStack.dispatchedLevels.contains(level)) {
-                System.out.println("not finished dispatching level " + level);
                 callStack.addDataLoaderDFE(level, resultPathWithDataLoader);
-            } else {
-                System.out.println("already finished dispatching level " + level);
             }
         });
         if (callStack.dispatchedLevels.contains(level)) {
-            System.out.println("delayed dispatch");
             dispatchDelayedDataLoader(resultPathWithDataLoader);
-        } else {
-            System.out.println("normal dispatch");
         }
 
 
@@ -408,15 +412,17 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
                         callStack.batchWindowOfDelayedDataLoaderToDispatch.clear();
                         callStack.batchWindowOpen = false;
                     });
-                    System.out.println("start dispatch with " + dfesToDispatch.get().size());
                     dispatchDLCFImpl(dfesToDispatch.get(), false);
                 };
-                delayedDLCFBatchWindowScheduler.schedule(runnable, this.batchWindowNs, TimeUnit.NANOSECONDS);
+                try {
+                    delayedDataLoaderDispatchExecutor.get().schedule(runnable, this.batchWindowNs, TimeUnit.NANOSECONDS);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
             }
 
         });
     }
-
 
     private static class ResultPathWithDataLoader {
         final String resultPath;
