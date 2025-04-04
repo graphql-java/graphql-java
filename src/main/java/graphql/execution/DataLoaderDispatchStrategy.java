@@ -2,8 +2,10 @@ package graphql.execution;
 
 import graphql.Internal;
 import graphql.schema.DataFetcher;
+import graphql.schema.DataFetchingEnvironment;
 
 import java.util.List;
+import java.util.function.Supplier;
 
 @Internal
 public interface DataLoaderDispatchStrategy {
@@ -44,7 +46,7 @@ public interface DataLoaderDispatchStrategy {
     default void fieldFetched(ExecutionContext executionContext,
                               ExecutionStrategyParameters executionStrategyParameters,
                               DataFetcher<?> dataFetcher,
-                              Object fetchedValue) {
+                              Object fetchedValue, Supplier<DataFetchingEnvironment> dataFetchingEnvironment) {
 
     }
 
