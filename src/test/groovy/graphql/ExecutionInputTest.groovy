@@ -234,4 +234,81 @@ class ExecutionInputTest extends Specification {
         !er.errors.isEmpty()
         er.errors[0]["message"] == "Execution has been asked to be cancelled"
     }
+
+    def "can cancel request at random times (#testName)"() {
+        def sdl = '''
+            type Query {
+                fetch1 : Inner
+                fetch2 : Inner
+            }
+            
+            type Inner {
+                inner : Inner
+                f : String
+            }
+                
+        '''
+
+        when:
+
+        CountDownLatch fetcherLatch = new CountDownLatch(1)
+
+        DataFetcher df = { DataFetchingEnvironment env ->
+            return CompletableFuture.supplyAsync {
+                fetcherLatch.countDown()
+                def delay = plusOrMinus(dfDelay)
+                println("DF ${env.getExecutionStepInfo().getPath()} sleeping for $delay")
+                Thread.sleep(delay)
+                return [inner: [f: "x"], f: "x"]
+            }
+        }
+
+        def fetcherMap = ["Query": ["fetch1": df, "fetch2": df],
+                          "Inner": ["inner": df]
+        ]
+        def schema = TestUtil.schema(sdl, fetcherMap)
+        def graphQL = GraphQL.newGraphQL(schema).build()
+
+        ExecutionInput executionInput = ExecutionInput.newExecutionInput()
+                .query("query q { fetch1 { inner { inner { inner { f }}}} fetch2 { inner { inner { inner { f }}}} }")
+                .build()
+
+        def cf = graphQL.executeAsync(executionInput)
+
+        // wait for at least one fetcher to run
+        fetcherLatch.await()
+
+        // using a random number MAY make this test flaky - but so be it.  We want ot make sure that
+        // if we cancel then we dont lock up.  We have deterministic tests for that so lets hav
+        // some random ones
+        //
+        def randomCancel = plusOrMinus(dfDelay)
+        Thread.sleep(randomCancel)
+
+        // now make it cancel
+        println("Cancelling after $randomCancel")
+        executionInput.cancel()
+
+        Awaitility.await().atMost(Duration.ofSeconds(10)).until({ -> cf.isDone() })
+
+        def er = cf.join()
+
+        then:
+        !er.errors.isEmpty()
+        er.errors[0]["message"] == "Execution has been asked to be cancelled"
+
+        where:
+        testName  | dfDelay
+        "50 ms"   | plusOrMinus(50)
+        "100 ms"  | plusOrMinus(100)
+        "200 ms"  | plusOrMinus(200)
+        "500 ms"  | plusOrMinus(500)
+        "1000 ms" | plusOrMinus(1000)
+    }
+
+    int plusOrMinus(int integer) {
+        int half = integer / 2
+        def intVal = TestUtil.rand((integer - half), (integer + half))
+        return intVal
+    }
 }
