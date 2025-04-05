@@ -201,7 +201,7 @@ public abstract class ExecutionStrategy {
     @SuppressWarnings("unchecked")
     @DuckTyped(shape = "CompletableFuture<Map<String, Object>> | Map<String, Object>")
     protected Object executeObject(ExecutionContext executionContext, ExecutionStrategyParameters parameters) throws NonNullableFieldWasNullException {
-        return executionContext.call(() -> {
+        return executionContext.engineCallOrCancel(() -> {
             DataLoaderDispatchStrategy dataLoaderDispatcherStrategy = executionContext.getDataLoaderDispatcherStrategy();
             dataLoaderDispatcherStrategy.executeObject(executionContext, parameters);
             Instrumentation instrumentation = executionContext.getInstrumentation();
@@ -225,27 +225,24 @@ public abstract class ExecutionStrategy {
             Object fieldValueInfosResult = resolvedFieldFutures.awaitPolymorphic();
             if (fieldValueInfosResult instanceof CompletableFuture) {
                 CompletableFuture<List<FieldValueInfo>> fieldValueInfos = (CompletableFuture<List<FieldValueInfo>>) fieldValueInfosResult;
-                fieldValueInfos.whenComplete((completeValueInfos, throwable) -> {
-                    executionContext.run(throwable, () -> {
-                        if (throwable != null) {
-                            handleResultsConsumer.accept(null, throwable);
-                            return;
-                        }
-
-                        Async.CombinedBuilder<Object> resultFutures = fieldValuesCombinedBuilder(completeValueInfos);
-                        dataLoaderDispatcherStrategy.executeObjectOnFieldValuesInfo(completeValueInfos, parameters);
-                        resolveObjectCtx.onFieldValuesInfo(completeValueInfos);
-                        resultFutures.await().whenComplete(handleResultsConsumer);
-                    });
-                }).exceptionally((ex) -> executionContext.call(() -> {
-                    // if there are any issues with combining/handling the field results,
-                    // complete the future at all costs and bubble up any thrown exception so
-                    // the execution does not hang.
-                    dataLoaderDispatcherStrategy.executeObjectOnFieldValuesException(ex, parameters);
-                    resolveObjectCtx.onFieldValuesException();
-                    overallResult.completeExceptionally(ex);
-                    return null;
-                }));
+                fieldValueInfos.whenComplete(executionContext.engineRun(completeValueInfos -> {
+                                    Async.CombinedBuilder<Object> resultFutures = fieldValuesCombinedBuilder(completeValueInfos);
+                                    dataLoaderDispatcherStrategy.executeObjectOnFieldValuesInfo(completeValueInfos, parameters);
+                                    resolveObjectCtx.onFieldValuesInfo(completeValueInfos);
+                                    resultFutures.await().whenComplete(handleResultsConsumer);
+                                },
+                                throwable -> {
+                                    handleResultsConsumer.accept(null, throwable);
+                                }))
+                        .exceptionally(executionContext.engineExceptionally(ex -> {
+                            // if there are any issues with combining/handling the field results,
+                            // complete the future at all costs and bubble up any thrown exception so
+                            // the execution does not hang.
+                            dataLoaderDispatcherStrategy.executeObjectOnFieldValuesException(ex, parameters);
+                            resolveObjectCtx.onFieldValuesException();
+                            overallResult.completeExceptionally(ex);
+                            return null;
+                        }));
                 overallResult.whenComplete(resolveObjectCtx::onCompleted);
                 return overallResult;
             } else {
@@ -279,16 +276,13 @@ public abstract class ExecutionStrategy {
     }
 
     private BiConsumer<List<Object>, Throwable> buildFieldValueMap(List<String> fieldNames, CompletableFuture<Map<String, Object>> overallResult, ExecutionContext executionContext) {
-        return (List<Object> results, Throwable exception) -> {
-            executionContext.run(exception, () -> {
-                if (exception != null) {
-                    handleValueException(overallResult, exception, executionContext);
-                    return;
-                }
-                Map<String, Object> resolvedValuesByField = buildFieldValueMap(fieldNames, results);
-                overallResult.complete(resolvedValuesByField);
-            });
-        };
+        return executionContext.engineRun(
+                results -> {
+                    Map<String, Object> resolvedValuesByField1 = buildFieldValueMap(fieldNames, results);
+                    overallResult.complete(resolvedValuesByField1);
+                },
+                exception -> handleValueException(overallResult, exception, executionContext)
+        );
     }
 
     @NonNull
@@ -492,20 +486,33 @@ public abstract class ExecutionStrategy {
             // in reverse stack order
             CompletableFuture<Object> fetchedValue = originalFetchValue.thenApply(Function.identity());
             executionContext.incrementRunning(fetchedValue);
-            CompletableFuture<Object> rawResultCF = fetchedValue
-                    .handle((result, wrapperExceptionOrNull) -> executionContext.call(wrapperExceptionOrNull, () -> {
+
+            CompletableFuture<CompletableFuture<Object>> handledCF = fetchedValue.handle(executionContext.engineHandle(result -> {
+                        // we can simply return the fetched value CF and avoid a allocation
+                        fetchCtx.onCompleted(result,null);
+                        return originalFetchValue;
+                    },
+                    throwable -> {
                         // because we added an artificial CF, we need to unwrap the exception
-                        Throwable exception = wrapperExceptionOrNull != null ? wrapperExceptionOrNull.getCause() : null;
-                        fetchCtx.onCompleted(result, exception);
-                        if (exception != null) {
-                            CompletableFuture<Object> handleFetchingExceptionResult = handleFetchingException(dataFetchingEnvironment.get(), parameters, exception);
-                            return handleFetchingExceptionResult;
-                        } else {
-                            // we can simply return the fetched value CF and avoid a allocation
-                            return originalFetchValue;
-                        }
-                    }))
-                    .thenCompose(Function.identity());
+                        Throwable exception = throwable.getCause() != null ? throwable.getCause() : throwable;
+                        fetchCtx.onCompleted(null,exception);
+                        return handleFetchingException(dataFetchingEnvironment.get(), parameters, exception);
+                    }));
+            CompletableFuture<Object> rawResultCF = handledCF.thenCompose(Function.identity());
+//            CompletableFuture<Object> rawResultCF = fetchedValue
+//                    .handle((result, wrapperExceptionOrNull) -> executionContext.call(wrapperExceptionOrNull, () -> {
+//                        // because we added an artificial CF, we need to unwrap the exception
+//                        Throwable exception = wrapperExceptionOrNull != null ? wrapperExceptionOrNull.getCause() : null;
+//                        fetchCtx.onCompleted(result, exception);
+//                        if (exception != null) {
+//                            CompletableFuture<Object> handleFetchingExceptionResult = handleFetchingException(dataFetchingEnvironment.get(), parameters, exception);
+//                            return handleFetchingExceptionResult;
+//                        } else {
+//                            // we can simply return the fetched value CF and avoid a allocation
+//                            return originalFetchValue;
+//                        }
+//                    }))
+//                    .thenCompose(Function.identity());
             executionContext.incrementRunning(rawResultCF);
             CompletableFuture<FetchedValue> fetchedValueCF = rawResultCF
                     .thenApply(result -> unboxPossibleDataFetcherResult(executionContext, parameters, result));
@@ -546,7 +553,7 @@ public abstract class ExecutionStrategy {
     protected FetchedValue unboxPossibleDataFetcherResult(ExecutionContext executionContext,
                                                           ExecutionStrategyParameters parameters,
                                                           Object result) {
-        return executionContext.call(() -> {
+        return executionContext.engineCallOrCancel(() -> {
             if (result instanceof DataFetcherResult) {
                 DataFetcherResult<?> dataFetcherResult = (DataFetcherResult<?>) result;
 
@@ -632,7 +639,7 @@ public abstract class ExecutionStrategy {
     }
 
     private FieldValueInfo completeField(GraphQLFieldDefinition fieldDef, ExecutionContext executionContext, ExecutionStrategyParameters parameters, FetchedValue fetchedValue) {
-        return executionContext.call(() -> {
+        return executionContext.engineCallOrCancel(() -> {
             GraphQLObjectType parentType = (GraphQLObjectType) parameters.getExecutionStepInfo().getUnwrappedNonNullType();
             ExecutionStepInfo executionStepInfo = createExecutionStepInfo(executionContext, parameters, fieldDef, parentType);
 
@@ -828,17 +835,17 @@ public abstract class ExecutionStrategy {
             completeListCtx.onDispatched();
             overallResult.whenComplete(completeListCtx::onCompleted);
 
-            resultsFuture.whenComplete((results, exception) -> {
-                executionContext.run(exception, () -> {
-                    if (exception != null) {
+            resultsFuture.whenComplete(executionContext.engineRun(
+                    results -> {
+                        List<Object> completedResults = new ArrayList<>(results.size());
+                        completedResults.addAll(results);
+                        overallResult.complete(completedResults);
+
+                    },
+                    exception -> {
                         handleValueException(overallResult, exception, executionContext);
-                        return;
                     }
-                    List<Object> completedResults = new ArrayList<>(results.size());
-                    completedResults.addAll(results);
-                    overallResult.complete(completedResults);
-                });
-            });
+            ));
             listOrPromiseToList = overallResult;
         } else {
             completeListCtx.onCompleted(listResults, null);

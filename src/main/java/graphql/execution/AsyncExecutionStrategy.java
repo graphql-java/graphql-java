@@ -38,7 +38,7 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
     @Override
     @SuppressWarnings("FutureReturnValueIgnored")
     public CompletableFuture<ExecutionResult> execute(ExecutionContext executionContext, ExecutionStrategyParameters parameters) throws NonNullableFieldWasNullException {
-        return executionContext.call(() -> {
+        return executionContext.engineCallOrCancel(() -> {
             DataLoaderDispatchStrategy dataLoaderDispatcherStrategy = executionContext.getDataLoaderDispatcherStrategy();
             dataLoaderDispatcherStrategy.executionStrategy(executionContext, parameters);
             Instrumentation instrumentation = executionContext.getInstrumentation();
@@ -60,25 +60,24 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
             CompletableFuture<ExecutionResult> overallResult = new CompletableFuture<>();
             executionStrategyCtx.onDispatched();
 
-            futures.await().whenComplete((completeValueInfos, throwable) -> {
-                executionContext.run(throwable,() -> {
-                    List<String> fieldsExecutedOnInitialResult = deferredExecutionSupport.getNonDeferredFieldNames(fieldNames);
+            List<String> fieldsExecutedOnInitialResult = deferredExecutionSupport.getNonDeferredFieldNames(fieldNames);
+            BiConsumer<List<Object>, Throwable> handleResultsConsumer = handleResults(executionContext, fieldsExecutedOnInitialResult, overallResult);
 
-                    BiConsumer<List<Object>, Throwable> handleResultsConsumer = handleResults(executionContext, fieldsExecutedOnInitialResult, overallResult);
-                    if (throwable != null) {
+            futures.await().whenComplete(executionContext.engineRun(
+                    completeValueInfos -> {
+                        Async.CombinedBuilder<Object> fieldValuesFutures = Async.ofExpectedSize(completeValueInfos.size());
+                        for (FieldValueInfo completeValueInfo : completeValueInfos) {
+                            fieldValuesFutures.addObject(completeValueInfo.getFieldValueObject());
+                        }
+                        dataLoaderDispatcherStrategy.executionStrategyOnFieldValuesInfo(completeValueInfos);
+                        executionStrategyCtx.onFieldValuesInfo(completeValueInfos);
+                        fieldValuesFutures.await().whenComplete(handleResultsConsumer);
+
+                    },
+                    throwable -> {
                         handleResultsConsumer.accept(null, throwable.getCause());
-                        return;
                     }
-
-                    Async.CombinedBuilder<Object> fieldValuesFutures = Async.ofExpectedSize(completeValueInfos.size());
-                    for (FieldValueInfo completeValueInfo : completeValueInfos) {
-                        fieldValuesFutures.addObject(completeValueInfo.getFieldValueObject());
-                    }
-                    dataLoaderDispatcherStrategy.executionStrategyOnFieldValuesInfo(completeValueInfos);
-                    executionStrategyCtx.onFieldValuesInfo(completeValueInfos);
-                    fieldValuesFutures.await().whenComplete(handleResultsConsumer);
-                });
-            }).exceptionally((ex) -> executionContext.call(ex,() -> {
+            )).exceptionally(executionContext.engineExceptionally(ex -> {
                 // if there are any issues with combining/handling the field results,
                 // complete the future at all costs and bubble up any thrown exception so
                 // the execution does not hang.
