@@ -369,7 +369,7 @@ class EngineRunningTest extends Specification {
         then:
         result.errors.collect { it.message } == ["recovered"]
         // we expect simply going from running to finshed
-        states == [RUNNING, NOT_RUNNING]
+        new ArrayList<>(states) == [RUNNING, NOT_RUNNING]
     }
 
 
