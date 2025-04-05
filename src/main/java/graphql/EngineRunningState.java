@@ -89,7 +89,12 @@ public class EngineRunningState {
         CompletableFuture<U> result = new CompletableFuture<>();
         src = observeCompletableFutureStart(src);
         src.whenComplete((u, t) -> {
-            CompletionStage<U> innerCF = fn.apply(u).toCompletableFuture();
+            CompletionStage<U> innerCF;
+            try {
+                innerCF = fn.apply(u).toCompletableFuture();
+            } catch (Throwable e) {
+                innerCF = CompletableFuture.failedFuture(e);
+            }
             // this run is needed to wrap around the result.complete()/result.completeExceptionally() call
             innerCF.whenComplete((u1, t1) -> run(() -> {
                 if (t1 != null) {
