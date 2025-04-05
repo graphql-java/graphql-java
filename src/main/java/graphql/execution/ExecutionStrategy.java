@@ -291,8 +291,12 @@ public abstract class ExecutionStrategy {
         };
     }
 
-    @NonNull
-    private static Map<String, Object> buildFieldValueMap(List<String> fieldNames, List<Object> results) {
+    /**
+     * Default implementation that creates a mutable {@link java.util.LinkedHashMap}.
+     * Concrete classes are enabled to override this method to change the concrete {@link Map} implementation
+     * (e.g. immutable maps, unified maps from eclipse-collections and so on).
+     */
+    protected Map<String, Object> buildFieldValueMap(List<String> fieldNames, List<Object> results) {
         Map<String, Object> resolvedValuesByField = Maps.newLinkedHashMapWithExpectedSize(fieldNames.size());
         int ix = 0;
         for (Object fieldValue : results) {
@@ -1133,6 +1137,17 @@ public abstract class ExecutionStrategy {
                 .parentInfo(parentStepInfo)
                 .arguments(argumentValues)
                 .build();
+    }
+
+    protected BiConsumer<List<Object>, Throwable> handleResults(ExecutionContext executionContext, List<String> fieldNames, CompletableFuture<ExecutionResult> overallResult) {
+        return (List<Object> results, Throwable exception) -> {
+            if (exception != null) {
+                handleNonNullException(executionContext, overallResult, exception);
+                return;
+            }
+            final var map = buildFieldValueMap(fieldNames, results);
+            overallResult.complete(new ExecutionResultImpl(map, executionContext.getErrors()));
+        };
     }
 
     @NonNull
