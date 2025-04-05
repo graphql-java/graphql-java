@@ -27,6 +27,7 @@ import spock.lang.Specification
 import spock.lang.Unroll
 
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.CopyOnWriteArrayList
 
 import static graphql.schema.idl.TypeRuntimeWiring.newTypeWiring
 
@@ -711,7 +712,7 @@ class SubscriptionExecutionStrategyTest extends Specification {
     }
 
     def "we can cancel the operation and the upstream publisher is told"() {
-        List<Runnable> promises = []
+        List<Runnable> promises = new CopyOnWriteArrayList<>()
         RxJavaMessagePublisher publisher = new RxJavaMessagePublisher(10)
 
         DataFetcher newMessageDF = { env -> return publisher }

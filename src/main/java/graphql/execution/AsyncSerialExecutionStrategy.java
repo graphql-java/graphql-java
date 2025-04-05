@@ -32,7 +32,7 @@ public class AsyncSerialExecutionStrategy extends AbstractAsyncExecutionStrategy
     @Override
     @SuppressWarnings({"TypeParameterUnusedInFormals", "FutureReturnValueIgnored"})
     public CompletableFuture<ExecutionResult> execute(ExecutionContext executionContext, ExecutionStrategyParameters parameters) throws NonNullableFieldWasNullException {
-        return executionContext.call(() -> {
+        return executionContext.engineCallOrCancel(() -> {
             DataLoaderDispatchStrategy dataLoaderDispatcherStrategy = executionContext.getDataLoaderDispatcherStrategy();
 
             Instrumentation instrumentation = executionContext.getInstrumentation();
@@ -50,7 +50,7 @@ public class AsyncSerialExecutionStrategy extends AbstractAsyncExecutionStrategy
                 return CompletableFuture.completedFuture(isNotSensible.get());
             }
 
-            CompletableFuture<List<Object>> resultsFuture = Async.eachSequentially(fieldNames, (fieldName, prevResults) -> executionContext.call(() -> {
+            CompletableFuture<List<Object>> resultsFuture = Async.eachSequentially(fieldNames, (fieldName, prevResults) -> executionContext.engineCallOrCancel(() -> {
                 MergedField currentField = fields.getSubField(fieldName);
                 ResultPath fieldPath = parameters.getPath().segment(mkNameForPath(currentField));
                 ExecutionStrategyParameters newParameters = parameters
@@ -77,7 +77,7 @@ public class AsyncSerialExecutionStrategy extends AbstractAsyncExecutionStrategy
         Object fieldWithInfo = resolveFieldWithInfo(executionContext, newParameters);
         if (fieldWithInfo instanceof CompletableFuture) {
             //noinspection unchecked
-            return ((CompletableFuture<FieldValueInfo>) fieldWithInfo).thenCompose(fvi -> executionContext.call(() -> {
+            return ((CompletableFuture<FieldValueInfo>) fieldWithInfo).thenCompose(fvi -> executionContext.engineCallOrCancel(() -> {
                 dataLoaderDispatcherStrategy.executionStrategyOnFieldValuesInfo(List.of(fvi));
                 CompletableFuture<Object> fieldValueFuture = fvi.getFieldValueFuture();
                 return fieldValueFuture;

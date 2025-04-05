@@ -303,7 +303,7 @@ class ExecutionContextBuilderTest extends Specification {
         CountDownLatch latch = new CountDownLatch(1)
         CountDownLatch threadLatch = new CountDownLatch(1)
         offThread({
-            executionContext.run {
+            executionContext.engineRunOrCancel {
                 threadLatch.countDown()
                 println("running on ${Thread.currentThread().name}")
                 latch.await()
@@ -325,7 +325,7 @@ class ExecutionContextBuilderTest extends Specification {
         latch = new CountDownLatch(1)
         threadLatch = new CountDownLatch(1)
         offThread({
-            executionContext.call {
+            executionContext.engineCallOrCancel {
                 threadLatch.countDown()
                 println("running on ${Thread.currentThread().name}")
                 latch.await()
@@ -354,13 +354,13 @@ class ExecutionContextBuilderTest extends Specification {
 
         when:
         executionContext.getExecutionInput().cancel() // now in cancel state
-        executionContext.run { "x" }
+        executionContext.engineRunOrCancel { "x" }
 
         then:
         thrown(AbortExecutionException)
 
         when:
-        executionContext.call { "x" }
+        executionContext.engineCallOrCancel { "x" }
 
         then:
         thrown(AbortExecutionException)
@@ -369,6 +369,7 @@ class ExecutionContextBuilderTest extends Specification {
     def "wont abort of we already have an exception"() {
 
         when:
+        Throwable captureE = null
         def executionContext = mkEexecutionContext()
         def existingException = new AbortExecutionException("x")
 
@@ -376,17 +377,22 @@ class ExecutionContextBuilderTest extends Specification {
         !executionContext.isRunning()
 
         when:
+        captureE = null
         executionContext.getExecutionInput().cancel() // now in cancel state
-        executionContext.run(existingException, { "x" })
+        executionContext.engineRun({ -> "good" }, { captureE = it }).accept(null,existingException)
 
         then:
         notThrown(AbortExecutionException)
+        captureE == existingException
 
         when:
-        executionContext.call(existingException, { "x" })
+        def val = executionContext.engineHandle({ -> "good" },
+                { captureE = it; return "badPath" }).apply(null, existingException)
 
         then:
         notThrown(AbortExecutionException)
+        captureE == existingException
+        val == "badPath"
     }
 
 }
