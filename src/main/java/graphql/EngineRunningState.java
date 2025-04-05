@@ -172,7 +172,7 @@ public class EngineRunningState {
         engineRunningObserver.runningStateChanged(executionId, graphQLContext, runningState);
     }
 
-    public void run(Runnable runnable) {
+    private void run(Runnable runnable) {
         if (engineRunningObserver == null) {
             runnable.run();
             return;
@@ -185,6 +185,9 @@ public class EngineRunningState {
         }
     }
 
+    /**
+     * Only used once outside of this class: when the execution starts
+     */
     public <T> T call(Supplier<T> supplier) {
         if (engineRunningObserver == null) {
             return supplier.get();
