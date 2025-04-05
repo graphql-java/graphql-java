@@ -88,8 +88,9 @@ public class EngineRunningState {
         }
         CompletableFuture<U> result = new CompletableFuture<>();
         src = observeCompletableFutureStart(src);
-        src.whenComplete((u, t) -> run(() -> {
+        src.whenComplete((u, t) -> {
             CompletionStage<U> innerCF = fn.apply(u).toCompletableFuture();
+            // this run is needed to wrap around the result.complete()/result.completeExceptionally() call
             innerCF.whenComplete((u1, t1) -> run(() -> {
                 if (t1 != null) {
                     result.completeExceptionally(t1);
@@ -97,32 +98,26 @@ public class EngineRunningState {
                     result.complete(u1);
                 }
             }));
-        }));
+        });
         observerCompletableFutureEnd(src);
         return result;
     }
 
-    public <T, U> CompletableFuture<U> chain(CompletableFuture<T> src, Function<CompletableFuture<T>, CompletableFuture<U>> fn) {
-        if (engineRunningObserver == null) {
-            return fn.apply(src);
-        }
-        src = observeCompletableFutureStart(src);
-        CompletableFuture<U> result = fn.apply(src);
-        observerCompletableFutureEnd(result);
-        return result;
-    }
 
-
-    public <T> CompletableFuture<T> observeCompletableFutureStart(CompletableFuture<T> future) {
+    private <T> CompletableFuture<T> observeCompletableFutureStart(CompletableFuture<T> future) {
         if (engineRunningObserver == null) {
             return future;
         }
+        // the completion order of dependent CFs is in stack order for
+        // directly dependent CFs, but in reverse stack order for indirect dependent ones
+        // By creating one dependent CF on originalFetchValue, we make sure the order it is always
+        // in reverse stack order
         future = future.thenApply(Function.identity());
         incrementRunningWhenCompleted(future);
         return future;
     }
 
-    public void observerCompletableFutureEnd(CompletableFuture<?> future) {
+    private void observerCompletableFutureEnd(CompletableFuture<?> future) {
         if (engineRunningObserver == null) {
             return;
         }
@@ -144,6 +139,9 @@ public class EngineRunningState {
     }
 
     private void decrementRunning() {
+        if (engineRunningObserver == null) {
+            return;
+        }
         assertTrue(isRunning.get() > 0);
         if (isRunning.decrementAndGet() == 0) {
             changeOfState(NOT_RUNNING);
