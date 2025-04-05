@@ -10,8 +10,8 @@ import spock.lang.Specification
  */
 class JSpecifyAnnotationsCheck extends Specification {
 
-    private static final Set<String> ALLOWLIST = [
-//            "graphql.AssertException",
+    private static final Set<String> JSPECIFY_EXEMPTION_LIST = [
+            "graphql.AssertException",
             "graphql.Directives",
             "graphql.ErrorClassification",
             "graphql.ErrorType",
@@ -382,7 +382,7 @@ class JSpecifyAnnotationsCheck extends Specification {
                 .stream()
                 .filter { !it.isAnnotatedWith("org.jspecify.annotations.NullMarked") }
                 .map { it.name }
-                .filter { it -> !ALLOWLIST.contains(it) }
+                .filter { it -> !JSPECIFY_EXEMPTION_LIST.contains(it) }
                 .collect()
 
         then:
