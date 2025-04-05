@@ -4,6 +4,10 @@ import graphql.execution.DataFetcherExceptionHandler
 import graphql.execution.DataFetcherExceptionHandlerResult
 import graphql.execution.EngineRunningObserver
 import graphql.execution.ExecutionId
+import graphql.execution.instrumentation.Instrumentation
+import graphql.execution.instrumentation.InstrumentationState
+import graphql.execution.instrumentation.parameters.InstrumentationCreateStateParameters
+import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters
 import graphql.schema.DataFetcher
 import spock.lang.Specification
 
@@ -29,7 +33,91 @@ class EngineRunningTest extends Specification {
         states
     }
 
-    def "async instrumentation state"() {
+    def "engine starts before instrumentation state and handles async state correctly"() {
+        given:
+        def sdl = '''
+
+        type Query {
+          hello: String
+        }
+        '''
+        def df = { env ->
+            return "world"
+        } as DataFetcher
+        def fetchers = ["Query": ["hello": df]]
+        def schema = TestUtil.schema(sdl, fetchers)
+
+        CompletableFuture cf = new CompletableFuture()
+        Instrumentation instrumentation = new Instrumentation() {
+
+            @Override
+            CompletableFuture<InstrumentationState> createStateAsync(InstrumentationCreateStateParameters parameters) {
+                return cf
+            }
+        }
+        def graphQL = GraphQL.newGraphQL(schema).instrumentation(instrumentation).build()
+
+        def query = "{ hello }"
+        def ei = newExecutionInput(query).build()
+
+        List<RunningState> states = trackStates(ei)
+
+        when:
+        def er = graphQL.executeAsync(ei)
+        then:
+        states == [RUNNING, NOT_RUNNING]
+
+        when:
+        states.clear()
+        cf.complete(new InstrumentationState() {})
+        then:
+        states == [RUNNING, NOT_RUNNING]
+        er.get().data == [hello: "world"]
+
+
+    }
+
+    def "async instrument execution result"() {
+        given:
+        def sdl = '''
+
+        type Query {
+          hello: String
+        }
+        '''
+        def df = { env ->
+            return "world"
+        } as DataFetcher
+        def fetchers = ["Query": ["hello": df]]
+        def schema = TestUtil.schema(sdl, fetchers)
+
+        CompletableFuture cf = new CompletableFuture()
+        Instrumentation instrumentation = new Instrumentation() {
+
+            @Override
+            CompletableFuture<ExecutionResult> instrumentExecutionResult(ExecutionResult executionResult, InstrumentationExecutionParameters parameters, InstrumentationState state) {
+                return cf
+            }
+        }
+        def graphQL = GraphQL.newGraphQL(schema).instrumentation(instrumentation).build()
+
+        def query = "{ hello }"
+        def ei = newExecutionInput(query).build()
+
+        List<RunningState> states = trackStates(ei)
+
+        when:
+        def er = graphQL.executeAsync(ei)
+        then:
+        states == [RUNNING, NOT_RUNNING]
+
+        when:
+        states.clear()
+        cf.complete(ExecutionResultImpl.newExecutionResult().data([hello: "world-modified"]).build())
+        then:
+        er.get().data == [hello: "world-modified"]
+        states == [RUNNING, NOT_RUNNING]
+
 
     }
 
