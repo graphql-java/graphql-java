@@ -203,24 +203,47 @@ class EngineRunningTest extends Specification {
         def sdl = '''
 
         type Query {
-          hello: String
+            hello: String
             hello2: String
+            foo: Foo
+            someStaticValue: Bar
+        }
+        type Foo {
+            name: String
+        }
+        type Bar {
+          staticValue: String
         }
         '''
         CompletableFuture cf1 = new CompletableFuture();
+        CompletableFuture cf2 = new CompletableFuture();
+        CompletableFuture cfFooName = new CompletableFuture();
         def df1 = { env ->
             return cf1;
         } as DataFetcher
-        CompletableFuture cf2 = new CompletableFuture();
+
         def df2 = { env ->
             return cf2;
         } as DataFetcher
 
-        def fetchers = ["Query": ["hello": df1, "hello2": df2]]
+        def dfFoo = { env ->
+            return "Foo";
+        } as DataFetcher
+
+        def dfFooName = { env ->
+            return cfFooName;
+        } as DataFetcher
+
+        def dfStaticValue = { env ->
+            return [staticValue: "staticValue"]
+        } as DataFetcher
+
+
+        def fetchers = [Query: ["hello": df1, "hello2": df2, foo: dfFoo, someStaticValue: dfStaticValue], Foo: [name: dfFooName]]
         def schema = TestUtil.schema(sdl, fetchers)
         def graphQL = GraphQL.newGraphQL(schema).build()
 
-        def query = "{ hello hello2 }"
+        def query = "{ hello hello2 foo { name } someStaticValue {staticValue} }"
         def ei = newExecutionInput(query).build()
 
         List<RunningState> states = trackStates(ei)
@@ -233,17 +256,22 @@ class EngineRunningTest extends Specification {
         when:
         states.clear();
         cf1.complete("world")
-
         then:
         states == [RUNNING, NOT_RUNNING]
 
         when:
-        states.clear()
-        cf2.complete("world2")
-
+        states.clear();
+        cfFooName.complete("FooName")
         then:
         states == [RUNNING, NOT_RUNNING]
-        er.get().data == [hello: "world", hello2: "world2"]
+
+
+        when:
+        states.clear()
+        cf2.complete("world2")
+        then:
+        states == [RUNNING, NOT_RUNNING]
+        er.get().data == [hello: "world", hello2: "world2", foo: [name: "FooName"], someStaticValue: [staticValue: "staticValue"]]
     }
 
 
