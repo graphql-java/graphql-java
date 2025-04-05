@@ -29,6 +29,11 @@ class EngineRunningTest extends Specification {
         states
     }
 
+    def "async instrumentation state"() {
+
+    }
+
+
     def "engine running state is observed"() {
         given:
         def sdl = '''

@@ -2,6 +2,7 @@ package graphql.execution;
 
 
 import graphql.Directives;
+import graphql.EngineRunningState;
 import graphql.ExecutionInput;
 import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
@@ -72,7 +73,7 @@ public class Execution {
         this.doNotAutomaticallyDispatchDataLoader = doNotAutomaticallyDispatchDataLoader;
     }
 
-    public CompletableFuture<ExecutionResult> execute(Document document, GraphQLSchema graphQLSchema, ExecutionId executionId, ExecutionInput executionInput, InstrumentationState instrumentationState) {
+    public CompletableFuture<ExecutionResult> execute(Document document, GraphQLSchema graphQLSchema, ExecutionId executionId, ExecutionInput executionInput, InstrumentationState instrumentationState, EngineRunningState engineRunningState) {
         NodeUtil.GetOperationResult getOperationResult;
         CoercedVariables coercedVariables;
         Supplier<NormalizedVariables> normalizedVariableValues;
@@ -88,9 +89,6 @@ public class Execution {
         }
 
         boolean propagateErrorsOnNonNullContractFailure = propagateErrorsOnNonNullContractFailure(getOperationResult.operationDefinition.getDirectives());
-
-        // can be null
-        EngineRunningObserver engineRunningObserver = executionInput.getGraphQLContext().get(EngineRunningObserver.ENGINE_RUNNING_OBSERVER_KEY);
 
         ExecutionContext executionContext = newExecutionContextBuilder()
                 .instrumentation(instrumentation)
@@ -114,7 +112,7 @@ public class Execution {
                 .valueUnboxer(valueUnboxer)
                 .executionInput(executionInput)
                 .propagapropagateErrorsOnNonNullContractFailureeErrors(propagateErrorsOnNonNullContractFailure)
-                .engineRunningObserver(engineRunningObserver)
+                .engineRunningState(engineRunningState)
                 .build();
 
         executionContext.getGraphQLContext().put(ResultNodesInfo.RESULT_NODES_INFO, executionContext.getResultNodesInfo());
