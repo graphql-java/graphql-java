@@ -10,6 +10,7 @@ import graphql.execution.AbortExecutionException
 import graphql.execution.AsyncExecutionStrategy
 import graphql.execution.Execution
 import graphql.execution.ExecutionId
+import graphql.execution.ResponseMapFactory
 import graphql.execution.ResultPath
 import graphql.execution.ValueUnboxer
 import graphql.execution.instrumentation.ChainedInstrumentation
@@ -306,7 +307,7 @@ class FieldValidationTest extends Specification {
         def document = TestUtil.parseQuery(query)
         def strategy = new AsyncExecutionStrategy()
         def instrumentation = new FieldValidationInstrumentation(validation)
-        def execution = new Execution(strategy, strategy, strategy, instrumentation, ValueUnboxer.DEFAULT, false)
+        def execution = new Execution(strategy, strategy, strategy, instrumentation, ValueUnboxer.DEFAULT, ResponseMapFactory.DEFAULT, false)
 
         def executionInput = ExecutionInput.newExecutionInput().query(query).variables(variables).build()
         execution.execute(document, schema, ExecutionId.generate(), executionInput, null, new EngineRunningState())
