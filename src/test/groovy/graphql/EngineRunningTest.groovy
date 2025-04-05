@@ -8,12 +8,16 @@ import graphql.execution.instrumentation.Instrumentation
 import graphql.execution.instrumentation.InstrumentationState
 import graphql.execution.instrumentation.parameters.InstrumentationCreateStateParameters
 import graphql.execution.instrumentation.parameters.InstrumentationExecutionParameters
+import graphql.execution.preparsed.PreparsedDocumentEntry
+import graphql.execution.preparsed.PreparsedDocumentProvider
+import graphql.parser.Parser
 import graphql.schema.DataFetcher
 import spock.lang.Specification
 
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.locks.ReentrantLock
+import java.util.function.Function
 
 import static graphql.ExecutionInput.newExecutionInput
 import static graphql.execution.EngineRunningObserver.ENGINE_RUNNING_OBSERVER_KEY
@@ -31,6 +35,51 @@ class EngineRunningTest extends Specification {
                 states.add(running)
         } as EngineRunningObserver);
         states
+    }
+
+    def "preparsed async document provider"() {
+        given:
+        def sdl = '''
+
+        type Query {
+          hello: String
+        }
+        '''
+        def df = { env ->
+            return "world"
+        } as DataFetcher
+        def fetchers = ["Query": ["hello": df]]
+        def schema = TestUtil.schema(sdl, fetchers)
+
+        def query = "{ hello }"
+        def document = Parser.parse(query)
+
+        CompletableFuture cf = new CompletableFuture()
+        PreparsedDocumentProvider preparsedDocumentProvider = new PreparsedDocumentProvider() {
+            @Override
+            CompletableFuture<PreparsedDocumentEntry> getDocumentAsync(ExecutionInput executionInput, Function<ExecutionInput, PreparsedDocumentEntry> parseAndValidateFunction) {
+                return cf
+            }
+        }
+        def graphQL = GraphQL.newGraphQL(schema).preparsedDocumentProvider(preparsedDocumentProvider).build()
+
+        def ei = newExecutionInput(query).build()
+
+        List<RunningState> states = trackStates(ei)
+
+        when:
+        def er = graphQL.executeAsync(ei)
+        then:
+        states == [RUNNING, NOT_RUNNING]
+
+        when:
+        states.clear()
+        cf.complete(new PreparsedDocumentEntry(document))
+        then:
+        states == [RUNNING, NOT_RUNNING]
+        er.get().data == [hello: "world"]
+
+
     }
 
     def "engine starts before instrumentation state and handles async state correctly"() {
