@@ -390,7 +390,7 @@ class JSpecifyAnnotationsCheck extends Specification {
             println """The following public API and experimental API classes are missing @NullMarked annotation:
             ${classesMissingAnnotation.sort().join("\n")}
             
-Add @NullMarked to these public API classes and add @Nullable annotations where appropriate."""
+Add @NullMarked to these public API classes and add @Nullable annotations where appropriate. See documentation at https://jspecify.dev/docs/user-guide/#nullmarked"""
             assert false, "Found ${classesMissingAnnotation.size()} public API and experimental API classes missing @NullMarked annotation"
         }
     }
