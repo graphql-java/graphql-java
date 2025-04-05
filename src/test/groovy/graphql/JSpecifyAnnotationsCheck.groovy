@@ -11,7 +11,7 @@ import spock.lang.Specification
 class JSpecifyAnnotationsCheck extends Specification {
 
     private static final Set<String> ALLOWLIST = [
-            "graphql.AssertException",
+//            "graphql.AssertException",
             "graphql.Directives",
             "graphql.ErrorClassification",
             "graphql.ErrorType",
