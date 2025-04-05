@@ -1,5 +1,6 @@
 package graphql.execution
 
+import graphql.EngineRunningState
 import graphql.ExecutionInput
 import graphql.GraphQLContext
 import graphql.execution.instrumentation.SimplePerformantInstrumentation
@@ -108,6 +109,7 @@ class AsyncSerialExecutionStrategyTest extends Specification {
                 .locale(Locale.getDefault())
                 .graphQLContext(GraphQLContext.getDefault())
                 .executionInput(ExecutionInput.newExecutionInput("{}").build())
+                .engineRunningState(new EngineRunningState())
                 .build()
         ExecutionStrategyParameters executionStrategyParameters = ExecutionStrategyParameters
                 .newParameters()
@@ -155,6 +157,7 @@ class AsyncSerialExecutionStrategyTest extends Specification {
                 .locale(Locale.getDefault())
                 .graphQLContext(GraphQLContext.getDefault())
                 .executionInput(ExecutionInput.newExecutionInput("{}").build())
+                .engineRunningState(new EngineRunningState())
                 .build()
         ExecutionStrategyParameters executionStrategyParameters = ExecutionStrategyParameters
                 .newParameters()
@@ -169,35 +172,35 @@ class AsyncSerialExecutionStrategyTest extends Specification {
 
         then:
         !result.isDone()
-        1 * df1.get(_,_,_) >> cf1
-        0 * df2.get(_,_,_) >> cf2
-        0 * df3.get(_,_,_) >> cf3
+        1 * df1.get(_, _, _) >> cf1
+        0 * df2.get(_, _, _) >> cf2
+        0 * df3.get(_, _, _) >> cf3
 
         when:
         cf1.complete("world1")
 
         then:
         !result.isDone()
-        0 * df1.get(_,_,_) >> cf1
-        1 * df2.get(_,_,_) >> cf2
-        0 * df3.get(_,_,_) >> cf3
+        0 * df1.get(_, _, _) >> cf1
+        1 * df2.get(_, _, _) >> cf2
+        0 * df3.get(_, _, _) >> cf3
 
         when:
         cf2.complete("world2")
 
         then:
         !result.isDone()
-        0 * df1.get(_,_,_) >> cf1
-        0 * df2.get(_,_,_) >> cf2
-        1 * df3.get(_,_,_) >> cf3
+        0 * df1.get(_, _, _) >> cf1
+        0 * df2.get(_, _, _) >> cf2
+        1 * df3.get(_, _, _) >> cf3
 
         when:
         cf3.complete("world3")
 
         then:
-        0 * df1.get(_,_,_) >> cf1
-        0 * df2.get(_,_,_) >> cf2
-        0 * df3.get(_,_,_) >> cf3
+        0 * df1.get(_, _, _) >> cf1
+        0 * df2.get(_, _, _) >> cf2
+        0 * df3.get(_, _, _) >> cf3
         result.isDone()
         result.get().data == ['hello': 'world1', 'hello2': 'world2', 'hello3': 'world3']
     }

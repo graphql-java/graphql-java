@@ -32,41 +32,39 @@ public class AsyncSerialExecutionStrategy extends AbstractAsyncExecutionStrategy
     @Override
     @SuppressWarnings({"TypeParameterUnusedInFormals", "FutureReturnValueIgnored"})
     public CompletableFuture<ExecutionResult> execute(ExecutionContext executionContext, ExecutionStrategyParameters parameters) throws NonNullableFieldWasNullException {
-        return executionContext.call(() -> {
-            DataLoaderDispatchStrategy dataLoaderDispatcherStrategy = executionContext.getDataLoaderDispatcherStrategy();
+        DataLoaderDispatchStrategy dataLoaderDispatcherStrategy = executionContext.getDataLoaderDispatcherStrategy();
 
-            Instrumentation instrumentation = executionContext.getInstrumentation();
-            InstrumentationExecutionStrategyParameters instrumentationParameters = new InstrumentationExecutionStrategyParameters(executionContext, parameters);
-            InstrumentationContext<ExecutionResult> executionStrategyCtx = nonNullCtx(instrumentation.beginExecutionStrategy(instrumentationParameters,
-                    executionContext.getInstrumentationState())
-            );
-            MergedSelectionSet fields = parameters.getFields();
-            ImmutableList<String> fieldNames = ImmutableList.copyOf(fields.keySet());
+        Instrumentation instrumentation = executionContext.getInstrumentation();
+        InstrumentationExecutionStrategyParameters instrumentationParameters = new InstrumentationExecutionStrategyParameters(executionContext, parameters);
+        InstrumentationContext<ExecutionResult> executionStrategyCtx = nonNullCtx(instrumentation.beginExecutionStrategy(instrumentationParameters,
+                executionContext.getInstrumentationState())
+        );
+        MergedSelectionSet fields = parameters.getFields();
+        ImmutableList<String> fieldNames = ImmutableList.copyOf(fields.keySet());
 
-            // this is highly unlikely since Mutations cant do introspection BUT in theory someone could make the query strategy this code
-            // so belts and braces
-            Optional<ExecutionResult> isNotSensible = Introspection.isIntrospectionSensible(fields, executionContext);
-            if (isNotSensible.isPresent()) {
-                return CompletableFuture.completedFuture(isNotSensible.get());
-            }
+        // this is highly unlikely since Mutations cant do introspection BUT in theory someone could make the query strategy this code
+        // so belts and braces
+        Optional<ExecutionResult> isNotSensible = Introspection.isIntrospectionSensible(fields, executionContext);
+        if (isNotSensible.isPresent()) {
+            return CompletableFuture.completedFuture(isNotSensible.get());
+        }
 
-            CompletableFuture<List<Object>> resultsFuture = Async.eachSequentially(fieldNames, (fieldName, prevResults) -> executionContext.call(() -> {
-                MergedField currentField = fields.getSubField(fieldName);
-                ResultPath fieldPath = parameters.getPath().segment(mkNameForPath(currentField));
-                ExecutionStrategyParameters newParameters = parameters
-                        .transform(builder -> builder.field(currentField).path(fieldPath));
+        CompletableFuture<List<Object>> resultsFuture = Async.eachSequentially(fieldNames, (fieldName, prevResults) -> {
+            MergedField currentField = fields.getSubField(fieldName);
+            ResultPath fieldPath = parameters.getPath().segment(mkNameForPath(currentField));
+            ExecutionStrategyParameters newParameters = parameters
+                    .transform(builder -> builder.field(currentField).path(fieldPath));
 
-                Object resolveSerialField = resolveSerialField(executionContext, dataLoaderDispatcherStrategy, newParameters);
-                return resolveSerialField;
-            }));
-
-            CompletableFuture<ExecutionResult> overallResult = new CompletableFuture<>();
-            executionStrategyCtx.onDispatched();
-
-            resultsFuture.whenComplete(handleResults(executionContext, fieldNames, overallResult));
-            overallResult.whenComplete(executionStrategyCtx::onCompleted);
-            return overallResult;
+            Object resolveSerialField = resolveSerialField(executionContext, dataLoaderDispatcherStrategy, newParameters);
+            return resolveSerialField;
         });
+
+        CompletableFuture<ExecutionResult> overallResult = new CompletableFuture<>();
+        executionStrategyCtx.onDispatched();
+
+        resultsFuture.whenComplete(handleResults(executionContext, fieldNames, overallResult));
+        overallResult.whenComplete(executionStrategyCtx::onCompleted);
+        return overallResult;
     }
 
     private Object resolveSerialField(ExecutionContext executionContext,
@@ -77,11 +75,11 @@ public class AsyncSerialExecutionStrategy extends AbstractAsyncExecutionStrategy
         Object fieldWithInfo = resolveFieldWithInfo(executionContext, newParameters);
         if (fieldWithInfo instanceof CompletableFuture) {
             //noinspection unchecked
-            return ((CompletableFuture<FieldValueInfo>) fieldWithInfo).thenCompose(fvi -> executionContext.call(() -> {
+            return ((CompletableFuture<FieldValueInfo>) fieldWithInfo).thenCompose(fvi -> {
                 dataLoaderDispatcherStrategy.executionStrategyOnFieldValuesInfo(List.of(fvi));
                 CompletableFuture<Object> fieldValueFuture = fvi.getFieldValueFuture();
                 return fieldValueFuture;
-            }));
+            });
         } else {
             FieldValueInfo fvi = (FieldValueInfo) fieldWithInfo;
             dataLoaderDispatcherStrategy.executionStrategyOnFieldValuesInfo(List.of(fvi));
