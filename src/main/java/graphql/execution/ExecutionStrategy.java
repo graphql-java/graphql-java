@@ -1,7 +1,6 @@
 package graphql.execution;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Maps;
 import graphql.DuckTyped;
 import graphql.EngineRunningState;
 import graphql.ExecutionResult;
@@ -260,7 +259,7 @@ public abstract class ExecutionStrategy {
                 overallResult.whenComplete(resolveObjectCtx::onCompleted);
                 return overallResult;
             } else {
-                Map<String, Object> fieldValueMap = buildFieldValueMap(fieldsExecutedOnInitialResult, (List<Object>) completedValuesObject);
+                Map<String, Object> fieldValueMap = executionContext.getResponseMapFactory().createInsertionOrdered(fieldsExecutedOnInitialResult, (List<Object>) completedValuesObject);
                 resolveObjectCtx.onCompleted(fieldValueMap, null);
                 return fieldValueMap;
             }
@@ -281,20 +280,9 @@ public abstract class ExecutionStrategy {
                 handleValueException(overallResult, exception, executionContext);
                 return;
             }
-            Map<String, Object> resolvedValuesByField = buildFieldValueMap(fieldNames, results);
+            Map<String, Object> resolvedValuesByField = executionContext.getResponseMapFactory().createInsertionOrdered(fieldNames, results);
             overallResult.complete(resolvedValuesByField);
         };
-    }
-
-    @NonNull
-    private static Map<String, Object> buildFieldValueMap(List<String> fieldNames, List<Object> results) {
-        Map<String, Object> resolvedValuesByField = Maps.newLinkedHashMapWithExpectedSize(fieldNames.size());
-        int ix = 0;
-        for (Object fieldValue : results) {
-            String fieldName = fieldNames.get(ix++);
-            resolvedValuesByField.put(fieldName, fieldValue);
-        }
-        return resolvedValuesByField;
     }
 
     DeferredExecutionSupport createDeferredExecutionSupport(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
