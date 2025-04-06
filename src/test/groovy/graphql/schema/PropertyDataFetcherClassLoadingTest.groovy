@@ -25,7 +25,7 @@ class PropertyDataFetcherClassLoadingTest extends Specification {
         }
 
         BrokenClass getBrokenThings() {
-            return BrokenClass.cast(null)
+            return new BrokenClass()
         }
     }
 

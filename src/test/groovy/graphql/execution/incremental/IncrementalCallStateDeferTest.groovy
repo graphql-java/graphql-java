@@ -6,7 +6,6 @@ import graphql.execution.ResultPath
 import graphql.execution.pubsub.CapturingSubscriber
 import graphql.incremental.DelayedIncrementalPartialResult
 import org.awaitility.Awaitility
-import org.jetbrains.annotations.NotNull
 import org.reactivestreams.Publisher
 import spock.lang.Specification
 
@@ -242,7 +241,7 @@ class IncrementalCallStateDeferTest extends Specification {
 
         def threadFactory = new ThreadFactory() {
             @Override
-            Thread newThread(@NotNull Runnable r) {
+            Thread newThread(Runnable r) {
                 return new Thread(r, "SubscriberThread")
             }
         }
