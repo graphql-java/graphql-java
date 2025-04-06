@@ -16,7 +16,6 @@ import org.awaitility.Awaitility
 import org.dataloader.BatchLoader
 import org.dataloader.DataLoaderFactory
 import org.dataloader.DataLoaderRegistry
-import org.jetbrains.annotations.NotNull
 import org.reactivestreams.Publisher
 import reactor.core.publisher.Mono
 import spock.lang.Specification
@@ -96,7 +95,6 @@ class DataLoaderDispatcherTest extends Specification {
 
         def enhancingInstrumentation = new SimplePerformantInstrumentation() {
 
-            @NotNull
             @Override
             ExecutionInput instrumentExecutionInput(ExecutionInput executionInput, InstrumentationExecutionParameters parameters, InstrumentationState state) {
                 assert executionInput.getDataLoaderRegistry() == startingDataLoaderRegistry
