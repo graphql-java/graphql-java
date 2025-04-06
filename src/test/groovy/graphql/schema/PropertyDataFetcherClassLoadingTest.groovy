@@ -25,7 +25,7 @@ class PropertyDataFetcherClassLoadingTest extends Specification {
         }
 
         BrokenClass getBrokenThings() {
-            return BrokenClass.cast(null)
+            return new BrokenClass()
         }
     }
 
@@ -35,10 +35,10 @@ class PropertyDataFetcherClassLoadingTest extends Specification {
 
         def target = new TargetClass()
 
-//        when:
-//        def value = okDF.get(fld("okThings"), target, { -> null })
-//        then:
-//        value == "ok"
+        when:
+        def value = okDF.get(fld("okThings"), target, { -> null })
+        then:
+        value == "ok"
 
         when:
         brokenDF.get(fld("brokenThings"), target, { -> null })
