@@ -9,6 +9,7 @@ import graphql.ExperimentalApi;
 import graphql.GraphQLContext;
 import graphql.GraphQLError;
 import graphql.Internal;
+import graphql.Profiler;
 import graphql.execution.incremental.IncrementalCallState;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationContext;
@@ -57,19 +58,22 @@ public class Execution {
     private final Instrumentation instrumentation;
     private final ValueUnboxer valueUnboxer;
     private final boolean doNotAutomaticallyDispatchDataLoader;
+    private final Profiler profiler;
 
     public Execution(ExecutionStrategy queryStrategy,
                      ExecutionStrategy mutationStrategy,
                      ExecutionStrategy subscriptionStrategy,
                      Instrumentation instrumentation,
                      ValueUnboxer valueUnboxer,
-                     boolean doNotAutomaticallyDispatchDataLoader) {
+                     boolean doNotAutomaticallyDispatchDataLoader,
+                     Profiler profiler) {
         this.queryStrategy = queryStrategy != null ? queryStrategy : new AsyncExecutionStrategy();
         this.mutationStrategy = mutationStrategy != null ? mutationStrategy : new AsyncSerialExecutionStrategy();
         this.subscriptionStrategy = subscriptionStrategy != null ? subscriptionStrategy : new AsyncExecutionStrategy();
         this.instrumentation = instrumentation;
         this.valueUnboxer = valueUnboxer;
         this.doNotAutomaticallyDispatchDataLoader = doNotAutomaticallyDispatchDataLoader;
+        this.profiler = profiler;
     }
 
     public CompletableFuture<ExecutionResult> execute(Document document, GraphQLSchema graphQLSchema, ExecutionId executionId, ExecutionInput executionInput, InstrumentationState instrumentationState) {
@@ -115,6 +119,7 @@ public class Execution {
                 .executionInput(executionInput)
                 .propagapropagateErrorsOnNonNullContractFailureeErrors(propagateErrorsOnNonNullContractFailure)
                 .engineRunningObserver(engineRunningObserver)
+                .profiler(profiler)
                 .build();
 
         executionContext.getGraphQLContext().put(ResultNodesInfo.RESULT_NODES_INFO, executionContext.getResultNodesInfo());

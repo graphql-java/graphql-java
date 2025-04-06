@@ -7,6 +7,7 @@ import graphql.ExperimentalApi;
 import graphql.GraphQLContext;
 import graphql.GraphQLError;
 import graphql.Internal;
+import graphql.Profiler;
 import graphql.collect.ImmutableKit;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationState;
@@ -51,6 +52,7 @@ public class ExecutionContextBuilder {
     DataLoaderDispatchStrategy dataLoaderDispatcherStrategy = DataLoaderDispatchStrategy.NO_OP;
     boolean propagateErrorsOnNonNullContractFailure = true;
     EngineRunningObserver engineRunningObserver;
+    Profiler profiler;
 
     /**
      * @return a new builder of {@link graphql.execution.ExecutionContext}s
@@ -99,6 +101,7 @@ public class ExecutionContextBuilder {
         dataLoaderDispatcherStrategy = other.getDataLoaderDispatcherStrategy();
         propagateErrorsOnNonNullContractFailure = other.propagateErrorsOnNonNullContractFailure();
         engineRunningObserver = other.getEngineRunningObserver();
+        profiler = other.getProfiler();
     }
 
     public ExecutionContextBuilder instrumentation(Instrumentation instrumentation) {
@@ -243,6 +246,11 @@ public class ExecutionContextBuilder {
 
     public ExecutionContextBuilder engineRunningObserver(EngineRunningObserver engineRunningObserver) {
         this.engineRunningObserver = engineRunningObserver;
+        return this;
+    }
+
+    public ExecutionContextBuilder profiler(Profiler profiler) {
+        this.profiler = profiler;
         return this;
     }
 }

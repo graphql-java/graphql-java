@@ -8,6 +8,7 @@ import graphql.ExperimentalApi;
 import graphql.GraphQLContext;
 import graphql.GraphQLError;
 import graphql.Internal;
+import graphql.Profiler;
 import graphql.PublicApi;
 import graphql.collect.ImmutableKit;
 import graphql.execution.EngineRunningObserver.RunningState;
@@ -78,6 +79,7 @@ public class ExecutionContext {
 
     private final ResultNodesInfo resultNodesInfo = new ResultNodesInfo();
     private final EngineRunningObserver engineRunningObserver;
+    private final Profiler profiler;
 
     ExecutionContext(ExecutionContextBuilder builder) {
         this.graphQLSchema = builder.graphQLSchema;
@@ -105,6 +107,7 @@ public class ExecutionContext {
         this.queryTree = FpKit.interThreadMemoize(() -> ExecutableNormalizedOperationFactory.createExecutableNormalizedOperation(graphQLSchema, operationDefinition, fragmentsByName, coercedVariables));
         this.propagateErrorsOnNonNullContractFailure = builder.propagateErrorsOnNonNullContractFailure;
         this.engineRunningObserver = builder.engineRunningObserver;
+        this.profiler = builder.profiler;
     }
 
 
@@ -439,5 +442,9 @@ public class ExecutionContext {
         if (engineRunningObserver != null) {
             engineRunningObserver.runningStateChanged(executionId, graphQLContext, runningState);
         }
+    }
+
+    public Profiler getProfiler() {
+        return profiler;
     }
 }

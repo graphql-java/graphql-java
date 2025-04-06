@@ -62,6 +62,7 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
 
             futures.await().whenComplete((completeValueInfos, throwable) -> {
                 executionContext.run(throwable,() -> {
+                    executionContext.getProfiler().rootFieldCount(completeValueInfos.size());
                     List<String> fieldsExecutedOnInitialResult = deferredExecutionSupport.getNonDeferredFieldNames(fieldNames);
 
                     BiConsumer<List<Object>, Throwable> handleResultsConsumer = handleResults(executionContext, fieldsExecutedOnInitialResult, overallResult);
