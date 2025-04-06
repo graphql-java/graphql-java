@@ -226,6 +226,7 @@ public abstract class ExecutionStrategy {
             if (fieldValueInfosResult instanceof CompletableFuture) {
                 CompletableFuture<List<FieldValueInfo>> fieldValueInfos = (CompletableFuture<List<FieldValueInfo>>) fieldValueInfosResult;
                 fieldValueInfos.whenComplete((completeValueInfos, throwable) -> {
+                    executionContext.getProfiler().subSelectionCount(completeValueInfos.size());
                     executionContext.run(throwable, () -> {
                         if (throwable != null) {
                             handleResultsConsumer.accept(null, throwable);
@@ -250,6 +251,7 @@ public abstract class ExecutionStrategy {
                 return overallResult;
             } else {
                 List<FieldValueInfo> completeValueInfos = (List<FieldValueInfo>) fieldValueInfosResult;
+                executionContext.getProfiler().subSelectionCount(completeValueInfos.size());
 
                 Async.CombinedBuilder<Object> resultFutures = fieldValuesCombinedBuilder(completeValueInfos);
                 dataLoaderDispatcherStrategy.executeObjectOnFieldValuesInfo(completeValueInfos, parameters);
@@ -478,6 +480,7 @@ public abstract class ExecutionStrategy {
         executionContext.getDataLoaderDispatcherStrategy().fieldFetched(executionContext, parameters, dataFetcher, fetchedObject);
         fetchCtx.onDispatched();
         fetchCtx.onFetchedValue(fetchedObject);
+        executionContext.getProfiler().fieldFetched(fetchedObject, dataFetcher);
         // if it's a subscription, leave any reactive objects alone
         if (!executionContext.isSubscriptionOperation()) {
             // possible convert reactive objects into CompletableFutures

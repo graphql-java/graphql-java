@@ -412,6 +412,9 @@ public class GraphQL {
      * @return a promise to an {@link ExecutionResult} which can include errors
      */
     public CompletableFuture<ExecutionResult> executeAsync(ExecutionInput executionInput) {
+        Profiler profiler = executionInput.isProfileExecution() ? new ProfilerImpl() : Profiler.NO_OP;
+        profiler.start();
+
         ExecutionInput executionInputWithId = ensureInputHasId(executionInput);
 
         CompletableFuture<InstrumentationState> instrumentationStateCF = instrumentation.createStateAsync(new InstrumentationCreateStateParameters(this.graphQLSchema, executionInputWithId));
@@ -426,7 +429,7 @@ public class GraphQL {
 
                 GraphQLSchema graphQLSchema = instrumentation.instrumentSchema(this.graphQLSchema, instrumentationParameters, instrumentationState);
 
-                CompletableFuture<ExecutionResult> executionResult = parseValidateAndExecute(instrumentedExecutionInput, graphQLSchema, instrumentationState);
+                CompletableFuture<ExecutionResult> executionResult = parseValidateAndExecute(instrumentedExecutionInput, graphQLSchema, instrumentationState, profiler);
                 //
                 // finish up instrumentation
                 executionResult = executionResult.whenComplete(completeInstrumentationCtxCF(executionInstrumentation));
@@ -460,12 +463,12 @@ public class GraphQL {
     }
 
 
-    private CompletableFuture<ExecutionResult> parseValidateAndExecute(ExecutionInput executionInput, GraphQLSchema graphQLSchema, InstrumentationState instrumentationState) {
+    private CompletableFuture<ExecutionResult> parseValidateAndExecute(ExecutionInput executionInput, GraphQLSchema graphQLSchema, InstrumentationState instrumentationState, Profiler profiler) {
         AtomicReference<ExecutionInput> executionInputRef = new AtomicReference<>(executionInput);
         Function<ExecutionInput, PreparsedDocumentEntry> computeFunction = transformedInput -> {
             // if they change the original query in the pre-parser, then we want to see it downstream from then on
             executionInputRef.set(transformedInput);
-            return parseAndValidate(executionInputRef, graphQLSchema, instrumentationState);
+            return parseAndValidate(executionInputRef, graphQLSchema, instrumentationState, profiler);
         };
         CompletableFuture<PreparsedDocumentEntry> preparsedDoc = preparsedDocumentProvider.getDocumentAsync(executionInput, computeFunction);
         return preparsedDoc.thenCompose(preparsedDocumentEntry -> {
@@ -473,14 +476,14 @@ public class GraphQL {
                 return CompletableFuture.completedFuture(new ExecutionResultImpl(preparsedDocumentEntry.getErrors()));
             }
             try {
-                return execute(executionInputRef.get(), preparsedDocumentEntry.getDocument(), graphQLSchema, instrumentationState);
+                return executeImpl(executionInputRef.get(), preparsedDocumentEntry.getDocument(), graphQLSchema, instrumentationState, profiler);
             } catch (AbortExecutionException e) {
                 return CompletableFuture.completedFuture(e.toExecutionResult());
             }
         });
     }
 
-    private PreparsedDocumentEntry parseAndValidate(AtomicReference<ExecutionInput> executionInputRef, GraphQLSchema graphQLSchema, InstrumentationState instrumentationState) {
+    private PreparsedDocumentEntry parseAndValidate(AtomicReference<ExecutionInput> executionInputRef, GraphQLSchema graphQLSchema, InstrumentationState instrumentationState, Profiler profiler) {
 
         ExecutionInput executionInput = executionInputRef.get();
 
@@ -533,13 +536,14 @@ public class GraphQL {
         return validationErrors;
     }
 
-    private CompletableFuture<ExecutionResult> execute(ExecutionInput executionInput,
-                                                       Document document,
-                                                       GraphQLSchema graphQLSchema,
-                                                       InstrumentationState instrumentationState
+    private CompletableFuture<ExecutionResult> executeImpl(ExecutionInput executionInput,
+                                                           Document document,
+                                                           GraphQLSchema graphQLSchema,
+                                                           InstrumentationState instrumentationState,
+                                                           Profiler profiler
     ) {
 
-        Execution execution = new Execution(queryStrategy, mutationStrategy, subscriptionStrategy, instrumentation, valueUnboxer, doNotAutomaticallyDispatchDataLoader);
+        Execution execution = new Execution(queryStrategy, mutationStrategy, subscriptionStrategy, instrumentation, valueUnboxer, doNotAutomaticallyDispatchDataLoader, profiler);
         ExecutionId executionId = executionInput.getExecutionId();
 
         return execution.execute(document, graphQLSchema, executionId, executionInput, instrumentationState);
