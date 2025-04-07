@@ -1,6 +1,7 @@
 package graphql.execution
 
 import graphql.Assert
+import graphql.EngineRunningState
 import graphql.ExceptionWhileDataFetching
 import graphql.ExecutionInput
 import graphql.ExecutionResult
@@ -84,6 +85,7 @@ class ExecutionStrategyTest extends Specification {
                 .dataLoaderRegistry(new DataLoaderRegistry())
                 .locale(Locale.getDefault())
                 .valueUnboxer(ValueUnboxer.DEFAULT)
+                .engineRunningState(new EngineRunningState())
 
         new ExecutionContext(builder)
     }
@@ -547,7 +549,7 @@ class ExecutionStrategyTest extends Specification {
         executionStrategy.resolveFieldWithInfo(executionContext, parameters)
 
         then:
-        1 * dataFetcher.get(_,_,_) >> { environment = (it[2] as Supplier<DataFetchingEnvironment>).get() }
+        1 * dataFetcher.get(_, _, _) >> { environment = (it[2] as Supplier<DataFetchingEnvironment>).get() }
         environment.fieldDefinition == fieldDefinition
         environment.graphQLSchema == schema
         environment.graphQlContext.get("key") == "context"
