@@ -444,14 +444,14 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
             callStack.batchWindowOfDelayedDataLoaderToDispatch.add(resultPathWithDataLoader.resultPath);
             if (!callStack.batchWindowOpen) {
                 callStack.batchWindowOpen = true;
-                AtomicReference<Set<String>> dfesToDispatch = new AtomicReference<>();
+                AtomicReference<Set<String>> resultPathToDispatch = new AtomicReference<>();
                 Runnable runnable = () -> {
                     callStack.lock.runLocked(() -> {
-                        dfesToDispatch.set(new LinkedHashSet<>(callStack.batchWindowOfDelayedDataLoaderToDispatch));
+                        resultPathToDispatch.set(new LinkedHashSet<>(callStack.batchWindowOfDelayedDataLoaderToDispatch));
                         callStack.batchWindowOfDelayedDataLoaderToDispatch.clear();
                         callStack.batchWindowOpen = false;
                     });
-                    dispatchDLCFImpl(dfesToDispatch.get(), false, null);
+                    dispatchDLCFImpl(resultPathToDispatch.get(), false, null);
                 };
                 delayedDataLoaderDispatchExecutor.get().schedule(runnable, this.batchWindowNs, TimeUnit.NANOSECONDS);
             }

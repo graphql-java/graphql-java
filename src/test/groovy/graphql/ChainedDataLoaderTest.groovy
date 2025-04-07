@@ -1,6 +1,5 @@
 package graphql
 
-
 import graphql.execution.ExecutionId
 import graphql.execution.instrumentation.dataloader.DelayedDataLoaderDispatcherExecutorFactory
 import graphql.execution.instrumentation.dataloader.DispatchingContextKeys
@@ -79,6 +78,95 @@ class ChainedDataLoaderTest extends Specification {
         er.data == [dogName: "Luna", catName: "Tiger"]
         batchLoadCalls == 2
     }
+
+    def "parallel different data loaders"() {
+        given:
+        def sdl = '''
+
+        type Query {
+          hello: String
+          helloDelayed: String
+        }
+        '''
+        AtomicInteger batchLoadCalls = new AtomicInteger()
+        BatchLoader<String, String> batchLoader1 = { keys ->
+            return supplyAsync {
+                batchLoadCalls.incrementAndGet()
+                Thread.sleep(250)
+                println "BatchLoader 1 called with keys: $keys"
+                assert keys.size() == 1
+                return ["Luna" + keys[0]]
+            }
+        }
+
+        BatchLoader<String, String> batchLoader2 = { keys ->
+            return supplyAsync {
+                batchLoadCalls.incrementAndGet()
+                Thread.sleep(250)
+                println "BatchLoader 2 called with keys: $keys"
+                assert keys.size() == 1
+                return ["Skipper" + keys[0]]
+            }
+        }
+        BatchLoader<String, String> batchLoader3 = { keys ->
+            return supplyAsync {
+                batchLoadCalls.incrementAndGet()
+                Thread.sleep(250)
+                println "BatchLoader 3 called with keys: $keys"
+                assert keys.size() == 1
+                return ["friends" + keys[0]]
+            }
+        }
+
+
+        DataLoader<String, String> dl1 = DataLoaderFactory.newDataLoader(batchLoader1);
+        DataLoader<String, String> dl2 = DataLoaderFactory.newDataLoader(batchLoader2);
+        DataLoader<String, String> dl3 = DataLoaderFactory.newDataLoader(batchLoader3);
+
+        DataLoaderRegistry dataLoaderRegistry = new DataLoaderRegistry();
+        dataLoaderRegistry.register("dl1", dl1);
+        dataLoaderRegistry.register("dl2", dl2);
+        dataLoaderRegistry.register("dl3", dl3);
+
+        def df = { env ->
+            def cf1 = env.getDataLoader("dl1").load("key1")
+            def cf2 = env.getDataLoader("dl2").load("key2")
+            return cf1.thenCombine(cf2, { result1, result2 ->
+                return result1 + result2
+            }).thenCompose {
+                return env.getDataLoader("dl3").load(it)
+            }
+        } as DataFetcher
+
+        def dfDelayed = { env ->
+            return supplyAsync {
+                Thread.sleep(2000)
+            }.thenCompose {
+                def cf1 = env.getDataLoader("dl1").load("key1-delayed")
+                def cf2 = env.getDataLoader("dl2").load("key2-delayed")
+                return cf1.thenCombine(cf2, { result1, result2 ->
+                    return result1 + result2
+                }).thenCompose {
+                    return env.getDataLoader("dl3").load(it)
+                }
+            }
+        } as DataFetcher
+
+
+        def fetchers = [Query: [hello: df, helloDelayed: dfDelayed]]
+        def schema = TestUtil.schema(sdl, fetchers)
+        def graphQL = GraphQL.newGraphQL(schema).build()
+
+        def query = "{ hello helloDelayed} "
+        def ei = newExecutionInput(query).dataLoaderRegistry(dataLoaderRegistry).build()
+
+        when:
+        def er = graphQL.execute(ei)
+        then:
+        er.data == [hello: "friendsLunakey1Skipperkey2", helloDelayed: "friendsLunakey1-delayedSkipperkey2-delayed"]
+        batchLoadCalls.get() == 6
+    }
+
 
     def "more complicated chained data loader for one DF"() {
         given:
