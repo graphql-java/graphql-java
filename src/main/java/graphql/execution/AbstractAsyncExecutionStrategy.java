@@ -22,7 +22,7 @@ public abstract class AbstractAsyncExecutionStrategy extends ExecutionStrategy {
     }
 
     protected BiConsumer<List<Object>, Throwable> handleResults(ExecutionContext executionContext, List<String> fieldNames, CompletableFuture<ExecutionResult> overallResult) {
-        return (List<Object> results, Throwable exception) -> executionContext.run(exception, () -> {
+        return (List<Object> results, Throwable exception) -> {
             if (exception != null) {
                 handleNonNullException(executionContext, overallResult, exception);
                 return;
@@ -35,6 +35,6 @@ public abstract class AbstractAsyncExecutionStrategy extends ExecutionStrategy {
                 resolvedValuesByField.put(fieldName, result);
             }
             overallResult.complete(new ExecutionResultImpl(resolvedValuesByField, executionContext.getErrors()));
-        });
+        };
     }
 }
