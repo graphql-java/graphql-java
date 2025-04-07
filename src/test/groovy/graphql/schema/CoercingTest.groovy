@@ -14,7 +14,6 @@ import graphql.language.StringValue
 import graphql.language.VariableReference
 import graphql.schema.idl.RuntimeWiring
 import graphql.schema.idl.TypeRuntimeWiring
-import org.jetbrains.annotations.NotNull
 import spock.lang.Specification
 
 import java.time.ZonedDateTime
@@ -248,7 +247,7 @@ class CoercingTest extends Specification {
         }
 
         @Override
-        StringValue valueToLiteral(@NotNull Object input, @NotNull GraphQLContext graphQLContext, @NotNull Locale locale) {
+        StringValue valueToLiteral(Object input, GraphQLContext graphQLContext, Locale locale) {
             return new StringValue(input.toString())
         }
     })

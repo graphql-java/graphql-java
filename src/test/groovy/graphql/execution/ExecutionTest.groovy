@@ -1,5 +1,6 @@
 package graphql.execution
 
+import graphql.EngineRunningState
 import graphql.ExecutionInput
 import graphql.ExecutionResult
 import graphql.ExecutionResultImpl
@@ -51,7 +52,7 @@ class ExecutionTest extends Specification {
         def document = parser.parseDocument(query)
 
         when:
-        execution.execute(document, MutationSchema.schema, ExecutionId.generate(), emptyExecutionInput, instrumentationState)
+        execution.execute(document, MutationSchema.schema, ExecutionId.generate(), emptyExecutionInput, instrumentationState, new EngineRunningState(emptyExecutionInput))
 
         then:
         queryStrategy.execute == 1
@@ -71,7 +72,7 @@ class ExecutionTest extends Specification {
         def document = parser.parseDocument(query)
 
         when:
-        execution.execute(document, MutationSchema.schema, ExecutionId.generate(), emptyExecutionInput, instrumentationState)
+        execution.execute(document, MutationSchema.schema, ExecutionId.generate(), emptyExecutionInput, instrumentationState, new EngineRunningState(emptyExecutionInput))
 
         then:
         queryStrategy.execute == 0
@@ -91,7 +92,7 @@ class ExecutionTest extends Specification {
         def document = parser.parseDocument(query)
 
         when:
-        execution.execute(document, MutationSchema.schema, ExecutionId.generate(), emptyExecutionInput, instrumentationState)
+        execution.execute(document, MutationSchema.schema, ExecutionId.generate(), emptyExecutionInput, instrumentationState, new EngineRunningState(emptyExecutionInput))
 
         then:
         queryStrategy.execute == 0
@@ -128,7 +129,7 @@ class ExecutionTest extends Specification {
 
 
         when:
-        execution.execute(document, MutationSchema.schema, ExecutionId.generate(), emptyExecutionInput, instrumentationState)
+        execution.execute(document, MutationSchema.schema, ExecutionId.generate(), emptyExecutionInput, instrumentationState, new EngineRunningState(emptyExecutionInput))
 
         then:
         queryStrategy.execute == 0
