@@ -31,7 +31,7 @@ public class DataLoaderWithContext<K, V> extends DelegatingDataLoader<K, V> {
         String path = dfe.getExecutionStepInfo().getPath().toString();
         DataFetchingEnvironmentImpl.DFEInternalState dfeInternalState = (DataFetchingEnvironmentImpl.DFEInternalState) dfeImpl.toInternal();
         if (dfeInternalState.getDataLoaderDispatchStrategy() instanceof PerLevelDataLoaderDispatchStrategy) {
-            ((PerLevelDataLoaderDispatchStrategy) dfeInternalState.dataLoaderDispatchStrategy).newDataLoaderCF(path, level, delegate);
+            ((PerLevelDataLoaderDispatchStrategy) dfeInternalState.dataLoaderDispatchStrategy).newDataLoaderLoadCall(path, level, delegate);
         }
         return super.load(key, keyContext);
     }

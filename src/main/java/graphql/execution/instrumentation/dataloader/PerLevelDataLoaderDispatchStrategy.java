@@ -58,12 +58,18 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
 
         private final Set<Integer> dispatchedLevels = ConcurrentHashMap.newKeySet();
 
-        // fields only relevant when a DataLoaderCF is involved
-        private final List<ResultPathWithDataLoader> allResultPathWithDataLoader = new CopyOnWriteArrayList<>();
+
 
         //TODO: maybe this should be cleaned up once the CF returned by these fields are completed
         // otherwise this will stick around until the whole request is finished
+
+        private final List<ResultPathWithDataLoader> allResultPathWithDataLoader = new CopyOnWriteArrayList<>();
+        // used for per level dispatching
         private final Map<Integer, Set<ResultPathWithDataLoader>> levelToResultPathWithDataLoader = new ConcurrentHashMap<>();
+
+        private final Set<Integer> dispatchingStartedPerLevel = ConcurrentHashMap.newKeySet();
+        private final Set<Integer> dispatchingFinishedPerLevel = ConcurrentHashMap.newKeySet();
+        // Set of ResultPath
         private final Set<String> batchWindowOfDelayedDataLoaderToDispatch = ConcurrentHashMap.newKeySet();
 
         private boolean batchWindowOpen = false;
@@ -73,7 +79,7 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
             expectedExecuteObjectCallsPerLevel.set(1, 1);
         }
 
-        public void addDataLoaderDFE(int level, ResultPathWithDataLoader resultPathWithDataLoader) {
+        public void addResultPathWithDataLoader(int level, ResultPathWithDataLoader resultPathWithDataLoader) {
             levelToResultPathWithDataLoader.computeIfAbsent(level, k -> new LinkedHashSet<>()).add(resultPathWithDataLoader);
         }
 
@@ -347,19 +353,24 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
 
         Set<ResultPathWithDataLoader> resultPathWithDataLoaders = callStack.levelToResultPathWithDataLoader.get(level);
         if (resultPathWithDataLoaders != null) {
-            dispatchDLCFImpl(resultPathWithDataLoaders
-                    .stream()
-                    .map(resultPathWithDataLoader -> resultPathWithDataLoader.resultPath)
-                    .collect(Collectors.toSet()), true);
+            Set<String> resultPathToDispatch = callStack.lock.callLocked(() -> {
+                callStack.dispatchingStartedPerLevel.add(level);
+                return resultPathWithDataLoaders
+                        .stream()
+                        .map(resultPathWithDataLoader -> resultPathWithDataLoader.resultPath)
+                        .collect(Collectors.toSet());
+            });
+            dispatchDLCFImpl(resultPathToDispatch, true, level);
         } else {
-            // TODO: this is questionable if we should do that: we didn't find any DataLoaders in that level
+            callStack.dispatchingFinishedPerLevel.add(level);
+            // TODO: this is questionable if we should do that: we didn't find any DataLoaders in that level,
             DataLoaderRegistry dataLoaderRegistry = executionContext.getDataLoaderRegistry();
             dataLoaderRegistry.dispatchAll();
         }
     }
 
 
-    public void dispatchDLCFImpl(Set<String> resultPathsToDispatch, boolean dispatchAll) {
+    public void dispatchDLCFImpl(Set<String> resultPathsToDispatch, boolean dispatchAll, Integer level) {
 
         // filter out all DataLoaderCFS that are matching the fields we want to dispatch
         List<ResultPathWithDataLoader> relevantResultPathWithDataLoader = new ArrayList<>();
@@ -371,43 +382,52 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
         // we are cleaning up the list of all DataLoadersCFs
         callStack.allResultPathWithDataLoader.removeAll(relevantResultPathWithDataLoader);
 
+        Set<Integer> levelsToDispatch = relevantResultPathWithDataLoader.stream()
+                .map(resultPathWithDataLoader -> resultPathWithDataLoader.level)
+                .collect(Collectors.toSet());
+
+
         // means we are all done dispatching the fields
         if (relevantResultPathWithDataLoader.size() == 0) {
+            if (level != null) {
+                callStack.dispatchingFinishedPerLevel.add(level);
+            }
             return;
         }
         List<CompletableFuture> allDispatchedCFs = new ArrayList<>();
         if (dispatchAll) {
-//         if we have a mixed world with old and new DataLoaderCFs we dispatch all DataLoaders to retain compatibility
             for (DataLoader dl : executionContext.getDataLoaderRegistry().getDataLoaders()) {
                 allDispatchedCFs.add(dl.dispatch());
             }
         } else {
-            // Only dispatching relevant data loaders
             for (ResultPathWithDataLoader resultPathWithDataLoader : relevantResultPathWithDataLoader) {
                 allDispatchedCFs.add(resultPathWithDataLoader.dataLoader.dispatch());
             }
         }
         CompletableFuture.allOf(allDispatchedCFs.toArray(new CompletableFuture[0]))
                 .whenComplete((unused, throwable) -> {
-                    dispatchDLCFImpl(resultPathsToDispatch, false);
+                    dispatchDLCFImpl(resultPathsToDispatch, false, level);
                         }
                 );
 
     }
 
 
-    public void newDataLoaderCF(String resultPath, int level, DataLoader dataLoader) {
+    public void newDataLoaderLoadCall(String resultPath, int level, DataLoader dataLoader) {
         if (disableNewDataLoaderDispatching) {
             return;
         }
         ResultPathWithDataLoader resultPathWithDataLoader = new ResultPathWithDataLoader(resultPath, level, dataLoader);
-        callStack.lock.runLocked(() -> {
+        boolean levelFinished = callStack.lock.callLocked(() -> {
+            boolean finished = callStack.dispatchingFinishedPerLevel.contains(level);
             callStack.allResultPathWithDataLoader.add(resultPathWithDataLoader);
-            if (!callStack.dispatchedLevels.contains(level)) {
-                callStack.addDataLoaderDFE(level, resultPathWithDataLoader);
+            // only add to the list of DataLoader for this level if we are not already dispatching
+            if (!callStack.dispatchingStartedPerLevel.contains(level)) {
+                callStack.addResultPathWithDataLoader(level, resultPathWithDataLoader);
             }
+            return finished;
         });
-        if (callStack.dispatchedLevels.contains(level)) {
+        if (levelFinished) {
             dispatchDelayedDataLoader(resultPathWithDataLoader);
         }
 
@@ -426,13 +446,9 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
                         callStack.batchWindowOfDelayedDataLoaderToDispatch.clear();
                         callStack.batchWindowOpen = false;
                     });
-                    dispatchDLCFImpl(dfesToDispatch.get(), false);
+                    dispatchDLCFImpl(dfesToDispatch.get(), false, null);
                 };
-                try {
-                    delayedDataLoaderDispatchExecutor.get().schedule(runnable, this.batchWindowNs, TimeUnit.NANOSECONDS);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
+                delayedDataLoaderDispatchExecutor.get().schedule(runnable, this.batchWindowNs, TimeUnit.NANOSECONDS);
             }
 
         });
