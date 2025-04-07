@@ -1,7 +1,6 @@
 package graphql;
 
 import org.jspecify.annotations.NullMarked;
-import org.jspecify.annotations.Nullable;
 
 import java.util.Collection;
 import java.util.function.Supplier;
@@ -14,49 +13,49 @@ import static java.lang.String.format;
 @NullMarked
 public class Assert {
 
-    public static <T> T assertNotNullWithNPE(@Nullable T object, Supplier<String> msg) {
+    public static <T> T assertNotNullWithNPE(T object, Supplier<String> msg) {
         if (object != null) {
             return object;
         }
         throw new NullPointerException(msg.get());
     }
 
-    public static <T> T assertNotNull(@Nullable T object) {
+    public static <T> T assertNotNull(T object) {
         if (object != null) {
             return object;
         }
         return throwAssert("Object required to be not null");
     }
 
-    public static <T> T assertNotNull(@Nullable T object, Supplier<String> msg) {
+    public static <T> T assertNotNull(T object, Supplier<String> msg) {
         if (object != null) {
             return object;
         }
         return throwAssert(msg.get());
     }
 
-    public static <T> T assertNotNull(@Nullable T object, String constantMsg) {
+    public static <T> T assertNotNull(T object, String constantMsg) {
         if (object != null) {
             return object;
         }
         return throwAssert(constantMsg);
     }
 
-    public static <T> T assertNotNull(@Nullable T object, String msgFmt, Object arg1) {
+    public static <T> T assertNotNull(T object, String msgFmt, Object arg1) {
         if (object != null) {
             return object;
         }
         return throwAssert(msgFmt, arg1);
     }
 
-    public static <T> T assertNotNull(@Nullable T object, String msgFmt, Object arg1, Object arg2) {
+    public static <T> T assertNotNull(T object, String msgFmt, Object arg1, Object arg2) {
         if (object != null) {
             return object;
         }
         return throwAssert(msgFmt, arg1, arg2);
     }
 
-    public static <T> T assertNotNull(@Nullable T object, String msgFmt, Object arg1, Object arg2, Object arg3) {
+    public static <T> T assertNotNull(T object, String msgFmt, Object arg1, Object arg2, Object arg3) {
         if (object != null) {
             return object;
         }
@@ -64,14 +63,14 @@ public class Assert {
     }
 
 
-    public static <T> void assertNull(@Nullable T object, Supplier<String> msg) {
+    public static <T> void assertNull(T object, Supplier<String> msg) {
         if (object == null) {
             return;
         }
         throwAssert(msg.get());
     }
 
-    public static <T> void assertNull(@Nullable T object) {
+    public static <T> void assertNull(T object) {
         if (object == null) {
             return;
         }
@@ -90,14 +89,14 @@ public class Assert {
         return throwAssert("Internal error: should never happen");
     }
 
-    public static <T> Collection<T> assertNotEmpty(@Nullable Collection<T> collection) {
+    public static <T> Collection<T> assertNotEmpty(Collection<T> collection) {
         if (collection == null || collection.isEmpty()) {
             throwAssert("collection must be not null and not empty");
         }
         return collection;
     }
 
-    public static <T> Collection<T> assertNotEmpty(@Nullable Collection<T> collection, Supplier<String> msg) {
+    public static <T> Collection<T> assertNotEmpty(Collection<T> collection, Supplier<String> msg) {
         if (collection == null || collection.isEmpty()) {
             throwAssert(msg.get());
         }
@@ -200,14 +199,14 @@ public class Assert {
      *
      * @return the name if valid, or AssertException if invalid.
      */
-    public static String assertValidName(@Nullable String name) {
+    public static String assertValidName(String name) {
         if (name != null && !name.isEmpty() && validNamePattern.matcher(name).matches()) {
             return name;
         }
         return throwAssert(invalidNameErrorMessage, name);
     }
 
-    private static <T> T throwAssert(String format, @Nullable Object... args) {
+    private static <T> T throwAssert(String format, Object... args) {
         throw new AssertException(format(format, args));
     }
 }
