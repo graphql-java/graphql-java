@@ -412,41 +412,44 @@ public class GraphQL {
      * @return a promise to an {@link ExecutionResult} which can include errors
      */
     public CompletableFuture<ExecutionResult> executeAsync(ExecutionInput executionInput) {
-        ExecutionInput executionInputWithId = ensureInputHasId(executionInput);
+        EngineRunningState engineRunningState = new EngineRunningState(executionInput);
+        return engineRunningState.call(() -> {
+            ExecutionInput executionInputWithId = ensureInputHasId(executionInput);
+            engineRunningState.updateExecutionId(executionInputWithId.getExecutionId());
 
-        CompletableFuture<InstrumentationState> instrumentationStateCF = instrumentation.createStateAsync(new InstrumentationCreateStateParameters(this.graphQLSchema, executionInputWithId));
-        return Async.orNullCompletedFuture(instrumentationStateCF).thenCompose(instrumentationState -> {
-            try {
-                InstrumentationExecutionParameters inputInstrumentationParameters = new InstrumentationExecutionParameters(executionInputWithId, this.graphQLSchema);
-                ExecutionInput instrumentedExecutionInput = instrumentation.instrumentExecutionInput(executionInputWithId, inputInstrumentationParameters, instrumentationState);
+            CompletableFuture<InstrumentationState> instrumentationStateCF = instrumentation.createStateAsync(new InstrumentationCreateStateParameters(this.graphQLSchema, executionInputWithId));
+            instrumentationStateCF = Async.orNullCompletedFuture(instrumentationStateCF);
 
-                InstrumentationExecutionParameters instrumentationParameters = new InstrumentationExecutionParameters(instrumentedExecutionInput, this.graphQLSchema);
-                InstrumentationContext<ExecutionResult> executionInstrumentation = nonNullCtx(instrumentation.beginExecution(instrumentationParameters, instrumentationState));
-                executionInstrumentation.onDispatched();
+            return engineRunningState.compose(instrumentationStateCF, (instrumentationState -> {
+                try {
+                    InstrumentationExecutionParameters inputInstrumentationParameters = new InstrumentationExecutionParameters(executionInputWithId, this.graphQLSchema);
+                    ExecutionInput instrumentedExecutionInput = instrumentation.instrumentExecutionInput(executionInputWithId, inputInstrumentationParameters, instrumentationState);
 
-                GraphQLSchema graphQLSchema = instrumentation.instrumentSchema(this.graphQLSchema, instrumentationParameters, instrumentationState);
+                    InstrumentationExecutionParameters instrumentationParameters = new InstrumentationExecutionParameters(instrumentedExecutionInput, this.graphQLSchema);
+                    InstrumentationContext<ExecutionResult> executionInstrumentation = nonNullCtx(instrumentation.beginExecution(instrumentationParameters, instrumentationState));
+                    executionInstrumentation.onDispatched();
 
-                CompletableFuture<ExecutionResult> executionResult = parseValidateAndExecute(instrumentedExecutionInput, graphQLSchema, instrumentationState);
-                //
-                // finish up instrumentation
-                executionResult = executionResult.whenComplete(completeInstrumentationCtxCF(executionInstrumentation));
-                //
-                // allow instrumentation to tweak the result
-                executionResult = executionResult.thenCompose(result -> instrumentation.instrumentExecutionResult(result, instrumentationParameters, instrumentationState));
-                return executionResult;
-            } catch (AbortExecutionException abortException) {
-                return handleAbortException(executionInput, instrumentationState, abortException);
-            }
+                    GraphQLSchema graphQLSchema = instrumentation.instrumentSchema(this.graphQLSchema, instrumentationParameters, instrumentationState);
+
+                    CompletableFuture<ExecutionResult> executionResult = parseValidateAndExecute(instrumentedExecutionInput, graphQLSchema, instrumentationState, engineRunningState);
+                    //
+                    // finish up instrumentation
+                    executionResult = executionResult.whenComplete(completeInstrumentationCtxCF(executionInstrumentation));
+                    //
+                    // allow instrumentation to tweak the result
+                    executionResult = engineRunningState.compose(executionResult, (result -> instrumentation.instrumentExecutionResult(result, instrumentationParameters, instrumentationState)));
+                    return executionResult;
+                } catch (AbortExecutionException abortException) {
+                    return handleAbortException(executionInput, instrumentationState, abortException);
+                }
+            }));
         });
     }
 
+
     private CompletableFuture<ExecutionResult> handleAbortException(ExecutionInput executionInput, InstrumentationState instrumentationState, AbortExecutionException abortException) {
-        CompletableFuture<ExecutionResult> executionResult = CompletableFuture.completedFuture(abortException.toExecutionResult());
         InstrumentationExecutionParameters instrumentationParameters = new InstrumentationExecutionParameters(executionInput, this.graphQLSchema);
-        //
-        // allow instrumentation to tweak the result
-        executionResult = executionResult.thenCompose(result -> instrumentation.instrumentExecutionResult(result, instrumentationParameters, instrumentationState));
-        return executionResult;
+        return instrumentation.instrumentExecutionResult(abortException.toExecutionResult(), instrumentationParameters, instrumentationState);
     }
 
     private ExecutionInput ensureInputHasId(ExecutionInput executionInput) {
@@ -460,7 +463,7 @@ public class GraphQL {
     }
 
 
-    private CompletableFuture<ExecutionResult> parseValidateAndExecute(ExecutionInput executionInput, GraphQLSchema graphQLSchema, InstrumentationState instrumentationState) {
+    private CompletableFuture<ExecutionResult> parseValidateAndExecute(ExecutionInput executionInput, GraphQLSchema graphQLSchema, InstrumentationState instrumentationState, EngineRunningState engineRunningState) {
         AtomicReference<ExecutionInput> executionInputRef = new AtomicReference<>(executionInput);
         Function<ExecutionInput, PreparsedDocumentEntry> computeFunction = transformedInput -> {
             // if they change the original query in the pre-parser, then we want to see it downstream from then on
@@ -468,22 +471,21 @@ public class GraphQL {
             return parseAndValidate(executionInputRef, graphQLSchema, instrumentationState);
         };
         CompletableFuture<PreparsedDocumentEntry> preparsedDoc = preparsedDocumentProvider.getDocumentAsync(executionInput, computeFunction);
-        return preparsedDoc.thenCompose(preparsedDocumentEntry -> {
+        return engineRunningState.compose(preparsedDoc, (preparsedDocumentEntry -> {
             if (preparsedDocumentEntry.hasErrors()) {
                 return CompletableFuture.completedFuture(new ExecutionResultImpl(preparsedDocumentEntry.getErrors()));
             }
             try {
-                return execute(executionInputRef.get(), preparsedDocumentEntry.getDocument(), graphQLSchema, instrumentationState);
+                return execute(executionInputRef.get(), preparsedDocumentEntry.getDocument(), graphQLSchema, instrumentationState, engineRunningState);
             } catch (AbortExecutionException e) {
                 return CompletableFuture.completedFuture(e.toExecutionResult());
             }
-        });
+        }));
     }
 
     private PreparsedDocumentEntry parseAndValidate(AtomicReference<ExecutionInput> executionInputRef, GraphQLSchema graphQLSchema, InstrumentationState instrumentationState) {
 
         ExecutionInput executionInput = executionInputRef.get();
-        String query = executionInput.getQuery();
 
         ParseAndValidateResult parseResult = parse(executionInput, graphQLSchema, instrumentationState);
         if (parseResult.isFailure()) {
@@ -537,13 +539,14 @@ public class GraphQL {
     private CompletableFuture<ExecutionResult> execute(ExecutionInput executionInput,
                                                        Document document,
                                                        GraphQLSchema graphQLSchema,
-                                                       InstrumentationState instrumentationState
+                                                       InstrumentationState instrumentationState,
+                                                       EngineRunningState engineRunningState
     ) {
 
         Execution execution = new Execution(queryStrategy, mutationStrategy, subscriptionStrategy, instrumentation, valueUnboxer, doNotAutomaticallyDispatchDataLoader);
         ExecutionId executionId = executionInput.getExecutionId();
 
-        return execution.execute(document, graphQLSchema, executionId, executionInput, instrumentationState);
+        return execution.execute(document, graphQLSchema, executionId, executionInput, instrumentationState, engineRunningState);
     }
 
 }

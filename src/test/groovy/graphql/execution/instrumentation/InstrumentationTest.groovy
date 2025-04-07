@@ -16,7 +16,6 @@ import graphql.schema.DataFetchingEnvironment
 import graphql.schema.SingletonPropertyDataFetcher
 import graphql.schema.StaticDataFetcher
 import org.awaitility.Awaitility
-import org.jetbrains.annotations.NotNull
 import spock.lang.Specification
 
 import java.util.concurrent.CompletableFuture
@@ -183,7 +182,6 @@ class InstrumentationTest extends Specification {
             }
         }
 
-        @NotNull
         @Override
         DataFetcher<?> instrumentDataFetcher(DataFetcher<?> dataFetcher, InstrumentationFieldFetchParameters parameters, InstrumentationState state) {
             System.out.println(String.format("t%s instrument DF for %s", Thread.currentThread().getId(), parameters.environment.getExecutionStepInfo().getPath()))

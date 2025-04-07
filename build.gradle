@@ -97,7 +97,12 @@ jar {
         attributes('Automatic-Module-Name': 'com.graphqljava')
     }
 }
-
+tasks.withType(GroovyCompile) {
+    // Options when compiling Java using the Groovy plugin.
+    // (Groovy itself defaults to UTF-8 for Groovy code)
+    options.encoding = 'UTF-8'
+    groovyOptions.forkOptions.memoryMaximumSize = "4g"
+}
 dependencies {
     implementation 'org.antlr:antlr4-runtime:' + antlrVersion
     api 'com.graphql-java:java-dataloader:4.0.0'
@@ -106,18 +111,20 @@ dependencies {
     antlr 'org.antlr:antlr4:' + antlrVersion
     implementation 'com.google.guava:guava:' + guavaVersion
     testImplementation group: 'junit', name: 'junit', version: '4.13.2'
-    testImplementation 'org.spockframework:spock-core:2.0-groovy-3.0'
-    testImplementation 'org.codehaus.groovy:groovy:3.0.24'
-    testImplementation 'org.codehaus.groovy:groovy-json:3.0.24'
+    testImplementation 'org.spockframework:spock-core:2.3-groovy-4.0'
+    testImplementation 'net.bytebuddy:byte-buddy:1.17.5'
+    testImplementation 'org.objenesis:objenesis:3.4'
+    testImplementation 'org.apache.groovy:groovy:4.0.26"'
+    testImplementation 'org.apache.groovy:groovy-json:4.0.26'
     testImplementation 'com.google.code.gson:gson:2.12.1'
-    testImplementation 'org.eclipse.jetty:jetty-server:11.0.24'
+    testImplementation 'org.eclipse.jetty:jetty-server:11.0.25'
     testImplementation 'com.fasterxml.jackson.core:jackson-databind:2.18.3'
-    testImplementation 'org.awaitility:awaitility-groovy:4.2.0'
+    testImplementation 'org.awaitility:awaitility-groovy:4.3.0'
     testImplementation 'com.github.javafaker:javafaker:1.0.2'
 
     testImplementation 'org.reactivestreams:reactive-streams-tck:' + reactiveStreamsVersion
     testImplementation "io.reactivex.rxjava2:rxjava:2.2.21"
-    testImplementation "io.projectreactor:reactor-core:3.7.3"
+    testImplementation "io.projectreactor:reactor-core:3.7.4"
 
     testImplementation 'org.testng:testng:7.11.0' // use for reactive streams test inheritance
 
@@ -125,6 +132,8 @@ dependencies {
     testAnnotationProcessor 'org.openjdk.jmh:jmh-generator-annprocess:1.37'
     jmh 'org.openjdk.jmh:jmh-core:1.37'
     jmh 'org.openjdk.jmh:jmh-generator-annprocess:1.37'
+
+    testImplementation "com.tngtech.archunit:archunit-junit5:1.2.0"
 }
 
 shadowJar {
@@ -218,9 +227,9 @@ generateGrammarSource {
     outputDirectory = file("${project.buildDir}/generated-src/antlr/main/graphql/parser/antlr")
 }
 generateGrammarSource.inputs
-    .dir('src/main/antlr')
-    .withPropertyName('sourceDir')
-    .withPathSensitivity(PathSensitivity.RELATIVE)
+        .dir('src/main/antlr')
+        .withPropertyName('sourceDir')
+        .withPathSensitivity(PathSensitivity.RELATIVE)
 
 
 task sourcesJar(type: Jar) {

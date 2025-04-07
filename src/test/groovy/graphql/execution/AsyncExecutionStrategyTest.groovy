@@ -1,8 +1,9 @@
 package graphql.execution
 
+import graphql.EngineRunningState
 import graphql.ErrorType
+import graphql.ExecutionInput
 import graphql.ExecutionResult
-import graphql.ExperimentalApi
 import graphql.GraphQLContext
 import graphql.execution.instrumentation.ExecutionStrategyInstrumentationContext
 import graphql.execution.instrumentation.InstrumentationState
@@ -108,7 +109,9 @@ abstract class AsyncExecutionStrategyTest extends Specification {
                 .instrumentation(SimplePerformantInstrumentation.INSTANCE)
                 .valueUnboxer(ValueUnboxer.DEFAULT)
                 .graphQLContext(graphqlContextMock)
+                .executionInput(ExecutionInput.newExecutionInput("{}").build())
                 .locale(Locale.getDefault())
+                .engineRunningState(new EngineRunningState())
                 .build()
         ExecutionStrategyParameters executionStrategyParameters = ExecutionStrategyParameters
                 .newParameters()
@@ -150,6 +153,8 @@ abstract class AsyncExecutionStrategyTest extends Specification {
                 .instrumentation(SimplePerformantInstrumentation.INSTANCE)
                 .locale(Locale.getDefault())
                 .graphQLContext(graphqlContextMock)
+                .executionInput(ExecutionInput.newExecutionInput("{}").build())
+                .engineRunningState(new EngineRunningState())
                 .build()
         ExecutionStrategyParameters executionStrategyParameters = ExecutionStrategyParameters
                 .newParameters()
@@ -192,6 +197,8 @@ abstract class AsyncExecutionStrategyTest extends Specification {
                 .valueUnboxer(ValueUnboxer.DEFAULT)
                 .instrumentation(SimplePerformantInstrumentation.INSTANCE)
                 .graphQLContext(graphqlContextMock)
+                .executionInput(ExecutionInput.newExecutionInput("{}").build())
+                .engineRunningState(new EngineRunningState())
                 .locale(Locale.getDefault())
                 .build()
         ExecutionStrategyParameters executionStrategyParameters = ExecutionStrategyParameters
@@ -235,6 +242,8 @@ abstract class AsyncExecutionStrategyTest extends Specification {
                 .valueUnboxer(ValueUnboxer.DEFAULT)
                 .locale(Locale.getDefault())
                 .graphQLContext(graphqlContextMock)
+                .executionInput(ExecutionInput.newExecutionInput("{}").build())
+                .engineRunningState(new EngineRunningState())
                 .build()
         ExecutionStrategyParameters executionStrategyParameters = ExecutionStrategyParameters
                 .newParameters()
@@ -274,7 +283,9 @@ abstract class AsyncExecutionStrategyTest extends Specification {
                 .operationDefinition(operation)
                 .valueUnboxer(ValueUnboxer.DEFAULT)
                 .graphQLContext(graphqlContextMock)
+                .executionInput(ExecutionInput.newExecutionInput("{}").build())
                 .locale(Locale.getDefault())
+                .engineRunningState(new EngineRunningState())
                 .instrumentation(new SimplePerformantInstrumentation() {
 
                     @Override

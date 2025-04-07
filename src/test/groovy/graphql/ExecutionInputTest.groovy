@@ -3,10 +3,13 @@ package graphql
 import graphql.execution.ExecutionId
 import graphql.schema.DataFetcher
 import graphql.schema.DataFetchingEnvironment
+import org.awaitility.Awaitility
 import org.dataloader.DataLoaderRegistry
 import spock.lang.Specification
 
-import java.util.function.UnaryOperator
+import java.time.Duration
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.CountDownLatch
 
 class ExecutionInputTest extends Specification {
 
@@ -104,9 +107,11 @@ class ExecutionInputTest extends Specification {
                 .locale(Locale.GERMAN)
                 .build()
         def graphQLContext = executionInputOld.getGraphQLContext()
-        def executionInput = executionInputOld.transform({ bldg -> bldg
-                .query("new query")
-                .variables(variables) })
+        def executionInput = executionInputOld.transform({ bldg ->
+            bldg
+                    .query("new query")
+                    .variables(variables)
+        })
 
         then:
         executionInput.graphQLContext == graphQLContext

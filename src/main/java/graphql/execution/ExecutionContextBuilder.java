@@ -2,12 +2,12 @@ package graphql.execution;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import graphql.EngineRunningState;
 import graphql.ExecutionInput;
 import graphql.ExperimentalApi;
 import graphql.GraphQLContext;
 import graphql.GraphQLError;
 import graphql.Internal;
-import graphql.PublicApi;
 import graphql.collect.ImmutableKit;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationState;
@@ -16,6 +16,7 @@ import graphql.language.FragmentDefinition;
 import graphql.language.OperationDefinition;
 import graphql.schema.GraphQLSchema;
 import org.dataloader.DataLoaderRegistry;
+import org.jspecify.annotations.Nullable;
 
 import java.util.Locale;
 import java.util.Map;
@@ -24,7 +25,7 @@ import java.util.function.Supplier;
 import static graphql.Assert.assertNotNull;
 import static graphql.collect.ImmutableKit.emptyList;
 
-@PublicApi
+@Internal
 public class ExecutionContextBuilder {
 
     Instrumentation instrumentation;
@@ -50,6 +51,7 @@ public class ExecutionContextBuilder {
     ExecutionInput executionInput;
     DataLoaderDispatchStrategy dataLoaderDispatcherStrategy = DataLoaderDispatchStrategy.NO_OP;
     boolean propagateErrorsOnNonNullContractFailure = true;
+    EngineRunningState engineRunningState;
 
     /**
      * @return a new builder of {@link graphql.execution.ExecutionContext}s
@@ -97,6 +99,7 @@ public class ExecutionContextBuilder {
         executionInput = other.getExecutionInput();
         dataLoaderDispatcherStrategy = other.getDataLoaderDispatcherStrategy();
         propagateErrorsOnNonNullContractFailure = other.propagateErrorsOnNonNullContractFailure();
+        engineRunningState = other.getEngineRunningState();
     }
 
     public ExecutionContextBuilder instrumentation(Instrumentation instrumentation) {
@@ -138,7 +141,7 @@ public class ExecutionContextBuilder {
      * @deprecated use {@link #graphQLContext(GraphQLContext)} instead
      */
     @Deprecated(since = "2021-07-05")
-    public ExecutionContextBuilder context(Object context) {
+    public ExecutionContextBuilder context(@Nullable Object context) {
         this.context = context;
         return this;
     }
@@ -237,5 +240,10 @@ public class ExecutionContextBuilder {
         // preconditions
         assertNotNull(executionId, () -> "You must provide a query identifier");
         return new ExecutionContext(this);
+    }
+
+    public ExecutionContextBuilder engineRunningState(EngineRunningState engineRunningState) {
+        this.engineRunningState = engineRunningState;
+        return this;
     }
 }

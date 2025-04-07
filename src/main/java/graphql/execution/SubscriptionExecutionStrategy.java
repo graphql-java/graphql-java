@@ -56,7 +56,6 @@ public class SubscriptionExecutionStrategy extends ExecutionStrategy {
 
     @Override
     public CompletableFuture<ExecutionResult> execute(ExecutionContext executionContext, ExecutionStrategyParameters parameters) throws NonNullableFieldWasNullException {
-
         Instrumentation instrumentation = executionContext.getInstrumentation();
         InstrumentationExecutionStrategyParameters instrumentationParameters = new InstrumentationExecutionStrategyParameters(executionContext, parameters);
         ExecutionStrategyInstrumentationContext executionStrategyCtx = ExecutionStrategyInstrumentationContext.nonNullCtx(instrumentation.beginExecutionStrategy(
@@ -68,20 +67,22 @@ public class SubscriptionExecutionStrategy extends ExecutionStrategy {
 
         //
         // when the upstream source event stream completes, subscribe to it and wire in our adapter
-        CompletableFuture<ExecutionResult> overallResult = sourceEventStream.thenApply((publisher) -> {
+        CompletableFuture<ExecutionResult> overallResult = sourceEventStream.thenApply((publisher) ->
+        {
             if (publisher == null) {
-                return new ExecutionResultImpl(null, executionContext.getErrors());
+                ExecutionResultImpl executionResult = new ExecutionResultImpl(null, executionContext.getErrors());
+                return executionResult;
             }
             Function<Object, CompletionStage<ExecutionResult>> mapperFunction = eventPayload -> executeSubscriptionEvent(executionContext, parameters, eventPayload);
             boolean keepOrdered = keepOrdered(executionContext.getGraphQLContext());
             SubscriptionPublisher mapSourceToResponse = new SubscriptionPublisher(publisher, mapperFunction, keepOrdered);
-            return new ExecutionResultImpl(mapSourceToResponse, executionContext.getErrors());
+            ExecutionResultImpl executionResult = new ExecutionResultImpl(mapSourceToResponse, executionContext.getErrors());
+            return executionResult;
         });
 
         // dispatched the subscription query
         executionStrategyCtx.onDispatched();
         overallResult.whenComplete(executionStrategyCtx::onCompleted);
-
         return overallResult;
     }
 

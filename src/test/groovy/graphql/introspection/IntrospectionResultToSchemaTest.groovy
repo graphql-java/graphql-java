@@ -377,7 +377,7 @@ input CharacterInput {
             "subscriptionType": {"name":"SubscriptionType"},
             "types": [
             ]
-            }"""
+            }}"""
         def parsed = slurp(input)
 
         when:
@@ -826,7 +826,7 @@ directiveArg: String = "default Value") on FIELD | FRAGMENT_SPREAD | INLINE_FRAG
                     "isRepeatable":true
                 }
             ]
-         }"""
+         }}"""
         def parsed = slurp(input)
 
         when:

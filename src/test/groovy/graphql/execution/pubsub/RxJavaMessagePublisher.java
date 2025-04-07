@@ -4,6 +4,8 @@ import io.reactivex.Flowable;
 import org.reactivestreams.Publisher;
 import org.reactivestreams.Subscriber;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
 /**
  * This example publisher will create count "messages" and then terminate. Its
  * uses tRxJava Flowable as a backing publisher
@@ -11,10 +13,18 @@ import org.reactivestreams.Subscriber;
 public class RxJavaMessagePublisher implements Publisher<Message> {
 
     private final Flowable<Message> flowable;
+    private final AtomicInteger counter = new AtomicInteger();
 
     public RxJavaMessagePublisher(final int count) {
         flowable = Flowable.range(0, count)
-                .map(at -> examineMessage(new Message("sender" + at, "text" + at), at));
+                .map(at -> {
+                    counter.incrementAndGet();
+                    return examineMessage(new Message("sender" + at, "text" + at), at);
+                });
+    }
+
+    public int getCounter() {
+        return counter.get();
     }
 
     @Override

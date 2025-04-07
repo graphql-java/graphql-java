@@ -5,7 +5,6 @@ import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
 import graphql.PublicSpi;
 
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -28,6 +27,7 @@ public abstract class AbstractAsyncExecutionStrategy extends ExecutionStrategy {
                 handleNonNullException(executionContext, overallResult, exception);
                 return;
             }
+
             Map<String, Object> resolvedValuesByField = Maps.newLinkedHashMapWithExpectedSize(fieldNames.size());
             int ix = 0;
             for (Object result : results) {

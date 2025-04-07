@@ -1,5 +1,6 @@
 package graphql.execution
 
+
 import graphql.GraphQLContext
 import graphql.execution.instrumentation.Instrumentation
 import graphql.language.Document
@@ -137,24 +138,24 @@ class ExecutionContextBuilderTest extends Specification {
         given:
         def oldCoercedVariables = CoercedVariables.emptyVariables()
         def executionContextOld = new ExecutionContextBuilder()
-            .instrumentation(instrumentation)
-            .queryStrategy(queryStrategy)
-            .mutationStrategy(mutationStrategy)
-            .subscriptionStrategy(subscriptionStrategy)
-            .graphQLSchema(schema)
-            .executionId(executionId)
-            .graphQLContext(graphQLContext)
-            .root(root)
-            .operationDefinition(operation)
-            .coercedVariables(oldCoercedVariables)
-            .fragmentsByName([MyFragment: fragment])
-            .dataLoaderRegistry(dataLoaderRegistry)
-            .build()
+                .instrumentation(instrumentation)
+                .queryStrategy(queryStrategy)
+                .mutationStrategy(mutationStrategy)
+                .subscriptionStrategy(subscriptionStrategy)
+                .graphQLSchema(schema)
+                .executionId(executionId)
+                .graphQLContext(graphQLContext)
+                .root(root)
+                .operationDefinition(operation)
+                .coercedVariables(oldCoercedVariables)
+                .fragmentsByName([MyFragment: fragment])
+                .dataLoaderRegistry(dataLoaderRegistry)
+                .build()
 
         when:
         def coercedVariables = CoercedVariables.of([var: 'value'])
         def executionContext = executionContextOld.transform(builder -> builder
-                                                        .coercedVariables(coercedVariables))
+                .coercedVariables(coercedVariables))
 
         then:
         executionContext.executionId == executionId
@@ -231,7 +232,7 @@ class ExecutionContextBuilderTest extends Specification {
         when:
         def executionContext = executionContextOld
                 .transform(builder -> builder
-                .dataLoaderDispatcherStrategy(mockDataLoaderDispatcherStrategy))
+                        .dataLoaderDispatcherStrategy(mockDataLoaderDispatcherStrategy))
 
         then:
         executionContext.getDataLoaderDispatcherStrategy() == mockDataLoaderDispatcherStrategy
@@ -265,4 +266,5 @@ class ExecutionContextBuilderTest extends Specification {
         OperationDefinition.Operation.MUTATION     | false   | true       | false
         OperationDefinition.Operation.SUBSCRIPTION | false   | false      | true
     }
+
 }

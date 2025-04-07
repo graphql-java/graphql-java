@@ -55,7 +55,8 @@ public class AsyncSerialExecutionStrategy extends AbstractAsyncExecutionStrategy
             ExecutionStrategyParameters newParameters = parameters
                     .transform(builder -> builder.field(currentField).path(fieldPath));
 
-            return resolveSerialField(executionContext, dataLoaderDispatcherStrategy, newParameters);
+            Object resolveSerialField = resolveSerialField(executionContext, dataLoaderDispatcherStrategy, newParameters);
+            return resolveSerialField;
         });
 
         CompletableFuture<ExecutionResult> overallResult = new CompletableFuture<>();
@@ -76,7 +77,8 @@ public class AsyncSerialExecutionStrategy extends AbstractAsyncExecutionStrategy
             //noinspection unchecked
             return ((CompletableFuture<FieldValueInfo>) fieldWithInfo).thenCompose(fvi -> {
                 dataLoaderDispatcherStrategy.executionStrategyOnFieldValuesInfo(List.of(fvi));
-                return fvi.getFieldValueFuture();
+                CompletableFuture<Object> fieldValueFuture = fvi.getFieldValueFuture();
+                return fieldValueFuture;
             });
         } else {
             FieldValueInfo fvi = (FieldValueInfo) fieldWithInfo;

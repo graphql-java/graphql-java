@@ -1,7 +1,6 @@
 package graphql.schema
 
 import graphql.GraphQLContext
-import org.jetbrains.annotations.NotNull
 import spock.lang.Specification
 
 class DelegatingDataFetchingEnvironmentTest extends Specification {
@@ -23,7 +22,6 @@ class DelegatingDataFetchingEnvironmentTest extends Specification {
 
         when:
         def delegatingDFE = new DelegatingDataFetchingEnvironment(dfe) {
-            @NotNull
             @Override
             GraphQLContext getGraphQlContext() {
                 return GraphQLContext.of(["key": "overriddenContext"])
