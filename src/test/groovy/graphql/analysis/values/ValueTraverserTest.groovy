@@ -21,7 +21,6 @@ import graphql.schema.GraphQLObjectType
 import graphql.schema.GraphQLScalarType
 import graphql.schema.idl.SchemaDirectiveWiring
 import graphql.schema.idl.SchemaDirectiveWiringEnvironment
-import org.jetbrains.annotations.Nullable
 import spock.lang.Specification
 
 import static graphql.schema.idl.RuntimeWiring.newRuntimeWiring
@@ -323,7 +322,7 @@ class ValueTraverserTest extends Specification {
         ]
         def visitor = new ValueVisitor() {
             @Override
-            Object visitArgumentValue(@Nullable Object coercedValue, GraphQLArgument graphQLArgument, ValueVisitor.InputElements inputElements) {
+            Object visitArgumentValue(Object coercedValue, GraphQLArgument graphQLArgument, ValueVisitor.InputElements inputElements) {
                 if (graphQLArgument.name == "arg2") {
                     return [name: "Harry Potter", age: 54]
                 }
@@ -402,7 +401,7 @@ class ValueTraverserTest extends Specification {
         def visitor = new ValueVisitor() {
 
             @Override
-            Object visitScalarValue(@Nullable Object coercedValue, GraphQLScalarType inputType, ValueVisitor.InputElements inputElements) {
+            Object visitScalarValue(Object coercedValue, GraphQLScalarType inputType, ValueVisitor.InputElements inputElements) {
                 if (coercedValue == "Tom Riddle") {
                     return "Happy Potter"
                 }
@@ -410,7 +409,7 @@ class ValueTraverserTest extends Specification {
             }
 
             @Override
-            Object visitAppliedDirectiveArgumentValue(@Nullable Object coercedValue, GraphQLAppliedDirectiveArgument graphQLAppliedDirectiveArgument, ValueVisitor.InputElements inputElements) {
+            Object visitAppliedDirectiveArgumentValue(Object coercedValue, GraphQLAppliedDirectiveArgument graphQLAppliedDirectiveArgument, ValueVisitor.InputElements inputElements) {
                 if (graphQLAppliedDirectiveArgument.name == "arg2") {
                     return [name: "Harry Potter", age: 54]
                 }

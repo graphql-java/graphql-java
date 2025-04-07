@@ -1,6 +1,6 @@
 package graphql.execution
 
-import graphql.ExecutionInput
+
 import graphql.GraphQLContext
 import graphql.execution.instrumentation.Instrumentation
 import graphql.language.Document
@@ -10,8 +10,6 @@ import graphql.parser.Parser
 import graphql.schema.GraphQLSchema
 import org.dataloader.DataLoaderRegistry
 import spock.lang.Specification
-
-import java.util.concurrent.CountDownLatch
 
 class ExecutionContextBuilderTest extends Specification {
 
@@ -267,132 +265,6 @@ class ExecutionContextBuilderTest extends Specification {
         OperationDefinition.Operation.QUERY        | true    | false      | false
         OperationDefinition.Operation.MUTATION     | false   | true       | false
         OperationDefinition.Operation.SUBSCRIPTION | false   | false      | true
-    }
-
-    def mkEexecutionContext() {
-        return new ExecutionContextBuilder()
-                .instrumentation(instrumentation)
-                .queryStrategy(queryStrategy)
-                .mutationStrategy(mutationStrategy)
-                .subscriptionStrategy(subscriptionStrategy)
-                .graphQLSchema(schema)
-                .executionId(executionId)
-                .graphQLContext(graphQLContext)
-                .root(root)
-                .operationDefinition(operation)
-                .fragmentsByName([MyFragment: fragment])
-                .dataLoaderRegistry(dataLoaderRegistry)
-                .executionInput(ExecutionInput.newExecutionInput("query q { f }").build())
-                .operationDefinition(OperationDefinition.newOperationDefinition().operation(OperationDefinition.Operation.QUERY).build())
-                .build()
-    }
-
-    def offThread(Runnable runnable) {
-        new Thread(runnable).start()
-    }
-
-    def "can track if its running or not"() {
-
-        when:
-        def executionContext = mkEexecutionContext()
-
-        then:
-        !executionContext.isRunning()
-
-        when:
-        CountDownLatch latch = new CountDownLatch(1)
-        CountDownLatch threadLatch = new CountDownLatch(1)
-        offThread({
-            executionContext.engineRunOrCancel {
-                threadLatch.countDown()
-                println("running on ${Thread.currentThread().name}")
-                latch.await()
-            }
-        })
-        threadLatch.await()
-
-        then:
-        executionContext.isRunning()
-
-        when:
-        latch.countDown()
-        Thread.sleep(10) // time for the runnable to exit
-
-        then:
-        !executionContext.isRunning()
-
-        when:
-        latch = new CountDownLatch(1)
-        threadLatch = new CountDownLatch(1)
-        offThread({
-            executionContext.engineCallOrCancel {
-                threadLatch.countDown()
-                println("running on ${Thread.currentThread().name}")
-                latch.await()
-                return "x"
-            }
-        })
-        then:
-        threadLatch.await()
-        executionContext.isRunning()
-
-        when:
-        latch.countDown()
-        Thread.sleep(10) // time for the call to exit
-
-        then:
-        !executionContext.isRunning()
-    }
-
-    def "can abort execution if asked to"() {
-
-        when:
-        def executionContext = mkEexecutionContext()
-
-        then:
-        !executionContext.isRunning()
-
-        when:
-        executionContext.getExecutionInput().cancel() // now in cancel state
-        executionContext.engineRunOrCancel { "x" }
-
-        then:
-        thrown(AbortExecutionException)
-
-        when:
-        executionContext.engineCallOrCancel { "x" }
-
-        then:
-        thrown(AbortExecutionException)
-    }
-
-    def "wont abort of we already have an exception"() {
-
-        when:
-        Throwable captureE = null
-        def executionContext = mkEexecutionContext()
-        def existingException = new AbortExecutionException("x")
-
-        then:
-        !executionContext.isRunning()
-
-        when:
-        captureE = null
-        executionContext.getExecutionInput().cancel() // now in cancel state
-        executionContext.engineRun({ -> "good" }, { captureE = it }).accept(null,existingException)
-
-        then:
-        notThrown(AbortExecutionException)
-        captureE == existingException
-
-        when:
-        def val = executionContext.engineHandle({ -> "good" },
-                { captureE = it; return "badPath" }).apply(null, existingException)
-
-        then:
-        notThrown(AbortExecutionException)
-        captureE == existingException
-        val == "badPath"
     }
 
 }

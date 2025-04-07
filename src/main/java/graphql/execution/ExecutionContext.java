@@ -3,6 +3,7 @@ package graphql.execution;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import graphql.EngineRunningState;
 import graphql.ExecutionInput;
 import graphql.ExperimentalApi;
 import graphql.GraphQLContext;
@@ -10,7 +11,6 @@ import graphql.GraphQLError;
 import graphql.Internal;
 import graphql.PublicApi;
 import graphql.collect.ImmutableKit;
-import graphql.execution.EngineRunningObserver.RunningState;
 import graphql.execution.incremental.IncrementalCallState;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.execution.instrumentation.InstrumentationState;
@@ -23,26 +23,16 @@ import graphql.schema.GraphQLSchema;
 import graphql.util.FpKit;
 import graphql.util.LockKit;
 import org.dataloader.DataLoaderRegistry;
-import org.jspecify.annotations.Nullable;
 
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.BiConsumer;
-import java.util.function.BiFunction;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.function.Supplier;
-
-import static graphql.Assert.assertTrue;
-import static graphql.execution.EngineRunningObserver.RunningState.CANCELLED;
-import static graphql.execution.EngineRunningObserver.RunningState.NOT_RUNNING;
-import static graphql.execution.EngineRunningObserver.RunningState.RUNNING;
 
 @SuppressWarnings("TypeParameterUnusedInFormals")
 @PublicApi
@@ -81,7 +71,7 @@ public class ExecutionContext {
     private volatile DataLoaderDispatchStrategy dataLoaderDispatcherStrategy = DataLoaderDispatchStrategy.NO_OP;
 
     private final ResultNodesInfo resultNodesInfo = new ResultNodesInfo();
-    private final EngineRunningObserver engineRunningObserver;
+    private final EngineRunningState engineRunningState;
 
     ExecutionContext(ExecutionContextBuilder builder) {
         this.graphQLSchema = builder.graphQLSchema;
@@ -108,7 +98,7 @@ public class ExecutionContext {
         this.dataLoaderDispatcherStrategy = builder.dataLoaderDispatcherStrategy;
         this.queryTree = FpKit.interThreadMemoize(() -> ExecutableNormalizedOperationFactory.createExecutableNormalizedOperation(graphQLSchema, operationDefinition, fragmentsByName, coercedVariables));
         this.propagateErrorsOnNonNullContractFailure = builder.propagateErrorsOnNonNullContractFailure;
-        this.engineRunningObserver = builder.engineRunningObserver;
+        this.engineRunningState = builder.engineRunningState;
     }
 
 
@@ -370,211 +360,9 @@ public class ExecutionContext {
         return resultNodesInfo;
     }
 
-
-    @Override
-    public String toString() {
-        return "ExecutionContext{" +
-                " isRunning=" + isRunning() +
-                " executionId=" + executionId +
-                '}';
-    }
-
-    @Nullable
-    EngineRunningObserver getEngineRunningObserver() {
-        return engineRunningObserver;
-    }
-
     @Internal
-    public boolean isRunning() {
-        return isRunning.get() > 0;
+    public EngineRunningState getEngineRunningState() {
+        return engineRunningState;
     }
 
-    private void incrementRunning() {
-        assertTrue(isRunning.get() >= 0);
-        if (isRunning.incrementAndGet() == 1) {
-            changeOfState(RUNNING);
-        }
-    }
-
-    private void decrementRunning() {
-        assertTrue(isRunning.get() > 0);
-        if (isRunning.decrementAndGet() == 0) {
-            changeOfState(NOT_RUNNING);
-        }
-    }
-
-    @Internal
-    public void incrementRunning(CompletableFuture<?> cf) {
-        cf.whenComplete((result, throwable) -> {
-            incrementRunning();
-        });
-    }
-
-    @Internal
-    public void decrementRunning(CompletableFuture<?> cf) {
-        cf.whenComplete((result, throwable) -> {
-            decrementRunning();
-        });
-
-    }
-
-    /**
-     * This method increments the engine state and then runs the {@link Supplier} to get a value
-     * <p>
-     * If the request has been cancelled then {@link AbortExecutionException} is thrown so
-     * you better be prepared to handle that.  Do not do this inside {@link CompletableFuture} handling
-     * say but rather use {@link ExecutionContext#engineHandle(Function, Function)}
-     *
-     * @param callable the code to run
-     *
-     * @return a value
-     *
-     * @throws AbortExecutionException is the operation has been cancelled
-     */
-    @Internal
-    public <T> T engineCallOrCancel(Supplier<T> callable) throws AbortExecutionException {
-        incrementRunning();
-        throwIfCancelled();
-        try {
-            return callable.get();
-        } finally {
-            decrementRunning();
-        }
-    }
-
-    /**
-     * This will return a {@link BiFunction} that could be used in a {@link CompletableFuture#handle(BiFunction)}
-     * that will run the good path if the value is ok or the bad path if there is a throwable.  If the request has been cancelled
-     * then a {@link AbortExecutionException} will be created and the bad path will be run.
-     *
-     * @param goodPath the good path to run
-     * @param badPath  the bad path to run
-     * @param <T>      for two
-     *
-     * @return a {@link BiFunction}
-     */
-    @Internal
-    public <T, U> BiFunction<? super T, Throwable, ? extends U> engineHandle(Function<? super T, ? extends U> goodPath,
-                                                                             Function<Throwable, ? extends U> badPath) {
-        return (value, throwable) -> {
-            incrementRunning();
-            throwable = checkIsCancelled(throwable);
-            try {
-                if (throwable == null) {
-                    return goodPath.apply(value);
-                } else {
-                    return badPath.apply(throwable);
-                }
-            } finally {
-                decrementRunning();
-            }
-        };
-    }
-
-    /**
-     * This will return a {@link Function} that can be used say in a {@link CompletableFuture#exceptionally(Function)} situation
-     * to turn an exception into a value.  The engine state will be incremented and decremented during around the callback
-     *
-     * @param fn  the function to make a value
-     * @param <T> for two
-     *
-     * @return a function to turns exceptions into values
-     */
-    @Internal
-    public <T> Function<Throwable, ? extends T> engineExceptionally(Function<Throwable, ? extends T> fn) {
-        return (throwable) -> {
-            incrementRunning();
-            try {
-                return fn.apply(throwable);
-            } finally {
-                decrementRunning();
-            }
-        };
-    }
-
-    /**
-     * This method increments the engine state and then runs the {@link Runnable}
-     *
-     * If the request has been cancelled then {@link AbortExecutionException} is thrown so
-     * you better be prepared to handle that.  Do do this inside {@link CompletableFuture} handling
-     * say but rather use {@link ExecutionContext#engineRun(Consumer, Consumer)}
-     *
-     * @param runnable the code to run
-     *
-     * @throws AbortExecutionException is the operation has been cancelled
-     */
-    @Internal
-    public void engineRunOrCancel(Runnable runnable) throws AbortExecutionException {
-        incrementRunning();
-        throwIfCancelled();
-        try {
-            runnable.run();
-        } finally {
-            decrementRunning();
-            throwIfCancelled();
-        }
-    }
-
-    /**
-     * This will return a {@link BiConsumer} that could be used in a {@link CompletableFuture#whenComplete(BiConsumer)}
-     * that will run the good path if the value is ok or the bad path if there is a throwable.  If the request has been cancelled
-     * then a {@link AbortExecutionException} will be created and the bad path will be run.
-     *
-     * @param goodPath the good path to run
-     * @param badPath  the bad path to run
-     * @param <T>      for two
-     *
-     * @return a {@link BiConsumer}
-     */
-    @Internal
-    public <T> BiConsumer<T, Throwable> engineRun(Consumer<T> goodPath,
-                                                  Consumer<Throwable> badPath) {
-        return (value, throwable) -> {
-            incrementRunning();
-            throwable = checkIsCancelled(throwable);
-            try {
-                if (throwable == null) {
-                    goodPath.accept(value);
-                } else {
-                    badPath.accept(throwable);
-                }
-            } finally {
-                decrementRunning();
-            }
-        };
-    }
-
-    private void throwIfCancelled() {
-        AbortExecutionException abortExecutionException = checkIsCancelled();
-        if (abortExecutionException != null) {
-            throw abortExecutionException;
-        }
-    }
-
-    private Throwable checkIsCancelled(Throwable currentThrowable) {
-        // no need to check we are cancelled if we already have an exception in play
-        // since it can lead to an exception being thrown when an exception has already been
-        // thrown
-        if (currentThrowable == null) {
-            return checkIsCancelled();
-        }
-        return currentThrowable;
-    }
-
-    /**
-     * This will abort the execution via {@link AbortExecutionException} if the {@link ExecutionInput} has been cancelled
-     */
-    private AbortExecutionException checkIsCancelled() {
-        if (executionInput.isCancelled()) {
-            changeOfState(CANCELLED);
-            return new AbortExecutionException("Execution has been asked to be cancelled");
-        }
-        return null;
-    }
-
-    private void changeOfState(RunningState runningState) {
-        if (engineRunningObserver != null) {
-            engineRunningObserver.runningStateChanged(executionId, graphQLContext, runningState);
-        }
-    }
 }
