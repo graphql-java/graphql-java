@@ -5,8 +5,6 @@ import graphql.GraphQLError;
 import graphql.GraphQLException;
 import graphql.PublicApi;
 import graphql.language.SourceLocation;
-import graphql.schema.GraphQLType;
-import graphql.schema.GraphQLTypeUtil;
 
 import java.util.List;
 

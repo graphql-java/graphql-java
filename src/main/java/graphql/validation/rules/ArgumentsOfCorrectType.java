@@ -10,8 +10,6 @@ import graphql.validation.ValidationContext;
 import graphql.validation.ValidationError;
 import graphql.validation.ValidationErrorCollector;
 
-import java.util.Locale;
-
 import static graphql.validation.ValidationErrorType.WrongType;
 
 @Internal

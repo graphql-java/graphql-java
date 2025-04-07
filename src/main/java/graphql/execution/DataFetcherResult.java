@@ -3,7 +3,6 @@ package graphql.execution;
 import com.google.common.collect.ImmutableList;
 import graphql.ExecutionResult;
 import graphql.GraphQLError;
-import graphql.Internal;
 import graphql.PublicApi;
 import graphql.schema.DataFetcher;
 

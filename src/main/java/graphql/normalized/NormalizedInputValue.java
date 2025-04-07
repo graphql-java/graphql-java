@@ -8,7 +8,6 @@ import java.util.Objects;
 
 import static graphql.Assert.assertNotNull;
 import static graphql.Assert.assertTrue;
-import static graphql.Assert.assertTrue;
 import static graphql.Assert.assertValidName;
 import static graphql.language.AstPrinter.printAst;
 
