@@ -460,4 +460,246 @@ class MutationTest extends Specification {
                 topLevelF4: expectedMap,
         ]
     }
+
+
+    def "stress test mutation with dataloader"() {
+        when:
+        // concurrency bugs are hard to find, so run this test a lot of times
+        for (int i = 0; i < 150; i++) {
+            println "iteration $i"
+            runTest()
+        }
+        then:
+        noExceptionThrown()
+    }
+
+    def runTest() {
+        def sdl = """
+            type Query {
+                q : String
+            }
+            
+            type Mutation {
+                topLevelF1(arg: Int) : ComplexType
+                topLevelF2(arg: Int) : ComplexType
+                topLevelF3(arg: Int) : ComplexType
+                topLevelF4(arg: Int) : ComplexType
+            }
+            
+            type ComplexType {
+                f1 : ComplexType
+                f2 : ComplexType
+                f3 : ComplexType
+                f4 : ComplexType
+                end : String
+            }
+        """
+
+        def emptyComplexMap = [
+                f1: null,
+                f2: null,
+                f3: null,
+                f4: null,
+        ]
+
+        BatchLoaderWithContext<Integer, Map> fieldBatchLoader = { keys, context ->
+            assert keys.size() == 2, "since only f1 and f2 are DL based, we will only get 2 key values"
+
+            def batchValue = [
+                    emptyComplexMap,
+                    emptyComplexMap,
+            ]
+            CompletableFuture.supplyAsync {
+                return batchValue
+            }
+
+        } as BatchLoaderWithContext
+
+        BatchLoader<Integer, Integer> mutationBatchLoader = { keys ->
+            CompletableFuture.supplyAsync {
+                return keys
+            }
+
+        } as BatchLoader
+
+
+        DataLoaderRegistry dlReg = DataLoaderRegistry.newRegistry()
+                .register("topLevelDL", DataLoaderFactory.newDataLoader(mutationBatchLoader))
+                .register("fieldDL", DataLoaderFactory.newDataLoader(fieldBatchLoader))
+                .build()
+
+        def mutationDF = { env ->
+            def fieldName = env.getField().name
+            def factor = Integer.parseInt(fieldName.substring(fieldName.length() - 1))
+            def value = env.getArgument("arg")
+
+            def key = value + factor
+            return env.getDataLoader("topLevelDL").load(key)
+        } as DataFetcher
+
+        def fieldDataLoaderDF = { env ->
+            def fieldName = env.getField().name
+            def level = env.getExecutionStepInfo().getPath().getLevel()
+            return env.getDataLoader("fieldDL").load(fieldName, level)
+        } as DataFetcher
+
+        def fieldDataLoaderNonDF = { env ->
+            return emptyComplexMap
+        } as DataFetcher
+
+        def schema = TestUtil.schema(sdl,
+                [Mutation   : [
+                        topLevelF1: mutationDF,
+                        topLevelF2: mutationDF,
+                        topLevelF3: mutationDF,
+                        topLevelF4: mutationDF,
+                ],
+                 // only f1 and f3 are using data loaders - f2 and f4 are plain old property based
+                 // so some fields with batch loader and some without
+                 ComplexType: [
+                         f1: fieldDataLoaderDF,
+                         f2: fieldDataLoaderNonDF,
+                         f3: fieldDataLoaderDF,
+                         f4: fieldDataLoaderNonDF,
+                 ]
+                ])
+
+
+        def graphQL = GraphQL.newGraphQL(schema)
+                .build()
+
+
+        def ei = ExecutionInput.newExecutionInput("""
+            mutation m {
+                topLevelF1(arg:10) {
+                    f1 {
+                        f1 { end } 
+                        f2 { end }
+                        f3 { end }
+                        f4 { end }
+                    }
+                    f2 {
+                        f1 { end }
+                        f2 { end }
+                        f3 { end }
+                        f4 { end }
+                    }
+                    f3 {
+                        f1 { end }
+                        f2 { end }
+                        f3 { end }
+                        f4 { end }
+                    }
+                    f4 {
+                        f1 { end }
+                        f2 { end }
+                        f3 { end }
+                        f4 { end }
+                    }
+                }
+                    
+                topLevelF2(arg:10) {
+                    f1 {
+                        f1 { end } 
+                        f2 { end }
+                        f3 { end }
+                        f4 { end }
+                    }
+                    f2 {
+                        f1 { end }
+                        f2 { end }
+                        f3 { end }
+                        f4 { end }
+                    }
+                    f3 {
+                        f1 { end }
+                        f2 { end }
+                        f3 { end }
+                        f4 { end }
+                    }
+                    f4 {
+                        f1 { end }
+                        f2 { end }
+                        f3 { end }
+                        f4 { end }
+                    }
+                }
+                
+                topLevelF3(arg:10) {
+                    f1 {
+                        f1 { end } 
+                        f2 { end }
+                        f3 { end }
+                        f4 { end }
+                    }
+                    f2 {
+                        f1 { end }
+                        f2 { end }
+                        f3 { end }
+                        f4 { end }
+                    }
+                    f3 {
+                        f1 { end }
+                        f2 { end }
+                        f3 { end }
+                        f4 { end }
+                    }
+                    f4 {
+                        f1 { end }
+                        f2 { end }
+                        f3 { end }
+                        f4 { end }
+                    }
+                }
+
+                topLevelF4(arg:10) {
+                    f1 {
+                        f1 { end } 
+                        f2 { end }
+                        f3 { end }
+                        f4 { end }
+                    }
+                    f2 {
+                        f1 { end }
+                        f2 { end }
+                        f3 { end }
+                        f4 { end }
+                    }
+                    f3 {
+                        f1 { end }
+                        f2 { end }
+                        f3 { end }
+                        f4 { end }
+                    }
+                    f4 {
+                        f1 { end }
+                        f2 { end }
+                        f3 { end }
+                        f4 { end }
+                    }
+                }
+             }
+        """).dataLoaderRegistry(dlReg).build()
+        def cf = graphQL.executeAsync(ei)
+
+        Awaitility.await().until { cf.isDone() }
+        def er = cf.join()
+
+        assert er.errors.isEmpty()
+
+        def expectedMap = [
+                f1: [f1: [end: null], f2: [end: null], f3: [end: null], f4: [end: null]],
+                f2: [f1: [end: null], f2: [end: null], f3: [end: null], f4: [end: null]],
+                f3: [f1: [end: null], f2: [end: null], f3: [end: null], f4: [end: null]],
+                f4: [f1: [end: null], f2: [end: null], f3: [end: null], f4: [end: null]],
+        ]
+
+        assert er.data == [
+                topLevelF1: expectedMap,
+                topLevelF2: expectedMap,
+                topLevelF3: expectedMap,
+                topLevelF4: expectedMap,
+        ]
+    }
+
 }

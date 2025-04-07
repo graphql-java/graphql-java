@@ -59,7 +59,6 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
         private final Set<Integer> dispatchedLevels = ConcurrentHashMap.newKeySet();
 
 
-
         //TODO: maybe this should be cleaned up once the CF returned by these fields are completed
         // otherwise this will stick around until the whole request is finished
 
@@ -72,7 +71,7 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
         // Set of ResultPath
         private final Set<String> batchWindowOfDelayedDataLoaderToDispatch = ConcurrentHashMap.newKeySet();
 
-        private boolean batchWindowOpen = false;
+        private boolean batchWindowOpen;
 
 
         public CallStack() {
@@ -257,6 +256,12 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
             callStack.clearHappenedExecuteObjectCalls();
             callStack.clearHappenedOnFieldValueCalls();
             callStack.expectedExecuteObjectCallsPerLevel.set(1, 1);
+            callStack.dispatchingFinishedPerLevel.clear();
+            callStack.dispatchingStartedPerLevel.clear();
+            callStack.allResultPathWithDataLoader.clear();
+            callStack.batchWindowOfDelayedDataLoaderToDispatch.clear();
+            callStack.batchWindowOpen = false;
+            callStack.levelToResultPathWithDataLoader.clear();
         });
     }
 
