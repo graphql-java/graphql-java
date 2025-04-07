@@ -100,6 +100,7 @@ class AsyncSerialExecutionStrategyTest extends Specification {
                 .type(schema.getQueryType())
                 .build()
 
+        def ei = ExecutionInput.newExecutionInput("{}").build()
         ExecutionContext executionContext = new ExecutionContextBuilder()
                 .graphQLSchema(schema)
                 .executionId(ExecutionId.generate())
@@ -108,8 +109,8 @@ class AsyncSerialExecutionStrategyTest extends Specification {
                 .valueUnboxer(ValueUnboxer.DEFAULT)
                 .locale(Locale.getDefault())
                 .graphQLContext(GraphQLContext.getDefault())
-                .executionInput(ExecutionInput.newExecutionInput("{}").build())
-                .engineRunningState(new EngineRunningState())
+                .executionInput(ei)
+                .engineRunningState(new EngineRunningState(ei))
                 .build()
         ExecutionStrategyParameters executionStrategyParameters = ExecutionStrategyParameters
                 .newParameters()
@@ -148,6 +149,7 @@ class AsyncSerialExecutionStrategyTest extends Specification {
                 .type(schema.getQueryType())
                 .build()
 
+        def ei = ExecutionInput.newExecutionInput("{}").build()
         ExecutionContext executionContext = new ExecutionContextBuilder()
                 .graphQLSchema(schema)
                 .executionId(ExecutionId.generate())
@@ -156,8 +158,8 @@ class AsyncSerialExecutionStrategyTest extends Specification {
                 .valueUnboxer(ValueUnboxer.DEFAULT)
                 .locale(Locale.getDefault())
                 .graphQLContext(GraphQLContext.getDefault())
-                .executionInput(ExecutionInput.newExecutionInput("{}").build())
-                .engineRunningState(new EngineRunningState())
+                .executionInput(ei)
+                .engineRunningState(new EngineRunningState(ei))
                 .build()
         ExecutionStrategyParameters executionStrategyParameters = ExecutionStrategyParameters
                 .newParameters()

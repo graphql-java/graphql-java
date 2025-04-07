@@ -750,7 +750,7 @@ class SubscriptionExecutionStrategyTest extends Specification {
         def messages = capturingSubscriber.events
         messages.size() == 1
         def error = messages[0].errors[0]
-        assert error.message == "Execution has been asked to be cancelled"
+        assert error.message.contains("Execution has been asked to be cancelled")
         publisher.counter == 2
     }
 
