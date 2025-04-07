@@ -105,7 +105,7 @@ tasks.withType(GroovyCompile) {
 }
 dependencies {
     implementation 'org.antlr:antlr4-runtime:' + antlrVersion
-    api 'com.graphql-java:java-dataloader:3.4.0'
+    api 'com.graphql-java:java-dataloader:4.0.0'
     api 'org.reactivestreams:reactive-streams:' + reactiveStreamsVersion
     api "org.jspecify:jspecify:1.0.0"
     antlr 'org.antlr:antlr4:' + antlrVersion
