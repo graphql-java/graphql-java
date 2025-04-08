@@ -100,18 +100,15 @@ class DataLoaderHangingTest extends Specification {
                 new ThreadPoolExecutor.CallerRunsPolicy())
 
         DataFetcher albumsDf = { env ->
-            println "get album"
             env.getDataLoader("artist.albums").load(env)
         }
         DataFetcher songsDf = { env ->
-            println "get songs"
             env.getDataLoader("album.songs").load(env)
         }
 
         def dataFetcherArtists = new DataFetcher() {
             @Override
             Object get(DataFetchingEnvironment environment) {
-                println "getting artists"
                 def limit = environment.getArgument("limit") as Integer
                 def artists = []
                 for (int i = 1; i <= limit; i++) {

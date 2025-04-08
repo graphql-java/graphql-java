@@ -1,5 +1,6 @@
 package graphql
 
+import graphql.execution.instrumentation.dataloader.DispatchingContextKeys
 import graphql.schema.DataFetcher
 import org.awaitility.Awaitility
 import org.dataloader.BatchLoader
@@ -7,6 +8,7 @@ import org.dataloader.BatchLoaderWithContext
 import org.dataloader.DataLoaderFactory
 import org.dataloader.DataLoaderRegistry
 import spock.lang.Specification
+import spock.lang.Unroll
 
 import java.util.concurrent.CompletableFuture
 
@@ -229,6 +231,8 @@ class MutationTest extends Specification {
      This test shows a dataloader being called at the mutation field level, in serial via AsyncSerialExecutionStrategy, and then
      again at the sub field level, in parallel, via AsyncExecutionStrategy.
      */
+
+    @Unroll
     def "more complex async mutation with DataLoader"() {
         def sdl = """
             type Query {
@@ -435,7 +439,7 @@ class MutationTest extends Specification {
                     }
                 }
              }
-        """).dataLoaderRegistry(dlReg).build()
+        """).dataLoaderRegistry(dlReg).graphQLContext([DispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING]: enableDataLoaderChaining).build()
         when:
         def cf = graphQL.executeAsync(ei)
 
@@ -459,21 +463,28 @@ class MutationTest extends Specification {
                 topLevelF3: expectedMap,
                 topLevelF4: expectedMap,
         ]
+
+        where:
+        enableDataLoaderChaining << [true, false]
     }
 
 
+    @Unroll
     def "stress test mutation with dataloader"() {
         when:
         // concurrency bugs are hard to find, so run this test a lot of times
         for (int i = 0; i < 150; i++) {
             println "iteration $i"
-            runTest()
+            runTest(enableDataLoaderChaining)
         }
         then:
         noExceptionThrown()
+
+        where:
+        enableDataLoaderChaining << [true, false]
     }
 
-    def runTest() {
+    def runTest(boolean enableDataLoaderChaining) {
         def sdl = """
             type Query {
                 q : String
@@ -679,7 +690,7 @@ class MutationTest extends Specification {
                     }
                 }
              }
-        """).dataLoaderRegistry(dlReg).build()
+        """).dataLoaderRegistry(dlReg).graphQLContext([(DispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING): enableDataLoaderChaining]).build()
         def cf = graphQL.executeAsync(ei)
 
         Awaitility.await().until { cf.isDone() }

@@ -521,7 +521,6 @@ public abstract class ExecutionStrategy {
             }
             fetchedValue = Async.toCompletableFutureOrMaterializedObject(fetchedValueRaw);
         } catch (Exception e) {
-            e.printStackTrace();
             fetchedValue = Async.exceptionallyCompletedFuture(e);
         }
         return fetchedValue;
