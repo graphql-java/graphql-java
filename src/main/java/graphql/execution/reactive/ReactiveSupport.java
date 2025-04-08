@@ -2,9 +2,8 @@ package graphql.execution.reactive;
 
 import graphql.DuckTyped;
 import graphql.Internal;
+import org.reactivestreams.FlowAdapters;
 import org.reactivestreams.Publisher;
-import org.reactivestreams.Subscriber;
-import org.reactivestreams.Subscription;
 
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
@@ -26,15 +25,9 @@ public class ReactiveSupport {
             return flowPublisherToCF((Flow.Publisher<?>) fetchedObject);
         }
         if (fetchedObject instanceof Publisher) {
-            return reactivePublisherToCF((Publisher<?>) fetchedObject);
+            return flowPublisherToCF(FlowAdapters.toFlowPublisher((Publisher<?>) fetchedObject));
         }
         return fetchedObject;
-    }
-
-    private static CompletableFuture<Object> reactivePublisherToCF(Publisher<?> publisher) {
-        ReactivePublisherToCompletableFuture<Object> cf = new ReactivePublisherToCompletableFuture<>();
-        publisher.subscribe(cf);
-        return cf;
     }
 
     private static CompletableFuture<Object> flowPublisherToCF(Flow.Publisher<?> publisher) {
@@ -113,39 +106,6 @@ public class ReactiveSupport {
             if (subscriptionRef.getAndSet(null) != null) {
                 complete(null);
             }
-        }
-    }
-
-    private static class ReactivePublisherToCompletableFuture<T> extends PublisherToCompletableFuture<T, Subscription> implements Subscriber<T> {
-
-        @Override
-        void doSubscriptionCancel(Subscription subscription) {
-            subscription.cancel();
-        }
-
-        @Override
-        void doSubscriptionRequest(Subscription subscription, long n) {
-            subscription.request(n);
-        }
-
-        @Override
-        public void onSubscribe(Subscription s) {
-            onSubscribeImpl(s);
-        }
-
-        @Override
-        public void onNext(T t) {
-            onNextImpl(t);
-        }
-
-        @Override
-        public void onError(Throwable t) {
-            onErrorImpl(t);
-        }
-
-        @Override
-        public void onComplete() {
-            onCompleteImpl();
         }
     }
 
