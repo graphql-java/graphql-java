@@ -53,6 +53,7 @@ import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -779,10 +780,16 @@ public abstract class ExecutionStrategy {
 
         List<FieldValueInfo> fieldValueInfos = new ArrayList<>(size.orElse(1));
         int index = 0;
-        for (Object item : iterableValues) {
+        Iterator<Object> iterator = iterableValues.iterator();
+        while (iterator.hasNext()) {
             if (incrementAndCheckMaxNodesExceeded(executionContext)) {
                 return new FieldValueInfo(NULL, null, fieldValueInfos);
             }
+//            try {
+            Object item = iterator.next();
+//            }catch (Throwable t) {
+//                //same as DF throwing exception?
+//            }
 
             ResultPath indexedPath = parameters.getPath().segment(index);
 

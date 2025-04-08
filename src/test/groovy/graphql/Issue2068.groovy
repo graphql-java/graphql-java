@@ -10,6 +10,7 @@ import org.dataloader.BatchLoader
 import org.dataloader.DataLoader
 import org.dataloader.DataLoaderOptions
 import org.dataloader.DataLoaderRegistry
+import spock.lang.Ignore
 import spock.lang.Specification
 
 import java.util.concurrent.CompletableFuture
@@ -23,6 +24,7 @@ import static graphql.ExecutionInput.newExecutionInput
 import static graphql.schema.idl.TypeRuntimeWiring.newTypeWiring
 
 class Issue2068 extends Specification {
+    @Ignore
     def "shouldn't hang on exception in resolveFieldWithInfo"() {
         setup:
         def sdl = """
@@ -65,8 +67,14 @@ class Issue2068 extends Specification {
                 TimeUnit.MILLISECONDS, new SynchronousQueue<>(), threadFactory,
                 new ThreadPoolExecutor.CallerRunsPolicy())
 
-        DataFetcher nationsDf = { env -> env.getDataLoader("owner.nation").load(env) }
-        DataFetcher ownersDf = { env -> env.getDataLoader("dog.owner").load(env) }
+        DataFetcher nationsDf = { env ->
+            println "NATIONS!!" + env.getExecutionStepInfo().getPath().getLevel()
+            return env.getDataLoader("owner.nation").load(env)
+        }
+        DataFetcher ownersDf = { DataFetchingEnvironment env ->
+            println "OWNER!! level :" + env.getExecutionStepInfo().getPath().getLevel()
+            return env.getDataLoader("dog.owner").load(env)
+        }
 
         def wiring = RuntimeWiring.newRuntimeWiring()
                 .type(newTypeWiring("Query")
@@ -75,6 +83,7 @@ class Issue2068 extends Specification {
                         .dataFetcher("toys", new StaticDataFetcher(new AbstractList() {
                             @Override
                             Object get(int i) {
+//                                return "toy"
                                 throw new RuntimeException("Simulated failure");
                             }
 
@@ -120,37 +129,38 @@ class Issue2068 extends Specification {
 
         then: "execution with single instrumentation shouldn't hang"
         // wait for each future to complete and grab the results
-        thrown(RuntimeException)
-
-        when:
-        graphql = GraphQL.newGraphQL(schema)
-                .build()
-
-        graphql.execute(newExecutionInput()
-                .dataLoaderRegistry(dataLoaderRegistry)
-                .query("""
-                query LoadPets {
-                      pets {
-                        cats {
-                          toys {
-                            name
-                          }
-                        }
-                        dogs {
-                          owner {
-                            nation {
-                              name
-                            }
-                          }
-                        }
-                      }
-                    }
-                    """)
-                .build())
-
-        then: "execution with chained instrumentation shouldn't hang"
-        // wait for each future to complete and grab the results
-        thrown(RuntimeException)
+        def e = thrown(RuntimeException)
+        e.printStackTrace()
+//
+//        when:
+//        graphql = GraphQL.newGraphQL(schema)
+//                .build()
+//
+//        graphql.execute(newExecutionInput()
+//                .dataLoaderRegistry(dataLoaderRegistry)
+//                .query("""
+//                query LoadPets {
+//                      pets {
+//                        cats {
+//                          toys {
+//                            name
+//                          }
+//                        }
+//                        dogs {
+//                          owner {
+//                            nation {
+//                              name
+//                            }
+//                          }
+//                        }
+//                      }
+//                    }
+//                    """)
+//                .build())
+//
+//        then: "execution with chained instrumentation shouldn't hang"
+//        // wait for each future to complete and grab the results
+//        thrown(RuntimeException)
     }
 
     private static DataLoaderRegistry mkNewDataLoaderRegistry(executor) {

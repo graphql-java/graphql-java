@@ -369,8 +369,8 @@ class ChainedDataLoaderTest extends Specification {
         def query = "{ foo bar } "
         def ei = newExecutionInput(query).dataLoaderRegistry(dataLoaderRegistry).build()
 
-        // make the window large enough to avoid flaky tests
-        ei.getGraphQLContext().put(DispatchingContextKeys.DELAYED_DATA_LOADER_BATCH_WINDOW_SIZE_NANO_SECONDS, 2_000_000)
+        // make the window to 50ms
+        ei.getGraphQLContext().put(DispatchingContextKeys.DELAYED_DATA_LOADER_BATCH_WINDOW_SIZE_NANO_SECONDS, 1_000_000L * 250)
 
         when:
         def er = graphQL.execute(ei)

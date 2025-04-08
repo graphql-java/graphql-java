@@ -56,8 +56,6 @@ class DataLoaderDispatcherTest extends Specification {
     ]
 
 
-
-
     def "dispatch is called if there are data loaders"() {
         def dispatchedCalled = false
         def dataLoaderRegistry = new DataLoaderRegistry() {
@@ -77,6 +75,7 @@ class DataLoaderDispatcherTest extends Specification {
 
         def graphQL = GraphQL.newGraphQL(starWarsSchema).build()
         def executionInput = newExecutionInput().dataLoaderRegistry(dataLoaderRegistry).query('{ hero { name } }').build()
+        executionInput.getGraphQLContext().put(DispatchingContextKeys.DISABLE_NEW_DATA_LOADER_DISPATCHING, true)
 
         when:
         def er = graphQL.execute(executionInput)
@@ -246,6 +245,7 @@ class DataLoaderDispatcherTest extends Specification {
 
         when:
         def executionInput = newExecutionInput().dataLoaderRegistry(dataLoaderRegistry).query('{ field }').build()
+        executionInput.getGraphQLContext().put(DispatchingContextKeys.DISABLE_NEW_DATA_LOADER_DISPATCHING, true)
         def er = graphql.execute(executionInput)
 
         then:

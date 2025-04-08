@@ -69,15 +69,13 @@ class DataLoaderNodeTest extends Specification {
     }
 
     class NodeDataFetcher implements DataFetcher {
-        DataLoader loader
 
-        NodeDataFetcher(DataLoader loader) {
-            this.loader = loader
+        NodeDataFetcher() {
         }
 
         @Override
         Object get(DataFetchingEnvironment environment) throws Exception {
-            return loader.load(environment.getSource())
+            return environment.getDataLoader("childNodes").load(environment.getSource())
         }
     }
 
@@ -95,7 +93,7 @@ class DataLoaderNodeTest extends Specification {
             return CompletableFuture.completedFuture(childNodes)
         })
 
-        DataFetcher<?> nodeDataFetcher = new NodeDataFetcher(loader)
+        DataFetcher<?> nodeDataFetcher = new NodeDataFetcher()
 
         def nodeTypeName = "Node"
         def childNodesFieldName = "childNodes"
@@ -135,9 +133,10 @@ class DataLoaderNodeTest extends Specification {
         DataLoaderRegistry registry = new DataLoaderRegistry().register(childNodesFieldName, loader)
 
         ExecutionResult result = GraphQL.newGraphQL(schema)
-//                .instrumentation(new DataLoaderDispatcherInstrumentation())
                 .build()
-                .execute(ExecutionInput.newExecutionInput().dataLoaderRegistry(registry).query(
+                .execute(ExecutionInput.newExecutionInput()
+                        .graphQLContext([(DispatchingContextKeys.DISABLE_NEW_DATA_LOADER_DISPATCHING): disableNewDispatching])
+                        .dataLoaderRegistry(registry).query(
                 '''
                         query Q { 
                             root { 
@@ -176,5 +175,10 @@ class DataLoaderNodeTest extends Specification {
         //
         // but currently is this
         nodeLoads.size() == 3 // WOOT!
+
+        where:
+        disableNewDispatching << [true, false]
+
+
     }
 }

@@ -22,6 +22,7 @@ import org.dataloader.DataLoaderFactory
 import org.dataloader.DataLoaderOptions
 import org.dataloader.DataLoaderRegistry
 import spock.lang.Specification
+import spock.lang.Unroll
 
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionStage
@@ -38,6 +39,7 @@ class DataLoaderHangingTest extends Specification {
 
     public static final int NUM_OF_REPS = 50
 
+    @Unroll
     def "deadlock attempt"() {
         setup:
         def sdl = """
@@ -97,12 +99,19 @@ class DataLoaderHangingTest extends Specification {
                 TimeUnit.MILLISECONDS, new SynchronousQueue<>(), threadFactory,
                 new ThreadPoolExecutor.CallerRunsPolicy())
 
-        DataFetcher albumsDf = { env -> env.getDataLoader("artist.albums").load(env) }
-        DataFetcher songsDf = { env -> env.getDataLoader("album.songs").load(env) }
+        DataFetcher albumsDf = { env ->
+            println "get album"
+            env.getDataLoader("artist.albums").load(env)
+        }
+        DataFetcher songsDf = { env ->
+            println "get songs"
+            env.getDataLoader("album.songs").load(env)
+        }
 
         def dataFetcherArtists = new DataFetcher() {
             @Override
             Object get(DataFetchingEnvironment environment) {
+                println "getting artists"
                 def limit = environment.getArgument("limit") as Integer
                 def artists = []
                 for (int i = 1; i <= limit; i++) {
@@ -134,6 +143,7 @@ class DataLoaderHangingTest extends Specification {
 
             def result = graphql.executeAsync(newExecutionInput()
                     .dataLoaderRegistry(dataLoaderRegistry)
+                    .graphQLContext([(DispatchingContextKeys.DISABLE_NEW_DATA_LOADER_DISPATCHING): disableNewDispatching] as Map)
                     .query("""
                     query getArtistsWithData {
                       listArtists(limit: 1) {
@@ -174,6 +184,10 @@ class DataLoaderHangingTest extends Specification {
                     results.each { assert it.errors.empty }
                 })
                 .join()
+
+        where:
+        disableNewDispatching << [true, false]
+
     }
 
     private DataLoaderRegistry mkNewDataLoaderRegistry(executor) {
@@ -359,6 +373,7 @@ class DataLoaderHangingTest extends Specification {
         ExecutionInput executionInput = newExecutionInput()
                 .query(query)
                 .graphQLContext(["registry": registry])
+                .graphQLContext([(DispatchingContextKeys.DISABLE_NEW_DATA_LOADER_DISPATCHING): true])
                 .dataLoaderRegistry(registry)
                 .build()
 

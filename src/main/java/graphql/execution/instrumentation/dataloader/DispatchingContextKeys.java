@@ -15,7 +15,7 @@ public final class DispatchingContextKeys {
      * That is for DataLoaders, that are not batched as part of the normal per level
      * dispatching, because they were created after the level was already dispatched.
      *
-     * Expect Integer values
+     * Expect Long values
      *
      * Default is 500_000 (0.5 ms)
      */
@@ -37,6 +37,5 @@ public final class DispatchingContextKeys {
      *
      * Expects a boolean value.
      */
-    @Deprecated
     public static final String DISABLE_NEW_DATA_LOADER_DISPATCHING = "__GJ_disable_new_data_loader_dispatching";
 }
