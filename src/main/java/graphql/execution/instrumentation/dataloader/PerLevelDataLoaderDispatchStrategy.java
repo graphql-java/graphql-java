@@ -284,7 +284,14 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
         // on the next level we expect the following on object calls because we found non null objects
         callStack.increaseExpectedExecuteObjectCalls(curLevel + 1, expectedOnObjectCalls);
         // maybe the object calls happened already (because the DataFetcher return directly values synchronously)
-        // therefore we check if the next level is ready
+        // therefore we check the next levels if they are ready
+        // this means we could skip some level because the higher level is also already ready,
+        // which means there is nothing to dispatch on these levels: if x and x+1 is ready, it means there are no
+        // data loaders used on x
+        //
+        // if data loader chaining is disabled (the old algo) the level we dispatch is not really relevant as
+        // we dispatch the whole registry anyway
+
         int levelToCheck = curLevel;
         while (levelReady(levelToCheck + 1)) {
             callStack.setDispatchedLevel(levelToCheck + 1);
@@ -350,6 +357,7 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
             // level 1 is special: there is only one strategy call and that's it
             return callStack.allFetchesHappened(1);
         }
+        // a level with zero expectations can't be ready
         if (callStack.expectedFetchCountPerLevel.get(level) == 0) {
             return false;
         }

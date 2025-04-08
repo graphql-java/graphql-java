@@ -785,11 +785,7 @@ public abstract class ExecutionStrategy {
             if (incrementAndCheckMaxNodesExceeded(executionContext)) {
                 return new FieldValueInfo(NULL, null, fieldValueInfos);
             }
-//            try {
             Object item = iterator.next();
-//            }catch (Throwable t) {
-//                //same as DF throwing exception?
-//            }
 
             ResultPath indexedPath = parameters.getPath().segment(index);
 
