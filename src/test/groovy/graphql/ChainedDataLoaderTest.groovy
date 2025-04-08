@@ -70,7 +70,7 @@ class ChainedDataLoaderTest extends Specification {
         def graphQL = GraphQL.newGraphQL(schema).build()
 
         def query = "{ dogName catName } "
-        def ei = newExecutionInput(query).dataLoaderRegistry(dataLoaderRegistry).build()
+        def ei = newExecutionInput(query).graphQLContext([(DispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING): true]).dataLoaderRegistry(dataLoaderRegistry).build()
 
         when:
         def er = graphQL.execute(ei)
@@ -158,7 +158,7 @@ class ChainedDataLoaderTest extends Specification {
         def graphQL = GraphQL.newGraphQL(schema).build()
 
         def query = "{ hello helloDelayed} "
-        def ei = newExecutionInput(query).dataLoaderRegistry(dataLoaderRegistry).build()
+        def ei = newExecutionInput(query).graphQLContext([(DispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING): true]).dataLoaderRegistry(dataLoaderRegistry).build()
 
         when:
         def er = graphQL.execute(ei)
@@ -244,7 +244,7 @@ class ChainedDataLoaderTest extends Specification {
         def graphQL = GraphQL.newGraphQL(schema).build()
 
         def query = "{ foo } "
-        def ei = newExecutionInput(query).dataLoaderRegistry(dataLoaderRegistry).build()
+        def ei = newExecutionInput(query).graphQLContext([(DispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING): true]).dataLoaderRegistry(dataLoaderRegistry).build()
 
         when:
         def er = graphQL.execute(ei)
@@ -310,7 +310,7 @@ class ChainedDataLoaderTest extends Specification {
         def graphQL = GraphQL.newGraphQL(schema).build()
 
         def query = "{ dogName catName } "
-        def ei = newExecutionInput(query).dataLoaderRegistry(dataLoaderRegistry).build()
+        def ei = newExecutionInput(query).graphQLContext([(DispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING): true]).dataLoaderRegistry(dataLoaderRegistry).build()
 
         when:
         def er = graphQL.execute(ei)
@@ -367,7 +367,7 @@ class ChainedDataLoaderTest extends Specification {
         def graphQL = GraphQL.newGraphQL(schema).build()
 
         def query = "{ foo bar } "
-        def ei = newExecutionInput(query).dataLoaderRegistry(dataLoaderRegistry).build()
+        def ei = newExecutionInput(query).graphQLContext([(DispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING): true]).dataLoaderRegistry(dataLoaderRegistry).build()
 
         // make the window to 50ms
         ei.getGraphQLContext().put(DispatchingContextKeys.DELAYED_DATA_LOADER_BATCH_WINDOW_SIZE_NANO_SECONDS, 1_000_000L * 250)
@@ -415,7 +415,7 @@ class ChainedDataLoaderTest extends Specification {
         def graphQL = GraphQL.newGraphQL(schema).build()
 
         def query = "{ foo } "
-        def ei = newExecutionInput(query).dataLoaderRegistry(dataLoaderRegistry).build()
+        def ei = newExecutionInput(query).graphQLContext([(DispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING): true]).dataLoaderRegistry(dataLoaderRegistry).build()
 
 
         ScheduledExecutorService scheduledExecutorService = Mock()
@@ -438,7 +438,7 @@ class ChainedDataLoaderTest extends Specification {
 
     }
 
-    def "handling of chained DataLoaders can be disabled"() {
+    def "handling of chained DataLoaders is disabled by default"() {
         given:
         def sdl = '''
 
@@ -488,7 +488,6 @@ class ChainedDataLoaderTest extends Specification {
         def query = "{ dogName catName } "
         def ei = newExecutionInput(query).dataLoaderRegistry(dataLoaderRegistry).build()
 
-        ei.getGraphQLContext().put(DispatchingContextKeys.DISABLE_NEW_DATA_LOADER_DISPATCHING, true)
 
         when:
         def er = graphQL.executeAsync(ei)

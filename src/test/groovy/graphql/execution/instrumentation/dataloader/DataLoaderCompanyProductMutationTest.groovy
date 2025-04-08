@@ -71,7 +71,7 @@ class DataLoaderCompanyProductMutationTest extends Specification {
         ExecutionInput executionInput = ExecutionInput.newExecutionInput()
                 .query(query)
                 .dataLoaderRegistry(registry)
-                .graphQLContext([(DispatchingContextKeys.DISABLE_NEW_DATA_LOADER_DISPATCHING): true])
+                .graphQLContext([(DispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING): false])
                 .build()
 
         when:

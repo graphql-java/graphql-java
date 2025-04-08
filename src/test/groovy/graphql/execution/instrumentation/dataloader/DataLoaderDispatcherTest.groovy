@@ -75,7 +75,7 @@ class DataLoaderDispatcherTest extends Specification {
 
         def graphQL = GraphQL.newGraphQL(starWarsSchema).build()
         def executionInput = newExecutionInput().dataLoaderRegistry(dataLoaderRegistry).query('{ hero { name } }').build()
-        executionInput.getGraphQLContext().put(DispatchingContextKeys.DISABLE_NEW_DATA_LOADER_DISPATCHING, true)
+        executionInput.getGraphQLContext().put(DispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING, false)
 
         when:
         def er = graphQL.execute(executionInput)
@@ -245,7 +245,7 @@ class DataLoaderDispatcherTest extends Specification {
 
         when:
         def executionInput = newExecutionInput().dataLoaderRegistry(dataLoaderRegistry).query('{ field }').build()
-        executionInput.getGraphQLContext().put(DispatchingContextKeys.DISABLE_NEW_DATA_LOADER_DISPATCHING, true)
+        executionInput.getGraphQLContext().put(DispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING, false)
         def er = graphql.execute(executionInput)
 
         then:

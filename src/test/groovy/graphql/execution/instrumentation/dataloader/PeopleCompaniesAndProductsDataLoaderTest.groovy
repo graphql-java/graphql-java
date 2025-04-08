@@ -190,7 +190,7 @@ class PeopleCompaniesAndProductsDataLoaderTest extends Specification {
         ExecutionInput executionInput = ExecutionInput.newExecutionInput()
                 .query(query)
                 .graphQLContext(["registry": registry])
-                .graphQLContext([(DispatchingContextKeys.DISABLE_NEW_DATA_LOADER_DISPATCHING): disableNewDispatching])
+                .graphQLContext([(DispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING): enableDataLoaderChaining])
                 .dataLoaderRegistry(registry)
                 .build()
 
@@ -209,7 +209,7 @@ class PeopleCompaniesAndProductsDataLoaderTest extends Specification {
         companyBatchLoadInvocationCount == 1
 
         where:
-        disableNewDispatching << [true, false]
+        enableDataLoaderChaining << [true, false]
 
     }
 }
