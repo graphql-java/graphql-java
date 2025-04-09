@@ -40,7 +40,7 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
     private final InterThreadMemoizedSupplier<ScheduledExecutorService> delayedDataLoaderDispatchExecutor;
 
     static final InterThreadMemoizedSupplier<ScheduledExecutorService> defaultDelayedDLCFBatchWindowScheduler
-            = new InterThreadMemoizedSupplier<>(Executors::newSingleThreadScheduledExecutor);
+            = new InterThreadMemoizedSupplier<>(() -> Executors.newScheduledThreadPool(Runtime.getRuntime().availableProcessors()));
 
     static final long DEFAULT_BATCH_WINDOW_NANO_SECONDS_DEFAULT = 500_000L;
 
@@ -48,16 +48,30 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
     private static class CallStack {
 
         private final LockKit.ReentrantLock lock = new LockKit.ReentrantLock();
+
+        /**
+         * A level is ready when all fields in this level are fetched
+         * The expected field fetch count is accurate when all execute object calls happened
+         * The expected execute object count is accurate when all sub selections fetched
+         * are done in the previous level
+         */
+
         private final LevelMap expectedFetchCountPerLevel = new LevelMap();
         private final LevelMap fetchCountPerLevel = new LevelMap();
 
+        // an object call means a sub selection of a field of type object/interface/union
+        // the number of fields for sub selections increases the expected fetch count for this level
         private final LevelMap expectedExecuteObjectCallsPerLevel = new LevelMap();
         private final LevelMap happenedExecuteObjectCallsPerLevel = new LevelMap();
 
+        // this means one sub selection has been fully fetched
+        // and the expected execute objects calls for the next level have been calculated
         private final LevelMap happenedOnFieldValueCallsPerLevel = new LevelMap();
 
         private final Set<Integer> dispatchedLevels = ConcurrentHashMap.newKeySet();
 
+        // all levels that are ready to be dispatched
+        private int highestReadyLevel;
 
         //TODO: maybe this should be cleaned up once the CF returned by these fields are completed
         // otherwise this will stick around until the whole request is finished
@@ -75,6 +89,8 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
 
 
         public CallStack() {
+            // in the first level there is only one sub selection,
+            // so we only expect one execute object call (which is actually an executionStrategy call)
             expectedExecuteObjectCallsPerLevel.set(1, 1);
         }
 
@@ -127,7 +143,7 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
             return happenedExecuteObjectCallsPerLevel.get(level) == expectedExecuteObjectCallsPerLevel.get(level);
         }
 
-        boolean allOnFieldCallsHappened(int level) {
+        boolean allSubSelectionsFetchingHappened(int level) {
             return happenedOnFieldValueCallsPerLevel.get(level) == expectedExecuteObjectCallsPerLevel.get(level);
         }
 
@@ -193,8 +209,8 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
 
     @Override
     public void executionStrategy(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
-        int curLevel = parameters.getExecutionStepInfo().getPath().getLevel() + 1;
-        increaseHappenedExecuteObjectAndIncreaseExpectedFetchCount(curLevel, parameters);
+        Assert.assertTrue(parameters.getExecutionStepInfo().getPath().isRootPath());
+        increaseHappenedExecuteObjectAndIncreaseExpectedFetchCount(1, parameters);
     }
 
     @Override
@@ -262,6 +278,7 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
             callStack.batchWindowOfDelayedDataLoaderToDispatch.clear();
             callStack.batchWindowOpen = false;
             callStack.levelToResultPathWithDataLoader.clear();
+            callStack.highestReadyLevel = 0;
         });
     }
 
@@ -292,15 +309,7 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
         // if data loader chaining is disabled (the old algo) the level we dispatch is not really relevant as
         // we dispatch the whole registry anyway
 
-        int levelToCheck = curLevel;
-        while (levelReady(levelToCheck + 1)) {
-            callStack.setDispatchedLevel(levelToCheck + 1);
-            levelToCheck++;
-        }
-        if (levelToCheck > curLevel) {
-            return levelToCheck;
-        }
-        return null;
+        return getHighestReadyLevel(curLevel + 1);
     }
 
     /**
@@ -341,7 +350,7 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
 // thread safety : called with callStack.lock
 //
     private boolean dispatchIfNeeded(int level) {
-        boolean ready = levelReady(level);
+        boolean ready = checkLevelBeingReady(level);
         if (ready) {
             return callStack.setDispatchedLevel(level);
         }
@@ -351,22 +360,49 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
     //
 // thread safety: called with callStack.lock
 //
-    private boolean levelReady(int level) {
-        Assert.assertTrue(level > 0);
-        if (level == 1) {
-            // level 1 is special: there is only one strategy call and that's it
-            return callStack.allFetchesHappened(1);
+    private Integer getHighestReadyLevel(int startFrom) {
+        int curLevel = callStack.highestReadyLevel;
+        while (true) {
+            if (!checkLevelImpl(curLevel + 1)) {
+                callStack.highestReadyLevel = curLevel;
+                return curLevel >= startFrom ? curLevel : null;
+            }
+            curLevel++;
         }
+    }
+
+    private boolean checkLevelBeingReady(int level) {
+        Assert.assertTrue(level > 0);
+        if (level <= callStack.highestReadyLevel) {
+            return true;
+        }
+
+        for (int i = callStack.highestReadyLevel + 1; i <= level; i++) {
+            if (!checkLevelImpl(i)) {
+                return false;
+            }
+        }
+        callStack.highestReadyLevel = level;
+        return true;
+    }
+
+    private boolean checkLevelImpl(int level) {
         // a level with zero expectations can't be ready
         if (callStack.expectedFetchCountPerLevel.get(level) == 0) {
             return false;
         }
-        if (levelReady(level - 1) && callStack.allOnFieldCallsHappened(level - 1)
-                && callStack.allExecuteObjectCallsHappened(level) && callStack.allFetchesHappened(level)) {
-
-            return true;
+        // level 1 is special: there is no previous sub selections
+        // and the expected execution object calls is always 1
+        if (level > 1 && !callStack.allSubSelectionsFetchingHappened(level - 1)) {
+            return false;
         }
-        return false;
+        if (!callStack.allExecuteObjectCallsHappened(level)) {
+            return false;
+        }
+        if (!callStack.allFetchesHappened(level)) {
+            return false;
+        }
+        return true;
     }
 
     void dispatch(int level) {
