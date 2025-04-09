@@ -323,6 +323,8 @@ public abstract class ExecutionStrategy {
             ExecutionStrategyParameters parameters,
             DeferredExecutionSupport deferredExecutionSupport
     ) {
+        executionContext.throwIfCancelled();
+
         MergedSelectionSet fields = parameters.getFields();
 
         executionContext.getIncrementalCallState().enqueue(deferredExecutionSupport.createCalls(parameters));
@@ -332,6 +334,8 @@ public abstract class ExecutionStrategy {
                 .ofExpectedSize(fields.size() - deferredExecutionSupport.deferredFieldsCount());
 
         for (String fieldName : fields.getKeys()) {
+            executionContext.throwIfCancelled();
+
             MergedField currentField = fields.getSubField(fieldName);
 
             ResultPath fieldPath = parameters.getPath().segment(mkNameForPath(currentField));
@@ -420,6 +424,7 @@ public abstract class ExecutionStrategy {
 
     @DuckTyped(shape = "CompletableFuture<FetchedValue> | FetchedValue")
     private Object fetchField(GraphQLFieldDefinition fieldDef, ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
+        executionContext.throwIfCancelled();
 
         if (incrementAndCheckMaxNodesExceeded(executionContext)) {
             return new FetchedValue(null, Collections.emptyList(), null);
