@@ -15,13 +15,13 @@ import org.dataloader.DataLoader;
 import org.dataloader.DataLoaderRegistry;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -75,8 +75,7 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
 
         //TODO: maybe this should be cleaned up once the CF returned by these fields are completed
         // otherwise this will stick around until the whole request is finished
-
-        private final List<ResultPathWithDataLoader> allResultPathWithDataLoader = new CopyOnWriteArrayList<>();
+        private final List<ResultPathWithDataLoader> allResultPathWithDataLoader = Collections.synchronizedList(new ArrayList<>());
         // used for per level dispatching
         private final Map<Integer, Set<ResultPathWithDataLoader>> levelToResultPathWithDataLoader = new ConcurrentHashMap<>();
 
@@ -442,11 +441,6 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
         }
         // we are cleaning up the list of all DataLoadersCFs
         callStack.allResultPathWithDataLoader.removeAll(relevantResultPathWithDataLoader);
-
-        Set<Integer> levelsToDispatch = relevantResultPathWithDataLoader.stream()
-                .map(resultPathWithDataLoader -> resultPathWithDataLoader.level)
-                .collect(Collectors.toSet());
-
 
         // means we are all done dispatching the fields
         if (relevantResultPathWithDataLoader.size() == 0) {
