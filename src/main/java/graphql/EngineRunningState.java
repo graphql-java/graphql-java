@@ -26,6 +26,8 @@ public class EngineRunningState {
     @Nullable
     private volatile ExecutionId executionId;
 
+    private volatile boolean engineFinished;
+
     private final AtomicInteger isRunning = new AtomicInteger(0);
 
     @VisibleForTesting
@@ -149,6 +151,9 @@ public class EngineRunningState {
         }
         assertTrue(isRunning.get() > 0);
         if (isRunning.decrementAndGet() == 0) {
+            if (engineFinished) {
+                return;
+            }
             changeOfState(NOT_RUNNING);
         }
     }
@@ -203,6 +208,25 @@ public class EngineRunningState {
         } finally {
             decrementRunning();
         }
+    }
+
+
+    /**
+     * This makes sure that the engineRunningObserver is notified when the engine is finished before the overall CF
+     * is completed. Otherwise it could happen that the engineRunningObserver is notified after the CF<ExecutionResult> is completed,
+     * which is counter intuitive.
+     *
+     * @return
+     */
+    public CompletableFuture<ExecutionResult> trackEngineFinished(CompletableFuture<ExecutionResult> erCF) {
+        if (engineRunningObserver == null) {
+            return erCF;
+        }
+        return erCF.whenComplete((executionResult, throwable) -> {
+            engineFinished = true;
+            changeOfState(NOT_RUNNING);
+        });
+
     }
 
 
