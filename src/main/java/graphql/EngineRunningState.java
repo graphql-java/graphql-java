@@ -213,10 +213,9 @@ public class EngineRunningState {
 
     /**
      * This makes sure that the engineRunningObserver is notified when the engine is finished before the overall CF
-     * is completed. Otherwise it could happen that the engineRunningObserver is notified after the CF<ExecutionResult> is completed,
+     * is completed. Otherwise it could happen that the engineRunningObserver is notified after the CF ExecutionResult is completed,
      * which is counter intuitive.
      *
-     * @return
      */
     public CompletableFuture<ExecutionResult> trackEngineFinished(CompletableFuture<ExecutionResult> erCF) {
         if (engineRunningObserver == null) {
