@@ -1,7 +1,6 @@
 package graphql.validation;
 
 
-import graphql.ExperimentalApi;
 import graphql.Internal;
 import graphql.i18n.I18nMsg;
 import graphql.language.Argument;

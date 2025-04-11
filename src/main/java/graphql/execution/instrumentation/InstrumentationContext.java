@@ -2,8 +2,6 @@ package graphql.execution.instrumentation;
 
 import graphql.PublicSpi;
 
-import java.util.concurrent.CompletableFuture;
-
 /**
  * When a {@link Instrumentation}.'beginXXX()' method is called then it must return a non null InstrumentationContext
  * that will be invoked when the step is first dispatched and then when it completes.  Sometimes this is effectively the same time
