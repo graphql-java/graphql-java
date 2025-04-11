@@ -27,6 +27,7 @@ import graphql.schema.idl.errors.SchemaProblem;
 import graphql.schema.idl.errors.SchemaRedefinitionError;
 import graphql.schema.idl.errors.TypeRedefinitionError;
 import graphql.util.FpKit;
+import org.jspecify.annotations.NullMarked;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -49,6 +50,7 @@ import static java.util.Optional.ofNullable;
  */
 @SuppressWarnings("rawtypes")
 @PublicApi
+@NullMarked
 public class TypeDefinitionRegistry implements Serializable {
 
     private final Map<String, List<ObjectTypeExtensionDefinition>> objectTypeExtensions = new LinkedHashMap<>();

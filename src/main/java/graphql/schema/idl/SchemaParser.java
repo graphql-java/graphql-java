@@ -12,6 +12,8 @@ import graphql.parser.ParserEnvironment;
 import graphql.parser.ParserOptions;
 import graphql.schema.idl.errors.NonSDLDefinitionError;
 import graphql.schema.idl.errors.SchemaProblem;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import java.io.File;
 import java.io.IOException;
@@ -32,6 +34,7 @@ import static java.nio.charset.Charset.defaultCharset;
  * definitions ready to be placed into {@link SchemaGenerator} say
  */
 @PublicApi
+@NullMarked
 public class SchemaParser {
 
     /**
@@ -87,7 +90,7 @@ public class SchemaParser {
      *
      * @throws SchemaProblem if there are problems compiling the schema definitions
      */
-    public TypeDefinitionRegistry parse(Reader reader, ParserOptions parserOptions) throws SchemaProblem {
+    public TypeDefinitionRegistry parse(Reader reader, @Nullable ParserOptions parserOptions) throws SchemaProblem {
         try (Reader input = reader) {
             return parseImpl(input, parserOptions);
         } catch (IOException e) {
@@ -113,7 +116,7 @@ public class SchemaParser {
         return parseImpl(schemaInput, null);
     }
 
-    private TypeDefinitionRegistry parseImpl(Reader schemaInput, ParserOptions parseOptions) {
+    private TypeDefinitionRegistry parseImpl(Reader schemaInput, @Nullable ParserOptions parseOptions) {
         try {
             if (parseOptions == null) {
                 parseOptions = ParserOptions.getDefaultSdlParserOptions();
