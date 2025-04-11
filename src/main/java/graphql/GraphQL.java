@@ -413,7 +413,7 @@ public class GraphQL {
      */
     public CompletableFuture<ExecutionResult> executeAsync(ExecutionInput executionInput) {
         EngineRunningState engineRunningState = new EngineRunningState(executionInput);
-        return engineRunningState.call(() -> {
+        return engineRunningState.engineRun(() -> {
             ExecutionInput executionInputWithId = ensureInputHasId(executionInput);
             engineRunningState.updateExecutionId(executionInputWithId.getExecutionId());
 

@@ -14,7 +14,9 @@ import java.util.function.Supplier;
 
 import static graphql.Assert.assertTrue;
 import static graphql.execution.EngineRunningObserver.RunningState.NOT_RUNNING;
+import static graphql.execution.EngineRunningObserver.RunningState.NOT_RUNNING_FINISH;
 import static graphql.execution.EngineRunningObserver.RunningState.RUNNING;
+import static graphql.execution.EngineRunningObserver.RunningState.RUNNING_START;
 
 @Internal
 public class EngineRunningState {
@@ -25,6 +27,9 @@ public class EngineRunningState {
     private final GraphQLContext graphQLContext;
     @Nullable
     private volatile ExecutionId executionId;
+
+    // if true the last decrementRunning() call will be ignored
+    private volatile boolean finished;
 
     private final AtomicInteger isRunning = new AtomicInteger(0);
 
@@ -148,7 +153,7 @@ public class EngineRunningState {
             return;
         }
         assertTrue(isRunning.get() > 0);
-        if (isRunning.decrementAndGet() == 0) {
+        if (isRunning.decrementAndGet() == 0 && !finished) {
             changeOfState(NOT_RUNNING);
         }
     }
@@ -193,16 +198,20 @@ public class EngineRunningState {
     /**
      * Only used once outside of this class: when the execution starts
      */
-    public <T> T call(Supplier<T> supplier) {
+    public CompletableFuture<ExecutionResult> engineRun(Supplier<CompletableFuture<ExecutionResult>> engineRun) {
         if (engineRunningObserver == null) {
-            return supplier.get();
+            return engineRun.get();
         }
-        incrementRunning();
-        try {
-            return supplier.get();
-        } finally {
-            decrementRunning();
-        }
+        isRunning.incrementAndGet();
+        changeOfState(RUNNING_START);
+
+        CompletableFuture<ExecutionResult> erCF = engineRun.get();
+        erCF = erCF.whenComplete((result, throwable) -> {
+            finished = true;
+            changeOfState(NOT_RUNNING_FINISH);
+        });
+        decrementRunning();
+        return erCF;
     }
 
 
