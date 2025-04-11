@@ -21,7 +21,6 @@ import org.openjdk.jmh.annotations.Fork;
 import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
-import org.openjdk.jmh.annotations.Param;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
@@ -176,8 +175,8 @@ public class DataLoaderPerformance {
 
     }
 
-    @Param({"true", "false"})
-    public boolean enableDataLoaderChaining;
+//    @Param({"true", "false"})
+//    public boolean enableDataLoaderChaining;
 
     @Benchmark
     @BenchmarkMode(Mode.AverageTime)
@@ -189,7 +188,7 @@ public class DataLoaderPerformance {
         DataLoaderRegistry registry = DataLoaderRegistry.newRegistry().register(ownerDLName, ownerDL).register(petDLName, petDL).build();
 
         ExecutionInput executionInput = ExecutionInput.newExecutionInput().query(myState.query).dataLoaderRegistry(registry).build();
-        executionInput.getGraphQLContext().put(DispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING, enableDataLoaderChaining);
+        executionInput.getGraphQLContext().put(DispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING, true);
         ExecutionResult execute = myState.graphQL.execute(executionInput);
         Assert.assertTrue(execute.isDataPresent());
         Assert.assertTrue(execute.getErrors().isEmpty());
