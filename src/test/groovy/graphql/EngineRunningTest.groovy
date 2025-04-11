@@ -13,6 +13,7 @@ import graphql.execution.preparsed.PreparsedDocumentProvider
 import graphql.parser.Parser
 import graphql.schema.DataFetcher
 import spock.lang.Specification
+import spock.lang.Unroll
 
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CopyOnWriteArrayList
@@ -171,7 +172,7 @@ class EngineRunningTest extends Specification {
     }
 
 
-    def "engine running state is observed"() {
+    def "engine running state is observed with pure sync execution"() {
         given:
         def sdl = '''
 
@@ -391,6 +392,7 @@ class EngineRunningTest extends Specification {
         states == [RUNNING, NOT_RUNNING]
     }
 
+    @Unroll()
     def "async datafetcher failing with async exception handler"() {
         given:
         def sdl = '''
@@ -401,7 +403,13 @@ class EngineRunningTest extends Specification {
         '''
         def cf = new CompletableFuture();
         def df = { env ->
-            return cf.thenApply { it -> throw new RuntimeException("boom") }
+            return cf.thenApply {
+                it ->
+                    {
+                        Thread.sleep(new Random().nextInt(250))
+                        throw new RuntimeException("boom")
+                    }
+            }
         } as DataFetcher
 
         ReentrantLock reentrantLock = new ReentrantLock()
@@ -410,6 +418,7 @@ class EngineRunningTest extends Specification {
         def exceptionHandler = { param ->
             def async = CompletableFuture.supplyAsync {
                 reentrantLock.lock();
+                Thread.sleep(new Random().nextInt(500))
                 return DataFetcherExceptionHandlerResult.newResult(GraphqlErrorBuilder
                         .newError(param.dataFetchingEnvironment).message("recovered").build()).build()
             }
@@ -445,8 +454,10 @@ class EngineRunningTest extends Specification {
 
         then:
         result.errors.collect { it.message } == ["recovered"]
-        // we expect simply going from running to finshed
-        new ArrayList<>(states) == [RUNNING, NOT_RUNNING]
+        states == [RUNNING, NOT_RUNNING]
+
+        where:
+        i << (1..25)
     }
 
 
