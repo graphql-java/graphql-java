@@ -462,11 +462,11 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
     }
 
 
-    public void newDataLoaderLoadCall(String resultPath, int level, DataLoader dataLoader) {
+    public void newDataLoaderLoadCall(String resultPath, int level, DataLoader dataLoader, String dataLoaderName, Object key) {
         if (!enableDataLoaderChaining) {
             return;
         }
-        ResultPathWithDataLoader resultPathWithDataLoader = new ResultPathWithDataLoader(resultPath, level, dataLoader);
+        ResultPathWithDataLoader resultPathWithDataLoader = new ResultPathWithDataLoader(resultPath, level, dataLoader, dataLoaderName, key);
         boolean levelFinished = callStack.lock.callLocked(() -> {
             boolean finished = callStack.dispatchingFinishedPerLevel.contains(level);
             callStack.allResultPathWithDataLoader.add(resultPathWithDataLoader);
@@ -483,21 +483,26 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
 
     }
 
+    class DispatchDelayedDataloader implements Runnable {
+
+        @Override
+        public void run() {
+            AtomicReference<Set<String>> resultPathToDispatch = new AtomicReference<>();
+            callStack.lock.runLocked(() -> {
+                resultPathToDispatch.set(new LinkedHashSet<>(callStack.batchWindowOfDelayedDataLoaderToDispatch));
+                callStack.batchWindowOfDelayedDataLoaderToDispatch.clear();
+                callStack.batchWindowOpen = false;
+            });
+            dispatchDLCFImpl(resultPathToDispatch.get(), null);
+        }
+    }
+
     private void newDelayedDataLoader(ResultPathWithDataLoader resultPathWithDataLoader) {
         callStack.lock.runLocked(() -> {
             callStack.batchWindowOfDelayedDataLoaderToDispatch.add(resultPathWithDataLoader.resultPath);
             if (!callStack.batchWindowOpen) {
                 callStack.batchWindowOpen = true;
-                AtomicReference<Set<String>> resultPathToDispatch = new AtomicReference<>();
-                Runnable runnable = () -> {
-                    callStack.lock.runLocked(() -> {
-                        resultPathToDispatch.set(new LinkedHashSet<>(callStack.batchWindowOfDelayedDataLoaderToDispatch));
-                        callStack.batchWindowOfDelayedDataLoaderToDispatch.clear();
-                        callStack.batchWindowOpen = false;
-                    });
-                    dispatchDLCFImpl(resultPathToDispatch.get(), null);
-                };
-                delayedDataLoaderDispatchExecutor.get().schedule(runnable, this.batchWindowNs, TimeUnit.NANOSECONDS);
+                delayedDataLoaderDispatchExecutor.get().schedule(new DispatchDelayedDataloader(), this.batchWindowNs, TimeUnit.NANOSECONDS);
             }
 
         });
@@ -507,11 +512,25 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
         final String resultPath;
         final int level;
         final DataLoader dataLoader;
+        final String name;
+        final Object key;
 
-        public ResultPathWithDataLoader(String resultPath, int level, DataLoader dataLoader) {
+        public ResultPathWithDataLoader(String resultPath, int level, DataLoader dataLoader, String name, Object key) {
             this.resultPath = resultPath;
             this.level = level;
             this.dataLoader = dataLoader;
+            this.name = name;
+            this.key = key;
+        }
+
+        @Override
+        public String toString() {
+            return "ResultPathWithDataLoader{" +
+                    "resultPath='" + resultPath + '\'' +
+                    ", level=" + level +
+                    ", key=" + key +
+                    ", name='" + name + '\'' +
+                    '}';
         }
     }
 

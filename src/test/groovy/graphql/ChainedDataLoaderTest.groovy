@@ -4,11 +4,13 @@ import graphql.execution.ExecutionId
 import graphql.execution.instrumentation.dataloader.DelayedDataLoaderDispatcherExecutorFactory
 import graphql.execution.instrumentation.dataloader.DispatchingContextKeys
 import graphql.schema.DataFetcher
+import org.awaitility.Awaitility
 import org.dataloader.BatchLoader
 import org.dataloader.DataLoader
 import org.dataloader.DataLoaderFactory
 import org.dataloader.DataLoaderRegistry
 import spock.lang.Specification
+import spock.lang.Unroll
 
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
@@ -73,12 +75,15 @@ class ChainedDataLoaderTest extends Specification {
         def ei = newExecutionInput(query).graphQLContext([(DispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING): true]).dataLoaderRegistry(dataLoaderRegistry).build()
 
         when:
-        def er = graphQL.execute(ei)
+        def efCF = graphQL.executeAsync(ei)
+        Awaitility.await().until { efCF.isDone() }
+        def er = efCF.get()
         then:
         er.data == [dogName: "Luna", catName: "Tiger"]
         batchLoadCalls == 2
     }
 
+    @Unroll
     def "parallel different data loaders"() {
         given:
         def sdl = '''
@@ -90,29 +95,29 @@ class ChainedDataLoaderTest extends Specification {
         '''
         AtomicInteger batchLoadCalls = new AtomicInteger()
         BatchLoader<String, String> batchLoader1 = { keys ->
+            println "BatchLoader 1 called with keys: $keys ${Thread.currentThread().name}"
+            batchLoadCalls.incrementAndGet()
             return supplyAsync {
-                batchLoadCalls.incrementAndGet()
                 Thread.sleep(250)
-                println "BatchLoader 1 called with keys: $keys"
                 assert keys.size() == 1
                 return ["Luna" + keys[0]]
             }
         }
 
         BatchLoader<String, String> batchLoader2 = { keys ->
+            println "BatchLoader 2 called with keys: $keys ${Thread.currentThread().name}"
+            batchLoadCalls.incrementAndGet()
             return supplyAsync {
-                batchLoadCalls.incrementAndGet()
                 Thread.sleep(250)
-                println "BatchLoader 2 called with keys: $keys"
                 assert keys.size() == 1
                 return ["Skipper" + keys[0]]
             }
         }
         BatchLoader<String, String> batchLoader3 = { keys ->
+            println "BatchLoader 3 called with keys: $keys ${Thread.currentThread().name}"
+            batchLoadCalls.incrementAndGet()
             return supplyAsync {
-                batchLoadCalls.incrementAndGet()
                 Thread.sleep(250)
-                println "BatchLoader 3 called with keys: $keys"
                 assert keys.size() == 1
                 return ["friends" + keys[0]]
             }
@@ -161,10 +166,15 @@ class ChainedDataLoaderTest extends Specification {
         def ei = newExecutionInput(query).graphQLContext([(DispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING): true]).dataLoaderRegistry(dataLoaderRegistry).build()
 
         when:
-        def er = graphQL.execute(ei)
+        def efCF = graphQL.executeAsync(ei)
+        Awaitility.await().until { efCF.isDone() }
+        def er = efCF.get()
         then:
         er.data == [hello: "friendsLunakey1Skipperkey2", helloDelayed: "friendsLunakey1-delayedSkipperkey2-delayed"]
         batchLoadCalls.get() == 6
+
+        where:
+        i << (0..20)
     }
 
 
@@ -247,7 +257,9 @@ class ChainedDataLoaderTest extends Specification {
         def ei = newExecutionInput(query).graphQLContext([(DispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING): true]).dataLoaderRegistry(dataLoaderRegistry).build()
 
         when:
-        def er = graphQL.execute(ei)
+        def efCF = graphQL.executeAsync(ei)
+        Awaitility.await().until { efCF.isDone() }
+        def er = efCF.get()
         then:
         er.data == [foo: "start-batchloader1-otherCF1-otherCF2-start-batchloader1-batchloader2-apply"]
         batchLoadCalls1 == 1
@@ -313,7 +325,9 @@ class ChainedDataLoaderTest extends Specification {
         def ei = newExecutionInput(query).graphQLContext([(DispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING): true]).dataLoaderRegistry(dataLoaderRegistry).build()
 
         when:
-        def er = graphQL.execute(ei)
+        def efCF = graphQL.executeAsync(ei)
+        Awaitility.await().until { efCF.isDone() }
+        def er = efCF.get()
         then:
         er.data == [dogName: "Luna2", catName: "Tiger2"]
         batchLoadCalls == 3
@@ -373,7 +387,9 @@ class ChainedDataLoaderTest extends Specification {
         ei.getGraphQLContext().put(DispatchingContextKeys.DELAYED_DATA_LOADER_BATCH_WINDOW_SIZE_NANO_SECONDS, 1_000_000L * 250)
 
         when:
-        def er = graphQL.execute(ei)
+        def efCF = graphQL.executeAsync(ei)
+        Awaitility.await().until { efCF.isDone() }
+        def er = efCF.get()
         then:
         er.data == [foo: "fooFirstValue", bar: "barFirstValue"]
         batchLoadCalls.get() == 1
@@ -428,7 +444,9 @@ class ChainedDataLoaderTest extends Specification {
 
 
         when:
-        def er = graphQL.execute(ei)
+        def efCF = graphQL.executeAsync(ei)
+        Awaitility.await().until { efCF.isDone() }
+        def er = efCF.get()
 
         then:
         er.data == [foo: "fooFirstValue"]

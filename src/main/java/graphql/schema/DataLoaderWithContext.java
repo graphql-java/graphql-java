@@ -26,14 +26,17 @@ public class DataLoaderWithContext<K, V> extends DelegatingDataLoader<K, V> {
 
     @Override
     public CompletableFuture<V> load(@NonNull K key, @Nullable Object keyContext) {
+        // calling super.load() is important, because otherwise the data loader will sometimes called
+        // later than the dispatch, which results in a hanging DL
+        CompletableFuture<V> result = super.load(key, keyContext);
         DataFetchingEnvironmentImpl dfeImpl = (DataFetchingEnvironmentImpl) dfe;
         int level = dfe.getExecutionStepInfo().getPath().getLevel();
         String path = dfe.getExecutionStepInfo().getPath().toString();
         DataFetchingEnvironmentImpl.DFEInternalState dfeInternalState = (DataFetchingEnvironmentImpl.DFEInternalState) dfeImpl.toInternal();
         if (dfeInternalState.getDataLoaderDispatchStrategy() instanceof PerLevelDataLoaderDispatchStrategy) {
-            ((PerLevelDataLoaderDispatchStrategy) dfeInternalState.dataLoaderDispatchStrategy).newDataLoaderLoadCall(path, level, delegate);
+            ((PerLevelDataLoaderDispatchStrategy) dfeInternalState.dataLoaderDispatchStrategy).newDataLoaderLoadCall(path, level, delegate, dataLoaderName, key);
         }
-        return super.load(key, keyContext);
+        return result;
     }
 
 }
