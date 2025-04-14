@@ -23,7 +23,9 @@ import static graphql.ExecutionInput.newExecutionInput
 import static graphql.execution.EngineRunningObserver.ENGINE_RUNNING_OBSERVER_KEY
 import static graphql.execution.EngineRunningObserver.RunningState
 import static graphql.execution.EngineRunningObserver.RunningState.NOT_RUNNING
+import static graphql.execution.EngineRunningObserver.RunningState.NOT_RUNNING_FINISH
 import static graphql.execution.EngineRunningObserver.RunningState.RUNNING
+import static graphql.execution.EngineRunningObserver.RunningState.RUNNING_START
 
 class EngineRunningTest extends Specification {
 
@@ -70,13 +72,13 @@ class EngineRunningTest extends Specification {
         when:
         def er = graphQL.executeAsync(ei)
         then:
-        states == [RUNNING, NOT_RUNNING]
+        states == [RUNNING_START, NOT_RUNNING]
 
         when:
         states.clear()
         cf.complete(new PreparsedDocumentEntry(document))
         then:
-        states == [RUNNING, NOT_RUNNING]
+        states == [RUNNING, NOT_RUNNING_FINISH]
         er.get().data == [hello: "world"]
 
 
@@ -114,13 +116,13 @@ class EngineRunningTest extends Specification {
         when:
         def er = graphQL.executeAsync(ei)
         then:
-        states == [RUNNING, NOT_RUNNING]
+        states == [RUNNING_START, NOT_RUNNING]
 
         when:
         states.clear()
         cf.complete(new InstrumentationState() {})
         then:
-        states == [RUNNING, NOT_RUNNING]
+        states == [RUNNING, NOT_RUNNING_FINISH]
         er.get().data == [hello: "world"]
 
 
@@ -158,14 +160,14 @@ class EngineRunningTest extends Specification {
         when:
         def er = graphQL.executeAsync(ei)
         then:
-        states == [RUNNING, NOT_RUNNING]
+        states == [RUNNING_START, NOT_RUNNING]
 
         when:
         states.clear()
         cf.complete(ExecutionResultImpl.newExecutionResult().data([hello: "world-modified"]).build())
         then:
         er.get().data == [hello: "world-modified"]
-        states == [RUNNING, NOT_RUNNING]
+        states == [RUNNING, NOT_RUNNING_FINISH]
 
 
     }
@@ -195,7 +197,7 @@ class EngineRunningTest extends Specification {
         def er = graphQL.execute(ei)
         then:
         er.data == [hello: "world"]
-        states == [RUNNING, NOT_RUNNING]
+        states == [RUNNING_START, NOT_RUNNING_FINISH]
     }
 
     def "multiple async DF"() {
@@ -251,7 +253,7 @@ class EngineRunningTest extends Specification {
         when:
         def er = graphQL.executeAsync(ei)
         then:
-        states == [RUNNING, NOT_RUNNING]
+        states == [RUNNING_START, NOT_RUNNING]
 
         when:
         states.clear();
@@ -270,7 +272,7 @@ class EngineRunningTest extends Specification {
         states.clear()
         cf2.complete("world2")
         then:
-        states == [RUNNING, NOT_RUNNING]
+        states == [RUNNING, NOT_RUNNING_FINISH]
         er.get().data == [hello: "world", hello2: "world2", foo: [name: "FooName"], someStaticValue: [staticValue: "staticValue"]]
     }
 
@@ -299,14 +301,14 @@ class EngineRunningTest extends Specification {
         when:
         def er = graphQL.executeAsync(ei)
         then:
-        states == [RUNNING, NOT_RUNNING]
+        states == [RUNNING_START, NOT_RUNNING]
 
         when:
         states.clear();
         cf.complete("world")
 
         then:
-        states == [RUNNING, NOT_RUNNING]
+        states == [RUNNING, NOT_RUNNING_FINISH]
         er.get().data == [hello: "world"]
     }
 
@@ -334,7 +336,7 @@ class EngineRunningTest extends Specification {
         when:
         def er = graphQL.executeAsync(ei)
         then:
-        states == [RUNNING, NOT_RUNNING]
+        states == [RUNNING_START, NOT_RUNNING]
 
         when:
         states.clear();
@@ -342,7 +344,7 @@ class EngineRunningTest extends Specification {
 
         then:
         er.get().data == [hello: "world"]
-        states == [RUNNING, NOT_RUNNING]
+        states == [RUNNING, NOT_RUNNING_FINISH]
     }
 
 
@@ -387,8 +389,7 @@ class EngineRunningTest extends Specification {
 
         then:
         result.errors.collect { it.message } == ["recovered"]
-        // we expect simply going from running to finshed
-        states == [RUNNING, NOT_RUNNING]
+        states == [RUNNING, NOT_RUNNING_FINISH]
     }
 
     def "async datafetcher failing with async exception handler"() {
@@ -429,7 +430,7 @@ class EngineRunningTest extends Specification {
         def er = graphQL.executeAsync(ei)
 
         then:
-        states == [RUNNING, NOT_RUNNING]
+        states == [RUNNING_START, NOT_RUNNING]
 
         when:
         states.clear()
@@ -445,8 +446,7 @@ class EngineRunningTest extends Specification {
 
         then:
         result.errors.collect { it.message } == ["recovered"]
-        // we expect simply going from running to finshed
-        new ArrayList<>(states) == [RUNNING, NOT_RUNNING]
+        states == [RUNNING, NOT_RUNNING_FINISH]
     }
 
 
@@ -480,7 +480,7 @@ class EngineRunningTest extends Specification {
         when:
         def er = graphQL.executeAsync(ei)
         then:
-        states == [RUNNING, NOT_RUNNING]
+        states == [RUNNING_START, NOT_RUNNING]
 
         when:
         states.clear();
@@ -494,7 +494,7 @@ class EngineRunningTest extends Specification {
         cf2.complete("world2")
 
         then:
-        states == [RUNNING, NOT_RUNNING]
+        states == [RUNNING, NOT_RUNNING_FINISH]
         er.get().data == [hello: "world", hello2: "world2"]
     }
 }

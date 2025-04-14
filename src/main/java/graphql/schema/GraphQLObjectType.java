@@ -1,7 +1,6 @@
 package graphql.schema;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import graphql.Assert;
 import graphql.DirectivesUtil;
 import graphql.Internal;

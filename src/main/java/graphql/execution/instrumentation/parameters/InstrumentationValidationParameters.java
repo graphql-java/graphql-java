@@ -3,7 +3,6 @@ package graphql.execution.instrumentation.parameters;
 import graphql.ExecutionInput;
 import graphql.PublicApi;
 import graphql.execution.instrumentation.Instrumentation;
-import graphql.execution.instrumentation.InstrumentationState;
 import graphql.language.Document;
 import graphql.schema.GraphQLSchema;
 

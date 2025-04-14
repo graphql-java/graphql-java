@@ -18,6 +18,10 @@ public interface EngineRunningObserver {
 
     enum RunningState {
         /**
+         * Represents that the engine is running, for the first time
+         */
+        RUNNING_START,
+        /**
          * Represents that the engine code is actively running its own code
          */
         RUNNING,
@@ -25,6 +29,10 @@ public interface EngineRunningObserver {
          * Represents that the engine code is asynchronously waiting for fetching to happen
          */
         NOT_RUNNING,
+        /**
+         * Represents that the engine is finished
+         */
+        NOT_RUNNING_FINISH,
         /**
          * Represents that the engine code has been cancelled via {@link ExecutionInput#cancel()}
          */

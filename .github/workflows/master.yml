@@ -25,7 +25,7 @@ jobs:
       - name: build test and publish
         run: ./gradlew assemble && ./gradlew check --info && ./gradlew publishToSonatype closeAndReleaseSonatypeStagingRepository -x check --info --stacktrace
       - name: Publish Test Results
-        uses: EnricoMi/publish-unit-test-result-action@v2.18.0
+        uses: EnricoMi/publish-unit-test-result-action@v2.19.0
         if: always()
         with:
           files: '**/build/test-results/test/TEST-*.xml'

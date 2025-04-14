@@ -7,7 +7,6 @@ import graphql.schema.CoercingParseValueException;
 import graphql.schema.CoercingSerializeException;
 import graphql.schema.DataFetcher;
 import graphql.schema.GraphQLScalarType;
-import graphql.schema.PropertyDataFetcher;
 import graphql.schema.SingletonPropertyDataFetcher;
 import graphql.schema.TypeResolver;
 

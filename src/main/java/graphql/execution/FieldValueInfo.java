@@ -1,8 +1,6 @@
 package graphql.execution;
 
 import com.google.common.collect.ImmutableList;
-import graphql.ExecutionResult;
-import graphql.ExecutionResultImpl;
 import graphql.PublicApi;
 
 import java.util.List;

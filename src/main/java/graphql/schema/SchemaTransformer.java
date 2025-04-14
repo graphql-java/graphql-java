@@ -34,7 +34,6 @@ import static graphql.schema.impl.StronglyConnectedComponentsTopologicallySorted
 import static graphql.util.NodeZipper.ModificationType.DELETE;
 import static graphql.util.NodeZipper.ModificationType.REPLACE;
 import static graphql.util.TraversalControl.CONTINUE;
-import static java.lang.String.format;
 
 /**
  * Transforms a {@link GraphQLSchema} object by calling bac on a provided visitor.
