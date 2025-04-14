@@ -28,6 +28,7 @@ import graphql.schema.idl.errors.SchemaRedefinitionError;
 import graphql.schema.idl.errors.TypeRedefinitionError;
 import graphql.util.FpKit;
 import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -63,7 +64,7 @@ public class TypeDefinitionRegistry implements Serializable {
     private final Map<String, TypeDefinition> types = new LinkedHashMap<>();
     private final Map<String, ScalarTypeDefinition> scalarTypes = new LinkedHashMap<>();
     private final Map<String, DirectiveDefinition> directiveDefinitions = new LinkedHashMap<>();
-    private SchemaDefinition schema;
+    private @Nullable SchemaDefinition schema;
     private final List<SchemaExtensionDefinition> schemaExtensionDefinitions = new ArrayList<>();
     private final SchemaParseOrder schemaParseOrder = new SchemaParseOrder();
 
