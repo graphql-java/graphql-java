@@ -6,6 +6,8 @@ import graphql.Internal;
 import graphql.PublicApi;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -20,12 +22,13 @@ import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
 import static graphql.language.NodeUtil.assertNewChildrenAreEmpty;
 
 @PublicApi
+@NullMarked
 public class VariableReference extends AbstractNode<VariableReference> implements Value<VariableReference>, NamedNode<VariableReference> {
 
     private final String name;
 
     @Internal
-    protected VariableReference(String name, SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars, Map<String, String> additionalData) {
+    protected VariableReference(String name, @Nullable SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars, Map<String, String> additionalData) {
         super(sourceLocation, comments, ignoredChars, additionalData);
         this.name = name;
     }
@@ -61,7 +64,7 @@ public class VariableReference extends AbstractNode<VariableReference> implement
     }
 
     @Override
-    public boolean isEqualTo(Node o) {
+    public boolean isEqualTo(@Nullable Node o) {
         if (this == o) {
             return true;
         }
@@ -106,9 +109,9 @@ public class VariableReference extends AbstractNode<VariableReference> implement
     }
 
     public static final class Builder implements NodeBuilder {
-        private SourceLocation sourceLocation;
+        private @Nullable SourceLocation sourceLocation;
         private ImmutableList<Comment> comments = emptyList();
-        private String name;
+        private @Nullable String name;
         private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
         private Map<String, String> additionalData = new LinkedHashMap<>();
 
@@ -123,7 +126,7 @@ public class VariableReference extends AbstractNode<VariableReference> implement
             this.additionalData = new LinkedHashMap<>(existing.getAdditionalData());
         }
 
-        public Builder sourceLocation(SourceLocation sourceLocation) {
+        public Builder sourceLocation(@Nullable SourceLocation sourceLocation) {
             this.sourceLocation = sourceLocation;
             return this;
         }
