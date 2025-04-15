@@ -45,7 +45,6 @@ public class InterThreadMemoizedPerformance {
     @Benchmark
     @BenchmarkMode(Mode.AverageTime)
     @OutputTimeUnit(TimeUnit.NANOSECONDS)
-    @OperationsPerInvocation(100)
     public void accessSupplier(MyState state, Blackhole blackhole) {
         String result = state.supplier.get();
         blackhole.consume(result);
