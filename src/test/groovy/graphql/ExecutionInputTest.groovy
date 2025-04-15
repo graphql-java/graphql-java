@@ -1,15 +1,23 @@
 package graphql
 
 import graphql.execution.ExecutionId
+import graphql.execution.instrumentation.ExecutionStrategyInstrumentationContext
+import graphql.execution.instrumentation.Instrumentation
+import graphql.execution.instrumentation.InstrumentationContext
+import graphql.execution.instrumentation.InstrumentationState
+import graphql.execution.instrumentation.parameters.InstrumentationExecutionStrategyParameters
+import graphql.execution.instrumentation.parameters.InstrumentationFieldCompleteParameters
+import graphql.execution.instrumentation.parameters.InstrumentationFieldParameters
 import graphql.schema.DataFetcher
 import graphql.schema.DataFetchingEnvironment
-import org.awaitility.Awaitility
 import org.dataloader.DataLoaderRegistry
 import spock.lang.Specification
 
 import java.time.Duration
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CountDownLatch
+
+import static org.awaitility.Awaitility.*
 
 class ExecutionInputTest extends Specification {
 
@@ -166,5 +174,249 @@ class ExecutionInputTest extends Specification {
         then:
         er.errors.isEmpty()
         er.data["fetch"] == "{locale=German, executionId=ID123, graphqlContext=b}"
+    }
+
+    def "can cancel the execution"() {
+        def sdl = '''
+            type Query {
+                fetch1 : Inner
+                fetch2 : Inner
+            }
+            
+            type Inner {
+                f : String
+            }
+                
+        '''
+
+        CountDownLatch fieldLatch = new CountDownLatch(1)
+
+        DataFetcher df1Sec = { DataFetchingEnvironment env ->
+            println("Entering DF1")
+            return CompletableFuture.supplyAsync {
+                println("DF1 async run")
+                fieldLatch.await()
+                Thread.sleep(1000)
+                return [f: "x"]
+            }
+        }
+        DataFetcher df10Sec = { DataFetchingEnvironment env ->
+            println("Entering DF10")
+            return CompletableFuture.supplyAsync {
+                println("DF10 async run")
+                fieldLatch.await()
+                Thread.sleep(10000)
+                return "x"
+            }
+        }
+
+        def fetcherMap = ["Query": ["fetch1": df1Sec, "fetch2": df1Sec],
+                          "Inner": ["f": df10Sec]
+        ]
+        def schema = TestUtil.schema(sdl, fetcherMap)
+        def graphQL = GraphQL.newGraphQL(schema).build()
+
+        when:
+        ExecutionInput executionInput = ExecutionInput.newExecutionInput()
+                .query("query q { fetch1 { f }  fetch2 { f } }")
+                .build()
+
+        def cf = graphQL.executeAsync(executionInput)
+
+        Thread.sleep(250) // let it get into the field fetching say
+
+        // lets cancel it
+        println("cancelling")
+        executionInput.cancel()
+
+        // let the DFs run
+        println("make the fields run")
+        fieldLatch.countDown()
+
+        println("and await for the overall CF to complete")
+        await().atMost(Duration.ofSeconds(60)).until({ -> cf.isDone() })
+
+        def er = cf.join()
+
+        then:
+        !er.errors.isEmpty()
+        er.errors[0]["message"] == "Execution has been asked to be cancelled"
+    }
+
+    def "can cancel request at random times (#testName)"() {
+        def sdl = '''
+            type Query {
+                fetch1 : Inner
+                fetch2 : Inner
+            }
+            
+            type Inner {
+                inner : Inner
+                f : String
+            }
+                
+        '''
+
+        when:
+
+        CountDownLatch fetcherLatch = new CountDownLatch(1)
+
+        DataFetcher df = { DataFetchingEnvironment env ->
+            return CompletableFuture.supplyAsync {
+                fetcherLatch.countDown()
+                def delay = plusOrMinus(dfDelay)
+                println("DF ${env.getExecutionStepInfo().getPath()} sleeping for $delay")
+                Thread.sleep(delay)
+                return [inner: [f: "x"], f: "x"]
+            }
+        }
+
+        def fetcherMap = ["Query": ["fetch1": df, "fetch2": df],
+                          "Inner": ["inner": df]
+        ]
+        def schema = TestUtil.schema(sdl, fetcherMap)
+        def graphQL = GraphQL.newGraphQL(schema).build()
+
+        ExecutionInput executionInput = ExecutionInput.newExecutionInput()
+                .query("query q { fetch1 { inner { inner { inner { f }}}} fetch2 { inner { inner { inner { f }}}} }")
+                .build()
+
+        def cf = graphQL.executeAsync(executionInput)
+
+        // wait for at least one fetcher to run
+        fetcherLatch.await()
+
+        // using a random number MAY make this test flaky - but so be it.  We want ot make sure that
+        // if we cancel then we dont lock up.  We have deterministic tests for that so lets hav
+        // some random ones
+        //
+        def randomCancel = plusOrMinus(dfDelay)
+        Thread.sleep(randomCancel)
+
+        // now make it cancel
+        println("Cancelling after $randomCancel")
+        executionInput.cancel()
+
+        await().atMost(Duration.ofSeconds(10)).until({ -> cf.isDone() })
+
+        def er = cf.join()
+
+        then:
+        !er.errors.isEmpty()
+        er.errors[0]["message"] == "Execution has been asked to be cancelled"
+
+        where:
+        testName  | dfDelay
+        "50 ms"   | plusOrMinus(50)
+        "100 ms"  | plusOrMinus(100)
+        "200 ms"  | plusOrMinus(200)
+        "500 ms"  | plusOrMinus(500)
+        "1000 ms" | plusOrMinus(1000)
+    }
+
+    def "can cancel at specific places"() {
+        def sdl = '''
+            type Query {
+                fetch1 : Inner
+                fetch2 : Inner
+            }
+            
+            type Inner {
+                inner : Inner
+                f : String
+            }
+                
+        '''
+
+        when:
+
+        DataFetcher df = { DataFetchingEnvironment env ->
+            return CompletableFuture.supplyAsync {
+                return [inner: [f: "x"], f: "x"]
+            }
+        }
+
+        def fetcherMap = ["Query": ["fetch1": df, "fetch2": df],
+                          "Inner": ["inner": df]
+        ]
+
+
+        def queryText = "query q { fetch1 { inner { inner { inner { f }}}} fetch2 { inner { inner { inner { f }}}} }"
+        ExecutionInput executionInput = ExecutionInput.newExecutionInput()
+                .query(queryText)
+                .build()
+
+        Instrumentation instrumentation = new Instrumentation() {
+            @Override
+            ExecutionStrategyInstrumentationContext beginExecutionStrategy(InstrumentationExecutionStrategyParameters parameters, InstrumentationState state) {
+                executionInput.cancel()
+                return null
+            }
+        }
+        def schema = TestUtil.schema(sdl, fetcherMap)
+        def graphQL = GraphQL.newGraphQL(schema).instrumentation(instrumentation).build()
+
+
+        def er = awaitAsync(graphQL, executionInput)
+
+        then:
+        !er.errors.isEmpty()
+        er.errors[0]["message"] == "Execution has been asked to be cancelled"
+
+        when:
+        executionInput = ExecutionInput.newExecutionInput()
+                .query(queryText)
+                .build()
+
+        instrumentation = new Instrumentation() {
+            @Override
+            InstrumentationContext<Object> beginFieldExecution(InstrumentationFieldParameters parameters, InstrumentationState state) {
+                executionInput.cancel()
+                return null
+            }
+        }
+        schema = TestUtil.schema(sdl, fetcherMap)
+        graphQL = GraphQL.newGraphQL(schema).instrumentation(instrumentation).build()
+
+        er = awaitAsync(graphQL, executionInput)
+
+        then:
+        !er.errors.isEmpty()
+        er.errors[0]["message"] == "Execution has been asked to be cancelled"
+
+        when:
+        executionInput = ExecutionInput.newExecutionInput()
+                .query(queryText)
+                .build()
+
+        instrumentation = new Instrumentation() {
+
+            @Override
+            InstrumentationContext<Object> beginFieldCompletion(InstrumentationFieldCompleteParameters parameters, InstrumentationState state) {
+                executionInput.cancel()
+                return null
+            }
+        }
+        schema = TestUtil.schema(sdl, fetcherMap)
+        graphQL = GraphQL.newGraphQL(schema).instrumentation(instrumentation).build()
+
+        er = awaitAsync(graphQL, executionInput)
+
+        then:
+        !er.errors.isEmpty()
+        er.errors[0]["message"] == "Execution has been asked to be cancelled"
+
+    }
+
+    private static ExecutionResult awaitAsync(GraphQL graphQL, ExecutionInput executionInput) {
+        def cf = graphQL.executeAsync(executionInput)
+        await().atMost(Duration.ofSeconds(10)).until({ -> cf.isDone() })
+        return cf.join()
+    }
+
+    private static int plusOrMinus(int integer) {
+        int half = (int) (integer / 2)
+        def intVal = TestUtil.rand((integer - half), (integer + half))
+        return intVal
     }
 }

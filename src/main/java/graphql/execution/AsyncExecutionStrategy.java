@@ -63,6 +63,8 @@ public class AsyncExecutionStrategy extends AbstractAsyncExecutionStrategy {
             List<String> fieldsExecutedOnInitialResult = deferredExecutionSupport.getNonDeferredFieldNames(fieldNames);
 
             BiConsumer<List<Object>, Throwable> handleResultsConsumer = handleResults(executionContext, fieldsExecutedOnInitialResult, overallResult);
+            throwable = executionContext.possibleCancellation(throwable);
+
             if (throwable != null) {
                 handleResultsConsumer.accept(null, throwable.getCause());
                 return;

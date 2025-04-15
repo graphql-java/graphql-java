@@ -70,6 +70,7 @@ class ExecutionStrategyTest extends Specification {
 
     def buildContext(GraphQLSchema schema = null) {
         ExecutionId executionId = ExecutionId.from("executionId123")
+        ExecutionInput ei = ExecutionInput.newExecutionInput("{}").build()
         def variables = [arg1: "value1"]
         def builder = ExecutionContextBuilder.newExecutionContextBuilder()
                 .instrumentation(SimplePerformantInstrumentation.INSTANCE)
@@ -80,12 +81,12 @@ class ExecutionStrategyTest extends Specification {
                 .subscriptionStrategy(executionStrategy)
                 .coercedVariables(CoercedVariables.of(variables))
                 .graphQLContext(GraphQLContext.newContext().of("key", "context").build())
-                .executionInput(ExecutionInput.newExecutionInput("{}").build())
+                .executionInput(ei)
                 .root("root")
                 .dataLoaderRegistry(new DataLoaderRegistry())
                 .locale(Locale.getDefault())
                 .valueUnboxer(ValueUnboxer.DEFAULT)
-                .engineRunningState(new EngineRunningState())
+                .engineRunningState(new EngineRunningState(ei))
 
         new ExecutionContext(builder)
     }
