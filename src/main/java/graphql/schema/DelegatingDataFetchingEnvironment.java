@@ -176,4 +176,9 @@ public class DelegatingDataFetchingEnvironment implements DataFetchingEnvironmen
     public Map<String, Object> getVariables() {
         return delegateEnvironment.getVariables();
     }
+
+    @Override
+    public Object toInternal() {
+        return delegateEnvironment.toInternal();
+    }
 }

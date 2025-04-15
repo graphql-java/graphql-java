@@ -53,6 +53,7 @@ import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -420,6 +421,7 @@ public abstract class ExecutionStrategy {
         }
 
         MergedField field = parameters.getField();
+        String pathString = parameters.getPath().toString();
         GraphQLObjectType parentType = (GraphQLObjectType) parameters.getExecutionStepInfo().getUnwrappedNonNullType();
 
         // if the DF (like PropertyDataFetcher) does not use the arguments or execution step info then dont build any
@@ -470,7 +472,7 @@ public abstract class ExecutionStrategy {
         dataFetcher = instrumentation.instrumentDataFetcher(dataFetcher, instrumentationFieldFetchParams, executionContext.getInstrumentationState());
         dataFetcher = executionContext.getDataLoaderDispatcherStrategy().modifyDataFetcher(dataFetcher);
         Object fetchedObject = invokeDataFetcher(executionContext, parameters, fieldDef, dataFetchingEnvironment, dataFetcher);
-        executionContext.getDataLoaderDispatcherStrategy().fieldFetched(executionContext, parameters, dataFetcher, fetchedObject);
+        executionContext.getDataLoaderDispatcherStrategy().fieldFetched(executionContext, parameters, dataFetcher, fetchedObject, dataFetchingEnvironment);
         fetchCtx.onDispatched();
         fetchCtx.onFetchedValue(fetchedObject);
         // if it's a subscription, leave any reactive objects alone
@@ -777,10 +779,12 @@ public abstract class ExecutionStrategy {
 
         List<FieldValueInfo> fieldValueInfos = new ArrayList<>(size.orElse(1));
         int index = 0;
-        for (Object item : iterableValues) {
+        Iterator<Object> iterator = iterableValues.iterator();
+        while (iterator.hasNext()) {
             if (incrementAndCheckMaxNodesExceeded(executionContext)) {
                 return new FieldValueInfo(NULL, null, fieldValueInfos);
             }
+            Object item = iterator.next();
 
             ResultPath indexedPath = parameters.getPath().segment(index);
 
