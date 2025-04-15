@@ -1,0 +1,551 @@
+schema {
+    query: Object27
+    mutation: Object23
+}
+
+"Directs the executor to include this field or fragment only when the `if` argument is true"
+directive @include(
+    "Included when true."
+    if: Boolean!
+) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
+
+"Directs the executor to skip this field or fragment when the `if`'argument is true."
+directive @skip(
+    "Skipped when true."
+    if: Boolean!
+) on FIELD | FRAGMENT_SPREAD | INLINE_FRAGMENT
+
+"Marks the field, argument, input field or enum value as deprecated"
+directive @deprecated(
+    "The reason for the deprecation"
+    reason: String! = "No longer supported"
+) on FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM_VALUE | INPUT_FIELD_DEFINITION
+
+"Exposes a URL that specifies the behaviour of this scalar."
+directive @specifiedBy(
+    "The URL that specifies the behaviour of this scalar."
+    url: String!
+) on SCALAR
+
+interface Interface1 implements Interface2 & Interface3 {
+    field1: ID!
+    field13: String
+    field14: String
+    field15: String
+    field16: String!
+    field17: Scalar1
+    field18(argument6: [Enum2] = [EnumValue14], argument7: Int, argument8: String): Object5
+    field2: String!
+    field23(argument10: [Enum2] = [EnumValue14], argument11: Int, argument12: String, argument9: Float = 1.0): Object5
+    field3: Interface2
+    field4(argument1: [Enum1!] = [EnumValue1], argument2: Int, argument3: String, argument4: Int, argument5: String): Object2
+}
+
+interface Interface2 {
+    field1: ID!
+    field2: String!
+    field3: Interface2
+    field4(argument1: [Enum1!] = [EnumValue1], argument2: Int, argument3: String, argument4: Int, argument5: String): Object2
+}
+
+interface Interface3 {
+    field1: ID!
+}
+
+interface Interface4 implements Interface2 & Interface3 {
+    field1: ID!
+    field16: String!
+    field2: String!
+    field24: Int
+    field25: Int
+    field26: Interface5
+    field3: Interface2
+    field31: Object7
+    field4(argument1: [Enum1!] = [EnumValue1], argument2: Int, argument3: String, argument4: Int, argument5: String): Object2
+}
+
+interface Interface5 implements Interface2 & Interface3 {
+    field1: ID!
+    field2: String!
+    field27: String
+    field28: String
+    field29: String
+    field3: Interface2
+    field30: String
+    field4(argument1: [Enum1!] = [EnumValue1], argument2: Int, argument3: String, argument4: Int, argument5: String): Object2
+}
+
+interface Interface6 {
+    field36: Boolean!
+    field37: String
+}
+
+interface Interface7 {
+    field1: ID!
+    field16: String!
+    field24: Int
+    field40: String!
+}
+
+type Object1 implements Interface1 & Interface2 & Interface3 & Interface4 {
+    field1: ID!
+    field13: String
+    field14: String
+    field15: String
+    field16: String!
+    field17: Scalar1
+    field18(argument6: [Enum2] = [EnumValue14], argument7: Int, argument8: String): Object5
+    field2: String!
+    field23(argument10: [Enum2] = [EnumValue14], argument11: Int, argument12: String, argument9: Float = 1.0): Object5
+    field24: Int
+    field25: Int
+    field26: Interface5
+    field3: Interface2
+    field31: Object7
+    field4(argument1: [Enum1!] = [EnumValue1], argument2: Int, argument3: String, argument4: Int, argument5: String): Object2
+}
+
+type Object10 implements Interface6 {
+    field36: Boolean!
+    field37: String
+    field38: Object6
+}
+
+type Object11 implements Interface2 & Interface3 & Interface4 {
+    field1: ID!
+    field16: String!
+    field2: String!
+    field24: Int
+    field25: Int
+    field26: Interface5
+    field3: Interface2
+    field31: Object7
+    field39: Interface1
+    field4(argument1: [Enum1!] = [EnumValue1], argument2: Int, argument3: String, argument4: Int, argument5: String): Object2
+}
+
+type Object12 implements Interface2 & Interface3 & Interface4 {
+    field1: ID!
+    field16: String!
+    field2: String!
+    field24: Int
+    field25: Int
+    field26: Interface5
+    field3: Interface2
+    field31: Object7
+    field4(argument1: [Enum1!] = [EnumValue1], argument2: Int, argument3: String, argument4: Int, argument5: String): Object2
+    field40: String!
+}
+
+type Object13 implements Interface2 & Interface3 & Interface4 {
+    field1: ID!
+    field16: String!
+    field2: String!
+    field24: Int
+    field25: Int
+    field26: Interface5
+    field3: Interface2
+    field31: Object7
+    field4(argument1: [Enum1!] = [EnumValue1], argument2: Int, argument3: String, argument4: Int, argument5: String): Object2
+}
+
+type Object14 implements Interface2 & Interface3 & Interface5 {
+    field1: ID!
+    field2: String!
+    field27: String
+    field28: String
+    field29: String
+    field3: Interface2
+    field30: String
+    field4(argument1: [Enum1!] = [EnumValue1], argument2: Int, argument3: String, argument4: Int, argument5: String): Object2
+}
+
+type Object15 implements Interface2 & Interface3 & Interface5 {
+    field1: ID!
+    field2: String!
+    field27: String
+    field28: String
+    field29: String
+    field3: Interface2
+    field30: String
+    field4(argument1: [Enum1!] = [EnumValue1], argument2: Int, argument3: String, argument4: Int, argument5: String): Object2
+}
+
+type Object16 implements Interface6 {
+    field36: Boolean!
+    field37: String
+}
+
+type Object17 {
+    field41: [String!]
+    field42: String!
+}
+
+type Object18 implements Interface2 & Interface3 & Interface4 & Interface7 {
+    field1: ID!
+    field16: String!
+    field2: String!
+    field24: Int
+    field25: Int
+    field26: Interface5
+    field3: Interface2
+    field31: Object7
+    field4(argument1: [Enum1!] = [EnumValue1], argument2: Int, argument3: String, argument4: Int, argument5: String): Object2
+    field40: String!
+}
+
+type Object19 implements Interface2 & Interface3 & Interface4 & Interface7 {
+    field1: ID!
+    field16: String!
+    field2: String!
+    field24: Int
+    field25: Int
+    field26: Interface5
+    field3: Interface2
+    field31: Object7
+    field4(argument1: [Enum1!] = [EnumValue1], argument2: Int, argument3: String, argument4: Int, argument5: String): Object2
+    field40: String!
+}
+
+type Object2 {
+    field5: [Object3]
+    field8: Object4
+}
+
+type Object20 implements Interface2 & Interface3 & Interface4 & Interface7 {
+    field1: ID!
+    field16: String!
+    field2: String!
+    field24: Int
+    field25: Int
+    field26: Interface5
+    field3: Interface2
+    field31: Object7
+    field4(argument1: [Enum1!] = [EnumValue1], argument2: Int, argument3: String, argument4: Int, argument5: String): Object2
+    field40: String!
+}
+
+type Object21 implements Interface2 & Interface3 & Interface4 & Interface7 {
+    field1: ID!
+    field16: String!
+    field2: String!
+    field24: Int
+    field25: Int
+    field26: Interface5
+    field3: Interface2
+    field31: Object7
+    field4(argument1: [Enum1!] = [EnumValue1], argument2: Int, argument3: String, argument4: Int, argument5: String): Object2
+    field40: String!
+}
+
+type Object22 implements Interface2 & Interface3 {
+    field1: ID!
+    field2: String!
+    field3: Interface2
+    field4(argument1: [Enum1!] = [EnumValue1], argument2: Int, argument3: String, argument4: Int, argument5: String): Object2
+}
+
+type Object23 {
+    field43(argument13: InputObject3): Object24!
+    field45(argument14: InputObject4): Object24!
+    field46(argument15: InputObject3): Object24!
+    field47(argument16: InputObject4): Object24!
+    field48(argument17: InputObject5): Object24!
+    field49(argument18: InputObject6): Object24!
+    field50(argument19: InputObject7): Object24!
+    field51(argument20: InputObject9): Object24!
+    field52(argument21: InputObject10): Object25!
+    field54(argument22: InputObject11): Object26!
+    field56(argument23: InputObject12): Object24!
+}
+
+type Object24 implements Interface6 {
+    field36: Boolean!
+    field37: String
+    field44: Object8
+}
+
+type Object25 implements Interface6 {
+    field36: Boolean!
+    field37: String
+    field53: ID
+}
+
+type Object26 implements Interface6 {
+    field36: Boolean!
+    field37: String
+    field55: Interface5
+}
+
+type Object27 {
+    field105(argument55: ID): Interface3
+    field106(argument56: Int, argument57: String, argument58: Int, argument59: String): Object36
+    field57: Object28
+    field68(argument24: ID): Interface1
+    field69(argument25: Scalar1, argument26: [Enum2] = [EnumValue14], argument27: Int, argument28: String): Object5
+    field70(argument29: Float, argument30: Float, argument31: Float = 1.0, argument32: [Enum2] = [EnumValue14], argument33: Int, argument34: String): Object5
+    field71(argument35: Int, argument36: String): Object5
+    field72(argument37: [ID]): [Interface4]!
+    field73(argument38: [Enum1!]!, argument39: Int, argument40: String, argument41: Int, argument42: String): Object7
+    field74(argument43: String, argument44: Int = 1, argument45: Int = 2, argument46: Boolean): Object30
+    field91: Object32
+}
+
+type Object28 implements Interface3 {
+    field1: ID!
+    field58: String
+    field59: Boolean!
+    field60: [Object29]
+}
+
+type Object29 {
+    field61: String!
+    field62: String!
+    field63: String
+    field64: String
+    field65: String
+    field66: String
+    field67: String
+}
+
+type Object3 {
+    field6: String
+    field7: Interface2
+}
+
+type Object30 implements Interface2 & Interface3 {
+    field1: ID!
+    field14: String
+    field2: String!
+    field3: Interface2
+    field4(argument1: [Enum1!] = [EnumValue1], argument2: Int, argument3: String, argument4: Int, argument5: String): Object2
+    field75: String
+    field76: String
+    field77: String!
+    field78: Object31
+    field88: [Object31]
+    field89: [Object31]
+    field90: [Object31]
+}
+
+type Object31 {
+    field79: ID!
+    field80: Enum3
+    field81: String
+    field82: String
+    field83: String
+    field84: String
+    field85: Int
+    field86: Int
+    field87: String
+}
+
+type Object32 implements Interface2 & Interface3 & Interface5 {
+    field1: ID!
+    field104(argument51: Int, argument52: String, argument53: Int, argument54: String): Object7
+    field2: String!
+    field27: String
+    field28: String
+    field29: String
+    field3: Interface2
+    field30: String
+    field4(argument1: [Enum1!] = [EnumValue1], argument2: Int, argument3: String, argument4: Int, argument5: String): Object2
+    field92: String
+    field93: String
+    field94(argument47: Int, argument48: String, argument49: Int, argument50: String): Object33
+}
+
+type Object33 {
+    field103: Object4
+    field95: [Object34]
+}
+
+type Object34 {
+    field96: String
+    field97: Object35
+}
+
+type Object35 implements Interface2 & Interface3 & Interface4 {
+    field1: ID!
+    field100: [String!]
+    field101: [String!]
+    field102: [String!]
+    field16: String!
+    field2: String!
+    field24: Int
+    field25: Int
+    field26: Interface5
+    field3: Interface2
+    field31: Object7
+    field39: Interface1
+    field4(argument1: [Enum1!] = [EnumValue1], argument2: Int, argument3: String, argument4: Int, argument5: String): Object2
+    field98: [Interface5]
+    field99: String!
+}
+
+type Object36 {
+    field107: [Object37]
+    field110: Object4
+}
+
+type Object37 {
+    field108: String
+    field109: Interface7
+}
+
+type Object4 {
+    field10: Boolean!
+    field11: Boolean!
+    field12: String
+    field9: String
+}
+
+type Object5 {
+    field19: [Object6]
+    field22: Object4
+}
+
+type Object6 {
+    field20: String
+    field21: Interface1
+}
+
+type Object7 {
+    field32: [Object8]
+    field35: Object4
+}
+
+type Object8 {
+    field33: String
+    field34: Interface4
+}
+
+type Object9 implements Interface1 & Interface2 & Interface3 & Interface4 {
+    field1: ID!
+    field13: String
+    field14: String
+    field15: String
+    field16: String!
+    field17: Scalar1
+    field18(argument6: [Enum2] = [EnumValue14], argument7: Int, argument8: String): Object5
+    field2: String!
+    field23(argument10: [Enum2] = [EnumValue14], argument11: Int, argument12: String, argument9: Float = 1.0): Object5
+    field24: Int
+    field25: Int
+    field26: Interface5
+    field3: Interface2
+    field31: Object7
+    field4(argument1: [Enum1!] = [EnumValue1], argument2: Int, argument3: String, argument4: Int, argument5: String): Object2
+}
+
+enum Enum1 {
+    EnumValue1
+    EnumValue10
+    EnumValue11
+    EnumValue2
+    EnumValue3
+    EnumValue4
+    EnumValue5
+    EnumValue6
+    EnumValue7
+    EnumValue8
+    EnumValue9
+}
+
+enum Enum2 {
+    EnumValue12
+    EnumValue13
+    EnumValue14
+    EnumValue15
+    EnumValue16
+    EnumValue17
+}
+
+enum Enum3 {
+    EnumValue18
+    EnumValue19
+    EnumValue20
+    EnumValue21
+}
+
+scalar Scalar1
+
+scalar Scalar2
+
+input InputObject1 {
+    inputField1: String!
+}
+
+input InputObject10 {
+    inputField35: ID!
+}
+
+input InputObject11 {
+    inputField36: ID!
+    inputField37: String
+    inputField38: String
+    inputField39: String
+    inputField40: Boolean = true
+}
+
+input InputObject12 {
+    inputField41: String
+    inputField42: [Scalar2]
+}
+
+input InputObject2 {
+    inputField2: String
+    inputField3: String!
+}
+
+input InputObject3 {
+    inputField4: ID!
+    inputField5: Enum2!
+    inputField6: String!
+    inputField7: String
+    inputField8: String
+    inputField9: Scalar1
+}
+
+input InputObject4 {
+    inputField10: ID!
+    inputField11: Enum2!
+    inputField12: String!
+    inputField13: String
+    inputField14: String
+    inputField15: Scalar1
+}
+
+input InputObject5 {
+    inputField16: ID!
+    inputField17: String!
+}
+
+input InputObject6 {
+    inputField18: ID!
+    inputField19: String!
+}
+
+input InputObject7 {
+    inputField20: ID!
+    inputField21: String!
+    inputField22: String
+    inputField23: String!
+    inputField24: [Scalar2]
+    inputField25: InputObject8
+}
+
+input InputObject8 {
+    inputField26: ID
+    inputField27: String
+    inputField28: Scalar1
+}
+
+input InputObject9 {
+    inputField29: ID!
+    inputField30: String
+    inputField31: String!
+    inputField32: [ID!]
+    inputField33: [Scalar2]
+    inputField34: InputObject8
+}

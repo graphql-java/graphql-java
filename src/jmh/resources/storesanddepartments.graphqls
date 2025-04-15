@@ -1,0 +1,58 @@
+# used in graphql.execution.instrumentation.dataloader.BatchCompareDataFetchers
+schema {
+    query: Query
+}
+
+type Query {
+    shops(howMany : Int = 5): [Shop]
+    expensiveShops(howMany : Int = 5, howLong : Int = 0): [Shop]
+}
+
+type Shop {
+    id: ID!
+    name: String!
+    f1 : String
+    f2 : String
+    f3 : String
+    f4 : String
+    f5 : String
+    f6 : String
+    f7 : String
+    f8 : String
+    f9 : String
+    f10 : String
+    departments(howMany : Int = 5): [Department]
+    expensiveDepartments(howMany : Int = 5, howLong : Int = 0): [Department]
+}
+
+type Department {
+    id: ID!
+    name: String!
+    f1 : String
+    f2 : String
+    f3 : String
+    f4 : String
+    f5 : String
+    f6 : String
+    f7 : String
+    f8 : String
+    f9 : String
+    f10 : String
+    products(howMany : Int = 5): [Product]
+    expensiveProducts(howMany : Int = 5, howLong : Int = 0): [Product]
+}
+
+type Product {
+    id: ID!
+    name: String!
+    f1 : String
+    f2 : String
+    f3 : String
+    f4 : String
+    f5 : String
+    f6 : String
+    f7 : String
+    f8 : String
+    f9 : String
+    f10 : String
+}
