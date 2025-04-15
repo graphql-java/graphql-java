@@ -128,6 +128,10 @@ dependencies {
 
     testImplementation 'org.testng:testng:7.11.0' // use for reactive streams test inheritance
     testImplementation "com.tngtech.archunit:archunit-junit5:1.4.0"
+
+    // this is needed for the idea jmh plugin to work correctly
+    jmh 'org.openjdk.jmh:jmh-core:1.37'
+    jmh 'org.openjdk.jmh:jmh-generator-annprocess:1.37'
 }
 
 shadowJar {
