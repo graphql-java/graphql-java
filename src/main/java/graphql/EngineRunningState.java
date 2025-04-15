@@ -14,7 +14,9 @@ import java.util.function.Supplier;
 
 import static graphql.Assert.assertTrue;
 import static graphql.execution.EngineRunningObserver.RunningState.NOT_RUNNING;
+import static graphql.execution.EngineRunningObserver.RunningState.NOT_RUNNING_FINISH;
 import static graphql.execution.EngineRunningObserver.RunningState.RUNNING;
+import static graphql.execution.EngineRunningObserver.RunningState.RUNNING_START;
 
 @Internal
 public class EngineRunningState {
@@ -26,7 +28,8 @@ public class EngineRunningState {
     @Nullable
     private volatile ExecutionId executionId;
 
-    private volatile boolean engineFinished;
+    // if true the last decrementRunning() call will be ignored
+    private volatile boolean finished;
 
     private final AtomicInteger isRunning = new AtomicInteger(0);
 
@@ -150,10 +153,7 @@ public class EngineRunningState {
             return;
         }
         assertTrue(isRunning.get() > 0);
-        if (isRunning.decrementAndGet() == 0) {
-            if (engineFinished) {
-                return;
-            }
+        if (isRunning.decrementAndGet() == 0 && !finished) {
             changeOfState(NOT_RUNNING);
         }
     }
@@ -198,34 +198,20 @@ public class EngineRunningState {
     /**
      * Only used once outside of this class: when the execution starts
      */
-    public <T> T call(Supplier<T> supplier) {
+    public CompletableFuture<ExecutionResult> engineRun(Supplier<CompletableFuture<ExecutionResult>> engineRun) {
         if (engineRunningObserver == null) {
-            return supplier.get();
+            return engineRun.get();
         }
-        incrementRunning();
-        try {
-            return supplier.get();
-        } finally {
-            decrementRunning();
-        }
-    }
+        isRunning.incrementAndGet();
+        changeOfState(RUNNING_START);
 
-
-    /**
-     * This makes sure that the engineRunningObserver is notified when the engine is finished before the overall CF
-     * is completed. Otherwise it could happen that the engineRunningObserver is notified after the CF ExecutionResult is completed,
-     * which is counter intuitive.
-     *
-     */
-    public CompletableFuture<ExecutionResult> trackEngineFinished(CompletableFuture<ExecutionResult> erCF) {
-        if (engineRunningObserver == null) {
-            return erCF;
-        }
-        return erCF.whenComplete((executionResult, throwable) -> {
-            engineFinished = true;
-            changeOfState(NOT_RUNNING);
+        CompletableFuture<ExecutionResult> erCF = engineRun.get();
+        erCF = erCF.whenComplete((result, throwable) -> {
+            finished = true;
+            changeOfState(NOT_RUNNING_FINISH);
         });
-
+        decrementRunning();
+        return erCF;
     }
 
 
