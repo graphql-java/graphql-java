@@ -420,7 +420,7 @@ public class GraphQL {
             CompletableFuture<InstrumentationState> instrumentationStateCF = instrumentation.createStateAsync(new InstrumentationCreateStateParameters(this.graphQLSchema, executionInputWithId));
             instrumentationStateCF = Async.orNullCompletedFuture(instrumentationStateCF);
 
-            CompletableFuture<ExecutionResult> erCF = engineRunningState.compose(instrumentationStateCF, (instrumentationState -> {
+            return engineRunningState.compose(instrumentationStateCF, (instrumentationState -> {
                 try {
                     InstrumentationExecutionParameters inputInstrumentationParameters = new InstrumentationExecutionParameters(executionInputWithId, this.graphQLSchema);
                     ExecutionInput instrumentedExecutionInput = instrumentation.instrumentExecutionInput(executionInputWithId, inputInstrumentationParameters, instrumentationState);
@@ -443,7 +443,6 @@ public class GraphQL {
                     return handleAbortException(executionInput, instrumentationState, abortException);
                 }
             }));
-            return engineRunningState.trackEngineFinished(erCF);
         });
     }
 
