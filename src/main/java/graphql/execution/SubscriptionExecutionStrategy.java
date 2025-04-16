@@ -1,5 +1,6 @@
 package graphql.execution;
 
+import graphql.Assert;
 import graphql.ExecutionResult;
 import graphql.ExecutionResultImpl;
 import graphql.GraphQLContext;
@@ -14,13 +15,14 @@ import graphql.execution.reactive.SubscriptionPublisher;
 import graphql.language.Field;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLObjectType;
+import org.reactivestreams.FlowAdapters;
 import org.reactivestreams.Publisher;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.Flow;
 import java.util.function.Function;
 
-import static graphql.Assert.assertTrue;
 import static graphql.execution.instrumentation.SimpleInstrumentationContext.nonNullCtx;
 import static java.util.Collections.singletonMap;
 
@@ -70,14 +72,12 @@ public class SubscriptionExecutionStrategy extends ExecutionStrategy {
         CompletableFuture<ExecutionResult> overallResult = sourceEventStream.thenApply((publisher) ->
         {
             if (publisher == null) {
-                ExecutionResultImpl executionResult = new ExecutionResultImpl(null, executionContext.getErrors());
-                return executionResult;
+                return new ExecutionResultImpl(null, executionContext.getErrors());
             }
             Function<Object, CompletionStage<ExecutionResult>> mapperFunction = eventPayload -> executeSubscriptionEvent(executionContext, parameters, eventPayload);
             boolean keepOrdered = keepOrdered(executionContext.getGraphQLContext());
             SubscriptionPublisher mapSourceToResponse = new SubscriptionPublisher(publisher, mapperFunction, keepOrdered);
-            ExecutionResultImpl executionResult = new ExecutionResultImpl(mapSourceToResponse, executionContext.getErrors());
-            return executionResult;
+            return new ExecutionResultImpl(mapSourceToResponse, executionContext.getErrors());
         });
 
         // dispatched the subscription query
@@ -111,12 +111,31 @@ public class SubscriptionExecutionStrategy extends ExecutionStrategy {
         CompletableFuture<FetchedValue> fieldFetched = Async.toCompletableFuture(fetchField(executionContext, newParameters));
         return fieldFetched.thenApply(fetchedValue -> {
             Object publisher = fetchedValue.getFetchedValue();
-            if (publisher != null) {
-                assertTrue(publisher instanceof Publisher, () -> "Your data fetcher must return a Publisher of events when using graphql subscriptions");
-            }
-            //noinspection unchecked,DataFlowIssue
-            return (Publisher<Object>) publisher;
+            return mkReactivePublisher(publisher);
         });
+    }
+
+    /**
+     * The user code can return either a reactive stream {@link Publisher} or a JDK {@link Flow.Publisher}
+     * and we adapt it to a reactive streams one since we use reactive streams in our implementation.
+     *
+     * @param publisherObj - the object returned from the data fetcher as the source of events
+     *
+     * @return a reactive streams {@link Publisher} always
+     */
+    @SuppressWarnings("unchecked")
+    private static Publisher<Object> mkReactivePublisher(Object publisherObj) {
+        if (publisherObj != null) {
+            if (publisherObj instanceof Publisher) {
+                return (Publisher<Object>) publisherObj;
+            } else if (publisherObj instanceof Flow.Publisher) {
+                Flow.Publisher<Object> flowPublisher = (Flow.Publisher<Object>) publisherObj;
+                return FlowAdapters.toPublisher(flowPublisher);
+            } else {
+                return Assert.assertShouldNeverHappen("Your data fetcher must return a Publisher of events when using graphql subscriptions");
+            }
+        }
+        return null; // null is valid - we return null data in this case
     }
 
     /*
