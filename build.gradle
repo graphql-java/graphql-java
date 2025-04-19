@@ -116,7 +116,7 @@ dependencies {
     testImplementation 'org.objenesis:objenesis:3.4'
     testImplementation 'org.apache.groovy:groovy:4.0.26"'
     testImplementation 'org.apache.groovy:groovy-json:4.0.26'
-    testImplementation 'com.google.code.gson:gson:2.12.1'
+    testImplementation 'com.google.code.gson:gson:2.13.0'
     testImplementation 'org.eclipse.jetty:jetty-server:11.0.25'
     testImplementation 'com.fasterxml.jackson.core:jackson-databind:2.18.3'
     testImplementation 'org.awaitility:awaitility-groovy:4.3.0'
