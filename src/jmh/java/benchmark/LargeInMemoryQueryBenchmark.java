@@ -1,6 +1,6 @@
-package graphql;
+package benchmark;
 
-import benchmark.BenchmarkUtils;
+import graphql.GraphQL;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.idl.RuntimeWiring;
 import graphql.schema.idl.SchemaGenerator;
@@ -77,7 +77,7 @@ public class LargeInMemoryQueryBenchmark {
         runAtStartup();
 
         Options opt = new OptionsBuilder()
-                .include("graphql.LargeInMemoryQueryBenchmark")
+                .include("benchmark.LargeInMemoryQueryBenchmark")
                 .addProfiler(GCProfiler.class)
                 .build();
 
