@@ -116,7 +116,7 @@ dependencies {
     testImplementation 'org.objenesis:objenesis:3.4'
     testImplementation 'org.apache.groovy:groovy:4.0.26"'
     testImplementation 'org.apache.groovy:groovy-json:4.0.26'
-    testImplementation 'com.google.code.gson:gson:2.12.1'
+    testImplementation 'com.google.code.gson:gson:2.13.0'
     testImplementation 'org.eclipse.jetty:jetty-server:11.0.25'
     testImplementation 'com.fasterxml.jackson.core:jackson-databind:2.18.3'
     testImplementation 'org.awaitility:awaitility-groovy:4.3.0'
@@ -127,13 +127,11 @@ dependencies {
     testImplementation "io.projectreactor:reactor-core:3.7.4"
 
     testImplementation 'org.testng:testng:7.11.0' // use for reactive streams test inheritance
+    testImplementation "com.tngtech.archunit:archunit-junit5:1.4.0"
 
-    testImplementation 'org.openjdk.jmh:jmh-core:1.37'
-    testAnnotationProcessor 'org.openjdk.jmh:jmh-generator-annprocess:1.37'
+    // this is needed for the idea jmh plugin to work correctly
     jmh 'org.openjdk.jmh:jmh-core:1.37'
     jmh 'org.openjdk.jmh:jmh-generator-annprocess:1.37'
-
-    testImplementation "com.tngtech.archunit:archunit-junit5:1.2.0"
 }
 
 shadowJar {

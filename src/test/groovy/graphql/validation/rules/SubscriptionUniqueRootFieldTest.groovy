@@ -7,7 +7,7 @@ import graphql.validation.ValidationErrorType
 import graphql.validation.Validator
 import spock.lang.Specification
 
-class SubscriptionRootFieldTest extends Specification {
+class SubscriptionUniqueRootFieldTest extends Specification {
     def "5.2.3.1 subscription with only one root field passes validation"() {
         given:
         def subscriptionOneRoot = '''
@@ -286,7 +286,6 @@ class SubscriptionRootFieldTest extends Specification {
         then:
         validationErrors.empty
     }
-
     static List<ValidationError> validate(String query) {
         def document = new Parser().parseDocument(query)
         return new Validator().validateDocument(SpecValidationSchema.specValidationSchema, document, Locale.ENGLISH)
