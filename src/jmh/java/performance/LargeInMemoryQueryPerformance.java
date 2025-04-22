@@ -1,5 +1,6 @@
-package benchmark;
+package performance;
 
+import benchmark.BenchmarkUtils;
 import graphql.GraphQL;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.idl.RuntimeWiring;
@@ -40,7 +41,7 @@ import static graphql.schema.idl.TypeRuntimeWiring.newTypeWiring;
 @Warmup(iterations = 2, time = 5)
 @Measurement(iterations = 2)
 @Fork(2)
-public class LargeInMemoryQueryBenchmark {
+public class LargeInMemoryQueryPerformance {
 
     GraphQL graphQL;
     volatile boolean shutDown;
@@ -77,7 +78,7 @@ public class LargeInMemoryQueryBenchmark {
         runAtStartup();
 
         Options opt = new OptionsBuilder()
-                .include("benchmark.LargeInMemoryQueryBenchmark")
+                .include("performance.LargeInMemoryQueryBenchmark")
                 .addProfiler(GCProfiler.class)
                 .build();
 
@@ -86,7 +87,7 @@ public class LargeInMemoryQueryBenchmark {
 
     private static void runAtStartup() {
 
-        LargeInMemoryQueryBenchmark complexQueryBenchmark = new LargeInMemoryQueryBenchmark();
+        LargeInMemoryQueryPerformance complexQueryBenchmark = new LargeInMemoryQueryPerformance();
         BenchmarkUtils.runInToolingForSomeTimeThenExit(
                 complexQueryBenchmark::setUp,
                 complexQueryBenchmark::runManyQueriesToCompletion,
