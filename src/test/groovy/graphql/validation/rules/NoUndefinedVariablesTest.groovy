@@ -181,4 +181,37 @@ class NoUndefinedVariablesTest extends Specification {
         errorCollector.containsValidationError(ValidationErrorType.UndefinedVariable)
         errorCollector.getErrors()[0].message == "Validation error (UndefinedVariable@[A/field]) : Undefined variable 'a'"
     }
+
+    def "variable-directive back-reference"() {
+        given:
+        def query = "query (\$v1: Int, \$v2: Int @dir(arg: \$v1)) { __typename }"
+
+        when:
+        traverse(query)
+
+        then:
+        errorCollector.errors.isEmpty()
+    }
+
+    def "variable-directive self-reference"() {
+        given:
+        def query = "query (\$v1: Int @dir(arg: \$v1)) { __typename }"
+
+        when:
+        traverse(query)
+
+        then:
+        errorCollector.errors.isEmpty()
+    }
+
+    def "variable-directive forward-reference"() {
+        given:
+        def query = "query (\$v1: Int @dir(arg: \$v2), \$v2: Int) { __typename }"
+
+        when:
+        traverse(query)
+
+        then:
+        errorCollector.errors.isEmpty()
+    }
 }
