@@ -625,13 +625,10 @@ public abstract class ExecutionStrategy {
                 instrumentationParams, executionContext.getInstrumentationState()
         ));
 
-        NonNullableFieldValidator nonNullableFieldValidator = new NonNullableFieldValidator(executionContext, executionStepInfo);
-
         ExecutionStrategyParameters newParameters = parameters.transform(builder ->
                 builder.executionStepInfo(executionStepInfo)
                         .source(fetchedValue.getFetchedValue())
                         .localContext(fetchedValue.getLocalContext())
-                        .nonNullFieldValidator(nonNullableFieldValidator)
         );
 
         FieldValueInfo fieldValueInfo = completeValue(executionContext, newParameters);
@@ -786,13 +783,10 @@ public abstract class ExecutionStrategy {
 
             ExecutionStepInfo stepInfoForListElement = executionStepInfoFactory.newExecutionStepInfoForListElement(executionStepInfo, indexedPath);
 
-            NonNullableFieldValidator nonNullableFieldValidator = new NonNullableFieldValidator(executionContext, stepInfoForListElement);
-
             FetchedValue value = unboxPossibleDataFetcherResult(executionContext, parameters, item);
 
             ExecutionStrategyParameters newParameters = parameters.transform(builder ->
                     builder.executionStepInfo(stepInfoForListElement)
-                            .nonNullFieldValidator(nonNullableFieldValidator)
                             .localContext(value.getLocalContext())
                             .path(indexedPath)
                             .source(value.getFetchedValue())
@@ -934,12 +928,10 @@ public abstract class ExecutionStrategy {
         );
 
         ExecutionStepInfo newExecutionStepInfo = executionStepInfo.changeTypeWithPreservedNonNull(resolvedObjectType);
-        NonNullableFieldValidator nonNullableFieldValidator = new NonNullableFieldValidator(executionContext, newExecutionStepInfo);
 
         ExecutionStrategyParameters newParameters = parameters.transform(builder ->
                 builder.executionStepInfo(newExecutionStepInfo)
                         .fields(subFields)
-                        .nonNullFieldValidator(nonNullableFieldValidator)
                         .source(result)
         );
 

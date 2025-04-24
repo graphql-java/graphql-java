@@ -37,7 +37,7 @@ public class ExecutionStrategyParameters {
         this.localContext = localContext;
         this.fields = assertNotNull(fields, () -> "fields is null");
         this.source = source;
-        this.nonNullableFieldValidator = nonNullableFieldValidator;
+        this.nonNullableFieldValidator = assertNotNull(nonNullableFieldValidator, () -> "requires a NonNullValidator");;
         this.path = path;
         this.currentField = currentField;
         this.parent = parent;
