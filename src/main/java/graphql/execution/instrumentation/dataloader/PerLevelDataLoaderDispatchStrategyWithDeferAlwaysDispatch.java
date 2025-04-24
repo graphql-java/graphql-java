@@ -6,6 +6,7 @@ import graphql.execution.DataLoaderDispatchStrategy;
 import graphql.execution.ExecutionContext;
 import graphql.execution.ExecutionStrategyParameters;
 import graphql.execution.FieldValueInfo;
+import graphql.execution.MergedField;
 import graphql.schema.DataFetcher;
 import graphql.util.LockKit;
 import org.dataloader.DataLoaderRegistry;
@@ -195,10 +196,13 @@ public class PerLevelDataLoaderDispatchStrategyWithDeferAlwaysDispatch implement
     }
 
     private void increaseCallCounts(int curLevel, ExecutionStrategyParameters parameters) {
-        int nonDeferredFieldCount = (int) parameters.getFields().getSubFieldsList().stream()
-                .filter(field -> !field.isDeferred())
-                .count();
-
+        int count = 0;
+        for (MergedField field : parameters.getFields().getSubFieldsList()) {
+            if (!field.isDeferred()) {
+                count++;
+            }
+        }
+        int nonDeferredFieldCount = count;
         callStack.lock.runLocked(() -> {
             callStack.increaseExpectedFetchCount(curLevel, nonDeferredFieldCount);
             callStack.increaseHappenedStrategyCalls(curLevel);

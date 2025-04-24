@@ -2,11 +2,11 @@ package graphql.incremental;
 
 import graphql.ExperimentalApi;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @ExperimentalApi
 public class DelayedIncrementalPartialResultImpl implements DelayedIncrementalPartialResult {
@@ -44,10 +44,12 @@ public class DelayedIncrementalPartialResultImpl implements DelayedIncrementalPa
             result.put("extensions", extensions);
         }
 
-        if(incrementalItems != null) {
-            result.put("incremental", incrementalItems.stream()
-                    .map(IncrementalPayload::toSpecification)
-                    .collect(Collectors.toList()));
+        if (incrementalItems != null) {
+            List<Map<String, Object>> list = new ArrayList<>();
+            for (IncrementalPayload incrementalItem : incrementalItems) {
+                list.add(incrementalItem.toSpecification());
+            }
+            result.put("incremental", list);
         }
 
         return result;

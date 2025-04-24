@@ -80,7 +80,11 @@ public abstract class IncrementalPayload {
     }
 
     protected Object errorsToSpec(List<GraphQLError> errors) {
-        return errors.stream().map(GraphQLError::toSpecification).collect(toList());
+        List<Map<String, Object>> list = new ArrayList<>();
+        for (GraphQLError error : errors) {
+            list.add(error.toSpecification());
+        }
+        return list;
     }
 
     public int hashCode() {

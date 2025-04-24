@@ -15,8 +15,10 @@ import graphql.execution.instrumentation.Instrumentation;
 import graphql.incremental.IncrementalPayload;
 import graphql.util.FpKit;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -24,7 +26,6 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiFunction;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 /**
  * The purpose of this class hierarchy is to encapsulate most of the logic for deferring field execution, thus
@@ -106,9 +107,11 @@ public interface DeferredExecutionSupport {
 
         @Override
         public Set<IncrementalCall<? extends IncrementalPayload>> createCalls(ExecutionStrategyParameters executionStrategyParameters) {
-            return deferredExecutionToFields.keySet().stream()
-                    .map(deferredExecution -> this.createDeferredFragmentCall(deferredExecution, executionStrategyParameters))
-                    .collect(Collectors.toSet());
+            Set<IncrementalCall<? extends IncrementalPayload>> set = new HashSet<>();
+            for (DeferredExecution deferredExecution : deferredExecutionToFields.keySet()) {
+                set.add(this.createDeferredFragmentCall(deferredExecution, executionStrategyParameters));
+            }
+            return set;
         }
 
         private DeferredFragmentCall createDeferredFragmentCall(DeferredExecution deferredExecution, ExecutionStrategyParameters executionStrategyParameters) {
@@ -116,9 +119,10 @@ public interface DeferredExecutionSupport {
 
             List<MergedField> mergedFields = deferredExecutionToFields.get(deferredExecution);
 
-            List<Supplier<CompletableFuture<DeferredFragmentCall.FieldWithExecutionResult>>> calls = mergedFields.stream()
-                    .map(currentField -> this.createResultSupplier(currentField, deferredCallContext, executionStrategyParameters))
-                    .collect(Collectors.toList());
+            List<Supplier<CompletableFuture<DeferredFragmentCall.FieldWithExecutionResult>>> calls = new ArrayList<>();
+            for (MergedField currentField : mergedFields) {
+                calls.add(this.createResultSupplier(currentField, deferredCallContext, executionStrategyParameters));
+            }
 
             return new DeferredFragmentCall(
                     deferredExecution.getLabel(),

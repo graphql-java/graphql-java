@@ -77,8 +77,11 @@ public class GraphqlErrorHelper {
     }
 
     static List<GraphQLError> fromSpecification(List<Map<String, Object>> specificationMaps) {
-        return specificationMaps.stream()
-                .map(GraphqlErrorHelper::fromSpecification).collect(Collectors.toList());
+        List<GraphQLError> list = new ArrayList<>();
+        for (Map<String, Object> specificationMap : specificationMaps) {
+            list.add(fromSpecification(specificationMap));
+        }
+        return list;
     }
 
     static GraphQLError fromSpecification(Map<String, Object> specificationMap) {

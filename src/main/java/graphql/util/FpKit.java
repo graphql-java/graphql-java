@@ -36,12 +36,11 @@ public class FpKit {
     //
     // From a list of named things, get a map of them by name, merging them according to the merge function
     public static <T> Map<String, T> getByName(List<T> namedObjects, Function<T, String> nameFn, BinaryOperator<T> mergeFunc) {
-        return namedObjects.stream().collect(Collectors.toMap(
-                nameFn,
-                identity(),
-                mergeFunc,
-                LinkedHashMap::new)
-        );
+        Map<String, T> map = new LinkedHashMap<>();
+        for (T namedObject : namedObjects) {
+            map.merge(nameFn.apply(namedObject), namedObject, mergeFunc);
+        }
+        return map;
     }
 
     // normal groupingBy but with LinkedHashMap
@@ -60,12 +59,11 @@ public class FpKit {
     }
 
     public static <T, NewKey> Map<NewKey, T> groupingByUniqueKey(Collection<T> list, Function<T, NewKey> keyFunction) {
-        return list.stream().collect(Collectors.toMap(
-                keyFunction,
-                identity(),
-                throwingMerger(),
-                LinkedHashMap::new)
-        );
+        Map<NewKey, T> map = new LinkedHashMap<>();
+        for (T t : list) {
+            map.merge(keyFunction.apply(t), t, throwingMerger());
+        }
+        return map;
     }
 
     public static <T, NewKey> Map<NewKey, T> groupingByUniqueKey(Stream<T> stream, Function<T, NewKey> keyFunction) {
@@ -241,7 +239,11 @@ public class FpKit {
     }
 
     public static <K, V, U> List<U> mapEntries(Map<K, V> map, BiFunction<K, V, U> function) {
-        return map.entrySet().stream().map(entry -> function.apply(entry.getKey(), entry.getValue())).collect(Collectors.toList());
+        List<U> list = new ArrayList<>();
+        for (Map.Entry<K, V> entry : map.entrySet()) {
+            list.add(function.apply(entry.getKey(), entry.getValue()));
+        }
+        return list;
     }
 
 
@@ -272,10 +274,12 @@ public class FpKit {
     }
 
     public static <T> Optional<T> findOne(Collection<T> list, Predicate<T> filter) {
-        return list
-                .stream()
-                .filter(filter)
-                .findFirst();
+        for (T t : list) {
+            if (filter.test(t)) {
+                return Optional.of(t);
+            }
+        }
+        return Optional.empty();
     }
 
     public static <T> T findOneOrNull(List<T> list, Predicate<T> filter) {
@@ -292,10 +296,13 @@ public class FpKit {
     }
 
     public static <T> List<T> filterList(Collection<T> list, Predicate<T> filter) {
-        return list
-                .stream()
-                .filter(filter)
-                .collect(Collectors.toList());
+        List<T> result = new ArrayList<>();
+        for (T t : list) {
+            if (filter.test(t)) {
+                result.add(t);
+            }
+        }
+        return result;
     }
 
     public static <T> Set<T> filterSet(Collection<T> input, Predicate<T> filter) {
