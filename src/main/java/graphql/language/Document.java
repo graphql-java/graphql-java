@@ -55,10 +55,9 @@ public class Document extends AbstractNode<Document> {
      * @return a list of definitions of that class or empty list
      */
     public <T extends Definition> List<T> getDefinitionsOfType(Class<T> definitionClass) {
-        return definitions.stream()
-                .filter(d -> definitionClass.isAssignableFrom(d.getClass()))
-                .map(definitionClass::cast)
-                .collect(ImmutableList.toImmutableList());
+        return ImmutableKit.filterAndMap(definitions,
+                d -> definitionClass.isAssignableFrom(d.getClass()),
+                definitionClass::cast);
     }
 
     /**
