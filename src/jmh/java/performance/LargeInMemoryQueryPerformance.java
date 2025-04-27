@@ -78,7 +78,7 @@ public class LargeInMemoryQueryPerformance {
         runAtStartup();
 
         Options opt = new OptionsBuilder()
-                .include("performance.LargeInMemoryQueryBenchmark")
+                .include("performance.LargeInMemoryQueryPerformance")
                 .addProfiler(GCProfiler.class)
                 .build();
 
