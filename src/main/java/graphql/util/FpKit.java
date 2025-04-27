@@ -278,16 +278,6 @@ public class FpKit {
         return result;
     }
 
-    public static <T> CompletableFuture<List<T>> flatList(CompletableFuture<List<List<T>>> cf) {
-        return cf.thenApply(FpKit::flatList);
-    }
-
-    public static <T> List<T> flatList(Collection<List<T>> listLists) {
-        return listLists.stream()
-                .flatMap(List::stream)
-                .collect(ImmutableList.toImmutableList());
-    }
-
     public static <T> Optional<T> findOne(Collection<T> list, Predicate<T> filter) {
         for (T t : list) {
             if (filter.test(t)) {
