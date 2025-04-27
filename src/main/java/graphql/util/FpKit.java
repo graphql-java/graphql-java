@@ -55,7 +55,7 @@ public class FpKit {
 
     // normal groupingBy but with LinkedHashMap
     public static <T, NewKey> Map<NewKey, ImmutableList<T>> groupingBy(Collection<T> list, Function<T, NewKey> function) {
-        return filterAndGroupingBy(list, t -> true, function);
+        return filterAndGroupingBy(list, ALWAYS_TRUE, function);
     }
 
     @SuppressWarnings("unchecked")
@@ -93,9 +93,12 @@ public class FpKit {
     }
 
 
+    private static final Predicate<Object> ALWAYS_TRUE = o -> true;
+
     private static final BinaryOperator<Object> THROWING_MERGER_SINGLETON = (u, v) -> {
         throw new IllegalStateException(String.format("Duplicate key %s", u));
     };
+
 
     private static <T> BinaryOperator<T> throwingMerger() {
         //noinspection unchecked
