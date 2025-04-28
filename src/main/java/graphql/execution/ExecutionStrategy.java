@@ -329,8 +329,7 @@ public abstract class ExecutionStrategy {
             MergedField currentField = fields.getSubField(fieldName);
 
             ResultPath fieldPath = parameters.getPath().segment(mkNameForPath(currentField));
-            ExecutionStrategyParameters newParameters = parameters
-                    .transform(builder -> builder.field(currentField).path(fieldPath).parent(parameters));
+            ExecutionStrategyParameters newParameters = parameters.transform(currentField, fieldPath, parameters);
 
             if (!deferredExecutionSupport.isDeferredField(currentField)) {
                 Object fieldValueInfo = resolveFieldWithInfo(executionContext, newParameters);
@@ -627,12 +626,10 @@ public abstract class ExecutionStrategy {
 
         NonNullableFieldValidator nonNullableFieldValidator = new NonNullableFieldValidator(executionContext, executionStepInfo);
 
-        ExecutionStrategyParameters newParameters = parameters.transform(builder ->
-                builder.executionStepInfo(executionStepInfo)
-                        .source(fetchedValue.getFetchedValue())
-                        .localContext(fetchedValue.getLocalContext())
-                        .nonNullFieldValidator(nonNullableFieldValidator)
-        );
+        ExecutionStrategyParameters newParameters = parameters.transform(executionStepInfo,
+                nonNullableFieldValidator,
+                fetchedValue.getLocalContext(),
+                fetchedValue.getFetchedValue());
 
         FieldValueInfo fieldValueInfo = completeValue(executionContext, newParameters);
 
@@ -790,13 +787,10 @@ public abstract class ExecutionStrategy {
 
             FetchedValue value = unboxPossibleDataFetcherResult(executionContext, parameters, item);
 
-            ExecutionStrategyParameters newParameters = parameters.transform(builder ->
-                    builder.executionStepInfo(stepInfoForListElement)
-                            .nonNullFieldValidator(nonNullableFieldValidator)
-                            .localContext(value.getLocalContext())
-                            .path(indexedPath)
-                            .source(value.getFetchedValue())
-            );
+            ExecutionStrategyParameters newParameters = parameters.transform(stepInfoForListElement,
+                    nonNullableFieldValidator, indexedPath,
+                    value.getLocalContext(), value.getFetchedValue());
+
             fieldValueInfos.add(completeValue(executionContext, newParameters));
             index++;
         }
@@ -936,12 +930,10 @@ public abstract class ExecutionStrategy {
         ExecutionStepInfo newExecutionStepInfo = executionStepInfo.changeTypeWithPreservedNonNull(resolvedObjectType);
         NonNullableFieldValidator nonNullableFieldValidator = new NonNullableFieldValidator(executionContext, newExecutionStepInfo);
 
-        ExecutionStrategyParameters newParameters = parameters.transform(builder ->
-                builder.executionStepInfo(newExecutionStepInfo)
-                        .fields(subFields)
-                        .nonNullFieldValidator(nonNullableFieldValidator)
-                        .source(result)
-        );
+        ExecutionStrategyParameters newParameters = parameters.transform(newExecutionStepInfo,
+                nonNullableFieldValidator,
+                subFields,
+                result);
 
         // Calling this from the executionContext to ensure we shift back from mutation strategy to the query strategy.
         return executionContext.getQueryStrategy().executeObject(executionContext, newParameters);
