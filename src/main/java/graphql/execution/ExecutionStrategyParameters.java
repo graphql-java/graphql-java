@@ -117,28 +117,81 @@ public class ExecutionStrategyParameters {
     }
 
     @Internal
-    ExecutionStrategyParameters transform(MergedField currentField, ResultPath path) {
-        return new ExecutionStrategyParameters(executionStepInfo, source, localContext, fields, nonNullableFieldValidator, path, currentField, parent, deferredCallContext);
+    ExecutionStrategyParameters transform(MergedField currentField,
+                                          ResultPath path) {
+        return new ExecutionStrategyParameters(executionStepInfo,
+                source,
+                localContext,
+                fields,
+                nonNullableFieldValidator,
+                path,
+                currentField,
+                parent,
+                deferredCallContext);
     }
 
     @Internal
-    ExecutionStrategyParameters transform(ExecutionStepInfo executionStepInfo, NonNullableFieldValidator nonNullableFieldValidator, MergedSelectionSet fields, Object source) {
-        return new ExecutionStrategyParameters(executionStepInfo, source, localContext, fields, nonNullableFieldValidator, path, currentField, parent, deferredCallContext);
+    ExecutionStrategyParameters transform(ExecutionStepInfo executionStepInfo,
+                                          NonNullableFieldValidator nonNullableFieldValidator,
+                                          MergedSelectionSet fields,
+                                          Object source) {
+        return new ExecutionStrategyParameters(executionStepInfo,
+                source,
+                localContext,
+                fields,
+                nonNullableFieldValidator,
+                path,
+                currentField,
+                parent,
+                deferredCallContext);
     }
 
     @Internal
-    ExecutionStrategyParameters transform(ExecutionStepInfo executionStepInfo, NonNullableFieldValidator nonNullableFieldValidator, ResultPath path, Object localContext, Object source) {
-        return new ExecutionStrategyParameters(executionStepInfo, source, localContext, fields, nonNullableFieldValidator, path, currentField, parent, deferredCallContext);
+    ExecutionStrategyParameters transform(ExecutionStepInfo executionStepInfo,
+                                          NonNullableFieldValidator nonNullableFieldValidator,
+                                          ResultPath path,
+                                          Object localContext,
+                                          Object source) {
+        return new ExecutionStrategyParameters(executionStepInfo,
+                source,
+                localContext,
+                fields,
+                nonNullableFieldValidator,
+                path,
+                currentField,
+                parent,
+                deferredCallContext);
     }
 
     @Internal
-    ExecutionStrategyParameters transform(ExecutionStepInfo executionStepInfo, NonNullableFieldValidator nonNullableFieldValidator, Object localContext, Object source) {
-        return new ExecutionStrategyParameters(executionStepInfo, source, localContext, fields, nonNullableFieldValidator, path, currentField, parent, deferredCallContext);
+    ExecutionStrategyParameters transform(ExecutionStepInfo executionStepInfo,
+                                          NonNullableFieldValidator nonNullableFieldValidator,
+                                          Object localContext,
+                                          Object source) {
+        return new ExecutionStrategyParameters(executionStepInfo,
+                source,
+                localContext,
+                fields,
+                nonNullableFieldValidator,
+                path,
+                currentField,
+                parent,
+                deferredCallContext);
     }
 
     @Internal
-    ExecutionStrategyParameters transform(MergedField currentField, ResultPath path, ExecutionStrategyParameters parent) {
-        return new ExecutionStrategyParameters(executionStepInfo, source, localContext, fields, nonNullableFieldValidator, path, currentField, parent, deferredCallContext);
+    ExecutionStrategyParameters transform(MergedField currentField,
+                                          ResultPath path,
+                                          ExecutionStrategyParameters parent) {
+        return new ExecutionStrategyParameters(executionStepInfo,
+                source,
+                localContext,
+                fields,
+                nonNullableFieldValidator,
+                path,
+                currentField,
+                parent,
+                deferredCallContext);
     }
 
     public ExecutionStrategyParameters transform(Consumer<Builder> builderConsumer) {
