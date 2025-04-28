@@ -81,7 +81,13 @@ public class ExecutionStepInfo {
     /*
      * This constructor allows for a slightly ( 1% ish) faster transformation without an intermediate Builder object
      */
-    private ExecutionStepInfo(GraphQLOutputType type, ResultPath path, ExecutionStepInfo parent, MergedField field, GraphQLFieldDefinition fieldDefinition, GraphQLObjectType fieldContainer, Supplier<ImmutableMapWithNullValues<String, Object>> arguments) {
+    private ExecutionStepInfo(GraphQLOutputType type,
+                              ResultPath path,
+                              ExecutionStepInfo parent,
+                              MergedField field,
+                              GraphQLFieldDefinition fieldDefinition,
+                              GraphQLObjectType fieldContainer,
+                              Supplier<ImmutableMapWithNullValues<String, Object>> arguments) {
         this.type = assertNotNull(type, () -> "you must provide a graphql type");
         this.path = path;
         this.parent = parent;
