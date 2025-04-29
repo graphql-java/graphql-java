@@ -651,10 +651,13 @@ public abstract class ExecutionStrategy {
         );
 
         FieldValueInfo fieldValueInfo = completeValue(executionContext, newParameters);
-
-        CompletableFuture<Object> executionResultFuture = fieldValueInfo.getFieldValueFuture();
         ctxCompleteField.onDispatched();
-        executionResultFuture.whenComplete(ctxCompleteField::onCompleted);
+        if (fieldValueInfo.isFutureValue()) {
+            CompletableFuture<Object> executionResultFuture = fieldValueInfo.getFieldValueFuture();
+            executionResultFuture.whenComplete(ctxCompleteField::onCompleted);
+        } else {
+            ctxCompleteField.onCompleted(fieldValueInfo.getFieldValueObject(), null);
+        }
         return fieldValueInfo;
     }
 
