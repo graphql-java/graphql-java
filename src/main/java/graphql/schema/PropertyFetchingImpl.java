@@ -401,12 +401,12 @@ public class PropertyFetchingImpl {
         return FLYWEIGHT_CACHEKEY_CACHE.computeIfAbsent(classLoader, clazz.getName(), propertyName, CacheKey::new);
     }
 
-    private static final class CacheKey {
+    static final class CacheKey {
         private final ClassLoader classLoader;
         private final String className;
         private final String propertyName;
 
-        private CacheKey(ClassLoader classLoader, String className, String propertyName) {
+        CacheKey(ClassLoader classLoader, String className, String propertyName) {
             this.classLoader = classLoader;
             this.className = className;
             this.propertyName = propertyName;

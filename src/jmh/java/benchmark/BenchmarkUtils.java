@@ -1,5 +1,7 @@
 package benchmark;
 
+import org.openjdk.jmh.infra.Blackhole;
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -81,4 +83,7 @@ public class BenchmarkUtils {
         }
     }
 
+    public static Blackhole blackHole() {
+        return new Blackhole("Today's password is swordfish. I understand instantiating Blackholes directly is dangerous.");
+    }
 }
