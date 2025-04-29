@@ -4,6 +4,8 @@ import graphql.Assert;
 import graphql.Internal;
 import graphql.PublicApi;
 import graphql.schema.visibility.GraphqlFieldVisibility;
+import graphql.util.flyweight.FlyweightKit;
+import org.jspecify.annotations.NonNull;
 
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -33,6 +35,7 @@ public class GraphQLCodeRegistry {
     private final Map<String, TypeResolver> typeResolverMap;
     private final GraphqlFieldVisibility fieldVisibility;
     private final DataFetcherFactory<?> defaultDataFetcherFactory;
+    private final FlyweightKit.BiKeyMap<String, String, FieldCoordinates> flyweightFieldCoordinates;
 
     private GraphQLCodeRegistry(Builder builder) {
         this.dataFetcherMap = builder.dataFetcherMap;
@@ -40,6 +43,7 @@ public class GraphQLCodeRegistry {
         this.typeResolverMap = builder.typeResolverMap;
         this.fieldVisibility = builder.fieldVisibility;
         this.defaultDataFetcherFactory = builder.defaultDataFetcherFactory;
+        this.flyweightFieldCoordinates = new FlyweightKit.BiKeyMap<>();
     }
 
     /**
@@ -58,7 +62,15 @@ public class GraphQLCodeRegistry {
      * @return the DataFetcher associated with this field.  All fields have data fetchers
      */
     public DataFetcher<?> getDataFetcher(GraphQLObjectType parentType, GraphQLFieldDefinition fieldDefinition) {
-        return getDataFetcherImpl(FieldCoordinates.coordinates(parentType, fieldDefinition), fieldDefinition, dataFetcherMap, systemDataFetcherMap, defaultDataFetcherFactory);
+        return getDataFetcherImpl(flyWeightCoordinates(parentType, fieldDefinition),
+                fieldDefinition,
+                dataFetcherMap,
+                systemDataFetcherMap,
+                defaultDataFetcherFactory);
+    }
+
+    private FieldCoordinates flyWeightCoordinates(@NonNull GraphQLObjectType parentType, @NonNull GraphQLFieldDefinition fieldDefinition) {
+        return flyweightFieldCoordinates.computeIfAbsent(parentType.getName(),fieldDefinition.getName(), FieldCoordinates::coordinates);
     }
 
     /**

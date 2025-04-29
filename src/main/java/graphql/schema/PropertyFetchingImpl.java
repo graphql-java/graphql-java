@@ -4,6 +4,8 @@ import graphql.GraphQLException;
 import graphql.Internal;
 import graphql.schema.fetching.LambdaFetchingSupport;
 import graphql.util.StringKit;
+import graphql.util.flyweight.FlyweightKit;
+import org.jspecify.annotations.NonNull;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -38,6 +40,8 @@ public class PropertyFetchingImpl {
     private final ConcurrentMap<CacheKey, CachedMethod> METHOD_CACHE = new ConcurrentHashMap<>();
     private final ConcurrentMap<CacheKey, Field> FIELD_CACHE = new ConcurrentHashMap<>();
     private final ConcurrentMap<CacheKey, CacheKey> NEGATIVE_CACHE = new ConcurrentHashMap<>();
+    private final FlyweightKit.TriKeyMap<ClassLoader,String,String,CacheKey> FLYWEIGHT_CACHEKEY_CACHE = new FlyweightKit.TriKeyMap<>();
+
     private final Class<?> singleArgumentType;
 
     public PropertyFetchingImpl(Class<?> singleArgumentType) {
@@ -376,6 +380,7 @@ public class PropertyFetchingImpl {
         METHOD_CACHE.clear();
         FIELD_CACHE.clear();
         NEGATIVE_CACHE.clear();
+        FLYWEIGHT_CACHEKEY_CACHE.clear();
     }
 
     public boolean setUseSetAccessible(boolean flag) {
@@ -390,10 +395,10 @@ public class PropertyFetchingImpl {
         return USE_NEGATIVE_CACHE.getAndSet(flag);
     }
 
-    private CacheKey mkCacheKey(Object object, String propertyName) {
+    private CacheKey mkCacheKey(@NonNull Object object, @NonNull String propertyName) {
         Class<?> clazz = object.getClass();
         ClassLoader classLoader = clazz.getClassLoader();
-        return new CacheKey(classLoader, clazz.getName(), propertyName);
+        return FLYWEIGHT_CACHEKEY_CACHE.computeIfAbsent(classLoader, clazz.getName(), propertyName, CacheKey::new);
     }
 
     private static final class CacheKey {
