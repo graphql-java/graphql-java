@@ -281,6 +281,8 @@ public interface DataFetchingEnvironment extends IntrospectionDataFetchingEnviro
      * @return an internal representation of the DataFetchingEnvironment
      */
     @Internal
-    Object toInternal();
+    default Object toInternal() {
+        throw new UnsupportedOperationException();
+    }
 
 }
