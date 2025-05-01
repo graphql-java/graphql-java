@@ -86,11 +86,11 @@ public class GraphQL {
 
     /**
      * This allows you to control specific aspects of the GraphQL system
-     * including some JVM wide settings and some per execution setttings
+     * including some JVM wide settings and some per execution settings
      *
      * @return a GraphQL object
      */
-    public static GraphQLConfiguration configuration() {
+    public static GraphQLConfiguration config() {
         return GraphQLConfiguration.INSTANCE;
     }
 
