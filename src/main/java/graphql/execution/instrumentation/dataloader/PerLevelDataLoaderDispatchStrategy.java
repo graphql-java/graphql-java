@@ -73,10 +73,7 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
         // all levels that are ready to be dispatched
         private int highestReadyLevel;
 
-        //TODO: maybe this should be cleaned up once the CF returned by these fields are completed
-        // otherwise this will stick around until the whole request is finished
         private final List<ResultPathWithDataLoader> allResultPathWithDataLoader = Collections.synchronizedList(new ArrayList<>());
-        // used for per level dispatching
         private final Map<Integer, Set<ResultPathWithDataLoader>> levelToResultPathWithDataLoader = new ConcurrentHashMap<>();
 
         private final Set<Integer> dispatchingStartedPerLevel = ConcurrentHashMap.newKeySet();
