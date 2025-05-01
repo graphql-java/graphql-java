@@ -1,8 +1,8 @@
 package graphql
 
 import graphql.execution.ExecutionId
-import graphql.execution.instrumentation.dataloader.DelayedDataLoaderDispatcherExecutorFactory
 import graphql.execution.instrumentation.dataloader.DataLoaderDispatchingContextKeys
+import graphql.execution.instrumentation.dataloader.DelayedDataLoaderDispatcherExecutorFactory
 import graphql.schema.DataFetcher
 import org.awaitility.Awaitility
 import org.dataloader.BatchLoader
@@ -72,7 +72,8 @@ class ChainedDataLoaderTest extends Specification {
         def graphQL = GraphQL.newGraphQL(schema).build()
 
         def query = "{ dogName catName } "
-        def ei = newExecutionInput(query).graphQLContext([(DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING): true]).dataLoaderRegistry(dataLoaderRegistry).build()
+        def ei = newExecutionInput(query).dataLoaderRegistry(dataLoaderRegistry).build()
+        DataLoaderDispatchingContextKeys.enableDataLoaderChaining(ei.graphQLContext)
 
         when:
         def efCF = graphQL.executeAsync(ei)
@@ -383,8 +384,8 @@ class ChainedDataLoaderTest extends Specification {
         def query = "{ foo bar } "
         def ei = newExecutionInput(query).graphQLContext([(DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING): true]).dataLoaderRegistry(dataLoaderRegistry).build()
 
-        // make the window to 50ms
-        ei.getGraphQLContext().put(DataLoaderDispatchingContextKeys.DELAYED_DATA_LOADER_BATCH_WINDOW_SIZE_NANO_SECONDS, 1_000_000L * 250)
+        // make the window  250ms
+        DataLoaderDispatchingContextKeys.setDelayedDataLoaderBatchWindowSizeNanoSeconds(ei.graphQLContext, 1_000_000L * 250)
 
         when:
         def efCF = graphQL.executeAsync(ei)
@@ -435,7 +436,7 @@ class ChainedDataLoaderTest extends Specification {
 
 
         ScheduledExecutorService scheduledExecutorService = Mock()
-        ei.getGraphQLContext().put(DataLoaderDispatchingContextKeys.DELAYED_DATA_LOADER_DISPATCHING_EXECUTOR_FACTORY, new DelayedDataLoaderDispatcherExecutorFactory() {
+        DataLoaderDispatchingContextKeys.setDelayedDataLoaderDispatchingExecutorFactory(ei.getGraphQLContext(), new DelayedDataLoaderDispatcherExecutorFactory() {
             @Override
             ScheduledExecutorService createExecutor(ExecutionId executionId, GraphQLContext graphQLContext) {
                 return scheduledExecutorService

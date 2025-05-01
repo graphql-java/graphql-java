@@ -7,6 +7,9 @@ import org.jspecify.annotations.NullMarked;
 
 import java.util.concurrent.ScheduledExecutorService;
 
+/**
+ * See {@link DataLoaderDispatchingContextKeys} for how to set it.
+ */
 @ExperimentalApi
 @NullMarked
 @FunctionalInterface
