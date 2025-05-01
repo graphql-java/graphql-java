@@ -140,7 +140,7 @@ class DataLoaderHangingTest extends Specification {
 
             def result = graphql.executeAsync(newExecutionInput()
                     .dataLoaderRegistry(dataLoaderRegistry)
-                    .graphQLContext([(DispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING): enableDataLoaderChaining] as Map)
+                    .graphQLContext([(DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING): enableDataLoaderChaining] as Map)
                     .query("""
                     query getArtistsWithData {
                       listArtists(limit: 1) {
@@ -370,7 +370,7 @@ class DataLoaderHangingTest extends Specification {
         ExecutionInput executionInput = newExecutionInput()
                 .query(query)
                 .graphQLContext(["registry": registry])
-                .graphQLContext([(DispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING): false])
+                .graphQLContext([(DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING): false])
                 .dataLoaderRegistry(registry)
                 .build()
 

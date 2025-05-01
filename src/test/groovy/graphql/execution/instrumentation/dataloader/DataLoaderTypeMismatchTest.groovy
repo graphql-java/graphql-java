@@ -66,7 +66,7 @@ class DataLoaderTypeMismatchTest extends Specification {
 
         when:
         def result = graphql.execute(ExecutionInput.newExecutionInput()
-                .graphQLContext([(DispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING): enableDataLoaderChaining])
+                .graphQLContext([(DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING): enableDataLoaderChaining])
                 .dataLoaderRegistry(dataLoaderRegistry).query("query { getTodos { id } }").build())
 
         then: "execution shouldn't hang"

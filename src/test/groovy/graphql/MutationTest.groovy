@@ -1,6 +1,6 @@
 package graphql
 
-import graphql.execution.instrumentation.dataloader.DispatchingContextKeys
+import graphql.execution.instrumentation.dataloader.DataLoaderDispatchingContextKeys
 import graphql.schema.DataFetcher
 import org.awaitility.Awaitility
 import org.dataloader.BatchLoader
@@ -439,7 +439,7 @@ class MutationTest extends Specification {
                     }
                 }
              }
-        """).dataLoaderRegistry(dlReg).graphQLContext([DispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING]: enableDataLoaderChaining).build()
+        """).dataLoaderRegistry(dlReg).graphQLContext([DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING]: enableDataLoaderChaining).build()
         when:
         def cf = graphQL.executeAsync(ei)
 
@@ -690,7 +690,7 @@ class MutationTest extends Specification {
                     }
                 }
              }
-        """).dataLoaderRegistry(dlReg).graphQLContext([(DispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING): enableDataLoaderChaining]).build()
+        """).dataLoaderRegistry(dlReg).graphQLContext([(DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING): enableDataLoaderChaining]).build()
         def cf = graphQL.executeAsync(ei)
 
         Awaitility.await().until { cf.isDone() }

@@ -190,7 +190,7 @@ class PeopleCompaniesAndProductsDataLoaderTest extends Specification {
         ExecutionInput executionInput = ExecutionInput.newExecutionInput()
                 .query(query)
                 .graphQLContext(["registry": registry])
-                .graphQLContext([(DispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING): enableDataLoaderChaining])
+                .graphQLContext([(DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING): enableDataLoaderChaining])
                 .dataLoaderRegistry(registry)
                 .build()
 

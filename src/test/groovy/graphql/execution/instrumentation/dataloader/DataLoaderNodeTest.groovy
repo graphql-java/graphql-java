@@ -135,7 +135,7 @@ class DataLoaderNodeTest extends Specification {
         ExecutionResult result = GraphQL.newGraphQL(schema)
                 .build()
                 .execute(ExecutionInput.newExecutionInput()
-                        .graphQLContext([(DispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING): enableDataLoaderChaining])
+                        .graphQLContext([(DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING): enableDataLoaderChaining])
                         .dataLoaderRegistry(registry).query(
                 '''
                         query Q { 

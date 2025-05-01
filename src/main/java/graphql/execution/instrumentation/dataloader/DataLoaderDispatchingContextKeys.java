@@ -6,8 +6,8 @@ import org.jspecify.annotations.NullMarked;
 
 @ExperimentalApi
 @NullMarked
-public final class DispatchingContextKeys {
-    private DispatchingContextKeys() {
+public final class DataLoaderDispatchingContextKeys {
+    private DataLoaderDispatchingContextKeys() {
     }
 
     /**

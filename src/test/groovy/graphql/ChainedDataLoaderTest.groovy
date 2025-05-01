@@ -2,7 +2,7 @@ package graphql
 
 import graphql.execution.ExecutionId
 import graphql.execution.instrumentation.dataloader.DelayedDataLoaderDispatcherExecutorFactory
-import graphql.execution.instrumentation.dataloader.DispatchingContextKeys
+import graphql.execution.instrumentation.dataloader.DataLoaderDispatchingContextKeys
 import graphql.schema.DataFetcher
 import org.awaitility.Awaitility
 import org.dataloader.BatchLoader
@@ -72,7 +72,7 @@ class ChainedDataLoaderTest extends Specification {
         def graphQL = GraphQL.newGraphQL(schema).build()
 
         def query = "{ dogName catName } "
-        def ei = newExecutionInput(query).graphQLContext([(DispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING): true]).dataLoaderRegistry(dataLoaderRegistry).build()
+        def ei = newExecutionInput(query).graphQLContext([(DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING): true]).dataLoaderRegistry(dataLoaderRegistry).build()
 
         when:
         def efCF = graphQL.executeAsync(ei)
@@ -163,7 +163,7 @@ class ChainedDataLoaderTest extends Specification {
         def graphQL = GraphQL.newGraphQL(schema).build()
 
         def query = "{ hello helloDelayed} "
-        def ei = newExecutionInput(query).graphQLContext([(DispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING): true]).dataLoaderRegistry(dataLoaderRegistry).build()
+        def ei = newExecutionInput(query).graphQLContext([(DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING): true]).dataLoaderRegistry(dataLoaderRegistry).build()
 
         when:
         def efCF = graphQL.executeAsync(ei)
@@ -254,7 +254,7 @@ class ChainedDataLoaderTest extends Specification {
         def graphQL = GraphQL.newGraphQL(schema).build()
 
         def query = "{ foo } "
-        def ei = newExecutionInput(query).graphQLContext([(DispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING): true]).dataLoaderRegistry(dataLoaderRegistry).build()
+        def ei = newExecutionInput(query).graphQLContext([(DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING): true]).dataLoaderRegistry(dataLoaderRegistry).build()
 
         when:
         def efCF = graphQL.executeAsync(ei)
@@ -322,7 +322,7 @@ class ChainedDataLoaderTest extends Specification {
         def graphQL = GraphQL.newGraphQL(schema).build()
 
         def query = "{ dogName catName } "
-        def ei = newExecutionInput(query).graphQLContext([(DispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING): true]).dataLoaderRegistry(dataLoaderRegistry).build()
+        def ei = newExecutionInput(query).graphQLContext([(DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING): true]).dataLoaderRegistry(dataLoaderRegistry).build()
 
         when:
         def efCF = graphQL.executeAsync(ei)
@@ -381,10 +381,10 @@ class ChainedDataLoaderTest extends Specification {
         def graphQL = GraphQL.newGraphQL(schema).build()
 
         def query = "{ foo bar } "
-        def ei = newExecutionInput(query).graphQLContext([(DispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING): true]).dataLoaderRegistry(dataLoaderRegistry).build()
+        def ei = newExecutionInput(query).graphQLContext([(DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING): true]).dataLoaderRegistry(dataLoaderRegistry).build()
 
         // make the window to 50ms
-        ei.getGraphQLContext().put(DispatchingContextKeys.DELAYED_DATA_LOADER_BATCH_WINDOW_SIZE_NANO_SECONDS, 1_000_000L * 250)
+        ei.getGraphQLContext().put(DataLoaderDispatchingContextKeys.DELAYED_DATA_LOADER_BATCH_WINDOW_SIZE_NANO_SECONDS, 1_000_000L * 250)
 
         when:
         def efCF = graphQL.executeAsync(ei)
@@ -431,11 +431,11 @@ class ChainedDataLoaderTest extends Specification {
         def graphQL = GraphQL.newGraphQL(schema).build()
 
         def query = "{ foo } "
-        def ei = newExecutionInput(query).graphQLContext([(DispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING): true]).dataLoaderRegistry(dataLoaderRegistry).build()
+        def ei = newExecutionInput(query).graphQLContext([(DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING): true]).dataLoaderRegistry(dataLoaderRegistry).build()
 
 
         ScheduledExecutorService scheduledExecutorService = Mock()
-        ei.getGraphQLContext().put(DispatchingContextKeys.DELAYED_DATA_LOADER_DISPATCHING_EXECUTOR_FACTORY, new DelayedDataLoaderDispatcherExecutorFactory() {
+        ei.getGraphQLContext().put(DataLoaderDispatchingContextKeys.DELAYED_DATA_LOADER_DISPATCHING_EXECUTOR_FACTORY, new DelayedDataLoaderDispatcherExecutorFactory() {
             @Override
             ScheduledExecutorService createExecutor(ExecutionId executionId, GraphQLContext graphQLContext) {
                 return scheduledExecutorService

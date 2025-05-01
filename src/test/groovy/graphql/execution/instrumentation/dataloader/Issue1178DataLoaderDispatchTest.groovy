@@ -80,7 +80,7 @@ class Issue1178DataLoaderDispatchTest extends Specification {
         then: "execution shouldn't error"
         for (int i = 0; i < NUM_OF_REPS; i++) {
             def result = graphql.execute(ExecutionInput.newExecutionInput()
-                    .graphQLContext([(DispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING): enableDataLoaderChaining])
+                    .graphQLContext([(DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING): enableDataLoaderChaining])
                     .dataLoaderRegistry(dataLoaderRegistry)
                     .query("""
                 query { 

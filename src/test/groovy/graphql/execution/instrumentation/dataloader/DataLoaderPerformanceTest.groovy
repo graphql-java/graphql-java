@@ -29,7 +29,7 @@ class DataLoaderPerformanceTest extends Specification {
         ExecutionInput executionInput = ExecutionInput.newExecutionInput()
                 .query(getQuery())
                 .dataLoaderRegistry(dataLoaderRegistry)
-                .graphQLContext([(ENABLE_INCREMENTAL_SUPPORT): incrementalSupport, (DispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING): enableDataLoaderChaining])
+                .graphQLContext([(ENABLE_INCREMENTAL_SUPPORT): incrementalSupport, (DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING): enableDataLoaderChaining])
                 .build()
         def result = graphQL.execute(executionInput)
 
@@ -52,7 +52,7 @@ class DataLoaderPerformanceTest extends Specification {
         ExecutionInput executionInput = ExecutionInput.newExecutionInput()
                 .query(getExpensiveQuery(false))
                 .dataLoaderRegistry(dataLoaderRegistry)
-                .graphQLContext([(ENABLE_INCREMENTAL_SUPPORT): incrementalSupport, (DispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING): enableDataLoaderChaining])
+                .graphQLContext([(ENABLE_INCREMENTAL_SUPPORT): incrementalSupport, (DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING): enableDataLoaderChaining])
                 .build()
         def result = graphQL.execute(executionInput)
 
@@ -76,7 +76,7 @@ class DataLoaderPerformanceTest extends Specification {
         ExecutionInput executionInput = ExecutionInput.newExecutionInput()
                 .query(getQuery())
                 .dataLoaderRegistry(dataLoaderRegistry)
-                .graphQLContext([(ENABLE_INCREMENTAL_SUPPORT): incrementalSupport, (DispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING): enableDataLoaderChaining])
+                .graphQLContext([(ENABLE_INCREMENTAL_SUPPORT): incrementalSupport, (DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING): enableDataLoaderChaining])
                 .build()
 
         def result = graphQL.execute(executionInput)
@@ -102,7 +102,7 @@ class DataLoaderPerformanceTest extends Specification {
         ExecutionInput executionInput = ExecutionInput.newExecutionInput()
                 .query(getExpensiveQuery(false))
                 .dataLoaderRegistry(dataLoaderRegistry)
-                .graphQLContext([(ENABLE_INCREMENTAL_SUPPORT): incrementalSupport, (DispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING): enableDataLoaderChaining])
+                .graphQLContext([(ENABLE_INCREMENTAL_SUPPORT): incrementalSupport, (DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING): enableDataLoaderChaining])
                 .build()
 
         def result = graphQL.execute(executionInput)

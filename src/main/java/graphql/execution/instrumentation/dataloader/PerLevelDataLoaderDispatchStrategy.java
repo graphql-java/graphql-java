@@ -182,7 +182,7 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
         this.executionContext = executionContext;
 
         GraphQLContext graphQLContext = executionContext.getGraphQLContext();
-        Long batchWindowNs = graphQLContext.get(DispatchingContextKeys.DELAYED_DATA_LOADER_BATCH_WINDOW_SIZE_NANO_SECONDS);
+        Long batchWindowNs = graphQLContext.get(DataLoaderDispatchingContextKeys.DELAYED_DATA_LOADER_BATCH_WINDOW_SIZE_NANO_SECONDS);
         if (batchWindowNs != null) {
             this.batchWindowNs = batchWindowNs;
         } else {
@@ -190,14 +190,14 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
         }
 
         this.delayedDataLoaderDispatchExecutor = new InterThreadMemoizedSupplier<>(() -> {
-            DelayedDataLoaderDispatcherExecutorFactory delayedDataLoaderDispatcherExecutorFactory = graphQLContext.get(DispatchingContextKeys.DELAYED_DATA_LOADER_DISPATCHING_EXECUTOR_FACTORY);
+            DelayedDataLoaderDispatcherExecutorFactory delayedDataLoaderDispatcherExecutorFactory = graphQLContext.get(DataLoaderDispatchingContextKeys.DELAYED_DATA_LOADER_DISPATCHING_EXECUTOR_FACTORY);
             if (delayedDataLoaderDispatcherExecutorFactory != null) {
                 return delayedDataLoaderDispatcherExecutorFactory.createExecutor(executionContext.getExecutionId(), graphQLContext);
             }
             return defaultDelayedDLCFBatchWindowScheduler.get();
         });
 
-        Boolean enableDataLoaderChaining = graphQLContext.get(DispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING);
+        Boolean enableDataLoaderChaining = graphQLContext.get(DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING);
         this.enableDataLoaderChaining = enableDataLoaderChaining != null && enableDataLoaderChaining;
     }
 
