@@ -175,7 +175,8 @@ public class PerLevelDataLoaderDispatchStrategyWithDeferAlwaysDispatch implement
     public void fieldFetched(ExecutionContext executionContext,
                              ExecutionStrategyParameters parameters,
                              DataFetcher<?> dataFetcher,
-                             Object fetchedValue, Supplier<DataFetchingEnvironment> dataFetchingEnvironment) {
+                             Object fetchedValue,
+                             Supplier<DataFetchingEnvironment> dataFetchingEnvironment) {
 
         final boolean dispatchNeeded;
 
