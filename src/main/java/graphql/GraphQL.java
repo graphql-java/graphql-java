@@ -84,6 +84,16 @@ import static graphql.execution.instrumentation.SimpleInstrumentationContext.non
 @PublicApi
 public class GraphQL {
 
+    /**
+     * This allows you to control specific aspects of the GraphQL system
+     * including some JVM wide settings and some per execution setttings
+     *
+     * @return a GraphQL object
+     */
+    public static GraphQLConfiguration configuration() {
+        return GraphQLConfiguration.INSTANCE;
+    }
+
     private final GraphQLSchema graphQLSchema;
     private final ExecutionStrategy queryStrategy;
     private final ExecutionStrategy mutationStrategy;
