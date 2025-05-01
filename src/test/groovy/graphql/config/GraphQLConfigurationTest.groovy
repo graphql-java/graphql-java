@@ -18,6 +18,23 @@ class GraphQLConfigurationTest extends Specification {
         defaultParserOptions.getMaxRuleDepth() == 99
     }
 
+    def "can set property data fetcher config"() {
+        when:
+        def prevValue = GraphQL.configuration().propertyDataFetcher().setUseNegativeCache(false)
+        then:
+        prevValue
+
+        when:
+        prevValue = GraphQL.configuration().propertyDataFetcher().setUseNegativeCache(false)
+        then:
+        ! prevValue
+
+        when:
+        prevValue = GraphQL.configuration().propertyDataFetcher().setUseNegativeCache(true)
+        then:
+        ! prevValue
+    }
+
     def "can set defer configuration"() {
         when:
         def builder = GraphQLContext.newContext()

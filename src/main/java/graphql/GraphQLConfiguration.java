@@ -1,6 +1,7 @@
 package graphql;
 
 import graphql.parser.ParserOptions;
+import graphql.schema.PropertyDataFetcherHelper;
 
 /**
  * This allows you to control specific aspects of the GraphQL system
@@ -11,12 +12,17 @@ public class GraphQLConfiguration {
     static final GraphQLConfiguration INSTANCE = new GraphQLConfiguration();
     static final ParserCfg PARSER_CFG = new ParserCfg();
     static final IncrementalSupportCfg INCREMENTAL_SUPPORT_CFG = new IncrementalSupportCfg();
+    static final PropertyDataFetcherCfg PROPERTY_DATA_FETCHER_CFG = new PropertyDataFetcherCfg();
 
     private GraphQLConfiguration() {
     }
 
     public ParserCfg parser() {
         return PARSER_CFG;
+    }
+
+    public PropertyDataFetcherCfg propertyDataFetcher() {
+        return PROPERTY_DATA_FETCHER_CFG;
     }
 
     @ExperimentalApi
@@ -125,6 +131,48 @@ public class GraphQLConfiguration {
         public ParserCfg setDefaultSdlParserOptions(ParserOptions options) {
             ParserOptions.setDefaultSdlParserOptions(options);
             return this;
+        }
+    }
+
+    public static class PropertyDataFetcherCfg {
+        private PropertyDataFetcherCfg() {
+        }
+
+        /**
+         * PropertyDataFetcher caches the methods and fields that map from a class to a property for runtime performance reasons
+         * as well as negative misses.
+         * <p>
+         * However during development you might be using an assistance tool like JRebel to allow you to tweak your code base and this
+         * caching may interfere with this.  So you can call this method to clear the cache.  A JRebel plugin could
+         * be developed to do just that.
+         */
+        @SuppressWarnings("unused")
+        public PropertyDataFetcherCfg clearReflectionCache() {
+            PropertyDataFetcherHelper.clearReflectionCache();
+            return this;
+        }
+
+        /**
+         * This can be used to control whether PropertyDataFetcher will use {@link java.lang.reflect.Method#setAccessible(boolean)} to gain access to property
+         * values.  By default, it PropertyDataFetcher WILL use setAccessible.
+         *
+         * @param flag whether to use setAccessible
+         *
+         * @return the previous value of the flag
+         */
+        public boolean setUseSetAccessible(boolean flag) {
+            return PropertyDataFetcherHelper.setUseSetAccessible(flag);
+        }
+
+        /**
+         * This can be used to control whether PropertyDataFetcher will cache negative lookups for a property for performance reasons.  By default it PropertyDataFetcher WILL cache misses.
+         *
+         * @param flag whether to cache misses
+         *
+         * @return the previous value of the flag
+         */
+        public boolean setUseNegativeCache(boolean flag) {
+            return PropertyDataFetcherHelper.setUseNegativeCache(flag);
         }
     }
 
