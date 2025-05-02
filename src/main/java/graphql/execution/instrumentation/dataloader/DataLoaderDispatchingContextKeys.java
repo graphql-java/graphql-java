@@ -5,6 +5,8 @@ import graphql.ExperimentalApi;
 import graphql.GraphQLContext;
 import org.jspecify.annotations.NullMarked;
 
+import java.time.Duration;
+
 /**
  * GraphQLContext keys related to DataLoader dispatching.
  */
@@ -56,15 +58,15 @@ public final class DataLoaderDispatchingContextKeys {
 
 
     /**
-     * Sets in nanoseconds the batch window size for delayed DataLoaders.
+     * Sets nanoseconds the batch window duration size for delayed DataLoaders.
      * That is for DataLoaders, that are not batched as part of the normal per level
      * dispatching, because they were created after the level was already dispatched.
      *
      * @param graphQLContext
-     * @param batchWindowSizeNanoSeconds
+     * @param batchWindowSize
      */
-    public static void setDelayedDataLoaderBatchWindowSizeNanoSeconds(GraphQLContext graphQLContext, long batchWindowSizeNanoSeconds) {
-        graphQLContext.put(DELAYED_DATA_LOADER_BATCH_WINDOW_SIZE_NANO_SECONDS, batchWindowSizeNanoSeconds);
+    public static void setDelayedDataLoaderBatchWindowSize(GraphQLContext graphQLContext, Duration batchWindowSize) {
+        graphQLContext.put(DELAYED_DATA_LOADER_BATCH_WINDOW_SIZE_NANO_SECONDS, batchWindowSize.toNanos());
     }
 
     /**

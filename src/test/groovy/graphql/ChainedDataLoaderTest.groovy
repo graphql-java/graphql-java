@@ -12,6 +12,7 @@ import org.dataloader.DataLoaderRegistry
 import spock.lang.Specification
 import spock.lang.Unroll
 
+import java.time.Duration
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.TimeUnit
@@ -392,7 +393,7 @@ class ChainedDataLoaderTest extends Specification {
         setEnableDataLoaderChaining(ei.graphQLContext, true);
 
         // make the window  250ms
-        DataLoaderDispatchingContextKeys.setDelayedDataLoaderBatchWindowSizeNanoSeconds(ei.graphQLContext, 1_000_000L * 250)
+        DataLoaderDispatchingContextKeys.setDelayedDataLoaderBatchWindowSize(ei.graphQLContext, Duration.ofMillis(250))
 
         when:
         def efCF = graphQL.executeAsync(ei)
