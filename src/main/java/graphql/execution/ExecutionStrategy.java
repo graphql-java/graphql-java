@@ -53,7 +53,6 @@ import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -782,12 +781,10 @@ public abstract class ExecutionStrategy {
 
         List<FieldValueInfo> fieldValueInfos = new ArrayList<>(size.orElse(1));
         int index = 0;
-        Iterator<Object> iterator = iterableValues.iterator();
-        while (iterator.hasNext()) {
+        for (Object item : iterableValues) {
             if (incrementAndCheckMaxNodesExceeded(executionContext)) {
                 return new FieldValueInfo(NULL, null, fieldValueInfos);
             }
-            Object item = iterator.next();
 
             ResultPath indexedPath = parameters.getPath().segment(index);
 
