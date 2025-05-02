@@ -18,6 +18,7 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 
 import static graphql.ExecutionInput.newExecutionInput
+import static graphql.execution.instrumentation.dataloader.DataLoaderDispatchingContextKeys.setEnableDataLoaderChaining
 import static java.util.concurrent.CompletableFuture.supplyAsync
 
 class ChainedDataLoaderTest extends Specification {
@@ -73,7 +74,7 @@ class ChainedDataLoaderTest extends Specification {
 
         def query = "{ dogName catName } "
         def ei = newExecutionInput(query).dataLoaderRegistry(dataLoaderRegistry).build()
-        DataLoaderDispatchingContextKeys.enableDataLoaderChaining(ei.graphQLContext)
+        setEnableDataLoaderChaining(ei.graphQLContext, true)
 
         when:
         def efCF = graphQL.executeAsync(ei)
@@ -164,7 +165,8 @@ class ChainedDataLoaderTest extends Specification {
         def graphQL = GraphQL.newGraphQL(schema).build()
 
         def query = "{ hello helloDelayed} "
-        def ei = newExecutionInput(query).graphQLContext([(DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING): true]).dataLoaderRegistry(dataLoaderRegistry).build()
+        def ei = newExecutionInput(query).dataLoaderRegistry(dataLoaderRegistry).build()
+        setEnableDataLoaderChaining(ei.graphQLContext, true)
 
         when:
         def efCF = graphQL.executeAsync(ei)
@@ -255,7 +257,8 @@ class ChainedDataLoaderTest extends Specification {
         def graphQL = GraphQL.newGraphQL(schema).build()
 
         def query = "{ foo } "
-        def ei = newExecutionInput(query).graphQLContext([(DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING): true]).dataLoaderRegistry(dataLoaderRegistry).build()
+        def ei = newExecutionInput(query).dataLoaderRegistry(dataLoaderRegistry).build()
+        setEnableDataLoaderChaining(ei.graphQLContext, true)
 
         when:
         def efCF = graphQL.executeAsync(ei)
@@ -323,7 +326,8 @@ class ChainedDataLoaderTest extends Specification {
         def graphQL = GraphQL.newGraphQL(schema).build()
 
         def query = "{ dogName catName } "
-        def ei = newExecutionInput(query).graphQLContext([(DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING): true]).dataLoaderRegistry(dataLoaderRegistry).build()
+        def ei = newExecutionInput(query).dataLoaderRegistry(dataLoaderRegistry).build()
+        setEnableDataLoaderChaining(ei.graphQLContext, true)
 
         when:
         def efCF = graphQL.executeAsync(ei)
@@ -382,7 +386,10 @@ class ChainedDataLoaderTest extends Specification {
         def graphQL = GraphQL.newGraphQL(schema).build()
 
         def query = "{ foo bar } "
-        def ei = newExecutionInput(query).graphQLContext([(DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING): true]).dataLoaderRegistry(dataLoaderRegistry).build()
+
+        def eiBuilder = ExecutionInput.newExecutionInput(query)
+        def ei = eiBuilder.dataLoaderRegistry(dataLoaderRegistry).build()
+        setEnableDataLoaderChaining(ei.graphQLContext, true);
 
         // make the window  250ms
         DataLoaderDispatchingContextKeys.setDelayedDataLoaderBatchWindowSizeNanoSeconds(ei.graphQLContext, 1_000_000L * 250)
@@ -432,7 +439,8 @@ class ChainedDataLoaderTest extends Specification {
         def graphQL = GraphQL.newGraphQL(schema).build()
 
         def query = "{ foo } "
-        def ei = newExecutionInput(query).graphQLContext([(DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING): true]).dataLoaderRegistry(dataLoaderRegistry).build()
+        def ei = newExecutionInput(query).dataLoaderRegistry(dataLoaderRegistry).build()
+        setEnableDataLoaderChaining(ei.graphQLContext, true);
 
 
         ScheduledExecutorService scheduledExecutorService = Mock()

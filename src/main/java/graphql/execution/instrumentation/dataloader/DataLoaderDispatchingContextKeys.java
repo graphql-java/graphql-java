@@ -50,8 +50,8 @@ public final class DataLoaderDispatchingContextKeys {
      *
      * @param graphQLContext
      */
-    public static void enableDataLoaderChaining(GraphQLContext graphQLContext) {
-        graphQLContext.put(ENABLE_DATA_LOADER_CHAINING, true);
+    public static void setEnableDataLoaderChaining(GraphQLContext graphQLContext, boolean enabled) {
+        graphQLContext.put(ENABLE_DATA_LOADER_CHAINING, enabled);
     }
 
 
