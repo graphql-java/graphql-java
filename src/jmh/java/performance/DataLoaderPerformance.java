@@ -175,9 +175,6 @@ public class DataLoaderPerformance {
 
     }
 
-//    @Param({"true", "false"})
-//    public boolean enableDataLoaderChaining;
-
     @Benchmark
     @BenchmarkMode(Mode.AverageTime)
     @OutputTimeUnit(TimeUnit.MILLISECONDS)
