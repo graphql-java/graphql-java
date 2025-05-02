@@ -164,13 +164,10 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
         }
 
 
-        public boolean setDispatchedLevel(int level) {
-            if (dispatchedLevels.contains(level)) {
+        public void setDispatchedLevel(int level) {
+            if (!dispatchedLevels.add(level)) {
                 Assert.assertShouldNeverHappen("level " + level + " already dispatched");
-                return false;
             }
-            dispatchedLevels.add(level);
-            return true;
         }
     }
 
@@ -342,7 +339,8 @@ public class PerLevelDataLoaderDispatchStrategy implements DataLoaderDispatchStr
     private boolean dispatchIfNeeded(int level) {
         boolean ready = checkLevelBeingReady(level);
         if (ready) {
-            return callStack.setDispatchedLevel(level);
+            callStack.setDispatchedLevel(level);
+            return true;
         }
         return false;
     }
