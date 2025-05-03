@@ -1,38 +1,61 @@
 package graphql;
 
+import graphql.introspection.GoodFaithIntrospection;
 import graphql.parser.ParserOptions;
 import graphql.schema.PropertyDataFetcherHelper;
+
+import static graphql.Assert.assertNotNull;
 
 /**
  * This allows you to control specific aspects of the GraphQL system
  * including some JVM wide settings and some per execution settings
- * as well as experimental ones
+ * as well as experimental ones.
  */
 public class GraphQLConfiguration {
-    static final GraphQLConfiguration INSTANCE = new GraphQLConfiguration();
-    static final ParserCfg PARSER_CFG = new ParserCfg();
-    static final IncrementalSupportCfg INCREMENTAL_SUPPORT_CFG = new IncrementalSupportCfg();
-    static final PropertyDataFetcherCfg PROPERTY_DATA_FETCHER_CFG = new PropertyDataFetcherCfg();
-
-    private GraphQLConfiguration() {
+    GraphQLConfiguration() {
     }
 
-    public ParserCfg parser() {
-        return PARSER_CFG;
+    /**
+     * @return an element that allows you to control JVM wide parsing configuration
+     */
+    public ParserCfg parsing() {
+        return new ParserCfg(this);
     }
 
-    public PropertyDataFetcherCfg propertyDataFetcher() {
-        return PROPERTY_DATA_FETCHER_CFG;
+    /**
+     * @return an element that allows you to control JVM wide {@link graphql.schema.PropertyDataFetcher} configuration
+     */
+    public PropertyDataFetcherCfg propertyDataFetching() {
+        return new PropertyDataFetcherCfg(this);
     }
 
-    @ExperimentalApi
-    public IncrementalSupportCfg incrementalSupport() {
-        return INCREMENTAL_SUPPORT_CFG;
+    /**
+     * @return an element that allows you to control JVM wide configuration
+     * of {@link graphql.introspection.GoodFaithIntrospection}
+     */
+    public GoodFaithIntrospectionCfg goodFaithIntrospection() {
+        return new GoodFaithIntrospectionCfg(this);
     }
 
-    public static class ParserCfg {
+    private static class BaseCfg {
+        protected final GraphQLConfiguration configuration;
 
-        private ParserCfg() {
+        private BaseCfg(GraphQLConfiguration configuration) {
+            this.configuration = configuration;
+        }
+
+        /**
+         * @return an element that allows you to chain multiple configuration elements
+         */
+        public GraphQLConfiguration then() {
+            return configuration;
+        }
+    }
+
+    public static class ParserCfg extends BaseCfg {
+
+        private ParserCfg(GraphQLConfiguration configuration) {
+            super(configuration);
         }
 
         /**
@@ -134,8 +157,9 @@ public class GraphQLConfiguration {
         }
     }
 
-    public static class PropertyDataFetcherCfg {
-        private PropertyDataFetcherCfg() {
+    public static class PropertyDataFetcherCfg extends BaseCfg {
+        private PropertyDataFetcherCfg(GraphQLConfiguration configuration) {
+            super(configuration);
         }
 
         /**
@@ -176,22 +200,109 @@ public class GraphQLConfiguration {
         }
     }
 
-
-    public static class IncrementalSupportCfg {
-        private IncrementalSupportCfg() {
+    public static class GoodFaithIntrospectionCfg extends BaseCfg {
+        private GoodFaithIntrospectionCfg(GraphQLConfiguration configuration) {
+            super(configuration);
         }
 
-        @ExperimentalApi
-        public boolean isIncrementalSupportEnabled(GraphQLContext graphQLContext) {
-            return graphQLContext.getBoolean(ExperimentalApi.ENABLE_INCREMENTAL_SUPPORT);
+        /**
+         * @return true if good faith introspection is enabled
+         */
+        public boolean isEnabledJvmWide() {
+            return GoodFaithIntrospection.isEnabledJvmWide();
+        }
+
+        /**
+         * This allows you to disable good faith introspection, which is on by default.
+         *
+         * @param enabled the desired state
+         *
+         * @return the previous state
+         */
+        public GoodFaithIntrospectionCfg enabledJvmWide(boolean enabled) {
+            GoodFaithIntrospection.enabledJvmWide(enabled);
+            return this;
+        }
+    }
+
+    /*
+     * ===============================================
+     * Per GraphqlContext code down here
+     * ===============================================
+     */
+
+    public static class GraphQLContextConfiguration {
+        // it will be one or the other types of GraphQLContext
+        private final GraphQLContext graphQLContext;
+        private final GraphQLContext.Builder graphQLContextBuilder;
+
+        GraphQLContextConfiguration(GraphQLContext graphQLContext) {
+            this.graphQLContext = graphQLContext;
+            this.graphQLContextBuilder = null;
+        }
+
+        GraphQLContextConfiguration(GraphQLContext.Builder graphQLContextBuilder) {
+            this.graphQLContextBuilder = graphQLContextBuilder;
+            this.graphQLContext = null;
+        }
+
+        /**
+         * @return an element that allows you to control incremental support, that is @defer configuration
+         */
+        public IncrementalSupportCfg incrementalSupport() {
+            return new IncrementalSupportCfg(this);
+        }
+
+        private void put(String named, Object value) {
+            if (graphQLContext != null) {
+                graphQLContext.put(named, value);
+            } else {
+                assertNotNull(graphQLContextBuilder).put(named, value);
+            }
+        }
+
+        private boolean getBoolean(String named) {
+            if (graphQLContext != null) {
+                return graphQLContext.getBoolean(named);
+            } else {
+                return assertNotNull(graphQLContextBuilder).getBoolean(named);
+            }
+        }
+    }
+
+    private static class BaseContextCfg {
+        protected final GraphQLContextConfiguration contextConfig;
+
+        private BaseContextCfg(GraphQLContextConfiguration contextConfig) {
+            this.contextConfig = contextConfig;
+        }
+
+        /**
+         * @return an element that allows you to chain multiple configuration elements
+         */
+        public GraphQLContextConfiguration then() {
+            return contextConfig;
+        }
+    }
+
+    public static class IncrementalSupportCfg extends BaseContextCfg {
+        private IncrementalSupportCfg(GraphQLContextConfiguration contextConfig) {
+            super(contextConfig);
+        }
+
+        /**
+         * @return true if @defer and @stream behaviour is enabled for this execution.
+         */
+        public boolean isIncrementalSupportEnabled() {
+            return contextConfig.getBoolean(ExperimentalApi.ENABLE_INCREMENTAL_SUPPORT);
         }
 
         /**
          * This controls whether @defer and @stream behaviour is enabled for this execution.
          */
         @ExperimentalApi
-        public IncrementalSupportCfg enableIncrementalSupport(GraphQLContext.Builder graphqlContext, boolean enable) {
-            graphqlContext.put(ExperimentalApi.ENABLE_INCREMENTAL_SUPPORT, enable);
+        public IncrementalSupportCfg enableIncrementalSupport(boolean enable) {
+            contextConfig.put(ExperimentalApi.ENABLE_INCREMENTAL_SUPPORT, enable);
             return this;
         }
     }

@@ -86,12 +86,30 @@ public class GraphQL {
 
     /**
      * This allows you to control specific aspects of the GraphQL system
-     * including some JVM wide settings and some per execution settings
+     * including some JVM wide settings
      *
-     * @return a GraphQL object
+     * @return a {@link GraphQLConfiguration} object
      */
-    public static GraphQLConfiguration config() {
-        return GraphQLConfiguration.INSTANCE;
+    public static GraphQLConfiguration configure() {
+        return new GraphQLConfiguration();
+    }
+
+    /**
+     * This allows you to control specific per execution aspects of the GraphQL system
+     *
+     * @return a {@link GraphQLConfiguration.GraphQLContextConfiguration} object
+     */
+    public static GraphQLConfiguration.GraphQLContextConfiguration configure(GraphQLContext graphQLContext) {
+        return new GraphQLConfiguration.GraphQLContextConfiguration(graphQLContext);
+    }
+
+    /**
+     * This allows you to control specific per execution aspects of the GraphQL system
+     *
+     * @return a {@link GraphQLConfiguration.GraphQLContextConfiguration} object
+     */
+    public static GraphQLConfiguration.GraphQLContextConfiguration configure(GraphQLContext.Builder graphQLContextBuilder) {
+        return new GraphQLConfiguration.GraphQLContextConfiguration(graphQLContextBuilder);
     }
 
     private final GraphQLSchema graphQLSchema;
