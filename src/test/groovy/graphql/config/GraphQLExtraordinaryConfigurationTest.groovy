@@ -10,7 +10,7 @@ import spock.lang.Specification
 
 import static graphql.parser.ParserOptions.newParserOptions
 
-class GraphQLConfigurationTest extends Specification {
+class GraphQLExtraordinaryConfigurationTest extends Specification {
 
     def startingParserOptions = ParserOptions.getDefaultParserOptions()
     def startingState = GoodFaithIntrospection.isEnabledJvmWide()
@@ -25,8 +25,8 @@ class GraphQLConfigurationTest extends Specification {
     def "can set parser configurations"() {
         when:
         def parserOptions = newParserOptions().maxRuleDepth(99).build()
-        GraphQL.configure().parsing().setDefaultParserOptions(parserOptions)
-        def defaultParserOptions = GraphQL.configure().parsing().getDefaultParserOptions()
+        GraphQL.extraordinaryConfigure().parsing().setDefaultParserOptions(parserOptions)
+        def defaultParserOptions = GraphQL.extraordinaryConfigure().parsing().getDefaultParserOptions()
 
         then:
         defaultParserOptions.getMaxRuleDepth() == 99
@@ -34,82 +34,82 @@ class GraphQLConfigurationTest extends Specification {
 
     def "can set property data fetcher config"() {
         when:
-        def prevValue = GraphQL.configure().propertyDataFetching().setUseNegativeCache(false)
+        def prevValue = GraphQL.extraordinaryConfigure().propertyDataFetching().setUseNegativeCache(false)
         then:
         prevValue
 
         when:
-        prevValue = GraphQL.configure().propertyDataFetching().setUseNegativeCache(false)
+        prevValue = GraphQL.extraordinaryConfigure().propertyDataFetching().setUseNegativeCache(false)
         then:
         !prevValue
 
         when:
-        prevValue = GraphQL.configure().propertyDataFetching().setUseNegativeCache(true)
+        prevValue = GraphQL.extraordinaryConfigure().propertyDataFetching().setUseNegativeCache(true)
         then:
         !prevValue
     }
 
     def "can set good faith settings"() {
         when:
-        GraphQL.configure().goodFaithIntrospection().enabledJvmWide(false)
+        GraphQL.extraordinaryConfigure().goodFaithIntrospection().enabledJvmWide(false)
 
         then:
-        !GraphQL.configure().goodFaithIntrospection().isEnabledJvmWide()
+        !GraphQL.extraordinaryConfigure().goodFaithIntrospection().isEnabledJvmWide()
 
         when:
-        GraphQL.configure().goodFaithIntrospection().enabledJvmWide(true)
+        GraphQL.extraordinaryConfigure().goodFaithIntrospection().enabledJvmWide(true)
 
         then:
-        GraphQL.configure().goodFaithIntrospection().isEnabledJvmWide()
+        GraphQL.extraordinaryConfigure().goodFaithIntrospection().isEnabledJvmWide()
 
         // showing chaining
         when:
-        GraphQL.configure().goodFaithIntrospection()
+        GraphQL.extraordinaryConfigure().goodFaithIntrospection()
                 .enabledJvmWide(true)
                 .then().goodFaithIntrospection()
                 .enabledJvmWide(false)
 
         then:
-        !GraphQL.configure().goodFaithIntrospection().isEnabledJvmWide()
+        !GraphQL.extraordinaryConfigure().goodFaithIntrospection().isEnabledJvmWide()
     }
 
     def "can set defer configuration on graphql context objects"() {
         when:
         def graphqlContextBuilder = GraphQLContext.newContext()
-        GraphQL.configure(graphqlContextBuilder).incrementalSupport().enableIncrementalSupport(true)
+        GraphQL.extraordinaryConfigure(graphqlContextBuilder).incrementalSupport().enableIncrementalSupport(true)
 
         then:
         graphqlContextBuilder.build().get(ExperimentalApi.ENABLE_INCREMENTAL_SUPPORT) == true
-        GraphQL.configure(graphqlContextBuilder).incrementalSupport().isIncrementalSupportEnabled()
+        GraphQL.extraordinaryConfigure(graphqlContextBuilder).incrementalSupport().isIncrementalSupportEnabled()
 
         when:
         graphqlContextBuilder = GraphQLContext.newContext()
-        GraphQL.configure(graphqlContextBuilder).incrementalSupport().enableIncrementalSupport(false)
+        GraphQL.extraordinaryConfigure(graphqlContextBuilder).incrementalSupport().enableIncrementalSupport(false)
 
         then:
         graphqlContextBuilder.build().get(ExperimentalApi.ENABLE_INCREMENTAL_SUPPORT) == false
-        !GraphQL.configure(graphqlContextBuilder).incrementalSupport().isIncrementalSupportEnabled()
+        !GraphQL.extraordinaryConfigure(graphqlContextBuilder).incrementalSupport().isIncrementalSupportEnabled()
 
         when:
         def graphqlContext = GraphQLContext.newContext().build()
-        GraphQL.configure(graphqlContext).incrementalSupport().enableIncrementalSupport(true)
+        GraphQL.extraordinaryConfigure(graphqlContext).incrementalSupport().enableIncrementalSupport(true)
 
         then:
         graphqlContext.get(ExperimentalApi.ENABLE_INCREMENTAL_SUPPORT) == true
-        GraphQL.configure(graphqlContext).incrementalSupport().isIncrementalSupportEnabled()
+        GraphQL.extraordinaryConfigure(graphqlContext).incrementalSupport().isIncrementalSupportEnabled()
 
         when:
         graphqlContext = GraphQLContext.newContext().build()
-        GraphQL.configure(graphqlContext).incrementalSupport().enableIncrementalSupport(false)
+        GraphQL.extraordinaryConfigure(graphqlContext).incrementalSupport().enableIncrementalSupport(false)
 
         then:
         graphqlContext.get(ExperimentalApi.ENABLE_INCREMENTAL_SUPPORT) == false
-        !GraphQL.configure(graphqlContext).incrementalSupport().isIncrementalSupportEnabled()
+        !GraphQL.extraordinaryConfigure(graphqlContext).incrementalSupport().isIncrementalSupportEnabled()
 
         when:
         graphqlContext = GraphQLContext.newContext().build()
         // just to show we we can navigate the DSL
-        GraphQL.configure(graphqlContext)
+        GraphQL.extraordinaryConfigure(graphqlContext)
                 .incrementalSupport()
                 .enableIncrementalSupport(false)
                 .enableIncrementalSupport(true)
@@ -118,6 +118,6 @@ class GraphQLConfigurationTest extends Specification {
 
         then:
         graphqlContext.get(ExperimentalApi.ENABLE_INCREMENTAL_SUPPORT) == false
-            !GraphQL.configure(graphqlContext).incrementalSupport().isIncrementalSupportEnabled()
+            !GraphQL.extraordinaryConfigure(graphqlContext).incrementalSupport().isIncrementalSupportEnabled()
     }
 }
