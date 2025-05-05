@@ -7,16 +7,16 @@ import graphql.schema.PropertyDataFetcherHelper;
 import static graphql.Assert.assertNotNull;
 
 /**
- * This allows you to control "extraordinary" aspects of the GraphQL system
+ * This allows you to control "unusual" aspects of the GraphQL system
  * including some JVM wide settings and some per execution settings
  * as well as experimental ones.
  * <p>
- * This is named extraordinary because in general we don't expect you to
- * have to make ths configuration by default but you can opt into certain features
+ * This is named unusual because in general we don't expect you to
+ * have to make ths configuration by default, but you can opt into certain features
  * or disable them if you want to.
  */
-public class GraphQLExtraordinaryConfiguration {
-    GraphQLExtraordinaryConfiguration() {
+public class GraphQLUnusualConfiguration {
+    GraphQLUnusualConfiguration() {
     }
 
     /**
@@ -42,23 +42,23 @@ public class GraphQLExtraordinaryConfiguration {
     }
 
     private static class BaseCfg {
-        protected final GraphQLExtraordinaryConfiguration configuration;
+        protected final GraphQLUnusualConfiguration configuration;
 
-        private BaseCfg(GraphQLExtraordinaryConfiguration configuration) {
+        private BaseCfg(GraphQLUnusualConfiguration configuration) {
             this.configuration = configuration;
         }
 
         /**
          * @return an element that allows you to chain multiple configuration elements
          */
-        public GraphQLExtraordinaryConfiguration then() {
+        public GraphQLUnusualConfiguration then() {
             return configuration;
         }
     }
 
     public static class ParserCfg extends BaseCfg {
 
-        private ParserCfg(GraphQLExtraordinaryConfiguration configuration) {
+        private ParserCfg(GraphQLUnusualConfiguration configuration) {
             super(configuration);
         }
 
@@ -162,7 +162,7 @@ public class GraphQLExtraordinaryConfiguration {
     }
 
     public static class PropertyDataFetcherCfg extends BaseCfg {
-        private PropertyDataFetcherCfg(GraphQLExtraordinaryConfiguration configuration) {
+        private PropertyDataFetcherCfg(GraphQLUnusualConfiguration configuration) {
             super(configuration);
         }
 
@@ -205,7 +205,7 @@ public class GraphQLExtraordinaryConfiguration {
     }
 
     public static class GoodFaithIntrospectionCfg extends BaseCfg {
-        private GoodFaithIntrospectionCfg(GraphQLExtraordinaryConfiguration configuration) {
+        private GoodFaithIntrospectionCfg(GraphQLUnusualConfiguration configuration) {
             super(configuration);
         }
 

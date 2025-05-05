@@ -85,43 +85,43 @@ import static graphql.execution.instrumentation.SimpleInstrumentationContext.non
 public class GraphQL {
 
     /**
-     * This allows you to control "extraordinary" aspects of the GraphQL system
+     * This allows you to control "unusual" aspects of the GraphQL system
      * including some JVM wide settings
      * <p>
-     * This is named extraordinary because in general we don't expect you to
+     * This is named unusual because in general we don't expect you to
      * have to make ths configuration by default, but you can opt into certain features
      * or disable them if you want to.
      *
-     * @return a {@link GraphQLExtraordinaryConfiguration} object
+     * @return a {@link GraphQLUnusualConfiguration} object
      */
-    public static GraphQLExtraordinaryConfiguration extraordinaryConfigure() {
-        return new GraphQLExtraordinaryConfiguration();
+    public static GraphQLUnusualConfiguration unusualConfiguration() {
+        return new GraphQLUnusualConfiguration();
     }
 
     /**
-     * This allows you to control "extraordinary" per execution aspects of the GraphQL system
+     * This allows you to control "unusual" per execution aspects of the GraphQL system
      * <p>
-     * This is named extraordinary because in general we don't expect you to
+     * This is named unusual because in general we don't expect you to
      * have to make ths configuration by default, but you can opt into certain features
      * or disable them if you want to.
      *
-     * @return a {@link GraphQLExtraordinaryConfiguration.GraphQLContextConfiguration} object
+     * @return a {@link GraphQLUnusualConfiguration.GraphQLContextConfiguration} object
      */
-    public static GraphQLExtraordinaryConfiguration.GraphQLContextConfiguration extraordinaryConfigure(GraphQLContext graphQLContext) {
-        return new GraphQLExtraordinaryConfiguration.GraphQLContextConfiguration(graphQLContext);
+    public static GraphQLUnusualConfiguration.GraphQLContextConfiguration unusualConfiguration(GraphQLContext graphQLContext) {
+        return new GraphQLUnusualConfiguration.GraphQLContextConfiguration(graphQLContext);
     }
 
     /**
-     * This allows you to control "extraordinary" per execution aspects of the GraphQL system
+     * This allows you to control "unusual" per execution aspects of the GraphQL system
      * <p>
-     * This is named extraordinary because in general we don't expect you to
+     * This is named unusual because in general we don't expect you to
      * have to make ths configuration by default, but you can opt into certain features
      * or disable them if you want to.
      *
-     * @return a {@link GraphQLExtraordinaryConfiguration.GraphQLContextConfiguration} object
+     * @return a {@link GraphQLUnusualConfiguration.GraphQLContextConfiguration} object
      */
-    public static GraphQLExtraordinaryConfiguration.GraphQLContextConfiguration extraordinaryConfigure(GraphQLContext.Builder graphQLContextBuilder) {
-        return new GraphQLExtraordinaryConfiguration.GraphQLContextConfiguration(graphQLContextBuilder);
+    public static GraphQLUnusualConfiguration.GraphQLContextConfiguration unusualConfiguration(GraphQLContext.Builder graphQLContextBuilder) {
+        return new GraphQLUnusualConfiguration.GraphQLContextConfiguration(graphQLContextBuilder);
     }
 
     private final GraphQLSchema graphQLSchema;
