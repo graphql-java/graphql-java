@@ -62,7 +62,7 @@ public class NodeMultiZipper<T> {
             Map<T, ImmutableList<NodeZipper<T>>> sameParent = zipperWithSameParent(deepestZippers);
 
             List<NodeZipper<T>> newZippers = new ArrayList<>();
-            Map<T, NodeZipper<T>> zipperByNode = FpKit.groupingByUniqueKey(curZippers, NodeZipper::getCurNode);
+            Map<T, NodeZipper<T>> zipperByNode = FpKit.toMapByUniqueKey(curZippers, NodeZipper::getCurNode);
             for (Map.Entry<T, ImmutableList<NodeZipper<T>>> entry : sameParent.entrySet()) {
                 NodeZipper<T> newZipper = moveUp(entry.getKey(), entry.getValue());
                 Optional<NodeZipper<T>> zipperToBeReplaced = Optional.ofNullable(zipperByNode.get(entry.getKey()));
