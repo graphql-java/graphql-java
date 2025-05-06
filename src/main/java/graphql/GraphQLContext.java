@@ -326,6 +326,15 @@ public class GraphQLContext {
             );
         }
 
+        public Object get(Object key) {
+            return map.get(key);
+        }
+
+        public boolean getBoolean(Object key) {
+            return Boolean.parseBoolean(String.valueOf(get(key)));
+        }
+
+
         public Builder of(
                 Object key1, Object value1
         ) {
