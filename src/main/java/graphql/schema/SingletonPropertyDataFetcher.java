@@ -15,7 +15,18 @@ public class SingletonPropertyDataFetcher<T> implements LightDataFetcher<T> {
 
     private static final SingletonPropertyDataFetcher<Object> SINGLETON_FETCHER = new SingletonPropertyDataFetcher<>();
 
-    private static final DataFetcherFactory<?> SINGLETON_FETCHER_FACTORY = environment -> SINGLETON_FETCHER;
+    private static final DataFetcherFactory<?> SINGLETON_FETCHER_FACTORY = new DataFetcherFactory<Object>() {
+        @SuppressWarnings("deprecation")
+        @Override
+        public DataFetcher<Object> get(DataFetcherFactoryEnvironment environment) {
+            return SINGLETON_FETCHER;
+        }
+
+        @Override
+        public DataFetcher<Object> get(GraphQLFieldDefinition fieldDefinition) {
+            return SINGLETON_FETCHER;
+        }
+    };
 
     /**
      * This returns the same singleton {@link LightDataFetcher} that fetches property values
