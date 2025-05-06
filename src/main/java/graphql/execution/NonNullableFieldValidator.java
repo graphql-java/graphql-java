@@ -14,15 +14,13 @@ import graphql.Internal;
 public class NonNullableFieldValidator {
 
     private final ExecutionContext executionContext;
-    private final ExecutionStepInfo executionStepInfo;
 
-    public NonNullableFieldValidator(ExecutionContext executionContext, ExecutionStepInfo executionStepInfo) {
+    public NonNullableFieldValidator(ExecutionContext executionContext) {
         this.executionContext = executionContext;
-        this.executionStepInfo = executionStepInfo;
     }
 
     /**
-     * Called to check that a value is non null if the type requires it to be non null
+     * Called to check that a value is non-null if the type requires it to be non null
      *
      * @param parameters the execution strategy parameters
      * @param result the result to check
@@ -34,6 +32,7 @@ public class NonNullableFieldValidator {
      */
     public <T> T validate(ExecutionStrategyParameters parameters, T result) throws NonNullableFieldWasNullException {
         if (result == null) {
+            ExecutionStepInfo executionStepInfo = parameters.getExecutionStepInfo();
             if (executionStepInfo.isNonNullType()) {
                 // see https://spec.graphql.org/October2021/#sec-Errors-and-Non-Nullability
                 //

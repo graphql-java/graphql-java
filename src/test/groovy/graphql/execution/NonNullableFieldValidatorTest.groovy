@@ -7,10 +7,6 @@ import static graphql.schema.GraphQLNonNull.nonNull
 
 class NonNullableFieldValidatorTest extends Specification {
 
-    def parameters = Mock(ExecutionStrategyParameters) {
-        getPath() >> ResultPath.rootPath()
-    }
-
     def "non nullable field throws exception"() {
         ExecutionContext context = Mock(ExecutionContext) {
             propagateErrorsOnNonNullContractFailure() >> true
@@ -18,7 +14,12 @@ class NonNullableFieldValidatorTest extends Specification {
 
         ExecutionStepInfo typeInfo = ExecutionStepInfo.newExecutionStepInfo().type(nonNull(GraphQLString)).build()
 
-        NonNullableFieldValidator validator = new NonNullableFieldValidator(context, typeInfo)
+        def parameters = Mock(ExecutionStrategyParameters) {
+            getPath() >> ResultPath.rootPath()
+            getExecutionStepInfo() >> typeInfo
+        }
+
+        NonNullableFieldValidator validator = new NonNullableFieldValidator(context)
 
         when:
         validator.validate(parameters, null)
@@ -35,7 +36,12 @@ class NonNullableFieldValidatorTest extends Specification {
 
         ExecutionStepInfo typeInfo = ExecutionStepInfo.newExecutionStepInfo().type(GraphQLString).build()
 
-        NonNullableFieldValidator validator = new NonNullableFieldValidator(context, typeInfo)
+        def parameters = Mock(ExecutionStrategyParameters) {
+            getPath() >> ResultPath.rootPath()
+            getExecutionStepInfo() >> typeInfo
+        }
+
+        NonNullableFieldValidator validator = new NonNullableFieldValidator(context)
 
         when:
         def result = validator.validate(parameters, null)
@@ -51,7 +57,12 @@ class NonNullableFieldValidatorTest extends Specification {
 
         ExecutionStepInfo typeInfo = ExecutionStepInfo.newExecutionStepInfo().type(nonNull(GraphQLString)).build()
 
-        NonNullableFieldValidator validator = new NonNullableFieldValidator(context, typeInfo)
+        def parameters = Mock(ExecutionStrategyParameters) {
+            getPath() >> ResultPath.rootPath()
+            getExecutionStepInfo() >> typeInfo
+        }
+
+        NonNullableFieldValidator validator = new NonNullableFieldValidator(context)
 
         when:
         def result = validator.validate(parameters, null)
