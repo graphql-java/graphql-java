@@ -4,6 +4,7 @@ import graphql.Assert;
 import graphql.ExecutionInput;
 import graphql.ExecutionResult;
 import graphql.GraphQL;
+import graphql.execution.instrumentation.dataloader.DataLoaderDispatchingContextKeys;
 import graphql.schema.DataFetcher;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.idl.RuntimeWiring;
@@ -184,6 +185,7 @@ public class DataLoaderPerformance {
         DataLoaderRegistry registry = DataLoaderRegistry.newRegistry().register(ownerDLName, ownerDL).register(petDLName, petDL).build();
 
         ExecutionInput executionInput = ExecutionInput.newExecutionInput().query(myState.query).dataLoaderRegistry(registry).build();
+        executionInput.getGraphQLContext().put(DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING, true);
         ExecutionResult execute = myState.graphQL.execute(executionInput);
         Assert.assertTrue(execute.isDataPresent());
         Assert.assertTrue(execute.getErrors().isEmpty());

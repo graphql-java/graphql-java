@@ -73,7 +73,7 @@ class DataFetchingEnvironmentImplTest extends Specification {
         dfe.getVariables() == variables
         dfe.getOperationDefinition() == operationDefinition
         dfe.getExecutionId() == executionId
-        dfe.getDataLoader("dataLoader") == dataLoader
+        dfe.getDataLoader("dataLoader").delegate == dataLoader
     }
 
     def "create environment from existing one will copy everything to new instance"() {
@@ -118,7 +118,7 @@ class DataFetchingEnvironmentImplTest extends Specification {
         dfe.getDocument() == dfeCopy.getDocument()
         dfe.getOperationDefinition() == dfeCopy.getOperationDefinition()
         dfe.getVariables() == dfeCopy.getVariables()
-        dfe.getDataLoader("dataLoader") == dataLoader
+        dfe.getDataLoader("dataLoader").delegate == dataLoader
         dfe.getLocale() == dfeCopy.getLocale()
         dfe.getLocalContext() == dfeCopy.getLocalContext()
     }

@@ -38,20 +38,36 @@ public class ResultPath {
 
     // hash is effective immutable but lazily initialized similar to the hash code of java.lang.String
     private int hash;
+    private final String toStringValue;
 
     private ResultPath() {
         parent = null;
         segment = null;
+        this.toStringValue = initString();
     }
 
     private ResultPath(ResultPath parent, String segment) {
         this.parent = assertNotNull(parent, () -> "Must provide a parent path");
         this.segment = assertNotNull(segment, () -> "Must provide a sub path");
+        this.toStringValue = initString();
     }
 
     private ResultPath(ResultPath parent, int segment) {
         this.parent = assertNotNull(parent, () -> "Must provide a parent path");
         this.segment = segment;
+        this.toStringValue = initString();
+    }
+
+    private String initString() {
+        if (parent == null) {
+            return "";
+        }
+
+        if (ROOT_PATH.equals(parent)) {
+            return segmentToString();
+        }
+        return parent + segmentToString();
+
     }
 
     public int getLevel() {
@@ -294,15 +310,7 @@ public class ResultPath {
      */
     @Override
     public String toString() {
-        if (parent == null) {
-            return "";
-        }
-
-        if (ROOT_PATH.equals(parent)) {
-            return segmentToString();
-        }
-
-        return parent.toString() + segmentToString();
+        return toStringValue;
     }
 
     public String segmentToString() {
