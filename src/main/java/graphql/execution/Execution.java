@@ -57,6 +57,7 @@ public class Execution {
     private final ExecutionStrategy subscriptionStrategy;
     private final Instrumentation instrumentation;
     private final ValueUnboxer valueUnboxer;
+    private final ResponseMapFactory responseMapFactory;
     private final boolean doNotAutomaticallyDispatchDataLoader;
 
     public Execution(ExecutionStrategy queryStrategy,
@@ -64,12 +65,14 @@ public class Execution {
                      ExecutionStrategy subscriptionStrategy,
                      Instrumentation instrumentation,
                      ValueUnboxer valueUnboxer,
+                     ResponseMapFactory responseMapFactory,
                      boolean doNotAutomaticallyDispatchDataLoader) {
         this.queryStrategy = queryStrategy != null ? queryStrategy : new AsyncExecutionStrategy();
         this.mutationStrategy = mutationStrategy != null ? mutationStrategy : new AsyncSerialExecutionStrategy();
         this.subscriptionStrategy = subscriptionStrategy != null ? subscriptionStrategy : new AsyncExecutionStrategy();
         this.instrumentation = instrumentation;
         this.valueUnboxer = valueUnboxer;
+        this.responseMapFactory = responseMapFactory;
         this.doNotAutomaticallyDispatchDataLoader = doNotAutomaticallyDispatchDataLoader;
     }
 
@@ -116,6 +119,7 @@ public class Execution {
                 .dataLoaderRegistry(executionInput.getDataLoaderRegistry())
                 .locale(executionInput.getLocale())
                 .valueUnboxer(valueUnboxer)
+                .responseMapFactory(responseMapFactory)
                 .executionInput(executionInput)
                 .propagapropagateErrorsOnNonNullContractFailureeErrors(propagateErrorsOnNonNullContractFailure)
                 .engineRunningState(engineRunningState)

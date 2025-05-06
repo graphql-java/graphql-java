@@ -24,7 +24,7 @@ import java.util.concurrent.TimeUnit;
 @State(Scope.Benchmark)
 @Warmup(iterations = 2, time = 5)
 @Measurement(iterations = 3)
-@Fork(3)
+@Fork(2)
 public class ENF1Performance {
 
     @State(Scope.Benchmark)
