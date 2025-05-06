@@ -22,29 +22,29 @@ public class GraphQLUnusualConfiguration {
     /**
      * @return an element that allows you to control JVM wide parsing configuration
      */
-    public ParserCfg parsing() {
-        return new ParserCfg(this);
+    public ParserConfig parsing() {
+        return new ParserConfig(this);
     }
 
     /**
      * @return an element that allows you to control JVM wide {@link graphql.schema.PropertyDataFetcher} configuration
      */
-    public PropertyDataFetcherCfg propertyDataFetching() {
-        return new PropertyDataFetcherCfg(this);
+    public PropertyDataFetcherConfig propertyDataFetching() {
+        return new PropertyDataFetcherConfig(this);
     }
 
     /**
      * @return an element that allows you to control JVM wide configuration
      * of {@link graphql.introspection.GoodFaithIntrospection}
      */
-    public GoodFaithIntrospectionCfg goodFaithIntrospection() {
-        return new GoodFaithIntrospectionCfg(this);
+    public GoodFaithIntrospectionConfig goodFaithIntrospection() {
+        return new GoodFaithIntrospectionConfig(this);
     }
 
-    private static class BaseCfg {
+    private static class BaseConfig {
         protected final GraphQLUnusualConfiguration configuration;
 
-        private BaseCfg(GraphQLUnusualConfiguration configuration) {
+        private BaseConfig(GraphQLUnusualConfiguration configuration) {
             this.configuration = configuration;
         }
 
@@ -56,9 +56,9 @@ public class GraphQLUnusualConfiguration {
         }
     }
 
-    public static class ParserCfg extends BaseCfg {
+    public static class ParserConfig extends BaseConfig {
 
-        private ParserCfg(GraphQLUnusualConfiguration configuration) {
+        private ParserConfig(GraphQLUnusualConfiguration configuration) {
             super(configuration);
         }
 
@@ -92,7 +92,7 @@ public class GraphQLUnusualConfiguration {
          * @see graphql.language.IgnoredChar
          * @see graphql.language.SourceLocation
          */
-        public ParserCfg setDefaultParserOptions(ParserOptions options) {
+        public ParserConfig setDefaultParserOptions(ParserOptions options) {
             ParserOptions.setDefaultParserOptions(options);
             return this;
         }
@@ -122,7 +122,7 @@ public class GraphQLUnusualConfiguration {
          * @see graphql.language.IgnoredChar
          * @see graphql.language.SourceLocation
          */
-        public ParserCfg setDefaultOperationParserOptions(ParserOptions options) {
+        public ParserConfig setDefaultOperationParserOptions(ParserOptions options) {
             ParserOptions.setDefaultOperationParserOptions(options);
             return this;
         }
@@ -155,14 +155,14 @@ public class GraphQLUnusualConfiguration {
          * @see graphql.language.IgnoredChar
          * @see graphql.language.SourceLocation
          */
-        public ParserCfg setDefaultSdlParserOptions(ParserOptions options) {
+        public ParserConfig setDefaultSdlParserOptions(ParserOptions options) {
             ParserOptions.setDefaultSdlParserOptions(options);
             return this;
         }
     }
 
-    public static class PropertyDataFetcherCfg extends BaseCfg {
-        private PropertyDataFetcherCfg(GraphQLUnusualConfiguration configuration) {
+    public static class PropertyDataFetcherConfig extends BaseConfig {
+        private PropertyDataFetcherConfig(GraphQLUnusualConfiguration configuration) {
             super(configuration);
         }
 
@@ -175,7 +175,7 @@ public class GraphQLUnusualConfiguration {
          * be developed to do just that.
          */
         @SuppressWarnings("unused")
-        public PropertyDataFetcherCfg clearReflectionCache() {
+        public PropertyDataFetcherConfig clearReflectionCache() {
             PropertyDataFetcherHelper.clearReflectionCache();
             return this;
         }
@@ -204,8 +204,8 @@ public class GraphQLUnusualConfiguration {
         }
     }
 
-    public static class GoodFaithIntrospectionCfg extends BaseCfg {
-        private GoodFaithIntrospectionCfg(GraphQLUnusualConfiguration configuration) {
+    public static class GoodFaithIntrospectionConfig extends BaseConfig {
+        private GoodFaithIntrospectionConfig(GraphQLUnusualConfiguration configuration) {
             super(configuration);
         }
 
@@ -223,7 +223,7 @@ public class GraphQLUnusualConfiguration {
          *
          * @return the previous state
          */
-        public GoodFaithIntrospectionCfg enabledJvmWide(boolean enabled) {
+        public GoodFaithIntrospectionConfig enabledJvmWide(boolean enabled) {
             GoodFaithIntrospection.enabledJvmWide(enabled);
             return this;
         }
@@ -253,8 +253,8 @@ public class GraphQLUnusualConfiguration {
         /**
          * @return an element that allows you to control incremental support, that is @defer configuration
          */
-        public IncrementalSupportCfg incrementalSupport() {
-            return new IncrementalSupportCfg(this);
+        public IncrementalSupportConfig incrementalSupport() {
+            return new IncrementalSupportConfig(this);
         }
 
         private void put(String named, Object value) {
@@ -274,10 +274,10 @@ public class GraphQLUnusualConfiguration {
         }
     }
 
-    private static class BaseContextCfg {
+    private static class BaseContextConfig {
         protected final GraphQLContextConfiguration contextConfig;
 
-        private BaseContextCfg(GraphQLContextConfiguration contextConfig) {
+        private BaseContextConfig(GraphQLContextConfiguration contextConfig) {
             this.contextConfig = contextConfig;
         }
 
@@ -289,8 +289,8 @@ public class GraphQLUnusualConfiguration {
         }
     }
 
-    public static class IncrementalSupportCfg extends BaseContextCfg {
-        private IncrementalSupportCfg(GraphQLContextConfiguration contextConfig) {
+    public static class IncrementalSupportConfig extends BaseContextConfig {
+        private IncrementalSupportConfig(GraphQLContextConfiguration contextConfig) {
             super(contextConfig);
         }
 
@@ -305,7 +305,7 @@ public class GraphQLUnusualConfiguration {
          * This controls whether @defer and @stream behaviour is enabled for this execution.
          */
         @ExperimentalApi
-        public IncrementalSupportCfg enableIncrementalSupport(boolean enable) {
+        public IncrementalSupportConfig enableIncrementalSupport(boolean enable) {
             contextConfig.put(ExperimentalApi.ENABLE_INCREMENTAL_SUPPORT, enable);
             return this;
         }
