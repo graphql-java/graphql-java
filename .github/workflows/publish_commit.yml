@@ -1,6 +1,6 @@
 name: Publish Commit SHA for performance testing
 on:
-  pull_request:
+  pull_request_target:
     types:
       - closed
     branches:
@@ -12,6 +12,7 @@ permissions:
   contents: read  # This is required for actions/checkout
 jobs:
   publishCommit:
+    if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     steps:
       - uses: aws-actions/configure-aws-credentials@v4
