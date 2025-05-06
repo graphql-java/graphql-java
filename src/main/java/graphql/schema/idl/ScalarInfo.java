@@ -6,6 +6,7 @@ import graphql.PublicApi;
 import graphql.Scalars;
 import graphql.language.ScalarTypeDefinition;
 import graphql.schema.GraphQLScalarType;
+import org.jspecify.annotations.NullMarked;
 
 import java.util.List;
 import java.util.Map;
@@ -14,6 +15,7 @@ import java.util.Map;
  * Info on all the standard scalar objects provided by graphql-java
  */
 @PublicApi
+@NullMarked
 public class ScalarInfo {
 
     /**
