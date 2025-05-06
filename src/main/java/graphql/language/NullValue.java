@@ -7,6 +7,8 @@ import graphql.PublicApi;
 import graphql.collect.ImmutableKit;
 import graphql.util.TraversalControl;
 import graphql.util.TraverserContext;
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -19,10 +21,11 @@ import static graphql.language.NodeChildrenContainer.newNodeChildrenContainer;
 import static graphql.language.NodeUtil.assertNewChildrenAreEmpty;
 
 @PublicApi
+@NullMarked
 public class NullValue extends AbstractNode<NullValue> implements Value<NullValue> {
 
     @Internal
-    protected NullValue(SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars, Map<String, String> additionalData) {
+    protected NullValue(@Nullable SourceLocation sourceLocation, List<Comment> comments, IgnoredChars ignoredChars, Map<String, String> additionalData) {
         super(sourceLocation, comments, ignoredChars, additionalData);
     }
 
@@ -47,7 +50,7 @@ public class NullValue extends AbstractNode<NullValue> implements Value<NullValu
     }
 
     @Override
-    public boolean isEqualTo(Node o) {
+    public boolean isEqualTo(@Nullable Node o) {
         if (this == o) {
             return true;
         }
@@ -87,7 +90,7 @@ public class NullValue extends AbstractNode<NullValue> implements Value<NullValu
     }
 
     public static final class Builder implements NodeBuilder {
-        private SourceLocation sourceLocation;
+        private @Nullable SourceLocation sourceLocation;
         private ImmutableList<Comment> comments = emptyList();
         private IgnoredChars ignoredChars = IgnoredChars.EMPTY;
         private Map<String, String> additionalData = new LinkedHashMap<>();
@@ -102,7 +105,7 @@ public class NullValue extends AbstractNode<NullValue> implements Value<NullValu
         private Builder() {
         }
 
-        public Builder sourceLocation(SourceLocation sourceLocation) {
+        public Builder sourceLocation(@Nullable SourceLocation sourceLocation) {
             this.sourceLocation = sourceLocation;
             return this;
         }
