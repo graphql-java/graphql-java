@@ -1,5 +1,6 @@
 package graphql;
 
+import graphql.execution.ResponseMapFactory;
 import graphql.introspection.GoodFaithIntrospection;
 import graphql.parser.ParserOptions;
 import graphql.schema.PropertyDataFetcherHelper;
@@ -257,6 +258,13 @@ public class GraphQLUnusualConfiguration {
             return new IncrementalSupportConfig(this);
         }
 
+        /**
+         * @return an element that allows you to control the {@link ResponseMapFactory} used
+         */
+        public ResponseMapFactoryConfig responseMapFactory() {
+            return new ResponseMapFactoryConfig(this);
+        }
+
         private void put(String named, Object value) {
             if (graphQLContext != null) {
                 graphQLContext.put(named, value);
@@ -270,6 +278,15 @@ public class GraphQLUnusualConfiguration {
                 return graphQLContext.getBoolean(named);
             } else {
                 return assertNotNull(graphQLContextBuilder).getBoolean(named);
+            }
+        }
+
+        public <T> T get(String named) {
+            if (graphQLContext != null) {
+                return graphQLContext.get(named);
+            } else {
+                //noinspection unchecked
+                return (T) assertNotNull(graphQLContextBuilder).get(named);
             }
         }
     }
@@ -307,6 +324,30 @@ public class GraphQLUnusualConfiguration {
         @ExperimentalApi
         public IncrementalSupportConfig enableIncrementalSupport(boolean enable) {
             contextConfig.put(ExperimentalApi.ENABLE_INCREMENTAL_SUPPORT, enable);
+            return this;
+        }
+    }
+
+    public static class ResponseMapFactoryConfig extends BaseContextConfig {
+        private ResponseMapFactoryConfig(GraphQLContextConfiguration contextConfig) {
+            super(contextConfig);
+        }
+
+        /**
+         * @return the {@link ResponseMapFactory} in play - this can be null
+         */
+        @ExperimentalApi
+        public ResponseMapFactory getOr(ResponseMapFactory defaultFactory) {
+            ResponseMapFactory responseMapFactory = contextConfig.get(ResponseMapFactory.class.getCanonicalName());
+            return responseMapFactory != null ? responseMapFactory : defaultFactory;
+        }
+
+        /**
+         * This controls the {@link ResponseMapFactory} to use for this request
+         */
+        @ExperimentalApi
+        public ResponseMapFactoryConfig setFactory(ResponseMapFactory factory) {
+            contextConfig.put(ResponseMapFactory.class.getCanonicalName(), factory);
             return this;
         }
     }

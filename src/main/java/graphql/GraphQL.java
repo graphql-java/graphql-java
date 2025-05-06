@@ -133,7 +133,6 @@ public class GraphQL {
     private final Instrumentation instrumentation;
     private final PreparsedDocumentProvider preparsedDocumentProvider;
     private final ValueUnboxer valueUnboxer;
-    private final ResponseMapFactory responseMapFactory;
     private final boolean doNotAutomaticallyDispatchDataLoader;
 
 
@@ -146,7 +145,6 @@ public class GraphQL {
         this.instrumentation = assertNotNull(builder.instrumentation, () -> "instrumentation must not be null");
         this.preparsedDocumentProvider = assertNotNull(builder.preparsedDocumentProvider, () -> "preparsedDocumentProvider must be non null");
         this.valueUnboxer = assertNotNull(builder.valueUnboxer, () -> "valueUnboxer must not be null");
-        this.responseMapFactory = assertNotNull(builder.responseMapFactory, () -> "responseMapFactory must be not null");
         this.doNotAutomaticallyDispatchDataLoader = builder.doNotAutomaticallyDispatchDataLoader;
     }
 
@@ -256,7 +254,6 @@ public class GraphQL {
         private PreparsedDocumentProvider preparsedDocumentProvider = NoOpPreparsedDocumentProvider.INSTANCE;
         private boolean doNotAutomaticallyDispatchDataLoader = false;
         private ValueUnboxer valueUnboxer = ValueUnboxer.DEFAULT;
-        private ResponseMapFactory responseMapFactory = ResponseMapFactory.DEFAULT;
 
         public Builder(GraphQLSchema graphQLSchema) {
             this.graphQLSchema = graphQLSchema;
@@ -324,11 +321,6 @@ public class GraphQL {
 
         public Builder valueUnboxer(ValueUnboxer valueUnboxer) {
             this.valueUnboxer = valueUnboxer;
-            return this;
-        }
-
-        public Builder responseMapFactory(ResponseMapFactory responseMapFactory) {
-            this.responseMapFactory = responseMapFactory;
             return this;
         }
 
@@ -591,7 +583,7 @@ public class GraphQL {
                                                        EngineRunningState engineRunningState
     ) {
 
-        Execution execution = new Execution(queryStrategy, mutationStrategy, subscriptionStrategy, instrumentation, valueUnboxer, responseMapFactory, doNotAutomaticallyDispatchDataLoader);
+        Execution execution = new Execution(queryStrategy, mutationStrategy, subscriptionStrategy, instrumentation, valueUnboxer, doNotAutomaticallyDispatchDataLoader);
         ExecutionId executionId = executionInput.getExecutionId();
 
         return execution.execute(document, graphQLSchema, executionId, executionInput, instrumentationState, engineRunningState);
