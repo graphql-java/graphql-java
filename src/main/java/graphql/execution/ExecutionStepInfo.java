@@ -1,5 +1,6 @@
 package graphql.execution;
 
+import graphql.Internal;
 import graphql.PublicApi;
 import graphql.collect.ImmutableMapWithNullValues;
 import graphql.schema.GraphQLFieldDefinition;
@@ -75,6 +76,25 @@ public class ExecutionStepInfo {
         this.type = assertNotNull(builder.type, () -> "you must provide a graphql type");
         this.arguments = builder.arguments;
         this.fieldContainer = builder.fieldContainer;
+    }
+
+    /*
+     * This constructor allows for a slightly ( 1% ish) faster transformation without an intermediate Builder object
+     */
+    private ExecutionStepInfo(GraphQLOutputType type,
+                              ResultPath path,
+                              ExecutionStepInfo parent,
+                              MergedField field,
+                              GraphQLFieldDefinition fieldDefinition,
+                              GraphQLObjectType fieldContainer,
+                              Supplier<ImmutableMapWithNullValues<String, Object>> arguments) {
+        this.type = assertNotNull(type, () -> "you must provide a graphql type");
+        this.path = path;
+        this.parent = parent;
+        this.field = field;
+        this.fieldDefinition = fieldDefinition;
+        this.fieldContainer = fieldContainer;
+        this.arguments = arguments;
     }
 
     /**
@@ -193,12 +213,11 @@ public class ExecutionStepInfo {
     public ExecutionStepInfo changeTypeWithPreservedNonNull(GraphQLOutputType newType) {
         assertTrue(!GraphQLTypeUtil.isNonNull(newType), () -> "newType can't be non null");
         if (isNonNullType()) {
-            return newExecutionStepInfo(this).type(GraphQLNonNull.nonNull(newType)).build();
+            return transform(GraphQLNonNull.nonNull(newType));
         } else {
-            return newExecutionStepInfo(this).type(newType).build();
+            return transform(newType);
         }
     }
-
 
     /**
      * @return the type in graphql SDL format, eg [typeName!]!
@@ -214,6 +233,16 @@ public class ExecutionStepInfo {
                 ", type=" + type +
                 ", fieldDefinition=" + fieldDefinition +
                 '}';
+    }
+
+    @Internal
+    ExecutionStepInfo transform(GraphQLOutputType type) {
+        return new ExecutionStepInfo(type, path, parent, field, fieldDefinition, fieldContainer, arguments);
+    }
+
+    @Internal
+    ExecutionStepInfo transform(GraphQLOutputType type, ExecutionStepInfo parent, ResultPath path) {
+        return new ExecutionStepInfo(type, path, parent, field, fieldDefinition, fieldContainer, arguments);
     }
 
     public ExecutionStepInfo transform(Consumer<Builder> builderConsumer) {
