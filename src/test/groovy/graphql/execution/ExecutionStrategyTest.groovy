@@ -666,8 +666,8 @@ class ExecutionStrategyTest extends Specification {
             @Override
             @Override
             InstrumentationContext<Object> beginFieldCompletion(InstrumentationFieldCompleteParameters parameters, InstrumentationState state) {
-                if (parameters.fetchedValue instanceof FetchedValue) {
-                    FetchedValue value = (FetchedValue) parameters.fetchedValue
+                if (parameters.getFetchedObject() instanceof FetchedValue) {
+                    FetchedValue value = (FetchedValue) parameters.getFetchedObject()
                     fetchedValues.put(parameters.field.name, value)
                 }
                 return super.beginFieldCompletion(parameters, state)
