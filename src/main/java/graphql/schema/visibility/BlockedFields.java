@@ -1,8 +1,8 @@
 package graphql.schema.visibility;
 
-import com.google.common.collect.ImmutableList;
 import graphql.Internal;
 import graphql.PublicApi;
+import graphql.collect.ImmutableKit;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLFieldsContainer;
 import graphql.schema.GraphQLInputFieldsContainer;
@@ -35,9 +35,8 @@ public class BlockedFields implements GraphqlFieldVisibility {
 
     @Override
     public List<GraphQLFieldDefinition> getFieldDefinitions(GraphQLFieldsContainer fieldsContainer) {
-        return fieldsContainer.getFieldDefinitions().stream()
-                .filter(fieldDefinition -> !block(mkFQN(fieldsContainer.getName(), fieldDefinition.getName())))
-                .collect(ImmutableList.toImmutableList());
+        return ImmutableKit.filter(fieldsContainer.getFieldDefinitions(),
+                fieldDefinition -> !block(mkFQN(fieldsContainer.getName(), fieldDefinition.getName())));
     }
 
     @Override
@@ -53,9 +52,8 @@ public class BlockedFields implements GraphqlFieldVisibility {
 
     @Override
     public List<GraphQLInputObjectField> getFieldDefinitions(GraphQLInputFieldsContainer fieldsContainer) {
-        return fieldsContainer.getFieldDefinitions().stream()
-                .filter(fieldDefinition -> !block(mkFQN(fieldsContainer.getName(), fieldDefinition.getName())))
-                .collect(ImmutableList.toImmutableList());
+        return ImmutableKit.filter(fieldsContainer.getFieldDefinitions(),
+                fieldDefinition -> !block(mkFQN(fieldsContainer.getName(), fieldDefinition.getName())));
     }
 
     @Override

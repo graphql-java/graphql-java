@@ -2,6 +2,7 @@ package graphql.analysis.values;
 
 import com.google.common.collect.ImmutableList;
 import graphql.PublicApi;
+import graphql.collect.ImmutableKit;
 import graphql.schema.DataFetchingEnvironment;
 import graphql.schema.DataFetchingEnvironmentImpl;
 import graphql.schema.GraphQLAppliedDirective;
@@ -22,7 +23,6 @@ import graphql.schema.GraphQLTypeUtil;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import static graphql.Assert.assertShouldNeverHappen;
 import static graphql.Assert.assertTrue;
@@ -62,13 +62,12 @@ public class ValueTraverser {
 
         private InputElements(ImmutableList<GraphQLInputSchemaElement> inputElements) {
             this.inputElements = inputElements;
-            this.unwrappedInputElements = inputElements.stream()
-                    .filter(it -> !(it instanceof GraphQLNonNull || it instanceof GraphQLList))
-                    .collect(ImmutableList.toImmutableList());
+            this.unwrappedInputElements = ImmutableKit.filter(inputElements,
+                    it -> !(it instanceof GraphQLNonNull || it instanceof GraphQLList));
 
-            List<GraphQLInputValueDefinition> inputValDefs = unwrappedInputElements.stream()
-                    .filter(it -> it instanceof GraphQLInputValueDefinition)
-                    .map(GraphQLInputValueDefinition.class::cast).collect(Collectors.toList());
+            List<GraphQLInputValueDefinition> inputValDefs = ImmutableKit.filterAndMap(unwrappedInputElements,
+                    it -> it instanceof GraphQLInputValueDefinition,
+                    GraphQLInputValueDefinition.class::cast);
             this.lastElement = inputValDefs.isEmpty() ? null : inputValDefs.get(inputValDefs.size() - 1);
         }
 
