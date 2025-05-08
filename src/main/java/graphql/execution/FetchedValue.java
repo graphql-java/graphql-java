@@ -8,7 +8,7 @@ import graphql.execution.instrumentation.parameters.InstrumentationFieldComplete
 import java.util.List;
 
 /**
- * Note: This MAY be returned by {@link InstrumentationFieldCompleteParameters#getFetchedValue()}
+ * Note: This MAY be returned by {@link InstrumentationFieldCompleteParameters#getFetchedObject()}
  * and therefore part of the public despite never used in a method signature.
  */
 @PublicApi
