@@ -85,6 +85,46 @@ import static graphql.execution.instrumentation.SimpleInstrumentationContext.non
 @PublicApi
 public class GraphQL {
 
+    /**
+     * This allows you to control "unusual" aspects of the GraphQL system
+     * including some JVM wide settings
+     * <p>
+     * This is named unusual because in general we don't expect you to
+     * have to make ths configuration by default, but you can opt into certain features
+     * or disable them if you want to.
+     *
+     * @return a {@link GraphQLUnusualConfiguration} object
+     */
+    public static GraphQLUnusualConfiguration unusualConfiguration() {
+        return new GraphQLUnusualConfiguration();
+    }
+
+    /**
+     * This allows you to control "unusual" per execution aspects of the GraphQL system
+     * <p>
+     * This is named unusual because in general we don't expect you to
+     * have to make ths configuration by default, but you can opt into certain features
+     * or disable them if you want to.
+     *
+     * @return a {@link GraphQLUnusualConfiguration.GraphQLContextConfiguration} object
+     */
+    public static GraphQLUnusualConfiguration.GraphQLContextConfiguration unusualConfiguration(GraphQLContext graphQLContext) {
+        return new GraphQLUnusualConfiguration.GraphQLContextConfiguration(graphQLContext);
+    }
+
+    /**
+     * This allows you to control "unusual" per execution aspects of the GraphQL system
+     * <p>
+     * This is named unusual because in general we don't expect you to
+     * have to make ths configuration by default, but you can opt into certain features
+     * or disable them if you want to.
+     *
+     * @return a {@link GraphQLUnusualConfiguration.GraphQLContextConfiguration} object
+     */
+    public static GraphQLUnusualConfiguration.GraphQLContextConfiguration unusualConfiguration(GraphQLContext.Builder graphQLContextBuilder) {
+        return new GraphQLUnusualConfiguration.GraphQLContextConfiguration(graphQLContextBuilder);
+    }
+
     private final GraphQLSchema graphQLSchema;
     private final ExecutionStrategy queryStrategy;
     private final ExecutionStrategy mutationStrategy;
@@ -423,7 +463,7 @@ public class GraphQL {
         EngineRunningState engineRunningState = new EngineRunningState(executionInput);
         return engineRunningState.engineRun(() -> {
             ExecutionInput executionInputWithId = ensureInputHasId(executionInput);
-            engineRunningState.updateExecutionId(executionInputWithId.getExecutionId());
+            engineRunningState.updateExecutionInput(executionInputWithId);
 
             CompletableFuture<InstrumentationState> instrumentationStateCF = instrumentation.createStateAsync(new InstrumentationCreateStateParameters(this.graphQLSchema, executionInputWithId));
             instrumentationStateCF = Async.orNullCompletedFuture(instrumentationStateCF);
