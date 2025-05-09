@@ -19,7 +19,7 @@ repositories {
 
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of(11)
+        languageVersion = JavaLanguageVersion.of(24)
     }
 }
 
@@ -120,5 +120,9 @@ tasks.withType(PublishToMavenRepository) {
 // Only publish Maven POM, disable default Gradle modules file
 tasks.withType(GenerateModuleMetadata) {
     enabled = false
+}
+
+tasks.named('compileJava') {
+    dependsOn(':jar')
 }
 
