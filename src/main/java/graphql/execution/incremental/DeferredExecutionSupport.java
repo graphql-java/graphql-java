@@ -73,14 +73,14 @@ public interface DeferredExecutionSupport {
             ImmutableList.Builder<String> nonDeferredFieldNamesBuilder = ImmutableList.builder();
 
             mergedSelectionSet.getSubFields().values().forEach(mergedField -> {
+                if (mergedField.getFields().size() > mergedField.getDeferredExecutions().size()) {
+                    nonDeferredFieldNamesBuilder.add(mergedField.getSingleField().getResultKey());
+                    return;
+                }
                 mergedField.getDeferredExecutions().forEach(de -> {
                     deferredExecutionToFieldsBuilder.put(de, mergedField);
                     deferredFieldsBuilder.add(mergedField);
                 });
-
-                if (mergedField.getDeferredExecutions().isEmpty()) {
-                    nonDeferredFieldNamesBuilder.add(mergedField.getSingleField().getResultKey());
-                }
             });
 
             this.deferredExecutionToFields = deferredExecutionToFieldsBuilder.build();
