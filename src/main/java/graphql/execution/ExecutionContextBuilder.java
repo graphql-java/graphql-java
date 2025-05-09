@@ -52,6 +52,7 @@ public class ExecutionContextBuilder {
     DataLoaderDispatchStrategy dataLoaderDispatcherStrategy = DataLoaderDispatchStrategy.NO_OP;
     boolean propagateErrorsOnNonNullContractFailure = true;
     EngineRunningState engineRunningState;
+    ResponseMapFactory responseMapFactory = ResponseMapFactory.DEFAULT;
 
     /**
      * @return a new builder of {@link graphql.execution.ExecutionContext}s
@@ -100,6 +101,7 @@ public class ExecutionContextBuilder {
         dataLoaderDispatcherStrategy = other.getDataLoaderDispatcherStrategy();
         propagateErrorsOnNonNullContractFailure = other.propagateErrorsOnNonNullContractFailure();
         engineRunningState = other.getEngineRunningState();
+        responseMapFactory = other.getResponseMapFactory();
     }
 
     public ExecutionContextBuilder instrumentation(Instrumentation instrumentation) {
@@ -221,6 +223,11 @@ public class ExecutionContextBuilder {
     @Internal
     public ExecutionContextBuilder dataLoaderDispatcherStrategy(DataLoaderDispatchStrategy dataLoaderDispatcherStrategy) {
         this.dataLoaderDispatcherStrategy = dataLoaderDispatcherStrategy;
+        return this;
+    }
+
+    public ExecutionContextBuilder responseMapFactory(ResponseMapFactory responseMapFactory) {
+        this.responseMapFactory = responseMapFactory;
         return this;
     }
 
