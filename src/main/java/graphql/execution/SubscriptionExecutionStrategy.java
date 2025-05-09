@@ -108,9 +108,9 @@ public class SubscriptionExecutionStrategy extends ExecutionStrategy {
     private CompletableFuture<Publisher<Object>> createSourceEventStream(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
         ExecutionStrategyParameters newParameters = firstFieldOfSubscriptionSelection(parameters);
 
-        CompletableFuture<FetchedValue> fieldFetched = Async.toCompletableFuture(fetchField(executionContext, newParameters));
+        CompletableFuture<Object> fieldFetched = Async.toCompletableFuture(fetchField(executionContext, newParameters));
         return fieldFetched.thenApply(fetchedValue -> {
-            Object publisher = fetchedValue.getFetchedValue();
+            Object publisher = FetchedValue.getFetchedValue(fetchedValue);
             if (publisher != null) {
                 assertTrue(publisher instanceof Publisher, () -> "Your data fetcher must return a Publisher of events when using graphql subscriptions");
             }
@@ -147,7 +147,7 @@ public class SubscriptionExecutionStrategy extends ExecutionStrategy {
                 i13nFieldParameters, executionContext.getInstrumentationState()
         ));
 
-        FetchedValue fetchedValue = unboxPossibleDataFetcherResult(newExecutionContext, parameters, eventPayload);
+        Object fetchedValue = unboxPossibleDataFetcherResult(newExecutionContext, parameters, eventPayload);
         FieldValueInfo fieldValueInfo = completeField(newExecutionContext, newParameters, fetchedValue);
         CompletableFuture<ExecutionResult> overallResult = fieldValueInfo
                 .getFieldValueFuture()
