@@ -15,7 +15,7 @@ dependencies {
 
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of(11)
+        languageVersion = JavaLanguageVersion.of(24)
     }
 }
 
@@ -39,7 +39,7 @@ repositories {
 
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of(11)
+        languageVersion = JavaLanguageVersion.of(24)
     }
 }
 
@@ -55,3 +55,6 @@ jar {
     }
 }
 
+tasks.named('compileJava') {
+    dependsOn(':jar')
+}
