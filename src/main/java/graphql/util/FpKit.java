@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import graphql.Internal;
+import org.jspecify.annotations.NonNull;
 
 import java.lang.reflect.Array;
 import java.util.ArrayList;
@@ -116,6 +117,19 @@ public class FpKit {
         }
         return list;
     }
+
+    /**
+     * Creates an {@link ArrayList} sized appropriately to the collection, typically for copying
+     *
+     * @param collection the collection of a certain size
+     * @param <T>        to two
+     *
+     * @return a new {@link ArrayList} initially sized to the same as the collection
+     */
+    public static <T> @NonNull List<T> arrayListSizedTo(@NonNull Collection<?> collection) {
+        return new ArrayList<>(collection.size());
+    }
+
 
     /**
      * Converts a value into a list if it's really a collection or array of things
@@ -239,8 +253,9 @@ public class FpKit {
     }
 
     public static <K, V, U> List<U> mapEntries(Map<K, V> map, BiFunction<K, V, U> function) {
-        List<U> list = new ArrayList<>();
-        for (Map.Entry<K, V> entry : map.entrySet()) {
+        Set<Map.Entry<K, V>> entries = map.entrySet();
+        List<U> list = arrayListSizedTo(entries);
+        for (Map.Entry<K, V> entry : entries) {
             list.add(function.apply(entry.getKey(), entry.getValue()));
         }
         return list;
@@ -296,7 +311,7 @@ public class FpKit {
     }
 
     public static <T> List<T> filterList(Collection<T> list, Predicate<T> filter) {
-        List<T> result = new ArrayList<>();
+        List<T> result = arrayListSizedTo(list);
         for (T t : list) {
             if (filter.test(t)) {
                 result.add(t);
@@ -359,9 +374,10 @@ public class FpKit {
     /**
      * Faster set intersection.
      *
-     * @param <T> for two
+     * @param <T>  for two
      * @param set1 first set
      * @param set2 second set
+     *
      * @return intersection set
      */
     public static <T> Set<T> intersection(Set<T> set1, Set<T> set2) {

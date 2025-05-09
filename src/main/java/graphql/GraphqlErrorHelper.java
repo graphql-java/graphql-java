@@ -1,13 +1,13 @@
 package graphql;
 
 import graphql.language.SourceLocation;
+import graphql.util.FpKit;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 import static graphql.collect.ImmutableKit.mapAndDropNulls;
 
@@ -77,7 +77,7 @@ public class GraphqlErrorHelper {
     }
 
     static List<GraphQLError> fromSpecification(List<Map<String, Object>> specificationMaps) {
-        List<GraphQLError> list = new ArrayList<>();
+        List<GraphQLError> list = FpKit.arrayListSizedTo(specificationMaps);
         for (Map<String, Object> specificationMap : specificationMaps) {
             list.add(fromSpecification(specificationMap));
         }

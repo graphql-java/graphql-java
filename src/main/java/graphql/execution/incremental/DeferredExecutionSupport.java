@@ -15,7 +15,6 @@ import graphql.execution.instrumentation.Instrumentation;
 import graphql.incremental.IncrementalPayload;
 import graphql.util.FpKit;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -107,8 +106,9 @@ public interface DeferredExecutionSupport {
 
         @Override
         public Set<IncrementalCall<? extends IncrementalPayload>> createCalls(ExecutionStrategyParameters executionStrategyParameters) {
-            Set<IncrementalCall<? extends IncrementalPayload>> set = new HashSet<>();
-            for (DeferredExecution deferredExecution : deferredExecutionToFields.keySet()) {
+            ImmutableSet<DeferredExecution> deferredExecutions = deferredExecutionToFields.keySet();
+            Set<IncrementalCall<? extends IncrementalPayload>> set = new HashSet<>(deferredExecutions.size());
+            for (DeferredExecution deferredExecution : deferredExecutions) {
                 set.add(this.createDeferredFragmentCall(deferredExecution, executionStrategyParameters));
             }
             return set;
@@ -119,7 +119,7 @@ public interface DeferredExecutionSupport {
 
             List<MergedField> mergedFields = deferredExecutionToFields.get(deferredExecution);
 
-            List<Supplier<CompletableFuture<DeferredFragmentCall.FieldWithExecutionResult>>> calls = new ArrayList<>();
+            List<Supplier<CompletableFuture<DeferredFragmentCall.FieldWithExecutionResult>>> calls = FpKit.arrayListSizedTo(mergedFields);
             for (MergedField currentField : mergedFields) {
                 calls.add(this.createResultSupplier(currentField, deferredCallContext, executionStrategyParameters));
             }

@@ -3,6 +3,7 @@ package graphql.incremental;
 import graphql.ExperimentalApi;
 import graphql.GraphQLError;
 import graphql.execution.ResultPath;
+import graphql.util.FpKit;
 import org.jspecify.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -10,8 +11,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-
-import static java.util.stream.Collectors.toList;
 
 /**
  * Represents a payload that can be resolved after the initial response.
@@ -80,7 +79,7 @@ public abstract class IncrementalPayload {
     }
 
     protected Object errorsToSpec(List<GraphQLError> errors) {
-        List<Map<String, Object>> list = new ArrayList<>();
+        List<Map<String, Object>> list = FpKit.arrayListSizedTo(errors);
         for (GraphQLError error : errors) {
             list.add(error.toSpecification());
         }
@@ -92,8 +91,12 @@ public abstract class IncrementalPayload {
     }
 
     public boolean equals(Object obj) {
-        if (this == obj) return true;
-        if (obj == null || getClass() != obj.getClass()) return false;
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null || getClass() != obj.getClass()) {
+            return false;
+        }
         IncrementalPayload that = (IncrementalPayload) obj;
         return Objects.equals(path, that.path) &&
                 Objects.equals(label, that.label) &&

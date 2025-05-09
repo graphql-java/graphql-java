@@ -602,8 +602,9 @@ class ValuesResolverConversion {
     ) throws CoercingParseValueException, NonNullableValueCoercedAsNullException {
 
         GraphQLInputType wrappedType = (GraphQLInputType) graphQLList.getWrappedType();
-        List<Object> list = new ArrayList<>();
-        for (Object val : FpKit.toListOrSingletonList(value)) {
+        List<Object> listOrSingletonList = FpKit.toListOrSingletonList(value);
+        List<Object> list = FpKit.arrayListSizedTo(listOrSingletonList);
+        for (Object val : listOrSingletonList) {
             list.add(externalValueToInternalValueImpl(
                     inputInterceptor,
                     fieldVisibility,

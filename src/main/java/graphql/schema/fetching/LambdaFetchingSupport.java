@@ -2,6 +2,7 @@ package graphql.schema.fetching;
 
 import graphql.Internal;
 import graphql.VisibleForTesting;
+import graphql.util.FpKit;
 
 import java.lang.invoke.CallSite;
 import java.lang.invoke.LambdaMetafactory;
@@ -16,8 +17,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Predicate;
-
-import static java.util.stream.Collectors.toList;
 
 @Internal
 public class LambdaFetchingSupport {
@@ -69,7 +68,7 @@ public class LambdaFetchingSupport {
         Predicate<Method> getterPredicate = method -> isGetterNamed(method) && propertyName.equals(mkPropertyNameGetter(method));
         List<Method> allGetterMethods = findMethodsForProperty(sourceClass,
                 getterPredicate);
-        List<Method> pojoGetterMethods = new ArrayList<>();
+        List<Method> pojoGetterMethods = FpKit.arrayListSizedTo(allGetterMethods);
         for (Method allGetterMethod : allGetterMethods) {
             if (isPossiblePojoMethod(allGetterMethod)) {
                 pojoGetterMethods.add(allGetterMethod);

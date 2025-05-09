@@ -133,8 +133,9 @@ class ValuesResolverLegacy {
     private static Value<?> handleListLegacy(Object value, GraphQLList type, GraphQLContext graphqlContext, Locale locale) {
         GraphQLType itemType = type.getWrappedType();
         if (FpKit.isIterable(value)) {
-            List<Value> valuesNodes = new ArrayList<>();
-            for (Object item : FpKit.toListOrSingletonList(value)) {
+            List<Object> listOrSingletonList = FpKit.toListOrSingletonList(value);
+            List<Value> valuesNodes = FpKit.arrayListSizedTo(listOrSingletonList);
+            for (Object item : listOrSingletonList) {
                 valuesNodes.add(valueToLiteralLegacy(item, itemType, graphqlContext, locale));
             }
             return ArrayValue.newArrayValue().values(valuesNodes).build();

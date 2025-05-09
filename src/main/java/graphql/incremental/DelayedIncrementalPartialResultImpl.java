@@ -1,8 +1,8 @@
 package graphql.incremental;
 
 import graphql.ExperimentalApi;
+import graphql.util.FpKit;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -45,7 +45,7 @@ public class DelayedIncrementalPartialResultImpl implements DelayedIncrementalPa
         }
 
         if (incrementalItems != null) {
-            List<Map<String, Object>> list = new ArrayList<>();
+            List<Map<String, Object>> list = FpKit.arrayListSizedTo(incrementalItems);
             for (IncrementalPayload incrementalItem : incrementalItems) {
                 list.add(incrementalItem.toSpecification());
             }
