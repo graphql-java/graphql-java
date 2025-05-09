@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import graphql.Internal;
+import org.jspecify.annotations.NonNull;
 
 import java.lang.reflect.Array;
 import java.util.ArrayList;
@@ -36,12 +37,11 @@ public class FpKit {
     //
     // From a list of named things, get a map of them by name, merging them according to the merge function
     public static <T> Map<String, T> getByName(List<T> namedObjects, Function<T, String> nameFn, BinaryOperator<T> mergeFunc) {
-        return namedObjects.stream().collect(Collectors.toMap(
-                nameFn,
-                identity(),
-                mergeFunc,
-                LinkedHashMap::new)
-        );
+        Map<String, T> map = new LinkedHashMap<>();
+        for (T namedObject : namedObjects) {
+            map.merge(nameFn.apply(namedObject), namedObject, mergeFunc);
+        }
+        return map;
     }
 
     // normal groupingBy but with LinkedHashMap
@@ -60,12 +60,11 @@ public class FpKit {
     }
 
     public static <T, NewKey> Map<NewKey, T> groupingByUniqueKey(Collection<T> list, Function<T, NewKey> keyFunction) {
-        return list.stream().collect(Collectors.toMap(
-                keyFunction,
-                identity(),
-                throwingMerger(),
-                LinkedHashMap::new)
-        );
+        Map<NewKey, T> map = new LinkedHashMap<>();
+        for (T t : list) {
+            map.merge(keyFunction.apply(t), t, throwingMerger());
+        }
+        return map;
     }
 
     public static <T, NewKey> Map<NewKey, T> groupingByUniqueKey(Stream<T> stream, Function<T, NewKey> keyFunction) {
@@ -118,6 +117,19 @@ public class FpKit {
         }
         return list;
     }
+
+    /**
+     * Creates an {@link ArrayList} sized appropriately to the collection, typically for copying
+     *
+     * @param collection the collection of a certain size
+     * @param <T>        to two
+     *
+     * @return a new {@link ArrayList} initially sized to the same as the collection
+     */
+    public static <T> @NonNull List<T> arrayListSizedTo(@NonNull Collection<?> collection) {
+        return new ArrayList<>(collection.size());
+    }
+
 
     /**
      * Converts a value into a list if it's really a collection or array of things
@@ -241,7 +253,12 @@ public class FpKit {
     }
 
     public static <K, V, U> List<U> mapEntries(Map<K, V> map, BiFunction<K, V, U> function) {
-        return map.entrySet().stream().map(entry -> function.apply(entry.getKey(), entry.getValue())).collect(Collectors.toList());
+        Set<Map.Entry<K, V>> entries = map.entrySet();
+        List<U> list = arrayListSizedTo(entries);
+        for (Map.Entry<K, V> entry : entries) {
+            list.add(function.apply(entry.getKey(), entry.getValue()));
+        }
+        return list;
     }
 
 
@@ -272,10 +289,12 @@ public class FpKit {
     }
 
     public static <T> Optional<T> findOne(Collection<T> list, Predicate<T> filter) {
-        return list
-                .stream()
-                .filter(filter)
-                .findFirst();
+        for (T t : list) {
+            if (filter.test(t)) {
+                return Optional.of(t);
+            }
+        }
+        return Optional.empty();
     }
 
     public static <T> T findOneOrNull(List<T> list, Predicate<T> filter) {
@@ -292,10 +311,13 @@ public class FpKit {
     }
 
     public static <T> List<T> filterList(Collection<T> list, Predicate<T> filter) {
-        return list
-                .stream()
-                .filter(filter)
-                .collect(Collectors.toList());
+        List<T> result = arrayListSizedTo(list);
+        for (T t : list) {
+            if (filter.test(t)) {
+                result.add(t);
+            }
+        }
+        return result;
     }
 
     public static <T> Set<T> filterSet(Collection<T> input, Predicate<T> filter) {
@@ -352,9 +374,10 @@ public class FpKit {
     /**
      * Faster set intersection.
      *
-     * @param <T> for two
+     * @param <T>  for two
      * @param set1 first set
      * @param set2 second set
+     *
      * @return intersection set
      */
     public static <T> Set<T> intersection(Set<T> set1, Set<T> set2) {
