@@ -1624,12 +1624,13 @@ class DeferExecutionSupportIntegrationTest extends Specification {
           }
         '''
         when:
-        def initialResult = executeQuery(query)
+        def result = executeQuery(query)
 
         then:
-        initialResult.toSpecification() == [
+        result.toSpecification() == [
                 data: [post: [summary: "A summary", text: "The full text"]]
         ]
+        !(result instanceof IncrementalExecutionResult)
 
 
     }
