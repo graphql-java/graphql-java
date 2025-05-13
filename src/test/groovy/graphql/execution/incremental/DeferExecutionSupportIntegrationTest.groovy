@@ -1604,6 +1604,38 @@ class DeferExecutionSupportIntegrationTest extends Specification {
         incrementalResults.any { it.incremental[0].path == ["posts", 2] }
     }
 
+
+    def "two fragments one with defer and one without"() {
+        given:
+        def query = '''
+            query {
+                post {
+                 text
+                ...f1 @defer
+                ...f2
+                }
+            }
+            
+         fragment f1 on Post {
+               summary
+          }
+         fragment f2 on Post {
+           summary
+          }
+        '''
+        when:
+        def result = executeQuery(query)
+
+        then:
+        result.toSpecification() == [
+                data: [post: [summary: "A summary", text: "The full text"]]
+        ]
+        !(result instanceof IncrementalExecutionResult)
+
+
+    }
+
+
     private ExecutionResult executeQuery(String query) {
         return this.executeQuery(query, true, [:])
     }
