@@ -178,7 +178,7 @@ shadowJar {
     bnd('''
 -exportcontents: graphql.*
 -removeheaders: Private-Package
-Import-Package: !android.os.*,!com.google.*,!org.checkerframework.*,!javax.annotation.*,!graphql.com.google.*,!org.antlr.*,!graphql.org.antlr.*,!sun.misc.*,*
+Import-Package: !android.os.*,!com.google.*,!org.checkerframework.*,!javax.annotation.*,!graphql.com.google.*,!org.antlr.*,!graphql.org.antlr.*,!sun.misc.*,org.jspecify.annotations;resolution:=optional,*
 ''')
 }
 
