@@ -15,7 +15,7 @@ dependencies {
 
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of(24)
+        languageVersion = JavaLanguageVersion.of(11)
     }
 }
 
@@ -39,7 +39,7 @@ repositories {
 
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of(24)
+        languageVersion = JavaLanguageVersion.of(11)
     }
 }
 
@@ -53,8 +53,4 @@ jar {
                 'Premain-Class': 'graphql.agent.GraphQLJavaAgent'
         )
     }
-}
-
-tasks.named('compileJava') {
-    dependsOn(':jar')
 }

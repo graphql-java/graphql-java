@@ -1,8 +1,10 @@
 package performance;
 
 import benchmark.BenchmarkUtils;
+import graphql.ExecutionInput;
 import graphql.ExecutionResult;
 import graphql.GraphQL;
+import graphql.ParseAndValidate;
 import graphql.language.Document;
 import graphql.parser.Parser;
 import graphql.schema.GraphQLSchema;
@@ -31,15 +33,15 @@ import static graphql.Assert.assertTrue;
 @Measurement(iterations = 3)
 @Fork(3)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
-public class ValidatorPerformance {
+public class ParseAndValidatePerformance {
 
     private static class Scenario {
         public final GraphQLSchema schema;
-        public final Document document;
+        public final ExecutionInput executionInput;
 
-        Scenario(GraphQLSchema schema, Document document) {
+        Scenario(GraphQLSchema schema, ExecutionInput executionInput) {
             this.schema = schema;
-            this.document = document;
+            this.executionInput = executionInput;
         }
     }
 
@@ -63,13 +65,8 @@ public class ValidatorPerformance {
                 String schemaString = BenchmarkUtils.loadResource(schemaPath);
                 String query = BenchmarkUtils.loadResource(queryPath);
                 GraphQLSchema schema = SchemaGenerator.createdMockedSchema(schemaString);
-                Document document = Parser.parse(query);
 
-                // make sure this is a valid query overall
-                GraphQL graphQL = GraphQL.newGraphQL(schema).build();
-                ExecutionResult executionResult = graphQL.execute(query);
-                assertTrue(executionResult.getErrors().size() == 0);
-                return new Scenario(schema, document);
+                return new Scenario(schema, ExecutionInput.newExecutionInput(query).build());
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
@@ -78,8 +75,7 @@ public class ValidatorPerformance {
     }
 
     private void run(Scenario scenario) {
-        Validator validator = new Validator();
-        validator.validateDocument(scenario.schema, scenario.document, Locale.ENGLISH);
+        ParseAndValidate.parseAndValidate(scenario.schema, scenario.executionInput);
     }
 
     @Benchmark

@@ -31,15 +31,13 @@ import static graphql.Assert.assertTrue;
 @Measurement(iterations = 3)
 @Fork(3)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
-public class ValidatorPerformance {
+public class ParserPerformance {
 
     private static class Scenario {
-        public final GraphQLSchema schema;
-        public final Document document;
+        public final String query;
 
-        Scenario(GraphQLSchema schema, Document document) {
-            this.schema = schema;
-            this.document = document;
+        Scenario(String query) {
+            this.query = query;
         }
     }
 
@@ -52,24 +50,16 @@ public class ValidatorPerformance {
 
         @Setup
         public void setup() {
-            largeSchema1 = load("large-schema-1.graphqls", "large-schema-1-query.graphql");
-            largeSchema4 = load("large-schema-4.graphqls", "large-schema-4-query.graphql");
-            manyFragments = load("many-fragments.graphqls", "many-fragments-query.graphql");
-            extraLargeSchema = load("extra-large-schema-1.graphqls", "extra-large-schema-1-query.graphql");
+            largeSchema1 = load("large-schema-1-query.graphql");
+            largeSchema4 = load("large-schema-4-query.graphql");
+            manyFragments = load("many-fragments-query.graphql");
+            extraLargeSchema = load("extra-large-schema-1-query.graphql");
         }
 
-        private Scenario load(String schemaPath, String queryPath) {
+        private Scenario load(String queryPath) {
             try {
-                String schemaString = BenchmarkUtils.loadResource(schemaPath);
                 String query = BenchmarkUtils.loadResource(queryPath);
-                GraphQLSchema schema = SchemaGenerator.createdMockedSchema(schemaString);
-                Document document = Parser.parse(query);
-
-                // make sure this is a valid query overall
-                GraphQL graphQL = GraphQL.newGraphQL(schema).build();
-                ExecutionResult executionResult = graphQL.execute(query);
-                assertTrue(executionResult.getErrors().size() == 0);
-                return new Scenario(schema, document);
+                return new Scenario(query);
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
@@ -78,8 +68,7 @@ public class ValidatorPerformance {
     }
 
     private void run(Scenario scenario) {
-        Validator validator = new Validator();
-        validator.validateDocument(scenario.schema, scenario.document, Locale.ENGLISH);
+        Parser.parse(scenario.query);
     }
 
     @Benchmark
