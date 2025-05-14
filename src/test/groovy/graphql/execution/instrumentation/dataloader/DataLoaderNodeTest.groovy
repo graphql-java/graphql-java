@@ -11,6 +11,7 @@ import graphql.schema.GraphQLObjectType
 import graphql.schema.GraphQLSchema
 import graphql.schema.StaticDataFetcher
 import org.dataloader.DataLoader
+import org.dataloader.DataLoaderFactory
 import org.dataloader.DataLoaderRegistry
 import spock.lang.Specification
 
@@ -85,7 +86,8 @@ class DataLoaderNodeTest extends Specification {
 
         List<List<Node>> nodeLoads = []
 
-        DataLoader<Node, List<Node>> loader = new DataLoader<>({ keys ->
+
+        def closure = { keys ->
             nodeLoads.add(keys)
             List<List<Node>> childNodes = new ArrayList<>()
             for (Node key : keys) {
@@ -93,7 +95,8 @@ class DataLoaderNodeTest extends Specification {
             }
             System.out.println("BatchLoader called for " + keys + " -> got " + childNodes)
             return CompletableFuture.completedFuture(childNodes)
-        })
+        }
+        DataLoader<Node, List<Node>> loader = DataLoaderFactory.newDataLoader(closure)
 
         DataFetcher<?> nodeDataFetcher = new NodeDataFetcher(loader)
 

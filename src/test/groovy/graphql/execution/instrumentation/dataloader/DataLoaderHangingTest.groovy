@@ -192,7 +192,7 @@ class DataLoaderHangingTest extends Specification {
                     })
                 }, executor)
             }
-        }, DataLoaderOptions.newOptions().setMaxBatchSize(5))
+        }, DataLoaderOptions.newOptions().setMaxBatchSize(5).build())
 
         def dataLoaderSongs = DataLoaderFactory.newDataLoader(new BatchLoader<DataFetchingEnvironment, List<Object>>() {
             @Override
