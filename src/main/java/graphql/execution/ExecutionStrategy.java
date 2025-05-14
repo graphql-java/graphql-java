@@ -13,7 +13,6 @@ import graphql.SerializationError;
 import graphql.TrivialDataFetcher;
 import graphql.TypeMismatchError;
 import graphql.UnresolvedTypeError;
-import graphql.collect.ImmutableMapWithNullValues;
 import graphql.execution.directives.QueryDirectives;
 import graphql.execution.directives.QueryDirectivesImpl;
 import graphql.execution.incremental.DeferredExecutionSupport;
@@ -28,7 +27,6 @@ import graphql.execution.instrumentation.parameters.InstrumentationFieldParamete
 import graphql.execution.reactive.ReactiveSupport;
 import graphql.extensions.ExtensionsBuilder;
 import graphql.introspection.Introspection;
-import graphql.language.Argument;
 import graphql.language.Field;
 import graphql.normalized.ExecutableNormalizedField;
 import graphql.normalized.ExecutableNormalizedOperation;
@@ -37,12 +35,10 @@ import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
 import graphql.schema.DataFetchingFieldSelectionSet;
 import graphql.schema.DataFetchingFieldSelectionSetImpl;
-import graphql.schema.GraphQLArgument;
 import graphql.schema.GraphQLCodeRegistry;
 import graphql.schema.GraphQLEnumType;
 import graphql.schema.GraphQLFieldDefinition;
 import graphql.schema.GraphQLObjectType;
-import graphql.schema.GraphQLOutputType;
 import graphql.schema.GraphQLScalarType;
 import graphql.schema.GraphQLSchema;
 import graphql.schema.GraphQLType;
@@ -63,7 +59,6 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 import static graphql.execution.Async.exceptionallyCompletedFuture;
-import static graphql.execution.ExecutionStepInfo.newExecutionStepInfo;
 import static graphql.execution.FieldCollectorParameters.newParameters;
 import static graphql.execution.FieldValueInfo.CompleteValueType.ENUM;
 import static graphql.execution.FieldValueInfo.CompleteValueType.LIST;
@@ -1074,48 +1069,10 @@ public abstract class ExecutionStrategy {
                                                         ExecutionStrategyParameters parameters,
                                                         GraphQLFieldDefinition fieldDefinition,
                                                         GraphQLObjectType fieldContainer) {
-        MergedField field = parameters.getField();
-        ExecutionStepInfo parentStepInfo = parameters.getExecutionStepInfo();
-        GraphQLOutputType fieldType = fieldDefinition.getType();
-        List<GraphQLArgument> fieldArgDefs = fieldDefinition.getArguments();
-        Supplier<ImmutableMapWithNullValues<String, Object>> argumentValues = ImmutableMapWithNullValues::emptyMap;
-        //
-        // no need to create args at all if there are none on the field def
-        //
-        if (!fieldArgDefs.isEmpty()) {
-            argumentValues = getArgumentValues(executionContext, fieldArgDefs, field.getArguments());
-        }
-
-
-        return newExecutionStepInfo()
-                .type(fieldType)
-                .fieldDefinition(fieldDefinition)
-                .fieldContainer(fieldContainer)
-                .field(field)
-                .path(parameters.getPath())
-                .parentInfo(parentStepInfo)
-                .arguments(argumentValues)
-                .build();
-    }
-
-    @NonNull
-    private static Supplier<ImmutableMapWithNullValues<String, Object>> getArgumentValues(ExecutionContext executionContext,
-                                                                                          List<GraphQLArgument> fieldArgDefs,
-                                                                                          List<Argument> fieldArgs) {
-        Supplier<ImmutableMapWithNullValues<String, Object>> argumentValues;
-        GraphQLCodeRegistry codeRegistry = executionContext.getGraphQLSchema().getCodeRegistry();
-        Supplier<ImmutableMapWithNullValues<String, Object>> argValuesSupplier = () -> {
-            Map<String, Object> resolvedValues = ValuesResolver.getArgumentValues(codeRegistry,
-                    fieldArgDefs,
-                    fieldArgs,
-                    executionContext.getCoercedVariables(),
-                    executionContext.getGraphQLContext(),
-                    executionContext.getLocale());
-
-            return ImmutableMapWithNullValues.copyOf(resolvedValues);
-        };
-        argumentValues = FpKit.intraThreadMemoize(argValuesSupplier);
-        return argumentValues;
+        return executionStepInfoFactory.createExecutionStepInfo(executionContext,
+                parameters,
+                fieldDefinition,
+                fieldContainer);
     }
 
     // Errors that result from the execution of deferred fields are kept in the deferred context only.
