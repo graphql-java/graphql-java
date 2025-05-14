@@ -10,6 +10,7 @@ import graphql.schema.idl.MapEnumValuesProvider
 import graphql.schema.idl.RuntimeWiring
 import org.dataloader.BatchLoader
 import org.dataloader.DataLoader
+import org.dataloader.DataLoaderFactory
 import org.dataloader.DataLoaderRegistry
 
 import java.util.concurrent.CompletableFuture

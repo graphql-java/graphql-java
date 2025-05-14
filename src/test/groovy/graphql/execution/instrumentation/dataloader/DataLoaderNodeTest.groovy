@@ -70,15 +70,15 @@ class DataLoaderNodeTest extends Specification {
     }
 
     class NodeDataFetcher implements DataFetcher {
-        DataLoader loader
+        String name
 
-        NodeDataFetcher(DataLoader loader) {
-            this.loader = loader
+        NodeDataFetcher(String name) {
+            this.name = name
         }
 
         @Override
         Object get(DataFetchingEnvironment environment) throws Exception {
-            return loader.load(environment.getSource())
+            return environment.getDataLoader(name).load(environment.getSource())
         }
     }
 
@@ -87,7 +87,7 @@ class DataLoaderNodeTest extends Specification {
         List<List<Node>> nodeLoads = []
 
 
-        def closure = { keys ->
+        def batchLoadFunction = { keys ->
             nodeLoads.add(keys)
             List<List<Node>> childNodes = new ArrayList<>()
             for (Node key : keys) {
@@ -96,14 +96,15 @@ class DataLoaderNodeTest extends Specification {
             System.out.println("BatchLoader called for " + keys + " -> got " + childNodes)
             return CompletableFuture.completedFuture(childNodes)
         }
-        DataLoader<Node, List<Node>> loader = DataLoaderFactory.newDataLoader(closure)
-
-        DataFetcher<?> nodeDataFetcher = new NodeDataFetcher(loader)
+        DataLoader<Node, List<Node>> loader = DataLoaderFactory.newDataLoader(batchLoadFunction)
 
         def nodeTypeName = "Node"
         def childNodesFieldName = "childNodes"
         def queryTypeName = "Query"
         def rootFieldName = "root"
+
+        DataFetcher<?> nodeDataFetcher = new NodeDataFetcher(childNodesFieldName)
+        DataLoaderRegistry registry = new DataLoaderRegistry().register(childNodesFieldName, loader)
 
         GraphQLObjectType nodeType = GraphQLObjectType
                 .newObject()
@@ -134,8 +135,6 @@ class DataLoaderNodeTest extends Specification {
                             .build())
                         .build())
                 .build()
-
-        DataLoaderRegistry registry = new DataLoaderRegistry().register(childNodesFieldName, loader)
 
         ExecutionResult result = GraphQL.newGraphQL(schema)
 //                .instrumentation(new DataLoaderDispatcherInstrumentation())
