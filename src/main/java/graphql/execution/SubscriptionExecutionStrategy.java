@@ -184,7 +184,7 @@ public class SubscriptionExecutionStrategy extends ExecutionStrategy {
         MergedField firstField = fields.getSubField(fields.getKeys().get(0));
 
         ResultPath fieldPath = parameters.getPath().segment(mkNameForPath(firstField.getSingleField()));
-        return parameters.transform(builder -> builder.field(firstField).path(fieldPath));
+        return parameters.transform(firstField,fieldPath);
     }
 
     private ExecutionStepInfo createSubscribedFieldStepInfo(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
