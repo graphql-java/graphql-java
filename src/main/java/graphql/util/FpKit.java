@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import graphql.Internal;
+import org.jspecify.annotations.NonNull;
 
 import java.lang.reflect.Array;
 import java.util.ArrayList;
@@ -140,6 +141,19 @@ public class FpKit {
         }
         return list;
     }
+
+    /**
+     * Creates an {@link ArrayList} sized appropriately to the collection, typically for copying
+     *
+     * @param collection the collection of a certain size
+     * @param <T>        to two
+     *
+     * @return a new {@link ArrayList} initially sized to the same as the collection
+     */
+    public static <T> @NonNull List<T> arrayListSizedTo(@NonNull Collection<?> collection) {
+        return new ArrayList<>(collection.size());
+    }
+
 
     /**
      * Converts a value into a list if it's really a collection or array of things
@@ -301,7 +315,7 @@ public class FpKit {
     }
 
     public static <T> List<T> filterList(Collection<T> list, Predicate<T> filter) {
-        List<T> result = new ArrayList<>();
+        List<T> result = arrayListSizedTo(list);
         for (T t : list) {
             if (filter.test(t)) {
                 result.add(t);
