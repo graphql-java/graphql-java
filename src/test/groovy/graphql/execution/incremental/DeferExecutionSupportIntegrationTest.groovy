@@ -1666,13 +1666,11 @@ class DeferExecutionSupportIntegrationTest extends Specification {
         def incrementalResults = getIncrementalResults(initialResult)
 
         then:
-        // Ordering is non-deterministic, so we assert on the things we know are going to be true.
 
         incrementalResults.size() == 1
-        incrementalResults[0] == [hasNext    : false,
-                                  incremental: [[path: ["post"], data: [summary: "A summary"]]]
+        incrementalResults[0] == [incremental: [[path: ["post"], data: [summary: "A summary"]]],
+                                  hasNext    : false
         ]
-
 
     }
 
