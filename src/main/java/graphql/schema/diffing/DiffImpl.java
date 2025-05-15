@@ -40,7 +40,7 @@ public class DiffImpl {
     private final PossibleMappingsCalculator possibleMappingsCalculator;
     private final SchemaGraph completeSourceGraph;
     private final SchemaGraph completeTargetGraph;
-    private final PossibleMappingsCalculator.PossibleMappings possibleMappings;
+    private final PossibleMappings possibleMappings;
     private final SchemaDiffingRunningCheck runningCheck;
 
     private static class MappingEntry {
@@ -104,7 +104,7 @@ public class DiffImpl {
         }
     }
 
-    public DiffImpl(PossibleMappingsCalculator possibleMappingsCalculator, SchemaGraph completeSourceGraph, SchemaGraph completeTargetGraph, PossibleMappingsCalculator.PossibleMappings possibleMappings, SchemaDiffingRunningCheck runningCheck) {
+    public DiffImpl(PossibleMappingsCalculator possibleMappingsCalculator, SchemaGraph completeSourceGraph, SchemaGraph completeTargetGraph, PossibleMappings possibleMappings, SchemaDiffingRunningCheck runningCheck) {
         this.possibleMappingsCalculator = possibleMappingsCalculator;
         this.completeSourceGraph = completeSourceGraph;
         this.completeTargetGraph = completeTargetGraph;
@@ -140,6 +140,8 @@ public class DiffImpl {
         while (!queue.isEmpty()) {
             MappingEntry mappingEntry = queue.poll();
             algoIterationCount.incrementAndGet();
+
+            System.out.println("entry with lbc " + mappingEntry.lowerBoundCost + " optimal ged " + optimalEdit.ged);
 
             if (mappingEntry.lowerBoundCost >= optimalEdit.ged) {
                 // once the lowest lowerBoundCost is not lower than the optimal edit, we are done
@@ -204,13 +206,12 @@ public class DiffImpl {
         double[][] costMatrix = new double[costMatrixSize][costMatrixSize];
 
         Map<Vertex, Double> isolatedVerticesCache = new LinkedHashMap<>();
-        Map<Vertex, Vertex> nonFixedParentRestrictions = possibleMappingsCalculator.getNonFixedParentRestrictions(completeSourceGraph, completeTargetGraph, parentPartialMapping);
 
         for (int i = parentLevel; i < allSources.size(); i++) {
             Vertex v = allSources.get(i);
             int j = 0;
             for (Vertex u : availableTargetVertices) {
-                double cost = calcLowerBoundMappingCost(v, u, parentPartialMapping, isolatedVerticesCache, nonFixedParentRestrictions);
+                double cost = calcLowerBoundMappingCost(v, u, parentPartialMapping, isolatedVerticesCache);
                 costMatrixForHungarianAlgo[i - parentLevel][j] = cost;
                 costMatrix[i - parentLevel][j] = cost;
                 j++;
@@ -224,7 +225,11 @@ public class DiffImpl {
         double costMatrixSum = getCostMatrixSum(costMatrix, assignments);
         double lowerBoundForPartialMapping = editorialCostForMapping + costMatrixSum;
 
-        Mapping newMapping = parentPartialMapping.extendMapping(v_i, availableTargetVertices.get(assignments[0]));
+        Mapping newMapping = parentPartialMapping.copy();
+
+        if (!newMapping.extendMapping(v_i, availableTargetVertices.get(assignments[0]), this.completeSourceGraph, this.completeTargetGraph)) {
+            return;
+        }
 
         if (costMatrixSum >= Integer.MAX_VALUE && optimalEdit.mapping == null) {
             throw new RuntimeException("bug: could not find any allowed mapping");
@@ -241,11 +246,12 @@ public class DiffImpl {
 
         queue.add(newMappingEntry);
 
-        expandMappingAndUpdateOptimalMapping(fixedEditorialCost,
+        expandMappingAndMaybeUpdateOptimalMapping(fixedEditorialCost,
                 level,
                 optimalEdit,
                 allSources,
                 parentPartialMapping.copy(),
+                false, // use all assignments
                 assignments,
                 availableTargetVertices,
                 lowerBoundForPartialMapping);
@@ -289,8 +295,10 @@ public class DiffImpl {
 
             double costMatrixSumSibling = getCostMatrixSum(costMatrixCopy, assignments);
             double lowerBoundForPartialMappingSibling = editorialCostForMapping + costMatrixSumSibling;
-            Mapping newMappingSibling = partialMapping.extendMapping(v_i, availableTargetVertices.get(assignments[0]));
-
+            Mapping newMappingSibling = partialMapping.copy();
+            if (!newMappingSibling.extendMapping(v_i, availableTargetVertices.get(assignments[0]), this.completeSourceGraph, this.completeTargetGraph)) {
+                continue;
+            }
 
             if (lowerBoundForPartialMappingSibling >= upperBound) {
                 break;
@@ -322,14 +330,14 @@ public class DiffImpl {
         if (sibling.lowerBoundCost < optimalEdit.ged) {
             queue.add(sibling);
 
-            // we need to start here from the parent mapping, this is why we remove the last element
-            Mapping toExpand = sibling.partialMapping.copyMappingWithLastElementRemoved();
+            Mapping toExpand = sibling.partialMapping.copy();
 
-            expandMappingAndUpdateOptimalMapping(fixedEditorialCost,
+            expandMappingAndMaybeUpdateOptimalMapping(fixedEditorialCost,
                     level,
                     optimalEdit,
                     allSources,
                     toExpand,
+                    true, // skip first assignment
                     sibling.assignments,
                     sibling.availableTargetVertices,
                     sibling.lowerBoundCost);
@@ -341,16 +349,21 @@ public class DiffImpl {
      * matching (hungarian algo result) and update the optimal edit if we
      * found a better one.
      */
-    private void expandMappingAndUpdateOptimalMapping(int fixedEditorialCost,
-                                                      int level,
-                                                      OptimalEdit optimalEdit,
-                                                      List<Vertex> allSources,
-                                                      Mapping toExpand,
-                                                      int[] assignments,
-                                                      List<Vertex> availableTargetVertices,
-                                                      double lowerBoundCost) {
-        for (int i = 0; i < assignments.length; i++) {
-            toExpand.add(allSources.get(level - 1 + i), availableTargetVertices.get(assignments[i]));
+    private void expandMappingAndMaybeUpdateOptimalMapping(int fixedEditorialCost,
+                                                           int level,
+                                                           OptimalEdit optimalEdit,
+                                                           List<Vertex> allSources,
+                                                           Mapping toExpand,
+                                                           boolean skipFirstAssignment,
+                                                           int[] assignments,
+                                                           List<Vertex> availableTargetVertices,
+                                                           double lowerBoundCost) {
+        for (int i = skipFirstAssignment ? 1 : 0; i < assignments.length; i++) {
+            boolean expandSuccessful =
+                    toExpand.extendMapping(allSources.get(level - 1 + i), availableTargetVertices.get(assignments[i]), this.completeSourceGraph, this.completeTargetGraph);
+            if (!expandSuccessful) {
+                return;
+            }
         }
         assertTrue(toExpand.size() == this.completeSourceGraph.size());
         int costForFullMapping = editorialCostForMapping(fixedEditorialCost, toExpand, completeSourceGraph, completeTargetGraph);
@@ -401,31 +414,34 @@ public class DiffImpl {
     private double calcLowerBoundMappingCost(Vertex v,
                                              Vertex u,
                                              Mapping partialMapping,
-                                             Map<Vertex, Double> isolatedVerticesCache,
-                                             Map<Vertex, Vertex> nonFixedParentRestrictions) {
-        if (nonFixedParentRestrictions.containsKey(v) || partialMapping.hasParentRestriction(v)) {
-            if (!u.isIsolated()) { // Always allow mapping to isolated nodes
-                Vertex uParentRestriction = nonFixedParentRestrictions.get(v);
-                if (uParentRestriction == null) {
-                    uParentRestriction = partialMapping.getParentRestriction(v);
-                }
-
-                Collection<Edge> parentEdges = completeTargetGraph.getAdjacentEdgesInverseNonCopy(u);
-                if (parentEdges.size() != 1) {
-                    return Integer.MAX_VALUE;
-                }
-
-                Vertex uParent = parentEdges.iterator().next().getFrom();
-                if (uParent != uParentRestriction) {
-                    return Integer.MAX_VALUE;
-                }
-            }
-        }
+                                             Map<Vertex, Double> isolatedVerticesCache
+    ) {
+//        if (nonFixedParentRestrictions.containsKey(v) || partialMapping.hasParentRestriction(v)) {
+//            if (!u.isIsolated()) { // Always allow mapping to isolated nodes
+//                Vertex uParentRestriction = nonFixedParentRestrictions.get(v);
+//                if (uParentRestriction == null) {
+//                    uParentRestriction = partialMapping.getParentRestriction(v);
+//                }
+//
+//                Collection<Edge> parentEdges = completeTargetGraph.getAdjacentEdgesInverseNonCopy(u);
+//                if (parentEdges.size() != 1) {
+//                    return Integer.MAX_VALUE;
+//                }
+//
+//                Vertex uParent = parentEdges.iterator().next().getFrom();
+//                if (uParent != uParentRestriction) {
+//                    return Integer.MAX_VALUE;
+//                }
+//            }
+//        }
 
         if (!possibleMappings.mappingPossible(v, u)) {
             return Integer.MAX_VALUE;
         }
-        if (u.isOfType(SchemaGraph.ISOLATED)) {
+        if (u.isIsolated() && v.isIsolated()) {
+            return 0;
+        }
+        if (u.isIsolated()) {
             if (isolatedVerticesCache.containsKey(v)) {
                 return isolatedVerticesCache.get(v);
             }
@@ -433,7 +449,7 @@ public class DiffImpl {
             isolatedVerticesCache.put(v, result);
             return result;
         }
-        if (v.isOfType(SchemaGraph.ISOLATED)) {
+        if (v.isIsolated()) {
             if (isolatedVerticesCache.containsKey(u)) {
                 return isolatedVerticesCache.get(u);
             }
