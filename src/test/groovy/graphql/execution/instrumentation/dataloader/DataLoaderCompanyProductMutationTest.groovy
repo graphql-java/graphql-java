@@ -48,7 +48,7 @@ class DataLoaderCompanyProductMutationTest extends Specification {
                 newTypeWiring("Company").dataFetcher("projects", {
                     environment ->
                         DataLoaderCompanyProductBackend.Company source = environment.getSource()
-                        return backend.getProjectsLoader().load(source.getId())
+                        return environment.getDataLoader("projects-dl").load(source.getId())
                 }))
                 .type(
                 newTypeWiring("Query").dataFetcher("companies", {
