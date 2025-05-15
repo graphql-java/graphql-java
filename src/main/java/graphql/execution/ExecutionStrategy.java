@@ -605,10 +605,7 @@ public abstract class ExecutionStrategy {
                 instrumentationParams, executionContext.getInstrumentationState()
         ));
 
-        NonNullableFieldValidator nonNullableFieldValidator = new NonNullableFieldValidator(executionContext, executionStepInfo);
-
         ExecutionStrategyParameters newParameters = parameters.transform(executionStepInfo,
-                nonNullableFieldValidator,
                 fetchedValue.getLocalContext(),
                 fetchedValue.getFetchedValue());
 
@@ -767,13 +764,12 @@ public abstract class ExecutionStrategy {
 
             ExecutionStepInfo stepInfoForListElement = executionStepInfoFactory.newExecutionStepInfoForListElement(executionStepInfo, indexedPath);
 
-            NonNullableFieldValidator nonNullableFieldValidator = new NonNullableFieldValidator(executionContext, stepInfoForListElement);
-
             FetchedValue value = unboxPossibleDataFetcherResult(executionContext, parameters, item);
 
             ExecutionStrategyParameters newParameters = parameters.transform(stepInfoForListElement,
-                    nonNullableFieldValidator, indexedPath,
-                    value.getLocalContext(), value.getFetchedValue());
+                    indexedPath,
+                    value.getLocalContext(),
+                    value.getFetchedValue());
 
             fieldValueInfos.add(completeValue(executionContext, newParameters));
             index++;
@@ -910,10 +906,8 @@ public abstract class ExecutionStrategy {
         );
 
         ExecutionStepInfo newExecutionStepInfo = executionStepInfo.changeTypeWithPreservedNonNull(resolvedObjectType);
-        NonNullableFieldValidator nonNullableFieldValidator = new NonNullableFieldValidator(executionContext, newExecutionStepInfo);
 
         ExecutionStrategyParameters newParameters = parameters.transform(newExecutionStepInfo,
-                nonNullableFieldValidator,
                 subFields,
                 result);
 

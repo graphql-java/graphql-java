@@ -38,7 +38,7 @@ public class ExecutionStrategyParameters {
         this.localContext = localContext;
         this.fields = assertNotNull(fields, () -> "fields is null");
         this.source = source;
-        this.nonNullableFieldValidator = nonNullableFieldValidator;
+        this.nonNullableFieldValidator = assertNotNull(nonNullableFieldValidator, () -> "requires a NonNullValidator");;
         this.path = path;
         this.currentField = currentField;
         this.parent = parent;
@@ -132,7 +132,6 @@ public class ExecutionStrategyParameters {
 
     @Internal
     ExecutionStrategyParameters transform(ExecutionStepInfo executionStepInfo,
-                                          NonNullableFieldValidator nonNullableFieldValidator,
                                           MergedSelectionSet fields,
                                           Object source) {
         return new ExecutionStrategyParameters(executionStepInfo,
@@ -148,7 +147,6 @@ public class ExecutionStrategyParameters {
 
     @Internal
     ExecutionStrategyParameters transform(ExecutionStepInfo executionStepInfo,
-                                          NonNullableFieldValidator nonNullableFieldValidator,
                                           ResultPath path,
                                           Object localContext,
                                           Object source) {
@@ -165,7 +163,6 @@ public class ExecutionStrategyParameters {
 
     @Internal
     ExecutionStrategyParameters transform(ExecutionStepInfo executionStepInfo,
-                                          NonNullableFieldValidator nonNullableFieldValidator,
                                           Object localContext,
                                           Object source) {
         return new ExecutionStrategyParameters(executionStepInfo,
