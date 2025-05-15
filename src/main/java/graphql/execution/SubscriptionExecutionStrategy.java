@@ -106,7 +106,7 @@ public class SubscriptionExecutionStrategy extends ExecutionStrategy {
      */
 
     private CompletableFuture<Publisher<Object>> createSourceEventStream(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
-        ExecutionStrategyParameters newParameters = firstFieldOfSubscriptionSelection(executionContext, parameters);
+        ExecutionStrategyParameters newParameters = firstFieldOfSubscriptionSelection(parameters);
 
         CompletableFuture<FetchedValue> fieldFetched = Async.toCompletableFuture(fetchField(executionContext, newParameters));
         return fieldFetched.thenApply(fetchedValue -> {
@@ -139,7 +139,7 @@ public class SubscriptionExecutionStrategy extends ExecutionStrategy {
                 .root(eventPayload)
                 .resetErrors()
         );
-        ExecutionStrategyParameters newParameters = firstFieldOfSubscriptionSelection(newExecutionContext, parameters);
+        ExecutionStrategyParameters newParameters = firstFieldOfSubscriptionSelection(parameters);
         ExecutionStepInfo subscribedFieldStepInfo = createSubscribedFieldStepInfo(executionContext, newParameters);
 
         InstrumentationFieldParameters i13nFieldParameters = new InstrumentationFieldParameters(executionContext, () -> subscribedFieldStepInfo);
@@ -179,14 +179,12 @@ public class SubscriptionExecutionStrategy extends ExecutionStrategy {
         return rootField.getResultKey();
     }
 
-    private ExecutionStrategyParameters firstFieldOfSubscriptionSelection(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {
+    private ExecutionStrategyParameters firstFieldOfSubscriptionSelection(ExecutionStrategyParameters parameters) {
         MergedSelectionSet fields = parameters.getFields();
         MergedField firstField = fields.getSubField(fields.getKeys().get(0));
 
         ResultPath fieldPath = parameters.getPath().segment(mkNameForPath(firstField.getSingleField()));
-        NonNullableFieldValidator nonNullableFieldValidator = new NonNullableFieldValidator(executionContext);
-        return parameters.transform(builder ->
-                builder.field(firstField).path(fieldPath).nonNullFieldValidator(nonNullableFieldValidator));
+        return parameters.transform(builder -> builder.field(firstField).path(fieldPath));
     }
 
     private ExecutionStepInfo createSubscribedFieldStepInfo(ExecutionContext executionContext, ExecutionStrategyParameters parameters) {

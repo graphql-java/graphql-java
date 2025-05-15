@@ -2,6 +2,7 @@ package graphql.execution.instrumentation.dataloader;
 
 
 import com.google.common.collect.ImmutableList;
+import org.dataloader.BatchLoader;
 import org.dataloader.DataLoader;
 import org.dataloader.DataLoaderFactory;
 
@@ -26,12 +27,13 @@ public class DataLoaderCompanyProductBackend {
             mkCompany(projectCount);
         }
 
-        projectsLoader = DataLoaderFactory.newDataLoader(keys -> getProjectsForCompanies(keys).thenApply(projects -> keys
+        BatchLoader<UUID, List<Project>> uuidListBatchLoader = keys -> getProjectsForCompanies(keys).thenApply(projects -> keys
                 .stream()
                 .map(companyId -> projects.stream()
                         .filter(project -> project.getCompanyId().equals(companyId))
                         .collect(Collectors.toList()))
-                .collect(Collectors.toList())));
+                .collect(Collectors.toList()));
+        projectsLoader = DataLoaderFactory.newDataLoader(uuidListBatchLoader);
 
     }
 
