@@ -100,9 +100,9 @@ public class BatchCompareDataFetchers {
 
     public DataLoader<String, List<Department>> departmentsForShopDataLoader = DataLoaderFactory.newDataLoader(departmentsForShopsBatchLoader);
 
-    public DataFetcher<CompletableFuture<List<Department>>> departmentsForShopDataLoaderDataFetcher = environment -> {
+    public DataFetcher<?> departmentsForShopDataLoaderDataFetcher = environment -> {
         Shop shop = environment.getSource();
-        return departmentsForShopDataLoader.load(shop.getId());
+        return environment.getDataLoader("departments").load(shop.getId());
     };
 
     // Products
@@ -136,9 +136,9 @@ public class BatchCompareDataFetchers {
 
     public DataLoader<String, List<Product>> productsForDepartmentDataLoader = DataLoaderFactory.newDataLoader(productsForDepartmentsBatchLoader);
 
-    public DataFetcher<CompletableFuture<List<Product>>> productsForDepartmentDataLoaderDataFetcher = environment -> {
+    public DataFetcher<?> productsForDepartmentDataLoaderDataFetcher = environment -> {
         Department department = environment.getSource();
-        return productsForDepartmentDataLoader.load(department.getId());
+        return environment.getDataLoader("products").load(department.getId());
     };
 
     private <T> CompletableFuture<T> maybeAsyncWithSleep(Supplier<CompletableFuture<T>> supplier) {
