@@ -115,6 +115,7 @@ class AsyncSerialExecutionStrategyTest extends Specification {
                 .newParameters()
                 .executionStepInfo(typeInfo)
                 .fields(mergedSelectionSet(['hello': mergedField(new Field('hello')), 'hello2': mergedField(new Field('hello2')), 'hello3': mergedField(new Field('hello3'))]))
+                .nonNullFieldValidator(new NonNullableFieldValidator(executionContext))
                 .build()
 
         AsyncSerialExecutionStrategy strategy = new AsyncSerialExecutionStrategy()
@@ -163,6 +164,7 @@ class AsyncSerialExecutionStrategyTest extends Specification {
                 .newParameters()
                 .executionStepInfo(typeInfo)
                 .fields(mergedSelectionSet(['hello': mergedField(new Field('hello')), 'hello2': mergedField(new Field('hello2')), 'hello3': mergedField(new Field('hello3'))]))
+                .nonNullFieldValidator(new NonNullableFieldValidator(executionContext))
                 .build()
 
         AsyncSerialExecutionStrategy strategy = new AsyncSerialExecutionStrategy()
