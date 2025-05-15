@@ -132,7 +132,6 @@ public class ExecutionStrategyParameters {
 
     @Internal
     ExecutionStrategyParameters transform(ExecutionStepInfo executionStepInfo,
-                                          NonNullableFieldValidator nonNullableFieldValidator,
                                           MergedSelectionSet fields,
                                           Object source) {
         return new ExecutionStrategyParameters(executionStepInfo,
@@ -148,7 +147,6 @@ public class ExecutionStrategyParameters {
 
     @Internal
     ExecutionStrategyParameters transform(ExecutionStepInfo executionStepInfo,
-                                          NonNullableFieldValidator nonNullableFieldValidator,
                                           ResultPath path,
                                           Object localContext,
                                           Object source) {
@@ -165,7 +163,6 @@ public class ExecutionStrategyParameters {
 
     @Internal
     ExecutionStrategyParameters transform(ExecutionStepInfo executionStepInfo,
-                                          NonNullableFieldValidator nonNullableFieldValidator,
                                           Object localContext,
                                           Object source) {
         return new ExecutionStrategyParameters(executionStepInfo,

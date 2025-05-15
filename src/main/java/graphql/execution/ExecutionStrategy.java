@@ -607,8 +607,6 @@ public abstract class ExecutionStrategy {
                 instrumentationParams, executionContext.getInstrumentationState()
         ));
 
-        NonNullableFieldValidator nonNullableFieldValidator = new NonNullableFieldValidator(executionContext, executionStepInfo);
-
         ExecutionStrategyParameters newParameters = parameters.transform(executionStepInfo,
                 fetchedValue.getLocalContext(),
                 fetchedValue.getFetchedValue());
