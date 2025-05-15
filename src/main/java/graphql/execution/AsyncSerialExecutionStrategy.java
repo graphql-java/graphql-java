@@ -52,11 +52,9 @@ public class AsyncSerialExecutionStrategy extends AbstractAsyncExecutionStrategy
         CompletableFuture<List<Object>> resultsFuture = Async.eachSequentially(fieldNames, (fieldName, prevResults) -> {
             MergedField currentField = fields.getSubField(fieldName);
             ResultPath fieldPath = parameters.getPath().segment(mkNameForPath(currentField));
-            ExecutionStrategyParameters newParameters = parameters
-                    .transform(builder -> builder.field(currentField).path(fieldPath));
+            ExecutionStrategyParameters newParameters = parameters.transform(currentField, fieldPath);
 
-            Object resolveSerialField = resolveSerialField(executionContext, dataLoaderDispatcherStrategy, newParameters);
-            return resolveSerialField;
+            return resolveSerialField(executionContext, dataLoaderDispatcherStrategy, newParameters);
         });
 
         CompletableFuture<ExecutionResult> overallResult = new CompletableFuture<>();

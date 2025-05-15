@@ -105,7 +105,7 @@ tasks.withType(GroovyCompile) {
 }
 dependencies {
     implementation 'org.antlr:antlr4-runtime:' + antlrVersion
-    api 'com.graphql-java:java-dataloader:4.0.0'
+    api 'com.graphql-java:java-dataloader:5.0.0'
     api 'org.reactivestreams:reactive-streams:' + reactiveStreamsVersion
     api "org.jspecify:jspecify:1.0.0"
     antlr 'org.antlr:antlr4:' + antlrVersion
@@ -176,7 +176,7 @@ shadowJar {
     bnd('''
 -exportcontents: graphql.*
 -removeheaders: Private-Package
-Import-Package: !android.os.*,!com.google.*,!org.checkerframework.*,!javax.annotation.*,!graphql.com.google.*,!org.antlr.*,!graphql.org.antlr.*,!sun.misc.*,org.jspecify.*;resolution:=optional,*
+Import-Package: !android.os.*,!com.google.*,!org.checkerframework.*,!javax.annotation.*,!graphql.com.google.*,!org.antlr.*,!graphql.org.antlr.*,!sun.misc.*,org.jspecify.annotations;resolution:=optional,*
 ''')
 }
 
