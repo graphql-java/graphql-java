@@ -11,6 +11,7 @@ import graphql.execution.ExecutionStrategyParameters;
 import graphql.execution.FieldValueInfo;
 import graphql.execution.MergedField;
 import graphql.execution.MergedSelectionSet;
+import graphql.execution.ResultPath;
 import graphql.execution.instrumentation.Instrumentation;
 import graphql.incremental.IncrementalPayload;
 import graphql.util.FpKit;
@@ -73,14 +74,14 @@ public interface DeferredExecutionSupport {
             ImmutableList.Builder<String> nonDeferredFieldNamesBuilder = ImmutableList.builder();
 
             mergedSelectionSet.getSubFields().values().forEach(mergedField -> {
+                if (mergedField.getFields().size() > mergedField.getDeferredExecutions().size()) {
+                    nonDeferredFieldNamesBuilder.add(mergedField.getSingleField().getResultKey());
+                    return;
+                }
                 mergedField.getDeferredExecutions().forEach(de -> {
                     deferredExecutionToFieldsBuilder.put(de, mergedField);
                     deferredFieldsBuilder.add(mergedField);
                 });
-
-                if (mergedField.getDeferredExecutions().isEmpty()) {
-                    nonDeferredFieldNamesBuilder.add(mergedField.getSingleField().getResultKey());
-                }
             });
 
             this.deferredExecutionToFields = deferredExecutionToFieldsBuilder.build();
@@ -139,10 +140,11 @@ public interface DeferredExecutionSupport {
             ExecutionStrategyParameters callParameters = parameters.transform(builder ->
                     {
                         MergedSelectionSet mergedSelectionSet = MergedSelectionSet.newMergedSelectionSet().subFields(fields).build();
+                        ResultPath path = parameters.getPath().segment(currentField.getResultKey());
                         builder.deferredCallContext(deferredCallContext)
                                 .field(currentField)
                                 .fields(mergedSelectionSet)
-                                .path(parameters.getPath().segment(currentField.getResultKey()))
+                                .path(path)
                                 .parent(null); // this is a break in the parent -> child chain - it's a new start effectively
                     }
             );
