@@ -1,6 +1,5 @@
 package graphql.language;
 
-import com.google.common.collect.ImmutableList;
 import graphql.PublicApi;
 import graphql.collect.ImmutableKit;
 import graphql.util.TraversalControl;
@@ -149,16 +148,15 @@ public class AstSignature {
         NodeVisitorStub visitor = new NodeVisitorStub() {
             @Override
             public TraversalControl visitDocument(Document node, TraverserContext<Node> context) {
-                List<Definition> wantedDefinitions = node.getDefinitions().stream()
-                        .filter(d -> {
+                List<Definition> wantedDefinitions = ImmutableKit.filter(node.getDefinitions(),
+                        d -> {
                             if (d instanceof OperationDefinition) {
                                 OperationDefinition operationDefinition = (OperationDefinition) d;
                                 return isThisOperation(operationDefinition, operationName);
                             }
                             return d instanceof FragmentDefinition;
                             // SDL in a query makes no sense - its gone should it be present
-                        })
-                        .collect(ImmutableList.toImmutableList());
+                        });
 
                 Document changedNode = node.transform(builder -> {
                     builder.definitions(wantedDefinitions);
