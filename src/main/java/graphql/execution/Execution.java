@@ -184,9 +184,7 @@ public class Execution {
         MergedSelectionSet fields = fieldCollector.collectFields(
                 collectorParameters,
                 operationDefinition.getSelectionSet(),
-                Optional.ofNullable(executionContext.getGraphQLContext())
-                        .map(graphqlContext -> graphqlContext.getBoolean(ExperimentalApi.ENABLE_INCREMENTAL_SUPPORT))
-                        .orElse(false)
+                executionContext.hasIncrementalSupport()
         );
 
         ResultPath path = ResultPath.rootPath();
@@ -259,9 +257,7 @@ public class Execution {
             return DataLoaderDispatchStrategy.NO_OP;
         }
         if (!executionContext.isSubscriptionOperation()) {
-            boolean deferEnabled = Optional.ofNullable(executionContext.getGraphQLContext())
-                    .map(graphqlContext -> graphqlContext.getBoolean(ExperimentalApi.ENABLE_INCREMENTAL_SUPPORT))
-                    .orElse(false);
+            boolean deferEnabled = executionContext.hasIncrementalSupport();
 
             // Dedicated strategy for defer support, for safety purposes.
             return deferEnabled ?

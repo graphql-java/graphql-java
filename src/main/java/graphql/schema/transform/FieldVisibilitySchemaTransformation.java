@@ -62,9 +62,10 @@ public class FieldVisibilitySchemaTransformation {
         Set<GraphQLType> markedForRemovalTypes = new HashSet<>();
 
         // query, mutation, and subscription types should not be removed
-        final Set<String> protectedTypeNames = getOperationTypes(schema).stream()
-                .map(GraphQLObjectType::getName)
-                .collect(Collectors.toSet());
+        final Set<String> protectedTypeNames = new HashSet<>();
+        for (GraphQLObjectType graphQLObjectType : getOperationTypes(schema)) {
+            protectedTypeNames.add(graphQLObjectType.getName());
+        }
 
         beforeTransformationHook.run();
 

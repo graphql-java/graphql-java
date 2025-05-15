@@ -228,4 +228,11 @@ class FpKitTest extends Specification {
         then:
         intersection.isEmpty()
     }
+
+    def "test sized allocation"() {
+        when:
+        def newArrayList = FpKit.arrayListSizedTo(["a", "b", "c"])
+        then:
+        newArrayList instanceof ArrayList
+    }
 }
