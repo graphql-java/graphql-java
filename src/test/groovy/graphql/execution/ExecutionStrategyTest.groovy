@@ -137,6 +137,7 @@ class ExecutionStrategyTest extends Specification {
                 .executionStepInfo(ExecutionStepInfo.newExecutionStepInfo().type(objectType))
                 .source(result)
                 .fields(mergedSelectionSet(["fld": [Field.newField().build()]]))
+                .nonNullFieldValidator(new NonNullableFieldValidator(executionContext))
                 .field(mergedField(Field.newField().build()))
                 .build()
 
@@ -157,7 +158,7 @@ class ExecutionStrategyTest extends Specification {
         Field field = new Field("someField")
         def fldDef = newFieldDefinition().name("test").type(fieldType).build()
         def executionStepInfo = ExecutionStepInfo.newExecutionStepInfo().type(fieldType).path(ResultPath.rootPath()).fieldDefinition(fldDef).build()
-        NonNullableFieldValidator nullableFieldValidator = new NonNullableFieldValidator(executionContext, executionStepInfo)
+        NonNullableFieldValidator nullableFieldValidator = new NonNullableFieldValidator(executionContext)
 
 
         def result = ["test", "1", "2", "3"]
@@ -182,7 +183,7 @@ class ExecutionStrategyTest extends Specification {
         def fieldType = GraphQLString
         def fldDef = newFieldDefinition().name("test").type(fieldType).build()
         def executionStepInfo = ExecutionStepInfo.newExecutionStepInfo().type(fieldType).fieldDefinition(fldDef).build()
-        NonNullableFieldValidator nullableFieldValidator = new NonNullableFieldValidator(executionContext, executionStepInfo)
+        NonNullableFieldValidator nullableFieldValidator = new NonNullableFieldValidator(executionContext)
         def parameters = newParameters()
                 .executionStepInfo(executionStepInfo)
                 .nonNullFieldValidator(nullableFieldValidator)
@@ -208,7 +209,7 @@ class ExecutionStrategyTest extends Specification {
         def fieldType = nonNull(GraphQLString)
         def fldDef = newFieldDefinition().name("test").type(fieldType).build()
         def executionStepInfo = ExecutionStepInfo.newExecutionStepInfo().type(fieldType).fieldDefinition(fldDef).build()
-        NonNullableFieldValidator nullableFieldValidator = new NonNullableFieldValidator(executionContext, executionStepInfo)
+        NonNullableFieldValidator nullableFieldValidator = new NonNullableFieldValidator(executionContext)
         def parameters = newParameters()
                 .executionStepInfo(executionStepInfo)
                 .nonNullFieldValidator(nullableFieldValidator)
@@ -230,7 +231,7 @@ class ExecutionStrategyTest extends Specification {
         def fieldType = GraphQLString
         def fldDef = newFieldDefinition().name("test").type(fieldType).build()
         def executionStepInfo = ExecutionStepInfo.newExecutionStepInfo().type(fieldType).fieldDefinition(fldDef).build()
-        NonNullableFieldValidator nullableFieldValidator = new NonNullableFieldValidator(executionContext, executionStepInfo)
+        NonNullableFieldValidator nullableFieldValidator = new NonNullableFieldValidator(executionContext)
         def parameters = newParameters()
                 .executionStepInfo(executionStepInfo)
                 .nonNullFieldValidator(nullableFieldValidator)
@@ -256,7 +257,7 @@ class ExecutionStrategyTest extends Specification {
         def fieldType = nonNull(GraphQLString)
         def fldDef = newFieldDefinition().name("test").type(fieldType).build()
         def executionStepInfo = ExecutionStepInfo.newExecutionStepInfo().type(fieldType).fieldDefinition(fldDef).build()
-        NonNullableFieldValidator nullableFieldValidator = new NonNullableFieldValidator(executionContext, executionStepInfo)
+        NonNullableFieldValidator nullableFieldValidator = new NonNullableFieldValidator(executionContext)
         def parameters = newParameters()
                 .executionStepInfo(executionStepInfo)
                 .nonNullFieldValidator(nullableFieldValidator)
@@ -278,7 +279,7 @@ class ExecutionStrategyTest extends Specification {
         def fieldType = GraphQLString
         def fldDef = newFieldDefinition().name("test").type(fieldType).build()
         def executionStepInfo = ExecutionStepInfo.newExecutionStepInfo().type(fieldType).fieldDefinition(fldDef).build()
-        NonNullableFieldValidator nullableFieldValidator = new NonNullableFieldValidator(executionContext, executionStepInfo)
+        NonNullableFieldValidator nullableFieldValidator = new NonNullableFieldValidator(executionContext)
         def parameters = newParameters()
                 .executionStepInfo(executionStepInfo)
                 .nonNullFieldValidator(nullableFieldValidator)
@@ -304,7 +305,7 @@ class ExecutionStrategyTest extends Specification {
         def fieldType = nonNull(GraphQLString)
         def fldDef = newFieldDefinition().name("test").type(fieldType).build()
         def typeInfo = ExecutionStepInfo.newExecutionStepInfo().type(fieldType).fieldDefinition(fldDef).build()
-        NonNullableFieldValidator nullableFieldValidator = new NonNullableFieldValidator(executionContext, typeInfo)
+        NonNullableFieldValidator nullableFieldValidator = new NonNullableFieldValidator(executionContext)
         def parameters = newParameters()
                 .executionStepInfo(typeInfo)
                 .nonNullFieldValidator(nullableFieldValidator)
@@ -326,7 +327,7 @@ class ExecutionStrategyTest extends Specification {
         def fieldType = GraphQLString
         def fldDef = newFieldDefinition().name("test").type(fieldType).build()
         def typeInfo = ExecutionStepInfo.newExecutionStepInfo().type(fieldType).fieldDefinition(fldDef).build()
-        NonNullableFieldValidator nullableFieldValidator = new NonNullableFieldValidator(executionContext, typeInfo)
+        NonNullableFieldValidator nullableFieldValidator = new NonNullableFieldValidator(executionContext)
         def parameters = newParameters()
                 .executionStepInfo(typeInfo)
                 .nonNullFieldValidator(nullableFieldValidator)
@@ -352,7 +353,7 @@ class ExecutionStrategyTest extends Specification {
         def fieldType = nonNull(GraphQLString)
         def fldDef = newFieldDefinition().name("test").type(fieldType).build()
         def typeInfo = ExecutionStepInfo.newExecutionStepInfo().type(fieldType).fieldDefinition(fldDef).build()
-        NonNullableFieldValidator nullableFieldValidator = new NonNullableFieldValidator(executionContext, typeInfo)
+        NonNullableFieldValidator nullableFieldValidator = new NonNullableFieldValidator(executionContext)
         def parameters = newParameters()
                 .executionStepInfo(typeInfo)
                 .nonNullFieldValidator(nullableFieldValidator)
@@ -374,7 +375,7 @@ class ExecutionStrategyTest extends Specification {
         def fieldType = list(GraphQLString)
         def fldDef = newFieldDefinition().name("test").type(fieldType).build()
         def executionStepInfo = ExecutionStepInfo.newExecutionStepInfo().type(fieldType).path(ResultPath.rootPath()).fieldDefinition(fldDef).build()
-        NonNullableFieldValidator nullableFieldValidator = new NonNullableFieldValidator(executionContext, executionStepInfo)
+        NonNullableFieldValidator nullableFieldValidator = new NonNullableFieldValidator(executionContext)
         def result = ["test", "1", "2", "3"]
         def parameters = newParameters()
                 .executionStepInfo(executionStepInfo)
@@ -396,7 +397,7 @@ class ExecutionStrategyTest extends Specification {
         ExecutionContext executionContext = buildContext()
         def fieldType = Scalars.GraphQLInt
         def typeInfo = ExecutionStepInfo.newExecutionStepInfo().type(fieldType).build()
-        NonNullableFieldValidator nullableFieldValidator = new NonNullableFieldValidator(executionContext, typeInfo)
+        NonNullableFieldValidator nullableFieldValidator = new NonNullableFieldValidator(executionContext)
         String result = "not a number"
 
         def parameters = newParameters()
@@ -421,7 +422,7 @@ class ExecutionStrategyTest extends Specification {
         ExecutionContext executionContext = buildContext()
         GraphQLEnumType enumType = newEnum().name("Enum").value("value").build()
         def typeInfo = ExecutionStepInfo.newExecutionStepInfo().type(enumType).build()
-        NonNullableFieldValidator nullableFieldValidator = new NonNullableFieldValidator(executionContext, typeInfo)
+        NonNullableFieldValidator nullableFieldValidator = new NonNullableFieldValidator(executionContext)
         String result = "not a enum number"
 
         def parameters = newParameters()
@@ -468,7 +469,7 @@ class ExecutionStrategyTest extends Specification {
         ExecutionContext executionContext = buildContext()
         def fieldType = NullProducingScalar
         def typeInfo = ExecutionStepInfo.newExecutionStepInfo().type(nonNull(fieldType)).build()
-        NonNullableFieldValidator nullableFieldValidator = new NonNullableFieldValidator(executionContext, typeInfo)
+        NonNullableFieldValidator nullableFieldValidator = new NonNullableFieldValidator(executionContext)
 
         when:
         def parameters = newParameters()
@@ -529,7 +530,7 @@ class ExecutionStrategyTest extends Specification {
                 .build()
         ExecutionContext executionContext = buildContext(schema)
         ExecutionStepInfo typeInfo = ExecutionStepInfo.newExecutionStepInfo().type(objectType).build()
-        NonNullableFieldValidator nullableFieldValidator = new NonNullableFieldValidator(executionContext, typeInfo)
+        NonNullableFieldValidator nullableFieldValidator = new NonNullableFieldValidator(executionContext)
         Argument argument = new Argument("arg1", new StringValue("argVal"))
         Field field = new Field(someFieldName, [argument])
         MergedField mergedField = mergedField(field)
@@ -594,7 +595,7 @@ class ExecutionStrategyTest extends Specification {
                 .build()
         ExecutionContext executionContext = buildContext(schema)
         def typeInfo = ExecutionStepInfo.newExecutionStepInfo().type(objectType).build()
-        NonNullableFieldValidator nullableFieldValidator = new NonNullableFieldValidator(executionContext, typeInfo)
+        NonNullableFieldValidator nullableFieldValidator = new NonNullableFieldValidator(executionContext)
         ResultPath expectedPath = ResultPath.rootPath().segment(someFieldName)
 
         SourceLocation sourceLocation = new SourceLocation(666, 999)
@@ -730,7 +731,7 @@ class ExecutionStrategyTest extends Specification {
         ExecutionContext executionContext = buildContext(schema)
 
         def typeInfo = ExecutionStepInfo.newExecutionStepInfo().type(objectType).build()
-        NonNullableFieldValidator nullableFieldValidator = new NonNullableFieldValidator(executionContext, typeInfo)
+        NonNullableFieldValidator nullableFieldValidator = new NonNullableFieldValidator(executionContext)
         Field field = new Field(someFieldName)
 
         def parameters = newParameters()
@@ -759,7 +760,7 @@ class ExecutionStrategyTest extends Specification {
         def fieldType = list(Scalars.GraphQLInt)
         def fldDef = newFieldDefinition().name("test").type(fieldType).build()
         def executionStepInfo = ExecutionStepInfo.newExecutionStepInfo().type(fieldType).path(ResultPath.rootPath()).fieldDefinition(fldDef).build()
-        NonNullableFieldValidator nullableFieldValidator = new NonNullableFieldValidator(executionContext, executionStepInfo)
+        NonNullableFieldValidator nullableFieldValidator = new NonNullableFieldValidator(executionContext)
 
         def parameters = newParameters()
                 .executionStepInfo(executionStepInfo)
@@ -783,7 +784,7 @@ class ExecutionStrategyTest extends Specification {
         def fieldType = list(Scalars.GraphQLInt)
         def fldDef = newFieldDefinition().name("test").type(fieldType).build()
         def executionStepInfo = ExecutionStepInfo.newExecutionStepInfo().type(fieldType).path(ResultPath.rootPath()).fieldDefinition(fldDef).build()
-        NonNullableFieldValidator nullableFieldValidator = new NonNullableFieldValidator(executionContext, executionStepInfo)
+        NonNullableFieldValidator nullableFieldValidator = new NonNullableFieldValidator(executionContext)
 
         def parameters = newParameters()
                 .executionStepInfo(executionStepInfo)
@@ -807,7 +808,7 @@ class ExecutionStrategyTest extends Specification {
         def fieldType = list(Scalars.GraphQLInt)
         def fldDef = newFieldDefinition().name("test").type(fieldType).build()
         def executionStepInfo = ExecutionStepInfo.newExecutionStepInfo().type(fieldType).path(ResultPath.rootPath()).fieldDefinition(fldDef).build()
-        NonNullableFieldValidator nullableFieldValidator = new NonNullableFieldValidator(executionContext, executionStepInfo)
+        NonNullableFieldValidator nullableFieldValidator = new NonNullableFieldValidator(executionContext)
 
         def parameters = newParameters()
                 .executionStepInfo(executionStepInfo)
@@ -837,6 +838,7 @@ class ExecutionStrategyTest extends Specification {
                 .path(ResultPath.fromList(["parent"]))
                 .field(mergedField(field))
                 .fields(mergedSelectionSet(["parent": [mergedField(field)]]))
+                .nonNullFieldValidator(new NonNullableFieldValidator(executionContext))
                 .executionStepInfo(executionStepInfo)
                 .build()
 
@@ -869,6 +871,7 @@ class ExecutionStrategyTest extends Specification {
                 .field(mergedField(field))
                 .fields(mergedSelectionSet(["parent": [mergedField(field)]]))
                 .executionStepInfo(executionStepInfo)
+                .nonNullFieldValidator(new NonNullableFieldValidator(executionContext))
                 .build()
 
         when:
@@ -890,6 +893,7 @@ class ExecutionStrategyTest extends Specification {
                 .path(ResultPath.fromList(["parent"]))
                 .field(mergedField(field))
                 .fields(mergedSelectionSet(["parent": [mergedField(field)]]))
+                .nonNullFieldValidator(new NonNullableFieldValidator(executionContext))
                 .executionStepInfo(executionStepInfo)
                 .build()
 
@@ -913,7 +917,7 @@ class ExecutionStrategyTest extends Specification {
         def fieldType = list(Scalars.GraphQLInt)
         def fldDef = newFieldDefinition().name("test").type(fieldType).build()
         def executionStepInfo = ExecutionStepInfo.newExecutionStepInfo().type(fieldType).path(ResultPath.rootPath()).fieldDefinition(fldDef).build()
-        NonNullableFieldValidator nullableFieldValidator = new NonNullableFieldValidator(executionContext, executionStepInfo)
+        NonNullableFieldValidator nullableFieldValidator = new NonNullableFieldValidator(executionContext)
 
         def parameters = newParameters()
                 .executionStepInfo(executionStepInfo)
@@ -937,7 +941,7 @@ class ExecutionStrategyTest extends Specification {
         def fieldType = list(Scalars.GraphQLInt)
         def fldDef = newFieldDefinition().name("test").type(fieldType).build()
         def typeInfo = ExecutionStepInfo.newExecutionStepInfo().type(fieldType).fieldDefinition(fldDef).build()
-        NonNullableFieldValidator nullableFieldValidator = new NonNullableFieldValidator(executionContext, typeInfo)
+        NonNullableFieldValidator nullableFieldValidator = new NonNullableFieldValidator(executionContext)
 
         def parameters = newParameters()
                 .executionStepInfo(typeInfo)

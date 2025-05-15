@@ -187,7 +187,7 @@ public class Execution {
 
         ResultPath path = ResultPath.rootPath();
         ExecutionStepInfo executionStepInfo = newExecutionStepInfo().type(operationRootType).path(path).build();
-        NonNullableFieldValidator nonNullableFieldValidator = new NonNullableFieldValidator(executionContext, executionStepInfo);
+        NonNullableFieldValidator nonNullableFieldValidator = new NonNullableFieldValidator(executionContext);
 
         ExecutionStrategyParameters parameters = newParameters()
                 .executionStepInfo(executionStepInfo)
