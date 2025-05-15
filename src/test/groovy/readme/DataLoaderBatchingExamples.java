@@ -171,7 +171,7 @@ public class DataLoaderBatchingExamples {
             }
         };
 
-        DataLoaderOptions options = DataLoaderOptions.newOptions().setValueCache(crossRequestValueCache);
+        DataLoaderOptions options = DataLoaderOptions.newOptions().setValueCache(crossRequestValueCache).build();
 
         DataLoader<String, Object> dataLoader = DataLoaderFactory.newDataLoader(batchLoader, options);
     }
@@ -260,7 +260,7 @@ public class DataLoaderBatchingExamples {
         //
         // this creates an overall context for the dataloader
         //
-        DataLoaderOptions loaderOptions = DataLoaderOptions.newOptions().setBatchLoaderContextProvider(contextProvider);
+        DataLoaderOptions loaderOptions = DataLoaderOptions.newOptions().setBatchLoaderContextProvider(contextProvider).build();
         DataLoader<String, Object> characterDataLoader = DataLoaderFactory.newDataLoader(batchLoaderWithCtx, loaderOptions);
 
         // .... later in your data fetcher

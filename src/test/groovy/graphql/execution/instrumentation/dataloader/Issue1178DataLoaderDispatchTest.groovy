@@ -8,6 +8,7 @@ import graphql.schema.StaticDataFetcher
 import graphql.schema.idl.RuntimeWiring
 import org.dataloader.BatchLoader
 import org.dataloader.DataLoader
+import org.dataloader.DataLoaderFactory
 import org.dataloader.DataLoaderRegistry
 import spock.lang.Specification
 
@@ -40,7 +41,7 @@ class Issue1178DataLoaderDispatchTest extends Specification {
 
         def executor = Executors.newFixedThreadPool(5)
 
-        def dataLoader = new DataLoader<Object, Object>(new BatchLoader<Object, Object>() {
+        def dataLoader = DataLoaderFactory.newDataLoader(new BatchLoader<Object, Object>() {
             @Override
             CompletionStage<List<Object>> load(List<Object> keys) {
                 return CompletableFuture.supplyAsync({
@@ -48,7 +49,7 @@ class Issue1178DataLoaderDispatchTest extends Specification {
                 }, executor)
             }
         })
-        def dataLoader2 = new DataLoader<Object, Object>(new BatchLoader<Object, Object>() {
+        def dataLoader2 = DataLoaderFactory.newDataLoader(new BatchLoader<Object, Object>() {
             @Override
             CompletionStage<List<Object>> load(List<Object> keys) {
                 return CompletableFuture.supplyAsync({
@@ -61,8 +62,8 @@ class Issue1178DataLoaderDispatchTest extends Specification {
         dataLoaderRegistry.register("todo.related", dataLoader)
         dataLoaderRegistry.register("todo.related2", dataLoader2)
 
-        def relatedDf = new MyDataFetcher(dataLoader)
-        def relatedDf2 = new MyDataFetcher(dataLoader2)
+        def relatedDf = new MyDataFetcher("todo.related")
+        def relatedDf2 = new MyDataFetcher("todo.related2")
 
         def wiring = RuntimeWiring.newRuntimeWiring()
                 .type(newTypeWiring("Query")
@@ -119,16 +120,16 @@ class Issue1178DataLoaderDispatchTest extends Specification {
 
     static class MyDataFetcher implements DataFetcher<CompletableFuture<Object>> {
 
-        private final DataLoader dataLoader
+        private final String name
 
-        MyDataFetcher(DataLoader dataLoader) {
-            this.dataLoader = dataLoader
+        MyDataFetcher(String name) {
+            this.name = name
         }
 
         @Override
         CompletableFuture<Object> get(DataFetchingEnvironment environment) {
             def todo = environment.source as Map
-            return dataLoader.load(todo['id'])
+            return environment.getDataLoader(name).load(todo['id'])
         }
     }
 }
