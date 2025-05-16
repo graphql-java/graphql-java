@@ -80,7 +80,9 @@ class Issue1178DataLoaderDispatchTest extends Specification {
 
         then: "execution shouldn't error"
         for (int i = 0; i < NUM_OF_REPS; i++) {
-            def result = graphql.execute(ExecutionInput.newExecutionInput().dataLoaderRegistry(dataLoaderRegistry)
+            def result = graphql.execute(ExecutionInput.newExecutionInput()
+                    .graphQLContext([(DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING): enableDataLoaderChaining])
+                    .dataLoaderRegistry(dataLoaderRegistry)
                     .query("""
                 query { 
                     getTodos { __typename id 
@@ -116,6 +118,9 @@ class Issue1178DataLoaderDispatchTest extends Specification {
                 }""").build())
             assert result.errors.empty
         }
+        where:
+        enableDataLoaderChaining << [true, false]
+
     }
 
     static class MyDataFetcher implements DataFetcher<CompletableFuture<Object>> {

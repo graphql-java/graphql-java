@@ -43,6 +43,7 @@ class StarWarsDataLoaderWiring {
     BatchLoader<String, Object> characterBatchLoader = new BatchLoader<String, Object>() {
         @Override
         CompletionStage<List<Object>> load(List<String> keys) {
+            println "loading characters via batch loader for keys: $keys"
             batchFunctionLoadCount++
 
             //
@@ -53,7 +54,9 @@ class StarWarsDataLoaderWiring {
             //
             // async supply of values
             CompletableFuture.supplyAsync({
-                return getCharacterDataViaBatchHTTPApi(keys)
+                def result = getCharacterDataViaBatchHTTPApi(keys)
+                println "result " + result + " for keys: $keys"
+                return result
             })
         }
 
@@ -98,7 +101,16 @@ class StarWarsDataLoaderWiring {
         Object get(DataFetchingEnvironment environment) {
             List<String> friendIds = environment.source.friends
             naiveLoadCount += friendIds.size()
-            return environment.getDataLoader("character").loadMany(friendIds)
+
+            def many = environment.getDataLoader("character").loadMany(friendIds)
+            many.whenComplete { result, error ->
+                if (error != null) {
+                    println "Error loading friends: $error"
+                } else {
+                    println "Loaded friends: $result"
+                }
+            }
+            return many
         }
     }
 

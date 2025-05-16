@@ -65,8 +65,12 @@ class Issue2068 extends Specification {
                 TimeUnit.MILLISECONDS, new SynchronousQueue<>(), threadFactory,
                 new ThreadPoolExecutor.CallerRunsPolicy())
 
-        DataFetcher nationsDf = { env -> env.getDataLoader("owner.nation").load(env) }
-        DataFetcher ownersDf = { env -> env.getDataLoader("dog.owner").load(env) }
+        DataFetcher nationsDf = { env ->
+            return env.getDataLoader("owner.nation").load(env)
+        }
+        DataFetcher ownersDf = { DataFetchingEnvironment env ->
+            return env.getDataLoader("dog.owner").load(env)
+        }
 
         def wiring = RuntimeWiring.newRuntimeWiring()
                 .type(newTypeWiring("Query")
@@ -75,6 +79,7 @@ class Issue2068 extends Specification {
                         .dataFetcher("toys", new StaticDataFetcher(new AbstractList() {
                             @Override
                             Object get(int i) {
+//                                return "toy"
                                 throw new RuntimeException("Simulated failure");
                             }
 
@@ -120,7 +125,7 @@ class Issue2068 extends Specification {
 
         then: "execution with single instrumentation shouldn't hang"
         // wait for each future to complete and grab the results
-        thrown(RuntimeException)
+        def e = thrown(RuntimeException)
 
         when:
         graphql = GraphQL.newGraphQL(schema)

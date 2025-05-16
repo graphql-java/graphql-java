@@ -60,6 +60,7 @@ public class Execution {
     private final ResponseMapFactory responseMapFactory;
     private final boolean doNotAutomaticallyDispatchDataLoader;
 
+
     public Execution(ExecutionStrategy queryStrategy,
                      ExecutionStrategy mutationStrategy,
                      ExecutionStrategy subscriptionStrategy,

@@ -137,9 +137,10 @@ class DataLoaderNodeTest extends Specification {
                 .build()
 
         ExecutionResult result = GraphQL.newGraphQL(schema)
-//                .instrumentation(new DataLoaderDispatcherInstrumentation())
                 .build()
-                .execute(ExecutionInput.newExecutionInput().dataLoaderRegistry(registry).query(
+                .execute(ExecutionInput.newExecutionInput()
+                        .graphQLContext([(DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING): enableDataLoaderChaining])
+                        .dataLoaderRegistry(registry).query(
                 '''
                         query Q { 
                             root { 
@@ -178,5 +179,10 @@ class DataLoaderNodeTest extends Specification {
         //
         // but currently is this
         nodeLoads.size() == 3 // WOOT!
+
+        where:
+        enableDataLoaderChaining << [true, false]
+
+
     }
 }

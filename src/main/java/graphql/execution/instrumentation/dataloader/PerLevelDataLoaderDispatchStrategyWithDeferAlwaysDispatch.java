@@ -8,6 +8,7 @@ import graphql.execution.ExecutionStrategyParameters;
 import graphql.execution.FieldValueInfo;
 import graphql.execution.MergedField;
 import graphql.schema.DataFetcher;
+import graphql.schema.DataFetchingEnvironment;
 import graphql.util.LockKit;
 import org.dataloader.DataLoaderRegistry;
 
@@ -15,6 +16,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Supplier;
 
 /**
  * The execution of a query can be divided into 2 phases: first, the non-deferred fields are executed and only once
@@ -174,7 +176,8 @@ public class PerLevelDataLoaderDispatchStrategyWithDeferAlwaysDispatch implement
     public void fieldFetched(ExecutionContext executionContext,
                              ExecutionStrategyParameters parameters,
                              DataFetcher<?> dataFetcher,
-                             Object fetchedValue) {
+                             Object fetchedValue,
+                             Supplier<DataFetchingEnvironment> dataFetchingEnvironment) {
 
         final boolean dispatchNeeded;
 

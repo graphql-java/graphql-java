@@ -57,7 +57,7 @@ class DataLoaderTypeMismatchTest extends Specification {
 
         def wiring = RuntimeWiring.newRuntimeWiring()
                 .type(newTypeWiring("Query")
-                    .dataFetcher("getTodos", todosDef))
+                        .dataFetcher("getTodos", todosDef))
                 .build()
 
         def schema = new SchemaGenerator().makeExecutableSchema(typeDefinitionRegistry, wiring)
@@ -66,10 +66,16 @@ class DataLoaderTypeMismatchTest extends Specification {
                 .build()
 
         when:
-        def result = graphql.execute(ExecutionInput.newExecutionInput().dataLoaderRegistry(dataLoaderRegistry).query("query { getTodos { id } }").build())
+        def result = graphql.execute(ExecutionInput.newExecutionInput()
+                .graphQLContext([(DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING): enableDataLoaderChaining])
+                .dataLoaderRegistry(dataLoaderRegistry).query("query { getTodos { id } }").build())
 
         then: "execution shouldn't hang"
         !result.errors.empty
         result.errors[0].message == "Can't resolve value (/getTodos) : type mismatch error, expected type LIST"
+
+        where:
+        enableDataLoaderChaining << [true, false]
+
     }
 }

@@ -105,9 +105,9 @@ class PeopleCompaniesAndProductsDataLoaderTest extends Specification {
         @Override
         Object get(DataFetchingEnvironment environment) {
             Product source = environment.getSource()
-            DataLoaderRegistry dlRegistry = environment.getGraphQlContext().get("registry")
-            DataLoader<Integer, Person> personDL = dlRegistry.getDataLoader("person")
-            return personDL.load(source.getSuppliedById())
+//            DataLoaderRegistry dlRegistry = environment.getGraphQlContext().get("registry")
+//            DataLoader<Integer, Person> personDL = dlRegistry.getDataLoader("person")
+            return environment.getDataLoader("person").load(source.getSuppliedById())
         }
     }
 
@@ -115,10 +115,10 @@ class PeopleCompaniesAndProductsDataLoaderTest extends Specification {
         @Override
         Object get(DataFetchingEnvironment environment) {
             Product source = environment.getSource()
-            DataLoaderRegistry dlRegistry = environment.getGraphQlContext().get("registry")
-            DataLoader<Integer, Person> personDL = dlRegistry.getDataLoader("person")
+//            DataLoaderRegistry dlRegistry = environment.getGraphQlContext().get("registry")
+//            DataLoader<Integer, Person> personDL = dlRegistry.getDataLoader("person")
 
-            return personDL.loadMany(source.getMadeByIds())
+            return environment.getDataLoader("person").loadMany(source.getMadeByIds())
         }
     }
 
@@ -126,9 +126,9 @@ class PeopleCompaniesAndProductsDataLoaderTest extends Specification {
         @Override
         Object get(DataFetchingEnvironment environment) {
             Person source = environment.getSource()
-            DataLoaderRegistry dlRegistry = environment.getGraphQlContext().get("registry")
-            DataLoader<Integer, Company> companyDL = dlRegistry.getDataLoader("company")
-            return companyDL.load(source.getCompanyId())
+//            DataLoaderRegistry dlRegistry = environment.getGraphQlContext().get("registry")
+//            DataLoader<Integer, Company> companyDL = dlRegistry.getDataLoader("company")
+            return environment.getDataLoader("company").load(source.getCompanyId())
         }
     }
 
@@ -191,6 +191,7 @@ class PeopleCompaniesAndProductsDataLoaderTest extends Specification {
         ExecutionInput executionInput = ExecutionInput.newExecutionInput()
                 .query(query)
                 .graphQLContext(["registry": registry])
+                .graphQLContext([(DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING): enableDataLoaderChaining])
                 .dataLoaderRegistry(registry)
                 .build()
 
@@ -207,6 +208,9 @@ class PeopleCompaniesAndProductsDataLoaderTest extends Specification {
         companyBatchLoadKeyCount == 26
 
         companyBatchLoadInvocationCount == 1
+
+        where:
+        enableDataLoaderChaining << [true, false]
 
     }
 }
