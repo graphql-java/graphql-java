@@ -12,6 +12,7 @@ import graphql.schema.DataFetchingEnvironment
 import graphql.schema.idl.RuntimeWiring
 import org.dataloader.BatchLoader
 import org.dataloader.DataLoader
+import org.dataloader.DataLoaderFactory
 import org.dataloader.DataLoaderRegistry
 import spock.lang.Specification
 
@@ -168,8 +169,8 @@ class PeopleCompaniesAndProductsDataLoaderTest extends Specification {
 
 
     private DataLoaderRegistry buildRegistry() {
-        DataLoader<Integer, Person> personDataLoader = new DataLoader<>(personBatchLoader)
-        DataLoader<Integer, Company> companyDataLoader = new DataLoader<>(companyBatchLoader)
+        DataLoader<Integer, Person> personDataLoader = DataLoaderFactory.newDataLoader(personBatchLoader)
+        DataLoader<Integer, Company> companyDataLoader = DataLoaderFactory.newDataLoader(companyBatchLoader)
 
         DataLoaderRegistry registry = new DataLoaderRegistry()
         registry.register("person", personDataLoader)

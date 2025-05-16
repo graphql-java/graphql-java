@@ -10,6 +10,7 @@ import graphql.schema.idl.MapEnumValuesProvider
 import graphql.schema.idl.RuntimeWiring
 import org.dataloader.BatchLoader
 import org.dataloader.DataLoader
+import org.dataloader.DataLoaderFactory
 import org.dataloader.DataLoaderRegistry
 
 import java.util.concurrent.CompletableFuture
@@ -63,7 +64,7 @@ class StarWarsDataLoaderWiring {
 
     def newDataLoaderRegistry() {
         // a data loader for characters that points to the character batch loader
-        def characterDataLoader = new DataLoader<String, Object>(characterBatchLoader)
+        def characterDataLoader = DataLoaderFactory.newDataLoader(characterBatchLoader)
         new DataLoaderRegistry().register("character", characterDataLoader)
     }
 

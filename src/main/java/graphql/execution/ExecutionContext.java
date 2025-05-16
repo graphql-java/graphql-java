@@ -61,6 +61,8 @@ public class ExecutionContext {
     private final Locale locale;
     private final IncrementalCallState incrementalCallState = new IncrementalCallState();
     private final ValueUnboxer valueUnboxer;
+    private final ResponseMapFactory responseMapFactory;
+
     private final ExecutionInput executionInput;
     private final Supplier<ExecutableNormalizedOperation> queryTree;
     private final boolean propagateErrorsOnNonNullContractFailure;
@@ -92,6 +94,7 @@ public class ExecutionContext {
         this.dataLoaderRegistry = builder.dataLoaderRegistry;
         this.locale = builder.locale;
         this.valueUnboxer = builder.valueUnboxer;
+        this.responseMapFactory = builder.responseMapFactory;
         this.errors.set(builder.errors);
         this.localContext = builder.localContext;
         this.executionInput = builder.executionInput;
@@ -100,7 +103,6 @@ public class ExecutionContext {
         this.propagateErrorsOnNonNullContractFailure = builder.propagateErrorsOnNonNullContractFailure;
         this.engineRunningState = builder.engineRunningState;
     }
-
 
     public ExecutionId getExecutionId() {
         return executionId;
@@ -295,6 +297,10 @@ public class ExecutionContext {
         });
     }
 
+    public ResponseMapFactory getResponseMapFactory() {
+        return responseMapFactory;
+    }
+
     /**
      * @return the total list of errors for this execution context
      */
@@ -361,8 +367,13 @@ public class ExecutionContext {
     }
 
     @Internal
+    public boolean hasIncrementalSupport() {
+        GraphQLContext graphqlContext = getGraphQLContext();
+        return graphqlContext != null && graphqlContext.getBoolean(ExperimentalApi.ENABLE_INCREMENTAL_SUPPORT);
+    }
+
+    @Internal
     public EngineRunningState getEngineRunningState() {
         return engineRunningState;
     }
-
 }

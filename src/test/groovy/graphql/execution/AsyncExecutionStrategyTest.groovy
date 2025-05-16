@@ -117,6 +117,7 @@ abstract class AsyncExecutionStrategyTest extends Specification {
                 .newParameters()
                 .executionStepInfo(typeInfo)
                 .fields(mergedSelectionSet(['hello': mergedField([Field.newField('hello').build()]), 'hello2': mergedField([Field.newField('hello2').build()])]))
+                .nonNullFieldValidator(new NonNullableFieldValidator(executionContext))
                 .build()
 
         AsyncExecutionStrategy asyncExecutionStrategy = new AsyncExecutionStrategy()
@@ -160,6 +161,7 @@ abstract class AsyncExecutionStrategyTest extends Specification {
                 .newParameters()
                 .executionStepInfo(typeInfo)
                 .fields(mergedSelectionSet(['hello': mergedField([Field.newField('hello').build()]), 'hello2': mergedField([Field.newField('hello2').build()])]))
+                .nonNullFieldValidator(new NonNullableFieldValidator(executionContext))
                 .build()
 
         AsyncExecutionStrategy asyncExecutionStrategy = new AsyncExecutionStrategy()
@@ -205,6 +207,7 @@ abstract class AsyncExecutionStrategyTest extends Specification {
                 .newParameters()
                 .executionStepInfo(typeInfo)
                 .fields(mergedSelectionSet(['hello': mergedField([Field.newField('hello').build()]), 'hello2': mergedField([Field.newField('hello2').build()])]))
+                .nonNullFieldValidator(new NonNullableFieldValidator(executionContext))
                 .build()
 
         AsyncExecutionStrategy asyncExecutionStrategy = new AsyncExecutionStrategy()
@@ -249,6 +252,7 @@ abstract class AsyncExecutionStrategyTest extends Specification {
                 .newParameters()
                 .executionStepInfo(typeInfo)
                 .fields(mergedSelectionSet(['hello': mergedField([Field.newField('hello').build()]), 'hello2': mergedField([Field.newField('hello2').build()])]))
+                .nonNullFieldValidator(new NonNullableFieldValidator(executionContext))
                 .build()
 
         AsyncExecutionStrategy asyncExecutionStrategy = new AsyncExecutionStrategy()
@@ -312,6 +316,7 @@ abstract class AsyncExecutionStrategyTest extends Specification {
                 .newParameters()
                 .executionStepInfo(typeInfo)
                 .fields(mergedSelectionSet(['hello': mergedField([new Field('hello')]), 'hello2': mergedField([new Field('hello2')])]))
+                .nonNullFieldValidator(new NonNullableFieldValidator(executionContext))
                 .build()
 
         AsyncExecutionStrategy asyncExecutionStrategy = new AsyncExecutionStrategy()

@@ -11,6 +11,7 @@ import graphql.schema.GraphQLObjectType
 import graphql.schema.GraphQLSchema
 import graphql.schema.StaticDataFetcher
 import org.dataloader.DataLoader
+import org.dataloader.DataLoaderFactory
 import org.dataloader.DataLoaderRegistry
 import spock.lang.Specification
 
@@ -69,13 +70,15 @@ class DataLoaderNodeTest extends Specification {
     }
 
     class NodeDataFetcher implements DataFetcher {
+        String name
 
-        NodeDataFetcher() {
+        NodeDataFetcher(String name) {
+            this.name = name
         }
 
         @Override
         Object get(DataFetchingEnvironment environment) throws Exception {
-            return environment.getDataLoader("childNodes").load(environment.getSource())
+            return environment.getDataLoader(name).load(environment.getSource())
         }
     }
 
@@ -83,7 +86,8 @@ class DataLoaderNodeTest extends Specification {
 
         List<List<Node>> nodeLoads = []
 
-        DataLoader<Node, List<Node>> loader = new DataLoader<>({ keys ->
+
+        def batchLoadFunction = { keys ->
             nodeLoads.add(keys)
             List<List<Node>> childNodes = new ArrayList<>()
             for (Node key : keys) {
@@ -91,14 +95,16 @@ class DataLoaderNodeTest extends Specification {
             }
             System.out.println("BatchLoader called for " + keys + " -> got " + childNodes)
             return CompletableFuture.completedFuture(childNodes)
-        })
-
-        DataFetcher<?> nodeDataFetcher = new NodeDataFetcher()
+        }
+        DataLoader<Node, List<Node>> loader = DataLoaderFactory.newDataLoader(batchLoadFunction)
 
         def nodeTypeName = "Node"
         def childNodesFieldName = "childNodes"
         def queryTypeName = "Query"
         def rootFieldName = "root"
+
+        DataFetcher<?> nodeDataFetcher = new NodeDataFetcher(childNodesFieldName)
+        DataLoaderRegistry registry = new DataLoaderRegistry().register(childNodesFieldName, loader)
 
         GraphQLObjectType nodeType = GraphQLObjectType
                 .newObject()
@@ -129,8 +135,6 @@ class DataLoaderNodeTest extends Specification {
                             .build())
                         .build())
                 .build()
-
-        DataLoaderRegistry registry = new DataLoaderRegistry().register(childNodesFieldName, loader)
 
         ExecutionResult result = GraphQL.newGraphQL(schema)
                 .build()

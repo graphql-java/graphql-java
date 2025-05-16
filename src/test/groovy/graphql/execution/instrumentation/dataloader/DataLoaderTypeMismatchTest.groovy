@@ -9,6 +9,7 @@ import graphql.schema.idl.SchemaGenerator
 import graphql.schema.idl.SchemaParser
 import org.dataloader.BatchLoader
 import org.dataloader.DataLoader
+import org.dataloader.DataLoaderFactory
 import org.dataloader.DataLoaderRegistry
 import spock.lang.Specification
 
@@ -36,7 +37,7 @@ class DataLoaderTypeMismatchTest extends Specification {
 
         def typeDefinitionRegistry = new SchemaParser().parse(sdl)
 
-        def dataLoader = new DataLoader<Object, Object>(new BatchLoader<Object, Object>() {
+        def dataLoader = DataLoaderFactory.newDataLoader(new BatchLoader<Object, Object>() {
             @Override
             CompletionStage<List<Object>> load(List<Object> keys) {
                 return CompletableFuture.completedFuture([

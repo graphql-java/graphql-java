@@ -36,7 +36,7 @@ import java.util.stream.Collectors;
 @State(Scope.Benchmark)
 @Warmup(iterations = 2, time = 5)
 @Measurement(iterations = 3)
-@Fork(3)
+@Fork(2)
 public class DataLoaderPerformance {
 
     static Owner o1 = new Owner("O-1", "Andi", List.of("P-1", "P-2", "P-3"));

@@ -1,5 +1,6 @@
 package graphql.execution;
 
+import graphql.Internal;
 import graphql.PublicApi;
 import graphql.execution.incremental.DeferredCallContext;
 import org.jspecify.annotations.Nullable;
@@ -37,7 +38,7 @@ public class ExecutionStrategyParameters {
         this.localContext = localContext;
         this.fields = assertNotNull(fields, () -> "fields is null");
         this.source = source;
-        this.nonNullableFieldValidator = nonNullableFieldValidator;
+        this.nonNullableFieldValidator = assertNotNull(nonNullableFieldValidator, () -> "requires a NonNullValidator");;
         this.path = path;
         this.currentField = currentField;
         this.parent = parent;
@@ -113,6 +114,81 @@ public class ExecutionStrategyParameters {
      */
     public MergedField getField() {
         return currentField;
+    }
+
+    @Internal
+    ExecutionStrategyParameters transform(MergedField currentField,
+                                          ResultPath path) {
+        return new ExecutionStrategyParameters(executionStepInfo,
+                source,
+                localContext,
+                fields,
+                nonNullableFieldValidator,
+                path,
+                currentField,
+                parent,
+                deferredCallContext);
+    }
+
+    @Internal
+    ExecutionStrategyParameters transform(ExecutionStepInfo executionStepInfo,
+                                          MergedSelectionSet fields,
+                                          Object source) {
+        return new ExecutionStrategyParameters(executionStepInfo,
+                source,
+                localContext,
+                fields,
+                nonNullableFieldValidator,
+                path,
+                currentField,
+                parent,
+                deferredCallContext);
+    }
+
+    @Internal
+    ExecutionStrategyParameters transform(ExecutionStepInfo executionStepInfo,
+                                          ResultPath path,
+                                          Object localContext,
+                                          Object source) {
+        return new ExecutionStrategyParameters(executionStepInfo,
+                source,
+                localContext,
+                fields,
+                nonNullableFieldValidator,
+                path,
+                currentField,
+                parent,
+                deferredCallContext);
+    }
+
+    @Internal
+    ExecutionStrategyParameters transform(ExecutionStepInfo executionStepInfo,
+                                          Object localContext,
+                                          Object source) {
+        return new ExecutionStrategyParameters(executionStepInfo,
+                source,
+                localContext,
+                fields,
+                nonNullableFieldValidator,
+                path,
+                currentField,
+                parent,
+                deferredCallContext);
+    }
+
+    @Internal
+    ExecutionStrategyParameters transform(MergedField currentField,
+                                          ResultPath path,
+                                          ExecutionStrategyParameters parent) {
+        return new ExecutionStrategyParameters(executionStepInfo,
+                source,
+                localContext,
+                fields,
+                nonNullableFieldValidator,
+                path,
+                currentField,
+                parent,
+                deferredCallContext);
     }
 
     public ExecutionStrategyParameters transform(Consumer<Builder> builderConsumer) {

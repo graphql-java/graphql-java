@@ -11,6 +11,7 @@ import org.jspecify.annotations.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -25,10 +26,19 @@ import static graphql.Assert.assertNotNull;
  * This also allows you to pass down new local context objects between parent and child fields.  If you return a
  * {@link #getLocalContext()} value then it will be passed down into any child fields via
  * {@link graphql.schema.DataFetchingEnvironment#getLocalContext()}
- *
+ * <p>
  * You can also have {@link DataFetcher}s contribute to the {@link ExecutionResult#getExtensions()} by returning
  * extensions maps that will be merged together via the {@link graphql.extensions.ExtensionsBuilder} and its {@link graphql.extensions.ExtensionsMerger}
  * in place.
+ * <p>
+ * This provides {@link #hashCode()} and {@link #equals(Object)} methods that afford comparison with other {@link DataFetcherResult} object.s
+ * However, to function correctly, this relies on the values provided in the following fields in turn also implementing {@link #hashCode()}} and {@link #equals(Object)} as appropriate:
+ * <ul>
+ *   <li>The data returned in {@link #getData()}.
+ *   <li>The individual errors returned in {@link #getErrors()}.
+ *   <li>The context returned in {@link #getLocalContext()}.
+ *   <li>The keys/values in the {@link #getExtensions()} {@link Map}.
+ * </ul>
  *
  * @param <T> The type of the data fetched
  */
@@ -123,6 +133,35 @@ public class DataFetcherResult<T> {
                 .extensions(this.extensions)
                 .localContext(this.localContext)
                 .build();
+    }
+
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+
+        DataFetcherResult<?> that = (DataFetcherResult<?>) o;
+        return Objects.equals(data, that.data)
+                && errors.equals(that.errors)
+                && Objects.equals(localContext, that.localContext)
+                && Objects.equals(extensions, that.extensions);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(data, errors, localContext, extensions);
+    }
+
+    @Override
+    public String toString() {
+        return "DataFetcherResult{" +
+                "data=" + data +
+                ", errors=" + errors +
+                ", localContext=" + localContext +
+                ", extensions=" + extensions +
+                '}';
     }
 
     /**

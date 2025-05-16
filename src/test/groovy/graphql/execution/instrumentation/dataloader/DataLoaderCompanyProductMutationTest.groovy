@@ -45,11 +45,11 @@ class DataLoaderCompanyProductMutationTest extends Specification {
 
         def wiring = newRuntimeWiring()
                 .type(
-                        newTypeWiring("Company").dataFetcher("projects", {
-                            environment ->
-                                DataLoaderCompanyProductBackend.Company source = environment.getSource()
-                                return backend.getProjectsLoader().load(source.getId())
-                        }))
+                newTypeWiring("Company").dataFetcher("projects", {
+                    environment ->
+                        DataLoaderCompanyProductBackend.Company source = environment.getSource()
+                        return environment.getDataLoader("projects-dl").load(source.getId())
+                }))
                 .type(
                         newTypeWiring("Query").dataFetcher("companies", {
                             environment -> backend.getCompanies()

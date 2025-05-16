@@ -2,6 +2,7 @@ package graphql.schema.fetching;
 
 import graphql.Internal;
 import graphql.VisibleForTesting;
+import graphql.util.FpKit;
 
 import java.lang.invoke.CallSite;
 import java.lang.invoke.LambdaMetafactory;
@@ -16,8 +17,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Predicate;
-
-import static java.util.stream.Collectors.toList;
 
 @Internal
 public class LambdaFetchingSupport {
@@ -69,9 +68,12 @@ public class LambdaFetchingSupport {
         Predicate<Method> getterPredicate = method -> isGetterNamed(method) && propertyName.equals(mkPropertyNameGetter(method));
         List<Method> allGetterMethods = findMethodsForProperty(sourceClass,
                 getterPredicate);
-        List<Method> pojoGetterMethods = allGetterMethods.stream()
-                .filter(LambdaFetchingSupport::isPossiblePojoMethod)
-                .collect(toList());
+        List<Method> pojoGetterMethods = FpKit.arrayListSizedTo(allGetterMethods);
+        for (Method allGetterMethod : allGetterMethods) {
+            if (isPossiblePojoMethod(allGetterMethod)) {
+                pojoGetterMethods.add(allGetterMethod);
+            }
+        }
         if (!pojoGetterMethods.isEmpty()) {
             Method method = pojoGetterMethods.get(0);
             if (isBooleanGetter(method)) {
@@ -97,7 +99,13 @@ public class LambdaFetchingSupport {
 
     private static Method findBestBooleanGetter(List<Method> methods) {
         // we prefer isX() over getX() if both happen to be present
-        Optional<Method> isMethod = methods.stream().filter(method -> method.getName().startsWith("is")).findFirst();
+        Optional<Method> isMethod = Optional.empty();
+        for (Method method : methods) {
+            if (method.getName().startsWith("is")) {
+                isMethod = Optional.of(method);
+                break;
+            }
+        }
         return isMethod.orElse(methods.get(0));
     }
 
@@ -121,9 +129,9 @@ public class LambdaFetchingSupport {
             currentClass = currentClass.getSuperclass();
         }
 
-        return methods.stream()
-                .sorted(Comparator.comparing(Method::getName))
-                .collect(toList());
+        List<Method> list = new ArrayList<>(methods);
+        list.sort(Comparator.comparing(Method::getName));
+        return list;
     }
 
     private static boolean isPossiblePojoMethod(Method method) {
