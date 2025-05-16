@@ -15,13 +15,11 @@ import java.util.concurrent.CompletableFuture;
 public class DataLoaderWithContext<K, V> extends DelegatingDataLoader<K, V> {
     final DataFetchingEnvironment dfe;
     final String dataLoaderName;
-    final DataLoader<K, V> delegate;
 
     public DataLoaderWithContext(DataFetchingEnvironment dfe, String dataLoaderName, DataLoader<K, V> delegate) {
         super(delegate);
         this.dataLoaderName = dataLoaderName;
         this.dfe = dfe;
-        this.delegate = delegate;
     }
 
     @Override
