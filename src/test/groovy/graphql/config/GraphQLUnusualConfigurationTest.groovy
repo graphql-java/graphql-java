@@ -1,5 +1,6 @@
 package graphql.config
 
+import graphql.ExecutionInput
 import graphql.ExperimentalApi
 import graphql.GraphQL
 import graphql.GraphQLContext
@@ -182,4 +183,28 @@ class GraphQLUnusualConfigurationTest extends Specification {
         graphqlContext.get(DataLoaderDispatchingContextKeys.DELAYED_DATA_LOADER_BATCH_WINDOW_SIZE_NANO_SECONDS) == Duration.ofMillis(10).toNanos()
         graphqlContext.get(DataLoaderDispatchingContextKeys.DELAYED_DATA_LOADER_DISPATCHING_EXECUTOR_FACTORY) == factory
     }
+
+    def "we can access via the ExecutionInput"() {
+        when:
+        def eiBuilder = ExecutionInput.newExecutionInput("query q {f}")
+
+        GraphQL.unusualConfiguration(eiBuilder)
+                .dataloaderConfig()
+                .enableDataLoaderChaining(true)
+
+        def ei = eiBuilder.build()
+
+        then:
+        ei.getGraphQLContext().get(DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING) == true
+
+        when:
+        ei = ExecutionInput.newExecutionInput("query q {f}").build()
+
+        GraphQL.unusualConfiguration(ei)
+                .dataloaderConfig()
+                .enableDataLoaderChaining(true)
+
+        then:
+        ei.getGraphQLContext().get(DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING) == true
+  }
 }
