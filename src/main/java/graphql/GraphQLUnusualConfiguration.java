@@ -1,10 +1,16 @@
 package graphql;
 
+import graphql.execution.instrumentation.dataloader.DelayedDataLoaderDispatcherExecutorFactory;
 import graphql.introspection.GoodFaithIntrospection;
 import graphql.parser.ParserOptions;
 import graphql.schema.PropertyDataFetcherHelper;
 
+import java.time.Duration;
+
 import static graphql.Assert.assertNotNull;
+import static graphql.execution.instrumentation.dataloader.DataLoaderDispatchingContextKeys.DELAYED_DATA_LOADER_BATCH_WINDOW_SIZE_NANO_SECONDS;
+import static graphql.execution.instrumentation.dataloader.DataLoaderDispatchingContextKeys.DELAYED_DATA_LOADER_DISPATCHING_EXECUTOR_FACTORY;
+import static graphql.execution.instrumentation.dataloader.DataLoaderDispatchingContextKeys.ENABLE_DATA_LOADER_CHAINING;
 
 /**
  * This allows you to control "unusual" aspects of the GraphQL system
@@ -235,6 +241,7 @@ public class GraphQLUnusualConfiguration {
      * ===============================================
      */
 
+    @SuppressWarnings("DataFlowIssue")
     public static class GraphQLContextConfiguration {
         // it will be one or the other types of GraphQLContext
         private final GraphQLContext graphQLContext;
@@ -257,6 +264,14 @@ public class GraphQLUnusualConfiguration {
             return new IncrementalSupportConfig(this);
         }
 
+        /**
+         * @return an element that allows you to precisely control {@link org.dataloader.DataLoader} behavior
+         * in graphql-java.
+         */
+        public DataloaderConfig dataloaderConfig() {
+            return new DataloaderConfig(this);
+        }
+
         private void put(String named, Object value) {
             if (graphQLContext != null) {
                 graphQLContext.put(named, value);
@@ -270,6 +285,15 @@ public class GraphQLUnusualConfiguration {
                 return graphQLContext.getBoolean(named);
             } else {
                 return assertNotNull(graphQLContextBuilder).getBoolean(named);
+            }
+        }
+
+        private <T> T get(String named) {
+            if (graphQLContext != null) {
+                return graphQLContext.get(named);
+            } else {
+                //noinspection unchecked
+                return (T) assertNotNull(graphQLContextBuilder).get(named);
             }
         }
     }
@@ -307,6 +331,65 @@ public class GraphQLUnusualConfiguration {
         @ExperimentalApi
         public IncrementalSupportConfig enableIncrementalSupport(boolean enable) {
             contextConfig.put(ExperimentalApi.ENABLE_INCREMENTAL_SUPPORT, enable);
+            return this;
+        }
+    }
+
+    public static class DataloaderConfig extends BaseContextConfig {
+        private DataloaderConfig(GraphQLContextConfiguration contextConfig) {
+            super(contextConfig);
+        }
+
+        /**
+         * @return true if @defer and @stream behaviour is enabled for this execution.
+         */
+        public boolean isDataLoaderChainingEnabled() {
+            return contextConfig.getBoolean(ENABLE_DATA_LOADER_CHAINING);
+        }
+
+        /**
+         * Enables the ability that chained DataLoaders are dispatched automatically.
+         */
+        @ExperimentalApi
+        public DataloaderConfig enableDataLoaderChaining(boolean enable) {
+            contextConfig.put(ENABLE_DATA_LOADER_CHAINING, enable);
+            return this;
+        }
+
+        /**
+         * @return the batch window duration size for delayed DataLoaders.
+         */
+        public Duration delayedDataLoaderBatchWindowSize() {
+            Long d = contextConfig.get(DELAYED_DATA_LOADER_BATCH_WINDOW_SIZE_NANO_SECONDS);
+            return d != null ? Duration.ofNanos(d) : null;
+        }
+
+        /**
+         * Sets the batch window duration size for delayed DataLoaders.
+         * That is for DataLoaders, that are not batched as part of the normal per level
+         * dispatching, because they were created after the level was already dispatched.
+         */
+        @ExperimentalApi
+        public DataloaderConfig delayedDataLoaderBatchWindowSize(Duration batchWindowSize) {
+            contextConfig.put(DELAYED_DATA_LOADER_BATCH_WINDOW_SIZE_NANO_SECONDS, batchWindowSize.toNanos());
+            return this;
+        }
+
+        /**
+         * @return the instance of {@link DelayedDataLoaderDispatcherExecutorFactory} that is used to create the
+         * {@link java.util.concurrent.ScheduledExecutorService} for the delayed DataLoader dispatching.
+         */
+        public DelayedDataLoaderDispatcherExecutorFactory delayedDataLoaderExecutorFactory() {
+            return contextConfig.get(DELAYED_DATA_LOADER_DISPATCHING_EXECUTOR_FACTORY);
+        }
+
+        /**
+         * Sets the instance of {@link DelayedDataLoaderDispatcherExecutorFactory} that is used to create the
+         * {@link java.util.concurrent.ScheduledExecutorService} for the delayed DataLoader dispatching.
+         */
+        @ExperimentalApi
+        public DataloaderConfig delayedDataLoaderExecutorFactory(DelayedDataLoaderDispatcherExecutorFactory delayedDataLoaderDispatcherExecutorFactory) {
+            contextConfig.put(DELAYED_DATA_LOADER_DISPATCHING_EXECUTOR_FACTORY, delayedDataLoaderDispatcherExecutorFactory);
             return this;
         }
     }
