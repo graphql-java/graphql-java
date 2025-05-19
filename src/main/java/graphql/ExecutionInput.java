@@ -31,6 +31,7 @@ public class ExecutionInput {
     private final Locale locale;
     // this is currently not used but we want it back soon after the v23 release
     private final AtomicBoolean cancelled;
+    private final boolean profileExecution;
 
 
     @Internal
@@ -47,6 +48,7 @@ public class ExecutionInput {
         this.localContext = builder.localContext;
         this.extensions = builder.extensions;
         this.cancelled = builder.cancelled;
+        this.profileExecution = builder.profileExecution;
     }
 
     /**
@@ -142,6 +144,11 @@ public class ExecutionInput {
         return extensions;
     }
 
+
+    public boolean isProfileExecution() {
+        return profileExecution;
+    }
+
     /**
      * This helps you transform the current ExecutionInput object into another one by starting a builder with all
      * the current values and allows you to transform it how you want.
@@ -221,6 +228,7 @@ public class ExecutionInput {
         private Locale locale = Locale.getDefault();
         private ExecutionId executionId;
         private AtomicBoolean cancelled = new AtomicBoolean(false);
+        private boolean profileExecution;
 
         public Builder query(String query) {
             this.query = assertNotNull(query, () -> "query can't be null");
@@ -283,7 +291,7 @@ public class ExecutionInput {
             return this;
         }
 
-         /**
+        /**
          * This will give you a builder of {@link GraphQLContext} and any values you set will be copied
          * into the underlying {@link GraphQLContext} of this execution input
          *
@@ -357,6 +365,11 @@ public class ExecutionInput {
          */
         public Builder dataLoaderRegistry(DataLoaderRegistry dataLoaderRegistry) {
             this.dataLoaderRegistry = assertNotNull(dataLoaderRegistry);
+            return this;
+        }
+
+        public Builder profileExecution(boolean profileExecution) {
+            this.profileExecution = profileExecution;
             return this;
         }
 

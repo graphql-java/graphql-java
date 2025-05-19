@@ -2,6 +2,7 @@ package graphql;
 
 import graphql.execution.EngineRunningObserver;
 import graphql.execution.ExecutionId;
+import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 
 import java.util.concurrent.CompletableFuture;
@@ -19,6 +20,7 @@ import static graphql.execution.EngineRunningObserver.RunningState.RUNNING;
 import static graphql.execution.EngineRunningObserver.RunningState.RUNNING_START;
 
 @Internal
+@NullMarked
 public class EngineRunningState {
 
     @Nullable
