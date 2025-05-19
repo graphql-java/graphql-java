@@ -67,13 +67,13 @@ class QueryGeneratorTest extends Specification {
         then:
         String printed = printer.print(result)
 
-        Assert.assertEquals(printed.trim(), """
+        Assert.assertEquals("""
 {
   id
   name
   type
 }
-""".trim())
+""".trim(), printed.trim())
     }
 
     def "generate fields for type with nested type"() {
@@ -87,7 +87,7 @@ class QueryGeneratorTest extends Specification {
         then:
         String printed = printer.print(result)
 
-        Assert.assertEquals(printed.trim(), """
+        Assert.assertEquals("""
 {
   id
   bar {
@@ -101,7 +101,7 @@ class QueryGeneratorTest extends Specification {
     type
   }
 }
-""".trim())
+""".trim(), printed.trim())
     }
 
     def "straight forward cyclic dependency"() {
@@ -115,9 +115,20 @@ class QueryGeneratorTest extends Specification {
         then:
         String printed = printer.print(result)
 
-        Assert.assertEquals(printed.trim(), """
-
-""".trim())
+        Assert.assertEquals("""
+{
+  id
+  name
+  fooFoo {
+    id
+    name
+    fooFoo {
+      id
+      name
+    }
+  }
+}
+""".trim(), printed.trim())
     }
 
     def "transitive cyclic dependency"() {
@@ -131,8 +142,31 @@ class QueryGeneratorTest extends Specification {
         then:
         String printed = printer.print(result)
 
-        Assert.assertEquals(printed.trim(), """
-
-""".trim())
+        Assert.assertEquals("""
+{
+  id
+  name
+  barFoo {
+    id
+    name
+    fooBarFoo {
+      id
+      name
+      barFoo {
+        id
+        name
+        fooBarFoo {
+          id
+          name
+          barFoo {
+            id
+            name
+          }
+        }
+      }
+    }
+  }
+}
+""".trim(), printed.trim())
     }
 }
